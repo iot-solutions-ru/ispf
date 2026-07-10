@@ -12,7 +12,7 @@
 
 - **Было:** `SCADA_MIMIC.md`, `ROADMAP_PHASE25.md`
 - **Стало:** `scada-mimic.md`, затем `roadmap-phase-25.md` (выделение фаз 25–33)
-- **09.07.2026:** Фазы 25–33 снова влита в единый [roadmap.md](roadmap.md); `roadmap-phase-25.md` — только redirect stub
+- **09.07.2026:** Фазы 25–33 снова влита в единый [roadmap](roadmap.md); `roadmap-phase-25.md` — только redirect stub
 - **ADR:** `decisions/0001-app-platform-boundary.md` (тот же шаблон, lowercase)
 
 ## Проверка ссылок

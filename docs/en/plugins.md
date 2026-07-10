@@ -14,7 +14,7 @@
 
 The core **does not contain** domain business logic in Java, **does not embed device drivers in the server JAR**, and **does not mix** with commercial modules without an explicit license boundary.
 
-**Core ISPF principle:** solution business logic lives **on the platform** — in models, variables, events, functions, and workflows of the object tree. The core supplies only generic engines; the solution is declarative configuration. See [architecture.md](architecture.md).
+**Core ISPF principle:** solution business logic lives **on the platform** — in models, variables, events, functions, and workflows of the object tree. The core supplies only generic engines; the solution is declarative configuration. See [architecture](architecture.md).
 
 ## How to Connect Extensions (Without Java in the Core)
 
@@ -26,7 +26,7 @@ An application solution fills platform mechanisms **via API and bundle deploy**,
 4. `POST /api/v1/applications/{appId}/deploy` — bundle in one request
 5. Objects, dashboards, BPMN — via existing platform REST APIs
 
-See [applications.md](applications.md).
+See [applications](applications.md).
 
 ## Commercial Plugin: Deliverable Requirements
 
@@ -36,7 +36,7 @@ Every commercial plugin **must** include:
 - `README` with usage restrictions and copyright holder contact
 - Version and list of compatible ISPF versions
 
-Commercial bundle with a `license` section — see [commercial-licensing.md](commercial-licensing.md) and [0003](decisions/0003-commercial-bundle-licensing.md).
+Commercial bundle with a `license` section — see [commercial-licensing](commercial-licensing.md) and [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
 
 A plugin **must not** be committed to `packages/ispf-server/` and **must not** be merged into `main` without a separate open-source decision.
 
@@ -50,7 +50,7 @@ Like device drivers, LLM adapters live **outside** the `ispf-server` core:
 | `packages/ispf-ai-openai-compatible` | OpenAI-compatible HTTP API |
 | `packages/ispf-ai-ollama` | Ollama local API |
 
-`ispf-server` contains only the registry, ToolRegistry, audit, and admin REST. Configuration — Spring profile/env (`ispf.ai.*`). See [ai-development.md](ai-development.md), [0004](decisions/0004-ai-artifact-generation-gates.md).
+`ispf-server` contains only the registry, ToolRegistry, audit, and admin REST. Configuration — Spring profile/env (`ispf.ai.*`). See [ai-development](ai-development.md), [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md).
 
 ## Checklist Before PR to `main`
 
@@ -61,6 +61,6 @@ Like device drivers, LLM adapters live **outside** the `ispf-server` core:
 
 ## Related Documents
 
-- [license.md](license.md) — platform AGPL, driver packs, commercial modules
-- [applications.md](applications.md) — deploy API
+- [license](license.md) — platform AGPL, driver packs, commercial modules
+- [applications](applications.md) — deploy API
 - [decisions/](decisions/) — ADR (0008 boundary, 0009 gate, 0010 licensing)

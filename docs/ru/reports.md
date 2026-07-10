@@ -156,6 +156,6 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|
 
 ## Связанные документы
 
-- [APPLICATIONS.md](applications.md) — развертывание пакета
-- [DASHBOARDS.md](dashboards.md) — аналогичная древовидная модель
-- [ROADMAP.md](roadmap.md) — Этапы 12–13.
+- [applications](applications.md) — развертывание пакета
+- [dashboards](dashboards.md) — аналогичная древовидная модель
+- [roadmap](roadmap.md) — Этапы 12–13.

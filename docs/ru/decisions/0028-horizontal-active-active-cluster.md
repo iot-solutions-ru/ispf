@@ -19,12 +19,12 @@ ISPF предполагает **одно дерево объектов** (`root.
 
 - PostgreSQL — единый source of truth для дерева объектов.
 - `PlatformLeaderLockService` — JDBC locks для singleton schedulers.
-- NATS/JetStream replica fan-out — cross-replica WebSocket/object-change sync ([MESSAGING.md](../MESSAGING.md)).
+- NATS/JetStream replica fan-out — cross-replica WebSocket/object-change sync ([MESSAGING](../MESSAGING.md)).
 - Redis optional — correlator windows + ACL cache, общие для реплик.
-- Optimistic concurrency (`If-Match` / revision) — безопасное параллельное редактирование конфигурации ([COLLABORATION.md](../COLLABORATION.md)).
-- Demand-driven object change pub/sub ([ADR-0024](0024-demand-driven-variable-change-pubsub.md)) — меньше лишней работы при масштабировании API tier.
+- Optimistic concurrency (`If-Match` / revision) — безопасное параллельное редактирование конфигурации ([COLLABORATION](../COLLABORATION.md)).
+- Demand-driven object change pub/sub ([0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md)) — меньше лишней работы при масштабировании API tier.
 
-**Cluster ≠ federation:** cluster = N реплик, **одна БД**, один site. Federation ([ADR-0008](0008-federation-topology.md)) = несколько sites / edge agents с catalog sync.
+**Cluster ≠ federation:** cluster = N реплик, **одна БД**, один site. Federation ([0008-federation-topology](0008-federation-topology.md)) = несколько sites / edge agents с catalog sync.
 
 ## Решение
 
@@ -52,7 +52,7 @@ Clients → nginx (round-robin REST, sticky WS) → ispf-server × N
 | Platform schedulers | Active-passive (one leader) | `platform_leader_locks` ([PlatformLeaderLockService](../../packages/ispf-server/src/main/java/com/ispf/server/platform/PlatformLeaderLockService.java)) |
 | Device driver poll loops | **Exactly-one owner** | `platform_driver_locks` + `DriverOwnershipService` (BL-136) |
 | Binding periodic tick | Active-passive (one leader) | Existing leader lock on `binding_periodic_scheduler` |
-| Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([BL-114](../roadmap.md#часть-e--полный-реестр-bl-01139)) |
+| Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139)) |
 
 ### 3. Driver ownership
 
@@ -94,17 +94,16 @@ Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml]
 - Survives single-node failure with nginx passive health.
 - Driver I/O safe across replicas via DB locks.
 
-
 Risks:
 
-- PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([BL-114](../roadmap.md#часть-e--полный-реестр-bl-01139)).
+- PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139)).
 - NATS + Redis become operational dependencies for full multi-replica UX.
-- Sticky WS optional when [ADR-0029](0029-cluster-live-variable-replica-sync.md) live sync + Redis path interest enabled; REST round-robin safe for HMI reads.
+- Sticky WS optional when [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) live sync + Redis path interest enabled; REST round-robin safe for HMI reads.
 
 ## Связанные материалы
 
-- [ADR-0024](0024-demand-driven-variable-change-pubsub.md) — demand-driven pub/sub (complements cluster; update: horizontal scale = N JVMs + shared DB, not only bigger host)
-- [BL-133…139](../roadmap.md#часть-e--полный-реестр-bl-01139) — EX-CLUSTER implementation backlog
-- [DEPLOYMENT.md](../deployment.md) — Multi-instance cluster runbook
-- [MESSAGING.md](../MESSAGING.md) — NATS replica fan-out
-- [ADR-0029](0029-cluster-live-variable-replica-sync.md) — live variable RAM mirror (closes stale-read gap)
+- [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven pub/sub (complements cluster; update: horizontal scale = N JVMs + shared DB, not only bigger host)
+- [roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139) — EX-CLUSTER implementation backlog
+- [deployment](../deployment.md) — Multi-instance cluster runbook
+- [MESSAGING](../MESSAGING.md) — NATS replica fan-out
+- [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live variable RAM mirror (closes stale-read gap)

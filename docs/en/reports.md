@@ -156,6 +156,6 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|
 
 ## Related documents
 
-- [APPLICATIONS.md](applications.md) — bundle deploy
-- [DASHBOARDS.md](dashboards.md) — similar tree-first model
-- [ROADMAP.md](roadmap.md) — Phase 12–13
+- [applications](applications.md) — bundle deploy
+- [dashboards](dashboards.md) — similar tree-first model
+- [roadmap](roadmap.md) — Phase 12–13

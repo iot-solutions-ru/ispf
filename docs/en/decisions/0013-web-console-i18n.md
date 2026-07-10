@@ -33,9 +33,9 @@ Static Web Console UI: labels, buttons, tabs, empty states, validation messages 
 
 - Adding UI text requires `en` key + `t()` + `npm run i18n:translate` + `npm run i18n:check`.
 - Bundle size grows with four locale JSON sets (acceptable for admin console).
-- SCADA glossary terms should stay consistent with [GLOSSARY.md](../GLOSSARY.md).
+- SCADA glossary terms should stay consistent with [GLOSSARY](../GLOSSARY.md).
 
 ## Related
 
 - [ROADMAP.md § Phase 19](../roadmap.md)
-- [WEB_CONSOLE.md](../web-console.md) § Localization
+- [web-console](../web-console.md) § Localization

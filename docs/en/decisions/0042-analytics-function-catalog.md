@@ -23,7 +23,7 @@ Custom logic today:
 - **Reactive:** platform/application **JavaScript functions** via `callFunction(...)` (instant, not historian-backed).
 - **Historian:** only **new Java** `AnalyticsEvaluator` + server deploy — no end-user UDF.
 
-Goal: **catalog browse and extensibility comparable to PI AF** without abandoning ISPF’s **tree-first** model ([ADR-0001](0001-app-platform-boundary.md), [ADR-0041](0041-multi-tag-historian-computations.md)).
+Goal: **catalog browse and extensibility comparable to PI AF** without abandoning ISPF’s **tree-first** model ([0001-app-platform-boundary](0001-app-platform-boundary.md), [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)).
 
 ## Decision
 
@@ -93,7 +93,7 @@ Registry merges:
 
 Optional browse node (read-only mirror): `root.platform.analytics.catalog` — Haystack-tagged objects for Explorer search; **canonical definitions remain server registry** (avoid drift).
 
-UI ([ADR-0040](0040-unified-computations-ui.md)): **Formula browser** in `BindingExpressionEditorModal` — search, filter by kind/tag/pack, insert template with placeholders, validate before save. Replaces scattered static TS lists.
+UI ([0040-unified-computations-ui](0040-unified-computations-ui.md)): **Formula browser** in `BindingExpressionEditorModal` — search, filter by kind/tag/pack, insert template with placeholders, validate before save. Replaces scattered static TS lists.
 
 ### 3. User-defined formulas (BL-214)
 
@@ -130,7 +130,7 @@ Operators and solution developers can **save reusable formulas** without Java.
 
 ### 4. Extension packs — analytics plugins (BL-213)
 
-Mirror [plugins.md](../plugins.md) and driver/LLM SPI patterns:
+Mirror [plugins](../plugins.md) and driver/LLM SPI patterns:
 
 | Module | Purpose |
 |--------|---------|
@@ -144,7 +144,7 @@ Pack deliverable:
 - JAR with `META-INF/services/com.ispf.analytics.AnalyticsFunction`
 - Functions declare: `id`, `kinds`, parameter schema, evaluator or CEL macro expansion
 
-Commercial industry packs stay **outside `main`** ([ADR-0003](0003-commercial-bundle-licensing.md)).
+Commercial industry packs stay **outside `main`** ([0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)).
 
 **Marketplace distribution (BL-216):** paid and free Tier C packs list on the platform marketplace with `artifactKind: analytics-pack`. Install/activate flow matches application bundles; artifacts unpack to `ISPF_ANALYTICS_PACKS_DIR` with RSA license verification. Operator guide: [analytics-formulas-and-packs.md § Buying Tier C packs](../analytics-formulas-and-packs.md#buying-tier-c-packs-on-the-marketplace).
 
@@ -167,8 +167,8 @@ Future (out of BL-212–214): **sandboxed** app functions invoked from historian
 
 | PI AF | ISPF choice |
 |-------|-------------|
-| Separate AF database / duplicate hierarchy | Object tree + binding rules ([ADR-0041](0041-multi-tag-historian-computations.md)) |
-| PI Analytics expression language | CEL + helpers + documented recipes ([analytics-historian-cookbook.md](../analytics-historian-cookbook.md)) |
+| Separate AF database / duplicate hierarchy | Object tree + binding rules ([0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)) |
+| PI Analytics expression language | CEL + helpers + documented recipes ([analytics-historian-cookbook](../analytics-historian-cookbook.md)) |
 | 200+ analyses in core | Core ships **lean** set; industry depth via **packs** and Tier B formulas |
 | Analysis templates only on AF | Formulas in catalog; **instances** as rules on devices |
 
@@ -200,12 +200,12 @@ Risks:
 
 ## Related
 
-- [ADR-0038](0038-analytics-platform-architecture.md) — analytics layers
-- [ADR-0041](0041-multi-tag-historian-computations.md) — historian binding rules
-- [ADR-0040](0040-unified-computations-ui.md) — Computations tab
-- [analytics-platform-roadmap.md](../analytics-platform-roadmap.md) — BL-212+
-- [analytics-historian-cookbook.md](../analytics-historian-cookbook.md) — recipes (linked from catalog)
-- [analytics-formulas-and-packs.md](../analytics-formulas-and-packs.md) — operator and vendor guide (Tier A/B/C, marketplace)
+- [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) — analytics layers
+- [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) — historian binding rules
+- [0040-unified-computations-ui](0040-unified-computations-ui.md) — Computations tab
+- [analytics-platform-roadmap](../analytics-platform-roadmap.md) — BL-212+
+- [analytics-historian-cookbook](../analytics-historian-cookbook.md) — recipes (linked from catalog)
+- [analytics-formulas-and-packs](../analytics-formulas-and-packs.md) — operator and vendor guide (Tier A/B/C, marketplace)
 
 ## Changelog
 

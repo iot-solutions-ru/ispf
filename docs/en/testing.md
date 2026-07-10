@@ -90,7 +90,7 @@ TypeScript strict check in CI-equivalent locally.
 
 ## Load / throughput (prod VPS)
 
-HTTP scenarios and internal automation load test, baseline metrics, and dashboard probe — **[load-testing.md](load-testing.md)**.
+HTTP scenarios and internal automation load test, baseline metrics, and dashboard probe — **[load-testing](load-testing.md)**.
 
 ```bash
 python deploy/events-load-test.py --base-url https://ispf.iot-solutions.ru

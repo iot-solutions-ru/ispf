@@ -90,7 +90,7 @@ npm run build   # tsc + vite build
 
 ## Нагрузка/пропускная способность (прод VPS)
 
-Сценарии HTTP и внутреннего автоматического нагрузочного тестирования, базовые метрики и зонд дашборда — **[LOAD_TESTING.md](load-testing.md)**.
+Сценарии HTTP и внутреннего автоматического нагрузочного тестирования, базовые метрики и зонд дашборда — **[load-testing](load-testing.md)**.
 
 ```bash
 python deploy/events-load-test.py --base-url https://ispf.iot-solutions.ru

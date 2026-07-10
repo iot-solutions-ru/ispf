@@ -44,6 +44,6 @@ Counsel may still review that specific renderings do not closely mimic a proprie
 
 ## Related
 
-- [LICENSE.md](license.md)
-- [LICENSE_COMPLIANCE.md](license-compliance.md)
+- [license](license.md)
+- [license-compliance](license-compliance.md)
 - [tools/symbol-pack-isa/README.md](readme.md)

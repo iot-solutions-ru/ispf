@@ -65,9 +65,9 @@ Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `
 
 | `artifactKind` | Install target | Doc |
 |----------------|----------------|-----|
-| *(default / omitted)* | Application bundle deploy | [applications.md](applications.md) |
-| `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` | [symbol-marketplace.md](symbol-marketplace.md) |
-| `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md) |
+| *(default / omitted)* | Application bundle deploy | [applications](applications.md) |
+| `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` | [symbol-marketplace](symbol-marketplace.md) |
+| `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
 
 Paid **analytics extension packs** (Tier C historian functions) use the same install/activate API as apps. After install, helpers appear in `GET /api/v1/platform/analytics/catalog` with `pack: <packId>`.
 
@@ -132,8 +132,8 @@ ISPF only proxies the download; fix is always on the marketplace host. See [ispf
 
 ## Related
 
-- [competitive-scorecard.md](competitive-scorecard.md) — dimension 12 (ecosystem / marketplace)
-- [commercial-licensing.md](commercial-licensing.md)
-- [plugins.md](plugins.md)
-- [applications.md](applications.md)
-- [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md) — Tier C marketplace packs
+- [competitive-scorecard](competitive-scorecard.md) — dimension 12 (ecosystem / marketplace)
+- [commercial-licensing](commercial-licensing.md)
+- [plugins](plugins.md)
+- [applications](applications.md)
+- [analytics-formulas-and-packs](analytics-formulas-and-packs.md) — Tier C marketplace packs

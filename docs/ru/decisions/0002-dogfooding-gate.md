@@ -34,5 +34,5 @@
 
 ## Связанные материалы
 
-- [roadmap.md](../roadmap.md)
-- [0001](0001-app-platform-boundary.md)
+- [roadmap](../roadmap.md)
+- [0001-app-platform-boundary](0001-app-platform-boundary.md)

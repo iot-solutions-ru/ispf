@@ -8,7 +8,7 @@ ISPF certified integrator and solution partner program. **Partner Portal** is a 
 - API: `GET /api/v1/tiers`, applications, directory, training progress
 - In-server API `GET /api/v1/partners/*` — **stub** (`PartnerProgramService`, `"source": "stub"`); demo partners hardcoded; enroll is synthetic until Partner Portal sync
 
-Related: [marketplace.md](marketplace.md), [certification.md](certification.md), [solution-developer-guide.md](solution-developer-guide.md).
+Related: [marketplace](marketplace.md), [certification](certification.md), [solution-developer-guide](solution-developer-guide.md).
 
 ---
 
@@ -38,23 +38,23 @@ Related: [marketplace.md](marketplace.md), [certification.md](certification.md),
 
 ### Associate track (~16 h)
 
-1. Object model and blueprints ([object-model.md](object-model.md))
-2. Bundle lifecycle ([applications.md](applications.md))
-3. Operator HMI ([operator-guide.md](operator-guide.md))
+1. Object model and blueprints ([object-model](object-model.md))
+2. Bundle lifecycle ([applications](applications.md))
+3. Operator HMI ([operator-guide](operator-guide.md))
 4. Lab: deploy `demo-app` + custom dashboard
 
 ### Professional track (~24 h)
 
-1. Drivers and virtual devices ([drivers.md](drivers.md))
-2. SCADA mimics ([scada.md](scada.md))
-3. Automation and workflows ([automation.md](automation.md), [workflows.md](workflows.md))
+1. Drivers and virtual devices ([drivers](drivers.md))
+2. SCADA mimics ([scada](scada.md))
+3. Automation and workflows ([automation](automation.md), [workflows](workflows.md))
 4. Lab: SCADA or MES reference walkthrough
 
 ### Expert track (~32 h)
 
-1. Cluster and federation ([cluster.md](cluster.md), [federation.md](federation.md))
-2. Historian tiers ([historian-tiers.md](historian-tiers.md))
-3. AI agent and solution generator ([ai-development.md](ai-development.md))
+1. Cluster and federation ([cluster](cluster.md), [federation](federation.md))
+2. Historian tiers ([historian-tiers](historian-tiers.md))
+3. AI agent and solution generator ([ai-development](ai-development.md))
 4. Lab: production-ready site with alerts + operator app
 
 ---
@@ -96,7 +96,7 @@ Related: [marketplace.md](marketplace.md), [certification.md](certification.md),
 ## Legal and branding
 
 - Partners may use **ISPF Certified Partner** badge per level guidelines (TBD).
-- Marketplace bundles require signed manifest and license metadata ([marketplace.md](marketplace.md)).
+- Marketplace bundles require signed manifest and license metadata ([marketplace](marketplace.md)).
 - GPL/LGPL driver packs excluded from default prod profile unless customer legal review.
 
 ---
@@ -109,4 +109,4 @@ Related: [marketplace.md](marketplace.md), [certification.md](certification.md),
 | First 5 certified integrators | Phase 32 GA |
 | OEM symbol + driver marketplace GA | BL-183, BL-185 |
 
-See [roadmap.md](roadmap.md) — BL-184, BL-190.
+See [roadmap](roadmap.md) — BL-184, BL-190.

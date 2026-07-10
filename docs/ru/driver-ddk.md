@@ -16,9 +16,9 @@
 | ---- | -------- |
 | [`packages/ispf-driver-ddk`](../packages/ispf-driver-ddk/) | Gradle-модуль DDK (исходники шаблонов + дымовой тест) |
 | [`packages/ispf-driver-ddk/template/`](../packages/ispf-driver-ddk/template/) | Копируемый заглушка: драйвер, тест, `driver-pack.json`, `build.gradle.kts` |
-| [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md) | Расположение во время выполнения и соединение |
-| [DRIVER_PROMOTION.md](driver-promotion.md) | Чеклист ПРОДАКШН |
-| [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) | CI-взаимодействие после продвижения |
+| [licensed-driver-packs](licensed-driver-packs.md) | Расположение во время выполнения и соединение |
+| [driver-promotion](driver-promotion.md) | Чеклист ПРОДАКШН |
+| [driver-interop-lab](driver-interop-lab.md) | CI-взаимодействие после продвижения |
 
 ## Рабочий процесс
 
@@ -68,7 +68,7 @@ ls build/driver-packs/ispf-driver-acme-widget/
 
 1. Запись в `DriverProductionMatrix` с `loopbackTestSourcePath` и `interopGradleModule`.
 2. Добавить модуль в [`.github/workflows/driver-interop.yml`](../.github/workflows/driver-interop.yml).
-3. Обновить [DRIVERS.md](drivers.md).
+3. Обновить [drivers](drivers.md).
 
 ## Соглашение о сопоставлении точек (шаблон)
 
@@ -80,5 +80,5 @@ ls build/driver-packs/ispf-driver-acme-widget/
 
 ## Связанные АДР
 
-- [0022-driver-production-matrix.md](decisions/0022-driver-production-matrix.md)
-- [0002-dogfooding-gate.md](decisions/0002-dogfooding-gate.md)
+- [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md)
+- [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md)

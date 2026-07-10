@@ -2,7 +2,7 @@
 
 # Dashboards and widgets
 
-**Full widget reference** (purpose, settings, examples): **[widgets.md](widgets.md)**.
+**Full widget reference** (purpose, settings, examples): **[widgets](widgets.md)**.
 
 ## Overview
 
@@ -15,7 +15,7 @@ Model variables:
 | `title` | Screen title |
 | `layout` | Widget grid JSON |
 | `refreshIntervalMs` | Poll interval (ms), default 5000 |
-| `@dashboardContext` | **Planned** — JSON session (selection, params, widgets); see [platform-logic.md](platform-logic.md) |
+| `@dashboardContext` | **Planned** — JSON session (selection, params, widgets); see [platform-logic](platform-logic.md) |
 
 Demos:
 
@@ -95,7 +95,7 @@ Dashboard `root.platform.dashboards.snmp-host-monitoring`:
 }
 ```
 
-**Net ↓ / net ↑** charts reference `ifInOctetsRate` / `ifOutOctetsRate` (B/s). Platform bindings `counterRate(ifInOctets)` / `counterRate(ifOutOctets)` in `snmp-agent-v1` models update on each SNMP poll; raw Counter32 values remain in `ifInOctets` / `ifOutOctets`. Details: [bindings.md](bindings.md).
+**Net ↓ / net ↑** charts reference `ifInOctetsRate` / `ifOutOctetsRate` (B/s). Platform bindings `counterRate(ifInOctets)` / `counterRate(ifOutOctets)` in `snmp-agent-v1` models update on each SNMP poll; raw Counter32 values remain in `ifInOctets` / `ifOutOctets`. Details: [bindings](bindings.md).
 
 ```json
 {
@@ -187,7 +187,7 @@ sequenceDiagram
 
 ## Dashboard logic (platform rules)
 
-**Status:** specification (ADR [0019](decisions/0019-platform-rule-unification.md)); runtime rollout is phased.
+**Status:** specification (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md)); runtime rollout is phased.
 
 Today `DashboardContext` in web-console is React state + `sessionStorage`. Target model:
 
@@ -202,7 +202,7 @@ Today `DashboardContext` in web-console is React state + `sessionStorage`. Targe
 | Fire event on mode change | rule → `target.kind: event` |
 | Filter event-feed | CEL `condition`, not `payloadFilterExpr` |
 
-More: [platform-logic.md](platform-logic.md), [bindings.md](bindings.md).
+More: [platform-logic](platform-logic.md), [bindings](bindings.md).
 
 ## Linked selection (`selectionKey`) — summary
 
@@ -259,11 +259,11 @@ Example grid from **Lab Training** — dashboard `root.platform.dashboards.lab-f
 
 `fieldsJson` matches function arguments on the `virtual-lab-v1` model. Size `w:6` on a 12-column grid is half the screen; `h:4` is height in grid rows (`rowHeight` × 4 pixels).
 
-Import ready-made layout: `POST /api/v1/platform/packages/import?packageId=lab-training` (see [lab-training.md](lab-training.md)).
+Import ready-made layout: `POST /api/v1/platform/packages/import?packageId=lab-training` (see [lab-training](lab-training.md)).
 
 ## Widget types
 
-Full catalog with every field and examples — **[widgets.md](widgets.md)**.
+Full catalog with every field and examples — **[widgets](widgets.md)**.
 
 Quick index:
 
@@ -276,10 +276,10 @@ Quick index:
 | `object-table`, `card-grid`, `map`, `object-tree` | Object catalogs | [§ object-table](widgets.md) |
 | `dashboard-link`, `sub-dashboard`, `nav-menu` | Navigation | [§ dashboard-link](widgets.md) |
 | `report`, `event-feed`, `work-queue` | Reports, events, BPMN | [§ report](widgets.md) |
-| `spreadsheet` | Formula grid | [widgets.md § spreadsheet](widgets.md) + [spreadsheet-widget.md](spreadsheet-widget.md) |
+| `spreadsheet` | Formula grid | [widgets.md § spreadsheet](widgets.md) + [spreadsheet-widget](spreadsheet-widget.md) |
 | `panel`, `tab-panel`, `carousel`, … | Screen composition | [§ composition](widgets.md) |
 | `label`, `image`, `html-snippet` | Decoration | [§ session/static](widgets.md) |
-| `scada-mimic` | SCADA mimic diagram | [§ scada-mimic](widgets.md), [scada.md](scada.md) |
+| `scada-mimic` | SCADA mimic diagram | [§ scada-mimic](widgets.md), [scada](scada.md) |
 
 ## Dashboard context (DashboardSession)
 
@@ -359,7 +359,7 @@ The **spreadsheet** widget is a fixed `rows × cols` grid with A1 addressing. Re
 The `spreadsheet` widget is an HMI table with formulas. Use it for shift calculators, summaries, and simple operator-screen math without Excel.
 
 **Lab:** `root.platform.dashboards.lab-calculator` (**configured** mode).  
-**Details:** [spreadsheet-widget.md](spreadsheet-widget.md). Operator usage: [operator-guide.md](operator-guide.md).
+**Details:** [spreadsheet-widget](spreadsheet-widget.md). Operator usage: [operator-guide](operator-guide.md).
 
 ### On-screen UI
 
@@ -506,7 +506,7 @@ Lab demo: `root.platform.dashboards.lab-calculator` (`sheetMode: configured`), `
 
 **Reference package:** [examples/spreadsheet-demo](../examples/spreadsheet-demo/) — `sheet-storage-v1` model, device `root.platform.devices.sheet-demo-01`, two dashboards (session/variable persist).
 
-Full `sheetConfigJson`, `dataRegion`, `conditionalStyles` reference — [spreadsheet-widget.md](spreadsheet-widget.md).
+Full `sheetConfigJson`, `dataRegion`, `conditionalStyles` reference — [spreadsheet-widget](spreadsheet-widget.md).
 
 ## Element styles (`stylesJson`)
 
@@ -566,7 +566,7 @@ Sources: `widgetStyles.ts`, `DashWidgetShell.tsx`.
 - **View mode** — live data, refresh per `refreshIntervalMs`
 - **Edit mode** — drag, resize, widget property panel
 - Save: `PUT /api/v1/dashboards/by-path/layout`
-- **Federated dashboards** (`root.platform.federation.*` or federated `DASHBOARD`): layout/title save proxies to remote node; widget paths in UI stay local (see [federation.md](federation.md))
+- **Federated dashboards** (`root.platform.federation.*` or federated `DASHBOARD`): layout/title save proxies to remote node; widget paths in UI stay local (see [federation](federation.md))
 
 Components: `DashboardBuilder`, `DashboardGrid`, `WidgetEditorPanel`.
 

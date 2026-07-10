@@ -57,15 +57,15 @@ graph LR
 
 ### Core principle
 
-**Business logic lives on the platform** — in models, variables, events, functions, and workflows of the **object tree**. The platform supplies generic engines (CEL, bindings, BPMN, script runtime, drivers); the solution configures them declaratively. Bundle deploy packages configuration, not a separate runtime. Summary for developers and agents: [application-principles.md](application-principles.md). Details: [architecture.md](architecture.md). Next development wave: [roadmap.md § Phase 5](roadmap.md) (models, functions, events, workflow, bundle as tree packaging).
+**Business logic lives on the platform** — in models, variables, events, functions, and workflows of the **object tree**. The platform supplies generic engines (CEL, bindings, BPMN, script runtime, drivers); the solution configures them declaratively. Bundle deploy packages configuration, not a separate runtime. Summary for developers and agents: [application-principles](application-principles.md). Details: [architecture](architecture.md). Backlog: [roadmap](roadmap.md).
 
-### Key benefits
+### Key capabilities
 
-- **Unified model** — a device, dashboard, workflow, and alert rule are nodes in one tree; solution logic is expressed through their variables, events, functions, and BPMN.
-- **Extensibility without forking the core** — industry solutions deploy as bundles (models, objects, JSON functions, BPMN, operator UI) **into platform mechanisms**, without Java on the server.
-- **Cloud-native stack** — Spring Boot 4.0, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket, optionally NATS/MQTT/Keycloak.
-- **58 built-in drivers** — from Modbus and OPC UA to SNMP, Kafka, and JDBC ([catalog](drivers.md)).
-- **Apache 2.0 core** — commercial industry bundles are separate ([plugins.md](plugins.md)).
+- **Unified model** — device, dashboard, workflow, and alert rule are tree nodes; logic uses variables, events, functions, and BPMN.
+- **Bundles, not core forks** — industry solutions deploy as configuration into platform mechanisms ([applications](applications.md)).
+- **Stack** — Spring Boot 4, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket; optional NATS/MQTT/Keycloak.
+- **58 built-in drivers** — [drivers](drivers.md).
+- **Apache 2.0 core** — commercial bundles separate ([plugins](plugins.md)).
 
 ---
 
@@ -87,13 +87,13 @@ The central platform abstraction. Each node has a path (`root.platform.devices.p
 | `USER` / `ROLE` | Users and roles (mirror of security API) |
 | `CUSTOM` | Arbitrary container (fallback) |
 
-Details: [object-model.md](object-model.md), [glossary.md](glossary.md).
+Details: [object-model](object-model.md), [glossary](glossary.md).
 
 ### 2. Models (templates)
 
 `BlueprintDefinition` describes a set of variables, events, functions, and CEL bindings. RELATIVE mixins auto-apply only when a non-empty *Applicability condition* (CEL) is set. The demo model `mqtt-sensor-v1` is a fixture applied via `templateId`.
 
-Details: [blueprints.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+Details: [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ### 3. Device drivers
 
@@ -106,7 +106,7 @@ Demo after first startup:
 | `demo-sensor-01` | virtual | Sinusoidal temperature + alarm binding |
 | `snmp-localhost` | snmp | localhost SNMP agent |
 
-Details: [drivers.md](drivers.md).
+Details: [drivers](drivers.md).
 
 ### 4. Dashboards and HMI
 
@@ -122,13 +122,13 @@ Dashboard Builder (admin) and Operator HMI (read-only) use the same widgets:
 
 Widgets bind to data via `objectPath` (static) or `selectionKey` (dynamic row selection from a table).
 
-Details: [dashboards.md](dashboards.md), [scada.md](scada.md), widget reference: [widgets.md](widgets.md).
+Details: [dashboards](dashboards.md), [scada](scada.md), widget reference: [widgets](widgets.md).
 
 ### 5. Workflow (BPMN)
 
 Visual BPMN editor in the Web Console. Supports service tasks (including application function calls), user tasks (operator queue), gateways with CEL conditions, parallel branches, signals, and NATS.
 
-Details: [workflows.md](workflows.md).
+Details: [workflows](workflows.md).
 
 ### 6. Automation
 
@@ -136,7 +136,7 @@ Details: [workflows.md](workflows.md).
 - **Alert rules** — CEL condition on a variable → automatic event fire. `ALERT` nodes in `root.platform.alert-rules`.
 - **Event correlators** — event chain → workflow start. `CORRELATOR` nodes in `root.platform.correlators`.
 
-Details: [automation.md](automation.md).
+Details: [automation](automation.md).
 
 ### 7. Application solutions (Application Platform)
 
@@ -152,7 +152,7 @@ The REQ-PF layer lets you deploy industry applications **without changing the Ja
 | Schedules | `GET/POST /schedules` |
 | SQL reports | `GET /applications/{id}/reports/{name}` |
 
-Details: [applications.md](applications.md), [reports.md](reports.md).
+Details: [applications](applications.md), [reports](reports.md).
 
 ### 8. Operator UI
 
@@ -168,13 +168,13 @@ Operator UI configuration is stored on the server (`operator_app_ui`) and edited
 2. `GET /api/v1/applications/{appId}/operator-ui` (from bundle)
 3. Legacy fallback `public/operator-apps/{appId}.ui.json`
 
-Details: [operator-guide.md](operator-guide.md), [web-console.md](web-console.md).
+Details: [operator-guide](operator-guide.md), [web-console](web-console.md).
 
 ### 9. Security
 
 Two roles: **admin** (full access) and **operator** (view, functions, work queue). Profile `local` — Bearer token after login; profile `dev`/prod — OAuth2 JWT via Keycloak.
 
-Details: [security.md](security.md).
+Details: [security](security.md).
 
 ---
 
@@ -228,7 +228,7 @@ flowchart TD
 4. Administrator creates an operator app in the tree → configures dashboards.
 5. Operators work via `?mode=operator&app=my-terminal`.
 
-Step-by-step walkthrough: [solution-developer-guide.md](solution-developer-guide.md).
+Step-by-step walkthrough: [solution-developer-guide](solution-developer-guide.md).
 
 ---
 
@@ -249,7 +249,7 @@ cd apps/web-console && npm install && npm run dev
 | http://localhost:8080/api/v1/info | Platform version |
 | http://localhost:8080/actuator/health | Health check |
 
-Full instructions: [getting-started.md](getting-started.md).
+Full instructions: [getting-started](getting-started.md).
 
 ---
 
@@ -264,7 +264,7 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
                     PostgreSQL/H2 │ Flyway │ NATS* │ MQTT*
 ```
 
-Details: [architecture.md](architecture.md).
+Details: [architecture](architecture.md).
 
 ---
 
@@ -282,7 +282,7 @@ Base URL: `http://localhost:8080/api/v1`
 | Drivers | `POST /drivers/runtime/start?devicePath=...` |
 | Events | `GET /events`, `POST /events/fire` |
 
-Full reference: [api.md](api.md).
+Full reference: [api](api.md).
 
 ---
 
@@ -293,7 +293,7 @@ Full reference: [api.md](api.md).
 | ISPF core (`main`) | Apache 2.0 |
 | Commercial plugins and app bundles | Separate license, outside `main` |
 
-Details: [license.md](license.md), [plugins.md](plugins.md).
+Details: [license](license.md), [plugins](plugins.md).
 
 ---
 
@@ -304,23 +304,23 @@ Details: [license.md](license.md), [plugins.md](plugins.md).
 | Document | Description |
 |----------|-------------|
 | **product.md** (this file) | Product overview, capabilities, scenarios |
-| [operator-guide.md](operator-guide.md) | Operator HMI usage |
-| [solution-developer-guide.md](solution-developer-guide.md) | Building application solutions |
-| [glossary.md](glossary.md) | Terms and definitions |
+| [operator-guide](operator-guide.md) | Operator HMI usage |
+| [solution-developer-guide](solution-developer-guide.md) | Building application solutions |
+| [glossary](glossary.md) | Terms and definitions |
 
 ### Technical documentation
 
 | Document | Description |
 |----------|-------------|
-| [getting-started.md](getting-started.md) | Installation and first run |
-| [object-model.md](object-model.md) | Tree, variables, CEL |
-| [dashboards.md](dashboards.md) | Layout, selectionKey, builder |
-| [scada.md](scada.md) | Mimic diagrams, MIMIC objects, mimic editor (align, distribute, flip, resize, smart-snap) |
-| [widgets.md](widgets.md) | Reference for all widgets |
-| [workflows.md](workflows.md) | BPMN engine |
-| [applications.md](applications.md) | REQ-PF deploy API |
-| [drivers.md](drivers.md) | Driver catalog |
-| [security.md](security.md) | RBAC and authentication |
-| [deployment.md](deployment.md) | Production |
+| [getting-started](getting-started.md) | Installation and first run |
+| [object-model](object-model.md) | Tree, variables, CEL |
+| [dashboards](dashboards.md) | Layout, selectionKey, builder |
+| [scada](scada.md) | Mimic diagrams, MIMIC objects, mimic editor (align, distribute, flip, resize, smart-snap) |
+| [widgets](widgets.md) | Reference for all widgets |
+| [workflows](workflows.md) | BPMN engine |
+| [applications](applications.md) | REQ-PF deploy API |
+| [drivers](drivers.md) | Driver catalog |
+| [security](security.md) | RBAC and authentication |
+| [deployment](deployment.md) | Production |
 
-Full index: [readme.md](readme.md).
+Full index: [readme](readme.md).

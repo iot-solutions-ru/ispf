@@ -4,7 +4,7 @@
 
 One mechanism for variable bindings, dashboard logic, and event side effects.
 
-**Status:** specification (ADR [0019](decisions/0019-platform-rule-unification.md), **Proposed**). Runtime extensions — phases 1–3.
+**Status:** specification (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), **Proposed**). Runtime extensions — phases 1–3.
 
 ---
 
@@ -100,7 +100,7 @@ Legacy without `kind`:
 | `onStartup` | exists | start / model attach |
 | `onVariableChange` | exists | telemetry, variables |
 | `onEvent` | exists | platform event name |
-| `periodicMs` | exists | periodic recompute; index `platform_binding_periodic_rules`, wake by `next_run_at` ([BINDINGS.md](bindings.md)) |
+| `periodicMs` | exists | periodic recompute; index `platform_binding_periodic_rules`, wake by `next_run_at` ([bindings](bindings.md)) |
 | `onContextChange` | **planned** | `@dashboardContext` change |
 
 ---
@@ -193,6 +193,6 @@ Widgets **without** conditional fields in JSON layout.
 
 ## Related documents
 
-- [BINDINGS.md](bindings.md) — binding rules, CEL, API
-- [DASHBOARDS.md](dashboards.md) — layout, widgets, context
+- [bindings](bindings.md) — binding rules, CEL, API
+- [dashboards](dashboards.md) — layout, widgets, context
 - [decisions/0019-platform-rule-unification.md](decisions/0019-platform-rule-unification.md)

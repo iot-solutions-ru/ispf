@@ -14,7 +14,7 @@
 
 Ядро **не содержит** отраслевую бизнес-логику на Java, **не включает драйверы устройств в серверный JAR** и **не меняет** с коммерческими модулями без явной границы лицензии.
 
-**Основной принцип ISPF:** бизнес-логика решений живёт **на платформе** — в моделях, функциях, событиях, функциях и дереве объектов рабочих процессов. Ядро предлагает только generic-движки; Решение — декларативная конфигурация. См. [ARCHITECTURE.md](architecture.md).
+**Основной принцип ISPF:** бизнес-логика решений живёт **на платформе** — в моделях, функциях, событиях, функциях и дереве объектов рабочих процессов. Ядро предлагает только generic-движки; Решение — декларативная конфигурация. См. [architecture](architecture.md).
 
 ## Как подключить расширения (кроме Java во ядре)
 
@@ -26,7 +26,7 @@
 4. `POST /api/v1/applications/{appId}/deploy` — связать один запрос
 5. Объекты, дашборды, BPMN — через события платформы REST API
 
-См. [APPLICATIONS.md](applications.md).
+См. [applications](applications.md).
 
 ## Коммерческий плагин: требования к поставкам
 
@@ -36,7 +36,7 @@
 - `README` с ограничениями использования и контактом правообладателя
 - Версия и список совместимых версий ISPF
 
-Рекламный пакет с секцией `license` — см. [COMMERCIAL_LICENSING.md](commercial-licensing.md) и [0003](decisions/0003-commercial-bundle-licensing.md).
+Рекламный пакет с секцией `license` — см. [commercial-licensing](commercial-licensing.md) и [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
 
 Плагин **не коммитится** в `packages/ispf-server/` и **не** вливается в `main` без отдельного решения о open-source.
 
@@ -50,7 +50,7 @@
 | `packages/ispf-ai-openai-compatible` | OpenAI-compatible HTTP API |
 | `packages/ispf-ai-ollama` | Ollama local API |
 
-`ispf-server` содержит только реестр, ToolRegistry, аудит и администратор REST. Конфигурация — Профиль Spring/env (`ispf.ai.*`). См. [AI_DEVELOPMENT.md](ai-development.md), [0004](decisions/0004-ai-artifact-generation-gates.md).
+`ispf-server` содержит только реестр, ToolRegistry, аудит и администратор REST. Конфигурация — Профиль Spring/env (`ispf.ai.*`). См. [ai-development](ai-development.md), [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md).
 
 ## Чеклист перед PR в `main`
 
@@ -61,6 +61,6 @@
 
 ## Связь
 
-- [LICENSE.md](license.md) — платформа AGPL, пакеты драйверов, коммерческие модули
-- [APPLICATIONS.md](applications.md) — развернуть API
+- [license](license.md) — платформа AGPL, пакеты драйверов, коммерческие модули
+- [applications](applications.md) — развернуть API
 - [decisions/](decisions/) — ADR (0008 boundary, 0009 gate, 0010 licensing)

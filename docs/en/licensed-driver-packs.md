@@ -83,14 +83,14 @@ License signing payload fields (sorted JSON): `packId`, `minPlatformVersion`, `i
 
 - JAR must implement `com.ispf.driver.DeviceDriver`.
 - Prefer explicit `drivers[]` with `driverClass` for predictable `driverId`.
-- Promotion path for in-tree stubs: [DRIVER_PROMOTION.md](driver-promotion.md).
+- Promotion path for in-tree stubs: [driver-promotion](driver-promotion.md).
 
 ## Deploy profiles
 
-Production VPS deploy uses **`permissive`** profile by default (excludes copyleft and StepFunc-restricted packs). See [LICENSE_COMPLIANCE.md](license-compliance.md).
+Production VPS deploy uses **`permissive`** profile by default (excludes copyleft and StepFunc-restricted packs). See [license-compliance](license-compliance.md).
 
 ## Related
 
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md) — RSA keys and `tools/license-builder/`
-- [DRIVERS.md](drivers.md) — in-tree catalog
+- [commercial-licensing](commercial-licensing.md) — RSA keys and `tools/license-builder/`
+- [drivers](drivers.md) — in-tree catalog
 - [ROADMAP.md § Part B (FW-50)](roadmap.md)

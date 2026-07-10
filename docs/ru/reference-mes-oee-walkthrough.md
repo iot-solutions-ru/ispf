@@ -76,6 +76,6 @@ curl -s -X POST http://localhost:8080/api/v1/bff/invoke \
 
 ## Связанные документы
 
-- [REFERENCE_MES_WALKTHROUGH.md](reference-mes-walkthrough.md) — dispatch / tank reference
-- [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md)
-- [APPLICATIONS.md](applications.md)
+- [reference-mes-walkthrough](reference-mes-walkthrough.md) — dispatch / tank reference
+- [solution-developer-guide](solution-developer-guide.md)
+- [applications](applications.md)

@@ -2,7 +2,7 @@
 
 # Принципы создания приложений на ISPF
 
-Канонические правила для **разработчиков решений** и **AI-агентов** (агент Tree-First, AI Studio, MCP). Сводит воедино Target approach из [ARCHITECTURE.md](architecture.md), границу platform/solution ([ADR-0001](decisions/0001-app-platform-boundary.md)), жизненный цикл из [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md), подходы A–H из [AGENT_KNOWLEDGE.md](agent-knowledge.md) и единую модель логики из [PLATFORM_LOGIC.md](platform-logic.md).
+Канонические правила для **разработчиков решений** и **AI-агентов** (агент Tree-First, AI Studio, MCP). Сводит воедино Target approach из [architecture](architecture.md), границу platform/solution ([0001-app-platform-boundary](decisions/0001-app-platform-boundary.md)), жизненный цикл из [solution-developer-guide](solution-developer-guide.md), подходы A–H из [agent-knowledge](agent-knowledge.md) и единую модель логики из [platform-logic](platform-logic.md).
 
 **Для деталей API и виджетов** — специализированные документы; этот файл — хаб «как создать приложение».
 
@@ -57,7 +57,7 @@ flowchart TB
 - **Запрещено:** Java в `ispf-server`, React в `apps/web-console`, платформа Flyway для приложений-таблиц, жестко закодированные маршруты BFF.
 - Новые возможности платформы — только REQ-PF, без обходного пути в комплекте.
 
-См. [ADR-0001](decisions/0001-app-platform-boundary.md), [PLUGINS.md](plugins.md).
+См. [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [plugins](plugins.md).
 
 ---
 
@@ -81,7 +81,7 @@ flowchart TB
 - Production path: `validate_bundle` → `dry_run_deploy` → `import_package` (в одном run).
 - POC/lab: инструменты Tree-First без пакета — разрешено; Импорт пакета только после того, как gates OK.
 
-Секции манифестируют: `objects[]`, `models[]`, `dashboards[]`, `workflows[]`, `migrations[]`, `functions[]`, `bindings[]`, `operatorUi`, … — см. [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md).
+Секции манифестируют: `objects[]`, `models[]`, `dashboards[]`, `workflows[]`, `migrations[]`, `functions[]`, `bindings[]`, `operatorUi`, … — см. [solution-developer-public-api](solution-developer-public-api.md).
 
 ---
 
@@ -102,7 +102,7 @@ flowchart TB
 - Activators: `onVariableChange`, `onContextChange`, `onEvent`, `onStartup`, `periodicMs`.
 - `search_context topic=platform-logic`.
 
-См. [PLATFORM_LOGIC.md](platform-logic.md), [ADR-0019](decisions/0019-platform-rule-unification.md).
+См. [platform-logic](platform-logic.md), [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md).
 
 ---
 
@@ -193,9 +193,9 @@ flowchart TB
 
 - `import_package` только после `validate_bundle` + `dry_run_deploy` OK **в том же run**.
 - Не изобретать пути REST — только документированные инструменты/конечные точки.
-- Коммерческий пакет: подпись после правок — [COMMERCIAL_LICENSING.md](commercial-licensing.md).
+- Коммерческий пакет: подпись после правок — [commercial-licensing](commercial-licensing.md).
 
-См. [ADR-0004](decisions/0004-ai-artifact-generation-gates.md).
+См. [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md).
 
 ---
 
@@ -203,16 +203,16 @@ flowchart TB
 
 | Задача | Механизм | Документ |
 |--------|----------|----------|
-| Вычисление переменных | CEL / привязки платформы / правила привязки | [BINDINGS.md](bindings.md) |
-| Пользовательский интерфейс дашборда (показать/скрыть, режим) | Правило платформы → `@dashboardContext` | [PLATFORM_LOGIC.md](platform-logic.md), [DASHBOARDS.md](dashboards.md) |
-| Порог → событие | узел ALERT + CEL | [АВТОМАТИЗАЦИЯ.md](automation.md) |
-| Шаблоны событий → рабочий процесс | Коррелятор | [АВТОМАТИЗАЦИЯ.md](automation.md) |
-| Процесс с задачами оператора | РАБОЧИЙ ПРОЦЕСС BPMN | [WORKFLOWS.md](workflows.md) |
-| CRUD по схеме приложения SQL | Функция сценария (шаги) | [APPLICATIONS.md](applications.md), [OBJECT_FUNCTIONS.md](object-functions.md) |
-| SQL → опрос переменных | sqlBinding/привязки[] | [APPLICATIONS.md](applications.md) |
-| Телеметрия устройства | Драйвер + сопоставления точек | [DRIVERS.md](drivers.md) |
-| Таблица HMI | Виджет `object-table` + `selectionKey` | [DASHBOARDS.md](dashboards.md), [WIDGETS.md](widgets.md) |
-| Legacy mini-DSL на виджете | **Устарело** → Правила платформы | [PLATFORM_LOGIC.md](platform-logic.md) § наследие |
+| Вычисление переменных | CEL / привязки платформы / правила привязки | [bindings](bindings.md) |
+| Пользовательский интерфейс дашборда (показать/скрыть, режим) | Правило платформы → `@dashboardContext` | [platform-logic](platform-logic.md), [dashboards](dashboards.md) |
+| Порог → событие | узел ALERT + CEL | [automation](automation.md) |
+| Шаблоны событий → рабочий процесс | Коррелятор | [automation](automation.md) |
+| Процесс с задачами оператора | РАБОЧИЙ ПРОЦЕСС BPMN | [workflows](workflows.md) |
+| CRUD по схеме приложения SQL | Функция сценария (шаги) | [applications](applications.md), [object-functions](object-functions.md) |
+| SQL → опрос переменных | sqlBinding/привязки[] | [applications](applications.md) |
+| Телеметрия устройства | Драйвер + сопоставления точек | [drivers](drivers.md) |
+| Таблица HMI | Виджет `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
+| Legacy mini-DSL на виджете | **Устарело** → Правила платформы | [platform-logic](platform-logic.md) § наследие |
 
 ---
 
@@ -224,7 +224,7 @@ flowchart TB
 | Уровень приложения как среда выполнения | Дублирует дерево объектов | Дорожки к деревьям |
 | Логика на виджете | N mini-DSL, AI/люди путаются | Правило платформы |
 | sessionStorage-only context | Не durable, не multi-client | `@dashboardContext` + WS |
-| Пакет без проверки | Тихая поломка | Гейтс [0004](decisions/0004-ai-artifact-generation-gates.md) |
+| Пакет без проверки | Тихая поломка | Гейтс [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) |
 | Platform Flyway для app tables | Смешивает schemas | `migrations[]` в app schema |
 
 ---
@@ -260,12 +260,12 @@ flowchart TB
 
 | Документ | Назначение |
 |----------|------------|
-| [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md) | Жизненный цикл: регистрация → миграция → развертывание → оператор |
-| [AGENT_KNOWLEDGE.md](agent-knowledge.md) | Подходы A–H, документы карт, темы search_context |
-| [АРХИТЕКТУРА.md](architecture.md) | Платформа Слои, базовая доменная модель |
-| [PLATFORM_LOGIC.md](platform-logic.md) | Platform Rule, `@dashboardContext` |
-| [AI_DEVELOPMENT.md](ai-development.md) | Инструменты агента, ContextPack, MCP |
-| [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md) | Манифест стабильного контракта |
+| [solution-developer-guide](solution-developer-guide.md) | Жизненный цикл: регистрация → миграция → развертывание → оператор |
+| [agent-knowledge](agent-knowledge.md) | Подходы A–H, документы карт, темы search_context |
+| [architecture](architecture.md) | Платформа Слои, базовая доменная модель |
+| [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
+| [ai-development](ai-development.md) | Инструменты агента, ContextPack, MCP |
+| [solution-developer-public-api](solution-developer-public-api.md) | Манифест стабильного контракта |
 | [решения/README.md](decisions/readme.md) | АДР-0001, 0004, 0005, 0019 |
 
 ---

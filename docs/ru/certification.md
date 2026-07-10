@@ -4,7 +4,7 @@
 
 Курсовая программа для сертификации ISPF. Полные экзамены и прокторинг включены в Фазу 32 GA; Приведенные ниже лабораторные работы сегодня можно запустить на лабораторных/VPS-хостах.
 
-Соответствует коммерческим уровням [PARTNER_PROGRAM.md](partner-program.md).
+Соответствует коммерческим уровням [partner-program](partner-program.md).
 
 ---
 
@@ -21,16 +21,16 @@
 
 ## Трек разработчика решений
 
-Сопоставляется с Партнером **Associate → Professional** в [PARTNER_PROGRAM.md](partner-program.md).
+Сопоставляется с Партнером **Associate → Professional** в [partner-program](partner-program.md).
 
 ### Уровень 1 — Базовый (~16 ч.)
 
 | Модуль | Ссылка | Лаборатория |
 | ------ | --------- | --- |
-| Object tree | [OBJECT_MODEL.md](object-model.md) | Create DEVICE + `list_variables` |
-| Bundles | [APPLICATIONS.md](applications.md) | Deploy `demo-app` |
-| Панели мониторинга | [DASHBOARDS.md](dashboards.md) | Виджеты «Значение + диаграмма» |
-| Пользовательский интерфейс оператора | [OPERATOR_GUIDE.md](operator-guide.md) | Настроить приложение оператора |
+| Object tree | [object-model](object-model.md) | Create DEVICE + `list_variables` |
+| Bundles | [applications](applications.md) | Deploy `demo-app` |
+| Панели мониторинга | [dashboards](dashboards.md) | Виджеты «Значение + диаграмма» |
+| Пользовательский интерфейс оператора | [operator-guide](operator-guide.md) | Настроить приложение оператора |
 
 **Экзамен (завершение):** Развертывание пакета с одним дашбордом; режим оператора загружается без консоли администратора.
 
@@ -38,10 +38,10 @@
 
 | Модуль | Ссылка | Лаборатория |
 | ------ | --------- | --- |
-| Drivers | [DRIVERS.md](drivers.md) | SNMP or virtual device `RUNNING` |
-| Полевые пилоты | [FIELD_PILOT_PLAYBOOK.md](field-pilot-playbook.md) | Заполните один контрольный список сценариев ОТ |
-| Alerts | [AUTOMATION.md](automation.md) | `configure_alert` + fire event |
-| Рабочие процессы | [WORKFLOWS.md](workflows.md) | Пользовательская задача в рабочей очереди |
+| Drivers | [drivers](drivers.md) | SNMP or virtual device `RUNNING` |
+| Полевые пилоты | [field-pilot-playbook](field-pilot-playbook.md) | Заполните один контрольный список сценариев ОТ |
+| Alerts | [automation](automation.md) | `configure_alert` + fire event |
+| Рабочие процессы | [workflows](workflows.md) | Пользовательская задача в рабочей очереди |
 
 **Обследование (заготовка):** Оповещение → коррелятор → путь уведомления оператора.
 
@@ -49,9 +49,9 @@
 
 | Модуль | Ссылка | Лаборатория |
 | ------ | --------- | --- |
-| Имитаторы SCADA | [SCADA.md](scada.md) | Мимик с живыми привязками |
-| Федерация | [FEDERATION.md](federation.md) | Привязать удаленное устройство |
-| ИИ-агент | [AI_DEVELOPMENT.md](ai-development.md) | Сценарий генератора решений (BL-177) |
+| Имитаторы SCADA | [scada](scada.md) | Мимик с живыми привязками |
+| Федерация | [federation](federation.md) | Привязать удаленное устройство |
+| ИИ-агент | [ai-development](ai-development.md) | Сценарий генератора решений (BL-177) |
 
 **Экзамен (завершение):** Комплексное развертывание агента – адаптация пользовательского интерфейса оператора без редактирования дерева вручную.
 
@@ -85,10 +85,10 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 
 | Модуль | Ссылка | Лаборатория |
 | ------ | --------- | --- |
-| Безопасность | [SECURITY.md](security.md) | RBAC, регистрация MFA, экспорт аудита |
-| Развернуть | [DEPLOYMENT.md](deployment.md) | VPS прямой или скелет Helm |
-| Историк | [HISTORIAN_TIERS.md](historian-tiers.md) | Горячий ярус + экспорт паркета (BL-163) |
-| Наблюдаемость | [OBSERVABILITY.md](observability.md) | Сбор метрик + пакет диагностики |
+| Безопасность | [security](security.md) | RBAC, регистрация MFA, экспорт аудита |
+| Развернуть | [deployment](deployment.md) | VPS прямой или скелет Helm |
+| Историк | [historian-tiers](historian-tiers.md) | Горячий ярус + экспорт паркета (BL-163) |
+| Наблюдаемость | [observability](observability.md) | Сбор метрик + пакет диагностики |
 
 **Экзамен (завершение):** Усиленное развертывание на одном узле + тренировка резервного копирования/восстановления; Скрипт проверки ClickHouse зелёный.
 
@@ -96,9 +96,9 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 
 | Модуль | Ссылка | Лаборатория |
 | ------ | --------- | --- |
-| Кластер | [CLUSTER.md](cluster.md) | Лаборатория двух реплик |
-| Мультитенант | [MULTI_TENANT.md](multi-tenant.md) | Тест записи изоляции тенанта |
-| Центр Федерации | [FEDERATION.md](federation.md) | Хаб с 2+ узлами (BL-188) |
+| Кластер | [cluster](cluster.md) | Лаборатория двух реплик |
+| Мультитенант | [multi-tenant](multi-tenant.md) | Тест записи изоляции тенанта |
+| Центр Федерации | [federation](federation.md) | Хаб с 2+ узлами (BL-188) |
 
 **Экзамен (незавершенный):** Тренировка по аварийному переключению; Клиент A не может читать переменные клиента B.
 
@@ -125,13 +125,13 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 
 | Трек | Аудитория | Ключевой документ |
 | ----- | -------- | ------- |
-| Оператор | Начальники смен | [OPERATOR_GUIDE.md](operator-guide.md) |
-| MES-специалист | Инженеры-технологи | [REFERENCE_MES_PLATFORM.md](reference-mes-platform.md) |
+| Оператор | Начальники смен | [operator-guide](operator-guide.md) |
+| MES-специалист | Инженеры-технологи | [reference-mes-platform](reference-mes-platform.md) |
 
 ---
 
 ## Связанный
 
-- [PARTNER_PROGRAM.md](partner-program.md) — уровни коммерческого партнера
-- [COMPETITIVE_Scorecard.md](competitive-scorecard.md) — измерение 13 Документация/DX
-- [roadmap.md](roadmap.md) — BL-190
+- [partner-program](partner-program.md) — уровни коммерческого партнера
+- [competitive-scorecard](competitive-scorecard.md) — измерение 13 Документация/DX
+- [roadmap](roadmap.md) — BL-190

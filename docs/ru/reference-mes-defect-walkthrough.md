@@ -55,5 +55,5 @@
 
 ## Связанные документы
 
-- [WORKFLOWS.md](workflows.md) — BPMN на ISPF
-- [APPLICATIONS.md](applications.md) — bundle deploy
+- [workflows](workflows.md) — BPMN на ISPF
+- [applications](applications.md) — bundle deploy

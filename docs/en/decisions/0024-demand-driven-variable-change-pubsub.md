@@ -6,7 +6,7 @@ Accepted (2026-07-02)
 
 ## Context
 
-High-rate MQTT telemetry exposed bottlenecks (see [ADR-0017](0017-telemetry-ingest-pipeline.md)):
+High-rate MQTT telemetry exposed bottlenecks (see [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md)):
 
 - Every coalesced variable update published `ObjectChangeEvent` with `telemetry=true`, even when no historian subscriber exists.
 - `BindingPropagationListener` ran **synchronously** at `HIGHEST_PRECEDENCE` on every variable update — blocking MQTT callback threads before the async event bus.
@@ -24,7 +24,7 @@ Integrators expect broker-like semantics:
 
 ### 1. Single JVM, no sidecar
 
-All ingress and automation stays in `ispf-server`. Horizontal scale = **N stateless JVM replicas** sharing one PostgreSQL (+ optional Redis/NATS), or a larger dedicated host with tuned thread pools — not a separate ingress worker process. See [ADR-0028](0028-horizontal-active-active-cluster.md).
+All ingress and automation stays in `ispf-server`. Horizontal scale = **N stateless JVM replicas** sharing one PostgreSQL (+ optional Redis/NATS), or a larger dedicated host with tuned thread pools — not a separate ingress worker process. See [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md).
 
 ### 2. Subscription registries
 
@@ -129,7 +129,6 @@ Exact numbers depend on coalesce ms, device count, and CEL complexity — BL-113
 - MQTT hot path no longer blocked by sync bindings.
 - Zero-subscriber MQTT fan-in avoids useless platform work.
 
-
 Risks:
 
 - Live WebSocket UI still needs in-memory values (always updated); event-driven UI refresh only when interest exists (acceptable for HMI polling/WebSocket variable subscriptions).
@@ -137,6 +136,6 @@ Risks:
 
 ## Related
 
-- [ADR-0017](0017-telemetry-ingest-pipeline.md)
-- [ADR-0014](0014-automation-pipeline-evolution.md)
+- [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md)
+- [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md)
 - BL-111…113 (EX-SCALE, sidecar superseded by this ADR)

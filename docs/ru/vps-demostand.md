@@ -2,7 +2,7 @@
 
 # Демостанд VPS (пример хоста)
 
-> **Обобщённое руководство:** [DEMOSTANDS.md](demostands.md) — производство, пропускная способность, демо-простой, край.
+> **Обобщённое руководство:** [demostands](demostands.md) — производство, пропускная способность, демо-простой, край.
 
 Эта страница — **операционные заметки** для одного из prod-примеров: одноузлового Docker для nginx. Используйте как шаблон; имена контейнеров и хостов замените на свои.
 
@@ -36,7 +36,7 @@ Compose: [`deploy/docker-compose.vps-single.yml`](../deploy/docker-compose.vps-s
 
 **Важно:** на Docker-стенде не используйте [`apply-platform-update.sh`](../deploy/apply-platform-update.sh) — он для systemd. После смены env — воссоздать контейнер, а не `docker restart`.
 
-Миграция с multi-replica: `vps-single-rollout.sh`. Обратно на кластер: [CLUSTER.md](cluster.md).
+Миграция с multi-replica: `vps-single-rollout.sh`. Обратно на кластер: [cluster](cluster.md).
 
 ## Версии с исправлениями hot path
 
@@ -45,4 +45,4 @@ Compose: [`deploy/docker-compose.vps-single.yml`](../deploy/docker-compose.vps-s
 | ≥ 0.9.100 | `AlarmShelfService` — read-only hot path |
 | ≥ 0.9.101 | `ScheduleObjectService.listEnabled()` — без write в read-only tx |
 
-См. [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md).
+См. [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).

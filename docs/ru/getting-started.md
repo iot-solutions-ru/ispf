@@ -111,7 +111,7 @@ Gradle использует `build/driver-packs` после sync.
 cp -r build/driver-packs/* /opt/ispf/data/drivers/
 ```
 
-Подробно: [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md).
+Подробно: [licensed-driver-packs](licensed-driver-packs.md).
 
 ## 3. Запуск API-сервера
 
@@ -202,10 +202,10 @@ curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root
 | `dev` | PostgreSQL | JWT Keycloak localhost:8180 | вкл. |
 | `test` | H2 memory | выкл. | выкл. |
 
-Подробнее: [DEPLOYMENT.md](deployment.md), [SECURITY.md](security.md).
+Подробнее: [deployment](deployment.md), [security](security.md).
 
 ## Следующие шаги
 
 - [Модель объектов](object-model.md) — как устроены пути, переменные и привязки
-- [REST API](api.md) — полный справочник
+- [api](api.md) — полный справочник
 - [Дашборды](dashboards.md) — создание HMI-экранов

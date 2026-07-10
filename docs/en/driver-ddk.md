@@ -16,9 +16,9 @@
 | ---- | -------- |
 | [`packages/ispf-driver-ddk`](../packages/ispf-driver-ddk/) | DDK Gradle module (template sources + smoke test) |
 | [`packages/ispf-driver-ddk/template/`](../packages/ispf-driver-ddk/template/) | Copyable stub: driver, test, `driver-pack.json`, `build.gradle.kts` |
-| [licensed-driver-packs.md](licensed-driver-packs.md) | Runtime layout and licensing |
-| [driver-promotion.md](driver-promotion.md) | PRODUCTION checklist |
-| [driver-interop-lab.md](driver-interop-lab.md) | CI interop after promotion |
+| [licensed-driver-packs](licensed-driver-packs.md) | Runtime layout and licensing |
+| [driver-promotion](driver-promotion.md) | PRODUCTION checklist |
+| [driver-interop-lab](driver-interop-lab.md) | CI interop after promotion |
 
 ## Workflow
 
@@ -68,7 +68,7 @@ Copy directory to `${ISPF_DRIVER_PACKS_DIR}/` on server. Restart ISPF → `Licen
 
 1. Entry in `DriverProductionMatrix` with `loopbackTestSourcePath` and `interopGradleModule`.
 2. Add module to [`.github/workflows/driver-interop.yml`](../.github/workflows/driver-interop.yml).
-3. Update [drivers.md](drivers.md).
+3. Update [drivers](drivers.md).
 
 ## Point mapping convention (template)
 
@@ -80,5 +80,5 @@ BL-144 acceptance: three reference custom drivers — `template/` (acme-widget),
 
 ## Related ADRs
 
-- [0022-driver-production-matrix.md](decisions/0022-driver-production-matrix.md)
-- [0002-dogfooding-gate.md](decisions/0002-dogfooding-gate.md)
+- [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md)
+- [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md)

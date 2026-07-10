@@ -2,9 +2,9 @@
 
 # ISPF application development principles
 
-Canonical rules for **solution developers** and **AI agents** (tree-first agent, AI Studio, MCP). Combines the target approach from [architecture.md](architecture.md), the platform/solution boundary ([ADR-0001](decisions/0001-app-platform-boundary.md)), the lifecycle from [solution-developer-guide.md](solution-developer-guide.md), approaches A–H from [agent-knowledge.md](agent-knowledge.md), and the unified logic model from [platform-logic.md](platform-logic.md).
+Canonical rules for **solution developers** and **AI agents** (tree-first agent, AI Studio, MCP). Hub links: [architecture.md](architecture.md), [ADR-0001](decisions/0001-app-platform-boundary.md), [solution-developer-guide.md](solution-developer-guide.md), [agent-knowledge.md](agent-knowledge.md), [platform-logic.md](platform-logic.md).
 
-**For API and widget details** — see specialized documents; this file is the hub for “how to build an application”.
+API and widget details live in linked docs below.
 
 **Agent:** `search_context(query=..., topic=application-principles)`.
 
@@ -57,7 +57,7 @@ flowchart TB
 - **Forbidden:** Java in `ispf-server`, React in `apps/web-console`, platform Flyway for app tables, hardcoded BFF routes.
 - New platform capability — REQ-PF only, not a bundle workaround.
 
-See [ADR-0001](decisions/0001-app-platform-boundary.md), [plugins.md](plugins.md).
+See [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [plugins](plugins.md).
 
 ---
 
@@ -81,7 +81,7 @@ See [ADR-0001](decisions/0001-app-platform-boundary.md), [plugins.md](plugins.md
 - Production path: `validate_bundle` → `dry_run_deploy` → `import_package` (in one run).
 - POC/lab: tree-first tools without bundle — allowed; bundle import only after gates OK.
 
-Manifest sections: `objects[]`, `models[]`, `dashboards[]`, `workflows[]`, `migrations[]`, `functions[]`, `bindings[]`, `operatorUi`, … — see [solution-developer-public-api.md](solution-developer-public-api.md).
+Manifest sections: `objects[]`, `models[]`, `dashboards[]`, `workflows[]`, `migrations[]`, `functions[]`, `bindings[]`, `operatorUi`, … — see [solution-developer-public-api](solution-developer-public-api.md).
 
 ---
 
@@ -102,7 +102,7 @@ Three effects (`target.kind`): `variable`, `context` (`@dashboardContext`), `eve
 - Activators: `onVariableChange`, `onContextChange`, `onEvent`, `onStartup`, `periodicMs`.
 - `search_context topic=platform-logic`.
 
-See [platform-logic.md](platform-logic.md), [ADR-0019](decisions/0019-platform-rule-unification.md).
+See [platform-logic](platform-logic.md), [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md).
 
 ---
 
@@ -193,9 +193,9 @@ Full table with delivery and Operator UI — [agent-knowledge.md § Approaches](
 
 - `import_package` only after `validate_bundle` + `dry_run_deploy` OK **in the same run**.
 - Do not invent REST paths — only documented tools/endpoints.
-- Commercial bundle: sign after edits — [commercial-licensing.md](commercial-licensing.md).
+- Commercial bundle: sign after edits — [commercial-licensing](commercial-licensing.md).
 
-See [ADR-0004](decisions/0004-ai-artifact-generation-gates.md).
+See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md).
 
 ---
 
@@ -203,16 +203,16 @@ See [ADR-0004](decisions/0004-ai-artifact-generation-gates.md).
 
 | Task | Mechanism | Document |
 |------|-----------|----------|
-| Variable computation | CEL / platform bindings / binding rules | [bindings.md](bindings.md) |
-| Dashboard UI (show/hide, mode) | Platform Rule → `@dashboardContext` | [platform-logic.md](platform-logic.md), [dashboards.md](dashboards.md) |
-| Threshold → event | ALERT node + CEL | [automation.md](automation.md) |
-| Event pattern → workflow | Correlator | [automation.md](automation.md) |
-| Process with operator tasks | BPMN WORKFLOW | [workflows.md](workflows.md) |
-| SQL CRUD on app schema | Script function (steps) | [applications.md](applications.md), [object-functions.md](object-functions.md) |
-| SQL → variable poll | sqlBinding / bindings[] | [applications.md](applications.md) |
-| Device telemetry | Driver + point mappings | [drivers.md](drivers.md) |
-| HMI table | Widget `object-table` + `selectionKey` | [dashboards.md](dashboards.md), [widgets.md](widgets.md) |
-| Legacy mini-DSL on widget | **Deprecated** → Platform rules | [platform-logic.md](platform-logic.md) § legacy |
+| Variable computation | CEL / platform bindings / binding rules | [bindings](bindings.md) |
+| Dashboard UI (show/hide, mode) | Platform Rule → `@dashboardContext` | [platform-logic](platform-logic.md), [dashboards](dashboards.md) |
+| Threshold → event | ALERT node + CEL | [automation](automation.md) |
+| Event pattern → workflow | Correlator | [automation](automation.md) |
+| Process with operator tasks | BPMN WORKFLOW | [workflows](workflows.md) |
+| SQL CRUD on app schema | Script function (steps) | [applications](applications.md), [object-functions](object-functions.md) |
+| SQL → variable poll | sqlBinding / bindings[] | [applications](applications.md) |
+| Device telemetry | Driver + point mappings | [drivers](drivers.md) |
+| HMI table | Widget `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
+| Legacy mini-DSL on widget | **Deprecated** → Platform rules | [platform-logic](platform-logic.md) § legacy |
 
 ---
 
@@ -224,7 +224,7 @@ See [ADR-0004](decisions/0004-ai-artifact-generation-gates.md).
 | App layer as runtime | Duplicates object tree | Tree paths |
 | Logic on widget | N mini-DSL, AI/people get confused | Platform Rule |
 | sessionStorage-only context | Not durable, not multi-client | `@dashboardContext` + WS |
-| Bundle without validate | Silent breakage | Gates [0004](decisions/0004-ai-artifact-generation-gates.md) |
+| Bundle without validate | Silent breakage | Gates [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) |
 | Platform Flyway for app tables | Mixes schemas | `migrations[]` in app schema |
 
 ---
@@ -260,12 +260,12 @@ See [ADR-0004](decisions/0004-ai-artifact-generation-gates.md).
 
 | Document | Purpose |
 |----------|---------|
-| [solution-developer-guide.md](solution-developer-guide.md) | Lifecycle: register → migrate → deploy → operator |
-| [agent-knowledge.md](agent-knowledge.md) | Approaches A–H, docs map, search_context topics |
-| [architecture.md](architecture.md) | Platform layers, core domain model |
-| [platform-logic.md](platform-logic.md) | Platform Rule, `@dashboardContext` |
-| [ai-development.md](ai-development.md) | Agent tools, ContextPack, MCP |
-| [solution-developer-public-api.md](solution-developer-public-api.md) | Stable manifest contract |
+| [solution-developer-guide](solution-developer-guide.md) | Lifecycle: register → migrate → deploy → operator |
+| [agent-knowledge](agent-knowledge.md) | Approaches A–H, docs map, search_context topics |
+| [architecture](architecture.md) | Platform layers, core domain model |
+| [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
+| [ai-development](ai-development.md) | Agent tools, ContextPack, MCP |
+| [solution-developer-public-api](solution-developer-public-api.md) | Stable manifest contract |
 | [decisions/readme.md](decisions/readme.md) | ADR-0001, 0004, 0005, 0019 |
 
 ---

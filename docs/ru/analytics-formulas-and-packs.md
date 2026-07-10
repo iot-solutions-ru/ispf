@@ -4,9 +4,9 @@
 
 Как создавать, переиспользовать и распространять historian-вычисления сверх одного binding rule. Охватывает **Tier A** (встроенные), **Tier B** (свои формулы) и **Tier C** (Java-пакеты + маркетплейс).
 
-**См. также:** [analytics-historian-cookbook.md](analytics-historian-cookbook.md) (рецепты), [ADR-0042](decisions/0042-analytics-function-catalog.md) (архитектура), [analytics-tag-catalog.md](analytics-tag-catalog.md) (API развёрнутых тегов).
+**См. также:** [analytics-historian-cookbook](analytics-historian-cookbook.md) (рецепты), [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (архитектура), [analytics-tag-catalog](analytics-tag-catalog.md) (API развёрнутых тегов).
 
-> **Важно:** [historian-tiers.md](historian-tiers.md) описывает **уровни хранения** (hot/warm/cold). Здесь — **уровни функций** A/B/C из ADR-0042; это разные темы.
+> **Важно:** [historian-tiers](historian-tiers.md) описывает **уровни хранения** (hot/warm/cold). Здесь — **уровни функций** A/B/C из ADR-0042; это разные темы.
 
 ---
 
@@ -180,7 +180,7 @@ ${ISPF_ANALYTICS_PACKS_DIR}/
 | `minPlatformVersion` | ✓ | Минимальная версия ISPF |
 | `jarFile` | ✓ | Имя JAR в каталоге пакета |
 | `functions[]` | ✓ | Helper id, которые экспортирует пакет |
-| `license` | commercial | RSA-подписанные claims (как у [licensed-driver-packs.md](licensed-driver-packs.md)) |
+| `license` | commercial | RSA-подписанные claims (как у [licensed-driver-packs](licensed-driver-packs.md)) |
 
 ### SPI-контракт
 
@@ -210,7 +210,7 @@ ispf:
 
 ## Покупка Tier C через маркетплейс
 
-Коммерческие и community **analytics extension packs** распространяются по тому же контракту, что application bundles и symbol packs ([MARKETPLACE.md](marketplace.md)).
+Коммерческие и community **analytics extension packs** распространяются по тому же контракту, что application bundles и symbol packs ([marketplace](marketplace.md)).
 
 **Статус:** контракт листинга и поток для оператора описаны здесь; установка в `ISPF_ANALYTICS_PACKS_DIR` на платформе — **БЛ-216** (в работе). Open pack `energyDelta` уже в ядре без маркетплейса.
 
@@ -264,15 +264,15 @@ acme-mes-kpi-1.0.0.zip
 | POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/install` |
 | POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/activate` |
 
-Тело activate: `{ "activationCode": "..." }` — `installationId` добавляется сервером ([ADR-0003](decisions/0003-commercial-bundle-licensing.md)).
+Тело activate: `{ "activationCode": "..." }` — `installationId` добавляется сервером ([0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md)).
 
 ### Чеклист вендора
 
 1. Реализовать SPI; тесты против `ispf-analytics-api`.
-2. Собрать подписанный `analytics-pack.json` + JAR ([commercial-licensing.md](commercial-licensing.md)).
+2. Собрать подписанный `analytics-pack.json` + JAR ([commercial-licensing](commercial-licensing.md)).
 3. Опубликовать листинг на [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) с `artifactKind: analytics-pack`.
 4. Interop CI: функции в каталоге после install на lab ISPF.
-5. Партнёрская программа: OEM tier, revenue share ([partner-program.md](partner-program.md)).
+5. Партнёрская программа: OEM tier, revenue share ([partner-program](partner-program.md)).
 
 ### Offline / air-gapped
 
@@ -294,9 +294,9 @@ acme-mes-kpi-1.0.0.zip
 
 ## Связанные документы
 
-- [ADR-0042](decisions/0042-analytics-function-catalog.md)
-- [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
-- [analytics-tag-catalog.md](analytics-tag-catalog.md)
-- [MARKETPLACE.md](marketplace.md)
-- [licensed-driver-packs.md](licensed-driver-packs.md)
-- [analytics-platform-roadmap.md](analytics-platform-roadmap.md) — БЛ-212…216
+- [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md)
+- [analytics-historian-cookbook](analytics-historian-cookbook.md)
+- [analytics-tag-catalog](analytics-tag-catalog.md)
+- [marketplace](marketplace.md)
+- [licensed-driver-packs](licensed-driver-packs.md)
+- [analytics-platform-roadmap](analytics-platform-roadmap.md) — БЛ-212…216

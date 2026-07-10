@@ -18,7 +18,7 @@
 
 1. Реализовать опрос/чтение (или запись, если заявлено) в модуле `ispf-driver-*`.
 2. Добавьте модульные/интеграционные тесты для парсеров и счастливого пути.
-3. Обновить описание в `DriverMetadata` и раздел в [DRIVERS.md](drivers.md).
+3. Обновить описание в `DriverMetadata` и раздел в [drivers](drivers.md).
 4. Изменить запись в `DriverMaturityRegistry`.
 5. При необходимости — демо-устройство/модель в бутстрапе.
 
@@ -48,4 +48,4 @@
 | `vmware` | STUB | **BETA** | vSphere API point parser + connectivity shell |
 | `smi-s` | STUB | **BETA** | SMI-S CIM point parser + connectivity shell |
 
-Для остальных стаб-драйверов требуется нативный стек или коммерческий пак — продвижение только по конкретному запросу ([LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md)).
+Для остальных стаб-драйверов требуется нативный стек или коммерческий пак — продвижение только по конкретному запросу ([licensed-driver-packs](licensed-driver-packs.md)).

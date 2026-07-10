@@ -15,7 +15,7 @@
    - **STUB** — placeholder driver pack (не в matrix; defaults to BETA в catalog).
 3. **Capabilities** (declared, не все implemented yet): `POLL`, `SUBSCRIBE`, `WRITE`, `DISCOVERY`, `QUALITY`, `OBSERVED_AT`.
 4. **CI gate** — `DriverProductionMatrixTest` fails, если любая PRODUCTION row не имеет resolvable `loopbackTestClass`.
-5. **Dogfooding** — new driver promotion следует [0002](0002-dogfooding-gate.md); matrix row добавляется только после acceptance criteria.
+5. **Dogfooding** — new driver promotion следует [0002-dogfooding-gate](0002-dogfooding-gate.md); matrix row добавляется только после acceptance criteria.
 
 ## Top-10 industrial drivers (target PRODUCTION)
 
@@ -42,6 +42,6 @@
 
 ## Связанные материалы
 
-- [drivers.md](../drivers.md)
+- [drivers](../drivers.md)
 - [roadmap.md § BL-78](../roadmap.md#часть-e--полный-реестр-bl-01139)
-- [0020-time-and-timezones.md](0020-time-and-timezones.md) — `observedAt`
+- [0020-time-and-timezones](0020-time-and-timezones.md) — `observedAt`

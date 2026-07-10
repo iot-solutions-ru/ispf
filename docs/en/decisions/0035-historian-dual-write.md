@@ -6,7 +6,7 @@ Accepted (2026-07-06)
 
 ## Context
 
-Historian writes to PostgreSQL/Timescale by default (`ispf.variable-history.store=jdbc`). ClickHouse is already supported as the **sole** store (`store=clickhouse`) for high-throughput deployments ([0017](0017-telemetry-ingest-pipeline.md)).
+Historian writes to PostgreSQL/Timescale by default (`ispf.variable-history.store=jdbc`). ClickHouse is already supported as the **sole** store (`store=clickhouse`) for high-throughput deployments ([0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md)).
 
 Operators need a migration path: **OLTP-consistent reads from PostgreSQL**, analytics/long retention in ClickHouse without cutover risk (BL-116).
 
@@ -37,10 +37,10 @@ ispf:
 - Query migration — separate BL (optional read replica routing).
 - `store=clickhouse` without dual-write — still single-store mode.
 
-See [DEPLOYMENT.md § ClickHouse](../deployment.md), [ROADMAP BL-116](../roadmap.md).
+See [DEPLOYMENT.md § ClickHouse](../deployment.md), [roadmap](../roadmap.md).
 
 ## Related
 
-- [ADR-0016](0016-clickhouse-event-journal.md) — ClickHouse event journal
-- [ADR-0017](0017-telemetry-ingest-pipeline.md) — historian stores
-- [CLICKHOUSE_PROD_PLAYBOOK.md](../clickhouse-prod-playbook.md)
+- [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) — ClickHouse event journal
+- [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md) — historian stores
+- [clickhouse-prod-playbook](../clickhouse-prod-playbook.md)

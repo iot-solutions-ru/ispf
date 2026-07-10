@@ -44,7 +44,7 @@ Frozen on `main`, July 2026. Acceleration improves from these points — no new 
 | --- | -------- | -------- | ------ |
 | `list_devices` p99 @ 150 concurrent | ≤2500 ms (local), ≤5000 ms (CI) | `ListDevicesLoadTest` | No regression |
 | `events/fire` p99 | ≤3000 ms (nightly gate) | `EventFireLoadTest` | No regression |
-| MQTT event journal sustained | ~1878 events/s (VPS 0.9.87) | [load-testing.md](load-testing.md), HF01 | No regression |
+| MQTT event journal sustained | ~1878 events/s (VPS 0.9.87) | [load-testing](load-testing.md), HF01 | No regression |
 | Cluster scale factor (3/1 replica) | ≥1.8× | `deploy/cluster-scale-load-test.py` | Keep ≥1.8 |
 
 ### Frontend / HMI (S21 targets)
@@ -165,7 +165,7 @@ Status: 🟢 on target · 🟡 at risk · 🔴 off track · ⚪ not started
 
 ## Related
 
-- [roadmap.md](roadmap.md) — sprint registry S19–S23
-- [testing.md](testing.md) — test commands
-- [ci-flaky-triage.md](ci-flaky-triage.md) — flake policy (S20-04)
-- [load-testing.md](load-testing.md) — throughput baselines
+- [roadmap](roadmap.md) — sprint registry S19–S23
+- [testing](testing.md) — test commands
+- [ci-flaky-triage](ci-flaky-triage.md) — flake policy (S20-04)
+- [load-testing](load-testing.md) — throughput baselines

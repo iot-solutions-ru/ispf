@@ -77,9 +77,8 @@ Out of scope: full Brick reasoner, runtime replacement object paths.
 
 
 - Integrators могут экспортировать tagged subtrees без fork object model.
-- RELATIVE mixin pattern совпадает с existing driver/lab mixin'ами ([0011](0011-model-type-semantics.md), [0018](0018-fixture-models-and-cel-applicability.md)).
+- RELATIVE mixin pattern совпадает с existing driver/lab mixin'ами ([0011-model-type-semantics](0011-model-type-semantics.md), [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md)).
 - Чёткая граница: semantics — metadata; mechanisms остаются tree-first.
-
 
 Risks:
 
@@ -107,6 +106,6 @@ Risks:
 ## Связанные материалы
 
 - [roadmap.md § Wave G (BL-56…62)](../roadmap.md#часть-e--полный-реестр-bl-01139)
-- [blueprints.md](../BLUEPRINTS.md) — RELATIVE mixins
-- [drivers.md](../drivers.md) — point mappings (future Haystack tag normalization)
+- [BLUEPRINTS](../BLUEPRINTS.md) — RELATIVE mixins
+- [drivers](../drivers.md) — point mappings (future Haystack tag normalization)
 - [0002 Dogfooding gate](0002-dogfooding-gate.md)

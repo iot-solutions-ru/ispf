@@ -2,7 +2,7 @@
 
 # Device drivers
 
-Candidate catalog for new drivers (roadmap.md): [ROADMAP.md § PF-14](roadmap.md), full list below (REQ-PF-14).
+Candidate catalog for new drivers (roadmap.md): [roadmap](roadmap.md), full list below (REQ-PF-14).
 
 ## Driver maturity
 
@@ -13,9 +13,9 @@ Candidate catalog for new drivers (roadmap.md): [ROADMAP.md § PF-14](roadmap.md
 | **stub** | TCP/session check or connectivity shell (v0.1) |
 | **simulator** | Virtual/profile-based (see PF-09) |
 
-Many REQ-PF-14 catalog entries are marked as stub — see the table below and [DRIVER_PROMOTION.md](driver-promotion.md).
+Many REQ-PF-14 catalog entries are marked as stub — see the table below and [driver-promotion](driver-promotion.md).
 
-Production readiness matrix — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`. Interop lab — [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) (BL-141).
+Production readiness matrix — [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`. Interop lab — [driver-interop-lab](driver-interop-lab.md) (BL-141).
 
 ### Top-20 industrial (BL-140, Phase 25)
 
@@ -30,7 +30,7 @@ In `DriverProductionMatrix` — **20** drivers at **PRODUCTION** (including `cwm
 
 ### observedAt (source timestamps, BL-79)
 
-Poll drivers pass `updateVariable(name, value, observedAt)` to the historian ([0020](decisions/0020-time-and-timezones.md)):
+Poll drivers pass `updateVariable(name, value, observedAt)` to the historian ([0020-time-and-timezones](decisions/0020-time-and-timezones.md)):
 
 | Driver id | observedAt | Source |
 | --------- | ---------- | ------ |
@@ -58,7 +58,7 @@ public interface DeviceDriver {
 
 Registration via **driver packs** in `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop at `pollIntervalMs`.
 
-Build packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. See [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md).
+Build packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. See [licensed-driver-packs](licensed-driver-packs.md).
 
 ## Device variables (driver group)
 
@@ -66,7 +66,7 @@ On a `DEVICE` object, variables in the `driver` group appear when **provisioning
 
 `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` embeds the schema (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) from a blueprint without writing to the model catalog and without `appliedBlueprintIds`.
 
-Fixture RELATIVE model `device-driver-v1` (when `fixtures-enabled`) — for demo/lab and explicit apply; see [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+Fixture RELATIVE model `device-driver-v1` (when `fixtures-enabled`) — for demo/lab and explicit apply; see [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 | Variable | Description |
 |----------|-------------|
@@ -384,7 +384,7 @@ The `capabilities` field — string set from `DriverProductionMatrix` (ADR-0022)
 
 ### Stub promotion (demand-driven)
 
-58 `driverId` values are registered; some are **STUB** or **BETA** (connectivity shell without full protocol). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002](decisions/0002-dogfooding-gate.md):
+58 `driverId` values are registered; some are **STUB** or **BETA** (connectivity shell without full protocol). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
 
 1. The app team describes the scenario (device, point mapping, acceptance test).
 2. A platform PR adds protocol logic to the existing `ispf-driver-*` module.

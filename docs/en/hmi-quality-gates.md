@@ -2,7 +2,7 @@
 
 Operator HMI quality: Lighthouse, bundle budget, axe a11y, SCADA mimic FPS.
 
-See [acceleration-program.md](acceleration-program.md) · [roadmap § S21](roadmap.md).
+See [acceleration-program](acceleration-program.md) · [roadmap § S21](roadmap.md).
 
 ## Gates
 
@@ -42,7 +42,7 @@ Stress document builder: `e2e/fixtures/stressMimic.ts`. Playwright measures min 
 | Color contrast (axe) | Done | `--text-muted` tokens + dedicated contrast tests on login/operator |
 | Keyboard mimic editor | Done | Escape close, arrow navigate between elements, Shift+arrow nudge, V/P/C tools, Del, Ctrl+Z/Y/S; dialog `role` + `aria-pressed` on tools |
 | Screen reader labels | Done | `AlarmBarOverlay` — `role="alert"` + `aria-live="assertive"` per alarm |
-| SCADA symbol library | Done | [SCADA_SYMBOL_LIBRARY.md](scada-symbol-library.md), `customSvg.test.ts` |
+| SCADA symbol library | Done | [scada-symbol-library](scada-symbol-library.md), `customSvg.test.ts` |
 | Mimic 60 fps @ tank-farm | Done | CI stress proxy: 120 symbols @ ≥55 fps (`stressMimic.ts`); full tank-farm diagram same render path |
 | Mimic FPS @ 500 el (live WebSocket) | Gap | e2e uses mocked API; `quality-gates.spec.ts` defaults `MIMIC_MIN_FPS=60` |
 | Lighthouse operator dashboard | Done | `lighthouse-ci.mjs` audits `/?mode=operator&app=e2e-operator` with API mocks |

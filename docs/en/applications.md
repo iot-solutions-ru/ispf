@@ -2,9 +2,9 @@
 
 # Platform applications (REQ-PF)
 
-Platform layer for deploying application solutions **without industry Java code in `ispf-server`**. Aligns with [0001](decisions/0001-app-platform-boundary.md) and REQ-PF requirements.
+Platform layer for deploying application solutions **without industry Java code in `ispf-server`**. Aligns with [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) and REQ-PF requirements.
 
-**Roadmap and REQ-PF status:** [roadmap.md](roadmap.md) (Part A).
+**Roadmap and REQ-PF status:** [roadmap](roadmap.md) (Part A).
 
 ## Overview
 
@@ -95,7 +95,7 @@ Functions are JSON **scripts** with steps:
 | `failIfNotEquals` | Check var value |
 | `return` | Build output (`fields`); arrays via `${var}` |
 
-Full examples of script/java/built-in functions on tree objects: [object-functions.md](object-functions.md). The same steps run in `sourceType=script` on an object (Inspector) and in application deploy.
+Full examples of script/java/built-in functions on tree objects: [object-functions](object-functions.md). The same steps run in `sourceType=script` on an object (Inspector) and in application deploy.
 
 One invoke = one JDBC transaction (rollback on unhandled exception). Nested `invoke_function` — up to 8 levels. Invalid script → **400** on deploy.
 
@@ -368,7 +368,7 @@ Object tree subtree (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/exp
 
 SQL reports in app schema: deploy via bundle `reports[]` or `POST .../reports/deploy`, run `POST .../reports/{id}/run`, CSV export `GET .../reports/{id}/export`.
 
-Details: [reports.md](reports.md).
+Details: [reports](reports.md).
 
 ## Operator UI (dashboards from tree)
 
@@ -421,12 +421,12 @@ Sync: on deploy/register/migrate and at server startup.
 
 ## Related documentation
 
-- [api.md](api.md) — endpoint table
-- [workflows.md](workflows.md) — BPMN `invoke_function`, instance cancel
-- [web-console.md](web-console.md) — BPMN editor and auto-layout
-- [roadmap.md](roadmap.md) — REQ-PF, sprint roadmap
-- [plugins.md](plugins.md) — core vs commercial plugin boundaries
-- [security.md](security.md) — RBAC matrix
+- [api](api.md) — endpoint table
+- [workflows](workflows.md) — BPMN `invoke_function`, instance cancel
+- [web-console](web-console.md) — BPMN editor and auto-layout
+- [roadmap](roadmap.md) — REQ-PF, sprint roadmap
+- [plugins](plugins.md) — core vs commercial plugin boundaries
+- [security](security.md) — RBAC matrix
 
 ## Deprecation path (PF-03, Phase 5.5)
 
@@ -439,7 +439,7 @@ After `POST /api/v1/applications/{appId}/deploy`:
 - Invoke: `POST /api/v1/bff/invoke` or `POST /api/v1/objects/by-path/functions/invoke` by tree path.
 - SQL bindings: `bindingExpression: sqlBinding('appId','var')` on the node variable.
 
-**Legacy (deprecated, warn-only):** operator manifest `screens[]` in bundle — Phase 3.5; prefer `operatorUi` + dashboards in tree. Legacy manifest screen types: `table`/`report` (BFF), `dashboard` (embedded DASHBOARD path), `chart` (single-variable trend), `map` (child devices). See [solution-developer-guide.md](solution-developer-guide.md).
+**Legacy (deprecated, warn-only):** operator manifest `screens[]` in bundle — Phase 3.5; prefer `operatorUi` + dashboards in tree. Legacy manifest screen types: `table`/`report` (BFF), `dashboard` (embedded DASHBOARD path), `chart` (single-variable trend), `map` (child devices). See [solution-developer-guide](solution-developer-guide.md).
 
 ## Next steps (backlog)
 
@@ -448,4 +448,4 @@ Phase 17 and Phase 19 are closed. Current wave — **[roadmap.md § Phase 18](ro
 - **18.1** Playwright admin e2e (Explorer, operator deep link) — Phase 3.4 tail
 - **18.2** Driver stub promotion (demand-driven)
 
-Sprint planning: [roadmap.md](roadmap.md).
+Sprint planning: [roadmap](roadmap.md).

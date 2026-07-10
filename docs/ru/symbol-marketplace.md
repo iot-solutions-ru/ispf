@@ -2,11 +2,11 @@
 
 # Symbol marketplace (BL-185)
 
-Каталог и распространение пакетов символов SCADA/HMI — примитивы P&ID, значки оборудования, анимированные состояния и привязки мнемосхем, совместимые с [SCADA.md](scada.md) и `diagramJson` v2.
+Каталог и распространение пакетов символов SCADA/HMI — примитивы P&ID, значки оборудования, анимированные состояния и привязки мнемосхем, совместимые с [scada](scada.md) и `diagramJson` v2.
 
-Связанные: [MARKETPLACE.md](marketplace.md), [SCADA_MIMIC.md](scada-mimic.md), [roadmap.md](roadmap.md) (BL-146, BL-185).
+Связанные: [marketplace](marketplace.md), [scada-mimic](scada-mimic.md), [roadmap](roadmap.md) (BL-146, BL-185).
 
-**Статус (0.9.102):** справочный пакет `ispf-pid-v1` (218 символов) поставляется в веб-консоли. API листинга/установки сервера — **заглушка** (`MarketplaceSymbolListingService`, `"source": "stub"`). См. [COMPETITIVE_Scorecard.md](competitive-scorecard.md).
+**Статус (0.9.102):** справочный пакет `ispf-pid-v1` (218 символов) поставляется в веб-консоли. API листинга/установки сервера — **заглушка** (`MarketplaceSymbolListingService`, `"source": "stub"`). См. [competitive-scorecard](competitive-scorecard.md).
 
 ---
 
@@ -58,7 +58,7 @@
 
 ## Распределение
 
-Пакеты символов поставляются по тому же контракту маркетплейса, что и пакеты приложений ([MARKETPLACE.md](marketplace.md)):
+Пакеты символов поставляются по тому же контракту маркетплейса, что и пакеты приложений ([marketplace](marketplace.md)):
 
 | Шаг | Действие |
 |------|--------|
@@ -120,6 +120,6 @@ ispf:
 
 ## Сопутствующие документы
 
-- [SCADA.md](scada.md) — архитектура mimic
-- [WIDGETS.md](widgets.md) — `scada-mimic` widget
-- [MARKETPLACE.md](marketplace.md) — API каталога
+- [scada](scada.md) — архитектура mimic
+- [widgets](widgets.md) — `scada-mimic` widget
+- [marketplace](marketplace.md) — API каталога

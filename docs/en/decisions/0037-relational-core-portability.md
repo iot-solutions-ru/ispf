@@ -82,7 +82,6 @@ Default mode: `ISPF_EVENT_JOURNAL_STORE=jdbc`, `ISPF_VARIABLE_HISTORY_STORE=jdbc
 
 - single abstraction; explicit single-DB scenario; external JDBC for integrations without mixing with metadata.
 
-
 Risks:
 
 - enterprise engines certified one at a time; cluster requires the same engine on all replicas; DBMS change — greenfield + bundles, not live migration.
@@ -91,7 +90,7 @@ Risks:
 
 ## Related
 
-- [STORAGE_PORTABILITY_INVENTORY.md](../storage-portability-inventory.md)
-- [DEPLOYMENT.md](../deployment.md) § Storage deployment modes
-- [ADR-0028](0028-horizontal-active-active-cluster.md), [ADR-0016](0016-clickhouse-event-journal.md)
-- [BLUEPRINTS.md](../blueprints.md) — `data-source-v1`
+- [storage-portability-inventory](../storage-portability-inventory.md)
+- [deployment](../deployment.md) § Storage deployment modes
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
+- [blueprints](../blueprints.md) — `data-source-v1`

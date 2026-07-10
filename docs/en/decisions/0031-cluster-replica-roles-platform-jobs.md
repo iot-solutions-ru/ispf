@@ -30,7 +30,6 @@ Env `ISPF_REPLICA_ROLE`:
 
 Backward compatibility: no role = `all` (current behaviour).
 
-Additionally:
 
 - `ISPF_CLUSTER_JOB_CONSUMER_ENABLED` — explicit consumer disable on `all`/`worker`.
 - Driver ownership disabled on `api` and `worker` regardless of `ISPF_CLUSTER_DRIVER_OWNERSHIP`.
@@ -87,7 +86,7 @@ On a small cluster without a dedicated worker, all replicas are `all` — jobs r
 
 ## Related
 
-- [ADR-0028](0028-horizontal-active-active-cluster.md) — base cluster
-- [ADR-0029](0029-cluster-live-variable-replica-sync.md) — live sync
-- [CLUSTER.md](../cluster.md) — roles and jobs runbook
-- [BL-144](../roadmap.md) — replica roles + platform jobs
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — base cluster
+- [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live sync
+- [cluster](../cluster.md) — roles and jobs runbook
+- [roadmap](../roadmap.md) — replica roles + platform jobs

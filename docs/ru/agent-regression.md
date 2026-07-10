@@ -64,11 +64,11 @@ bash scripts/run-agent-regression.sh --live
 
 **Текущее число сценариев:** 50 (SCADA, MES, HVAC).
 
-Репортёр pass rate (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — **цель** ≥95% **живого** прогона агента. **Не достигнуто на 0.9.102**: CI на PR и nightly по умолчанию проверяют **только схемы и заглушку** (`nightly-stub-results.json`), а не реальный pass rate LLM. См. [competitive-scorecard.md](competitive-scorecard.md).
+Репортёр pass rate (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — **цель** ≥95% **живого** прогона агента. **Не достигнуто на 0.9.102**: CI на PR и nightly по умолчанию проверяют **только схемы и заглушку** (`nightly-stub-results.json`), а не реальный pass rate LLM. См. [competitive-scorecard](competitive-scorecard.md).
 
 ## См. также
 
-- [ai-development.md](ai-development.md) — инструменты и playbook агента
+- [ai-development](ai-development.md) — инструменты и playbook агента
 - [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — рецепт e2e-деплоя BL-177
 - [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — рецепт factory spec BL-180
-- [roadmap.md](roadmap.md) — BL-177, BL-178
+- [roadmap](roadmap.md) — BL-177, BL-178

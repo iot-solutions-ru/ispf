@@ -64,6 +64,6 @@ We explicitly **do not** embed Dify, LangGraph, or AutoAgent as runtime dependen
 
 ## Related
 
-- [ADR-0005](0005-tree-first-ai-agent.md) — tree-first agent
-- [AI_AGENT.md](../ai-agent.md) — agent modes and tools
-- [ROADMAP.md](../roadmap.md) — FW-49…53
+- [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) — tree-first agent
+- [ai-agent](../ai-agent.md) — agent modes and tools
+- [roadmap](../roadmap.md) — FW-49…53

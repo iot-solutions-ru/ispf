@@ -14,7 +14,7 @@ Policy for Playwright, Gradle integration tests, and load gates when CI success 
 
 1. **Detect** — failed job in GitHub Actions; label issue `ci-flake`.
 2. **Assign owner** — module owner (backend / web-console / deploy).
-3. **Reproduce** — local command from [TESTING.md](testing.md) or workflow log.
+3. **Reproduce** — local command from [testing](testing.md) or workflow log.
 4. **Fix or quarantine:**
    - **Fix preferred:** deterministic wait, isolation, test data cleanup.
    - **Quarantine:** `@Disabled` / `test.skip` with issue link + expiry date (max 14 days).

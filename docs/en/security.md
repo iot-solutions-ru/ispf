@@ -12,7 +12,7 @@ ISPF uses **role-based access** at the HTTP API level:
 | `developer` | `ROLE_developer` |
 | `operator` | `ROLE_operator` |
 
-Per-object ACL — see [security.md](security.md) (`object_acl_entries`, **Access** tab in Web Console).
+Per-object ACL — see [security](security.md) (`object_acl_entries`, **Access** tab in Web Console).
 
 ## Authentication profiles
 
@@ -53,7 +53,7 @@ Web Console: login screen; session stored in `localStorage`. In `dev`/prod profi
 | `GET /api/v1/auth/me` | Current user (with token) |
 | `GET /api/v1/auth/config` | Auth mode (`local` / `oidc`) for Web Console |
 
-Users and roles sync into the object tree (see [object-model.md](object-model.md)).
+Users and roles sync into the object tree (see [object-model](object-model.md)).
 
 ### dev/default (as in production)
 

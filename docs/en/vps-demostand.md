@@ -2,7 +2,7 @@
 
 # VPS demostand (example host)
 
-> **General guide:** [demostands.md](demostands.md) — production, throughput, demo-idle, edge.
+> **General guide:** [demostands](demostands.md) — production, throughput, demo-idle, edge.
 
 This page is **operational notes** for one prod example: single-node Docker behind nginx. Use as a template; replace container names and hosts with your own.
 
@@ -36,7 +36,7 @@ Compose: [`deploy/docker-compose.vps-single.yml`](../deploy/docker-compose.vps-s
 
 **Important:** on Docker stand do not use [`apply-platform-update.sh`](../deploy/apply-platform-update.sh) — it is for systemd. After env change — recreate container, not `docker restart`.
 
-Migration from multi-replica: `vps-single-rollout.sh`. Back to cluster: [cluster.md](cluster.md).
+Migration from multi-replica: `vps-single-rollout.sh`. Back to cluster: [cluster](cluster.md).
 
 ## Versions with hot-path fixes
 
@@ -45,4 +45,4 @@ Migration from multi-replica: `vps-single-rollout.sh`. Back to cluster: [cluster
 | ≥ 0.9.100 | `AlarmShelfService` — read-only hot path |
 | ≥ 0.9.101 | `ScheduleObjectService.listEnabled()` — no write in read-only tx |
 
-See [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md).
+See [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).

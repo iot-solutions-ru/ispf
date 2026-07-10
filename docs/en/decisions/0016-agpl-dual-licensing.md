@@ -25,9 +25,9 @@ All device drivers are extracted from `ispf-server.jar` into **driver packs** (1
 - Breaking: empty `packs-dir` → no drivers at runtime.
 - `DriverFactory` / `DriverCatalog` — loaded packs only.
 - `GET /api/v1/platform/license` — tier/status.
-- Docs: [LICENSE.md](../LICENSE.md), [LICENSED_DRIVER_PACKS.md](../licensed-driver-packs.md).
+- Docs: [LICENSE](../LICENSE.md), [licensed-driver-packs](../licensed-driver-packs.md).
 
 ## Related
 
-- Supersedes marketing «Apache-only core» in [0003](0003-commercial-bundle-licensing.md) scope (bundle licensing unchanged).
-- [THIRD_PARTY_NOTICES.md](../third-party-notices.md)
+- Supersedes marketing «Apache-only core» in [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md) scope (bundle licensing unchanged).
+- [third-party-notices](../third-party-notices.md)

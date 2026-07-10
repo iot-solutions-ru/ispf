@@ -72,4 +72,4 @@ POST /api/v1/workflows/instances/{instanceId}/signal
 
 `EscalationTemplateSmokeTest` разбирает `ack-timeout-escalation.bpmn.xml` и проверяет путь эскалации по boundary timer.
 
-См. также: [WORKFLOWS.md](workflows.md), [AUTOMATION.md](automation.md).
+См. также: [workflows](workflows.md), [automation](automation.md).

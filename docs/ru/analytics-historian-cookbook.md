@@ -4,11 +4,11 @@
 
 Рецепты для **historian binding rules** (`kind: historian` в `@bindingRules`). Одно правило = один analytics-тег со своей выходной переменной, расписанием и выражением.
 
-См. [ADR-0041](decisions/0041-multi-tag-historian-computations.md) и [analytics-tag-catalog.md](analytics-tag-catalog.md).
+См. [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md) и [analytics-tag-catalog](analytics-tag-catalog.md).
 
-**Дорожная карта (как в PI AF):** единый каталог формул, плагины и свои формулы — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–216). Каталог и «сохранить/применить формулу» доступны в редакторе выражений; менеджер формул — **Система → Формулы analytics**.
+**Дорожная карта (как в PI AF):** единый каталог формул, плагины и свои формулы — [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (BL-212–216). Каталог и «сохранить/применить формулу» доступны в редакторе выражений; менеджер формул — **Система → Формулы analytics**.
 
-**Полный гайд (Tier A/B/C, API, покупка пакетов в маркетплейсе):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
+**Полный гайд (Tier A/B/C, API, покупка пакетов в маркетплейсе):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
 
 ---
 
@@ -412,5 +412,5 @@ python deploy/local/tools/setup-historian-chain-dashboard.py https://ispf.iot-so
 
 ## См. также
 
-- [bindings.md](bindings.md)
-- [ADR-0040](decisions/0040-unified-computations-ui.md), [ADR-0041](decisions/0041-multi-tag-historian-computations.md)
+- [bindings](bindings.md)
+- [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md), [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)

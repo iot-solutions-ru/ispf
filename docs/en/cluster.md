@@ -2,9 +2,9 @@
 
 # ISPF cluster (multi-replica)
 
-Guide to horizontal API scaling: multiple JVM replicas, one object tree in PostgreSQL, live value synchronization via NATS ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)).
+Guide to horizontal API scaling: multiple JVM replicas, one object tree in PostgreSQL, live value synchronization via NATS ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
 
-See also: [ADR-0028](decisions/0028-horizontal-active-active-cluster.md), [deployment.md](deployment.md), [messaging.md](messaging.md), [bindings.md](bindings.md).
+See also: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md), [deployment](deployment.md), [messaging](messaging.md), [bindings](bindings.md).
 
 ## Cluster ≠ federation
 
@@ -12,7 +12,7 @@ See also: [ADR-0028](decisions/0028-horizontal-active-active-cluster.md), [deplo
 |---|-------------|------------------|
 | Object tree | Single `root.platform.*` in one DB | Multiple sites / edge agents |
 | Replicas | N stateless JVMs behind LB | Hub ↔ spoke communication |
-| Driver | Exactly one poll per device | See [federation.md](federation.md) |
+| Driver | Exactly one poll per device | See [federation](federation.md) |
 
 ## Topology (VPS / lab example)
 
@@ -43,7 +43,7 @@ Each replica on startup:
 
 | Data | Storage | Cluster behavior |
 |------|---------|------------------|
-| Object structure, configs, bindings | PostgreSQL | Write on any replica → NATS fan-out → reload on peers ([ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md): `reloadPathFromDatabase`, config variables: `syncVariableFromDatabase`) |
+| Object structure, configs, bindings | PostgreSQL | Write on any replica → NATS fan-out → reload on peers ([0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md): `reloadPathFromDatabase`, config variables: `syncVariableFromDatabase`) |
 | **Real-time telemetry** (`ifInOctets`, `temperature`, …) | **RAM on owner replica** | Not written to PG on every tick |
 | **Live mirror on subscriber** | RAM (copy snapshot) | ADR-0029: NATS payload includes `value` |
 | Historian / event journal | PG / ClickHouse / Cassandra | Written **only by owner** |
@@ -322,9 +322,9 @@ Default **unified** (`ISPF_REPLICA_PROFILE=unified` or `ISPF_REPLICA_ROLE=all`):
 | compute | `compute` (alias: `worker`) | internal | no | no | yes | no | no |
 | analytics | `analytics` | internal | no | no | no | yes | yes |
 
-**analytics** — rollup materializer and heavy historian backfill ([ADR-0038](decisions/0038-analytics-platform-architecture.md), BL-207). When UP analytics replicas exist, `io` and `edge-api` replicas do **not** run the materializer. Single-node `unified` still runs analytics workloads.
+**analytics** — rollup materializer and heavy historian backfill ([0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md), BL-207). When UP analytics replicas exist, `io` and `edge-api` replicas do **not** run the materializer. Single-node `unified` still runs analytics workloads.
 
-**edge-api** without local drivers — see [demostands.md](demostands.md) (Edge B). Local drivers on a weak CPU — **unified** + [demostands.md](demostands.md) (Edge A).
+**edge-api** without local drivers — see [demostands](demostands.md) (Edge B). Local drivers on a weak CPU — **unified** + [demostands](demostands.md) (Edge A).
 
 Explicit override: `ISPF_REPLICA_CAPABILITIES=http-public,ws,replica-sync`.
 
@@ -358,7 +358,7 @@ Web console calls `run-async` and polls until `COMPLETED`. Sync `POST …/run` r
 
 Job storage in `platform_jobs` (PostgreSQL). Worker claim: `FOR UPDATE SKIP LOCKED`. Stale `RUNNING` returns to `QUEUED`.
 
-Details: [ADR-0031](decisions/0031-cluster-replica-roles-platform-jobs.md), [ADR-0032](decisions/0032-replica-profiles-and-capabilities.md).
+Details: [0031-cluster-replica-roles-platform-jobs](decisions/0031-cluster-replica-roles-platform-jobs.md), [0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md).
 
 ## Cluster startup and configuration
 
@@ -368,10 +368,10 @@ This section is the **canonical order** for bringing up a multi-profile cluster:
 
 | Rule | Why |
 |------|-----|
-| **One PostgreSQL** for all replicas | Single `root.platform.*` tree, driver locks, cluster registry ([ADR-0028](decisions/0028-horizontal-active-active-cluster.md)) |
+| **One PostgreSQL** for all replicas | Single `root.platform.*` tree, driver locks, cluster registry ([0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md)) |
 | **Unique `ISPF_REPLICA_ID`** per JVM | Heartbeat, locks, diagnostics |
 | **`ISPF_CLUSTER_ENABLED=true`** on every replica | `unified` profile is not allowed when cluster mode is on |
-| **Profile separation** | `edge-api` in nginx; `io` / `analytics` / `compute` internal ([ADR-0032](decisions/0032-replica-profiles-and-capabilities.md)) |
+| **Profile separation** | `edge-api` in nginx; `io` / `analytics` / `compute` internal ([0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md)) |
 | **Staggered replica start** | Avoid concurrent `AssetAnalyticsBootstrap` / Flyway on cold DB (PostgreSQL deadlock on `object_nodes`) |
 | **Host network or unique HTTP ports** | Cluster diagnostics fan-out uses `http://127.0.0.1:{httpPort}/api/v1/platform/metrics` per registered port |
 
@@ -486,7 +486,7 @@ Writes for catalog seeding and operator API must hit **edge-api**, not `io` or `
 
 ### Lab BL-210 pipeline (after cluster is UP)
 
-From workstation (SSH key — `ssh ispf-lab`, see [lab-event-journal-stress.md](lab-event-journal-stress.md#workstation-ssh-one-time)):
+From workstation (SSH key — `ssh ispf-lab`, see [lab-event-journal-stress](lab-event-journal-stress.md#workstation-ssh-one-time)):
 
 ```powershell
 python deploy/run_lab_bl210_launch.py --force   # full reset + remote nohup
@@ -514,7 +514,7 @@ Expected healthy lab cluster: **`nodesUp` = `nodesTotal` = 4**, profiles `edge-a
 
 ### VPS prod (single unified node)
 
-> **Profiles:** production / throughput / demo-simple / edge — [demostands.md](demostands.md). Below — **demo-idle** example for one node.
+> **Profiles:** production / throughput / demo-simple / edge — [demostands](demostands.md). Below — **demo-idle** example for one node.
 
 ```text
 Internet → nginx :8080 → replica-1 (unified / role all, :8081)
@@ -557,7 +557,7 @@ Diagnostics response: CPU per replica, `clusterTopSuspect`, drill-down (threads,
 | Drivers | `ingressPending`, `pressureScore` (≥100 — hot driver) |
 | Jobs / workflows | `RUNNING` on this replica, `runningSeconds` |
 
-UI: Admin → System → Metrics → **Load diagnostics** (CPU) and Cluster card (health). Optional: **Sync metrics with audit device** checkbox — audit runtime in the tree (see [observability.md](observability.md)); disabled when leaving the page.
+UI: Admin → System → Metrics → **Load diagnostics** (CPU) and Cluster card (health). Optional: **Sync metrics with audit device** checkbox — audit runtime in the tree (see [observability](observability.md)); disabled when leaving the page.
 
 At 100% CPU: expand the hot replica in diagnostics; first thread sample CPU is warmup (refresh ~20s); if all JVMs are low — `docker stats` on host (Scylla/CH/Postgres).
 
@@ -599,7 +599,7 @@ When a replica fails, nginx marks upstream down (`max_fails`) and routes the cli
 
 ### VPS deployment
 
-**Single-node demostand (current prod):** see [vps-demostand.md](vps-demostand.md). Hotfix path: SCP + `docker-compose` recreate, not `apply-platform-update.sh`.
+**Single-node demostand (current prod):** see [vps-demostand](vps-demostand.md). Hotfix path: SCP + `docker-compose` recreate, not `apply-platform-update.sh`.
 
 **Multi-replica cluster:**
 
@@ -618,5 +618,5 @@ Reset DB: [`vps-cluster-factory-reset.sh`](../deploy/vps-cluster-factory-reset.s
 - [ADR-0028](decisions/0028-horizontal-active-active-cluster.md) — topology, driver locks
 - [ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md) — RAM mirror
 - [ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md) — config/structure CRUD sync
-- [ADR-0024](decisions/0024-demand-driven-variable-change-pubsub.md) — demand-driven publish
-- ROADMAP BL-134…143
+- [ADR-0031](decisions/0031-cluster-replica-roles-platform-jobs.md), [ADR-0032](decisions/0032-replica-profiles-and-capabilities.md) — replica roles
+- [roadmap.md](roadmap.md) — BL-134…143

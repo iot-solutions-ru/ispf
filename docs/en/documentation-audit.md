@@ -12,7 +12,7 @@
 
 - **Before:** `SCADA_MIMIC.md`, `ROADMAP_PHASE25.md`
 - **After:** `scada-mimic.md`, then `roadmap-phase-25.md` (Phases 25–33 split)
-- **2026-07-09:** Phases 25–33 merged back into single [roadmap.md](roadmap.md); `roadmap-phase-25.md` is a redirect stub only
+- **2026-07-09:** Phases 25–33 merged back into single [roadmap](roadmap.md); `roadmap-phase-25.md` is a redirect stub only
 - **ADRs:** `decisions/0001-app-platform-boundary.md` (unchanged pattern, lowercase)
 
 ## Link audit
@@ -39,6 +39,8 @@ python tools/docs-audit/fix_remaining_links.py
 python tools/docs-audit/audit_links.py       # CI gate: exit 1 if broken internal links
 python tools/docs-audit/proofread_ru_terms.py  # RU terminology fixes
 python tools/docs-audit/fix_en_banners.py    # EN language banners
+python tools/docs-audit/strip-neuro-slang.py # remove LLM/marketing phrasing
+python tools/docs-audit/polish-docs.py       # normalize links, trim boilerplate
 ```
 
 ## Known follow-ups

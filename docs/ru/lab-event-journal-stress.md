@@ -2,7 +2,7 @@
 
 # Лаборатория: стресс журнала событий (Scylla + MQTT)
 
-Нагрузочный стенд для **EVENT_JOURNAL_ONLY** быстрого пути ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)): драйвер mqtt → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
+Нагрузочный стенд для **EVENT_JOURNAL_ONLY** быстрого пути ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)): драйвер mqtt → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
 
 **Хост:** `84.42.21.226`, порт SSH `5031`, пользователь `iot-solutions`  
 **SSH alias:** `ispf-lab` (ключ Ed25519 `~/.ssh/ispf_lab_ed25519`)  
@@ -191,10 +191,10 @@ Cleanup orphans: `bash lab-emqtt-cleanup.sh` (label `ispf.emqtt-bench=1`).
 
 ## Связанные документы
 
-- [LOAD_TESTING.md](load-testing.md) — общие сценарии MQTT/emqtt
-- [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md) — EVENT_JOURNAL_ONLY
-- [ADR-0026](decisions/0026-elastic-telemetry-ingress.md) — входной конвейер
-- [AUTOMATION.md](automation.md) — API метрик платформы
+- [load-testing](load-testing.md) — общие сценарии MQTT/emqtt
+- [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) — EVENT_JOURNAL_ONLY
+- [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md) — входной конвейер
+- [automation](automation.md) — API метрик платформы
 
 ## Сравнение продуктов VPS (ispf.iot-solutions.ru)
 

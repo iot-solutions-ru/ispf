@@ -1,24 +1,24 @@
 # ISPF competitive scorecard (BL-189)
 
-Public readiness matrix for Phases 25–33 (see unified [roadmap.md](roadmap.md)). **Current column:** **Code verified** — evidence from `main` source and tests (release **0.9.102**, July 2026).
+Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)). **Current column:** **Code verified** — evidence from `main` source and tests (release **0.9.102**, July 2026).
 
 Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI, Siemens Opcenter, Tulip, mature context-tree IIoT platforms.
 
 | # | Dimension | Baseline (Phase 24) | **Code verified (0.9.102)** | Target | Phase / BL |
 |---|-----------|:-------------------:|:---------------------------:|:------:|------------|
-| 1 | Unified data model (object tree) | 9.0 | **8.5** | **10** | [25](roadmap.md#phase-25--ot-trust), [29](roadmap.md#phase-29--mes-platform), [30](roadmap.md#phase-30--automation-depth) — BL-164…168, BL-173 |
-| 2 | SCADA / HMI / mimics | 7.0 | **7.5** | **10** | [26](roadmap.md#phase-26--hmi-excellence) — BL-146…152 |
-| 3 | OT/IT connectivity (drivers.md) | 6.0 | **6.5** | **10** | [25](roadmap.md#phase-25--ot-trust) — BL-140…145 |
-| 4 | Historian / time-series | 7.0 | **7.0** | **10** | [28](roadmap.md#phase-28--historian-at-scale) — BL-159…163; [33](roadmap.md#phase-33--analytics-platform-af-capable) BL-200…210 |
-| 5 | Automation / alarms | 7.5 | **7.5** | **10** | [27](roadmap.md#phase-27--enterprise-security), [30](roadmap.md#phase-30--automation-depth) — BL-153…157, BL-171…174 |
-| 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [30](roadmap.md#phase-30--automation-depth) — BL-176 |
-| 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [29](roadmap.md#phase-29--mes-platform) — BL-164…170 |
-| 8 | Low-code velocity | 8.0 | **8.0** | **10** | [26](roadmap.md#phase-26--hmi-excellence), [31](roadmap.md#phase-31--ai-autopilot) — BL-146…152, BL-177…180 |
-| 9 | AI-assisted development | 9.0 | **6.5** | **10** | [31](roadmap.md#phase-31--ai-autopilot) — BL-177…182 |
-| 10 | Security / RBAC / tenancy | 6.5 | **7.5** | **10** | [27](roadmap.md#phase-27--enterprise-security) — BL-153…157 |
-| 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [25](roadmap.md#phase-25--ot-trust), [28](roadmap.md#phase-28--historian-at-scale), [32](roadmap.md#phase-32--ecosystem--market) — BL-144…145, BL-186…187 |
-| 12 | Ecosystem / marketplace | 4.0 | **5.0** | **10** | [32](roadmap.md#phase-32--ecosystem--market) — BL-183…185 |
-| 13 | Documentation / DX | 9.0 | **8.5** | **10** | [32](roadmap.md#phase-32--ecosystem--market) — BL-189, BL-190 |
+| 1 | Unified data model (object tree) | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#phase-25--ot-trust), [roadmap](roadmap.md#phase-29--mes-platform), [roadmap](roadmap.md#phase-30--automation-depth) — BL-164…168, BL-173 |
+| 2 | SCADA / HMI / mimics | 7.0 | **7.5** | **10** | [roadmap](roadmap.md#phase-26--hmi-excellence) — BL-146…152 |
+| 3 | OT/IT connectivity (drivers.md) | 6.0 | **6.5** | **10** | [roadmap](roadmap.md#phase-25--ot-trust) — BL-140…145 |
+| 4 | Historian / time-series | 7.0 | **7.0** | **10** | [roadmap](roadmap.md#phase-28--historian-at-scale) — BL-159…163; [roadmap](roadmap.md#phase-33--analytics-platform-af-capable) BL-200…210 |
+| 5 | Automation / alarms | 7.5 | **7.5** | **10** | [roadmap](roadmap.md#phase-27--enterprise-security), [roadmap](roadmap.md#phase-30--automation-depth) — BL-153…157, BL-171…174 |
+| 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#phase-30--automation-depth) — BL-176 |
+| 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [roadmap](roadmap.md#phase-29--mes-platform) — BL-164…170 |
+| 8 | Low-code velocity | 8.0 | **8.0** | **10** | [roadmap](roadmap.md#phase-26--hmi-excellence), [roadmap](roadmap.md#phase-31--ai-autopilot) — BL-146…152, BL-177…180 |
+| 9 | AI-assisted development | 9.0 | **6.5** | **10** | [roadmap](roadmap.md#phase-31--ai-autopilot) — BL-177…182 |
+| 10 | Security / RBAC / tenancy | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#phase-27--enterprise-security) — BL-153…157 |
+| 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [roadmap](roadmap.md#phase-25--ot-trust), [roadmap](roadmap.md#phase-28--historian-at-scale), [roadmap](roadmap.md#phase-32--ecosystem--market) — BL-144…145, BL-186…187 |
+| 12 | Ecosystem / marketplace | 4.0 | **5.0** | **10** | [roadmap](roadmap.md#phase-32--ecosystem--market) — BL-183…185 |
+| 13 | Documentation / DX | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#phase-32--ecosystem--market) — BL-189, BL-190 |
 | 14 | Stack modernity | 9.0 | **9.5** | **10** | maintain — Spring Boot 4, React 19, NATS, ClickHouse option |
 
 **Overall (code verified): ~7.4/10** — simple mean of the 14 dimensions above.
@@ -29,7 +29,7 @@ Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI
 
 ## Definition of done (10/10 overall)
 
-From [roadmap.md](roadmap.md) (Phases 25–33 / DoD). Status on **0.9.102**:
+From [roadmap](roadmap.md) (Phases 25–33 / DoD). Status on **0.9.102**:
 
 | Criterion | Status |
 |-----------|--------|

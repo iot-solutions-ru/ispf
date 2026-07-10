@@ -21,11 +21,11 @@ Distributed ISPF installations (hub + edge) require a single model: stable objec
 
 ## Consequences
 
-- Implementation: `FederationProxyService`, `FederationPeerService`, tunnel WebSocket — see [federation.md](../federation.md).
+- Implementation: `FederationProxyService`, `FederationPeerService`, tunnel WebSocket — see [federation](../federation.md).
 - WebSocket fan-out notifies subscribers on federated paths; full replica consistency — via NATS only within one platform cluster.
 - Dashboard widget paths remapped to federated prefix when proxying layout.
 
 ## Related
 
-- REQ-PF-13 — [roadmap.md](../roadmap.md), [federation.md](../federation.md)
-- [messaging.md](../messaging.md) — sync vs async
+- REQ-PF-13 — [roadmap](../roadmap.md), [federation](../federation.md)
+- [messaging](../messaging.md) — sync vs async

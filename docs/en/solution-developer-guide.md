@@ -4,13 +4,13 @@
 
 How to build an application solution on ISPF **without changing core Java**: application registration, SQL data, JSON functions, bundle deploy, operator UI, and reports.
 
-Product overview: [product.md](product.md). Full API: [applications.md](applications.md). **Stable platform ↔ solution boundary:** [solution-developer-public-api.md](solution-developer-public-api.md).
+Product overview: [product](product.md). Full API: [applications](applications.md). **Stable platform ↔ solution boundary:** [solution-developer-public-api](solution-developer-public-api.md).
 
 ---
 
 ## Core principle
 
-**Business logic lives on the platform** — in models, variables, events, functions, and workflows on the **object tree**. Your solution does not add Java to the server: it configures ISPF mechanisms with declarative configuration (blueprints, BPMN, script functions, objects, alert rules). Bundle deploy is how you **deliver** that configuration to the platform. Full P1–P10 principles (for humans and agents): [application-principles.md](application-principles.md). See also [architecture.md](architecture.md).
+**Business logic lives on the platform** — in models, variables, events, functions, and workflows on the **object tree**. Your solution does not add Java to the server: it configures ISPF mechanisms with declarative configuration (blueprints, BPMN, script functions, objects, alert rules). Bundle deploy is how you **deliver** that configuration to the platform. Full P1–P10 principles (for humans and agents): [application-principles](application-principles.md). See also [architecture](architecture.md).
 
 ## What is a "solution" on ISPF
 
@@ -25,7 +25,7 @@ A **solution (application)** is a registered app with an isolated SQL schema, sc
 
 **Tree-first convergence (Phase 5.5):** after `POST .../deploy`, functions are addressed as `{appId}.functions.{name}` on the object path; SQL bindings may live as `bindingExpression: sqlBinding('appId','var')` on a variable; `objects[]` in the bundle updates existing nodes (reconcile), not only creates new ones.
 
-> **Do not use the application layer as runtime.** The `applications` record is a registry and isolated SQL schema; invoke, workflow, alerts, and dashboards run through the **object tree API**. If a bundle still calls only `/applications/{appId}/functions/invoke` without tree paths — migrate to tree-first (see [applications.md](applications.md)).
+> **Do not use the application layer as runtime.** The `applications` record is a registry and isolated SQL schema; invoke, workflow, alerts, and dashboards run through the **object tree API**. If a bundle still calls only `/applications/{appId}/functions/invoke` without tree paths — migrate to tree-first (see [applications](applications.md)).
 
 ### Legacy bundle migration to tree-first
 
@@ -216,7 +216,7 @@ Widgets for application screens:
 | `dashboard-link` | Navigation between screens |
 | `card-grid` | KPI cards |
 
-See [dashboards.md](dashboards.md).
+See [dashboards](dashboards.md).
 
 ---
 
@@ -247,7 +247,7 @@ GET /api/v1/applications/my-terminal/reports/daily-summary?format=csv
 
 Report is defined in bundle (`reports[]`) or deployed separately. Export is CSV.
 
-See [reports.md](reports.md).
+See [reports](reports.md).
 
 ---
 
@@ -284,7 +284,7 @@ Service task with `ispf:actionType="INVOKE_FUNCTION"`:
 
 User task → Work Queue task for operator.
 
-See [workflows.md](workflows.md).
+See [workflows](workflows.md).
 
 ---
 
@@ -299,7 +299,7 @@ examples/demo-app/
     └── V1__demo.sql
 ```
 
-Run demo: register app, run migration + function deploy per [applications.md](applications.md).
+Run demo: register app, run migration + function deploy per [applications](applications.md).
 
 ---
 
@@ -330,9 +330,9 @@ Run demo: register app, run migration + function deploy per [applications.md](ap
 
 ## Related documents
 
-- [applications.md](applications.md) — full REQ-PF API
-- [reports.md](reports.md) — SQL reports
-- [dashboards.md](dashboards.md) — widgets
-- [web-console.md](web-console.md) — admin UI for setup
-- [glossary.md](glossary.md) — terms
-- [roadmap.md](roadmap.md) — REQ-PF status
+- [applications](applications.md) — full REQ-PF API
+- [reports](reports.md) — SQL reports
+- [dashboards](dashboards.md) — widgets
+- [web-console](web-console.md) — admin UI for setup
+- [glossary](glossary.md) — terms
+- [roadmap](roadmap.md) — REQ-PF status

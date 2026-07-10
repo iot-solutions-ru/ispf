@@ -8,7 +8,7 @@
 
 ## Контекст
 
-[0005](0005-tree-first-ai-agent.md) реализует in-server tree-first agent (`TreeFirstAgentService`) с ограниченным ReAct loop и Java tool handlers в `PlatformAgentToolRegistry`. Внешние клиенты (Cursor IDE, CI pipelines, custom assistants) всё чаще используют [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) для tool discovery и invocation.
+[0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) реализует in-server tree-first agent (`TreeFirstAgentService`) с ограниченным ReAct loop и Java tool handlers в `PlatformAgentToolRegistry`. Внешние клиенты (Cursor IDE, CI pipelines, custom assistants) всё чаще используют [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) для tool discovery и invocation.
 
 Нужен тонкий мост, чтобы MCP clients переиспользовали **те же** ACL-aware platform tools без дублирования бизнес-логики и без обхода validation gates 0004.
 
@@ -73,6 +73,6 @@ McpServer (profile mcp)
 
 ## Связанные материалы
 
-- [ai-development.md](../ai-development.md)
-- [0005](0005-tree-first-ai-agent.md)
+- [ai-development](../ai-development.md)
+- [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md)
 - `PlatformAgentToolRegistry.java`

@@ -107,17 +107,17 @@ src/
 - Макет предварительного просмотра JSON
 - Сохранение через API
 
-См. [DASHBOARDS.md](dashboards.md).
+См. [dashboards](dashboards.md).
 
 ## Построитель рабочих процессов
 
 - Переключение ПРОХОД/АКТИВ/ОСТАНОВЛЕНО
 - Кнопка «Выполнить»
 - Редактор BPMN (bpmn-js) с модулем ISPF
-- **Автоматическая компоновка:** если XML без `bpmndi`, `ensureDiagram.ts` вызывает `bpmn-auto-layout` перед использованием (см. [WORKFLOWS.md](workflows.md))
+- **Автоматическая компоновка:** если XML без `bpmndi`, `ensureDiagram.ts` вызывает `bpmn-auto-layout` перед использованием (см. [workflows](workflows.md))
 - Резервный просмотрщик XML
 
-См. [WORKFLOWS.md](workflows.md).
+См. [workflows](workflows.md).
 
 ## Live-данные
 
@@ -144,7 +144,7 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 - **Persistence:** `localStorage` (`ispf.ui.locale`), URL `?lang=`, fallback `en`
 - **Adding strings:** key in `en/{namespace}.json` → `useTranslation` + `t('key')` → `npm run i18n:translate` → `npm run i18n:check`
 
-См. [0013](decisions/0013-web-console-i18n.md).
+См. [0013-web-console-i18n](decisions/0013-web-console-i18n.md).
 
 ## Федерация
 
@@ -196,7 +196,7 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 
 Фоновое выполнение: HTTP-запрос агента продолжается при переходе в Обозреватель; индикатор в шапке и точка на вкладке AI Studio. После закрытия окна незавершённый запрос восстанавливается из `localStorage` (сессия опроса на сервере).
 
-См. [AI_DEVELOPMENT.md](ai-development.md).
+См. [ai-development](ai-development.md).
 
 ## Зависимости пользовательского интерфейса
 

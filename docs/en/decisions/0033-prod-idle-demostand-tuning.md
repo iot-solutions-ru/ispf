@@ -6,17 +6,17 @@ Accepted (2026-07-06)
 
 ## Context
 
-Platform defaults ([ADR-0026](0026-elastic-telemetry-ingress.md)) target **throughput**: elastic L0–L3 pools (ingress 4–32 workers, binding-async, object-change bus). On stands with a **small** number of devices (demo, HMI, edge gateway) the same defaults cause:
+Platform defaults ([0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md)) target **throughput**: elastic L0–L3 pools (ingress 4–32 workers, binding-async, object-change bus). On stands with a **small** number of devices (demo, HMI, edge gateway) the same defaults cause:
 
 - extra threads and elastic scale churn with no real queue;
 - high CPU on poll drivers in `FULL` mode (full automation pipeline on every OID);
 - need for **one** JVM instead of several replicas on limited CPU.
 
-Additionally, **exception storms** were found from read-only transactions with hidden INSERT/UPDATE on hot paths (`AlarmShelfService`, `ScheduleObjectService`).
+**Exception storms** were found from read-only transactions with hidden INSERT/UPDATE on hot paths (`AlarmShelfService`, `ScheduleObjectService`).
 
 Stopping drivers reduces load but **does not replace** profile selection: demos need live devices with reduced pools and correct publish modes.
 
-General guide: [DEMOSTANDS.md](../DEMOSTANDS.md).
+General guide: [DEMOSTANDS](../DEMOSTANDS.md).
 
 ## Decision
 
@@ -27,7 +27,7 @@ General guide: [DEMOSTANDS.md](../DEMOSTANDS.md).
 | **Production** | ON (defaults) | 1–N replicas, PG + TS/CH | [DEMOSTANDS.md § Production](../DEMOSTANDS.md) |
 | **Demo / idle** | OFF, fixed pools | single unified node | [DEMOSTANDS.md § Demo](../DEMOSTANDS.md) |
 | **Edge** | OFF, minimal 1 | single node, coalesce↑ | [DEMOSTANDS.md § Edge](../DEMOSTANDS.md) |
-| **Throughput** | ON (peak tuning) | benchmark | [LOAD_TESTING.md](../load-testing.md) |
+| **Throughput** | ON (peak tuning) | benchmark | [load-testing](../load-testing.md) |
 
 ### 2. `prod-idle` profile (env overlay for demo / idle)
 
@@ -51,7 +51,7 @@ Apply: merge into `ispf-server.env` + **recreate** container ([`deploy/vps-apply
 
 ### 4. Single unified node for idle demo
 
-`ISPF_CLUSTER_ENABLED=false`, `replicaRole=all`. Multi-replica only when CPU headroom and HA/throughput goals exist ([CLUSTER.md](../cluster.md)).
+`ISPF_CLUSTER_ENABLED=false`, `replicaRole=all`. Multi-replica only when CPU headroom and HA/throughput goals exist ([cluster](../cluster.md)).
 
 ### 5. Read-only hot paths without writes
 
@@ -72,7 +72,6 @@ After changing `env_file` — `compose rm` + `up`, not `docker restart`.
 - Clear separation of «load-test defaults» vs «idle overlay».
 - Fewer hidden ERRORs in logs.
 
-
 Risks:
 
 - Prod-idle **not** suitable for flood MQTT without switching env to throughput profile.
@@ -81,14 +80,14 @@ Risks:
 
 **Documentation**
 
-- [DEMOSTANDS.md](../DEMOSTANDS.md) — primary guide
-- [VPS_DEMOSTAND.md](../vps-demostand.md) — example ops on one host
-- [DEPLOYMENT.md](../deployment.md), [CLUSTER.md](../cluster.md)
+- [DEMOSTANDS](../DEMOSTANDS.md) — primary guide
+- [vps-demostand](../vps-demostand.md) — example ops on one host
+- [deployment](../deployment.md), [cluster](../cluster.md)
 
 ## Related
 
-- [ADR-0026](0026-elastic-telemetry-ingress.md) — elastic ingress defaults (throughput)
-- [ADR-0027](0027-event-journal-ingress-fast-path.md) — journal fast path
-- [ADR-0028](0028-horizontal-active-active-cluster.md) — cluster vs single
-- [LOAD_TESTING.md](../load-testing.md) — throughput
-- [OBSERVABILITY.md](../observability.md) — load diagnostics
+- [0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md) — elastic ingress defaults (throughput)
+- [0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md) — journal fast path
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — cluster vs single
+- [load-testing](../load-testing.md) — throughput
+- [observability](../observability.md) — load diagnostics

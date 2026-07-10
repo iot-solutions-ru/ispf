@@ -1,8 +1,8 @@
 # Historian tiers (BL-159, BL-202)
 
-Turnkey **hot → warm → cold** historian profile for ISPF deployments. Configuration lives in `application.yml` under `ispf.historian.tiers`; **tier routing enforcement** is active when `deploy-profile=three-tier` (BL-202).
+Turnkey **hot → warm → cold** profile. Config: `ispf.historian.tiers` in `application.yml`; tier routing when `deploy-profile=three-tier` (BL-202).
 
-**See also:** [VARIABLE_HISTORY.md](variable-history.md), [decisions/0035-historian-dual-write.md](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap.md](analytics-platform-roadmap.md) (BL-202), [DEPLOYMENT.md](deployment.md).
+**See also:** [variable-history](variable-history.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap](analytics-platform-roadmap.md), [analytics-historian-cookbook](analytics-historian-cookbook.md), [deployment](deployment.md).
 
 ---
 
@@ -88,7 +88,7 @@ ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 
 **Lab-only (single tier):** set `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only` — JDBC-only, no warm routing.
 
-**Warm read cutover (full CH primary):** set `ISPF_VARIABLE_HISTORY_STORE=clickhouse` only after dual-write soak and lab SLO gate — see [VARIABLE_HISTORY.md § SLO](variable-history.md). Tier routing is bypassed when store is `clickhouse`.
+**Warm read cutover (full CH primary):** set `ISPF_VARIABLE_HISTORY_STORE=clickhouse` only after dual-write soak and lab SLO gate — see [variable-history](variable-history.md). Tier routing is bypassed when store is `clickhouse`.
 
 ---
 
@@ -108,6 +108,6 @@ ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 |----|-------|
 | BL-159 | Tier config model |
 | BL-202 | Tier routing enforcement + cold Parquet export (this doc) |
-| BL-161 | Query SLO — [VARIABLE_HISTORY.md](variable-history.md) |
-| BL-201 | AF-lite templates — [reference-asset-analytics.md](reference-asset-analytics.md) |
+| BL-161 | Query SLO — [variable-history](variable-history.md) |
+| BL-201 | AF-lite templates — [reference-asset-analytics](reference-asset-analytics.md) |
 | BL-163 | On-demand trend export CSV/Parquet |

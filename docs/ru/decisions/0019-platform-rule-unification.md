@@ -19,7 +19,7 @@
 
 Оператор и инженер не могут запомнить десять DSL. AI может, люди — нет.
 
-ADR [0010](0010-binding-rules-only.md) уже зафиксировал **binding rules** как единственный механизм вычисления переменных. Нужно **расширить ту же модель** на UI-логику дашбордов и события, не вводя параллельные системы.
+ADR [0010-binding-rules-only](0010-binding-rules-only.md) уже зафиксировал **binding rules** как единственный механизм вычисления переменных. Нужно **расширить ту же модель** на UI-логику дашбордов и события, не вводя параллельные системы.
 
 ## Решение
 
@@ -59,7 +59,7 @@ ADR [0010](0010-binding-rules-only.md) уже зафиксировал **binding
 
 ## Последствия
 
-- Один язык (CEL), один engine, одна документация ([bindings.md](../BINDINGS.md), [platform-logic.md](../PLATFORM_LOGIC.md)).
+- Один язык (CEL), один engine, одна документация ([BINDINGS](../BINDINGS.md), [PLATFORM_LOGIC](../PLATFORM_LOGIC.md)).
 - Контекст дашборда durable, multi-client через WS; события в journal.
 - Таблица→детали остаётся, но семантика = «изменение context», не отдельная подсистема.
 
@@ -73,14 +73,14 @@ Risks:
 
 | Фаза | Содержание |
 |------|------------|
-| 0 | ADR, [platform-logic.md](../PLATFORM_LOGIC.md), обновление BINDINGS/DASHBOARDS |
+| 0 | ADR, [PLATFORM_LOGIC](../PLATFORM_LOGIC.md), обновление BINDINGS/DASHBOARDS |
 | 1 | `@dashboardContext`, `target.kind`, `onContextChange`, engine, WS sync |
 | 2 | Rules tab в Dashboard Builder, demo layout |
 | 3 | Deprecate legacy mini-DSL |
 
 ## Связанные материалы
 
-- [0010-binding-rules-only.md](0010-binding-rules-only.md)
-- [bindings.md](../BINDINGS.md)
-- [dashboards.md](../DASHBOARDS.md)
-- [platform-logic.md](../PLATFORM_LOGIC.md)
+- [0010-binding-rules-only](0010-binding-rules-only.md)
+- [BINDINGS](../BINDINGS.md)
+- [DASHBOARDS](../DASHBOARDS.md)
+- [PLATFORM_LOGIC](../PLATFORM_LOGIC.md)

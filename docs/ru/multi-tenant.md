@@ -98,4 +98,4 @@ Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenan
 | OIDC tenant claim | Планируется (продолжение BL-155) | Планируется |
 | Перезапуск при переключении | Да | Да |
 
-См. также [FEDERATION.md](federation.md), [ROADMAP.md](roadmap.md).
+См. также [federation](federation.md), [roadmap](roadmap.md).

@@ -2,14 +2,14 @@
 
 # Лицензирование коммерческого пакета
 
-Коммерческий пакет RSA-лицензирование при развертывании. Архитектурное решение: [0003](decisions/0003-commercial-bundle-licensing.md).
+Коммерческий пакет RSA-лицензирование при развертывании. Архитектурное решение: [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
 
 ## Принцип
 
 | Слой | Лицензия |
 |------|----------|
-| Платформа (`ispf-server`, веб-консоль) | **GNU AGPL v3** (+ необязательный [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)) |
-| Пакет драйверов устройств | `licenseType` в упаковке — см. [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md) |
+| Платформа (`ispf-server`, веб-консоль) | **GNU AGPL v3** (+ необязательный [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)) |
+| Пакет драйверов устройств | `licenseType` в упаковке — см. [licensed-driver-packs](licensed-driver-packs.md) |
 | Commercial bundle | Optional секция `license` в manifest; verify при deploy |
 
 ## Конфигурация сервера
@@ -42,7 +42,7 @@ Admin передаёт `installationId` поставщику для выпуск
 
 ## Platform license file (`platform-license.json`)
 
-Файл `{data-dir}/platform-license.json` — Освобождение предприятия от AGPL (см. [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)).
+Файл `{data-dir}/platform-license.json` — Освобождение предприятия от AGPL (см. [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)).
 
 | Условие | Результат |
 |---------|-----------|
@@ -75,7 +75,7 @@ CLI: [tools/license-builder/README.md](readme.md).
 | Условие | Результат |
 |---------|-----------|
 | Нет `license` | Deploy как раньше (если `require-signed-bundles=false`) |
-| Нет `license` + `require-signed-bundles=true` | HTTP 403 ([BL-100](roadmap.md)) |
+| Нет `license` + `require-signed-bundles=true` | HTTP 403 ([roadmap](roadmap.md)) |
 | `license` + `enforce=false` + недействительно | ПРЕДУПРЕЖДАЕМ: если нужны, развертывание продолжается (кроме `require-signed-bundles=true` → 403) |
 | `license` + (`enforce=true` **или** `require-signed-bundles=true`) + invalid | HTTP 403 |
 
@@ -85,7 +85,7 @@ Property: `ispf.license.require-signed-bundles` / env `ISPF_LICENSE_REQUIRE_SIGN
 
 Лицензия RSA на **артефакт доставки** (манифест), не соблюдайте требования дерева после установки. Админ установки может видеть и дорабатывать пакет объектов; идея может изменить конфигурацию по частям.
 
-**Принятая политика (ADR [0036](decisions/0036-bundle-ip-balanced-protection.md)):**
+**Принятая политика (ADR [0036-bundle-ip-balanced-protection](decisions/0036-bundle-ip-balanced-protection.md)):**
 
 | Делаем | Не делать |
 |--------|-----------|
@@ -109,10 +109,10 @@ Property: `ispf.license.require-signed-bundles` / env `ISPF_LICENSE_REQUIRE_SIGN
 | 5 | `enforce=true` на staging до prod; мониторить WARN/403 в deploy logs |
 | 6 | Уничтожить старый закрытый ключ после подтверждения, что все установки на новых лицензиях |
 
-Идентификатор установки (`GET /api/v1/platform/installation-id`) при ротации **не меняется**. Пакеты лицензионных драйверов используют тот же `ispf.license.public-key-pem` — см. [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md).
+Идентификатор установки (`GET /api/v1/platform/installation-id`) при ротации **не меняется**. Пакеты лицензионных драйверов используют тот же `ispf.license.public-key-pem` — см. [licensed-driver-packs](licensed-driver-packs.md).
 
 ## Связанные документы
 
-- [ПЛАГИНЫ.md](plugins.md)
-- [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md)
-- [AIR_GAP_DEPLOYMENT.md](air-gap-deployment.md) — автономная установка/обновление (BL-128)
+- [plugins](plugins.md)
+- [solution-developer-public-api](solution-developer-public-api.md)
+- [air-gap-deployment](air-gap-deployment.md) — автономная установка/обновление (BL-128)

@@ -2,7 +2,7 @@
 
 # ADR-0018: Fixture-модели и CEL applicability для RELATIVE
 
-> **Примечание (2026):** fixture-модели и API переименованы в blueprint (`FixtureBlueprint*`, `/api/v1/relative-blueprints`). См. [blueprints.md](../BLUEPRINTS.md).
+> **Примечание (2026):** fixture-модели и API переименованы в blueprint (`FixtureBlueprint*`, `/api/v1/relative-blueprints`). См. [BLUEPRINTS](../BLUEPRINTS.md).
 
 Статус: **Принято**  
 Дата: 2026-06-25
@@ -89,11 +89,11 @@ ispf:
 - `device-driver-v1`, `mqtt-gateway-v1` удалены из `ModelBootstrap` и `SystemIntrinsicModels`.
 - Код: `FixtureModelBootstrap`, `FixtureBlueprintDefinitions`, обновлённый `BlueprintEngine`.
 - Существующие RELATIVE-модели без CEL перестают auto-apply'иться — для auto-apply нужно задать выражение в редакторе.
-- Документация: [blueprints.md](../BLUEPRINTS.md), [drivers.md](../drivers.md).
+- Документация: [BLUEPRINTS](../BLUEPRINTS.md), [drivers](../drivers.md).
 
 ## Связанные материалы
 
-- [ADR-0011](0011-model-type-semantics.md) — три вида моделей
-- [ADR-0017](0017-telemetry-ingest-pipeline.md) — `mqtt-gateway-v1` ingest
-- [blueprints.md](../BLUEPRINTS.md)
-- [drivers.md](../drivers.md)
+- [0011-model-type-semantics](0011-model-type-semantics.md) — три вида моделей
+- [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md) — `mqtt-gateway-v1` ingest
+- [BLUEPRINTS](../BLUEPRINTS.md)
+- [drivers](../drivers.md)

@@ -62,11 +62,11 @@ bash scripts/run-agent-regression.sh --live
 
 **Current scenario count:** 50 (SCADA, MES, HVAC).
 
-Pass-rate reporter (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — **target** ≥95% **live** agent pass rate. **Not met on 0.9.102** (CI + nightly default: schema/stub only). See [COMPETITIVE_SCORECARD.md](competitive-scorecard.md).
+Pass-rate reporter (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — **target** ≥95% **live** agent pass rate. **Not met on 0.9.102** (CI + nightly default: schema/stub only). See [competitive-scorecard](competitive-scorecard.md).
 
 ## Related
 
-- [AI_DEVELOPMENT.md](ai-development.md) — agent tools and playbooks
+- [ai-development](ai-development.md) — agent tools and playbooks
 - [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — BL-177 e2e deploy recipe
 - [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — BL-180 factory spec recipe
-- [roadmap.md](roadmap.md) — BL-177, BL-178
+- [roadmap](roadmap.md) — BL-177, BL-178

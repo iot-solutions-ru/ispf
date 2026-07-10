@@ -4,7 +4,7 @@
 
 Полное описание всех типов виджетов ISPF: назначение, использование в HMI, расположение полей и примеры.
 
-**См. также:** [DASHBOARDS.md](dashboards.md) (сетка, `selectionKey`, навигация), [OPERATOR_GUIDE.md](operator-guide.md) (роль оператора), [BINDINGS.md](bindings.md) (привязки платформы в запросе), [SPREADSHEET_WIDGET.md](spreadsheet-widget.md) (формулы и таблицы).
+**См. также:** [dashboards](dashboards.md) (сетка, `selectionKey`, навигация), [operator-guide](operator-guide.md) (роль оператора), [bindings](bindings.md) (привязки платформы в запросе), [spreadsheet-widget](spreadsheet-widget.md) (формулы и таблицы).
 
 ---
 
@@ -20,7 +20,7 @@
 | `x`, `y` | number | Позиция на сетке (0-based) |
 | `w`, `h` | number | Ширина и высота в единицах сетки (`columns` обычно 12) |
 | `objectPath` | string | Статический путь объекта (`root.platform.devices.foo`) |
-| `selectionKey` | строка | Выбор имени слота; путь берётся из `selection[key]` (см. [DASHBOARDS.md](dashboards.md)) |
+| `selectionKey` | строка | Выбор имени слота; путь берётся из `selection[key]` (см. [dashboards](dashboards.md)) |
 | `variableName` | string | Имя переменной на объекте |
 | `valueField` | строка | Поле `DataRecord`: `value` (по умолчанию), `raw`, `online`, `unit`, `int`, `string` |
 | `paramKey` | string | Читать значение из `session.params[key]` |
@@ -342,7 +342,7 @@
 
 **Назначение:** сетка A1 с формулами (встроенный движок ISPF).
 
-**Полное описание:** [SPREADSHEET_WIDGET.md](spreadsheet-widget.md). Операторский сценарий — [OPERATOR_GUIDE.md](operator-guide.md).
+**Полное описание:** [spreadsheet-widget](spreadsheet-widget.md). Операторский сценарий — [operator-guide](operator-guide.md).
 
 | Поле | Описание |
 |------|----------|
@@ -357,7 +357,7 @@
 
 ### mini-tec-sld — Однолинейная схема mini-TEC *(удалено)*
 
-**Статус:** виджет удален. Используйте [`scada-mimic`](#scada-mimic--scada-мнемосхема) + объект `MIMIC` или встроенный `diagramJson`. См. [SCADA.md](scada.md).
+**Статус:** виджет удален. Используйте [`scada-mimic`](#scada-mimic--scada-мнемосхема) + объект `MIMIC` или встроенный `diagramJson`. См. [scada](scada.md).
 
 ---
 
@@ -379,7 +379,7 @@
 
 **Редактор:** Dashboard Builder → «Открыть редактор мнемосхемы»; Проводник → объект `MIMIC`. Инструменты: выбор/размещение/подключение, **выравнивание и распределение**, переворот/поворот, **манипуляторы изменения размера**, интеллектуальная привязка, переключение сетки, множественный выбор (Shift), Del для удаления. Подробно — [SCADA.md § Редактор](scada.md).
 
-**См.:** [SCADA.md](scada.md), [SCADA_MIMIC.md](scada-mimic.md).
+**См.:** [scada](scada.md), [scada-mimic](scada-mimic.md).
 
 ---
 

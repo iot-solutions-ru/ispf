@@ -4,7 +4,7 @@
 
 Качество HMI оператора: Lighthouse, бюджет бандла, доступность axe, FPS мнемосхемы SCADA.
 
-См. [ACCELERATION_PROGRAM.md](acceleration-program.md) · [ROADMAP § S21](roadmap.md).
+См. [acceleration-program](acceleration-program.md) · [roadmap](roadmap.md).
 
 ## Проверки
 
@@ -44,7 +44,7 @@ npm run test:quality
 | Контраст цветов (axe) | Готово | токены `--text-muted` + отдельные тесты контраста на входе и у оператора |
 | Редактор мнемосхемы с клавиатуры | Готово | Escape — закрыть; стрелки — навигация между элементами; Shift+стрелка — сдвиг; инструменты V/P/C, Del, Ctrl+Z/Y/S; диалог `role` + `aria-pressed` на инструментах |
 | Метки для экранных читалок | Готово | `AlarmBarOverlay` — `role="alert"` + `aria-live="assertive"` на каждую тревогу |
-| Библиотека символов SCADA | Готово | [SCADA_SYMBOL_LIBRARY.md](scada-symbol-library.md), `customSvg.test.ts` |
+| Библиотека символов SCADA | Готово | [scada-symbol-library](scada-symbol-library.md), `customSvg.test.ts` |
 | 60 fps мнемосхемы @ tank-farm | Готово | прокси стресса CI: 120 символов @ ≥55 fps (`stressMimic.ts`); полная схема tank-farm — тот же путь рендеринга |
 | FPS мнемосхемы @ 500 эл. (живой WebSocket) | Пробел | e2e использует заглушённый API; в `quality-gates.spec.ts` по умолчанию `MIMIC_MIN_FPS=60` |
 | Панель оператора в Lighthouse | Готово | `lighthouse-ci.mjs` аудирует `/?mode=operator&app=e2e-operator` с заглушками API |

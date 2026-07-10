@@ -1,6 +1,6 @@
 ﻿# ADR-0018: Fixture models and CEL applicability for RELATIVE
 
-> **Note (2026):** Fixture models and API were renamed to blueprint (`FixtureBlueprint*`, `/api/v1/relative-blueprints`). See [BLUEPRINTS.md](../blueprints.md).
+> **Note (2026):** Fixture models and API were renamed to blueprint (`FixtureBlueprint*`, `/api/v1/relative-blueprints`). See [blueprints](../blueprints.md).
 
 ## Status
 
@@ -88,11 +88,11 @@ When `fixtures-enabled=false`: demo nodes in `PlatformBootstrap.initializeFixtur
 - `device-driver-v1`, `mqtt-gateway-v1` removed from `ModelBootstrap` and `SystemIntrinsicModels`.
 - Code: `FixtureModelBootstrap`, `FixtureBlueprintDefinitions`, updated `BlueprintEngine`.
 - Existing RELATIVE models without CEL no longer auto-apply — set an expression in the editor for auto-apply.
-- Documentation: [BLUEPRINTS.md](../blueprints.md), [DRIVERS.md](../drivers.md).
+- Documentation: [blueprints](../blueprints.md), [drivers](../drivers.md).
 
 ## Related
 
-- [ADR-0011](0011-model-type-semantics.md) — three model kinds
-- [ADR-0017](0017-telemetry-ingest-pipeline.md) — `mqtt-gateway-v1` ingest
-- [BLUEPRINTS.md](../blueprints.md)
-- [DRIVERS.md](../drivers.md)
+- [0011-model-type-semantics](0011-model-type-semantics.md) — three model kinds
+- [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md) — `mqtt-gateway-v1` ingest
+- [blueprints](../blueprints.md)
+- [drivers](../drivers.md)

@@ -13,7 +13,7 @@
    - **STUB** — placeholder driver pack (not in matrix; defaults to BETA in catalog).
 3. **Capabilities** (declared, not all implemented yet): `POLL`, `SUBSCRIBE`, `WRITE`, `DISCOVERY`, `QUALITY`, `OBSERVED_AT`.
 4. **CI gate** — `DriverProductionMatrixTest` fails if any PRODUCTION row lacks a resolvable `loopbackTestClass`.
-5. **Dogfooding** — new driver promotion follows [0002](0002-dogfooding-gate.md); matrix row added only after acceptance criteria.
+5. **Dogfooding** — new driver promotion follows [0002-dogfooding-gate](0002-dogfooding-gate.md); matrix row added only after acceptance criteria.
 
 ## Top-10 industrial drivers (target PRODUCTION)
 
@@ -40,6 +40,6 @@
 
 ## References
 
-- [DRIVERS.md](../drivers.md)
-- [ROADMAP.md § BL-78](../roadmap.md)
-- [0020-time-and-timezones.md](0020-time-and-timezones.md) — `observedAt`
+- [drivers](../drivers.md)
+- [roadmap](../roadmap.md)
+- [0020-time-and-timezones](0020-time-and-timezones.md) — `observedAt`

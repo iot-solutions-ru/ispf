@@ -2,7 +2,7 @@
 
 # Развертывание воздушного зазора (БЛ-128)
 
-Runbook для установки и обновления ISPF на хостах **без исходящего Интернета**. Дополняет [DEPLOYMENT.md](deployment.md) (быстрый онлайн-старт) и [COMMERCIAL_LICENSING.md](commercial-licensing.md) (лицензии пакета RSA/пакета драйверов).
+Runbook для установки и обновления ISPF на хостах **без исходящего Интернета**. Дополняет [deployment](deployment.md) (быстрый онлайн-старт) и [commercial-licensing](commercial-licensing.md) (лицензии пакета RSA/пакета драйверов).
 
 ## Когда использовать
 
@@ -110,7 +110,7 @@ bash deploy/air-gap-apply.sh /media/ispf-airgap-<new-version>.tar.gz
 
 ## Порядок коммерческого лицензирования
 
-Сайты с воздушным зазором обычно работают со строгим пакетным доверием. Согласование с [BL-100](roadmap.md):
+Сайты с воздушным зазором обычно работают со строгим пакетным доверием. Согласование с [roadmap](roadmap.md):
 
 | Шаг | Действие |
 |------|--------|
@@ -173,7 +173,7 @@ If you cannot run `air-gap-pack.sh` on Linux, assemble the same layout manually:
 
 ## Сопутствующие документы
 
-- [DEPLOYMENT.md](deployment.md) — онлайн-развертывание, подписание бандла, ClickHouse
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md) — заявки на лицензию, флаги принудительного применения
-- [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md) — макет пакета драйверов.
+- [deployment](deployment.md) — онлайн-развертывание, подписание бандла, ClickHouse
+- [commercial-licensing](commercial-licensing.md) — заявки на лицензию, флаги принудительного применения
+- [licensed-driver-packs](licensed-driver-packs.md) — макет пакета драйверов.
 - [tools/license-builder/README.md](readme.md) — подписывать пакеты в автономном режиме на стороне поставщика.

@@ -17,12 +17,12 @@ Existing building blocks (Phase 2–22):
 
 - PostgreSQL as single source of truth for object tree.
 - `PlatformLeaderLockService` — JDBC locks for singleton schedulers.
-- NATS/JetStream replica fan-out — cross-replica WebSocket/object-change sync ([MESSAGING.md](../MESSAGING.md)).
+- NATS/JetStream replica fan-out — cross-replica WebSocket/object-change sync ([messaging](../messaging.md)).
 - Redis optional — correlator windows + ACL cache shared across replicas.
-- Optimistic concurrency (`If-Match` / revision) — safe parallel config edits ([COLLABORATION.md](../COLLABORATION.md)).
-- Demand-driven object change pub/sub ([ADR-0024](0024-demand-driven-variable-change-pubsub.md)) — reduces useless work when scaling API tier.
+- Optimistic concurrency (`If-Match` / revision) — safe parallel config edits ([collaboration](../collaboration.md)).
+- Demand-driven object change pub/sub ([0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md)) — reduces useless work when scaling API tier.
 
-**Cluster ≠ federation:** cluster = N replicas, **one database**, one site. Federation ([ADR-0008](0008-federation-topology.md)) = multiple sites / edge agents with catalog sync.
+**Cluster ≠ federation:** cluster = N replicas, **one database**, one site. Federation ([0008-federation-topology](0008-federation-topology.md)) = multiple sites / edge agents with catalog sync.
 
 ## Decision
 
@@ -50,7 +50,7 @@ Each replica:
 | Platform schedulers | Active-passive (one leader) | `platform_leader_locks` ([PlatformLeaderLockService](../../packages/ispf-server/src/main/java/com/ispf/server/platform/PlatformLeaderLockService.java)) |
 | Device driver poll loops | **Exactly-one owner** | `platform_driver_locks` + `DriverOwnershipService` (BL-136) |
 | Binding periodic tick | Active-passive (one leader) | Existing leader lock on `binding_periodic_scheduler` |
-| Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([BL-114](../roadmap.md)) |
+| Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([roadmap](../roadmap.md)) |
 
 ### 3. Driver ownership
 
@@ -91,17 +91,17 @@ Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml]
 - Survives single-node failure with nginx passive health.
 - Driver I/O safe across replicas via DB locks.
 
-
 Risks:
 
-- PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([BL-114](../roadmap.md)).
+- PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([roadmap](../roadmap.md)).
 - NATS + Redis become operational dependencies for full multi-replica UX.
-- Sticky WS optional when [ADR-0029](0029-cluster-live-variable-replica-sync.md) live sync + Redis path interest are enabled; REST round-robin safe for HMI reads.
+- Sticky WS optional when [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) live sync + Redis path interest are enabled; REST round-robin safe for HMI reads.
 
 ## Related
 
-- [ADR-0024](0024-demand-driven-variable-change-pubsub.md) — demand-driven pub/sub (complements cluster; update: horizontal scale = N JVMs + shared DB, not only bigger host)
-- [BL-133…139](../roadmap.md) — EX-CLUSTER implementation backlog
-- [DEPLOYMENT.md](../deployment.md) — Multi-instance cluster runbook
-- [MESSAGING.md](../MESSAGING.md) — NATS replica fan-out
-- [ADR-0029](0029-cluster-live-variable-replica-sync.md) — live variable RAM mirror (closes stale-read gap)
+- [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven pub/sub
+- [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live variable RAM mirror
+- [roadmap](../roadmap.md) — cluster backlog
+- [cluster](../cluster.md) — runbook
+- [deployment](../deployment.md) — multi-instance deploy
+- [messaging](../messaging.md) — NATS replica fan-out

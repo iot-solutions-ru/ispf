@@ -8,7 +8,7 @@ for commercial contracts and third-party asset redistribution.
 | Mode | When | Obligations |
 |------|------|-------------|
 | **Community (AGPL)** | Default; no `platform-license.json` | Network use → AGPL source-offer for **platform** modifications |
-| **Enterprise** | Valid `platform-license.json` | Per [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md) |
+| **Enterprise** | Valid `platform-license.json` | Per [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md) |
 
 Check runtime: `GET /api/v1/platform/license`
 
@@ -18,7 +18,7 @@ Ship with every release:
 
 1. [LICENSE](../LICENSE) (AGPL)
 2. [NOTICE](../NOTICE)
-3. [THIRD_PARTY_NOTICES.md](third-party-notices.md)
+3. [third-party-notices](third-party-notices.md)
 4. Java + npm SBOM (CycloneDX recommended)
 5. Per driver pack: `LICENSE`, `THIRD_PARTY-NOTICE.txt`, `NOTICE-EXTERNAL-DEPS.txt` (if any)
 
@@ -55,8 +55,8 @@ Copyleft or StepFunc-restricted packs require separate legal review before `-Dri
 
 Original ISA/ISO functional symbols — **Apache-2.0**, built by [`tools/symbol-pack-isa`](../tools/symbol-pack-isa).
 
-- [LICENSE.md](license.md)
-- [PID_SYMBOLS_LEGAL.md](pid-symbols-legal.md)
+- [license](license.md)
+- [pid-symbols-legal](pid-symbols-legal.md)
 
 ## Pre-release audit (automated)
 
@@ -75,7 +75,7 @@ Workflow BPMN editor/viewer must keep the bpmn.io watermark visible. CSS in
 
 ## Related
 
-- [LICENSE.md](license.md)
-- [THIRD_PARTY_NOTICES.md](third-party-notices.md)
-- [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md)
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md)
+- [license](license.md)
+- [third-party-notices](third-party-notices.md)
+- [licensed-driver-packs](licensed-driver-packs.md)
+- [commercial-licensing](commercial-licensing.md)

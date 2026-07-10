@@ -9,7 +9,7 @@
 
 Глобального пути вида `root/.../myFn` нет.
 
-См. также: [OBJECT_MODEL.md](object-model.md), [APPLICATIONS.md](applications.md) (развертывание функций приложений), [WORKFLOWS.md](workflows.md) (BPMN `invoke_function`).
+См. также: [object-model](object-model.md), [applications](applications.md) (развертывание функций приложений), [workflows](workflows.md) (BPMN `invoke_function`).
 
 ## Дескриптор `FunctionDescriptor`
 
@@ -253,7 +253,7 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 
 ## 2. Script-функции (`sourceType: "script"`)
 
-Тело — JSON с массивом `steps`. Тот же движок, что у [APPLICATIONS.md](applications.md), но сохраняется на объект через Inspector / `PUT .../functions`.
+Тело — JSON с массивом `steps`. Тот же движок, что у [applications](applications.md), но сохраняется на объект через Inspector / `PUT .../functions`.
 
 Переменные скрипта: `input` (поля вызова), плюс `var` из шагов. Подстановки: `"${input.orderId}"`, `"$row.count"`, `"${item.name}"` в `map`.
 

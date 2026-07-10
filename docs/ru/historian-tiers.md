@@ -4,7 +4,7 @@
 
 Готовый архивный профиль **горячий → теплый → холодный** для развертываний ISPF. Конфигурация находится в `application.yml` под `ispf.historian.tiers`; Обеспечение многоуровневой маршрутизации является последующей работой (BL-160+).
 
-**См. также:** [VARIABLE_HISTORY.md](variable-history.md), [decisions/0035-historian-dual-write.md](decisions/0035-historian-dual-write.md), [DEPLOYMENT.md](deployment.md).
+**См. также:** [variable-history](variable-history.md), [decisions/0035-historian-dual-write.md](decisions/0035-historian-dual-write.md), [deployment](deployment.md).
 
 ---
 
@@ -73,7 +73,7 @@ ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
 
 **Lab-only (single tier):** set `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only`, `ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=false`, omit cold bucket.
 
-**Переключение горячего запроса:** установите `ISPF_VARIABLE_HISTORY_STORE=clickhouse` только после выдержки двойной записи и лабораторного шлюза SLO — см. [VARIABLE_HISTORY.md § SLO](variable-history.md).
+**Переключение горячего запроса:** установите `ISPF_VARIABLE_HISTORY_STORE=clickhouse` только после выдержки двойной записи и лабораторного шлюза SLO — см. [variable-history](variable-history.md).
 
 ---
 
@@ -92,7 +92,7 @@ ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
 | БЛ | Тема |
 |----|-------|
 | БЛ-159 | Этот документ + конфигурация уровня |
-| БЛ-161 | SLO запроса — [VARIABLE_HISTORY.md](variable-history.md) |
-| БЛ-160+ | AF-lite → AF-capable — [analytics-platform-roadmap.md](analytics-platform-roadmap.md) (БЛ-200…210) |
+| БЛ-161 | SLO запроса — [variable-history](variable-history.md) |
+| БЛ-160+ | AF-lite → AF-capable — [analytics-platform-roadmap](analytics-platform-roadmap.md) (БЛ-200…210) |
 | БЛ-162 | Журнал событий CH переключение |
 | БЛ-163 | Тенденция экспорта CSV/Паркет оптом |

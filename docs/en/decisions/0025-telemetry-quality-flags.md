@@ -23,4 +23,4 @@
 ## References
 
 - [OBJECT_MODEL.md § Telemetry quality](../object-model.md#telemetry-quality-bl-82)
-- [ROADMAP.md § BL-82](../roadmap.md)
+- [roadmap](../roadmap.md)

@@ -2,13 +2,13 @@
 
 # Глоссарий ISPF
 
-Краткий словарь терминов платформы. Обзор продукта: [product.md](product.md).
+Краткий словарь терминов платформы. Обзор продукта: [product](product.md).
 
 ---
 
 ## Сквозной принцип
 
-**Бизнес-логика в механизмах платформы** — архитектурный принцип ISPF: правила и поведение прикладного решения описываются **declarative-конфигурацией дерева объектов** (модели, переменные, события, функции, workflow, правила оповещений, корреляторы), а не отраслевым Java в `ispf-server`. Платформа реализует **generic-движки**; **bundle deploy** доставляет в них конфигурацию. См. [architecture.md](architecture.md).
+**Бизнес-логика в механизмах платформы** — архитектурный принцип ISPF: правила и поведение прикладного решения описываются **declarative-конфигурацией дерева объектов** (модели, переменные, события, функции, workflow, правила оповещений, корреляторы), а не отраслевым Java в `ispf-server`. Платформа реализует **generic-движки**; **bundle deploy** доставляет в них конфигурацию. См. [architecture](architecture.md).
 
 ---
 
@@ -24,7 +24,7 @@
 
 ## Б
 
-**Привязка (binding)** — правило вычисления значения переменной (`BindingRule` в `@bindingRules`). Пересчёт через `BindingRuleEngine` по активаторам (локальным и межобъектным). Выражение — Google **CEL** или функция платформы. См. [bindings.md](bindings.md).
+**Привязка (binding)** — правило вычисления значения переменной (`BindingRule` в `@bindingRules`). Пересчёт через `BindingRuleEngine` по активаторам (локальным и межобъектным). Выражение — Google **CEL** или функция платформы. См. [bindings](bindings.md).
 
 **BFF (Backend-for-Frontend)** — шлюз `POST /bff/invoke` для вызова функций приложения из UI. Профиль `ispf-operator-v1` — контракт legacy manifest.
 
@@ -100,7 +100,7 @@
 
 **Модель (Model / BlueprintDefinition)** — шаблон объекта: переменные, события, функции, привязки. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. `RELATIVE`-миксины применяются при создании только при непустом CEL (*условие применимости* / `suitabilityExpression`). Явное применение — `templateId` или API.
 
-**Fixture-модель** — демо/лабораторная модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется при `ispf.bootstrap.fixtures-enabled=true`. Не входит в встроенный реестр. См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+**Fixture-модель** — демо/лабораторная модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется при `ispf.bootstrap.fixtures-enabled=true`. Не входит в встроенный реестр. См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 **Model engine** — плагин `ispf-plugin-blueprint`, применяющий модели к объектам.
 
@@ -166,7 +166,7 @@
 
 **WebSocket** — `WS /ws/objects` — live-обновления переменных и событий.
 
-**Widget (виджет)** — элемент дашборда: value, chart, object-table, spreadsheet, work-queue, … Справочник: [widgets.md](widgets.md).
+**Widget (виджет)** — элемент дашборда: value, chart, object-table, spreadsheet, work-queue, … Справочник: [widgets](widgets.md).
 
 **Work queue (рабочая очередь)** — очередь BPMN user tasks для операторов.
 

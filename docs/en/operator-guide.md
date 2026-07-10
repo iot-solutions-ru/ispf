@@ -4,7 +4,7 @@
 
 Guide for users with the **operator** role — equipment monitoring, work queue tasks, events, and reports.
 
-Product overview: [product.md](product.md). UI technical details: [web-console.md](web-console.md).
+Product overview: [product](product.md). UI technical details: [web-console](web-console.md).
 
 ---
 
@@ -84,7 +84,7 @@ A **dashboard-link** widget on a screen can open another dashboard — in the cu
 | **spreadsheet** | A1 grid with formulas | Enter values and formulas (if `editable`) |
 | **text** / **image** | Static content | — |
 
-Full reference for all widgets (what each setting does, examples): **[widgets.md](widgets.md)**.
+Full reference for all widgets (what each setting does, examples): **[widgets](widgets.md)**.
 
 On screens with a device table (`object-table` widget with `selectionKey`), clicking a row updates linked widgets — charts and indicators show data for the **selected** device.
 
@@ -92,7 +92,7 @@ On screens with a device table (`object-table` widget with `selectionKey`), clic
 
 The **spreadsheet** widget is a table with Excel-style cell addressing (A1, B2, …). Values and formulas recalculate on screen without server round-trips (except live **binding** cells).
 
-Detailed instructions: [spreadsheet-widget.md](spreadsheet-widget.md).
+Detailed instructions: [spreadsheet-widget](spreadsheet-widget.md).
 
 **Summary:**
 
@@ -177,7 +177,7 @@ Example (if application `demo` is configured):
 - “Reports” screen in the operator app
 - Or direct API call (integrators only)
 
-Details: [reports.md](reports.md).
+Details: [reports](reports.md).
 
 ---
 
@@ -212,7 +212,7 @@ http://<host>:5173?mode=admin
 
 Operator HMI includes a **built-in AI assistant** — a read-only copilot for the shift: trends, reports, event journal, task queue. It does not change platform configuration.
 
-Details: [ai-development.md](ai-development.md), BL-179.
+Details: [ai-development](ai-development.md), BL-179.
 
 ### How to open
 
@@ -264,8 +264,8 @@ The assistant responds **in the operator's language** (Russian / English). Appli
 
 ## Related Documents
 
-- [product.md](product.md) — product overview
-- [dashboards.md](dashboards.md) — layout, selectionKey, navigation
-- [widgets.md](widgets.md) — reference for all widgets (settings and examples)
-- [workflows.md](workflows.md) — how tasks reach the work queue
-- [security.md](security.md) — roles and access rights
+- [product](product.md) — product overview
+- [dashboards](dashboards.md) — layout, selectionKey, navigation
+- [widgets](widgets.md) — reference for all widgets (settings and examples)
+- [workflows](workflows.md) — how tasks reach the work queue
+- [security](security.md) — roles and access rights

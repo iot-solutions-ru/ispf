@@ -25,4 +25,4 @@
 ## Ссылки
 
 - [OBJECT_MODEL.md § Telemetry quality](../object-model.md#telemetry-quality-bl-82)
-- [ROADMAP.md § BL-82](../roadmap.md#часть-e--полный-реестр-bl-01139)
+- [roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139)

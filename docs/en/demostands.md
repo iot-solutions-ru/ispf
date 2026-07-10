@@ -6,7 +6,7 @@ Guide to choosing a configuration based on your goal: **industrial production**,
 
 Not tied to a specific host. Example scripts and env files are in [`deploy/`](../deploy/).
 
-See also: [deployment.md](deployment.md), [security.md](security.md), [cluster.md](cluster.md), [load-testing.md](load-testing.md), [observability.md](observability.md), [ADR-0026](decisions/0026-elastic-telemetry-ingress.md), [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md).
+See also: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
 ## How to choose a profile
 
@@ -24,7 +24,7 @@ See also: [deployment.md](deployment.md), [security.md](security.md), [cluster.m
   Low CPU          ──► Edge            minimal pools, coalesce↑
 ```
 
-**Key rule:** defaults ([ADR-0026](decisions/0026-elastic-telemetry-ingress.md)) target **production throughput** and load testing. The **demo-idle** profile (`prod-idle.env`) **does not** replace production under real load. For production with low background load on a single JVM, you may deliberately trim pools, but do not copy the demostand overlay without analyzing queue behavior.
+**Key rule:** defaults ([0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md)) target **production throughput** and load testing. The **demo-idle** profile (`prod-idle.env`) **does not** replace production under real load. For production with low background load on a single JVM, you may deliberately trim pools, but do not copy the demostand overlay without analyzing queue behavior.
 
 ---
 
@@ -39,8 +39,8 @@ Unlike **demo-idle:** runs **real** automation (`FULL` on devices that need it),
 | Sub-variant | Devices | Topology | Journal / historian |
 |-------------|---------|----------|---------------------|
 | **Prod S** — one site, one node | < ~50 active drivers, moderate polling | `ISPF_CLUSTER_ENABLED=false`, `replicaRole=all` | `jdbc` + Timescale (PG image by default) |
-| **Prod M** — HA, horizontal API | 50–500+, operators, REST/WS failover | 2–4 replicas, nginx, NATS + Redis ([cluster.md](cluster.md)) | Timescale or ClickHouse journal as events grow |
-| **Prod L** — high-flow telemetry | sustained hundreds–thousands msg/s | Cluster + dedicated `io` / `compute` replicas ([ADR-0032](decisions/0032-replica-profiles-and-capabilities.md)) | ClickHouse / Scylla ([0016](decisions/0016-clickhouse-event-journal.md), [0025](decisions/0025-cassandra-scylla-timeseries-store.md)) |
+| **Prod M** — HA, horizontal API | 50–500+, operators, REST/WS failover | 2–4 replicas, nginx, NATS + Redis ([cluster](cluster.md)) | Timescale or ClickHouse journal as events grow |
+| **Prod L** — high-flow telemetry | sustained hundreds–thousands msg/s | Cluster + dedicated `io` / `compute` replicas ([0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md)) | ClickHouse / Scylla ([0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0025-cassandra-scylla-timeseries-store](decisions/0025-cassandra-scylla-timeseries-store.md)) |
 
 Sizing rule: **no more than 1 JVM per 2 vCPU** under sustained driver+automation load. Four replicas on four vCPUs only if most of the time is idle.
 
@@ -63,7 +63,7 @@ Operators → nginx (ip_hash / health) → replica-1..N
               optional: ClickHouse, Scylla
 ```
 
-See [cluster.md](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), rollout [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh).
+See [cluster](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), rollout [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh).
 
 **Analytics scale-out (Prod L + ClickHouse):** add internal `analytics` replicas so driver `io` nodes stay free of rollup materializer CPU. Lab stack: [`deploy/docker-compose.analytics.yml`](../deploy/docker-compose.analytics.yml). Helm: `analytics.enabled=true`, `analytics.replicaCount`, optional `analytics.affinity` to pin pods near ClickHouse.
 
@@ -72,8 +72,8 @@ See [cluster.md](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../deplo
 | `unified` / `all` | General-purpose node (small prod) |
 | `io` | Dedicated driver I/O in a cluster |
 | `compute` | Async reports / platform jobs |
-| `analytics` | Rollup materializer, heavy historian backfill ([analytics-platform-roadmap.md](analytics-platform-roadmap.md) BL-207) |
-| `edge-api` | Remote site without local drivers ([federation.md](federation.md)) |
+| `analytics` | Rollup materializer, heavy historian backfill ([analytics-platform-roadmap](analytics-platform-roadmap.md) BL-207) |
+| `edge-api` | Remote site without local drivers ([federation](federation.md)) |
 
 ### Elastic pools and pipeline
 
@@ -95,22 +95,22 @@ Targeted trimming (single node, consistently low queues): pin workers via env, b
 |----------|------|-------|
 | PLC/Modbus/SNMP, many points, historian | `TELEMETRY_ONLY` | Coalesce per SLA (1–5s) |
 | Alerts, bindings, workflows on device | `FULL` | Only where automation is needed |
-| High event flow without CEL | `EVENT_JOURNAL_ONLY` | [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md) |
+| High event flow without CEL | `EVENT_JOURNAL_ONLY` | [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) |
 | Device in tree but not required | `STOPPED` | Do not keep RUNNING "just in case" |
 
-Drivers: **PRODUCTION** maturity ([drivers.md](drivers.md), [ADR-0022](decisions/0022-driver-production-matrix.md)).
+Drivers: **PRODUCTION** maturity ([drivers](drivers.md), [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md)).
 
 ### Security and compliance
 
 | Parameter | Production |
 |-----------|------------|
 | `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | **false** |
-| Authentication | OIDC/RBAC ([security.md](security.md)), not default `admin/admin` on the network |
+| Authentication | OIDC/RBAC ([security](security.md)), not default `admin/admin` on the network |
 | TLS | nginx/ingress terminates HTTPS |
 | Actuator | `/actuator/*` not public; Prometheus — admin role |
 | AI mutate tools | `ispf.ai.agent-require-approval-for-mutate=true` on prod |
 | Secrets | `/opt/ispf/ispf-server.env` chmod 600, not in git |
-| Driver packs | `permissive` deploy profile ([license-compliance.md](license-compliance.md)) |
+| Driver packs | `permissive` deploy profile ([license-compliance](license-compliance.md)) |
 
 ### Durability and retention
 
@@ -118,19 +118,19 @@ Drivers: **PRODUCTION** maturity ([drivers.md](drivers.md), [ADR-0022](decisions
 |------|----------|--------|
 | Configuration, ACL, objects | PostgreSQL | PostgreSQL |
 | Variable history | Timescale `variable_samples` (jdbc) | ClickHouse / Scylla optional |
-| Event journal | Timescale `event_history` (jdbc) | ClickHouse (rule set in [deployment.md](deployment.md)) |
-| Retention | `ISPF_*_RETENTION_DAYS`, Timescale policy ([ADR-0009](decisions/0009-timescaledb-retention.md)) | + CH archive |
+| Event journal | Timescale `event_history` (jdbc) | ClickHouse (rule set in [deployment](deployment.md)) |
+| Retention | `ISPF_*_RETENTION_DAYS`, Timescale policy ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) | + CH archive |
 
 Flyway path: migrations on startup; backup DB before upgrade. Repair: [`deploy/vps-flyway-repair.sh`](../deploy/vps-flyway-repair.sh).
 
 ### Observability and operations
 
-- **Metrics:** `/actuator/prometheus` or OTLP ([observability.md](observability.md)).
+- **Metrics:** `/actuator/prometheus` or OTLP ([observability](observability.md)).
 - **Diagnostics:** Admin → System → Metrics; during incidents — `GET /api/v1/platform/metrics`, cluster diagnostics.
 - **Metrics probe:** only during events (runtime toggle), not on product startup.
 - **Backup:** regular `pg_dump`; verify restore.
 - **Deploy:** staged jar + UI, rolling replica restart ([`vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1)); in Docker — **recreate** when env changes.
-- **Do not** factory-reset on config desync — [ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md), `vps-cluster-verify.sh --config-sync`.
+- **Do not** factory-reset on config desync — [0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md), `vps-cluster-verify.sh --config-sync`.
 
 ### Env reference (prod, not idle)
 
@@ -186,7 +186,7 @@ Prod L: add `ISPF_EVENT_JOURNAL_STORE=clickhouse`, `ISPF_VARIABLE_HISTORY_STORE=
 | Mode | Pipeline | CPU |
 |------|----------|-----|
 | `TELEMETRY_ONLY` | RAM + historian (when history enabled) | Low |
-| `EVENT_JOURNAL_ONLY` | Async event journal ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)) | Low–medium |
+| `EVENT_JOURNAL_ONLY` | Async event journal ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)) | Low–medium |
 | `FULL` | Object-change → bindings → alerts → workflows | High |
 
 Polled drivers with many points — **`TELEMETRY_ONLY`** + coalesce. **`FULL`** — only where automation is required.
@@ -198,7 +198,7 @@ Polled drivers with many points — **`TELEMETRY_ONLY`** + coalesce. **`FULL`** 
 
 ### Read-only hot paths
 
-Methods with `@Transactional(readOnly = true)` on hot ticks **must not** include INSERT/UPDATE. See [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md).
+Methods with `@Transactional(readOnly = true)` on hot ticks **must not** include INSERT/UPDATE. See [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
 ### Restart and env (Docker)
 
@@ -216,7 +216,7 @@ In demos, do not fix CPU by mass STOP. In production — RUNNING only for device
 
 ### Topology
 
-- One powerful JVM **or** [cluster](cluster.md) — with enough CPU per JVM.
+- One JVM with sufficient CPU **or** [cluster](cluster.md) — with enough CPU per JVM.
 - Journal: ClickHouse or Scylla. Historian: CH/Cassandra at high sample rates.
 
 ### Elastic pools — **enabled** (default)
@@ -227,7 +227,7 @@ In demos, do not fix CPU by mass STOP. In production — RUNNING only for device
 | L3 | `TelemetryIngressDispatcher` | 4→32 |
 | L5 | Event journal / variable history writers | 4→32 |
 
-Peak tuning: [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh). See [load-testing.md](load-testing.md).
+Peak tuning: [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh). See [load-testing](load-testing.md).
 
 ---
 
@@ -302,7 +302,7 @@ Two sub-variants:
 
 ### A. Edge gateway — local drivers
 
-ISPF on the device polls PLCs/sensors and serves HMI or syncs to a hub ([federation.md](federation.md)).
+ISPF on the device polls PLCs/sensors and serves HMI or syncs to a hub ([federation](federation.md)).
 
 | Parameter | Recommendation |
 |-----------|----------------|
@@ -347,7 +347,7 @@ JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
 
 ### B. Edge API — no local drivers
 
-Node serves REST/WS to operators only; site telemetry goes to the hub ([cluster.md](cluster.md) — `edge-api` profile).
+Node serves REST/WS to operators only; site telemetry goes to the hub ([cluster](cluster.md) — `edge-api` profile).
 
 | Parameter | Recommendation |
 |-----------|----------------|
@@ -404,8 +404,8 @@ Use when there is **no** point running a polling JVM on the gateway: all SCADA o
 
 ## Related decisions
 
-- [ADR-0026](decisions/0026-elastic-telemetry-ingress.md) — multi-level ingress, elastic defaults.
-- [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md) — journal fast path
-- [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md) — IDLE profile rationale
-- [load-testing.md](load-testing.md) — throughput scripts
-- [cluster.md](cluster.md) — when you need multiple replicas instead of a single node
+- [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md) — multi-level ingress, elastic defaults.
+- [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) — journal fast path
+- [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md) — IDLE profile rationale
+- [load-testing](load-testing.md) — throughput scripts
+- [cluster](cluster.md) — when you need multiple replicas instead of a single node

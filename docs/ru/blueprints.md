@@ -14,7 +14,7 @@
 
 **Внутренние схемы** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в реестре для начальной загрузки, но **не отображаются** в каталоге относительных чертежей и **не используются** в `appliedBlueprintIds`. Структура вшивается в примере через `*ObjectService.ensureStructure()`.
 
-См. [0011](decisions/0011-model-type-semantics.md).
+См. [0011-model-type-semantics](decisions/0011-model-type-semantics.md).
 
 ### Связь с объектом
 
@@ -37,7 +37,7 @@
 
 **Явный применить** (шаблон/API): вчерася `targetObjectType`; CEL optionalen — если задано, должно быть `true`.
 
-См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ### Условие применимости (CEL)
 
@@ -64,7 +64,7 @@
 
 **Fixtures** (демо/лаборатория, не часть ядра): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Конфиг: `ispf.bootstrap.fixtures-enabled` (по умолчанию `true`).
 
-См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## API
 
@@ -80,7 +80,7 @@
 - Переменные (`ModelVariableDefinition`) — schema, default, group, readable/writable
 - События (`EventDescriptor`)
 - Функции (`FunctionDescriptor`)
-- Binding rules (`ModelBindingRule`) — см. [BINDINGS.md](bindings.md)
+- Binding rules (`ModelBindingRule`) — см. [bindings](bindings.md)
 - Метаданные: name, description, `ObjectType`, `BlueprintType`
 
 ## Двигатель
@@ -110,7 +110,7 @@
 | POST | `/api/v1/blueprints/from-object` | Экспорт модели из объекта |
 | GET | `/api/v1/blueprints/attachments` | Привязки model↔type |
 
-Доступ: **админ**. См. [API.md](api.md).
+Доступ: **админ**. См. [api](api.md).
 
 ## Встроенные и крепеж-модели
 
@@ -144,13 +144,13 @@
 
 #### mqtt-gateway-v1
 
-Входной шлюз MQTT — один брокер, маршрутизация `lastIngress` на дочерние датчики через `dispatchTelemetry`. См. [ADR-0017](decisions/0017-telemetry-ingest-pipeline.md).
+Входной шлюз MQTT — один брокер, маршрутизация `lastIngress` на дочерние датчики через `dispatchTelemetry`. См. [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).
 
 #### драйвер-v1 устройства
 
 RELATIVE mixin с переменными группами `driver` — для демо/лаборатории и явного применения. **Не** используется для автоматического применения при создании УСТРОЙСТВА.
 
-На production path схема драйвера provisioning через `provisionDriver()` без относительного миксина (см. [DRIVERS.md](drivers.md)).
+На production path схема драйвера provisioning через `provisionDriver()` без относительного миксина (см. [drivers](drivers.md)).
 
 #### snmp-агент-v1
 
@@ -192,8 +192,8 @@ Content-Type: application/json
 
 ## Связанные документы
 
-- [OBJECT_MODEL.md](object-model.md) — переменные, DataRecord
-- [DASHBOARDS.md](dashboards.md) — макет Dashboard-v1.
-- [WORKFLOWS.md](workflows.md) — рабочий процесс-v1
-- [DRIVERS.md](drivers.md) — переменные драйвера, инициализация
+- [object-model](object-model.md) — переменные, DataRecord
+- [dashboards](dashboards.md) — макет Dashboard-v1.
+- [workflows](workflows.md) — рабочий процесс-v1
+- [drivers](drivers.md) — переменные драйвера, инициализация
 - [decisions/0018-fixture-models-and-cel-applicability.md](decisions/0018-fixture-models-and-cel-applicability.md) — fixtures + автоматическое применение CEL

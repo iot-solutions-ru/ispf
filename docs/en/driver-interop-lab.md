@@ -6,7 +6,7 @@ ISPF OT driver compatibility lab: loopback tests in CI, latency report, and writ
 
 ## Goal
 
-- Confirm **PRODUCTION** maturity for industrial protocols ([ADR-0022](decisions/0022-driver-production-matrix.md), BL-140).
+- Confirm **PRODUCTION** maturity for industrial protocols ([0022-driver-production-matrix](decisions/0022-driver-production-matrix.md), BL-140).
 - Run the **same** Gradle test set locally, in CI, and on a lab host.
 - Record run duration and status per driver pack.
 
@@ -80,7 +80,7 @@ Drivers with `WRITE` in the matrix cover write path in loopback tests:
 | `dlms` | Gurux SET |
 | `mqtt` | publish path |
 
-Read-only production drivers (`dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — integrity poll / session check without write round-trip; promotion write path — separate BL per [driver-promotion.md](driver-promotion.md).
+Read-only production drivers (`dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — integrity poll / session check without write round-trip; promotion write path — separate BL per [driver-promotion](driver-promotion.md).
 
 ## Docker fixtures (BL-141)
 
@@ -145,6 +145,6 @@ Extended hardware-emulator fixtures (OpenDNP3 outstation, Gurux DLMS simulator) 
 
 ## Related documents
 
-- [drivers.md](drivers.md) — maturity and configs
-- [driver-promotion.md](driver-promotion.md) — promotion checklist
-- [roadmap.md](roadmap.md) — BL-140…145
+- [drivers](drivers.md) — maturity and configs
+- [driver-promotion](driver-promotion.md) — promotion checklist
+- [roadmap](roadmap.md) — BL-140…145

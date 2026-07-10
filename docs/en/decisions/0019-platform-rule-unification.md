@@ -19,7 +19,7 @@ The platform accumulated several **incompatible ways** to express logic:
 
 Operators and engineers cannot remember ten DSLs. AI can; humans cannot.
 
-ADR [0010](0010-binding-rules-only.md) already fixed **binding rules** as the sole variable computation mechanism. We must **extend the same model** to dashboard UI logic and events without parallel systems.
+ADR [0010-binding-rules-only](0010-binding-rules-only.md) already fixed **binding rules** as the sole variable computation mechanism. We must **extend the same model** to dashboard UI logic and events without parallel systems.
 
 ## Decision
 
@@ -59,7 +59,7 @@ ADR [0010](0010-binding-rules-only.md) already fixed **binding rules** as the so
 
 ## Consequences
 
-- One language (CEL), one engine, one documentation set ([BINDINGS.md](../bindings.md), [PLATFORM_LOGIC.md](../platform-logic.md)).
+- One language (CEL), one engine, one documentation set ([bindings](../bindings.md), [platform-logic](../platform-logic.md)).
 - Dashboard context is durable, multi-client via WS; events in journal.
 - Table→details remains, but semantics = «context change», not a separate subsystem.
 
@@ -73,14 +73,14 @@ Risks:
 
 | Phase | Content |
 |-------|---------|
-| 0 | ADR, [PLATFORM_LOGIC.md](../platform-logic.md), update BINDINGS/DASHBOARDS |
+| 0 | ADR, [platform-logic](../platform-logic.md), update BINDINGS/DASHBOARDS |
 | 1 | `@dashboardContext`, `target.kind`, `onContextChange`, engine, WS sync |
 | 2 | Rules tab in Dashboard Builder, demo layout |
 | 3 | Deprecate legacy mini-DSL |
 
 ## Related
 
-- [0010-binding-rules-only.md](0010-binding-rules-only.md)
-- [BINDINGS.md](../bindings.md)
-- [DASHBOARDS.md](../dashboards.md)
-- [PLATFORM_LOGIC.md](../platform-logic.md)
+- [0010-binding-rules-only](0010-binding-rules-only.md)
+- [bindings](../bindings.md)
+- [dashboards](../dashboards.md)
+- [platform-logic](../platform-logic.md)

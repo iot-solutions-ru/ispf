@@ -2,7 +2,7 @@
 
 # Драйверы устройств
 
-Каталог кандидатов на новые драйверы (roadmap.md): [ROADMAP.md § PF-14](roadmap.md), полный список ниже (REQ-PF-14).
+Каталог кандидатов на новые драйверы (roadmap.md): [roadmap](roadmap.md), полный список ниже (REQ-PF-14).
 
 ## Зрелость драйверов
 
@@ -13,9 +13,9 @@
 | **stub** | TCP/session check или connectivity shell (v0.1) |
 | **simulator** | Virtual/profile-based (см. PF-09) |
 
-Многие записи каталога REQ-PF-14 помечены как stub — см. таблицу ниже и [DRIVER_PROMOTION.md](driver-promotion.md).
+Многие записи каталога REQ-PF-14 помечены как stub — см. таблицу ниже и [driver-promotion](driver-promotion.md).
 
-Матрица production readiness — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`. Interop lab — [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) (BL-141).
+Матрица production readiness — [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`. Interop lab — [driver-interop-lab](driver-interop-lab.md) (BL-141).
 
 ### Top-20 industrial (BL-140, Phase 25)
 
@@ -30,7 +30,7 @@
 
 ### observedAt (source timestamps, BL-79)
 
-Poll-драйверы передают `updateVariable(name, value, observedAt)` в historian ([0020](decisions/0020-time-and-timezones.md)):
+Poll-драйверы передают `updateVariable(name, value, observedAt)` в historian ([0020-time-and-timezones](decisions/0020-time-and-timezones.md)):
 
 | Driver id | observedAt | Источник |
 | --------- | ---------- | -------- |
@@ -58,7 +58,7 @@ public interface DeviceDriver {
 
 Регистрация через **driver packs** в `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop по `pollIntervalMs`.
 
-Сборка packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. См. [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md).
+Сборка packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. См. [licensed-driver-packs](licensed-driver-packs.md).
 
 ## Переменные устройства (driver group)
 
@@ -66,7 +66,7 @@ public interface DeviceDriver {
 
 `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedBlueprintIds`.
 
-Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 | Переменная | Описание |
 |------------|----------|
@@ -384,7 +384,7 @@ Loopback test: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 
 ### Stub promotion (demand-driven)
 
-58 `driverId` зарегистрированы; часть — **STUB** или **BETA** (connectivity shell без полного протокола). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу app-команды** через gate [0002](decisions/0002-dogfooding-gate.md):
+58 `driverId` зарегистрированы; часть — **STUB** или **BETA** (connectivity shell без полного протокола). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу app-команды** через gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
 
 1. App-команда описывает сценарий (устройство, point mapping, acceptance test).
 2. Platform PR добавляет протокольную логику в существующий `ispf-driver-*` модуль.

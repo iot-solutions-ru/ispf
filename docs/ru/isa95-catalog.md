@@ -4,7 +4,7 @@
 
 Как объекты платформы ISPF сопоставляются с иерархией оборудования **ANSI/ISA-95** (IEC 62264) и действиями MES. Используйте это при разработке приложений, пакетов и документации для клиентов-производителей.
 
-**См. также:** [OBJECT_MODEL.md](object-model.md), [REFERENCE_MES_OEE_WALKTHROUGH.md](reference-mes-oee-walkthrough.md), [mes-oee-reference](../examples/mes-oee-reference/).
+**См. также:** [object-model](object-model.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [mes-oee-reference](../examples/mes-oee-reference/).
 
 ---
 
@@ -58,8 +58,8 @@ root.platform.instances.{site}
 
 Справочные руководства:
 
-- OEE: [REFERENCE_MES_OEE_WALKTHROUGH.md](reference-mes-oee-walkthrough.md)
-– Эскалация: [REFERENCE_ESCALATION_TEMPLATES.md](reference-escalation-templates.md)
+- OEE: [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md)
+– Эскалация: [reference-escalation-templates](reference-escalation-templates.md)
 - Приказы MES: [mes-reference](../examples/mes-reference/)
 
 ---

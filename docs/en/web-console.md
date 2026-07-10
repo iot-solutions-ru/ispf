@@ -107,17 +107,17 @@ src/
 - JSON preview layout
 - Save via API
 
-See [dashboards.md](dashboards.md).
+See [dashboards](dashboards.md).
 
 ## Workflow builder
 
 - DRAFT / ACTIVE / STOPPED toggle
 - Run button
 - BPMN editor (bpmn-js) with ISPF moddle
-- **Auto-layout:** if XML has no `bpmndi`, `ensureDiagram.ts` calls `bpmn-auto-layout` before display (see [workflows.md](workflows.md))
+- **Auto-layout:** if XML has no `bpmndi`, `ensureDiagram.ts` calls `bpmn-auto-layout` before display (see [workflows](workflows.md))
 - Fallback XML viewer
 
-See [workflows.md](workflows.md).
+See [workflows](workflows.md).
 
 ## Live data
 
@@ -144,7 +144,7 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 - **Persistence:** `localStorage` (`ispf.ui.locale`), URL `?lang=`, fallback `en`
 - **Adding strings:** key in `en/{namespace}.json` → `useTranslation` + `t('key')` → `npm run i18n:translate` → `npm run i18n:check`
 
-See [0013](decisions/0013-web-console-i18n.md).
+See [0013-web-console-i18n](decisions/0013-web-console-i18n.md).
 
 ## Federation
 
@@ -196,7 +196,7 @@ Components: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/f
 
 Background execution: agent HTTP request continues when navigating to Explorer; indicator in header and dot on AI Studio tab. After closing the window, an incomplete request is restored from `localStorage` (server session polling).
 
-See [ai-development.md](ai-development.md).
+See [ai-development](ai-development.md).
 
 ## UI dependencies
 

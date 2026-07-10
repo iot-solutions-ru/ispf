@@ -4,11 +4,11 @@
 
 Load scenarios to measure throughput of **HTTP events API** and the **internal automation pipeline** (driver → alert rule → event journal).
 
-Baseline recorded on prod stand, version **0.9.18**, June 2026. **Deploy profile** for load-test — throughput ([DEMOSTANDS.md](demostands.md)); do not use idle/edge env.
+Baseline recorded on prod stand, version **0.9.18**, June 2026. **Deploy profile** for load-test — throughput ([demostands](demostands.md)); do not use idle/edge env.
 
 **Absolute throughput** (events/s, samples/s) depends on CPU, disk, journal/historian store and coalesce settings — tables below are **not SLA**; use them to compare modes on one stand, not as portable numbers.
 
-See also [OBSERVABILITY.md](observability.md) — Prometheus scrape and OTLP export.
+See also [observability](observability.md) — Prometheus scrape and OTLP export.
 
 ## Three paths
 
@@ -39,7 +39,7 @@ After test demo objects remain in tree; alert rules and schedules must be re-ena
 
 Scenario **one ingress update → one `event_history` record**: mqtt driver, mode `EVENT_JOURNAL_ONLY`, no alert rules and no HTTP.
 
-See [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md), [ADR-0026](decisions/0026-elastic-telemetry-ingress.md).
+See [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md).
 
 ```bash
 # VPS
@@ -77,11 +77,11 @@ bash /opt/ispf/loadtest/vps-ispf-fair-run.sh
 | Sustained | 65s, 20 clients, 10ms | **~1.9k** (elastic L0 + L5′) |
 | Peak | 65s, 32 clients, 1ms | high delta; journal queue ≥500k needed |
 
-Optional tuning before peak: `bash deploy/vps-event-journal-peak-tuning.sh` (queue 500k, batch 1k, flush 20ms). Metrics: `eventsFiredTotal`, `eventJournalSyncFallbackTotal`, `eventJournalQueueSize` in `/api/v1/platform/metrics` (section `automation`). Scylla `COUNT(*)` after peak may timeout — see [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).
+Optional tuning before peak: `bash deploy/vps-event-journal-peak-tuning.sh` (queue 500k, batch 1k, flush 20ms). Metrics: `eventsFiredTotal`, `eventJournalSyncFallbackTotal`, `eventJournalQueueSize` in `/api/v1/platform/metrics` (section `automation`). Scylla `COUNT(*)` after peak may timeout — see [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md).
 
 ### Lab stress (Scylla, multi-device emqtt)
 
-Dedicated lab host (`84.42.21.226`), **EVENT_JOURNAL_ONLY**, 16 mqtt drivers, journal store **Scylla**. Full documentation: **[LAB_EVENT_JOURNAL_STRESS.md](lab-event-journal-stress.md)**.
+Dedicated lab host (`84.42.21.226`), **EVENT_JOURNAL_ONLY**, 16 mqtt drivers, journal store **Scylla**. Full documentation: **[lab-event-journal-stress](lab-event-journal-stress.md)**.
 
 | Metric (peak, 8 emqtt shards) | Value |
 |---------------------------------|-------|
@@ -101,7 +101,7 @@ AUTO_CALIBRATE=true bash lab-mqtt-event-journal-multi-test.sh
 
 ### VPS prod (Scylla journal, smaller Scylla footprint)
 
-Same methodology on `ispf.iot-solutions.ru` — multi-device: `deploy/vps-mqtt-event-journal-multi-test.sh`, orchestration `deploy/run_vps_max_load.py`. Single-device fair bench: `deploy/vps-ispf-fair-bench.sh` ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)).
+Same methodology on `ispf.iot-solutions.ru` — multi-device: `deploy/vps-mqtt-event-journal-multi-test.sh`, orchestration `deploy/run_vps_max_load.py`. Single-device fair bench: `deploy/vps-ispf-fair-bench.sh` ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
 
 | Metric | VPS prod (context) | Lab (reference) |
 |--------|-------------------|-----------------|
@@ -230,7 +230,7 @@ python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1
 
 Formula: `msg/s ≈ devices × clients_per_topic × (1000 / interval_ms)`.
 
-**Important:** line `Done (formula estimate)` and `ISPF_EMQTT_FORMULA_RATE=` in stdout — **calculation**, not broker measurement. For lab multi-device benchmark with Mosquitto `$SYS` and ISPF metrics see [LAB_EVENT_JOURNAL_STRESS.md](lab-event-journal-stress.md).
+**Important:** line `Done (formula estimate)` and `ISPF_EMQTT_FORMULA_RATE=` in stdout — **calculation**, not broker measurement. For lab multi-device benchmark with Mosquitto `$SYS` and ISPF metrics see [lab-event-journal-stress](lab-event-journal-stress.md).
 
 ## Internal load test (virtual driver)
 
@@ -292,7 +292,7 @@ JUnit equivalent: `EventFireLoadTest` (150 concurrent HTTP).
 | Lab multi-tag + catalog + CH | `deploy/local/tools/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows |
 | 50k-tag catalog seed | `deploy/local/tools/seed-analytics-scale-catalog.py` | `--tags 50000` |
 
-Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../examples/analytics-platform/enterprise-l/README.md). SLO table: [variable-history.md](variable-history.md) § Analytics SLO.
+Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../examples/analytics-platform/enterprise-l/README.md). SLO table: [variable-history](variable-history.md) § Analytics SLO.
 
 ## Internal load test
 
@@ -405,16 +405,16 @@ See [0014 automation pipeline evolution](decisions/0014-automation-pipeline-evol
 - **Sync:** bindings, WebSocket
 - **Async bus (dual lane):** telemetry (historian) vs automation (alerts, workflows, correlators)
 - **Coalesce:** `RuntimeTelemetryCoalescer` (global default + per-device override) before publish `ObjectChangeEvent`
-- **Multi-level ingress:** L0 driver buffer → L1 server buffer → L3 ingress queue → L4 coalesce → L5 historian **or** L5′ event journal fast path ([0026](decisions/0026-elastic-telemetry-ingress.md), [0027](decisions/0027-event-journal-ingress-fast-path.md))
+- **Multi-level ingress:** L0 driver buffer → L1 server buffer → L3 ingress queue → L4 coalesce → L5 historian **or** L5′ event journal fast path ([0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md))
 - **Telemetry publish mode:** `FULL` | `TELEMETRY_ONLY` | `EVENT_JOURNAL_ONLY` on driver binding
 - **Alert path:** `AlertRuleListener` → CEL → `EventService.fire` → `EventJournalAsyncWriter`
 - **Ingress journal path:** `TelemetryEventJournalFastPath` → `EventService.fireIngress` → `EventJournalAsyncWriter` (no HTTP and no alert CEL)
 - **Alert runtime state:** in-memory (`AlertRuleRuntimeStore`); periodic flush to object tree (default 30 s), not on every evaluation
-- **Event journal storage:** prod VPS — `ISPF_EVENT_JOURNAL_STORE=clickhouse` ([0016](decisions/0016-clickhouse-event-journal.md)); relational data remains in PostgreSQL. Fallback: `jdbc` + Timescale ([0015](decisions/0015-event-history-timescale.md)). Retention `ISPF_EVENT_JOURNAL_RETENTION_DAYS` (default 90). Scripts: `deploy/vps-clickhouse-setup.sh`, `deploy/vps-clickhouse-verify.sh`, rollback — `deploy/vps-event-journal-jdbc.sh`.
+- **Event journal storage:** prod VPS — `ISPF_EVENT_JOURNAL_STORE=clickhouse` ([0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md)); relational data remains in PostgreSQL. Fallback: `jdbc` + Timescale ([0015-event-history-timescale](decisions/0015-event-history-timescale.md)). Retention `ISPF_EVENT_JOURNAL_RETENTION_DAYS` (default 90). Scripts: `deploy/vps-clickhouse-setup.sh`, `deploy/vps-clickhouse-verify.sh`, rollback — `deploy/vps-event-journal-jdbc.sh`.
 
 ## Related documents
 
-- [AUTOMATION.md](automation.md) — events, alert rules, correlators
-- [DEPLOYMENT.md](deployment.md) — VPS deploy, env vars
-- [API.md](api.md) — `/api/v1/platform/metrics`
-- [TESTING.md](testing.md) — JUnit / CI
+- [automation](automation.md) — events, alert rules, correlators
+- [deployment](deployment.md) — VPS deploy, env vars
+- [api](api.md) — `/api/v1/platform/metrics`
+- [testing](testing.md) — JUnit / CI

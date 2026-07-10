@@ -22,11 +22,11 @@ A breaking change is acceptable before 1.0.
 
 - API and UI: Bindings tab, CRUD `/binding-rules`.
 - Agent: `create_binding_rule` instead of binding on `create_variable`.
-- Documentation: [bindings.md](../bindings.md) rewritten.
+- Documentation: [bindings](../bindings.md) rewritten.
 - Column `binding_expr` removed from schema (V1 + V41); dev — DB recreate instead of runtime migration.
 
 ## Related
 
-- [bindings.md](../bindings.md)
-- [object-model.md](../object-model.md)
+- [bindings](../bindings.md)
+- [object-model](../object-model.md)
 - FW-48 / virt-cluster playbook

@@ -6,7 +6,7 @@
 
 **Target approach:** ИИ не пишет Java/React в `main`; только проверенные артефакты (пакеты, модели, дашборды, функции, события) и узлы дерева с помощью инструментов платформы.
 
-См. [0004](decisions/0004-ai-artifact-generation-gates.md) и [0005](decisions/0005-tree-first-ai-agent.md).
+См. [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) и [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md).
 
 ---
 
@@ -21,7 +21,7 @@
 | FW-44 | Tree-first agent | `com.ispf.server.ai.agent.*`, REST `/api/v1/ai/agent/**` |
 | FW-44b | MCP adapter | `com.ispf.server.ai.mcp.*`, profile `mcp`, REST `/api/v1/ai/mcp` |
 | FW-45 | Platform knowledge briefing | `PlatformBriefingService`, `ContextPackSearchService`, agent tools |
-| FW-46 | База знаний агента | [AGENT_KNOWLEDGE.md](agent-knowledge.md) — подходы к приложениям, карточная документация |
+| FW-46 | База знаний агента | [agent-knowledge](agent-knowledge.md) — подходы к приложениям, карточная документация |
 | FW-47 | Agent discovery tools | `AgentDiscoveryTools` — functions, events, variable schemas |
 | FW-48 | Инструменты автоматизации агентов | `AgentAutomationTools` — оповещения, корреляторы, пользовательский интерфейс оператора, `create_variable`, кластерные сценарии |
 
@@ -42,7 +42,7 @@ python tools/ai-pack/build.py
 
 Пакет включает поля схемы пакета, шаги сценария, типы виджетов, фрагменты документации API, справочные примеры, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (индекс всех `docs/*.md`) и **docChunks** для оцениваемого поиска.
 
-Primary agent router doc: [AGENT_KNOWLEDGE.md](agent-knowledge.md) (`search_context topic=agent-knowledge`).
+Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`).
 
 Рабочие процессы CI и выпуска выполняются `python tools/ai-pack/build.py` перед тестированием/сборкой сервера (`ISPF_VERSION` из тега в выпуске).
 
@@ -123,7 +123,7 @@ Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 | `POST/GET/DELETE /api/v1/ai/agent/sessions/{id}/documents` | Session-scoped knowledge files |
 | `POST /api/v1/ai/agent/run` | **Deprecated** one-shot run (no session store); prefer sessions API |
 
-См. [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) (FW-49…53).
+См. [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) (FW-49…53).
 
 ---
 
@@ -308,7 +308,7 @@ Example: `{"method":"resources/read","params":{"uri":"contextpack://script-steps
 }
 ```
 
-См. [0006](decisions/0006-mcp-agent-tool-adapter.md).
+См. [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md).
 
 ---
 
@@ -380,13 +380,13 @@ API keys are read from env var name in `api-key-env`; never stored in audit log.
 
 Studio не добавляет новые разделы пакета; он использует тот же контракт манифеста, что и импорт вручную.
 
-**Федерация** (отдельный раздел `root.platform.federation`): вкладки Узлы / Токены / Туннель / Проверка — см. [WEB_CONSOLE.md](web-console.md).
+**Федерация** (отдельный раздел `root.platform.federation`): вкладки Узлы / Токены / Туннель / Проверка — см. [web-console](web-console.md).
 
 ---
 
 ## Пакетный контракт
 
-Выходные данные AI должны соответствовать [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md). Дополнительное происхождение в `metadata`:
+Выходные данные AI должны соответствовать [solution-developer-public-api](solution-developer-public-api.md). Дополнительное происхождение в `metadata`:
 
 ```json
 {
@@ -404,8 +404,8 @@ Commercial bundles: sign **after** AI edits (`contentSha256` covers manifest bod
 
 ## Связанные документы
 
-- [AGENT_KNOWLEDGE.md](agent-knowledge.md) — подходы к заявкам, полный индекс документации для агента
-- [PLUGINS.md](plugins.md) — внешний поставщик LLM (например, драйверы)
-- [APPLICATIONS.md](applications.md) — развернуть API
-- [DASHBOARDS.md](dashboards.md) — реестр виджетов для сгенерированных дашбордов.
+- [agent-knowledge](agent-knowledge.md) — подходы к заявкам, полный индекс документации для агента
+- [plugins](plugins.md) — внешний поставщик LLM (например, драйверы)
+- [applications](applications.md) — развернуть API
+- [dashboards](dashboards.md) — реестр виджетов для сгенерированных дашбордов.
 - [ROADMAP.md § Часть B (FW-40…48)](roadmap.md)

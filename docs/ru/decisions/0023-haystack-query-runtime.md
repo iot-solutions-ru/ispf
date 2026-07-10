@@ -8,7 +8,7 @@
 
 ## Контекст
 
-[ADR-0021](0021-haystack-semantic-overlay.md) определяет Haystack как optional overlay на ISPF object tree. Wave G (BL-56…62 Done) доставил tag export, `GET /platform/haystack/search` (repeated `tags` params с AND semantics) и dashboard bind-by-tags.
+[0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md) определяет Haystack как optional overlay на ISPF object tree. Wave G (BL-56…62 Done) доставил tag export, `GET /platform/haystack/search` (repeated `tags` params с AND semantics) и dashboard bind-by-tags.
 
 Integrators и BMS engineers ожидают **Haystack filter strings** (`point and temp`, `equip and ahu`), а не checkbox tag lists. SkySpark/FIN tools используют похожий filter syntax над tag sets.
 
@@ -108,7 +108,6 @@ Agent может добавить `query_haystack`, delegating to `HaystackQuery
 - Reuses export tag index; minimal new surface area.
 - ACL enforced на query endpoint (строже, чем legacy search).
 
-
 Risks:
 
 - Full tree scan per query; large deployments могут потребовать cached index (future BL).
@@ -116,6 +115,6 @@ Risks:
 
 ## Связанные материалы
 
-- [ADR-0021](0021-haystack-semantic-overlay.md)
-- BL-101, BL-102, BL-103 — [roadmap.md](../roadmap.md#часть-e--полный-реестр-bl-01139)
+- [0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md)
+- BL-101, BL-102, BL-103 — [roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139)
 - `HaystackExportService`, `HaystackFilterParser`, `HaystackQueryService`

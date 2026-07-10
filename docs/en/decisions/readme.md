@@ -1,35 +1,94 @@
 # Architecture Decision Records (ADR)
 
-English canonical ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/decisions/readme.md).
+English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/decisions/readme.md).
 
 ## Writing style
 
-ADRs are engineering records, not marketing copy. Prefer:
+Engineering record — not marketing. Prefer Status / Context / Decision / Consequences / Related; use `Risks:` bullets under Consequences. Avoid hype scores and template **Positive** / **Negative** blocks.
 
-| Use | Avoid |
-|-----|--------|
-| Status, Context, Decision, Consequences, Related | **Positive** / **Negative / risks** subsections |
-| Concrete APIs, env vars, package names | «moat», «target approach», «best-in-class», «PI-like», «user request» |
-| «Goal:» or problem statement in Context | «Goal:» |
-| `Risks:` bullet list under Consequences | Hype scores (10/10) inside ADRs |
+Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
-Run [`tools/docs-audit/strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py) after bulk edits to catch regressions.
+## Index
 
-## Index (selected)
+### Platform boundary, licensing, AI (0001–0008)
 
 | ID | Title |
 |----|-------|
-| [0001](0001-app-platform-boundary.md) | App vs platform boundary |
-| [0002](0002-dogfooding-gate.md) | Dogfooding gate |
-| [0005](0005-tree-first-ai-agent.md) | Tree-first AI agent |
-| [0020](0020-time-and-timezones.md) | Time and timezones |
-| [0022](0022-driver-production-matrix.md) | Driver production matrix |
-| [0027](0027-event-journal-ingress-fast-path.md) | Event journal ingress |
-| [0037](0037-relational-core-portability.md) | Relational core portability |
-| [0038](0038-analytics-platform-architecture.md) | Analytics platform (AF-capable) |
-| [0039](0039-unified-alarm-architecture.md) | Alert rule evolution (same `alert-rule-v1`) |
-| [0040](0040-unified-computations-ui.md) | Unified Computations tab |
-| [0041](0041-multi-tag-historian-computations.md) | Historian binding rules (multi-tag) |
-| [0042](0042-analytics-function-catalog.md) | Analytics function catalog |
+| [0001-app-platform-boundary](0001-app-platform-boundary.md) | App vs platform boundary |
+| [0002-dogfooding-gate](0002-dogfooding-gate.md) | Dogfooding gate |
+| [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md) | Commercial bundle licensing |
+| [0004-ai-artifact-generation-gates](0004-ai-artifact-generation-gates.md) | AI artifact generation gates |
+| [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | Tree-first AI agent |
+| [0006-mcp-agent-tool-adapter](0006-mcp-agent-tool-adapter.md) | MCP agent tool adapter |
+| [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) | Bundle tree packaging |
+| [0008-federation-topology](0008-federation-topology.md) | Federation topology |
 
-Full list: all `NNNN-*.md` files in this directory.
+### Storage, model, UI (0009–0013)
+
+| ID | Title |
+|----|-------|
+| [0009-timescaledb-retention](0009-timescaledb-retention.md) | TimescaleDB retention |
+| [0010-binding-rules-only](0010-binding-rules-only.md) | Binding rules only |
+| [0011-model-type-semantics](0011-model-type-semantics.md) | Model type semantics |
+| [0012-visual-groups](0012-visual-groups.md) | Visual groups |
+| [0013-web-console-i18n](0013-web-console-i18n.md) | Web console i18n |
+
+### Automation, telemetry, rules (0014–0019)
+
+| ID | Title |
+|----|-------|
+| [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) | Automation pipeline evolution |
+| [0015-event-history-timescale](0015-event-history-timescale.md) | Event history (Timescale) |
+| [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) | ClickHouse event journal |
+| [0016-agpl-dual-licensing](0016-agpl-dual-licensing.md) | AGPL dual licensing |
+| [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md) | Telemetry ingest pipeline |
+| [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md) | Fixture models and CEL applicability |
+| [0019-platform-rule-unification](0019-platform-rule-unification.md) | Platform rule unification |
+
+### Time, Haystack, drivers (0020–0025)
+
+| ID | Title |
+|----|-------|
+| [0020-time-and-timezones](0020-time-and-timezones.md) | Time and timezones |
+| [0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md) | Haystack semantic overlay |
+| [0022-driver-production-matrix](0022-driver-production-matrix.md) | Driver production matrix |
+| [0023-haystack-query-runtime](0023-haystack-query-runtime.md) | Haystack query runtime |
+| [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) | Demand-driven variable pub/sub |
+| [0025-telemetry-quality-flags](0025-telemetry-quality-flags.md) | Telemetry quality flags |
+| [0025-cassandra-scylla-timeseries-store](0025-cassandra-scylla-timeseries-store.md) | Cassandra/Scylla timeseries store |
+
+### Ingress, cluster, historian (0026–0037)
+
+| ID | Title |
+|----|-------|
+| [0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md) | Elastic telemetry ingress |
+| [0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md) | Event journal ingress fast path |
+| [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) | Horizontal active-active cluster |
+| [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) | Cluster live variable replica sync |
+| [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) | Cluster config/structure replica sync |
+| [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md) | Replica roles and platform jobs |
+| [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) | Replica profiles and capabilities |
+| [0033-prod-idle-demostand-tuning](0033-prod-idle-demostand-tuning.md) | Prod-idle demostand tuning |
+| [0034-agent-observability-and-session-knowledge](0034-agent-observability-and-session-knowledge.md) | Agent observability and session knowledge |
+| [0035-historian-dual-write](0035-historian-dual-write.md) | Historian dual-write |
+| [0036-bundle-ip-balanced-protection](0036-bundle-ip-balanced-protection.md) | Bundle IP-balanced protection |
+| [0037-relational-core-portability](0037-relational-core-portability.md) | Relational core portability |
+
+### Analytics, alarms, UI (0038–0042)
+
+| ID | Title |
+|----|-------|
+| [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) | Analytics platform architecture |
+| [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | Alert rule evolution (`alert-rule-v1`) |
+| [0040-unified-computations-ui](0040-unified-computations-ui.md) | Unified Computations tab |
+| [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) | Multi-tag historian binding rules |
+| [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | Analytics function catalog |
+
+## Topic chains (read in order)
+
+| Topic | ADRs | Runbook |
+|-------|------|---------|
+| Cluster HA | [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) → [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) → [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) → [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md) → [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) | [cluster](../cluster.md), [deployment](../deployment.md) |
+| Historian / analytics | [0035-historian-dual-write](0035-historian-dual-write.md) → [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) → [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) → [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | [historian-tiers](../historian-tiers.md), [analytics-platform-roadmap](../analytics-platform-roadmap.md) |
+| Automation / alarms | [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) → [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | [automation](../automation.md) |
+| Haystack | [0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md) → [0023-haystack-query-runtime](0023-haystack-query-runtime.md) | [semantic-demo](../semantic-demo.md) |

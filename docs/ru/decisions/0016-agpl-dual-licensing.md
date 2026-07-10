@@ -26,9 +26,9 @@ ISPF переходит с Apache 2.0 core на **AGPL-3.0** с **dual licensing
 - Breaking: пустой `packs-dir` → нет драйверов в runtime.
 - `DriverFactory` / `DriverCatalog` — только loaded packs.
 - `GET /api/v1/platform/license` — tier/status.
-- Docs: [license.md](../LICENSE.md), [licensed-driver-packs.md](../licensed-driver-packs.md).
+- Docs: [LICENSE](../LICENSE.md), [licensed-driver-packs](../licensed-driver-packs.md).
 
 ## Связанные материалы
 
-- Supersedes marketing «Apache-only core» в scope [0003](0003-commercial-bundle-licensing.md) (bundle licensing без изменений).
-- [third-party-notices.md](../third-party-notices.md)
+- Supersedes marketing «Apache-only core» в scope [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md) (bundle licensing без изменений).
+- [third-party-notices](../third-party-notices.md)

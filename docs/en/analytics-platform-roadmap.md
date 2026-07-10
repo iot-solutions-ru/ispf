@@ -7,10 +7,10 @@
 | | |
 | --- | --- |
 | **Phase** | 33 (extends Phase 28 historian) |
-| **ADR** | [0038-analytics-platform-architecture.md](decisions/0038-analytics-platform-architecture.md) |
+| **ADR** | [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) |
 | **Prerequisites** | BL-159 (tiers), BL-160 (AF-lite), BL-161 (SLO), ClickHouse dual-write on prod |
 | **Target** | Historian dimension **10/10** — "petabyte + asset framework" per [roadmap.md § Phase 33](roadmap.md#phase-33--analytics-platform-af-capable) |
-| **Status of record** | BL IDs and Done/Partial live only in [roadmap.md](roadmap.md) — this file is the deep charter |
+| **Status of record** | BL IDs and Done/Partial live only in [roadmap](roadmap.md) — this file is the deep charter |
 
 ---
 
@@ -99,7 +99,7 @@ nginx → hmi-read replicas (REST/WS)
 **Acceptance**
 
 - [ ] ADR-0038 status → Accepted after review
-- [x] Phase 33 section in [roadmap.md](roadmap.md)
+- [x] Phase 33 section in [roadmap](roadmap.md)
 - [ ] Competitive matrix historian row references BL-200…210
 
 ---
@@ -148,7 +148,7 @@ nginx → hmi-read replicas (REST/WS)
 
 **Acceptance**
 
-- [x] Prod profile `three-tier` documented in [historian-tiers.md](historian-tiers.md) with enforcement (not config-only)
+- [x] Prod profile `three-tier` documented in [historian-tiers](historian-tiers.md) with enforcement (not config-only)
 - [x] Query spanning 30d uses CH without full PG scan (`TierRoutingVariableHistoryQueryStore`)
 - [x] Cold export job produces Parquet under configured prefix (`HistorianColdArchiveService`)
 
@@ -191,7 +191,7 @@ nginx → hmi-read replicas (REST/WS)
 **Scope**
 
 1. Engine writes via `ObjectManager.setVariableValue` with `observedAt` timestamp
-2. NATS live sync for derived outputs in cluster ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md))
+2. NATS live sync for derived outputs in cluster ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md))
 3. WebSocket push to subscribed dashboards (via existing `publishConfigVariableChangeAfterCommit`)
 4. Backfill API: `POST /api/v1/platform/analytics/tags/backfill?path=&from=&to=`
 
@@ -249,7 +249,7 @@ nginx → hmi-read replicas (REST/WS)
 
 - [x] Integration test: 3 tags same device + 2 remote paths (`AnalyticsMultiTagQueryIntegrationTest`)
 - [x] Aligned bucket merge unit test (`AnalyticsQueryServiceTest`)
-- [x] OpenAPI fragment in [api.md](api.md)
+- [x] OpenAPI fragment in [api](api.md)
 - [x] Query 10 tags × 7d × 1h buckets <3s p95 on Scenario B hardware (BL-210 lab gate — JVM gate in CI; full CH gate in `analytics-scale-gate.sh`)
 
 ---
@@ -259,7 +259,7 @@ nginx → hmi-read replicas (REST/WS)
 | Field | Value |
 |-------|-------|
 | Priority | P2 |
-| Depends on | BL-203, [ADR-0032](decisions/0032-replica-profiles-and-capabilities.md) |
+| Depends on | BL-203, [0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md) |
 | Status | **Done** |
 | Delivers | Role-separated analytics workers |
 
@@ -269,7 +269,7 @@ nginx → hmi-read replicas (REST/WS)
 2. Gates: materializer + heavy backfill only on `analytics` capability
 3. `docker-compose.analytics.yml` — unified + analytics sidecar pattern
 4. Helm values: `analytics.replicaCount`, affinity to CH zone
-5. [demostands.md](demostands.md) — row «Analytics scale-out»
+5. [demostands](demostands.md) — row «Analytics scale-out»
 
 **Acceptance**
 
@@ -341,13 +341,13 @@ nginx → hmi-read replicas (REST/WS)
 1. Lab fixture: 50k history-enabled tags (synthetic or replay)
 2. CI/lab script: 1B samples in CH; multi-tag query SLO; materializer lag
 3. Examples: `examples/analytics-platform/site-m/` and `enterprise-l/`
-4. [competitive-scorecard.md](competitive-scorecard.md): Historian **≥9.5** when gates pass
-5. [roadmap.md](roadmap.md) Phase 33 → Done (update BL-200…210 registry there)
+4. [competitive-scorecard](competitive-scorecard.md): Historian **≥9.5** when gates pass
+5. [roadmap](roadmap.md) Phase 33 → Done (update BL-200…210 registry there)
 
 **Acceptance**
 
 - [x] Scenario C README walkthrough ≤1 day on lab hardware spec documented
-- [x] Documented SLO table signed off in [variable-history.md](variable-history.md) § Analytics SLO
+- [x] Documented SLO table signed off in [variable-history](variable-history.md) § Analytics SLO
 - [x] No PI-trademark claims; positioning «AF-capable» with gap register vs full PI Vision
 
 ---
@@ -402,7 +402,7 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 ---
 
-## BL-212–215: Function catalog and extensibility ([ADR-0042](decisions/0042-analytics-function-catalog.md))
+## BL-212–215: Function catalog and extensibility ([0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md))
 
 | BL | Scope | Outcome |
 |----|--------|---------|
@@ -429,7 +429,7 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 | Topic | Rationale |
 |-------|-----------|
-| Full PI Analytics expression language | CEL + helpers + Tier B formulas ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
+| Full PI Analytics expression language | CEL + helpers + Tier B formulas ([0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md)) |
 | Separate AF database / duplicate asset tree | Tree-first ISPF model |
 | Real-time ML inference on tags | BL-175 ML hooks |
 | PI Vision–class graphics | Phase 26 HMI scope |
@@ -441,10 +441,10 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 | Document | Purpose |
 |----------|---------|
-| [historian-tiers.md](historian-tiers.md) | Hot/warm/cold config |
-| [variable-history.md](variable-history.md) | REST historian phases |
-| [demostands.md](demostands.md) | Deploy profiles |
-| [cluster.md](cluster.md) | Replica cluster |
+| [historian-tiers](historian-tiers.md) | Hot/warm/cold config |
+| [variable-history](variable-history.md) | REST historian phases |
+| [demostands](demostands.md) | Deploy profiles |
+| [cluster](cluster.md) | Replica cluster |
 | [examples/mes-platform/README.md](../examples/mes-platform/README.md) | OEE analytics chart (BL-160) |
 
 ---

@@ -8,7 +8,7 @@
 - API: `GET /api/v1/tiers`, applications, directory, training progress
 - Внутрисерверный API `GET /api/v1/partners/*` — **заглушка** (`PartnerProgramService`, `"source": "stub"`); демо-партнеры жестко запрограммированы; регистрация является синтетической до тех пор, пока партнерский портал не синхронизируется.
 
-Связано: [MARKETPLACE.md](marketplace.md), [CERTIFICATION.md](certification.md), [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md).
+Связано: [marketplace](marketplace.md), [certification](certification.md), [solution-developer-guide](solution-developer-guide.md).
 
 ---
 
@@ -38,23 +38,23 @@
 
 ### Ассоциированный трек (~16 ч.)
 
-1. Объектная модель и чертежи ([OBJECT_MODEL.md](object-model.md))
-2. Жизненный цикл пакета ([APPLICATIONS.md](applications.md))
-3. HMI оператора ([OPERATOR_GUIDE.md](operator-guide.md))
+1. Объектная модель и чертежи ([object-model](object-model.md))
+2. Жизненный цикл пакета ([applications](applications.md))
+3. HMI оператора ([operator-guide](operator-guide.md))
 4. Лабораторная работа: развертывание `demo-app` + пользовательская дашборд.
 
 ### Профессиональный трек (~24 ч.)
 
-1. Драйверы и виртуальные устройства ([DRIVERS.md](drivers.md))
-2. Имитаторы SCADA ([SCADA.md](scada.md))
-3. Автоматизация и рабочие процессы ([AUTOMATION.md](automation.md), [WORKFLOWS.md](workflows.md))
+1. Драйверы и виртуальные устройства ([drivers](drivers.md))
+2. Имитаторы SCADA ([scada](scada.md))
+3. Автоматизация и рабочие процессы ([automation](automation.md), [workflows](workflows.md))
 4. Лабораторная работа: Справочное руководство по SCADA или MES.
 
 ### Экспертный трек (~32 ч.)
 
-1. Кластер и федерация ([CLUSTER.md](cluster.md), [FEDERATION.md](federation.md))
-2. Уровни историка ([HISTORIAN_TIERS.md](historian-tiers.md))
-3. Агент ИИ и генератор решений ([AI_DEVELOPMENT.md](ai-development.md))
+1. Кластер и федерация ([cluster](cluster.md), [federation](federation.md))
+2. Уровни историка ([historian-tiers](historian-tiers.md))
+3. Агент ИИ и генератор решений ([ai-development](ai-development.md))
 4. Лаборатория: готовый к работе сайт с оповещениями + приложение для оператора.
 
 ---
@@ -96,7 +96,7 @@
 ## Юридические вопросы и брендинг
 
 - Партнеры могут использовать значок **Сертифицированного партнера ISPF** для каждого уровня (TBD).
-- Для пакетов Marketplace требуются подписанные метаданные манифеста и лицензии ([MARKETPLACE.md](marketplace.md)).
+- Для пакетов Marketplace требуются подписанные метаданные манифеста и лицензии ([marketplace](marketplace.md)).
 - Пакеты драйверов GPL/LGPL исключены из профиля продукта по умолчанию до тех пор, пока не будет проведена юридическая проверка со стороны клиента.
 
 ---
@@ -109,4 +109,4 @@
 | Первые 5 сертифицированных интеграторов | Этап 32 ГА |
 | Символ OEM + маркетплейс драйверов GA | БЛ-183, БЛ-185 |
 
-См. [roadmap.md](roadmap.md) — BL-184, BL-190.
+См. [roadmap](roadmap.md) — BL-184, BL-190.

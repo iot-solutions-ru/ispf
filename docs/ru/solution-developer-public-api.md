@@ -2,7 +2,7 @@
 
 ﻿# Публичный API для решений разработчиков
 
-Стабильная граница между **платформой** (ядро ISPF) и **решением** (ваш пакет). Подробный рабочий процесс — [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md). Архитектурные границы — [0001](decisions/0001-app-platform-boundary.md).
+Стабильная граница между **платформой** (ядро ISPF) и **решением** (ваш пакет). Подробный рабочий процесс — [solution-developer-guide](solution-developer-guide.md). Архитектурные границы — [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
 
 ---
 
@@ -21,17 +21,17 @@
 | Автоматизация | Правила оповещения, корреляторы в деревне | CEL, шаблоны корреляторов |
 | Operator UI | `operatorUi` / `dashboards[]` в bundle | `GET .../operator-ui` |
 | Reports | Tree-first `root.platform.reports.*` | SQL + optional YARG |
-| Вебсокет | `/ws/objects` — `subscribe`, `subscribe_events` | Параметр запроса токена; см. [MESSAGING.md](messaging.md) |
+| Вебсокет | `/ws/objects` — `subscribe`, `subscribe_events` | Параметр запроса токена; см. [messaging](messaging.md) |
 | Event catalog | `events[]` в bundle, `GET .../events` | Роли для WS subscribe (FW-31) |
 | Bundle dependencies | `requires[]` в bundle | minVersion другого appId (FW-12) |
-| Drivers | SPI `DeviceDriver` в отдельном JAR | [DRIVERS.md](drivers.md) |
-| Инструменты искусственного интеллекта (администратор платформы) | `POST /api/v1/ai/tools/*`, Студия | [AI_DEVELOPMENT.md](ai-development.md) — не меняет контракт на стабильный пакет |
+| Drivers | SPI `DeviceDriver` в отдельном JAR | [drivers](drivers.md) |
+| Инструменты искусственного интеллекта (администратор платформы) | `POST /api/v1/ai/tools/*`, Студия | [ai-development](ai-development.md) — не меняет контракт на стабильный пакет |
 
 ## Запрещено
 
 | Действие | Почему |
 |----------|--------|
-| Java в `packages/ispf-server/` | [0001](decisions/0001-app-platform-boundary.md) |
+| Java в `packages/ispf-server/` | [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) |
 | Таблицы приложений Flyway на платформе | Схема приложения только через API миграции |
 | Отраслевые BFF routes | Только `/api/v1/bff/invoke` |
 | Сервер платформы Fork для одного клиента | Пакетное развертывание + настройка |
@@ -55,7 +55,7 @@
 | `alertRules`, `correlators`, `operatorUi` | Stable |
 | `events[]` | Stable — id, roles, optional payloadSchema |
 | `requires[]` | Stable — appId, minVersion |
-| `license` | Необязательный; коммерческое — [COMMERCIAL_LICENSING.md](commercial-licensing.md) |
+| `license` | Необязательный; коммерческое — [commercial-licensing](commercial-licensing.md) |
 
 ## Версия платформы
 
@@ -64,12 +64,12 @@
 
 ## Коммерческий пакет
 
-Секция `license` в манифесте — см. [0003](decisions/0003-commercial-bundle-licensing.md). Эталонные пакеты Apache (`warehouse`, `lab-training`, `mes-reference`) — без `license`.
+Секция `license` в манифесте — см. [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md). Эталонные пакеты Apache (`warehouse`, `lab-training`, `mes-reference`) — без `license`.
 
 ## Связанные документы
 
-- [APPLICATIONS.md](applications.md) — полный API развертывания.
-- [MESSAGING.md](messaging.md) — асинхронность и синхронизация, субъекты NATS, события WS
-- [AI_DEVELOPMENT.md](ai-development.md) — уровень AI (FW-40…43), инструменты администратора.
-- [API.md](api.md) — справочник REST
-- [PLUGINS.md](plugins.md) — границы `main`
+- [applications](applications.md) — полный API развертывания.
+- [messaging](messaging.md) — асинхронность и синхронизация, субъекты NATS, события WS
+- [ai-development](ai-development.md) — уровень AI (FW-40…43), инструменты администратора.
+- [api](api.md) — справочник REST
+- [plugins](plugins.md) — границы `main`

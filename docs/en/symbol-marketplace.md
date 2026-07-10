@@ -1,10 +1,10 @@
 # Symbol marketplace (BL-185)
 
-Catalog and distribution for SCADA/HMI symbol packs — P&ID primitives, equipment icons, animated states, and mimic widget bindings compatible with [SCADA.md](scada.md) and `diagramJson` v2.
+Catalog and distribution for SCADA/HMI symbol packs — P&ID primitives, equipment icons, animated states, and mimic widget bindings compatible with [scada](scada.md) and `diagramJson` v2.
 
-Related: [MARKETPLACE.md](marketplace.md), [SCADA_MIMIC.md](scada-mimic.md), [roadmap.md](roadmap.md) (BL-146, BL-185).
+Related: [marketplace](marketplace.md), [scada-mimic](scada-mimic.md), [roadmap](roadmap.md) (BL-146, BL-185).
 
-**Status (0.9.102):** reference pack `ispf-pid-v1` (218 symbols) ships in web-console. Server listing/install API is **stub** (`MarketplaceSymbolListingService`, `"source": "stub"`). See [COMPETITIVE_SCORECARD.md](competitive-scorecard.md).
+**Status (0.9.102):** reference pack `ispf-pid-v1` (218 symbols) ships in web-console. Server listing/install API is **stub** (`MarketplaceSymbolListingService`, `"source": "stub"`). See [competitive-scorecard](competitive-scorecard.md).
 
 ---
 
@@ -56,7 +56,7 @@ Legal: see [apps/web-console/public/legal/SYMBOL-PACK-PID-LICENSE.md](../../apps
 
 ## Distribution
 
-Symbol packs ship through the same marketplace contract as application bundles ([MARKETPLACE.md](marketplace.md)):
+Symbol packs ship through the same marketplace contract as application bundles ([marketplace](marketplace.md)):
 
 | Step | Action |
 |------|--------|
@@ -118,6 +118,6 @@ Symbol vendors join the [Partner program](partner-program.md) at **OEM** level:
 
 ## Related documents
 
-- [SCADA.md](scada.md) — mimic architecture
-- [WIDGETS.md](widgets.md) — `scada-mimic` widget
-- [MARKETPLACE.md](marketplace.md) — catalog API
+- [scada](scada.md) — mimic architecture
+- [widgets](widgets.md) — `scada-mimic` widget
+- [marketplace](marketplace.md) — catalog API

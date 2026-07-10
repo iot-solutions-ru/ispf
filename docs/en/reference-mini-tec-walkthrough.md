@@ -84,7 +84,7 @@ Installed capacity: **4440 kW** (3×1480). Virtual driver profiles: `tec-gpu`, `
 
 ## REST / WebSocket / OPC-UA
 
-See [examples/mini-tec/README.md](readme.md). OPC-UA lab: one GPU can be switched to `opcua` driver profile instead of `virtual` ([drivers.md](drivers.md)).
+See [examples/mini-tec/README.md](readme.md). OPC-UA lab: one GPU can be switched to `opcua` driver profile instead of `virtual` ([drivers](drivers.md)).
 
 ## NFR (production)
 

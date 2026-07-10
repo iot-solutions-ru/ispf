@@ -57,5 +57,5 @@ Priority: `ISPF_REPLICA_CAPABILITIES` > `ISPF_REPLICA_PROFILE` > `ISPF_REPLICA_R
 
 ## Related
 
-- [ADR-0031](0031-cluster-replica-roles-platform-jobs.md)
-- [CLUSTER.md](../cluster.md)
+- [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md)
+- [cluster](../cluster.md)

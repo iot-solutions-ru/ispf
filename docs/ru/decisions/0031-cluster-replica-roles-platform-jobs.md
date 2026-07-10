@@ -88,7 +88,7 @@ PostgreSQL ← platform_jobs (claim by workers)
 
 ## Связанные материалы
 
-- [ADR-0028](0028-horizontal-active-active-cluster.md) — базовый кластер
-- [ADR-0029](0029-cluster-live-variable-replica-sync.md) — live sync
-- [CLUSTER.md](../cluster.md) — runbook ролей и jobs
-- [BL-144](../roadmap.md) — replica roles + platform jobs
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — базовый кластер
+- [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live sync
+- [cluster](../cluster.md) — runbook ролей и jobs
+- [roadmap](../roadmap.md) — replica roles + platform jobs

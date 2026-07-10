@@ -12,7 +12,7 @@
 | `apps/web-console/` | [GNU AGPL v3](../LICENSE) |
 | `docs/` | [GNU AGPL v3](../LICENSE) |
 
-**Двойное лицензирование:** сообщество использует AGPL; предприятие — [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md) + `platform-license.json` (освобождение от обязательств AGPL по договору).
+**Двойное лицензирование:** сообщество использует AGPL; предприятие — [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md) + `platform-license.json` (освобождение от обязательств AGPL по договору).
 
 Копирайт: **© 2026 Основные участники ISPF** — см. [ЛИЦЕНЗИЯ](../LICENSE) и [УВЕДОМЛЕНИЕ](../NOTICE).
 
@@ -29,7 +29,7 @@ ${ISPF_DRIVER_PACKS_DIR}/ispf-driver-modbus/
 
 Сборка: `.\gradlew syncAllDriverPacks` → `build/driver-packs/`.
 
-Подробно: [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md), ADR [0016](decisions/0016-agpl-dual-licensing.md).
+Подробно: [licensed-driver-packs](licensed-driver-packs.md), ADR [0016-agpl-dual-licensing](decisions/0016-agpl-dual-licensing.md).
 
 ## Пакеты приложений — отдельный продукт
 
@@ -38,7 +38,7 @@ ${ISPF_DRIVER_PACKS_DIR}/ispf-driver-modbus/
 | Тип | Лицензия |
 |-----|----------|
 | Open reference (`lab-training`, …) | Apache / AGPL manifest, без RSA |
-| Коммерческий артикул | Проприетарное лицензионное соглашение + дополнительный RSA в манифесте ([COMMERCIAL_LICENSING.md](commercial-licensing.md)) |
+| Коммерческий артикул | Проприетарное лицензионное соглашение + дополнительный RSA в манифесте ([commercial-licensing](commercial-licensing.md)) |
 
 Декларативный пакет JSON **не является** исходным кодом платформы; Платформа AGPL **не требует** его раскрытия.
 
@@ -61,14 +61,14 @@ ${ISPF_DRIVER_PACKS_DIR}/ispf-driver-modbus/
 ## Обязательства при распространении
 
 1. Сохраните [ЛИЦЕНЗИЮ](../LICENSE) и [УВЕДОМЛЕНИЕ](../NOTICE).
-2. Приложите [THIRD_PARTY_NOTICES.md](third-party-notices.md) и следом [LICENSE_COMPLIANCE.md](license-compliance.md).
+2. Приложите [third-party-notices](third-party-notices.md) и следом [license-compliance](license-compliance.md).
 3. Для пакетов драйверов — ЛИЦЕНЗИЯ и уведомления для каждого пакета.
 4. Соблюдайте зависимости AGPL/GPL/LGPL/MPL в пакетах.
 
 ## Связанные документы
 
-- [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)
-- [LICENSE_COMPLIANCE.md](license-compliance.md)
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md)
-- [CLA.md](../../CLA.md)
-- [ПЛАГИНЫ.md](plugins.md)
+- [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)
+- [license-compliance](license-compliance.md)
+- [commercial-licensing](commercial-licensing.md)
+- [CLA](../../CLA.md)
+- [plugins](plugins.md)

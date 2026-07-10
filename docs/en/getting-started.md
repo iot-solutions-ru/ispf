@@ -111,7 +111,7 @@ Copy packs to the server:
 cp -r build/driver-packs/* /opt/ispf/data/drivers/
 ```
 
-Details: [licensed-driver-packs.md](licensed-driver-packs.md).
+Details: [licensed-driver-packs](licensed-driver-packs.md).
 
 ## 3. Start the API server
 
@@ -202,10 +202,10 @@ Server integration tests use the `test` profile (H2 in-memory, RBAC disabled). L
 | `dev` | PostgreSQL | JWT Keycloak localhost:8180 | on |
 | `test` | H2 memory | off | off |
 
-More: [deployment.md](deployment.md), [security.md](security.md).
+More: [deployment](deployment.md), [security](security.md).
 
 ## Next steps
 
-- [object-model.md](object-model.md) — paths, variables, and bindings
-- [api.md](api.md) — full REST reference
-- [dashboards.md](dashboards.md) — building HMI screens
+- [object-model](object-model.md) — paths, variables, and bindings
+- [api](api.md) — full REST reference
+- [dashboards](dashboards.md) — building HMI screens

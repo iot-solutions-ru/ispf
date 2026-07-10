@@ -20,10 +20,10 @@ The ISPF core is Apache 2.0 without DRM. Commercial solutions (bundle, driver pa
 
 ## Consequences
 
-- Implementation: `com.ispf.server.license.*`, [commercial-licensing.md](../commercial-licensing.md).
-- [plugins.md](../plugins.md) — commercial bundle delivery requirements.
+- Implementation: `com.ispf.server.license.*`, [commercial-licensing](../commercial-licensing.md).
+- [plugins](../plugins.md) — commercial bundle delivery requirements.
 
 ## Related
 
-- [0001](0001-app-platform-boundary.md)
-- REQ-FW-10, FW-11 in [roadmap.md](../roadmap.md)
+- [0001-app-platform-boundary](0001-app-platform-boundary.md)
+- REQ-FW-10, FW-11 in [roadmap](../roadmap.md)

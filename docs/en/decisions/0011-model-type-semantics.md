@@ -37,8 +37,8 @@ Types `RELATIVE`, `INSTANCE`, `ABSOLUTE` are declared in `BlueprintType`, but se
 - **Auto-apply** on create (`applyRelativeModels`, flag `autoApplyRelativeBlueprints`, default true): model applies **only** if CEL is **non-empty** and evaluates to `true`. Empty CEL → auto-apply **does not run**.
 - **System-intrinsic** RELATIVE (`parameters.systemIntrinsic=true`, e.g. `data-source-v1`) **excluded** from auto-apply and catalog — schema embedded in instance via `SystemObjectStructureService`.
 - **Explicit apply** (`templateId`, API `/relative-blueprints/{id}/apply`, companion-blueprints): CEL optional; `targetObjectType` is checked.
-- **Fixture models** (`mqtt-sensor-v1`, `mqtt-gateway-v1`, `device-driver-v1`, …) — not core built-in; see [0018](0018-fixture-models-and-cel-applicability.md).
-- Driver variable schema on `DEVICE` at provisioning — embedded structure, not relative auto-apply; see [0018](0018-fixture-models-and-cel-applicability.md).
+- **Fixture models** (`mqtt-sensor-v1`, `mqtt-gateway-v1`, `device-driver-v1`, …) — not core built-in; see [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
+- Driver variable schema on `DEVICE` at provisioning — embedded structure, not relative auto-apply; see [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
 
 ### 4. INSTANCE as virtual type
 
@@ -67,11 +67,11 @@ When variable/event/function names collide on apply of multiple models:
 - Flyway `V39__object_applied_models.sql`.
 - `PlatformObject.appliedBlueprintIds`, extended `ObjectDto`.
 - UI: three catalogs, create dialog with INSTANCE types, inspector with applied models list.
-- Documentation: [blueprints.md](../blueprints.md), [object-model.md](../object-model.md).
+- Documentation: [blueprints](../blueprints.md), [object-model](../object-model.md).
 
 ## Related
 
-- [blueprints.md](../blueprints.md)
-- [bindings.md](../bindings.md)
-- [0010](0010-binding-rules-only.md) (binding rules only)
-- [0018](0018-fixture-models-and-cel-applicability.md) (fixtures + CEL auto-apply)
+- [blueprints](../blueprints.md)
+- [bindings](../bindings.md)
+- [0010-binding-rules-only](0010-binding-rules-only.md) (binding rules only)
+- [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md) (fixtures + CEL auto-apply)

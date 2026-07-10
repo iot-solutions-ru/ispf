@@ -85,14 +85,14 @@ License signing payload fields (sorted JSON): `packId`, `minPlatformVersion`, `i
 
 - JAR must implement `com.ispf.driver.DeviceDriver`.
 - Prefer explicit `drivers[]` with `driverClass` for predictable `driverId`.
-— Путь продвижения для заглушек в дереве: [DRIVER_PROMOTION.md](driver-promotion.md).
+— Путь продвижения для заглушек в дереве: [driver-promotion](driver-promotion.md).
 
 ## Развертывание профилей
 
-Для развертывания производственного VPS по умолчанию используется профиль **`permissive`** (исключая пакеты с авторским левом и пакетами с ограничением StepFunc). См. [LICENSE_COMPLIANCE.md](license-compliance.md).
+Для развертывания производственного VPS по умолчанию используется профиль **`permissive`** (исключая пакеты с авторским левом и пакетами с ограничением StepFunc). См. [license-compliance](license-compliance.md).
 
 ## Связанный
 
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md) — RSA keys and `tools/license-builder/`
-- [DRIVERS.md](drivers.md) — древовидный каталог.
+- [commercial-licensing](commercial-licensing.md) — RSA keys and `tools/license-builder/`
+- [drivers](drivers.md) — древовидный каталог.
 - [ROADMAP.md § Часть B (FW-50)](roadmap.md)

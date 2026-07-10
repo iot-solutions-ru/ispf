@@ -77,7 +77,7 @@ Scale-up triggers when pending queue depth ≥ threshold; scale-down after conse
 ### L4–L5 — Coalescer, historian fast path, elastic writer, event journal fast path
 
 - `TelemetryHistorianFastPath` for `TELEMETRY_ONLY` historian-only devices.
-- `TelemetryEventJournalFastPath` for `EVENT_JOURNAL_ONLY` — driver ingress → async journal ([ADR-0027](0027-event-journal-ingress-fast-path.md)).
+- `TelemetryEventJournalFastPath` for `EVENT_JOURNAL_ONLY` — driver ingress → async journal ([0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md)).
 - `VariableHistoryAsyncWriter` overflow coalesce (no sync persist on producer threads).
 - `EventJournalAsyncWriter` elastic writers (L5′) — same scaler semantics as variable history; avoids fixed 2-thread journal bottleneck under flood load.
 - Scylla/Cassandra historian writes group samples **by partition** `(object_path, variable_name, field_name)` before UNLOGGED batch execute (avoids cross-partition batch anti-pattern).
@@ -106,7 +106,7 @@ Scale-up triggers when pending queue depth ≥ threshold; scale-down after conse
 
 ## Related
 
-- [ADR-0017](0017-telemetry-ingest-pipeline.md)
-- [ADR-0024](0024-demand-driven-variable-change-pubsub.md)
-- [ADR-0027](0027-event-journal-ingress-fast-path.md)
-- [LOAD_TESTING.md](../load-testing.md)
+- [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md)
+- [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md)
+- [0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md)
+- [load-testing](../load-testing.md)

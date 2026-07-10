@@ -18,7 +18,7 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 1. Implement poll/read (or write, when declared) in `ispf-driver-*` module.
 2. Add unit/integration tests for point parser and happy path.
-3. Update description in `DriverMetadata` and section in [drivers.md](drivers.md).
+3. Update description in `DriverMetadata` and section in [drivers](drivers.md).
 4. Change entry in `DriverMaturityRegistry`.
 5. If needed — demo device / model in bootstrap.
 
@@ -48,14 +48,14 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 | `vmware` | STUB | **BETA** | vSphere API point parser + connectivity shell |
 | `smi-s` | STUB | **BETA** | SMI-S CIM point parser + connectivity shell |
 
-Remaining stub drivers require native stack or commercial pack — promotion only on specific request ([licensed-driver-packs.md](licensed-driver-packs.md)).
+Remaining stub drivers require native stack or commercial pack — promotion only on specific request ([licensed-driver-packs](licensed-driver-packs.md)).
 
 ## Ready-for-field (field pilots)
 
 **Not automatic** when `maturity: PRODUCTION` or lab interop is green. A driver/scenario is **ready for field** only after:
 
 1. **Named field implementation task** — site, protocol, integrator ticket, scope to implement or harden the driver for that deployment.
-2. Lab dry-run green for that scenario ([field-pilot-playbook.md](field-pilot-playbook.md)).
+2. Lab dry-run green for that scenario ([field-pilot-playbook](field-pilot-playbook.md)).
 3. **7-day soak** + customer OT sign-off.
 
 Until (1): status is **playbook-ready** only. See BL-140 (Partial) and [quality path Wave 1](roadmap.md#quality-path-to-done).

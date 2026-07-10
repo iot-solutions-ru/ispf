@@ -7,7 +7,7 @@
 
 ## Контекст
 
-RSA-лицензия на manifest ([0003](0003-commercial-bundle-licensing.md)) привязывает **доставку** bundle к `installationId`, но после deploy конфигурация живёт в object tree ([0007](0007-bundle-tree-packaging.md), [APPLICATION_PRINCIPLES.md](../application-principles.md) P1). Администратор установки видит дашборды, мнемосхемы, functions, bindings и теоретически может воспроизвести решение по частям или через export / pull-from-tree.
+RSA-лицензия на manifest ([0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)) привязывает **доставку** bundle к `installationId`, но после deploy конфигурация живёт в object tree ([0007-bundle-tree-packaging](0007-bundle-tree-packaging.md), [application-principles](../application-principles.md) P1). Администратор установки видит дашборды, мнемосхемы, functions, bindings и теоретически может воспроизвести решение по частям или через export / pull-from-tree.
 
 Нужна явная продуктовая политика: сколько защищать runtime-конфигурацию vs насколько допускать доработку под объект.
 
@@ -47,7 +47,7 @@ RSA-лицензия на manifest ([0003](0003-commercial-bundle-licensing.md))
 
 ## Связанные материалы
 
-- [0003](0003-commercial-bundle-licensing.md) — RSA при deploy
-- [0007](0007-bundle-tree-packaging.md) — bundle = упаковка дерева
-- [COMMERCIAL_LICENSING.md](../commercial-licensing.md)
-- [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)
+- [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md) — RSA при deploy
+- [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) — bundle = упаковка дерева
+- [commercial-licensing](../commercial-licensing.md)
+- [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)

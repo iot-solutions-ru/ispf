@@ -6,7 +6,7 @@ Accepted (2026-07-07)
 
 ## Context
 
-RSA license on manifest ([0003](0003-commercial-bundle-licensing.md)) binds **delivery** of a bundle to `installationId`, but after deploy configuration lives in the object tree ([0007](0007-bundle-tree-packaging.md), [APPLICATION_PRINCIPLES.md](../application-principles.md) P1). The installation administrator sees dashboards, mimics, functions, bindings and can theoretically reproduce the solution in parts or via export / pull-from-tree.
+RSA license on manifest ([0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)) binds **delivery** of a bundle to `installationId`, but after deploy configuration lives in the object tree ([0007-bundle-tree-packaging](0007-bundle-tree-packaging.md), [application-principles](../application-principles.md) P1). The installation administrator sees dashboards, mimics, functions, bindings and can theoretically reproduce the solution in parts or via export / pull-from-tree.
 
 An explicit product policy is needed: how much to protect runtime configuration vs how much to allow site-specific customization.
 
@@ -46,7 +46,7 @@ Hard **export gate** (`restrict-bundle-export`) — **not planned** without a se
 
 ## Related
 
-- [0003](0003-commercial-bundle-licensing.md) — RSA at deploy
-- [0007](0007-bundle-tree-packaging.md) — bundle = tree packaging
-- [COMMERCIAL_LICENSING.md](../commercial-licensing.md)
-- [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)
+- [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md) — RSA at deploy
+- [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) — bundle = tree packaging
+- [commercial-licensing](../commercial-licensing.md)
+- [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)

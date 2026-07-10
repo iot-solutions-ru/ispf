@@ -2,7 +2,7 @@
 
 # Мнемосхема SCADA — справочник диаграмма Json и API
 
-Технический справочник по формированию документации и REST API. Обзор возможностей, рабочего процесса и конструкции: **[SCADA.md](scada.md)**.
+Технический справочник по формированию документации и REST API. Обзор возможностей, рабочего процесса и конструкции: **[scada](scada.md)**.
 
 ---
 
@@ -244,4 +244,4 @@ cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipeline
 
 Динамические символы (метки, блоки графического процессора, выключатели в активном состоянии): определите в `customSymbols[]` с помощью `behaviors` + `bindingSchema`. Ссылка: `mini-tec-mimic.json`.
 
-Полное руководство: [SCADA.md § Каталог символов](scada.md), [SCADA_SYMBOL_LIBRARY.md](scada-symbol-library.md).
+Полное руководство: [SCADA.md § Каталог символов](scada.md), [scada-symbol-library](scada-symbol-library.md).

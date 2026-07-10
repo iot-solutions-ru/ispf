@@ -4,7 +4,7 @@
 
 Spike REQ-PF-13 implementation: peer registry, proxy object read/write, and catalog sync.
 
-Full concept — [federation.md](federation.md), roadmap [roadmap.md § Phase 4–8](roadmap.md).
+Full concept — [federation](federation.md), roadmap [roadmap.md § Phase 4–8](roadmap.md).
 
 ## Principle
 
@@ -172,7 +172,7 @@ Tunnel and store-forward ITs poll async connect/replay; budgets live in `Federat
 | `BUFFER_DRAIN_TIMEOUT_SECONDS` | 90 | 120 | `FederationStoreForwardIntegrationTest` |
 | `CONNECT_RETRY_INTERVAL_MS` | 5000 | 5000 | tunnel connect retry |
 
-Tests marked `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — no parallel run with other IT classes. Nightly gate: [ci-nightly.yml](../.github/workflows/ci-nightly.yml) job **Federation integration gate (S27)**. On timeout failure triage per [ci-flaky-triage.md](ci-flaky-triage.md) (P1 if &lt;1×/week).
+Tests marked `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — no parallel run with other IT classes. Nightly gate: [ci-nightly.yml](../.github/workflows/ci-nightly.yml) job **Federation integration gate (S27)**. On timeout failure triage per [ci-flaky-triage](ci-flaky-triage.md) (P1 if &lt;1×/week).
 
 **Ops checklist:**
 
@@ -413,7 +413,7 @@ Deploy profiles: hub uses standard VPS stack; edges use [docker-compose.edge-arm
 | Live values | Proxy read + WS fan-out; stale badge when peer YELLOW/RED |
 | Federation site picker | Peer health badges (green/yellow/red) + 2-minute poll refresh |
 | Event journal | Aggregated WARNING+ from all federated prefixes |
-| Agent copilot | Scoped to hub operator app prefixes only ([operator-guide.md](operator-guide.md)) |
+| Agent copilot | Scoped to hub operator app prefixes only ([operator-guide](operator-guide.md)) |
 
 Operators **never** edit federation nodes or binds — admin console only.
 
@@ -438,9 +438,9 @@ Follow [Recovery runbook + SLO (BL-120)](#recovery-runbook--slo-bl-120-s22-05):
 
 - No cross-peer computed bindings on hub (aggregate in hub CUSTOM manually if needed).
 - Dashboard layout writes proxy to **remote** dashboard (BL-46).
-- MoM operator app is read-only for config; agent copilot read-only ([BL-179](roadmap.md)).
+- MoM operator app is read-only for config; agent copilot read-only ([roadmap](roadmap.md)).
 
-See also: [operator-guide.md](operator-guide.md), [deploy/docker-compose.edge-arm.yml](../deploy/docker-compose.edge-arm.yml), [roadmap.md](roadmap.md) BL-188.
+See also: [operator-guide](operator-guide.md), [deploy/docker-compose.edge-arm.yml](../deploy/docker-compose.edge-arm.yml), [roadmap](roadmap.md) BL-188.
 
 ## Spike / production backlog
 

@@ -4,13 +4,13 @@
 
 Как создать прикладное решение на ISPF **без изменений ядра Java**: приложения для регистрации, SQL-данные, JSON-функции, пакетное развертывание, пользовательский интерфейс оператора и отчёты.
 
-Обзор продукта: [PRODUCT.md](product.md). Полный API: [APPLICATIONS.md](applications.md). **Стабильная граница платформы ↔ решение:** [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md).
+Обзор продукта: [product](product.md). Полный API: [applications](applications.md). **Стабильная граница платформы ↔ решение:** [solution-developer-public-api](solution-developer-public-api.md).
 
 ---
 
 ## Основной принцип
 
-**Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и рабочих процессах **дерева объектов**. Ваше решение не включает Java на сервер: оно выполняет механизмы декларативной-конфигурации ISPF (модели, BPMN, скрипт-функции, объекты, правила оповещений). Bundle Deploy — способ **доставить** эту конфигурацию в платформу. Полный привод P1–P10 (для людей и агентов): [APPLICATION_PRINCIPLES.md](application-principles.md). См. также [ARCHITECTURE.md](architecture.md).
+**Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и рабочих процессах **дерева объектов**. Ваше решение не включает Java на сервер: оно выполняет механизмы декларативной-конфигурации ISPF (модели, BPMN, скрипт-функции, объекты, правила оповещений). Bundle Deploy — способ **доставить** эту конфигурацию в платформу. Полный привод P1–P10 (для людей и агентов): [application-principles](application-principles.md). См. также [architecture](architecture.md).
 
 ## Что такое «решение» на ISPF
 
@@ -216,7 +216,7 @@ http://localhost:5173?mode=operator&app=my-terminal
 | `dashboard-link` | Навигация между экранами |
 | `card-grid` | Карточки с KPI |
 
-Подробнее: [DASHBOARDS.md](dashboards.md).
+Подробнее: [dashboards](dashboards.md).
 
 ---
 
@@ -247,7 +247,7 @@ GET /api/v1/applications/my-terminal/reports/daily-summary?format=csv
 
 Отчёт описан в bundle (`reports[]`) или деплоится отдельно. Экспорт — CSV.
 
-Подробнее: [REPORTS.md](reports.md).
+Подробнее: [reports](reports.md).
 
 ---
 
@@ -284,7 +284,7 @@ Service task с `ispf:actionType="INVOKE_FUNCTION"`:
 
 Задача пользователя → Задача в Work Queue для оператора.
 
-Подробнее: [WORKFLOWS.md](workflows.md).
+Подробнее: [workflows](workflows.md).
 
 ---
 
@@ -299,7 +299,7 @@ examples/demo-app/
     └── V1__demo.sql
 ```
 
-Запуск демо: зарегистрируйте приложение, выполните миграцию + развертывание функций в [APPLICATIONS.md](applications.md).
+Запуск демо: зарегистрируйте приложение, выполните миграцию + развертывание функций в [applications](applications.md).
 
 ---
 
@@ -330,9 +330,9 @@ examples/demo-app/
 
 ## Связанные документы
 
-- [APPLICATIONS.md](applications.md) — полный REQ-PF API
-- [REPORTS.md](reports.md) — отчеты SQL
-- [DASHBOARDS.md](dashboards.md) — виджеты
-- [WEB_CONSOLE.md](web-console.md) — интерфейс администратора для настройки
-- [GLOSSARY.md](glossary.md) — термины
-- [ROADMAP.md](roadmap.md) — статус REQ-PF
+- [applications](applications.md) — полный REQ-PF API
+- [reports](reports.md) — отчеты SQL
+- [dashboards](dashboards.md) — виджеты
+- [web-console](web-console.md) — интерфейс администратора для настройки
+- [glossary](glossary.md) — термины
+- [roadmap](roadmap.md) — статус REQ-PF

@@ -2,7 +2,7 @@
 
 Stub curriculum for ISPF certification. Full exams and proctoring ship with Phase 32 GA; labs below are runnable today on lab/VPS hosts.
 
-Aligns with [PARTNER_PROGRAM.md](partner-program.md) commercial tiers.
+Aligns with [partner-program](partner-program.md) commercial tiers.
 
 ---
 
@@ -19,16 +19,16 @@ Additional tracks (operator, MES specialist) — draft modules at end of documen
 
 ## Solution developer track
 
-Maps to Partner **Associate → Professional** in [PARTNER_PROGRAM.md](partner-program.md).
+Maps to Partner **Associate → Professional** in [partner-program](partner-program.md).
 
 ### Level 1 — Foundation (~16 h)
 
 | Module | Reference | Lab |
 | ------ | --------- | --- |
-| Object tree | [OBJECT_MODEL.md](object-model.md) | Create DEVICE + `list_variables` |
-| Bundles | [APPLICATIONS.md](applications.md) | Deploy `demo-app` |
-| Dashboards | [DASHBOARDS.md](dashboards.md) | Value + chart widgets |
-| Operator UI | [OPERATOR_GUIDE.md](operator-guide.md) | Configure operator app |
+| Object tree | [object-model](object-model.md) | Create DEVICE + `list_variables` |
+| Bundles | [applications](applications.md) | Deploy `demo-app` |
+| Dashboards | [dashboards](dashboards.md) | Value + chart widgets |
+| Operator UI | [operator-guide](operator-guide.md) | Configure operator app |
 
 **Exam (stub):** Deploy bundle with one dashboard; operator mode loads without admin console.
 
@@ -36,10 +36,10 @@ Maps to Partner **Associate → Professional** in [PARTNER_PROGRAM.md](partner-p
 
 | Module | Reference | Lab |
 | ------ | --------- | --- |
-| Drivers | [DRIVERS.md](drivers.md) | SNMP or virtual device `RUNNING` |
-| Field pilots | [FIELD_PILOT_PLAYBOOK.md](field-pilot-playbook.md) | Complete one OT scenario checklist |
-| Alerts | [AUTOMATION.md](automation.md) | `configure_alert` + fire event |
-| Workflows | [WORKFLOWS.md](workflows.md) | User task in work queue |
+| Drivers | [drivers](drivers.md) | SNMP or virtual device `RUNNING` |
+| Field pilots | [field-pilot-playbook](field-pilot-playbook.md) | Complete one OT scenario checklist |
+| Alerts | [automation](automation.md) | `configure_alert` + fire event |
+| Workflows | [workflows](workflows.md) | User task in work queue |
 
 **Exam (stub):** Alert → correlator → operator notification path.
 
@@ -47,9 +47,9 @@ Maps to Partner **Associate → Professional** in [PARTNER_PROGRAM.md](partner-p
 
 | Module | Reference | Lab |
 | ------ | --------- | --- |
-| SCADA mimics | [SCADA.md](scada.md) | Mimic with live bindings |
-| Federation | [FEDERATION.md](federation.md) | Bind remote device |
-| AI agent | [AI_DEVELOPMENT.md](ai-development.md) | Solution generator scenario (BL-177) |
+| SCADA mimics | [scada](scada.md) | Mimic with live bindings |
+| Federation | [federation](federation.md) | Bind remote device |
+| AI agent | [ai-development](ai-development.md) | Solution generator scenario (BL-177) |
 
 **Exam (stub):** End-to-end agent deploy — spec to operator UI without manual tree edits.
 
@@ -83,10 +83,10 @@ Maps to internal ops onboarding and Partner **Expert** infrastructure modules.
 
 | Module | Reference | Lab |
 | ------ | --------- | --- |
-| Security | [SECURITY.md](security.md) | RBAC, MFA enrollment, audit export |
-| Deploy | [DEPLOYMENT.md](deployment.md) | VPS direct or Helm skeleton |
-| Historian | [HISTORIAN_TIERS.md](historian-tiers.md) | Hot tier + Parquet export (BL-163) |
-| Observability | [OBSERVABILITY.md](observability.md) | Metrics scrape + diagnostics bundle |
+| Security | [security](security.md) | RBAC, MFA enrollment, audit export |
+| Deploy | [deployment](deployment.md) | VPS direct or Helm skeleton |
+| Historian | [historian-tiers](historian-tiers.md) | Hot tier + Parquet export (BL-163) |
+| Observability | [observability](observability.md) | Metrics scrape + diagnostics bundle |
 
 **Exam (stub):** Hardened single-node deploy + backup/restore drill; ClickHouse verify script green.
 
@@ -94,9 +94,9 @@ Maps to internal ops onboarding and Partner **Expert** infrastructure modules.
 
 | Module | Reference | Lab |
 | ------ | --------- | --- |
-| Cluster | [CLUSTER.md](cluster.md) | Two-replica lab |
-| Multi-tenant | [MULTI_TENANT.md](multi-tenant.md) | Tenant isolation write test |
-| Federation hub | [FEDERATION.md](federation.md) | Hub with 2+ peers (BL-188) |
+| Cluster | [cluster](cluster.md) | Two-replica lab |
+| Multi-tenant | [multi-tenant](multi-tenant.md) | Tenant isolation write test |
+| Federation hub | [federation](federation.md) | Hub with 2+ peers (BL-188) |
 
 **Exam (stub):** Failover drill; tenant A cannot read tenant B variables.
 
@@ -123,13 +123,13 @@ Certification labs feed the [agent regression suite](agent-regression.md). Targe
 
 | Track | Audience | Key doc |
 | ----- | -------- | ------- |
-| Operator | Shift supervisors | [OPERATOR_GUIDE.md](operator-guide.md) |
-| MES specialist | Manufacturing engineers | [REFERENCE_MES_PLATFORM.md](reference-mes-platform.md) |
+| Operator | Shift supervisors | [operator-guide](operator-guide.md) |
+| MES specialist | Manufacturing engineers | [reference-mes-platform](reference-mes-platform.md) |
 
 ---
 
 ## Related
 
-- [PARTNER_PROGRAM.md](partner-program.md) — commercial partner tiers
-- [COMPETITIVE_SCORECARD.md](competitive-scorecard.md) — dimension 13 Documentation/DX
-- [roadmap.md](roadmap.md) — BL-190
+- [partner-program](partner-program.md) — commercial partner tiers
+- [competitive-scorecard](competitive-scorecard.md) — dimension 13 Documentation/DX
+- [roadmap](roadmap.md) — BL-190

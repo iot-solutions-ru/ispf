@@ -4,11 +4,11 @@
 
 Recipes for **historian binding rules** (`kind: historian` in `@bindingRules`). Each rule is one analytics tag with its own output variable, schedule, and expression.
 
-See [ADR-0041](decisions/0041-multi-tag-historian-computations.md) and [analytics-tag-catalog.md](analytics-tag-catalog.md).
+See [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md) and [analytics-tag-catalog](analytics-tag-catalog.md).
 
-**Formula catalog (PI AF–style):** unified catalog, extension packs, and site formulas — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–216). Use the expression editor catalog for insert/apply; manage saved formulas under **System → Analytics formulas**.
+**Formula catalog (PI AF–style):** unified catalog, extension packs, and site formulas — [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (BL-212–216). Use the expression editor catalog for insert/apply; manage saved formulas under **System → Analytics formulas**.
 
-**Full guide (Tier A/B/C, APIs, marketplace packs):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
+**Full guide (Tier A/B/C, APIs, marketplace packs):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
 
 ---
 
@@ -507,13 +507,13 @@ Pre-0041 flow (`root.platform.analytics.rollingAvg` → **Apply template** → f
 
 - No bootstrap of `root.platform.analytics.*` for new installs
 - `/api/v1/platform/analytics/templates/*` kept temporarily; prefer binding rules
-- [reference-asset-analytics.md](reference-asset-analytics.md) describes legacy BL-160; use this cookbook for new work
+- [reference-asset-analytics](reference-asset-analytics.md) describes legacy BL-160; use this cookbook for new work
 
 ---
 
 ## Related
 
-- [bindings.md](bindings.md) — reactive rules + `kind` field
-- [ADR-0040](decisions/0040-unified-computations-ui.md) — Computations tab
-- [ADR-0041](decisions/0041-multi-tag-historian-computations.md) — binding-rule model
+- [bindings](bindings.md) — reactive rules + `kind` field
+- [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md) — Computations tab
+- [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md) — binding-rule model
 - [examples/analytics-rolling-avg/README.md](../../examples/analytics-rolling-avg/README.md) — updated walkthrough

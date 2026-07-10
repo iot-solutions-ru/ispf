@@ -2,7 +2,7 @@
 
 Deployed **historian computations** are discovered from `@bindingRules` entries with `kind: historian` on `DEVICE` objects. Each rule produces one catalog tag and one live output variable.
 
-**Cookbook (OEE, tag chains):** [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
+**Cookbook (OEE, tag chains):** [analytics-historian-cookbook](analytics-historian-cookbook.md)
 
 ## Tag identity
 
@@ -54,7 +54,7 @@ Full chain + dashboard: [cookbook Recipe 5](analytics-historian-cookbook.md#reci
 
 Alias paths `/derived-tags/catalog` may exist on some deployments for WAF compatibility.
 
-**Formulas and extension packs (Tier B/C):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
+**Formulas and extension packs (Tier B/C):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
 
 ### Catalog entry fields
 
@@ -106,13 +106,13 @@ Expression debugger remains a separate tab.
 - Per-device `analyticsExpression` / `analyticsHelper` as source of truth
 - `POST /api/v1/platform/analytics/templates/apply`
 
-Legacy BL-160 docs: [reference-asset-analytics.md](reference-asset-analytics.md).
+Legacy BL-160 docs: [reference-asset-analytics](reference-asset-analytics.md).
 
 ## Related
 
-- [ADR-0041](decisions/0041-multi-tag-historian-computations.md)
-- [ADR-0040](decisions/0040-unified-computations-ui.md)
-- [ADR-0038](decisions/0038-analytics-platform-architecture.md)
-- [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
-- [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md)
-- [analytics-platform-roadmap.md](analytics-platform-roadmap.md) BL-209 / BL-211
+- [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)
+- [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md)
+- [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md)
+- [analytics-historian-cookbook](analytics-historian-cookbook.md)
+- [analytics-formulas-and-packs](analytics-formulas-and-packs.md)
+- [analytics-platform-roadmap](analytics-platform-roadmap.md) BL-209 / BL-211

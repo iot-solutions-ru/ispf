@@ -15,7 +15,7 @@ Operators need:
 3. **Multi-tag analytics** (ad-hoc queries, KPI chains) backed by ClickHouse warm tier.
 4. **Flexible topology** — single JVM on a small site **or** role-separated cluster (ingest / HMI / analytics workers) without forking the product.
 
-Binding rules ([ADR-0010](0010-binding-rules-only.md)) remain the mechanism for **per-object reactive logic**. Analytics calculations that depend on historian windows, cross-tag DAGs, and backfill are a **separate engine** that **writes results back** into the object tree (and NATS live sync in cluster).
+Binding rules ([0010-binding-rules-only](0010-binding-rules-only.md)) remain the mechanism for **per-object reactive logic**. Analytics calculations that depend on historian windows, cross-tag DAGs, and backfill are a **separate engine** that **writes results back** into the object tree (and NATS live sync in cluster).
 
 ## Decision
 
@@ -33,7 +33,7 @@ Object tree remains **source of truth for metadata and live derived values**. Cl
 
 ### 2. Object model extensions (BL-209)
 
-> **Amendment (ADR-0041, 2026-07-09):** Historian computations are **`BindingRule` with `kind: historian`** in `@bindingRules`, not `ANALYTICS_TEMPLATE` tree objects. Tag path = `objectPath#ruleId`; presets are static code + [analytics-historian-cookbook.md](../analytics-historian-cookbook.md). The bullets below describe the original BL-209 proposal; template catalog and `analytics-tag-v1` metadata vars are **deprecated** for new work.
+> **Amendment (ADR-0041, 2026-07-09):** Historian computations are **`BindingRule` with `kind: historian`** in `@bindingRules`, not `ANALYTICS_TEMPLATE` tree objects. Tag path = `objectPath#ruleId`; presets are static code + [analytics-historian-cookbook](../analytics-historian-cookbook.md). The bullets below describe the original BL-209 proposal; template catalog and `analytics-tag-v1` metadata vars are **deprecated** for new work.
 
 - ~~Keep `ANALYTICS_TEMPLATE` catalog (`root.platform.analytics`) for built-in KPI recipes.~~ → static presets + binding rules
 - Add optional **`ANALYTICS_TAG`** (or RELATIVE blueprint `analytics-tag-v1` on `DEVICE`) for deployed derived tags with:
@@ -42,7 +42,7 @@ Object tree remains **source of truth for metadata and live derived values**. Cl
   - `rollupBuckets[]` (which materialized windows to maintain)
   - `lineage` (upstream tag paths for impact analysis)
 
-Haystack / Brick tags continue as semantic overlay ([ADR-0021](0021-haystack-semantic-overlay.md)); analytics metadata is additive.
+Haystack / Brick tags continue as semantic overlay ([0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md)); analytics metadata is additive.
 
 ### 3. Calculation engine (BL-203–204)
 
@@ -51,7 +51,7 @@ New package: `packages/ispf-analytics-engine` (library consumed by `ispf-server`
 - Build **dependency DAG** from analytics tag definitions (cycle detection).
 - Triggers: **periodic** (indexed like binding periodic rules), **on source sample** (coalesced), **manual backfill** API.
 - Evaluation functions (v1): `rollingAvg`, `rateOfChange`, `totalizer`, `min`/`max` over window, `oeeComposite` (delegates to MES BFF where configured).
-- Output: `setVariableValue` on target path + cluster NATS fan-out ([ADR-0029](0029-cluster-live-variable-replica-sync.md)).
+- Output: `setVariableValue` on target path + cluster NATS fan-out ([0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md)).
 
 **Not in v1:** full PI Analytics expression language, ML inference (see BL-175).
 
@@ -75,7 +75,7 @@ Optional: `POST .../analytics/expression` for CEL-over-historian (v2).
 
 ### 6. Replica profile `analytics` (BL-207)
 
-Extend [ADR-0032](0032-replica-profiles-and-capabilities.md):
+Extend [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md):
 
 | Profile | Capabilities |
 |---------|----------------|
@@ -102,7 +102,7 @@ Lightweight **time windows** attached to analytics context (not full PI Event Fr
 | **Site M** | 500–5k | 2× unified + CH | three-tier dual-write | in-process + CH rollups |
 | **Enterprise L** | 5k–50k+ | io + hmi-read + analytics×N + CH cluster | warm read primary | dedicated analytics replicas |
 
-See [analytics-platform-roadmap.md](../analytics-platform-roadmap.md) for BL-200…210 acceptance tests per profile.
+See [analytics-platform-roadmap](../analytics-platform-roadmap.md) for BL-200…210 acceptance tests per profile.
 
 ### 9. Relationship to BL-160 (AF-lite)
 
@@ -113,13 +113,13 @@ BL-160 **must complete** (editor, PUT API, `derivedValue` runtime) as **BL-201**
 - New backlog BL-200…210 (Phase 33); historian Phase 33 target shifts from "petabyte storage" to **AF-capable analytics**.
 - ClickHouse becomes **required** for Enterprise L analytics SLO; PG remains mandatory for tree.
 - Binding rules unchanged; analytics engine must not fork CEL semantics for simple device logic.
-- [ADR-0041](0041-multi-tag-historian-computations.md) — historian binding rules (supersedes template catalog)
-- [analytics-historian-cookbook.md](../analytics-historian-cookbook.md)
+- [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) — historian binding rules (supersedes template catalog)
+- [analytics-historian-cookbook](../analytics-historian-cookbook.md)
 
 ## Related
 
-- [ADR-0035](0035-historian-dual-write.md) — dual-write migration
-- [ADR-0032](0032-replica-profiles-and-capabilities.md) — replica capabilities
-- [HISTORIAN_TIERS.md](../historian-tiers.md) — hot/warm/cold
+- [0035-historian-dual-write](0035-historian-dual-write.md) — dual-write migration
+- [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) — replica capabilities
+- [historian-tiers](../historian-tiers.md) — hot/warm/cold
 - [roadmap.md § Phase 33](../roadmap.md#phase-33--analytics-platform-af-capable)
 - BL-160, BL-159, BL-161, BL-165 (OEE)

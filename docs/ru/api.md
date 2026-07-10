@@ -5,7 +5,7 @@
 Базовый URL: `http://localhost:8080`
 
 Авторизация: JWT (Keycloak) или заголовок `X-ISPF-Role: admin|developer|operator` (профиль `local`).  
-Матрица ролей: [SECURITY.md](security.md).
+Матрица ролей: [security](security.md).
 
 ## Платформа
 
@@ -15,7 +15,7 @@
 | ПОЛУЧИТЬ | `/api/v1/platform/metrics` | админ | Сводные метрики платформы (время выполнения, БД, дерево, драйверы, подключения, безопасность, историк, автоматизация) |
 | GET | `/api/v1/platform/haystack/export` | operator+ | Экспорт Haystack grid для поддерева (`rootPath`, `includePoints`) |
 | GET | `/api/v1/platform/haystack/search` | operator+ | Поиск по тегам AND (`tags`, `rootPath`, `entityKind`, `limit`) |
-| ПОЛУЧИТЬ | `/api/v1/platform/haystack/query` | оператор+ | Запрос фильтра Haystack (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — см. [ADR-0023](decisions/0023-haystack-query-runtime.md) |
+| ПОЛУЧИТЬ | `/api/v1/platform/haystack/query` | оператор+ | Запрос фильтра Haystack (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — см. [0023-haystack-query-runtime](decisions/0023-haystack-query-runtime.md) |
 | GET | `/api/v1/platform/update/status` | admin | Проверка обновлений с GitHub Releases |
 | POST | `/api/v1/platform/update/check` | admin | Принудительная проверка релиза |
 | POST | `/api/v1/platform/update/apply` | admin | Скачать релиз и перезапустить сервер (VPS, `apply-enabled=true`) |
@@ -91,7 +91,7 @@ Content-Type: application/json
 | `driverId` | Для `DEVICE`: provisioning драйвера после create |
 | `autoApplyRelativeBlueprints` | По умолчанию `true`. ОТНОСИТЕЛЬНЫЕ миксины с **пустым** CEL не применяются; нужен непустой `suitabilityExpression` |
 
-`mqtt-sensor-v1` — fixture-модель (`ispf.bootstrap.fixtures-enabled`). См. [BLUEPRINTS.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+`mqtt-sensor-v1` — fixture-модель (`ispf.bootstrap.fixtures-enabled`). См. [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## функции
 
@@ -120,7 +120,7 @@ Content-Type: application/json
 ## Приложения (REQ-PF)
 
 Платформенный уровень для развертывания прикладных решений без Java в `ispf-server`.  
-Полное описание: [APPLICATIONS.md](applications.md).
+Полное описание: [applications](applications.md).
 
 | Метод | Путь | Роли | Описание |
 |--------|------|------|----------|
@@ -137,7 +137,7 @@ Content-Type: application/json
 | GET | `/api/v1/schedules` | admin | Список расписаний |
 | POST | `/api/v1/schedules` | admin | Создать/обновить расписание |
 
-Подробнее: [APPLICATIONS.md](applications.md), [REPORTS.md](reports.md), [PLUGINS.md](plugins.md).
+Подробнее: [applications](applications.md), [reports](reports.md), [plugins](plugins.md).
 
 ## Рабочая очередь
 

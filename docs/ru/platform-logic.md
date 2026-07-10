@@ -4,7 +4,7 @@
 
 Один механизм для привязки функций, логики дашборда и побочных эффектов.
 
-**Статус:** спецификация (ADR [0019](decisions/0019-platform-rule-unification.md), **Предлагается**). Продление времени выполнения — по фазам 1–3.
+**Статус:** спецификация (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), **Предлагается**). Продление времени выполнения — по фазам 1–3.
 
 ---
 
@@ -100,7 +100,7 @@ Legacy без `kind`:
 | `onStartup` | есть | старт / attach модели |
 | `onVariableChange` | есть | телеметрия, переменные |
 | `onEvent` | есть | имя platform event |
-| `periodicMs` | есть | периодический пересчет; индекс `platform_binding_periodic_rules`, пробуждение по `next_run_at` ([BINDINGS.md](bindings.md)) |
+| `periodicMs` | есть | периодический пересчет; индекс `platform_binding_periodic_rules`, пробуждение по `next_run_at` ([bindings](bindings.md)) |
 | `onContextChange` | **planned** | изменение `@dashboardContext` |
 
 ---
@@ -193,6 +193,6 @@ Web-console `DashboardSession` зеркалирует эту структуру.
 
 ## Связанные документы
 
-- [BINDINGS.md](bindings.md) — правила привязки, CEL, API
-- [DASHBOARDS.md](dashboards.md) — макет, виджеты, контекст
+- [bindings](bindings.md) — правила привязки, CEL, API
+- [dashboards](dashboards.md) — макет, виджеты, контекст
 - [decisions/0019-platform-rule-unification.md](decisions/0019-platform-rule-unification.md)

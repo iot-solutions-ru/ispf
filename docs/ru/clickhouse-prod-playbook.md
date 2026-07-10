@@ -4,7 +4,7 @@
 
 Руководство по эксплуатации ClickHouse в рабочей среде ISPF: **журнал событий**, **архиватор переменных** и путь миграции **двойная запись**.
 
-Связано: [DEPLOYMENT.md](deployment.md), [ADR-0016](decisions/0016-clickhouse-event-journal.md), [ADR-0035](decisions/0035-historian-dual-write.md), [0017](decisions/0017-telemetry-ingest-pipeline.md).
+Связано: [deployment](deployment.md), [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).
 
 ---
 
@@ -16,7 +16,7 @@
 | Variable historian | PostgreSQL/Timescale | `ISPF_VARIABLE_HISTORY_STORE=clickhouse` @ high sample rate |
 | Миграция | — | **Двойная запись** (первичный PG + вторичный CH) перед переключением |
 
-Prod VPS baseline: `jdbc` for both until load requires CH ([ROADMAP](roadmap.md)).
+Prod VPS baseline: `jdbc` for both until load requires CH ([roadmap](roadmap.md)).
 
 ---
 

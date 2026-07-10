@@ -7,7 +7,7 @@
 
 ## Контекст
 
-Historian по умолчанию пишет в PostgreSQL/Timescale (`ispf.variable-history.store=jdbc`). ClickHouse уже поддерживается как **единственный** store (`store=clickhouse`) для high-throughput deployments ([0017](0017-telemetry-ingest-pipeline.md)).
+Historian по умолчанию пишет в PostgreSQL/Timescale (`ispf.variable-history.store=jdbc`). ClickHouse уже поддерживается как **единственный** store (`store=clickhouse`) для high-throughput deployments ([0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md)).
 
 Операторам нужен путь миграции: **OLTP-консистентные reads из PG**, аналитика/долгий retention в CH без cutover риска (BL-116).
 
@@ -38,4 +38,4 @@ ispf:
 - Query migration — отдельный BL (optional read replica routing).
 - `store=clickhouse` без dual-write — по-прежнему single-store mode.
 
-См. [DEPLOYMENT.md § ClickHouse](../deployment.md), [ROADMAP BL-116](../roadmap.md).
+См. [DEPLOYMENT.md § ClickHouse](../deployment.md), [roadmap](../roadmap.md).

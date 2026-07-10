@@ -1,6 +1,6 @@
 # Air-gap deployment (BL-128)
 
-Runbook for installing and updating ISPF on hosts **without outbound internet**. Complements [DEPLOYMENT.md](deployment.md) (online quick start) and [COMMERCIAL_LICENSING.md](commercial-licensing.md) (RSA bundle / driver pack licenses).
+Runbook for installing and updating ISPF on hosts **without outbound internet**. Complements [deployment](deployment.md) (online quick start) and [commercial-licensing](commercial-licensing.md) (RSA bundle / driver pack licenses).
 
 ## When to use
 
@@ -108,7 +108,7 @@ bash deploy/air-gap-apply.sh /media/ispf-airgap-<new-version>.tar.gz
 
 ## Commercial licensing flow
 
-Air-gap sites typically run with strict bundle trust. Align with [BL-100](roadmap.md):
+Air-gap sites typically run with strict bundle trust. Align with [roadmap](roadmap.md):
 
 | Step | Action |
 |------|--------|
@@ -171,7 +171,7 @@ If you cannot run `air-gap-pack.sh` on Linux, assemble the same layout manually:
 
 ## Related documents
 
-- [DEPLOYMENT.md](deployment.md) — online deploy, bundle signing, ClickHouse
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md) — license claims, enforce flags
-- [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md) — driver pack layout
+- [deployment](deployment.md) — online deploy, bundle signing, ClickHouse
+- [commercial-licensing](commercial-licensing.md) — license claims, enforce flags
+- [licensed-driver-packs](licensed-driver-packs.md) — driver pack layout
 - [tools/license-builder/README.md](readme.md) — sign bundles offline on vendor side

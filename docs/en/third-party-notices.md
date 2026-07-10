@@ -8,7 +8,7 @@ This document is an engineering inventory, not legal advice. For public release 
 
 ## ISPF licensing policy
 
-Platform code in the repository is licensed under **GNU AGPL-3.0** ([ADR-0016](decisions/0016-agpl-dual-licensing.md)). Third-party libraries retain their own licenses.
+Platform code in the repository is licensed under **GNU AGPL-3.0** ([0016-agpl-dual-licensing](decisions/0016-agpl-dual-licensing.md)). Third-party libraries retain their own licenses.
 
 Current delivery state:
 
@@ -41,7 +41,7 @@ Current delivery state:
 
 ## Project license recommendation
 
-ISPF model (see [LICENSE.md](license.md), ADR-0016):
+ISPF model (see [license](license.md), ADR-0016):
 
 1. **Platform** — AGPL-3.0; network use triggers source-offer obligations unless Enterprise EULA applies.
 2. **Drivers** — pack-only runtime; copyleft deps isolated per pack with pack `LICENSE`.

@@ -2,7 +2,7 @@
 
 How ISPF platform objects map to **ANSI/ISA-95** (IEC 62264) equipment hierarchy and MES activities. Use this when designing apps, bundles, and documentation for manufacturing customers.
 
-**See also:** [OBJECT_MODEL.md](object-model.md), [REFERENCE_MES_OEE_WALKTHROUGH.md](reference-mes-oee-walkthrough.md), [mes-oee-reference](../examples/mes-oee-reference/).
+**See also:** [object-model](object-model.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [mes-oee-reference](../examples/mes-oee-reference/).
 
 ---
 
@@ -56,8 +56,8 @@ Example from **mes-oee-reference**: line code `LINE-A01` in SQL maps to a logica
 
 Reference walkthroughs:
 
-- OEE: [REFERENCE_MES_OEE_WALKTHROUGH.md](reference-mes-oee-walkthrough.md)
-- Escalation: [REFERENCE_ESCALATION_TEMPLATES.md](reference-escalation-templates.md)
+- OEE: [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md)
+- Escalation: [reference-escalation-templates](reference-escalation-templates.md)
 - MES orders: [mes-reference](../examples/mes-reference/)
 
 ---

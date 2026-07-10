@@ -6,7 +6,7 @@ A **binding rule** is a declarative rule for computing variable values on an obj
 
 Rules are stored in system variable `@bindingRules` (JSON array, reserved). Runtime — **`BindingRuleEngine`** (unified binding engine since v0.8.0).
 
-See also: [object-model.md](object-model.md), [blueprints.md](blueprints.md), ADR [0010](decisions/0010-binding-rules-only.md).
+See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md).
 
 ---
 
@@ -40,7 +40,7 @@ See also: [object-model.md](object-model.md), [blueprints.md](blueprints.md), AD
 | `condition` | CEL; empty = always |
 | `expression` | CEL or single platform function |
 | `target` | Where to write result (see **Target kinds** below) |
-| `kind` | Optional: `reactive` (default) or `historian` — historian rules are evaluated by the analytics engine, not `BindingRuleEngine` ([ADR-0041](decisions/0041-multi-tag-historian-computations.md)) |
+| `kind` | Optional: `reactive` (default) or `historian` — historian rules are evaluated by the analytics engine, not `BindingRuleEngine` ([0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)) |
 | `windowBucket` | Historian only: aggregate window (`5m`, `1h`, `8h`, …) |
 | `rollupBuckets` | Historian only: optional materialized rollup windows |
 
@@ -48,7 +48,7 @@ See also: [object-model.md](object-model.md), [blueprints.md](blueprints.md), AD
 
 Same `@bindingRules` array; multiple rules per device; arbitrary output variable names. Tag catalog path = `objectPath#ruleId`.
 
-**Recipes (rolling avg, OEE, tag chains, CEL):** [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
+**Recipes (rolling avg, OEE, tag chains, CEL):** [analytics-historian-cookbook](analytics-historian-cookbook.md)
 
 ```json
 {
@@ -69,7 +69,7 @@ Rules with `periodicMs > 0` are parsed into JDBC index `platform_binding_periodi
 
 ### Target kinds (platform rule)
 
-Model extension — ADR [0019](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`** (backward compatible).
+Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`** (backward compatible).
 
 | `kind` | Fields | Purpose |
 |--------|------|------------|
@@ -89,7 +89,7 @@ Example dashboard rule (planned):
 }
 ```
 
-Activator **`onContextChange`** — recalculate when `@dashboardContext` changes. Full spec: [platform-logic.md](platform-logic.md).
+Activator **`onContextChange`** — recalculate when `@dashboardContext` changes. Full spec: [platform-logic](platform-logic.md).
 
 **Cross-object:** activator on remote path + `refAt("path", var)` in expression. On remote variable change (including driver telemetry) `BindingPropagationListener` recalculates rules on consumer objects.
 
@@ -148,13 +148,13 @@ systemctl start ispf-server
 # Local/dev compose: docker compose exec postgres psql ...
 ```
 
-Existing DB without recreate: Flyway `V41__drop_binding_expr.sql` drops the column; on **V1 checksum mismatch** recreate is required (see [deployment.md](deployment.md)).
+Existing DB without recreate: Flyway `V41__drop_binding_expr.sql` drops the column; on **V1 checksum mismatch** recreate is required (see [deployment](deployment.md)).
 
 ---
 
 ## UI
 
-Web Console → Object inspector → **Computations** tab (reactive + historian rules). See [ADR-0040](decisions/0040-unified-computations-ui.md).
+Web Console → Object inspector → **Computations** tab (reactive + historian rules). See [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md).
 
 ---
 

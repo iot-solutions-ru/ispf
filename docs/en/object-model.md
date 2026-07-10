@@ -112,7 +112,7 @@ Field types (`FieldType`): `BOOLEAN`, `INTEGER`, `LONG`, `DOUBLE`, `STRING`, `DA
 
 ### Telemetry quality (BL-82)
 
-Optional `quality` field on telemetry rows: `GOOD`, `UNCERTAIN`, `BAD` ([ADR-0025](decisions/0025-telemetry-quality-flags.md)). Drivers map protocol status (e.g. OPC UA StatusCode) to these levels. Chart widgets skip `BAD` samples (line gap); historian quality column is follow-up work.
+Optional `quality` field on telemetry rows: `GOOD`, `UNCERTAIN`, `BAD` ([0025-telemetry-quality-flags](decisions/0025-telemetry-quality-flags.md)). Drivers map protocol status (e.g. OPC UA StatusCode) to these levels. Chart widgets skip `BAD` samples (line gap); historian quality column is follow-up work.
 
 ### DataRecord
 
@@ -138,7 +138,7 @@ Widgets and API read fields via `valueField` (default `"value"`).
 
 ### Computed bindings (binding rules)
 
-Rules on the object in `@bindingRules` (see [bindings.md](bindings.md)). Runtime — `BindingRuleEngine`; cross-object via activators and `refAt`.
+Rules on the object in `@bindingRules` (see [bindings](bindings.md)). Runtime — `BindingRuleEngine`; cross-object via activators and `refAt`.
 
 Brief list of platform bindings:
 
@@ -175,7 +175,7 @@ The event is validated against the object descriptor, written to `event_history`
 | `script` | JSON DSL (`steps`) — `ScriptFunctionHandler` |
 | `java` | Public class source → `ObjectJavaFunction`; **compile on save** (`PUT .../functions`), invoke via `JavaFunctionHandler` |
 
-**Detailed examples for all types:** [object-functions.md](object-functions.md) (built-in handlers, script steps, Java, bindings, workflow, REST).
+**Detailed examples for all types:** [object-functions](object-functions.md) (built-in handlers, script steps, Java, bindings, workflow, REST).
 
 Invoke:
 
@@ -188,7 +188,7 @@ Content-Type: application/json
 
 **Java function:** class `implements com.ispf.core.function.ObjectJavaFunction`; compile on save; see [object-functions.md § Java](object-functions.md).
 
-Built-in handlers (function name on object + server handler): `acknowledgeAlarm`, Virtual Lab (`calculate`, `fireEvent1`, …), Mini-TEC (`gpu_start`, …), `dispatchTelemetry` (MQTT gateway). Full list and payloads — in [object-functions.md](object-functions.md).
+Built-in handlers (function name on object + server handler): `acknowledgeAlarm`, Virtual Lab (`calculate`, `fireEvent1`, …), Mini-TEC (`gpu_start`, …), `dispatchTelemetry` (MQTT gateway). Full list and payloads — in [object-functions](object-functions.md).
 
 Platform extension: implement `FunctionHandler` in `ispf-server` and register as Spring `@Component`.
 
@@ -200,7 +200,7 @@ Objects are created manually or from a **model** (`templateId`). A model defines
 
 **DEVICE + driver:** `driver*` variables are embedded at `provisionDriver()`, not via relative auto-apply.
 
-See [blueprints.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+See [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Persistence
 
@@ -210,8 +210,8 @@ Flyway migrations (`packages/ispf-server/src/main/resources/db/migration/`):
 |-------|----------|
 | `object_nodes` | Tree nodes (including alert rules and correlators) |
 | `object_variables` | Variable values (`@bindingRules` — reserved var on object) |
-| `variable_samples` | Telemetry history (time-series samples; Timescale hypertable — [0009](decisions/0009-timescaledb-retention.md)) |
-| `event_history` | Event journal (Timescale hypertable — [0015](decisions/0015-event-history-timescale.md)) |
+| `variable_samples` | Telemetry history (time-series samples; Timescale hypertable — [0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) |
+| `event_history` | Event journal (Timescale hypertable — [0015-event-history-timescale](decisions/0015-event-history-timescale.md)) |
 | `workflow_instances` | BPMN instances |
 | `workflow_user_tasks` | Operator tasks |
 | `correlator_hits` | Correlator firings (runtime) |
@@ -274,4 +274,4 @@ Platform config: `ispf.variable-history` in `application.yml` (`enabled`, `min-i
 
 Charts (`useTrendSeries`) load history from the server and append live points via WebSocket/polling.
 
-Detailed roadmap: [variable-history.md](variable-history.md).
+Detailed roadmap: [variable-history](variable-history.md).

@@ -4,9 +4,9 @@
 
 How to create, reuse, and distribute historian computations beyond a single binding rule. Covers **Tier A** (built-ins), **Tier B** (user formulas), and **Tier C** (Java extension packs + marketplace).
 
-**See also:** [analytics-historian-cookbook.md](analytics-historian-cookbook.md) (recipes), [ADR-0042](decisions/0042-analytics-function-catalog.md) (architecture), [analytics-tag-catalog.md](analytics-tag-catalog.md) (deployed tags API).
+**See also:** [analytics-historian-cookbook](analytics-historian-cookbook.md) (recipes), [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (architecture), [analytics-tag-catalog](analytics-tag-catalog.md) (deployed tags API).
 
-> **Note:** [historian-tiers.md](historian-tiers.md) describes **storage tiers** (hot/warm/cold). This document uses **function tiers** A/B/C from ADR-0042 — different topic.
+> **Note:** [historian-tiers](historian-tiers.md) describes **storage tiers** (hot/warm/cold). This document uses **function tiers** A/B/C from ADR-0042 — different topic.
 
 ---
 
@@ -182,7 +182,7 @@ ${ISPF_ANALYTICS_PACKS_DIR}/
 | `minPlatformVersion` | ✓ | ISPF semver gate |
 | `jarFile` | ✓ | JAR filename in pack directory |
 | `functions[]` | ✓ | Helper ids exposed by this pack |
-| `license` | commercial | RSA-signed claims (same model as [licensed-driver-packs.md](licensed-driver-packs.md)) |
+| `license` | commercial | RSA-signed claims (same model as [licensed-driver-packs](licensed-driver-packs.md)) |
 
 Example:
 
@@ -246,7 +246,7 @@ ispf:
 
 ## Buying Tier C packs on the marketplace
 
-Commercial and community **analytics extension packs** distribute through the same marketplace contract as application bundles and symbol packs ([MARKETPLACE.md](marketplace.md)).
+Commercial and community **analytics extension packs** distribute through the same marketplace contract as application bundles and symbol packs ([marketplace](marketplace.md)).
 
 **Status:** listing contract and operator flow documented here; platform install into `ISPF_ANALYTICS_PACKS_DIR` — **BL-216** (in progress). Open pack `energyDelta` ships in core today without marketplace.
 
@@ -302,15 +302,15 @@ acme-mes-kpi-1.0.0.zip
 | POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/install` |
 | POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/activate` |
 
-Activate body: `{ "activationCode": "..." }` — `installationId` added server-side ([ADR-0003](decisions/0003-commercial-bundle-licensing.md)).
+Activate body: `{ "activationCode": "..." }` — `installationId` added server-side ([0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md)).
 
 ### Vendor checklist
 
 1. Implement SPI pack; test against `ispf-analytics-api`.
-2. Build signed `analytics-pack.json` + JAR; run license builder ([commercial-licensing.md](commercial-licensing.md)).
+2. Build signed `analytics-pack.json` + JAR; run license builder ([commercial-licensing](commercial-licensing.md)).
 3. Publish listing on [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) with `artifactKind: analytics-pack`.
 4. Interop CI: functions appear in catalog after install on lab ISPF.
-5. Partner program: OEM tier for marketplace revenue share ([partner-program.md](partner-program.md)).
+5. Partner program: OEM tier for marketplace revenue share ([partner-program](partner-program.md)).
 
 ### Offline / air-gapped
 
@@ -332,9 +332,9 @@ Copy the pack zip to the server and unpack under `ISPF_ANALYTICS_PACKS_DIR` manu
 
 ## Related
 
-- [ADR-0042](decisions/0042-analytics-function-catalog.md)
-- [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
-- [analytics-tag-catalog.md](analytics-tag-catalog.md)
-- [MARKETPLACE.md](marketplace.md)
-- [licensed-driver-packs.md](licensed-driver-packs.md) — parallel licensing model
-- [analytics-platform-roadmap.md](analytics-platform-roadmap.md) — BL-212…216
+- [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md)
+- [analytics-historian-cookbook](analytics-historian-cookbook.md)
+- [analytics-tag-catalog](analytics-tag-catalog.md)
+- [marketplace](marketplace.md)
+- [licensed-driver-packs](licensed-driver-packs.md) — parallel licensing model
+- [analytics-platform-roadmap](analytics-platform-roadmap.md) — BL-212…216

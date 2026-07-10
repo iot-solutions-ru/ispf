@@ -35,7 +35,7 @@ Stored in `@bindingRules` alongside reactive rules:
 - **Tag identity** — `tagPath = objectPath#ruleId` for DAG, catalog, schedules
 - **Reactive engine** skips `kind=historian`; **analytics engine** compiles and evaluates them
 
-Expression forms: builtins (`rollingAvg`, `rateOfChange`, `oee`), CEL with `hist.*` (BL-211). See [analytics-historian-cookbook.md](../analytics-historian-cookbook.md).
+Expression forms: builtins (`rollingAvg`, `rateOfChange`, `oee`), CEL with `hist.*` (BL-211). See [analytics-historian-cookbook](../analytics-historian-cookbook.md).
 
 ### 2. Remove `ANALYTICS_TEMPLATE` tree catalog
 
@@ -63,9 +63,9 @@ Expression forms: builtins (`rollingAvg`, `rateOfChange`, `oee`), CEL with `hist
 
 ## Related
 
-- [ADR-0040](0040-unified-computations-ui.md)
-- [analytics-historian-cookbook.md](../analytics-historian-cookbook.md) — Recipe 5 (`analytics-demo` on prod)
-- [analytics-tag-catalog.md](../analytics-tag-catalog.md)
+- [0040-unified-computations-ui](0040-unified-computations-ui.md)
+- [analytics-historian-cookbook](../analytics-historian-cookbook.md) — Recipe 5 (`analytics-demo` on prod)
+- [analytics-tag-catalog](../analytics-tag-catalog.md)
 
 ### Implementation status (2026-07-09)
 

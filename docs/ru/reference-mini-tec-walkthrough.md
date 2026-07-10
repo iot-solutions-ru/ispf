@@ -84,8 +84,8 @@
 
 ## REST / WebSocket / OPC-UA
 
-См. [examples/mini-tec/README.md](readme.md). OPC-UA lab: один ГПУ можно перевести на `opcua` driver profile вместо `virtual` ([DRIVERS.md](drivers.md)).
+См. [examples/mini-tec/README.md](readme.md). OPC-UA lab: один ГПУ можно перевести на `opcua` driver profile вместо `virtual` ([drivers](drivers.md)).
 
 ## NFR (production)
 
-Для промышленной эксплуатации мнемосхемы ТЭЦ см. [DEPLOYMENT.md § SCADA NFR](deployment.md).
+Для промышленной эксплуатации мнемосхемы ТЭЦ см. [deployment](deployment.md).

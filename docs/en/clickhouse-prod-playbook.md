@@ -2,7 +2,7 @@
 
 Ops guide for enabling ClickHouse on ISPF production: **event journal**, **variable historian**, and **dual-write** migration path.
 
-Related: [DEPLOYMENT.md](deployment.md), [ADR-0016](decisions/0016-clickhouse-event-journal.md), [ADR-0035](decisions/0035-historian-dual-write.md), [0017](decisions/0017-telemetry-ingest-pipeline.md).
+Related: [deployment](deployment.md), [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).
 
 ---
 
@@ -14,7 +14,7 @@ Related: [DEPLOYMENT.md](deployment.md), [ADR-0016](decisions/0016-clickhouse-ev
 | Variable historian | PostgreSQL/Timescale | `ISPF_VARIABLE_HISTORY_STORE=clickhouse` @ high sample rate |
 | Migration | — | **Dual-write** (PG primary + CH secondary) before cutover |
 
-Prod VPS baseline: `jdbc` for both until load requires CH ([ROADMAP](roadmap.md)).
+Prod VPS baseline: `jdbc` for both until load requires CH ([roadmap](roadmap.md)).
 
 ---
 

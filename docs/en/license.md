@@ -12,7 +12,7 @@
 | `apps/web-console/` | [GNU AGPL v3](../LICENSE) |
 | `docs/` | [GNU AGPL v3](../LICENSE) |
 
-**Dual licensing:** community uses AGPL; enterprise — [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md) + `platform-license.json` (AGPL obligation exemption under contract).
+**Dual licensing:** community uses AGPL; enterprise — [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md) + `platform-license.json` (AGPL obligation exemption under contract).
 
 Copyright: **© 2026 ISPF Core Contributors** — see [LICENSE](../LICENSE) and [NOTICE](../NOTICE).
 
@@ -29,7 +29,7 @@ ${ISPF_DRIVER_PACKS_DIR}/ispf-driver-modbus/
 
 Build: `.\gradlew syncAllDriverPacks` → `build/driver-packs/`.
 
-Details: [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md), ADR [0016](decisions/0016-agpl-dual-licensing.md).
+Details: [licensed-driver-packs](licensed-driver-packs.md), ADR [0016-agpl-dual-licensing](decisions/0016-agpl-dual-licensing.md).
 
 ## Application bundles — separate product
 
@@ -38,7 +38,7 @@ Bundle (objects, dashboards, widgets, functions) is a **separate artifact** with
 | Type | License |
 |------|---------|
 | Open reference (`lab-training`, …) | Apache / AGPL manifest, no RSA |
-| Commercial SKU | Proprietary EULA + optional RSA in manifest ([COMMERCIAL_LICENSING.md](commercial-licensing.md)) |
+| Commercial SKU | Proprietary EULA + optional RSA in manifest ([commercial-licensing](commercial-licensing.md)) |
 
 Declarative bundle JSON is **not** platform source code; AGPL platform **does not require** its disclosure.
 
@@ -61,14 +61,14 @@ Declarative bundle JSON is **not** platform source code; AGPL platform **does no
 ## Distribution obligations
 
 1. Retain [LICENSE](../LICENSE) and [NOTICE](../NOTICE).
-2. Include [THIRD_PARTY_NOTICES.md](third-party-notices.md) and follow [LICENSE_COMPLIANCE.md](license-compliance.md).
+2. Include [third-party-notices](third-party-notices.md) and follow [license-compliance](license-compliance.md).
 3. For driver packs — LICENSE and notices of each pack.
 4. Comply with AGPL / GPL / LGPL / MPL dependencies in packs.
 
 ## Related documents
 
-- [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)
-- [LICENSE_COMPLIANCE.md](license-compliance.md)
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md)
-- [CLA.md](../../CLA.md)
-- [PLUGINS.md](plugins.md)
+- [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)
+- [license-compliance](license-compliance.md)
+- [commercial-licensing](commercial-licensing.md)
+- [CLA](../../CLA.md)
+- [plugins](plugins.md)

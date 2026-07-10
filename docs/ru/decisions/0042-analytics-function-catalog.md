@@ -50,7 +50,7 @@
 
 
 
-**Пошаговый гайд:** [analytics-formulas-and-packs.md](../analytics-formulas-and-packs.md).
+**Пошаговый гайд:** [analytics-formulas-and-packs](../analytics-formulas-and-packs.md).
 
 
 
@@ -74,7 +74,7 @@ POST /api/v1/platform/analytics/catalog/validate
 
 
 
-UI: **браузер формул** в модальном редакторе выражений ([ADR-0040](0040-unified-computations-ui.md)).
+UI: **браузер формул** в модальном редакторе выражений ([0040-unified-computations-ui](0040-unified-computations-ui.md)).
 
 
 
@@ -164,7 +164,7 @@ Pack deliverable: `analytics-pack.json` + JAR + `META-INF/services/...AnalyticsF
 
 
 
-Коммерческие analytics packs распространяются через [MARKETPLACE.md](../marketplace.md) с `artifactKind: analytics-pack` (аналог symbol packs и driver packs):
+Коммерческие analytics packs распространяются через [marketplace](../marketplace.md) с `artifactKind: analytics-pack` (аналог symbol packs и driver packs):
 
 
 
@@ -172,7 +172,7 @@ Pack deliverable: `analytics-pack.json` + JAR + `META-INF/services/...AnalyticsF
 
 2. Оператор: **Система → Решения → Маркетплейс** → Install / Activate.
 
-3. Платформа распаковывает в `ISPF_ANALYTICS_PACKS_DIR`, проверяет RSA-лицензию ([ADR-0003](0003-commercial-bundle-licensing.md)).
+3. Платформа распаковывает в `ISPF_ANALYTICS_PACKS_DIR`, проверяет RSA-лицензию ([0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)).
 
 4. Функции появляются в `GET .../analytics/catalog` с `pack: <packId>`.
 
@@ -238,15 +238,15 @@ Pack deliverable: `analytics-pack.json` + JAR + `META-INF/services/...AnalyticsF
 
 
 
-- [ADR-0038](0038-analytics-platform-architecture.md)
+- [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md)
 
-- [ADR-0041](0041-multi-tag-historian-computations.md)
+- [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)
 
-- [analytics-formulas-and-packs.md](../analytics-formulas-and-packs.md)
+- [analytics-formulas-and-packs](../analytics-formulas-and-packs.md)
 
-- [analytics-historian-cookbook.md](../analytics-historian-cookbook.md)
+- [analytics-historian-cookbook](../analytics-historian-cookbook.md)
 
-- [MARKETPLACE.md](../marketplace.md)
+- [marketplace](../marketplace.md)
 
-- [analytics-platform-roadmap.md](../analytics-platform-roadmap.md)
+- [analytics-platform-roadmap](../analytics-platform-roadmap.md)
 

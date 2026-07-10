@@ -2,7 +2,7 @@
 
 # SCADA mimic — diagramJson and API reference
 
-Technical reference for document format and REST API. Overview of capabilities, workflow, and architecture: **[scada.md](scada.md)**.
+Technical reference for document format and REST API. Overview of capabilities, workflow, and architecture: **[scada](scada.md)**.
 
 ---
 
@@ -244,4 +244,4 @@ Editor palette — **SVG only**:
 
 Dynamic symbols (labels, GPU blocks, breakers with live state): define in `customSymbols[]` with `behaviors` + `bindingSchema`. Reference: `mini-tec-mimic.json`.
 
-Full guide: [scada.md § Symbol catalog](scada.md), [scada-symbol-library.md](scada-symbol-library.md).
+Full guide: [scada.md § Symbol catalog](scada.md), [scada-symbol-library](scada-symbol-library.md).

@@ -81,7 +81,7 @@ scp deploy/vps-idle-thread-sample.py root@ispf.iot-solutions.ru:/tmp/
 ssh root@ispf.iot-solutions.ru python3 /tmp/vps-idle-thread-sample.py
 ```
 
-Подробнее: [DEMOSTANDS.md](demostands.md) (раздел проверки), [VPS_DEMOSTAND.md](vps-demostand.md) (пример ops).
+Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).
 
 **Панель управления Grafana** (все метрики конвейера): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](readme.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.
 
@@ -191,6 +191,6 @@ ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY=10000
 
 ## Связанные документы
 
-- [LOAD_TESTING.md](load-testing.md) — базовые показатели и скрипты нагрузочного тестирования
-- [MESSAGING.md](messaging.md) — дополнительные транспорты JetStream / Redis (0014)
+- [load-testing](load-testing.md) — базовые показатели и скрипты нагрузочного тестирования
+- [messaging](messaging.md) — дополнительные транспорты JetStream / Redis (0014)
 - [decisions/0014-automation-pipeline-evolution.md](decisions/0014-automation-pipeline-evolution.md)

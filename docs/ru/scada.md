@@ -4,7 +4,7 @@
 
 Конфигурируемые мнемосхемы / P&ID / однолинейные схемы с каталогом SVG-символов, живыми привязками к переменному дереву объектов и управление с помощью HMI.
 
-**См. также:** [SCADA_MIMIC.md](scada-mimic.md) (схема `diagramJson`, REST API), [WIDGETS.md § scada-mimic](widgets.md), [DASHBOARDS.md](dashboards.md), [BINDINGS.md](bindings.md).
+**См. также:** [scada-mimic](scada-mimic.md) (схема `diagramJson`, REST API), [WIDGETS.md § scada-mimic](widgets.md), [dashboards](dashboards.md), [bindings](bindings.md).
 
 ---
 
@@ -233,7 +233,7 @@
 }
 ```
 
-Полная схема полей, REST API и реэкспорт загрузочного JSON: [SCADA_MIMIC.md](scada-mimic.md).
+Полная схема полей, REST API и реэкспорт загрузочного JSON: [scada-mimic](scada-mimic.md).
 
 ---
 
@@ -251,7 +251,7 @@
 
 Pack-символы: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Генератор: [`tools/symbol-pack-isa`](readme.md).
 
-**Полное руководство (загрузка, библиотека, поведение):** [SCADA_SYMBOL_LIBRARY.md](scada-symbol-library.md) (BL-94).
+**Полное руководство (загрузка, библиотека, поведение):** [scada-symbol-library](scada-symbol-library.md) (BL-94).
 
 ### Три выхода размещения
 
@@ -387,7 +387,7 @@ cd tools/symbol-pack-isa && npm install && npm run build
 # → apps/web-console/src/scada/symbols/packs/ispf-pid-v1/
 ```
 
-Юридически: [PID_SYMBOLS_LEGAL.md](pid-symbols-legal.md).
+Юридически: [pid-symbols-legal](pid-symbols-legal.md).
 
 ---
 
@@ -422,7 +422,7 @@ cd tools/symbol-pack-isa && npm install && npm run build
 cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipelineScadaMimics.ts
 ```
 
-Прохождение мини-TEC: [REFERENCE_MINI_TEC_WALKTHROUGH.md](reference-mini-tec-walkthrough.md).
+Прохождение мини-TEC: [reference-mini-tec-walkthrough](reference-mini-tec-walkthrough.md).
 
 Шаблоны в коде: `apps/web-console/src/scada/templates/`. В Dashboard Builder — кнопки **мини-ТЭЦ**, **СДКУ РП (РД-029)**, **резервуарный парк**.
 
@@ -454,7 +454,7 @@ cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipeline
 ## Связь с логикой платформы
 
 - Привязки симулируют использование тех же переменных, что и виджеты диаграммы/значений/функций.
-- `selectionKey` работает через `@dashboardContext` — см. [PLATFORM_LOGIC.md](platform-logic.md).
+- `selectionKey` работает через `@dashboardContext` — см. [platform-logic](platform-logic.md).
 - События и правила оповещений — на объектах-источниках, а не внутри JSON.
 
 ---

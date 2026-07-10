@@ -58,5 +58,5 @@ ADR-0031 ввёл enum `ISPF_REPLICA_ROLE` (`all` / `api` / `worker`). На prod
 
 ## Связанные материалы
 
-- [ADR-0031](0031-cluster-replica-roles-platform-jobs.md)
-- [CLUSTER.md](../cluster.md)
+- [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md)
+- [cluster](../cluster.md)

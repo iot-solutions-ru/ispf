@@ -38,8 +38,8 @@
 - **Auto-apply** при create (`applyRelativeModels`, флаг `autoApplyRelativeBlueprints`, default true): модель применяется **только** если CEL **не пустой** и вычисляется в `true`. Пустой CEL → auto-apply **не выполняется**.
 - **System-intrinsic** RELATIVE (`parameters.systemIntrinsic=true`, напр. `data-source-v1`) **исключены** из auto-apply и каталога — схема вшивается в экземпляр через `SystemObjectStructureService`.
 - **Явный apply** (`templateId`, API `/relative-blueprints/{id}/apply`, companion-blueprints): CEL опционален; проверяется `targetObjectType`.
-- **Fixture-модели** (`mqtt-sensor-v1`, `mqtt-gateway-v1`, `device-driver-v1`, …) — не core built-in; см. [ADR-0018](0018-fixture-models-and-cel-applicability.md).
-- Схема driver-переменных на `DEVICE` при provisioning — embedded structure, не relative auto-apply; см. [ADR-0018](0018-fixture-models-and-cel-applicability.md).
+- **Fixture-модели** (`mqtt-sensor-v1`, `mqtt-gateway-v1`, `device-driver-v1`, …) — не core built-in; см. [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
+- Схема driver-переменных на `DEVICE` при provisioning — embedded structure, не relative auto-apply; см. [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
 
 ### 4. INSTANCE как виртуальный тип
 
@@ -68,11 +68,11 @@
 - Flyway `V39__object_applied_models.sql`.
 - `PlatformObject.appliedBlueprintIds`, расширенный `ObjectDto`.
 - UI: три каталога, create dialog с INSTANCE-типами, инспектор со списком применённых моделей.
-- Документация: [blueprints.md](../BLUEPRINTS.md), [object-model.md](../object-model.md).
+- Документация: [BLUEPRINTS](../BLUEPRINTS.md), [object-model](../object-model.md).
 
 ## Связанные материалы
 
-- [blueprints.md](../BLUEPRINTS.md)
-- [bindings.md](../BINDINGS.md)
-- [ADR-0010](0010-binding-rules-only.md) (binding rules only)
-- [ADR-0018](0018-fixture-models-and-cel-applicability.md) (fixtures + CEL auto-apply)
+- [BLUEPRINTS](../BLUEPRINTS.md)
+- [BINDINGS](../BINDINGS.md)
+- [0010-binding-rules-only](0010-binding-rules-only.md) (binding rules only)
+- [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md) (fixtures + CEL auto-apply)

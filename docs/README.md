@@ -19,6 +19,6 @@ ADR: [en/decisions/](en/decisions/) · [ru/decisions/](ru/decisions/)
 
 ## Maintenance
 
-- [documentation-audit.md](en/documentation-audit.md) — structure, naming, link policy
+- [documentation-audit](en/documentation-audit.md) — structure, naming, link policy
 - `python tools/docs-audit/audit_links.py` — verify internal links
 - `python tools/docs-audit/audit_en_language.py` — no Cyrillic in `docs/en/`

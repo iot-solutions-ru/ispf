@@ -22,9 +22,9 @@
 
 **Решение (solution)** наполняет эти механизмы конфигурацией: модели, пороги, процессы, функции, дашборды.
 
-Bundle deploy ([APPLICATIONS.md](applications.md)) — **упаковка и доставка** конфигурации в дерево объектов и app schema, а не отдельный runtime вне платформы.
+Bundle deploy ([applications](applications.md)) — **упаковка и доставка** конфигурации в дерево объектов и app schema, а не отдельный runtime вне платформы.
 
-**Запрещено в `main`:** отраслевой Java в `ispf-server`, hardcoded BFF routes, дублирование логики вне object tree. См. [0001](decisions/0001-app-platform-boundary.md).
+**Запрещено в `main`:** отраслевой Java в `ispf-server`, hardcoded BFF routes, дублирование логики вне object tree. См. [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
 
 **Развитие platform:** усиление выразительности механизмов object tree (Phase 5). См. [ROADMAP.md § Phase 5](roadmap.md).
 
@@ -48,7 +48,7 @@ graph TB
     VARS --> CEL[CEL Bindings]
 ```
 
-Подробнее: [OBJECT_MODEL.md](object-model.md).
+Подробнее: [object-model](object-model.md).
 
 ### Объект платформы
 
@@ -62,11 +62,11 @@ graph TB
 ### Модели (Templates)
 
 `BlueprintDefinition` — blueprint: variables, events, functions, bindings.  
-См. [BLUEPRINTS.md](blueprints.md).
+См. [blueprints](blueprints.md).
 
 ### Выражения
 
-Google CEL для bindings, alert rules, workflow gateways. Переменные объектов также поддерживают **platform bindings** (`counterRate`, `scale`, `clamp`, …) — см. [BINDINGS.md](bindings.md).
+Google CEL для bindings, alert rules, workflow gateways. Переменные объектов также поддерживают **platform bindings** (`counterRate`, `scale`, `clamp`, …) — см. [bindings](bindings.md).
 
 ```
 self.temperature.value > self.threshold.value
@@ -116,7 +116,7 @@ counterRate(ifInOctets)
 
 OAuth2 JWT (Keycloak) или header-based RBAC (`local`).  
 Roles: `admin`, `operator`.  
-См. [SECURITY.md](security.md).
+См. [security](security.md).
 
 ## Поток данных: телеметрия
 
@@ -148,19 +148,19 @@ Event fire → event_history
 - Keycloak / OIDC
 - Static web-console behind CDN/ingress
 
-**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Multi-replica: driver ownership, NATS live mirror — см. **[CLUSTER.md](cluster.md)**. Несколько площадок / edge-агентов — [FEDERATION.md](federation.md), [ROADMAP.md § Phase 4–8](roadmap.md).
+**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Multi-replica: driver ownership, NATS live mirror — см. **[cluster](cluster.md)**. Несколько площадок / edge-агентов — [federation](federation.md), [ROADMAP.md § Phase 4–8](roadmap.md).
 
-См. [DEPLOYMENT.md](deployment.md).
+См. [deployment](deployment.md).
 
 ## Точки расширения
 
-1. **DeviceDriver** — новый протокол ([DRIVERS.md](drivers.md))
-2. **BlueprintDefinition** — шаблон устройства/процесса ([BLUEPRINTS.md](blueprints.md))
+1. **DeviceDriver** — новый протокол ([drivers](drivers.md))
+2. **BlueprintDefinition** — шаблон устройства/процесса ([blueprints](blueprints.md))
 3. **FunctionHandler** — бизнес-операции на объектах
-4. **Dashboard widgets** — новые типы в web-console ([DASHBOARDS.md](dashboards.md))
-5. **REST / Webhook** — внешние интеграции ([API.md](api.md))
-6. **NATS subjects** — messageTask в BPMN ([WORKFLOWS.md](workflows.md))
-7. **Application bundle** — deploy функций и миграций **вне** ядра ([APPLICATIONS.md](applications.md), [PLUGINS.md](plugins.md))
+4. **Dashboard widgets** — новые типы в web-console ([dashboards](dashboards.md))
+5. **REST / Webhook** — внешние интеграции ([api](api.md))
+6. **NATS subjects** — messageTask в BPMN ([workflows](workflows.md))
+7. **Application bundle** — deploy функций и миграций **вне** ядра ([applications](applications.md), [plugins](plugins.md))
 
 Коммерческие и отраслевые расширения **не** входят в Apache 2.0-дерево `main`.
 

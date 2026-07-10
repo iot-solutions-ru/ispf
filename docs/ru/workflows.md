@@ -67,7 +67,7 @@ Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
 | `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
 | `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
 
-Пример `invoke_function` (прикладные функции — [APPLICATIONS.md](applications.md)):
+Пример `invoke_function` (прикладные функции — [applications](applications.md)):
 
 ```xml
 <serviceTask id="assign" name="Assign tank"
@@ -133,7 +133,7 @@ Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
 <sequenceFlow sourceRef="ackTimeout" targetRef="escalate"/>
 ```
 
-Пока пользовательская задача находится в `WAITING`, параллельно отсчитывается SLA. При реализации таймера достижения ветки эскалации (прерывания). Шаблон: [REFERENCE_ESCALATION_TEMPLATES.md](reference-escalation-templates.md).
+Пока пользовательская задача находится в `WAITING`, параллельно отсчитывается SLA. При реализации таймера достижения ветки эскалации (прерывания). Шаблон: [reference-escalation-templates](reference-escalation-templates.md).
 
 ## Рабочая очередь
 
@@ -167,7 +167,7 @@ POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 
 ## Корреляторы событий → Рабочий процесс
 
-Коррелятор с действием `RUN_WORKFLOW` и `actionTarget` = путь рабочего процесса. См. [АВТОМАТИЗАЦИЯ.md](automation.md).
+Коррелятор с действием `RUN_WORKFLOW` и `actionTarget` = путь рабочего процесса. См. [automation](automation.md).
 
 ## Демонстрационный рабочий процесс
 

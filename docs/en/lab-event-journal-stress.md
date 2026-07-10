@@ -2,7 +2,7 @@
 
 # Lab: event journal stress (Scylla + MQTT)
 
-Load stand for **EVENT_JOURNAL_ONLY** fast path ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)): mqtt driver → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
+Load stand for **EVENT_JOURNAL_ONLY** fast path ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)): mqtt driver → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
 
 **Host:** `84.42.21.226`, SSH port `5031`, user `iot-solutions`  
 **SSH alias:** `ispf-lab` (Ed25519 key `~/.ssh/ispf_lab_ed25519`)  
@@ -191,10 +191,10 @@ Cleanup orphans: `bash lab-emqtt-cleanup.sh` (label `ispf.emqtt-bench=1`).
 
 ## Related documents
 
-- [LOAD_TESTING.md](load-testing.md) — general MQTT / emqtt scenarios
-- [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md) — EVENT_JOURNAL_ONLY
-- [ADR-0026](decisions/0026-elastic-telemetry-ingress.md) — ingress pipeline
-- [AUTOMATION.md](automation.md) — platform metrics API
+- [load-testing](load-testing.md) — general MQTT / emqtt scenarios
+- [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) — EVENT_JOURNAL_ONLY
+- [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md) — ingress pipeline
+- [automation](automation.md) — platform metrics API
 
 ## VPS prod comparison (ispf.iot-solutions.ru)
 

@@ -4,7 +4,7 @@
 
 Complete reference for **P&ID pack symbols**, **custom SVG upload**, and **document library** in ISPF mimic editor.
 
-See also: [scada.md](scada.md), [scada-mimic.md](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
+See also: [scada](scada.md), [scada-mimic](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
 
 ---
 
@@ -133,7 +133,7 @@ cd apps/web-console && npm run test -- src/scada/customSvg.test.ts src/scada/sym
 
 ## Legal
 
-- **ispf-pid-v1** pack: Apache-2.0 original work ([LICENSE](license.md)).
+- **ispf-pid-v1** pack: Apache-2.0 original work ([license](license.md)).
 - Do **not** import vendor SymbolFactory / TIA / copyrighted P&ID art.
 - Legacy WMF importer (`tools/symbol-import/`) is **deprecated**.
 

@@ -2,6 +2,8 @@
 
 # Automation: events, alerts, correlators
 
+**See also:** [workflows](workflows.md), [0039-unified-alarm-architecture](decisions/0039-unified-alarm-architecture.md), [0014-automation-pipeline-evolution](decisions/0014-automation-pipeline-evolution.md), [operator-guide](operator-guide.md).
+
 ## Events
 
 ### Descriptor
@@ -18,11 +20,11 @@ Levels (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
 POST /api/v1/events/fire
 ```
 
-**Driver ingress (high frequency, no HTTP):** when `telemetryPublishMode=EVENT_JOURNAL_ONLY`, each driver variable update triggers `EventService.fireIngress` → async journal. The event name comes from `ingressEventName` in the driver configuration (default `messageReceived`). See [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).
+**Driver ingress (high frequency, no HTTP):** when `telemetryPublishMode=EVENT_JOURNAL_ONLY`, each driver variable update triggers `EventService.fireIngress` → async journal. The event name comes from `ingressEventName` in the driver configuration (default `messageReceived`). See [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md).
 
 Shared hot path after descriptor validation:
 
-1. Write to `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) or ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))
+1. Write to `event_history` (async batch — Timescale [0015-event-history-timescale](decisions/0015-event-history-timescale.md) or ClickHouse [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md))
 2. `ObjectChangeEvent` → WebSocket
 3. Listeners: correlators, UI.
 
@@ -36,7 +38,7 @@ Without `objectPath` — global journal (up to 200 entries).
 
 ### Demo
 
-`mqtt-sensor-v1` → `thresholdExceeded` when the threshold is exceeded (via alert rule or manual fire); `messageReceived` — for loadtest/audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).
+`mqtt-sensor-v1` → `thresholdExceeded` when the threshold is exceeded (via alert rule or manual fire); `messageReceived` — for loadtest/audit ingress ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
 
 ---
 
@@ -249,3 +251,9 @@ In `?mode=operator`:
 - **WorkQueuePanel** — tasks from user tasks.
 
 Dashboard widgets `event-feed` and `work-queue` duplicate functionality on the HMI screen.
+
+## Related
+
+- [0039-unified-alarm-architecture](decisions/0039-unified-alarm-architecture.md) — alert rule field evolution
+- [reference-escalation-templates](reference-escalation-templates.md) — workflow escalation
+- [variable-history](variable-history.md) — event journal storage ([0015-event-history-timescale](decisions/0015-event-history-timescale.md), [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md))

@@ -127,5 +127,5 @@ If `observedAt` is absent, `observedAt := ingestedAt` (backward compatible).
 
 - [ROADMAP.md § Phase 21](../roadmap.md#phase-21--time--timezones)
 - [ROADMAP.md § Phase 21 (BL-66…71)](../roadmap.md#phase-21--time--timezones)
-- [FW-60](../roadmap.md) — framework requirement (BL-66…71)
-- [ADR-0013](0013-web-console-i18n.md) — locale vs timezone (orthogonal concerns)
+- [roadmap](../roadmap.md) — framework requirement (BL-66…71)
+- [0013-web-console-i18n](0013-web-console-i18n.md) — locale vs timezone (orthogonal concerns)

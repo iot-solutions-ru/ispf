@@ -12,7 +12,7 @@ ISPF использует **ролевой доступ** на уровне HTTP
 | `developer` | `ROLE_developer` |
 | `operator` | `ROLE_operator` |
 
-Пообъектный ACL — см. [SECURITY.md](security.md) (`object_acl_entries`, вкладка «Доступ» в веб-консоли).
+Пообъектный ACL — см. [security](security.md) (`object_acl_entries`, вкладка «Доступ» в веб-консоли).
 
 ## Профили аутентификации
 
@@ -53,7 +53,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 | `GET /api/v1/auth/me` | Текущий пользователь (с токеном) |
 | `GET /api/v1/auth/config` | Режим auth (`local` / `oidc`) для Web Console |
 
-Пользователи и ролики синхронизируются в дереве объектов (см. [OBJECT_MODEL.md](object-model.md)).
+Пользователи и ролики синхронизируются в дереве объектов (см. [object-model](object-model.md)).
 
 ### dev/default (как в рабочей среде)
 

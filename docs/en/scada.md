@@ -4,7 +4,7 @@
 
 Configurable mimic diagrams / P&ID / single-line diagrams with an SVG symbol catalog, live bindings to the object-tree variables, and HMI-driven control.
 
-**See also:** [scada-mimic.md](scada-mimic.md) (`diagramJson` schema, REST API), [widgets.md § scada-mimic](widgets.md), [dashboards.md](dashboards.md), [bindings.md](bindings.md).
+**See also:** [scada-mimic](scada-mimic.md) (`diagramJson` schema, REST API), [widgets.md § scada-mimic](widgets.md), [dashboards](dashboards.md), [bindings](bindings.md).
 
 ---
 
@@ -171,7 +171,7 @@ Element coordinates are **pixels on the artboard**, not dashboard grid cells.
 
 ---
 
-## Bindings ([bindings.md](bindings.md))
+## Bindings ([bindings](bindings.md))
 
 An element or line references live platform data:
 
@@ -233,7 +233,7 @@ Format **version 2** (only supported). v1 documents normalize to v2 on load with
 }
 ```
 
-Full field schema, REST API, and bootstrap JSON re-export: [scada-mimic.md](scada-mimic.md).
+Full field schema, REST API, and bootstrap JSON re-export: [scada-mimic](scada-mimic.md).
 
 ---
 
@@ -251,7 +251,7 @@ All mimic symbols are **SVG**. One renderer: `CustomSvgSymbol` + optional `behav
 
 Pack symbols: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Generator: [`tools/symbol-pack-isa`](readme.md).
 
-**Full guide (upload, library, behaviors):** [scada-symbol-library.md](scada-symbol-library.md) (BL-94).
+**Full guide (upload, library, behaviors):** [scada-symbol-library](scada-symbol-library.md) (BL-94).
 
 ### Three placement modes
 
@@ -387,7 +387,7 @@ cd tools/symbol-pack-isa && npm install && npm run build
 # → apps/web-console/src/scada/symbols/packs/ispf-pid-v1/
 ```
 
-Legal: [pid-symbols-legal.md](pid-symbols-legal.md).
+Legal: [pid-symbols-legal](pid-symbols-legal.md).
 
 ---
 
@@ -422,7 +422,7 @@ App `pipeline-scada`, devices: `root.platform.devices.pipeline-scada.*`. Re-expo
 cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipelineScadaMimics.ts
 ```
 
-mini-TEC walkthrough: [reference-mini-tec-walkthrough.md](reference-mini-tec-walkthrough.md).
+mini-TEC walkthrough: [reference-mini-tec-walkthrough](reference-mini-tec-walkthrough.md).
 
 Templates in code: `apps/web-console/src/scada/templates/`. In Dashboard Builder — **mini-TEC**, **Pipeline SCADA RP (RD-029)**, **tank farm** buttons.
 
@@ -454,7 +454,7 @@ Templates in code: `apps/web-console/src/scada/templates/`. In Dashboard Builder
 ## Link to platform logic
 
 - Mimic bindings use the same variables as chart/value/function widgets.
-- `selectionKey` works via `@dashboardContext` — see [platform-logic.md](platform-logic.md).
+- `selectionKey` works via `@dashboardContext` — see [platform-logic](platform-logic.md).
 - Events and alert rules live on source objects, not inside mimic JSON.
 
 ---

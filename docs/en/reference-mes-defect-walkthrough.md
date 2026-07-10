@@ -55,5 +55,5 @@ Reference BPMN (drawio): [docs/assets/mes-defect-bpmn.drawio.xml](assets/mes-def
 
 ## Related documents
 
-- [workflows.md](workflows.md) — BPMN on ISPF
-- [applications.md](applications.md) — bundle deploy
+- [workflows](workflows.md) — BPMN on ISPF
+- [applications](applications.md) — bundle deploy

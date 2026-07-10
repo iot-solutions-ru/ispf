@@ -105,7 +105,7 @@ Environment badge: `GET /api/v1/info` → `environment` (`ispf.environment`, def
 
 ## Связанные документы
 
-- [SECURITY.md](security.md) — RBAC и ACL
-- [OBJECT_MODEL.md](object-model.md) — дерево объектов
-- [BLUEPRINTS.md](blueprints.md) — разница/обновление моделей
-- [ROADMAP.md](roadmap.md) — Фаза 11
+- [security](security.md) — RBAC и ACL
+- [object-model](object-model.md) — дерево объектов
+- [blueprints](blueprints.md) — разница/обновление моделей
+- [roadmap](roadmap.md) — Фаза 11

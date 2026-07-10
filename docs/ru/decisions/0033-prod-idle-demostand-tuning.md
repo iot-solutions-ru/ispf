@@ -7,7 +7,7 @@
 
 ## Контекст
 
-Платформенные defaults ([ADR-0026](0026-elastic-telemetry-ingress.md)) рассчитаны на **throughput**: elastic L0–L3 pools (ingress 4–32 workers, binding-async, object-change bus). На стендах с **малым** числом устройств (demo, HMI, edge gateway) те же defaults дают:
+Платформенные defaults ([0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md)) рассчитаны на **throughput**: elastic L0–L3 pools (ingress 4–32 workers, binding-async, object-change bus). На стендах с **малым** числом устройств (demo, HMI, edge gateway) те же defaults дают:
 
 - лишние потоки и churn elastic scale без реальной очереди;
 - высокий CPU при poll-драйверах в режиме `FULL` (полный automation pipeline на каждый OID);
@@ -17,7 +17,7 @@
 
 Остановка драйверов снижает нагрузку, но **не заменяет** выбор профиля: для demo нужны живые устройства при урезанных pools и корректных publish modes.
 
-Обобщённое руководство: [DEMOSTANDS.md](../DEMOSTANDS.md).
+Обобщённое руководство: [DEMOSTANDS](../DEMOSTANDS.md).
 
 ## Решение
 
@@ -28,7 +28,7 @@
 | **Production** | ON (defaults) | 1–N реплик, PG + TS/CH | [DEMOSTANDS.md § Production](../DEMOSTANDS.md#профиль-production-промышленная-эксплуатация) |
 | **Demo / idle** | OFF, fixed pools | single unified node | [DEMOSTANDS.md § Demo](../DEMOSTANDS.md#профиль-demo--idle-малая-нагрузка) |
 | **Edge** | OFF, minimal 1 | single node, coalesce↑ | [DEMOSTANDS.md § Edge](../DEMOSTANDS.md#профиль-edge-ограниченный-cpu) |
-| **Throughput** | ON (peak tuning) | benchmark | [LOAD_TESTING.md](../load-testing.md) |
+| **Throughput** | ON (peak tuning) | benchmark | [load-testing](../load-testing.md) |
 
 ### 2. Профиль `prod-idle` (env overlay для demo / idle)
 
@@ -52,7 +52,7 @@
 
 ### 4. Single unified node для idle demo
 
-`ISPF_CLUSTER_ENABLED=false`, `replicaRole=all`. Multi-replica — только при запасе CPU и цели HA/throughput ([CLUSTER.md](../cluster.md)).
+`ISPF_CLUSTER_ENABLED=false`, `replicaRole=all`. Multi-replica — только при запасе CPU и цели HA/throughput ([cluster](../cluster.md)).
 
 ### 5. Read-only hot paths без write
 
@@ -73,7 +73,6 @@
 - Явное разделение «load-test defaults» vs «idle overlay».
 - Меньше скрытых ERROR в логах.
 
-
 Risks:
 
 - Prod-idle **не** подходит для flood MQTT без смены env на throughput profile.
@@ -82,14 +81,14 @@ Risks:
 
 **Документация**
 
-- [DEMOSTANDS.md](../DEMOSTANDS.md) — основной guide
-- [VPS_DEMOSTAND.md](../VPS_DEMOSTAND.md) — пример ops на одном хосте
-- [DEPLOYMENT.md](../deployment.md), [CLUSTER.md](../cluster.md)
+- [DEMOSTANDS](../DEMOSTANDS.md) — основной guide
+- [VPS_DEMOSTAND](../VPS_DEMOSTAND.md) — пример ops на одном хосте
+- [deployment](../deployment.md), [cluster](../cluster.md)
 
 ## Связанные материалы
 
-- [ADR-0026](0026-elastic-telemetry-ingress.md) — elastic ingress defaults (throughput)
-- [ADR-0027](0027-event-journal-ingress-fast-path.md) — journal fast path
-- [ADR-0028](0028-horizontal-active-active-cluster.md) — cluster vs single
-- [LOAD_TESTING.md](../load-testing.md) — throughput
-- [OBSERVABILITY.md](../OBSERVABILITY.md) — Load diagnostics
+- [0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md) — elastic ingress defaults (throughput)
+- [0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md) — journal fast path
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — cluster vs single
+- [load-testing](../load-testing.md) — throughput
+- [OBSERVABILITY](../OBSERVABILITY.md) — Load diagnostics

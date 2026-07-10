@@ -72,4 +72,4 @@ Typical production chain:
 
 `EscalationTemplateSmokeTest` parses `ack-timeout-escalation.bpmn.xml` and verifies boundary timer escalation path.
 
-See also: [workflows.md](workflows.md), [automation.md](automation.md).
+See also: [workflows](workflows.md), [automation](automation.md).

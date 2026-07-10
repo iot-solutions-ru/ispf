@@ -20,11 +20,11 @@
 
 ## Последствия
 
-- [variable-history.md](../variable-history.md) — операторский и API контракт.
-- [deployment.md](../deployment.md) — docker image `timescale/timescaledb` для prod.
+- [variable-history](../variable-history.md) — операторский и API контракт.
+- [deployment](../deployment.md) — docker image `timescale/timescaledb` для prod.
 - Увеличение retention на prod — ops: изменить config + при необходимости `SELECT drop_chunks` / политику Timescale (вне hot-path кода).
 
 ## Связанные материалы
 
 - ROADMAP Phase 2.2 — TimescaleDB hypertables + retention
-- REQ-PF variable history — [object-model.md](../object-model.md)
+- REQ-PF variable history — [object-model](../object-model.md)

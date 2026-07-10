@@ -7,7 +7,7 @@
 
 ## Контекст
 
-P3a ([0015](0015-event-history-timescale.md)) вынес `event_history` в Timescale hypertable в PostgreSQL. На ~40 events/s узким местом остаётся OLTP-запись в PG; для сотен/тысяч events/s нужен column store с batch insert и отдельным масштабированием.
+P3a ([0015-event-history-timescale](0015-event-history-timescale.md)) вынес `event_history` в Timescale hypertable в PostgreSQL. На ~40 events/s узким местом остаётся OLTP-запись в PG; для сотен/тысяч events/s нужен column store с batch insert и отдельным масштабированием.
 
 PostgreSQL/Timescale остаётся для relational core (дерево объектов, workflow, RBAC, alert state).
 
@@ -47,6 +47,6 @@ TTL occurred_at + INTERVAL 90 DAY;
 
 ## Связанные материалы
 
-- [0015](0015-event-history-timescale.md) — Timescale tier (P3a)
-- [0014](0014-automation-pipeline-evolution.md) — automation pipeline evolution
-- [load-testing.md](../load-testing.md) — throughput baselines
+- [0015-event-history-timescale](0015-event-history-timescale.md) — Timescale tier (P3a)
+- [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) — automation pipeline evolution
+- [load-testing](../load-testing.md) — throughput baselines

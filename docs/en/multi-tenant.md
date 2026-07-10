@@ -98,4 +98,4 @@ On `POST /api/v1/tenants`:
 | OIDC tenant claim | Planned (BL-155 follow-up) | Planned |
 | Restart on toggle | Yes | Yes |
 
-See also [federation.md](federation.md), [roadmap.md](roadmap.md).
+See also [federation](federation.md), [roadmap](roadmap.md).

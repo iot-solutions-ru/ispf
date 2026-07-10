@@ -23,11 +23,11 @@
 
 - API и UI: вкладка «Привязки», CRUD `/binding-rules`.
 - Agent: `create_binding_rule` вместо binding на `create_variable`.
-- Документация: [bindings.md](../BINDINGS.md) переписан.
+- Документация: [BINDINGS](../BINDINGS.md) переписан.
 - Колонка `binding_expr` удалена из схемы (V1 + V41); dev — пересоздание БД вместо runtime-migration.
 
 ## Связанные материалы
 
-- [bindings.md](../BINDINGS.md)
-- [object-model.md](../object-model.md)
+- [BINDINGS](../BINDINGS.md)
+- [object-model](../object-model.md)
 - FW-48 / virt-cluster playbook

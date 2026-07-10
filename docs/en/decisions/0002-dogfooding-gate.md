@@ -33,5 +33,5 @@ Criterion for a new REQ-PF: *can the need be expressed through an existing or ge
 
 ## Related
 
-- [roadmap.md](../roadmap.md)
-- [0001](0001-app-platform-boundary.md)
+- [roadmap](../roadmap.md)
+- [0001-app-platform-boundary](0001-app-platform-boundary.md)

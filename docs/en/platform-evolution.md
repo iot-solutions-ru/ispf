@@ -5,7 +5,7 @@
 Chronological checklist of **what was delivered** over the platform's lifetime. Items marked done are completed work — this is not a plan, but a **retrospective** of evolution.
 
 **Baseline:** `main` → `0.9.41`.  
-**Sources:** git history, [roadmap.md](roadmap.md), release tags.
+**Sources:** git history, [roadmap](roadmap.md), release tags.
 
 ---
 
@@ -14,7 +14,7 @@ Chronological checklist of **what was delivered** over the platform's lifetime. 
 | Symbol | Meaning |
 |--------|---------|
 | `[x]` | Implemented and in baseline `main` |
-| `[~]` | Partial / in progress (see [roadmap.md](roadmap.md)) |
+| `[~]` | Partial / in progress (see [roadmap](roadmap.md)) |
 | `[ ]` | Planned, not yet closed |
 
 Evolution runs **top to bottom** — from foundation to the current state.
@@ -59,7 +59,7 @@ Evolution runs **top to bottom** — from foundation to the current state.
 
 Turning point: solutions live **on the platform** via bundle deploy, not in industry-specific Java server code.
 
-- [x] **REQ-PF specification** — [roadmap.md § Part A](roadmap.md), ADR [0001](decisions/0001-app-platform-boundary.md)
+- [x] **REQ-PF specification** — [roadmap.md § Part A](roadmap.md), ADR [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md)
 - [x] **Sprint A** — script runtime: `selectMany`, `setVar`, `when`/`if`, transactions; app schema isolation (PF-02)
 - [x] **Sprint B** — bundle metadata, BFF wire profile `ispf-operator-v1`, `cancel_workflows` (PF-06, PF-10)
 - [x] **Sprint C** — manifest-driven operator shell via generic `POST /bff/invoke`
@@ -68,7 +68,7 @@ Turning point: solutions live **on the platform** via bundle deploy, not in indu
 - [x] **Application deploy API** — `POST /applications/{appId}/deploy`: migrations, functions, objects, dashboards, workflows, models
 - [x] **Platform scheduler** — cron via `platform_schedules`, not `@Scheduled` in Java (PF-05)
 - [x] **Script functions** — JSON steps + SQL, no custom `FunctionHandler` in `main` (PF-01)
-- [x] **Reference apps** — `examples/demo-app`, `warehouse-app` (dogfooding gate [0002](decisions/0002-dogfooding-gate.md))
+- [x] **Reference apps** — `examples/demo-app`, `warehouse-app` (dogfooding gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md))
 
 ---
 
@@ -184,7 +184,7 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 
 - [x] **Multi-user collaboration** — object revision (If-Match), config audit, stale editor UI
 - [x] **WS presence** + subtree leases + model merge preview
-- [x] **Change-sets** — preview/apply promotion pipeline ([collaboration.md](collaboration.md))
+- [x] **Change-sets** — preview/apply promotion pipeline ([collaboration](collaboration.md))
 - [x] **Reports tree-first (Phase 12)** — `report-v1` model, Report Builder, `/api/v1/reports/by-path`
 - [x] **YARG export (Phase 13)** — PDF/XLSX/HTML, template upload, widget PDF button
 - [x] **Platform catalogs (Phase 14)** — data-sources, schedules, bindings, migrations in the tree
@@ -201,7 +201,7 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 - [x] **Report type `tree-variables`** — cross-device RECORD_LIST
 - [x] **New widgets** — pie-chart, history-table, variable-editor, svg-widget, composite-widget
 - [x] **Importable bundle** — `examples/lab-training/` + lab users/ACL bootstrap
-- [x] **Docs + integration tests** — [lab-training.md](lab-training.md)
+- [x] **Docs + integration tests** — [lab-training](lab-training.md)
 
 ---
 
@@ -209,10 +209,10 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 
 - [x] **ADR process** — `docs/decisions/` (18 ADR)
 - [x] **Gap registry** — summary in [roadmap.md § Part I](roadmap.md)
-- [x] **Commercial licensing** — RSA keys, `installationId`, LicenseBuilder ([commercial-licensing.md](commercial-licensing.md))
-- [x] **MES reference** — walkthrough + synthetic demo ([reference-mes-walkthrough.md](reference-mes-walkthrough.md))
+- [x] **Commercial licensing** — RSA keys, `installationId`, LicenseBuilder ([commercial-licensing](commercial-licensing.md))
+- [x] **MES reference** — walkthrough + synthetic demo ([reference-mes-walkthrough](reference-mes-walkthrough.md))
 - [x] **Solution public API** — boundary doc + event catalog in bundle
-- [x] **Messaging contract** — event bus vs sync RPC ([messaging.md](messaging.md))
+- [x] **Messaging contract** — event bus vs sync RPC ([messaging](messaging.md))
 - [x] **Bundle `requires[]`** — dependency manifest for commercial bundles
 
 ---
@@ -226,7 +226,7 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 - [x] **Tree-first agent (FW-44)** — multi-turn sessions, live steps, cancel
 - [x] **Agent tools FW-45–48** — knowledge, invoke/search, discovery, automation (alert/correlator/bindings)
 - [x] **MCP adapter (ADR 0006)** — agent tools over MCP protocol
-- [x] **Licensed driver JAR packs (FW-50)** — pilot pack, [licensed-driver-packs.md](licensed-driver-packs.md)
+- [x] **Licensed driver JAR packs (FW-50)** — pilot pack, [licensed-driver-packs](licensed-driver-packs.md)
 - [x] **Mobile explorer** + roadmap backend (v0.7.7–0.7.13)
 
 ---
@@ -237,10 +237,10 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 - [x] **Dashboard session context** — sub-dashboard, expanded widget palette, fullscreen editor
 - [x] **Visual groups (ADR 0012)** — typed model catalogs (ADR 0011)
 - [x] **MapLibre** — Leaflet replacement; platform SQL object editors
-- [x] **mini-TEC reference** — operator HMI, SLD widget, platform bootstrap ([reference-mini-tec-walkthrough.md](reference-mini-tec-walkthrough.md))
+- [x] **mini-TEC reference** — operator HMI, SLD widget, platform bootstrap ([reference-mini-tec-walkthrough](reference-mini-tec-walkthrough.md))
 - [x] **YARG + lab reports** — agent report tools
 - [x] **Operator alarm bar** (v0.8.27)
-- [x] **Web Console i18n (Phase 19)** — en/ru/de/zh, LocaleSwitcher, `npm run i18n:check` ([0013](decisions/0013-web-console-i18n.md))
+- [x] **Web Console i18n (Phase 19)** — en/ru/de/zh, LocaleSwitcher, `npm run i18n:check` ([0013-web-console-i18n](decisions/0013-web-console-i18n.md))
 - [x] **Platform schedules UI** + system catalog i18n
 
 ---
@@ -248,7 +248,7 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 ## 16. Scale, observability, event journal — v0.9.x
 
 - [x] **Performance hardening (0.9.2–0.9.3)** — server + web-console; optional Redis cache
-- [x] **Ordered object-change event bus** — dual-lane automation pipeline ([0014](decisions/0014-automation-pipeline-evolution.md))
+- [x] **Ordered object-change event bus** — dual-lane automation pipeline ([0014-automation-pipeline-evolution](decisions/0014-automation-pipeline-evolution.md))
 - [x] **Automation indexes + async journal** — throughput ~22 events/s prod baseline (0.9.9)
 - [x] **Prometheus gauges** — automation pipeline metrics (0.9.6)
 - [x] **NATS JetStream fan-out** — optional replica fan-out (0.9.7)
@@ -256,12 +256,12 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 - [x] **OpenTelemetry** — OTLP metrics (0.9.9) + tracing handlers (0.9.10)
 - [x] **Elastic worker pool** — object-change bus (0.9.11)
 - [x] **System runtime settings UI** — ISPF env vars in admin (0.9.12)
-- [x] **TimescaleDB event journal hypertable** — P3a (0.9.18, [0015](decisions/0015-event-history-timescale.md))
-- [x] **ClickHouse event journal SPI** — P3b high-throughput (0.9.19+, [0016](decisions/0016-clickhouse-event-journal.md))
+- [x] **TimescaleDB event journal hypertable** — P3a (0.9.18, [0015-event-history-timescale](decisions/0015-event-history-timescale.md))
+- [x] **ClickHouse event journal SPI** — P3b high-throughput (0.9.19+, [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md))
 - [x] **MQTT meter-bus ingest** — historian path, coalesce sweeps
 - [x] **AGPL-3.0** — platform license; all drivers as optional packs ([0016-agpl](decisions/0016-agpl-dual-licensing.md))
-- [x] **Load testing tooling** — [load-testing.md](load-testing.md), VPS reports
-- [x] **Demostand profiles** — throughput / idle / edge ([demostands.md](demostands.md), [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md))
+- [x] **Load testing tooling** — [load-testing](load-testing.md), VPS reports
+- [x] **Demostand profiles** — throughput / idle / edge ([demostands](demostands.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md))
 
 ---
 
@@ -301,7 +301,7 @@ Target approach: **more declarative logic in the object tree**, less custom Java
 - [~] **Driver observedAt full matrix** — BL-74 pilots; remaining drivers demand-driven
 - [~] **Playwright live staging** — workflow + secrets; expand coverage on demand
 
-Detailed current plan: [roadmap.md](roadmap.md).
+Detailed current plan: [roadmap](roadmap.md).
 
 ---
 
@@ -309,8 +309,8 @@ Detailed current plan: [roadmap.md](roadmap.md).
 
 These decisions held throughout the evolution:
 
-- [x] **Target approach** — business logic in object-tree mechanisms, not industry-specific Java ([architecture.md](architecture.md))
-- [x] **Dogfooding gate** — every REQ-PF originates from app-team needs ([0002](decisions/0002-dogfooding-gate.md))
+- [x] **Target approach** — business logic in object-tree mechanisms, not industry-specific Java ([architecture](architecture.md))
+- [x] **Dogfooding gate** — every REQ-PF originates from app-team needs ([0002-dogfooding-gate](decisions/0002-dogfooding-gate.md))
 - [x] **Tree-first** — alert rules, correlators, reports, schedules, security — tree nodes
 - [x] **Bundle = packaging** — deploy delivers configuration into the platform, not a separate runtime
 - [x] **Generic platform / industry solution** — separation of `main` vs `examples/*`
@@ -321,10 +321,10 @@ These decisions held throughout the evolution:
 
 | Document | Purpose |
 |----------|---------|
-| [roadmap.md](roadmap.md) | Phases 0–20, status by topic |
-| [roadmap.md](roadmap.md) | Unified roadmap: REQ-PF/FW, BL-01…139, phases, sprints |
+| [roadmap](roadmap.md) | Phases 0–20, status by topic |
+| [roadmap](roadmap.md) | Unified roadmap: REQ-PF/FW, BL-01…139, phases, sprints |
 | [docs/decisions/](decisions/readme.md) | ADR — key architectural forks |
-| [product.md](product.md) | Product overview for customers |
+| [product](product.md) | Product overview for customers |
 
 ---
 

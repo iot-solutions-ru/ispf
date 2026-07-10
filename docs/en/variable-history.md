@@ -59,8 +59,8 @@ The following topics are **not** part of the variable history module — separat
 
 | Topic | Note |
 |-------|------|
-| Threshold / trend alerts | `ALERT` nodes in tree; see [AUTOMATION.md](automation.md) |
-| Event correlators | `CORRELATOR` nodes in tree; API `/api/v1/correlators` — see [AUTOMATION.md](automation.md) |
+| Threshold / trend alerts | `ALERT` nodes in tree; see [automation](automation.md) |
+| Event correlators | `CORRELATOR` nodes in tree; API `/api/v1/correlators` — see [automation](automation.md) |
 
 Historian only **stores and serves** time series; event generation and escalation are the automation layer.
 
@@ -112,10 +112,10 @@ Lab scripts:
 
 SLO targets API: `GET /api/v1/platform/analytics/analytics-slo`. Historian + analytics targets also appear under `analyticsSlo` in `GET .../historian-sla`.
 
-Walkthroughs: [examples/analytics-platform/site-m](../examples/analytics-platform/site-m/), [enterprise-l](../examples/analytics-platform/enterprise-l/). Gap register: [analytics-platform-gaps.md](analytics-platform-gaps.md).
+Walkthroughs: [examples/analytics-platform/site-m](../examples/analytics-platform/site-m/), [enterprise-l](../examples/analytics-platform/enterprise-l/). Gap register: [analytics-platform-gaps](analytics-platform-gaps.md).
 
 Dashboard reference: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (BL-161 widget layout + BFF sketch).
 
-Multi-tier retention and deploy profiles: [HISTORIAN_TIERS.md](historian-tiers.md).
+Multi-tier retention and deploy profiles: [historian-tiers](historian-tiers.md).
 
-See also [OBJECT_MODEL.md](object-model.md), [API.md](api.md).
+See also [object-model](object-model.md), [api](api.md).

@@ -6,7 +6,7 @@ Guide for the rights holder: what to prepare, how to assemble the technical pack
 
 **Not legal advice.** Before submission, align the package with counsel and, if needed, a registry consultant.
 
-See also: [PRODUCT.md](product.md), [DEPLOYMENT.md](deployment.md), [LICENSE_COMPLIANCE.md](license-compliance.md).
+See also: [product](product.md), [deployment](deployment.md), [license-compliance](license-compliance.md).
 
 ---
 
@@ -56,7 +56,7 @@ Name a product in the application for functional comparison, for example:
 - AVEVA / Wonderware
 - Citect / Schneider Electric
 
-Mapping: object tree, drivers, HMI, historian, alarms, workflow, reports — see [PRODUCT.md](product.md).
+Mapping: object tree, drivers, HMI, historian, alarms, workflow, reports — see [product](product.md).
 
 ---
 
@@ -151,36 +151,36 @@ Table for class **09.04** — fill "Yes" + link to documentation section:
 
 | SCADA / industrial control function | ISPF | Source in repository |
 |-------------------------------------|:----:|----------------------|
-| Field equipment data acquisition | ✓ | [DRIVERS.md](drivers.md) — 58 drivers |
-| History storage (historian) | ✓ | [VARIABLE_HISTORY.md](variable-history.md) |
-| Operator HMI / mimic diagrams | ✓ | [SCADA.md](scada.md), [DASHBOARDS.md](dashboards.md) |
+| Field equipment data acquisition | ✓ | [drivers](drivers.md) — 58 drivers |
+| History storage (historian) | ✓ | [variable-history](variable-history.md) |
+| Operator HMI / mimic diagrams | ✓ | [scada](scada.md), [dashboards](dashboards.md) |
 | Control (write to devices) | ✓ | Driver write, object functions |
-| Alarm signaling | ✓ | [AUTOMATION.md](automation.md), work queue |
+| Alarm signaling | ✓ | [automation](automation.md), work queue |
 | Event journal | ✓ | Event journal API |
-| Reports | ✓ | [REPORTS.md](reports.md) — PDF, XLSX, HTML |
-| Automation / workflow | ✓ | [WORKFLOWS.md](workflows.md) |
-| Access control | ✓ | [SECURITY.md](security.md) |
-| Scaling / cluster | ✓ | [CLUSTER.md](cluster.md) |
-| Application solutions without core fork | ✓ | [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md) |
+| Reports | ✓ | [reports](reports.md) — PDF, XLSX, HTML |
+| Automation / workflow | ✓ | [workflows](workflows.md) |
+| Access control | ✓ | [security](security.md) |
+| Scaling / cluster | ✓ | [cluster](cluster.md) |
+| Application solutions without core fork | ✓ | [solution-developer-guide](solution-developer-guide.md) |
 
 ### 6.2. Mapping: sources → PDF for tech pack
 
 | Tech pack file | Basis (Markdown in `docs/`) |
 |----------------|----------------------------|
-| product-description.pdf | [PRODUCT.md](product.md) |
-| functional-spec.pdf | §6.1 + [PRODUCT.md](product.md) § Capabilities |
-| system-requirements.pdf | [GETTING_STARTED.md](getting-started.md), [DEPLOYMENT.md](deployment.md) |
-| installation-guide.pdf | [GETTING_STARTED.md](getting-started.md), [DEPLOYMENT.md](deployment.md) § Production quick start |
-| upgrade-guide.pdf | [DEPLOYMENT.md](deployment.md), Flyway migrations |
-| administrator-guide.pdf | [WEB_CONSOLE.md](web-console.md), [SECURITY.md](security.md), [DEMOSTANDS.md](demostands.md) |
-| operator-guide.pdf | [OPERATOR_GUIDE.md](operator-guide.md) |
-| solution-developer-guide.pdf | [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md) (abridged) |
-| security-guide.pdf | [SECURITY.md](security.md) |
-| api-overview.pdf | [API.md](api.md) (table of contents + typical scenarios) |
-| drivers-catalog-excerpt.pdf | [DRIVERS.md](drivers.md) — protocol table |
-| third-party-licenses.pdf | [THIRD_PARTY_NOTICES.md](third-party-notices.md), [LICENSE_COMPLIANCE.md](license-compliance.md) |
-| deployment-for-expert.pdf | §7 below + [DEPLOYMENT.md](deployment.md) |
-| demo-scenario.pdf | §8 below + [LAB_TRAINING.md](lab-training.md) |
+| product-description.pdf | [product](product.md) |
+| functional-spec.pdf | §6.1 + [product](product.md) § Capabilities |
+| system-requirements.pdf | [getting-started](getting-started.md), [deployment](deployment.md) |
+| installation-guide.pdf | [getting-started](getting-started.md), [deployment](deployment.md) § Production quick start |
+| upgrade-guide.pdf | [deployment](deployment.md), Flyway migrations |
+| administrator-guide.pdf | [web-console](web-console.md), [security](security.md), [demostands](demostands.md) |
+| operator-guide.pdf | [operator-guide](operator-guide.md) |
+| solution-developer-guide.pdf | [solution-developer-guide](solution-developer-guide.md) (abridged) |
+| security-guide.pdf | [security](security.md) |
+| api-overview.pdf | [api](api.md) (table of contents + typical scenarios) |
+| drivers-catalog-excerpt.pdf | [drivers](drivers.md) — protocol table |
+| third-party-licenses.pdf | [third-party-notices](third-party-notices.md), [license-compliance](license-compliance.md) |
+| deployment-for-expert.pdf | §7 below + [deployment](deployment.md) |
+| demo-scenario.pdf | §8 below + [lab-training](lab-training.md) |
 
 **PDF build:** export from Markdown (pandoc, VS Code, Typora) or print to PDF from CI. Unified style: title with product name, version, rights holder, date.
 
@@ -214,11 +214,11 @@ The expert must **deploy and verify** operability. Prepare one of:
 | Compose | `deploy/docker-compose.prod-stack.yml` + `deploy/air-gap-images.env` |
 | Instructions | `07-expert-review/deployment-for-expert.pdf` |
 
-Minimal scenario: `bash deploy/prod-quickstart.sh` (see [DEPLOYMENT.md](deployment.md)).
+Minimal scenario: `bash deploy/prod-quickstart.sh` (see [deployment](deployment.md)).
 
 ### Option B — Air-gap archive
 
-See [AIR_GAP_DEPLOYMENT.md](air-gap-deployment.md) — single tar with images, JAR, UI, scripts.
+See [air-gap-deployment](air-gap-deployment.md) — single tar with images, JAR, UI, scripts.
 
 ### System requirements (for system-requirements.pdf)
 

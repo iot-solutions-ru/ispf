@@ -8,19 +8,19 @@
 
 | # | Измерение | Baseline (фаза 24) | **Проверено по коду (0.9.102)** | Цель | Фаза / BL |
 |---|-----------|:-------------------:|:-------------------------------:|:------:|------------|
-| 1 | Единая модель данных (дерево объектов) | 9.0 | **8.5** | **10** | [25](roadmap.md#этап-25--ot-trust), [29](roadmap.md#этап-29--платформа-mes), [30](roadmap.md#этап-30--глубина-автоматизации) — BL-164…168, BL-173 |
-| 2 | SCADA / HMI / мнемосхемы | 7.0 | **7.5** | **10** | [26](roadmap.md#этап-26--совершенство-hmi) — BL-146…152 |
-| 3 | OT/IT connectivity (drivers.md) | 6.0 | **6.5** | **10** | [25](roadmap.md#этап-25--ot-trust) — BL-140…145 |
-| 4 | Historian / time-series | 7.0 | **7.0** | **10** | [28](roadmap.md#фаза-28--историк-в-масштабе) — BL-159…163; [33](roadmap.md#фаза-33--аналитическая-платформа-af-capable) БЛ-200…210 |
-| 5 | Automation / alarms | 7.5 | **7.5** | **10** | [27](roadmap.md#этап-27--безопасность-предприятия), [30](roadmap.md#этап-30--глубина-автоматизации) — BL-153…157, BL-171…174 |
-| 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [30](roadmap.md#этап-30--глубина-автоматизации) — BL-176 |
-| 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [29](roadmap.md#этап-29--платформа-mes) — BL-164…170 |
-| 8 | Скорость low-code | 8.0 | **8.0** | **10** | [26](roadmap.md#этап-26--совершенство-hmi), [31](roadmap.md#фаза-31--автопилот-ии) — BL-146…152, BL-177…180 |
-| 9 | AI-assisted разработка | 9.0 | **6.5** | **10** | [31](roadmap.md#фаза-31--автопилот-ии) — BL-177…182 |
-| 10 | Security / RBAC / мультитенантность | 6.5 | **7.5** | **10** | [27](roadmap.md#этап-27--безопасность-предприятия) — BL-153…157 |
-| 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [25](roadmap.md#этап-25--ot-trust), [28](roadmap.md#фаза-28--историк-в-масштабе), [32](roadmap.md#этап-32--экосистема-и-рынок) — BL-144…145, BL-186…187 |
-| 12 | Экосистема / маркетплейс | 4.0 | **5.0** | **10** | [32](roadmap.md#этап-32--экосистема-и-рынок) — BL-183…185 |
-| 13 | Documentation / DX | 9.0 | **8.5** | **10** | [32](roadmap.md#этап-32--экосистема-и-рынок) — BL-189, BL-190 |
+| 1 | Единая модель данных (дерево объектов) | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#этап-25--ot-trust), [roadmap](roadmap.md#этап-29--платформа-mes), [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-164…168, BL-173 |
+| 2 | SCADA / HMI / мнемосхемы | 7.0 | **7.5** | **10** | [roadmap](roadmap.md#этап-26--совершенство-hmi) — BL-146…152 |
+| 3 | OT/IT connectivity (drivers.md) | 6.0 | **6.5** | **10** | [roadmap](roadmap.md#этап-25--ot-trust) — BL-140…145 |
+| 4 | Historian / time-series | 7.0 | **7.0** | **10** | [roadmap](roadmap.md#фаза-28--историк-в-масштабе) — BL-159…163; [roadmap](roadmap.md#фаза-33--аналитическая-платформа-af-capable) БЛ-200…210 |
+| 5 | Automation / alarms | 7.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-27--безопасность-предприятия), [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-153…157, BL-171…174 |
+| 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-176 |
+| 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [roadmap](roadmap.md#этап-29--платформа-mes) — BL-164…170 |
+| 8 | Скорость low-code | 8.0 | **8.0** | **10** | [roadmap](roadmap.md#этап-26--совершенство-hmi), [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-146…152, BL-177…180 |
+| 9 | AI-assisted разработка | 9.0 | **6.5** | **10** | [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-177…182 |
+| 10 | Security / RBAC / мультитенантность | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-27--безопасность-предприятия) — BL-153…157 |
+| 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [roadmap](roadmap.md#этап-25--ot-trust), [roadmap](roadmap.md#фаза-28--историк-в-масштабе), [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-144…145, BL-186…187 |
+| 12 | Экосистема / маркетплейс | 4.0 | **5.0** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-183…185 |
+| 13 | Documentation / DX | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-189, BL-190 |
 | 14 | Stack modernity | 9.0 | **9.5** | **10** | maintain — Spring Boot 4, React 19, NATS, опция ClickHouse |
 
 **Итого (проверено по коду): ~7.4/10** — простое среднее по 14 измерениям.
@@ -31,7 +31,7 @@
 
 ## Definition of done (10/10 overall)
 
-Из [roadmap.md](roadmap.md) (Фазы 25–33 / DoD). Статус на **0.9.102**:
+Из [roadmap](roadmap.md) (Фазы 25–33 / DoD). Статус на **0.9.102**:
 
 | Критерий | Статус |
 |----------|--------|
@@ -82,7 +82,7 @@
 2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites; genealogy lite (**БЛ-193**).
 3. **AI (6.5 → 9+):** live LLM regression в CI (`validate-scenarios.mjs --live --enforce-rate`); убрать stub nightly; реальный solution generator или явно keyword-only.
 4. **Ecosystem (5.0 → 9+):** persist partner enrollments; установка symbol pack beyond in-memory stub; внешние signed bundles.
-5. **Historian (7.0 → 9+):** lab benchmark + CI gate (БЛ-161); AF-capable analytics plane ([analytics-platform-roadmap.md](analytics-platform-roadmap.md) БЛ-200…210).
+5. **Historian (7.0 → 9+):** lab benchmark + CI gate (БЛ-161); AF-capable analytics plane ([analytics-platform-roadmap](analytics-platform-roadmap.md) БЛ-200…210).
 6. **HMI (7.5 → 9+):** FPS gate на live WebSocket mimic; persistence alarm shelving.
 7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**).
 

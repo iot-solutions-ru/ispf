@@ -19,11 +19,11 @@ Variable history (`variable_samples`) grows with device count and poll frequency
 
 ## Consequences
 
-- [variable-history.md](../variable-history.md) — operator and API contract.
-- [deployment.md](../deployment.md) — docker image `timescale/timescaledb` for prod.
+- [variable-history](../variable-history.md) — operator and API contract.
+- [deployment](../deployment.md) — docker image `timescale/timescaledb` for prod.
 - Increasing retention in prod — ops: change config + if needed `SELECT drop_chunks` / Timescale policy (outside hot-path code).
 
 ## Related
 
 - ROADMAP Phase 2.2 — TimescaleDB hypertables + retention
-- REQ-PF variable history — [object-model.md](../object-model.md)
+- REQ-PF variable history — [object-model](../object-model.md)

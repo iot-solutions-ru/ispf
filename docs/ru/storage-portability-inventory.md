@@ -63,4 +63,4 @@ ISPF_EVENT_JOURNAL_STORE=clickhouse
 ISPF_VARIABLE_HISTORY_STORE=clickhouse
 ```
 
-См. [CLICKHOUSE_PROD_PLAYBOOK.md](clickhouse-prod-playbook.md).
+См. [clickhouse-prod-playbook](clickhouse-prod-playbook.md).

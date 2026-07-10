@@ -112,7 +112,7 @@ CRUD-пользователи — через `POST/PUT/DELETE /api/v1/security/u
 
 ### Качество телеметрии (BL-82)
 
-Необязательное поле `quality` в строках телеметрии: `GOOD`, `UNCERTAIN`, `BAD` ([ADR-0025](decisions/0025-telemetry-quality-flags.md)). Драйверы сопоставляют статус протокола (например, OPC UA StatusCode) с этими уровнями. Виджеты диаграмм пропускают 88 образцов (разрыв строки); Колонка качества историка является последующей работой.
+Необязательное поле `quality` в строках телеметрии: `GOOD`, `UNCERTAIN`, `BAD` ([0025-telemetry-quality-flags](decisions/0025-telemetry-quality-flags.md)). Драйверы сопоставляют статус протокола (например, OPC UA StatusCode) с этими уровнями. Виджеты диаграмм пропускают 88 образцов (разрыв строки); Колонка качества историка является последующей работой.
 
 ### Запись данных
 
@@ -138,7 +138,7 @@ CRUD-пользователи — через `POST/PUT/DELETE /api/v1/security/u
 
 ### Вычисляемые привязки (правила связывания)
 
-Правила на объекте в `@bindingRules` (см. [BINDINGS.md](bindings.md)). Время выполнения — `BindingRuleEngine`; перекрестный объект через активаторы и `refAt`.
+Правила на объекте в `@bindingRules` (см. [bindings](bindings.md)). Время выполнения — `BindingRuleEngine`; перекрестный объект через активаторы и `refAt`.
 
 Краткий перечень креплений платформы:
 
@@ -175,7 +175,7 @@ POST /api/v1/events/fire
 | `script` | JSON DSL (`steps`) — `ScriptFunctionHandler` |
 | `java` | Исходник общественного класса → `ObjectJavaFunction`; **компиляция при сохранении** (`PUT .../functions`), вызвать через `JavaFunctionHandler` |
 
-**Подробные примеры всех типов:** [OBJECT_FUNCTIONS.md](object-functions.md) (встроенные обработчики, шаги сценария, Java, привязки, рабочий процесс, REST).
+**Подробные примеры всех типов:** [object-functions](object-functions.md) (встроенные обработчики, шаги сценария, Java, привязки, рабочий процесс, REST).
 
 Вызов:
 
@@ -188,7 +188,7 @@ Content-Type: application/json
 
 **Функция Java:** класс `implements com.ispf.core.function.ObjectJavaFunction`; скомпилировать при сохранении; см. [OBJECT_FUNCTIONS.md § Java](object-functions.md).
 
-Встроенные обработчики (имя функции на объекте + обработчик в пространстве): `acknowledgeAlarm`, Virtual Lab (`calculate`, `fireEvent1`, …), Mini-TEC (`gpu_start`, …), `dispatchTelemetry` (шлюз MQTT). Полный список и полезная нагрузка — в [OBJECT_FUNCTIONS.md](object-functions.md).
+Встроенные обработчики (имя функции на объекте + обработчик в пространстве): `acknowledgeAlarm`, Virtual Lab (`calculate`, `fireEvent1`, …), Mini-TEC (`gpu_start`, …), `dispatchTelemetry` (шлюз MQTT). Полный список и полезная нагрузка — в [object-functions](object-functions.md).
 
 Расширение платформы: реализуйте `FunctionHandler` в `ispf-server` и зарегистрируйтесь как Spring `@Component`.
 
@@ -200,7 +200,7 @@ Content-Type: application/json
 
 **DEVICE + драйвер:** переменные `driver*` встраиваются при `provisionDriver()`, не через относительное автоматическое применение.
 
-См. [BLUEPRINTS.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+См. [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Персистентность
 
@@ -210,8 +210,8 @@ Flyway-миграции (`packages/ispf-server/src/main/resources/db/migration/`
 |---------|------------|
 | `object_nodes` | Узлы дерева (в т.ч. alert rules и correlators) |
 | `object_variables` | Значения переменных (`@bindingRules` — reserved var на объекте) |
-| `variable_samples` | История телеметрии (сэмплы временных рядов; Гипертаблица шкалы времени — [0009](decisions/0009-timescaledb-retention.md)) |
-| `event_history` | Журнал событий (Гипертаблица шкалы времени — [0015](decisions/0015-event-history-timescale.md)) |
+| `variable_samples` | История телеметрии (сэмплы временных рядов; Гипертаблица шкалы времени — [0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) |
+| `event_history` | Журнал событий (Гипертаблица шкалы времени — [0015-event-history-timescale](decisions/0015-event-history-timescale.md)) |
 | `workflow_instances` | Экземпляры BPMN |
 | `workflow_user_tasks` | Задачи оператора |
 | `correlator_hits` | Срабатывания correlators (runtime) |
@@ -274,4 +274,4 @@ Content-Type: application/json
 
 Графики (`useTrendSeries`) загружают историю с сервера и обрабатывают live-точками через WebSocket/polling.
 
-Подробный план действий: [VARIABLE_HISTORY.md](variable-history.md).
+Подробный план действий: [variable-history](variable-history.md).

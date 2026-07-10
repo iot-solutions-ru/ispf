@@ -9,7 +9,7 @@ A function is a **named callable** on an object tree node. Addressing is always 
 
 There is no global path of the form `root/.../myFn`.
 
-See also: [object-model.md](object-model.md), [applications.md](applications.md) (application function deployment), [workflows.md](workflows.md) (BPMN `invoke_function`).
+See also: [object-model](object-model.md), [applications](applications.md) (application function deployment), [workflows](workflows.md) (BPMN `invoke_function`).
 
 ## `FunctionDescriptor`
 
@@ -253,7 +253,7 @@ Often invoked from a binding: `callFunction(dispatchTelemetry, lastIngress)`.
 
 ## 2. Script functions (`sourceType: "script"`)
 
-Body — JSON with a `steps` array. Same engine as [applications.md](applications.md), but saved on the object via Inspector / `PUT .../functions`.
+Body — JSON with a `steps` array. Same engine as [applications](applications.md), but saved on the object via Inspector / `PUT .../functions`.
 
 Script variables: `input` (invoke fields), plus `var` from steps. Substitutions: `"${input.orderId}"`, `"$row.count"`, `"${item.name}"` in `map`.
 

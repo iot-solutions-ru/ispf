@@ -81,7 +81,7 @@ scp deploy/vps-idle-thread-sample.py root@ispf.iot-solutions.ru:/tmp/
 ssh root@ispf.iot-solutions.ru python3 /tmp/vps-idle-thread-sample.py
 ```
 
-Details: [DEMOSTANDS.md](demostands.md) (verification section), [VPS_DEMOSTAND.md](vps-demostand.md) (ops example).
+Details: [demostands](demostands.md) (verification section), [vps-demostand](vps-demostand.md) (ops example).
 
 **Grafana dashboard** (all pipeline metrics): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](readme.md). Local stack: `docker compose -f deploy/docker-compose.observability.yml up -d`.
 
@@ -191,6 +191,6 @@ Short spike in `ispf.object_change.queue.size` is normal; sustained growth with 
 
 ## Related documents
 
-- [LOAD_TESTING.md](load-testing.md) — baselines and load test scripts
-- [MESSAGING.md](messaging.md) — JetStream / Redis optional transports (0014)
+- [load-testing](load-testing.md) — baselines and load test scripts
+- [messaging](messaging.md) — JetStream / Redis optional transports (0014)
 - [decisions/0014-automation-pipeline-evolution.md](decisions/0014-automation-pipeline-evolution.md)

@@ -10,7 +10,7 @@
 
 Поведение тревог в ISPF разнесено по **alert rules** (`ALERT` / `alert-rule-v1`), корреляторам, bindings, workflow, alarm shelf и process program. Зрелые SCADA-стеки объединяют триггеры, экземпляры, эскалацию и уведомления в одном определении; в ISPF это пока разбито по нескольким механизмам.
 
-Нужна та же **семантика** без второй модели. В ISPF автоматизация уже живёт в **дереве + intrinsic blueprint** ([AUTOMATION.md](../automation.md)). Отдельный `alarm-v2`, JSON `@alarmDefinition` или новый `ObjectType` раздвоили бы Explorer, bundle deploy, MCP `configure_alert` и `AutomationTreeService`.
+Нужна та же **семантика** без второй модели. В ISPF автоматизация уже живёт в **дереве + intrinsic blueprint** ([automation](../automation.md)). Отдельный `alarm-v2`, JSON `@alarmDefinition` или новый `ObjectType` раздвоили бы Explorer, bundle deploy, MCP `configure_alert` и `AutomationTreeService`.
 
 **Process program (BL-172)** — управление, не эволюция alert rule.
 
@@ -68,4 +68,4 @@ Runtime на узле правила: `activeInstanceCount`, `pendingInstanceCou
 
 ## Связанные документы
 
-- [AUTOMATION.md](../automation.md), ADR [0014](0014-automation-pipeline-evolution.md), [REFERENCE_ESCALATION_TEMPLATES.md](../reference-escalation-templates.md)
+- [automation](../automation.md), ADR [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md), [reference-escalation-templates](../reference-escalation-templates.md)

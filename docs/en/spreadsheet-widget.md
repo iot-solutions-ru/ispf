@@ -4,7 +4,7 @@
 
 `spreadsheet` is an HMI grid with A1 cell addressing (`A1`, `B2`, `C10`) and client-side formulas. Use it for shift calculators, summaries, simple on-screen calculations, and process tables without a separate Excel file.
 
-Widget catalog: [widgets.md](widgets.md). Dashboard basics, `selectionKey`, and layout: [dashboards.md](dashboards.md).
+Widget catalog: [widgets](widgets.md). Dashboard basics, `selectionKey`, and layout: [dashboards](dashboards.md).
 
 ## Why you might see `#NAME?`
 

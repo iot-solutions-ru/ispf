@@ -13,13 +13,13 @@ High-rate MQTT telemetry exposed bottlenecks in the automation/historian path:
 3. **Gateway `lastIngress`** — one coalesce slot capped dispatch rate (~20/s).
 4. **JPA `saveAll` on `variable_samples`** — `IDENTITY` id prevented JDBC batching (~300 samples/s ceiling on prod VPS).
 
-Event journal already uses `JdbcTemplate.batchUpdate` ([ADR-0016](0016-clickhouse-event-journal.md)); historian still used JPA.
+Event journal already uses `JdbcTemplate.batchUpdate` ([0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)); historian still used JPA.
 
 ## Decision
 
 ### MQTT gateway orchestrator (`mqtt-gateway-v1`, fixture)
 
-Fixture RELATIVE model (registered when `ispf.bootstrap.fixtures-enabled=true`). See [ADR-0018](0018-fixture-models-and-cel-applicability.md).
+Fixture RELATIVE model (registered when `ispf.bootstrap.fixtures-enabled=true`). See [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
 
 - One MQTT connection; driver writes ingress to `lastIngress` (`topic` + `raw`).
 - Driver config: `ingressVariable=lastIngress`, `ingressTopicLanes=true` — per-topic coalesce keys in `RuntimeTelemetryCoalescer`.
@@ -61,7 +61,7 @@ Per-device `telemetryPublishMode`:
 |------|-----------|----------------|---------------|
 | `FULL` (default) | yes | yes | via alerts, API, correlators |
 | `TELEMETRY_ONLY` | yes (fast path) | telemetry lane only | no |
-| `EVENT_JOURNAL_ONLY` | no | skipped | yes (`fireIngress` fast path, [ADR-0027](0027-event-journal-ingress-fast-path.md)) |
+| `EVENT_JOURNAL_ONLY` | no | skipped | yes (`fireIngress` fast path, [0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md)) |
 
 Per-device `telemetryCoalesceMs` caps sample/event rate before downstream tiers (loadtest knob).
 
@@ -87,12 +87,12 @@ flowchart LR
 - Gateway loadtest with JDBC store and minimal coalesce shows higher historian throughput than JPA `saveAll` on the same topology; absolute rates depend on hardware, coalesce, and `min-interval-ms`.
 - Throughput is bounded by `telemetryCoalesceMs`, device count, and store I/O; tune coalesce for production dashboards (typical tens of ms).
 - Loadtest on prod often sets `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=1` (platform debounce default is much higher).
-- ClickHouse / Cassandra historian stores are optional; see [ADR-0025](0025-cassandra-scylla-timeseries-store.md), [VARIABLE_HISTORY.md](../variable-history.md).
+- ClickHouse / Cassandra historian stores are optional; see [0025-cassandra-scylla-timeseries-store](0025-cassandra-scylla-timeseries-store.md), [variable-history](../variable-history.md).
 
 ## Related
 
-- [LOAD_TESTING.md](../load-testing.md) — baselines and scripts
-- [VARIABLE_HISTORY.md](../variable-history.md) — configuration
-- [BINDINGS.md](../bindings.md) — `activators.async`
-- [ADR-0014](0014-automation-pipeline-evolution.md) — dual-lane bus
-- [ADR-0009](0009-timescaledb-retention.md) — Timescale retention
+- [load-testing](../load-testing.md) — baselines and scripts
+- [variable-history](../variable-history.md) — configuration
+- [bindings](../bindings.md) — `activators.async`
+- [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) — dual-lane bus
+- [0009-timescaledb-retention](0009-timescaledb-retention.md) — Timescale retention

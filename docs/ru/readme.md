@@ -25,7 +25,7 @@
 | [Привязки](bindings.md) | CEL и platform bindings |
 | [Логика платформы](platform-logic.md) | Правила, контекст дашборда |
 | [История переменных](variable-history.md) | Time-series, retention |
-| [REST API](api.md) | Справочник endpoints |
+| [api](api.md) | Справочник endpoints |
 | [Приложения](applications.md) | Bundles, BFF, scheduler |
 | [Отчёты](reports.md) | SQL-отчёты, экспорт CSV |
 | [Roadmap](roadmap.md) | Единый растущий roadmap: Фаза 0–33, БЛ-01…210, Фазы 25–33 |
@@ -54,6 +54,18 @@
 | [Field pilot playbook](field-pilot-playbook.md) | Runbook OT-валидации |
 | [Уровни historian](historian-tiers.md) | JDBC, ClickHouse, dual-write |
 | [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Продакшен rollout |
+| [Кластер](cluster.md) | Multi-replica HA ([0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md)) |
+
+## Analytics
+
+| Документ | Описание |
+|----------|----------|
+| [Historian cookbook](analytics-historian-cookbook.md) | Рецепты, binding rules, rollups |
+| [Formulas and packs](analytics-formulas-and-packs.md) | Пакеты выражений |
+| [Analytics roadmap](analytics-platform-roadmap.md) | Чартер BL-200…210 |
+| [Tag catalog API](analytics-tag-catalog.md) | Analytics-теги |
+| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Архитектура analytics |
+| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Каталог функций |
 
 ## AI / автоматизация / MES
 
@@ -73,7 +85,7 @@
 |----------|-------------|
 | [Развёртывание](deployment.md) | Docker, env vars |
 | [Профили демостендов](demostands.md) | Prod, lab, edge топологии |
-| [Кластер](cluster.md) | Multi-replica |
+| [Кластер](cluster.md) | Runbook multi-replica |
 | [Федерация](federation.md) | Hub / edge peers |
 | [Безопасность](security.md) | RBAC, MFA |
 | [Наблюдаемость](observability.md) | Метрики, диагностика |

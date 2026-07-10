@@ -83,8 +83,8 @@ Legacy-объекты без `triggerType`, но с `variableName`, продол
 - Event-triggered workflows могут стартовать без промежуточного correlator или alert rule.
 - Перестройка index требуется после изменений workflow `triggerJson` / `status` (`WorkflowTriggerIndexListener`, `WorkflowService.updateStatus`).
 - Split-lane bus и внешний journal (JetStream/Redis) внедряются инкрементально; ADR фиксирует направление без обязательной немедленной миграции.
-- Timescale tier event journal — [ADR-0015](0015-event-history-timescale.md) (P3a); ClickHouse backend — [ADR-0016](0016-clickhouse-event-journal.md) (P3b, prod default).
-- High-rate telemetry ingest — [ADR-0017](0017-telemetry-ingest-pipeline.md) (MQTT gateway, JDBC historian).
+- Timescale tier event journal — [0015-event-history-timescale](0015-event-history-timescale.md) (P3a); ClickHouse backend — [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) (P3b, prod default).
+- High-rate telemetry ingest — [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md) (MQTT gateway, JDBC historian).
 
 ## Связанные материалы
 

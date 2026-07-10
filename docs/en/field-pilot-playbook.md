@@ -2,7 +2,7 @@
 
 Repeatable OT field-pilot runbooks for three reference scenarios. Each pilot validates **PRODUCTION** drivers, write round-trip, historian ingest, and operator HMI without middleware between ISPF and the plant edge.
 
-Prerequisites: ISPF ≥ 0.9.32, [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) green locally, operator account with device admin role.
+Prerequisites: ISPF ≥ 0.9.32, [driver-interop-lab](driver-interop-lab.md) green locally, operator account with device admin role.
 
 ### Ready-for-field gate (policy) {#ready-for-field-gate-policy}
 
@@ -40,7 +40,7 @@ Single ISPF node on plant VLAN reading a Modbus TCP PLC (or `deploy/driver-inter
 | `pollIntervalMs` | `1000` |
 | `unitId` | `1` |
 
-Map holding registers to variables (`40001` → `tank.level`, etc.). See [DRIVERS.md](drivers.md) § modbus-tcp.
+Map holding registers to variables (`40001` → `tank.level`, etc.). See [drivers](drivers.md) § modbus-tcp.
 
 ### Validation checklist
 
@@ -79,7 +79,7 @@ Fleet of edge gateways publishing JSON telemetry to a shared broker (Mosquitto, 
 | `clientId` | `ispf-fleet-01` |
 | `topicPrefix` | `plant/line1/{deviceId}/telemetry` |
 
-One ISPF device per gateway or a multiplexed flexible topic map — see [DRIVERS.md](drivers.md) § mqtt.
+One ISPF device per gateway or a multiplexed flexible topic map — see [drivers](drivers.md) § mqtt.
 
 ### Validation checklist
 
@@ -128,7 +128,7 @@ Point mapping: `ns=2;s=LineSpeed` etc. SecurityPolicy None for lab; sign + encry
 | `bindPort` | `4840` |
 | `namespace` | `2` |
 
-Expose selected ISPF variables to external UA clients (UA Expert, Prosys). See [OPCUA_SERVER_INTEROP.md](opcua-server-interop.md).
+Expose selected ISPF variables to external UA clients (UA Expert, Prosys). See [opcua-server-interop](opcua-server-interop.md).
 
 ### Validation checklist
 
@@ -175,8 +175,8 @@ Daily log for the **7-day soak** (BL-140 field evidence). Copy the table into th
 | -------- | -------- |
 | Interop report | `build/driver-interop/interop-summary.md` |
 | Pilot journal | Customer ticket / `docs/` appendix (duration, incidents, tag count) |
-| Scorecard delta | [COMPETITIVE_SCORECARD.md](competitive-scorecard.md) dimension 3 |
-| Promotion evidence | [DRIVER_PROMOTION.md](driver-promotion.md) field-pilot section |
+| Scorecard delta | [competitive-scorecard](competitive-scorecard.md) dimension 3 |
+| Promotion evidence | [driver-promotion](driver-promotion.md) field-pilot section |
 | Sign-off record | § Pilot sign-off below (one per scenario) |
 
 **Definition of done (BL-140):** per scenario — **ready-for-field** only after named field task + driver work for that site; then lab dry-run green, field checklist passed, **7-day soak** journal, customer OT sign-off. Until a field task exists: **playbook-ready** (lab matrix + templates only). Scorecard OT connectivity ≥ 9.5 requires field evidence, not lab-only.
@@ -226,13 +226,13 @@ Complete one form per scenario after the **7-day soak**. Attach to the pilot jou
 | ISPF integrator | | |
 | Platform QA | | |
 
-**Approval:** ☐ Promote driver evidence to [DRIVER_PROMOTION.md](driver-promotion.md) ☐ Follow-up required
+**Approval:** ☐ Promote driver evidence to [driver-promotion](driver-promotion.md) ☐ Follow-up required
 
 ---
 
 ## Related
 
-- [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) — CI loopback matrix
-- [DRIVERS.md](drivers.md) — driver configs
-- [roadmap.md](roadmap.md) — BL-140, BL-141, BL-143
-- [DEPLOYMENT.md](deployment.md) — VPS / edge rollout
+- [driver-interop-lab](driver-interop-lab.md) — CI loopback matrix
+- [drivers](drivers.md) — driver configs
+- [roadmap](roadmap.md) — BL-140, BL-141, BL-143
+- [deployment](deployment.md) — VPS / edge rollout

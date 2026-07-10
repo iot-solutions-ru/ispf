@@ -6,7 +6,7 @@ Accepted (2026-07-05)
 
 ## Context
 
-[ADR-0028](0028-horizontal-active-active-cluster.md) scales REST/API across N replicas with **exactly-one driver ownership**. Runtime telemetry (`setDriverTelemetryValue`) updates **in-memory values only on the driver owner** — not PostgreSQL per tick.
+[0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) scales REST/API across N replicas with **exactly-one driver ownership**. Runtime telemetry (`setDriverTelemetryValue`) updates **in-memory values only on the driver owner** — not PostgreSQL per tick.
 
 Cross-replica behaviour today:
 
@@ -70,7 +70,7 @@ Follower RAM apply publishes `ObjectChangeEvent` with `replicaIngress=true`:
 | `BindingPropagationAsyncHandler` | Skip automation |
 | `VariableHistoryListener` | Skip (historian runs on owner only) |
 | `ObjectWebSocketHandler` | Push to local WS clients |
-| `ClusterObjectTreeReplicaSync` | Structure/config CRUD via PG reload ([ADR-0030](0030-cluster-config-structure-replica-sync.md)); skips telemetry + `replicaIngress` |
+| `ClusterObjectTreeReplicaSync` | Structure/config CRUD via PG reload ([0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md)); skips telemetry + `replicaIngress` |
 
 Config/API variable writes (`revision` present) also replicate value snapshots so followers stay consistent without full path reload.
 
@@ -83,7 +83,7 @@ When `ispf.cluster.enabled=true` and `ispf.redis.enabled=true`:
 
 This ensures the driver owner publishes (and NATS-syncs) even when all UI clients are on other replicas.
 
-Fallback without Redis: local interest only (same as pre-0029); sticky REST+WS recommended ([DEPLOYMENT.md](../deployment.md)).
+Fallback without Redis: local interest only (same as pre-0029); sticky REST+WS recommended ([deployment](../deployment.md)).
 
 ### 5. Configuration
 
@@ -95,7 +95,7 @@ Fallback without Redis: local interest only (same as pre-0029); sticky REST+WS r
 
 Disable live sync only for debugging or single-replica-equivalent deployments.
 
-See [CLUSTER.md](../cluster.md) for tuning examples and bandwidth estimates.
+See [cluster](../cluster.md) for tuning examples and bandwidth estimates.
 
 ### 6. Ingress (nginx)
 
@@ -136,7 +136,6 @@ flowchart TB
 - Backward compatible NATS payload; gradual rollout.
 - Redis interest closes demand-driven gap without sticky REST.
 
-
 Risks:
 
 - NATS bandwidth scales with `(variables × replicas × rate / cluster_coalesce)` — monitor in cluster load tests.
@@ -145,9 +144,9 @@ Risks:
 
 ## Related
 
-- [ADR-0028](0028-horizontal-active-active-cluster.md) — cluster topology (update: live sync supersedes sticky REST requirement)
-- [ADR-0024](0024-demand-driven-variable-change-pubsub.md) — demand-driven publish + global interest extension
-- [ADR-0030](0030-cluster-config-structure-replica-sync.md) — structure/config CRUD replica sync
-- [CLUSTER.md](../cluster.md) — operator guide with SNMP walkthrough and tuning
-- [MESSAGING.md](../MESSAGING.md) — NATS payload fields
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — cluster topology (update: live sync supersedes sticky REST requirement)
+- [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven publish + global interest extension
+- [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) — structure/config CRUD replica sync
+- [cluster](../cluster.md) — operator guide with SNMP walkthrough and tuning
+- [MESSAGING](../MESSAGING.md) — NATS payload fields
 - BL-140…142 — implementation backlog

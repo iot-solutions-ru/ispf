@@ -6,7 +6,7 @@
 
 Правила хранения в системной переменной `@bindingRules` (JSON-массив, зарезервировано). Время выполнения — **`BindingRuleEngine`** (Единый механизм привязок с v0.8.0).
 
-См. также: [OBJECT_MODEL.md](object-model.md), [BLUEPRINTS.md](blueprints.md), ADR [0010](decisions/0010-binding-rules-only.md).
+См. также: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md).
 
 ---
 
@@ -40,10 +40,10 @@
 | `condition` | CEL; пусто = всегда |
 | `expression` | CEL или одна platform function |
 | `target` | Куда записать результат (см. **Target kinds** ниже) |
-| `kind` | Опционально: `reactive` или `historian` ([ADR-0041](decisions/0041-multi-tag-historian-computations.md)) |
+| `kind` | Опционально: `reactive` или `historian` ([0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)) |
 | `windowBucket` | Окно historian (`5m`, `1h`, …) |
 
-Рецепты: [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
+Рецепты: [analytics-historian-cookbook](analytics-historian-cookbook.md)
 
 ### Периодическое время выполнения
 
@@ -51,7 +51,7 @@
 
 ### Виды целей (Правило платформы)
 
-Расширение моделей — ADR [0019](decisions/0019-platform-rule-unification.md). Если `target.kind` отсутствует → **`variable`** (обратная совместимость).
+Расширение моделей — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). Если `target.kind` отсутствует → **`variable`** (обратная совместимость).
 
 | `kind` | Поля | Назначение |
 |--------|------|------------|
@@ -71,7 +71,7 @@
 }
 ```
 
-Активатор **`onContextChange`** — пересчёт при поддержке `@dashboardContext`. Полная спецификация: [PLATFORM_LOGIC.md](platform-logic.md).
+Активатор **`onContextChange`** — пересчёт при поддержке `@dashboardContext`. Полная спецификация: [platform-logic](platform-logic.md).
 
 **Перекрестный объект:** активатор на удаленном пути + `refAt("path", var)` в выражении. При удаленной переменной (в т.ч. телеметрии драйвера) `BindingPropagationListener` пересчитывает правила на потребительских объектах.
 
@@ -130,13 +130,13 @@ systemctl start ispf-server
 # Local/dev compose: docker compose exec postgres psql ...
 ```
 
-Существующая БД без пересоздания: Flyway `V41__drop_binding_expr.sql` снимает колонку; при **несоответствии контрольной суммы V1** необходимо пересоздание (см. [DEPLOYMENT.md](deployment.md)).
+Существующая БД без пересоздания: Flyway `V41__drop_binding_expr.sql` снимает колонку; при **несоответствии контрольной суммы V1** необходимо пересоздание (см. [deployment](deployment.md)).
 
 ---
 
 ## Пользовательский интерфейс
 
-Веб-консоль → Инспектор объектов → вкладка **«Вычисления»** (reactive + historian). См. [ADR-0040](decisions/0040-unified-computations-ui.md).
+Веб-консоль → Инспектор объектов → вкладка **«Вычисления»** (reactive + historian). См. [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md).
 
 ---
 

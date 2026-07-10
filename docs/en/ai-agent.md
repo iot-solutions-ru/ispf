@@ -2,7 +2,7 @@
 
 Operator and integrator reference for the ISPF tree-first agent, regression suite, solution generator stub, and observability widgets.
 
-See also [AI_DEVELOPMENT.md](ai-development.md), [AGENT_REGRESSION.md](agent-regression.md), [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md).
+See also [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).
 
 ---
 
@@ -92,7 +92,7 @@ Results file shape:
 }
 ```
 
-Target: **≥95%** live pass rate across all scenarios. **Status (0.9.102): not met** — PR/nightly gate JSON schema + stub results only; see [AGENT_REGRESSION.md](agent-regression.md).
+Target: **≥95%** live pass rate across all scenarios. **Status (0.9.102): not met** — PR/nightly gate JSON schema + stub results only; see [agent-regression](agent-regression.md).
 
 ---
 
@@ -169,7 +169,7 @@ Embed in a platform dashboard (`root.platform.dashboards.ai-ops`) using a **char
 | ID | Feature | Doc |
 |----|---------|-----|
 | BL-177 | End-to-end agent deploy | [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
-| BL-178 | Agent regression suite | [AGENT_REGRESSION.md](agent-regression.md) |
+| BL-178 | Agent regression suite | [agent-regression](agent-regression.md) |
 | BL-179 | Solution generator stub | This doc § Solution generator |
 | BL-180 | Solution generator GA + metrics widget | [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) |
-| BL-181 | Agent observability v2 | `/agent/metrics/tools`, [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) |
+| BL-181 | Agent observability v2 | `/agent/metrics/tools`, [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) |

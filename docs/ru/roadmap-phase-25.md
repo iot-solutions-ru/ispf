@@ -6,7 +6,7 @@
 
 **→ [roadmap.md § Этап 25–33](roadmap.md#phase-25-33--excellence-program)**
 
-Не добавляйте новые фазы сюда. Только в [roadmap.md](roadmap.md).
+Не добавляйте новые фазы сюда. Только в [roadmap](roadmap.md).
 
 | Бывший раздел | Новое место |
 | ------------- | ----------- |
@@ -17,4 +17,4 @@
 | Определение готовности | [roadmap.md § DoD](roadmap.md#определение-готовности--общая-оценка-1010) |
 | Ближайшие 90 дней | [roadmap.md § Ближайшие 90 дней](roadmap.md#ближайшие-90-дней) |
 
-Companion-чартер (не второй roadmap): [analytics-platform-roadmap.md](analytics-platform-roadmap.md).
+Companion-чартер (не второй roadmap): [analytics-platform-roadmap](analytics-platform-roadmap.md).

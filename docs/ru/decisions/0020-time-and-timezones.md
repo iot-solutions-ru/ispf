@@ -129,5 +129,5 @@ ISPF обслуживает операторов, площадки и устро
 
 - [roadmap.md § Phase 21](../roadmap.md#phase-21--time--timezones)
 - [roadmap.md § Phase 21 (BL-66…71)](../roadmap.md#phase-21--time--timezones)
-- [FW-60](../roadmap.md#часть-b--req-fw-framework-закрыт)
-- [ADR-0013](0013-web-console-i18n.md) — locale vs timezone (orthogonal concerns)
+- [roadmap](../roadmap.md#часть-b--req-fw-framework-закрыт)
+- [0013-web-console-i18n](0013-web-console-i18n.md) — locale vs timezone (orthogonal concerns)

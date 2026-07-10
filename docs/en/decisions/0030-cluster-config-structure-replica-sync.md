@@ -6,7 +6,7 @@ Accepted (2026-07-05)
 
 ## Context
 
-[ADR-0028](0028-horizontal-active-active-cluster.md) shares one PostgreSQL tree across N replicas. [ADR-0029](0029-cluster-live-variable-replica-sync.md) mirrors **live telemetry** to follower RAM via NATS payloads with `value`.
+[0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) shares one PostgreSQL tree across N replicas. [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) mirrors **live telemetry** to follower RAM via NATS payloads with `value`.
 
 Config and structure changes (create/update/delete objects, persisted variables such as mimic `diagram`, dashboard layout, bindings) were still inconsistent:
 
@@ -17,7 +17,7 @@ Config and structure changes (create/update/delete objects, persisted variables 
 | Rename/metadata stale on round-robin REST | `UPDATED` only reloaded path when missing from follower RAM |
 | Factory reset as only fix | Desync between PG (truth) and per-replica RAM |
 
-[ADR-0024](0024-demand-driven-variable-change-pubsub.md) skips publication when no local WS/automation subscribers. That is correct for telemetry volume but **wrong for cluster structure/config** — followers must always learn writes from other replicas.
+[0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) skips publication when no local WS/automation subscribers. That is correct for telemetry volume but **wrong for cluster structure/config** — followers must always learn writes from other replicas.
 
 ## Decision
 
@@ -75,7 +75,6 @@ Follower replica
 - No factory reset needed for RAM desync after normal CRUD.
 - Complements ADR-0029 without duplicating telemetry path.
 
-
 Risks:
 
 - Extra PG reads on followers per config/structure event (low frequency vs telemetry).
@@ -83,8 +82,8 @@ Risks:
 
 ## Related
 
-- [ADR-0028](0028-horizontal-active-active-cluster.md) — cluster topology
-- [ADR-0029](0029-cluster-live-variable-replica-sync.md) — live telemetry mirror
-- [ADR-0024](0024-demand-driven-variable-change-pubsub.md) — demand-driven (telemetry only in cluster)
-- [CLUSTER.md](../cluster.md) — operator guide and troubleshooting
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — cluster topology
+- [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live telemetry mirror
+- [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven (telemetry only in cluster)
+- [cluster](../cluster.md) — operator guide and troubleshooting
 - ROADMAP BL-143 — integration test + smoke `--config-sync`

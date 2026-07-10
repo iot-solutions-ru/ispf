@@ -14,7 +14,7 @@ Module `ispf-plugin-blueprint` — **blueprint** system (object structure templa
 
 **Intrinsic schemas** (1:1 with `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) live in the registry for bootstrap but **do not appear** in the relative-blueprints catalog and **are not used** in `appliedBlueprintIds`. Structure is embedded in the instance via `*ObjectService.ensureStructure()`.
 
-See [0011](decisions/0011-model-type-semantics.md).
+See [0011-model-type-semantics](decisions/0011-model-type-semantics.md).
 
 ### Object linkage
 
@@ -37,7 +37,7 @@ On `POST /objects` with `autoApplyRelativeBlueprints=true` (default) `BlueprintE
 
 **Explicit apply** (template/API): only `targetObjectType`; CEL optional — if set, must be `true`.
 
-See [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ### Applicability condition (CEL)
 
@@ -64,7 +64,7 @@ Expression evaluated via `ExpressionEngine` with `self` = target object variable
 
 **Fixtures** (demo/lab, not core): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Config: `ispf.bootstrap.fixtures-enabled` (default `true`).
 
-See [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## API
 
@@ -80,7 +80,7 @@ See [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 - Variables (`ModelVariableDefinition`) — schema, default, group, readable/writable
 - Events (`EventDescriptor`)
 - Functions (`FunctionDescriptor`)
-- Binding rules (`ModelBindingRule`) — see [bindings.md](bindings.md)
+- Binding rules (`ModelBindingRule`) — see [bindings](bindings.md)
 - Metadata: name, description, `ObjectType`, `BlueprintType`
 
 ## Engine
@@ -110,7 +110,7 @@ User models (non-`builtin`) load from DB on server start after `ensureBuiltInMod
 | POST | `/api/v1/blueprints/from-object` | Export model from object |
 | GET | `/api/v1/blueprints/attachments` | Model↔type attachments |
 
-Access: **admin**. See [api.md](api.md).
+Access: **admin**. See [api](api.md).
 
 ## Built-in and fixture models
 
@@ -144,13 +144,13 @@ Event: `thresholdExceeded`. Function: `acknowledgeAlarm`.
 
 #### mqtt-gateway-v1
 
-MQTT ingress gateway — one broker, routes `lastIngress` to child sensors via `dispatchTelemetry`. See [ADR-0017](decisions/0017-telemetry-ingest-pipeline.md).
+MQTT ingress gateway — one broker, routes `lastIngress` to child sensors via `dispatchTelemetry`. See [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).
 
 #### device-driver-v1
 
 RELATIVE mixin with `driver` group variables — for demo/lab and explicit apply. **Not** used for auto-apply on DEVICE create.
 
-On production path driver schema is provisioned via `provisionDriver()` without relative mixin (see [drivers.md](drivers.md)).
+On production path driver schema is provisioned via `provisionDriver()` without relative mixin (see [drivers](drivers.md)).
 
 #### snmp-agent-v1
 
@@ -192,8 +192,8 @@ Content-Type: application/json
 
 ## Related documents
 
-- [object-model.md](object-model.md) — variables, DataRecord
-- [dashboards.md](dashboards.md) — dashboard-v1 layout
-- [workflows.md](workflows.md) — workflow-v1
-- [drivers.md](drivers.md) — driver variables, provisioning
+- [object-model](object-model.md) — variables, DataRecord
+- [dashboards](dashboards.md) — dashboard-v1 layout
+- [workflows](workflows.md) — workflow-v1
+- [drivers](drivers.md) — driver variables, provisioning
 - [decisions/0018-fixture-models-and-cel-applicability.md](decisions/0018-fixture-models-and-cel-applicability.md) — fixtures + CEL auto-apply

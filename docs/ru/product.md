@@ -57,7 +57,7 @@ graph LR
 
 ### Основной принцип
 
-**Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и рабочих процессах **дерева объектов**. Платформа предоставляет generic-движки (CEL, привязки, BPMN, среда выполнения скриптов, драйверы); решение выполняет их декларативно-конфигурацию. Bundle Deploy — упаковка конфигурации, не зависящая от времени выполнения. Свод решения для разработчиков и агентов: [APPLICATION_PRINCIPLES.md](application-principles.md). Подробнее: [ARCHITECTURE.md](architecture.md). Следующая волна развития — [ROADMAP.md § Phase 5](roadmap.md) (модели, функции, события, рабочий процесс, пакет как упаковка дерева).
+**Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и рабочих процессах **дерева объектов**. Платформа предоставляет generic-движки (CEL, привязки, BPMN, среда выполнения скриптов, драйверы); решение выполняет их декларативно-конфигурацию. Bundle Deploy — упаковка конфигурации, не зависящая от времени выполнения. Свод решения для разработчиков и агентов: [application-principles](application-principles.md). Подробнее: [architecture](architecture.md). Следующая волна развития — [ROADMAP.md § Phase 5](roadmap.md) (модели, функции, события, рабочий процесс, пакет как упаковка дерева).
 
 ### Ключевые преимущества
 
@@ -65,7 +65,7 @@ graph LR
 - **Расширяемость без разветвления ядра** — отраслевые решения деплоятся как бандлы (модели, объекты, JSON-функции, BPMN, пользовательский интерфейс оператора) **в механизмах платформы**, без Java на сервере.
 - **Облачный стек** — Spring Boot 4.0, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket, опционально NATS/MQTT/Keycloak.
 - **58 встроенных драйверов** — от Modbus и OPC UA до SNMP, Kafka и JDBC ([каталог](drivers.md)).
-- **Apache 2.0 ядра** — коммерческие отраслевые пакеты — отдельно ([PLUGINS.md](plugins.md)).
+- **Apache 2.0 ядра** — коммерческие отраслевые пакеты — отдельно ([plugins](plugins.md)).
 
 ---
 
@@ -87,13 +87,13 @@ graph LR
 | `USER` / `ROLE` | Пользователи и роли (зеркало security API) |
 | `CUSTOM` | Произвольный контейнер (fallback) |
 
-Подробнее: [OBJECT_MODEL.md](object-model.md), [GLOSSARY.md](glossary.md).
+Подробнее: [object-model](object-model.md), [glossary](glossary.md).
 
 ### 2. Модели (шаблоны)
 
 `BlueprintDefinition` описывает набор функций, событий, функций и CEL-привязок. ОТНОСИТЕЛЬНЫЕ миксины автоматически применяются только при заданном *Условии применимости* (CEL). Демо-модель `mqtt-sensor-v1` — приспособление, применяется через `templateId`.
 
-Подробнее: [BLUEPRINTS.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+Подробнее: [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ### 3. Драйверы устройства
 
@@ -106,7 +106,7 @@ SPI `DeviceDriver` подключает протоколы к переменно
 | `demo-sensor-01` | virtual | Синусоида температуры + alarm binding |
 | `snmp-localhost` | snmp | SNMP-агент localhost |
 
-Подробнее: [DRIVERS.md](drivers.md).
+Подробнее: [drivers](drivers.md).
 
 ### 4. Дашборды и HMI
 
@@ -122,13 +122,13 @@ Dashboard Builder (администратор) и Операторский HMI (
 
 Связь виджетов с данными — через `objectPath` (статический) или `selectionKey` (динамический выбор строк таблицы).
 
-Подробнее: [DASHBOARDS.md](dashboards.md), [SCADA.md](scada.md), справочник виджетов: [WIDGETS.md](widgets.md).
+Подробнее: [dashboards](dashboards.md), [scada](scada.md), справочник виджетов: [widgets](widgets.md).
 
 ### 5. Рабочий процесс (BPMN)
 
 Визуальный редактор BPMN в веб-консоли. Поддерживаются сервисные задачи (в т.ч. вызов прикладных функций), пользовательские задачи (очередь операторов), шлюзы с CEL-условиями, параллельные ветки, сигналы и NATS.
 
-Подробнее: [WORKFLOWS.md](workflows.md).
+Подробнее: [workflows](workflows.md).
 
 ### 6. Автоматизация
 
@@ -136,7 +136,7 @@ Dashboard Builder (администратор) и Операторский HMI (
 - **Правила оповещений** — CEL-условие на переменную → автоматический пожар. Узлы `ALERT` в `root.platform.alert-rules`.
 - **Event correlators** — цепочка событий → запуск workflow. Узлы `CORRELATOR` в `root.platform.correlators`.
 
-Подробнее: [AUTOMATION.md](automation.md).
+Подробнее: [automation](automation.md).
 
 ### 7. Прикладные решения (Платформа приложений)
 
@@ -152,7 +152,7 @@ Dashboard Builder (администратор) и Операторский HMI (
 | Расписания | `GET/POST /schedules` |
 | SQL-отчёты | `GET /applications/{id}/reports/{name}` |
 
-Подробнее: [APPLICATIONS.md](applications.md), [REPORTS.md](reports.md).
+Подробнее: [applications](applications.md), [reports](reports.md).
 
 ### 8. Пользовательский интерфейс оператора
 
@@ -168,13 +168,13 @@ http://localhost:5173?mode=operator&app=<appId>
 2. `GET /api/v1/applications/{appId}/operator-ui` (из bundle)
 3. Legacy fallback `public/operator-apps/{appId}.ui.json`
 
-Подробнее: [OPERATOR_GUIDE.md](operator-guide.md), [WEB_CONSOLE.md](web-console.md).
+Подробнее: [operator-guide](operator-guide.md), [web-console](web-console.md).
 
 ### 9. Безопасность
 
 Два ролика: **admin** (полный доступ) и **operator** (просмотр, функции, рабочая очередь). Профиль `local` — Носитель-токен после входа в систему; профиль `dev`/prod — OAuth2 JWT через Keycloak.
 
-Подробнее: [SECURITY.md](security.md).
+Подробнее: [security](security.md).
 
 ---
 
@@ -228,7 +228,7 @@ flowchart TD
 4. Администратор создаёт приложение оператора в дереве → настраивает дашборды.
 5. Операторы работают через `?mode=operator&app=my-terminal`.
 
-Подробное пошаговое руководство: [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md).
+Подробное пошаговое руководство: [solution-developer-guide](solution-developer-guide.md).
 
 ---
 
@@ -249,7 +249,7 @@ cd apps/web-console && npm install && npm run dev
 | http://localhost:8080/api/v1/info | Версия платформы |
 | http://localhost:8080/actuator/health | Health check |
 
-Полная инструкция: [GETTING_STARTED.md](getting-started.md).
+Полная инструкция: [getting-started](getting-started.md).
 
 ---
 
@@ -264,7 +264,7 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
                     PostgreSQL/H2 │ Flyway │ NATS* │ MQTT*
 ```
 
-Детали: [ARCHITECTURE.md](architecture.md).
+Детали: [architecture](architecture.md).
 
 ---
 
@@ -282,7 +282,7 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
 | Драйверы | `POST /drivers/runtime/start?devicePath=...` |
 | События | `GET /events`, `POST /events/fire` |
 
-Полный справочник: [API.md](api.md).
+Полный справочник: [api](api.md).
 
 ---
 
@@ -293,7 +293,7 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
 | Ядро ISPF (`main`) | Apache 2.0 |
 | Коммерческие плагины и app bundle | Отдельная лицензия, вне `main` |
 
-Подробнее: [LICENSE.md](license.md), [PLUGINS.md](plugins.md).
+Подробнее: [license](license.md), [plugins](plugins.md).
 
 ---
 
@@ -304,23 +304,23 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
 | Документ | Описание |
 |----------|----------|
 | **PRODUCT.md** (этот файл) | Обзор продукта, возможностей, сценариев |
-| [OPERATOR_GUIDE.md](operator-guide.md) | Работа оператора с HMI |
-| [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md) | Создание прикладных решений |
-| [ГЛОССАРИЙ.md](glossary.md) | Термины и определения |
+| [operator-guide](operator-guide.md) | Работа оператора с HMI |
+| [solution-developer-guide](solution-developer-guide.md) | Создание прикладных решений |
+| [glossary](glossary.md) | Термины и определения |
 
 ### Техническая документация
 
 | Документ | Описание |
 |----------|----------|
-| [GETTING_STARTED.md](getting-started.md) | Установка и первый запуск |
-| [OBJECT_MODEL.md](object-model.md) | Дерево переменное, CEL |
-| [DASHBOARDS.md](dashboards.md) | Планировка, подборКлюч, застройщик |
-| [SCADA.md](scada.md) | Мнемосхемы, объекты MIMIC, редактор мнемосхем (выравнивание, распределение, переворот, изменение размера, интеллектуальная привязка) |
-| [WIDGETS.md](widgets.md) | Справочник всех виджетов |
-| [WORKFLOWS.md](workflows.md) | BPMN-движок |
-| [APPLICATIONS.md](applications.md) | API развертывания REQ-PF |
-| [DRIVERS.md](drivers.md) | Каталог драйверов |
-| [SECURITY.md](security.md) | RBAC и аутентификация |
-| [DEPLOYMENT.md](deployment.md) | Производство |
+| [getting-started](getting-started.md) | Установка и первый запуск |
+| [object-model](object-model.md) | Дерево переменное, CEL |
+| [dashboards](dashboards.md) | Планировка, подборКлюч, застройщик |
+| [scada](scada.md) | Мнемосхемы, объекты MIMIC, редактор мнемосхем (выравнивание, распределение, переворот, изменение размера, интеллектуальная привязка) |
+| [widgets](widgets.md) | Справочник всех виджетов |
+| [workflows](workflows.md) | BPMN-движок |
+| [applications](applications.md) | API развертывания REQ-PF |
+| [drivers](drivers.md) | Каталог драйверов |
+| [security](security.md) | RBAC и аутентификация |
+| [deployment](deployment.md) | Производство |
 
-Полный индекс: [README.md](readme.md).
+Полный индекс: [readme](readme.md).

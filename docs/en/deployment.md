@@ -37,7 +37,7 @@ Artifact: `:packages:ispf-server:bootRun` or JAR from `build/libs/`.
 | `ISPF_MQTT_BROKER` | tcp://localhost:1883 | Broker URL |
 | `ISPF_NATS_ENABLED` | false | NATS integration |
 | `ISPF_NATS_URL` | nats://localhost:4222 | NATS URL |
-| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | true | Demo/lab fixture models and demo nodes (`mqtt-sensor-v1`, …). See [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md). **Prod VPS:** `vps-deploy-direct.ps1` sets `false`; lab demo — `vps-factory-reset.sh --fixtures`. |
+| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | true | Demo/lab fixture models and demo nodes (`mqtt-sensor-v1`, …). See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md). **Prod VPS:** `vps-deploy-direct.ps1` sets `false`; lab demo — `vps-factory-reset.sh --fixtures`. |
 
 ### Profiles
 
@@ -50,9 +50,9 @@ Artifact: `:packages:ispf-server:bootRun` or JAR from `build/libs/`.
 
 ### Database
 
-- **Flyway** — migrations on startup (`ddl-auto: validate`); locations per `RelationalDialect` (see [ADR-0037](decisions/0037-relational-core-portability.md))
+- **Flyway** — migrations on startup (`ddl-auto: validate`); locations per `RelationalDialect` (see [0037-relational-core-portability](decisions/0037-relational-core-portability.md))
 - **local:** H2 `./data/ispf-local` (PostgreSQL compatibility mode)
-- **prod:** PostgreSQL; TimescaleDB extension (docker image `timescale/timescaledb`) — hypertables `variable_samples` and `event_history`, retention 90d ([0009](decisions/0009-timescaledb-retention.md), [0015](decisions/0015-event-history-timescale.md))
+- **prod:** PostgreSQL; TimescaleDB extension (docker image `timescale/timescaledb`) — hypertables `variable_samples` and `event_history`, retention 90d ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md), [0015-event-history-timescale](decisions/0015-event-history-timescale.md))
 
 #### Storage modes
 
@@ -63,7 +63,7 @@ Artifact: `:packages:ispf-server:bootRun` or JAR from `build/libs/`.
 
 Single DB is the standard scenario: configuration, objects, `event_history`, and `variable_samples` in one PostgreSQL. ClickHouse/Cassandra — only under high time-series load.
 
-Optionally: `ISPF_METADATA_DB_KIND` (`postgresql`, `h2`, `mssql`, …) — see [storage-portability-inventory.md](storage-portability-inventory.md).
+Optionally: `ISPF_METADATA_DB_KIND` (`postgresql`, `h2`, `mssql`, …) — see [storage-portability-inventory](storage-portability-inventory.md).
 
 **Changing metadata engine (greenfield, before v1.0):** new empty DB, Flyway baseline for the chosen dialect, configuration — import bundles. In-place PG→MSSQL migration is not supported.
 
@@ -145,7 +145,7 @@ bash deploy/air-gap-pack.sh --version 0.9.32
 bash deploy/air-gap-apply.sh /path/to/ispf-airgap-0.9.32.tar.gz
 ```
 
-Full checklist, licensing, and offline update: [air-gap-deployment.md](air-gap-deployment.md).
+Full checklist, licensing, and offline update: [air-gap-deployment](air-gap-deployment.md).
 
 ## Bundle signing (BL-100)
 
@@ -165,7 +165,7 @@ Import/deploy behavior:
 | Valid signed `license` | OK | OK |
 | Invalid / tampered signature | WARN (if `enforce=false`) or 403 | HTTP 403 |
 
-Details: [commercial-licensing.md](commercial-licensing.md) (deploy behavior, key rotation).
+Details: [commercial-licensing](commercial-licensing.md) (deploy behavior, key rotation).
 
 ## Production topology (target)
 
@@ -182,13 +182,13 @@ Details: [commercial-licensing.md](commercial-licensing.md) (deploy behavior, ke
               PostgreSQL + Redis + NATS JetStream
 ```
 
-- Stateless API replicas share one PostgreSQL tree ([ADR-0028](decisions/0028-horizontal-active-active-cluster.md)).
+- Stateless API replicas share one PostgreSQL tree ([0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md)).
 - Driver poll loops: exactly-one owner per device via `platform_driver_locks` (BL-136).
 - Singleton schedulers: JDBC leader locks (`platform_leader_locks`).
 
 ## Multi-instance cluster (BL-134…139)
 
-Detailed guide: **[cluster.md](cluster.md)** — topology, bindings, ADR-0029, tuning, and **[cluster startup order](cluster.md#cluster-startup-and-configuration)** (staged bootstrap, profiles, nginx, lab BL-210).
+Detailed guide: **[cluster](cluster.md)** — topology, bindings, ADR-0029, tuning, and **[cluster startup order](cluster.md#cluster-startup-and-configuration)** (staged bootstrap, profiles, nginx, lab BL-210).
 
 **Lab / Enterprise L (4 profiles: edge×2 + analytics + io):**
 
@@ -219,7 +219,7 @@ Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf).
 | `ISPF_CLUSTER_ENABLED` | `true` | Enables driver ownership + cluster health API |
 | `ISPF_NATS_ENABLED` | `true` | Cross-replica WS/object-change fan-out |
 | `ISPF_NATS_REPLICA_EVENTS` | `true` | Required for multi-replica UI sync |
-| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC` | `true` | NATS live-value RAM mirror ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) |
+| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC` | `true` | NATS live-value RAM mirror ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)) |
 | `ISPF_CLUSTER_PATH_INTEREST` | `true` | Redis global WS interest (requires Redis) |
 | `ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS` | `500` | NATS fan-out coalesce (separate from `ISPF_RUNTIME_TELEMETRY_COALESCE_MS`) |
 | `ISPF_REDIS_ENABLED` | `true` | Recommended (correlator windows, ACL cache, cluster path interest) |
@@ -244,7 +244,7 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 **Failover verify**
 
 1. `curl -sf http://127.0.0.1:8088/api/v1/info` — should succeed with any replica up.
-2. Stop one replica: REST must not 502; WS clients on other replicas stay connected; NATS propagates live variable snapshots ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)).
+2. Stop one replica: REST must not 502; WS clients on other replicas stay connected; NATS propagates live variable snapshots ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
 3. Admin → System → Metrics → cluster health card (`/api/v1/platform/cluster/health`).
 
 **Ops checklist (BL-139)**
@@ -256,7 +256,7 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 - [ ] Nginx upstream lists all healthy `ispf-server-*` backends; `/ws/` uses `ip_hash`
 - [ ] `GET /api/v1/platform/cluster/health` (admin) — all nodes `UP`, driver locks visible
 - [ ] Smoke: `bash deploy/cluster-smoke-test.sh` (round-robin, REST failover, driver reclaim)
-- [ ] Config sync: `bash deploy/cluster-smoke-test.sh --config-sync` ([ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md))
+- [ ] Config sync: `bash deploy/cluster-smoke-test.sh --config-sync` ([0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md))
 - [ ] Scale gate (lab/CI): `python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8`
 - [ ] Kill one replica: REST via LB stays 200; driver locks migrate within TTL + failover scan
 
@@ -272,7 +272,7 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 
 ### Prod VPS (single-node example)
 
-The current public example uses a **single unified node**. Generalized deployment profiles: **[demostands.md](demostands.md)** (production, throughput, demo-idle, edge). Single-node ops template: [vps-demostand.md](vps-demostand.md).
+The current public example uses a **single unified node**. Generalized deployment profiles: **[demostands](demostands.md)** (production, throughput, demo-idle, edge). Single-node ops template: [vps-demostand](vps-demostand.md).
 
 | Script | When |
 |--------|------|
@@ -280,7 +280,7 @@ The current public example uses a **single unified node**. Generalized deploymen
 | [`vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) | Merge prod-idle overlay + **recreate** container (not `docker restart`) |
 | [`vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) | After recreate: SNMP `TELEMETRY_ONLY`, demo-sensor `FULL` |
 | [`vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) | Thread CPU diagnostic (SSH) |
-| [`ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) | Demo-idle overlay ([demostands.md](demostands.md)) |
+| [`ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) | Demo-idle overlay ([demostands](demostands.md)) |
 | [`vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1) | Local build + SCP staging |
 
 ```powershell
@@ -312,11 +312,11 @@ curl -sf http://127.0.0.1:8080/api/v1/info
 ssh user@host 'bash /opt/ispf/bin/vps-cluster-verify.sh --config-sync'
 ```
 
-**Rollback cluster → single:** [demostands.md](demostands.md), [vps-demostand.md](vps-demostand.md).
+**Rollback cluster → single:** [demostands](demostands.md), [vps-demostand](vps-demostand.md).
 
 ## ClickHouse variable history (prod playbook, BL-114)
 
-Full ops guide: **[clickhouse-prod-playbook.md](clickhouse-prod-playbook.md)** — install, event journal, historian cutover, **dual-write** (BL-116), verify, rollback.
+Full ops guide: **[clickhouse-prod-playbook](clickhouse-prod-playbook.md)** — install, event journal, historian cutover, **dual-write** (BL-116), verify, rollback.
 
 Default historian: PostgreSQL/Timescale (`ISPF_VARIABLE_HISTORY_STORE=jdbc`). Dual-write: `ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true` + CH credentials (reads remain in PG).
 
@@ -328,7 +328,7 @@ Actuator endpoints:
 - `/actuator/prometheus` — metrics (admin role); ISPF gauges `ispf_event_history_records`, `ispf_alert_fires_total`, `ispf_object_change_queue_size`, …
 - `/actuator/metrics` — Micrometer
 
-**Metrics probe:** sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe`. Enable at **runtime** via Admin → System → Metrics → Load diagnostics (checkbox) or `PUT /api/v1/platform/diagnostics/metrics-probe` with `{ "enabled": true }`. Boot env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` does not start the scheduler (see [observability.md](observability.md)). Create device: `python deploy/setup-platform-metrics-monitor.py`.
+**Metrics probe:** sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe`. Enable at **runtime** via Admin → System → Metrics → Load diagnostics (checkbox) or `PUT /api/v1/platform/diagnostics/metrics-probe` with `{ "enabled": true }`. Boot env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` does not start the scheduler (see [observability](observability.md)). Create device: `python deploy/setup-platform-metrics-monitor.py`.
 
 ## Logging
 
@@ -405,7 +405,7 @@ The script logs in (`admin`/`admin`), calls `POST /api/v1/drivers/runtime/start?
 
 ## Upgrade to v0.8.0+
 
-> **Runbook for upgrading from pre-0.8.0.** One-time breaking change [0010](decisions/0010-binding-rules-only.md): column `binding_expr` removed (`V41`), checksum `V1` changed — **easier to recreate the DB** than migrate legacy bindings. On prod 0.9.x, normal deploy via [vps-deploy-direct.ps1](../deploy/vps-deploy-direct.ps1) — no DB recreation.
+> **Runbook for upgrading from pre-0.8.0.** One-time breaking change [0010-binding-rules-only](decisions/0010-binding-rules-only.md): column `binding_expr` removed (`V41`), checksum `V1` changed — **easier to recreate the DB** than migrate legacy bindings. On prod 0.9.x, normal deploy via [vps-deploy-direct.ps1](../deploy/vps-deploy-direct.ps1) — no DB recreation.
 
 ### Prod VPS (`ispf.iot-solutions.ru`) — PostgreSQL in Docker
 
@@ -440,7 +440,7 @@ docker compose exec postgres psql -U ispf -d postgres \
 
 ### H2 (local dev only)
 
-Delete `./data/ispf-local.mv.db` or change `spring.datasource.url`. See [bindings.md](bindings.md).
+Delete `./data/ispf-local.mv.db` or change `spring.datasource.url`. See [bindings](bindings.md).
 
 ## SCADA NFR (mini-TEC / production)
 
@@ -448,13 +448,13 @@ Targets from mini-TEC mimic requirements (§4) — **operational**, not bootstra
 
 | Requirement | ISPF recommendation |
 |------------|-------------------|
-| 99.9% availability | `ispf-server` cluster + health checks; see [cluster.md](cluster.md) |
+| 99.9% availability | `ispf-server` cluster + health checks; see [cluster](cluster.md) |
 | ≤50 concurrent operators | Redis session/cache (`redis` in compose); nginx sticky sessions |
 | 7-year telemetry archive | TimescaleDB retention policies + ClickHouse `store=clickhouse` for events |
-| Backup | `pg_dump` / volume snapshots; runbook in [air-gap-deployment.md](air-gap-deployment.md) |
+| Backup | `pg_dump` / volume snapshots; runbook in [air-gap-deployment](air-gap-deployment.md) |
 | Zero-downtime update | Blue/green via `apply-platform-update.sh` + staged jar/UI |
-| Sessions / timeout | Keycloak realm: SSO idle timeout, max session; see [security.md](security.md) |
-| Email/SMS alarms | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` + webhook to SMS gateway; [automation.md](automation.md) |
+| Sessions / timeout | Keycloak realm: SSO idle timeout, max session; see [security](security.md) |
+| Email/SMS alarms | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` + webhook to SMS gateway; [automation](automation.md) |
 | Offline operator HMI | PWA cache web-console static; HMI layout in `dashboard-v1.layout` |
 | OPC-UA field level | Driver pack `opcua`; GPU variable mapping — lab note in [examples/mini-tec/README.md](readme.md) |
 

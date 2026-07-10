@@ -83,7 +83,6 @@ db/migration/oracle/
 
 - единая абстракция; явный single-DB сценарий; external JDBC для интеграций без смешивания с metadata.
 
-
 Risks:
 
 - enterprise-движки сертифицируются по одному; cluster требует одинаковый engine на всех репликах; смена СУБД — greenfield + бандлы, не live migration.
@@ -92,7 +91,7 @@ Risks:
 
 ## Связанные материалы
 
-- [STORAGE_PORTABILITY_INVENTORY.md](../STORAGE_PORTABILITY_INVENTORY.md)
-- [DEPLOYMENT.md](../deployment.md) § Storage deployment modes
-- [ADR-0028](0028-horizontal-active-active-cluster.md), [ADR-0016](0016-clickhouse-event-journal.md)
-- [BLUEPRINTS.md](../BLUEPRINTS.md) — `data-source-v1`
+- [STORAGE_PORTABILITY_INVENTORY](../STORAGE_PORTABILITY_INVENTORY.md)
+- [deployment](../deployment.md) § Storage deployment modes
+- [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
+- [BLUEPRINTS](../BLUEPRINTS.md) — `data-source-v1`

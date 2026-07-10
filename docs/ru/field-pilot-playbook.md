@@ -4,7 +4,7 @@
 
 Повторяемые инструкции для полевых пилотов OT для трех эталонных сценариев. Каждый пилотный проект проверяет **ПРОИЗВОДСТВЕННЫЕ** драйверы, записывает данные туда и обратно, принимает архивные данные и использует HMI оператора без промежуточного программного обеспечения между ISPF и периферией предприятия.
 
-Предварительные требования: ISPF ≥ 0.9.32, [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) зелёный локально, учетная запись оператора с ролью администратора устройства.
+Предварительные требования: ISPF ≥ 0.9.32, [driver-interop-lab](driver-interop-lab.md) зелёный локально, учетная запись оператора с ролью администратора устройства.
 
 ### Gate ready-for-field (политика) {#ready-for-field-gate-policy}
 
@@ -42,7 +42,7 @@
 | `pollIntervalMs` | `1000` |
 | `unitId` | `1` |
 
-Сопоставьте регистры хранения переменным (`40001` → `tank.level` и т. д.). См. [DRIVERS.md](drivers.md) § modbus-tcp.
+Сопоставьте регистры хранения переменным (`40001` → `tank.level` и т. д.). См. [drivers](drivers.md) § modbus-tcp.
 
 ### Контрольный список проверки
 
@@ -81,7 +81,7 @@ bash deploy/tools/driver-interop-smoke.sh
 | `clientId` | `ispf-fleet-01` |
 | `topicPrefix` | `plant/line1/{deviceId}/telemetry` |
 
-Одно устройство ISPF на шлюз или мультиплексированная гибкая тематическая карта — см. [DRIVERS.md](drivers.md) § mqtt.
+Одно устройство ISPF на шлюз или мультиплексированная гибкая тематическая карта — см. [drivers](drivers.md) § mqtt.
 
 ### Контрольный список проверки
 
@@ -130,7 +130,7 @@ mosquitto_pub -h 127.0.0.1 -t ispf/lab/ping -m ok
 | `bindPort` | `4840` |
 | `namespace` | `2` |
 
-Предоставьте выбранные переменные ISPF внешним клиентам UA (UA Expert, Prosys). См. [OPCUA_SERVER_INTEROP.md](opcua-server-interop.md).
+Предоставьте выбранные переменные ISPF внешним клиентам UA (UA Expert, Prosys). См. [opcua-server-interop](opcua-server-interop.md).
 
 ### Контрольный список проверки
 
@@ -177,8 +177,8 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 | -------- | -------- |
 | Interop report | `build/driver-interop/interop-summary.md` |
 | Пилотный журнал | Заявка клиента / приложение `docs/` (длительность, инциденты, количество тегов) |
-| Дельта системы показателей | [COMPETITIVE_Scorecard.md](competitive-scorecard.md) измерение 3 |
-| Доказательства продвижения | [DRIVER_PROMOTION.md](driver-promotion.md) раздел полевого пилота |
+| Дельта системы показателей | [competitive-scorecard](competitive-scorecard.md) измерение 3 |
+| Доказательства продвижения | [driver-promotion](driver-promotion.md) раздел полевого пилота |
 | Запись о подписании | § Подписание пилотного проекта ниже (по одному на каждый сценарий) |
 
 **Определение готовности (BL-140):** по сценарию — **ready-for-field** только после именованной полевой задачи и работ по драйверу под площадку; затем зелёный lab dry-run, пройденный field checklist, журнал **7-day soak**, sign-off OT заказчика. Без полевой задачи: **playbook-ready** (только lab + шаблоны). Scorecard OT ≥ 9,5 — только с полевыми доказательствами.
@@ -228,13 +228,13 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 | Интегратор ISPF | | |
 | Проверка качества платформы | | |
 
-**Одобрение:** ☐ Разместите доказательства драйвера на [DRIVER_PROMOTION.md](driver-promotion.md) ☐ Требуются последующие действия
+**Одобрение:** ☐ Разместите доказательства драйвера на [driver-promotion](driver-promotion.md) ☐ Требуются последующие действия
 
 ---
 
 ## Связанный
 
-- [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) — матрица обратной связи CI
-- [DRIVERS.md](drivers.md) — конфиги драйверов
-- [roadmap.md](roadmap.md) — BL-140, BL-141, BL-143
-- [DEPLOYMENT.md](deployment.md) — VPS/периферийное развертывание
+- [driver-interop-lab](driver-interop-lab.md) — матрица обратной связи CI
+- [drivers](drivers.md) — конфиги драйверов
+- [roadmap](roadmap.md) — BL-140, BL-141, BL-143
+- [deployment](deployment.md) — VPS/периферийное развертывание

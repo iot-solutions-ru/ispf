@@ -6,7 +6,7 @@
 
 **→ [roadmap.md § Phase 25–33](roadmap.md#phase-25-33--excellence-program)**
 
-Do not add new phases here. Append to [roadmap.md](roadmap.md) only.
+Do not add new phases here. Append to [roadmap](roadmap.md) only.
 
 | Former section | New location |
 | -------------- | ------------ |
@@ -17,4 +17,4 @@ Do not add new phases here. Append to [roadmap.md](roadmap.md) only.
 | Definition of Done | [roadmap.md § DoD](roadmap.md#definition-of-done--1010-overall) |
 | Next 90 days | [roadmap.md § Next 90 days](roadmap.md#next-90-days) |
 
-Companion charter (not a second roadmap): [analytics-platform-roadmap.md](analytics-platform-roadmap.md).
+Companion charter (not a second roadmap): [analytics-platform-roadmap](analytics-platform-roadmap.md).

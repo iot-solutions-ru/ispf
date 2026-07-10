@@ -35,9 +35,9 @@
 
 - Добавление UI-текста требует ключа в `en` + `t()` + `npm run i18n:translate` + `npm run i18n:check`.
 - Размер bundle растёт из-за четырёх наборов locale JSON (приемлемо для admin console).
-- Термины SCADA glossary должны совпадать с [glossary.md](../GLOSSARY.md).
+- Термины SCADA glossary должны совпадать с [GLOSSARY](../GLOSSARY.md).
 
 ## Связанные материалы
 
 - [roadmap.md § Phase 19](../roadmap.md)
-- [web-console.md](../web-console.md) § Localization
+- [web-console](../web-console.md) § Localization

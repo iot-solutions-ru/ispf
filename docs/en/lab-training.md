@@ -140,7 +140,7 @@ Devices created by bootstrap: `root.platform.devices.lab-userA-01`, `root.platfo
 
 **Dashboard:** `root.platform.dashboards.lab-form-grid`
 
-**Documentation:** layout example in [DASHBOARDS.md](dashboards.md).
+**Documentation:** layout example in [dashboards](dashboards.md).
 
 ---
 
@@ -171,7 +171,7 @@ Devices created by bootstrap: `root.platform.devices.lab-userA-01`, `root.platfo
 3. Confirm **C2** (Sum) and **D2** (A×110%) recalculated.
 4. Refresh page (**F5**) — A2/B2 values should persist (saved to `sheetValues` on `lab-userA-01`).
 
-**Free mode (new widgets default):** any cell — value or `=formula`; formula bar, F2, Ctrl+Z, CSV export. Details: [SPREADSHEET_WIDGET.md](spreadsheet-widget.md).
+**Free mode (new widgets default):** any cell — value or `=formula`; formula bar, F2, Ctrl+Z, CSV export. Details: [spreadsheet-widget](spreadsheet-widget.md).
 
 **Verify:** change A2 → Sum and A×110% recalc; F5 → values in `sheetValues`.
 
@@ -269,7 +269,7 @@ Run: `./gradlew test` (server), `npm test` in `apps/web-console`.
 
 ## Related documents
 
-- [DASHBOARDS.md](dashboards.md) — widgets and Grid Layout
-- [AUTOMATION.md](automation.md) — alert rules and correlators
-- [REPORTS.md](reports.md) — tree-first reports
-- [SECURITY.md](security.md) — ACL API
+- [dashboards](dashboards.md) — widgets and Grid Layout
+- [automation](automation.md) — alert rules and correlators
+- [reports](reports.md) — tree-first reports
+- [security](security.md) — ACL API

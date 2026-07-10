@@ -8,7 +8,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
 | **Updated** | 2026-07-09 |
-| **Target approach** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](architecture.md)) |
+| **Product direction** | Self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([architecture](architecture.md)) |
 
 ---
 
@@ -29,7 +29,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 
 **Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…210.
 
-Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
+Acceleration program: [acceleration-program](acceleration-program.md).
 
 VPS deploy — on request only ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc)).
 
@@ -37,7 +37,7 @@ VPS deploy — on request only ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc
 
 ## Retrospective — what shipped and where we are {#retrospective}
 
-**As of 2026-07-09** · prod **0.9.105** (`ispf.iot-solutions.ru`) · code-verified score **~7.4/10** ([competitive-scorecard.md](competitive-scorecard.md)).
+**As of 2026-07-09** · prod **0.9.105** (`ispf.iot-solutions.ru`) · code-verified score **~7.4/10** ([competitive-scorecard](competitive-scorecard.md)).
 
 ### Eras (closed → active)
 
@@ -185,7 +185,7 @@ See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for clos
 | PF-13 | Federation | 4, 7–8 | Done |
 | PF-14 | Driver catalog (58 `driverId`) | 3, 10 | Done |
 
-Details: [APPLICATIONS.md](applications.md).
+Details: [applications](applications.md).
 
 ---
 
@@ -212,7 +212,7 @@ Details: [APPLICATIONS.md](applications.md).
 | FW-50 | Licensed driver JAR | DRV | 16 | Done |
 | FW-60 | Time & timezone (BL-66…71) | TIME | 21 | Done |
 
-Details: [AI_DEVELOPMENT.md](ai-development.md), [decisions/](decisions/).
+Details: [ai-development](ai-development.md), [decisions/](decisions/).
 
 ---
 
@@ -733,8 +733,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | --- | --- |
 | **Version** | 0.9.87 |
 | **Result** | ~1878 events/s sustained (was ~384/s) |
-| **ADR** | [0026](decisions/0026-elastic-telemetry-ingress.md), [0027](decisions/0027-event-journal-ingress-fast-path.md) |
-| **Bench** | [LOAD_TESTING.md](load-testing.md) |
+| **ADR** | [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) |
+| **Bench** | [load-testing](load-testing.md) |
 
 | Layer | Component | Env |
 | ---- | --------- | --- |
@@ -750,7 +750,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | S19-02 | Scorecard + weekly cadence | Done |
 | S19-03 | Scope freeze 8 weeks | Done |
 
-Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleration/collect-baseline.py`.
+Artifact: [acceleration-program](acceleration-program.md), `tools/acceleration/collect-baseline.py`.
 
 ### Sprint S20 — CI velocity {#sprint-s20--ci-velocity}
 
@@ -759,9 +759,9 @@ Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleratio
 | S20-01 | pr-fast / nightly-full | Done |
 | S20-02 | Path-based jobs | Done |
 | S20-03 | Gradle/npm cache | Done |
-| S20-04 | Flaky triage policy | Done — [CI_FLAKY_TRIAGE.md](ci-flaky-triage.md) |
+| S20-04 | Flaky triage policy | Done — [ci-flaky-triage](ci-flaky-triage.md) |
 | S20-05 | Clean build artifacts | Done |
-| S20-06 | CI observability dashboard | Done — [CI_DASHBOARD.md](ci-dashboard.md), `tools/acceleration/ci-dashboard.py` |
+| S20-06 | CI observability dashboard | Done — [ci-dashboard](ci-dashboard.md), `tools/acceleration/ci-dashboard.py` |
 
 ### Sprint S21 — HMI depth {#sprint-s21--hmi-moat}
 
@@ -772,7 +772,7 @@ Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleratio
 | S21-03 | Lighthouse CI gate | BL-95 | Done — `scripts/lighthouse-ci.mjs` |
 | S21-04 | A11y baseline axe | BL-93 | Done — `e2e/quality-gates.spec.ts` |
 | S21-05 | Bundle size budget | BL-95 | Done — `scripts/bundle-budget.mjs` |
-| S21-06 | Known gaps doc | BL-93, 94 | Done — [HMI_QUALITY_GATES.md](hmi-quality-gates.md) |
+| S21-06 | Known gaps doc | BL-93, 94 | Done — [hmi-quality-gates](hmi-quality-gates.md) |
 
 ### Sprint S22 — Edge Trust {#sprint-s22--edge-trust}
 
@@ -791,7 +791,7 @@ Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleratio
 | S23-01 | Brick class inference | BL-104 | 5 | Done — `BrickClassInferenceService`, `GET /api/v1/platform/brick/infer` |
 | S23-02 | Inspector suggestions | BL-104 | 5 | Done — `BrickMetadataPanel`, Explorer **Brick** tab |
 | S23-03 | Semantic roundtrip test | BL-105 | 8 | Done — `SemanticRoundtripIntegrationTest` |
-| S23-04 | Demo dashboard <5 min | BL-105 | 5 | Done — [SEMANTIC_DEMO.md](semantic-demo.md) |
+| S23-04 | Demo dashboard <5 min | BL-105 | 5 | Done — [semantic-demo](semantic-demo.md) |
 | S23-05 | KPI time-to-first-dashboard | — | 3 | Done — walkthrough + `tools/semantic-demo-check.sh` |
 
 **Acceleration Go/No-Go:** CI ±10%; HMI gates green 2 weeks; federation chaos green; semantic demo ≤5 min.
@@ -802,8 +802,8 @@ Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleratio
 | -- | ---------- | -- | -- | ------ |
 | S24-01 | OEE reference bundle | BL-121 | 5 | Done — [mes-oee-reference](../examples/mes-oee-reference/) |
 | S24-02 | BPMN timer catch + boundary | BL-122 | 8 | Done — `WorkflowEngine.fireDueTimers`, `POST .../timer` |
-| S24-03 | Escalation templates | BL-123 | 3 | Done — [REFERENCE_ESCALATION_TEMPLATES.md](reference-escalation-templates.md) |
-| S24-04 | ISA-95 catalog | BL-124 | 3 | Done — [ISA95_CATALOG.md](isa95-catalog.md) |
+| S24-03 | Escalation templates | BL-123 | 3 | Done — [reference-escalation-templates](reference-escalation-templates.md) |
+| S24-04 | ISA-95 catalog | BL-124 | 3 | Done — [isa95-catalog](isa95-catalog.md) |
 
 ### Sprint S25 — Multi-tenant + scale {#sprint-s25--multitenant--scale}
 
@@ -811,14 +811,14 @@ Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleratio
 | -- | ---------- | -- | -- | ------ |
 | S25-01 | Tenant write isolation | BL-125 | 5 | Done — `requirePathInScope` on mutations |
 | S25-02 | Per-tenant quotas API | BL-126 | 5 | Done — `maxDevices` / `maxObjects`, V70 migration |
-| S25-03 | Historian dual-write | BL-116 | 8 | Done — [ADR-0035](decisions/0035-historian-dual-write.md) |
+| S25-03 | Historian dual-write | BL-116 | 8 | Done — [0035-historian-dual-write](decisions/0035-historian-dual-write.md) |
 
 ### Sprint S26 — HMI + ops close-out {#sprint-s26--hmi--ops-close-out}
 
 | ID | Purpose | BL | SP | Status |
 | -- | ---------- | -- | -- | ------ |
-| S26-01 | SCADA symbol library docs + tests | BL-94 | 3 | Done — [SCADA_SYMBOL_LIBRARY.md](scada-symbol-library.md) |
-| S26-02 | ClickHouse prod playbook + scripts | BL-114 | 5 | Done — [CLICKHOUSE_PROD_PLAYBOOK.md](clickhouse-prod-playbook.md) |
+| S26-01 | SCADA symbol library docs + tests | BL-94 | 3 | Done — [scada-symbol-library](scada-symbol-library.md) |
+| S26-02 | ClickHouse prod playbook + scripts | BL-114 | 5 | Done — [clickhouse-prod-playbook](clickhouse-prod-playbook.md) |
 | S26-03 | Dual-write verify + application.yml | BL-114 | 2 | Done — `vps-variable-history-dual-write.sh`, verify script |
 
 ---
@@ -851,7 +851,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | **S27 — Federation hardening** | BL-119/120 sync + chaos e2e, tunnel flake budget | Done — chaos IT, flake budget, nightly gate, peer health events |
 | **S28 — Ingress + historian prod** | VPS dual-write rollout, ClickHouse cutover playbook execution | Done — dual-write script + verify mode (VPS rollout) |
 | **S29 — HMI a11y close-out** | WCAG contrast audit, mimic editor keyboard, Lighthouse ≥90 on operator shell | Done — axe + Lighthouse operator gate |
-| **S30 — Registry / compliance** | [RUSSIAN_SOFTWARE_REGISTRY.md](russian-software-registry.md), techpack refresh | Done — techpack 0.9.101; legal scans / Astra+RED OS by 2028 — on submission |
+| **S30 — Registry / compliance** | [russian-software-registry](russian-software-registry.md), techpack refresh | Done — techpack 0.9.101; legal scans / Astra+RED OS by 2028 — on submission |
 
 **Local (2026-07-07):** pr-fast CI green (906 tests); web-console quality-gates + Lighthouse operator OK.
 
@@ -862,13 +862,13 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 
 **Goal:** bring the product to **10/10** across IoT / SCADA / MES / ERP Level 4 / analytics.
 
-**Single roadmap rule:** all future phases append here — do not create separate `roadmap-phase-N.md` files. Deep charters (e.g. [analytics-platform-roadmap.md](analytics-platform-roadmap.md)) remain companion docs; status and BL IDs live only in this file.
+**Single roadmap rule:** all future phases append here — do not create separate `roadmap-phase-N.md` files. Deep charters (e.g. [analytics-platform-roadmap](analytics-platform-roadmap.md)) remain companion docs; status and BL IDs live only in this file.
 
 | | |
 | --- | --- |
 | **Baseline** | Phase 24 closed, `main`, July 2026 |
 | **Updated** | 2026-07-09 (unified roadmap; domain gap audit; Phase 33 analytics) |
-| **Product score** | Code verified **~7.4/10** — [competitive-scorecard.md](competitive-scorecard.md) |
+| **Product score** | Code verified **~7.4/10** — [competitive-scorecard](competitive-scorecard.md) |
 | **Target** | 10/10 — see [Definition of Done](#definition-of-done--1010-overall) |
 
 ### Phases 25–33 summary
@@ -882,7 +882,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 ## Competitive scorecard (baseline → code verified → target)
 
 Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI / Opcenter / Tulip / mature context-tree IIoT).  
-**Code verified** — evidence from `main` source/tests (0.9.102). Full matrix: [competitive-scorecard.md](competitive-scorecard.md).
+**Code verified** — evidence from `main` source/tests (0.9.102). Full matrix: [competitive-scorecard](competitive-scorecard.md).
 
 | Dimension | Baseline | **Code verified** | Target | Phase |
 | --------- | :------: | :---------------: | :----: | ----- |
@@ -925,7 +925,7 @@ Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI /
 
 ## Domain gap audit — IoT / SCADA / MES / ERP (2026-07-09)
 
-Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.4/10** ([competitive-scorecard.md](competitive-scorecard.md)); prod **0.9.105**. Assessment: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, AI without stub) — not more surface features.
+Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.4/10** ([competitive-scorecard](competitive-scorecard.md)); prod **0.9.105**. Assessment: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, AI without stub) — not more surface features.
 
 **Strategy:** ISPF is **not** a full ERP (SAP/1C). Level 4 goal = reliable ISA-95 connectors. Full Opcenter-class MES is **not** "everything in core" — first-class MES objects + certified bundles + 1–2 live plants. Moat = solution velocity (AI + low-code) with Kepware-class OT trust.
 
@@ -1003,16 +1003,16 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-140 | **Top-20 industrial PRODUCTION** | P0 | Modbus×3, OPC UA, OPC UA server, S7, BACnet, MQTT, SNMP, HTTP, flexible, IEC-104, DNP3, DLMS, EtherNet/IP, OPC DA bridge, GPS — `DriverMaturity.PRODUCTION`, interop test green, [drivers.md](drivers.md) updated |
+| BL-140 | **Top-20 industrial PRODUCTION** | P0 | Modbus×3, OPC UA, OPC UA server, S7, BACnet, MQTT, SNMP, HTTP, flexible, IEC-104, DNP3, DLMS, EtherNet/IP, OPC DA bridge, GPS — `DriverMaturity.PRODUCTION`, interop test green, [drivers](drivers.md) updated |
 | BL-141 | **Driver interop lab** | P0 | Docker fixtures per driver, CI workflow `driver-interop.yml`, latency + write round-trip report |
 | BL-142 | **Event→variable at driver** | P1 | MQTT/Kafka streams → dynamic variables; integration test |
 | BL-143 | **OPC UA server GA** | P1 | External UA clients: subscribe, read, write; interop with UA Expert / prosys |
-| BL-144 | **Driver DDK** | P1 | `packages/ispf-driver-ddk`, template, 3 reference custom drivers, [driver-promotion.md](driver-promotion.md) |
-| BL-145 | **Agent edge GA** | P1 | Store-forward, offline buffer, federation sync — 30-day field soak, [federation.md](federation.md) |
+| BL-144 | **Driver DDK** | P1 | `packages/ispf-driver-ddk`, template, 3 reference custom drivers, [driver-promotion](driver-promotion.md) |
+| BL-145 | **Agent edge GA** | P1 | Store-forward, offline buffer, federation sync — 30-day field soak, [federation](federation.md) |
 
 **Phase metric:** 20 PRODUCTION drivers; 0 beta in top-industrial list; 3 pilot OT sites without middleware.
 
-**Related docs:** [drivers.md](drivers.md), [driver-promotion.md](driver-promotion.md), [ADR-0022](decisions/0022-driver-production-matrix.md).
+**Related docs:** [drivers](drivers.md), [driver-promotion](driver-promotion.md), [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md).
 
 ---
 
@@ -1022,17 +1022,17 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-146 | **P&ID symbol library v2** | P1 | 200+ ISA symbols, import pipeline, [scada-symbol-library.md](scada-symbol-library.md), legal audit |
+| BL-146 | **P&ID symbol library v2** | P1 | 200+ ISA symbols, import pipeline, [scada-symbol-library](scada-symbol-library.md), legal audit |
 | BL-147 | **Mimic editor pro** | P1 | Multi-select, layers, undo/redo, keyboard nav — WCAG |
 | BL-148 | **Video wall mode** | P2 | Dashboard layout 2×2…4×4, auto-scale |
 | BL-149 | **Expression debugger** | P1 | Step-through CEL/bindings in Web Console, breakpoints |
-| BL-150 | **Live spreadsheet v2** | P2 | Real-time cell refresh, cross-sheet refs, export — [spreadsheet-widget.md](spreadsheet-widget.md) |
+| BL-150 | **Live spreadsheet v2** | P2 | Real-time cell refresh, cross-sheet refs, export — [spreadsheet-widget](spreadsheet-widget.md) |
 | BL-151 | **Operator offline PWA** | P1 | Service worker: dashboards + mimics cache; sync on reconnect |
-| BL-152 | **HMI perf gate** | P1 | Mimic 500 elements ≥60 FPS; Lighthouse operator ≥95 — [hmi-quality-gates.md](hmi-quality-gates.md) |
+| BL-152 | **HMI perf gate** | P1 | Mimic 500 elements ≥60 FPS; Lighthouse operator ≥95 — [hmi-quality-gates](hmi-quality-gates.md) |
 
 **Phase metric:** mini-TEC + pipeline SCADA on video wall; operator 8 h offline.
 
-**Related docs:** [scada.md](scada.md), [widgets.md](widgets.md), [hmi-quality-gates.md](hmi-quality-gates.md).
+**Related docs:** [scada](scada.md), [widgets](widgets.md), [hmi-quality-gates](hmi-quality-gates.md).
 
 ---
 
@@ -1042,12 +1042,12 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-153 | **MFA** | P2 | TOTP + WebAuthn; Keycloak integration — [security.md](security.md) |
+| BL-153 | **MFA** | P2 | TOTP + WebAuthn; Keycloak integration — [security](security.md) |
 | BL-154 | **Per-variable ACL** | P2 | read/write on variable, event, function (not only object-level) |
-| BL-155 | **Hard multi-tenancy** | P2 | Per-tenant DB schema option; OIDC tenant claim mapping — [multi-tenant.md](multi-tenant.md) |
+| BL-155 | **Hard multi-tenancy** | P2 | Per-tenant DB schema option; OIDC tenant claim mapping — [multi-tenant](multi-tenant.md) |
 | BL-156 | **Audit trail GA** | P2 | Immutable audit log, export, SIEM webhook |
 | BL-157 | **Role templates** | P2 | Custom roles; ISA-95 scoped permissions |
-| BL-158 | **Alarm shelving** | P2 | Shelve/unshelve with approval workflow — extension of [automation.md](automation.md) |
+| BL-158 | **Alarm shelving** | P2 | Shelve/unshelve with approval workflow — extension of [automation](automation.md) |
 
 **Phase metric:** pentest pass; tenant A ≠ tenant B in hard mode; MFA mandatory for admin.
 
@@ -1062,12 +1062,12 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-159 | **Historian tiers turnkey** | P2 | Hot (PG/Timescale) → Warm (CH) → Cold (S3/parquet); one-click deploy profile |
 | BL-160 | **Asset analytics framework** | P2 | Rollups, KPI templates, derived tags (AF-like lite) — **Done** (BL-201) |
 | BL-161 | **Historian query SLA** | P2 | 1M points aggregate <2s; documented SLO |
-| BL-162 | **Event journal petabyte path** | P2 | CH cutover playbook executed; lab 10M events/min — [clickhouse-prod-playbook.md](clickhouse-prod-playbook.md) |
-| BL-163 | **Trend export** | P3 | Excel/CSV/Parquet bulk, REST streaming — [variable-history.md](variable-history.md) |
+| BL-162 | **Event journal petabyte path** | P2 | CH cutover playbook executed; lab 10M events/min — [clickhouse-prod-playbook](clickhouse-prod-playbook.md) |
+| BL-163 | **Trend export** | P3 | Excel/CSV/Parquet bulk, REST streaming — [variable-history](variable-history.md) |
 
 **Phase metric:** lab 1B samples query; prod playbook ≤5 manual steps.
 
-**Related ADRs:** [0016](decisions/0016-clickhouse-event-journal.md), [0035](decisions/0035-historian-dual-write.md), [0025](decisions/0025-cassandra-scylla-timeseries-store.md).
+**Related ADRs:** [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [0025-cassandra-scylla-timeseries-store](decisions/0025-cassandra-scylla-timeseries-store.md).
 
 ---
 
@@ -1078,12 +1078,12 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
 | BL-164 | **MES object types** | P1 | `WORK_ORDER`, `OPERATION`, `LOT`, `SHIFT`, `QUALITY_RECORD` in tree |
-| BL-165 | **OEE first-class** | P1 | Platform BFF + dashboards; ISA-95 paths — [isa95-catalog.md](isa95-catalog.md) |
+| BL-165 | **OEE first-class** | P1 | Platform BFF + dashboards; ISA-95 paths — [isa95-catalog](isa95-catalog.md) |
 | BL-166 | **Work order dispatch** | P1 | BPMN + work-queue + mobile operator confirm |
 | BL-167 | **Quality module** | P2 | SPC charts, defect tracking, traceability report |
 | BL-168 | **ISA-88 batch lite** | P2 | Recipe + phase + batch instance (workflow-backed) |
-| BL-169 | **ERP outbox (live connector)** | **P0** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog.md](isa95-catalog.md) Level 4 |
-| BL-170 | **MES certification bundle** | P1 | `mes-platform` bundle — deploy ≤30 min — [reference-mes-oee-walkthrough.md](reference-mes-oee-walkthrough.md) |
+| BL-169 | **ERP outbox (live connector)** | **P0** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog](isa95-catalog.md) Level 4 |
+| BL-170 | **MES certification bundle** | P1 | `mes-platform` bundle — deploy ≤30 min — [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) |
 
 **Phase metric:** OEE walkthrough → production MES in 1 day without custom Java.
 
@@ -1100,7 +1100,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-173 | **Queries engine** | P2 | Dynamic cross-object queries in tree |
 | BL-174 | **Event filters** | P3 | Reusable event log filters |
 | BL-175 | **ML hooks** | P3 | Anomaly detection SPI + reference model |
-| BL-176 | **BPMN expansion** | P2 | Message events, escalation, compensation, DMN lite — [workflows.md](workflows.md) |
+| BL-176 | **BPMN expansion** | P2 | Message events, escalation, compensation, DMN lite — [workflows](workflows.md) |
 
 **Phase metric:** escalation + CEP + process program in one project without ad-hoc scripts.
 
@@ -1116,9 +1116,9 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | -- | ------ | --------- | ---------- |
 | BL-177 | **End-to-end agent deploy** | P0 | Agent: spec → bundle → deploy → operator UI without human edit |
 | BL-178 | **Agent regression suite** | P0 | 50 scenarios CI (MES, SCADA, HVAC) — pass rate ≥95% |
-| BL-179 | **Operator agent GA** | P1 | Scoped tools, memory, ru/en — [ai-development.md](ai-development.md) |
+| BL-179 | **Operator agent GA** | P1 | Scoped tools, memory, ru/en — [ai-development](ai-development.md) |
 | BL-180 | **Solution generator** | P0 | "Describe a plant" → tree + dashboards + alerts <15 min |
-| BL-181 | **Agent observability v2** | P2 | Cost/latency per tool; failure auto-retry — [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) |
+| BL-181 | **Agent observability v2** | P2 | Cost/latency per tool; failure auto-retry — [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) |
 | BL-182 | **Context pack v2** | P2 | Auto-refresh from live platform + readiness gap index |
 
 **Phase metric:** new integrator builds demo in 2 h using only AI Studio.
@@ -1131,12 +1131,12 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-183 | **Marketplace GA** | P3 | Browse, install, sign, version bundle — [marketplace.md](marketplace.md) |
+| BL-183 | **Marketplace GA** | P3 | Browse, install, sign, version bundle — [marketplace](marketplace.md) |
 | BL-184 | **Partner program** | P3 | 5 certified integrators, training curriculum |
 | BL-185 | **Symbol marketplace** | P3 | Community P&ID packs with legal review |
-| BL-186 | **K8s Helm chart** | P2 | Production helm + operator — [deployment.md](deployment.md) |
-| BL-187 | **ARM edge profile** | P2 | Raspberry Pi / industrial gateway compose — [demostands.md](demostands.md) |
-| BL-188 | **Manager-of-managers** | P3 | Federation hub 10+ peers, unified operator shell — [federation.md](federation.md) |
+| BL-186 | **K8s Helm chart** | P2 | Production helm + operator — [deployment](deployment.md) |
+| BL-187 | **ARM edge profile** | P2 | Raspberry Pi / industrial gateway compose — [demostands](demostands.md) |
+| BL-188 | **Manager-of-managers** | P3 | Federation hub 10+ peers, unified operator shell — [federation](federation.md) |
 | BL-189 | **Competitive scorecard** | P3 | Public readiness matrix, updated per release |
 | BL-190 | **Certification paths** | P3 | Solution developer + platform admin exams |
 
@@ -1148,7 +1148,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 **Goal:** Historian / analytics **10/10** beyond AF-lite — calculation engine, materialized rollups, multi-tag API, optional `analytics` replica profile. Same jar: **single server** (Scenario A) or **role-separated cluster** (Scenario C).
 
-**Charter:** [analytics-platform-roadmap.md](analytics-platform-roadmap.md) · **ADR:** [0038](decisions/0038-analytics-platform-architecture.md)
+**Charter:** [analytics-platform-roadmap](analytics-platform-roadmap.md) · **ADR:** [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md)
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
@@ -1164,7 +1164,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-209 | **Tag catalog & lineage UI** | P2 | Done — analytics tag inspector, lineage API |
 | BL-210 | **Enterprise scale gates** | P2 | Done — lab scripts, SLO table, JVM gate, examples |
 | BL-211 | **CEL-over-historian expressions** | P2 | Done — `hist.*`, `cel` helper, validate/evaluate API, Tag Inspector editor |
-| BL-212a | **Analytics function catalog API** | P2 | Done — `GET .../analytics/catalog`; wire dormant evaluators ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
+| BL-212a | **Analytics function catalog API** | P2 | Done — `GET .../analytics/catalog`; wire dormant evaluators ([0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md)) |
 | BL-212b | **Analytics formula browser UI** | P2 | Done — catalog in Computations expression modal; static TS catalogs removed |
 | BL-213 | **Analytics extension packs (SPI)** | P2 | Done — `ispf-analytics-api` SPI; `ispf-analytics-core-ext` (`energyDelta`) |
 | BL-214 | **User-defined analytics formulas** | P2 | Done — `@analyticsFormulas` CRUD, Tier B catalog, save/apply UI, bundle import |
@@ -1175,7 +1175,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 **Prerequisite:** complete BL-160 via BL-201 before BL-203+.
 
-**Related:** [historian-tiers.md](historian-tiers.md), [variable-history.md](variable-history.md), [demostands.md](demostands.md), Phase 28 BL-159…163.
+**Related:** [historian-tiers](historian-tiers.md), [variable-history](variable-history.md), [demostands](demostands.md), Phase 28 BL-159…163.
 
 ---
 
@@ -1293,11 +1293,11 @@ Product is **10/10** when **all** of the following hold simultaneously:
 5. **Security** — MFA + per-variable ACL + hard tenancy option (BL-153…155)
 6. **HMI** — mimic 500 el @60 FPS, offline PWA 8h (BL-151, BL-152)
 7. **Marketplace** — 10+ signed bundles, 3 external partners (BL-183, BL-184)
-8. **Scorecard** — all 14 dimensions ≥9.5, none ≤8 (BL-189) — **not met** (code verified ~7.4/10; see [competitive-scorecard.md](competitive-scorecard.md))
+8. **Scorecard** — all 14 dimensions ≥9.5, none ≤8 (BL-189) — **not met** (code verified ~7.4/10; see [competitive-scorecard](competitive-scorecard.md))
 9. **OT honesty** — zero stub drivers labeled PRODUCTION (BL-191)
 10. **Compliance pack** — IEC 62443 / GAMP-lite docs published (BL-192) — for enterprise tenders
 
-**Premature Done marking:** program-wave scores and BL artifacts shipped **without** code-verified gates were retracted (see [competitive-scorecard.md](competitive-scorecard.md)). **Usable Done** is defined below — stricter than closing BL rows.
+**Premature Done marking:** program-wave scores and BL artifacts shipped **without** code-verified gates were retracted (see [competitive-scorecard](competitive-scorecard.md)). **Usable Done** is defined below — stricter than closing BL rows.
 
 ---
 
@@ -1336,7 +1336,7 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 
 | Usable outcome | Evidence | BL |
 | -------------- | -------- | -- |
-| Integrator connects plant without middleware | 3 pilots **7-day soak** with incident journal — [field-pilot-playbook.md](field-pilot-playbook.md) | BL-140, 141, 191 |
+| Integrator connects plant without middleware | 3 pilots **7-day soak** with incident journal — [field-pilot-playbook](field-pilot-playbook.md) | BL-140, 141, 191 |
 | Writes and quality flags trusted | Interop CI write round-trip per top driver; matrix matches code | BL-141, 191 |
 | Edge survives disconnect | Store-forward + reconnect; federation sync measured | BL-145 |
 
@@ -1357,7 +1357,7 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 | Matrix honest | Zero `PRODUCTION` entries whose driver class is documented stub; CI test green |
 | Interop trusted | Write round-trip in `driver-interop-smoke.sh` for `modbus-tcp`, `mqtt`, `opcua` |
 | Pilot started | Modbus scenario: site named, journal day 1–3 logged, checklist §1 in progress |
-| Scorecard | [competitive-scorecard.md](competitive-scorecard.md) dim 3 updated with file paths |
+| Scorecard | [competitive-scorecard](competitive-scorecard.md) dim 3 updated with file paths |
 
 #### Workstream A — BL-191 matrix honesty (code)
 
@@ -1392,7 +1392,7 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 | B1 | Extend smoke script: **FC16 / MQTT publish / OPC UA write** round-trip | Dev | `deploy/tools/driver-interop-smoke.sh` | Exit 0 on compose up |
 | B2 | CI workflow publishes `build/driver-interop/interop-summary.md` artifact | DevOps | `.github/workflows/driver-interop.yml` | Artifact on main |
 | B3 | Document read-only vs write drivers in interop lab | Docs | `driver-interop-lab.md` | Table matches post-BL-191 matrix |
-| B4 | Local gate before pilot: `docker compose … up` + `driver-interop-smoke.sh` in integrator runbook | Integrator | [field-pilot-playbook.md](field-pilot-playbook.md) §1 dry-run | Checklist linked |
+| B4 | Local gate before pilot: `docker compose … up` + `driver-interop-smoke.sh` in integrator runbook | Integrator | [field-pilot-playbook](field-pilot-playbook.md) §1 dry-run | Checklist linked |
 
 #### Workstream C — BL-140 pilot #1 (Modbus plant)
 
@@ -1418,7 +1418,7 @@ Defer **30-day edge soak** to S33; Wave 1 only needs evidence that disconnect pa
 
 #### Pilot soak journal {#pilot-soak-journal}
 
-Copy into customer ticket or `docs/` appendix. One table per pilot ([field-pilot-playbook.md](field-pilot-playbook.md) § Close-out).
+Copy into customer ticket or `docs/` appendix. One table per pilot ([field-pilot-playbook](field-pilot-playbook.md) § Close-out).
 
 | Day | Date | Tags online | Incidents (P0/P1) | Historian OK | Notes |
 | --- | ---- | ----------- | ------------------- | ------------ | ----- |
@@ -1571,13 +1571,13 @@ Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-
 
 | Document | Purpose |
 | -------- | ---------- |
-| [APPLICATIONS.md](applications.md) | Deploy API, REQ-PF |
-| [DEPLOYMENT.md](deployment.md) | Prod, cluster runbook |
-| [DRIVERS.md](drivers.md) | Driver catalog |
-| [FEDERATION.md](federation.md) | Edge federation |
-| [LOAD_TESTING.md](load-testing.md) | Load gates |
-| [PLATFORM_EVOLUTION.md](platform-evolution.md) | History |
-| [analytics-platform-roadmap.md](analytics-platform-roadmap.md) | Phase 33 charter (BL-200…211) — status in this file |
+| [applications](applications.md) | Deploy API, REQ-PF |
+| [deployment](deployment.md) | Prod, cluster runbook |
+| [drivers](drivers.md) | Driver catalog |
+| [federation](federation.md) | Edge federation |
+| [load-testing](load-testing.md) | Load gates |
+| [platform-evolution](platform-evolution.md) | History |
+| [analytics-platform-roadmap](analytics-platform-roadmap.md) | Phase 33 charter (BL-200…211) — status in this file |
 | [decisions/](decisions/) | ADR |
 
 ---
@@ -1590,7 +1590,7 @@ Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-
 | 2026-07-09 | Added [§ Retrospective](#retrospective) — eras, closed vs active backlog, Phase 25–33 glance |
 | 2026-07-09 | Domain gap audit IoT/SCADA/MES/ERP: BL-169 → P0; BL-191…193; Phase 33 analytics BL-200…210 |
 | 2026-07-09 | **Driver field policy:** `ready-for-field` only after named field implementation task; BL-140 → Partial (playbook-ready, not field Done) |
-| 2026-07-07 | Phase 25–32 Phases 25–33: [roadmap.md](roadmap.md), BL-140…190 |
+| 2026-07-07 | Phase 25–32 Phases 25–33: [roadmap](roadmap.md), BL-140…190 |
 | 2026-07-07 | Tail cleanup: ROADMAP sync (BL 0 Partial, 23.24 Done); CH verify prod-safe smoke |
 | 2026-07-07 | S30: registry techpack 0.9.101; S29 Lighthouse operator; quality-gates 5/5 |
 | 2026-07-07 | S27 Done: federation hardening; pr-fast CI green (906 tests) |

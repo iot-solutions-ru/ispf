@@ -2,14 +2,14 @@
 
 # Commercial bundle licensing
 
-RSA licensing for commercial bundles at deploy time. Architectural decision: [0003](decisions/0003-commercial-bundle-licensing.md).
+RSA licensing for commercial bundles at deploy time. Architectural decision: [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
 
 ## Principle
 
 | Layer | License |
 |-------|---------|
-| Platform (`ispf-server`, web-console) | **GNU AGPL v3** (+ optional [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)) |
-| Device driver pack | `licenseType` per pack — see [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md) |
+| Platform (`ispf-server`, web-console) | **GNU AGPL v3** (+ optional [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)) |
+| Device driver pack | `licenseType` per pack — see [licensed-driver-packs](licensed-driver-packs.md) |
 | Commercial bundle | Optional `license` section in manifest; verified at deploy |
 
 ## Server configuration
@@ -42,7 +42,7 @@ License status (admin): `GET /api/v1/platform/license` — mode, tier, valid, en
 
 ## Platform license file (`platform-license.json`)
 
-File `{data-dir}/platform-license.json` — Enterprise exemption from AGPL (see [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md)).
+File `{data-dir}/platform-license.json` — Enterprise exemption from AGPL (see [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)).
 
 | Condition | Result |
 |-----------|--------|
@@ -75,7 +75,7 @@ CLI: [tools/license-builder/README.md](readme.md).
 | Condition | Result |
 |-----------|--------|
 | No `license` | Deploy as before (if `require-signed-bundles=false`) |
-| No `license` + `require-signed-bundles=true` | HTTP 403 ([BL-100](roadmap.md)) |
+| No `license` + `require-signed-bundles=true` | HTTP 403 ([roadmap](roadmap.md)) |
 | `license` + `enforce=false` + invalid | WARN on error, deploy continues (except `require-signed-bundles=true` → 403) |
 | `license` + (`enforce=true` **or** `require-signed-bundles=true`) + invalid | HTTP 403 |
 
@@ -85,7 +85,7 @@ Property: `ispf.license.require-signed-bundles` / env `ISPF_LICENSE_REQUIRE_SIGN
 
 RSA license protects the **delivery artifact** (manifest), not tree contents after install. The installation admin can view and modify bundle objects; they could theoretically reproduce configuration piece by piece.
 
-**Accepted policy (ADR [0036](decisions/0036-bundle-ip-balanced-protection.md)):**
+**Accepted policy (ADR [0036-bundle-ip-balanced-protection](decisions/0036-bundle-ip-balanced-protection.md)):**
 
 | We do | We do not |
 |-------|-----------|
@@ -109,10 +109,10 @@ Rotate vendor RSA keys **without** changing installation ID:
 | 5 | `enforce=true` on staging before prod; monitor WARN/403 in deploy logs |
 | 6 | Destroy old private key after confirming all installations use new licenses |
 
-Installation ID (`GET /api/v1/platform/installation-id`) does **not** change on rotation. Licensed driver packs use the same `ispf.license.public-key-pem` — see [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md).
+Installation ID (`GET /api/v1/platform/installation-id`) does **not** change on rotation. Licensed driver packs use the same `ispf.license.public-key-pem` — see [licensed-driver-packs](licensed-driver-packs.md).
 
 ## Related documents
 
-- [PLUGINS.md](plugins.md)
-- [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md)
-- [AIR_GAP_DEPLOYMENT.md](air-gap-deployment.md) — offline install/update (BL-128)
+- [plugins](plugins.md)
+- [solution-developer-public-api](solution-developer-public-api.md)
+- [air-gap-deployment](air-gap-deployment.md) — offline install/update (BL-128)

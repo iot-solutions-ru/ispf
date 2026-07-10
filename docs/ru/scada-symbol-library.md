@@ -4,7 +4,7 @@
 
 Полный справочник по **символам пакета P&ID**, **загрузке пользовательского SVG** и **библиотеке документов** в редакторе мнемосхем ISPF.
 
-См. также: [SCADA.md](scada.md), [SCADA_MIMIC.md](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
+См. также: [scada](scada.md), [scada-mimic](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
 
 ---
 
@@ -133,7 +133,7 @@ cd apps/web-console && npm run test -- src/scada/customSvg.test.ts src/scada/sym
 
 ## Юридическая информация
 
-- Пакет **ispf-pid-v1**: оригинальная работа Apache-2.0 ([ЛИЦЕНЗИЯ](license.md)).
+- Пакет **ispf-pid-v1**: оригинальная работа Apache-2.0 ([license](license.md)).
 - **Не** импортируйте изображения производителей SymbolFactory/TIA/P&ID, защищенные авторским правом.
 - Legacy WMF importer (`tools/symbol-import/`) is **deprecated**.
 

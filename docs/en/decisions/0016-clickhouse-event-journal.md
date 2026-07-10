@@ -6,7 +6,7 @@ Accepted (2026-06-25)
 
 ## Context
 
-P3a ([0015](0015-event-history-timescale.md)) moved `event_history` into a Timescale hypertable in PostgreSQL. At ~40 events/s, OLTP writes to PostgreSQL remain the bottleneck; for hundreds/thousands of events/s a column store with batch insert and separate scaling is needed.
+P3a ([0015-event-history-timescale](0015-event-history-timescale.md)) moved `event_history` into a Timescale hypertable in PostgreSQL. At ~40 events/s, OLTP writes to PostgreSQL remain the bottleneck; for hundreds/thousands of events/s a column store with batch insert and separate scaling is needed.
 
 PostgreSQL/Timescale remains for the relational core (object tree, workflow, RBAC, alert state).
 
@@ -46,6 +46,6 @@ TTL occurred_at + INTERVAL 90 DAY;
 
 ## Related
 
-- [0015](0015-event-history-timescale.md) — Timescale tier (P3a)
-- [0014](0014-automation-pipeline-evolution.md) — automation pipeline evolution
-- [LOAD_TESTING.md](../load-testing.md) — throughput baselines
+- [0015-event-history-timescale](0015-event-history-timescale.md) — Timescale tier (P3a)
+- [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) — automation pipeline evolution
+- [load-testing](../load-testing.md) — throughput baselines

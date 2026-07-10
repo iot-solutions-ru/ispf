@@ -10,7 +10,7 @@
 | Режим | Когда | Обязательства |
 |------|------|-------------|
 | **Сообщество (AGPL)** | По умолчанию; нет `platform-license.json` | Использование сети → Исходное предложение AGPL для модификаций **платформы** |
-| **Предприятие** | Действительно `platform-license.json` | Согласно [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md) |
+| **Предприятие** | Действительно `platform-license.json` | Согласно [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md) |
 
 Check runtime: `GET /api/v1/platform/license`
 
@@ -20,7 +20,7 @@ Check runtime: `GET /api/v1/platform/license`
 
 1. [LICENSE](../LICENSE) (AGPL)
 2. [NOTICE](../NOTICE)
-3. [THIRD_PARTY_NOTICES.md](third-party-notices.md)
+3. [third-party-notices](third-party-notices.md)
 4. Java + npm SBOM (рекомендуется CycloneDX)
 5. Для каждого пакета драйверов: `LICENSE`, `THIRD_PARTY-NOTICE.txt`, `NOTICE-EXTERNAL-DEPS.txt` (если есть)
 
@@ -57,8 +57,8 @@ Web console static files include `legal/*` (copied at build via `scripts/copy-le
 
 Исходные функциональные символы ISA/ISO — **Apache-2.0**, созданные [`tools/symbol-pack-isa`](../tools/symbol-pack-isa).
 
-- [ЛИЦЕНЗИЯ.md](license.md)
-- [PID_SYMBOLS_LEGAL.md](pid-symbols-legal.md)
+- [license](license.md)
+- [pid-symbols-legal](pid-symbols-legal.md)
 
 ## Предварительный аудит (автоматический)
 
@@ -77,7 +77,7 @@ CI runs `check-all.mjs` on every push/PR.
 
 ## Связанный
 
-- [ЛИЦЕНЗИЯ.md](license.md)
-- [THIRD_PARTY_NOTICES.md](third-party-notices.md)
-- [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md)
-- [COMMERCIAL_LICENSING.md](commercial-licensing.md)
+- [license](license.md)
+- [third-party-notices](third-party-notices.md)
+- [licensed-driver-packs](licensed-driver-packs.md)
+- [commercial-licensing](commercial-licensing.md)

@@ -8,7 +8,7 @@ End-to-end certification path: **platform MES catalog → deploy bundle → OEE 
 |--------|---------|-----------|--------|
 | Certification skeleton | `mes-platform` | [examples/mes-platform/](../examples/mes-platform/) | Reference |
 | Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../examples/mes-platform-production/) | **Certified** (BL-170) |
-**See also:** [ISA95_CATALOG.md](isa95-catalog.md), [REFERENCE_MES_OEE_WALKTHROUGH.md](reference-mes-oee-walkthrough.md), [OBJECT_MODEL.md](object-model.md).
+**See also:** [isa95-catalog](isa95-catalog.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [object-model](object-model.md).
 
 ---
 
@@ -206,6 +206,6 @@ bash deploy/tools/mes-platform-production-deploy.sh
 
 ## Related documents
 
-- [REFERENCE_MES_OEE_WALKTHROUGH.md](reference-mes-oee-walkthrough.md) — BL-121 minimal OEE
-- [REFERENCE_MES_WALKTHROUGH.md](reference-mes-walkthrough.md) — dispatch / tank reference
-- [HISTORIAN_TIERS.md](historian-tiers.md) — historian at scale (Phase 28)
+- [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) — BL-121 minimal OEE
+- [reference-mes-walkthrough](reference-mes-walkthrough.md) — dispatch / tank reference
+- [historian-tiers](historian-tiers.md) — historian at scale (Phase 28)

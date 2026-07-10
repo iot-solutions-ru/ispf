@@ -4,7 +4,7 @@
 
 Complete description of all ISPF widget types: purpose, HMI usage, layout fields, and examples.
 
-**See also:** [dashboards.md](dashboards.md) (grid, `selectionKey`, navigation), [operator-guide.md](operator-guide.md) (operator role), [bindings.md](bindings.md) (platform bindings in variables), [spreadsheet-widget.md](spreadsheet-widget.md) (formulas and grids).
+**See also:** [dashboards](dashboards.md) (grid, `selectionKey`, navigation), [operator-guide](operator-guide.md) (operator role), [bindings](bindings.md) (platform bindings in variables), [spreadsheet-widget](spreadsheet-widget.md) (formulas and grids).
 
 ---
 
@@ -20,7 +20,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | `x`, `y` | number | Grid position (0-based) |
 | `w`, `h` | number | Width and height in grid units (`columns` usually 12) |
 | `objectPath` | string | Static object path (`root.platform.devices.foo`) |
-| `selectionKey` | string | Selection slot name; path from `selection[key]` (see [dashboards.md](dashboards.md)) |
+| `selectionKey` | string | Selection slot name; path from `selection[key]` (see [dashboards](dashboards.md)) |
 | `variableName` | string | Variable name on the object |
 | `valueField` | string | `DataRecord` field: `value` (default), `raw`, `online`, `unit`, `int`, `string` |
 | `paramKey` | string | Read value from `session.params[key]` |
@@ -342,7 +342,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 
 **Purpose:** A1 grid with formulas (built-in ISPF engine).
 
-**Full reference:** [spreadsheet-widget.md](spreadsheet-widget.md). Operator workflow — [operator-guide.md](operator-guide.md).
+**Full reference:** [spreadsheet-widget](spreadsheet-widget.md). Operator workflow — [operator-guide](operator-guide.md).
 
 | Field | Description |
 |-------|-------------|
@@ -357,7 +357,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 
 ### `mini-tec-sld` — mini-TEC single-line diagram *(removed)*
 
-**Status:** widget removed. Use [`scada-mimic`](#scada-mimic--scada-mimic-diagram) + `MIMIC` object or embedded `diagramJson`. See [scada.md](scada.md).
+**Status:** widget removed. Use [`scada-mimic`](#scada-mimic--scada-mimic-diagram) + `MIMIC` object or embedded `diagramJson`. See [scada](scada.md).
 
 ---
 
@@ -379,7 +379,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 
 **Editor:** Dashboard Builder → "Open mimic editor"; Explorer → `MIMIC` object. Tools: select/place/connect, **align and distribute**, flip/rotate, **resize handles**, smart snap, grid toggle, multi-select (Shift), Del to delete. Details — [scada.md § Editor](scada.md).
 
-**See:** [scada.md](scada.md), [scada-mimic.md](scada-mimic.md).
+**See:** [scada](scada.md), [scada-mimic](scada-mimic.md).
 
 ---
 

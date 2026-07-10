@@ -13,7 +13,7 @@ Two anti-patterns were observed under flood load:
 1. **HTTP per message** — external tap calling `POST /api/v1/events/fire` adds REST serialization and connection overhead on top of journal I/O; useful for API smoke tests, not representative of in-process driver ingress.
 2. **FULL automation path** — coalesced telemetry → object-change bus → alert CEL → `EventService.fire` couples journal throughput to binding evaluation and dual-lane scheduling.
 
-Production event journal already uses async batch writers ([ADR-0016](0016-clickhouse-event-journal.md), [ADR-0015](0015-event-history-timescale.md)). The missing piece was a **driver-native hot path** that enqueues journal writes without HTTP and without traversing the telemetry/automation bus.
+Production event journal already uses async batch writers ([0016-clickhouse-event-journal](0016-clickhouse-event-journal.md), [0015-event-history-timescale](0015-event-history-timescale.md)). The missing piece was a **driver-native hot path** that enqueues journal writes without HTTP and without traversing the telemetry/automation bus.
 
 ## Decision
 
@@ -56,7 +56,7 @@ Metric source tag: `EventFireSource.INGRESS` (`ispf.automation.events_fired` by 
 
 ### Direct ingress (skip L1 buffer)
 
-Same rule as historian fast path ([ADR-0026](0026-elastic-telemetry-ingress.md)): devices on `EVENT_JOURNAL_ONLY` bypass the server `DriverIngressBuffer` (L1) so MQTT L0 and platform tiers are not stacked.
+Same rule as historian fast path ([0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md)): devices on `EVENT_JOURNAL_ONLY` bypass the server `DriverIngressBuffer` (L1) so MQTT L0 and platform tiers are not stacked.
 
 ### Elastic L0 (0.9.87+)
 
@@ -110,7 +110,7 @@ Scripts (no fixed throughput claims — measure on your hardware):
 
 Setup helper: `deploy/setup-mqtt-event-journal.py` (single device); multi-device: `deploy/setup-mqtt-event-journal-devices.py` with `--bench-no-l0-coalesce`.
 
-See [LOAD_TESTING.md](../load-testing.md) and **[LAB_EVENT_JOURNAL_STRESS.md](../LAB_EVENT_JOURNAL_STRESS.md)** (Scylla lab host, multi-device emqtt, metrics interpretation).
+See [load-testing](../load-testing.md) and **[LAB_EVENT_JOURNAL_STRESS](../LAB_EVENT_JOURNAL_STRESS.md)** (Scylla lab host, multi-device emqtt, metrics interpretation).
 
 **Lab baseline (2026-07-04, ISPF 0.9.88, 16 mqtt devices, Scylla):** sustained journal **~110k events/s** (~6.8k/device); `eventsFired` → flushed → Scylla meta **100%** (no journal loss). Apparent «~17% efficiency vs configured MQTT target» is an emqtt formula / CPU-cap artifact, not ISPF dropping messages. Bottleneck at peak: Scylla write CPU.
 
@@ -132,12 +132,12 @@ Interpretation: use **`eventsFired` delta** and **`eventJournalSyncFallbackTotal
 - **Not a replacement for** `FULL` automation or `TELEMETRY_ONLY` dashboards — orthogonal modes.
 - **Coalesce:** per-device `telemetryCoalesceMs` still applies before platform tiers; for near 1:1 message→event use minimal coalesce in lab only.
 - **Bench L0:** set `ingressCoalesceEnabled=false` on the mqtt driver (loadtest scripts default) so L0 last-value-wins coalesce is off; elastic workers via server defaults (`ISPF_DRIVER_MQTT_CALLBACK_ELASTIC`, min/max threads, scale thresholds) or per-device `callbackElasticEnabled` / `callbackThreadsMin/Max`. Optional `deploy/vps-event-journal-peak-tuning.sh` for journal queue under peak. High-rate fast paths skip RAM live-value updates when event journal or historian-only handles ingress.
-- **WebSocket:** `publishEventFired` still runs on fast path; UI fan-out may become a limiter at extreme rates — tune separately ([ADR-0024](0024-demand-driven-variable-change-pubsub.md)).
+- **WebSocket:** `publishEventFired` still runs on fast path; UI fan-out may become a limiter at extreme rates — tune separately ([0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md)).
 
 ## Related
 
-- [ADR-0026](0026-elastic-telemetry-ingress.md) — multi-level telemetry ingress
-- [ADR-0017](0017-telemetry-ingest-pipeline.md) — publish modes and gateway
-- [ADR-0016](0016-clickhouse-event-journal.md) — ClickHouse journal store
-- [AUTOMATION.md](../AUTOMATION.md) — events API and descriptors
-- [LOAD_TESTING.md](../load-testing.md) — measurement scripts
+- [0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md) — multi-level telemetry ingress
+- [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md) — publish modes and gateway
+- [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) — ClickHouse journal store
+- [AUTOMATION](../AUTOMATION.md) — events API and descriptors
+- [load-testing](../load-testing.md) — measurement scripts

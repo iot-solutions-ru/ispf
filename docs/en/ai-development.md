@@ -6,7 +6,7 @@ Platform-side development infrastructure for solution developers. AI reads curat
 
 **Target approach:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
 
-See [0004](decisions/0004-ai-artifact-generation-gates.md) and [0005](decisions/0005-tree-first-ai-agent.md).
+See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) and [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md).
 
 ---
 
@@ -21,7 +21,7 @@ See [0004](decisions/0004-ai-artifact-generation-gates.md) and [0005](decisions/
 | FW-44 | Tree-first agent | `com.ispf.server.ai.agent.*`, REST `/api/v1/ai/agent/**` |
 | FW-44b | MCP adapter | `com.ispf.server.ai.mcp.*`, profile `mcp`, REST `/api/v1/ai/mcp` |
 | FW-45 | Platform knowledge briefing | `PlatformBriefingService`, `ContextPackSearchService`, agent tools |
-| FW-46 | Agent knowledge base | [agent-knowledge.md](agent-knowledge.md) — application approaches, docs map |
+| FW-46 | Agent knowledge base | [agent-knowledge](agent-knowledge.md) — application approaches, docs map |
 | FW-47 | Agent discovery tools | `AgentDiscoveryTools` — functions, events, variable schemas |
 | FW-48 | Agent automation tools | `AgentAutomationTools` — alerts, correlators, operator UI, `create_variable`, cluster playbooks |
 
@@ -42,7 +42,7 @@ Outputs:
 
 Pack includes bundle schema fields, script steps, widget types, API doc slices, reference examples, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (index of all `docs/*.md`), and **docChunks** for scored search.
 
-Primary agent router doc: [agent-knowledge.md](agent-knowledge.md) (`search_context topic=agent-knowledge`).
+Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`).
 
 CI and release workflows run `python tools/ai-pack/build.py` before server tests/build (`ISPF_VERSION` from tag in release).
 
@@ -123,7 +123,7 @@ ReAct loop on the platform with a hard step cap (default 96, `ispf.ai.agent-max-
 | `POST/GET/DELETE /api/v1/ai/agent/sessions/{id}/documents` | Session-scoped knowledge files |
 | `POST /api/v1/ai/agent/run` | **Deprecated** one-shot run (no session store); prefer sessions API |
 
-See [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) (FW-49…53).
+See [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) (FW-49…53).
 
 ---
 
@@ -308,7 +308,7 @@ Cursor example (HTTP to local server):
 }
 ```
 
-See [0006](decisions/0006-mcp-agent-tool-adapter.md).
+See [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md).
 
 ---
 
@@ -380,13 +380,13 @@ Example: *"Create SNMP localhost, CPU/RAM/network metrics and a dashboard"* — 
 
 Studio does not add new bundle sections; it uses the same manifest contract as manual import.
 
-**Federation** (separate section `root.platform.federation`): Nodes / Tokens / Tunnel / Probe tabs — see [web-console.md](web-console.md).
+**Federation** (separate section `root.platform.federation`): Nodes / Tokens / Tunnel / Probe tabs — see [web-console](web-console.md).
 
 ---
 
 ## Bundle contract
 
-AI output must match [solution-developer-public-api.md](solution-developer-public-api.md). Optional provenance in `metadata`:
+AI output must match [solution-developer-public-api](solution-developer-public-api.md). Optional provenance in `metadata`:
 
 ```json
 {
@@ -404,8 +404,8 @@ Commercial bundles: sign **after** AI edits (`contentSha256` covers manifest bod
 
 ## Related documents
 
-- [agent-knowledge.md](agent-knowledge.md) — application approaches, full doc index for agent
-- [plugins.md](plugins.md) — external LLM provider (like drivers)
-- [applications.md](applications.md) — deploy API
-- [dashboards.md](dashboards.md) — widget registry for generated dashboards
+- [agent-knowledge](agent-knowledge.md) — application approaches, full doc index for agent
+- [plugins](plugins.md) — external LLM provider (like drivers)
+- [applications](applications.md) — deploy API
+- [dashboards](dashboards.md) — widget registry for generated dashboards
 - [roadmap.md § Part B (FW-40…48)](roadmap.md)

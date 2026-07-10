@@ -6,9 +6,9 @@
 
 ## Context
 
-ISPF alarm behavior is spread across **alert rules** (`ALERT` / `alert-rule-v1`), **correlators**, **bindings**, **workflows**, **alarm shelf**, and partial **process programs** (BL-172). Mature SCADA alarm stacks combine triggers, active/pending instances, escalation, and notifications in one definition; ISPF covers parts of that across several mechanisms.
+ISPF alarm behavior is spread across **alert rules** (`ALERT` / `alert-rule-v1`), **correlators**, **bindings**, **workflows**, **alarm shelf**, and partial **process programs** (BL-172). Mature SCADA stacks combine triggers, active/pending instances, escalation, and notifications in one definition; ISPF covers parts of that across several mechanisms.
 
-We want that **semantics** without a parallel object model. ISPF already stores automation as **tree nodes + intrinsic blueprint variables** ([ADR-0010](0010-binding-rules-only.md), alert rules in [AUTOMATION.md](../automation.md)). Introducing `alarm-v2`, `@alarmDefinition` JSON, or a new `ObjectType` would fork operators, bundles, MCP `configure_alert`, and `AutomationTreeService`.
+We want that **semantics** without a parallel object model. ISPF stores automation as **tree nodes + intrinsic blueprint variables** ([0010-binding-rules-only](0010-binding-rules-only.md), [automation](../automation.md)). A new `ObjectType` or `@alarmDefinition` JSON would fork operators, bundles, MCP `configure_alert`, and `AutomationTreeService`.
 
 **Process programs (BL-172)** remain cyclic **control** — not part of alert-rule evolution.
 
@@ -124,7 +124,7 @@ Inline escalation, still on **`alert-rule-v1`**:
 | `escalationWebhookUrl` | string |
 | `escalationWorkflowPath` | string |
 
-Heavy SLA flows remain **workflows** ([REFERENCE_ESCALATION_TEMPLATES.md](../reference-escalation-templates.md)).
+Heavy SLA flows remain **workflows** ([reference-escalation-templates](../reference-escalation-templates.md)).
 
 Corrective actions: optional `onRaiseWorkflowPath`, `onClearWorkflowPath` — not a separate action table.
 
@@ -190,6 +190,6 @@ Risks:
 
 ## Related
 
-- [AUTOMATION.md](../automation.md)
-- [ADR-0014](0014-automation-pipeline-evolution.md) — indexes and lanes
-- [REFERENCE_ESCALATION_TEMPLATES.md](../reference-escalation-templates.md)
+- [automation](../automation.md)
+- [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) — indexes and lanes
+- [reference-escalation-templates](../reference-escalation-templates.md)

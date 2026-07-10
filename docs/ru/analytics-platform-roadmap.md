@@ -7,10 +7,10 @@
 | | |
 | --- | --- |
 | **Фаза** | 33 (расширяет Фазу 28 historian) |
-| **ADR** | [0038-analytics-platform-architecture.md](decisions/0038-analytics-platform-architecture.md) |
+| **ADR** | [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) |
 | **Предпосылки** | БЛ-159 (tiers), БЛ-160 (AF-lite), БЛ-161 (SLO), dual-write CH на prod |
 | **Конкурентная цель** | Historian **10/10** — «petabyte + asset framework» — [roadmap.md § Фаза 33](roadmap.md#фаза-33--аналитическая-платформа-af-capable) |
-| **Статус** | BL ID и Done/Partial — только в [roadmap.md](roadmap.md); этот файл — глубокий чартер |
+| **Статус** | BL ID и Done/Partial — только в [roadmap](roadmap.md); этот файл — глубокий чартер |
 
 ---
 
@@ -101,7 +101,7 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 
 ---
 
-## БЛ-212–215: Каталог функций и расширяемость ([ADR-0042](decisions/0042-analytics-function-catalog.md))
+## БЛ-212–215: Каталог функций и расширяемость ([0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md))
 
 | БЛ | Scope | Результат |
 |----|--------|---------|
@@ -139,5 +139,5 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 
 | Дата | Изменение |
 |------|-----------|
-| 10.07.2026 | БЛ-212a/b готово; БЛ-213 готово (pack `energyDelta`); ADR-0042 принят; docs [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md); БЛ-216 marketplace analytics packs |
+| 10.07.2026 | БЛ-212a/b готово; БЛ-213 готово (pack `energyDelta`); ADR-0042 принят; docs [analytics-formulas-and-packs](analytics-formulas-and-packs.md); БЛ-216 marketplace analytics packs |
 | 09.07.2026 | Первоначальный charter БЛ-200…210 + ADR-0038 |

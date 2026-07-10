@@ -2,7 +2,7 @@
 
 # Solution Developer Public API
 
-Stable boundary between **platform** (ISPF core) and **solution** (your bundle). Detailed workflow — [solution-developer-guide.md](solution-developer-guide.md). Architectural boundaries — [0001](decisions/0001-app-platform-boundary.md).
+Stable boundary between **platform** (ISPF core) and **solution** (your bundle). Detailed workflow — [solution-developer-guide](solution-developer-guide.md). Architectural boundaries — [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
 
 ---
 
@@ -21,17 +21,17 @@ Stable boundary between **platform** (ISPF core) and **solution** (your bundle).
 | Automation | Alert rules, correlators in tree | CEL, correlator patterns |
 | Operator UI | `operatorUi` / `dashboards[]` in bundle | `GET .../operator-ui` |
 | Reports | Tree-first `root.platform.reports.*` | SQL + optional YARG |
-| WebSocket | `/ws/objects` — `subscribe`, `subscribe_events` | Token query param; see [messaging.md](messaging.md) |
+| WebSocket | `/ws/objects` — `subscribe`, `subscribe_events` | Token query param; see [messaging](messaging.md) |
 | Event catalog | `events[]` in bundle, `GET .../events` | Roles for WS subscribe (FW-31) |
 | Bundle dependencies | `requires[]` in bundle | minVersion of another appId (FW-12) |
-| Drivers | SPI `DeviceDriver` in separate JAR | [drivers.md](drivers.md) |
-| AI tools (platform admin) | `POST /api/v1/ai/tools/*`, Studio | [ai-development.md](ai-development.md) — does not change stable bundle contract |
+| Drivers | SPI `DeviceDriver` in separate JAR | [drivers](drivers.md) |
+| AI tools (platform admin) | `POST /api/v1/ai/tools/*`, Studio | [ai-development](ai-development.md) — does not change stable bundle contract |
 
 ## Forbidden
 
 | Action | Why |
 |--------|-----|
-| Java in `packages/ispf-server/` | [0001](decisions/0001-app-platform-boundary.md) |
+| Java in `packages/ispf-server/` | [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) |
 | Platform Flyway for app tables | App schema only via migrate API |
 | Domain-specific BFF routes | Only `/api/v1/bff/invoke` |
 | Fork platform server for one customer | Bundle deploy + config |
@@ -55,7 +55,7 @@ Manifest field `version` is **semver** (`MAJOR.MINOR.PATCH`). Comparison for `re
 | `alertRules`, `correlators`, `operatorUi` | Stable |
 | `events[]` | Stable — id, roles, optional payloadSchema |
 | `requires[]` | Stable — appId, minVersion |
-| `license` | Optional; commercial — [commercial-licensing.md](commercial-licensing.md) |
+| `license` | Optional; commercial — [commercial-licensing](commercial-licensing.md) |
 
 ## Platform version
 
@@ -64,12 +64,12 @@ Manifest field `version` is **semver** (`MAJOR.MINOR.PATCH`). Comparison for `re
 
 ## Commercial bundle
 
-`license` section in manifest — see [0003](decisions/0003-commercial-bundle-licensing.md). Apache reference bundles (`warehouse`, `lab-training`, `mes-reference`) — no `license`.
+`license` section in manifest — see [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md). Apache reference bundles (`warehouse`, `lab-training`, `mes-reference`) — no `license`.
 
 ## Related documents
 
-- [applications.md](applications.md) — full deploy API
-- [messaging.md](messaging.md) — async vs sync, NATS subjects, WS events
-- [ai-development.md](ai-development.md) — AI layer (FW-40…43), admin tools
-- [api.md](api.md) — REST reference
-- [plugins.md](plugins.md) — `main` boundaries
+- [applications](applications.md) — full deploy API
+- [messaging](messaging.md) — async vs sync, NATS subjects, WS events
+- [ai-development](ai-development.md) — AI layer (FW-40…43), admin tools
+- [api](api.md) — REST reference
+- [plugins](plugins.md) — `main` boundaries

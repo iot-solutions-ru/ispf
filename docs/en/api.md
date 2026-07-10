@@ -5,7 +5,7 @@
 Base URL: `http://localhost:8080`
 
 Authentication: JWT (Keycloak) or header `X-ISPF-Role: admin|developer|operator` (`local` profile).  
-Role matrix: [security.md](security.md).
+Role matrix: [security](security.md).
 
 ## Platform
 
@@ -15,7 +15,7 @@ Role matrix: [security.md](security.md).
 | GET | `/api/v1/platform/metrics` | admin | Platform summary metrics (runtime, DB, tree, drivers, connections, security, historian, automation) |
 | GET | `/api/v1/platform/haystack/export` | operator+ | Haystack grid export for a subtree (`rootPath`, `includePoints`) |
 | GET | `/api/v1/platform/haystack/search` | operator+ | AND tag search (`tags`, `rootPath`, `entityKind`, `limit`) |
-| GET | `/api/v1/platform/haystack/query` | operator+ | Haystack filter query (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — see [ADR-0023](decisions/0023-haystack-query-runtime.md) |
+| GET | `/api/v1/platform/haystack/query` | operator+ | Haystack filter query (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — see [0023-haystack-query-runtime](decisions/0023-haystack-query-runtime.md) |
 | GET | `/api/v1/platform/update/status` | admin | Check for updates from GitHub Releases |
 | POST | `/api/v1/platform/update/check` | admin | Force release check |
 | POST | `/api/v1/platform/update/apply` | admin | Download release and restart server (VPS, `apply-enabled=true`) |
@@ -91,7 +91,7 @@ Content-Type: application/json
 | `driverId` | For `DEVICE`: driver provisioning after create |
 | `autoApplyRelativeBlueprints` | Default `true`. RELATIVE mixins with **empty** CEL are not applied; non-empty `suitabilityExpression` required |
 
-`mqtt-sensor-v1` is a fixture blueprint (`ispf.bootstrap.fixtures-enabled`). See [blueprints.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+`mqtt-sensor-v1` is a fixture blueprint (`ispf.bootstrap.fixtures-enabled`). See [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Functions
 
@@ -120,7 +120,7 @@ Content-Type: application/json
 ## Applications (REQ-PF)
 
 Platform layer for deploying application solutions without Java in `ispf-server`.  
-Full description: [applications.md](applications.md).
+Full description: [applications](applications.md).
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
@@ -137,7 +137,7 @@ Full description: [applications.md](applications.md).
 | GET | `/api/v1/schedules` | admin | List schedules |
 | POST | `/api/v1/schedules` | admin | Create/update schedule |
 
-See also: [applications.md](applications.md), [reports.md](reports.md), [plugins.md](plugins.md).
+See also: [applications](applications.md), [reports](reports.md), [plugins](plugins.md).
 
 ## Work Queue
 

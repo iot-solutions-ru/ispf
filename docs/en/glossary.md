@@ -2,13 +2,13 @@
 
 # ISPF Glossary
 
-A concise dictionary of platform terms. Product overview: [product.md](product.md).
+A concise dictionary of platform terms. Product overview: [product](product.md).
 
 ---
 
 ## Core principle (cross-cutting term)
 
-**Business logic in platform mechanisms** — the ISPF architectural principle: application rules and behavior are described by declarative configuration of the **object tree** (models, variables, events, functions, workflow, alert rules, correlators), not by domain-specific Java in `ispf-server`. The platform implements generic engines; bundle deploy delivers configuration into those mechanisms. See [architecture.md](architecture.md).
+**Business logic in platform mechanisms** — the ISPF architectural principle: application rules and behavior are described by declarative configuration of the **object tree** (models, variables, events, functions, workflow, alert rules, correlators), not by domain-specific Java in `ispf-server`. The platform implements generic engines; bundle deploy delivers configuration into those mechanisms. See [architecture](architecture.md).
 
 ---
 
@@ -24,7 +24,7 @@ A concise dictionary of platform terms. Product overview: [product.md](product.m
 
 ## B
 
-**Binding** — a rule for computing variable values (`BindingRule` in `@bindingRules`). Recalculated by `BindingRuleEngine` on activators (local and cross-object changes). Expression — Google **CEL** or a platform function. See [bindings.md](bindings.md).
+**Binding** — a rule for computing variable values (`BindingRule` in `@bindingRules`). Recalculated by `BindingRuleEngine` on activators (local and cross-object changes). Expression — Google **CEL** or a platform function. See [bindings](bindings.md).
 
 **BFF (Backend-for-Frontend)** — the `POST /bff/invoke` gateway for calling application functions from the UI. Wire profile `ispf-operator-v1` — contract for the legacy manifest.
 
@@ -100,7 +100,7 @@ A concise dictionary of platform terms. Product overview: [product.md](product.m
 
 **Model (BlueprintDefinition)** — an object template: variables, events, functions, bindings. Types: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. RELATIVE mixins auto-apply on create only when CEL is non-empty (*Applicability condition* / `suitabilityExpression`). Explicit apply — via `templateId` or API.
 
-**Fixture model** — demo/lab model (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), registered when `ispf.bootstrap.fixtures-enabled=true`. Not part of the core built-in registry. See [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+**Fixture model** — demo/lab model (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), registered when `ispf.bootstrap.fixtures-enabled=true`. Not part of the core built-in registry. See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 **Model engine** — the `ispf-plugin-blueprint` plugin that applies models to objects.
 
@@ -166,7 +166,7 @@ A concise dictionary of platform terms. Product overview: [product.md](product.m
 
 **WebSocket** — `WS /ws/objects` — live updates for variables and events.
 
-**Widget** — a dashboard element: value, chart, object-table, spreadsheet, work-queue, … Reference: [widgets.md](widgets.md).
+**Widget** — a dashboard element: value, chart, object-table, spreadsheet, work-queue, … Reference: [widgets](widgets.md).
 
 **Work Queue** — queue of BPMN user tasks for operators.
 

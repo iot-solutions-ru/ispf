@@ -4,7 +4,7 @@
 
 Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, заглушке генератора решений и виджетам наблюдения.
 
-См. также [AI_DEVELOPMENT.md](ai-development.md), [AGENT_REGRESSION.md](agent-regression.md), [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md).
+См. также [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).
 
 ---
 
@@ -94,7 +94,7 @@ node tools/agent-regression/validate-scenarios.mjs --results nightly-results.jso
 }
 ```
 
-Цель: **≥95 %** процент успешных попыток во всех сценариях. **Статус (0.9.102): не выполнено** — JSON-схема PR/nightly gates + только результаты заглушки; см. [AGENT_REGRESSION.md](agent-regression.md).
+Цель: **≥95 %** процент успешных попыток во всех сценариях. **Статус (0.9.102): не выполнено** — JSON-схема PR/nightly gates + только результаты заглушки; см. [agent-regression](agent-regression.md).
 
 ---
 
@@ -171,7 +171,7 @@ node tools/agent-regression/validate-scenarios.mjs --results nightly-results.jso
 | ID | Особенность | Док |
 |----|---------|-----|
 | БЛ-177 | Комплексное развертывание агента | [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
-| БЛ-178 | Пакет регрессионного агента | [AGENT_REGRESSION.md](agent-regression.md) |
+| БЛ-178 | Пакет регрессионного агента | [agent-regression](agent-regression.md) |
 | БЛ-179 | Заглушка генератора решений | Этот документ § Генератор решений |
 | БЛ-180 | Генератор решений GA + виджет метрик | [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) |
-| БЛ-181 | Наблюдаемость агентов v2 | `/agent/metrics/tools`, [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) |
+| БЛ-181 | Наблюдаемость агентов v2 | `/agent/metrics/tools`, [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) |

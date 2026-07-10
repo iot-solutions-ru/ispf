@@ -22,11 +22,11 @@
 
 ## Последствия
 
-- Реализация: `FederationProxyService`, `FederationPeerService`, tunnel WebSocket — см. [federation.md](../federation.md).
+- Реализация: `FederationProxyService`, `FederationPeerService`, tunnel WebSocket — см. [federation](../federation.md).
 - WebSocket fan-out уведомляет подписчиков federated paths; полная replica consistency — через NATS только внутри одного кластера platform.
 - Dashboard widget paths remapped на federated prefix при proxy layout.
 
 ## Связанные материалы
 
-- REQ-PF-13 — [roadmap.md](../roadmap.md), [federation.md](../federation.md)
-- [messaging.md](../messaging.md) — sync vs async
+- REQ-PF-13 — [roadmap](../roadmap.md), [federation](../federation.md)
+- [messaging](../messaging.md) — sync vs async

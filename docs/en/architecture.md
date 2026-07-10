@@ -2,6 +2,8 @@
 
 # ISPF Architecture
 
+**See also:** [object-model](object-model.md), [cluster](cluster.md), [application-principles](application-principles.md), [decisions/readme.md](decisions/readme.md).
+
 ## Vision
 
 **IoT Solutions Platform Framework (ISPF)** — middleware for IoT, industrial automation, and IT operations. A unified data model and API for devices, HMI dashboards, alerts, and BPMN automation.
@@ -22,9 +24,9 @@ The **platform (framework)** implements **generic engines once**: CEL, bindings,
 
 A **solution** fills those mechanisms with configuration: models, thresholds, processes, functions, dashboards.
 
-Bundle deploy ([applications.md](applications.md)) is **packaging and delivery** of configuration into the object tree and app schema — not a separate runtime outside the platform.
+Bundle deploy ([applications](applications.md)) is **packaging and delivery** of configuration into the object tree and app schema — not a separate runtime outside the platform.
 
-**Forbidden in `main`:** domain Java in `ispf-server`, hardcoded BFF routes, duplicating logic outside the object tree. See [0001](decisions/0001-app-platform-boundary.md).
+**Forbidden in `main`:** domain Java in `ispf-server`, hardcoded BFF routes, duplicating logic outside the object tree. See [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
 
 **Platform evolution:** richer object-tree mechanisms (Phase 5). See [roadmap.md § Phase 5](roadmap.md).
 
@@ -48,7 +50,7 @@ graph TB
     VARS --> CEL[CEL Bindings]
 ```
 
-Details: [object-model.md](object-model.md).
+Details: [object-model](object-model.md).
 
 ### Platform object
 
@@ -62,11 +64,11 @@ Addressable node: `root.platform.devices.pump-01`. Types: `DEVICE`, `DASHBOARD`,
 ### Models (templates)
 
 `BlueprintDefinition` — blueprint: variables, events, functions, bindings.  
-See [blueprints.md](blueprints.md).
+See [blueprints](blueprints.md).
 
 ### Expressions
 
-Google CEL for bindings, alert rules, workflow gateways. Object variables also support **platform bindings** (`counterRate`, `scale`, `clamp`, …) — see [bindings.md](bindings.md).
+Google CEL for bindings, alert rules, workflow gateways. Object variables also support **platform bindings** (`counterRate`, `scale`, `clamp`, …) — see [bindings](bindings.md).
 
 ```
 self.temperature.value > self.threshold.value
@@ -116,7 +118,7 @@ counterRate(ifInOctets)
 
 OAuth2 JWT (Keycloak) or header-based RBAC (`local`).  
 Roles: `admin`, `operator`.  
-See [security.md](security.md).
+See [security](security.md).
 
 ## Data flow: telemetry
 
@@ -148,19 +150,19 @@ Event fire → event_history
 - Keycloak / OIDC
 - Static web-console behind CDN/ingress
 
-**Horizontal scale ≠ federation:** replicas share one DB and one `root.platform.*` tree. Multi-replica: driver ownership, NATS live mirror — see **[cluster.md](cluster.md)**. Multiple sites / edge agents — [federation.md](federation.md), [roadmap.md § Phase 4–8](roadmap.md).
+**Horizontal scale ≠ federation:** replicas share one DB and one `root.platform.*` tree. Multi-replica: driver ownership, NATS live mirror — see **[cluster](cluster.md)**. Multiple sites / edge agents — [federation](federation.md), [roadmap.md § Phase 4–8](roadmap.md).
 
-See [deployment.md](deployment.md).
+See [deployment](deployment.md).
 
 ## Extension points
 
-1. **DeviceDriver** — new protocol ([drivers.md](drivers.md))
-2. **BlueprintDefinition** — device/process template ([blueprints.md](blueprints.md))
+1. **DeviceDriver** — new protocol ([drivers](drivers.md))
+2. **BlueprintDefinition** — device/process template ([blueprints](blueprints.md))
 3. **FunctionHandler** — business operations on objects
-4. **Dashboard widgets** — new types in web-console ([dashboards.md](dashboards.md))
-5. **REST / Webhook** — external integrations ([api.md](api.md))
-6. **NATS subjects** — messageTask in BPMN ([workflows.md](workflows.md))
-7. **Application bundle** — deploy functions and migrations **outside** core ([applications.md](applications.md), [plugins.md](plugins.md))
+4. **Dashboard widgets** — new types in web-console ([dashboards](dashboards.md))
+5. **REST / Webhook** — external integrations ([api](api.md))
+6. **NATS subjects** — messageTask in BPMN ([workflows](workflows.md))
+7. **Application bundle** — deploy functions and migrations **outside** core ([applications](applications.md), [plugins](plugins.md))
 
 Commercial and domain extensions **do not** belong in the Apache 2.0 `main` tree.
 

@@ -105,7 +105,7 @@ Configure `opcua` client device:
 
 Point mapping: same NodeId as server mapping, e.g. `ns=2;s=Temperature`.
 
-See also [DRIVERS.md](drivers.md) § opcua client and [DRIVER_INTEROP_LAB.md](driver-interop-lab.md).
+See also [drivers](drivers.md) § opcua client and [driver-interop-lab](driver-interop-lab.md).
 
 ## Limitations (v0.1)
 

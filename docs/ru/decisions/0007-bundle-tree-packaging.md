@@ -15,15 +15,15 @@
 2. **Tree-first** — после deploy узлы появляются под `root.platform.*` (и app-specific paths); бизнес-логика вызывается через object tree (`BFF invoke`, tree functions), не через hardcoded routes в `main`.
 3. **App schema отдельно** — SQL migrations приложения (`migrations[]`) применяются к app schema (`schemaName`, `tablePrefix`), не к platform Flyway.
 4. **Версионирование bundle** — поле `version` (semver); история deploy хранится per `appId`; зависимости через `requires[]` с `minVersion`.
-5. **Commercial** — optional секция `license` (см. [0003](0003-commercial-bundle-licensing.md)); Apache reference bundles без `license`.
+5. **Commercial** — optional секция `license` (см. [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)); Apache reference bundles без `license`.
 
 ## Последствия
 
-- [applications.md](../applications.md) и [solution-developer-public-api.md](../solution-developer-public-api.md) описывают стабильный контракт manifest.
+- [applications](../applications.md) и [solution-developer-public-api](../solution-developer-public-api.md) описывают стабильный контракт manifest.
 - AI artifact generation валидирует manifest через `BundleManifestValidator` перед deploy.
-- Отраслевой Java в `ispf-server` остаётся запрещён ([0001](0001-app-platform-boundary.md)).
+- Отраслевой Java в `ispf-server` остаётся запрещён ([0001-app-platform-boundary](0001-app-platform-boundary.md)).
 
 ## Связанные материалы
 
-- REQ-PF-01, Phase 5 tree-first — [roadmap.md](../roadmap.md)
+- REQ-PF-01, Phase 5 tree-first — [roadmap](../roadmap.md)
 - [examples/](../examples/) — reference bundles

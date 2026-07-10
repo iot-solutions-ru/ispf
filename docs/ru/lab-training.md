@@ -140,7 +140,7 @@ Content-Type: application/json
 
 **Дашборд:** `root.platform.dashboards.lab-form-grid`
 
-**Документация:** пример макета в [DASHBOARDS.md](dashboards.md).
+**Документация:** пример макета в [dashboards](dashboards.md).
 
 ---
 
@@ -171,7 +171,7 @@ Content-Type: application/json
 3. Убедитесь, что **C2** (Сумма) и **D2** (A×110%) пересчитаны.
 4. Обновите страницу (**F5**) — значения A2/B2 должны сохраниться (сохранение в переменную `sheetValues` на `lab-userA-01`).
 
-**Режим бесплатный (новые виджеты по умолчанию):** любая ячейка — значение или `=формула`; строковая формула, F2, Ctrl+Z, экспорт CSV. Подробнее: [SPREADSHEET_WIDGET.md](spreadsheet-widget.md).
+**Режим бесплатный (новые виджеты по умолчанию):** любая ячейка — значение или `=формула`; строковая формула, F2, Ctrl+Z, экспорт CSV. Подробнее: [spreadsheet-widget](spreadsheet-widget.md).
 
 **Проверка:** изменить A2 → пересчёт Sum и A×110%; F5 → значения в `sheetValues`.
 
@@ -269,7 +269,7 @@ Content-Type: application/json
 
 ## Связанные документы
 
-- [DASHBOARDS.md](dashboards.md) — виджеты и Grid Layout
-- [AUTOMATION.md](automation.md) — правила оповещений и корреляторы
-- [REPORTS.md](reports.md) — отчёты по дереву
-- [SECURITY.md](security.md) — API ACL
+- [dashboards](dashboards.md) — виджеты и Grid Layout
+- [automation](automation.md) — правила оповещений и корреляторы
+- [reports](reports.md) — отчёты по дереву
+- [security](security.md) — API ACL

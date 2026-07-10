@@ -6,7 +6,7 @@
 
 ## Цель
 
-- Подтвердить зрелость **PRODUCTION** для промышленных протоколов ([ADR-0022](decisions/0022-driver-production-matrix.md), BL-140).
+- Подтвердить зрелость **PRODUCTION** для промышленных протоколов ([0022-driver-production-matrix](decisions/0022-driver-production-matrix.md), BL-140).
 - Запуск **одинакового** набора Gradle-тестов локально, в CI и на лабораторном хосте.
 - Фиксировать длительность прогона и статус для каждого пакета драйверов.
 
@@ -80,7 +80,7 @@ bash deploy/tools/driver-interop-report.sh
 | `dlms` | Gurux SET |
 | `mqtt` | publish path |
 
-Производственные драйверы только для чтения (`dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — опрос целостности/проверка сеанса без двусторонней записи; Путь записи продвижения — отдельный BL по [DRIVER_PROMOTION.md](driver-promotion.md).
+Производственные драйверы только для чтения (`dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — опрос целостности/проверка сеанса без двусторонней записи; Путь записи продвижения — отдельный BL по [driver-promotion](driver-promotion.md).
 
 ## Докерные приспособления (BL-141)
 
@@ -145,6 +145,6 @@ bash deploy/tools/driver-interop-report.sh
 
 ## Связанные документы
 
-- [DRIVERS.md](drivers.md) — зрелость и конфиги
-- [DRIVER_PROMOTION.md](driver-promotion.md) — чеклист продвижения
-- [roadmap.md](roadmap.md) — BL-140…145
+- [drivers](drivers.md) — зрелость и конфиги
+- [driver-promotion](driver-promotion.md) — чеклист продвижения
+- [roadmap](roadmap.md) — BL-140…145

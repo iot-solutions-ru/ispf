@@ -46,6 +46,6 @@ cd tools/symbol-pack-isa && npm install && npm run build
 
 ## Связанный
 
-- [ЛИЦЕНЗИЯ.md](license.md)
-- [LICENSE_COMPLIANCE.md](license-compliance.md)
+- [license](license.md)
+- [license-compliance](license-compliance.md)
 - [tools/symbol-pack-isa/README.md](readme.md)

@@ -67,7 +67,7 @@ Extension namespace: `http://ispf.io/bpmn` (prefix `ispf:`).
 | `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
 | `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
 
-Example `invoke_function` (application functions — [applications.md](applications.md)):
+Example `invoke_function` (application functions — [applications](applications.md)):
 
 ```xml
 <serviceTask id="assign" name="Assign tank"
@@ -133,7 +133,7 @@ The instance waits until the deadline expires; continuation via `POST .../timer`
 <sequenceFlow sourceRef="ackTimeout" targetRef="escalate"/>
 ```
 
-While the user task is in `WAITING`, an SLA timer runs in parallel. When the timer fires, the escalation branch runs (interrupting). Template: [reference-escalation-templates.md](reference-escalation-templates.md).
+While the user task is in `WAITING`, an SLA timer runs in parallel. When the timer fires, the escalation branch runs (interrupting). Template: [reference-escalation-templates](reference-escalation-templates.md).
 
 ## Work queue
 
@@ -167,7 +167,7 @@ When `ispf:function` is set on a user task, the function is invoked on complete.
 
 ## Event correlators → workflow
 
-Correlator with action `RUN_WORKFLOW` and `actionTarget` = workflow path. See [automation.md](automation.md).
+Correlator with action `RUN_WORKFLOW` and `actionTarget` = workflow path. See [automation](automation.md).
 
 ## Demo workflow
 

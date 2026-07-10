@@ -46,7 +46,7 @@
 | --- | -------- | -------- | ------ |
 | `list_devices` p99 @ 150 concurrent | ≤2500 ms (local), ≤5000 ms (CI) | `ListDevicesLoadTest` | Без регрессии |
 | `events/fire` p99 | ≤3000 ms (nightly gate) | `EventFireLoadTest` | Без регрессии |
-| MQTT event journal sustained | ~1878 events/s (VPS 0.9.87) | [load-testing.md](load-testing.md), HF01 | Без регрессии |
+| MQTT event journal sustained | ~1878 events/s (VPS 0.9.87) | [load-testing](load-testing.md), HF01 | Без регрессии |
 | Cluster scale factor (3/1 replica) | ≥1.8× | `deploy/cluster-scale-load-test.py` | Держать ≥1.8 |
 
 ### Frontend / HMI (цели S21)
@@ -167,7 +167,7 @@
 
 ## Связанные документы
 
-- [roadmap.md](roadmap.md) — реестр спринтов S19–S23
-- [testing.md](testing.md) — команды тестов
-- [ci-flaky-triage.md](ci-flaky-triage.md) — политика flaky (S20-04)
-- [load-testing.md](load-testing.md) — throughput baselines
+- [roadmap](roadmap.md) — реестр спринтов S19–S23
+- [testing](testing.md) — команды тестов
+- [ci-flaky-triage](ci-flaky-triage.md) — политика flaky (S20-04)
+- [load-testing](load-testing.md) — throughput baselines

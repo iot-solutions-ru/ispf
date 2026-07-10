@@ -67,6 +67,6 @@ curl -s -X POST http://localhost:8080/api/v1/bff/invoke \
 
 ## Related documents
 
-- [solution-developer-guide.md](solution-developer-guide.md)
-- [solution-developer-public-api.md](solution-developer-public-api.md)
-- [applications.md](applications.md)
+- [solution-developer-guide](solution-developer-guide.md)
+- [solution-developer-public-api](solution-developer-public-api.md)
+- [applications](applications.md)

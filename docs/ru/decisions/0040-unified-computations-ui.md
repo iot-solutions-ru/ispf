@@ -4,7 +4,7 @@
 
 ## Статус
 
-**Принято** (2026-07-09), дополнено [ADR-0041](0041-multi-tag-historian-computations.md)
+**Принято** (2026-07-09), дополнено [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)
 
 ## Контекст
 
@@ -22,13 +22,13 @@
 
 Отладчик выражений — отдельная вкладка.
 
-Historian-правила — **строки в той же таблице**, не отдельный инспектор ([ADR-0041](0041-multi-tag-historian-computations.md)).
+Historian-правила — **строки в той же таблице**, не отдельный инспектор ([0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)).
 
 ## Последствия
 
-- Документация: [bindings.md](../bindings.md), [analytics-tag-catalog.md](../analytics-tag-catalog.md), [analytics-historian-cookbook.md](../analytics-historian-cookbook.md)
+- Документация: [bindings](../bindings.md), [analytics-tag-catalog](../analytics-tag-catalog.md), [analytics-historian-cookbook](../analytics-historian-cookbook.md)
 - Целевая модель `kind: historian` — реализована в ADR-0041
 
 ## См. также
 
-- [ADR-0041](0041-multi-tag-historian-computations.md)
+- [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)

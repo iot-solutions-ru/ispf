@@ -6,7 +6,7 @@
 
 **Не является юридической консультацией.** Перед подачей согласуйте пакет с юристом и при необходимости с консультантом по реестру.
 
-См. также: [PRODUCT.md](product.md), [DEPLOYMENT.md](deployment.md), [LICENSE_COMPLIANCE.md](license-compliance.md).
+См. также: [product](product.md), [deployment](deployment.md), [license-compliance](license-compliance.md).
 
 ---
 
@@ -56,7 +56,7 @@
 - АВЕВА / Wonderware
 - Ситект / Шнайдер Электрик
 
-Сопоставление: дерево объектов, драйверы, HMI, историк, тревоги, рабочий процесс, отчёты — см. [PRODUCT.md](product.md).
+Сопоставление: дерево объектов, драйверы, HMI, историк, тревоги, рабочий процесс, отчёты — см. [product](product.md).
 
 ---
 
@@ -151,36 +151,36 @@ registry-techpack-ispf-<version>/
 
 | функция SCADA/АСУ ТП | ISPF | Источник в репозиториях |
 |-------------------------|:----:|------------------------|
-| Сбор данных с полевого оборудования | ✓ | [DRIVERS.md](drivers.md) — 58 драйверов |
-| Хранение истории (историк) | ✓ | [VARIABLE_HISTORY.md](variable-history.md) |
-| Операторский HMI / мнемосхемы | ✓ | [SCADA.md](scada.md), [DASHBOARDS.md](dashboards.md) |
+| Сбор данных с полевого оборудования | ✓ | [drivers](drivers.md) — 58 драйверов |
+| Хранение истории (историк) | ✓ | [variable-history](variable-history.md) |
+| Операторский HMI / мнемосхемы | ✓ | [scada](scada.md), [dashboards](dashboards.md) |
 | Управление (запись в устройство) | ✓ | Запись драйвера, объектные функции |
-| Аварийная сигнализация | ✓ | [AUTOMATION.md](automation.md), очередь работ |
+| Аварийная сигнализация | ✓ | [automation](automation.md), очередь работ |
 | Журнал событий | ✓ | API журнала событий |
-| Отчёты | ✓ | [REPORTS.md](reports.md) — PDF, XLSX, HTML |
-| Автоматизация / документооборот | ✓ | [WORKFLOWS.md](workflows.md) |
-| Разграничение доступа | ✓ | [SECURITY.md](security.md) |
-| Масштабирование / кластер | ✓ | [CLUSTER.md](cluster.md) |
-| Прикладные решения без разветвления ядра | ✓ | [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md) |
+| Отчёты | ✓ | [reports](reports.md) — PDF, XLSX, HTML |
+| Автоматизация / документооборот | ✓ | [workflows](workflows.md) |
+| Разграничение доступа | ✓ | [security](security.md) |
+| Масштабирование / кластер | ✓ | [cluster](cluster.md) |
+| Прикладные решения без разветвления ядра | ✓ | [solution-developer-guide](solution-developer-guide.md) |
 
 ### 6.2. Картирование: исходники → PDF для техпакета
 
 | Файл техпакета | Основа (Markdown в `docs/`) |
 |----------------|------------------------------|
-| описание продукта.pdf | [PRODUCT.md](product.md) |
-| функционал-спец.pdf | §6.1 + [PRODUCT.md](product.md) §«Возможности» |
-| системные требования.pdf | [GETTING_STARTED.md](getting-started.md), [DEPLOYMENT.md](deployment.md) |
-| руководство по установке.pdf | [GETTING_STARTED.md](getting-started.md), [DEPLOYMENT.md](deployment.md) §Быстрый старт производства |
-| руководство по обновлению.pdf | [DEPLOYMENT.md](deployment.md), Миграции Flyway |
-| руководство-администратора.pdf | [WEB_CONSOLE.md](web-console.md), [SECURITY.md](security.md), [DEMOSTANDS.md](demostands.md) |
-| оператор-руководство.pdf | [OPERATOR_GUIDE.md](operator-guide.md) |
-| руководство-разработчика-решения.pdf | [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md) (сокращённо) |
-| руководство по безопасности.pdf | [SECURITY.md](security.md) |
-| API-обзор.pdf | [API.md](api.md) (оглавление + типовые скрипты) |
-| драйверы-каталог-выдержка.pdf | [DRIVERS.md](drivers.md) — таблица протоколов |
-| сторонние лицензии.pdf | [THIRD_PARTY_NOTICES.md](third-party-notices.md), [LICENSE_COMPLIANCE.md](license-compliance.md) |
-| развертывание-для-эксперта.pdf | §7 ниже + [DEPLOYMENT.md](deployment.md) |
-| демо-сценарий.pdf | §8 ниже + [LAB_TRAINING.md](lab-training.md) |
+| описание продукта.pdf | [product](product.md) |
+| функционал-спец.pdf | §6.1 + [product](product.md) §«Возможности» |
+| системные требования.pdf | [getting-started](getting-started.md), [deployment](deployment.md) |
+| руководство по установке.pdf | [getting-started](getting-started.md), [deployment](deployment.md) §Быстрый старт производства |
+| руководство по обновлению.pdf | [deployment](deployment.md), Миграции Flyway |
+| руководство-администратора.pdf | [web-console](web-console.md), [security](security.md), [demostands](demostands.md) |
+| оператор-руководство.pdf | [operator-guide](operator-guide.md) |
+| руководство-разработчика-решения.pdf | [solution-developer-guide](solution-developer-guide.md) (сокращённо) |
+| руководство по безопасности.pdf | [security](security.md) |
+| API-обзор.pdf | [api](api.md) (оглавление + типовые скрипты) |
+| драйверы-каталог-выдержка.pdf | [drivers](drivers.md) — таблица протоколов |
+| сторонние лицензии.pdf | [third-party-notices](third-party-notices.md), [license-compliance](license-compliance.md) |
+| развертывание-для-эксперта.pdf | §7 ниже + [deployment](deployment.md) |
+| демо-сценарий.pdf | §8 ниже + [lab-training](lab-training.md) |
 
 **Сборка PDF:** экспорт из Markdown (pandoc, VS Code, Typora) или печать в PDF из CI. Единый стиль: титул с названием продукта, титулом, правообладателем, датой.
 
@@ -214,11 +214,11 @@ node tools/registry-techpack/build-techpack.mjs \
 | Compose | `deploy/docker-compose.prod-stack.yml` + `deploy/air-gap-images.env` |
 | Инструкция | `07-expert-review/deployment-for-expert.pdf` |
 
-Минимальный сценарий: `bash deploy/prod-quickstart.sh` (см. [DEPLOYMENT.md](deployment.md)).
+Минимальный сценарий: `bash deploy/prod-quickstart.sh` (см. [deployment](deployment.md)).
 
 ### Вариант Б — Архив с воздушным зазором
 
-См. [AIR_GAP_DEPLOYMENT.md](air-gap-deployment.md) — один tar с образами, JAR, UI, скриптами.
+См. [air-gap-deployment](air-gap-deployment.md) — один tar с образами, JAR, UI, скриптами.
 
 ### Системные требования (для system-requirements.pdf)
 

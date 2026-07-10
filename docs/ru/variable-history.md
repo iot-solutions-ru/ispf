@@ -59,8 +59,8 @@
 
 | Тема | Примечание |
 |------|------------|
-| Алерты по порогам / трендам | Узлы `ALERT` в деревенском; см. [АВТОМАТИЗАЦИЯ.md](automation.md) |
-| Корреляторы событий | Узлы `CORRELATOR` в деревенском; API `/api/v1/correlators` — см. [АВТОМАТИЗАЦИЯ.md](automation.md) |
+| Алерты по порогам / трендам | Узлы `ALERT` в деревенском; см. [automation](automation.md) |
+| Корреляторы событий | Узлы `CORRELATOR` в деревенском; API `/api/v1/correlators` — см. [automation](automation.md) |
 
 Историк только **хранит и отдаёт** временные ряды; генерация событий и эскалация — уровень автоматизации.
 
@@ -94,6 +94,6 @@ ispf:
 
 Ссылка на дашборд: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (макет виджета BL-161 + BFF sketch).
 
-Многоуровневые профили хранения и развертывания: [HISTORIAN_TIERS.md](historian-tiers.md).
+Многоуровневые профили хранения и развертывания: [historian-tiers](historian-tiers.md).
 
-См. также [OBJECT_MODEL.md](object-model.md), [API.md](api.md).
+См. также [object-model](object-model.md), [api](api.md).

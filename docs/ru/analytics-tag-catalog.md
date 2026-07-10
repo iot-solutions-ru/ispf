@@ -4,7 +4,7 @@
 
 Развёрнутые **historian-вычисления** обнаруживаются из `@bindingRules` с `kind: historian` на объектах `DEVICE`. Одно правило = один тег каталога и одна live-переменная.
 
-**Cookbook (OEE, цепочки):** [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
+**Cookbook (OEE, цепочки):** [analytics-historian-cookbook](analytics-historian-cookbook.md)
 
 ## Идентичность тега
 
@@ -56,7 +56,7 @@
 
 Поля ответа каталога, CEL-over-historian и propagation quality — см. [английскую версию](../en/analytics-tag-catalog.md).
 
-**Формулы и пакеты расширений (Tier B/C):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
+**Формулы и пакеты расширений (Tier B/C):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
 
 ## UI
 
@@ -70,6 +70,6 @@
 
 ## См. также
 
-- [ADR-0041](decisions/0041-multi-tag-historian-computations.md)
-- [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
-- [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md)
+- [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)
+- [analytics-historian-cookbook](analytics-historian-cookbook.md)
+- [analytics-formulas-and-packs](analytics-formulas-and-packs.md)

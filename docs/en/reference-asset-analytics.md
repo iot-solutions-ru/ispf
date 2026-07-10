@@ -1,6 +1,6 @@
 > **Language:** Canonical English. Russian edition: [ru/reference-asset-analytics.md](../ru/reference-asset-analytics.md).
 
-> **Deprecated for new configurations (ADR-0041).** Use historian binding rules and [analytics-historian-cookbook.md](analytics-historian-cookbook.md) instead of `ANALYTICS_TEMPLATE` + apply workflow.
+> **Deprecated for new configurations (ADR-0041).** Use historian binding rules and [analytics-historian-cookbook](analytics-historian-cookbook.md) instead of `ANALYTICS_TEMPLATE` + apply workflow.
 
 # Asset analytics (BL-160 / BL-201)
 
@@ -41,7 +41,7 @@ Manual refresh: `POST /api/v1/platform/analytics/derived-tags/refresh?devicePath
 ## Web console
 
 - Explorer: `root.platform.analytics` → folder list; child template → **Analytics template** inspector (typed form, apply section, historian preview).
-- Chart widgets: `analyticsTemplateId` selects helper + aggregate bucket ([widgets.md](widgets.md)).
+- Chart widgets: `analyticsTemplateId` selects helper + aggregate bucket ([widgets](widgets.md)).
 
 ## Apply workflow
 
@@ -65,6 +65,6 @@ OEE apply additionally requires `availabilityVariable`, `performanceVariable`, `
 
 ## Related
 
-- [variable-history.md](variable-history.md) — aggregate buckets including `8h`
+- [variable-history](variable-history.md) — aggregate buckets including `8h`
 - Roadmap BL-160 (Phase 28), BL-201 (Phase 33 AF-lite completion)
-- [analytics-platform-roadmap.md](analytics-platform-roadmap.md) — BL-200…210 enterprise analytics
+- [analytics-platform-roadmap](analytics-platform-roadmap.md) — BL-200…210 enterprise analytics

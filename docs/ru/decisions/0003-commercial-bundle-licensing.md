@@ -21,10 +21,10 @@
 
 ## Последствия
 
-- Реализация: `com.ispf.server.license.*`, [commercial-licensing.md](../commercial-licensing.md).
-- [plugins.md](../plugins.md) — требования к поставке commercial bundle.
+- Реализация: `com.ispf.server.license.*`, [commercial-licensing](../commercial-licensing.md).
+- [plugins](../plugins.md) — требования к поставке commercial bundle.
 
 ## Связанные материалы
 
-- [0001](0001-app-platform-boundary.md)
-- REQ-FW-10, FW-11 в [roadmap.md](../roadmap.md)
+- [0001-app-platform-boundary](0001-app-platform-boundary.md)
+- REQ-FW-10, FW-11 в [roadmap](../roadmap.md)

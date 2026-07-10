@@ -188,7 +188,7 @@ NATS_URL=nats://ispf-nats:4222   # тот же кластер, что ispf.nats.
 
 ## Связанные документы
 
-- [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md)
-- [AUTOMATION.md](automation.md)
-- [FEDERATION.md](federation.md)
-- [APPLICATIONS.md](applications.md)
+- [solution-developer-public-api](solution-developer-public-api.md)
+- [automation](automation.md)
+- [federation](federation.md)
+- [applications](applications.md)

@@ -21,7 +21,7 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 
 | Area | Gap | Future BL |
 |------|-----|-----------|
-| Expression language | No full PI Analytics syntax; built-in helpers + CEL `hist.*` on derived tags (BL-211) | [ADR-0042](decisions/0042-analytics-function-catalog.md) — unified catalog, user formulas, analytics packs (BL-212–215) |
+| Expression language | No full PI Analytics syntax; built-in helpers + CEL `hist.*` on derived tags (BL-211) | [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) — unified catalog, user formulas, analytics packs (BL-212–215) |
 | AF database | No duplicate asset tree; tree-first model | By design (ADR-0038) |
 | PI Vision graphics | No PI Vision–class graphics | Phase 26 HMI |
 | ML on tags | No inference on tag streams | BL-175 |
@@ -30,7 +30,7 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 
 ## Historian scorecard
 
-[competitive-scorecard.md](competitive-scorecard.md) Historian row remains **7.0 (code verified)** until Enterprise L lab gates pass on documented hardware. Target **≥9.5** after:
+[competitive-scorecard](competitive-scorecard.md) Historian row remains **7.0 (code verified)** until Enterprise L lab gates pass on documented hardware. Target **≥9.5** after:
 
 1. `analytics-scale-gate.sh` — catalog + multi-tag + optional 1B CH **PASS**
 2. `historian-scale-benchmark.sh` — BL-161 aggregate **PASS**
@@ -38,6 +38,6 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 
 ## Related
 
-- [analytics-platform-roadmap.md](analytics-platform-roadmap.md)
+- [analytics-platform-roadmap](analytics-platform-roadmap.md)
 - [decisions/0038-analytics-platform-architecture.md](decisions/0038-analytics-platform-architecture.md)
 - [examples/analytics-platform/](../examples/analytics-platform/)

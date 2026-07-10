@@ -8,7 +8,7 @@
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
 | **Обновлено** | 09.07.2026 |
-| **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([ARCHITECTURE.md](architecture.md)) |
+| **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([architecture](architecture.md)) |
 
 ---
 
@@ -29,7 +29,7 @@
 
 **Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210.
 
-Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
+Acceleration program: [acceleration-program](acceleration-program.md).
 
 Развертывание на VPS — только по запросу ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc)).
 
@@ -37,7 +37,7 @@ Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 
 ## Ретроспектива — что сделано и где мы {#retrospective}
 
-**На 09.07.2026** · prod **0.9.105** (`ispf.iot-solutions.ru`) · оценка по коду **~7,4/10** ([competitive-scorecard.md](competitive-scorecard.md)).
+**На 09.07.2026** · prod **0.9.105** (`ispf.iot-solutions.ru`) · оценка по коду **~7,4/10** ([competitive-scorecard](competitive-scorecard.md)).
 
 ### Эпохи (закрыто → активно)
 
@@ -185,7 +185,7 @@ Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 | ПФ-13 | Федерация | 4, 7–8 | Готово |
 | PF-14 | Driver catalog (58 `driverId`) | 3, 10 | Done |
 
-Детали: [APPLICATIONS.md](applications.md).
+Детали: [applications](applications.md).
 
 ---
 
@@ -212,7 +212,7 @@ Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 | FW-50 | Лицензированный драйвер JAR | ДРВ | 16 | Готово |
 | FW-60 | Время и часовой пояс (BL-66…71) | ВРЕМЯ | 21 | Готово |
 
-Детали: [AI_DEVELOPMENT.md](ai-development.md), [decisions/](decisions/).
+Детали: [ai-development](ai-development.md), [decisions/](decisions/).
 
 ---
 
@@ -733,8 +733,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | --- | --- |
 | **Версия** | 0.9.87 |
 | **Результат** | продолжалось ~1878 событий/с (было ~384/с) |
-| **ДОПОГ** | [0026](decisions/0026-elastic-telemetry-ingress.md), [0027](decisions/0027-event-journal-ingress-fast-path.md) |
-| **Скамейка** | [LOAD_TESTING.md](load-testing.md) |
+| **ДОПОГ** | [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) |
+| **Скамейка** | [load-testing](load-testing.md) |
 
 | Слой | Компонент | Окружение |
 | ---- | --------- | --- |
@@ -750,7 +750,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | С19-02 | Система показателей + еженедельная частота шагов | Готово |
 | С19-03 | Заморозка объема 8 недель | Готово |
 
-Артефакт: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleration/collect-baseline.py`.
+Артефакт: [acceleration-program](acceleration-program.md), `tools/acceleration/collect-baseline.py`.
 
 ### Sprint S20 — Скоростной двигатель
 
@@ -759,9 +759,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | С20-01 | пр-быстрый/ночной-полный | Готово |
 | С20-02 | Вакансии на основе пути | Готово |
 | С20-03 | Кэш Gradle/npm | Готово |
-| С20-04 | Ненадежная политика сортировки | Готово — [CI_FLAKY_TRIAGE.md](ci-flaky-triage.md) |
+| С20-04 | Ненадежная политика сортировки | Готово — [ci-flaky-triage](ci-flaky-triage.md) |
 | С20-05 | Очистить артефакты сборки | Готово |
-| С20-06 | Панель мониторинга CI | Готово — [CI_DASHBOARD.md](ci-dashboard.md), `tools/acceleration/ci-dashboard.py` |
+| С20-06 | Панель мониторинга CI | Готово — [ci-dashboard](ci-dashboard.md), `tools/acceleration/ci-dashboard.py` |
 
 ### Sprint S21 — HMI depth
 
@@ -772,7 +772,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | S21-03 | Lighthouse CI gate | BL-95 | Done — `scripts/lighthouse-ci.mjs` |
 | S21-04 | A11y baseline axe | BL-93 | Done — `e2e/quality-gates.spec.ts` |
 | S21-05 | Bundle size budget | BL-95 | Done — `scripts/bundle-budget.mjs` |
-| С21-06 | Известные пробелы в документе | БЛ-93, 94 | Готово — [HMI_QUALITY_GATES.md](hmi-quality-gates.md) |
+| С21-06 | Известные пробелы в документе | БЛ-93, 94 | Готово — [hmi-quality-gates](hmi-quality-gates.md) |
 
 ### Спринт S22 — Edge Trust
 
@@ -791,7 +791,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | S23-01 | Brick class inference | BL-104 | 5 | Done — `BrickClassInferenceService`, `GET /api/v1/platform/brick/infer` |
 | С23-02 | Предложения инспектора | БЛ-104 | 5 | Готово — `BrickMetadataPanel`, вкладка **Кирпич** в Проводнике |
 | S23-03 | Semantic roundtrip test | BL-105 | 8 | Done — `SemanticRoundtripIntegrationTest` |
-| С23-04 | Демо-панель <5 мин | БЛ-105 | 5 | Готово — [SEMANTIC_DEMO.md](semantic-demo.md) |
+| С23-04 | Демо-панель <5 мин | БЛ-105 | 5 | Готово — [semantic-demo](semantic-demo.md) |
 | S23-05 | KPI time-to-first-dashboard | — | 3 | Done — walkthrough + `tools/semantic-demo-check.sh` |
 
 **Ускорение «да/нет»:** ДИ ±10 %; Вентили HMI зелёные 2 нед.; зелёный хаос федерации; семантическая демонстрация ≤5 мин.
@@ -802,8 +802,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | -- | ---------- | -- | -- | ------ |
 | С24-01 | Эталонный комплект OEE | БЛ-121 | 5 | Готово — [mes-oee-reference](../examples/mes-oee-reference/) |
 | S24-02 | BPMN timer catch + boundary | BL-122 | 8 | Done — `WorkflowEngine.fireDueTimers`, `POST .../timer` |
-| С24-03 | Шаблоны эскалации | БЛ-123 | 3 | Готово — [REFERENCE_ESCALATION_TEMPLATES.md](reference-escalation-templates.md) |
-| С24-04 | Каталог ИСА-95 | БЛ-124 | 3 | Готово — [ISA95_CATALOG.md](isa95-catalog.md) |
+| С24-03 | Шаблоны эскалации | БЛ-123 | 3 | Готово — [reference-escalation-templates](reference-escalation-templates.md) |
+| С24-04 | Каталог ИСА-95 | БЛ-124 | 3 | Готово — [isa95-catalog](isa95-catalog.md) |
 
 ### Sprint S25 — Мультитенантность + масштабирование
 
@@ -811,14 +811,14 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | -- | ---------- | -- | -- | ------ |
 | S25-01 | Tenant write isolation | BL-125 | 5 | Done — `requirePathInScope` on mutations |
 | С25-02 | API квот для каждого тенанта | БЛ-126 | 5 | Готово — `maxDevices` / `maxObjects`, миграция на V70 |
-| С25-03 | Историк с двойной записью | БЛ-116 | 8 | Готово — [ADR-0035](decisions/0035-historian-dual-write.md) |
+| С25-03 | Историк с двойной записью | БЛ-116 | 8 | Готово — [0035-historian-dual-write](decisions/0035-historian-dual-write.md) |
 
 ### Sprint S26 — HMI + завершение операций
 
 | ID | Назначение | БЛ | СП | Статус |
 | -- | ---------- | -- | -- | ------ |
-| С26-01 | Документация + тесты библиотеки символов SCADA | БЛ-94 | 3 | Готово — [SCADA_SYMBOL_LIBRARY.md](scada-symbol-library.md) |
-| С26-02 | ClickHouse prod playbook + скрипты | БЛ-114 | 5 | Готово — [CLICKHOUSE_PROD_PLAYBOOK.md](clickhouse-prod-playbook.md) |
+| С26-01 | Документация + тесты библиотеки символов SCADA | БЛ-94 | 3 | Готово — [scada-symbol-library](scada-symbol-library.md) |
+| С26-02 | ClickHouse prod playbook + скрипты | БЛ-114 | 5 | Готово — [clickhouse-prod-playbook](clickhouse-prod-playbook.md) |
 | С26-03 | Проверка двойной записи + application.yml | БЛ-114 | 2 | Готово — `vps-variable-history-dual-write.sh`, проверить сценарий |
 
 ---
@@ -851,7 +851,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | **S27 — Усиление объединения** | БЛ-119/120 синхронизация + хаос е2е, туннельный флейк бюджетный | Готово — хаос в ИТ, разрозненный бюджет, nightly gates, мероприятия по охране здоровья коллег |
 | **S28 — Ingress + историк** | Внедрение VPS с двойной записью, выполнение раздельного сценария ClickHouse | Готово — сценарий двойной записи + режим проверки (развертывание VPS) |
 | **S29 — Завершение работы над HMI** | Аудит контрастности WCAG, клавиатура редактора мнемосхем, Lighthouse ≥90 в оболочке оператора | Готово — axe + Lighthouse operator gates |
-| **S30 — Реестр/соответствие** | [RUSSIAN_SOFTWARE_REGISTRY.md](russian-software-registry.md), обновление техпака | Готово — техпак 0.9.101; юридические сканы / Astra+RED OS до 2028 — при подаче |
+| **S30 — Реестр/соответствие** | [russian-software-registry](russian-software-registry.md), обновление техпака | Готово — техпак 0.9.101; юридические сканы / Astra+RED OS до 2028 — при подаче |
 
 **Локально (07.07.2026):** pr-fast CI green (906 тестов); веб-консоль quality gates + Lighthouse operator OK.
 
@@ -862,13 +862,13 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Цель:** довести продукт до **10/10** по IoT / SCADA / MES / ERP Level 4 / analytics.
 
-**Правило единого roadmap:** все будущие фазы добавляются сюда — не создавать отдельные `roadmap-phase-N.md`. Глубокие чартеры (напр. [analytics-platform-roadmap.md](analytics-platform-roadmap.md)) остаются companion-документами; статусы и BL ID живут только в этом файле.
+**Правило единого roadmap:** все будущие фазы добавляются сюда — не создавать отдельные `roadmap-phase-N.md`. Глубокие чартеры (напр. [analytics-platform-roadmap](analytics-platform-roadmap.md)) остаются companion-документами; статусы и BL ID живут только в этом файле.
 
 | | |
 | --- | --- |
 | **Baseline** | Фаза 24 закрыта, `main`, июль 2026 |
 | **Обновлено** | 09.07.2026 (единый roadmap; аудит доменов; Фаза 33 analytics) |
-| **Оценка продукта** | Проверено по коду **~7,4/10** — [competitive-scorecard.md](competitive-scorecard.md) |
+| **Оценка продукта** | Проверено по коду **~7,4/10** — [competitive-scorecard](competitive-scorecard.md) |
 | **Цель** | 10/10 — см. [Определение готовности](#определение-готовности--1010-всего) |
 
 ### Сводка фаз 25–33
@@ -882,7 +882,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 ## Конкурентный показатель (базовый уровень → проверенный код → целевой показатель)
 
 Шкала 1–10 относительно ведущих коммерческих платформ Ignition/Kepware/PI/Opcenter/Tulip/зрелого context tree IIoT.  
-**Проверено по коду** — данные из `main` источника/тестов (0.9.102). Полная матрица: [COMPETITIVE_Scorecard.md](competitive-scorecard.md).
+**Проверено по коду** — данные из `main` источника/тестов (0.9.102). Полная матрица: [competitive-scorecard](competitive-scorecard.md).
 
 | Измерение | Базовый уровень | **Проверено по коду** | Цель | Фаза |
 | --------- | :------: | :---------------: | :----: | ----- |
@@ -925,7 +925,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ## Аудит доменов — IoT / SCADA / MES / ERP (09.07.2026)
 
-Аудит домена относительно ведущих платформ (Kepware, Ignition, PI, Opcenter, Tulip). **Проверено по коду ~7,4/10** ([competitive-scorecard.md](competitive-scorecard.md)); prod **0.9.105**. Оценка: сильная application platform; до лидерства не хватает **промышленной глубины** (честный OT, живой ERP, полевой MES, AI без stub) — не ещё одного слоя фич.
+Аудит домена относительно ведущих платформ (Kepware, Ignition, PI, Opcenter, Tulip). **Проверено по коду ~7,4/10** ([competitive-scorecard](competitive-scorecard.md)); prod **0.9.105**. Оценка: сильная application platform; до лидерства не хватает **промышленной глубины** (честный OT, живой ERP, полевой MES, AI без stub) — не ещё одного слоя фич.
 
 **Стратегия:** ISPF — **не** полный ERP (SAP/1C). Цель Level 4 — надёжные коннекторы ISA-95. Полный MES класса Opcenter — **не** «всё в ядре»: первоклассные MES-объекты + сертифицированные bundles + 1–2 живых цеха. Ров — скорость решений (AI + low-code) при OT-доверии уровня Kepware.
 
@@ -1003,16 +1003,16 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |
-| БЛ-140 | **ТОП-20 ПРОМЫШЛЕНИЙ ПРОМЫШЛЕННОСТИ** | P0 | Modbus×3, OPC UA, сервер OPC UA, S7, BACnet, MQTT, SNMP, HTTP, гибкий, IEC-104, DNP3, DLMS, EtherNet/IP, мост OPC DA, GPS — `DriverMaturity.PRODUCTION`, тест взаимодействия зелёный, [DRIVERS.md](drivers.md) обновлён |
+| БЛ-140 | **ТОП-20 ПРОМЫШЛЕНИЙ ПРОМЫШЛЕННОСТИ** | P0 | Modbus×3, OPC UA, сервер OPC UA, S7, BACnet, MQTT, SNMP, HTTP, гибкий, IEC-104, DNP3, DLMS, EtherNet/IP, мост OPC DA, GPS — `DriverMaturity.PRODUCTION`, тест взаимодействия зелёный, [drivers](drivers.md) обновлён |
 | БЛ-141 | **Лаборатория взаимодействия драйверов** | P0 | Фикстуры Docker для каждого драйвера, рабочий процесс CI `driver-interop.yml`, задержка отчёта + двусторонняя запись |
 | БЛ-142 | **Событие→переменная в драйвере** | Р1 | Потоки MQTT/Kafka → динамические переменные; интеграционный тест |
 | БЛ-143 | **Сервер OPC UA GA** | Р1 | Внешние UA-клиенты: подписывайтесь, читайте, пишите; взаимодействие с UA Expert / prosys |
-| БЛ-144 | **Драйвер ДДК** | Р1 | `packages/ispf-driver-ddk`, шаблон, 3 эталонных пользовательских драйвера, [DRIVER_PROMOTION.md](driver-promotion.md) |
-| БЛ-145 | **Агент Edge GA** | Р1 | Переадресация хранения, автономный буфер, синхронизация федерации — задержка полей на 30 дней, [FEDERATION.md](federation.md) |
+| БЛ-144 | **Драйвер ДДК** | Р1 | `packages/ispf-driver-ddk`, шаблон, 3 эталонных пользовательских драйвера, [driver-promotion](driver-promotion.md) |
+| БЛ-145 | **Агент Edge GA** | Р1 | Переадресация хранения, автономный буфер, синхронизация федерации — задержка полей на 30 дней, [federation](federation.md) |
 
 **Этап «Метрика»:** 20 ПРОИЗВОДСТВЕННЫХ драйверов; 0 beta в топ-промышленном списке; 3 пилотных ОТ-объекта без промежуточного программного обеспечения.
 
-**Связанные документы:** [DRIVERS.md](drivers.md), [DRIVER_PROMOTION.md](driver-promotion.md), [ADR-0022](decisions/0022-driver-production-matrix.md).
+**Связанные документы:** [drivers](drivers.md), [driver-promotion](driver-promotion.md), [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md).
 
 ---
 
@@ -1022,17 +1022,17 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |
-| БЛ-146 | **Библиотека символов P&ID v2** | Р1 | 200+ символов ISA, конвейер импорта, [SCADA_SYMBOL_LIBRARY.md](scada-symbol-library.md), юридический аудит |
+| БЛ-146 | **Библиотека символов P&ID v2** | Р1 | 200+ символов ISA, конвейер импорта, [scada-symbol-library](scada-symbol-library.md), юридический аудит |
 | БЛ-147 | **Профессиональный редактор мимики** | Р1 | Множественный выбор, слои, отмена/повтор, навигация с помощью клавиатуры — WCAG |
 | БЛ-148 | **Режим видеостены** | П2 | Макет приборной панели 2×2…4×4, автоматическое масштабирование |
 | БЛ-149 | **Отладчик выражений** | Р1 | Пошаговое выполнение CEL/привязок в веб-консоли, точки останова |
-| БЛ-150 | **Живая таблица, версия 2** | П2 | Обновление ячеек в реальном времени, межтабличные ссылки, экспорт — [SPREADSHEET_WIDGET.md](spreadsheet-widget.md) |
+| БЛ-150 | **Живая таблица, версия 2** | П2 | Обновление ячеек в реальном времени, межтабличные ссылки, экспорт — [spreadsheet-widget](spreadsheet-widget.md) |
 | БЛ-151 | **Оператор не в сети PWA** | Р1 | Сервис-воркер: дашборды + кеш мнемосхем; синхронизировать при повторном подключении |
-| БЛ-152 | **Перспективный интерфейс HMI** | Р1 | Имитировать 500 элементов ≥60 кадров в секунду; Lighthouse operator ≥95 — [HMI_QUALITY_GATES.md](hmi-quality-gates.md) |
+| БЛ-152 | **Перспективный интерфейс HMI** | Р1 | Имитировать 500 элементов ≥60 кадров в секунду; Lighthouse operator ≥95 — [hmi-quality-gates](hmi-quality-gates.md) |
 
 **Этап «Метрика»:** мини-ТЭК + конвейер SCADA на видеостене; оператор 8 ч не в сети.
 
-**Связанные документы:** [SCADA.md](scada.md), [WIDGETS.md](widgets.md), [HMI_QUALITY_GATES.md](hmi-quality-gates.md).
+**Связанные документы:** [scada](scada.md), [widgets](widgets.md), [hmi-quality-gates](hmi-quality-gates.md).
 
 ---
 
@@ -1042,12 +1042,12 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |
-| БЛ-153 | **MFA** | П2 | TOTP + WebAuthn; Интеграция Keycloak — [SECURITY.md](security.md) |
+| БЛ-153 | **MFA** | П2 | TOTP + WebAuthn; Интеграция Keycloak — [security](security.md) |
 | БЛ-154 | **ACL для каждой переменной** | П2 | чтение/запись переменных, событий, функций (не только на уровне объекта) |
-| БЛ-155 | **Строгая мультитенантность** | П2 | Вариант схемы БД для каждого тенанта; Сопоставление заявок тенантов OIDC — [MULTI_TENANT.md](multi-tenant.md) |
+| БЛ-155 | **Строгая мультитенантность** | П2 | Вариант схемы БД для каждого тенанта; Сопоставление заявок тенантов OIDC — [multi-tenant](multi-tenant.md) |
 | БЛ-156 | **Аудиторский след GA** | П2 | Неизменяемый журнал аудита, экспорт, веб-перехватчик SIEM |
 | БЛ-157 | **Шаблоны ролей** | П2 | Пользовательские роли; Разрешения области действия ISA-95 |
-| БЛ-158 | **Стеллаж для сигнализации** | П2 | Отложить/отложить рабочий процесс утверждения — расширение [AUTOMATION.md](automation.md) |
+| БЛ-158 | **Стеллаж для сигнализации** | П2 | Отложить/отложить рабочий процесс утверждения — расширение [automation](automation.md) |
 
 **Фаза метрики:** прохождение пентеста; тенант A ≠ тенант B в жестком режиме; MFA обязателен для администратора.
 
@@ -1062,12 +1062,12 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-159 | **Исторические уровни под ключ** | П2 | Горячий (PG/Timescale) → Теплый (CH) → Холодный (S3/паркет); профиль развертывания в один клик |
 | БЛ-160 | **Среда анализа активов** | П2 | Сводные данные, шаблоны KPI, производные теги (AF-lite) — **Готово** (БЛ-201) |
 | БЛ-161 | **Соглашение об уровне обслуживания для запроса историка** | П2 | совокупность 1 млн баллов <2 с; документально подтвержденный SLO |
-| БЛ-162 | **Путь к журналу событий в петабайтах** | П2 | сценарий переключения CH выполнен; лаборатория 10 млн событий/мин — [CLICKHOUSE_PROD_PLAYBOOK.md](clickhouse-prod-playbook.md) |
-| БЛ-163 | **Экспорт тенденций** | P3 | Массовая обработка Excel/CSV/Parquet, потоковая передача REST — [VARIABLE_HISTORY.md](variable-history.md) |
+| БЛ-162 | **Путь к журналу событий в петабайтах** | П2 | сценарий переключения CH выполнен; лаборатория 10 млн событий/мин — [clickhouse-prod-playbook](clickhouse-prod-playbook.md) |
+| БЛ-163 | **Экспорт тенденций** | P3 | Массовая обработка Excel/CSV/Parquet, потоковая передача REST — [variable-history](variable-history.md) |
 
 **Этап метрики:** запрос образцов лаборатории 1B; prod playbook ≤5 ручных шагов.
 
-**Связанные ADR:** [0016](decisions/0016-clickhouse-event-journal.md), [0035](decisions/0035-historian-dual-write.md), [0025](decisions/0025-cassandra-scylla-timeseries-store.md).
+**Связанные ADR:** [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [0025-cassandra-scylla-timeseries-store](decisions/0025-cassandra-scylla-timeseries-store.md).
 
 ---
 
@@ -1078,12 +1078,12 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |
 | BL-164 | **MES object types** | P1 | `WORK_ORDER`, `OPERATION`, `LOT`, `SHIFT`, `QUALITY_RECORD` в дереве |
-| БЛ-165 | **Первоклассный OEE** | Р1 | Платформа BFF + дашборды; Пути ISA-95 — [ISA95_CATALOG.md](isa95-catalog.md) |
+| БЛ-165 | **Первоклассный OEE** | Р1 | Платформа BFF + дашборды; Пути ISA-95 — [isa95-catalog](isa95-catalog.md) |
 | БЛ-166 | **Отправка заказа на работу** | Р1 | BPMN + рабочая очередь + подтверждение мобильного оператора |
 | БЛ-167 | **Модуль качества** | П2 | Диаграммы SPC, отслеживание дефектов, отчеты о прослеживаемости |
 | БЛ-168 | **Облегченная пакетная обработка ISA-88** | П2 | Рецепт + этап + экземпляр пакета (на основе рабочего процесса) |
-| БЛ-169 | **Исходящие ERP (живой коннектор)** | **P0** | Реальный адаптер SAP **или** 1C (не stub); идемпотентная синхронизация + retry/DLQ; round-trip НСИ (заказы/материалы) — [isa95-catalog.md](isa95-catalog.md) Level 4 |
-| БЛ-170 | **Пакет сертификации MES** | Р1 | `mes-platform` пакет — развертывание ≤30 мин — [REFERENCE_MES_OEE_WALKTHROUGH.md](reference-mes-oee-walkthrough.md) |
+| БЛ-169 | **Исходящие ERP (живой коннектор)** | **P0** | Реальный адаптер SAP **или** 1C (не stub); идемпотентная синхронизация + retry/DLQ; round-trip НСИ (заказы/материалы) — [isa95-catalog](isa95-catalog.md) Level 4 |
+| БЛ-170 | **Пакет сертификации MES** | Р1 | `mes-platform` пакет — развертывание ≤30 мин — [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) |
 
 **Этап метрики:** Прохождение OEE → производство MES за 1 день без пользовательской Java.
 
@@ -1100,7 +1100,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-173 | **Механизм запросов** | П2 | Динамические межобъектные запросы в дереве |
 | БЛ-174 | **Фильтры событий** | P3 | Многоразовые фильтры журнала событий |
 | БЛ-175 | **Крючки ML** | P3 | Обнаружение аномалий SPI + эталонная модель |
-| БЛ-176 | **Расширение BPMN** | П2 | События сообщений, эскалация, компенсация, DMN lite — [WORKFLOWS.md](workflows.md) |
+| БЛ-176 | **Расширение BPMN** | П2 | События сообщений, эскалация, компенсация, DMN lite — [workflows](workflows.md) |
 
 **Фаза метрики:** эскалация + CEP + программа процесса в одном проекте без специальных сценариев.
 
@@ -1116,9 +1116,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | -- | ------ | --------- | ---------- |
 | БЛ-177 | **Комплексное развертывание агента** | P0 | Агент: спецификация → пакет → развертывание → пользовательский интерфейс оператора без редактирования человеком |
 | БЛ-178 | **Пакет регрессии агента** | P0 | 50 сценариев CI (MES, SCADA, HVAC) — проходимость ≥95% |
-| БЛ-179 | **Агент оператора ГА** | Р1 | Охватываемые инструменты, память, ru/en — [AI_DEVELOPMENT.md](ai-development.md) |
+| БЛ-179 | **Агент оператора ГА** | Р1 | Охватываемые инструменты, память, ru/en — [ai-development](ai-development.md) |
 | БЛ-180 | **Генератор решений** | P0 | «Опиши завод» → дерево + дашборды + оповещения <15 мин |
-| БЛ-181 | **Наблюдение за агентами, версия 2** | П2 | Стоимость/задержка на инструмент; автоматическая повторная попытка при сбое — [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) |
+| БЛ-181 | **Наблюдение за агентами, версия 2** | П2 | Стоимость/задержка на инструмент; автоматическая повторная попытка при сбое — [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) |
 | БЛ-182 | **Контекстный пакет v2** | П2 | Автоматическое обновление с действующей платформы + индекс разрыва готовности |
 
 **Фаза метрики:** новый интегратор собирает демо-версию за 2 часа только через AI Studio.
@@ -1131,12 +1131,12 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |
-| БЛ-183 | **Marketplace GA** | P3 | Просмотреть, установить, подписать, пакет версий — [MARKETPLACE.md](marketplace.md) |
+| БЛ-183 | **Marketplace GA** | P3 | Просмотреть, установить, подписать, пакет версий — [marketplace](marketplace.md) |
 | БЛ-184 | **Партнерская программа** | P3 | 5 сертифицированных интеграторов, программа обучения |
 | БЛ-185 | **Symbol marketplace** | P3 | Пакеты P&ID сообщества с юридической экспертизой |
-| БЛ-186 | **K8s Helm chart** | П2 | Production Helm + operator — [DEPLOYMENT.md](deployment.md) |
-| БЛ-187 | **Кромочный профиль ARM** | П2 | Состав Raspberry Pi / промышленного шлюза — [DEMOSTANDS.md](demostands.md) |
-| БЛ-188 | **Менеджер менеджеров** | P3 | Хаб Федерации: более 10 узлов, единая оболочка оператора — [FEDERATION.md](federation.md) |
+| БЛ-186 | **K8s Helm chart** | П2 | Production Helm + operator — [deployment](deployment.md) |
+| БЛ-187 | **Кромочный профиль ARM** | П2 | Состав Raspberry Pi / промышленного шлюза — [demostands](demostands.md) |
+| БЛ-188 | **Менеджер менеджеров** | P3 | Хаб Федерации: более 10 узлов, единая оболочка оператора — [federation](federation.md) |
 | БЛ-189 | **Таблица результатов соревнований** | P3 | Матрица публичной готовности, обновляемая для каждого выпуска |
 | БЛ-190 | **Пути сертификации** | P3 | Экзамены на разработчика решений и администратора платформы |
 
@@ -1148,7 +1148,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Цель:** Historian / analytics **10/10** сверх AF-lite — calculation engine, материализованные rollups, multi-tag API, опциональный replica profile `analytics`. Один jar: **один сервер** (сценарий A) или **кластер с ролями** (сценарий C).
 
-**Charter:** [analytics-platform-roadmap.md](analytics-platform-roadmap.md) · **ADR:** [0038](decisions/0038-analytics-platform-architecture.md)
+**Charter:** [analytics-platform-roadmap](analytics-platform-roadmap.md) · **ADR:** [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md)
 
 | ID | Задача | Приоритет | Приёмка |
 | -- | ------ | --------- | ---------- |
@@ -1164,7 +1164,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-209 | **Каталог тегов & lineage UI** | P2 | Inspector analytics tag; граф upstream/downstream |
 | БЛ-210 | **Enterprise scale gates** | P2 | Готово — lab scripts, SLO, examples |
 | БЛ-211 | **CEL-over-historian выражения** | P2 | Готово — `hist.*`, helper `cel`, validate/evaluate API, редактор в Tag Inspector |
-| БЛ-212a | **API каталога analytics-функций** | P2 | Готово — `GET .../analytics/catalog`; dormant evaluators ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
+| БЛ-212a | **API каталога analytics-функций** | P2 | Готово — `GET .../analytics/catalog`; dormant evaluators ([0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md)) |
 | БЛ-212b | **UI браузер формул analytics** | P2 | Готово — каталог в модальном редакторе выражений; статические TS-каталоги удалены |
 | БЛ-213 | **Analytics extension packs (SPI)** | P2 | Готово — SPI `ispf-analytics-api`; `ispf-analytics-core-ext` (`energyDelta`) |
 | БЛ-214 | **Пользовательские формулы analytics** | P2 | Готово — CRUD `@analyticsFormulas`, Tier B, UI, import из bundle |
@@ -1175,7 +1175,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Предпосылка:** БЛ-160 через БЛ-201 до БЛ-203+.
 
-**Связанные:** [historian-tiers.md](historian-tiers.md), [variable-history.md](variable-history.md), [demostands.md](demostands.md), Фаза 28 БЛ-159…163.
+**Связанные:** [historian-tiers](historian-tiers.md), [variable-history](variable-history.md), [demostands](demostands.md), Фаза 28 БЛ-159…163.
 
 ---
 
@@ -1293,11 +1293,11 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 5. **Безопасность** — MFA + список управления доступом для каждой переменной + опция strict tenant isolation (BL-153…155)
 6. **HMI** — mimic на 500 эл при 60 кадрах в секунду, автономное PWA 8 часов (BL-151, BL-152)
 7. **Маркетплейс** — более 10 подписанных пакетов, 3 внешних партнера (BL-183, BL-184)
-8. **Оценочная карта** — все 14 измерений ≥9,5, ни одного ≤8 (BL-189) — **не выполнено** (проверено по коду ~7,4/10; см. [COMPETITIVE_Scorecard.md](competitive-scorecard.md))
+8. **Оценочная карта** — все 14 измерений ≥9,5, ни одного ≤8 (BL-189) — **не выполнено** (проверено по коду ~7,4/10; см. [competitive-scorecard](competitive-scorecard.md))
 9. **Честность OT** — ноль stub-драйверов с меткой PRODUCTION (БЛ-191)
 10. **Compliance pack** — опубликованы docs IEC 62443 / GAMP-lite (БЛ-192) — для enterprise-тендеров
 
-**Преждевременная отметка Done:** program-wave ~9.8 и закрытые BL без code-verified gates **отозваны** (см. [competitive-scorecard.md](competitive-scorecard.md)). **Пригодный Done** — ниже, строже, чем просто закрыть строки BL.
+**Преждевременная отметка Done:** program-wave ~9.8 и закрытые BL без code-verified gates **отозваны** (см. [competitive-scorecard](competitive-scorecard.md)). **Пригодный Done** — ниже, строже, чем просто закрыть строки BL.
 
 ---
 
@@ -1336,7 +1336,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | Пригодный результат | Доказательство | БЛ |
 | ------------------- | -------------- | -- |
-| Интегратор подключает объект без middleware | 3 пилота **soak 7 дней** + журнал инцидентов — [field-pilot-playbook.md](field-pilot-playbook.md) | БЛ-140, 141, 191 |
+| Интегратор подключает объект без middleware | 3 пилота **soak 7 дней** + журнал инцидентов — [field-pilot-playbook](field-pilot-playbook.md) | БЛ-140, 141, 191 |
 | Запись и quality flags доверяют | Interop CI write round-trip; матрица = код | БЛ-141, 191 |
 | Edge переживает обрыв | Store-forward + reconnect; federation sync измерен | БЛ-145 |
 
@@ -1357,7 +1357,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | Честная матрица | Ноль `PRODUCTION` у stub-классов; CI-тест зелёный |
 | Доверенный interop | Write round-trip в `driver-interop-smoke.sh` для `modbus-tcp`, `mqtt`, `opcua` |
 | Пилот запущен | Modbus: площадка названа, журнал дни 1–3, чеклист §1 в работе |
-| Scorecard | [competitive-scorecard.md](competitive-scorecard.md) изм. 3 с путями в коде |
+| Scorecard | [competitive-scorecard](competitive-scorecard.md) изм. 3 с путями в коде |
 
 #### Поток A — БЛ-191 честность матрицы (код)
 
@@ -1404,7 +1404,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 #### Журнал soak пилота {#pilot-soak-journal}
 
-Копировать в тикет или appendix. Одна таблица на пилот ([field-pilot-playbook.md](field-pilot-playbook.md) § Close-out).
+Копировать в тикет или appendix. Одна таблица на пилот ([field-pilot-playbook](field-pilot-playbook.md) § Close-out).
 
 | День | Дата | Тегов online | Инциденты (P0/P1) | Historian OK | Заметки |
 | ---- | ---- | ------------ | ----------------- | ------------ | ------- |
@@ -1544,13 +1544,13 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 
 | Документ | Назначение |
 | -------- | ---------- |
-| [APPLICATIONS.md](applications.md) | Развертывание API, REQ-PF |
-| [DEPLOYMENT.md](deployment.md) | Prod, кластерный Runbook |
-| [DRIVERS.md](drivers.md) | Каталог драйверов |
-| [ФЕДЕРАЦИЯ.md](federation.md) | Пограничная федерация |
-| [LOAD_TESTING.md](load-testing.md) | Нагрузочные гейты |
-| [PLATFORM_EVOLUTION.md](platform-evolution.md) | История |
-| [analytics-platform-roadmap.md](analytics-platform-roadmap.md) | Чартер Фазы 33 (БЛ-200…210) — статус в этом файле |
+| [applications](applications.md) | Развертывание API, REQ-PF |
+| [deployment](deployment.md) | Prod, кластерный Runbook |
+| [drivers](drivers.md) | Каталог драйверов |
+| [federation](federation.md) | Пограничная федерация |
+| [load-testing](load-testing.md) | Нагрузочные гейты |
+| [platform-evolution](platform-evolution.md) | История |
+| [analytics-platform-roadmap](analytics-platform-roadmap.md) | Чартер Фазы 33 (БЛ-200…210) — статус в этом файле |
 | [решения/](decisions/) | АДР |
 
 ---
@@ -1563,7 +1563,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | 09.07.2026 | Добавлена [§ Ретроспектива](#retrospective) — эпохи, закрытый vs активный backlog, обзор Фазы 25–33 |
 | 09.07.2026 | Аудит доменов IoT/SCADA/MES/ERP: БЛ-169 → P0; БЛ-191…193; Фаза 33 analytics БЛ-200…210 |
 | 09.07.2026 | **Политика поля для драйверов:** ready-for-field только после именованной полевой задачи; БЛ-140 → Частичный (playbook-ready, не field Done) |
-| 07.07.2026 | Фазы 25–33 этапов 25–32: [roadmap.md](roadmap.md), BL-140…190 |
+| 07.07.2026 | Фазы 25–33 этапов 25–32: [roadmap](roadmap.md), BL-140…190 |
 | 07.07.2026 | Очистка хвоста: синхронизация ROADMAP (BL 0 Частичная, 23.24 Готово); CH проверить безопасность дыма |
 | 07.07.2026 | S30: технический пакет реестра 0.9.101; S29 Lighthouse operator; quality gates 5/5 |
 | 07.07.2026 | S27 Готово: усиление безопасности федерации; pr-fast CI зелёный (906 тестов) |

@@ -8,8 +8,8 @@ Accepted (2026-07-04)
 
 ISPF stores high-frequency time-series in two paths:
 
-1. **Event journal** — `EventJournalStore` ([0015](0015-event-history-timescale.md), [0016](0016-clickhouse-event-journal.md)).
-2. **Variable historian** — `VariableHistoryWriteStore` + `VariableHistoryQueryStore` ([0017](0017-telemetry-ingest-pipeline.md), BL-40).
+1. **Event journal** — `EventJournalStore` ([0015-event-history-timescale](0015-event-history-timescale.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)).
+2. **Variable historian** — `VariableHistoryWriteStore` + `VariableHistoryQueryStore` ([0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md), BL-40).
 
 Current backends: `jdbc` (PostgreSQL/Timescale, default) and `clickhouse` (opt-in). For deployments that already run Cassandra or Scylla (CQL-compatible cluster), a third backend is needed without duplicating the hot path (`EventJournalAsyncWriter`, `VariableHistoryAsyncWriter`).
 
@@ -41,6 +41,6 @@ PostgreSQL remains for the relational core (object tree, workflow, RBAC).
 
 ## Related
 
-- [0016](0016-clickhouse-event-journal.md)
-- [0017](0017-telemetry-ingest-pipeline.md)
-- [DEPLOYMENT.md](../deployment.md)
+- [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
+- [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md)
+- [deployment](../deployment.md)

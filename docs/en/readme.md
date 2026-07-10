@@ -25,7 +25,7 @@
 | [Bindings](bindings.md) | CEL and platform bindings |
 | [Platform logic](platform-logic.md) | Rules, dashboard context |
 | [Variable history](variable-history.md) | Time-series, retention |
-| [REST API](api.md) | Endpoints reference |
+| [api](api.md) | Endpoints reference |
 | [Applications](applications.md) | Bundles, BFF, scheduler |
 | [Reports](reports.md) | SQL reports, CSV export |
 | [Roadmap](roadmap.md) | Single growing roadmap: Phase 0–33, BL-01…210, Phases 25–33 |
@@ -54,6 +54,18 @@
 | [Field pilot playbook](field-pilot-playbook.md) | OT validation runbooks |
 | [Historian tiers](historian-tiers.md) | JDBC, ClickHouse, dual-write |
 | [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Production rollout |
+| [Cluster](cluster.md) | Multi-replica HA ([0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md)) |
+
+## Analytics
+
+| Document | Description |
+|----------|-------------|
+| [Historian cookbook](analytics-historian-cookbook.md) | Recipes, binding rules, rollups |
+| [Formulas and packs](analytics-formulas-and-packs.md) | Expression packs, deploy |
+| [Analytics roadmap](analytics-platform-roadmap.md) | BL-200…210 charter |
+| [Tag catalog API](analytics-tag-catalog.md) | Deployed analytics tags |
+| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Analytics platform architecture |
+| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Function catalog |
 
 ## AI / automation / MES
 
@@ -73,7 +85,7 @@
 |----------|-------------|
 | [Deployment](deployment.md) | Docker, env vars |
 | [Demostand profiles](demostands.md) | Prod, lab, edge topologies |
-| [Cluster](cluster.md) | Multi-replica |
+| [Cluster](cluster.md) | Multi-replica runbook |
 | [Federation](federation.md) | Hub / edge peers |
 | [Security](security.md) | RBAC, MFA |
 | [Observability](observability.md) | Metrics, diagnostics |
