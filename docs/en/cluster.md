@@ -400,7 +400,7 @@ This section is the **canonical order** for bringing up a multi-profile cluster:
 | replica-4 | `io` | no | Driver ownership, replica-sync, schedulers |
 | worker-* | `compute` | no | `platform_jobs` consumer (async reports) |
 
-Lab compose + nginx: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf).  
+Lab compose + nginx: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/local/nginx/cluster-lab.conf`](../deploy/local/nginx/cluster-lab.conf).  
 VPS host-network example: [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml) (ports `8081`…`8084`).
 
 ### Startup order (staged bootstrap)
@@ -486,7 +486,7 @@ Writes for catalog seeding and operator API must hit **edge-api**, not `io` or `
 
 ### Lab BL-210 pipeline (after cluster is UP)
 
-From workstation (SSH password in `ISPF_LAB_PASSWORD`):
+From workstation (SSH key — `ssh ispf-lab`, see [lab-event-journal-stress.md](lab-event-journal-stress.md#workstation-ssh-one-time)):
 
 ```powershell
 python deploy/run_lab_bl210_launch.py --force   # full reset + remote nohup

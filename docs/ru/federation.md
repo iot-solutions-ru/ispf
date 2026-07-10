@@ -327,7 +327,7 @@ export ISPF_SOAK_BASE_URL=https://edge-site.example
 export ISPF_SOAK_TOKEN=<admin-or-read-token>
 export ISPF_SOAK_OUTBOUND_AGENT_ID=<uuid>   # optional disconnect/reconnect cycles
 export ISPF_DATA_DIR=/var/lib/ispf          # optional persist file check
-bash deploy/tools/agent-store-forward-soak.sh
+bash deploy/local/tools/agent-store-forward-soak.sh
 ```
 
 | Окружение | По умолчанию | Описание |

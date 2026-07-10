@@ -9,8 +9,8 @@ Full recipes (OEE, tag chains, CEL): [analytics-historian-cookbook.md](../../doc
 **Production reference (3-tag chain + dashboard):** [cookbook Recipe 5](../../docs/en/analytics-historian-cookbook.md#recipe-5--full-production-example-analytics-demo)
 
 ```powershell
-python deploy/tools/setup-historian-chain-example.py https://ispf.iot-solutions.ru
-python deploy/tools/setup-historian-chain-dashboard.py https://ispf.iot-solutions.ru
+python deploy/local/tools/setup-historian-chain-example.py https://ispf.iot-solutions.ru
+python deploy/local/tools/setup-historian-chain-dashboard.py https://ispf.iot-solutions.ru
 ```
 
 ## Prerequisites

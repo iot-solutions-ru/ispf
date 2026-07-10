@@ -20,6 +20,6 @@ Reference layout for **historian query SLO observability** — p50/p95 latency v
 | **Aggregate** | ≤ 1M points bucketed | **< 2 s** |
 | **Raw trend** | ≤ 10k points | **< 500 ms** |
 
-Defaults bind via `ispf.variable-history.slo` (`VariableHistorySloProperties`). Lab gate: `deploy/tools/historian-scale-benchmark.sh`.
+Defaults bind via `ispf.variable-history.slo` (`VariableHistorySloProperties`). Lab gate: `deploy/local/tools/historian-scale-benchmark.sh`.
 
 See [docs/en/variable-history.md](../docs/en/variable-history.md) § Query SLO (BL-161) and [docs/en/historian-tiers.md](../docs/en/historian-tiers.md).

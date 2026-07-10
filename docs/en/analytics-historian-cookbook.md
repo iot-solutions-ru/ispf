@@ -422,8 +422,8 @@ Enable historian on outputs **after** rules create the variables — otherwise P
 From repo root:
 
 ```powershell
-python deploy/tools/setup-historian-chain-example.py https://ispf.iot-solutions.ru
-python deploy/tools/setup-historian-chain-dashboard.py https://ispf.iot-solutions.ru
+python deploy/local/tools/setup-historian-chain-example.py https://ispf.iot-solutions.ru
+python deploy/local/tools/setup-historian-chain-dashboard.py https://ispf.iot-solutions.ru
 ```
 
 Default credentials: `admin` / `admin` (lab/prod only where configured).

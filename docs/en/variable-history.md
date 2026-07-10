@@ -106,8 +106,8 @@ Documented service-level objectives for the **analytics platform** plane (multi-
 
 Lab scripts:
 
-- `deploy/tools/analytics-scale-gate.sh` — multi-tag p95, optional catalog/CH gates
-- `deploy/tools/seed-analytics-scale-catalog.py` — synthetic 50k-tag catalog
+- `deploy/local/tools/analytics-scale-gate.sh` — multi-tag p95, optional catalog/CH gates
+- `deploy/local/tools/seed-analytics-scale-catalog.py` — synthetic 50k-tag catalog
 - JVM CI gate: `AnalyticsMultiTagQueryLoadTest` (`@Tag("load")`, nightly workflow)
 
 SLO targets API: `GET /api/v1/platform/analytics/analytics-slo`. Historian + analytics targets also appear under `analyticsSlo` in `GET .../historian-sla`.

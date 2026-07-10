@@ -89,7 +89,7 @@
       "y": 6,
       "w": 12,
       "h": 2,
-      "htmlJson": "<p>BL-161: aggregate ≤1M points p95 &lt;2s, raw ≤10k p95 &lt;500ms. Micrometer: <code>ispf.historian.query.latency</code>. Lab gate: <code>deploy/tools/historian-scale-benchmark.sh</code>.</p>"
+      "htmlJson": "<p>BL-161: aggregate ≤1M points p95 &lt;2s, raw ≤10k p95 &lt;500ms. Micrometer: <code>ispf.historian.query.latency</code>. Lab gate: <code>deploy/local/tools/historian-scale-benchmark.sh</code>.</p>"
     }
   ]
 }

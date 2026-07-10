@@ -29,7 +29,7 @@ Updated by the analytics engine on each tick; read by catalog API and **Computat
 
 ## Production reference
 
-Full chain + dashboard: [cookbook Recipe 5](analytics-historian-cookbook.md#recipe-5--full-production-example-analytics-demo) — `root.platform.devices.analytics-demo`, scripts `deploy/tools/setup-historian-chain-*.py`.
+Full chain + dashboard: [cookbook Recipe 5](analytics-historian-cookbook.md#recipe-5--full-production-example-analytics-demo) — `root.platform.devices.analytics-demo`, scripts `deploy/local/tools/setup-historian-chain-*.py`.
 
 ## REST API
 

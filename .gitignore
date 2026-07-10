@@ -60,7 +60,9 @@ deploy/staging/
 marketing/
 
 # VPS, lab, load-test, and ad-hoc server ops under deploy/
-# (keep helm, docker-compose, nginx templates, air-gap, prod-quickstart, driver-interop)
+# Universal scripts stay in deploy/ — see deploy/README.md
+deploy/local/
+!deploy/local/README.example.md
 deploy/vps-*
 deploy/lab-*
 deploy/lab_*
@@ -70,6 +72,7 @@ deploy/run_vps_*
 deploy/_lab_*
 deploy/_fetch_*
 deploy/tmp-*
+deploy/tmp_*
 deploy/_tmp_*
 deploy/lab_ssh.py
 deploy/ispf_auth.py
@@ -91,6 +94,7 @@ deploy/start-snmp-*
 deploy/update-snmp-*
 deploy/meter-*
 deploy/mqtt-*
+deploy/mqtt_loadtest_lib.py
 deploy/events-*
 deploy/cluster-scale-*
 deploy/cluster-smoke-*
@@ -102,9 +106,23 @@ deploy/scylla-sample-*
 deploy/snmpd-*
 deploy/coalesce-sweep-report-*
 deploy/tools/vps-*
+deploy/tools/_*.py
+deploy/tools/*-lab*
+deploy/tools/analytics-*-gate.sh
+deploy/tools/historian-scale-benchmark.sh
+deploy/tools/run-enterprise-l-gates.sh
+deploy/tools/seed-analytics-scale-catalog.py
+deploy/tools/agent-store-forward-soak.sh
+deploy/tools/setup-historian-chain-*
+deploy/tools/lab-ssh-install-key.py
+deploy/nginx-*-lab.conf
+deploy/nginx-lab.conf
+deploy/prometheus-observability-local.yml
+deploy/scale-dashboard-*.mjs
 deploy/tools/marketplace-patch-seed-on-vps.py
 deploy/tools/marketplace-vps-sync-catalog.sh
 deploy/tools/mes-platform-production-deploy.sh
+scripts/deploy-lab-*
 
 # Customer MES printing contour example (local only)
 examples/mes-printing-contour/

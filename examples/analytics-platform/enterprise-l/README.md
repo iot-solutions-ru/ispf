@@ -2,6 +2,8 @@
 
 **Target:** 5k–50k+ history-enabled tags, dedicated `analytics` replicas, ClickHouse cluster as warm read plane, **1B+** `variable_samples` rows for enterprise historian gate.
 
+> **Lab scripts** (`seed-analytics-scale-catalog.py`, `*-gate.sh`) live in **`deploy/local/`** (gitignored). Copy [`deploy/local/README.example.md`](../../deploy/local/README.example.md) on first clone.
+
 ## Topology
 
 | Component | Setting |
@@ -28,7 +30,7 @@ Documented lab spec (8 vCPU ClickHouse node, 32 GB RAM, NVMe):
 ### 1. Seed 50k history-enabled tags
 
 ```bash
-python deploy/tools/seed-analytics-scale-catalog.py \
+python deploy/local/tools/seed-analytics-scale-catalog.py \
   --base-url http://127.0.0.1:8080 \
   --tags 50000 \
   --batch 200
@@ -42,7 +44,7 @@ For dry-run on laptop use `--tags 1000` first.
 export ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://localhost:8123
 export ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false
 export ISPF_ANALYTICS_BENCH_CH_MIN_SAMPLES=1000000000
-bash deploy/tools/analytics-scale-gate.sh
+bash deploy/local/tools/analytics-scale-gate.sh
 ```
 
 Bulk ingest playbook: [clickhouse-prod-playbook.md](../../docs/en/clickhouse-prod-playbook.md) — dual-write validation, then replay lab MQTT at scale.
@@ -54,14 +56,14 @@ export ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false
 export ISPF_ANALYTICS_BENCH_CATALOG_MIN_TAGS=50000
 export ISPF_ANALYTICS_BENCH_MULTI_TAG_P95_MS=3000
 export ISPF_ANALYTICS_BENCH_TAG_COUNT=10
-bash deploy/tools/analytics-scale-gate.sh
+bash deploy/local/tools/analytics-scale-gate.sh
 ```
 
 Or run the full orchestrator (scale + materializer lag; historian optional):
 
 ```bash
 export ISPF_ANALYTICS_BENCH_SKIP_MATERIALIZER_GATE=false
-bash deploy/tools/run-enterprise-l-gates.sh
+bash deploy/local/tools/run-enterprise-l-gates.sh
 ```
 
 ### 4. JVM regression gate (CI)
@@ -89,7 +91,7 @@ Enterprise L proves **AF-capable** tier (derived tags, DAG engine, OLAP rollups,
 - [ ] Seed 50k tags (`seed-analytics-scale-catalog.py --tags 50000`)
 - [ ] ClickHouse ≥ 1B `variable_samples` rows
 - [ ] `ISPF_ANALYTICS_MATERIALIZER_ENABLED=true` on analytics replica; materializer lag < 5 min
-- [ ] Run gates: `bash deploy/tools/run-enterprise-l-gates.sh` with `ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_MATERIALIZER_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false`
+- [ ] Run gates: `bash deploy/local/tools/run-enterprise-l-gates.sh` with `ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_MATERIALIZER_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false`
 - [ ] JVM gate: `AnalyticsMultiTagQueryLoadTest` in CI (nightly `load-test.yml`)
 
 - [ ] `build/analytics-scale/analytics-scale-gate.md` — all gates **PASS**

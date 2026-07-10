@@ -198,7 +198,7 @@ bash ~/ispf/lab-cluster-bootstrap.sh
 # Ingress: http://<lab>:8000/
 ```
 
-Артефакты: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/lab-cluster-bootstrap.sh`](../deploy/lab-cluster-bootstrap.sh), [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf).
+Артефакты: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/lab-cluster-bootstrap.sh`](../deploy/lab-cluster-bootstrap.sh), [`deploy/local/nginx/cluster-lab.conf`](../deploy/local/nginx/cluster-lab.conf).
 
 **Локальный CI-стек (3 универсальные реплики):**
 

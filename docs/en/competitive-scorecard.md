@@ -80,7 +80,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** P0); production MES sites; genealogy lite (**BL-193**).
 3. **AI (6.5 → 9+):** live LLM regression in CI (`validate-scenarios.mjs --live --enforce-rate`); remove stub nightly results; real solution generator or document as keyword-only.
 4. **Ecosystem (5.0 → 9+):** persist partner enrollments; symbol pack install beyond in-memory stub; external signed bundles.
-5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
+5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
 6. **HMI (7.5 → 9+):** FPS gate on live WebSocket mimic path; alarm shelving persistence.
 7. **Compliance:** IEC 62443 / GAMP-lite tender pack (**BL-192**).
 

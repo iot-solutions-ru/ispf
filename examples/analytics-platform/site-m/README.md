@@ -37,8 +37,8 @@ python deploy/setup-mqtt-historian-devices.py --devices 32 --base-url http://127
 ### 4. Run historian + analytics gates
 
 ```bash
-bash deploy/tools/historian-scale-benchmark.sh
-bash deploy/tools/analytics-scale-gate.sh
+bash deploy/local/tools/historian-scale-benchmark.sh
+bash deploy/local/tools/analytics-scale-gate.sh
 ```
 
 Reports: `build/historian-scale/scale-benchmark.md`, `build/analytics-scale/analytics-scale-gate.md`.

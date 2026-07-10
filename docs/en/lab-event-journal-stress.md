@@ -5,8 +5,19 @@
 Load stand for **EVENT_JOURNAL_ONLY** fast path ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)): mqtt driver → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
 
 **Host:** `84.42.21.226`, SSH port `5031`, user `iot-solutions`  
+**SSH alias:** `ispf-lab` (Ed25519 key `~/.ssh/ispf_lab_ed25519`)  
 **HTTP:** `http://84.42.21.226:8000` (lab nginx)  
 **Stack:** `~/ispf` — `deploy/lab-test-host-compose.yml` + `deploy/lab-stress.env`
+
+### Workstation SSH (one-time)
+
+```bash
+# First run only — password via ISPF_LAB_PASSWORD env, never commit it
+python deploy/local/tools/lab-ssh-install-key.py
+ssh ispf-lab   # thereafter
+```
+
+Copy `deploy/local/lab_ssh.example.py` → `deploy/lab_ssh.py` (gitignored) if missing; Python lab scripts use `connect_ssh()`.
 
 ## Quick start
 

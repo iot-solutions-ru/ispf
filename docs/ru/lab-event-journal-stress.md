@@ -5,8 +5,19 @@
 Нагрузочный стенд для **EVENT_JOURNAL_ONLY** быстрого пути ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)): драйвер mqtt → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
 
 **Хост:** `84.42.21.226`, порт SSH `5031`, пользователь `iot-solutions`  
+**SSH alias:** `ispf-lab` (ключ Ed25519 `~/.ssh/ispf_lab_ed25519`)  
 **HTTP:** `http://84.42.21.226:8000` (лаборатория nginx)  
 **Стек:** `~/ispf` — `deploy/lab-test-host-compose.yml` + `deploy/lab-stress.env`
+
+### SSH с рабочей станции (один раз)
+
+```bash
+# Первый запуск — пароль только через ISPF_LAB_PASSWORD, не коммитить
+python deploy/local/tools/lab-ssh-install-key.py
+ssh ispf-lab   # далее
+```
+
+Скопируйте `deploy/local/lab_ssh.example.py` → `deploy/lab_ssh.py` (в gitignore), если файла нет; Python-скрипты используют `connect_ssh()`.
 
 ## Быстрый старт
 

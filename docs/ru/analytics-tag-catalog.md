@@ -31,7 +31,7 @@
 
 ## Эталон на prod
 
-Полная цепочка и дашборд: [cookbook, рецепт 5](analytics-historian-cookbook.md#рецепт-5--полный-пример-на-prod-analytics-demo) — `root.platform.devices.analytics-demo`, скрипты `deploy/tools/setup-historian-chain-*.py`.
+Полная цепочка и дашборд: [cookbook, рецепт 5](analytics-historian-cookbook.md#рецепт-5--полный-пример-на-prod-analytics-demo) — `root.platform.devices.analytics-demo`, скрипты `deploy/local/tools/setup-historian-chain-*.py`.
 
 ## REST API
 
