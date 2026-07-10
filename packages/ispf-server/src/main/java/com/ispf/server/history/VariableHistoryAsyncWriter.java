@@ -156,10 +156,30 @@ public class VariableHistoryAsyncWriter {
     }
 
     private void spawnWorker() {
-        if (workers == null || activeWorkers.get() >= properties.resolvedWriterThreadsMax()) {
+        if (workers == null || !running) {
             return;
         }
-        workers.submit(this::writerLoop);
+        if (!reserveWorkerSlot()) {
+            return;
+        }
+        try {
+            workers.submit(this::writerLoop);
+        } catch (RuntimeException ex) {
+            activeWorkers.decrementAndGet();
+            throw ex;
+        }
+    }
+
+    private boolean reserveWorkerSlot() {
+        while (true) {
+            int active = activeWorkers.get();
+            if (active >= properties.resolvedWriterThreadsMax()) {
+                return false;
+            }
+            if (activeWorkers.compareAndSet(active, active + 1)) {
+                return true;
+            }
+        }
     }
 
     private void adjustWorkers() {
@@ -174,7 +194,6 @@ public class VariableHistoryAsyncWriter {
     }
 
     private void writerLoop() {
-        activeWorkers.incrementAndGet();
         int batchSize = Math.max(1, properties.getBatchSize());
         long flushIntervalMs = Math.max(1, properties.getFlushIntervalMs());
         try {

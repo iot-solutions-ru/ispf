@@ -50,6 +50,7 @@ class VariableHistoryAsyncWriterTest {
         properties.setFlushIntervalMs(60_000);
         properties.setWriterThreads(1);
         properties.setElasticWriterEnabled(false);
+        properties.setOverflowCoalesceEnabled(false);
         writer = new VariableHistoryAsyncWriter(properties, batchPersister, automationMetricsRecorder);
         writer.start();
     }
