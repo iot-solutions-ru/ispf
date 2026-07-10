@@ -59,10 +59,11 @@ tasks.register<Copy>("assembleAnalyticsPackDir") {
 }
 
 tasks.register<Zip>("assembleAnalyticsMarketplaceZip") {
-    dependsOn("assembleAnalyticsPackDir")
+    val packDirTask = tasks.named<Copy>("assembleAnalyticsPackDir")
+    dependsOn(packDirTask)
     archiveFileName.set("analytics-pack-demo-1.0.0.zip")
     destinationDirectory.set(rootProject.file("examples/marketplace-analytics-pack-demo"))
-    from(layout.buildDirectory.dir("analytics-packs/$packId"))
+    from(packDirTask.map { it.destinationDir })
 }
 
 tasks.named<Test>("test") {

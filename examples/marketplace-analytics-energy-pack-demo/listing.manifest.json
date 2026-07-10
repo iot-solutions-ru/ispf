@@ -1,0 +1,22 @@
+{
+  "slug": "ispf-analytics-energy-pack",
+  "title": "ISPF Energy Pack — energyDelta",
+  "description": "Free Tier C analytics extension for historian rules. Adds energyDelta(sourcePath, window): energy consumption delta over a historian window. Example: kWh consumed in the last hour.",
+  "pricing": "free",
+  "artifactKind": "analytics-pack",
+  "appId": null,
+  "packId": "ispf-analytics-energy-pack",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО «АйоТи Солюшнс»",
+  "vendorInn": "0000000000",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Analytics Team",
+  "vendorContactEmail": "marketplace@iot-solutions.ru",
+  "vendorContactPhone": "+7-000-000-00-00",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.127",
+  "bundleArtifact": "analytics-pack-energy-1.0.0.zip",
+  "tags": ["demo", "marketplace", "analytics", "historian", "energy", "delta"],
+  "changelog": "Initial energy analytics pack with energyDelta historian helper."
+}

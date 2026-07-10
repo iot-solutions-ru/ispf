@@ -68,22 +68,39 @@ else
   GATE_EXIT=1
 fi
 
-echo "==> Multi-tag query SLO (10 tags × 7d × 1h)"
+TAG_PREFIX="${ISPF_ANALYTICS_BENCH_TAG_PREFIX:-root.platform.devices.analytics-scale-lab}"
+TAG_VARIABLE="${ISPF_ANALYTICS_BENCH_TAG_VARIABLE:-temperature}"
+TAG_COUNT="${ISPF_ANALYTICS_BENCH_TAG_COUNT:-10}"
+
+echo "==> Multi-tag query SLO (${TAG_COUNT} tags × 7d × 1h)"
 FROM_ISO="$(date -u -d '7 days ago' +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v-7d +"%Y-%m-%dT%H:%M:%SZ")"
 TO_ISO="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-read -r -d '' QUERY_BODY <<EOF || true
-{
-  "tags": [
-    {"path": "root.platform.devices.demo-sensor-01", "variable": "temperature", "field": "value", "label": "demo"}
-  ],
-  "from": "${FROM_ISO}",
-  "to": "${TO_ISO}",
-  "bucket": "1h",
-  "agg": "avg",
-  "maxBuckets": 168
-}
-EOF
+QUERY_BODY="$(python3 - <<PY
+import json
+prefix = "${TAG_PREFIX}"
+variable = "${TAG_VARIABLE}"
+count = int("${TAG_COUNT}")
+pad = max(5, len(str(count)))
+tags = []
+for index in range(1, count + 1):
+    name = f"tag-{index:0{pad}d}"
+    tags.append({
+        "path": f"{prefix}.{name}",
+        "variable": variable,
+        "field": "value",
+        "label": name,
+    })
+print(json.dumps({
+    "tags": tags,
+    "from": "${FROM_ISO}",
+    "to": "${TO_ISO}",
+    "bucket": "1h",
+    "agg": "avg",
+    "maxBuckets": 168,
+}))
+PY
+)"
 
 LATENCIES_FILE="$(mktemp)"
 : > "$LATENCIES_FILE"

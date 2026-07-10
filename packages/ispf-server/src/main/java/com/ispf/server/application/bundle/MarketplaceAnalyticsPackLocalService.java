@@ -45,16 +45,8 @@ public class MarketplaceAnalyticsPackLocalService {
 
         List<Map<String, Object>> packs = new ArrayList<>();
         try {
-            if (Files.isRegularFile(root.resolve("listing.manifest.json"))) {
-                packs.add(loadPackListing(root));
-            } else {
-                try (Stream<Path> dirs = Files.list(root)) {
-                    for (Path dir : dirs.filter(Files::isDirectory).sorted().toList()) {
-                        if (Files.isRegularFile(dir.resolve("listing.manifest.json"))) {
-                            packs.add(loadPackListing(dir));
-                        }
-                    }
-                }
+            for (Path packDir : listPackDirectories(root)) {
+                packs.add(loadPackListing(packDir));
             }
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to scan local analytics packs: " + ex.getMessage(), ex);
@@ -116,40 +108,38 @@ public class MarketplaceAnalyticsPackLocalService {
     }
 
     private ResolvedListing resolveListing(Path root, String packId) throws Exception {
-        if (Files.isRegularFile(root.resolve("listing.manifest.json"))) {
-            Map<String, Object> row = loadPackListing(root);
+        for (Path packDir : listPackDirectories(root)) {
+            Map<String, Object> row = loadPackListing(packDir);
             String slug = stringValue(row.get("slug"));
             String directory = stringValue(row.get("directory"));
             if (packId.equals(slug) || packId.equals(directory) || packId.equals(stringValue(row.get("packId")))) {
                 return new ResolvedListing(
                         row,
-                        root.resolve("listing.manifest.json"),
-                        root,
-                        resolveZipArtifact(root, row)
+                        packDir.resolve("listing.manifest.json"),
+                        packDir,
+                        resolveZipArtifact(packDir, row)
                 );
-            }
-            throw new IllegalArgumentException("Unknown local analytics pack: " + packId);
-        }
-
-        try (Stream<Path> dirs = Files.list(root)) {
-            for (Path dir : dirs.filter(Files::isDirectory).sorted().toList()) {
-                if (!Files.isRegularFile(dir.resolve("listing.manifest.json"))) {
-                    continue;
-                }
-                Map<String, Object> row = loadPackListing(dir);
-                String slug = stringValue(row.get("slug"));
-                String directory = stringValue(row.get("directory"));
-                if (packId.equals(slug) || packId.equals(directory) || packId.equals(stringValue(row.get("packId")))) {
-                    return new ResolvedListing(
-                            row,
-                            dir.resolve("listing.manifest.json"),
-                            dir,
-                            resolveZipArtifact(dir, row)
-                    );
-                }
             }
         }
         throw new IllegalArgumentException("Unknown local analytics pack: " + packId);
+    }
+
+    private List<Path> listPackDirectories(Path root) throws Exception {
+        List<Path> dirs = new ArrayList<>();
+        if (Files.isRegularFile(root.resolve("listing.manifest.json"))) {
+            dirs.add(root);
+            return dirs;
+        }
+        try (Stream<Path> children = Files.list(root)) {
+            for (Path dir : children.filter(Files::isDirectory).sorted().toList()) {
+                String name = dir.getFileName().toString();
+                if (name.startsWith("marketplace-analytics-")
+                        && Files.isRegularFile(dir.resolve("listing.manifest.json"))) {
+                    dirs.add(dir);
+                }
+            }
+        }
+        return dirs;
     }
 
     private Path resolveZipArtifact(Path dir, Map<String, Object> row) {
@@ -232,9 +222,9 @@ public class MarketplaceAnalyticsPackLocalService {
     private Path resolveLocalRoot() {
         Path cwd = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
         for (int depth = 0; depth <= 4; depth++) {
-            Path demo = cwd.resolve("examples/marketplace-analytics-pack-demo");
-            if (Files.isDirectory(demo)) {
-                return demo;
+            Path examples = cwd.resolve("examples");
+            if (Files.isDirectory(examples) && hasMarketplaceAnalyticsPack(examples)) {
+                return examples;
             }
             Path parent = cwd.getParent();
             if (parent == null) {
@@ -242,8 +232,18 @@ public class MarketplaceAnalyticsPackLocalService {
             }
             cwd = parent;
         }
-        Path demo = Paths.get("examples/marketplace-analytics-pack-demo");
-        return Files.isDirectory(demo) ? demo : null;
+        Path examples = Paths.get("examples");
+        return Files.isDirectory(examples) && hasMarketplaceAnalyticsPack(examples) ? examples : null;
+    }
+
+    private static boolean hasMarketplaceAnalyticsPack(Path examplesDir) {
+        try (Stream<Path> dirs = Files.list(examplesDir)) {
+            return dirs.anyMatch(path -> Files.isDirectory(path)
+                    && path.getFileName().toString().startsWith("marketplace-analytics-")
+                    && Files.isRegularFile(path.resolve("listing.manifest.json")));
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     private static String stringValue(Object value) {

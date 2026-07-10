@@ -53,7 +53,15 @@ Bulk ingest playbook: [clickhouse-prod-playbook.md](../../docs/en/clickhouse-pro
 export ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false
 export ISPF_ANALYTICS_BENCH_CATALOG_MIN_TAGS=50000
 export ISPF_ANALYTICS_BENCH_MULTI_TAG_P95_MS=3000
+export ISPF_ANALYTICS_BENCH_TAG_COUNT=10
 bash deploy/tools/analytics-scale-gate.sh
+```
+
+Or run the full orchestrator (scale + materializer lag; historian optional):
+
+```bash
+export ISPF_ANALYTICS_BENCH_SKIP_MATERIALIZER_GATE=false
+bash deploy/tools/run-enterprise-l-gates.sh
 ```
 
 ### 4. JVM regression gate (CI)

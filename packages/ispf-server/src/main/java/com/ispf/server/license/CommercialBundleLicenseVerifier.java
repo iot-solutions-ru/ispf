@@ -35,10 +35,14 @@ public class CommercialBundleLicenseVerifier {
     }
 
     public void verifyOrWarn(String appId, Object manifest) {
+        verifyOrWarn(appId, manifest, false);
+    }
+
+    public void verifyOrWarn(String appId, Object manifest, boolean trustedMarketplaceFreeInstall) {
         Map<String, Object> root = objectMapper.convertValue(manifest, Map.class);
         Object licenseRaw = root.get("license");
         if (licenseRaw == null) {
-            if (properties.isRequireSignedBundles()) {
+            if (properties.isRequireSignedBundles() && !trustedMarketplaceFreeInstall) {
                 throw new CommercialLicenseException(
                         "Bundle manifest must include a signed license block (ispf.license.require-signed-bundles=true)"
                 );

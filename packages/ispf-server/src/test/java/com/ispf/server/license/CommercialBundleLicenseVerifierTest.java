@@ -100,6 +100,14 @@ class CommercialBundleLicenseVerifierTest {
     }
 
     @Test
+    void requireSignedBundlesAllowsTrustedMarketplaceFreeInstall() {
+        properties.setRequireSignedBundles(true);
+        properties.setEnforce(false);
+        Map<String, Object> manifest = baseManifest("free-marketplace-app");
+        assertDoesNotThrow(() -> verifier.verifyOrWarn("free-marketplace-app", manifest, true));
+    }
+
+    @Test
     void requireSignedBundlesAcceptsValidSignedLicense() throws Exception {
         properties.setRequireSignedBundles(true);
         properties.setEnforce(false);

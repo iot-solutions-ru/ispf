@@ -2,6 +2,7 @@ package com.ispf.server.platform.analytics;
 
 import com.ispf.analytics.engine.AnalyticsEvaluatorRegistry;
 import com.ispf.analytics.spi.AnalyticsFunctionDescriptor;
+import com.ispf.expression.PlatformBindingCatalog;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogParameter;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
@@ -52,6 +53,7 @@ public class AnalyticsCatalogRegistry {
         Map<String, AnalyticsCatalogEntry> catalog = new LinkedHashMap<>();
         registerEvaluatorBuiltins(catalog);
         registerHistorianCelBuiltins(catalog);
+        registerReactivePlatformBindings(catalog);
         registerPresets(catalog);
         return Collections.unmodifiableMap(new LinkedHashMap<>(catalog));
     }
@@ -221,6 +223,39 @@ public class AnalyticsCatalogRegistry {
                 "core",
                 "analytics-catalog-hist-" + helper
         );
+    }
+
+    private static void registerReactivePlatformBindings(Map<String, AnalyticsCatalogEntry> catalog) {
+        for (PlatformBindingCatalog.Entry binding : PlatformBindingCatalog.reactiveEntries()) {
+            List<String> tags = new ArrayList<>(List.of("reactive", "binding", "cel"));
+            if (binding.stateful()) {
+                tags.add("stateful");
+            }
+            if (binding.category() != null && !binding.category().isBlank()) {
+                tags.add(binding.category());
+            }
+            registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                    binding.id(),
+                    binding.displayName(),
+                    "A",
+                    List.of("reactive"),
+                    binding.syntax(),
+                    binding.parameters().stream()
+                            .map(param -> parameter(
+                                    param.name(),
+                                    param.type(),
+                                    param.required(),
+                                    param.description(),
+                                    param.defaultValue()
+                            ))
+                            .toList(),
+                    binding.description(),
+                    binding.examples() == null ? List.of(binding.syntax()) : List.copyOf(binding.examples()),
+                    List.copyOf(tags),
+                    "core",
+                    "analytics-catalog-reactive-" + binding.id().toLowerCase()
+            ));
+        }
     }
 
     private static void registerPresets(Map<String, AnalyticsCatalogEntry> catalog) {

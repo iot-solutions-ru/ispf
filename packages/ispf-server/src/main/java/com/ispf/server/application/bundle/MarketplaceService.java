@@ -239,7 +239,7 @@ public class MarketplaceService {
     ) throws Exception {
         ApplicationBundleDeployService.BundleManifest manifest =
                 BundleManifestJsonSupport.parse(objectMapper, manifestJson);
-        Map<String, Object> deployResult = deployService.deploy(appId, manifest);
+        Map<String, Object> deployResult = deployService.deploy(appId, manifest, true);
         Map<String, Object> result = new LinkedHashMap<>(deployResult);
         result.put("marketplaceId", marketplaceId);
         result.put("listingSlug", slug);

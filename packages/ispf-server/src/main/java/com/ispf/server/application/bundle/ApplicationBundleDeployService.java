@@ -132,8 +132,12 @@ public class ApplicationBundleDeployService {
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
+        return deploy(appId, manifest, false);
+    }
+
+    public Map<String, Object> deploy(String appId, BundleManifest manifest, boolean trustedMarketplaceFreeInstall) {
         BundleSemverSupport.requireValid(manifest.version());
-        licenseVerifier.verifyOrWarn(appId, manifest);
+        licenseVerifier.verifyOrWarn(appId, manifest, trustedMarketplaceFreeInstall);
         dependencyVerifier.verify(appId, manifest.requires());
         List<String> applied = new ArrayList<>();
         List<String> skipped = new ArrayList<>();

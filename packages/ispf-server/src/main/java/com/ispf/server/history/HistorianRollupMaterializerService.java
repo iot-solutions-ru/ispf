@@ -18,6 +18,9 @@ public class HistorianRollupMaterializerService {
     private static final int MAX_BUCKETS_PER_TICK = 2_000;
     private static final Duration INITIAL_LOOKBACK = Duration.ofDays(30);
 
+    private volatile HistorianRollupMaterializerService.TickResult lastTick =
+            HistorianRollupMaterializerService.TickResult.skipped("not run yet");
+
     private final ClickHouseHistorianRollupStore rollupStore;
     private final HistorianRollupSubscriptionIndex subscriptionIndex;
     private final AnalyticsProperties analyticsProperties;
@@ -41,9 +44,14 @@ public class HistorianRollupMaterializerService {
                 && analyticsClusterWorkloadService.isAnalyticsWorkloadActive();
     }
 
+    public HistorianRollupMaterializerService.TickResult lastTick() {
+        return lastTick;
+    }
+
     public TickResult materializeTick() {
         if (!isEnabled()) {
-            return TickResult.skipped("materializer disabled or ClickHouse not configured");
+            lastTick = TickResult.skipped("materializer disabled or ClickHouse not configured");
+            return lastTick;
         }
         long started = System.nanoTime();
         Instant now = Instant.now();
@@ -71,7 +79,8 @@ public class HistorianRollupMaterializerService {
         }
 
         long latencyMs = (System.nanoTime() - started) / 1_000_000L;
-        return new TickResult(true, subscriptions, bucketsWritten, maxLagMs, latencyMs, null);
+        lastTick = new TickResult(true, subscriptions, bucketsWritten, maxLagMs, latencyMs, null);
+        return lastTick;
     }
 
     public RebuildResult rebuild(

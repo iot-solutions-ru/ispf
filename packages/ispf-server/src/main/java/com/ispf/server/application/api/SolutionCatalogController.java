@@ -2,6 +2,7 @@ package com.ispf.server.application.api;
 
 import com.ispf.server.application.bundle.MarketplaceService;
 import com.ispf.server.application.bundle.SolutionCatalogService;
+import com.ispf.server.license.CommercialLicenseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -88,6 +89,8 @@ public class SolutionCatalogController {
     ) {
         try {
             return marketplaceService.installFreeListing(marketplaceId, slug);
+        } catch (CommercialLicenseException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
         } catch (MarketplaceService.MarketplaceRemoteException ex) {
             throw mapRemote(ex);
         } catch (IllegalArgumentException ex) {
@@ -108,6 +111,8 @@ public class SolutionCatalogController {
         try {
             String activationCode = body != null ? body.get("activationCode") : null;
             return marketplaceService.activatePaidListing(marketplaceId, slug, activationCode);
+        } catch (CommercialLicenseException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
         } catch (MarketplaceService.MarketplaceRemoteException ex) {
             throw mapRemote(ex);
         } catch (IllegalArgumentException ex) {

@@ -55,6 +55,48 @@ class AnalyticsCatalogApiTest {
     }
 
     @Test
+    void getCatalogIncludesReactiveBinding() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/analytics/catalog/movingAvg"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("movingAvg"))
+                .andExpect(jsonPath("$.tier").value("A"))
+                .andExpect(jsonPath("$.pack").value("core"))
+                .andExpect(jsonPath("$.kinds[?(@ == 'reactive')]").exists());
+    }
+
+    @Test
+    void validateReactiveCatalogExpressionReturnsValidForPlatformBinding() throws Exception {
+        mockMvc.perform(post("/api/v1/platform/analytics/catalog/validate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "kind": "reactive",
+                                  "expression": "movingAvg(temperature, 60)",
+                                  "context": {}
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.errors.length()").value(0));
+    }
+
+    @Test
+    void validateReactiveCatalogExpressionReturnsInvalidForBrokenExpression() throws Exception {
+        mockMvc.perform(post("/api/v1/platform/analytics/catalog/validate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "kind": "reactive",
+                                  "expression": "movingAvg(",
+                                  "context": {}
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(false))
+                .andExpect(jsonPath("$.errors.length()").value(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
     void validateCatalogExpressionReturnsValidForCorrectExpression() throws Exception {
         mockMvc.perform(post("/api/v1/platform/analytics/catalog/validate")
                         .contentType(MediaType.APPLICATION_JSON)

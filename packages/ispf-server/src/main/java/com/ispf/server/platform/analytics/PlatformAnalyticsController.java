@@ -1,5 +1,6 @@
 package com.ispf.server.platform.analytics;
 
+import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.server.history.HistorianQueryMetricsRecorder;
 import com.ispf.server.config.VariableHistorySloProperties;
 import com.ispf.server.config.AnalyticsSloProperties;
@@ -167,6 +168,22 @@ public class PlatformAnalyticsController {
         return rollupMaterializerService.rebuild(path, variable, field, bucket, from, to);
     }
 
+    /** Materializer health snapshot for Enterprise L lab gates (BL-210). */
+    @GetMapping("/rollups/materializer/status")
+    public Map<String, Object> materializerStatus() {
+        HistorianRollupMaterializerService.TickResult tick = rollupMaterializerService.lastTick();
+        Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("enabled", rollupMaterializerService.isEnabled());
+        payload.put("ran", tick.ran());
+        payload.put("subscriptions", tick.subscriptions());
+        payload.put("bucketsWritten", tick.bucketsWritten());
+        payload.put("maxLagMs", tick.maxLagMs());
+        payload.put("latencyMs", tick.latencyMs());
+        payload.put("skipReason", tick.skipReason());
+        payload.put("maxLagSecondsSlo", analyticsSloProperties.getMaterializerMaxLagSeconds());
+        return payload;
+    }
+
     /** Multi-tag aligned historian aggregate query (BL-206). */
     @PostMapping("/query")
     public AnalyticsQueryResponse query(@RequestBody AnalyticsQueryRequest request) {
@@ -200,8 +217,22 @@ public class PlatformAnalyticsController {
     public AnalyticsExpressionService.ValidateResult validateCatalogExpression(
             @RequestBody AnalyticsCatalogValidateRequest request
     ) {
+        if ("reactive".equalsIgnoreCase(request.kind())) {
+            return validateReactiveExpression(request.expression());
+        }
         String objectPath = resolveObjectPath(request.context());
         return expressionService.validate(request.expression(), objectPath);
+    }
+
+    private static AnalyticsExpressionService.ValidateResult validateReactiveExpression(String expression) {
+        try {
+            BindingExpressionValidator.validateOrThrow(expression);
+            String normalized = expression == null ? "" : expression.trim();
+            return new AnalyticsExpressionService.ValidateResult(true, normalized, List.of(), List.of());
+        } catch (Exception ex) {
+            String message = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+            return new AnalyticsExpressionService.ValidateResult(false, null, List.of(), List.of(message));
+        }
     }
 
     /** List Tier B user-defined analytics formulas (BL-214). */
