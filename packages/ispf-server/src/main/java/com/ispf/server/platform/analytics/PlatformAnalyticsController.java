@@ -15,6 +15,8 @@ import com.ispf.server.platform.analytics.catalog.AnalyticsTagCatalogEntry;
 import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormulaUpdateResponse;
+import com.ispf.server.platform.analytics.formula.BindingFormulaRebindService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +57,7 @@ public class PlatformAnalyticsController {
     private final AnalyticsCatalogService analyticsCatalogService;
     private final AnalyticsExpressionService expressionService;
     private final AnalyticsFormulaService formulaService;
+    private final BindingFormulaRebindService bindingFormulaRebindService;
 
     public PlatformAnalyticsController(
             AnalyticsDerivedTagService derivedTagService,
@@ -69,7 +72,8 @@ public class PlatformAnalyticsController {
             AnalyticsTagCatalogService tagCatalogService,
             AnalyticsCatalogService analyticsCatalogService,
             AnalyticsExpressionService expressionService,
-            AnalyticsFormulaService formulaService
+            AnalyticsFormulaService formulaService,
+            BindingFormulaRebindService bindingFormulaRebindService
     ) {
         this.derivedTagService = derivedTagService;
         this.historianQueryMetricsRecorder = historianQueryMetricsRecorder;
@@ -84,6 +88,7 @@ public class PlatformAnalyticsController {
         this.analyticsCatalogService = analyticsCatalogService;
         this.expressionService = expressionService;
         this.formulaService = formulaService;
+        this.bindingFormulaRebindService = bindingFormulaRebindService;
     }
 
     @PostMapping("/derived-tags/refresh")
@@ -211,15 +216,17 @@ public class PlatformAnalyticsController {
         return formulaService.create(formula);
     }
 
-    /** Update a Tier B analytics formula (BL-214). */
+    /** Update a Tier B analytics formula (BL-214). Rebinds binding rules that reference it. */
     @PutMapping("/formulas/{formulaId}")
-    public AnalyticsFormula updateFormula(
+    public AnalyticsFormulaUpdateResponse updateFormula(
             @PathVariable String formulaId,
             @RequestParam(required = false, defaultValue = AnalyticsFormula.SCOPE_SITE) String scope,
             @RequestParam(required = false) String appId,
             @RequestBody AnalyticsFormula formula
     ) {
-        return formulaService.update(formulaId, formula, scope, appId);
+        AnalyticsFormula saved = formulaService.update(formulaId, formula, scope, appId);
+        int reboundRules = bindingFormulaRebindService.rebindFormulaReferences(formulaId, scope, appId);
+        return new AnalyticsFormulaUpdateResponse(saved, reboundRules);
     }
 
     /** Delete a Tier B analytics formula (BL-214). */

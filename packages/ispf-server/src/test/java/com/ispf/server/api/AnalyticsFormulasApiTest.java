@@ -77,8 +77,9 @@ class AnalyticsFormulasApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBody.replace("Tank fill rate", "Tank fill rate v2")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.displayName").value("Tank fill rate v2"))
-                .andExpect(jsonPath("$.version").value(2));
+                .andExpect(jsonPath("$.formula.displayName").value("Tank fill rate v2"))
+                .andExpect(jsonPath("$.formula.version").value(2))
+                .andExpect(jsonPath("$.reboundRules").exists());
 
         mockMvc.perform(delete("/api/v1/platform/analytics/formulas/tank-fill-rate-test?scope=site"))
                 .andExpect(status().isOk());

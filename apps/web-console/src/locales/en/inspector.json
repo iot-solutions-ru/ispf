@@ -149,6 +149,7 @@
   "catalog.kind.reactive": "Reactive",
   "formula.saveAs": "Save as formula",
   "formula.saveTitle": "Save analytics formula",
+  "formula.editTitle": "Edit analytics formula",
   "formula.save": "Save formula",
   "formula.displayName": "Display name",
   "formula.id": "Formula id",

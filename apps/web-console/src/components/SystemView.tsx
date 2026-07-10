@@ -6,6 +6,7 @@ import EventJournalPanel from "./operator/EventJournalPanel";
 import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
 import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
 import PlatformBackupPanel from "./platform/PlatformBackupPanel";
+import AnalyticsFormulasPanel from "./platform/AnalyticsFormulasPanel";
 import PlatformChangeSetsPanel from "./platform/PlatformChangeSetsPanel";
 import PlatformSchedulesPanel from "./platform/PlatformSchedulesPanel";
 import SemanticExportPanel from "./platform/SemanticExportPanel";
@@ -17,6 +18,7 @@ type SystemTab =
   | "cluster"
   | "settings"
   | "solutions"
+  | "formulas"
   | "events"
   | "functions"
   | "bindings"
@@ -26,7 +28,7 @@ type SystemTab =
   | "backup";
 
 const SYSTEM_TABS: readonly SystemTab[] = [
-  "metrics", "cluster", "settings", "solutions", "events", "functions", "bindings", "changeSets", "schedules", "semanticExport", "backup",
+  "metrics", "cluster", "settings", "solutions", "formulas", "events", "functions", "bindings", "changeSets", "schedules", "semanticExport", "backup",
 ];
 
 export default function SystemView() {
@@ -38,6 +40,7 @@ export default function SystemView() {
     { id: "cluster", labelKey: "tab.cluster" },
     { id: "settings", labelKey: "tab.settings" },
     { id: "solutions", labelKey: "tab.solutions" },
+    { id: "formulas", labelKey: "tab.formulas" },
     { id: "events", labelKey: "tab.events" },
     { id: "functions", labelKey: "tab.functions" },
     { id: "bindings", labelKey: "tab.bindings" },
@@ -75,6 +78,7 @@ export default function SystemView() {
       {tab === "cluster" && <ClusterView />}
       {tab === "settings" && <SystemSettingsView />}
       {tab === "solutions" && <SolutionCatalogPanel />}
+      {tab === "formulas" && <AnalyticsFormulasPanel />}
       {tab === "events" && (
         <EventJournalPanel limit={100} showFilters objectPathFilter="" />
       )}

@@ -6,7 +6,7 @@
 
 См. [ADR-0041](decisions/0041-multi-tag-historian-computations.md) и [analytics-tag-catalog.md](analytics-tag-catalog.md).
 
-**Дорожная карта (как в PI AF):** единый каталог формул, плагины и свои формулы — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–215). Сейчас в UI и API — только встроенный набор; браузер каталога и «сохранить как формулу» в работе.
+**Дорожная карта (как в PI AF):** единый каталог формул, плагины и свои формулы — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–215). Каталог и «сохранить/применить формулу» доступны в редакторе выражений; менеджер формул — **Система → Формулы analytics**.
 
 ---
 

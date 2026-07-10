@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "../../ui/Modal";
-import { detectFormulaParameters } from "../../api/analyticsFormulas";
-import { useCreateAnalyticsFormula } from "../../hooks/useAnalyticsFormulas";
+import {
+  detectFormulaParameters,
+  type AnalyticsFormulaDto,
+} from "../../api/analyticsFormulas";
+import { useCreateAnalyticsFormula, useUpdateAnalyticsFormula } from "../../hooks/useAnalyticsFormulas";
 import type { AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
 
 interface SaveAnalyticsFormulaModalProps {
   open: boolean;
   expression: string;
   defaultKind: "historian" | "reactive";
+  formula?: AnalyticsFormulaDto | null;
   onClose: () => void;
-  onSaved?: () => void;
+  onSaved?: (reboundRules?: number) => void;
 }
 
 function slugifyId(value: string): string {
@@ -24,25 +28,39 @@ function slugifyId(value: string): string {
 
 export default function SaveAnalyticsFormulaModal({
   open,
-  expression,
+  expression: expressionProp,
   defaultKind,
+  formula = null,
   onClose,
   onSaved,
 }: SaveAnalyticsFormulaModalProps) {
-  const { t } = useTranslation(["inspector", "common"]);
+  const { t } = useTranslation(["inspector", "common", "system"]);
   const createMutation = useCreateAnalyticsFormula();
+  const updateMutation = useUpdateAnalyticsFormula();
+  const isEdit = formula != null;
   const [id, setId] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [kind, setKind] = useState<"historian" | "reactive">(defaultKind);
+  const [expression, setExpression] = useState(expressionProp);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
       return;
     }
+    setSaveMessage(null);
+    if (formula) {
+      setId(formula.id);
+      setDisplayName(formula.displayName);
+      setKind(formula.kind === "reactive" ? "reactive" : "historian");
+      setExpression(formula.expression);
+      return;
+    }
     setDisplayName("");
     setKind(defaultKind);
     setId("");
-  }, [open, defaultKind]);
+    setExpression(expressionProp);
+  }, [open, defaultKind, expressionProp, formula]);
 
   const parameters = useMemo<AnalyticsCatalogParameterDto[]>(() => {
     return detectFormulaParameters(expression).map((name: string) => ({
@@ -54,21 +72,39 @@ export default function SaveAnalyticsFormulaModal({
     }));
   }, [expression]);
 
+  const pending = createMutation.isPending || updateMutation.isPending;
+  const error = createMutation.error ?? updateMutation.error;
+
   const handleSave = async () => {
     const formulaId = id.trim() || slugifyId(displayName);
-    if (!formulaId) {
+    if (!formulaId || !expression.trim()) {
       return;
     }
-    await createMutation.mutateAsync({
+    const payload: AnalyticsFormulaDto = {
       id: formulaId,
       displayName: displayName.trim() || formulaId,
       kind,
       expression: expression.trim(),
       parameters,
-      version: 1,
-      scope: "site",
-      appId: null,
-    });
+      version: formula?.version ?? 1,
+      scope: formula?.scope ?? "site",
+      appId: formula?.appId ?? null,
+    };
+    if (isEdit) {
+      const result = await updateMutation.mutateAsync({
+        formulaId,
+        formula: payload,
+        scope: payload.scope,
+        appId: payload.appId ?? undefined,
+      });
+      if (result.reboundRules > 0) {
+        setSaveMessage(t("system:formulas.reboundRules", { count: result.reboundRules }));
+      }
+      onSaved?.(result.reboundRules);
+      onClose();
+      return;
+    }
+    await createMutation.mutateAsync(payload);
     onSaved?.();
     onClose();
   };
@@ -77,7 +113,7 @@ export default function SaveAnalyticsFormulaModal({
     <Modal
       open={open}
       stackLevel={1}
-      title={t("formula.saveTitle")}
+      title={isEdit ? t("formula.editTitle") : t("formula.saveTitle")}
       onClose={onClose}
       footer={
         <>
@@ -87,10 +123,10 @@ export default function SaveAnalyticsFormulaModal({
           <button
             type="button"
             className="btn primary"
-            disabled={!expression.trim() || createMutation.isPending}
+            disabled={!expression.trim() || pending}
             onClick={() => void handleSave()}
           >
-            {t("formula.save")}
+            {isEdit ? t("common:action.save") : t("formula.save")}
           </button>
         </>
       }
@@ -103,7 +139,7 @@ export default function SaveAnalyticsFormulaModal({
             value={displayName}
             onChange={(event) => {
               setDisplayName(event.target.value);
-              if (!id.trim()) {
+              if (!isEdit && !id.trim()) {
                 setId(slugifyId(event.target.value));
               }
             }}
@@ -111,7 +147,7 @@ export default function SaveAnalyticsFormulaModal({
         </label>
         <label>
           <span>{t("formula.id")}</span>
-          <input type="text" value={id} onChange={(event) => setId(event.target.value)} />
+          <input type="text" value={id} disabled={isEdit} onChange={(event) => setId(event.target.value)} />
         </label>
         <label>
           <span>{t("formula.kind")}</span>
@@ -122,16 +158,21 @@ export default function SaveAnalyticsFormulaModal({
         </label>
         <label>
           <span>{t("formula.expression")}</span>
-          <textarea className="mono" readOnly value={expression} rows={4} />
+          <textarea
+            className="mono"
+            readOnly={!isEdit}
+            value={expression}
+            rows={4}
+            onChange={(event) => setExpression(event.target.value)}
+          />
         </label>
         {parameters.length > 0 && (
           <p className="hint">
             {t("formula.parametersDetected", { names: parameters.map((param) => param.name).join(", ") })}
           </p>
         )}
-        {createMutation.isError && (
-          <p className="hint error">{(createMutation.error as Error).message}</p>
-        )}
+        {saveMessage && <p className="hint success">{saveMessage}</p>}
+        {error && <p className="hint error">{(error as Error).message}</p>}
       </div>
     </Modal>
   );

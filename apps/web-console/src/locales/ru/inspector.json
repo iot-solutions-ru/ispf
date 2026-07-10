@@ -17,6 +17,7 @@
   "catalog.kind.reactive": "Reactive",
   "formula.saveAs": "Сохранить как формулу",
   "formula.saveTitle": "Сохранить формулу analytics",
+  "formula.editTitle": "Редактировать формулу analytics",
   "formula.save": "Сохранить",
   "formula.displayName": "Отображаемое имя",
   "formula.id": "Id формулы",

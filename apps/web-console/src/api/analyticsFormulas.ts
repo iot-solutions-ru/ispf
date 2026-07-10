@@ -46,6 +46,11 @@ export interface AnalyticsFormulaExpandResponse {
   expression: string;
 }
 
+export interface AnalyticsFormulaUpdateResponse {
+  formula: AnalyticsFormulaDto;
+  reboundRules: number;
+}
+
 export function fetchAnalyticsFormulas(scope = "site", appId?: string): Promise<AnalyticsFormulaDto[]> {
   const params = new URLSearchParams({ scope });
   if (appId) {
@@ -66,7 +71,7 @@ export function updateAnalyticsFormula(
   formula: AnalyticsFormulaDto,
   scope = "site",
   appId?: string
-): Promise<AnalyticsFormulaDto> {
+): Promise<AnalyticsFormulaUpdateResponse> {
   const params = new URLSearchParams({ scope });
   if (appId) {
     params.set("appId", appId);

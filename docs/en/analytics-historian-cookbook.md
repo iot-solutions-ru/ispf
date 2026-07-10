@@ -6,6 +6,8 @@ Recipes for **historian binding rules** (`kind: historian` in `@bindingRules`). 
 
 See [ADR-0041](decisions/0041-multi-tag-historian-computations.md) and [analytics-tag-catalog.md](analytics-tag-catalog.md).
 
+**Formula catalog (PI AF–style):** unified catalog, extension packs, and site formulas — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–215). Use the expression editor catalog for insert/apply; manage saved formulas under **System → Analytics formulas**.
+
 ---
 
 ## Mental model

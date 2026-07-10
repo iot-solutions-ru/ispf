@@ -15,6 +15,8 @@ import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import com.ispf.server.plugin.blueprint.dto.BlueprintAttachmentDto;
 import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import jakarta.validation.Valid;
@@ -51,6 +53,8 @@ public class BlueprintController {
     private final BlueprintPersistenceService blueprintPersistence;
     private final BlueprintMergeService BlueprintMergeService;
     private final BlueprintApplicationService blueprintApplicationService;
+    private final AnalyticsFormulaService analyticsFormulaService;
+    private final BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport;
 
     public BlueprintController(
             BlueprintRegistry blueprintRegistry,
@@ -58,7 +62,9 @@ public class BlueprintController {
             ObjectManager objectManager,
             BlueprintPersistenceService blueprintPersistence,
             BlueprintMergeService BlueprintMergeService,
-            BlueprintApplicationService blueprintApplicationService
+            BlueprintApplicationService blueprintApplicationService,
+            AnalyticsFormulaService analyticsFormulaService,
+            BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport
     ) {
         this.blueprintRegistry = blueprintRegistry;
         this.blueprintEngine = blueprintEngine;
@@ -66,6 +72,8 @@ public class BlueprintController {
         this.blueprintPersistence = blueprintPersistence;
         this.BlueprintMergeService = BlueprintMergeService;
         this.blueprintApplicationService = blueprintApplicationService;
+        this.analyticsFormulaService = analyticsFormulaService;
+        this.blueprintAnalyticsFormulaSupport = blueprintAnalyticsFormulaSupport;
     }
 
     @GetMapping
@@ -88,6 +96,10 @@ public class BlueprintController {
     @PostMapping
     public BlueprintDto create(@Valid @RequestBody CreateModelRequest request) {
         Instant now = Instant.now();
+        Map<String, String> parameters = enrichParametersWithFormulaRefs(
+                request.bindings(),
+                request.parameters()
+        );
         BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 request.name(),
@@ -99,7 +111,7 @@ public class BlueprintController {
                 request.events(),
                 request.functions(),
                 request.bindings(),
-                request.parameters(),
+                parameters,
                 now,
                 now
         );
@@ -115,6 +127,9 @@ public class BlueprintController {
     @PutMapping("/{id}")
     public BlueprintDto update(@PathVariable String id, @Valid @RequestBody UpdateModelRequest request) {
         BlueprintDefinition existing = blueprintRegistry.requireById(id);
+        List<BlueprintBindingRule> bindings = request.bindings() != null ? request.bindings() : existing.bindings();
+        Map<String, String> baseParameters = request.parameters() != null ? request.parameters() : existing.parameters();
+        Map<String, String> parameters = enrichParametersWithFormulaRefs(bindings, baseParameters);
         BlueprintDefinition updated = new BlueprintDefinition(
                 existing.id(),
                 request.name() != null ? request.name() : existing.name(),
@@ -125,8 +140,8 @@ public class BlueprintController {
                 request.variables() != null ? request.variables() : existing.variables(),
                 request.events() != null ? request.events() : existing.events(),
                 request.functions() != null ? request.functions() : existing.functions(),
-                request.bindings() != null ? request.bindings() : existing.bindings(),
-                request.parameters() != null ? request.parameters() : existing.parameters(),
+                bindings,
+                parameters,
                 existing.createdAt(),
                 Instant.now()
         );
@@ -373,6 +388,29 @@ public class BlueprintController {
         return paths.stream()
                 .map(path -> Map.of("objectPath", path))
                 .toList();
+    }
+
+    private Map<String, String> enrichParametersWithFormulaRefs(
+            List<BlueprintBindingRule> bindings,
+            Map<String, String> parameters
+    ) {
+        if (bindings == null || bindings.isEmpty()) {
+            return parameters != null ? parameters : Map.of();
+        }
+        LinkedHashSet<String> formulaIds = new LinkedHashSet<>();
+        for (BlueprintBindingRule binding : bindings) {
+            if (binding.formulaRef() != null && !binding.formulaRef().isBlank()) {
+                formulaIds.add(binding.formulaRef().trim());
+            }
+        }
+        if (formulaIds.isEmpty()) {
+            return parameters != null ? parameters : Map.of();
+        }
+        List<AnalyticsFormula> formulas = new ArrayList<>();
+        for (String formulaId : formulaIds) {
+            analyticsFormulaService.findForCatalog(formulaId).ifPresent(formulas::add);
+        }
+        return blueprintAnalyticsFormulaSupport.embedFormulasInParameters(formulas, parameters);
     }
 
     public record CreateModelRequest(

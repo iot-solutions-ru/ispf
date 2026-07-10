@@ -55,19 +55,25 @@ public class BlueprintAnalyticsFormulaSupport {
         }
     }
 
-    public String writeToParameters(List<AnalyticsFormula> formulas, Map<String, String> parameters) {
+    public Map<String, String> embedFormulasInParameters(List<AnalyticsFormula> formulas, Map<String, String> parameters) {
         Map<String, String> next = parameters != null ? new java.util.LinkedHashMap<>(parameters) : new java.util.LinkedHashMap<>();
         if (formulas == null || formulas.isEmpty()) {
             next.remove(PARAMETERS_KEY);
-            return next.get(PARAMETERS_KEY);
+            return next;
         }
         try {
             List<BlueprintAnalyticsFormula> entries = formulas.stream().map(this::fromAnalyticsFormula).toList();
             next.put(PARAMETERS_KEY, objectMapper.writeValueAsString(entries));
-            return next.get(PARAMETERS_KEY);
+            return next;
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to serialize blueprint analytics formulas", ex);
         }
+    }
+
+    /** @deprecated use {@link #embedFormulasInParameters(List, Map)} */
+    @Deprecated
+    public String writeToParameters(List<AnalyticsFormula> formulas, Map<String, String> parameters) {
+        return embedFormulasInParameters(formulas, parameters).get(PARAMETERS_KEY);
     }
 
     private AnalyticsFormula toAnalyticsFormula(BlueprintAnalyticsFormula entry) {
