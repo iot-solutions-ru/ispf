@@ -1,6 +1,7 @@
 package com.ispf.server.platform.analytics.engine;
 
 import com.ispf.analytics.engine.HistorianTagPaths;
+import com.ispf.analytics.engine.AnalyticsEvaluationOptions;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -16,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.Instant;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +44,9 @@ class AnalyticsEngineIntegrationTest {
     @Autowired
     private VariableHistoryService variableHistoryService;
 
+    @Autowired
+    private AnalyticsTagCatalogService catalogService;
+
     @Test
     void threeTagChainCompletesWithinPeriodicTick() {
         assetAnalyticsService.ensureCatalog();
@@ -62,6 +67,35 @@ class AnalyticsEngineIntegrationTest {
         assertThat(readOutput(HistorianTagPaths.objectPath(tagA), "derived-a")).isNotBlank();
         assertThat(readOutput(HistorianTagPaths.objectPath(tagB), "derived-b")).isNotBlank();
         assertThat(readOutput(HistorianTagPaths.objectPath(tagC), "derived-c")).isNotBlank();
+    }
+
+    @Test
+    void totalizerHistorianRuleEvaluatesOk() {
+        assetAnalyticsService.ensureCatalog();
+        seedHistorianSamples(12.5);
+
+        String ruleId = "totalizer-rule";
+        HistorianComputationTestSupport.upsertBuiltinRule(
+                bindingRulesService,
+                SENSOR,
+                ruleId,
+                "totalizer",
+                SENSOR,
+                "temperature",
+                "totalizedValue",
+                "1h"
+        );
+
+        var tags = catalogService.listTagDefinitionsForObject(SENSOR).stream()
+                .filter(tag -> ruleId.equals(tag.ruleId()))
+                .toList();
+        assertThat(tags).hasSize(1);
+        assertThat(tags.getFirst().helper()).isEqualTo("totalizer");
+
+        var results = engineService.evaluateTags(tags, AnalyticsEvaluationOptions.now(), Instant.now());
+        assertThat(results).hasSize(1);
+        assertThat(results.getFirst().status()).isEqualTo("ok");
+        assertThat(results.getFirst().outputs()).containsKey("totalizedValue");
     }
 
     private void seedHistorianSamples(double value) {

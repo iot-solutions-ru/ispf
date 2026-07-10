@@ -20,6 +20,7 @@ import {
 import { validateBindingRuleExpression } from "../utils/bindingExpressionValidation";
 import { HISTORIAN_EXPRESSION_ENTRIES } from "../utils/historianExpressionBindings";
 import { PLATFORM_BINDING_ENTRIES } from "../utils/platformBindings";
+import { useAnalyticsCatalog } from "../hooks/useAnalyticsCatalog";
 
 interface RuleTemplate {
   id: string;
@@ -114,6 +115,11 @@ export default function BindingRulesPanel({
           : { kind, variableName: "", field: "value" as const });
     setEditing({ ...editing, target: nextTarget });
   };
+
+  const historianCatalog = useAnalyticsCatalog("historian");
+  const historianEntries = historianCatalog.entries.length > 0
+    ? historianCatalog.entries
+    : HISTORIAN_EXPRESSION_ENTRIES;
 
   if (rulesQuery.isLoading) {
     return <p>{t("inspector:bindings.loading")}</p>;
@@ -350,9 +356,10 @@ export default function BindingRulesPanel({
                   editorTitle={t("inspector:bindings.column.expression")}
                   entries={
                     editingRuleKind === "historian"
-                      ? HISTORIAN_EXPRESSION_ENTRIES
+                      ? historianEntries
                       : PLATFORM_BINDING_ENTRIES
                   }
+                  analyticsCatalogKind={editingRuleKind}
                   onValidate={(expression) =>
                     validateBindingRuleExpression(expression, path, editingRuleKind, "expression")
                   }
@@ -368,6 +375,7 @@ export default function BindingRulesPanel({
                   variableNames={variableNames}
                   functionNames={functionNames}
                   editorTitle={t("inspector:bindings.condition")}
+                  analyticsCatalogKind={editingRuleKind}
                   onValidate={(expression) =>
                     validateBindingRuleExpression(expression, path, editingRuleKind, "condition")
                   }

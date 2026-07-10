@@ -76,7 +76,7 @@ public class AnalyticsBlueprintBootstrap {
                 "",
                 List.of(
                         varDef("templateId", "Stable template id", "info", ""),
-                        varDef("helper", "Analytics helper (rollingAvg, rateOfChange)", "config", ""),
+                        varDef("helper", "Analytics helper (rollingAvg, rateOfChange, totalizer, min, max, last, oee)", "config", ""),
                         varDef("sourcePath", "Source object path", "config", ""),
                         varDef("sourceVariable", "Source variable name", "config", ""),
                         varDef("sourceField", "Source schema field", "config", "value"),

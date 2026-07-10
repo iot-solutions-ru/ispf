@@ -412,6 +412,8 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 | **214** | `@analyticsFormulas` + app bundle import | User-defined parameterized formulas |
 | **215** | `formulaRef` on rules, blueprint/marketplace share | Reusable site standards |
 
+**BL-212a** — **In progress** (2026-07-10). ADR-0042 accepted; catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
+
 ## Out of scope (post BL-215)
 
 | Topic | Rationale |
@@ -440,5 +442,6 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 | Date | Change |
 |------|--------|
+| 2026-07-10 | BL-212a in progress; ADR-0042 accepted |
 | 2026-07-09 | BL-211 CEL-over-historian (`hist.*`, Tag Inspector, validate/evaluate API) |
 | 2026-07-09 | Initial BL-200…210 charter + ADR-0038 |

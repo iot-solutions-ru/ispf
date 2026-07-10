@@ -12,6 +12,7 @@ import {
   type PlatformBindingEntry,
 } from "../utils/platformBindings";
 import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
+import AnalyticsFormulaBrowser from "./analytics/AnalyticsFormulaBrowser";
 
 export interface BindingExpressionEditorModalProps extends BindingBuilderContext {
   open: boolean;
@@ -20,6 +21,7 @@ export interface BindingExpressionEditorModalProps extends BindingBuilderContext
   placeholder?: string;
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
+  analyticsCatalogKind?: "historian" | "reactive";
   onValidate?: BindingExpressionValidator;
   onClose: () => void;
   onApply: (value: string) => void;
@@ -69,6 +71,7 @@ export default function BindingExpressionEditorModal({
   variableNames = [],
   functionNames = [],
   entries = PLATFORM_BINDING_ENTRIES,
+  analyticsCatalogKind,
   onValidate,
   onClose,
   onApply,
@@ -185,7 +188,7 @@ export default function BindingExpressionEditorModal({
             disabled={disabled}
             onClick={() => setCatalogOpen((open) => !open)}
           >
-            {catalogOpen ? t("platformBindings.hideCatalog") : t("platformBindings.showCatalog")}
+            {catalogOpen ? t("catalog.hide") : t("catalog.open")}
           </button>
           <button
             type="button"
@@ -230,7 +233,18 @@ export default function BindingExpressionEditorModal({
           </div>
         )}
 
-        {catalogOpen && (
+        {catalogOpen && analyticsCatalogKind && (
+          <div className="platform-binding-catalog binding-expression-editor-catalog">
+            <AnalyticsFormulaBrowser
+              disabled={disabled}
+              defaultKind={analyticsCatalogKind}
+              fallbackEntries={entries}
+              onInsert={(snippet) => applySnippet(snippet)}
+            />
+          </div>
+        )}
+
+        {catalogOpen && !analyticsCatalogKind && (
           <div className="platform-binding-catalog binding-expression-editor-catalog">
             <div className="platform-binding-catalog-toolbar">
               <input

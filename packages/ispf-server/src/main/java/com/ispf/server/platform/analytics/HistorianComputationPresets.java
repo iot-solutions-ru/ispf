@@ -49,6 +49,46 @@ public final class HistorianComputationPresets {
                         "rocValue"
                 ),
                 new Preset(
+                        "totalizer",
+                        "Totalizer",
+                        "Sum of bucket averages weighted by sample count",
+                        "totalizer",
+                        "totalizer({objectPath}.{sourceVariable}, {windowBucket})",
+                        "1h",
+                        60_000L,
+                        "totalizedValue"
+                ),
+                new Preset(
+                        "min",
+                        "Window minimum",
+                        "Minimum historian value in the selected window",
+                        "min",
+                        "min({objectPath}.{sourceVariable}, {windowBucket})",
+                        "1h",
+                        60_000L,
+                        "minValue"
+                ),
+                new Preset(
+                        "max",
+                        "Window maximum",
+                        "Maximum historian value in the selected window",
+                        "max",
+                        "max({objectPath}.{sourceVariable}, {windowBucket})",
+                        "1h",
+                        60_000L,
+                        "maxValue"
+                ),
+                new Preset(
+                        "last",
+                        "Last value",
+                        "Latest historian sample with live fallback",
+                        "last",
+                        "last({objectPath}.{sourceVariable}, {windowBucket})",
+                        "1h",
+                        60_000L,
+                        "lastValue"
+                ),
+                new Preset(
                         "oee",
                         "OEE composite",
                         "Availability × Performance × Quality",

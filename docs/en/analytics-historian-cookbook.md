@@ -85,7 +85,7 @@ Static recipes in code (`HistorianComputationPresets`). **Not** object-tree temp
 
 ---
 
-## Recipe 1 — Rolling average on one sensor
+## Recipe 1 — Rolling average on one sensor {#recipe-rolling-avg}
 
 **Goal:** 5-minute average of `temperature` on `sensor-a`, written to `avgTemp5m`.
 
@@ -115,6 +115,61 @@ Static recipes in code (`HistorianComputationPresets`). **Not** object-tree temp
 **Chart widget:** object path = device, variable = `avgTemp5m`, mode = live or history as needed.
 
 **Prerequisite:** `temperature` has `historyEnabled=true` and samples in historian.
+
+---
+
+## Recipe: rate of change {#recipe-rate-of-change}
+
+Builtin `rateOfChange(path.var, window)` — delta between first and last bucket average over the window.
+
+```json
+"expression": "rateOfChange(root.platform.devices.sensor-a.temperature, 1h)",
+"windowBucket": "1h"
+```
+
+---
+
+## Recipe: window min {#recipe-min}
+
+Builtin `min(path.var, window)` — minimum bucket `min` over the window.
+
+```json
+"expression": "min(root.platform.devices.sensor-a.temperature, 1h)",
+"windowBucket": "1h"
+```
+
+---
+
+## Recipe: window max {#recipe-max}
+
+Builtin `max(path.var, window)` — maximum bucket `max` over the window.
+
+```json
+"expression": "max(root.platform.devices.sensor-a.temperature, 1h)",
+"windowBucket": "1h"
+```
+
+---
+
+## Recipe: totalizer {#recipe-totalizer}
+
+Builtin `totalizer(path.var, window)` — sum of bucket averages × sample count over the window.
+
+```json
+"expression": "totalizer(root.platform.devices.sensor-a.flow, 1h)",
+"windowBucket": "1h"
+```
+
+---
+
+## Recipe: last sample {#recipe-last}
+
+Builtin `last(path.var, window)` — most recent historian sample (24h lookback), else live value.
+
+```json
+"expression": "last(root.platform.devices.sensor-a.temperature, 1h)",
+"windowBucket": "1h"
+```
 
 ---
 
@@ -235,7 +290,7 @@ Response includes `upstreamTagPaths`, `downstreamTagPaths`, and `lineage` graph.
 
 ---
 
-## Recipe 4 — Cross-device CEL composite
+## Recipe 4 — Cross-device CEL composite {#recipe-cel}
 
 **Goal:** Average temperature of two sensors on a third **virtual** device.
 

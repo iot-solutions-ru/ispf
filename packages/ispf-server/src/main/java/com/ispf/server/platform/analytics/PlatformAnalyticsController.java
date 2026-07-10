@@ -14,6 +14,7 @@ import com.ispf.server.platform.analytics.frames.EventFrame;
 import com.ispf.server.platform.analytics.frames.EventFrameMesShiftBridge;
 import com.ispf.server.platform.analytics.frames.EventFrameService;
 import com.ispf.server.platform.analytics.frames.EventFrameType;
+import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagCatalogEntry;
 import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
 import org.springframework.http.HttpHeaders;
@@ -21,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,6 +55,7 @@ public class PlatformAnalyticsController {
     private final AnalyticsQueryExportService analyticsQueryExportService;
     private final EventFrameService eventFrameService;
     private final AnalyticsTagCatalogService tagCatalogService;
+    private final AnalyticsCatalogService analyticsCatalogService;
     private final AnalyticsExpressionService expressionService;
 
     public PlatformAnalyticsController(
@@ -67,6 +70,7 @@ public class PlatformAnalyticsController {
             AnalyticsQueryExportService analyticsQueryExportService,
             EventFrameService eventFrameService,
             AnalyticsTagCatalogService tagCatalogService,
+            AnalyticsCatalogService analyticsCatalogService,
             AnalyticsExpressionService expressionService
     ) {
         this.assetAnalyticsService = assetAnalyticsService;
@@ -80,6 +84,7 @@ public class PlatformAnalyticsController {
         this.analyticsQueryExportService = analyticsQueryExportService;
         this.eventFrameService = eventFrameService;
         this.tagCatalogService = tagCatalogService;
+        this.analyticsCatalogService = analyticsCatalogService;
         this.expressionService = expressionService;
     }
 
@@ -189,6 +194,27 @@ public class PlatformAnalyticsController {
         return expressionService.validate(request.expression(), request.objectPath());
     }
 
+    /** Unified Tier A analytics function catalog (BL-212a / ADR-0042). */
+    @GetMapping("/catalog")
+    public List<AnalyticsCatalogEntry> listCatalog() {
+        return analyticsCatalogService.list();
+    }
+
+    /** Single analytics function metadata by id (BL-212a / ADR-0042). */
+    @GetMapping("/catalog/{functionId}")
+    public AnalyticsCatalogEntry getCatalogEntry(@PathVariable String functionId) {
+        return analyticsCatalogService.get(functionId);
+    }
+
+    /** Validate analytics expression by catalog kind/context payload (BL-212a). */
+    @PostMapping("/catalog/validate")
+    public AnalyticsExpressionService.ValidateResult validateCatalogExpression(
+            @RequestBody AnalyticsCatalogValidateRequest request
+    ) {
+        String objectPath = resolveObjectPath(request.context());
+        return expressionService.validate(request.expression(), objectPath);
+    }
+
     /** Evaluate analytics CEL-over-historian expression once (BL-211). */
     @PostMapping("/expression/evaluate")
     public AnalyticsExpressionService.EvaluateResult evaluateExpression(@RequestBody AnalyticsExpressionRequest request) {
@@ -199,6 +225,13 @@ public class PlatformAnalyticsController {
             String expression,
             String objectPath,
             Instant asOf
+    ) {
+    }
+
+    public record AnalyticsCatalogValidateRequest(
+            String kind,
+            String expression,
+            Map<String, Object> context
     ) {
     }
 
@@ -260,6 +293,21 @@ public class PlatformAnalyticsController {
             int downtimeMinutes,
             Map<String, String> metadata
     ) {
+    }
+
+    private static String resolveObjectPath(Map<String, Object> context) {
+        if (context == null || context.isEmpty()) {
+            return null;
+        }
+        Object objectPath = context.get("objectPath");
+        if (objectPath instanceof String value && !value.isBlank()) {
+            return value;
+        }
+        Object path = context.get("path");
+        if (path instanceof String value && !value.isBlank()) {
+            return value;
+        }
+        return null;
     }
 
     /** Export multi-tag analytics query as CSV or Parquet-compatible JSONL (BL-206). */

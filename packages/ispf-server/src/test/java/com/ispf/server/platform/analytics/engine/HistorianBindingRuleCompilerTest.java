@@ -18,6 +18,30 @@ class HistorianBindingRuleCompilerTest {
 
     @Test
     void compilesRollingAvgBuiltin() {
+        assertBuiltinCompiles("rollingAvg", "rollingAvg");
+    }
+
+    @Test
+    void compilesTotalizerBuiltin() {
+        assertBuiltinCompiles("totalizer", "totalizer");
+    }
+
+    @Test
+    void compilesMinBuiltin() {
+        assertBuiltinCompiles("min", "min");
+    }
+
+    @Test
+    void compilesMaxBuiltin() {
+        assertBuiltinCompiles("max", "max");
+    }
+
+    @Test
+    void compilesLastBuiltin() {
+        assertBuiltinCompiles("last", "last");
+    }
+
+    private static void assertBuiltinCompiles(String expressionHelper, String expectedHelper) {
         BindingRule rule = new BindingRule(
                 "rule-a",
                 "rule-a",
@@ -26,7 +50,7 @@ class HistorianBindingRuleCompilerTest {
                 BindingRuleKind.HISTORIAN,
                 new BindingActivators(false, List.of(new BindingVariableRef("root.dev.a", "temperature")), null, 60_000L, false, false),
                 "",
-                "rollingAvg(root.platform.devices.demo-sensor-01.temperature, 1h)",
+                expressionHelper + "(root.platform.devices.demo-sensor-01.temperature, 1h)",
                 new BindingTarget("variable", "avg-a", "value", null, null),
                 "1h",
                 null
@@ -40,6 +64,10 @@ class HistorianBindingRuleCompilerTest {
                 properties
         );
         assertThat(compiled).isPresent();
-        assertThat(compiled.get().helper()).isEqualTo("rollingAvg");
+        assertThat(compiled.get().helper()).isEqualTo(expectedHelper);
+        assertThat(compiled.get().windowBucket()).isEqualTo("1h");
+        assertThat(compiled.get().sources()).hasSize(1);
+        assertThat(compiled.get().sources().getFirst().path()).isEqualTo("root.platform.devices.demo-sensor-01");
+        assertThat(compiled.get().sources().getFirst().variable()).isEqualTo("temperature");
     }
 }

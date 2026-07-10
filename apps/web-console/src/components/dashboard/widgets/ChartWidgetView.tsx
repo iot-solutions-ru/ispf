@@ -250,9 +250,11 @@ export default function ChartWidgetView({
           <div className="dash-chart-placeholder error">{t("view.bindingError")}</div>
         ) : !chartReady ? (
           <div className="dash-chart-placeholder">
-            {series.variable?.historyEnabled === false
-              ? t("view.historyDisabled")
-              : t("view.waitingTrend")}
+            {useMultiSeries && !multiSeries.loading
+              ? t("view.noDataForChart")
+              : series.variable?.historyEnabled === false
+                ? t("view.historyDisabled")
+                : t("view.waitingTrend")}
           </div>
         ) : isCandlestickChart ? (
           <CandlestickChartBody

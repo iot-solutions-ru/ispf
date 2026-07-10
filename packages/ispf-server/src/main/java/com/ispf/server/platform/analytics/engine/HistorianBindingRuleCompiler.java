@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 public final class HistorianBindingRuleCompiler {
 
     private static final Pattern BUILTIN_CALL = Pattern.compile(
-            "^(rollingAvg|rateOfChange|oee)\\s*\\((.*)\\)$",
+            "^(rollingAvg|rateOfChange|totalizer|min|max|last|oee)\\s*\\((.*)\\)$",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
 
@@ -115,6 +115,18 @@ public final class HistorianBindingRuleCompiler {
             );
             case "rateofchange" -> compileSingleSourceBuiltin(
                     tagPath, "rateOfChange", args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
+            );
+            case "totalizer" -> compileSingleSourceBuiltin(
+                    tagPath, "totalizer", args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
+            );
+            case "min" -> compileSingleSourceBuiltin(
+                    tagPath, "min", args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
+            );
+            case "max" -> compileSingleSourceBuiltin(
+                    tagPath, "max", args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
+            );
+            case "last" -> compileSingleSourceBuiltin(
+                    tagPath, "last", args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
             );
             case "oee" -> compileOee(tagPath, args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable);
             default -> Optional.empty();

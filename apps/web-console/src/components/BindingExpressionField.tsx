@@ -15,6 +15,7 @@ interface BindingExpressionFieldProps extends BindingBuilderContext {
   placeholder?: string;
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
+  analyticsCatalogKind?: "historian" | "reactive";
   editorTitle?: string;
   onValidate?: BindingExpressionValidator;
 }
@@ -29,6 +30,7 @@ export default function BindingExpressionField({
   variableNames = [],
   functionNames = [],
   entries = PLATFORM_BINDING_ENTRIES,
+  analyticsCatalogKind,
   editorTitle,
   onValidate,
 }: BindingExpressionFieldProps) {
@@ -70,6 +72,7 @@ export default function BindingExpressionField({
         variableNames={variableNames}
         functionNames={functionNames}
         entries={entries}
+        analyticsCatalogKind={analyticsCatalogKind}
         onValidate={onValidate}
         onClose={() => setEditorOpen(false)}
         onApply={onChange}

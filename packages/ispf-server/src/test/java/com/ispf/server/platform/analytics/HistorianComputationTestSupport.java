@@ -41,6 +41,28 @@ public final class HistorianComputationTestSupport {
             String outputVariable,
             String windowBucket
     ) {
+        upsertBuiltinRule(
+                bindingRulesService,
+                devicePath,
+                ruleId,
+                "rollingAvg",
+                sourcePath,
+                sourceVariable,
+                outputVariable,
+                windowBucket
+        );
+    }
+
+    public static void upsertBuiltinRule(
+            BindingRulesService bindingRulesService,
+            String devicePath,
+            String ruleId,
+            String helper,
+            String sourcePath,
+            String sourceVariable,
+            String outputVariable,
+            String windowBucket
+    ) {
         List<BindingRule> rules = new ArrayList<>(bindingRulesService.listRules(devicePath));
         rules.removeIf(rule -> rule.id().equals(ruleId));
         rules.add(new BindingRule(
@@ -58,7 +80,7 @@ public final class HistorianComputationTestSupport {
                         false
                 ),
                 "",
-                "rollingAvg(" + sourcePath + "." + sourceVariable + ", " + windowBucket + ")",
+                helper + "(" + sourcePath + "." + sourceVariable + ", " + windowBucket + ")",
                 new BindingTarget("variable", outputVariable, "value", null, null),
                 windowBucket,
                 null

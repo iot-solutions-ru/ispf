@@ -8743,6 +8743,43 @@ body.scada-mimic-editor-open {
   flex: 1;
 }
 
+.analytics-formula-browser {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.analytics-formula-browser-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.analytics-formula-browser-toolbar input {
+  flex: 1 1 12rem;
+}
+
+.analytics-formula-browser-toolbar select {
+  flex: 0 0 auto;
+}
+
+.analytics-formula-browser-list {
+  gap: 0.5rem;
+}
+
+.analytics-formula-browser-detail {
+  margin: 0 0.55rem 0.35rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: rgba(47, 129, 247, 0.05);
+}
+
+.analytics-formula-browser-detail code {
+  font-size: 0.8rem;
+}
+
 .platform-binding-catalog-list {
   list-style: none;
   margin: 0;

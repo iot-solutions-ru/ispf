@@ -101,6 +101,20 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 
 ---
 
+## БЛ-212–215: Каталог функций и расширяемость ([ADR-0042](decisions/0042-analytics-function-catalog.md))
+
+| БЛ | Scope | Результат |
+|----|--------|---------|
+| **212a** | `GET /platform/analytics/catalog`; dormant evaluators | Единый API для builtins + `hist.*` + reactive CEL |
+| **212b** | Браузер формул в модальном редакторе выражений | PI-like discoverability без дерева AF |
+| **213** | SPI `ispf-analytics-api` + optional packs JAR | Отраслевые KPI вне ядра |
+| **214** | `@analyticsFormulas` + import из bundle приложения | Параметризованные формулы пользователя |
+| **215** | `formulaRef` на правилах, blueprint/marketplace | Переиспользуемые стандарты площадки |
+
+**БЛ-212a** — **В процессе** (2026-07-10). ADR-0042 принят; catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
+
+---
+
 ## Вне scope (БЛ-211+)
 
 - Полный PI Analytics DSL
@@ -114,4 +128,5 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 
 | Дата | Изменение |
 |------|-----------|
+| 10.07.2026 | БЛ-212a в процессе; ADR-0042 принят |
 | 09.07.2026 | Первоначальный charter БЛ-200…210 + ADR-0038 |

@@ -1,0 +1,163 @@
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
+import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
+import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
+
+export type AnalyticsFormulaKindFilter = "historian" | "reactive";
+
+interface AnalyticsFormulaBrowserProps {
+  disabled?: boolean;
+  defaultKind?: AnalyticsFormulaKindFilter;
+  fallbackEntries?: PlatformBindingEntry[];
+  onInsert: (snippet: string) => void;
+}
+
+function matchesQuery(entry: AnalyticsCatalogEntryDto, query: string): boolean {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return true;
+  }
+  return (
+    entry.id.toLowerCase().includes(normalized) ||
+    entry.displayName.toLowerCase().includes(normalized) ||
+    entry.syntax.toLowerCase().includes(normalized) ||
+    entry.description.toLowerCase().includes(normalized) ||
+    entry.tags.some((tag) => tag.toLowerCase().includes(normalized))
+  );
+}
+
+function placeholderForParam(parameter: AnalyticsCatalogParameterDto): string {
+  const defaultValue = parameter.defaultValue?.trim();
+  if (defaultValue) {
+    return defaultValue;
+  }
+  return `<${parameter.name}>`;
+}
+
+function buildInsertSnippet(entry: AnalyticsCatalogEntryDto): string {
+  if (!entry.parameters.length) {
+    return `${entry.id}()`;
+  }
+  const args = entry.parameters.map((parameter) => placeholderForParam(parameter));
+  return `${entry.id}(${args.join(", ")})`;
+}
+
+export default function AnalyticsFormulaBrowser({
+  disabled = false,
+  defaultKind = "historian",
+  fallbackEntries = [],
+  onInsert,
+}: AnalyticsFormulaBrowserProps) {
+  const { t } = useTranslation("inspector");
+  const catalogQuery = useAnalyticsCatalog();
+  const [search, setSearch] = useState("");
+  const [kindFilter, setKindFilter] = useState<AnalyticsFormulaKindFilter>(defaultKind);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedQuery = useAnalyticsCatalogFunction(selectedId, catalogQuery.hasRemoteEntries);
+
+  const remoteFiltered = useMemo(() => {
+    const list = catalogQuery.data ?? [];
+    return list.filter(
+      (entry) =>
+        entry.kinds.some((kind) => kind.toLowerCase() === kindFilter) && matchesQuery(entry, search)
+    );
+  }, [catalogQuery.data, kindFilter, search]);
+
+  const fallbackFiltered = useMemo(() => {
+    if (catalogQuery.hasRemoteEntries) {
+      return [] as PlatformBindingEntry[];
+    }
+    return filterPlatformBindings(search, fallbackEntries);
+  }, [catalogQuery.hasRemoteEntries, fallbackEntries, search]);
+
+  return (
+    <div className="analytics-formula-browser">
+      <div className="analytics-formula-browser-toolbar">
+        <input
+          type="search"
+          value={search}
+          placeholder={t("catalog.search")}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <select
+          value={kindFilter}
+          disabled={disabled}
+          onChange={(event) => setKindFilter(event.target.value as AnalyticsFormulaKindFilter)}
+        >
+          <option value="historian">{t("catalog.kind.historian")}</option>
+          <option value="reactive">{t("catalog.kind.reactive")}</option>
+        </select>
+      </div>
+
+      {!catalogQuery.hasRemoteEntries && (
+        <p className="hint">{t("catalog.fallbackHint")}</p>
+      )}
+
+      {catalogQuery.hasRemoteEntries ? (
+        <ul className="platform-binding-catalog-list analytics-formula-browser-list">
+          {remoteFiltered.map((entry) => (
+            <li key={entry.id}>
+              <div className="platform-binding-catalog-item-wrap">
+                <button
+                  type="button"
+                  className="platform-binding-catalog-item"
+                  disabled={disabled}
+                  onClick={() => setSelectedId((current) => (current === entry.id ? null : entry.id))}
+                >
+                  <div className="platform-binding-catalog-head">
+                    <code>{entry.id}</code>
+                    <span className="platform-binding-catalog-category">{entry.displayName}</span>
+                    <span className="inline-badge">{entry.tier}</span>
+                  </div>
+                  <code className="platform-binding-catalog-snippet">{buildInsertSnippet(entry)}</code>
+                  <p className="hint">{entry.description}</p>
+                </button>
+                <div className="platform-binding-catalog-actions">
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    disabled={disabled}
+                    onClick={() => onInsert(buildInsertSnippet(entry))}
+                  >
+                    {t("catalog.insert")}
+                  </button>
+                </div>
+              </div>
+              {selectedId === entry.id && selectedQuery.data && (
+                <div className="analytics-formula-browser-detail">
+                  <code>{selectedQuery.data.syntax}</code>
+                  {selectedQuery.data.examples.length > 0 && (
+                    <p className="hint">
+                      {t("catalog.examples")} {selectedQuery.data.examples[0]}
+                    </p>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="platform-binding-catalog-list">
+          {fallbackFiltered.map((entry) => (
+            <li key={entry.id}>
+              <div className="platform-binding-catalog-item-wrap">
+                <button
+                  type="button"
+                  className="platform-binding-catalog-item"
+                  disabled={disabled}
+                  onClick={() => onInsert(entry.snippet)}
+                >
+                  <div className="platform-binding-catalog-head">
+                    <code>{entry.name}</code>
+                  </div>
+                  <code className="platform-binding-catalog-snippet">{entry.snippet}</code>
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

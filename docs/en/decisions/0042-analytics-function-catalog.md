@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed** (2026-07-09)
+**Accepted** (2026-07-10)
 
 ## Context
 
@@ -209,4 +209,5 @@ Estimated: **4–6 weeks** after ADR-0041 stabilization for phases 1–2; phases
 
 | Date | Change |
 |------|--------|
+| 2026-07-10 | Status → Accepted; BL-212a in progress |
 | 2026-07-09 | Initial proposal (PI-like catalog, Tier A/B/C, BL-212–215) |
