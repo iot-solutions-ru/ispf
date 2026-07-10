@@ -1,5 +1,6 @@
 package com.ispf.server.history;
 
+import com.ispf.server.persistence.VariableSampleBucketAggregate;
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
 import com.ispf.server.relational.RelationalDbKind;
@@ -94,7 +95,10 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
             int maxBuckets
     ) {
         if (relationalDialect.kind() == RelationalDbKind.POSTGRESQL) {
-            return aggregateWithSql(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
+            return aggregateWithRepositorySql(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
+        }
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
+            return aggregateWithJdbcSql(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
         }
         return aggregateWithJvm(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
     }
@@ -104,7 +108,29 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
         return !timescaleHypertableInitializer.isVariableSamplesTimescaleActive();
     }
 
-    private List<VariableHistoryService.VariableHistoryBucket> aggregateWithSql(
+    private List<VariableHistoryService.VariableHistoryBucket> aggregateWithRepositorySql(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant to,
+            Duration bucket,
+            int maxBuckets
+    ) {
+        long bucketSeconds = bucket.getSeconds();
+        List<VariableHistoryService.VariableHistoryBucket> buckets = sampleRepository
+                .aggregateBuckets(objectPath, variableName, fieldName, from, to, bucketSeconds, maxBuckets)
+                .stream()
+                .map(this::toHistoryBucket)
+                .toList();
+        if (!buckets.isEmpty()) {
+            return buckets;
+        }
+        // JdbcTemplate bucket SQL can return empty on some PostgreSQL/Timescale setups while JPA reads work.
+        return aggregateWithJvm(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
+    }
+
+    private List<VariableHistoryService.VariableHistoryBucket> aggregateWithJdbcSql(
             String objectPath,
             String variableName,
             String fieldName,
@@ -123,14 +149,18 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
                         bucketSeconds,
                         maxBuckets
                 ).stream()
-                .map(row -> new VariableHistoryService.VariableHistoryBucket(
-                        row.getBucketStart(),
-                        row.getAvgVal(),
-                        row.getMinVal(),
-                        row.getMaxVal(),
-                        row.getSampleCount() != null ? row.getSampleCount().intValue() : 0
-                ))
+                .map(this::toHistoryBucket)
                 .toList();
+    }
+
+    private VariableHistoryService.VariableHistoryBucket toHistoryBucket(VariableSampleBucketAggregate row) {
+        return new VariableHistoryService.VariableHistoryBucket(
+                row.getBucketStart(),
+                row.getAvgVal(),
+                row.getMinVal(),
+                row.getMaxVal(),
+                row.getSampleCount() != null ? row.getSampleCount().intValue() : 0
+        );
     }
 
     private List<VariableHistoryService.VariableHistoryBucket> aggregateWithJvm(
