@@ -111,7 +111,11 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 | **214** | `@analyticsFormulas` + import из bundle приложения | Параметризованные формулы пользователя |
 | **215** | `formulaRef` на правилах, blueprint/marketplace | Переиспользуемые стандарты площадки |
 
-**БЛ-212a** — **В процессе** (2026-07-10). ADR-0042 принят; catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
+**БЛ-212a** — **Готово** (2026-07-10). Catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
+
+**БЛ-212b** — **Готово** (2026-07-10). Браузер формул в модальном редакторе выражений; дублирующие статические TS-каталоги удалены.
+
+**БЛ-213** — **Готово** (2026-07-10). SPI `ispf-analytics-api`; первый open pack `ispf-analytics-core-ext` (`energyDelta`).
 
 ---
 
@@ -128,5 +132,5 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 
 | Дата | Изменение |
 |------|-----------|
-| 10.07.2026 | БЛ-212a в процессе; ADR-0042 принят |
+| 10.07.2026 | БЛ-212a/b готово; БЛ-213 готово (pack `energyDelta`); ADR-0042 принят |
 | 09.07.2026 | Первоначальный charter БЛ-200…210 + ADR-0038 |

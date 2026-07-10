@@ -21,6 +21,7 @@ import com.ispf.server.history.HistorianRollupBuckets;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
 import com.ispf.server.platform.analytics.engine.HistorianBindingRuleCompiler;
+import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class BindingRulesService {
@@ -47,6 +50,7 @@ public class BindingRulesService {
     private final BindingPeriodicScheduler periodicScheduler;
     private final AnalyticsProperties analyticsProperties;
     private final AnalyticsEngineScheduler engineScheduler;
+    private final AnalyticsExtensionRegistry extensionRegistry;
     private final ConcurrentHashMap<String, Object> rulesLocks = new ConcurrentHashMap<>();
 
     public BindingRulesService(
@@ -55,7 +59,8 @@ public class BindingRulesService {
             BindingPeriodicScheduleRegistry periodicScheduleRegistry,
             @Lazy BindingPeriodicScheduler periodicScheduler,
             AnalyticsProperties analyticsProperties,
-            @Lazy AnalyticsEngineScheduler engineScheduler
+            @Lazy AnalyticsEngineScheduler engineScheduler,
+            AnalyticsExtensionRegistry extensionRegistry
     ) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
@@ -63,6 +68,7 @@ public class BindingRulesService {
         this.periodicScheduler = periodicScheduler;
         this.analyticsProperties = analyticsProperties;
         this.engineScheduler = engineScheduler;
+        this.extensionRegistry = extensionRegistry;
     }
 
     public List<BindingRule> listRules(String objectPath) {
@@ -158,7 +164,11 @@ public class BindingRulesService {
                 validateWindowBucket(bucket);
             }
         }
-        AnalyticsTagDefinition compiled = HistorianBindingRuleCompiler.compile(objectPath, rule, analyticsProperties)
+        AnalyticsTagDefinition compiled = HistorianBindingRuleCompiler.compile(
+                        objectPath,
+                        rule,
+                        analyticsProperties,
+                        extensionHelperIds())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Historian rule does not compile: " + rule.id()));
         ensureHistorianTargetVariable(objectPath, rule, compiled);
@@ -188,6 +198,12 @@ public class BindingRulesService {
                 false,
                 null
         );
+    }
+
+    private Set<String> extensionHelperIds() {
+        return extensionRegistry.registeredFunctions().stream()
+                .map(AnalyticsExtensionRegistry.RegisteredAnalyticsFunction::helperId)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private List<BindingRule> readRules(PlatformObject object) {

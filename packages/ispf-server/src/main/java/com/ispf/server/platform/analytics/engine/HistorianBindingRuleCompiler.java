@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +28,11 @@ public final class HistorianBindingRuleCompiler {
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
 
+    private static final Pattern EXTENSION_CALL = Pattern.compile(
+            "^([a-zA-Z][a-zA-Z0-9]*)\\s*\\((.*)\\)$",
+            Pattern.DOTALL
+    );
+
     private HistorianBindingRuleCompiler() {
     }
 
@@ -34,6 +40,15 @@ public final class HistorianBindingRuleCompiler {
             String objectPath,
             BindingRule rule,
             AnalyticsProperties analyticsProperties
+    ) {
+        return compile(objectPath, rule, analyticsProperties, Set.of());
+    }
+
+    public static Optional<AnalyticsTagDefinition> compile(
+            String objectPath,
+            BindingRule rule,
+            AnalyticsProperties analyticsProperties,
+            Set<String> extensionHelpers
     ) {
         if (rule == null || !rule.isHistorian()) {
             return Optional.empty();
@@ -67,6 +82,20 @@ public final class HistorianBindingRuleCompiler {
                     outputVariable
             );
         }
+        Matcher extension = EXTENSION_CALL.matcher(expression);
+        if (extension.matches() && extensionHelpers.contains(extension.group(1))) {
+            return compileSingleSourceBuiltin(
+                    tagPath,
+                    extension.group(1),
+                    splitArgs(extension.group(2)),
+                    windowBucket,
+                    rollupBuckets,
+                    periodicMs,
+                    onChange,
+                    rule.enabled(),
+                    outputVariable
+            );
+        }
         if (expression.toLowerCase(Locale.ROOT).contains("hist.")) {
             List<AnalyticsSourceRef> sources = HistorianCelPreprocessor.extractSources(expression);
             return Optional.of(new AnalyticsTagDefinition(
@@ -90,9 +119,18 @@ public final class HistorianBindingRuleCompiler {
             List<BindingRule> rules,
             AnalyticsProperties analyticsProperties
     ) {
+        return compileAll(objectPath, rules, analyticsProperties, Set.of());
+    }
+
+    public static List<AnalyticsTagDefinition> compileAll(
+            String objectPath,
+            List<BindingRule> rules,
+            AnalyticsProperties analyticsProperties,
+            Set<String> extensionHelpers
+    ) {
         List<AnalyticsTagDefinition> tags = new ArrayList<>();
         for (BindingRule rule : rules) {
-            compile(objectPath, rule, analyticsProperties).ifPresent(tags::add);
+            compile(objectPath, rule, analyticsProperties, extensionHelpers).ifPresent(tags::add);
         }
         return tags;
     }

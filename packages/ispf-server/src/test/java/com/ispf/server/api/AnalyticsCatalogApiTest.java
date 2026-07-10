@@ -45,6 +45,15 @@ class AnalyticsCatalogApiTest {
     }
 
     @Test
+    void getCatalogIncludesCoreExtensionPackFunction() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/analytics/catalog/energyDelta"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("energyDelta"))
+                .andExpect(jsonPath("$.tier").value("C"))
+                .andExpect(jsonPath("$.pack").value("core-ext"));
+    }
+
+    @Test
     void validateCatalogExpressionReturnsValidForCorrectExpression() throws Exception {
         mockMvc.perform(post("/api/v1/platform/analytics/catalog/validate")
                         .contentType(MediaType.APPLICATION_JSON)

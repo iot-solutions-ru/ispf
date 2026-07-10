@@ -12,6 +12,7 @@ import com.ispf.server.platform.analytics.catalog.AnalyticsTagCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagLineageService;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
 import com.ispf.server.platform.analytics.catalog.HistorianRuleMetaService;
+import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Loads analytics tag definitions from historian binding rules (ADR-0041).
@@ -32,6 +34,7 @@ public class AnalyticsTagCatalogService {
     private final AnalyticsTagLineageService lineageService;
     private final AnalyticsScheduleRegistry scheduleRegistry;
     private final HistorianRuleMetaService historianRuleMetaService;
+    private final AnalyticsExtensionRegistry extensionRegistry;
 
     public AnalyticsTagCatalogService(
             ObjectManager objectManager,
@@ -39,7 +42,8 @@ public class AnalyticsTagCatalogService {
             AnalyticsProperties analyticsProperties,
             AnalyticsTagLineageService lineageService,
             AnalyticsScheduleRegistry scheduleRegistry,
-            HistorianRuleMetaService historianRuleMetaService
+            HistorianRuleMetaService historianRuleMetaService,
+            AnalyticsExtensionRegistry extensionRegistry
     ) {
         this.objectManager = objectManager;
         this.bindingRulesService = bindingRulesService;
@@ -47,6 +51,7 @@ public class AnalyticsTagCatalogService {
         this.lineageService = lineageService;
         this.scheduleRegistry = scheduleRegistry;
         this.historianRuleMetaService = historianRuleMetaService;
+        this.extensionRegistry = extensionRegistry;
     }
 
     @Transactional(readOnly = true)
@@ -71,8 +76,15 @@ public class AnalyticsTagCatalogService {
         return HistorianBindingRuleCompiler.compileAll(
                 objectPath,
                 bindingRulesService.listRules(objectPath),
-                analyticsProperties
+                analyticsProperties,
+                extensionHelperIds()
         );
+    }
+
+    private Set<String> extensionHelperIds() {
+        return extensionRegistry.registeredFunctions().stream()
+                .map(AnalyticsExtensionRegistry.RegisteredAnalyticsFunction::helperId)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Transactional(readOnly = true)

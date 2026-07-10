@@ -1164,7 +1164,9 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-209 | **Tag catalog & lineage UI** | P2 | Done — analytics tag inspector, lineage API |
 | BL-210 | **Enterprise scale gates** | P2 | Done — lab scripts, SLO table, JVM gate, examples |
 | BL-211 | **CEL-over-historian expressions** | P2 | Done — `hist.*`, `cel` helper, validate/evaluate API, Tag Inspector editor |
-| BL-212a | **Analytics function catalog API** | P2 | In progress — `GET .../analytics/catalog`; wire dormant evaluators ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
+| BL-212a | **Analytics function catalog API** | P2 | Done — `GET .../analytics/catalog`; wire dormant evaluators ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
+| BL-212b | **Analytics formula browser UI** | P2 | Done — catalog in Computations expression modal; static TS catalogs removed |
+| BL-213 | **Analytics extension packs (SPI)** | P2 | Done — `ispf-analytics-api` SPI; `ispf-analytics-core-ext` (`energyDelta`) |
 
 **Phase metric:** Scenario B walkthrough ≤1 day; Scenario C lab gate documented; derived tag drives alarm without Chart-only rollup.
 
@@ -1244,7 +1246,9 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-209 | 33 | Tag catalog & lineage UI | P2 | Done |
 | BL-210 | 33 | Enterprise scale gates | P2 | Done |
 | BL-211 | 33 | CEL-over-historian expressions | P2 | Done |
-| BL-212a | 33 | Analytics function catalog API | P2 | In progress |
+| BL-212a | 33 | Analytics function catalog API | P2 | Done |
+| BL-212b | 33 | Analytics formula browser UI | P2 | Done |
+| BL-213 | 33 | Analytics extension packs (SPI) | P2 | Done |
 
 ---
 

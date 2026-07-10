@@ -1,6 +1,7 @@
 package com.ispf.server.platform.analytics.engine;
 
 import com.ispf.analytics.engine.AnalyticsEngine;
+import com.ispf.analytics.engine.AnalyticsEvaluator;
 import com.ispf.analytics.engine.AnalyticsEvaluatorRegistry;
 import com.ispf.analytics.engine.AnalyticsEvaluationOptions;
 import com.ispf.analytics.engine.AnalyticsEvaluationResult;
@@ -10,10 +11,12 @@ import com.ispf.analytics.engine.HistorianTagPaths;
 import com.ispf.analytics.engine.LiveVariablePort;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
+import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +45,8 @@ public class AnalyticsEngineService {
             AnalyticsTagMetadataService metadataService,
             CelExpressionEvaluator celExpressionEvaluator,
             ExpressionAliasEvaluator expressionAliasEvaluator,
-            OeeEvaluator oeeEvaluator
+            OeeEvaluator oeeEvaluator,
+            AnalyticsExtensionRegistry extensionRegistry
     ) {
         this.analyticsProperties = analyticsProperties;
         this.catalogService = catalogService;
@@ -51,11 +55,14 @@ public class AnalyticsEngineService {
         this.derivedValueWriter = derivedValueWriter;
         this.metricsRecorder = metricsRecorder;
         this.metadataService = metadataService;
+        List<AnalyticsEvaluator> evaluators = new ArrayList<>();
+        evaluators.add(celExpressionEvaluator);
+        evaluators.add(expressionAliasEvaluator);
+        evaluators.add(oeeEvaluator);
+        evaluators.addAll(List.of(extensionRegistry.evaluatorArray()));
         this.analyticsEngine = new AnalyticsEngine(AnalyticsEvaluatorRegistry.combine(
                 AnalyticsEvaluatorRegistry.builtins(),
-                celExpressionEvaluator,
-                expressionAliasEvaluator,
-                oeeEvaluator
+                evaluators.toArray(AnalyticsEvaluator[]::new)
         ));
     }
 

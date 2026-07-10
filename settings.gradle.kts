@@ -8,6 +8,8 @@ include(
     "packages:ispf-core",
     "packages:ispf-expression",
     "packages:ispf-analytics-engine",
+    "packages:ispf-analytics-api",
+    "packages:ispf-analytics-core-ext",
     "packages:ispf-driver-api",
     "packages:ispf-driver-ddk",
     "packages:ispf-server",

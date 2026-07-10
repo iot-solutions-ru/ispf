@@ -412,7 +412,11 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 | **214** | `@analyticsFormulas` + app bundle import | User-defined parameterized formulas |
 | **215** | `formulaRef` on rules, blueprint/marketplace share | Reusable site standards |
 
-**BL-212a** — **In progress** (2026-07-10). ADR-0042 accepted; catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
+**BL-212a** — **Done** (2026-07-10). Catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
+
+**BL-212b** — **Done** (2026-07-10). Formula browser in Computations expression modal; duplicate static TS catalogs removed.
+
+**BL-213** — **Done** (2026-07-10). `ispf-analytics-api` SPI; first open pack `ispf-analytics-core-ext` (`energyDelta`).
 
 ## Out of scope (post BL-215)
 
@@ -442,6 +446,6 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 | Date | Change |
 |------|--------|
-| 2026-07-10 | BL-212a in progress; ADR-0042 accepted |
+| 2026-07-10 | BL-212a/b Done; BL-213 Done (`energyDelta` pack); ADR-0042 accepted |
 | 2026-07-09 | BL-211 CEL-over-historian (`hist.*`, Tag Inspector, validate/evaluate API) |
 | 2026-07-09 | Initial BL-200…210 charter + ADR-0038 |

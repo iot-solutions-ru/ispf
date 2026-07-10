@@ -12,6 +12,8 @@ dependencies {
     implementation(project(":packages:ispf-core"))
     implementation(project(":packages:ispf-expression"))
     implementation(project(":packages:ispf-analytics-engine"))
+    implementation(project(":packages:ispf-analytics-api"))
+    implementation(project(":packages:ispf-analytics-core-ext"))
     implementation(project(":packages:ispf-driver-api"))
     implementation(project(":packages:ispf-plugin-blueprint"))
     implementation(project(":packages:ispf-plugin-workflow"))

@@ -1,8 +1,10 @@
 package com.ispf.server.platform.analytics;
 
 import com.ispf.analytics.engine.AnalyticsEvaluatorRegistry;
+import com.ispf.analytics.spi.AnalyticsFunctionDescriptor;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogParameter;
+import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -13,34 +15,42 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * In-memory Tier A analytics function catalog (ADR-0042 / BL-212a).
+ * In-memory analytics function catalog (Tier A built-ins + Tier C extensions).
  */
 @Component
 public class AnalyticsCatalogRegistry {
 
-    private final Map<String, AnalyticsCatalogEntry> entriesById;
+    private final Map<String, AnalyticsCatalogEntry> baseEntriesById;
+    private final AnalyticsExtensionRegistry extensionRegistry;
 
-    public AnalyticsCatalogRegistry() {
-        this.entriesById = buildCatalog();
+    public AnalyticsCatalogRegistry(AnalyticsExtensionRegistry extensionRegistry) {
+        this.extensionRegistry = extensionRegistry;
+        this.baseEntriesById = buildBaseCatalog();
     }
 
     public List<AnalyticsCatalogEntry> list() {
-        return List.copyOf(entriesById.values());
+        return List.copyOf(buildEffectiveCatalog().values());
     }
 
     public Optional<AnalyticsCatalogEntry> findById(String functionId) {
         if (functionId == null || functionId.isBlank()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(entriesById.get(functionId));
+        return Optional.ofNullable(buildEffectiveCatalog().get(functionId));
     }
 
-    private static Map<String, AnalyticsCatalogEntry> buildCatalog() {
+    private static Map<String, AnalyticsCatalogEntry> buildBaseCatalog() {
         Map<String, AnalyticsCatalogEntry> catalog = new LinkedHashMap<>();
         registerEvaluatorBuiltins(catalog);
         registerHistorianCelBuiltins(catalog);
         registerPresets(catalog);
         return Collections.unmodifiableMap(new LinkedHashMap<>(catalog));
+    }
+
+    private Map<String, AnalyticsCatalogEntry> buildEffectiveCatalog() {
+        Map<String, AnalyticsCatalogEntry> catalog = new LinkedHashMap<>(baseEntriesById);
+        registerPackFunctions(catalog, extensionRegistry);
+        return Collections.unmodifiableMap(catalog);
     }
 
     private static void registerEvaluatorBuiltins(Map<String, AnalyticsCatalogEntry> catalog) {
@@ -219,6 +229,54 @@ public class AnalyticsCatalogRegistry {
                     "analytics-catalog-preset-" + preset.id().toLowerCase()
             ));
         }
+    }
+
+    private static void registerPackFunctions(
+            Map<String, AnalyticsCatalogEntry> catalog,
+            AnalyticsExtensionRegistry extensionRegistry
+    ) {
+        for (AnalyticsExtensionRegistry.RegisteredAnalyticsFunction function : extensionRegistry.registeredFunctions()) {
+            registerIfAbsent(catalog, packEntry(function));
+        }
+    }
+
+    private static AnalyticsCatalogEntry packEntry(AnalyticsExtensionRegistry.RegisteredAnalyticsFunction function) {
+        AnalyticsFunctionDescriptor descriptor = function.descriptor();
+        String id = descriptor.id() == null || descriptor.id().isBlank() ? function.helperId() : descriptor.id();
+        String displayName = descriptor.displayName() == null || descriptor.displayName().isBlank()
+                ? id
+                : descriptor.displayName();
+        List<String> tags = descriptor.tags() == null ? List.of("extension") : List.copyOf(descriptor.tags());
+        String helper = descriptor.helper() == null || descriptor.helper().isBlank()
+                ? function.helperId()
+                : descriptor.helper();
+        String syntax = descriptor.syntax() == null || descriptor.syntax().isBlank()
+                ? helper + "(...)"
+                : descriptor.syntax();
+        List<AnalyticsCatalogParameter> parameters = descriptor.parameters() == null
+                ? List.of()
+                : descriptor.parameters().stream()
+                        .map(param -> parameter(
+                                param.name(),
+                                param.type(),
+                                param.required(),
+                                param.description(),
+                                null
+                        ))
+                        .toList();
+        return new AnalyticsCatalogEntry(
+                id,
+                displayName,
+                "C",
+                List.of("helper", "binding-rule"),
+                syntax,
+                parameters,
+                "Analytics extension function from pack " + function.packId() + ".",
+                List.of(syntax),
+                tags,
+                function.packId(),
+                "analytics-catalog-pack-" + id.toLowerCase()
+        );
     }
 
     private static List<AnalyticsCatalogParameter> presetParameters(HistorianComputationPresets.Preset preset) {

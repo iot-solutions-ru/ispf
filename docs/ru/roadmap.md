@@ -1164,7 +1164,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-209 | **Каталог тегов & lineage UI** | P2 | Inspector analytics tag; граф upstream/downstream |
 | БЛ-210 | **Enterprise scale gates** | P2 | Готово — lab scripts, SLO, examples |
 | БЛ-211 | **CEL-over-historian выражения** | P2 | Готово — `hist.*`, helper `cel`, validate/evaluate API, редактор в Tag Inspector |
-| БЛ-212a | **API каталога analytics-функций** | P2 | В процессе — `GET .../analytics/catalog`; dormant evaluators ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
+| БЛ-212a | **API каталога analytics-функций** | P2 | Готово — `GET .../analytics/catalog`; dormant evaluators ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
+| БЛ-212b | **UI браузер формул analytics** | P2 | Готово — каталог в модальном редакторе выражений; статические TS-каталоги удалены |
+| БЛ-213 | **Analytics extension packs (SPI)** | P2 | Готово — SPI `ispf-analytics-api`; `ispf-analytics-core-ext` (`energyDelta`) |
 
 **Метрика фазы:** walkthrough сценария B ≤1 день; lab gate сценария C; derived tag запускает alarm без Chart-only rollup.
 
@@ -1244,7 +1246,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-209 | 33 | Каталог тегов & lineage UI | P2 | Планируется |
 | БЛ-210 | 33 | Enterprise scale gates | P2 | Готово |
 | БЛ-211 | 33 | CEL-over-historian выражения | P2 | Готово |
-| БЛ-212a | 33 | API каталога analytics-функций | P2 | В процессе |
+| БЛ-212a | 33 | API каталога analytics-функций | P2 | Готово |
+| БЛ-212b | 33 | UI браузер формул analytics | P2 | Готово |
+| БЛ-213 | 33 | Analytics extension packs (SPI) | P2 | Готово |
 
 ---
 
