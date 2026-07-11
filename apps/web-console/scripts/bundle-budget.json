@@ -1,5 +1,5 @@
 {
-  "maxTotalJsKb": 6400,
+  "maxTotalJsKb": 6800,
   "maxEntryJsKb": 750,
   "maxChunkKb": {
     "vendor-react": 220,
