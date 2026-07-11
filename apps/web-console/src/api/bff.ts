@@ -1,5 +1,5 @@
 import { getAuthHeaders } from "../auth/session";
-import { resolveIngressPath } from "../utils/ingressPath";
+import { fetchWithIngressFallback } from "../utils/ingressFetch";
 import {
   ISPF_OPERATOR_WIRE_PROFILE,
   type BffInvokeRequest,
@@ -8,7 +8,7 @@ import {
 } from "../types/bff";
 
 export async function bffInvoke<T = unknown>(request: BffInvokeRequest): Promise<BffWireResponse<T>> {
-  const response = await fetch(resolveIngressPath("/api/v1/bff/invoke"), {
+  const response = await fetchWithIngressFallback("/api/v1/bff/invoke", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

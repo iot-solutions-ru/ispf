@@ -4,8 +4,9 @@ import { isOperatorMode } from "./isOperatorMode";
 export const HMI_INGRESS_PREFIX = "/hmi";
 
 /**
- * Route operator-mode REST/WS through dedicated hmi-read ingress.
+ * Route operator-mode REST/WS through dedicated hmi-read ingress when present.
  * Admin console keeps /api and /ws on edge-api pool only.
+ * Use fetchWithIngressFallback (ingressFetch.ts) for runtime fallback to /api.
  */
 export function resolveIngressPath(path: string): string {
   if (!path.startsWith("/")) {

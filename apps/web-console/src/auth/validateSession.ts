@@ -1,5 +1,5 @@
 import type { AuthMe } from "../api";
-import { resolveIngressPath } from "../utils/ingressPath";
+import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingressFetch";
 import {
   clearStoredSession,
   getStoredSession,
@@ -19,6 +19,7 @@ export function isSessionExpired(session: AuthSession | null): boolean {
 
 export function invalidateStoredSession(): void {
   clearStoredSession();
+  resetIngressRouteCache();
   window.dispatchEvent(new Event(SESSION_INVALID_EVENT));
 }
 
@@ -34,7 +35,7 @@ export async function validateStoredSession(): Promise<AuthSession | null> {
     return null;
   }
   try {
-    const response = await fetch(resolveIngressPath("/api/v1/auth/me"), {
+    const response = await fetchWithIngressFallback("/api/v1/auth/me", {
       cache: "no-store",
       headers: { Authorization: `Bearer ${session.token}` },
     });

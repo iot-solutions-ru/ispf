@@ -1,4 +1,5 @@
 import { getAuthHeaders } from "../auth/session";
+import { fetchWithIngressFallback } from "../utils/ingressFetch";
 import type { OperatorUi } from "../types/operatorUi";
 
 export interface OperatorAppEntry {
@@ -7,7 +8,7 @@ export interface OperatorAppEntry {
 }
 
 export async function fetchOperatorApps(): Promise<OperatorAppEntry[]> {
-  const response = await fetch("/api/v1/operator-apps", {
+  const response = await fetchWithIngressFallback("/api/v1/operator-apps", {
     headers: getAuthHeaders(),
   });
   if (!response.ok) {
@@ -17,7 +18,7 @@ export async function fetchOperatorApps(): Promise<OperatorAppEntry[]> {
 }
 
 export async function fetchOperatorAppUi(appId: string): Promise<OperatorUi | null> {
-  const response = await fetch(`/api/v1/operator-apps/${encodeURIComponent(appId)}/ui`, {
+  const response = await fetchWithIngressFallback(`/api/v1/operator-apps/${encodeURIComponent(appId)}/ui`, {
     headers: getAuthHeaders(),
   });
   if (response.status === 404) {

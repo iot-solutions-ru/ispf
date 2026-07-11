@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getStoredSession } from "../auth/session";
 import { SESSION_INVALID_EVENT, SESSION_UPDATED_EVENT } from "../auth/validateSession";
 import { isFederatedCatalogPath } from "../utils/federationPath";
-import { resolveIngressPath } from "../utils/ingressPath";
+import { preferDirectIngressRoute, resolveIngressWebSocketPaths } from "../utils/ingressFetch";
 import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./objectWebSocketTypes";
 
 export type { ObjectWsMessage } from "./objectWebSocketTypes";
@@ -38,13 +38,18 @@ export function subscribeObjectWebSocketConnection(listener: () => void): () => 
 
 const WS_BEARER_PROTOCOL = "ispf-bearer";
 
-function wsUrl(): string {
+let wsPathIndex = 0;
+let wsPathCandidates: string[] = [];
+
+function wsUrlAt(index: number): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}${resolveIngressPath("/ws/objects")}`;
+  const paths = wsPathCandidates.length > 0 ? wsPathCandidates : resolveIngressWebSocketPaths("/ws/objects");
+  const path = paths[Math.min(index, paths.length - 1)] ?? "/ws/objects";
+  return `${protocol}//${window.location.host}${path}`;
 }
 
-function openWebSocket(authToken: string): WebSocket {
-  return new WebSocket(wsUrl(), [WS_BEARER_PROTOCOL, authToken]);
+function openWebSocket(authToken: string, pathIndex: number): WebSocket {
+  return new WebSocket(wsUrlAt(pathIndex), [WS_BEARER_PROTOCOL, authToken]);
 }
 
 function clearRetryTimer() {
@@ -63,21 +68,29 @@ function teardownSocket() {
   setWsConnected(false);
 }
 
-function connectWebSocket(authToken: string) {
+function connectWebSocket(authToken: string, tryNextIngressPath = false) {
   if (
     activeSocket
     && connectionToken === authToken
+    && !tryNextIngressPath
     && (activeSocket.readyState === WebSocket.OPEN || activeSocket.readyState === WebSocket.CONNECTING)
   ) {
     return;
   }
 
+  if (!tryNextIngressPath) {
+    wsPathCandidates = resolveIngressWebSocketPaths("/ws/objects");
+    wsPathIndex = 0;
+  }
+
   teardownSocket();
   connectionToken = authToken;
-  const socket = openWebSocket(authToken);
+  const socket = openWebSocket(authToken, wsPathIndex);
   activeSocket = socket;
+  let opened = false;
 
   socket.onopen = () => {
+    opened = true;
     setWsConnected(true);
     pushMergedSubscriptionsToServer();
   };
@@ -100,6 +113,12 @@ function connectWebSocket(authToken: string) {
       activeSocket = null;
     }
     setWsConnected(false);
+    if (!opened && wsPathIndex + 1 < wsPathCandidates.length) {
+      wsPathIndex += 1;
+      preferDirectIngressRoute();
+      connectWebSocket(authToken, true);
+      return;
+    }
     if (socketOwnerCount > 0 && connectionToken === authToken) {
       clearRetryTimer();
       retryTimer = window.setTimeout(() => connectWebSocket(authToken), 3000);

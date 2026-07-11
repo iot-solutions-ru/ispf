@@ -2,13 +2,14 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { fetchOperatorApps, fetchOperatorAppUi } from "../api/operatorApps";
 import { getAuthHeaders } from "../auth/session";
+import { fetchWithIngressFallback } from "../utils/ingressFetch";
 import type { OperatorUi } from "../types/operatorUi";
 
 const BUNDLE_API_PATHS = ["operator-ui", "hmi-ui"] as const;
 
 async function loadUiFromBundleApi(appId: string): Promise<OperatorUi | null> {
   for (const path of BUNDLE_API_PATHS) {
-    const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/${path}`, {
+    const response = await fetchWithIngressFallback(`/api/v1/applications/${encodeURIComponent(appId)}/${path}`, {
       headers: getAuthHeaders(),
     });
     if (response.status === 404 || response.status === 403) {

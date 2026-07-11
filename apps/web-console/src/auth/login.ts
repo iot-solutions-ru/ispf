@@ -1,6 +1,6 @@
 import type { AuthSession } from "./session";
 import { clearStoredSession, setStoredSession } from "./session";
-import { resolveIngressPath } from "../utils/ingressPath";
+import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingressFetch";
 
 export interface LoginResponse {
   token: string;
@@ -14,7 +14,7 @@ export interface LoginResponse {
 }
 
 export async function login(username: string, password: string): Promise<AuthSession> {
-  const response = await fetch(resolveIngressPath("/api/v1/auth/login"), {
+  const response = await fetchWithIngressFallback("/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -41,10 +41,11 @@ export async function login(username: string, password: string): Promise<AuthSes
 export async function logout(): Promise<void> {
   const session = JSON.parse(localStorage.getItem("ispf-auth-session") ?? "null") as AuthSession | null;
   if (session?.token) {
-    await fetch(resolveIngressPath("/api/v1/auth/logout"), {
+    await fetchWithIngressFallback("/api/v1/auth/logout", {
       method: "POST",
       headers: { Authorization: `Bearer ${session.token}` },
     }).catch(() => undefined);
   }
   clearStoredSession();
+  resetIngressRouteCache();
 }

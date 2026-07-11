@@ -16,7 +16,7 @@ import type { WorkflowLifecycleStatus, WorkflowView } from "./types/workflow";
 import { getAuthHeaders, getStoredSession } from "./auth/session";
 import { parseApiError } from "./utils/parseApiError";
 import { invalidateStoredSession } from "./auth/validateSession";
-import { resolveIngressPath } from "./utils/ingressPath";
+import { fetchWithIngressFallback } from "./utils/ingressFetch";
 
 let authFailureCheck: Promise<void> | null = null;
 
@@ -34,7 +34,7 @@ async function handlePossibleAuthFailure(status: number): Promise<void> {
   }
   authFailureCheck = (async () => {
     try {
-      const response = await fetch(resolveIngressPath("/api/v1/auth/me"), {
+      const response = await fetchWithIngressFallback("/api/v1/auth/me", {
         cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -62,7 +62,7 @@ async function request<T>(url: string, init?: RequestOptions): Promise<T> {
   const authHeaders = authToken?.trim()
     ? { Authorization: `Bearer ${authToken.trim()}` }
     : getAuthHeaders();
-  const response = await fetch(resolveIngressPath(url), {
+  const response = await fetchWithIngressFallback(url, {
     ...fetchInit,
     cache: "no-store",
     headers: {
@@ -462,7 +462,7 @@ export async function downloadAnalyticsQueryExport(
   format: "csv" | "parquet",
 ): Promise<Blob> {
   const params = new URLSearchParams({ format });
-  const response = await fetch(resolveIngressPath(`/api/v1/platform/analytics/query/export?${params}`), {
+  const response = await fetchWithIngressFallback(`/api/v1/platform/analytics/query/export?${params}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(body),
@@ -494,8 +494,8 @@ export async function downloadVariableHistoryExport(
   if (options.to) params.set("to", options.to);
   if (options.limit != null) params.set("limit", String(options.limit));
 
-  const response = await fetch(
-    resolveIngressPath(`/api/v1/objects/by-path/variables/history/export?${params}`),
+  const response = await fetchWithIngressFallback(
+    `/api/v1/objects/by-path/variables/history/export?${params}`,
     { headers: getAuthHeaders() }
   );
   if (!response.ok) {
