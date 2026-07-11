@@ -6,12 +6,6 @@
     "text": "scripts/run-local-with-ai.ps1"
   },
   {
-    "file": "components/analytics/AnalyticsTemplateInspector.tsx",
-    "line": 198,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
-  },
-  {
     "file": "components/ApplicationBundlePanel.tsx",
     "line": 403,
     "kind": "ui-attr",
@@ -108,18 +102,6 @@
     "text": "root.platform.devices.foo"
   },
   {
-    "file": "components/BindingExpressionField.tsx",
-    "line": 91,
-    "kind": "jsx-text",
-    "text": "0 && inlineSuggestions.length"
-  },
-  {
-    "file": "components/BindingRulesPanel.tsx",
-    "line": 241,
-    "kind": "ui-attr",
-    "text": "params.mode"
-  },
-  {
     "file": "components/BrickMetadataPanel.tsx",
     "line": 143,
     "kind": "ui-attr",
@@ -127,25 +109,25 @@
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 519,
+    "line": 507,
     "kind": "ui-attr",
     "text": "root.platform.data-sources.myapp"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 543,
+    "line": 531,
     "kind": "ui-attr",
     "text": "root.platform.devices.demo-sensor-01"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 557,
+    "line": 545,
     "kind": "ui-attr",
     "text": "root.platform.data-sources.myapp"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 590,
+    "line": 578,
     "kind": "ui-attr",
     "text": "root.platform.devices.demo-sensor-01"
   },
@@ -169,91 +151,91 @@
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1057,
+    "line": 1004,
     "kind": "ui-attr",
     "text": "root.platform.workflows..."
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1185,
+    "line": 1132,
     "kind": "ui-attr",
     "text": "gpu-*"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1199,
+    "line": 1146,
     "kind": "jsx-text",
     "text": "DEVICE"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1200,
+    "line": 1147,
     "kind": "jsx-text",
     "text": "FOLDER"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1201,
+    "line": 1148,
     "kind": "jsx-text",
     "text": "DASHBOARD"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1202,
+    "line": 1149,
     "kind": "jsx-text",
     "text": "CUSTOM"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1223,
+    "line": 1170,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1246,
+    "line": 1193,
     "kind": "ui-attr",
     "text": "count>10 && name contains abc"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1521,
+    "line": 1468,
     "kind": "ui-attr",
     "text": "root.platform.reports.ready-items"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1809,
+    "line": 1756,
     "kind": "ui-attr",
     "text": "SVG"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1815,
+    "line": 1762,
     "kind": "ui-attr",
     "text": "/lab-assets/button.svg"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 2032,
+    "line": 1979,
     "kind": "ui-attr",
     "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 2091,
+    "line": 2038,
     "kind": "ui-attr",
     "text": "HTML"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 409,
+    "line": 408,
     "kind": "ui-attr",
     "text": "root.platform.dashboards.detail"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 698,
+    "line": 646,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
@@ -283,19 +265,19 @@
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 120,
+    "line": 103,
     "kind": "jsx-text",
     "text": "(editable && series.points.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 124,
+    "line": 107,
     "kind": "jsx-text",
     "text": "(editable && isRangeChart && series.rangePoints.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 130,
+    "line": 113,
     "kind": "jsx-text",
     "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
   },

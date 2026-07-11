@@ -64,13 +64,19 @@ class VariableHistoryAsyncWriterTest {
 
     @Test
     void enqueueReturnsBeforePersistence() throws InterruptedException {
+        writer.shutdown();
+        properties.setFlushIntervalMs(3_600_000);
+        writer = new VariableHistoryAsyncWriter(properties, batchPersister, automationMetricsRecorder);
         CountDownLatch persistEntered = new CountDownLatch(1);
         CountDownLatch allowPersist = new CountDownLatch(1);
         doAnswer(invocation -> {
             persistEntered.countDown();
-            assertTrue(allowPersist.await(5, TimeUnit.SECONDS));
+            if (!allowPersist.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("allowPersist timeout");
+            }
             return null;
         }).when(batchPersister).persistBatch(anyList());
+        writer.start();
 
         assertTimeoutPreemptively(java.time.Duration.ofMillis(250), () ->
                 writer.enqueue(List.of(
@@ -79,9 +85,10 @@ class VariableHistoryAsyncWriterTest {
                 ))
         );
 
-        assertTrue(persistEntered.await(5, TimeUnit.SECONDS));
+        assertTrue(persistEntered.await(5, TimeUnit.SECONDS), "worker should enter persistBatch while enqueue returns");
         allowPersist.countDown();
-        verify(batchPersister, timeout(5000).times(1)).persistBatch(anyList());
+        writer.awaitQueueDrain(5, TimeUnit.SECONDS);
+        verify(batchPersister, times(1)).persistBatch(anyList());
     }
 
     @Test
