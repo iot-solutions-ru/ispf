@@ -59,8 +59,13 @@ const MOCK_DASHBOARD_VIEW = {
 
 const EMPTY_CONTEXT = { selection: {}, params: {}, widgets: {} };
 
+function normalizeApiPath(pathname) {
+  return pathname.startsWith("/hmi/") ? pathname.slice("/hmi".length) : pathname;
+}
+
 function resolveMock(pathname, searchParams) {
-  switch (pathname) {
+  const apiPath = normalizeApiPath(pathname);
+  switch (apiPath) {
     case "/api/v1/auth/config":
       return { mode: "local", localLoginEnabled: true };
     case "/api/v1/auth/me":
@@ -119,7 +124,7 @@ function resolveMock(pathname, searchParams) {
     case "/api/v1/platform/storage/health":
       return { timestamp: NOW, backends: [] };
     default:
-      if (pathname.startsWith("/api/v1/ai/")) {
+      if (apiPath.startsWith("/api/v1/ai/")) {
         return { enabled: false, available: false };
       }
       return null;
@@ -161,6 +166,8 @@ export function installLighthouseApiMocks(page, origin) {
       };
 
       const originalFetch = window.fetch.bind(window);
+      const normalizeApiPath = (pathname) =>
+        pathname.startsWith("/hmi/") ? pathname.slice("/hmi".length) : pathname;
       window.fetch = async (input, init) => {
         const url = typeof input === "string" ? input : input.url;
         let pathname;
@@ -172,29 +179,30 @@ export function installLighthouseApiMocks(page, origin) {
         } catch {
           return originalFetch(input, init);
         }
-        if (!pathname.startsWith("/api/v1/")) {
+        const apiPath = normalizeApiPath(pathname);
+        if (!apiPath.startsWith("/api/v1/")) {
           return originalFetch(input, init);
         }
-        if (pathname === "/api/v1/dashboards/by-path" && searchParams.get("path") === dashboardPath) {
+        if (apiPath === "/api/v1/dashboards/by-path" && searchParams.get("path") === dashboardPath) {
           return new Response(JSON.stringify(dashboardView), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
         }
-        if (pathname === "/api/v1/dashboards/by-path/context" && searchParams.get("path") === dashboardPath) {
+        if (apiPath === "/api/v1/dashboards/by-path/context" && searchParams.get("path") === dashboardPath) {
           const body = { path: dashboardPath, context: emptyContext, contextJson: JSON.stringify(emptyContext) };
           return new Response(JSON.stringify(body), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
         }
-        if (Object.prototype.hasOwnProperty.call(routes, pathname)) {
-          return new Response(JSON.stringify(routes[pathname]), {
+        if (Object.prototype.hasOwnProperty.call(routes, apiPath)) {
+          return new Response(JSON.stringify(routes[apiPath]), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
         }
-        if (pathname.startsWith("/api/v1/ai/")) {
+        if (apiPath.startsWith("/api/v1/ai/")) {
           return new Response(JSON.stringify({ enabled: false, available: false }), {
             status: 200,
             headers: { "Content-Type": "application/json" },
