@@ -113,7 +113,7 @@ tasks.named<Test>("test") {
     environment("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("junit.jupiter.execution.parallel.enabled", "false")
-    maxHeapSize = "2g"
+    maxHeapSize = "10g"
     // Many @SpringBootTest classes in one JVM can pollute shared async shutdown (CI flakes).
     if (System.getenv("CI") != null) {
         forkEvery = 1

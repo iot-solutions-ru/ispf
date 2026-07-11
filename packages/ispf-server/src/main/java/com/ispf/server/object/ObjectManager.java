@@ -895,6 +895,16 @@ public class ObjectManager {
             reconcileType(path, type);
             return;
         }
+        Optional<ObjectNodeEntity> persisted = nodeRepository.findByPath(path);
+        if (persisted.isPresent()) {
+            registerNodeFromEntity(
+                    persisted.get(),
+                    loadVariablesByPath(List.of(path)).getOrDefault(path, List.of())
+            );
+            updateInfo(path, entry.displayName(), entry.description());
+            reconcileType(path, type);
+            return;
+        }
         int lastDot = path.lastIndexOf('.');
         String parentPath = path.substring(0, lastDot);
         String name = path.substring(lastDot + 1);
@@ -1169,7 +1179,19 @@ public class ObjectManager {
     }
 
     private void persistNode(PlatformObject node) {
-        nodeRepository.save(mapper.toEntity(node));
+        ObjectNodeEntity mapped = mapper.toEntity(node);
+        nodeRepository.findByPath(node.path()).ifPresent(existing -> mapped.setId(existing.getId()));
+        try {
+            nodeRepository.save(mapped);
+        } catch (DataIntegrityViolationException duplicate) {
+            Optional<ObjectNodeEntity> raced = nodeRepository.findByPath(node.path());
+            if (raced.isEmpty()) {
+                throw duplicate;
+            }
+            ObjectNodeEntity retry = mapper.toEntity(node);
+            retry.setId(raced.get().getId());
+            nodeRepository.save(retry);
+        }
     }
 
     private int nextSortOrder(String parentPath) {

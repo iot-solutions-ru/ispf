@@ -67,13 +67,12 @@ describe("useAnalyticsCatalog", () => {
     expect(result.current.entries[0]?.snippet).toContain("rollingAvg");
   });
 
-  it("falls back to static historian entries when catalog request fails", async () => {
+  it("returns empty entries when catalog request fails", async () => {
     vi.mocked(analyticsCatalogApi.fetchAnalyticsCatalog).mockRejectedValue(new Error("offline"));
     const { result } = renderHook(() => useAnalyticsCatalog("historian"), { wrapper });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.hasRemoteEntries).toBe(false);
-    expect(result.current.entries.length).toBeGreaterThan(0);
-    expect(result.current.entries.some((entry) => entry.id === "rollingAvg")).toBe(true);
+    expect(result.current.entries).toEqual([]);
   });
 });

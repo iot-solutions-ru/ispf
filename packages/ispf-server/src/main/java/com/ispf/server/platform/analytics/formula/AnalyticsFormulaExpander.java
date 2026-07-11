@@ -1,5 +1,6 @@
 package com.ispf.server.platform.analytics.formula;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -25,21 +26,19 @@ public final class AnalyticsFormulaExpander {
         while (matcher.find()) {
             names.add(matcher.group(1));
         }
-        return Set.copyOf(names);
+        return Collections.unmodifiableSet(names);
     }
 
     public static String expand(String expression, Map<String, String> parameters) {
         if (expression == null) {
             return "";
         }
-        if (parameters == null || parameters.isEmpty()) {
-            return expression;
-        }
+        Map<String, String> resolved = parameters != null ? parameters : Map.of();
         Matcher matcher = PLACEHOLDER.matcher(expression);
         StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
             String name = matcher.group(1);
-            String value = parameters.get(name);
+            String value = resolved.get(name);
             if (value == null) {
                 throw new IllegalArgumentException("Missing formula parameter: " + name);
             }
