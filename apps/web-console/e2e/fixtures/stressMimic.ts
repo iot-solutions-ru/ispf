@@ -6,12 +6,18 @@ export function buildStressMimicDocument(elementCount = 500) {
   const elements = Array.from({ length: elementCount }, (_, index) => ({
     id: `stress-el-${index}`,
     layerId: LAYER,
-    symbolId: "rect",
+    symbolId: "custom.svg",
     x: 40 + (index % cols) * 64,
     y: 40 + Math.floor(index / cols) * 48,
     width: 56,
     height: 40,
     rotation: 0,
+    props: {
+      width: 56,
+      height: 40,
+      viewBox: "0 0 56 40",
+      svg: '<rect width="56" height="40" fill="#3fb950" rx="4"/>',
+    },
     bindings: {},
     formatRules: [],
   }));

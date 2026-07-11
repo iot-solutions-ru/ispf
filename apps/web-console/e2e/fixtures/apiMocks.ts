@@ -176,14 +176,46 @@ export const MOCK_E2E_OPERATOR_UI = {
   },
 } as const;
 
+const MOCK_ANALYTICS_CATALOG = [
+  {
+    id: "movingAvg",
+    displayName: "Moving average",
+    tier: "A",
+    kinds: ["reactive", "historian"],
+    syntax: "movingAvg(sourceVar, windowSec)",
+    parameters: [
+      {
+        name: "sourceVar",
+        type: "string",
+        required: true,
+        description: "Source variable",
+        defaultValue: "temperature",
+      },
+      {
+        name: "windowSec",
+        type: "number",
+        required: true,
+        description: "Window seconds",
+        defaultValue: "60",
+      },
+    ],
+    description: "Rolling moving average over a time window",
+    examples: ["movingAvg(temperature, 60)"],
+    tags: ["reactive"],
+    pack: "core",
+    docAnchor: "",
+  },
+];
+
 export async function mockAuthConfig(page: Page, mode: "local" | "oidc" = "local") {
-  await page.route("**/api/v1/auth/config", (route) =>
+  const handler = (route: Route) =>
     json(route, {
       mode,
       localLoginEnabled: mode === "local",
       oidc: mode === "oidc" ? { issuer: "https://keycloak.example/realms/ispf", clientId: "web-console" } : undefined,
-    }),
-  );
+    });
+  await page.route("**/api/v1/auth/config", handler);
+  await page.route("**/hmi/api/v1/auth/config", handler);
 }
 
 export interface MockAuthenticatedApiOptions {
@@ -193,6 +225,10 @@ export interface MockAuthenticatedApiOptions {
     rowHeight?: number;
     widgets: unknown[];
   };
+}
+
+function normalizeMockApiPathname(pathname: string): string {
+  return pathname.startsWith("/hmi/") ? pathname.slice("/hmi".length) : pathname;
 }
 
 /** Single dispatcher avoids Playwright glob overlap (`objects?*` vs `by-path/editor`). */
@@ -222,12 +258,13 @@ export async function mockAuthenticatedApi(
     const request = route.request();
     const url = new URL(request.url());
     const { pathname, searchParams } = url;
+    const apiPath = normalizeMockApiPathname(pathname);
 
     if (request.method() !== "GET") {
       return json(route, { message: "mock not implemented" }, 501);
     }
 
-    switch (pathname) {
+    switch (apiPath) {
       case "/api/v1/auth/me":
         return json(route, {
           authenticated: true,
@@ -263,6 +300,8 @@ export async function mockAuthenticatedApi(
             },
           ],
         });
+      case "/api/v1/platform/analytics/catalog":
+        return json(route, MOCK_ANALYTICS_CATALOG);
       case "/api/v1/platform/license":
         return json(route, {
           installationId: "e2e-installation-id",
@@ -478,11 +517,11 @@ export async function mockAuthenticatedApi(
         break;
     }
 
-    if (pathname.startsWith("/api/v1/platform/binding-invocations")) {
+    if (apiPath.startsWith("/api/v1/platform/binding-invocations")) {
       return json(route, []);
     }
 
-    if (pathname.startsWith("/api/v1/platform/binding-audit-status")) {
+    if (apiPath.startsWith("/api/v1/platform/binding-audit-status")) {
       return json(route, {
         masterEnabled: false,
         objectEnabled: false,
@@ -490,7 +529,7 @@ export async function mockAuthenticatedApi(
       });
     }
 
-    if (pathname.startsWith("/api/v1/platform/update/")) {
+    if (apiPath.startsWith("/api/v1/platform/update/")) {
       return json(route, {
         checkEnabled: false,
         applyEnabled: false,
@@ -509,7 +548,7 @@ export async function mockAuthenticatedApi(
       });
     }
 
-    if (pathname === "/api/v1/dashboards/by-path/context") {
+    if (apiPath === "/api/v1/dashboards/by-path/context") {
       const dashboardPath = searchParams.get("path");
       if (dashboardPath === MOCK_DASHBOARD_PATH || dashboardPath === MOCK_DEMO_SENSOR_DASHBOARD_PATH) {
         const emptyCtx = { selection: {}, params: {}, widgets: {} };
@@ -522,32 +561,41 @@ export async function mockAuthenticatedApi(
       return json(route, { message: "not found" }, 404);
     }
 
-    if (pathname.startsWith("/api/v1/objects/leases")) {
+    if (apiPath.startsWith("/api/v1/objects/leases")) {
       return json(route, []);
     }
 
-    if (pathname === "/api/v1/operator-apps/e2e-operator/ui") {
-      return json(route, MOCK_E2E_OPERATOR_UI);
-    }
-
-    if (/^\/api\/v1\/operator-apps\/[^/]+\/ui$/.test(pathname)) {
+    const analyticsCatalogMatch = apiPath.match(/^\/api\/v1\/platform\/analytics\/catalog\/([^/]+)$/);
+    if (analyticsCatalogMatch) {
+      const entry = MOCK_ANALYTICS_CATALOG.find((item) => item.id === analyticsCatalogMatch[1]);
+      if (entry) {
+        return json(route, entry);
+      }
       return json(route, { message: "not found" }, 404);
     }
 
-    if (pathname.startsWith("/api/v1/applications/")) {
+    if (apiPath === "/api/v1/operator-apps/e2e-operator/ui") {
+      return json(route, MOCK_E2E_OPERATOR_UI);
+    }
+
+    if (/^\/api\/v1\/operator-apps\/[^/]+\/ui$/.test(apiPath)) {
+      return json(route, { message: "not found" }, 404);
+    }
+
+    if (apiPath.startsWith("/api/v1/applications/")) {
       if (
-        pathname.includes("/operator-manifest")
-        || pathname.includes("/operator-ui")
-        || pathname.includes("/hmi-ui")
-        || pathname.includes("/reports/")
+        apiPath.includes("/operator-manifest")
+        || apiPath.includes("/operator-ui")
+        || apiPath.includes("/hmi-ui")
+        || apiPath.includes("/reports/")
       ) {
         return json(route, { message: "not found" }, 404);
       }
       return json(route, []);
     }
 
-    if (pathname.startsWith("/api/v1/ai/")) {
-      switch (pathname) {
+    if (apiPath.startsWith("/api/v1/ai/")) {
+      switch (apiPath) {
         case "/api/v1/ai/provider":
           return json(route, {
             enabled: false,

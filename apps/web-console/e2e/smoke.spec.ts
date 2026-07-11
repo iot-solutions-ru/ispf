@@ -187,7 +187,7 @@ test.describe("dashboard preview", () => {
 });
 
 test.describe("binding expression builder", () => {
-  test("opens platform function catalog on Bindings tab", async ({ page }) => {
+  test("opens platform function catalog on Computations tab", async ({ page }) => {
     await mockAuthenticatedApi(page);
     await seedAuthSession(page);
     await page.goto("/?mode=admin");
@@ -203,18 +203,21 @@ test.describe("binding expression builder", () => {
         && response.ok(),
       { timeout: 15_000 },
     );
-    await page.locator("nav.tabs").getByRole("button", { name: "Bindings" }).click();
+    await page.locator("nav.tabs").getByRole("button", { name: "Computations" }).click();
     await rulesLoaded;
     await expect(page.getByRole("button", { name: "+ Rule" })).toBeVisible();
     await page.getByRole("button", { name: "+ Rule" }).click();
 
     await expect(page.getByRole("heading", { name: "New rule" })).toBeVisible();
-    const modal = page.locator(".modal");
-    await modal.locator(".binding-expression-field").first().getByRole("button", { name: "Functions" }).click();
-    const catalog = modal.locator(".platform-binding-catalog");
+    const rulePanel = page.locator(".modal, .binding-rules-panel").filter({ hasText: "New rule" });
+    await rulePanel.locator(".binding-expression-field").first().getByRole("button", { name: "Edit", exact: true }).click();
+
+    const editorModal = page.locator(".binding-expression-editor-modal");
+    await expect(editorModal).toBeVisible();
+    const catalog = editorModal.locator(".platform-binding-catalog");
     await expect(catalog).toBeVisible();
     await expect(catalog.locator("code", { hasText: "movingAvg" }).first()).toBeVisible();
-    await expect(catalog.getByRole("button", { name: "Build…" }).first()).toBeVisible();
+    await expect(catalog.getByRole("button", { name: "Insert" }).first()).toBeVisible();
   });
 });
 
