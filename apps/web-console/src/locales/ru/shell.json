@@ -13,7 +13,7 @@
   "agentStatusBar.openStudio": "Открыть AI Studio",
   "agentStatusBar.running": "Агент выполняет задачу…",
   "agentStatusBar.runningWithMessage": "Агент выполняет: «{{message}}»",
-  "login.defaultHint": "По умолчанию: администратор/администратор или оператор/оператор.",
+  "login.defaultHint": "По умолчанию: admin/admin или operator/operator",
   "login.loadingAuthConfig": "Загрузка конфигурации аутентификации…",
   "login.oidcCompleting": "Завершение входа в OIDC…",
   "login.oidcRealm": "Область OIDC",

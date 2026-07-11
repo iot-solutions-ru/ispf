@@ -13,7 +13,7 @@
   "agentStatusBar.openStudio": "Der Agent führt eine Aufgabe aus …",
   "agentStatusBar.running": "Offene Veröffentlichung",
   "agentStatusBar.runningWithMessage": "Überprüfen Sie es noch einmal",
-  "login.defaultHint": "Standard: admin/admin oder Operator/Operator",
+  "login.defaultHint": "Standard: admin/admin oder operator/operator",
   "login.loadingAuthConfig": "Authentifizierungskonfiguration wird geladen…",
   "login.oidcCompleting": "OIDC-Anmeldung wird abgeschlossen …",
   "login.oidcRealm": "OIDC-Bereich",

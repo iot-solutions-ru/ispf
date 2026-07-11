@@ -117,7 +117,7 @@
   "diagnostics.col.cpuDelta": "中央处理器Δ",
   "diagnostics.col.devicePath": "设备路径",
   "diagnostics.col.driverId": "司机",
-  "diagnostics.col.heap": "堆",
+  "diagnostics.col.heap": "Heap",
   "diagnostics.col.ingressPending": "入口待定",
   "diagnostics.col.jobType": "职位类型",
   "diagnostics.col.pointCount": "积分",

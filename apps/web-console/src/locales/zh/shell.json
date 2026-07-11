@@ -13,7 +13,7 @@
   "agentStatusBar.openStudio": "代理正在运行任务...",
   "agentStatusBar.running": "开放发布",
   "agentStatusBar.runningWithMessage": "再次检查",
-  "login.defaultHint": "默认：管理员/管理员或操作员/操作员",
+  "login.defaultHint": "默认：admin/admin 或 operator/operator",
   "login.loadingAuthConfig": "正在加载身份验证配置...",
   "login.oidcCompleting": "正在完成 OIDC 登录...",
   "login.oidcRealm": "OIDC 领域",
