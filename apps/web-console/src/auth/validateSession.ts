@@ -1,4 +1,5 @@
 import type { AuthMe } from "../api";
+import { resolveIngressPath } from "../utils/ingressPath";
 import {
   clearStoredSession,
   getStoredSession,
@@ -33,7 +34,7 @@ export async function validateStoredSession(): Promise<AuthSession | null> {
     return null;
   }
   try {
-    const response = await fetch("/api/v1/auth/me", {
+    const response = await fetch(resolveIngressPath("/api/v1/auth/me"), {
       cache: "no-store",
       headers: { Authorization: `Bearer ${session.token}` },
     });

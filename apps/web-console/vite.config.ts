@@ -134,6 +134,16 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      "/hmi/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/hmi/, ""),
+      },
+      "/hmi/ws": {
+        target: "ws://localhost:8080",
+        ws: true,
+        rewrite: (path) => path.replace(/^\/hmi/, ""),
+      },
       "/api": "http://localhost:8080",
       "/ws": {
         target: "ws://localhost:8080",

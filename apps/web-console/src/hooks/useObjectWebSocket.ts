@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getStoredSession } from "../auth/session";
 import { SESSION_INVALID_EVENT, SESSION_UPDATED_EVENT } from "../auth/validateSession";
 import { isFederatedCatalogPath } from "../utils/federationPath";
+import { resolveIngressPath } from "../utils/ingressPath";
 import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./objectWebSocketTypes";
 
 export type { ObjectWsMessage } from "./objectWebSocketTypes";
@@ -39,7 +40,7 @@ const WS_BEARER_PROTOCOL = "ispf-bearer";
 
 function wsUrl(): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/ws/objects`;
+  return `${protocol}//${window.location.host}${resolveIngressPath("/ws/objects")}`;
 }
 
 function openWebSocket(authToken: string): WebSocket {

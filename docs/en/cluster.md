@@ -379,16 +379,17 @@ This section is the **canonical order** for bringing up a multi-profile cluster:
 
 ```text
                          nginx :8000 (lab) / :8080 (VPS)
-              REST/WS ──► edge-api pool (replica-1, replica-2)
+              /api/, /ws/           ──► edge-api pool (replica-1, replica-2 only)
+              /hmi/api/, /hmi/ws/  ──► hmi-read (replica-5) — operator HMI only
               materializer paths only ──► analytics (replica-3)
               (no public ingress)     io (replica-4) — drivers
-                                    compute (optional) — jobs
+                                        compute (replica-6) — jobs
 
-        ┌──────────┬──────────┬──────────────┬─────────────┐
-        ▼          ▼          ▼              ▼             │
-   edge-api    edge-api   analytics          io           │
-   replica-1   replica-2  replica-3      replica-4       │
-        └──────────┴──────────┴──────┬───────┴─────────────┘
+        ┌──────────┬──────────┬──────────┬──────────────┬─────────────┬─────────────┐
+        ▼          ▼          ▼          ▼              ▼             ▼             │
+   edge-api    edge-api   hmi-read   analytics          io        compute          │
+   replica-1   replica-2  replica-5  replica-3      replica-4     replica-6         │
+        └──────────┴──────────┴──────────┴──────┬───────┴─────────────┴─────────────┘
                                      │
               PostgreSQL (one)  NATS  Redis  ClickHouse (optional)
 ```
@@ -396,9 +397,10 @@ This section is the **canonical order** for bringing up a multi-profile cluster:
 | Node | Profile | In nginx? | Responsibilities |
 |------|---------|-----------|------------------|
 | replica-1, replica-2 | `edge-api` | yes | REST, WS, config write, schedulers |
+| replica-5 | `hmi-read` | `/hmi/api/`, `/hmi/ws/` only | Read-optimized operator ingress; `config-write` disabled — never in edge-api upstream |
 | replica-3 | `analytics` | internal only (`/api/v1/platform/analytics/rollups/materializer/*`) | Rollup materializer, heavy historian backfill |
 | replica-4 | `io` | no | Driver ownership, replica-sync, schedulers |
-| worker-* | `compute` | no | `platform_jobs` consumer (async reports) |
+| replica-6 | `compute` | no | `platform_jobs` consumer (async reports) |
 
 Lab compose + nginx: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/local/nginx/cluster-lab.conf`](../deploy/local/nginx/cluster-lab.conf).  
 VPS host-network example: [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml) (ports `8081`…`8084`).
@@ -469,10 +471,12 @@ RAM is for the **whole machine** (OS + all containers), not per replica. Lab def
 | ClickHouse | 34g | — |
 | PostgreSQL | 6g | — |
 | edge-api ×2 | 6g each | 4g each |
+| hmi-read | 10g | 6g |
 | analytics | 10g | 6g |
 | io | 8g | 6g |
+| compute | 10g | 6g |
 
-Override via `ISPF_LAB_CH_MEM_LIMIT`, `ISPF_LAB_EDGE_MEM_LIMIT`, `ISPF_LAB_ANALYTICS_MEM_LIMIT`, `ISPF_LAB_IO_MEM_LIMIT`, `ISPF_LAB_JVM_XMX_*`.
+Override via `ISPF_LAB_CH_MEM_LIMIT`, `ISPF_LAB_EDGE_MEM_LIMIT`, `ISPF_LAB_HMI_MEM_LIMIT`, `ISPF_LAB_ANALYTICS_MEM_LIMIT`, `ISPF_LAB_IO_MEM_LIMIT`, `ISPF_LAB_COMPUTE_MEM_LIMIT`, `ISPF_LAB_JVM_XMX_*`.
 
 ### nginx ingress rules
 
@@ -483,6 +487,10 @@ Override via `ISPF_LAB_CH_MEM_LIMIT`, `ISPF_LAB_EDGE_MEM_LIMIT`, `ISPF_LAB_ANALY
 | `/ws/` | `edge-api` (`ip_hash`) |
 
 Writes for catalog seeding and operator API must hit **edge-api**, not `io` or `analytics` (otherwise `503 REPLICA_CAPABILITY_DENIED`).
+
+### Lab scenario preflight (clean slate)
+
+Before **each** isolated load/functional scenario on the lab cluster: full wipe (`docker compose down -v` on cluster + stress stacks), staged bootstrap, readiness gates (object tree HTTP 200, 6/6 replicas, empty CH). Script: [`deploy/lab-cluster-reset.sh`](../deploy/lab-cluster-reset.sh); wrapper: [`deploy/lab-scenario-run.sh`](../deploy/lab-scenario-run.sh). Policy: [load-testing.md § Clean slate](load-testing.md#clean-slate-policy-lab-cluster).
 
 ### Lab BL-210 pipeline (after cluster is UP)
 
@@ -510,7 +518,7 @@ ISPF_CLUSTER_COMPOSE_FILE=~/ispf/lab-cluster-compose.yml \
 ISPF_CLUSTER_PORT=8000 bash deploy/cluster-smoke-test.sh
 ```
 
-Expected healthy lab cluster: **`nodesUp` = `nodesTotal` = 4**, profiles `edge-api`, `edge-api`, `analytics`, `io`.
+Expected healthy lab cluster: **`nodesUp` = `nodesTotal` = 6**, profiles `edge-api`, `edge-api`, `hmi-read`, `analytics`, `io`, `compute`.
 
 ### VPS prod (single unified node)
 
@@ -582,9 +590,14 @@ python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8
 
 ### nginx
 
-REST and WS **may** use different LB policies when ADR-0029 is enabled — values are mirrored on all JVMs.
+Split ingress by role (see [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf)):
 
-REST and WS share one upstream with `ip_hash` — lower cross-replica NATS percentage, stable operator session.
+| Path | Upstream | Use |
+|------|----------|-----|
+| `/api/`, `/ws/` | edge-api (replica-1, replica-2) | Admin console, config writes, seed scripts |
+| `/hmi/api/`, `/hmi/ws/` | hmi-read (replica-5) | Operator mode (`?mode=operator`) — web console prefixes REST/WS automatically |
+
+Do **not** put `hmi-read` in the `/api/` or `/ws/` upstream — `POST /api/objects` and similar mutations return `503 REPLICA_CAPABILITY_DENIED`.
 
 When a replica fails, nginx marks upstream down (`max_fails`) and routes the client elsewhere; after deploy all replicas restart with the new build — Ctrl+F5 is enough.
 

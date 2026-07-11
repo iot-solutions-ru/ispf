@@ -10,6 +10,43 @@ Baseline recorded on prod stand, version **0.9.18**, June 2026. **Deploy profile
 
 See also [observability](observability.md) — Prometheus scrape and OTLP export.
 
+## Clean slate policy (lab cluster)
+
+**Every isolated scenario test** on the Enterprise L lab cluster must start from a **fully wiped database** and **full server restart** — no reuse of object tree state, historian rows, journal rows, or driver locks from a prior run.
+
+| Step | Action |
+|------|--------|
+| 1 | `docker compose down -v` on **both** `lab-cluster-compose.yml` (PG + CH) and `lab-test-host-compose.yml` (stress stack) |
+| 2 | Staged bootstrap via `lab-cluster-bootstrap.sh` (replica-1 → edge+analytics → io → hmi-read+compute) |
+| 3 | Readiness gates: object tree HTTP 200, cluster **6/6 UP**, CH `variable_samples=0`, CH `event_history=0` |
+| 4 | Scenario-specific **seed** (devices, mqtt, rules) — only after reset |
+| 5 | Test body + metrics capture |
+| 6 | Report to `~/ispf/loadtest/scenarios/<scenario-id>-*.log` |
+
+Scripts:
+
+```bash
+# On lab host — reset only (~10–20 min including object-tree load)
+bash ~/ispf/lab-cluster-reset.sh
+
+# Reset + run one scenario (mandatory wrapper)
+bash ~/ispf/lab-scenario-run.sh I-01-mqtt-historian -- \
+  python3 ~/ispf/loadtest/run-mqtt-historian.py --devices 4 --phase-seconds 60
+
+# From workstation (uploads compose + scripts, SSH)
+python deploy/run_lab_scenario.py I-01-mqtt-historian \
+  --test-cmd "python3 ~/ispf/loadtest/run-mqtt-historian.py --devices 4 --phase-seconds 60"
+```
+
+`loadtest-cleanup.py` stops background drivers/rules **within** a running server — it does **not** replace a full wipe. Use cleanup only for mid-run abort, never as the preflight for a new scenario.
+
+**Exceptions (document explicitly if used):**
+
+- **BL-210 bulk gates** (50k catalog + 1B CH seed) — one reset, then seed phases; do not reset between seed and gate within the same scenario id.
+- **Soak / combined load (Wave 6)** — single reset at start; no reset during the 30–60 min window.
+
+**Time budget:** ~10–20 min per reset (bootstrap + object-tree load). A suite of 25 scenarios ≈ 4–8 h of reset overhead alone — plan parallelization only across **separate lab hosts**, not skipped resets on one host.
+
 ## Three paths
 
 | Path | Script | What it measures |
