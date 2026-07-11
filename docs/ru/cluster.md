@@ -574,11 +574,65 @@ python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8
 
 ### nginx
 
-REST и WS **могут** использовать разные политики LB при включенном ADR-0029 — значения зеркалируются на всех JVM.
+Разделение ingress по роли (см. [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf)):
 
-REST и WS используют один восходящий поток с `ip_hash` — меньший процент перекрестных реплик NATS, стабильная сессия оператора.
+| Путь | Upstream | Назначение |
+|------|----------|------------|
+| `/api/`, `/ws/` | edge-api (replica-1, replica-2) | Admin console, запись конфигурации, seed-скрипты |
+| `/hmi/api/`, `/hmi/ws/` | hmi-read (replica-5) | Operator mode (`?mode=operator`) — web console автоматически добавляет префикс REST/WS |
 
-При падении реплики nginx помечает вверх по течению вниз (`max_fails`) и направляет клиента на другой; после развертывания все реплики перезапускаются с новой марки — достаточно Ctrl+F5.
+**Не** добавляйте `hmi-read` в upstream `/api/` или `/ws/` — `POST /api/objects` и подобные мутации вернут `503 REPLICA_CAPABILITY_DENIED`.
+
+При падении реплики nginx помечает upstream как down (`max_fails`) и направляет клиента на другой узел; после deploy все реплики перезапускаются с новой сборкой — достаточно Ctrl+F5.
+
+### Operator HMI ingress (`/hmi`)
+
+Трафик оператора и админки идёт по **разным префиксам URL** ([ADR-0032](decisions/0032-replica-profiles-and-capabilities.md)):
+
+| Консоль | REST | WebSocket |
+|---------|------|-----------|
+| Admin (`?mode=admin` или по умолчанию) | `/api/...` | `/ws/...` |
+| Operator (`?mode=operator`) | `/hmi/api/...` | `/hmi/ws/...` |
+
+Реализация: `resolveIngressPath()` в [`apps/web-console/src/utils/ingressPath.ts`](../apps/web-console/src/utils/ingressPath.ts). Браузер всегда обращается к **одному origin**; выбор конкретной реплики ему недоступен.
+
+#### Client-side fallback (без nginx / single JVM / Caddy)
+
+Ingress — не всегда nginx. Web console при первых operator-запросах пробует `/hmi` и **переключается на `/api`**, если путь `/hmi` не обслуживается API (HTML от SPA, 502/504 и т.п.):
+
+- [`fetchWithIngressFallback()`](../apps/web-console/src/utils/ingressFetch.ts) — REST
+- WebSocket — сначала `/hmi/ws/objects`, при неудаче `/ws/objects`
+- Результат кэшируется в `sessionStorage` (`ispf-ingress-route`) на сессию браузера; сбрасывается при logout
+
+| Развёртывание | Типичное поведение |
+|---------------|-------------------|
+| **Кластер** со split ingress | Первый JSON с `/hmi/api` → кэш `hmi`; LB сам выбирает реплику |
+| **All-in-one** (профиль `unified`) | Либо nginx алиасит `/hmi/api` на тот же JVM ([`nginx-vps-single.conf`](../deploy/nginx-vps-single.conf)), либо client fallback на `/api` |
+| **Dev** (`vite`) | Прокси переписывает `/hmi` → `localhost:8080` ([`vite.config.ts`](../apps/web-console/vite.config.ts)) |
+
+Клиент **не** делает round-robin по hmi-репликам — это всегда задача reverse proxy upstream.
+
+#### Несколько реплик `hmi-read`
+
+Масштабирование operator read: JVM с `ISPF_REPLICA_PROFILE=hmi-read` + строки `server` в `upstream ispf_hmi_backend` (как у нескольких `edge-api`):
+
+```nginx
+upstream ispf_hmi_backend {
+    least_conn;                    # REST /hmi/api/
+    server ispf-hmi-1:8080 max_fails=2 fail_timeout=10s;
+    server ispf-hmi-2:8080 max_fails=2 fail_timeout=10s;
+}
+
+upstream ispf_hmi_ws {
+    ip_hash;                       # sticky WS /hmi/ws/
+    server ispf-hmi-1:8080 max_fails=3 fail_timeout=30s;
+    server ispf-hmi-2:8080 max_fails=3 fail_timeout=30s;
+}
+```
+
+Эталон lab (сейчас одна hmi-нода): [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf). Живые значения тегов на всех hmi-репликах согласованы через NATS RAM mirror ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) при `ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true`.
+
+Если **весь** hmi upstream недоступен и клиент ушёл в fallback на `/api` у `edge-api`, чтение работает; мутации конфигурации из operator UI могут получить `503 REPLICA_CAPABILITY_DENIED` на путях, требующих `config-write` (только edge-api).
 
 ## Устранение неполадок (рассинхронизация)
 
@@ -586,7 +640,8 @@ REST и WS используют один восходящий поток с `ip_
 |--------|-------------------|----------|
 | Объект удален, но снова виден в дереве | Follower RAM не получил `DELETED` (до v0.9.93 — управляемый по требованию вентиль) | Обновить до 0.9.93+; Ctrl+Ф5; **не** сброс настроек |
 | Мнемосхема/диаграмма пуста после сохранения | Конфигурация не синхронизирована с подписчиком | 0.9.92+ исправление; проверить `bash deploy/vps-cluster-verify.sh --config-sync` |
-| Разные значения REST при обновлении | Круговой алгоритм до ADR-0029 по телеметрии | Убедиться что `liveVariableSyncEnabled=true` в кластере здоровья |
+| Разные значения REST при обновлении | Круговой алгоритм до ADR-0029 по телеметрии | Убедиться что `liveVariableSyncEnabled=true` в cluster health |
+| Пустой operator shell / HTML вместо API | Single-node ingress без `/hmi/` и fallback ещё не сработал | Добавить `/hmi/api/` + `/hmi/ws/` в nginx или перезагрузить operator tab после fallback на `/api`; проверить Network на `/hmi/api/v1/...` |
 | «Всё сломано» после экспериментов | Накопившийся RAM drift | `bash /opt/ispf/bin/vps-cluster-factory-reset.sh --no-fixtures` (prod) |
 
 ### Развертывание VPS

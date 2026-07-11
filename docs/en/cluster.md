@@ -601,6 +601,55 @@ Do **not** put `hmi-read` in the `/api/` or `/ws/` upstream — `POST /api/objec
 
 When a replica fails, nginx marks upstream down (`max_fails`) and routes the client elsewhere; after deploy all replicas restart with the new build — Ctrl+F5 is enough.
 
+### Operator HMI ingress (`/hmi`)
+
+Operator and admin traffic use **different URL prefixes** on purpose ([ADR-0032](decisions/0032-replica-profiles-and-capabilities.md)):
+
+| Console | REST | WebSocket |
+|---------|------|-----------|
+| Admin (`?mode=admin` or default) | `/api/...` | `/ws/...` |
+| Operator (`?mode=operator`) | `/hmi/api/...` | `/hmi/ws/...` |
+
+Implementation: `resolveIngressPath()` in [`apps/web-console/src/utils/ingressPath.ts`](../apps/web-console/src/utils/ingressPath.ts). The browser always talks to **one origin**; it does not pick individual replicas.
+
+#### Client-side fallback (no nginx / single JVM / Caddy)
+
+Ingress is not always nginx. The web console probes `/hmi` on first operator requests and **falls back to `/api`** when the `/hmi` path is not wired (SPA HTML, 502/504, etc.):
+
+- [`fetchWithIngressFallback()`](../apps/web-console/src/utils/ingressFetch.ts) — REST
+- WebSocket — try `/hmi/ws/objects`, then `/ws/objects` on failed connect
+- Result cached in `sessionStorage` (`ispf-ingress-route`) for the browser session; cleared on logout
+
+| Deployment | Typical behaviour |
+|------------|-------------------|
+| **Cluster** with split ingress | First JSON from `/hmi/api` → cache `hmi`; LB chooses replica |
+| **All-in-one** (`unified` profile) | Either nginx aliases `/hmi/api` → same JVM ([`nginx-vps-single.conf`](../deploy/nginx-vps-single.conf)), or client fallback to `/api` |
+| **Dev** (`vite`) | Proxy rewrites `/hmi` → `localhost:8080` ([`vite.config.ts`](../apps/web-console/vite.config.ts)) |
+
+The client does **not** implement client-side round-robin across hmi replicas. That is always the job of the reverse proxy upstream.
+
+#### Multiple `hmi-read` replicas
+
+Scale operator read load by adding JVMs with `ISPF_REPLICA_PROFILE=hmi-read` and listing them in `upstream ispf_hmi_backend` (same pattern as multiple `edge-api` nodes):
+
+```nginx
+upstream ispf_hmi_backend {
+    least_conn;                    # REST /hmi/api/
+    server ispf-hmi-1:8080 max_fails=2 fail_timeout=10s;
+    server ispf-hmi-2:8080 max_fails=2 fail_timeout=10s;
+}
+
+upstream ispf_hmi_ws {
+    ip_hash;                       # sticky WS /hmi/ws/
+    server ispf-hmi-1:8080 max_fails=3 fail_timeout=30s;
+    server ispf-hmi-2:8080 max_fails=3 fail_timeout=30s;
+}
+```
+
+Lab reference (single hmi node today): [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf). Live tag values stay consistent across hmi replicas via NATS RAM mirror ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) when `ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true`.
+
+If the **entire** hmi upstream is down and the client falls back to `/api` on `edge-api`, reads still work; config mutations from operator UI may hit `503 REPLICA_CAPABILITY_DENIED` on paths that require `config-write` (edge-api only).
+
 ## Troubleshooting (desync)
 
 | Symptom | Likely cause | Action |
@@ -608,6 +657,7 @@ When a replica fails, nginx marks upstream down (`max_fails`) and routes the cli
 | Object deleted but visible again in tree | Follower RAM missed `DELETED` (before v0.9.93 — demand-gated valve) | Upgrade to 0.9.93+; Ctrl+F5; **do not** factory reset |
 | Mimic/diagram empty after save | Config not synced to follower | 0.9.92+ fix; run `bash deploy/vps-cluster-verify.sh --config-sync` |
 | Different REST values on refresh | Round-robin before ADR-0029 for telemetry | Ensure `liveVariableSyncEnabled=true` in cluster health |
+| Operator shell blank / HTML instead of API | Single-node ingress without `/hmi/` and fallback not run yet | Add `/hmi/api/` + `/hmi/ws/` to nginx, or reload operator tab after first `/api` fallback; check Network tab for `/hmi/api/v1/...` |
 | “Everything broken” after experiments | Accumulated RAM drift | `bash /opt/ispf/bin/vps-cluster-factory-reset.sh --no-fixtures` (prod) |
 
 ### VPS deployment
