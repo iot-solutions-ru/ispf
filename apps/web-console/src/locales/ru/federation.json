@@ -16,7 +16,7 @@
   "bind.remotePathLabel": "Удалённый путь",
   "bind.selectPeer": "— выберите узел —",
   "bind.subtitle": "Локальный путь {{path}} — канонический. Удалённый узел — источник данных и поведения.",
-  "bind.title": "Привязка к федерации",
+  "bind.title": "Federation bind",
   "bind.titleReadonly": "Федерация",
   "bind.tunnelSuffix": " (туннель)",
   "bind.unbind": "Отвязать",

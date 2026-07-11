@@ -136,7 +136,7 @@
   "sidebar.open": "Задачи и события",
   "sidebar.panel": "Панель оператора",
   "sidebar.tasks": "Задачи",
-  "uiNoDashboards": "Пользовательский интерфейс оператора для «{{appId}}» не имеет информационных панелей и отчетов.",
+  "uiNoDashboards": "Operator UI для «{{appId}}» не содержит dashboards и reports.",
   "uiNotFound": "Пользовательский интерфейс оператора для «{{appId}}» не найден. Настройте в дереве → root.platform.operator-apps или разверните пакет оператораUi.",
   "workQueue.claim": "Претензия",
   "workQueue.complete": "Завершить",

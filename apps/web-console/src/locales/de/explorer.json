@@ -139,7 +139,7 @@
   "icons.tenant": "Mandant",
   "icons.user": "Benutzer",
   "icons.users-folder": "Benutzer",
-  "icons.workflow": "Arbeitsablauf",
+  "icons.workflow": "Workflow",
   "mobile.backToTree": "← Objektbaum",
   "tree.groupMember": "Gruppenmitglied",
   "tree.linkTitle": "Link: {{path}}"

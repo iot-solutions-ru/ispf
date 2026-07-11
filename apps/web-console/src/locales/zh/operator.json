@@ -86,7 +86,7 @@
   "eventJournal.operatorApp": "操作员应用程序 · {{appId}}",
   "eventJournal.title": "事件日志",
   "federationPeer.allSites": "所有站点",
-  "federationPeer.label": "联合会网站",
+  "federationPeer.label": "Federation site",
   "launcher.hint": "应用程序是一组仪表板对象。在树 → root.platform.operator-apps 中配置。",
   "launcher.subtitle": "对象树中的仪表板（服务器：Operator Apps）",
   "launcher.switchAdmin": "管理控制台",

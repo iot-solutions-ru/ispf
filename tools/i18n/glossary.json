@@ -38,3 +38,11 @@
   "Federation bind": { "de": "Federation Bind", "ru": "Federation bind", "zh": "Federation bind" },
   "Stack": { "de": "Stack", "ru": "Стек", "zh": "堆栈" },
   "Event": { "de": "Event", "ru": "Event", "zh": "Event" },
+  "Peer": { "de": "Peer", "ru": "Peer", "zh": "Peer" },
+  "Peers": { "de": "Peers", "ru": "Peers", "zh": "Peers" },
+  "Work queue": { "de": "Work queue", "ru": "Work queue", "zh": "Work queue" },
+  "Operator App": { "de": "Operator App", "ru": "Operator App", "zh": "Operator App" },
+  "Operator Apps": { "de": "Operator Apps", "ru": "Operator Apps", "zh": "Operator Apps" },
+  "Applied blueprints": { "de": "Applied blueprints", "ru": "Applied blueprints", "zh": "Applied blueprints" },
+  "Explorer": { "de": "Explorer", "ru": "Обозреватель", "zh": "Explorer" }
+}

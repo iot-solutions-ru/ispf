@@ -182,7 +182,7 @@
   "editor.trueLabelOff": "Beschriftung «aus»",
   "editor.trueLabelOn": "Beschriftung «ein»",
   "editor.typeHint.chart": "Verlauf von variableName; HistoryRange und maxPoints steuern die Stichprobe.",
-  "editor.typeHint.eventFeed": "Plattformveranstaltungen; Filtern Sie nach objectPathPrefix und eventNamesJson.",
+  "editor.typeHint.eventFeed": "Platform events; filter by objectPathPrefix and eventNamesJson.",
   "editor.typeHint.gauge": "Wert aus Variablenname; min/max aus Konstanten oder minVariable/maxVariable.",
   "editor.typeHint.indicator": "Boolescher/String-Zustand von variableName; Farben über trueLabel/falseLabel.",
   "editor.typeHint.map": "Markierungen für jedes untergeordnete Element von parentPath; Koordinaten aus latVariable.",
