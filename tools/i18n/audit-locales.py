@@ -16,18 +16,21 @@ BAD_PATTERNS: dict[str, list[str]] = {
     "ru": [
         r"ведро", r"\bкуч[аи]\b", r"дворняга", r"стог сена", r"лаборатория\)",
         r"прокси-сервер", r"информационн", r"рабочие процессы",
-        r"администратор/администратор", r"оборудовать",
+        r"администратор/администратор", r"оборудовать", r"чертеж",
     ],
     "de": [
         r"\bFahrer\b", r"\bHaufen\b", r"\bEimer\b", r"Heuhaufen", r"Historikerin",
         r"Schriftsteller", r"\bTisch\b", r"Veranstaltung", r"Schlüsselraum",
         r"Cassandra-Hafen", r"Cassandra-Tisch", r"Stapeländerung",
-        r"\bWebsite\b", r"ausrüsten", r"\bEreignis",
+        r"\bWebsite\b", r"ausrüsten",         r"\bEreignis",
         r"Ereigniskorrelator", r"Ereignisfilter", r"Kollegen",
+        r"Blaupause", r"Blaupausen",
     ],
     "zh": [
         r"干草堆", r"史家", r"历史桶", r"管理员/管理员", r"虚拟实验室",
         r"驱动程序", r"联合会", r"联合绑定", r"实验室\)", r"日记中的",
+        r"身份证号", r"运营商", r"工作流程", r"相关型号", r"司机",
+        r"捆绑包", r"应用领域",
     ],
 }
 

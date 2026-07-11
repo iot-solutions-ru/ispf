@@ -398,7 +398,7 @@
   "view.reportPreview": "报告预览（参数来自 parametersJson / session）。",
   "view.reportTruncated": "显示前 {{count}} 行（已截断）",
   "view.requireSessionParams": "在上表中选择一行",
-  "view.runWorkflow": "运行工作流程",
+  "view.runWorkflow": "Run workflow",
   "view.saved": "已保存",
   "view.scadaMimic.exportDone": "下载PNG",
   "view.scadaMimic.exportFailed": "PNG 导出失败",
@@ -429,6 +429,6 @@
   "view.wizardNext": "下一步 →",
   "view.wizardStepTitle": "步骤 {{id}} – {{label}}",
   "view.wizardSteps": "表格步骤",
-  "view.workflowStarted": "工作流程已启动",
-  "view.workflowWaiting": "等待操作员的工作流程 — 请参阅概述"
+  "view.workflowStarted": "Workflow started",
+  "view.workflowWaiting": "Workflow waiting for operator — see overview"
 }

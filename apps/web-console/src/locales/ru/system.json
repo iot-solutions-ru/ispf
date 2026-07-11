@@ -185,7 +185,7 @@
   "metrics.applicationFunctions": "Функций приложений",
   "metrics.applications": "Приложений",
   "metrics.avgStepsPerTurn": "Среднее шагов за ход",
-  "metrics.blueprints": "Чертежи",
+  "metrics.blueprints": "Blueprints",
   "metrics.connectedDrivers": "Подключённых драйверов",
   "metrics.dashboards": "Дашбордов",
   "metrics.defaultRetentionDays": "Retention по умолчанию (дн)",

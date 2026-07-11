@@ -88,7 +88,7 @@
   "table.actions": "行动",
   "table.description": "描述",
   "table.enabled": "启用",
-  "table.id": "身份证号",
+  "table.id": "ID",
   "table.name": "名称",
   "table.type": "类型"
 }

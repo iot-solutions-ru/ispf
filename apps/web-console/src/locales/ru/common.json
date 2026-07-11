@@ -82,7 +82,7 @@
   "objectPath.browseTree": "Выбор из дерева",
   "objectPath.filterHint": "Показаны типы: {{types}}",
   "objectPath.placeholder": "корень.платформа...",
-  "objectType.BLUEPRINT": "Чертеж",
+  "objectType.BLUEPRINT": "Blueprint",
   "section.changeHistory": "История изменений",
   "section.info": "Информация",
   "table.actions": "Действия",

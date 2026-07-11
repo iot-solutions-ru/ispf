@@ -82,7 +82,7 @@
   "objectPath.browseTree": "Baum durchsuchen",
   "objectPath.filterHint": "Angezeigte Typen: {{types}}",
   "objectPath.placeholder": "root.platform...",
-  "objectType.BLUEPRINT": "Blaupause",
+  "objectType.BLUEPRINT": "Blueprint",
   "section.changeHistory": "Änderungsverlauf",
   "section.info": "Informationen",
   "table.actions": "Aktionen",

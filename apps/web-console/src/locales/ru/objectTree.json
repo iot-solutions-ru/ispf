@@ -67,5 +67,5 @@
   "pattern.applicationScreens.description": "Legacy operator manifest screens из старых bundle formats. Для нового HMI предпочитайте Operator Apps + dashboards.",
   "pattern.applicationScreens.title": "Экраны",
   "pattern.federationPeer.description": "Зеркало каталога для federation peer «{{peerName}}». Дочерние узлы — read-only proxy объектов удалённого ISPF-сайта (устройства, дашборды, workflow и т. д.). Обновление: Федерация → Sync catalog. Чтобы использовать удалённые данные в production HMI — Place locally… из mirror node или Federation bind на существующий локальный path в инспекторе.",
-  "pattern.operatorApp.description": "Operator HMI entry для appId. Variables: title, dashboard/report lists, alarm bar, workflow user-task scope. ?mode=operator&app={appId}. Без widget JSON — DASHBOARD и REPORT paths в дереве.",
+  "pattern.operatorApp.description": "Operator HMI entry для appId. Variables: title, dashboard/report lists, alarm bar, workflow user-task scope. ?mode=operator&app={appId}. Без widget JSON — DASHBOARD и REPORT paths в дереве."
 }
