@@ -58,6 +58,30 @@ export function htmlSnippetRequiresIframe(html: string): boolean {
   return isFullHtmlDocument(normalized) || htmlSnippetContainsScript(normalized);
 }
 
+const IFRAME_ONLY_SNIPPET =
+  /^<iframe\b([^>]*)>(?:\s*<\/iframe>)?\s*$/i;
+
+function readHtmlAttribute(attrs: string, name: string): string | undefined {
+  const re = new RegExp(`\\b${name}\\s*=\\s*(['"])(.*?)\\1`, "i");
+  const match = attrs.match(re);
+  return match?.[2]?.trim();
+}
+
+/** Snippet that is only a single external iframe — rendered with platform-controlled `src`. */
+export function parseHtmlSnippetIframeEmbed(html: string): { src: string; title?: string } | null {
+  const normalized = normalizeHtmlSnippet(html).replace(/<!--[\s\S]*?-->/g, "").trim();
+  if (!normalized) return null;
+
+  const tagMatch = normalized.match(IFRAME_ONLY_SNIPPET);
+  if (!tagMatch) return null;
+
+  const src = readHtmlAttribute(tagMatch[1], "src");
+  if (!src || !/^https?:\/\//i.test(src)) return null;
+
+  const title = readHtmlAttribute(tagMatch[1], "title");
+  return title ? { src, title } : { src };
+}
+
 /** Wrap HTML fragment in a minimal document for iframe srcdoc. */
 export function buildHtmlSnippetSrcDoc(html: string): string {
   const trimmed = normalizeHtmlSnippet(html);

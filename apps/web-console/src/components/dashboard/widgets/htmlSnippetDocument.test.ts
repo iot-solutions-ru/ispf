@@ -5,6 +5,7 @@ import {
   htmlSnippetContainsScript,
   htmlSnippetRequiresIframe,
   isFullHtmlDocument,
+  parseHtmlSnippetIframeEmbed,
   sanitizeHtmlSnippet,
 } from "./htmlSnippetDocument";
 
@@ -38,5 +39,16 @@ describe("htmlSnippetDocument", () => {
     expect(sanitizeHtmlSnippet('<img src=x onerror="alert(1)">')).toBe('<img src=x>');
     expect(sanitizeHtmlSnippet('<a href="javascript:alert(1)">x</a>')).toBe("<a>x</a>");
     expect(sanitizeHtmlSnippet("<p>safe</p>")).toBe("<p>safe</p>");
+  });
+
+  it("parses single external iframe embeds before sanitization strips them", () => {
+    expect(
+      parseHtmlSnippetIframeEmbed(
+        "<iframe src='https://ya.ru' style='width:100%;height:100%;border:none' title='Яндекс'></iframe>",
+      ),
+    ).toEqual({ src: "https://ya.ru", title: "Яндекс" });
+    expect(parseHtmlSnippetIframeEmbed('<iframe src="javascript:alert(1)"></iframe>')).toBeNull();
+    expect(parseHtmlSnippetIframeEmbed("<p>text</p><iframe src='https://ya.ru'></iframe>")).toBeNull();
+    expect(sanitizeHtmlSnippet("<iframe src='https://ya.ru'></iframe>")).toBe("");
   });
 });

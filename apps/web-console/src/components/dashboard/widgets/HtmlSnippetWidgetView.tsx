@@ -2,7 +2,12 @@ import { useMemo } from "react";
 import type { HtmlSnippetWidget } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { buildHtmlSnippetSrcDoc, htmlSnippetRequiresIframe, sanitizeHtmlSnippet } from "./htmlSnippetDocument";
+import {
+  buildHtmlSnippetSrcDoc,
+  htmlSnippetRequiresIframe,
+  parseHtmlSnippetIframeEmbed,
+  sanitizeHtmlSnippet,
+} from "./htmlSnippetDocument";
 
 interface HtmlSnippetWidgetViewProps {
   widget: HtmlSnippetWidget;
@@ -11,7 +16,9 @@ interface HtmlSnippetWidgetViewProps {
 
 export default function HtmlSnippetWidgetView({ widget, editable }: HtmlSnippetWidgetViewProps) {
   const styles = useWidgetStyles(widget.stylesJson);
-  const html = sanitizeHtmlSnippet(widget.htmlJson ?? "");
+  const rawHtml = widget.htmlJson ?? "";
+  const externalEmbed = useMemo(() => parseHtmlSnippetIframeEmbed(rawHtml), [rawHtml]);
+  const html = sanitizeHtmlSnippet(rawHtml);
   const useIframe = useMemo(() => htmlSnippetRequiresIframe(html), [html]);
   const srcDoc = useMemo(() => (useIframe ? buildHtmlSnippetSrcDoc(html) : ""), [html, useIframe]);
 
@@ -22,7 +29,15 @@ export default function HtmlSnippetWidgetView({ widget, editable }: HtmlSnippetW
       className="dash-widget dash-widget-html"
       editable={editable}
     >
-      {useIframe ? (
+      {externalEmbed ? (
+        <iframe
+          className="dash-html-iframe"
+          style={styles.body}
+          title={externalEmbed.title || widget.title || "HTML snippet"}
+          src={externalEmbed.src}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+        />
+      ) : useIframe ? (
         <iframe
           key={srcDoc}
           className="dash-html-iframe"
