@@ -44,5 +44,7 @@
   "Operator App": { "de": "Operator App", "ru": "Operator App", "zh": "Operator App" },
   "Operator Apps": { "de": "Operator Apps", "ru": "Operator Apps", "zh": "Operator Apps" },
   "Applied blueprints": { "de": "Applied blueprints", "ru": "Applied blueprints", "zh": "Applied blueprints" },
+  "event journal": { "de": "Event journal", "ru": "event journal", "zh": "event journal" },
+  "Deploy history": { "de": "Deploy history", "ru": "Deploy history", "zh": "Deploy history" },
   "Explorer": { "de": "Explorer", "ru": "Обозреватель", "zh": "Explorer" }
 }

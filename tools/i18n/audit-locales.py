@@ -22,7 +22,8 @@ BAD_PATTERNS: dict[str, list[str]] = {
         r"\bFahrer\b", r"\bHaufen\b", r"\bEimer\b", r"Heuhaufen", r"Historikerin",
         r"Schriftsteller", r"\bTisch\b", r"Veranstaltung", r"Schlüsselraum",
         r"Cassandra-Hafen", r"Cassandra-Tisch", r"Stapeländerung",
-        r"\bWebsite\b", r"ausrüsten", r"\bsein\b",
+        r"\bWebsite\b", r"ausrüsten", r"\bEreignis",
+        r"Ereigniskorrelator", r"Ereignisfilter", r"Kollegen",
     ],
     "zh": [
         r"干草堆", r"史家", r"历史桶", r"管理员/管理员", r"虚拟实验室",

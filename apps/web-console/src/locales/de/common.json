@@ -2,7 +2,7 @@
   "action.add": "Hinzufügen",
   "action.cancel": "Abbrechen",
   "action.close": "Schließen",
-  "action.confirmDeleteEvent": "Ereignis „{{name}}“ löschen?",
+  "action.confirmDeleteEvent": "Event „{{name}}“ löschen?",
   "action.confirmDeleteFunction": "Funktion „{{name}}“ löschen?",
   "action.confirmDeleteNamed": "„{{name}}“ löschen?",
   "action.confirmDeleteObject": "Objekt „{{name}}“ und alle untergeordneten Elemente löschen?",
