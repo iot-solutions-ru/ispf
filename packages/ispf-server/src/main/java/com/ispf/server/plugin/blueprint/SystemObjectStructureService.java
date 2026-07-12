@@ -127,14 +127,6 @@ public class SystemObjectStructureService {
     }
 
     @Transactional
-    public void ensureQueryStructure(String path) {
-        if (objectManager.require(path).getVariable("queryId").isPresent()) {
-            return;
-        }
-        applyIntrinsic("query-v1", path);
-    }
-
-    @Transactional
     public void ensureAnalyticsTemplateStructure(String path) {
         if (objectManager.require(path).getVariable("templateId").isPresent()) {
             return;

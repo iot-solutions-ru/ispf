@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createObject, createEventFilter, createQuery } from "../api";
+import { createObject, createEventFilter, upsertFunction } from "../api";
+import { buildObjectQueryRunFunction } from "../utils/objectQueryDefaults";
 import { fetchInstanceTypes, instantiateBlueprint } from "../api/blueprints";
 import { registerApplication } from "../api/applications";
 import { saveReportDefinition } from "../api/reports";
@@ -299,16 +300,15 @@ export default function CreateObjectDialog({
         return created.path;
       }
       if (mode === "query") {
-        const created = await createQuery({
-          queryId: name,
+        const obj = await createObject({
+          parentPath,
+          name,
+          type: "CUSTOM",
           displayName: displayName || name,
           description,
-          queryType: "tree-scan",
-          sourcePathPattern: "root.platform.devices.*",
-          fieldsJson: "[]",
-          enabled: true,
         });
-        return created.path;
+        await upsertFunction(obj.path, buildObjectQueryRunFunction());
+        return obj.path;
       }
       if (mode === "event-filter") {
         const created = await createEventFilter({

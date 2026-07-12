@@ -69,12 +69,21 @@ class MqttGatewayFunctionHandlerTest {
         assertThat(MqttGatewayFunctionHandler.parseNumeric("23.7")).contains(23.7);
         assertThat(MqttGatewayFunctionHandler.parseNumeric(" 42 ")).contains(42.0);
         assertThat(MqttGatewayFunctionHandler.parseNumeric("not-a-number")).isEmpty();
+        assertThat(MqttGatewayFunctionHandler.parseNumeric("{\"value\":65.0}")).contains(65.0);
+    }
+
+    @Test
+    void extractTopicRouteResolvesHumiditySuffix() {
+        Optional<MqttGatewayFunctionHandler.TopicRoute> route = MqttGatewayFunctionHandler.extractTopicRoute(
+                "ispf/loadtest/00042/humidity",
+                "ispf/loadtest/(\\d+)/(temperature|humidity)"
+        );
+        assertThat(route).contains(new MqttGatewayFunctionHandler.TopicRoute("00042", "humidity"));
     }
 
     @Test
     void bypassesChildCoalesceForTelemetryOnlyChild() {
         MqttGatewayFunctionHandler handler = newHandlerWithTree();
-        when(telemetryPolicyService.automationEligible(CHILD, "temperature")).thenReturn(false);
         when(historianFastPath.tryPublish(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
                 .thenReturn(true);
 
@@ -88,23 +97,41 @@ class MqttGatewayFunctionHandlerTest {
     }
 
     @Test
-    void fallsBackToBusWhenHistorianFastPathUnavailable() {
+    void parallelDispatchUsesGatewayHistorianFastPathForLazyChild() {
+        MqttGatewayFunctionHandler handler = newHandlerWithTree();
+        when(historianFastPath.tryPublish(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
+                .thenReturn(false);
+        when(historianFastPath.tryPublishGatewayDispatched(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
+                .thenReturn(true);
+
+        DataRecord result = handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", true);
+
+        assertThat(result.firstRow().get("ok")).isEqualTo(true);
+        verify(objectManager).setDriverTelemetryValueDirect(eq(CHILD), eq("temperature"), any(DataRecord.class));
+        verify(historianFastPath).tryPublishGatewayDispatched(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null));
+        verify(objectManager, never()).setDriverTelemetryValue(eq(CHILD), eq("temperature"), any(DataRecord.class));
+        verify(publicationService, never()).publishVariableChange(any(), any(), any());
+    }
+
+    @Test
+    void bypassWithoutHistorianOrAutomationSkipsBus() {
         MqttGatewayFunctionHandler handler = newHandlerWithTree();
         when(telemetryPolicyService.automationEligible(CHILD, "temperature")).thenReturn(false);
         when(historianFastPath.tryPublish(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
                 .thenReturn(false);
+        when(historianFastPath.tryPublishGatewayDispatched(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
+                .thenReturn(false);
 
         handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", true);
 
-        verify(publicationService).publishVariableChange(CHILD, "temperature", null);
+        verify(publicationService, never()).publishVariableChange(any(), any(), any());
     }
 
     @Test
-    void keepsCoalescerForAutomationEligibleChild() {
+    void keepsCoalescerForNonBypassDispatch() {
         MqttGatewayFunctionHandler handler = newHandlerWithTree();
-        when(telemetryPolicyService.automationEligible(CHILD, "temperature")).thenReturn(true);
 
-        DataRecord result = handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", true);
+        DataRecord result = handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", false);
 
         assertThat(result.firstRow().get("ok")).isEqualTo(true);
         verify(objectManager).setDriverTelemetryValue(eq(CHILD), eq("temperature"), any(DataRecord.class));
@@ -112,9 +139,25 @@ class MqttGatewayFunctionHandlerTest {
         verify(publicationService, never()).publishVariableChange(any(), any(), any());
     }
 
+    @Test
+    void automationEligibleChildWithBypassPublishesBusWhenHistorianUnavailable() {
+        MqttGatewayFunctionHandler handler = newHandlerWithTree();
+        when(telemetryPolicyService.automationEligible(CHILD, "temperature")).thenReturn(true);
+        when(historianFastPath.tryPublish(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
+                .thenReturn(false);
+        when(historianFastPath.tryPublishGatewayDispatched(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
+                .thenReturn(false);
+
+        handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", true);
+
+        verify(publicationService).publishVariableChange(CHILD, "temperature", null);
+    }
+
     private MqttGatewayFunctionHandler newHandlerWithTree() {
         PlatformObject gateway = new PlatformObject("gateway", GATEWAY, ObjectType.DEVICE, "Gateway", "", null);
+        PlatformObject child = new PlatformObject("sensor", CHILD, ObjectType.CUSTOM, "Sensor", "", null);
         when(objectManager.require(GATEWAY)).thenReturn(gateway);
+        when(objectManager.require(CHILD)).thenReturn(child);
         when(platformScriptBridge.instantiateModelIfMissing(
                 eq(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL),
                 eq(BlueprintCatalogRoots.INSTANCES),

@@ -156,6 +156,12 @@ DEVICES=16 RATE_PER_DEVICE=31250 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MA
 
 В lab: `minIntervalMs=0`, ingress coalesce выкл., очередь historian 8M, числовой payload — **не** настройки прода ([demostands](demostands.md)).
 
+### Lab gateway ingress (сценарий I-02)
+
+**Один mqtt-драйвер → `dispatchTelemetry` → child sensor'ы → historian** на split topology (брокер на хосте loadgen, не `tcp://mqtt:1883` в compose приложения). Runbook: **[lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md)**.
+
+Id в ordered suite: `I-02-mqtt-gateway`. Главная метрика PASS: дельта **`variableHistoryFlushedTotal`** (не `sampleCount` после тяжёлых прогонов I-01). Loadtest выставляет `historySampleMode=ALL_VALUES` на child при `NUMERIC_PAYLOAD`.
+
 Реальный брокер `mqtt-broker.example.invalid` — см. subscribe mode ниже; нужны MQTT credentials.
 
 ### Объединение развертки (историк)

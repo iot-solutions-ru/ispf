@@ -4,7 +4,7 @@
  */
 export type PlatformBindingCategory = "signal" | "stateful" | "cross" | "function" | "aggregate";
 
-export type BindingParamKind = "var" | "path" | "number" | "string" | "unit" | "func";
+export type BindingParamKind = "var" | "path" | "number" | "string" | "unit" | "func" | "oqSpec";
 
 export interface BindingParamDef {
   key: string;
@@ -93,6 +93,9 @@ export function defaultParamValues(
             ? ctx.variableNames[0]
             : (param.default ?? "");
         break;
+      case "oqSpec":
+        values[param.key] = `@/${ctx.variableNames?.[0] ?? "oqSpec"}`;
+        break;
     }
   }
   return values;
@@ -151,6 +154,13 @@ export function buildPlatformBindingExpression(
       case "number":
       case "unit":
         parts.push(raw);
+        break;
+      case "oqSpec":
+        if (raw.startsWith("@/") || raw.startsWith("@")) {
+          parts.push(raw);
+        } else {
+          parts.push(quoteString(raw, "single"));
+        }
         break;
       case "path":
       case "string":
@@ -311,6 +321,50 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
     params: [
       { key: "path", kind: "path", labelKey: "platformBindings.param.path" },
       { key: "remoteVar", kind: "var", labelKey: "platformBindings.param.remoteVar" },
+    ],
+  },
+  {
+    id: "queryScalar",
+    name: "queryScalar",
+    snippet: 'queryScalar(@/downIfSpec, "count")',
+    category: "cross",
+    stringQuoteStyle: "double",
+    params: [
+      { key: "spec", kind: "oqSpec", labelKey: "platformBindings.param.spec" },
+      { key: "aggregate", kind: "string", labelKey: "platformBindings.param.aggregate", default: "count" },
+      { key: "field", kind: "string", labelKey: "platformBindings.param.field", optional: true },
+    ],
+  },
+  {
+    id: "queryRows",
+    name: "queryRows",
+    snippet: "queryRows(@/downIfSpec)",
+    category: "cross",
+    params: [{ key: "spec", kind: "oqSpec", labelKey: "platformBindings.param.spec" }],
+  },
+  {
+    id: "executeQuery",
+    name: "executeQuery",
+    snippet: "executeQuery(@/downIfSpec)",
+    category: "cross",
+    params: [{ key: "spec", kind: "oqSpec", labelKey: "platformBindings.param.spec" }],
+  },
+  {
+    id: "countScan",
+    name: "countScan",
+    snippet: 'countScan("root.platform.devices.*")',
+    category: "cross",
+    stringQuoteStyle: "double",
+    params: [{ key: "pattern", kind: "string", labelKey: "platformBindings.param.pattern" }],
+  },
+  {
+    id: "writeRef",
+    name: "write",
+    snippet: 'write(@/setpoint, 42)',
+    category: "cross",
+    params: [
+      { key: "ref", kind: "var", labelKey: "platformBindings.param.ref" },
+      { key: "value", kind: "number", labelKey: "platformBindings.param.value", default: "0" },
     ],
   },
   {

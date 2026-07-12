@@ -27,12 +27,20 @@ public record FunctionDescriptor(
                 && !sourceBody.isBlank();
     }
 
+    public boolean hasObjectQueryBody() {
+        return sourceType != null
+                && "object-query".equalsIgnoreCase(sourceType.trim())
+                && sourceBody != null
+                && !sourceBody.isBlank();
+    }
+
     public boolean hasScriptBody() {
         return sourceBody != null
                 && !sourceBody.isBlank()
                 && !hasJavaBody()
                 && !hasPulseBody()
-                && !hasExpressionBody();
+                && !hasExpressionBody()
+                && !hasObjectQueryBody();
     }
 
     public boolean hasPulseBody() {

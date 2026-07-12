@@ -21,7 +21,7 @@ describe("canCreateChildAt — platform catalogs", () => {
   });
 
   it("blocks create on instance leaves", () => {
-    expect(canCreateChildAt("root.platform.queries.device-scan", "QUERY")).toBe(false);
+    expect(canCreateChildAt("root.platform.queries.device-scan", "CUSTOM")).toBe(false);
     expect(canCreateChildAt("root.platform.mes.work-orders.wo-1", "WORK_ORDER")).toBe(false);
   });
 });
@@ -36,7 +36,7 @@ describe("resolveCreateDialogMode", () => {
 
 describe("defaultObjectTypeForParent", () => {
   it("maps catalog folders to child types", () => {
-    expect(defaultObjectTypeForParent("root.platform.queries")).toBe("QUERY");
+    expect(defaultObjectTypeForParent("root.platform.queries")).toBe("CUSTOM");
     expect(defaultObjectTypeForParent("root.platform.event-filters")).toBe("EVENT_FILTER");
     expect(defaultObjectTypeForParent("root.platform.process-programs")).toBe("PROCESS_PROGRAM");
     expect(defaultObjectTypeForParent("root.platform.mes.work-orders")).toBe("WORK_ORDER");

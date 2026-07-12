@@ -2,7 +2,7 @@ package com.ispf.server.bootstrap;
 
 import com.ispf.server.eventfilter.EventFilterObjectService;
 import com.ispf.server.process.ProcessProgramObjectService;
-import com.ispf.server.query.QueryDefinitionService;
+import com.ispf.server.query.ObjectQueryCatalog;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
@@ -17,20 +17,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class Phase30PlatformBootstrap {
 
     private final Phase30BlueprintBootstrap phase30BlueprintBootstrap;
-    private final QueryDefinitionService queryDefinitionService;
+    private final ObjectQueryCatalog objectQueryCatalog;
     private final EventFilterObjectService eventFilterObjectService;
     private final ProcessProgramObjectService processProgramObjectService;
     private final SystemObjectDescriptionReconciler systemObjectDescriptionReconciler;
 
     public Phase30PlatformBootstrap(
             Phase30BlueprintBootstrap phase30BlueprintBootstrap,
-            QueryDefinitionService queryDefinitionService,
+            ObjectQueryCatalog objectQueryCatalog,
             EventFilterObjectService eventFilterObjectService,
             ProcessProgramObjectService processProgramObjectService,
             SystemObjectDescriptionReconciler systemObjectDescriptionReconciler
     ) {
         this.phase30BlueprintBootstrap = phase30BlueprintBootstrap;
-        this.queryDefinitionService = queryDefinitionService;
+        this.objectQueryCatalog = objectQueryCatalog;
         this.eventFilterObjectService = eventFilterObjectService;
         this.processProgramObjectService = processProgramObjectService;
         this.systemObjectDescriptionReconciler = systemObjectDescriptionReconciler;
@@ -41,7 +41,7 @@ public class Phase30PlatformBootstrap {
     @Transactional
     public void onReady() {
         phase30BlueprintBootstrap.ensurePhase30Models();
-        queryDefinitionService.ensureCatalog();
+        objectQueryCatalog.ensureCatalog();
         eventFilterObjectService.ensureCatalog();
         processProgramObjectService.ensureCatalog();
         systemObjectDescriptionReconciler.reconcile();

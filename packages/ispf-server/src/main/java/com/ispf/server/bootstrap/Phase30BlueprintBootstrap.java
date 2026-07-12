@@ -41,7 +41,6 @@ public class Phase30BlueprintBootstrap {
     }
 
     public void ensurePhase30Models() {
-        ensureModel("query-v1", buildQueryModel());
         ensureModel("event-filter-v1", buildEventFilterModel());
         ensureModel("process-program-v1", buildProcessProgramModel());
     }
@@ -55,33 +54,6 @@ public class Phase30BlueprintBootstrap {
                     }
                 },
                 () -> blueprintEngine.createBlueprint(intrinsic)
-        );
-    }
-
-    private static BlueprintDefinition buildQueryModel() {
-        return new BlueprintDefinition(
-                UUID.randomUUID().toString(),
-                "query-v1",
-                "Cross-object query definition (tree scan or SQL)",
-                BlueprintType.RELATIVE,
-                ObjectType.QUERY,
-                "",
-                List.of(
-                        varDef("queryId", "Stable query id", "info", ""),
-                        varDef("queryType", "Query type: tree-scan|sql", "config", "tree-scan"),
-                        varDef("sourcePathPattern", "Object path glob", "config", "root.platform.devices.*"),
-                        varDef("fieldsJson", "Output fields JSON array", "config", "[]"),
-                        varDef("filterExpression", "CEL filter on variables", "config", ""),
-                        boolDef("enabled", "Enabled", true),
-                        varDef("lastRunAt", "Last run ISO instant", "runtime", ""),
-                        varDef("lastError", "Last error message", "runtime", "")
-                ),
-                List.of(),
-                List.of(),
-                List.of(),
-                SystemIntrinsicBlueprints.parameters(),
-                Instant.now(),
-                Instant.now()
         );
     }
 

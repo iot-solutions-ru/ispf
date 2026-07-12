@@ -128,8 +128,8 @@ public final class SystemObjectDescriptions {
                 or SEQUENCE (ordered chain) — and triggers a workflow or publishes a follow-up event. \
                 Place correlators between alert rules and BPMN automation."""));
         map.put("root.platform.queries", new Entry("Queries", """
-                Cross-object query catalog. Each QUERY child defines a dynamic scan or SQL projection over the object tree \
-                (sourcePathPattern, fieldsJson, optional CEL filterExpression). QueryDefinitionService.execute runs tree-scan queries."""));
+                Cross-object query catalog. Each child is a CUSTOM object with {@code run} function ({@code sourceType=object-query}) \
+                holding OQ JSON in {@code sourceBody}. Invoke via {@code POST .../functions/invoke?name=run}."""));
         map.put("root.platform.event-filters", new Entry("Event Filters", """
                 Reusable event journal filter catalog. Each EVENT_FILTER child stores eventNamePattern, sourceObjectPathPattern, \
                 severity range, time window, and optional CEL filterExpression for operator event log views and automation pre-filters."""));

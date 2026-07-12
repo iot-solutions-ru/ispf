@@ -84,6 +84,23 @@ class PlatformScriptBridgeTest {
     }
 
     @Test
+    void queryRowsReturnsDeviceInventory() {
+        List<Map<String, Object>> rows = bridge.queryRows("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.demo-sensor-01",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"}
+                  ]
+                }
+                """, "root.platform.queries.script-test");
+        assertThat(rows).hasSize(1);
+        assertThat(String.valueOf(rows.getFirst().get("path"))).isEqualTo("root.platform.devices.demo-sensor-01");
+    }
+
+    @Test
     void validateInstanceNameRejectsDots() {
         assertThatThrownBy(() -> PlatformScriptBridge.validateInstanceName("bad.id"))
                 .isInstanceOf(IllegalArgumentException.class);

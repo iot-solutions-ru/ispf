@@ -80,7 +80,7 @@
   "modal.advancedSettings": "高级设置",
   "modal.select": "选择",
   "objectPath.browseTree": "浏览树",
-  "objectPath.filterHint": "显示类型：{{types}}",
+  "objectPath.filterHint": "可选类型：{{types}}",
   "objectPath.placeholder": "根.平台...",
   "objectType.BLUEPRINT": "蓝图",
   "section.changeHistory": "变更历史",

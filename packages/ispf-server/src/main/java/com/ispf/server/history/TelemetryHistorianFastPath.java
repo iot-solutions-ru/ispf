@@ -80,6 +80,27 @@ public class TelemetryHistorianFastPath {
         return true;
     }
 
+    /**
+     * Gateway-dispatched child instances have no device driver binding (default FULL policy).
+     * Parallel ingress already coalesced at gateway — enqueue historian when the variable is historized.
+     */
+    public boolean tryPublishGatewayDispatched(
+            String objectPath,
+            String variableName,
+            DataRecord value,
+            Instant observedAt
+    ) {
+        if (!runtimeTelemetryProperties.isFastHistorianPath()) {
+            return false;
+        }
+        VariableChangeInterest interest = subscriptionRegistry.interest(objectPath, variableName);
+        if (!interest.historian()) {
+            return false;
+        }
+        variableHistoryService.recordFromDataRecordTrusted(objectPath, variableName, value, observedAt);
+        return true;
+    }
+
     /** Batch historian enqueue for ingress-drained lanes (L3 → L5). */
     public void publishBatch(List<CoalescedTelemetryUpdate> updates) {
         if (updates.isEmpty()) {

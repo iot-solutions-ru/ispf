@@ -34,6 +34,11 @@ class PlatformBindingRegistryTest {
         assertTrue(PlatformBindingRegistry.matches("call(root.remote/fn/myFunc, @/inputVar)"));
         assertTrue(PlatformBindingRegistry.matches("sumRecordField(table, int)"));
         assertTrue(PlatformBindingRegistry.matches("sumRecordField(table, \"int\")"));
+        assertTrue(PlatformBindingRegistry.matches("queryScalar(@/spec, \"count\")"));
+        assertTrue(PlatformBindingRegistry.matches("queryRows(@/spec)"));
+        assertTrue(PlatformBindingRegistry.matches("executeQuery(@/spec)"));
+        assertTrue(PlatformBindingRegistry.matches("countScan(\"root.*\")"));
+        assertTrue(PlatformBindingRegistry.matches("write(@/setpoint, 42)"));
     }
 
     @Test

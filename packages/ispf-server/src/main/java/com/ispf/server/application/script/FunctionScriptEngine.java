@@ -267,6 +267,46 @@ public class FunctionScriptEngine {
                 );
                 yield null;
             }
+            case "queryRows", "scan_objects" -> {
+                String spec = String.valueOf(resolveStepValue(step.get("spec"), vars));
+                List<Map<String, Object>> rows = platformScriptBridge.queryRows(spec, context.callerObjectPath());
+                vars.put(step.path("var").asText("rows"), rows);
+                yield null;
+            }
+            case "for_each_row" -> {
+                Object source = resolveStepValue(step.get("source"), vars);
+                if (!(source instanceof List<?> list)) {
+                    throw new IllegalArgumentException("for_each_row source must be a list");
+                }
+                String rowVar = step.path("rowVar").asText("row");
+                JsonNode body = step.get("steps");
+                if (body == null || !body.isArray()) {
+                    throw new IllegalArgumentException("for_each_row requires steps array");
+                }
+                for (Object element : list) {
+                    Map<String, Object> scoped = new LinkedHashMap<>(vars);
+                    if (element instanceof Map<?, ?> row) {
+                        scoped.put(rowVar, normalizeRow(toStringKeyMap(row)));
+                    } else {
+                        scoped.put(rowVar, element);
+                    }
+                    DataRecord early = executeSteps(body, scoped, outputSchema, context, false);
+                    if (early != null) {
+                        yield early;
+                    }
+                }
+                yield null;
+            }
+            case "apply_query_patch" -> {
+                Object patchesRaw = resolveStepValue(step.get("patches"), vars);
+                List<Map<String, Object>> patches = toPatchList(patchesRaw);
+                int applied = platformScriptBridge.applyQueryPatch(patches, context.callerObjectPath());
+                String var = step.path("var").asText("");
+                if (!var.isBlank()) {
+                    vars.put(var, applied);
+                }
+                yield null;
+            }
             case "return" -> toOutputRecord(outputSchema, resolveFields(step.get("fields"), vars));
             default -> throw new IllegalArgumentException("Unknown script step type: " + type);
         };
@@ -358,6 +398,20 @@ public class FunctionScriptEngine {
         Map<String, Object> normalized = new LinkedHashMap<>();
         row.forEach((key, value) -> normalized.put(String.valueOf(key), value));
         return normalized;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> toPatchList(Object patchesRaw) {
+        if (!(patchesRaw instanceof List<?> list)) {
+            throw new IllegalArgumentException("apply_query_patch patches must be a list");
+        }
+        List<Map<String, Object>> patches = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> map) {
+                patches.add(toStringKeyMap(map));
+            }
+        }
+        return patches;
     }
 
     private Map<String, Object> resolveFields(JsonNode fieldsNode, Map<String, Object> vars) {

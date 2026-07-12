@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import ObjectQuerySpecEditorModal from "./ObjectQuerySpecEditorModal";
 import {
   buildPlatformBindingExpression,
   defaultParamValues,
@@ -7,6 +8,11 @@ import {
   type BindingParamDef,
   type PlatformBindingEntry,
 } from "../utils/platformBindings";
+import {
+  isObjectQuerySpecVariableRef,
+  minifyObjectQuerySpec,
+  prettyObjectQuerySpec,
+} from "../utils/objectQuerySpecUtils";
 
 interface PlatformBindingComposerProps {
   entry: PlatformBindingEntry;
@@ -22,6 +28,7 @@ function ParamField({
   disabled,
   variableNames,
   functionNames,
+  objectPath,
   onChange,
 }: {
   param: BindingParamDef;
@@ -29,8 +36,56 @@ function ParamField({
   disabled?: boolean;
   variableNames: string[];
   functionNames: string[];
+  objectPath?: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useTranslation("inspector");
+  const [oqEditorOpen, setOqEditorOpen] = useState(false);
+
+  if (param.kind === "oqSpec") {
+    const displayValue = isObjectQuerySpecVariableRef(value)
+      ? value
+      : value.trim()
+        ? prettyObjectQuerySpec(value).split("\n").slice(0, 2).join("\n")
+        : "";
+    return (
+      <div className="platform-binding-oq-spec">
+        <input
+          type="text"
+          className="mono"
+          value={value}
+          disabled={disabled}
+          placeholder="@/oqSpec"
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <button
+          type="button"
+          className="btn btn-sm"
+          disabled={disabled}
+          onClick={() => setOqEditorOpen(true)}
+        >
+          {t("objectQuery.openEditor")}
+        </button>
+        {displayValue && !isObjectQuerySpecVariableRef(value) && (
+          <pre className="hint mono object-query-spec-preview">{displayValue}</pre>
+        )}
+        <ObjectQuerySpecEditorModal
+          open={oqEditorOpen}
+          title={t("objectQuery.editorTitle")}
+          value={isObjectQuerySpecVariableRef(value) ? "" : value}
+          disabled={disabled}
+          objectPath={objectPath}
+          variableNames={variableNames}
+          onClose={() => setOqEditorOpen(false)}
+          onApply={(next) => {
+            onChange(minifyObjectQuerySpec(next));
+            setOqEditorOpen(false);
+          }}
+        />
+      </div>
+    );
+  }
+
   if (param.kind === "var" && variableNames.length > 0) {
     return (
       <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
@@ -104,6 +159,7 @@ export default function PlatformBindingComposer({
               disabled={disabled}
               variableNames={variableNames}
               functionNames={functionNames}
+              objectPath={context.objectPath}
               onChange={(next) => patchValue(param.key, next)}
             />
           </label>

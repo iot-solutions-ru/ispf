@@ -244,8 +244,12 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     case "BINDING":
       return "bindings";
     case "QUERIES":
-    case "QUERY":
       return "queries";
+    case "CUSTOM":
+      if (path.includes(".queries.")) {
+        return "queries";
+      }
+      return "custom";
     case "ANALYTICS":
     case "ANALYTICS_TEMPLATE":
       return "analytics";

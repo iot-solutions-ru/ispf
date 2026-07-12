@@ -87,4 +87,26 @@ public class PlatformRefExecutor {
             return Optional.empty();
         }
     }
+
+    public boolean write(PlatformRef ref, Object value, String ruleObjectPath) {
+        PlatformRef resolved = PlatformRefResolver.resolve(ref, ruleObjectPath);
+        if (resolved.kind() != PlatformRefKind.VARIABLE) {
+            throw new ExpressionException("write() requires variable ref: " + ref);
+        }
+        return objectManager.tree().findByPath(resolved.object())
+                .flatMap(node -> node.getVariable(resolved.name()))
+                .map(variable -> {
+                    var schema = variable.schema();
+                    var row = new java.util.LinkedHashMap<String, Object>();
+                    if (schema != null && schema.fields() != null && !schema.fields().isEmpty()) {
+                        String field = resolved.field() != null ? resolved.field() : schema.fields().get(0).name();
+                        row.put(field, value);
+                    } else {
+                        row.put(resolved.field() != null ? resolved.field() : "value", value);
+                    }
+                    objectManager.setVariableValue(resolved.object(), resolved.name(), DataRecord.single(schema, row));
+                    return true;
+                })
+                .orElse(false);
+    }
 }

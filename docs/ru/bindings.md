@@ -29,6 +29,10 @@
 | `call(ref[, inputRef])` | `call(@/fn/ack, @/payload)` | Вызов function |
 | `fire(ref)` | `fire(@/evt/overload)` | Публикация event |
 | Historian | `avg(root.../temperature, 5m)`, `live(@/temperature)` | Агрегат по окну / live |
+| Object Query | `queryScalar(@/downIfSpec, "count")`, `queryRows(@/downIfSpec)` | KPI / полная таблица (JSON) по дереву |
+| Writeback | `write(@/setpoint, 42)` | Запись в удалённое поле переменной |
+
+**Object Query (OQ):** spec хранится в функциях `sourceType=object-query`; в выражениях — `@/variable/value`. Reactive bindings — только скаляры; полные таблицы — `queryRows` / `executeQuery` или invoke функции. ADR [0044-object-query](decisions/0044-object-query.md).
 
 **JSON-конфиги** (активаторы, виджеты, mimic, script steps): каноническое поле **`ref`**:
 

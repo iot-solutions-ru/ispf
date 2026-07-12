@@ -158,6 +158,7 @@ docker compose --env-file lab-stress.env -f lab-test-host-compose.yml \
 | Scylla `COUNT(*)` FAIL | delta 0, flushed OK | Ожидаемо при большом объёме; доверяйте flushed + Mosquitto |
 | CH script `pipefail` | exit 2 | LF: `sed -i 's/\r$//' lab-single-mqtt-historian-ch-test.sh` |
 | Timestamp в MQTT payload | ~1 sample/device | `NUMERIC_PAYLOAD=true` в скриптах бенчмарка |
+| `historySampleMode` CHANGES_ONLY (0.9.139+) | 0 flushed при constant payload без ALL_VALUES | `enable_variable_history(..., historySampleMode=ALL_VALUES)` в loadtest seed |
 | `Done (formula estimate)` | Завышенные msg/s | Не замер; используйте `$SYS` и метрики ISPF |
 
 ## Ключевые файлы
@@ -180,6 +181,7 @@ docker compose --env-file lab-stress.env -f lab-test-host-compose.yml \
 ## Связанные документы
 
 - [load-testing](load-testing.md) — общие MQTT / historian сценарии
+- [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) — I-02 gateway dispatch → child historian
 - [lab-event-journal-stress](lab-event-journal-stress.md) — EVENT_JOURNAL_ONLY (события/с, не сэмплы)
 - [variable-history](variable-history.md) — модель historian и stores
 - [demostands](demostands.md) — профили развёртывания prod

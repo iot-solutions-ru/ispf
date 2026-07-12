@@ -80,7 +80,7 @@
   "modal.advancedSettings": "Расширенные настройки",
   "modal.select": "Выбрать",
   "objectPath.browseTree": "Выбор из дерева",
-  "objectPath.filterHint": "Показаны типы: {{types}}",
+  "objectPath.filterHint": "Можно выбрать типы: {{types}}",
   "objectPath.placeholder": "корень.платформа...",
   "objectType.BLUEPRINT": "Blueprint",
   "section.changeHistory": "История изменений",

@@ -236,6 +236,12 @@ DEVICES=16 RATE_PER_DEVICE=31250 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MA
 
 Lab uses `minIntervalMs=0`, ingress coalesce off, 8M historian queue, numeric payload — **not** prod defaults ([demostands](demostands.md)).
 
+### Lab gateway ingress (scenario I-02)
+
+**One mqtt driver → `dispatchTelemetry` → child sensors → historian** on split topology (broker on loadgen host, not `tcp://mqtt:1883` in app compose). Full runbook: **[lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md)**.
+
+Ordered suite id: `I-02-mqtt-gateway`. Primary PASS metric: **`variableHistoryFlushedTotal`** delta (not `sampleCount` after large I-01 runs). Loadtest sets `historySampleMode=ALL_VALUES` on child sensors when using `NUMERIC_PAYLOAD`.
+
 Real broker `mqtt-broker.example.invalid` — see subscribe mode below; MQTT credentials required.
 
 ### Coalesce sweep (historian)

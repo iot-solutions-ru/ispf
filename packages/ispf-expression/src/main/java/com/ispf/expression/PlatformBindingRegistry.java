@@ -9,6 +9,11 @@ import java.util.Optional;
 public final class PlatformBindingRegistry {
 
     private static final List<PlatformBinding> BINDINGS = List.of(
+            QueryScalarBinding.INSTANCE,
+            QueryRowsBinding.INSTANCE,
+            CountScanBinding.INSTANCE,
+            SumScanBinding.INSTANCE,
+            WriteRefBinding.INSTANCE,
             CallRefBinding.INSTANCE,
             FireRefBinding.INSTANCE,
             ReadRefBinding.INSTANCE,

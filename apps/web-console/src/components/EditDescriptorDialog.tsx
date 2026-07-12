@@ -8,6 +8,9 @@ import BindingExpressionField from "./BindingExpressionField";
 import { cloneSchema, emptySchema, normalizeFunctionDescriptor } from "../utils/dataSchema";
 import { DEFAULT_JAVA_FUNCTION_TEMPLATE } from "../utils/javaFunctionTemplate";
 import { defaultScriptBody } from "../utils/functionScriptSteps";
+import { DEFAULT_OBJECT_QUERY_SPEC } from "../utils/objectQueryDefaults";
+import { prettyObjectQuerySpec, validateObjectQuerySpec } from "../utils/objectQuerySpecUtils";
+import ObjectQuerySpecField from "./ObjectQuerySpecField";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 import FunctionScriptStepsEditor from "./functionScript/FunctionScriptStepsEditor";
 import { useFunctionExpressionCatalog } from "../hooks/useAnalyticsCatalog";
@@ -97,6 +100,7 @@ export default function EditDescriptorDialog({
     script: "",
     java: "",
     expression: "",
+    "object-query": "",
   });
   const initializedRef = useRef(false);
   const inputFieldNames = useMemo(
@@ -129,6 +133,7 @@ export default function EditDescriptorDialog({
         script: fn.sourceType === "script" ? (fn.sourceBody ?? "") : "",
         java: fn.sourceType === "java" ? (fn.sourceBody ?? "") : "",
         expression: fn.sourceType === "expression" ? (fn.sourceBody ?? "") : "",
+        "object-query": fn.sourceType === "object-query" ? (fn.sourceBody ?? "") : "",
       };
       setSchemaJson(
         JSON.stringify(
@@ -219,6 +224,9 @@ export default function EditDescriptorDialog({
     let nextBody = sourceDrafts.current[draftKey] ?? "";
     if (!nextBody && next === "java") nextBody = DEFAULT_JAVA_FUNCTION_TEMPLATE;
     if (!nextBody && next === "script") nextBody = defaultScriptBody();
+    if (!nextBody && next === "object-query") {
+      nextBody = prettyObjectQuerySpec(DEFAULT_OBJECT_QUERY_SPEC);
+    }
     if (next === "expression") {
       const parsed = parseFunctionExpressionBody(nextBody);
       setExpressionText(parsed.expression);
@@ -253,7 +261,10 @@ export default function EditDescriptorDialog({
             inputSchema,
             outputSchema,
             sourceType: sourceType || null,
-            sourceBody: sourceBody || null,
+            sourceBody:
+              sourceType === "object-query" && sourceBody.trim()
+                ? JSON.stringify(JSON.parse(sourceBody))
+                : sourceBody || null,
             dataSourcePath: dataSourcePath || null,
             version: version || null,
           });
@@ -282,9 +293,16 @@ export default function EditDescriptorDialog({
       }
       if (isFunction && !showAdvancedJson) {
         const st = sourceType.trim();
-        if ((st === "java" || st === "script" || st === "expression") && !sourceBody.trim()) {
+        if ((st === "java" || st === "script" || st === "expression" || st === "object-query") && !sourceBody.trim()) {
           setParseError(t("descriptor.sourceBodyRequired"));
           return;
+        }
+        if (st === "object-query") {
+          const specValidation = validateObjectQuerySpec(sourceBody);
+          if (!specValidation.valid) {
+            setParseError(t("descriptor.objectQueryInvalid"));
+            return;
+          }
         }
         if (st === "expression" && !expressionText.trim()) {
           setParseError(t("descriptor.sourceBodyRequired"));
@@ -381,6 +399,7 @@ export default function EditDescriptorDialog({
                   <option value="script">{t("descriptor.sourceTypeScript")}</option>
                   <option value="java">{t("descriptor.sourceTypeJava")}</option>
                   <option value="expression">{t("descriptor.sourceTypeExpression")}</option>
+                  <option value="object-query">{t("descriptor.sourceTypeObjectQuery")}</option>
                 </select>
               </label>
               <label>
@@ -420,6 +439,18 @@ export default function EditDescriptorDialog({
                   />
                 </div>
               )}
+              {sourceType === "object-query" && (
+                <div className="full">
+                  <span className="field-label">{t("descriptor.objectQueryEditor")}</span>
+                  <ObjectQuerySpecField
+                    value={sourceBody}
+                    onChange={setSourceBody}
+                    objectPath={objectPath}
+                    variableNames={variableNames}
+                    editorTitle={t("descriptor.objectQueryEditor")}
+                  />
+                </div>
+              )}
               {sourceType === "script" && (
                 <div className="full">
                   <FunctionScriptStepsEditor
@@ -449,7 +480,11 @@ export default function EditDescriptorDialog({
                   </Suspense>
                 </div>
               )}
-              {sourceType !== "script" && sourceType !== "java" && sourceType !== "expression" && sourceBody.trim() && (
+              {sourceType !== "script" &&
+                sourceType !== "java" &&
+                sourceType !== "expression" &&
+                sourceType !== "object-query" &&
+                sourceBody.trim() && (
                 <label className="full">
                   {t("descriptor.sourceBody")}
                   <textarea
@@ -467,7 +502,9 @@ export default function EditDescriptorDialog({
                   ? t("descriptor.javaHint")
                   : sourceType === "expression"
                     ? t("descriptor.expressionHint")
-                    : t("descriptor.scriptHint")}
+                    : sourceType === "object-query"
+                      ? t("descriptor.objectQueryHint")
+                      : t("descriptor.scriptHint")}
               </p>
             </section>
           </>

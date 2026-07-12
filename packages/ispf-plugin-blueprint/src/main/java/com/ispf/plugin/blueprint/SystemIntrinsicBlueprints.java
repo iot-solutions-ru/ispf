@@ -17,7 +17,6 @@ public final class SystemIntrinsicBlueprints {
             "schedule-v1",
             "sql-binding-v1",
             "migration-v1",
-            "query-v1",
             "event-filter-v1",
             "alert-rule-v1",
             "correlator-v1",
@@ -38,7 +37,6 @@ public final class SystemIntrinsicBlueprints {
             Map.entry(ObjectType.MIMIC, "mimic-v1"),
             Map.entry(ObjectType.REPORT, "report-v1"),
             Map.entry(ObjectType.WORKFLOW, "workflow-v1"),
-            Map.entry(ObjectType.QUERY, "query-v1"),
             Map.entry(ObjectType.EVENT_FILTER, "event-filter-v1")
     );
 

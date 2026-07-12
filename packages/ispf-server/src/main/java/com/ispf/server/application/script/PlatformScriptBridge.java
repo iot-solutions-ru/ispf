@@ -11,7 +11,13 @@ import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
+import com.ispf.server.query.ObjectQueryPatchService;
+import com.ispf.server.query.ObjectQueryService;
+import com.ispf.server.query.oq.ObjectQueryResult;
+import com.ispf.server.query.oq.ObjectQuerySpec;
+import com.ispf.server.query.oq.ObjectQuerySpecParser;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -35,19 +41,48 @@ public class PlatformScriptBridge {
     private final BlueprintRegistry blueprintRegistry;
     private final BlueprintApplicationService blueprintApplicationService;
     private final ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap;
+    private final ObjectQuerySpecParser objectQuerySpecParser;
+    private final ObjectQueryService objectQueryService;
+    private final ObjectQueryPatchService objectQueryPatchService;
 
     public PlatformScriptBridge(
             ObjectMapper objectMapper,
             ObjectManager objectManager,
             BlueprintRegistry blueprintRegistry,
             BlueprintApplicationService blueprintApplicationService,
-            ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap
+            ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap,
+            @Lazy ObjectQueryService objectQueryService,
+            @Lazy ObjectQueryPatchService objectQueryPatchService
     ) {
         this.objectMapper = objectMapper;
         this.objectManager = objectManager;
         this.blueprintRegistry = blueprintRegistry;
         this.blueprintApplicationService = blueprintApplicationService;
         this.platformReferenceBlueprintBootstrap = platformReferenceBlueprintBootstrap;
+        this.objectQuerySpecParser = new ObjectQuerySpecParser(objectMapper);
+        this.objectQueryService = objectQueryService;
+        this.objectQueryPatchService = objectQueryPatchService;
+    }
+
+    public List<Map<String, Object>> queryRows(String specJson, String callerObjectPath) {
+        if (specJson == null || specJson.isBlank()) {
+            throw new IllegalArgumentException("queryRows spec is required");
+        }
+        ObjectQuerySpec spec = objectQuerySpecParser.parse(specJson);
+        ObjectQueryResult result = objectQueryService.execute(spec, callerObjectPath);
+        return result.rows();
+    }
+
+    public int applyQueryPatch(List<Map<String, Object>> patches, String callerObjectPath) {
+        if (patches == null || patches.isEmpty()) {
+            return 0;
+        }
+        try {
+            String json = objectMapper.writeValueAsString(patches);
+            return objectQueryPatchService.apply(json, callerObjectPath).applied();
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Failed to apply query patch: " + ex.getMessage(), ex);
+        }
     }
 
     public Map<String, Object> jsonParse(String source, List<String> fields) {
@@ -108,6 +143,9 @@ public class PlatformScriptBridge {
             throw new IllegalArgumentException("instantiateModelIfMissing parentPath is required");
         }
         String fullPath = objectManager.tree().resolveChildPath(parentPath, instanceName);
+        if (objectManager.tree().findByPath(fullPath).isPresent()) {
+            return fullPath;
+        }
         objectManager.syncPathFromDatabase(fullPath);
         if (objectManager.tree().findByPath(fullPath).isPresent()) {
             return fullPath;

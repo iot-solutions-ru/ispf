@@ -48,8 +48,19 @@ export default function ObjectTreePickerDialog({
 
   const filteredTree = useMemo(() => {
     const q = filterQuery.trim().toLowerCase();
-    if (!q && !rootPath && (!filterTypes || filterTypes.length === 0)) {
-      return tree;
+    // Type filter restricts selection, not navigation — show the full tree unless searching.
+    if (!q) {
+      if (!rootPath?.trim()) {
+        return tree;
+      }
+      const filterByRoot = (nodes: typeof tree): typeof tree =>
+        nodes
+          .filter((node) => pathUnderRoot(node.object.path, rootPath))
+          .map((node) => ({
+            object: node.object,
+            children: filterByRoot(node.children),
+          }));
+      return filterByRoot(tree);
     }
     const allowedPaths = new Set<string>();
     for (const obj of objects) {
@@ -59,7 +70,7 @@ export default function ObjectTreePickerDialog({
       if (!matchesFilter(obj.type, filterTypes)) {
         continue;
       }
-      if (q && !obj.path.toLowerCase().includes(q) && !obj.displayName.toLowerCase().includes(q)) {
+      if (!obj.path.toLowerCase().includes(q) && !obj.displayName.toLowerCase().includes(q)) {
         continue;
       }
       allowedPaths.add(obj.path);

@@ -43,6 +43,11 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
             .field("unit", FieldType.STRING)
             .build();
 
+    private static final DataSchema MEASUREMENT_SCHEMA = DataSchema.builder("measurement")
+            .field("value", FieldType.DOUBLE)
+            .field("unit", FieldType.STRING)
+            .build();
+
     private static final DataSchema DISPATCH_OUTPUT_SCHEMA = DataSchema.builder("dispatchTelemetryResult")
             .field("ok", FieldType.BOOLEAN)
             .field("message", FieldType.STRING)
@@ -116,14 +121,14 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
         String topicPattern = stringConfig(gateway, "topicIndexPattern")
                 .orElse(DEFAULT_TOPIC_INDEX.pattern());
 
-        Optional<String> index = extractIndex(topic, topicPattern);
-        if (index.isEmpty()) {
+        Optional<TopicRoute> route = extractTopicRoute(topic, topicPattern);
+        if (route.isEmpty()) {
             return failure("topic does not match routing pattern: " + topic);
         }
 
         String instanceModelName = stringConfig(gateway, "instanceModelName")
                 .orElse(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL);
-        String instanceName = sensorNamePrefix + index.get();
+        String instanceName = sensorNamePrefix + route.get().index();
         final String childPath;
         try {
             childPath = platformScriptBridge.instantiateModelIfMissing(
@@ -140,29 +145,54 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
             return failure("payload is not numeric: " + raw);
         }
 
-        DataRecord temperature = DataRecord.single(
-                TEMPERATURE_SCHEMA,
-                Map.of("value", parsed.get(), "unit", "C")
+        String variableName = route.get().variableName();
+        DataRecord measurement = DataRecord.single(
+                measurementSchema(variableName),
+                Map.of("value", parsed.get(), "unit", unitForVariable(variableName))
         );
-        updateChildTelemetry(childPath, temperature, bypassChildCoalesce);
+        updateChildTelemetry(childPath, variableName, measurement, bypassChildCoalesce);
         return DataRecord.single(
                 DISPATCH_OUTPUT_SCHEMA,
                 Map.of("ok", true, "message", "routed", "routedPath", childPath)
         );
     }
 
-    private void updateChildTelemetry(String childPath, DataRecord temperature, boolean bypassChildCoalesce) {
+    private void updateChildTelemetry(
+            String childPath,
+            String variableName,
+            DataRecord measurement,
+            boolean bypassChildCoalesce
+    ) {
         ensureChildLoaded(childPath);
-        boolean automationEligible = telemetryPolicyService.automationEligible(childPath, "temperature");
-        if (bypassChildCoalesce && !automationEligible) {
-            objectManager.setDriverTelemetryValueDirect(childPath, "temperature", temperature);
-            if (!historianFastPath.tryPublish(childPath, "temperature", temperature, null)) {
-                publicationService.publishVariableChange(childPath, "temperature", null);
+        if (bypassChildCoalesce) {
+            objectManager.setDriverTelemetryValueDirect(childPath, variableName, measurement);
+            if (historianFastPath.tryPublish(childPath, variableName, measurement, null)
+                    || historianFastPath.tryPublishGatewayDispatched(
+                            childPath, variableName, measurement, null)) {
+                return;
             }
+            if (!telemetryPolicyService.automationEligible(childPath, variableName)) {
+                return;
+            }
+            publicationService.publishVariableChange(childPath, variableName, null);
             return;
         }
-        objectManager.setDriverTelemetryValue(childPath, "temperature", temperature);
+        objectManager.setDriverTelemetryValue(childPath, variableName, measurement);
     }
+
+    private static DataSchema measurementSchema(String variableName) {
+        return "temperature".equals(variableName) ? TEMPERATURE_SCHEMA : MEASUREMENT_SCHEMA;
+    }
+
+    private static String unitForVariable(String variableName) {
+        return switch (variableName) {
+            case "temperature" -> "C";
+            case "humidity" -> "%";
+            default -> "";
+        };
+    }
+
+    record TopicRoute(String index, String variableName) {}
 
     private void ensureChildLoaded(String childPath) {
         try {
@@ -173,12 +203,27 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
         }
     }
 
+    private static final Pattern JSON_VALUE_FIELD =
+            Pattern.compile("\"value\"\\s*:\\s*(-?(?:\\d+)(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?");
+
     static Optional<Double> parseNumeric(String raw) {
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
         }
+        String trimmed = raw.trim();
+        if (trimmed.startsWith("{")) {
+            Matcher jsonValue = JSON_VALUE_FIELD.matcher(trimmed);
+            if (jsonValue.find()) {
+                try {
+                    double value = Double.parseDouble(jsonValue.group(1));
+                    return Double.isFinite(value) ? Optional.of(value) : Optional.empty();
+                } catch (NumberFormatException ignored) {
+                    return Optional.empty();
+                }
+            }
+        }
         try {
-            double value = Double.parseDouble(raw.trim());
+            double value = Double.parseDouble(trimmed);
             return Double.isFinite(value) ? Optional.of(value) : Optional.empty();
         } catch (NumberFormatException ex) {
             return Optional.empty();
@@ -186,6 +231,10 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
     }
 
     static Optional<String> extractIndex(String topic, String pattern) {
+        return extractTopicRoute(topic, pattern).map(TopicRoute::index);
+    }
+
+    static Optional<TopicRoute> extractTopicRoute(String topic, String pattern) {
         if (topic == null || topic.isBlank() || pattern == null || pattern.isBlank()) {
             return Optional.empty();
         }
@@ -193,7 +242,18 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
         if (!matcher.matches() || matcher.groupCount() < 1) {
             return Optional.empty();
         }
-        return Optional.ofNullable(matcher.group(1)).map(String::trim).filter(value -> !value.isBlank());
+        String index = Optional.ofNullable(matcher.group(1)).map(String::trim).filter(value -> !value.isBlank()).orElse(null);
+        if (index == null) {
+            return Optional.empty();
+        }
+        String variableName = "temperature";
+        if (matcher.groupCount() >= 2) {
+            variableName = Optional.ofNullable(matcher.group(2))
+                    .map(String::trim)
+                    .filter(value -> !value.isBlank())
+                    .orElse("temperature");
+        }
+        return Optional.of(new TopicRoute(index, variableName));
     }
 
     private static DataRecord failure(String message) {

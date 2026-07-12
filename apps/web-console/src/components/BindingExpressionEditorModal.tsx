@@ -15,7 +15,9 @@ import type { BindingExpressionValidator } from "../utils/bindingExpressionValid
 import AnalyticsFormulaBrowser from "./analytics/AnalyticsFormulaBrowser";
 import SaveAnalyticsFormulaModal from "./analytics/SaveAnalyticsFormulaModal";
 import ExpressionDebuggerSection from "./ExpressionDebuggerSection";
+import ObjectQuerySpecEditorModal from "./ObjectQuerySpecEditorModal";
 import { PlatformRefPicker } from "./PlatformRefPicker";
+import { minifyObjectQuerySpec } from "../utils/objectQuerySpecUtils";
 import type { BindingFormulaLink, VariableDto } from "../types";
 
 export interface BindingExpressionEditorModalProps extends BindingBuilderContext {
@@ -95,6 +97,7 @@ export default function BindingExpressionEditorModal({
   const [catalogQuery, setCatalogQuery] = useState("");
   const [composingId, setComposingId] = useState<string | null>(null);
   const [saveFormulaOpen, setSaveFormulaOpen] = useState(false);
+  const [objectQueryOpen, setObjectQueryOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -103,6 +106,7 @@ export default function BindingExpressionEditorModal({
       setCatalogQuery("");
       setComposingId(null);
       setDebuggerOpen(false);
+      setObjectQueryOpen(false);
       window.requestAnimationFrame(() => textareaRef.current?.focus());
     }
   }, [open, value, formulaLink]);
@@ -165,6 +169,16 @@ export default function BindingExpressionEditorModal({
   const handleApply = () => {
     onApply(draft, draftFormulaLink);
     onClose();
+  };
+
+  const insertObjectQueryBinding = (specJson: string, mode: "queryRows" | "queryScalar") => {
+    const minified = minifyObjectQuerySpec(specJson);
+    const escaped = minified.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    if (mode === "queryRows") {
+      applySnippet(`queryRows('${escaped}')`);
+      return;
+    }
+    applySnippet(`queryScalar('${escaped}', "count")`);
   };
 
   return (
@@ -233,6 +247,14 @@ export default function BindingExpressionEditorModal({
               {t("formula.saveAs")}
             </button>
           )}
+          <button
+            type="button"
+            className="btn small"
+            disabled={disabled}
+            onClick={() => setObjectQueryOpen(true)}
+          >
+            {t("objectQuery.insertFromBuilder")}
+          </button>
         </div>
 
         {variableNames.length > 0 && (
@@ -417,6 +439,19 @@ export default function BindingExpressionEditorModal({
         onClose={() => setSaveFormulaOpen(false)}
       />
     )}
+    <ObjectQuerySpecEditorModal
+      open={objectQueryOpen}
+      title={t("objectQuery.insertTitle")}
+      value=""
+      disabled={disabled}
+      objectPath={objectPath}
+      variableNames={variableNames}
+      onClose={() => setObjectQueryOpen(false)}
+      onApply={(specJson) => {
+        insertObjectQueryBinding(specJson, "queryRows");
+        setObjectQueryOpen(false);
+      }}
+    />
     </>
   );
 }

@@ -49,9 +49,8 @@ public enum ObjectType {
     /** Application reports folder. */
     REPORTS,
     REPORT,
-    /** Cross-object query catalog folder (Phase 30). */
+    /** Object-query catalog folder ({@link com.ispf.server.query.ObjectQueryCatalog#QUERIES_ROOT}). */
     QUERIES,
-    QUERY,
     /** Reusable event log filter catalog folder (Phase 30). */
     EVENT_FILTERS,
     EVENT_FILTER,

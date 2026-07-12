@@ -878,10 +878,6 @@ public class ObjectController {
         String leafId = path.substring(path.lastIndexOf('.') + 1);
         DataSchema stringSchema = DataSchema.builder("stringValue").field("value", com.ispf.core.model.FieldType.STRING).build();
         switch (node.type()) {
-            case QUERY -> {
-                systemObjectStructureService.ensureQueryStructure(path);
-                setStringVariable(path, "queryId", leafId, stringSchema);
-            }
             case EVENT_FILTER -> {
                 systemObjectStructureService.ensureEventFilterStructure(path);
                 setStringVariable(path, "filterId", leafId, stringSchema);

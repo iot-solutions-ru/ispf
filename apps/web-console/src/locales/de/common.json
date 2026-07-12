@@ -80,7 +80,7 @@
   "modal.advancedSettings": "Erweiterte Einstellungen",
   "modal.select": "Auswählen",
   "objectPath.browseTree": "Baum durchsuchen",
-  "objectPath.filterHint": "Angezeigte Typen: {{types}}",
+  "objectPath.filterHint": "Auswählbare Typen: {{types}}",
   "objectPath.placeholder": "root.platform...",
   "objectType.BLUEPRINT": "Blueprint",
   "section.changeHistory": "Änderungsverlauf",

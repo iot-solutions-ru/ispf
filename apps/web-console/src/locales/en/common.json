@@ -86,7 +86,7 @@
   "empty.noData": "No data.",
   "empty.noMatches": "No matching objects",
   "objectPath.placeholder": "root.platform...",
-  "objectPath.filterHint": "Showing types: {{types}}",
+  "objectPath.filterHint": "Selectable types: {{types}}",
   "objectPath.browseTree": "Browse tree",
   "modal.select": "Select",
   "modal.advancedSettings": "Advanced settings",

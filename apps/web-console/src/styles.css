@@ -8759,6 +8759,53 @@ body.scada-mimic-editor-open {
   max-height: 22rem;
 }
 
+.object-query-spec-editor-layout .object-query-help-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  background: var(--surface-elevated);
+}
+
+.object-query-help-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.object-query-pattern-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.object-query-pattern-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.platform-binding-oq-spec {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.platform-binding-oq-spec input {
+  width: 100%;
+}
+
+.object-query-spec-preview {
+  margin: 0;
+  max-height: 4rem;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.object-query-examples-catalog {
+  max-height: 18rem;
+}
+
 .binding-expression-input-row {
   display: flex;
   flex-wrap: wrap;

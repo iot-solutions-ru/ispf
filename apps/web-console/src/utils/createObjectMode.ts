@@ -8,12 +8,8 @@ import {
 } from "./automationPath";
 import type { ObjectType } from "../types";
 import { BINDINGS_ROOT, DATA_SOURCES_ROOT, MIGRATIONS_ROOT, SCHEDULES_ROOT } from "./platformSqlPath";
-import {
-  QUERIES_ROOT,
-  isMesCatalogContainer,
-  isPlatformCatalogContainer,
-  isPlatformReportsFolder,
-} from "./platformCatalogPath";
+import { isQueryPath, QUERIES_ROOT } from "./queryPath";
+import { isMesCatalogContainer, isPlatformCatalogContainer, isPlatformReportsFolder } from "./platformCatalogPath";
 import { EVENT_FILTERS_ROOT } from "./eventFilterPath";
 import { PROCESS_PROGRAMS_ROOT } from "./processProgramPath";
 
@@ -223,7 +219,7 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
   if (isOperatorAppChildPath(path)) {
     return false;
   }
-  if (isAlertRulePath(path) || isCorrelatorPath(path)) {
+  if (isAlertRulePath(path) || isCorrelatorPath(path) || isQueryPath(path)) {
     return false;
   }
   if (path.startsWith(`${APPLICATIONS_ROOT}.`)) {
@@ -271,7 +267,7 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
     return "DEVICE";
   }
   if (parentPath.endsWith(".queries")) {
-    return "QUERY";
+    return "CUSTOM";
   }
   if (parentPath.endsWith(".event-filters")) {
     return "EVENT_FILTER";

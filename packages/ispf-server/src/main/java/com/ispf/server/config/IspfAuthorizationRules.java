@@ -51,8 +51,7 @@ public final class IspfAuthorizationRules {
 
         auth.requestMatchers("/api/v1/alert-rules/**", "/api/v1/correlators/**",
                         "/api/v1/event-filters/**",
-                        "/api/v1/data-sources/**", "/api/v1/migrations/**", "/api/v1/sql-bindings/**",
-                        "/api/v1/queries/**")
+                        "/api/v1/data-sources/**", "/api/v1/migrations/**", "/api/v1/sql-bindings/**")
                 .hasAnyRole(IspfRoles.ROLES_CONFIG);
 
         auth.requestMatchers("/api/v1/work-queue/**")

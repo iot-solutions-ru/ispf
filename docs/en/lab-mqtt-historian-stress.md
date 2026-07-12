@@ -158,6 +158,7 @@ Absolute msg/s **are not comparable** across hosts. Use this table to understand
 | Scylla `COUNT(*)` FAIL | delta 0, flushed OK | Expected at high row count; trust flushed + Mosquitto |
 | CH script `pipefail` error | exit 2 | LF line endings: `sed -i 's/\r$//' lab-single-mqtt-historian-ch-test.sh` |
 | Timestamp MQTT payload | ~1 sample/device | Use `NUMERIC_PAYLOAD=true` in benchmark scripts |
+| `historySampleMode` CHANGES_ONLY (0.9.139+) | 0 flushed with constant payload without ALL_VALUES | `enable_variable_history(..., historySampleMode=ALL_VALUES)` in loadtest seed |
 | `Done (formula estimate)` | Inflated msg/s | Not measured; use `$SYS` and ISPF metrics |
 
 ## Key files
@@ -180,6 +181,7 @@ Metrics: `GET /api/v1/platform/metrics` → `automation.variableHistoryFlushedTo
 ## Related documents
 
 - [load-testing](load-testing.md) — general MQTT / historian scenarios
+- [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) — I-02 gateway dispatch → child historian
 - [lab-event-journal-stress](lab-event-journal-stress.md) — EVENT_JOURNAL_ONLY (events/s, not samples)
 - [variable-history](variable-history.md) — historian model and stores
 - [demostands](demostands.md) — prod deploy profiles

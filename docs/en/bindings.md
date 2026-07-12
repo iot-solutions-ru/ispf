@@ -29,6 +29,10 @@ All references to variables, functions, events, and historian tags use one slash
 | `call(ref[, inputRef])` | `call(@/fn/ack, @/payload)` | Invoke function |
 | `fire(ref)` | `fire(@/evt/overload)` | Publish event |
 | Historian | `avg(root.../temperature, 5m)`, `live(@/temperature)` | Windowed aggregate / live sample |
+| Object Query | `queryScalar(@/downIfSpec, "count")`, `queryRows(@/downIfSpec)` | Cross-object table KPI / full rows (JSON) |
+| Writeback | `write(@/setpoint, 42)` | Remote variable field write |
+
+**Object Query (OQ):** specs live on object-query functions (`sourceType=object-query`); reference stored spec via `@/variable/value`. Reactive bindings use scalars only (`queryScalar`, `countScan`, `sumScan`); full tables via `queryRows` / `executeQuery` or function invoke. See ADR [0044-object-query](decisions/0044-object-query.md).
 
 **JSON configs** (activators, widgets, mimic, script steps): canonical field **`ref`** (slash string):
 
@@ -133,7 +137,7 @@ Activator **`onContextChange`** — recalculate when `@dashboardContext` changes
 | Kind | Example |
 |-----|--------|
 | **CEL** | `read(@/temperature) + 1.0` or CEL `self.temperature.value + 1.0` on current object |
-| **Platform binding** | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)` |
+| **Platform binding** | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)`, `queryScalar(@/oqSpec, "count")` |
 | **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
 
 Validation: `POST /api/v1/expressions/validate` or Web Console **Validate**.

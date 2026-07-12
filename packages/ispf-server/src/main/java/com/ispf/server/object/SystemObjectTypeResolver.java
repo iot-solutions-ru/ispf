@@ -44,7 +44,6 @@ public final class SystemObjectTypeResolver {
             Map.entry("schedule-v1", ObjectType.SCHEDULE),
             Map.entry("sql-binding-v1", ObjectType.BINDING),
             Map.entry("migration-v1", ObjectType.MIGRATION),
-            Map.entry("query-v1", ObjectType.QUERY),
             Map.entry("analytics-template-v1", ObjectType.ANALYTICS_TEMPLATE),
             Map.entry("event-frame-v1", ObjectType.EVENT_FRAME),
             Map.entry("event-filter-v1", ObjectType.EVENT_FILTER),

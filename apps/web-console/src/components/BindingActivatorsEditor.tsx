@@ -10,7 +10,6 @@ import {
   buildRemoteVariableChange,
   CUSTOM_BINDING_EVENT,
   patchBindingActivators,
-  remoteActivatorRef,
   resolveOnEventAfterSelect,
   resolveOnEventSelectValue,
 } from "./bindingActivatorsUtils";
@@ -35,26 +34,31 @@ export default function BindingActivatorsEditor({
 }: BindingActivatorsEditorProps) {
   const { t } = useTranslation("inspector");
 
-  const remoteRef = remoteActivatorRef(activators);
-  const remotePath = remoteRef?.objectPath ?? "";
-  const remoteVariable = remoteRef?.variableName ?? "";
+  const variableChangeRef = activators.onVariableChange[0];
+  const storedActivatorPath = variableChangeRef?.objectPath?.trim() || "self";
+  const isSelfActivator = storedActivatorPath === "self";
+  const displayedActivatorPath = isSelfActivator ? "" : storedActivatorPath;
+  const resolvedActivatorPath = isSelfActivator ? objectPath : storedActivatorPath;
+  const activatorVariable = variableChangeRef?.variableName ?? "*";
   const onEventSelectValue = resolveOnEventSelectValue(activators, eventNames);
-  const remotePathReady = Boolean(remotePath.trim());
+  const activatorPathReady = Boolean(resolvedActivatorPath.trim());
 
-  const remoteVariablesQuery = useVariablesQuery(remotePath, 5000, remotePathReady);
-  const remoteVariableNames = useMemo(() => {
+  const activatorVariablesQuery = useVariablesQuery(resolvedActivatorPath, 5000, activatorPathReady);
+  const activatorVariableNames = useMemo(() => {
     const names = filterUserVariableNames(
-      (remoteVariablesQuery.data ?? []).map((variable) => variable.name),
+      (activatorVariablesQuery.data ?? []).map((variable) => variable.name),
     );
     return ["*", ...names.filter((name) => name !== "*")];
-  }, [remoteVariablesQuery.data]);
+  }, [activatorVariablesQuery.data]);
 
   const patch = (next: Partial<BindingActivators>) => {
     onChange(patchBindingActivators(activators, next));
   };
 
-  const setRemote = (path: string, variableName: string) => {
-    patch({ onVariableChange: buildRemoteVariableChange(path, variableName) });
+  const setActivatorPath = (path: string, variableName: string) => {
+    const trimmed = path.trim();
+    const normalizedPath = !trimmed || trimmed === objectPath ? "" : trimmed;
+    patch({ onVariableChange: buildRemoteVariableChange(normalizedPath, variableName) });
   };
 
   return (
@@ -124,32 +128,36 @@ export default function BindingActivatorsEditor({
 
       <ObjectPathField
         className="full"
-        label={t("bindings.activators.remotePath")}
-        value={remotePath}
-        filterTypes={["DEVICE"]}
+        label={t("bindings.activators.objectPath")}
+        value={displayedActivatorPath}
         allowManual
-        onChange={(path) => setRemote(path, remoteVariable || "*")}
+        onChange={(path) => setActivatorPath(path, activatorVariable || "*")}
       />
+      <span className="hint full">{t("bindings.activators.objectPathHint")}</span>
 
-      {remotePathReady && (
+      {activatorPathReady && (
         <div className="platform-ref-picker-row full">
           <PlatformRefPicker
-            objectPath={remotePath}
+            objectPath={resolvedActivatorPath}
             kind="variable"
-            value={remoteRef?.ref ?? refFromFields(remotePath, remoteVariable) ?? ""}
-            variableNames={remoteVariableNames}
+            value={
+              variableChangeRef?.ref
+              ?? refFromFields(isSelfActivator ? "@" : resolvedActivatorPath, activatorVariable) ?? ""
+            }
+            variableNames={activatorVariableNames}
             onChange={(ref) => {
               const fields = fieldsFromRef(ref);
+              const path = fields.objectPath === "self" ? "" : (fields.objectPath ?? displayedActivatorPath);
               patch({
                 onVariableChange: [{
-                  objectPath: fields.objectPath ?? remotePath,
+                  objectPath: path.trim() || "self",
                   variableName: fields.name ?? "*",
                   ref: ref || undefined,
                 }],
               });
             }}
           />
-          {remoteVariablesQuery.isLoading && (
+          {activatorVariablesQuery.isLoading && (
             <span className="hint">{t("bindings.activators.remoteVariablesLoading")}</span>
           )}
         </div>

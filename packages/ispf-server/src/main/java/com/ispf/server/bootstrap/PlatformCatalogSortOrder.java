@@ -6,7 +6,7 @@ import com.ispf.server.eventfilter.EventFilterObjectService;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.migration.MigrationObjectService;
 import com.ispf.server.process.ProcessProgramPaths;
-import com.ispf.server.query.QueryDefinitionService;
+import com.ispf.server.query.ObjectQueryCatalog;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.security.PlatformUserService;
 
@@ -42,7 +42,7 @@ public final class PlatformCatalogSortOrder {
             "root.platform.reports",
             "root.platform.correlators",
             "root.platform.workflows",
-            QueryDefinitionService.QUERIES_ROOT,
+            ObjectQueryCatalog.QUERIES_ROOT,
             EventFilterObjectService.EVENT_FILTERS_ROOT,
             ProcessProgramPaths.PROCESS_PROGRAMS_ROOT,
             "root.platform.mes",
