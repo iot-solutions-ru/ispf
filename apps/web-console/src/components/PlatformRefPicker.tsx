@@ -42,11 +42,11 @@ export function PlatformRefPicker({
       onChange("");
       return;
     }
-    const object = objectPath?.trim() || "@";
+    const object = !objectPath?.trim() || objectPath.trim() === "self" ? "@" : objectPath.trim();
     const ref =
       kind === "variable"
-        ? formatPlatformRef({ object: "@", kind, name, field: "value" })
-        : formatPlatformRef({ object: "@", kind, name });
+        ? formatPlatformRef({ object, kind, name, field: parsed?.field ?? "value" })
+        : formatPlatformRef({ object, kind, name });
     onChange(ref);
   };
 
