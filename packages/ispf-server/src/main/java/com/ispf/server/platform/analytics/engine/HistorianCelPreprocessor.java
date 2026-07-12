@@ -4,6 +4,7 @@ import com.ispf.analytics.engine.AnalyticsSourceRef;
 import com.ispf.analytics.engine.HistorianPort;
 import com.ispf.analytics.engine.LiveVariablePort;
 import com.ispf.core.ref.PlatformRef;
+import com.ispf.core.ref.PlatformRefParseException;
 import com.ispf.core.ref.PlatformRefParser;
 import com.ispf.server.history.VariableHistoryService;
 
@@ -211,11 +212,8 @@ public final class HistorianCelPreprocessor {
             throw new IllegalArgumentException(function + " requires at least one argument");
         }
         String first = args.getFirst().trim();
-        if (first.contains("/") || first.startsWith("@")) {
-            PlatformRef ref = PlatformRefParser.parseVariableSource(first);
-            if (ruleObjectPath != null && !ruleObjectPath.isBlank()) {
-                ref = ref.resolveObject(ruleObjectPath);
-            }
+        try {
+            PlatformRef ref = PlatformRefParser.parseHistorianSource(first, ruleObjectPath);
             String field = ref.field();
             String bucket = "5m";
             if ("live".equals(function)) {
@@ -233,8 +231,9 @@ public final class HistorianCelPreprocessor {
                 throw new IllegalArgumentException(function + " requires window bucket for slash ref");
             }
             return new HistorianTarget(ref.object(), ref.name(), field, bucket);
+        } catch (PlatformRefParseException ex) {
+            throw new IllegalArgumentException(function + " requires slash ref argument (object/variable): " + first);
         }
-        throw new IllegalArgumentException(function + " requires slash ref argument: " + first);
     }
 
     private static Double latestMetric(

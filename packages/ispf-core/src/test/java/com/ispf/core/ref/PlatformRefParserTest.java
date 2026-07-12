@@ -76,6 +76,16 @@ class PlatformRefParserTest {
         assertThat(resolved.object()).isEqualTo("root.platform.devices.local");
     }
 
+  @Test
+  void parseHistorianSourceAcceptsDotForm() {
+        PlatformRef ref = PlatformRefParser.parseHistorianSource(
+                "root.platform.devices.analytics-demo.chain-a.derived-a",
+                null
+        );
+        assertThat(ref.object()).isEqualTo("root.platform.devices.analytics-demo.chain-a");
+        assertThat(ref.name()).isEqualTo("derived-a");
+    }
+
     @Test
     void fromJsonFields() {
         PlatformRef ref = PlatformRefConfig.requireVariable(

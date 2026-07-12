@@ -7,6 +7,7 @@ import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingVariableRef;
+import com.ispf.core.ref.PlatformRefParser;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.history.HistorianRollupBuckets;
 
@@ -255,18 +256,14 @@ public final class HistorianBindingRuleCompiler {
     private static ParsedSourceRef parseSourceRef(String raw) {
         String trimmed = unquote(raw).trim();
         try {
-            var ref = com.ispf.core.ref.PlatformRefParser.parseOptional(trimmed);
-            if (ref.isPresent() && ref.get().isVariable()) {
-                var resolved = ref.get();
-                if (resolved.isCurrentObject()) {
-                    return null;
-                }
-                return new ParsedSourceRef(resolved.object(), resolved.name(), resolved.field());
+            var ref = PlatformRefParser.parseHistorianSource(trimmed, null);
+            if (ref.isCurrentObject()) {
+                return null;
             }
+            return new ParsedSourceRef(ref.object(), ref.name(), ref.field());
         } catch (RuntimeException ignored) {
             return null;
         }
-        return null;
     }
 
     private static List<String> splitArgs(String body) {

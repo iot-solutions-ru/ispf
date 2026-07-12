@@ -71,6 +71,34 @@ class HistorianBindingRuleCompilerTest {
         assertThat(compiled.get().windowBucket()).isEqualTo("1h");
     }
 
+    @Test
+    void compilesAvgWithDotFormSource() {
+        BindingRule rule = new BindingRule(
+                "rule-b",
+                "rule-b",
+                true,
+                0,
+                BindingRuleKind.HISTORIAN,
+                new BindingActivators(false, List.of(new BindingVariableRef("root.dev.a", "derived-a")), null, 60_000L, false, false),
+                "",
+                "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 1h)",
+                new BindingTarget("variable", "derived-b", "value", null, null),
+                "1h",
+                null
+        );
+        AnalyticsProperties properties = new AnalyticsProperties(
+                60_000L, true, true, 60_000L, false, 60_000L, 7, 20, 3_000L, 0
+        );
+        Optional<AnalyticsTagDefinition> compiled = HistorianBindingRuleCompiler.compile(
+                "root.platform.devices.analytics-demo.chain-b",
+                rule,
+                properties
+        );
+        assertThat(compiled).isPresent();
+        assertThat(compiled.get().sources().getFirst().path()).isEqualTo("root.platform.devices.analytics-demo.chain-a");
+        assertThat(compiled.get().sources().getFirst().variable()).isEqualTo("derived-a");
+    }
+
     private static void assertBuiltinCompiles(String expressionHelper, String expectedHelper) {
         BindingRule rule = new BindingRule(
                 "rule-a",

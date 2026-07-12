@@ -39,6 +39,41 @@ function quoteString(value: string, style: "single" | "double" = "double"): stri
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
+const HISTORIAN_BUILTIN_IDS = new Set([
+  "avg",
+  "min",
+  "max",
+  "last",
+  "sum",
+  "live",
+  "rateOfChange",
+  "totalizer",
+  "avgHistorian",
+]);
+
+/** Normalize historian source to slash ref (object/variable). */
+export function formatHistorianSourceRef(source: string, objectPath?: string): string {
+  const trimmed = source.trim();
+  if (!trimmed) {
+    return objectPath?.trim() ? `${objectPath.trim()}/sourceVar` : "@/sourceVar";
+  }
+  if (trimmed.includes("/") || trimmed.startsWith("@")) {
+    return trimmed;
+  }
+  const lastDot = trimmed.lastIndexOf(".");
+  if (lastDot > 0 && lastDot < trimmed.length - 1) {
+    const object = trimmed.slice(0, lastDot);
+    const name = trimmed.slice(lastDot + 1);
+    if (name && !name.includes(".")) {
+      return `${object}/${name}`;
+    }
+  }
+  if (objectPath?.trim()) {
+    return `${objectPath.trim()}/${trimmed}`;
+  }
+  return `@/${trimmed}`;
+}
+
 export function defaultParamValues(
   entry: PlatformBindingEntry,
   ctx: BindingBuilderContext = {}
@@ -73,7 +108,8 @@ export function defaultParamValues(
 
 export function buildPlatformBindingExpression(
   entry: PlatformBindingEntry,
-  values: Record<string, string>
+  values: Record<string, string>,
+  ctx: BindingBuilderContext = {}
 ): string {
   const path = values.path?.trim();
   const remoteVar = values.remoteVar?.trim();
@@ -90,9 +126,21 @@ export function buildPlatformBindingExpression(
     return input ? `call(${fnRef}, @/${input})` : `call(${fnRef})`;
   }
   if (entry.id === "avgHistorian") {
-    const source = values.source?.trim() || "sourceVar";
+    const source = formatHistorianSourceRef(values.source ?? "", ctx.objectPath);
     const window = values.windowBucket?.trim() || "5m";
-    return `avg(@/${source}, ${window})`;
+    return `avg(${source}, ${window})`;
+  }
+
+  if (HISTORIAN_BUILTIN_IDS.has(entry.id) || HISTORIAN_BUILTIN_IDS.has(entry.name)) {
+    const source = formatHistorianSourceRef(values.source ?? "", ctx.objectPath);
+    const window = values.windowBucket?.trim() || values.window?.trim() || "5m";
+    if (entry.id === "last" || entry.name === "last") {
+      return `last(${source})`;
+    }
+    if (entry.id === "live" || entry.name === "live") {
+      return `live(${source})`;
+    }
+    return `${entry.name}(${source}, ${window})`;
   }
 
   const parts: string[] = [];

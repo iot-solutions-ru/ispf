@@ -115,6 +115,49 @@ public final class PlatformRefParser {
         return Optional.empty();
     }
 
+    private static final Pattern HISTORIAN_VAR = Pattern.compile("^[A-Za-z_][A-Za-z0-9_-]*$");
+
+    /**
+     * Parses historian helper source arguments: slash refs and legacy {@code object.path.variable} form.
+     */
+    public static PlatformRef parseHistorianSource(String raw, String ruleObjectPath) {
+        String trimmed = unquote(raw).trim();
+        if (trimmed.isBlank()) {
+            throw new PlatformRefParseException("Historian source is required");
+        }
+        Optional<PlatformRef> parsed = parseOptional(trimmed).filter(PlatformRef::isVariable);
+        if (parsed.isEmpty() && trimmed.contains(".")) {
+            int lastDot = trimmed.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < trimmed.length() - 1) {
+                String object = trimmed.substring(0, lastDot);
+                String name = trimmed.substring(lastDot + 1);
+                if (HISTORIAN_VAR.matcher(name).matches()) {
+                    parsed = Optional.of(PlatformRef.variable(object, name));
+                }
+            }
+        }
+        if (parsed.isEmpty()) {
+            throw new PlatformRefParseException("Historian source must be slash ref object/variable: " + raw);
+        }
+        PlatformRef ref = parsed.get();
+        if (ruleObjectPath != null && !ruleObjectPath.isBlank()) {
+            ref = ref.resolveObject(ruleObjectPath);
+        }
+        return ref;
+    }
+
+    private static String unquote(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String trimmed = raw.trim();
+        if ((trimmed.startsWith("'") && trimmed.endsWith("'"))
+                || (trimmed.startsWith("\"") && trimmed.endsWith("\""))) {
+            return trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
     private static void extractSlashRefs(String expression, Set<PlatformRef> refs) {
         for (String token : expression.split("[^@/A-Za-z0-9_./-]+")) {
             if (!token.contains("/")) {

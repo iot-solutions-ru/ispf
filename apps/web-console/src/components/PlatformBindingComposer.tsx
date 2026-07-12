@@ -81,8 +81,8 @@ export default function PlatformBindingComposer({
   const [values, setValues] = useState(() => defaultParamValues(entry, context));
 
   const preview = useMemo(
-    () => buildPlatformBindingExpression(entry, values),
-    [entry, values]
+    () => buildPlatformBindingExpression(entry, values, context),
+    [entry, values, context]
   );
 
   const patchValue = (key: string, next: string) => {

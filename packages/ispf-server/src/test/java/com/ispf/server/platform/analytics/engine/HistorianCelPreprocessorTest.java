@@ -53,6 +53,18 @@ class HistorianCelPreprocessorTest {
                 .isEqualTo("(22.02 + 22.00) / 2.0");
     }
 
+    @Test
+    void expandsDotFormHistorianSource() {
+        String expression = "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)";
+        String expanded = HistorianCelPreprocessor.expand(
+                expression,
+                new RecordingHistorian(12.0),
+                unusedLive(),
+                Instant.parse("2026-07-09T10:00:00Z")
+        );
+        assertThat(expanded).isEqualTo("12.0");
+    }
+
     private static LiveVariablePort unusedLive() {
         return new LiveVariablePort() {
             @Override
