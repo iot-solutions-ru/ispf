@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class HistorianCelPreprocessorTest {
 
@@ -19,16 +20,7 @@ class HistorianCelPreprocessorTest {
         String expanded = HistorianCelPreprocessor.expand(
                 expression,
                 historian,
-                new LiveVariablePort() {
-                    @Override
-                    public Optional<Double> readNumeric(String objectPath, String variableName, String fieldName) {
-                        return Optional.empty();
-                    }
-
-                    @Override
-                    public void writeNumeric(String objectPath, String variableName, String fieldName, double value) {
-                    }
-                },
+                unusedLive(),
                 Instant.parse("2026-07-09T10:00:00Z")
         );
         assertThat(expanded).isEqualTo("21.5 * 2.0");
@@ -54,28 +46,14 @@ class HistorianCelPreprocessorTest {
     }
 
     @Test
-    void expandsDotFormHistorianSource() {
-        String expression = "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)";
-        String expanded = HistorianCelPreprocessor.expand(
-                expression,
+    void rejectsDotFormHistorianSource() {
+        assertThatThrownBy(() -> HistorianCelPreprocessor.expand(
+                "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)",
                 new RecordingHistorian(12.0),
                 unusedLive(),
                 Instant.parse("2026-07-09T10:00:00Z")
-        );
-        assertThat(expanded).isEqualTo("12.0");
-    }
-
-    private static LiveVariablePort unusedLive() {
-        return new LiveVariablePort() {
-            @Override
-            public Optional<Double> readNumeric(String objectPath, String variableName, String fieldName) {
-                return Optional.empty();
-            }
-
-            @Override
-            public void writeNumeric(String objectPath, String variableName, String fieldName, double value) {
-            }
-        };
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("slash ref");
     }
 
     @Test
@@ -106,6 +84,19 @@ class HistorianCelPreprocessorTest {
                 Instant.parse("2026-07-09T10:00:00Z")
         );
         assertThat(expanded).isEqualTo("21.5 * 2.0");
+    }
+
+    private static LiveVariablePort unusedLive() {
+        return new LiveVariablePort() {
+            @Override
+            public Optional<Double> readNumeric(String objectPath, String variableName, String fieldName) {
+                return Optional.empty();
+            }
+
+            @Override
+            public void writeNumeric(String objectPath, String variableName, String fieldName, double value) {
+            }
+        };
     }
 
     private static final class RecordingHistorian implements HistorianPort {

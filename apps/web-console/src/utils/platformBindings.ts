@@ -51,7 +51,7 @@ const HISTORIAN_BUILTIN_IDS = new Set([
   "avgHistorian",
 ]);
 
-/** Normalize historian source to slash ref (object/variable). */
+/** Build canonical slash ref for historian source (object/variable or @/name). */
 export function formatHistorianSourceRef(source: string, objectPath?: string): string {
   const trimmed = source.trim();
   if (!trimmed) {
@@ -59,14 +59,6 @@ export function formatHistorianSourceRef(source: string, objectPath?: string): s
   }
   if (trimmed.includes("/") || trimmed.startsWith("@")) {
     return trimmed;
-  }
-  const lastDot = trimmed.lastIndexOf(".");
-  if (lastDot > 0 && lastDot < trimmed.length - 1) {
-    const object = trimmed.slice(0, lastDot);
-    const name = trimmed.slice(lastDot + 1);
-    if (name && !name.includes(".")) {
-      return `${object}/${name}`;
-    }
   }
   if (objectPath?.trim()) {
     return `${objectPath.trim()}/${trimmed}`;

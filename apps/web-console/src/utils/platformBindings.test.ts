@@ -49,17 +49,6 @@ describe("platformBindings", () => {
     expect(buildPlatformBindingExpression(entry!, values)).toBe("avg(@/temperature, 5m)");
   });
 
-  it("converts dot-form historian source to slash ref", () => {
-    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "avgHistorian");
-    expect(entry).toBeDefined();
-    expect(
-      buildPlatformBindingExpression(entry!, {
-        source: "root.platform.devices.analytics-demo.chain-a.derived-a",
-        windowBucket: "5m",
-      })
-    ).toBe("avg(root.platform.devices.analytics-demo.chain-a/derived-a, 5m)");
-  });
-
   it("omits optional callRef input", () => {
     const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "callRef");
     expect(entry).toBeDefined();

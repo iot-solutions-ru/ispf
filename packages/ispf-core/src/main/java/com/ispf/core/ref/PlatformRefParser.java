@@ -3,7 +3,6 @@ package com.ispf.core.ref;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -115,31 +114,15 @@ public final class PlatformRefParser {
         return Optional.empty();
     }
 
-    private static final Pattern HISTORIAN_VAR = Pattern.compile("^[A-Za-z_][A-Za-z0-9_-]*$");
-
     /**
-     * Parses historian helper source arguments: slash refs and legacy {@code object.path.variable} form.
+     * Parses historian helper source arguments (canonical slash refs and bare current-object names).
      */
     public static PlatformRef parseHistorianSource(String raw, String ruleObjectPath) {
         String trimmed = unquote(raw).trim();
         if (trimmed.isBlank()) {
             throw new PlatformRefParseException("Historian source is required");
         }
-        Optional<PlatformRef> parsed = parseOptional(trimmed).filter(PlatformRef::isVariable);
-        if (parsed.isEmpty() && trimmed.contains(".")) {
-            int lastDot = trimmed.lastIndexOf('.');
-            if (lastDot > 0 && lastDot < trimmed.length() - 1) {
-                String object = trimmed.substring(0, lastDot);
-                String name = trimmed.substring(lastDot + 1);
-                if (HISTORIAN_VAR.matcher(name).matches()) {
-                    parsed = Optional.of(PlatformRef.variable(object, name));
-                }
-            }
-        }
-        if (parsed.isEmpty()) {
-            throw new PlatformRefParseException("Historian source must be slash ref object/variable: " + raw);
-        }
-        PlatformRef ref = parsed.get();
+        PlatformRef ref = parseVariableSource(trimmed);
         if (ruleObjectPath != null && !ruleObjectPath.isBlank()) {
             ref = ref.resolveObject(ruleObjectPath);
         }
@@ -165,20 +148,5 @@ public final class PlatformRefParser {
             }
             parseOptional(token).ifPresent(refs::add);
         }
-    }
-
-    public static Optional<PlatformRef> parseDotFormWithTree(String dotForm, Predicate<String> objectPathExists) {
-        if (dotForm == null || !dotForm.contains(".")) {
-            return Optional.empty();
-        }
-        String[] parts = dotForm.split("\\.");
-        for (int i = parts.length - 1; i >= 1; i--) {
-            String object = String.join(".", java.util.Arrays.copyOf(parts, i));
-            String variable = parts[i];
-            if (objectPathExists.test(object) && IDENT_PATTERN.matcher(variable).matches()) {
-                return Optional.of(PlatformRef.variable(object, variable));
-            }
-        }
-        return Optional.empty();
     }
 }
