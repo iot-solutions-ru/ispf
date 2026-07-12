@@ -14,6 +14,7 @@ public record VariableDto(
         Instant updatedAt,
         boolean historyEnabled,
         Integer historyRetentionDays,
+        String telemetryPublishMode,
         List<String> readRoles,
         List<String> writeRoles
 ) {
@@ -26,6 +27,7 @@ public record VariableDto(
                 variable.updatedAt().orElse(null),
                 variable.historyEnabled(),
                 variable.historyRetentionDays().orElse(null),
+                variable.telemetryPublishModeOverride().orElse(null),
                 variable.readRoles(),
                 variable.writeRoles()
         );

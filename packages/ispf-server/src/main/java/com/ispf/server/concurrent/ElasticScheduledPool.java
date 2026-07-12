@@ -2,6 +2,7 @@ package com.ispf.server.concurrent;
 
 import com.ispf.driver.ingress.ElasticWorkerScaler;
 import com.ispf.driver.ingress.IngressElasticSettings;
+import com.ispf.driver.ingress.ThreadPoolResize;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -73,8 +74,7 @@ public final class ElasticScheduledPool implements AutoCloseable {
         int minWorkers = settings.resolvedMinWorkers();
         int maxWorkers = settings.resolvedMaxWorkers();
         int target = Math.min(maxWorkers, Math.max(minWorkers, scaler.targetWorkers()));
-        executor.setMaximumPoolSize(target);
-        executor.setCorePoolSize(target);
+        ThreadPoolResize.apply(executor, target, target);
     }
 
     @Override

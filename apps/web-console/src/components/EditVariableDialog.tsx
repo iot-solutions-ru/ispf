@@ -10,6 +10,9 @@ import { fetchSecurityRoles } from "../api/securityRoles";
 import type { DataRecord, VariableDto } from "../types";
 import DataRecordValueEditor from "./schema/DataRecordValueEditor";
 import VariableHistoryFields, {
+  historyStateEqual,
+  historyStateFromVariable,
+  telemetryModeToApi,
   type VariableHistoryState,
 } from "./VariableHistoryFields";
 import RoleMultiSelect from "./RoleMultiSelect";
@@ -25,17 +28,11 @@ interface EditVariableDialogProps {
 }
 
 function historyFromVariable(variable: VariableDto): VariableHistoryState {
-  return {
-    historyEnabled: variable.historyEnabled ?? false,
-    historyRetentionDays: variable.historyRetentionDays ?? null,
-  };
+  return historyStateFromVariable(variable);
 }
 
 function historyEqual(a: VariableHistoryState, b: VariableHistoryState): boolean {
-  return (
-    a.historyEnabled === b.historyEnabled &&
-    a.historyRetentionDays === b.historyRetentionDays
-  );
+  return historyStateEqual(a, b);
 }
 
 export default function EditVariableDialog({
@@ -141,7 +138,11 @@ export default function EditVariableDialog({
         });
       }
       if (canManageHistory && historyDirty) {
-        await updateVariableHistory(objectPath, variable.name, history);
+        await updateVariableHistory(objectPath, variable.name, {
+          historyEnabled: history.historyEnabled,
+          historyRetentionDays: history.historyRetentionDays,
+          telemetryPublishMode: telemetryModeToApi(history.telemetryPublishMode),
+        });
       }
       if (canEditValue && valueDirty) {
         const payload = showJson ? (JSON.parse(jsonText) as DataRecord) : record;

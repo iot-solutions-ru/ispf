@@ -1,6 +1,7 @@
 package com.ispf.server.driver;
 
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.context.annotation.Lazy;
@@ -11,7 +12,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Resolves per-device telemetry publish policy from driver binding variables.
+ * Resolves per-device telemetry publish policy from driver binding variables,
+ * with optional per-variable overrides on {@link Variable}.
  */
 @Service
 public class DeviceTelemetryPolicyService {
@@ -22,6 +24,7 @@ public class DeviceTelemetryPolicyService {
     private final ObjectMapper objectMapper;
     private final RuntimeTelemetryProperties globalProperties;
     private final ConcurrentHashMap<String, CachedPolicy> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CachedVariableMode> variableModeCache = new ConcurrentHashMap<>();
 
     public DeviceTelemetryPolicyService(
             @Lazy ObjectManager objectManager,
@@ -33,8 +36,24 @@ public class DeviceTelemetryPolicyService {
         this.globalProperties = globalProperties;
     }
 
+    /** Device-level default from driver binding (or FULL when unbound). */
     public TelemetryPublishMode publishMode(String devicePath) {
         return policyFor(devicePath).publishMode();
+    }
+
+    /**
+     * Effective publish mode for a variable: per-variable override, else bound device default, else FULL.
+     */
+    public TelemetryPublishMode publishMode(String objectPath, String variableName) {
+        long now = System.currentTimeMillis();
+        String cacheKey = objectPath + "|" + variableName;
+        CachedVariableMode cached = variableModeCache.get(cacheKey);
+        if (cached != null && now - cached.loadedAtMs() < CACHE_TTL_MS) {
+            return cached.mode();
+        }
+        TelemetryPublishMode resolved = resolvePublishMode(objectPath, variableName);
+        variableModeCache.put(cacheKey, new CachedVariableMode(resolved, now));
+        return resolved;
     }
 
     public long coalesceMs(String devicePath) {
@@ -43,6 +62,10 @@ public class DeviceTelemetryPolicyService {
 
     public boolean automationEligible(String devicePath) {
         return policyFor(devicePath).automationEligible();
+    }
+
+    public boolean automationEligible(String objectPath, String variableName) {
+        return publishMode(objectPath, variableName).automationEligible();
     }
 
     /** When true, MQTT ingress uses per-topic coalesce lanes + parallel thread-pool dispatch. */
@@ -74,7 +97,31 @@ public class DeviceTelemetryPolicyService {
     public void invalidateCache(String devicePath) {
         if (devicePath != null && !devicePath.isBlank()) {
             cache.remove(devicePath);
+            String prefix = devicePath + "|";
+            variableModeCache.keySet().removeIf(key -> key.startsWith(prefix));
         }
+    }
+
+    public void invalidateVariable(String objectPath, String variableName) {
+        if (objectPath != null && !objectPath.isBlank() && variableName != null && !variableName.isBlank()) {
+            variableModeCache.remove(objectPath + "|" + variableName);
+        }
+    }
+
+    private TelemetryPublishMode resolvePublishMode(String objectPath, String variableName) {
+        Optional<String> override = readVariablePublishModeOverride(objectPath, variableName);
+        if (override.isPresent()) {
+            return TelemetryPublishMode.parse(override.get());
+        }
+        return readBinding(objectPath)
+                .map(DriverBinding::telemetryPublishMode)
+                .orElse(TelemetryPublishMode.FULL);
+    }
+
+    private Optional<String> readVariablePublishModeOverride(String objectPath, String variableName) {
+        return objectManager.tree().findByPath(objectPath)
+                .flatMap(node -> node.getVariable(variableName))
+                .flatMap(Variable::telemetryPublishModeOverride);
     }
 
     private CachedPolicy policyFor(String devicePath) {
@@ -130,14 +177,14 @@ public class DeviceTelemetryPolicyService {
 
     private static Optional<String> stringValue(PlatformObject node, String variableName) {
         return node.getVariable(variableName)
-                .flatMap(com.ispf.core.object.Variable::value)
+                .flatMap(Variable::value)
                 .map(record -> record.firstRow().get("value"))
                 .map(Object::toString);
     }
 
     private static Optional<Integer> intValue(PlatformObject node, String variableName) {
         return node.getVariable(variableName)
-                .flatMap(com.ispf.core.object.Variable::value)
+                .flatMap(Variable::value)
                 .map(record -> record.firstRow().get("value"))
                 .map(value -> ((Number) value).intValue());
     }
@@ -150,4 +197,6 @@ public class DeviceTelemetryPolicyService {
             boolean ingressPayloadLanes,
             long loadedAtMs
     ) {}
+
+    private record CachedVariableMode(TelemetryPublishMode mode, long loadedAtMs) {}
 }

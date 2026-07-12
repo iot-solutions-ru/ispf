@@ -56,7 +56,7 @@ public class ObjectChangePublicationService {
             return false;
         }
         boolean telemetry = interest.historian();
-        boolean automationEligible = telemetryPolicyService.automationEligible(objectPath) && interest.automation();
+        boolean automationEligible = telemetryPolicyService.automationEligible(objectPath, variableName) && interest.automation();
         if (!telemetry && !automationEligible && !interest.uiRefresh()) {
             return false;
         }
@@ -81,7 +81,7 @@ public class ObjectChangePublicationService {
         VariableChangeInterest interest = variableSubscriptionRegistry.interest(template.path(), template.variableName());
         boolean telemetry = interest.historian();
         // Config/API writes always fan out to automation (bindings, workflows) for eligible devices.
-        boolean automationEligible = telemetryPolicyService.automationEligible(template.path())
+        boolean automationEligible = telemetryPolicyService.automationEligible(template.path(), template.variableName())
                 || interest.automation();
         // Persisted config/API writes always publish (cluster NATS sync, explorer refresh).
         eventPublisher.publishEvent(new ObjectChangeEvent(
@@ -169,7 +169,7 @@ public class ObjectChangePublicationService {
     }
 
     private boolean publishLegacyVariableChange(String objectPath, String variableName, Instant observedAt) {
-        boolean automationEligible = telemetryPolicyService.automationEligible(objectPath);
+        boolean automationEligible = telemetryPolicyService.automationEligible(objectPath, variableName);
         eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(
                 objectPath,
                 variableName,

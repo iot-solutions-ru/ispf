@@ -731,12 +731,15 @@ final class AgentAutomationTools {
                             path,
                             name,
                             historyEnabled,
-                            retentionDays
+                            retentionDays,
+                            null
                     );
                     Map<String, Object> preview = new LinkedHashMap<>();
                     preview.put("name", updated.name());
                     preview.put("historyEnabled", updated.historyEnabled());
                     updated.historyRetentionDays().ifPresent(days -> preview.put("historyRetentionDays", days));
+                    updated.telemetryPublishModeOverride()
+                            .ifPresent(mode -> preview.put("telemetryPublishMode", mode));
                     return Map.of("status", "OK", "path", path, "variable", preview);
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());

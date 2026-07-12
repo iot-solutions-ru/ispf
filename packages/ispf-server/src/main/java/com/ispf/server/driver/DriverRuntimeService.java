@@ -244,9 +244,18 @@ public class DriverRuntimeService {
 
         DriverBinding binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
         DeviceDriver driver = driverFactory.create(binding.driverId());
+        @SuppressWarnings("unchecked")
+        final DriverIngressBuffer<String, ServerDriverObject.VariableUpdate>[] ingressBufferHolder =
+                new DriverIngressBuffer[1];
         Consumer<ServerDriverObject.VariableUpdate> variableUpdater = update -> {
             if (update.system()) {
                 objectManager.setSystemVariableValue(update.path(), update.variableName(), update.value());
+            } else if (usesDirectIngress(devicePath, update.variableName())) {
+                objectManager.setDriverTelemetryValue(
+                        update.path(), update.variableName(), update.value(), update.observedAt()
+                );
+            } else if (ingressBufferHolder[0] != null) {
+                ingressBufferHolder[0].submit(update.variableName(), update);
             } else {
                 objectManager.setDriverTelemetryValue(
                         update.path(), update.variableName(), update.value(), update.observedAt()
@@ -254,7 +263,7 @@ public class DriverRuntimeService {
             }
         };
         DriverIngressBuffer<String, ServerDriverObject.VariableUpdate> ingressBuffer = null;
-        if (driverPackProperties.isIngressBufferEnabled() && !usesDirectIngress(devicePath)) {
+        if (driverPackProperties.isIngressBufferEnabled() && deviceNeedsIngressBuffer(devicePath)) {
             String threadPrefix = "driver-ingress-" + devicePath.substring(Math.max(0, devicePath.length() - 24));
             ingressBuffer = new DriverIngressBuffer<>(
                     driverPackProperties.resolvedIngressBufferElastic(),
@@ -263,6 +272,7 @@ public class DriverRuntimeService {
                     threadPrefix,
                     false
             );
+            ingressBufferHolder[0] = ingressBuffer;
         }
         ServerDriverObject driverObject = new ServerDriverObject(
                 device,
@@ -726,13 +736,20 @@ public class DriverRuntimeService {
      * High-rate ingress modes skip the server driver ingress buffer (L1) so MQTT L0 drain is not stacked
      * with platform ingress coalescing.
      */
-    private boolean usesDirectIngress(String devicePath) {
-        TelemetryPublishMode mode = telemetryPolicyService.publishMode(devicePath);
+    private boolean usesDirectIngress(String devicePath, String variableName) {
+        TelemetryPublishMode mode = telemetryPolicyService.publishMode(devicePath, variableName);
         if (mode == TelemetryPublishMode.EVENT_JOURNAL_ONLY) {
             return true;
         }
         return runtimeTelemetryProperties.isFastHistorianPath()
                 && mode == TelemetryPublishMode.TELEMETRY_ONLY;
+    }
+
+    private boolean deviceNeedsIngressBuffer(String devicePath) {
+        return readBinding(devicePath)
+                .map(binding -> binding.pointMappings().keySet().stream()
+                        .anyMatch(variableName -> !usesDirectIngress(devicePath, variableName)))
+                .orElse(false);
     }
 
     /** Test helper: read configured driver id for a device path. */

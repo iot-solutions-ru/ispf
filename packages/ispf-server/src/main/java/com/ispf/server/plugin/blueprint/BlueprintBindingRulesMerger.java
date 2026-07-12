@@ -68,6 +68,10 @@ public class BlueprintBindingRulesMerger {
         }
     }
 
+    public void evaluateRulesForObject(String objectPath) {
+        bindingRuleEngine.runRulesForObject(objectPath);
+    }
+
     private static BindingRule resolve(BlueprintBindingRule modelRule, Map<String, String> parameters) {
         String expression = resolveParameters(modelRule.expression(), parameters);
         String condition = resolveParameters(modelRule.condition(), parameters);

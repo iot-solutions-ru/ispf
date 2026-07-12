@@ -42,7 +42,7 @@ class TelemetryEventJournalFastPathTest {
 
     @Test
     void firesIngressEventWhenModeIsEventJournalOnly() {
-        when(telemetryPolicyService.publishMode(DEVICE)).thenReturn(TelemetryPublishMode.EVENT_JOURNAL_ONLY);
+        when(telemetryPolicyService.publishMode(DEVICE, "temperature")).thenReturn(TelemetryPublishMode.EVENT_JOURNAL_ONLY);
         when(telemetryPolicyService.bindingFor(DEVICE)).thenReturn(Optional.of(
                 DriverBinding.of("mqtt", 5000, Map.of(), Map.of("temperature", "t"), TelemetryPublishMode.EVENT_JOURNAL_ONLY, 1)
         ));
@@ -61,7 +61,7 @@ class TelemetryEventJournalFastPathTest {
 
     @Test
     void skipsWhenModeIsTelemetryOnly() {
-        when(telemetryPolicyService.publishMode(DEVICE)).thenReturn(TelemetryPublishMode.TELEMETRY_ONLY);
+        when(telemetryPolicyService.publishMode(DEVICE, "temperature")).thenReturn(TelemetryPublishMode.TELEMETRY_ONLY);
 
         assertThat(fastPath.tryFire(DEVICE, "temperature", DataRecord.single(TEMP_SCHEMA, Map.of("raw", "1")), null))
                 .isFalse();

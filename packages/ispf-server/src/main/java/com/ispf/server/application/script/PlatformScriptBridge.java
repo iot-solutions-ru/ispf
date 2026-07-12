@@ -8,8 +8,10 @@ import com.ispf.core.object.Variable;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintException;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -32,17 +34,20 @@ public class PlatformScriptBridge {
     private final ObjectManager objectManager;
     private final BlueprintRegistry blueprintRegistry;
     private final BlueprintApplicationService blueprintApplicationService;
+    private final ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap;
 
     public PlatformScriptBridge(
             ObjectMapper objectMapper,
             ObjectManager objectManager,
             BlueprintRegistry blueprintRegistry,
-            BlueprintApplicationService blueprintApplicationService
+            BlueprintApplicationService blueprintApplicationService,
+            ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap
     ) {
         this.objectMapper = objectMapper;
         this.objectManager = objectManager;
         this.blueprintRegistry = blueprintRegistry;
         this.blueprintApplicationService = blueprintApplicationService;
+        this.platformReferenceBlueprintBootstrap = platformReferenceBlueprintBootstrap;
     }
 
     public Map<String, Object> jsonParse(String source, List<String> fields) {
@@ -103,14 +108,16 @@ public class PlatformScriptBridge {
             throw new IllegalArgumentException("instantiateModelIfMissing parentPath is required");
         }
         String fullPath = objectManager.tree().resolveChildPath(parentPath, instanceName);
+        objectManager.syncPathFromDatabase(fullPath);
         if (objectManager.tree().findByPath(fullPath).isPresent()) {
             return fullPath;
         }
+        platformReferenceBlueprintBootstrap.ifAvailable(PlatformReferenceBlueprintBootstrap::ensureReferenceModels);
         BlueprintDefinition model = blueprintRegistry.findByName(blueprintName)
                 .orElseThrow(() -> new IllegalArgumentException("Blueprint not found: " + blueprintName));
         try {
             blueprintApplicationService.instantiateWithRules(model.id(), parentPath, instanceName, Map.of());
-            objectManager.persistNodeTree(fullPath);
+            objectManager.syncPathFromDatabase(fullPath);
             return fullPath;
         } catch (IllegalArgumentException ex) {
             if (ex.getCause() instanceof BlueprintException modelEx

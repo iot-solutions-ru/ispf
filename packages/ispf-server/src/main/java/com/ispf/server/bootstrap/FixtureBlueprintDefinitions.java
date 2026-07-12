@@ -313,7 +313,7 @@ public final class FixtureBlueprintDefinitions {
 
     public static BlueprintDefinition buildMqttGatewaySensorInstanceModel() {
         return new BlueprintDefinition(
-                UUID.randomUUID().toString(),
+                PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL_ID,
                 PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL,
                 "MQTT temperature sensor — child of mqtt-gateway-v1 (telemetry via dispatchTelemetry, threshold alarms)",
                 BlueprintType.INSTANCE,
@@ -619,7 +619,7 @@ public final class FixtureBlueprintDefinitions {
 
     public static BlueprintDefinition buildSnmpAgentModel() {
         return new BlueprintDefinition(
-                UUID.randomUUID().toString(),
+                PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL_ID,
                 PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL,
                 "SNMP agent device (MIB-II system group)",
                 BlueprintType.INSTANCE,

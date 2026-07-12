@@ -19,6 +19,8 @@ public class Variable {
     private final boolean writable;
     private final boolean historyEnabled;
     private final Integer historyRetentionDays;
+    /** {@code null} or blank = inherit device {@code telemetryPublishMode}. */
+    private final String telemetryPublishMode;
     private final List<String> readRoles;
     private final List<String> writeRoles;
     private final AtomicReference<DataRecord> value = new AtomicReference<>();
@@ -31,7 +33,7 @@ public class Variable {
             boolean writable,
             DataRecord initialValue
     ) {
-        this(name, schema, readable, writable, initialValue, false, null, List.of(), List.of());
+        this(name, schema, readable, writable, initialValue, false, null, null, List.of(), List.of());
     }
 
     public Variable(
@@ -43,7 +45,7 @@ public class Variable {
             boolean historyEnabled,
             Integer historyRetentionDays
     ) {
-        this(name, schema, readable, writable, initialValue, historyEnabled, historyRetentionDays, List.of(), List.of());
+        this(name, schema, readable, writable, initialValue, historyEnabled, historyRetentionDays, null, List.of(), List.of());
     }
 
     public Variable(
@@ -57,12 +59,28 @@ public class Variable {
             List<String> readRoles,
             List<String> writeRoles
     ) {
+        this(name, schema, readable, writable, initialValue, historyEnabled, historyRetentionDays, null, readRoles, writeRoles);
+    }
+
+    public Variable(
+            String name,
+            DataSchema schema,
+            boolean readable,
+            boolean writable,
+            DataRecord initialValue,
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            String telemetryPublishMode,
+            List<String> readRoles,
+            List<String> writeRoles
+    ) {
         this.name = name;
         this.schema = schema;
         this.readable = readable;
         this.writable = writable;
         this.historyEnabled = historyEnabled;
         this.historyRetentionDays = historyRetentionDays;
+        this.telemetryPublishMode = normalizeTelemetryPublishMode(telemetryPublishMode);
         this.readRoles = readRoles != null ? List.copyOf(readRoles) : List.of();
         this.writeRoles = writeRoles != null ? List.copyOf(writeRoles) : List.of();
         if (initialValue != null) {
@@ -99,6 +117,13 @@ public class Variable {
         return Optional.ofNullable(historyRetentionDays);
     }
 
+    /**
+     * Per-variable telemetry publish mode override; empty = inherit the bound driver's default.
+     */
+    public Optional<String> telemetryPublishModeOverride() {
+        return Optional.ofNullable(telemetryPublishMode);
+    }
+
     /** Role names allowed to read this variable; empty = inherit object ACL. */
     public List<String> readRoles() {
         return readRoles;
@@ -110,7 +135,23 @@ public class Variable {
     }
 
     public Variable withHistorySettings(boolean enabled, Integer retentionDays) {
-        return withDefinition(readable, writable, enabled, retentionDays);
+        return withStorageSettings(enabled, retentionDays, telemetryPublishMode);
+    }
+
+    public Variable withStorageSettings(
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            String telemetryPublishMode
+    ) {
+        return withDefinition(
+                readable,
+                writable,
+                historyEnabled,
+                historyRetentionDays,
+                telemetryPublishMode,
+                readRoles,
+                writeRoles
+        );
     }
 
     public Variable withDefinition(
@@ -119,7 +160,7 @@ public class Variable {
             boolean historyEnabled,
             Integer historyRetentionDays
     ) {
-        return withDefinition(readable, writable, historyEnabled, historyRetentionDays, readRoles, writeRoles);
+        return withDefinition(readable, writable, historyEnabled, historyRetentionDays, telemetryPublishMode, readRoles, writeRoles);
     }
 
     public Variable withDefinition(
@@ -127,6 +168,18 @@ public class Variable {
             boolean writable,
             boolean historyEnabled,
             Integer historyRetentionDays,
+            List<String> readRoles,
+            List<String> writeRoles
+    ) {
+        return withDefinition(readable, writable, historyEnabled, historyRetentionDays, telemetryPublishMode, readRoles, writeRoles);
+    }
+
+    public Variable withDefinition(
+            boolean readable,
+            boolean writable,
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            String telemetryPublishMode,
             List<String> readRoles,
             List<String> writeRoles
     ) {
@@ -138,11 +191,19 @@ public class Variable {
                 value.get(),
                 historyEnabled,
                 historyRetentionDays,
+                telemetryPublishMode,
                 readRoles,
                 writeRoles
         );
         copy.updatedAt = this.updatedAt;
         return copy;
+    }
+
+    private static String normalizeTelemetryPublishMode(String raw) {
+        if (raw == null || raw.isBlank() || "INHERIT".equalsIgnoreCase(raw.trim())) {
+            return null;
+        }
+        return raw.trim().toUpperCase();
     }
 
     public Optional<DataRecord> value() {

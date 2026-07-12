@@ -174,12 +174,9 @@ public final class DriverIngressBuffer<K, V> {
         }
         if (eagerDrain && workers instanceof java.util.concurrent.ThreadPoolExecutor pool) {
             scaler.adjust(pendingCount.get());
-            int target = scaler.targetWorkers();
-            pool.setCorePoolSize(target);
-            pool.setMaximumPoolSize(elastic.resolvedMaxWorkers());
-            while (pool.getPoolSize() < target && pool.getPoolSize() < pool.getMaximumPoolSize()) {
-                pool.prestartCoreThread();
-            }
+            int maxWorkers = elastic.resolvedMaxWorkers();
+            int target = Math.min(scaler.targetWorkers(), maxWorkers);
+            ThreadPoolResize.apply(pool, maxWorkers, target);
             return;
         }
         scaler.adjust(pendingCount.get());

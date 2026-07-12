@@ -70,11 +70,13 @@ public class BlueprintApplicationService {
     ) {
         try {
             BlueprintApplyResult result = blueprintEngine.instantiateBlueprint(blueprintId, parentPath, instanceName, parameters);
-            PlatformObject instance = objectManager.require(
-                    objectManager.tree().resolveChildPath(parentPath, instanceName)
-            );
+            // Use in-memory tree only: object is not persisted yet; cluster require() evicts RAM-only nodes.
+            String instancePath = objectManager.tree().resolveChildPath(parentPath, instanceName);
+            PlatformObject instance = objectManager.tree().require(instancePath);
             BlueprintDefinition model = blueprintRegistry.requireById(blueprintId);
-            bindingRulesMerger.mergeBlueprintRules(instance.path(), model, parameters != null ? parameters : Map.of());
+            objectManager.persistNodeTree(instance.path());
+            bindingRulesMerger.mergeBlueprintRules(
+                    instance.path(), model, parameters != null ? parameters : Map.of());
             List<BlueprintApplyResult> relativeResults = blueprintEngine.applyRelativeBlueprints(instance.path());
             for (BlueprintApplyResult relative : relativeResults) {
                 blueprintRegistry.findById(relative.attachment().blueprintId()).ifPresent(relativeModel ->

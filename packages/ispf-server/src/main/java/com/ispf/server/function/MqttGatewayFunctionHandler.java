@@ -3,6 +3,7 @@ package com.ispf.server.function;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -76,13 +77,18 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
             return false;
         }
         PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
-        return node != null && node.functions().containsKey(FUNCTION_NAME);
+        if (node == null) {
+            return false;
+        }
+        return node.functions().containsKey(FUNCTION_NAME)
+                || node.getVariable("lastIngress").isPresent();
     }
 
     @Override
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
         PlatformObject gateway = objectManager.require(objectPath);
-        if (gateway.functions().get(FUNCTION_NAME) == null) {
+        if (gateway.functions().get(FUNCTION_NAME) == null
+                && gateway.getVariable("lastIngress").isEmpty()) {
             throw new IllegalArgumentException("Unknown function: " + FUNCTION_NAME);
         }
         String topic = stringField(input, "topic").orElseGet(() -> stringField(gateway, "lastIngress", "topic").orElse(""));
@@ -146,7 +152,8 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
     }
 
     private void updateChildTelemetry(String childPath, DataRecord temperature, boolean bypassChildCoalesce) {
-        boolean automationEligible = telemetryPolicyService.automationEligible(childPath);
+        ensureChildLoaded(childPath);
+        boolean automationEligible = telemetryPolicyService.automationEligible(childPath, "temperature");
         if (bypassChildCoalesce && !automationEligible) {
             objectManager.setDriverTelemetryValueDirect(childPath, "temperature", temperature);
             if (!historianFastPath.tryPublish(childPath, "temperature", temperature, null)) {
@@ -155,6 +162,15 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
             return;
         }
         objectManager.setDriverTelemetryValue(childPath, "temperature", temperature);
+    }
+
+    private void ensureChildLoaded(String childPath) {
+        try {
+            objectManager.require(childPath);
+        } catch (ObjectNotFoundException ex) {
+            objectManager.syncPathFromDatabase(childPath);
+            objectManager.require(childPath);
+        }
     }
 
     static Optional<Double> parseNumeric(String raw) {

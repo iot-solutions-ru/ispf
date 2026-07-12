@@ -65,4 +65,36 @@ class ObjectManagerIngressFastPathTest {
         var variable = objectManager.require(DEVICE).getVariable("temperature").orElseThrow();
         assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo(10.0);
     }
+
+    @Test
+    void skipsRamUpdateWhenVariableOverrideIsTelemetryOnly() {
+        driverRuntimeService.stop(DEVICE);
+        objectManager.setVariableValue(
+                DEVICE,
+                "temperature",
+                DataRecord.single(TEMPERATURE, Map.of("value", 10.0, "unit", "C"))
+        );
+        objectManager.updateVariableHistory(DEVICE, "temperature", true, null, "TELEMETRY_ONLY");
+        driverRuntimeService.configure(
+                DEVICE,
+                DriverBinding.of(
+                        "virtual",
+                        1000,
+                        Map.of("telemetryPublishMode", "FULL"),
+                        Map.of(),
+                        TelemetryPublishMode.FULL,
+                        1
+                )
+        );
+
+        objectManager.setDriverTelemetryValue(
+                DEVICE,
+                "temperature",
+                DataRecord.single(MQTT_PAYLOAD, Map.of("raw", "99.9")),
+                Instant.now()
+        );
+
+        var variable = objectManager.require(DEVICE).getVariable("temperature").orElseThrow();
+        assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo(10.0);
+    }
 }

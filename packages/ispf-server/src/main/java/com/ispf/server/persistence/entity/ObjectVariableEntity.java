@@ -48,6 +48,9 @@ public class ObjectVariableEntity {
     @Column(name = "history_retention_days")
     private Integer historyRetentionDays;
 
+    @Column(name = "telemetry_publish_mode", length = 32)
+    private String telemetryPublishMode;
+
     @Column(name = "read_roles_json", columnDefinition = "TEXT")
     private String readRolesJson;
 
@@ -132,6 +135,14 @@ public class ObjectVariableEntity {
 
     public void setHistoryRetentionDays(Integer historyRetentionDays) {
         this.historyRetentionDays = historyRetentionDays;
+    }
+
+    public String getTelemetryPublishMode() {
+        return telemetryPublishMode;
+    }
+
+    public void setTelemetryPublishMode(String telemetryPublishMode) {
+        this.telemetryPublishMode = telemetryPublishMode;
     }
 
     public String getReadRolesJson() {

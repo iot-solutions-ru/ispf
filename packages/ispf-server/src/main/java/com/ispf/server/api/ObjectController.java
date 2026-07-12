@@ -603,7 +603,8 @@ public class ObjectController {
                     path,
                     name,
                     request.historyEnabled(),
-                    request.historyRetentionDays()
+                    request.historyRetentionDays(),
+                    request.telemetryPublishMode()
             );
             return VariableDto.from(variable);
         } catch (IllegalArgumentException e) {
@@ -792,7 +793,8 @@ public class ObjectController {
 
     public record UpdateVariableHistoryRequest(
             boolean historyEnabled,
-            Integer historyRetentionDays
+            Integer historyRetentionDays,
+            String telemetryPublishMode
     ) {
     }
 

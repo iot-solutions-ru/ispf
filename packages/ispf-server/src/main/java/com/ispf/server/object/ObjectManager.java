@@ -17,6 +17,8 @@ import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.config.MqttGatewayProperties;
+import com.ispf.server.driver.DeviceTelemetryPolicyService;
+import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -87,6 +89,7 @@ public class ObjectManager {
     private final MqttGatewayProperties mqttGatewayProperties;
     private final TelemetryHistorianFastPath historianFastPath;
     private final TelemetryEventJournalFastPath eventJournalFastPath;
+    private final DeviceTelemetryPolicyService telemetryPolicyService;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
     private final ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService;
     private final ConcurrentHashMap<String, Object> variablePersistLocks = new ConcurrentHashMap<>();
@@ -116,6 +119,7 @@ public class ObjectManager {
             @org.springframework.context.annotation.Lazy MqttGatewayProperties mqttGatewayProperties,
             @org.springframework.context.annotation.Lazy TelemetryHistorianFastPath historianFastPath,
             @org.springframework.context.annotation.Lazy TelemetryEventJournalFastPath eventJournalFastPath,
+            @org.springframework.context.annotation.Lazy DeviceTelemetryPolicyService telemetryPolicyService,
             JavaFunctionRuntimeService javaFunctionRuntimeService,
             ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService
     ) {
@@ -142,6 +146,7 @@ public class ObjectManager {
         this.mqttGatewayProperties = mqttGatewayProperties;
         this.historianFastPath = historianFastPath;
         this.eventJournalFastPath = eventJournalFastPath;
+        this.telemetryPolicyService = telemetryPolicyService;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
         this.clusterBootstrapService = clusterBootstrapService;
     }
@@ -339,16 +344,7 @@ public class ObjectManager {
         }
         objectTree.register(node);
         for (ObjectVariableEntity varEntity : variableRepository.findByObjectPathIn(List.of(entity.getPath()))) {
-            DataRecord value = mapper.readDataRecord(varEntity.getValueJson());
-            node.addVariable(new Variable(
-                    varEntity.getName(),
-                    mapper.readSchema(varEntity.getSchemaJson()),
-                    varEntity.isReadable(),
-                    varEntity.isWritable(),
-                    value,
-                    varEntity.isHistoryEnabled(),
-                    varEntity.getHistoryRetentionDays()
-            ));
+            node.addVariable(mapper.toVariable(varEntity));
         }
     }
 
@@ -452,7 +448,7 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value, Instant observedAt) {
-        if (eventJournalFastPath.isEligible(path)
+        if (eventJournalFastPath.isEligible(path, name)
                 && eventJournalFastPath.tryFire(path, name, value, observedAt)) {
             return resolveDriverTelemetryVariable(path, name, value);
         }
@@ -461,8 +457,7 @@ public class ObjectManager {
             return resolveDriverTelemetryVariable(path, name, value);
         }
         Variable variable = setDriverTelemetryValueInMemory(path, name, value);
-        if (mqttGatewayProperties.isIngressBypassL3Queue()
-                && gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
+        if (gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
             return variable;
         }
         if (telemetryIngressDispatcher.isQueueEnabled()) {
@@ -491,7 +486,7 @@ public class ObjectManager {
     }
 
     private Variable setDriverTelemetryValueInMemory(String path, String name, DataRecord value) {
-        PlatformObject node = objectTree.require(path);
+        PlatformObject node = require(path);
         Variable variable = node.getVariable(name).orElseGet(() -> {
             Variable created = new Variable(name, value.schema(), true, false, null);
             node.addVariable(created);
@@ -773,18 +768,21 @@ public class ObjectManager {
             String path,
             String name,
             boolean historyEnabled,
-            Integer historyRetentionDays
+            Integer historyRetentionDays,
+            String telemetryPublishMode
     ) {
+        TelemetryPublishMode.validateOverride(telemetryPublishMode);
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + name));
         Map<String, Object> before = variableHistorySnapshot(variable);
-        Variable updated = variable.withHistorySettings(historyEnabled, historyRetentionDays);
+        Variable updated = variable.withStorageSettings(historyEnabled, historyRetentionDays, telemetryPublishMode);
         node.addVariable(updated);
         persistVariable(path, updated);
         bumpRevision(node);
+        telemetryPolicyService.invalidateVariable(path, name);
         recordAudit(
                 path,
                 "UPDATE_VARIABLE_HISTORY",
@@ -827,15 +825,7 @@ public class ObjectManager {
             Optional<ObjectVariableEntity> persisted = variableRepository.findByObjectPathAndName(path, name);
             if (persisted.isPresent()) {
                 ObjectVariableEntity entity = persisted.get();
-                node.addVariable(new Variable(
-                        name,
-                        mapper.readSchema(entity.getSchemaJson()),
-                        entity.isReadable(),
-                        entity.isWritable(),
-                        mapper.readDataRecord(entity.getValueJson()),
-                        entity.isHistoryEnabled(),
-                        entity.getHistoryRetentionDays()
-                ));
+                node.addVariable(mapper.toVariable(entity));
                 return setSystemVariableValue(path, name, value);
             }
             Variable created = new Variable(name, schema, false, false, value);
@@ -849,15 +839,7 @@ public class ObjectManager {
                     throw duplicate;
                 }
                 ObjectVariableEntity entity = raced.get();
-                node.addVariable(new Variable(
-                        name,
-                        mapper.readSchema(entity.getSchemaJson()),
-                        entity.isReadable(),
-                        entity.isWritable(),
-                        mapper.readDataRecord(entity.getValueJson()),
-                        entity.isHistoryEnabled(),
-                        entity.getHistoryRetentionDays()
-                ));
+                node.addVariable(mapper.toVariable(entity));
                 return setSystemVariableValue(path, name, value);
             }
             publish(ObjectChangeEvent.variableUpdated(path, name));
@@ -1003,17 +985,7 @@ public class ObjectManager {
         DataRecord value = mapper.readDataRecord(entity.getValueJson());
         node.getVariable(entity.getName()).ifPresentOrElse(
                 variable -> variable.setComputedValue(value),
-                () -> node.addVariable(new Variable(
-                        entity.getName(),
-                        mapper.readSchema(entity.getSchemaJson()),
-                        entity.isReadable(),
-                        entity.isWritable(),
-                        value,
-                        entity.isHistoryEnabled(),
-                        entity.getHistoryRetentionDays(),
-                        mapper.readStringList(entity.getReadRolesJson()),
-                        mapper.readStringList(entity.getWriteRolesJson())
-                ))
+                () -> node.addVariable(mapper.toVariable(entity))
         );
     }
 
@@ -1089,16 +1061,7 @@ public class ObjectManager {
                 if (node.variables().containsKey(varEntity.getName())) {
                     continue;
                 }
-                DataRecord value = mapper.readDataRecord(varEntity.getValueJson());
-                node.addVariable(new Variable(
-                        varEntity.getName(),
-                        mapper.readSchema(varEntity.getSchemaJson()),
-                        varEntity.isReadable(),
-                        varEntity.isWritable(),
-                        value,
-                        varEntity.isHistoryEnabled(),
-                        varEntity.getHistoryRetentionDays()
-                ));
+                node.addVariable(mapper.toVariable(varEntity));
             }
         }
     }
@@ -1131,16 +1094,7 @@ public class ObjectManager {
             if (registered.variables().containsKey(varEntity.getName())) {
                 continue;
             }
-            DataRecord value = mapper.readDataRecord(varEntity.getValueJson());
-            registered.addVariable(new Variable(
-                    varEntity.getName(),
-                    mapper.readSchema(varEntity.getSchemaJson()),
-                    varEntity.isReadable(),
-                    varEntity.isWritable(),
-                    value,
-                    varEntity.isHistoryEnabled(),
-                    varEntity.getHistoryRetentionDays()
-            ));
+            registered.addVariable(mapper.toVariable(varEntity));
         }
     }
 
@@ -1375,6 +1329,7 @@ public class ObjectManager {
         Map<String, Object> snapshot = new HashMap<>();
         snapshot.put("historyEnabled", variable.historyEnabled());
         variable.historyRetentionDays().ifPresent(days -> snapshot.put("historyRetentionDays", days));
+        variable.telemetryPublishModeOverride().ifPresent(mode -> snapshot.put("telemetryPublishMode", mode));
         return snapshot;
     }
 }

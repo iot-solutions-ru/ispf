@@ -138,6 +138,7 @@ export interface VariableDto {
   updatedAt: string | null;
   historyEnabled: boolean;
   historyRetentionDays: number | null;
+  telemetryPublishMode?: string | null;
   readRoles?: string[];
   writeRoles?: string[];
 }

@@ -12,9 +12,31 @@ See also [observability](observability.md) — Prometheus scrape and OTLP export
 
 ## Clean slate policy (lab cluster)
 
-**Every isolated scenario test** on the Enterprise L lab cluster must start from a **fully wiped database** and **full server restart** — no reuse of object tree state, historian rows, journal rows, or driver locks from a prior run.
+**Isolated regression** (full wipe before every scenario) — use `--profile isolated` or `bash lab-cluster-reset.sh hard`.
 
-| Step | Action |
+**Default for ordered suite** — `--profile grouped`: **hard reset once** (I-01), then **soft preflight** (~30–90 s) between similar scenarios: stop emqtt, purge loadtest devices/rules, `TRUNCATE` ClickHouse — cluster JVMs stay up.
+
+| Mode | Command | When | ~Time |
+|------|---------|------|-------|
+| **Hard** | `lab-cluster-reset.sh` / `--hard-reset` | First scenario, or after infra change | 5–10 min |
+| **Soft** | `lab-cluster-reset.sh soft` / `--soft-reset` | Between I-01…I-08 in grouped profile | 30–90 s |
+| **Skip** | `--skip-reset` / `--profile smoke` | Re-run one test; body self-cleans | 0 |
+
+```bash
+# Soft preflight only (cluster already running)
+bash ~/ispf/lab-cluster-reset.sh soft
+
+# Scenario with soft reset (~2 min total overhead vs ~7 min)
+bash ~/ispf/lab-scenario-run.sh --soft-reset I-03-mqtt-event-journal -- \
+  DEVICES=4 PHASE=60 bash ~/ispf/lab-cluster-mqtt-event-journal-test.sh
+
+# Ordered suite — grouped (default): 1× hard + 7× soft
+python deploy/run_lab_ordered_suite.py --profile grouped --continue-on-fail
+```
+
+**Every isolated scenario test** on the Enterprise L lab cluster *may* start from a **fully wiped database** — required for BL-210 / soak, not for day-to-day ingress debugging.
+
+| Step (hard only) | Action |
 |------|--------|
 | 1 | `docker compose down -v` on **both** `lab-cluster-compose.yml` (PG + CH) and `lab-test-host-compose.yml` (stress stack) |
 | 2 | Staged bootstrap via `lab-cluster-bootstrap.sh` (replica-1 → edge+analytics → io → hmi-read+compute) |
@@ -47,6 +69,27 @@ python deploy/run_lab_scenario.py I-01-mqtt-historian \
 
 **Time budget:** ~10–20 min per reset (bootstrap + object-tree load). A suite of 25 scenarios ≈ 4–8 h of reset overhead alone — plan parallelization only across **separate lab hosts**, not skipped resets on one host.
 
+## Lab topology (cluster + loadgen)
+
+Enterprise L lab splits **ISPF cluster** and **load generators** onto two LAN hosts so emqtt-bench and Mosquitto do not compete with JVM replicas for CPU:
+
+| Host | Role | Services |
+|------|------|----------|
+| **192.168.100.11** | Cluster (public edge `84.42.21.226:8000`) | `lab-cluster-compose.yml` — 6× ISPF, PG, CH, NATS, Redis, nginx |
+| **192.168.100.10** | Loadgen | `lab-loadgen-compose.yml` — Mosquitto `:1883`, emqtt-bench via SSH |
+
+MQTT drivers on the cluster subscribe to **`tcp://192.168.100.10:1883`**. Publishers run on `.10` (`lab-emqtt-remote.sh` or `mqtt-ingress-load-test.py --publish-via-ssh iot-solutions@192.168.100.10`).
+
+```bash
+# On cluster host (.11) — sync broker + scripts to loadgen, start Mosquitto
+bash ~/ispf/lab-loadgen-sync.sh
+
+# Bootstrap cluster (calls lab-loadgen-sync.sh automatically)
+bash ~/ispf/lab-cluster-bootstrap.sh
+```
+
+Config: `deploy/lab-loadgen.env` (`ISPF_LAB_LOADGEN_HOST`, `ISPF_LAB_CLUSTER_HOST`). Cluster bind for CH/PG replica sync uses `ip route get 192.168.100.10` → typically `192.168.100.11`.
+
 ## Three paths
 
 | Path | Script | What it measures |
@@ -54,7 +97,7 @@ python deploy/run_lab_scenario.py I-01-mqtt-historian \
 | **HTTP** | `deploy/events-load-test.py` | `POST /api/v1/events/fire` + `GET /api/v1/events` from client |
 | **Internal (poll)** | `deploy/events-internal-load-test.py` | Virtual driver → `sineWave` → alert → journal |
 | **MQTT ingress (subscribe)** | `deploy/mqtt-ingress-load-test.py` | Real broker → mqtt driver **subscribe** → alert → journal |
-| **MQTT ingress (push, lab)** | `--mode push` | Synthetic publisher → local Mosquitto |
+| **MQTT ingress (push, lab)** | `--mode push` | Synthetic publisher → Mosquitto on loadgen `.10` |
 | **MQTT event journal (internal)** | `deploy/mqtt-event-journal-test-remote.sh` | mqtt driver → `EVENT_JOURNAL_ONLY` → `fireIngress` → journal |
 | **MQTT event journal (HTTP tap)** | `deploy/mqtt-event-ingest-test-remote.sh` | External subscriber → `POST /events/fire` (API overhead baseline) |
 

@@ -74,7 +74,7 @@ class MqttGatewayFunctionHandlerTest {
     @Test
     void bypassesChildCoalesceForTelemetryOnlyChild() {
         MqttGatewayFunctionHandler handler = newHandlerWithTree();
-        when(telemetryPolicyService.automationEligible(CHILD)).thenReturn(false);
+        when(telemetryPolicyService.automationEligible(CHILD, "temperature")).thenReturn(false);
         when(historianFastPath.tryPublish(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
                 .thenReturn(true);
 
@@ -90,7 +90,7 @@ class MqttGatewayFunctionHandlerTest {
     @Test
     void fallsBackToBusWhenHistorianFastPathUnavailable() {
         MqttGatewayFunctionHandler handler = newHandlerWithTree();
-        when(telemetryPolicyService.automationEligible(CHILD)).thenReturn(false);
+        when(telemetryPolicyService.automationEligible(CHILD, "temperature")).thenReturn(false);
         when(historianFastPath.tryPublish(eq(CHILD), eq("temperature"), any(DataRecord.class), eq(null)))
                 .thenReturn(false);
 
@@ -102,7 +102,7 @@ class MqttGatewayFunctionHandlerTest {
     @Test
     void keepsCoalescerForAutomationEligibleChild() {
         MqttGatewayFunctionHandler handler = newHandlerWithTree();
-        when(telemetryPolicyService.automationEligible(CHILD)).thenReturn(true);
+        when(telemetryPolicyService.automationEligible(CHILD, "temperature")).thenReturn(true);
 
         DataRecord result = handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", true);
 

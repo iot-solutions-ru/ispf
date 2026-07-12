@@ -244,7 +244,8 @@ public class MqttGatewayIngressDispatchService {
                 continue;
             }
             String functionName = matcher.group(1);
-            if (node.functions().containsKey(functionName)) {
+            if (MqttGatewayFunctionHandler.FUNCTION_NAME.equals(functionName)
+                    || node.functions().containsKey(functionName)) {
                 return Optional.of(functionName);
             }
         }

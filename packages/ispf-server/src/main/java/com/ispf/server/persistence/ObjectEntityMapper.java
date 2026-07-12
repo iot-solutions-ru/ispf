@@ -56,9 +56,25 @@ public class ObjectEntityMapper {
         entity.setUpdatedAt(variable.updatedAt().orElse(null));
         entity.setHistoryEnabled(variable.historyEnabled());
         entity.setHistoryRetentionDays(variable.historyRetentionDays().orElse(null));
+        entity.setTelemetryPublishMode(variable.telemetryPublishModeOverride().orElse(null));
         entity.setReadRolesJson(writeStringList(variable.readRoles()));
         entity.setWriteRolesJson(writeStringList(variable.writeRoles()));
         return entity;
+    }
+
+    public Variable toVariable(ObjectVariableEntity entity) {
+        return new Variable(
+                entity.getName(),
+                readSchema(entity.getSchemaJson()),
+                entity.isReadable(),
+                entity.isWritable(),
+                readDataRecord(entity.getValueJson()),
+                entity.isHistoryEnabled(),
+                entity.getHistoryRetentionDays(),
+                entity.getTelemetryPublishMode(),
+                readStringList(entity.getReadRolesJson()),
+                readStringList(entity.getWriteRolesJson())
+        );
     }
 
     public List<String> readStringList(String json) {

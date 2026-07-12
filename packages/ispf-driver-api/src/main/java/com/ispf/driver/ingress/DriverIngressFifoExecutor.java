@@ -65,16 +65,9 @@ public final class DriverIngressFifoExecutor implements AutoCloseable {
             return;
         }
         scaler.adjust(executor.getQueue().size());
-        int target = scaler.targetWorkers();
-        if (target > executor.getCorePoolSize()) {
-            executor.setCorePoolSize(target);
-        }
-        while (executor.getPoolSize() < target && executor.getPoolSize() < executor.getMaximumPoolSize()) {
-            executor.prestartCoreThread();
-        }
-        if (target < executor.getCorePoolSize()) {
-            executor.setCorePoolSize(target);
-        }
+        int maxWorkers = elastic.resolvedMaxWorkers();
+        int target = Math.min(scaler.targetWorkers(), maxWorkers);
+        ThreadPoolResize.apply(executor, maxWorkers, target);
     }
 
     @Override

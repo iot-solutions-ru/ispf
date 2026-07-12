@@ -6,6 +6,7 @@ import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.driver.ingress.ElasticWorkerScaler;
+import com.ispf.driver.ingress.ThreadPoolResize;
 import jakarta.annotation.PreDestroy;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.context.annotation.Lazy;
@@ -90,8 +91,7 @@ public class RuntimeTelemetryCoalescer {
         int minWorkers = properties.resolvedCoalesceSchedulerThreadsMin();
         int maxWorkers = properties.resolvedCoalesceSchedulerThreadsMax();
         int target = Math.min(maxWorkers, Math.max(minWorkers, schedulerScaler.targetWorkers()));
-        scheduler.setMaximumPoolSize(target);
-        scheduler.setCorePoolSize(target);
+        ThreadPoolResize.apply(scheduler, target, target);
     }
 
     public void recordUpdate(String path, String variableName, DataRecord value) {

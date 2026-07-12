@@ -50,7 +50,7 @@ public class TelemetryHistorianFastPath {
         if (!runtimeTelemetryProperties.isFastHistorianPath()) {
             return false;
         }
-        if (telemetryPolicyService.publishMode(objectPath) != TelemetryPublishMode.TELEMETRY_ONLY) {
+        if (telemetryPolicyService.publishMode(objectPath, variableName) != TelemetryPublishMode.TELEMETRY_ONLY) {
             return false;
         }
         String cacheKey = objectPath + "|" + variableName;
@@ -60,7 +60,7 @@ public class TelemetryHistorianFastPath {
             return true;
         }
         VariableChangeInterest interest = subscriptionRegistry.interest(objectPath, variableName);
-        boolean eligible = interest.historian() && !needsBus(objectPath, interest);
+        boolean eligible = interest.historian() && !needsBus(objectPath, variableName, interest);
         if (eligible) {
             eligibilityCache.put(cacheKey, new EligibilityCacheEntry(true, nowMs));
         } else {
@@ -98,12 +98,12 @@ public class TelemetryHistorianFastPath {
         variableHistoryService.recordFromDataRecordsTrusted(updates);
     }
 
-    private boolean needsBus(String objectPath, VariableChangeInterest interest) {
-        if (telemetryPolicyService.publishMode(objectPath) == TelemetryPublishMode.TELEMETRY_ONLY) {
+    private boolean needsBus(String objectPath, String variableName, VariableChangeInterest interest) {
+        if (telemetryPolicyService.publishMode(objectPath, variableName) == TelemetryPublishMode.TELEMETRY_ONLY) {
             return false;
         }
         return interest.uiRefresh()
-                || (telemetryPolicyService.automationEligible(objectPath) && interest.automation());
+                || (telemetryPolicyService.automationEligible(objectPath, variableName) && interest.automation());
     }
 
     private record EligibilityCacheEntry(boolean eligible, long loadedAtMs) {}

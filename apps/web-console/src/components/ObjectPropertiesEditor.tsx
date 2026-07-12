@@ -34,6 +34,9 @@ import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 import VariableFieldEditor from "./VariableFieldEditor";
 import VariableHistoryFields, {
   formatHistoryRetention,
+  historyStateEqual,
+  historyStateFromVariable,
+  telemetryModeToApi,
   type VariableHistoryState,
 } from "./VariableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
@@ -117,17 +120,11 @@ interface EditorState {
 }
 
 function historyFromVariable(v: VariableDto): VariableHistoryState {
-  return {
-    historyEnabled: v.historyEnabled ?? false,
-    historyRetentionDays: v.historyRetentionDays ?? null,
-  };
+  return historyStateFromVariable(v);
 }
 
 function historyEqual(a: VariableHistoryState, b: VariableHistoryState): boolean {
-  return (
-    a.historyEnabled === b.historyEnabled &&
-    a.historyRetentionDays === b.historyRetentionDays
-  );
+  return historyStateEqual(a, b);
 }
 
 function buildState(data: ObjectEditorDto): EditorState {
@@ -430,7 +427,11 @@ export default function ObjectPropertiesEditor({
         const currentHistory = state.variableHistory[variable.name];
         const baseHistory = baseline.variableHistory[variable.name];
         if (currentHistory && baseHistory && !historyEqual(currentHistory, baseHistory)) {
-          await updateVariableHistory(path, variable.name, currentHistory, writeOpts);
+          await updateVariableHistory(path, variable.name, {
+            historyEnabled: currentHistory.historyEnabled,
+            historyRetentionDays: currentHistory.historyRetentionDays,
+            telemetryPublishMode: telemetryModeToApi(currentHistory.telemetryPublishMode),
+          }, writeOpts);
         }
       }
     },

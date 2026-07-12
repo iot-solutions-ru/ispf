@@ -591,6 +591,7 @@ export function setVariable(
 export interface UpdateVariableHistoryPayload {
   historyEnabled: boolean;
   historyRetentionDays: number | null;
+  telemetryPublishMode?: string | null;
 }
 
 export function updateVariableHistory(

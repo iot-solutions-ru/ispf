@@ -79,7 +79,7 @@ class ObjectChangePublicationServiceTest {
     void publishesHistorianOnlyForTelemetryOnlyDevice() {
         when(variableSubscriptionRegistry.interest(PATH, VAR))
                 .thenReturn(new VariableChangeInterest(true, false, false, false, false, false));
-        when(telemetryPolicyService.automationEligible(PATH)).thenReturn(false);
+        when(telemetryPolicyService.automationEligible(PATH, VAR)).thenReturn(false);
 
         boolean published = service.publishVariableChange(PATH, VAR, null);
 
@@ -95,7 +95,7 @@ class ObjectChangePublicationServiceTest {
     void publishesUiRefreshWithoutAutomation() {
         when(variableSubscriptionRegistry.interest(PATH, VAR))
                 .thenReturn(new VariableChangeInterest(false, false, false, false, false, true));
-        when(telemetryPolicyService.automationEligible(PATH)).thenReturn(true);
+        when(telemetryPolicyService.automationEligible(PATH, VAR)).thenReturn(true);
 
         service.publishVariableChange(PATH, VAR, null);
 
@@ -155,7 +155,7 @@ class ObjectChangePublicationServiceTest {
     void defersConfigVariableChangeUntilAfterCommit() {
         ObjectChangeEvent template = ObjectChangeEvent.variableUpdated(PATH, "diagram", 3L, "admin");
         when(variableSubscriptionRegistry.interest(PATH, "diagram")).thenReturn(VariableChangeInterest.NONE);
-        when(telemetryPolicyService.automationEligible(PATH)).thenReturn(false);
+        when(telemetryPolicyService.automationEligible(PATH, "diagram")).thenReturn(false);
 
         TransactionSynchronizationManager.initSynchronization();
         try {
@@ -175,7 +175,7 @@ class ObjectChangePublicationServiceTest {
     void alwaysPublishesConfigVariableChangeEvenWithoutSubscribers() {
         ObjectChangeEvent template = ObjectChangeEvent.variableUpdated(PATH, "diagram", 3L, "admin");
         when(variableSubscriptionRegistry.interest(PATH, "diagram")).thenReturn(VariableChangeInterest.NONE);
-        when(telemetryPolicyService.automationEligible(PATH)).thenReturn(false);
+        when(telemetryPolicyService.automationEligible(PATH, "diagram")).thenReturn(false);
 
         boolean published = service.publishConfigVariableChange(template);
 
@@ -206,7 +206,7 @@ class ObjectChangePublicationServiceTest {
     @Test
     void legacyModeAlwaysPublishesVariableChange() {
         properties.setDemandDrivenPublication(false);
-        when(telemetryPolicyService.automationEligible(PATH)).thenReturn(true);
+        when(telemetryPolicyService.automationEligible(PATH, VAR)).thenReturn(true);
 
         service.publishVariableChange(PATH, VAR, null);
 

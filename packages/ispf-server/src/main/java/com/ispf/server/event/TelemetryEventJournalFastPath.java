@@ -34,15 +34,15 @@ public class TelemetryEventJournalFastPath {
         this.eventService = eventService;
     }
 
-    public boolean isEligible(String objectPath) {
-        return telemetryPolicyService.publishMode(objectPath) == TelemetryPublishMode.EVENT_JOURNAL_ONLY;
+    public boolean isEligible(String objectPath, String variableName) {
+        return telemetryPolicyService.publishMode(objectPath, variableName) == TelemetryPublishMode.EVENT_JOURNAL_ONLY;
     }
 
     /**
      * @return true when the update was handled on the event-journal fast path
      */
     public boolean tryFire(String objectPath, String variableName, DataRecord value, Instant observedAt) {
-        if (!isEligible(objectPath)) {
+        if (!isEligible(objectPath, variableName)) {
             return false;
         }
         String eventName = telemetryPolicyService.bindingFor(objectPath)

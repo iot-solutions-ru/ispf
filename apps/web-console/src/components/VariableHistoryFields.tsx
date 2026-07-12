@@ -1,9 +1,50 @@
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 
+export type TelemetryPublishModeValue = "INHERIT" | "FULL" | "TELEMETRY_ONLY" | "EVENT_JOURNAL_ONLY";
+
 export interface VariableHistoryState {
   historyEnabled: boolean;
   historyRetentionDays: number | null;
+  telemetryPublishMode: TelemetryPublishModeValue;
+}
+
+export function telemetryModeFromVariable(mode: string | null | undefined): TelemetryPublishModeValue {
+  if (mode == null || mode === "") {
+    return "INHERIT";
+  }
+  if (
+    mode === "FULL"
+    || mode === "TELEMETRY_ONLY"
+    || mode === "EVENT_JOURNAL_ONLY"
+  ) {
+    return mode;
+  }
+  return "INHERIT";
+}
+
+export function telemetryModeToApi(mode: TelemetryPublishModeValue): string | null {
+  return mode === "INHERIT" ? null : mode;
+}
+
+export function historyStateFromVariable(variable: {
+  historyEnabled?: boolean;
+  historyRetentionDays?: number | null;
+  telemetryPublishMode?: string | null;
+}): VariableHistoryState {
+  return {
+    historyEnabled: variable.historyEnabled ?? false,
+    historyRetentionDays: variable.historyRetentionDays ?? null,
+    telemetryPublishMode: telemetryModeFromVariable(variable.telemetryPublishMode),
+  };
+}
+
+export function historyStateEqual(a: VariableHistoryState, b: VariableHistoryState): boolean {
+  return (
+    a.historyEnabled === b.historyEnabled
+    && a.historyRetentionDays === b.historyRetentionDays
+    && a.telemetryPublishMode === b.telemetryPublishMode
+  );
 }
 
 interface VariableHistoryFieldsProps {
@@ -28,6 +69,7 @@ export default function VariableHistoryFields({
 }: VariableHistoryFieldsProps) {
   const { t } = useTranslation("inspector");
   const retentionId = `${idPrefix}-retention`;
+  const telemetryModeId = `${idPrefix}-telemetry-mode`;
 
   return (
     <div className="variable-history-fields">
@@ -66,6 +108,28 @@ export default function VariableHistoryFields({
       </label>
       <p className="hint">
         {t("variables.retentionHint")}
+      </p>
+      <label htmlFor={telemetryModeId}>
+        {t("variables.telemetryPublishMode")}
+        <select
+          id={telemetryModeId}
+          disabled={disabled}
+          value={value.telemetryPublishMode}
+          onChange={(e) =>
+            onChange({
+              ...value,
+              telemetryPublishMode: e.target.value as TelemetryPublishModeValue,
+            })
+          }
+        >
+          <option value="INHERIT">{t("variables.telemetryPublishModeInherit")}</option>
+          <option value="FULL">{t("variables.telemetryPublishModeFull")}</option>
+          <option value="TELEMETRY_ONLY">{t("variables.telemetryPublishModeTelemetryOnly")}</option>
+          <option value="EVENT_JOURNAL_ONLY">{t("variables.telemetryPublishModeEventJournalOnly")}</option>
+        </select>
+      </label>
+      <p className="hint">
+        {t("variables.telemetryPublishModeHint")}
       </p>
     </div>
   );

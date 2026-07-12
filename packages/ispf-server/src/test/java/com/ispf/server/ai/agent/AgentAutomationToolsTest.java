@@ -283,7 +283,7 @@ class AgentAutomationToolsTest {
                 null
         );
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
-        when(objectManager.updateVariableHistory(path, "sineWave", true, null)).thenReturn(
+        when(objectManager.updateVariableHistory(path, "sineWave", true, null, null)).thenReturn(
                 sine.withHistorySettings(true, null)
         );
 
@@ -296,7 +296,7 @@ class AgentAutomationToolsTest {
         ), context);
 
         assertEquals("OK", result.get("status"));
-        verify(objectManager).updateVariableHistory(path, "sineWave", true, null);
+        verify(objectManager).updateVariableHistory(path, "sineWave", true, null, null);
     }
 
     @Test

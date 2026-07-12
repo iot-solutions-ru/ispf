@@ -22,6 +22,19 @@ public enum TelemetryPublishMode {
         };
     }
 
+    public static void validateOverride(String raw) {
+        if (raw == null || raw.isBlank() || "INHERIT".equalsIgnoreCase(raw.trim())) {
+            return;
+        }
+        String normalized = raw.trim().toUpperCase();
+        if (normalized.equals("FULL")
+                || normalized.equals("TELEMETRY_ONLY")
+                || normalized.equals("EVENT_JOURNAL_ONLY")) {
+            return;
+        }
+        throw new IllegalArgumentException("Unknown telemetryPublishMode: " + raw);
+    }
+
     public boolean automationEligible() {
         return this == FULL;
     }
