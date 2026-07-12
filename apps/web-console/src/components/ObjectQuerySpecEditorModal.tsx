@@ -46,7 +46,7 @@ export default function ObjectQuerySpecEditorModal({
   value,
   disabled = false,
   objectPath,
-  variableNames = [],
+  variableNames: _variableNames = [],
   onClose,
   onApply,
 }: ObjectQuerySpecEditorModalProps) {

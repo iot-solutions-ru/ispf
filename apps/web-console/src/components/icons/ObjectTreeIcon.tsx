@@ -36,7 +36,8 @@ export type TreeIconKind =
   | "filter"
   | "mes"
   | "work-orders"
-  | "quality";
+  | "quality"
+  | "custom";
 
 export type TreeIconCategory = "general" | "platform" | "objects" | "application";
 
@@ -81,6 +82,7 @@ export const TREE_ICON_CATALOG: TreeIconDefinition[] = [
   { id: "mes", category: "platform" },
   { id: "work-orders", category: "platform" },
   { id: "quality", category: "platform" },
+  { id: "custom", category: "general" },
 ];
 
 const ICON_IDS = new Set<string>(TREE_ICON_CATALOG.map((item) => item.id));
@@ -507,6 +509,12 @@ const ICONS: Record<TreeIconKind, ReactNode> = {
     <>
       <path d="M8 2.5l4 2v4c0 2.4-1.8 3.7-4 4.3-2.2-.6-4-1.9-4-4.3V4.5L8 2.5z" />
       <path d="M6.2 8.2l1.2 1.2 2.6-2.6" />
+    </>
+  ),
+  custom: (
+    <>
+      <rect x="3" y="3" width="4.5" height="4.5" rx="0.6" />
+      <rect x="8.5" y="8.5" width="4.5" height="4.5" rx="0.6" />
     </>
   ),
 };
