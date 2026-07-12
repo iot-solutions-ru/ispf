@@ -440,8 +440,7 @@
   "platformRef.eventLabel": "Событие",
   "platformRef.selectPlaceholder": "Выберите…",
   "platformRef.canonicalRef": "PlatformRef (slash-адрес)",
-  "platformRef.insertRef": "Вставить ref"
-}
+  "platformRef.insertRef": "Вставить ref",
   "scriptSteps.hint.objectPath": "self — объект, на котором объявлена функция",
   "scriptSteps.hint.varName": "Имя локальной переменной сценария",
   "scriptSteps.hint.varPath": "Путь через точку, напр. meter.id или input.raw",
