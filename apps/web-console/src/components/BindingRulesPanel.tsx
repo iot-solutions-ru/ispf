@@ -18,6 +18,7 @@ import {
   targetSummary,
 } from "./bindingRulesUtils";
 import { validateBindingRuleExpression } from "../utils/bindingExpressionValidation";
+import { encodeHistorianTagPath } from "../utils/analyticsPath";
 import { useAnalyticsCatalog } from "../hooks/useAnalyticsCatalog";
 
 interface RuleTemplate {
@@ -215,7 +216,7 @@ export default function BindingRulesPanel({
                         <button
                           type="button"
                           className="btn small"
-                          onClick={() => onInspectHistorian(`${path}#${rule.id}`)}
+                          onClick={() => onInspectHistorian(encodeHistorianTagPath(path, rule.id))}
                         >
                           {t("inspector:computations.inspect")}
                         </button>

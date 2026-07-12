@@ -9,6 +9,11 @@ export function isAnalyticsTagDevice(
 
 const TAG_SEGMENT = "/tag/";
 
+/** Canonical historian tag path (`objectPath/tag/ruleId`). */
+export function encodeHistorianTagPath(objectPath: string, ruleId: string): string {
+  return `${objectPath}${TAG_SEGMENT}${ruleId}`;
+}
+
 /** Object path from analytics tag path (`device/tag/ruleId`). */
 export function analyticsTagObjectPath(tagPath: string): string {
   const idx = tagPath.indexOf(TAG_SEGMENT);
