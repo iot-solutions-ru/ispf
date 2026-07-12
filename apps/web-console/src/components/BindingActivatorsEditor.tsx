@@ -1,6 +1,10 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { BindingActivators } from "../types";
+import { useVariablesQuery } from "../hooks/useVariablesQuery";
+import { ObjectPathField } from "../ui";
 import { refFromFields, fieldsFromRef } from "../utils/platformRef";
+import { filterUserVariableNames } from "../utils/systemVariables";
 import { PlatformRefPicker } from "./PlatformRefPicker";
 import {
   buildRemoteVariableChange,
@@ -26,7 +30,6 @@ export default function BindingActivatorsEditor({
   activators,
   eventNames,
   objectPath = "",
-  variableNames = [],
   dashboardMode = false,
   onChange,
 }: BindingActivatorsEditorProps) {
@@ -36,6 +39,15 @@ export default function BindingActivatorsEditor({
   const remotePath = remoteRef?.objectPath ?? "";
   const remoteVariable = remoteRef?.variableName ?? "";
   const onEventSelectValue = resolveOnEventSelectValue(activators, eventNames);
+  const remotePathReady = Boolean(remotePath.trim());
+
+  const remoteVariablesQuery = useVariablesQuery(remotePath, 5000, remotePathReady);
+  const remoteVariableNames = useMemo(() => {
+    const names = filterUserVariableNames(
+      (remoteVariablesQuery.data ?? []).map((variable) => variable.name),
+    );
+    return ["*", ...names.filter((name) => name !== "*")];
+  }, [remoteVariablesQuery.data]);
 
   const patch = (next: Partial<BindingActivators>) => {
     onChange(patchBindingActivators(activators, next));
@@ -110,33 +122,38 @@ export default function BindingActivatorsEditor({
         </label>
       )}
 
-      <label className="full">
-        {t("bindings.activators.remotePath")}
-        <input
-          value={remotePath}
-          placeholder="root.platform.devices.foo"
-          onChange={(e) => setRemote(e.target.value, remoteVariable)}
-        />
-      </label>
+      <ObjectPathField
+        className="full"
+        label={t("bindings.activators.remotePath")}
+        value={remotePath}
+        filterTypes={["DEVICE"]}
+        allowManual
+        onChange={(path) => setRemote(path, remoteVariable || "*")}
+      />
 
-      <div className="platform-ref-picker-row full">
-        <PlatformRefPicker
-          objectPath={objectPath}
-          kind="variable"
-          value={remoteRef?.ref ?? refFromFields(remotePath, remoteVariable) ?? ""}
-          variableNames={variableNames}
-          onChange={(ref) => {
-            const fields = fieldsFromRef(ref);
-            patch({
-              onVariableChange: [{
-                objectPath: fields.objectPath ?? "self",
-                variableName: fields.name ?? "*",
-                ref: ref || undefined,
-              }],
-            });
-          }}
-        />
-      </div>
+      {remotePathReady && (
+        <div className="platform-ref-picker-row full">
+          <PlatformRefPicker
+            objectPath={remotePath}
+            kind="variable"
+            value={remoteRef?.ref ?? refFromFields(remotePath, remoteVariable) ?? ""}
+            variableNames={remoteVariableNames}
+            onChange={(ref) => {
+              const fields = fieldsFromRef(ref);
+              patch({
+                onVariableChange: [{
+                  objectPath: fields.objectPath ?? remotePath,
+                  variableName: fields.name ?? "*",
+                  ref: ref || undefined,
+                }],
+              });
+            }}
+          />
+          {remoteVariablesQuery.isLoading && (
+            <span className="hint">{t("bindings.activators.remoteVariablesLoading")}</span>
+          )}
+        </div>
+      )}
 
       <div className="platform-ref-picker-row full">
         <PlatformRefPicker
@@ -156,16 +173,6 @@ export default function BindingActivatorsEditor({
           }}
         />
       </div>
-
-      <label className="full">
-        {t("bindings.activators.remoteVariable")}
-        <input
-          value={remotePath ? remoteVariable : ""}
-          disabled={!remotePath}
-          placeholder="*"
-          onChange={(e) => setRemote(remotePath, e.target.value)}
-        />
-      </label>
     </fieldset>
   );
 }

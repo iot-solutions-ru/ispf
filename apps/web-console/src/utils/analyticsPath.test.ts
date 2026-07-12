@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyticsTagObjectPath, encodeHistorianTagPath, isAnalyticsTagDevice } from "./analyticsPath";
+import { analyticsTagObjectPath, encodeHistorianTagPath, historianTagOwnedByObject, isAnalyticsTagDevice } from "./analyticsPath";
 
 describe("isAnalyticsTagDevice", () => {
   it("returns true when derivedValue is listed", () => {
@@ -39,5 +39,20 @@ describe("isAnalyticsTagDevice", () => {
     expect(
       encodeHistorianTagPath("root.platform.devices.chain-c", "chain-c-rule"),
     ).toBe("root.platform.devices.chain-c/tag/chain-c-rule");
+  });
+
+  it("matches tag ownership by object path", () => {
+    expect(
+      historianTagOwnedByObject(
+        "root.platform.devices.chain-c/tag/chain-c-rule",
+        "root.platform.devices.chain-c",
+      ),
+    ).toBe(true);
+    expect(
+      historianTagOwnedByObject(
+        "root.platform.devices.chain-c/tag/chain-c-rule",
+        "root.platform.devices.chain-b",
+      ),
+    ).toBe(false);
   });
 });

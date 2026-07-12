@@ -62,6 +62,7 @@ import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
 import ObjectChangeHistoryPanel from "./journal/ObjectChangeHistoryPanel";
 import VariableHistoryPanel from "./VariableHistoryPanel";
 import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
+import { historianTagOwnedByObject } from "../utils/analyticsPath";
 import { resolveApplicationAppId } from "../utils/applicationPath";
 import EditLeaseBanner from "./EditLeaseBanner";
 import { usePersistentTab } from "../hooks/usePersistentTab";
@@ -292,7 +293,7 @@ export default function ObjectPropertiesEditor({
   const historianComputations = useMemo(
     () =>
       (historianTagsQuery.data?.tags ?? []).filter((tag) =>
-        tag.path === path || tag.path.startsWith(`${path}#`)
+        historianTagOwnedByObject(tag.path, path)
       ),
     [historianTagsQuery.data?.tags, path]
   );

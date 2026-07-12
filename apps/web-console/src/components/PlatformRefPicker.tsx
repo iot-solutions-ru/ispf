@@ -59,6 +59,9 @@ export function PlatformRefPicker({
         onChange={(e) => handleNameChange(e.target.value)}
       >
         <option value="">{t("platformRef.selectPlaceholder")}</option>
+        {selectedName && !names.includes(selectedName) && (
+          <option value={selectedName}>{selectedName}</option>
+        )}
         {names.map((name) => (
           <option key={name} value={name}>
             {name}

@@ -120,6 +120,7 @@
   "bindings.activators.onEventCustom": "Custom event name…",
   "bindings.activators.onEventName": "Event name",
   "bindings.activators.remotePath": "Remote object path (cross-object)",
+  "bindings.activators.remoteVariablesLoading": "Loading variables…",
   "bindings.activators.remoteVariable": "Remote variable",
   "bindings.computedEmpty": "No computed bindings",
   "bindings.column.variable": "Variable",

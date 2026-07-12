@@ -48,6 +48,7 @@
   "bindings.activators.periodicMs": "Интервал (мс)",
   "bindings.activators.periodicMsHint": "0 = выключено",
   "bindings.activators.remotePath": "Путь remote-объекта (cross-object)",
+  "bindings.activators.remoteVariablesLoading": "Загрузка переменных…",
   "bindings.activators.remoteVariable": "Remote-переменная",
   "bindings.activators.title": "Активаторы",
   "bindings.addRule": "+ Правило",

@@ -19,3 +19,8 @@ export function analyticsTagObjectPath(tagPath: string): string {
   const idx = tagPath.indexOf(TAG_SEGMENT);
   return idx >= 0 ? tagPath.slice(0, idx) : tagPath;
 }
+
+/** True when tag path belongs to the given object (composite or bare device path). */
+export function historianTagOwnedByObject(tagPath: string, objectPath: string): boolean {
+  return analyticsTagObjectPath(tagPath) === objectPath;
+}

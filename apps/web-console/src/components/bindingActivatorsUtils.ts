@@ -69,7 +69,7 @@ export function activatorsSummary(rule: { activators: BindingActivators }): stri
     parts.push("startup");
   }
   for (const ref of rule.activators.onVariableChange ?? []) {
-    parts.push(`${ref.objectPath}:${ref.variableName}`);
+    parts.push(ref.ref ?? `${ref.objectPath}/${ref.variableName}`);
   }
   if (rule.activators.onContextChange) {
     parts.push("context");

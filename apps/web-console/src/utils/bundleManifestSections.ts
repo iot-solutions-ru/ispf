@@ -51,9 +51,9 @@ function labelForItem(section: BundleSectionKey, item: Record<string, unknown>):
     case "migrations":
       return String(item.id ?? "?");
     case "functions":
-      return `${String(item.objectPath ?? "?")}#${String(item.functionName ?? "?")}`;
+      return `${String(item.objectPath ?? "?")}/fn/${String(item.functionName ?? "?")}`;
     case "bindings":
-      return `${String(item.objectPath ?? "?")}.${String(item.variable ?? "?")}`;
+      return `${String(item.objectPath ?? "?")}/${String(item.variable ?? "?")}`;
     case "reports":
       return String(item.reportId ?? "?");
     case "alertRules":

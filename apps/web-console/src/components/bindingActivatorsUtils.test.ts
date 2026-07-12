@@ -103,11 +103,11 @@ describe("activatorsSummary", () => {
         periodicMs: 5000,
       },
     });
-    expect(summary).toBe("startup, self:*, root.device:temperature, event:alarmRaised, 5000ms");
+    expect(summary).toBe("startup, self/*, root.device/temperature, event:alarmRaised, 5000ms");
   });
 
   it("shows self wildcard for default activators", () => {
-    expect(activatorsSummary({ activators: defaultBindingActivators() })).toBe("self:*");
+    expect(activatorsSummary({ activators: defaultBindingActivators() })).toBe("self/*");
   });
 
   it("shows em dash when variable-change list is empty", () => {
