@@ -35,14 +35,18 @@ public record BindingRule(
         if (target == null) {
             throw new IllegalArgumentException("Binding rule target is required");
         }
-        if (target.isVariable() && (target.variableName() == null || target.variableName().isBlank())) {
-            throw new IllegalArgumentException("Binding rule target.variableName is required");
+        if (target.isVariable()
+                && (target.variableName() == null || target.variableName().isBlank())
+                && (target.ref() == null || target.ref().isBlank())) {
+            throw new IllegalArgumentException("Binding rule target.variableName or target.ref is required");
         }
         if (target.isContext() && (target.path() == null || target.path().isBlank())) {
             throw new IllegalArgumentException("Binding rule target.path is required for context effect");
         }
-        if (target.isEvent() && (target.eventName() == null || target.eventName().isBlank())) {
-            throw new IllegalArgumentException("Binding rule target.eventName is required for event effect");
+        if (target.isEvent()
+                && (target.eventName() == null || target.eventName().isBlank())
+                && (target.ref() == null || target.ref().isBlank())) {
+            throw new IllegalArgumentException("Binding rule target.eventName or target.ref is required for event effect");
         }
         if (kind == null) {
             kind = BindingRuleKind.REACTIVE;

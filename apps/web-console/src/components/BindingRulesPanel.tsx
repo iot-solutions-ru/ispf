@@ -5,6 +5,7 @@ import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../api";
 import type { BindingRule, BindingRuleKind, BindingTargetKind, VariableDto } from "../types";
 import BindingActivatorsEditor, { activatorsSummary } from "./BindingActivatorsEditor";
 import BindingExpressionField from "./BindingExpressionField";
+import BindingTargetRefEditor from "./BindingTargetRefEditor";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 import {
   emptyBindingRule,
@@ -307,19 +308,13 @@ export default function BindingRulesPanel({
                 </label>
               )}
               {editingTargetKind === "variable" && (
-                <label className="full">
-                  {t("inspector:bindings.targetVariable")}
-                  <input
-                    value={editing.target.variableName ?? ""}
-                    onChange={(e) =>
-                      setEditing({
-                        ...editing,
-                        target: { ...editing.target, kind: "variable", variableName: e.target.value },
-                      })
-                    }
-                    required
-                  />
-                </label>
+                <BindingTargetRefEditor
+                  ruleObjectPath={path}
+                  kind="variable"
+                  target={editing.target}
+                  localVariableNames={variableNames}
+                  onChange={(target) => setEditing({ ...editing, target })}
+                />
               )}
               {editingTargetKind === "action" && (
                 <p className="hint full">{t("inspector:bindings.targetActionHint")}</p>
@@ -342,19 +337,13 @@ export default function BindingRulesPanel({
                 </label>
               )}
               {editingTargetKind === "event" && (
-                <label className="full">
-                  {t("inspector:bindings.targetEventName")}
-                  <input
-                    value={editing.target.eventName ?? ""}
-                    onChange={(e) =>
-                      setEditing({
-                        ...editing,
-                        target: { ...editing.target, kind: "event", eventName: e.target.value },
-                      })
-                    }
-                    required
-                  />
-                </label>
+                <BindingTargetRefEditor
+                  ruleObjectPath={path}
+                  kind="event"
+                  target={editing.target}
+                  localEventNames={eventNames}
+                  onChange={(target) => setEditing({ ...editing, target })}
+                />
               )}
               <label className="full">
                 {t("inspector:bindings.column.expression")}

@@ -120,6 +120,8 @@
   "bindings.targetKind.action": "Побочный эффект (без записи)",
   "bindings.targetActionHint": "Выражение выполняется по активаторам; результат не сохраняется. Используйте call(), write(), queryRows(), fire() и т.п.",
   "bindings.targetVariable": "Целевая переменная",
+  "bindings.targetObjectPath": "Путь объекта-цели",
+  "bindings.targetObjectPathHint": "Пустое поле — текущий объект (@). Можно выбрать любой объект в дереве для записи на другой объект.",
   "bindings.ruleKind": "Тип вычисления",
   "bindings.ruleKind.reactive": "Реактивная",
   "bindings.ruleKind.historian": "Historian",

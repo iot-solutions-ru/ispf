@@ -92,6 +92,8 @@
   "bindings.newRule": "New rule",
   "bindings.ruleTitle": "Rule: {{id}}",
   "bindings.targetVariable": "Target variable",
+  "bindings.targetObjectPath": "Target object path",
+  "bindings.targetObjectPathHint": "Empty = current object (@). Pick any object in the tree for cross-object writes.",
   "bindings.ruleKind": "Computation kind",
   "bindings.ruleKind.reactive": "Reactive",
   "bindings.ruleKind.historian": "Historian",

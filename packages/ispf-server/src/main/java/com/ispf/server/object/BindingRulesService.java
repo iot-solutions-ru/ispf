@@ -23,6 +23,10 @@ import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
 import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
 import com.ispf.server.platform.analytics.engine.HistorianBindingRuleCompiler;
 import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
+import com.ispf.core.ref.PlatformRef;
+import com.ispf.core.ref.PlatformRefKind;
+import com.ispf.core.ref.PlatformRefParser;
+import com.ispf.server.ref.PlatformRefResolver;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -150,8 +154,12 @@ public class BindingRulesService {
         PlatformObject object = objectManager.require(objectPath);
         BindingTarget target = rule.target();
         if (target.isVariable()) {
+            if (target.ref() != null && !target.ref().isBlank()) {
+                validateVariableTargetRef(objectPath, target.ref());
+                return;
+            }
             if (target.variableName() == null || target.variableName().isBlank()) {
-                throw new IllegalArgumentException("Variable target.variableName is required");
+                throw new IllegalArgumentException("Variable target.variableName or target.ref is required");
             }
             if (object.getVariable(target.variableName()).isEmpty()) {
                 throw new IllegalArgumentException("Unknown target variable: " + target.variableName());
@@ -168,13 +176,39 @@ public class BindingRulesService {
             return;
         }
         if (target.isEvent()) {
+            if (target.ref() != null && !target.ref().isBlank()) {
+                validateEventTargetRef(objectPath, target.ref());
+                return;
+            }
             if (target.eventName() == null || target.eventName().isBlank()) {
-                throw new IllegalArgumentException("Event target.eventName is required");
+                throw new IllegalArgumentException("Event target.eventName or target.ref is required");
+            }
+            if (object.events().get(target.eventName()) == null) {
+                throw new IllegalArgumentException("Unknown event: " + target.eventName());
             }
             return;
         }
         if (target.isAction()) {
             return;
+        }
+    }
+
+    private void validateVariableTargetRef(String ruleObjectPath, String refRaw) {
+        PlatformRef ref = PlatformRefResolver.resolve(PlatformRefParser.parseVariableSource(refRaw), ruleObjectPath);
+        PlatformObject targetObject = objectManager.require(ref.object());
+        if (targetObject.getVariable(ref.name()).isEmpty()) {
+            throw new IllegalArgumentException("Unknown target variable ref: " + refRaw);
+        }
+    }
+
+    private void validateEventTargetRef(String ruleObjectPath, String refRaw) {
+        PlatformRef ref = PlatformRefResolver.resolve(PlatformRefParser.parse(refRaw), ruleObjectPath);
+        if (ref.kind() != PlatformRefKind.EVENT) {
+            throw new IllegalArgumentException("Event target ref must use /evt/ grammar: " + refRaw);
+        }
+        PlatformObject targetObject = objectManager.require(ref.object());
+        if (targetObject.events().get(ref.name()) == null) {
+            throw new IllegalArgumentException("Unknown target event ref: " + refRaw);
         }
     }
 
@@ -367,7 +401,8 @@ public class BindingRulesService {
                             rule.target().variableName(),
                             rule.target().field(),
                             rule.target().path(),
-                            rule.target().eventName()
+                            rule.target().eventName(),
+                            rule.target().ref()
                     ),
                     rule.windowBucket(),
                     rule.rollupBuckets(),
@@ -397,7 +432,8 @@ public class BindingRulesService {
                             target.variableName(),
                             target.field(),
                             target.path(),
-                            target.eventName()
+                            target.eventName(),
+                            target.ref()
                     ),
                     windowBucket,
                     rollupBuckets,
@@ -458,7 +494,8 @@ public class BindingRulesService {
             String variableName,
             String field,
             String path,
-            String eventName
+            String eventName,
+            String ref
     ) {
     }
 }

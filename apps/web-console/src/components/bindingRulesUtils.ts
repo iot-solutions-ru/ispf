@@ -64,6 +64,9 @@ export function targetKind(rule: BindingRule): NonNullable<BindingTarget["kind"]
 }
 
 export function targetSummary(target: BindingTarget): string {
+  if (target.ref?.trim()) {
+    return target.ref.trim();
+  }
   const kind = target.kind ?? "variable";
   if (kind === "context") {
     return `context.${target.path ?? "?"}`;
@@ -93,12 +96,12 @@ export function isBindingRuleSaveable(rule: BindingRule): boolean {
     return Boolean(rule.target.path?.trim());
   }
   if (kind === "event") {
-    return Boolean(rule.target.eventName?.trim());
+    return Boolean(rule.target.eventName?.trim() || rule.target.ref?.trim());
   }
   if (kind === "action") {
     return true;
   }
-  return Boolean(rule.target.variableName?.trim());
+  return Boolean(rule.target.variableName?.trim() || rule.target.ref?.trim());
 }
 
 export function prepareBindingRuleForSave(rule: BindingRule): BindingRule {
@@ -112,6 +115,7 @@ export function prepareBindingRuleForSave(rule: BindingRule): BindingRule {
     kind,
     target: {
       kind: target,
+      ref: rule.target.ref?.trim() || null,
       variableName: target === "variable" ? (rule.target.variableName?.trim() ?? "") : rule.target.variableName ?? null,
       field: rule.target.field ?? "value",
       path: target === "context" ? (rule.target.path?.trim() ?? "") : rule.target.path ?? null,

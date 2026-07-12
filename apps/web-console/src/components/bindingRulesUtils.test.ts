@@ -93,6 +93,14 @@ describe("isBindingRuleSaveable", () => {
     ).toBe(true);
     expect(
       isBindingRuleSaveable(
+        sampleRule({
+          target: { kind: "variable", ref: "root.platform.devices.pump-01/setpoint" },
+          expression: "42",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isBindingRuleSaveable(
         sampleRule({ target: { kind: "context", path: "  " }, expression: "true" }),
       ),
     ).toBe(false);

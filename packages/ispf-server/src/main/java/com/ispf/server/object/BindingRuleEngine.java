@@ -14,6 +14,10 @@ import com.ispf.expression.BindingEvaluationContext;
 import com.ispf.expression.BindingExpressionEvaluator;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
+import com.ispf.core.ref.PlatformRef;
+import com.ispf.core.ref.PlatformRefKind;
+import com.ispf.core.ref.PlatformRefParser;
+import com.ispf.server.ref.PlatformRefResolver;
 import com.ispf.server.binding.BindingInvokeAuditService;
 import com.ispf.server.dashboard.DashboardContextSupport;
 import com.ispf.server.event.EventService;
@@ -256,17 +260,17 @@ public class BindingRuleEngine {
             if (!conditionPasses(object, rule.condition())) {
                 return false;
             }
-            Variable targetVariable = object.getVariable(rule.target().variableName()).orElse(null);
-            if (targetVariable == null) {
+            ResolvedVariableTarget target = resolveVariableTarget(object.path(), rule.target());
+            if (target == null) {
                 success = false;
-                error = "Unknown target variable: " + rule.target().variableName();
+                error = "Unknown target variable: " + describeVariableTarget(rule.target());
                 return false;
             }
             Optional<DataRecord> computed = expressionEvaluator.evaluate(
                     object,
-                    rule.target().variableName(),
+                    target.evalVariableName(),
                     rule.expression(),
-                    targetVariable.schema(),
+                    target.variable().schema(),
                     evaluationContext
             );
             if (computed.isEmpty()) {
@@ -275,12 +279,24 @@ public class BindingRuleEngine {
                 return false;
             }
             DataRecord nextValue = computed.get();
-            previous = targetVariable.value().orElse(null);
+            previous = target.variable().value().orElse(null);
             next = nextValue;
             if (!BindingExpressionEvaluator.recordsEqual(previous, nextValue)) {
-                targetVariable.setComputedValue(nextValue);
-                objectManager.persistBindingRuleTarget(object.path(), targetVariable);
-                changedVariables.add(rule.target().variableName());
+                if (target.objectPath().equals(object.path())) {
+                    target.variable().setComputedValue(nextValue);
+                    objectManager.persistBindingRuleTarget(object.path(), target.variable());
+                    changedVariables.add(target.evalVariableName());
+                } else {
+                    target.variable().setComputedValue(nextValue);
+                    objectManager.persistBindingRuleTarget(target.objectPath(), target.variable());
+                    if (shouldPublishVariableUpdate(target.evalVariableName())) {
+                        publicationService.publishVariableChange(
+                                target.objectPath(),
+                                target.evalVariableName(),
+                                null
+                        );
+                    }
+                }
                 changed = true;
                 return true;
             }
@@ -301,6 +317,36 @@ public class BindingRuleEngine {
                     entityMapper.auditDiff(previous, next)
             );
         }
+    }
+
+    private ResolvedVariableTarget resolveVariableTarget(String ruleObjectPath, BindingTarget target) {
+        if (target.ref() != null && !target.ref().isBlank()) {
+            PlatformRef ref = PlatformRefResolver.resolve(
+                    PlatformRefParser.parseVariableSource(target.ref()),
+                    ruleObjectPath
+            );
+            return objectManager.tree().findByPath(ref.object())
+                    .flatMap(node -> node.getVariable(ref.name())
+                            .map(variable -> new ResolvedVariableTarget(ref.object(), variable, ref.name())))
+                    .orElse(null);
+        }
+        if (target.variableName() == null || target.variableName().isBlank()) {
+            return null;
+        }
+        return objectManager.tree().findByPath(ruleObjectPath)
+                .flatMap(node -> node.getVariable(target.variableName())
+                        .map(variable -> new ResolvedVariableTarget(ruleObjectPath, variable, target.variableName())))
+                .orElse(null);
+    }
+
+    private static String describeVariableTarget(BindingTarget target) {
+        if (target.ref() != null && !target.ref().isBlank()) {
+            return target.ref();
+        }
+        return target.variableName();
+    }
+
+    private record ResolvedVariableTarget(String objectPath, Variable variable, String evalVariableName) {
     }
 
     private boolean evaluateContextRule(
@@ -403,14 +449,21 @@ public class BindingRuleEngine {
             if (!conditionPasses(object, rule.condition())) {
                 return false;
             }
-            if (object.events().get(rule.target().eventName()) == null) {
+            ResolvedEventTarget target = resolveEventTarget(object.path(), rule.target());
+            if (target == null) {
                 success = false;
-                error = "Unknown event: " + rule.target().eventName();
+                error = "Unknown event target: " + describeEventTarget(rule.target());
+                return false;
+            }
+            PlatformObject targetObject = objectManager.tree().findByPath(target.objectPath()).orElse(null);
+            if (targetObject == null || targetObject.events().get(target.eventName()) == null) {
+                success = false;
+                error = "Unknown event: " + target.eventName() + " on " + target.objectPath();
                 return false;
             }
             Object computed = expressionEngine.evaluate(rule.expression(), object, readContextMap(object));
             DataRecord payload = payloadFromExpressionResult(computed);
-            eventService.fire(object.path(), rule.target().eventName(), payload);
+            eventService.fire(target.objectPath(), target.eventName(), payload);
             changed = true;
             return true;
         } catch (RuntimeException ex) {
@@ -429,6 +482,30 @@ public class BindingRuleEngine {
                     null
             );
         }
+    }
+
+    private ResolvedEventTarget resolveEventTarget(String ruleObjectPath, BindingTarget target) {
+        if (target.ref() != null && !target.ref().isBlank()) {
+            PlatformRef ref = PlatformRefResolver.resolve(PlatformRefParser.parse(target.ref()), ruleObjectPath);
+            if (ref.kind() != PlatformRefKind.EVENT) {
+                return null;
+            }
+            return new ResolvedEventTarget(ref.object(), ref.name());
+        }
+        if (target.eventName() == null || target.eventName().isBlank()) {
+            return null;
+        }
+        return new ResolvedEventTarget(ruleObjectPath, target.eventName());
+    }
+
+    private static String describeEventTarget(BindingTarget target) {
+        if (target.ref() != null && !target.ref().isBlank()) {
+            return target.ref();
+        }
+        return target.eventName();
+    }
+
+    private record ResolvedEventTarget(String objectPath, String eventName) {
     }
 
     private void persistDashboardContext(String objectPath, String contextJson) {

@@ -589,7 +589,8 @@ final class AgentAutomationTools {
             @Override
             public String description() {
                 return "Create or replace a binding rule on an object. Args: path, id, expression, "
-                        + "targetVariable (for kind=variable), optional targetKind (variable|action|context|event), "
+                        + "targetVariable (for kind=variable, local target), targetRef (slash ref for cross-object variable/event), "
+                        + "optional targetKind (variable|action|context|event), "
                         + "contextPath (context target), eventName (event target), condition (CEL), "
                         + "remoteObjectPath + remoteVariableName (cross-object activator), "
                         + "onContextChange (bool, dashboard rules), onStartup, order. "
@@ -601,13 +602,21 @@ final class AgentAutomationTools {
                 String path = stringArg(arguments, "path");
                 String id = stringArg(arguments, "id");
                 String targetVariable = stringArg(arguments, "targetVariable");
+                String targetRef = stringArg(arguments, "targetRef");
                 String expression = stringArg(arguments, "expression");
                 String targetKind = com.ispf.core.binding.BindingTargetKind.normalize(stringArg(arguments, "targetKind"));
                 if (path.isBlank() || id.isBlank() || expression.isBlank()) {
                     return Map.of("status", "ERROR", "error", "path, id, expression are required");
                 }
-                if (com.ispf.core.binding.BindingTargetKind.VARIABLE.equals(targetKind) && targetVariable.isBlank()) {
-                    return Map.of("status", "ERROR", "error", "targetVariable is required for targetKind=variable");
+                if (com.ispf.core.binding.BindingTargetKind.VARIABLE.equals(targetKind)
+                        && targetVariable.isBlank()
+                        && targetRef.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "targetVariable or targetRef is required for targetKind=variable");
+                }
+                if (com.ispf.core.binding.BindingTargetKind.EVENT.equals(targetKind)
+                        && stringArg(arguments, "eventName").isBlank()
+                        && targetRef.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "eventName or targetRef is required for targetKind=event");
                 }
                 var auth = context.authentication();
                 if (!tenantScopeService.isPathVisible(path, auth)) {
@@ -669,6 +678,17 @@ final class AgentAutomationTools {
                 String field = optionalString(arguments, "targetField");
                 if (field == null || field.isBlank()) {
                     field = "value";
+                }
+                String targetRef = stringArg(arguments, "targetRef");
+                if (targetRef != null && !targetRef.isBlank()) {
+                    return new com.ispf.core.binding.BindingTarget(
+                            targetKind,
+                            null,
+                            field,
+                            null,
+                            null,
+                            targetRef
+                    );
                 }
                 return switch (targetKind) {
                     case com.ispf.core.binding.BindingTargetKind.CONTEXT -> new com.ispf.core.binding.BindingTarget(

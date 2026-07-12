@@ -64,6 +64,24 @@
 }
 ```
 
+Кросс-объектная запись (правило на hub, результат на удалённом устройстве):
+
+```json
+{
+  "id": "mirror-remote-sine",
+  "enabled": true,
+  "order": 20,
+  "activators": {
+    "onVariableChange": [{ "ref": "root.platform.devices.cluster.dev-03/sineWave" }]
+  },
+  "expression": "read(root.platform.devices.cluster.dev-03/sineWave)",
+  "target": {
+    "kind": "variable",
+    "ref": "root.platform.devices.cluster.dev-03/mirroredSine"
+  }
+}
+```
+
 | Поле | Назначение |
 |------|------------|
 | `activators.onVariableChange` | Список ref переменных; `@/*` или `self` + `*` = любая локальная переменная |
@@ -73,7 +91,16 @@
 
 Historian-тег в каталоге: `objectPath/tag/ruleId`. Рецепты: [analytics-historian-cookbook](analytics-historian-cookbook.md).
 
-**Cross-object:** activator с remote `ref` + `read(remote/ref)` в выражении; `BindingPropagationListener` пересчитывает правила на consumer-объектах.
+### Типы цели (`target.kind`)
+
+| `kind` | Поля | Назначение |
+|--------|------|------------|
+| `variable` | `variableName` + `field` на `@`, или **`ref`** (slash) | Запись в переменную (локально или на другом объекте) |
+| `action` | — | Только выполнение выражения; side-effect через `call()`, `write()`, `queryRows()` |
+| `context` | `path` | `@dashboardContext` на `DASHBOARD` |
+| `event` | `eventName` на `@`, или **`ref`** (`…/evt/…`) | Публикация event (локально или на другом объекте) |
+
+**Cross-object:** activator с remote `ref` + `read(remote/ref)` в выражении; **target.ref** записывает результат на другой объект (оркестратор / absolute blueprint). Side-effect без цели — `target.kind=action` и `write(ref, …)` в `expression`. `BindingPropagationListener` пересчитывает правила на consumer-объектах.
 
 **Активаторы по умолчанию:** remote refs в expression → автоматические remote activators; иначе `self:*`.
 
@@ -94,6 +121,8 @@ Historian-тег в каталоге: `objectPath/tag/ruleId`. Рецепты: [
 ## UI
 
 Web Console → Object inspector → **Computations** → редактор с **PlatformRef picker** и каталогом функций.
+
+Для **переменной** или **события** как цели: выберите **Тип эффекта**, затем либо локальное имя на текущем объекте, либо **путь целевого объекта** + PlatformRef picker (`target.ref`) для записи на другой объект (оркестратор, absolute blueprint).
 
 ---
 
