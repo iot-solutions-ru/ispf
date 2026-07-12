@@ -16,4 +16,8 @@ public interface BindingEvaluationContext {
     default Optional<Object> readRemoteField(String objectPath, String variableName, String field) {
         return Optional.empty();
     }
+
+    default Optional<Boolean> fireEvent(String objectPath, String eventName) {
+        return Optional.empty();
+    }
 }

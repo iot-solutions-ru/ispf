@@ -52,7 +52,8 @@ export default function VariableHistoryPanel({
     }
   }, [fields, field]);
 
-  const { points, stats, isLoading, isError, error, aggregated, bucket } = useVariableHistory(
+  const { points, textSamples, stats, isLoading, isError, error, aggregated, bucket, isRecordSnapshot } =
+    useVariableHistory(
     objectPath,
     variableName,
     {
@@ -86,7 +87,15 @@ export default function VariableHistoryPanel({
     <div className="variable-history-panel">
       <div className="variable-history-toolbar">
         <div className="variable-history-stats">
-          {stats.latest != null ? (
+          {isRecordSnapshot ? (
+            textSamples.length > 0 ? (
+              <span className="variable-history-range">
+                {textSamples.length} {t("variables.historyPanel.snapshots")}
+              </span>
+            ) : (
+              <span className="hint">{t("variables.historyPanel.noData")}</span>
+            )
+          ) : stats.latest != null ? (
             <>
               <span className="variable-history-latest">{stats.latest.toFixed(2)}</span>
               {stats.min != null && stats.max != null && (
@@ -150,8 +159,33 @@ export default function VariableHistoryPanel({
 
       {exportError && <p className="hint error variable-history-export-error">{exportError}</p>}
 
-      <div className="variable-history-chart">
-        {isLoading && points.length === 0 ? (
+      <div className={isRecordSnapshot ? "variable-history-snapshots" : "variable-history-chart"}>
+        {isRecordSnapshot ? (
+          isLoading && textSamples.length === 0 ? (
+            <p className="hint">{t("variables.historyPanel.loading")}</p>
+          ) : isError ? (
+            <p className="hint error">{(error as Error).message}</p>
+          ) : textSamples.length === 0 ? (
+            <p className="hint">{t("variables.historyPanel.noData")}</p>
+          ) : (
+            <ul className="variable-history-snapshot-list">
+              {textSamples.map((sample) => {
+                let display = sample.text;
+                try {
+                  display = JSON.stringify(JSON.parse(sample.text), null, 2);
+                } catch {
+                  // keep raw text
+                }
+                return (
+                  <li key={sample.ts} className="variable-history-snapshot-item">
+                    <time className="variable-history-snapshot-time">{sample.time}</time>
+                    <pre className="variable-history-snapshot-json">{display}</pre>
+                  </li>
+                );
+              })}
+            </ul>
+          )
+        ) : isLoading && points.length === 0 ? (
           <p className="hint">{t("variables.historyPanel.loading")}</p>
         ) : isError ? (
           <p className="hint error">{(error as Error).message}</p>

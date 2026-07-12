@@ -27,7 +27,7 @@
 | `lastEvalAt` | Время последнего расчёта |
 | `lastEvalStatus` | `ok`, `error`, `skipped` |
 
-Обновляется analytics engine при каждом tick. **Не** является входом для `hist.avg` — только диагностика и quality в каталоге. Подробнее: [cookbook § `@historianRuleMeta`](analytics-historian-cookbook.md#historianrulemeta--что-это-и-чего-не-делать).
+Обновляется analytics engine при каждом tick. **Не** является входом для выражений — только диагностика и quality в каталоге.
 
 ## Эталон на prod
 

@@ -4,17 +4,19 @@
 
 Нагрузочный стенд для **EVENT_JOURNAL_ONLY** быстрого пути ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)): драйвер mqtt → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
 
-**Хост:** `84.42.21.226`, порт SSH `5031`, пользователь `iot-solutions`  
-**SSH alias:** `ispf-lab` (ключ Ed25519 `~/.ssh/ispf_lab_ed25519`)  
-**HTTP:** `http://84.42.21.226:8000` (лаборатория nginx)  
-**Стек:** `~/ispf` — `deploy/lab-test-host-compose.yml` + `deploy/lab-stress.env`
+**Где запускать:** выделенный lab-хост (SSH с рабочей станции; HTTP через nginx).
+**Шаблоны:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) и gitignored `deploy/lab-*` на машине оператора.
+
+SSH-хост, порт, пользователь и ключ — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (подставьте на стенде; не коммитьте реальные значения).
+
+**Стек:** `~/ispf` — шаблоны из [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/)
 
 ### SSH с рабочей станции (один раз)
 
 ```bash
 # Первый запуск — пароль только через ISPF_LAB_PASSWORD, не коммитить
 python deploy/local/tools/lab-ssh-install-key.py
-ssh ispf-lab   # далее
+ssh lab-host  # далее
 ```
 
 Скопируйте `deploy/local/lab_ssh.example.py` → `deploy/lab_ssh.py` (в gitignore), если файла нет; Python-скрипты используют `connect_ssh()`.
@@ -192,15 +194,16 @@ Cleanup orphans: `bash lab-emqtt-cleanup.sh` (label `ispf.emqtt-bench=1`).
 ## Связанные документы
 
 - [load-testing](load-testing.md) — общие сценарии MQTT/emqtt
+- [lab-mqtt-historian-stress](lab-mqtt-historian-stress.md) — TELEMETRY_ONLY historian (Scylla vs CH)
 - [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) — EVENT_JOURNAL_ONLY
 - [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md) — входной конвейер
 - [automation](automation.md) — API метрик платформы
 
-## Сравнение продуктов VPS (ispf.iot-solutions.ru)
+## Lab vs production VPS
 
 Те же параметры теста, что и лабораторный пик: **цель 16×32 тыс.**, **8 осколков emqtt**, мера 60 с, `EVENT_JOURNAL_ONLY`, журнал Scylla.
 
-| | Лаборатория (84.42.21.226) | VPS прод |
+| | Лаборатория (выделенное железо) | VPS прод |
 |--|-------------------|----------|
 | ISPF | 0.9.88 | 0.9.86 |
 | Сцилла | 20 СМП/48Г | **1 СМП / 750М** |

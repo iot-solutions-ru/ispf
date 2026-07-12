@@ -1,24 +1,26 @@
 package com.ispf.expression;
 
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.ref.PlatformRef;
+import com.ispf.core.ref.PlatformRefParser;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Platform binding: {@code refAt("objectPath", variableName[, field])}.
+ * Platform binding: {@code read(<variableRef>)} — reads a variable field via PlatformRef.
  */
-public final class RefAtBinding implements PlatformBinding {
+public final class ReadRefBinding implements PlatformBinding {
 
-    static final RefAtBinding INSTANCE = new RefAtBinding();
+    static final ReadRefBinding INSTANCE = new ReadRefBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "refAt\\(\\s*" + BindingSourceHelper.QUOTED_STRING + "\\s*,\\s*("
-                    + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*(" + BindingSourceHelper.IDENT + ")\\s*)?\\)"
+            "read\\(\\s*(" + BindingSourceHelper.VARIABLE_REF + ")\\s*\\)",
+            Pattern.CASE_INSENSITIVE
     );
 
-    private RefAtBinding() {
+    private ReadRefBinding() {
     }
 
     @Override
@@ -37,9 +39,7 @@ public final class RefAtBinding implements PlatformBinding {
         if (!matcher.matches()) {
             return Optional.empty();
         }
-        String remotePath = matcher.group(1);
-        String remoteVariable = matcher.group(2);
-        String field = matcher.group(3) != null ? matcher.group(3) : "value";
-        return context.readRemoteField(remotePath, remoteVariable, field);
+        PlatformRef ref = PlatformRefParser.parseVariableSource(BindingSourceHelper.unwrapQuotedRef(matcher.group(1)));
+        return PlatformRefValueHelper.readVariable(object, ref, context);
     }
 }

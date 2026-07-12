@@ -14,7 +14,7 @@
 
 | Уровень | Что это | Кто создаёт | Пример |
 |---------|---------|-------------|--------|
-| **A — Встроенные** | Core helpers + CEL `hist.*` + open packs в classpath | Команда платформы | `rollingAvg`, `hist.avg`, `energyDelta` (core-ext) |
+| **A — Встроенные** | Core helpers + historian aggregates + open packs | Команда платформы | `avg(ref, 5m)`, `energyDelta` (core-ext) |
 | **B — Своя формула** | Параметризованный шаблон выражения | Оператор / разработчик решения | `rateOfChange({{levelPath}}, 1h) * {{tankArea}}` |
 | **C — Пакет расширений** | JAR с SPI `AnalyticsFunctionProvider` | Партнёр / ISV | `mes-oee-pack`, `water-quality-pack` |
 
@@ -30,32 +30,36 @@
 
 ### Синтаксис helper (historian)
 
+Источники — **PlatformRef** slash-адреса ([0043-unified-platform-ref](decisions/0043-unified-platform-ref.md)).
+
 | Функция | Пример | Назначение |
 |---------|--------|------------|
-| `rollingAvg` | `rollingAvg(root.devices.pump01.temperature, 5m)` | Скользящее среднее |
-| `rateOfChange` | `rateOfChange(path.level, 1h)` | Дельта avg первого→последнего bucket |
-| `oee` | `oee('path', 'avail', 'perf', 'qual', 8h)` | OEE % по четырём входам |
-| `totalizer` | `totalizer(path.energy, 1h)` | Сумма за окно |
-| `min` / `max` / `last` | `min(path.var, 5m)` | Агрегаты по buckets |
+| `avg` | `avg(root.devices.pump01/temperature, 5m)` | Скользящее среднее |
+| `min` / `max` / `last` / `sum` | `min(root.devices.pump01/temperature, 1h)` | Агрегаты по buckets |
+| `live` | `live(@/temperature)` | Текущее live-значение |
+| `rateOfChange` | `rateOfChange(root.devices.pump01/level, 1h)` | Дельта avg первого→последнего bucket |
+| `oee` | `oee('root.../line-01', 'avail', 'perf', 'qual', 8h)` | OEE % |
+| `totalizer` | `totalizer(root.devices.pump01/energy, 1h)` | Сумма за окно |
 
 ### CEL + historian (`helper: cel`)
 
 ```text
-hist.avg('root.devices.pump01', 'temperature', '5m')
-hist.min('root.devices.pump01', 'temperature', 'value', '1h')
-(hist.avg('…sensor-a', 'temperature', '5m') + hist.avg('…sensor-b', 'temperature', '5m')) / 2.0
+avg(root.devices.pump01/temperature, 5m)
+min(root.devices.pump01/temperature/value, 1h)
+(avg(root.devices.sensor-a/temperature, 5m) + avg(root.devices.sensor-b/temperature, 5m)) / 2.0
+live(@/temperature)
 ```
 
-Доступны: `hist.avg`, `hist.min`, `hist.max`, `hist.sum`, `hist.last`, `hist.live`.
+Доступны: `avg`, `min`, `max`, `sum`, `last`, `live`.
 
-В CEL используйте **литералы double** (`2.0`, не `2`) при смешении с `hist.*`.
+В CEL используйте **литералы double** (`2.0`, не `2`) при смешении с historian expansions.
 
 ### Где найти
 
 - **Web console:** инспектор объекта → **Вычисления** → **+ Правило** → **Historian** → редактор → **каталог функций**.
 - **API:** `GET /api/v1/platform/analytics/catalog` и `GET .../catalog/{functionId}`.
 
-Новый `hist.xyz` **нельзя** добавить из UI — макросы `hist.*` регистрируются на сервере.
+Новый aggregate-примитив **нельзя** добавить из UI — функции historian регистрируются на сервере.
 
 ---
 
@@ -66,9 +70,9 @@ Tier B — **переиспользуемый шаблон**, не новый ru
 ### Синтаксис плейсхолдеров
 
 ```text
-rollingAvg({{sourcePath}}, {{window}})
-rateOfChange({{levelPath}}, 1h) * {{tankArea}}
-hist.avg('{{devicePath}}', '{{variable}}', '{{window}}')
+avg({{sourceRef}}, {{window}})
+rateOfChange({{levelRef}}, 1h) * {{tankArea}}
+avg({{deviceRef}}/{{variable}}, {{window}})
 ```
 
 Имена: `[a-zA-Z][a-zA-Z0-9_]*`. Сервер и UI определяют параметры из выражения автоматически.
@@ -270,7 +274,7 @@ acme-mes-kpi-1.0.0.zip
 
 1. Реализовать SPI; тесты против `ispf-analytics-api`.
 2. Собрать подписанный `analytics-pack.json` + JAR ([commercial-licensing](commercial-licensing.md)).
-3. Опубликовать листинг на [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) с `artifactKind: analytics-pack`.
+3. Опубликовать листинг на [ispf-marketplace](https://github.com/your-org/ispf-marketplace) с `artifactKind: analytics-pack`.
 4. Interop CI: функции в каталоге после install на lab ISPF.
 5. Партнёрская программа: OEM tier, revenue share ([partner-program](partner-program.md)).
 

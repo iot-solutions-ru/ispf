@@ -16,7 +16,7 @@ public final class DeadbandBinding implements PlatformBinding {
     static final DeadbandBinding INSTANCE = new DeadbandBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "deadband\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
+            "deadband\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*(?:,\\s*(" + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -40,16 +40,17 @@ public final class DeadbandBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(3),
                 "value"
         );
         double band = Double.parseDouble(matcher.group(2));
 
-        Optional<Double> currentOpt = BindingSourceHelper.readNumericField(
+        Optional<Double> currentOpt = BindingSourceHelper.readNumericSource(
                 object,
                 source.sourceVariable(),
-                source.field()
+                source.field(),
+                context
         );
         if (currentOpt.isEmpty()) {
             return Optional.empty();

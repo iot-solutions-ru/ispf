@@ -9,9 +9,9 @@ import java.util.Locale;
  * Computation rule kind — reactive bindings vs historian-backed derived tags (ADR-0041).
  */
 public enum BindingRuleKind {
-    /** Live CEL / refAt — evaluated by {@code BindingRuleEngine}. */
+    /** Live CEL / read / call — evaluated by {@code BindingRuleEngine}. */
     REACTIVE,
-    /** Historian windows / hist.* CEL — evaluated by analytics engine. */
+    /** Historian windows (avg, live, …) / CEL — evaluated by analytics engine. */
     HISTORIAN;
 
     @JsonValue

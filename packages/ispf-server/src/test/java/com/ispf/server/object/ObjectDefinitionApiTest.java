@@ -103,7 +103,7 @@ class ObjectDefinitionApiTest {
                                     "periodicMs": 60000
                                   },
                                   "condition": "",
-                                  "expression": "rollingAvg(root.platform.devices.analytics-demo.sensor-a.temperature, 1h)",
+                                  "expression": "avg(root.platform.devices.analytics-demo.sensor-a/temperature, 1h)",
                                   "target": { "kind": "variable", "variableName": "test", "field": "value" }
                                 }]
                                 """))

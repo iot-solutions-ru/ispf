@@ -81,7 +81,7 @@ bash /opt/ispf/loadtest/vps-ispf-fair-run.sh
 
 ### Лабораторный стресс (Scylla, emqtt с несколькими устройствами)
 
-Выделенный лабораторный хост (`84.42.21.226`), **EVENT_JOURNAL_ONLY**, 16 драйверов mqtt, хранилище журналов **Scylla**. Полная документация: **[lab-event-journal-stress](lab-event-journal-stress.md)**.
+Выделенный лабораторный хост, **EVENT_JOURNAL_ONLY**, 16 драйверов mqtt, хранилище журналов **Scylla**. Полная документация: **[lab-event-journal-stress](lab-event-journal-stress.md)** (SSH/HTTP — в `lab-loadgen.env`, не в документации).
 
 | Метрика (пиковая, 8 шардов emqtt) | Значение |
 |---------------------------------|-------|
@@ -101,7 +101,7 @@ AUTO_CALIBRATE=true bash lab-mqtt-event-journal-multi-test.sh
 
 ### VPS prod (журнал Scylla, меньший размер Scylla)
 
-Та же методология на `ispf.iot-solutions.ru` — несколько устройств: `deploy/vps-mqtt-event-journal-multi-test.sh`, оркестровка `deploy/run_vps_max_load.py`. Выставочный стенд для одного устройства: `deploy/vps-ispf-fair-bench.sh` ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
+Та же методология на `ispf.example.invalid` — несколько устройств: `deploy/vps-mqtt-event-journal-multi-test.sh`, оркестровка `deploy/run_vps_max_load.py`. Выставочный стенд для одного устройства: `deploy/vps-ispf-fair-bench.sh` ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
 
 | Метрическая | VPS прод (контекст) | Лаборатория (ссылка) |
 |--------|-------------------|-----------------|
@@ -119,7 +119,7 @@ AUTO_CALIBRATE=true bash lab-mqtt-event-journal-multi-test.sh
 # Lab: Mosquitto на VPS + synthetic publisher
 python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
   --devices 4 --messages-per-second 2000 --telemetry-coalesce-ms 50 `
-  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+  --publish-via-ssh deploy-user@production-host --skip-monitor-setup
 ```
 
 | Флаг | По умолчанию | Описание |
@@ -133,7 +133,30 @@ python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1
 
 **Ограничение prod:** `ispf.variable-history.min-interval-ms` (по умолчанию **5000**) — устранение записей в БД. Для высокоскоростного нагрузочного теста: `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=100` в `/opt/ispf/ispf-server.env` + перезапуск (см. `application.yml`).
 
-Реальный брокер `m5.wqtt.ru` — см. subscribe mode ниже; нужны MQTT credentials.
+### Лабораторный стресс historian (Scylla vs ClickHouse, split topology)
+
+Выделенная lab, **TELEMETRY_ONLY**, 16 драйверов mqtt, historian на хосте loadgen/DB, ISPF на хосте приложения. Runbook: **[lab-mqtt-historian-stress](lab-mqtt-historian-stress.md)**; шаблоны: **[examples/lab-mqtt-historian-stress](../../examples/lab-mqtt-historian-stress/)**.
+
+| Store | Цель (16 dev) | Historian flushed (lab 0.9.137) | Примечание |
+|-------|---------------|----------------------------------|------------|
+| Scylla | 250k msg/s | **~258k** samples/s | Scylla `COUNT(*)` может таймаутить — смотрите flushed + Mosquitto |
+| Scylla | 500k msg/s | **~520–559k** samples/s | Очередь может вырасти (~8M); сливается в 0 |
+| ClickHouse | 250k msg/s | **~288k** samples/s | CH `count()` совпадает с flushed |
+| ClickHouse | 500k msg/s | **~579k** samples/s | |
+
+```bash
+# На хосте приложения lab (см. ISPF_LAB_CLUSTER_HOST в examples/lab-mqtt-historian-stress/env/lab-loadgen.env)
+DEVICES=16 RATE_PER_DEVICE=15625 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MAX=8 \
+  bash ~/ispf/lab-single-mqtt-historian-test.sh
+
+docker compose --env-file lab-stress-ch.env -f lab-test-host-compose.yml up -d --force-recreate ispf-server nginx
+DEVICES=16 RATE_PER_DEVICE=31250 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MAX=8 \
+  bash ~/ispf/lab-single-mqtt-historian-ch-test.sh
+```
+
+В lab: `minIntervalMs=0`, ingress coalesce выкл., очередь historian 8M, числовой payload — **не** настройки прода ([demostands](demostands.md)).
+
+Реальный брокер `mqtt-broker.example.invalid` — см. subscribe mode ниже; нужны MQTT credentials.
 
 ### Объединение развертки (историк)
 
@@ -189,7 +212,7 @@ Report: `deploy/mqtt-coalesce-sweep-report-1782383597.json`.
 |-----------|--------|----------|---------------|
 | ~20 msg/s (synthetic) | `tcp://127.0.0.1:1883` (VPS Mosquitto) | ~20.0 | ~20.1 |
 
-*(4× `loadtest-mqtt-dev-*`, драйвер mqtt РАБОТАЕТ, состояние `self.temperature["value"] > -1000.0`. Отчет `deploy/mqtt-ingress-load-test-report-1782382991.json`. Реальный `m5.wqtt.ru` на продукте: TCP OK, MQTT-соединение `not authorised` — драйверы 0/4, событий/с 0.)*
+*(4× `loadtest-mqtt-dev-*`, драйвер mqtt РАБОТАЕТ, состояние `self.temperature["value"] > -1000.0`. Отчет `deploy/mqtt-ingress-load-test-report-1782382991.json`. Реальный `mqtt-broker.example.invalid` на продукте: TCP OK, MQTT-соединение `not authorised` — драйверы 0/4, событий/с 0.)*
 
 Lab push (локальный Mosquitto, `--mode push`) — синтетический publisher, см. `mqtt-loadtest-publisher.py`.
 
@@ -200,7 +223,7 @@ Benchmark **gateway `lastIngress.raw` only** — no child sensors, no `dispatchT
 ```powershell
 python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
   --ingress-history-only --devices 4 --messages-per-second 2000 --telemetry-coalesce-ms 1 `
-  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+  --publish-via-ssh deploy-user@production-host --skip-monitor-setup
 ```
 
 Число выборок/с измерено через `GET .../variables/history` для `lastIngress.raw` на шлюзе (не глобально `sampleCount`). Драйвер использует `ingressTopicLanes=false`, поэтому параллельная отправка не подавляет публикацию архива.
@@ -217,10 +240,10 @@ python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1
 python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
   --devices 4 --messages-per-second 10000 --telemetry-coalesce-ms 1 `
   --gateway --publisher emqtt-bench --emqtt-interval-ms 10 `
-  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+  --publish-via-ssh deploy-user@production-host --skip-monitor-setup
 
 # Standalone на VPS (50k msg/s, 4 топика):
-# ssh root@ispf.iot-solutions.ru 'bash /opt/ispf/loadtest/mqtt-emqtt-bench.sh --devices 4 --messages-per-second 50000 --duration-seconds 30'
+# ssh deploy-user@production-host 'bash /opt/ispf/loadtest/mqtt-emqtt-bench.sh --devices 4 --messages-per-second 50000 --duration-seconds 30'
 ```
 
 | Флаг | По умолчанию | Описание |
@@ -247,7 +270,7 @@ python deploy/vps-load-test.py --seed-only --devices 60
 ### 2. Мониторинг (зонд + дашборд)
 
 ```powershell
-python deploy/setup-platform-metrics-monitor.py --base-url https://ispf.iot-solutions.ru
+python deploy/setup-platform-metrics-monitor.py --base-url ${ISPF_BASE_URL:-https://ispf.example.invalid}
 ```
 
 - Probe: `root.platform.devices.platform-metrics-probe`
@@ -273,7 +296,7 @@ Admin-only: `GET /api/v1/platform/metrics` — секция `automation`:
 
 ```powershell
 python deploy/events-load-test.py `
-  --base-url https://ispf.iot-solutions.ru `
+  --base-url ${ISPF_BASE_URL:-https://ispf.example.invalid} `
   --concurrency 40 `
   --duration-seconds 60
 ```

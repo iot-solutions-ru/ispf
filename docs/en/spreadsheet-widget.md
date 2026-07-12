@@ -187,7 +187,7 @@ Minimal `free`:
   "type": "spreadsheet",
   "title": "Summary",
   "sheetMode": "configured",
-  "sheetConfigJson": "{\"rows\":6,\"cols\":4,\"frozenRows\":1,\"cells\":{\"A1\":{\"kind\":\"label\",\"text\":\"Parameter\"},\"B1\":{\"kind\":\"label\",\"text\":\"Value\"},\"A2\":{\"kind\":\"label\",\"text\":\"Temperature\"},\"B2\":{\"kind\":\"binding\",\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"variableName\":\"temperature\",\"valueField\":\"value\"},\"C2\":{\"kind\":\"formula\",\"expr\":\"=B2*1.8+32\"}}}"
+  "sheetConfigJson": "{\"rows\":6,\"cols\":4,\"frozenRows\":1,\"cells\":{\"A1\":{\"kind\":\"label\",\"text\":\"Parameter\"},\"B1\":{\"kind\":\"label\",\"text\":\"Value\"},\"A2\":{\"kind\":\"label\",\"text\":\"Temperature\"},\"B2\":{\"kind\":\"binding\",\"ref\":\"root.platform.devices.demo-sensor-01/temperature/value\"},\"C2\":{\"kind\":\"formula\",\"expr\":\"=B2*1.8+32\"}}}"
 }
 ```
 
@@ -212,7 +212,7 @@ Cell kinds:
 | `input` | `default`, `validation`, `format`, `style` | Operator input |
 | `formula` | `expr`, `format`, `style` | Formula |
 | `readonly` | `default`, `format`, `style` | Non-editable value |
-| `binding` | `objectPath`, `variableName`, `valueField`, `historyMinutes?` | Live snapshot or historian (see below) |
+| `binding` | `ref` (preferred) or `objectPath` + `variableName` + `valueField`, `historyMinutes?` | Live snapshot or historian (see below) |
 
 ### Binding + historian (`historyMinutes`)
 

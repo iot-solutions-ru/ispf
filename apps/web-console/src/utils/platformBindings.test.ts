@@ -10,7 +10,7 @@ describe("platformBindings", () => {
   it("lists 20 functions matching PlatformBindingRegistry", () => {
     expect(PLATFORM_BINDING_ENTRIES).toHaveLength(20);
     expect(PLATFORM_BINDING_NAMES).toContain("counterRate");
-    expect(PLATFORM_BINDING_NAMES).toContain("callFunctionAt");
+    expect(PLATFORM_BINDING_NAMES).toContain("call");
     expect(PLATFORM_BINDING_NAMES).toContain("sumRecordField");
   });
 
@@ -28,35 +28,35 @@ describe("platformBindings", () => {
     expect(buildPlatformBindingExpression(entry!, values)).toBe("movingAvg(temperature, 60)");
   });
 
-  it("builds refAt with object path", () => {
-    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "refAt");
+  it("builds readRef with object path", () => {
+    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "readRef");
     expect(entry).toBeDefined();
     const values = defaultParamValues(entry!, {
       objectPath: "root.platform.devices.pump-01",
       variableNames: ["pressure"],
     });
     expect(buildPlatformBindingExpression(entry!, values)).toBe(
-      'refAt("root.platform.devices.pump-01", pressure)'
+      'read("root.platform.devices.pump-01/pressure")'
     );
   });
 
-  it("builds rollingAvg analytics helper for chart bindings", () => {
-    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "rollingAvg");
+  it("builds avg analytics helper for chart bindings", () => {
+    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "avgHistorian");
     expect(entry).toBeDefined();
     const values = defaultParamValues(entry!, {
       variableNames: ["temperature"],
     });
-    expect(buildPlatformBindingExpression(entry!, values)).toBe("rollingAvg('temperature', '5m')");
+    expect(buildPlatformBindingExpression(entry!, values)).toBe("avg(@/temperature, 5m)");
   });
 
-  it("omits optional callFunction input", () => {
-    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "callFunction");
+  it("omits optional callRef input", () => {
+    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "callRef");
     expect(entry).toBeDefined();
     expect(
       buildPlatformBindingExpression(entry!, {
         function: "scaleValue",
         input: "",
       })
-    ).toBe("callFunction(scaleValue)");
+    ).toBe("call(@/fn/scaleValue)");
   });
 });

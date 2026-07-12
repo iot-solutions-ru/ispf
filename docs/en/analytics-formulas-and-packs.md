@@ -14,7 +14,7 @@ How to create, reuse, and distribute historian computations beyond a single bind
 
 | Tier | What it is | Who creates | Example |
 |------|------------|-------------|---------|
-| **A — Built-in** | Core helpers + CEL `hist.*` + open packs on classpath | Platform team | `rollingAvg`, `hist.avg`, `energyDelta` (core-ext) |
+| **A — Built-in** | Core helpers + historian aggregates + open packs on classpath | Platform team | `avg(ref, 5m)`, `energyDelta` (core-ext) |
 | **B — User formula** | Parameterized expression template | Operator / solution dev | `rateOfChange({{levelPath}}, 1h) * {{tankArea}}` |
 | **C — Extension pack** | JAR with `AnalyticsFunctionProvider` SPI | Partner / ISV | `mes-oee-pack`, `water-quality-pack` |
 
@@ -30,32 +30,37 @@ Catalog (browse)  →  parameterize  →  binding rule on device  →  live vari
 
 ### Helper syntax (historian)
 
+All sources use **PlatformRef** slash addresses ([0043-unified-platform-ref](decisions/0043-unified-platform-ref.md)).
+
 | Function | Example | Notes |
 |----------|---------|-------|
-| `rollingAvg` | `rollingAvg(root.devices.pump01.temperature, 5m)` | Windowed average |
-| `rateOfChange` | `rateOfChange(path.level, 1h)` | Delta first→last bucket avg |
-| `oee` | `oee('path', 'avail', 'perf', 'qual', 8h)` | OEE % from four inputs |
-| `totalizer` | `totalizer(path.energy, 1h)` | Sum over window |
-| `min` / `max` / `last` | `min(path.var, 5m)` | Bucket aggregates |
+| `avg` | `avg(root.devices.pump01/temperature, 5m)` | Windowed average |
+| `min` / `max` / `last` / `sum` | `min(root.devices.pump01/temperature, 1h)` | Bucket aggregates |
+| `live` | `live(@/temperature)` | Current live value |
+| `rollingAvg` | `avg(root.devices.pump01/temperature, 5m)` | Alias of `avg` |
+| `rateOfChange` | `rateOfChange(root.devices.pump01/level, 1h)` | Delta first→last bucket |
+| `oee` | `oee('root.../line-01', 'avail', 'perf', 'qual', 8h)` | OEE % from four inputs |
+| `totalizer` | `totalizer(root.devices.pump01/energy, 1h)` | Sum over window |
 
 ### CEL + historian (`helper: cel`)
 
 ```text
-hist.avg('root.devices.pump01', 'temperature', '5m')
-hist.min('root.devices.pump01', 'temperature', 'value', '1h')
-(hist.avg('…sensor-a', 'temperature', '5m') + hist.avg('…sensor-b', 'temperature', '5m')) / 2.0
+avg(root.devices.pump01/temperature, 5m)
+min(root.devices.pump01/temperature/value, 1h)
+(avg(root.devices.sensor-a/temperature, 5m) + avg(root.devices.sensor-b/temperature, 5m)) / 2.0
+live(@/temperature)
 ```
 
-Available: `hist.avg`, `hist.min`, `hist.max`, `hist.sum`, `hist.last`, `hist.live`.
+Available aggregates: `avg`, `min`, `max`, `sum`, `last`, `live`.
 
-Use **double literals** in CEL (`2.0`, not `2`) when mixing with `hist.*`.
+Use **double literals** in CEL (`2.0`, not `2`) when mixing with historian expansions.
 
 ### Discovery
 
 - **Web console:** Object inspector → **Computations** → **+ Rule** → **Historian** → expression editor → **function catalog** (search, filter by kind/tag/pack).
 - **API:** `GET /api/v1/platform/analytics/catalog` and `GET .../catalog/{functionId}`.
 
-You **cannot** add a new `hist.xyz` from the UI — `hist.*` macros are registered server-side.
+You **cannot** add a new aggregate primitive from the UI — historian functions are registered server-side.
 
 ---
 
@@ -68,9 +73,9 @@ Tier B is a **reusable template**, not a new runtime primitive. It expands to Ti
 Parameters use double braces:
 
 ```text
-rollingAvg({{sourcePath}}, {{window}})
-rateOfChange({{levelPath}}, 1h) * {{tankArea}}
-hist.avg('{{devicePath}}', '{{variable}}', '{{window}}')
+avg({{sourceRef}}, {{window}})
+rateOfChange({{levelRef}}, 1h) * {{tankArea}}
+avg({{deviceRef}}/{{variable}}, {{window}})
 ```
 
 Names must match `[a-zA-Z][a-zA-Z0-9_]*`. Server and UI auto-detect parameters from the expression.
@@ -308,7 +313,7 @@ Activate body: `{ "activationCode": "..." }` — `installationId` added server-s
 
 1. Implement SPI pack; test against `ispf-analytics-api`.
 2. Build signed `analytics-pack.json` + JAR; run license builder ([commercial-licensing](commercial-licensing.md)).
-3. Publish listing on [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) with `artifactKind: analytics-pack`.
+3. Publish listing on [ispf-marketplace](https://github.com/your-org/ispf-marketplace) with `artifactKind: analytics-pack`.
 4. Interop CI: functions appear in catalog after install on lab ISPF.
 5. Partner program: OEM tier for marketplace revenue share ([partner-program](partner-program.md)).
 

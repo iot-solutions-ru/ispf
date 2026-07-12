@@ -45,7 +45,7 @@ public final class HistorianComputationTestSupport {
                 bindingRulesService,
                 devicePath,
                 ruleId,
-                "rollingAvg",
+                "avg",
                 sourcePath,
                 sourceVariable,
                 outputVariable,
@@ -80,7 +80,7 @@ public final class HistorianComputationTestSupport {
                         false
                 ),
                 "",
-                helper + "(" + sourcePath + "." + sourceVariable + ", " + windowBucket + ")",
+                helper + "(" + sourcePath + "/" + sourceVariable + ", " + windowBucket + ")",
                 new BindingTarget("variable", outputVariable, "value", null, null),
                 windowBucket,
                 null

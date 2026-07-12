@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $CatalogDir = Join-Path $RepoRoot "examples\marketplace-catalog"
-$Remote = "root@ispf-marketplace.iot-solutions.ru"
+$Remote = "deploy-user@marketplace.example.invalid"
 $RemoteApp = "/opt/ispf-marketplace"
 $RemoteSeed = "$RemoteApp/seed/catalog"
 $PatchScript = Join-Path $PSScriptRoot "patch-marketplace-free-download-signing.sh"

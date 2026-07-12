@@ -1,0 +1,11 @@
+# MQTT broker + emqtt publishers on loadgen host.
+name: ispf-loadgen
+
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "127.0.0.1:1883:1883"
+      - "198.51.100.10:1883:1883"
+    volumes:
+      - ./mosquitto/lab-loadgen.conf:/mosquitto/config/mosquitto.conf:ro

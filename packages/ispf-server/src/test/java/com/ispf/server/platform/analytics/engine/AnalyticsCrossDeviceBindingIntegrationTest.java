@@ -97,7 +97,7 @@ class AnalyticsCrossDeviceBindingIntegrationTest {
                         10,
                         BindingActivators.onRemoteChange(SENSOR, "derivedValue"),
                         "",
-                        "refAt(\"" + SENSOR + "\", derivedValue)",
+                        "read(\"" + SENSOR + "/derivedValue\")",
                         new BindingTarget("sensorDerived", "value")
                 )
         ));

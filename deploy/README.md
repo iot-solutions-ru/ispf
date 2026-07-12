@@ -4,6 +4,8 @@
 
 **Local only (`deploy/local/`, gitignored):** lab cluster, load/stress gates, SSH helpers, soak tests, ad-hoc debug — see [`local/README.example.md`](local/README.example.md).
 
+**Documented lab templates (in git):** [`examples/lab-mqtt-historian-stress/`](../examples/lab-mqtt-historian-stress/) — anonymized compose/env/scripts for MQTT historian benchmarks. Copy to `~/ispf` on lab hosts and fill real hosts in untracked `deploy/lab-*.env`.
+
 ## Universal entry points
 
 | Script | Purpose |

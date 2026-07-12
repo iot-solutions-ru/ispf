@@ -40,7 +40,7 @@ Output: percent change between first and last bucket average in the window (e.g.
 
 ## Publish to remote marketplace
 
-On [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) host:
+On [ispf-marketplace](https://github.com/your-org/ispf-marketplace) host:
 
 1. Copy `analytics-pack-demo-1.0.0.zip` to artifacts store as `ispf-analytics-kpi-demo__1.0.0.zip`
 2. Register `listing.manifest.json` in catalog index

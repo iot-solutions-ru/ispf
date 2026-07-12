@@ -6,7 +6,35 @@ A **binding rule** is a declarative rule for computing variable values on an obj
 
 Rules are stored in system variable `@bindingRules` (JSON array, reserved). Runtime — **`BindingRuleEngine`** (unified binding engine since v0.8.0).
 
-See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md).
+See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md), ADR [0043-unified-platform-ref](decisions/0043-unified-platform-ref.md).
+
+---
+
+## PlatformRef (addresses)
+
+All references to variables, functions, events, and historian tags use one slash grammar (same as REST `path` + `name` + `field`):
+
+| Kind | Form | Example |
+|------|------|---------|
+| variable | `<object>/<name>[/<field>]` | `@/temperature`, `root.platform.devices.a/temperature/value` |
+| function | `<object>/fn/<name>` | `@/fn/calculate` |
+| event | `<object>/evt/<name>` | `@/evt/alarmRaised` |
+| tag | `<object>/tag/<ruleId>` | `root.platform.devices.a/tag/avg-temp-5m` |
+
+`@` = object where the rule runs.
+
+| Operation | Example | Purpose |
+|-----------|---------|---------|
+| `read(ref)` | `read(root.platform.devices.a/temperature)` | Live variable field |
+| `call(ref[, inputRef])` | `call(@/fn/ack, @/payload)` | Invoke function |
+| `fire(ref)` | `fire(@/evt/overload)` | Publish event |
+| Historian | `avg(root.../temperature, 5m)`, `live(@/temperature)` | Windowed aggregate / live sample |
+
+**JSON configs** (activators, widgets, mimic, script steps): canonical field **`ref`** (slash string):
+
+```json
+{ "ref": "root.platform.devices.virt-cluster.dev-03/sineWave" }
+```
 
 ---
 
@@ -21,13 +49,15 @@ See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [001
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      { "objectPath": "root.platform.devices.virt-cluster.dev-03", "variableName": "sineWave" }
+      {
+        "ref": "root.platform.devices.virt-cluster.dev-03/sineWave"
+      }
     ],
-    "onEvent": null,
+    "onEventRef": null,
     "periodicMs": 0
   },
   "condition": "",
-  "expression": "refAt(\"root.platform.devices.virt-cluster.dev-03\", sineWave)",
+  "expression": "read(root.platform.devices.virt-cluster.dev-03/sineWave)",
   "target": { "variableName": "member3Sine", "field": "value" }
 }
 ```
@@ -35,7 +65,8 @@ See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [001
 | Field | Purpose |
 |------|------------|
 | `activators.onStartup` | Recalculate on server start / model attach |
-| `activators.onVariableChange` | List of `{ objectPath, variableName }`; `"self"` + `"*"` = any local variable |
+| `activators.onVariableChange` | List of variable refs; `"ref": "@/*"` or legacy `"self"` + `"*"` = any local variable |
+| `activators.onEventRef` | Full event ref, e.g. `@/evt/alarmRaised` or cross-object `root.../evt/overload` |
 | `activators.periodicMs` | Periodic recalculation (0 = off); indexed in `platform_binding_periodic_rules`, wake by `next_run_at` |
 | `condition` | CEL; empty = always |
 | `expression` | CEL or single platform function |
@@ -46,7 +77,7 @@ See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [001
 
 ### Historian rules (`kind: historian`)
 
-Same `@bindingRules` array; multiple rules per device; arbitrary output variable names. Tag catalog path = `objectPath#ruleId`.
+Same `@bindingRules` array; multiple rules per device; arbitrary output variable names. Tag catalog path = `objectPath/tag/ruleId`.
 
 **Recipes (rolling avg, OEE, tag chains, CEL):** [analytics-historian-cookbook](analytics-historian-cookbook.md)
 
@@ -69,13 +100,13 @@ Rules with `periodicMs > 0` are parsed into JDBC index `platform_binding_periodi
 
 ### Target kinds (platform rule)
 
-Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`** (backward compatible).
+Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`**.
 
 | `kind` | Fields | Purpose |
 |--------|------|------------|
-| `variable` | `variableName`, `field` | As today — write to object variable |
+| `variable` | `variableName`, `field` (or `ref` for cross-object write — future) | Write to object variable |
 | `context` | `path` (dot-notation) | Write to `@dashboardContext` on `DASHBOARD` object |
-| `event` | `eventName` | Publish platform event; payload from `expression` |
+| `event` | `eventName` or `ref` | Publish platform event; payload from `expression` |
 
 Example dashboard rule (planned):
 
@@ -91,24 +122,23 @@ Example dashboard rule (planned):
 
 Activator **`onContextChange`** — recalculate when `@dashboardContext` changes. Full spec: [platform-logic](platform-logic.md).
 
-**Cross-object:** activator on remote path + `refAt("path", var)` in expression. On remote variable change (including driver telemetry) `BindingPropagationListener` recalculates rules on consumer objects.
+**Cross-object:** activator with remote `ref` + `read(remote/ref)` or `scale(remote/ref, …)` in expression. On remote variable change (including driver telemetry) `BindingPropagationListener` recalculates rules on consumer objects.
 
-**Default activators** (if not set): `refAt` in expression → automatic remote activators; otherwise local `self:*`.
+**Default activators** (if not set): remote refs in expression → automatic remote activators; otherwise local `self:*`.
 
 ---
 
 ## Expressions (`expression`)
 
-Two kinds (as before, but inside `rule.expression`):
-
 | Kind | Example |
 |-----|--------|
-| **CEL** | `self.temperature.value + 1.0` |
-| **Platform binding** | `counterRate(ifInOctets)`, `hysteresis(temperature, 80, 70)`, `refAt("root...dev-01", sineWave)` |
+| **CEL** | `read(@/temperature) + 1.0` or CEL `self.temperature.value + 1.0` on current object |
+| **Platform binding** | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)` |
+| **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
 
 Validation: `POST /api/v1/expressions/validate` or Web Console **Validate**.
 
-Stateful bindings (`counterRate`, `hysteresis`, …) — state in `@bindingState` (see prior behavior).
+Stateful bindings (`counterRate`, `hysteresis`, …) — state in `@bindingState`.
 
 ---
 
@@ -120,7 +150,7 @@ PUT  /api/v1/objects/by-path/binding-rules?path={objectPath}
 DELETE /api/v1/objects/by-path/binding-rules/{ruleId}?path={objectPath}
 ```
 
-Agent tool: `create_binding_rule` (path, id, targetVariable, expression, RemoteObjectPath?, RemoteVariableName?, condition?, onStartup?, order?).
+Agent tool: `create_binding_rule` — use slash refs in expression and optional `ref` on activators.
 
 ---
 
@@ -132,29 +162,9 @@ In models — `ModelBindingRule` (full schema or `ModelBindingRule.of(id, target
 
 ---
 
-## Upgrade from v0.7.x (legacy `bindingExpression`)
-
-`bindingExpression` on variable and `binding_expr` column **removed** (0010, v0.8.0). Bindings — only `@bindingRules`.
-
-**Prod** (`ispf.iot-solutions.ru`): PostgreSQL in Docker (`ispf-postgres`), not H2. **Local dev:** H2 file or Docker Compose PostgreSQL.
-
-```bash
-# Prod VPS (Docker postgres)
-systemctl stop ispf-server
-docker exec ispf-postgres psql -U ispf -d postgres -c 'DROP DATABASE IF EXISTS ispf;' -c 'CREATE DATABASE ispf OWNER ispf;'
-systemctl start ispf-server
-
-# Local H2: delete ./data/ispf-local.mv.db
-# Local/dev compose: docker compose exec postgres psql ...
-```
-
-Existing DB without recreate: Flyway `V41__drop_binding_expr.sql` drops the column; on **V1 checksum mismatch** recreate is required (see [deployment](deployment.md)).
-
----
-
 ## UI
 
-Web Console → Object inspector → **Computations** tab (reactive + historian rules). See [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md).
+Web Console → Object inspector → **Computations** tab (reactive + historian rules). Expression editor includes **PlatformRef picker** and function catalog. See [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md).
 
 ---
 

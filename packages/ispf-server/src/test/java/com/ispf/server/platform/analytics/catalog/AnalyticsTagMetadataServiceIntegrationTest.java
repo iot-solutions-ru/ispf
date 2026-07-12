@@ -59,7 +59,7 @@ class AnalyticsTagMetadataServiceIntegrationTest {
 
         AnalyticsTagDefinition tag = new AnalyticsTagDefinition(
                 HistorianTagPaths.encode(DEVICE, "avg-temp"),
-                "rollingAvg",
+                "avg",
                 List.of(new AnalyticsSourceRef(DEVICE, "temperature", "value")),
                 "5m",
                 List.of("5m"),

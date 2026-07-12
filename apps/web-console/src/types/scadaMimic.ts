@@ -16,6 +16,8 @@ export interface MimicLayer {
 }
 
 export interface MimicBinding {
+  /** Canonical PlatformRef slash address (dual-read with objectPath + variableName). */
+  ref?: string;
   objectPath?: string;
   selectionKey?: string;
   variableName: string;

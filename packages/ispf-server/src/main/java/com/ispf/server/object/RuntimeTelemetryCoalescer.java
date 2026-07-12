@@ -1,6 +1,8 @@
 package com.ispf.server.object;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataRecordValues;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
@@ -104,7 +106,8 @@ public class RuntimeTelemetryCoalescer {
             publishIfChanged(path, variableName, value, coalesceKey, observedAt);
             return;
         }
-        if (valuesEqual(lastPublished.get(coalesceKey), value)) {
+        if (policyService.historySampleMode(path, variableName) == HistorySampleMode.CHANGES_ONLY
+                && DataRecordValues.equal(lastPublished.get(coalesceKey), value)) {
             return;
         }
         if (!properties.isEnabled()) {
@@ -227,9 +230,12 @@ public class RuntimeTelemetryCoalescer {
             Instant observedAt
     ) {
         DataRecord last = lastPublished.get(coalesceKey);
-        if (valuesEqual(last, value)) {
+        if (policyService.historySampleMode(path, variableName) == HistorySampleMode.CHANGES_ONLY
+                && DataRecordValues.equal(last, value)) {
             return;
         }
+        DataRecord previous = policyService.includePreviousValueInEvent(path, variableName) ? last : null;
+        DataRecord eventValue = policyService.includePreviousValueInEvent(path, variableName) ? value : null;
         lastPublished.put(coalesceKey, value);
         if (gatewayIngressDispatch.tryScheduleDispatch(path, variableName, value)) {
             return;
@@ -237,7 +243,7 @@ public class RuntimeTelemetryCoalescer {
         if (historianFastPath.tryPublish(path, variableName, value, observedAt)) {
             return;
         }
-        publicationService.publishVariableChange(path, variableName, observedAt);
+        publicationService.publishVariableChange(path, variableName, observedAt, eventValue, previous);
     }
 
     private String resolveCoalesceKey(String path, String variableName, DataRecord value) {

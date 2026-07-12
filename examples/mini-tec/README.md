@@ -67,13 +67,13 @@ Content-Type: application/json
 
 ## Синхронизация фикстур с prod (VPS)
 
-После правок на `ispf.iot-solutions.ru` выгрузите эталон обратно в репозиторий:
+После правок на `ispf.example.invalid` выгрузите эталон обратно в репозиторий:
 
 ```bash
 # на VPS
 bash /opt/ispf/bin/export-minitec-fixtures.sh /tmp/minitec-fixtures-export
 
-# локально: scp -r root@ispf...:/tmp/minitec-fixtures-export ./examples/mini-tec/vps-export
+# locally: scp -r deploy-user@production-host:/tmp/minitec-fixtures-export ./examples/mini-tec/vps-export
 # скопировать dashboards → packages/ispf-server/src/main/resources/bootstrap/mini-tec/dashboards/
 # mimics → bootstrap/mini-tec-*.json, bundle → examples/mini-tec/bundle.json
 ```

@@ -113,7 +113,7 @@ POST /api/v1/objects/by-path/functions/invoke?path=root.platform.devices.demo-se
 Привязка к тому же объекту:
 
 ```
-callFunction(acknowledgeAlarm)
+call(@/fn/acknowledgeAlarm)
 ```
 
 ### 1.2 Pulse commands (`sourceType: "pulse"`)
@@ -247,7 +247,7 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 }
 ```
 
-Часто вызывается из binding: `callFunction(dispatchTelemetry, lastIngress)`.
+Часто вызывается из binding: `call(@/fn/dispatchTelemetry, @/lastIngress)`.
 
 ---
 
@@ -618,7 +618,7 @@ public class ThresholdFn implements ObjectJavaFunction {
 | Сложная логика | Удобно | `when` + шаги |
 | Чтение переменных дерева | Через input или script | `readVariable` |
 
-Для доступа к переменному объекту без передачи всего лишь введите **script** или привязку `callFunction`.
+Для доступа к переменным объекта без передачи всего во входе используйте **script** или `call(@/fn/...)` в binding.
 
 ---
 
@@ -651,16 +651,17 @@ POST /api/v1/objects/by-path/functions/invoke?path={objectPath}&name={functionNa
 На **текущем** объекте:
 
 ```
-callFunction(myFn)
-callFunction(myFn, sourceVariable)
-callFunction(myFn, sourceVariable, fieldName)
+call(@/fn/myFn)
+call(@/fn/myFn, @/sourceVar)
+read(@/payload/fieldName)
 ```
 
-С **другом** объектом:
+С **другого** объекта:
 
 ```
-callFunctionAt("root.platform.devices.test", myFn)
-callFunctionAt("root.platform.devices.test", myFn, payloadVar)
+call(root.platform.devices.test/fn/myFn)
+call(root.platform.devices.test/fn/myFn, @/payloadVar)
+read(root.platform.devices.test/temperature)
 ```
 
 ### 5.3 Задача службы рабочего процесса

@@ -148,7 +148,7 @@ FEATURE_INDEX = [
         "id": "bindings",
         "title": "CEL bindings",
         "description": "Variable bindings, platform functions, binding rules",
-        "keywords": "binding cel scale counterRate refAt",
+        "keywords": "binding cel scale counterRate PlatformRef read call fire",
         "docRef": "BINDINGS.md",
     },
     {

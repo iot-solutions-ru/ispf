@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 /**
  * Routes MQTT ingress on a gateway object to child sensor devices.
- * Triggered from model binding: {@code callFunction(dispatchTelemetry, lastIngress)}
+ * Triggered from model binding: {@code call(@/fn/dispatchTelemetry, @/lastIngress)}
  * or {@link MqttGatewayIngressDispatchService} (parallel per-topic FIFO workers).
  */
 @Component

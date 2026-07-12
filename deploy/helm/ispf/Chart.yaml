@@ -9,10 +9,10 @@ keywords:
   - scada
   - mes
   - iiot
-home: https://github.com/Michaael/IoT-Solutions-Platform-1
+home: https://github.com/your-org/IoT-Solutions-Platform-1
 maintainers:
   - name: IoT Solutions
-    url: https://iot-solutions.ru
+    url: https://vendor.example.invalid
 annotations:
   ispf.io/bl: BL-186
   ispf.io/status: chart-complete

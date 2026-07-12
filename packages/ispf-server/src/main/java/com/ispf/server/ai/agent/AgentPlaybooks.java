@@ -226,7 +226,7 @@ public final class AgentPlaybooks {
                 | ObjectType | Catalog / parent | Create autonomously when TZ needs it |
                 |------------|------------------|--------------------------------------|
                 | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_relative_blueprint + configure_driver |
-                | CUSTOM | root.platform.devices.* or instances | create_object type=CUSTOM — hub, aggregation, refAt bindings |
+                | CUSTOM | root.platform.devices.* or instances | create_object type=CUSTOM — hub, aggregation, read(...) bindings |
                 | DASHBOARD | root.platform.dashboards | create_object + set_dashboard_layout template= |
                 | MIMIC | root.platform.mimics | create_object + save_mimic_diagram |
                 | ALERT | root.platform.alert-rules | configure_alert (or create_object ALERT) |
@@ -379,23 +379,23 @@ public final class AgentPlaybooks {
                 + VIRT_CLUSTER_HUB
                 + " id=member1-sine targetVariable=member1Sine remoteObjectPath="
                 + VIRT_CLUSTER_DEV_01
-                + " remoteVariableName=sineWave expression=refAt(\""
+                + " remoteVariableName=sineWave expression=read(\""
                 + VIRT_CLUSTER_DEV_01
-                + "\", sineWave)\n"
+                + "/sineWave\")\n"
                 + "   create_binding_rule path="
                 + VIRT_CLUSTER_HUB
                 + " id=member2-sine targetVariable=member2Sine remoteObjectPath="
                 + VIRT_CLUSTER_DEV_02
-                + " remoteVariableName=sineWave expression=refAt(\""
+                + " remoteVariableName=sineWave expression=read(\""
                 + VIRT_CLUSTER_DEV_02
-                + "\", sineWave)\n"
+                + "/sineWave\")\n"
                 + "   create_binding_rule path="
                 + VIRT_CLUSTER_HUB
                 + " id=member3-sine targetVariable=member3Sine remoteObjectPath="
                 + VIRT_CLUSTER_DEV_03
-                + " remoteVariableName=sineWave expression=refAt(\""
+                + " remoteVariableName=sineWave expression=read(\""
                 + VIRT_CLUSTER_DEV_03
-                + "\", sineWave)\n"
+                + "/sineWave\")\n"
                 + "   create_binding_rule path="
                 + VIRT_CLUSTER_HUB
                 + " id=cluster-error targetVariable=clusterError expression="
@@ -478,7 +478,7 @@ public final class AgentPlaybooks {
                 + "2. **Model strategy**: выбери INSTANCE vs RELATIVE vs ABSOLUTE "
                 + "(см. get_automation_schema topic=instanceTypes).\n"
                 + "3. **Source layer**: устройства/драйверы/телеметрия (DEVICE, configure_driver, list_variables).\n"
-                + "4. **Aggregation layer**: CUSTOM hub + create_variable + create_binding_rule (refAt/CEL).\n"
+                + "4. **Aggregation layer**: CUSTOM hub + create_variable + create_binding_rule (read/CEL).\n"
                 + "5. **Alert layer**: configure_alert на hub/device переменных.\n"
                 + "6. **Correlation layer**: configure_correlator для pattern/action цепочек.\n"
                 + "7. **Operator layer**: DASHBOARD + MIMIC + REPORT + configure_operator_ui.\n"
@@ -673,7 +673,7 @@ public final class AgentPlaybooks {
                 
                 **Devices/drivers:** configure_driver, driver_control, configure_variable_history, create_virtual_device
                 
-                **Bindings/rules:** create_binding_rule, list_binding_rules, configure_platform_context_rule, create_binding_rule refAt/CEL
+                **Bindings/rules:** create_binding_rule, list_binding_rules, configure_platform_context_rule, create_binding_rule read/CEL
                 
                 **Dashboards/HMI:** get_dashboard_layout, set_dashboard_layout template=, add_dashboard_widget, get_widget_catalog
                 configure_operator_ui, configure_platform_context_rule (drill-down, visibility)
@@ -767,13 +767,13 @@ public final class AgentPlaybooks {
                 ### Dashboard visibility / drill-down
                 - configure_platform_context_rule on DASHBOARD object
                 - targetKind=context contextPath=params.mode (or selection.*)
-                - expression: CEL string result; condition uses context.selection.* and refAt(path,var)
+                - expression: CEL string result; condition uses context.selection.* and read(path/var)
                 - onContextChange=true (default)
                 
                 ### Variable binding (devices, CUSTOM hubs)
                 - create_binding_rule path=... targetKind=variable targetVariable=... expression=...
-                - Cross-device: remoteObjectPath + remoteVariableName activators
-                - refAt(otherPath, varName) in expression for computed values
+                - Cross-device: activator `{ "ref": "remotePath/variableName" }` or remoteObjectPath + remoteVariableName
+                - read(otherPath/varName) in expression for computed values
                 
                 ### Event side-effects
                 - create_binding_rule targetKind=event eventName=... expression=...

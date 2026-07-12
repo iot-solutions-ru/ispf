@@ -3,6 +3,7 @@ import { resolveWidgetPath } from "../components/dashboard/dashboardUtils";
 import { readFieldValue } from "../types/dashboard";
 import type { VariableDto } from "../types";
 import type { MimicBinding, MimicConnection, MimicElement } from "../types/scadaMimic";
+import { fieldsFromRef } from "../utils/platformRef";
 import { asBool, asNum } from "./utils";
 
 export interface ResolvedBindingValues {
@@ -64,25 +65,39 @@ function addPath(
   }
 }
 
-export function resolveBindingValue(
-  binding: MimicBinding | undefined,
-  session: Pick<DashboardSession, "selection" | "params">,
-  variablesByPath: Record<string, VariableDto[] | undefined>
-): unknown {
-  if (!binding?.variableName) return undefined;
+function bindingTarget(
+  binding: MimicBinding,
+  session: Pick<DashboardSession, "selection" | "params">
+): { objectPath?: string; variableName?: string; valueField: string } {
+  const fields = binding.ref ? fieldsFromRef(binding.ref) : null;
+  const variableName = fields?.name ?? binding.variableName;
+  const valueField = fields?.field ?? binding.valueField ?? "value";
+  const pathHint = fields?.objectPath && fields.objectPath !== "self"
+    ? fields.objectPath
+    : binding.objectPath;
   const objectPath = resolveWidgetPath(
-    binding.objectPath,
+    pathHint,
     binding.selectionKey,
     session.selection,
     undefined,
     session.params
   );
-  if (!objectPath) return undefined;
-  const variables = variablesByPath[objectPath];
-  const variable = variables?.find((v) => v.name === binding.variableName);
+  return { objectPath, variableName, valueField };
+}
+
+export function resolveBindingValue(
+  binding: MimicBinding | undefined,
+  session: Pick<DashboardSession, "selection" | "params">,
+  variablesByPath: Record<string, VariableDto[] | undefined>
+): unknown {
+  if (!binding?.variableName && !binding?.ref) return undefined;
+  const target = bindingTarget(binding, session);
+  if (!target.objectPath || !target.variableName) return undefined;
+  const variables = variablesByPath[target.objectPath];
+  const variable = variables?.find((v) => v.name === target.variableName);
   const row = variable?.value?.rows?.[0];
   if (!row) return undefined;
-  const raw = readFieldValue(row, binding.valueField ?? "value");
+  const raw = readFieldValue(row, target.valueField);
   return transformBindingValue(raw, binding.transform);
 }
 
@@ -91,17 +106,12 @@ export function resolveBindingQuality(
   session: Pick<DashboardSession, "selection" | "params">,
   variablesByPath: Record<string, VariableDto[] | undefined>
 ): unknown {
-  if (!binding?.variableName || !binding.qualityField?.trim()) return undefined;
-  const objectPath = resolveWidgetPath(
-    binding.objectPath,
-    binding.selectionKey,
-    session.selection,
-    undefined,
-    session.params
-  );
-  if (!objectPath) return undefined;
-  const variables = variablesByPath[objectPath];
-  const variable = variables?.find((v) => v.name === binding.variableName);
+  if (!binding?.qualityField?.trim()) return undefined;
+  if (!binding?.variableName && !binding?.ref) return undefined;
+  const target = bindingTarget(binding, session);
+  if (!target.objectPath || !target.variableName) return undefined;
+  const variables = variablesByPath[target.objectPath];
+  const variable = variables?.find((v) => v.name === target.variableName);
   const row = variable?.value?.rows?.[0];
   if (!row) return undefined;
   return readFieldValue(row, binding.qualityField.trim());

@@ -76,7 +76,7 @@ counterRate(ifInOctets)   → variable ifInOctetsRate
 **Cross-object** (on a hub object):
 
 ```cel
-refAt("root.platform.devices.snmp-router-01", ifInOctetsRate)   → routerNetDown
+read(root.platform.devices.snmp-router-01/ifInOctetsRate)   → routerNetDown
 ```
 
 Chain on the **owner** replica where the source device lives:
@@ -198,7 +198,7 @@ On the hub (cross-object):
 ```json
 {
   "targetVariable": "routerNetDown",
-  "expression": "refAt(\"root.platform.devices.snmp-router-01\", ifInOctetsRate)"
+  "expression": "read(root.platform.devices.snmp-router-01/ifInOctetsRate)"
 }
 ```
 
@@ -259,7 +259,7 @@ Per-device override (ingress only, **not** NATS):
 
 ```json
 {
-  "host": "192.168.1.1",
+  "host": "10.0.0.1",
   "community": "public",
   "telemetryCoalesceMs": 1000
 }
@@ -494,7 +494,7 @@ Before **each** isolated load/functional scenario on the lab cluster: full wipe 
 
 ### Lab BL-210 pipeline (after cluster is UP)
 
-From workstation (SSH key — `ssh ispf-lab`, see [lab-event-journal-stress](lab-event-journal-stress.md#workstation-ssh-one-time)):
+From workstation (SSH alias `lab-host` in `~/.ssh/config`; see [lab-event-journal-stress](lab-event-journal-stress.md#workstation-ssh-one-time)):
 
 ```powershell
 python deploy/run_lab_bl210_launch.py --force   # full reset + remote nohup
@@ -538,7 +538,7 @@ Internet → nginx :8080 → replica-1 (unified / role all, :8081)
 | Prod-idle env | [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) + [`vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) |
 | Driver tuning | [`deploy/vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) |
 
-Verify: `curl -sf https://ispf.iot-solutions.ru/api/v1/info` → `clusterEnabled=false`, `replicaRole=all`.
+Verify: `curl -sf ${ISPF_BASE_URL:-https://ispf.example.invalid}/api/v1/info` → `clusterEnabled=false`, `replicaRole=all`.
 
 **Multi-replica** (lab / HA): [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), `vps-cluster-rollout.sh`, `vps-cluster-verify.sh`.
 

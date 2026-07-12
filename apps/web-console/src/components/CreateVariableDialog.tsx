@@ -32,6 +32,10 @@ export default function CreateVariableDialog({
   const [history, setHistory] = useState<VariableHistoryState>({
     historyEnabled: false,
     historyRetentionDays: null,
+    telemetryPublishMode: "INHERIT",
+    historySampleMode: "CHANGES_ONLY",
+    includePreviousValueInEvent: false,
+    storageMode: "PERSISTENT",
   });
   const [setInitialValue, setSetInitialValue] = useState(false);
   const nameValid = isTechnicalIdentifier(name, "code");

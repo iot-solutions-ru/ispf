@@ -138,7 +138,7 @@ CRUD-пользователи — через `POST/PUT/DELETE /api/v1/security/u
 
 ### Вычисляемые привязки (правила связывания)
 
-Правила на объекте в `@bindingRules` (см. [bindings](bindings.md)). Время выполнения — `BindingRuleEngine`; перекрестный объект через активаторы и `refAt`.
+Правила на объекте в `@bindingRules` (см. [bindings](bindings.md)). Runtime — `BindingRuleEngine`; cross-object через activators и `read(remote/ref)`.
 
 Краткий перечень креплений платформы:
 

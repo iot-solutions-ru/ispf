@@ -1,11 +1,11 @@
 package com.ispf.analytics.engine;
 
 /**
- * Composite analytics tag identity: {@code objectPath#ruleId} (ADR-0041).
+ * Composite analytics tag identity: {@code objectPath/tag/ruleId} (ADR-0041 / ADR-0043).
  */
 public final class HistorianTagPaths {
 
-    public static final char SEPARATOR = '#';
+    public static final String TAG_SEGMENT = "/tag/";
 
     private HistorianTagPaths() {
     }
@@ -17,24 +17,24 @@ public final class HistorianTagPaths {
         if (ruleId == null || ruleId.isBlank()) {
             throw new IllegalArgumentException("ruleId is required");
         }
-        if (objectPath.indexOf(SEPARATOR) >= 0) {
-            throw new IllegalArgumentException("objectPath must not contain '#': " + objectPath);
+        if (objectPath.contains(TAG_SEGMENT)) {
+            throw new IllegalArgumentException("objectPath must not contain '/tag/': " + objectPath);
         }
-        if (ruleId.indexOf(SEPARATOR) >= 0) {
-            throw new IllegalArgumentException("ruleId must not contain '#': " + ruleId);
+        if (ruleId.contains("/")) {
+            throw new IllegalArgumentException("ruleId must not contain '/': " + ruleId);
         }
-        return objectPath + SEPARATOR + ruleId;
+        return objectPath + TAG_SEGMENT + ruleId;
     }
 
     public static boolean isComposite(String tagPath) {
-        return tagPath != null && tagPath.indexOf(SEPARATOR) > 0;
+        return tagPath != null && tagPath.contains(TAG_SEGMENT);
     }
 
     public static String objectPath(String tagPath) {
         if (tagPath == null || tagPath.isBlank()) {
             return tagPath;
         }
-        int idx = tagPath.indexOf(SEPARATOR);
+        int idx = tagPath.indexOf(TAG_SEGMENT);
         return idx > 0 ? tagPath.substring(0, idx) : tagPath;
     }
 
@@ -42,7 +42,9 @@ public final class HistorianTagPaths {
         if (tagPath == null) {
             return "";
         }
-        int idx = tagPath.indexOf(SEPARATOR);
-        return idx > 0 && idx < tagPath.length() - 1 ? tagPath.substring(idx + 1) : "";
+        int idx = tagPath.indexOf(TAG_SEGMENT);
+        return idx > 0 && idx + TAG_SEGMENT.length() < tagPath.length()
+                ? tagPath.substring(idx + TAG_SEGMENT.length())
+                : "";
     }
 }

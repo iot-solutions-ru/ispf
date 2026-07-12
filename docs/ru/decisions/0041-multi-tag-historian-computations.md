@@ -22,7 +22,7 @@
 {
   "id": "avg-temp-5m",
   "kind": "historian",
-  "expression": "rollingAvg(root.platform.devices.sensor-a.temperature, 5m)",
+  "expression": "avg(root.platform.devices.sensor-a/temperature, 5m)",
   "windowBucket": "5m",
   "target": { "kind": "variable", "variableName": "avgTemp5m", "field": "value" }
 }

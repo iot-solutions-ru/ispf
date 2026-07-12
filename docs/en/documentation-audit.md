@@ -30,6 +30,38 @@
 | `docs/ru/` | Proofread Russian editions with language banner linking to EN |
 | RU-primary sources (glossary, operator-guide, product, widgets, …) | Full RU in `ru/`; full EN restored in `en/` |
 
+## Anonymization policy (public docs)
+
+Committed markdown must not contain production hostnames, public IPs, SSH users/ports, or personal GitHub org names. Use placeholders:
+
+| Real (never commit) | Placeholder |
+|---------------------|-------------|
+| Production ISPF URL | `${ISPF_BASE_URL:-https://ispf.example.invalid}` |
+| Lab / edge host | `lab-edge.example.invalid` or `198.51.100.x` (RFC 5737) |
+| MQTT broker | `mqtt-broker.example.invalid` |
+| SSH user | `lab-operator` / `deploy-user@production-host` |
+| Marketplace vendor id | `default-publisher` |
+
+Lab runbooks: ship templates under [`examples/`](../../examples/); operator-specific `deploy/lab-*` stays gitignored.
+
+Re-run bulk pass (all committed text files — configs, scripts, Java, JSON, workflows):
+
+```bash
+python deploy/tools/anonymize-repo.py
+```
+
+Markdown-only (legacy):
+
+```bash
+python deploy/tools/anonymize-docs.py
+```
+
+Verify (expect no hits outside `deploy/tools/anonymize-repo.py` and this audit doc):
+
+```bash
+rg 'ispf\.iot-solutions|84\.42|iot-solutions\.ru|m5\.wqtt|Michaael/' --glob '!deploy/tools/anonymize-repo.py' --glob '!docs/*/documentation-audit.md'
+```
+
 ## Maintenance scripts
 
 ```bash

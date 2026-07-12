@@ -1,12 +1,40 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/bindings.md](../en/bindings.md).
 
-﻿# Привязки цепочки (обязательные правила)
+# Привязки цепочки (обязательные правила)
 
-**Обязательное правило** — декларативное правило расчета значений переменных на объекте: **когда** (активаторы) → **если** (условие, CEL) → **как** (выражение) → **куда** (цель).
+**Обязательное правило** — декларативное правило расчёта значений переменных на объекте: **когда** (активаторы) → **если** (условие, CEL) → **как** (выражение) → **куда** (цель).
 
-Правила хранения в системной переменной `@bindingRules` (JSON-массив, зарезервировано). Время выполнения — **`BindingRuleEngine`** (Единый механизм привязок с v0.8.0).
+Правила хранятся в системной переменной `@bindingRules` (JSON-массив). Runtime — **`BindingRuleEngine`**.
 
-См. также: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md).
+См. также: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md), ADR [0043-unified-platform-ref](decisions/0043-unified-platform-ref.md).
+
+---
+
+## PlatformRef (адреса)
+
+Единая slash-грамматика для переменных, функций, событий и historian-тегов (как REST `path` + `name` + `field`):
+
+| Kind | Форма | Пример |
+|------|--------|--------|
+| variable | `<object>/<name>[/<field>]` | `@/temperature`, `root.platform.devices.a/temperature/value` |
+| function | `<object>/fn/<name>` | `@/fn/calculate` |
+| event | `<object>/evt/<name>` | `@/evt/alarmRaised` |
+| tag | `<object>/tag/<ruleId>` | `root.platform.devices.a/tag/avg-temp-5m` |
+
+`@` — объект, на котором выполняется правило.
+
+| Операция | Пример | Назначение |
+|----------|--------|------------|
+| `read(ref)` | `read(root.platform.devices.a/temperature)` | Live-поле переменной |
+| `call(ref[, inputRef])` | `call(@/fn/ack, @/payload)` | Вызов function |
+| `fire(ref)` | `fire(@/evt/overload)` | Публикация event |
+| Historian | `avg(root.../temperature, 5m)`, `live(@/temperature)` | Агрегат по окну / live |
+
+**JSON-конфиги** (активаторы, виджеты, mimic, script steps): каноническое поле **`ref`**:
+
+```json
+{ "ref": "root.platform.devices.virt-cluster.dev-03/sineWave" }
+```
 
 ---
 
@@ -21,126 +49,51 @@
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      { "objectPath": "root.platform.devices.virt-cluster.dev-03", "variableName": "sineWave" }
+      { "ref": "root.platform.devices.virt-cluster.dev-03/sineWave" }
     ],
-    "onEvent": null,
+    "onEventRef": null,
     "periodicMs": 0
   },
   "condition": "",
-  "expression": "refAt(\"root.platform.devices.virt-cluster.dev-03\", sineWave)",
+  "expression": "read(root.platform.devices.virt-cluster.dev-03/sineWave)",
   "target": { "variableName": "member3Sine", "field": "value" }
 }
 ```
 
 | Поле | Назначение |
 |------|------------|
-| `activators.onStartup` | Пересчёт при старте сервера / attach модели |
-| `activators.onVariableChange` | Список `{ objectPath, variableName }`; `"self"` + `"*"` = любая локальная переменная |
-| `activators.periodicMs` | Периодический пересчет (0 = выкл.); индексируется в `platform_binding_periodic_rules`, пробуждение по `next_run_at` |
-| `condition` | CEL; пусто = всегда |
-| `expression` | CEL или одна platform function |
-| `target` | Куда записать результат (см. **Target kinds** ниже) |
-| `kind` | Опционально: `reactive` или `historian` ([0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)) |
-| `windowBucket` | Окно historian (`5m`, `1h`, …) |
+| `activators.onVariableChange` | Список ref переменных; `@/*` или `self` + `*` = любая локальная переменная |
+| `activators.onEventRef` | Полный event ref, напр. `@/evt/alarmRaised` |
+| `expression` | CEL или platform binding |
+| `kind` | `reactive` (по умолчанию) или `historian` |
 
-Рецепты: [analytics-historian-cookbook](analytics-historian-cookbook.md)
+Historian-тег в каталоге: `objectPath/tag/ruleId`. Рецепты: [analytics-historian-cookbook](analytics-historian-cookbook.md).
 
-### Периодическое время выполнения
+**Cross-object:** activator с remote `ref` + `read(remote/ref)` в выражении; `BindingPropagationListener` пересчитывает правила на consumer-объектах.
 
-Правила с `periodicMs > 0` анализа в JDBC-индексе `platform_binding_periodic_rules` при сохранении `@bindingRules`. **`BindingPeriodicScheduler`** будит JVM один раз на ближайший `next_run_at` и выполняет только правильные удары — без секундного обхода всего дерева. Если периодических правил нет, фоновый пробуждение не имеет значения.
-
-### Виды целей (Правило платформы)
-
-Расширение моделей — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). Если `target.kind` отсутствует → **`variable`** (обратная совместимость).
-
-| `kind` | Поля | Назначение |
-|--------|------|------------|
-| `variable` | `variableName`, `field` | Как сегодня — запись в переменную объекта |
-| `context` | `path` (dot-notation) | Запись в `@dashboardContext` на объекте `DASHBOARD` |
-| `event` | `eventName` | Публикация platform event; payload из `expression` |
-
-Пример правила дашборда (планируется):
-
-```json
-{
-  "id": "alarm-mode",
-  "activators": { "onContextChange": true },
-  "condition": "context.selection.device != \"\"",
-  "expression": "\"alarm\"",
-  "target": { "kind": "context", "path": "params.mode" }
-}
-```
-
-Активатор **`onContextChange`** — пересчёт при поддержке `@dashboardContext`. Полная спецификация: [platform-logic](platform-logic.md).
-
-**Перекрестный объект:** активатор на удаленном пути + `refAt("path", var)` в выражении. При удаленной переменной (в т.ч. телеметрии драйвера) `BindingPropagationListener` пересчитывает правила на потребительских объектах.
-
-**Активаторы по умолчанию** (если не заданы): `refAt` в выражении → автоматические удаленные активаторы; иначе местный `self:*`.
+**Активаторы по умолчанию:** remote refs в expression → автоматические remote activators; иначе `self:*`.
 
 ---
 
-## Выражения (выражение)
-
-Два вида (как раньше, но внутри `rule.expression`):
+## Выражения
 
 | Вид | Пример |
 |-----|--------|
-| **CEL** | `self.temperature.value + 1.0` |
-| **Platform binding** | `counterRate(ifInOctets)`, `hysteresis(temperature, 80, 70)`, `refAt("root...dev-01", sineWave)` |
+| **CEL** | `read(@/temperature) + 1.0` |
+| **Platform binding** | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)` |
+| **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
 
-Валидация: `POST /api/v1/expressions/validate` или Web Console «Проверить».
-
-Stateful bindings (`counterRate`, `hysteresis`, …) — состояние в `@bindingState` (см. прежнее поведение).
-
----
-
-## ОТДЫХ API
-
-```http
-GET  /api/v1/objects/by-path/binding-rules?path={objectPath}
-PUT  /api/v1/objects/by-path/binding-rules?path={objectPath}
-DELETE /api/v1/objects/by-path/binding-rules/{ruleId}?path={objectPath}
-```
-
-Инструмент агента: `create_binding_rule` (путь, идентификатор, targetVariable, выражение, RemoteObjectPath?, RemoteVariableName?, условие?, onStartup?, порядок?).
+Валидация: `POST /api/v1/expressions/validate` или **Validate** в Web Console.
 
 ---
 
-## Модели
+## UI
 
-В модели — `ModelBindingRule` (полная схема или `ModelBindingRule.of(id, target, expression)`). При применении/создании правил меряются через `ModelBindingRulesMerger` **после** функции.
-
-Поле `defaultBinding` на переменной модели **удалено** (v0.8.0).
-
----
-
-## Обновление с v0.7.x (legacy `bindingExpression`)
-
-Поле `bindingExpression` на переменной и колонка `binding_expr` **удалены** (0010, v0.8.0). Привязки — только `@bindingRules`.
-
-**Prod** (`ispf.iot-solutions.ru`): PostgreSQL в Docker (`ispf-postgres`), а не H2. **Локальный разработчик:** Файл H2 или докер составляют PostgreSQL.
-
-```bash
-# Prod VPS (Docker postgres)
-systemctl stop ispf-server
-docker exec ispf-postgres psql -U ispf -d postgres -c 'DROP DATABASE IF EXISTS ispf;' -c 'CREATE DATABASE ispf OWNER ispf;'
-systemctl start ispf-server
-
-# Local H2: удалить ./data/ispf-local.mv.db
-# Local/dev compose: docker compose exec postgres psql ...
-```
-
-Существующая БД без пересоздания: Flyway `V41__drop_binding_expr.sql` снимает колонку; при **несоответствии контрольной суммы V1** необходимо пересоздание (см. [deployment](deployment.md)).
-
----
-
-## Пользовательский интерфейс
-
-Веб-консоль → Инспектор объектов → вкладка **«Вычисления»** (reactive + historian). См. [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md).
+Web Console → Object inspector → **Computations** → редактор с **PlatformRef picker** и каталогом функций.
 
 ---
 
 ## Не путать с
 
-- **SQL bindings** (`ApplicationSqlBindingService`) — отдельный scheduler, не object binding rules
-- **Правила оповещений**, корреляторы, рабочие процессы — разработка подсистемы
+- **SQL bindings** — отдельный планировщик
+- **Alert rules**, correlators, workflows — отдельные подсистемы

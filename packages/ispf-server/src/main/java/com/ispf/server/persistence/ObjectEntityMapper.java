@@ -5,6 +5,8 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.HistorySampleMode;
+import com.ispf.core.object.VariableStorageMode;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -56,7 +58,13 @@ public class ObjectEntityMapper {
         entity.setUpdatedAt(variable.updatedAt().orElse(null));
         entity.setHistoryEnabled(variable.historyEnabled());
         entity.setHistoryRetentionDays(variable.historyRetentionDays().orElse(null));
+        entity.setHistorySampleMode(variable.historySampleMode().name());
+        entity.setIncludePreviousValueInEvent(variable.includePreviousValueInEvent());
+        entity.setStorageMode(variable.storageMode().name());
         entity.setTelemetryPublishMode(variable.telemetryPublishModeOverride().orElse(null));
+        if (variable.storageMode() == VariableStorageMode.TRANSIENT) {
+            entity.setValueJson(null);
+        }
         entity.setReadRolesJson(writeStringList(variable.readRoles()));
         entity.setWriteRolesJson(writeStringList(variable.writeRoles()));
         return entity;
@@ -71,6 +79,9 @@ public class ObjectEntityMapper {
                 readDataRecord(entity.getValueJson()),
                 entity.isHistoryEnabled(),
                 entity.getHistoryRetentionDays(),
+                HistorySampleMode.parse(entity.getHistorySampleMode()),
+                entity.isIncludePreviousValueInEvent(),
+                VariableStorageMode.parse(entity.getStorageMode()),
                 entity.getTelemetryPublishMode(),
                 readStringList(entity.getReadRolesJson()),
                 readStringList(entity.getWriteRolesJson())

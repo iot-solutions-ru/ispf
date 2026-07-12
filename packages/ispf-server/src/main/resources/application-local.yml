@@ -34,7 +34,7 @@ ispf:
     enabled: false
   ai:
     provider: openai-compatible
-    base-url: http://84.42.21.226:8000/v1
+    base-url: http://lab-edge.example.invalid:8000/v1
     model: unsloth/Qwen3.6-35B-A3B-NVFP4
     api-key: ${ISPF_AI_API_KEY:}
     timeout-seconds: 180

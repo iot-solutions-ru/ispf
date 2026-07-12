@@ -40,7 +40,7 @@ class AnalyticsEngineTest {
     private static AnalyticsTagDefinition tag(String path, String sourcePath, String sourceVariable) {
         return new AnalyticsTagDefinition(
                 path,
-                "rollingAvg",
+                "avg",
                 List.of(new AnalyticsSourceRef(sourcePath, sourceVariable, "value")),
                 "5m",
                 60_000L,

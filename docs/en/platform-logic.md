@@ -32,7 +32,7 @@ Same pattern as [binding rules](bindings.md):
   "enabled": true,
   "order": 10,
   "activators": {
-    "onVariableChange": [{ "objectPath": "self", "variableName": "temperature" }]
+    "onVariableChange": [{ "ref": "@/temperature" }]
   },
   "condition": "",
   "expression": "self.temperature.value",
@@ -63,7 +63,7 @@ Legacy without `kind`:
     ],
     "onContextChange": true
   },
-  "condition": "context.selection.device != \"\" && refAt(context.selection.device, temperature).value > 80",
+  "condition": "context.selection.device != \"\" && read(context.selection.device + \"/temperature\") > 80",
   "expression": "\"alarm\"",
   "target": {
     "kind": "context",

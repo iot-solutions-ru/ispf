@@ -1,33 +1,47 @@
 package com.ispf.expression;
 
 import com.ispf.core.binding.BindingVariableRef;
+import com.ispf.core.ref.PlatformRef;
+import com.ispf.core.ref.PlatformRefParser;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
- * Extracts cross-object dependencies from binding expressions (e.g. {@code refAt}).
+ * Extracts cross-object dependencies from binding expressions (PlatformRef slash grammar).
  */
 public final class BindingDependencyParser {
-
-    private static final Pattern REF_AT = Pattern.compile(
-            "refAt\\(\\s*\"([^\"]+)\"\\s*,\\s*([A-Za-z_][A-Za-z0-9_]*)"
-    );
 
     private BindingDependencyParser() {
     }
 
     public static Set<BindingVariableRef> parseRefAtDependencies(String expression) {
         Set<BindingVariableRef> refs = new LinkedHashSet<>();
-        if (expression == null || expression.isBlank()) {
-            return refs;
-        }
-        Matcher matcher = REF_AT.matcher(expression);
-        while (matcher.find()) {
-            refs.add(BindingVariableRef.remote(matcher.group(1), matcher.group(2)));
+        for (PlatformRef ref : PlatformRefParser.extractRefsFromExpression(expression)) {
+            if (!ref.isVariable()) {
+                continue;
+            }
+            if (ref.isCurrentObject()) {
+                refs.add(BindingVariableRef.local(ref.name()));
+            } else {
+                refs.add(BindingVariableRef.remote(ref.object(), ref.name()));
+            }
         }
         return refs;
+    }
+
+    public static Set<PlatformRef> parseAllRefs(String expression) {
+        return PlatformRefParser.extractRefsFromExpression(expression);
+    }
+
+    public static Set<BindingVariableRef> parseEventDependencies(String expression) {
+        return PlatformRefParser.extractRefsFromExpression(expression).stream()
+                .filter(PlatformRef::isEvent)
+                .map(ref -> BindingVariableRef.remote(
+                        ref.isCurrentObject() ? BindingVariableRef.SELF : ref.object(),
+                        ref.name()
+                ))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

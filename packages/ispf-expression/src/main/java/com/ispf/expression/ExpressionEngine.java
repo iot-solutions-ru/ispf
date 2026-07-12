@@ -25,6 +25,7 @@ public class ExpressionEngine {
             .addVar("self", SimpleType.DYN)
             .addVar("parent", SimpleType.DYN)
             .addVar("context", SimpleType.DYN)
+            .addVar("input", SimpleType.DYN)
             .build();
 
     private final CelCompiler payloadCompiler = CelCompilerFactory.standardCelCompilerBuilder()
@@ -201,10 +202,12 @@ public class ExpressionEngine {
                     .filter(record -> record.rowCount() > 0)
                     .ifPresent(record -> self.put(watchVariable, normalizeRow(record.firstRow())));
         }
+        Map<String, Object> inputContext = context != null ? context : Map.of();
         Map<String, Object> bindings = new HashMap<>();
         bindings.put("self", self);
         bindings.put("parent", Map.of());
-        bindings.put("context", context != null ? context : Map.of());
+        bindings.put("context", inputContext);
+        bindings.put("input", inputContext);
         return bindings;
     }
 

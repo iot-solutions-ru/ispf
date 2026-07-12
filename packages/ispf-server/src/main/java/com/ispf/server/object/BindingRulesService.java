@@ -133,6 +133,15 @@ public class BindingRulesService {
         return BindingActivators.onLocalChange();
     }
 
+    public static List<BindingVariableRef> refsFromActivators(List<BindingVariableRef> activators) {
+        if (activators == null) {
+            return List.of();
+        }
+        return activators.stream()
+                .map(BindingVariableRef::normalize)
+                .toList();
+    }
+
     private void validateRule(String objectPath, BindingRule rule) {
         if (rule.isHistorian()) {
             validateHistorianRule(objectPath, rule);

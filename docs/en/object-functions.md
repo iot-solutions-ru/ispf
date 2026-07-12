@@ -113,7 +113,7 @@ Result: `alarmAcknowledged.value = true`, output `{ "success": true, "message": 
 Binding on the same object:
 
 ```
-callFunction(acknowledgeAlarm)
+call(@/fn/acknowledgeAlarm)
 ```
 
 ### 1.2 Pulse commands (`sourceType: "pulse"`)
@@ -247,7 +247,7 @@ Gateway object (model `mqtt-gateway-v1`). Routes ingress MQTT to a child sensor.
 }
 ```
 
-Often invoked from a binding: `callFunction(dispatchTelemetry, lastIngress)`.
+Often invoked from a binding: `call(@/fn/dispatchTelemetry, @/lastIngress)`.
 
 ---
 
@@ -618,7 +618,7 @@ public class ThresholdFn implements ObjectJavaFunction {
 | Complex logic | Convenient | `when` + steps |
 | Reading tree variables | Via input or script | `readVariable` |
 
-To access object variables without passing everything in input, use **script** or a `callFunction` binding.
+To access object variables without passing everything in input, use **script** or `call(@/fn/...)` in a binding.
 
 ---
 
@@ -651,17 +651,20 @@ Requires invoke permission on the object (RBAC).
 On the **current** object:
 
 ```
-callFunction(myFn)
-callFunction(myFn, sourceVariable)
-callFunction(myFn, sourceVariable, fieldName)
+call(@/fn/myFn)
+call(@/fn/myFn, @/sourceVar)
+read(@/payload/fieldName)
 ```
 
 On **another** object:
 
 ```
-callFunctionAt("root.platform.devices.test", myFn)
-callFunctionAt("root.platform.devices.test", myFn, payloadVar)
+call(root.platform.devices.test/fn/myFn)
+call(root.platform.devices.test/fn/myFn, @/payloadVar)
+read(root.platform.devices.test/temperature)
 ```
+
+JSON script steps and agent tools accept `"ref": "@/fn/myFn"` instead of separate `objectPath` + `functionName`.
 
 ### 5.3 Workflow service task
 

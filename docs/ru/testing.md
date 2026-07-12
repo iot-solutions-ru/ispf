@@ -93,7 +93,7 @@ npm run build   # tsc + vite build
 Сценарии HTTP и внутреннего автоматического нагрузочного тестирования, базовые метрики и зонд дашборда — **[load-testing](load-testing.md)**.
 
 ```bash
-python deploy/events-load-test.py --base-url https://ispf.iot-solutions.ru
+python deploy/events-load-test.py --base-url ${ISPF_BASE_URL:-https://ispf.example.invalid}
 python deploy/events-internal-load-test.py --skip-monitor-setup --condition-expr-file deploy/loadtest-sinewave-condition.txt
 ```
 

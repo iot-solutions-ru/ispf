@@ -46,7 +46,7 @@ class AnalyticsDagBuilderTest {
     private static AnalyticsTagDefinition tag(String path, String sourcePath) {
         return new AnalyticsTagDefinition(
                 path,
-                "rollingAvg",
+                "avg",
                 List.of(new AnalyticsSourceRef(sourcePath, "derivedValue", "value")),
                 "5m",
                 60_000L,

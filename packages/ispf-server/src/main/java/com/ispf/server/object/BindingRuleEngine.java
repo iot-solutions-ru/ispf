@@ -101,7 +101,14 @@ public class BindingRuleEngine {
         if (eventName == null || eventName.isBlank()) {
             return;
         }
-        runRules(objectPath, Trigger.event(eventName), false);
+        runRules(objectPath, Trigger.event(objectPath, eventName), false);
+    }
+
+    public void onRemoteEvent(String ruleObjectPath, String firedObjectPath, String eventName) {
+        if (eventName == null || eventName.isBlank()) {
+            return;
+        }
+        runRules(ruleObjectPath, Trigger.event(firedObjectPath, eventName), false);
     }
 
     public void onPeriodic(String objectPath, String ruleId) {
@@ -201,7 +208,11 @@ public class BindingRuleEngine {
                     trigger.changedVariable()
             );
             case CONTEXT_CHANGE -> rule.activators().onContextChange();
-            case EVENT -> rule.activators().matchesEvent(trigger.eventName());
+            case EVENT -> rule.activators().matchesEvent(
+                    objectPath,
+                    trigger.changedObjectPath() != null ? trigger.changedObjectPath() : objectPath,
+                    trigger.eventName()
+            );
             case PERIODIC -> rule.id().equals(trigger.ruleId()) && rule.activators().hasPeriodicSchedule();
         };
     }
@@ -444,8 +455,8 @@ public class BindingRuleEngine {
             return new Trigger(Kind.VARIABLE_CHANGE, changedObjectPath, changedVariable, null, null);
         }
 
-        static Trigger event(String eventName) {
-            return new Trigger(Kind.EVENT, null, null, eventName, null);
+        static Trigger event(String firedObjectPath, String eventName) {
+            return new Trigger(Kind.EVENT, firedObjectPath, null, eventName, null);
         }
 
         static Trigger periodic(String ruleId) {

@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public final class HistorianBindingRuleCompiler {
 
     private static final Pattern BUILTIN_CALL = Pattern.compile(
-            "^(rollingAvg|rateOfChange|totalizer|min|max|last|oee)\\s*\\((.*)\\)$",
+            "^(avg|rateOfChange|totalizer|min|max|last|oee|live)\\s*\\((.*)\\)$",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
 
@@ -96,7 +96,7 @@ public final class HistorianBindingRuleCompiler {
                     outputVariable
             );
         }
-        if (expression.toLowerCase(Locale.ROOT).contains("hist.")) {
+        if (HistorianCelPreprocessor.isCelExpression(expression)) {
             List<AnalyticsSourceRef> sources = HistorianCelPreprocessor.extractSources(expression);
             return Optional.of(new AnalyticsTagDefinition(
                     tagPath,
@@ -148,8 +148,8 @@ public final class HistorianBindingRuleCompiler {
     ) {
         List<String> args = splitArgs(argsBody);
         return switch (helper) {
-            case "rollingavg" -> compileSingleSourceBuiltin(
-                    tagPath, "rollingAvg", args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
+            case "avg", "live" -> compileSingleSourceBuiltin(
+                    tagPath, helper, args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
             );
             case "rateofchange" -> compileSingleSourceBuiltin(
                     tagPath, "rateOfChange", args, defaultWindow, rollupBuckets, periodicMs, onChange, enabled, outputVariable
@@ -254,11 +254,19 @@ public final class HistorianBindingRuleCompiler {
 
     private static ParsedSourceRef parseSourceRef(String raw) {
         String trimmed = unquote(raw).trim();
-        int dot = trimmed.lastIndexOf('.');
-        if (dot <= 0 || dot >= trimmed.length() - 1) {
+        try {
+            var ref = com.ispf.core.ref.PlatformRefParser.parseOptional(trimmed);
+            if (ref.isPresent() && ref.get().isVariable()) {
+                var resolved = ref.get();
+                if (resolved.isCurrentObject()) {
+                    return null;
+                }
+                return new ParsedSourceRef(resolved.object(), resolved.name(), resolved.field());
+            }
+        } catch (RuntimeException ignored) {
             return null;
         }
-        return new ParsedSourceRef(trimmed.substring(0, dot), trimmed.substring(dot + 1), "value");
+        return null;
     }
 
     private static List<String> splitArgs(String body) {

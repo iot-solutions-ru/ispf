@@ -1,5 +1,7 @@
 package com.ispf.server.object;
 
+import com.ispf.core.model.DataRecord;
+
 import java.time.Instant;
 
 public record ObjectChangeEvent(
@@ -12,14 +14,16 @@ public record ObjectChangeEvent(
         boolean telemetry,
         boolean automationEligible,
         Instant observedAt,
-        boolean replicaIngress
+        boolean replicaIngress,
+        DataRecord value,
+        DataRecord previousValue
 ) {
     public static ObjectChangeEvent of(ObjectChangeType type, String path) {
-        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, true, null, false);
+        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, true, null, false, null, null);
     }
 
     public static ObjectChangeEvent of(ObjectChangeType type, String path, long revision, String changedBy) {
-        return new ObjectChangeEvent(type, path, null, Instant.now(), revision, changedBy, false, true, null, false);
+        return new ObjectChangeEvent(type, path, null, Instant.now(), revision, changedBy, false, true, null, false, null, null);
     }
 
     public static ObjectChangeEvent variableUpdated(String path, String variableName) {
@@ -46,6 +50,18 @@ public record ObjectChangeEvent(
             boolean automationEligible,
             Instant observedAt
     ) {
+        return variableUpdated(path, variableName, telemetry, automationEligible, observedAt, null, null);
+    }
+
+    public static ObjectChangeEvent variableUpdated(
+            String path,
+            String variableName,
+            boolean telemetry,
+            boolean automationEligible,
+            Instant observedAt,
+            DataRecord value,
+            DataRecord previousValue
+    ) {
         return new ObjectChangeEvent(
                 ObjectChangeType.VARIABLE_UPDATED,
                 path,
@@ -56,7 +72,9 @@ public record ObjectChangeEvent(
                 telemetry,
                 automationEligible,
                 observedAt,
-                false
+                false,
+                value,
+                previousValue
         );
     }
 
@@ -76,7 +94,9 @@ public record ObjectChangeEvent(
                 false,
                 false,
                 observedAt,
-                true
+                true,
+                null,
+                null
         );
     }
 
@@ -102,6 +122,19 @@ public record ObjectChangeEvent(
             boolean telemetry,
             boolean automationEligible
     ) {
+        return variableUpdated(path, variableName, revision, changedBy, telemetry, automationEligible, null, null);
+    }
+
+    public static ObjectChangeEvent variableUpdated(
+            String path,
+            String variableName,
+            long revision,
+            String changedBy,
+            boolean telemetry,
+            boolean automationEligible,
+            DataRecord value,
+            DataRecord previousValue
+    ) {
         return new ObjectChangeEvent(
                 ObjectChangeType.VARIABLE_UPDATED,
                 path,
@@ -112,19 +145,21 @@ public record ObjectChangeEvent(
                 telemetry,
                 automationEligible,
                 null,
-                false
+                false,
+                value,
+                previousValue
         );
     }
 
     public static ObjectChangeEvent eventFired(String path, String eventName) {
         return new ObjectChangeEvent(
-                ObjectChangeType.EVENT_FIRED, path, eventName, Instant.now(), null, null, false, true, null, false
+                ObjectChangeType.EVENT_FIRED, path, eventName, Instant.now(), null, null, false, true, null, false, null, null
         );
     }
 
     /** Follower RAM/WS refresh after NATS structure sync (ADR-0030) — no NATS re-fan-out. */
     public static ObjectChangeEvent structureReplicaIngress(ObjectChangeType type, String path) {
-        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, false, null, true);
+        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, false, null, true, null, null);
     }
 
     public static ObjectChangeEvent structureReplicaIngress(
@@ -132,6 +167,6 @@ public record ObjectChangeEvent(
             String path,
             String variableName
     ) {
-        return new ObjectChangeEvent(type, path, variableName, Instant.now(), null, null, false, false, null, true);
+        return new ObjectChangeEvent(type, path, variableName, Instant.now(), null, null, false, false, null, true, null, null);
     }
 }

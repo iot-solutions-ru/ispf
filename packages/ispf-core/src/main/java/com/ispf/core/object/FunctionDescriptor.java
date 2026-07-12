@@ -20,8 +20,19 @@ public record FunctionDescriptor(
         this(name, description, inputSchema, outputSchema, null, null, null, null);
     }
 
+    public boolean hasExpressionBody() {
+        return sourceType != null
+                && "expression".equalsIgnoreCase(sourceType.trim())
+                && sourceBody != null
+                && !sourceBody.isBlank();
+    }
+
     public boolean hasScriptBody() {
-        return sourceBody != null && !sourceBody.isBlank() && !hasJavaBody() && !hasPulseBody();
+        return sourceBody != null
+                && !sourceBody.isBlank()
+                && !hasJavaBody()
+                && !hasPulseBody()
+                && !hasExpressionBody();
     }
 
     public boolean hasPulseBody() {

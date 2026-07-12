@@ -17,7 +17,7 @@ public final class UnitConvertBinding implements PlatformBinding {
     static final UnitConvertBinding INSTANCE = new UnitConvertBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "unitConvert\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.IDENT
+            "unitConvert\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*,\\s*(" + BindingSourceHelper.IDENT
                     + ")\\s*,\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
@@ -42,14 +42,14 @@ public final class UnitConvertBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(4),
                 "value"
         );
         String fromUnit = matcher.group(2).toUpperCase(Locale.ROOT);
         String toUnit = matcher.group(3).toUpperCase(Locale.ROOT);
 
-        return BindingSourceHelper.readNumericField(object, source.sourceVariable(), source.field())
+        return BindingSourceHelper.readNumericSource(object, source.sourceVariable(), source.field(), context)
                 .flatMap(value -> convert(value, fromUnit, toUnit));
     }
 

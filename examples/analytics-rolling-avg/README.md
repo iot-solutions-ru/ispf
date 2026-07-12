@@ -9,8 +9,8 @@ Full recipes (OEE, tag chains, CEL): [analytics-historian-cookbook.md](../../doc
 **Production reference (3-tag chain + dashboard):** [cookbook Recipe 5](../../docs/en/analytics-historian-cookbook.md#recipe-5--full-production-example-analytics-demo)
 
 ```powershell
-python deploy/local/tools/setup-historian-chain-example.py https://ispf.iot-solutions.ru
-python deploy/local/tools/setup-historian-chain-dashboard.py https://ispf.iot-solutions.ru
+python deploy/local/tools/setup-historian-chain-example.py ${ISPF_BASE_URL:-https://ispf.example.invalid}
+python deploy/local/tools/setup-historian-chain-dashboard.py ${ISPF_BASE_URL:-https://ispf.example.invalid}
 ```
 
 ## Prerequisites
@@ -20,7 +20,7 @@ python deploy/local/tools/setup-historian-chain-dashboard.py https://ispf.iot-so
 
 ## 1. Add a historian rule
 
-**Web console:** Explorer → device → **Computations** → **+ Rule** → type **Historian** → expression in modal editor (use catalog for `rollingAvg` / `hist.avg`).
+**Web console:** Explorer → device → **Computations** → **+ Rule** → type **Historian** → expression in modal editor (catalog: `avg`, `live`, …).
 
 **REST:** merge into `@bindingRules`:
 
@@ -39,13 +39,13 @@ PUT /api/v1/objects/by-path/binding-rules?path=root.platform.devices.demo-sensor
     "activators": {
       "onStartup": false,
       "onVariableChange": [
-        { "objectPath": "root.platform.devices.demo-sensor-01", "variableName": "temperature" }
+        { "ref": "root.platform.devices.demo-sensor-01/temperature" }
       ],
       "onEvent": null,
       "periodicMs": 60000
     },
     "condition": "",
-    "expression": "rollingAvg(root.platform.devices.demo-sensor-01.temperature, 5m)",
+    "expression": "avg(root.platform.devices.demo-sensor-01/temperature, 5m)",
     "windowBucket": "5m",
     "target": { "kind": "variable", "variableName": "avgTemp5m", "field": "value" }
   }
@@ -57,10 +57,10 @@ Target variable `avgTemp5m` is created automatically if missing. Enable `history
 ## 2. Verify catalog
 
 ```http
-GET /api/v1/platform/analytics/tags/by-path?path=root.platform.devices.demo-sensor-01#avg-temp-5m
+GET /api/v1/platform/analytics/tags/by-path?path=root.platform.devices.demo-sensor-01/tag/avg-temp-5m
 ```
 
-Expect `helper: rollingAvg`, `outputVariable: avgTemp5m`, lineage sources pointing at `temperature`.
+Expect `helper: avg`, `outputVariable: avgTemp5m`, lineage sources pointing at `temperature`.
 
 Check rule metadata (diagnostics only — **not** an expression source):
 
@@ -89,9 +89,9 @@ Three-level pipeline (sensor → smooth → smooth again) on separate devices. S
 | --- | --- | --- |
 | `GET` / `PUT` | `/api/v1/objects/by-path/binding-rules?path=…` | List / save rules (reactive + historian) |
 | `GET` | `/api/v1/platform/analytics/tags?path=…` | Tag catalog |
-| `GET` | `/api/v1/platform/analytics/tags/by-path?path=…` | One tag (`objectPath#ruleId`) |
+| `GET` | `/api/v1/platform/analytics/tags/by-path?path=…` | One tag (`objectPath/tag/ruleId`) |
 | `POST` | `/api/v1/platform/analytics/query` | Multi-tag aligned historian query (charts) |
-| `POST` | `/api/v1/platform/analytics/expression/validate` | CEL + `hist.*` validation |
+| `POST` | `/api/v1/platform/analytics/expression/validate` | CEL + historian helper validation |
 
 Deprecated for new work: `/api/v1/platform/analytics/templates/*`, `derived-tags/refresh` as primary workflow.
 

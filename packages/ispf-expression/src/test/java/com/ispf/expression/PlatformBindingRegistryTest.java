@@ -27,18 +27,18 @@ class PlatformBindingRegistryTest {
         assertTrue(PlatformBindingRegistry.matches("deadband(gauge, 1.0)"));
         assertTrue(PlatformBindingRegistry.matches("hysteresis(gauge, 80, 70)"));
         assertTrue(PlatformBindingRegistry.matches("unitConvert(temperature, C, F)"));
-        assertTrue(PlatformBindingRegistry.matches("refAt(\"root.platform.devices.foo\", temperature)"));
-        assertTrue(PlatformBindingRegistry.matches("callFunction(myFunc)"));
-        assertTrue(PlatformBindingRegistry.matches("callFunction(myFunc, inputVar)"));
-        assertTrue(PlatformBindingRegistry.matches("callFunctionAt(\"root.remote\", myFunc)"));
-        assertTrue(PlatformBindingRegistry.matches("callFunctionAt(\"root.remote\", myFunc, inputVar)"));
+        assertTrue(PlatformBindingRegistry.matches("read(\"root.platform.devices.foo/temperature\")"));
+        assertTrue(PlatformBindingRegistry.matches("call(@/fn/myFunc)"));
+        assertTrue(PlatformBindingRegistry.matches("call(@/fn/myFunc, @/inputVar)"));
+        assertTrue(PlatformBindingRegistry.matches("call(root.remote/fn/myFunc)"));
+        assertTrue(PlatformBindingRegistry.matches("call(root.remote/fn/myFunc, @/inputVar)"));
         assertTrue(PlatformBindingRegistry.matches("sumRecordField(table, int)"));
         assertTrue(PlatformBindingRegistry.matches("sumRecordField(table, \"int\")"));
     }
 
     @Test
-    void callFunctionAtMatchesBeforeCallFunction() {
-        assertTrue(CallFunctionAtBinding.INSTANCE.matches("callFunctionAt(\"root.remote\", fn)"));
-        assertFalse(CallFunctionBinding.INSTANCE.matches("callFunctionAt(\"root.remote\", fn)"));
+    void callMatchesFunctionRefOnly() {
+        assertTrue(CallRefBinding.INSTANCE.matches("call(@/fn/fn)"));
+        assertFalse(CallRefBinding.INSTANCE.matches("read(\"root/foo/bar\")"));
     }
 }

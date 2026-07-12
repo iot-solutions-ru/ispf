@@ -6,7 +6,9 @@ import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
+import com.ispf.core.object.VariableStorageMode;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.reference.mes.MesBlueprintBootstrap;
@@ -536,7 +538,15 @@ public class ObjectManager {
                 mapper.auditDiff(before, value)
         );
         publishConfigChange(
-                ObjectChangeEvent.variableUpdated(path, name, false, true, observedAt),
+                ObjectChangeEvent.variableUpdated(
+                        path,
+                        name,
+                        false,
+                        true,
+                        observedAt,
+                        value,
+                        variable.includePreviousValueInEvent() ? before : null
+                ),
                 node
         );
         return variable;
@@ -771,6 +781,29 @@ public class ObjectManager {
             Integer historyRetentionDays,
             String telemetryPublishMode
     ) {
+        return updateVariableHistory(
+                path,
+                name,
+                historyEnabled,
+                historyRetentionDays,
+                telemetryPublishMode,
+                null,
+                null,
+                null
+        );
+    }
+
+    @Transactional
+    public Variable updateVariableHistory(
+            String path,
+            String name,
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            String telemetryPublishMode,
+            HistorySampleMode historySampleMode,
+            Boolean includePreviousValueInEvent,
+            VariableStorageMode storageMode
+    ) {
         TelemetryPublishMode.validateOverride(telemetryPublishMode);
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
@@ -778,7 +811,16 @@ public class ObjectManager {
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + name));
         Map<String, Object> before = variableHistorySnapshot(variable);
-        Variable updated = variable.withStorageSettings(historyEnabled, historyRetentionDays, telemetryPublishMode);
+        Variable updated = variable.withPolicySettings(
+                historyEnabled,
+                historyRetentionDays,
+                historySampleMode != null ? historySampleMode : variable.historySampleMode(),
+                includePreviousValueInEvent != null
+                        ? includePreviousValueInEvent
+                        : variable.includePreviousValueInEvent(),
+                storageMode != null ? storageMode : variable.storageMode(),
+                telemetryPublishMode
+        );
         node.addVariable(updated);
         persistVariable(path, updated);
         bumpRevision(node);
@@ -1191,7 +1233,13 @@ public class ObjectManager {
                 if (event.revision() != null || event.changedBy() != null) {
                     publicationService.publishConfigVariableChangeAfterCommit(event);
                 } else {
-                    publicationService.publishVariableChange(event.path(), event.variableName(), event.observedAt());
+                    publicationService.publishVariableChange(
+                            event.path(),
+                            event.variableName(),
+                            event.observedAt(),
+                            event.value(),
+                            event.previousValue()
+                    );
                 }
             }
             case EVENT_FIRED -> publicationService.publishEventFired(event.path(), event.variableName());
@@ -1278,7 +1326,9 @@ public class ObjectManager {
                 template.telemetry(),
                 template.automationEligible(),
                 template.observedAt(),
-                false
+                false,
+                template.value(),
+                template.previousValue()
         ));
     }
 
@@ -1329,6 +1379,9 @@ public class ObjectManager {
         Map<String, Object> snapshot = new HashMap<>();
         snapshot.put("historyEnabled", variable.historyEnabled());
         variable.historyRetentionDays().ifPresent(days -> snapshot.put("historyRetentionDays", days));
+        snapshot.put("historySampleMode", variable.historySampleMode().name());
+        snapshot.put("includePreviousValueInEvent", variable.includePreviousValueInEvent());
+        snapshot.put("storageMode", variable.storageMode().name());
         variable.telemetryPublishModeOverride().ifPresent(mode -> snapshot.put("telemetryPublishMode", mode));
         return snapshot;
     }

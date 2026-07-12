@@ -3,6 +3,7 @@ package com.ispf.server.object;
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingVariableRef;
+import com.ispf.core.ref.PlatformRef;
 import com.ispf.expression.BindingDependencyParser;
 import org.springframework.stereotype.Component;
 
@@ -75,7 +76,18 @@ public class BindingDependencyIndex {
                     .add(ruleObjectPath);
         }
         String onEvent = activators.onEvent();
-        if (onEvent != null && !onEvent.isBlank()) {
+        if (onEvent != null) {
+            onEvent = onEvent.trim();
+            if (onEvent.isBlank()) {
+                onEvent = null;
+            }
+        }
+        PlatformRef eventRef = activators.eventRef(ruleObjectPath);
+        if (eventRef != null && eventRef.isEvent()) {
+            eventConsumersByKey.computeIfAbsent(eventKey(eventRef.object(), eventRef.name()),
+                            ignored -> ConcurrentHashMap.newKeySet())
+                    .add(ruleObjectPath);
+        } else if (onEvent != null) {
             eventConsumersByKey.computeIfAbsent(eventKey(ruleObjectPath, onEvent.trim()), ignored -> ConcurrentHashMap.newKeySet())
                     .add(ruleObjectPath);
         }

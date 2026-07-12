@@ -34,8 +34,8 @@
 ## Phase 6 — Export and schema field (done)
 
 - REST: `GET .../variables/history/export?format=csv|json` (up to 10,000 points, `Content-Disposition: attachment`)
-- `field` parameter — select variable schema field (same as query)
-- In `VariableHistoryPanel`: field dropdown (if schema has multiple numeric fields) and **CSV** / **JSON** buttons
+- `field` parameter — select variable schema field (same as query); use `field=$record` for full variable snapshot (DataRecord JSON in `text`)
+- In `VariableHistoryPanel`: field dropdown (if schema has multiple numeric fields) and **CSV** / **JSON** buttons; `$record` shows a scrollable JSON list instead of a chart
 
 ## Phase 7 — Aggregations (done)
 
@@ -72,6 +72,11 @@ ispf:
     enabled: true
     min-interval-ms: 5000
     retention-days: 90   # default when variable retention = null
+    record-snapshot-enabled: true   # field $record — full DataRecord JSON in value_text
+    # Per-variable policy (PATCH .../variables/history):
+    #   historySampleMode: CHANGES_ONLY | ALL_VALUES
+    #   includePreviousValueInEvent: boolean
+    #   storageMode: PERSISTENT | TRANSIENT
     slo:
       aggregate-max-points: 1000000
       aggregate-max-latency-ms: 2000

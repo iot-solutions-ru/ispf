@@ -19,6 +19,8 @@ ADR: [en/decisions/](en/decisions/) · [ru/decisions/](ru/decisions/)
 
 ## Maintenance
 
-- [documentation-audit](en/documentation-audit.md) — structure, naming, link policy
+- [documentation-audit](en/documentation-audit.md) — structure, naming, link policy, **anonymization**
+- `python deploy/tools/anonymize-repo.py` — replace real hosts/users in all committed text files
+- `python deploy/tools/anonymize-docs.py` — markdown-only (wrapper)
 - `python tools/docs-audit/audit_links.py` — verify internal links
 - `python tools/docs-audit/audit_en_language.py` — no Cyrillic in `docs/en/`

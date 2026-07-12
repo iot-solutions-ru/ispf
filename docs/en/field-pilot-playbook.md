@@ -35,7 +35,7 @@ Single ISPF node on plant VLAN reading a Modbus TCP PLC (or `deploy/driver-inter
 | Setting | Example |
 | ------- | ------- |
 | `driverId` | `modbus-tcp` |
-| `host` | `192.168.10.50` |
+| `host` | `198.51.100.50` |
 | `port` | `502` |
 | `pollIntervalMs` | `1000` |
 | `unitId` | `1` |
@@ -114,7 +114,7 @@ Assembly line with OPC UA servers on cells; ISPF as aggregator and optional `opc
 | Setting | Example |
 | ------- | ------- |
 | `driverId` | `opcua` |
-| `endpointUrl` | `opc.tcp://192.168.20.10:4840` |
+| `endpointUrl` | `opc.tcp://198.51.100.20:4840` |
 | `readMode` | `subscribe` |
 | `timeoutMs` | `10000` |
 

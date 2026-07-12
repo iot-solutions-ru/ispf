@@ -9,7 +9,7 @@ export interface AnalyticsTemplateRef {
   sourceField?: string;
 }
 
-/** Build catalog expression, e.g. rollingAvg('temperature', '5m'). */
+/** Build catalog expression, e.g. avg(@/temperature, 5m). */
 export function buildAnalyticsBindingExpression(
   helper: string,
   variableName: string,
@@ -17,7 +17,7 @@ export function buildAnalyticsBindingExpression(
 ): string {
   const safeVar = variableName.trim() || "sourceVar";
   const safeBucket = windowBucket.trim() || "5m";
-  return `${helper}('${safeVar}', '${safeBucket}')`;
+  return `${helper}(@/${safeVar}, ${safeBucket})`;
 }
 
 /** Historian aggregate bucket for chart series when an analytics template is selected. */
@@ -29,7 +29,7 @@ export function resolveAnalyticsAggregateBucket(
     return fallbackBucket;
   }
   if (
-    template.helper === "rollingAvg" ||
+    template.helper === "avg" ||
     template.helper === "rateOfChange" ||
     template.helper === "oee"
   ) {

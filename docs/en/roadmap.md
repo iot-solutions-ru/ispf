@@ -37,7 +37,7 @@ VPS deploy — on request only ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc
 
 ## Retrospective — what shipped and where we are {#retrospective}
 
-**As of 2026-07-09** · prod **0.9.105** (`ispf.iot-solutions.ru`) · code-verified score **~7.4/10** ([competitive-scorecard](competitive-scorecard.md)).
+**As of 2026-07-09** · prod **0.9.105** (`ispf.example.invalid`) · code-verified score **~7.4/10** ([competitive-scorecard](competitive-scorecard.md)).
 
 ### Eras (closed → active)
 

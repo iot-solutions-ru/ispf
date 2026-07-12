@@ -51,6 +51,15 @@ public class ObjectVariableEntity {
     @Column(name = "telemetry_publish_mode", length = 32)
     private String telemetryPublishMode;
 
+    @Column(name = "history_sample_mode", nullable = false, length = 32)
+    private String historySampleMode = "CHANGES_ONLY";
+
+    @Column(name = "include_previous_value_in_event", nullable = false)
+    private boolean includePreviousValueInEvent;
+
+    @Column(name = "storage_mode", nullable = false, length = 32)
+    private String storageMode = "PERSISTENT";
+
     @Column(name = "read_roles_json", columnDefinition = "TEXT")
     private String readRolesJson;
 
@@ -143,6 +152,30 @@ public class ObjectVariableEntity {
 
     public void setTelemetryPublishMode(String telemetryPublishMode) {
         this.telemetryPublishMode = telemetryPublishMode;
+    }
+
+    public String getHistorySampleMode() {
+        return historySampleMode;
+    }
+
+    public void setHistorySampleMode(String historySampleMode) {
+        this.historySampleMode = historySampleMode;
+    }
+
+    public boolean isIncludePreviousValueInEvent() {
+        return includePreviousValueInEvent;
+    }
+
+    public void setIncludePreviousValueInEvent(boolean includePreviousValueInEvent) {
+        this.includePreviousValueInEvent = includePreviousValueInEvent;
+    }
+
+    public String getStorageMode() {
+        return storageMode;
+    }
+
+    public void setStorageMode(String storageMode) {
+        this.storageMode = storageMode;
     }
 
     public String getReadRolesJson() {

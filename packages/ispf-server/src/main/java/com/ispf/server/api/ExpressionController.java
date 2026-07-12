@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/expressions")
 public class ExpressionController {
@@ -23,9 +25,9 @@ public class ExpressionController {
     public ValidateResponse validate(@RequestBody ValidateRequest request) {
         try {
             BindingExpressionValidator.validateOrThrow(request.expression());
-            return new ValidateResponse(true, request.expression().trim(), null);
+            return new ValidateResponse(true, request.expression().trim(), null, List.of());
         } catch (Exception e) {
-            return new ValidateResponse(false, request.expression(), e.getMessage());
+            return new ValidateResponse(false, request.expression(), e.getMessage(), List.of());
         }
     }
 
@@ -51,7 +53,7 @@ public class ExpressionController {
     public record ValidateRequest(@NotBlank String expression) {
     }
 
-    public record ValidateResponse(boolean valid, String expression, String error) {
+    public record ValidateResponse(boolean valid, String expression, String error, List<String> warnings) {
     }
 
     public record EvaluateRequest(

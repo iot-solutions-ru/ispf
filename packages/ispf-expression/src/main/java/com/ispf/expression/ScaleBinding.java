@@ -1,6 +1,7 @@
 package com.ispf.expression;
 
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.ref.PlatformRef;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -16,7 +17,7 @@ public final class ScaleBinding implements PlatformBinding {
     static final ScaleBinding INSTANCE = new ScaleBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "scale\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
+            "scale\\(\\s*(.+?)\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC + ")\\s*(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
@@ -41,8 +42,9 @@ public final class ScaleBinding implements PlatformBinding {
         if (!matcher.matches()) {
             return Optional.empty();
         }
+        String sourceArg = matcher.group(1).trim();
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                sourceArg,
                 matcher.group(6),
                 "value"
         );
@@ -51,7 +53,12 @@ public final class ScaleBinding implements PlatformBinding {
         double outMin = Double.parseDouble(matcher.group(4));
         double outMax = Double.parseDouble(matcher.group(5));
 
-        return BindingSourceHelper.readNumericField(object, source.sourceVariable(), source.field())
+        PlatformRef ref = PlatformRefValueHelper.parseVariableArg(source.sourceVariable());
+        if (matcher.group(6) != null) {
+            ref = PlatformRef.variable(ref.object(), ref.name(), matcher.group(6));
+        }
+
+        return PlatformRefValueHelper.readNumericVariable(object, ref, context)
                 .flatMap(value -> scale(value, inMin, inMax, outMin, outMax));
     }
 

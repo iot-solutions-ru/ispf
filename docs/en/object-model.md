@@ -138,7 +138,7 @@ Widgets and API read fields via `valueField` (default `"value"`).
 
 ### Computed bindings (binding rules)
 
-Rules on the object in `@bindingRules` (see [bindings](bindings.md)). Runtime — `BindingRuleEngine`; cross-object via activators and `refAt`.
+Rules on the object in `@bindingRules` (see [bindings](bindings.md)). Runtime — `BindingRuleEngine`; cross-object via activators and `read(remote/ref)`.
 
 Brief list of platform bindings:
 

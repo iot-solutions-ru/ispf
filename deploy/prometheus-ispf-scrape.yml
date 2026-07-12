@@ -21,7 +21,7 @@ scrape_configs:
     # bearer_token_file: /etc/prometheus/ispf-admin.token
     static_configs:
       - targets:
-          - ispf.iot-solutions.ru
+          - ispf.example.invalid
         labels:
           environment: prod
           source: prometheus-pull

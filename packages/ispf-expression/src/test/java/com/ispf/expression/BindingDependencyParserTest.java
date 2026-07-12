@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BindingDependencyParserTest {
 
     @Test
-    void parsesRefAtDependencies() {
-        String expression = "refAt(\"root.platform.devices.dev-03\", sineWave) + refAt(\"root.platform.devices.dev-02\", sineWave)";
+    void parsesReadRefDependencies() {
+        String expression = "read(\"root.platform.devices.dev-03/sineWave\") + read(\"root.platform.devices.dev-02/sineWave\")";
         Set<BindingVariableRef> refs = BindingDependencyParser.parseRefAtDependencies(expression);
         assertEquals(2, refs.size());
         assertTrue(refs.contains(BindingVariableRef.remote("root.platform.devices.dev-03", "sineWave")));

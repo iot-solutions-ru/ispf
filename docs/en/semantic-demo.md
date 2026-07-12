@@ -85,7 +85,7 @@ Against a running server:
 
 ```bash
 bash tools/semantic-demo-check.sh
-# or: ISPF_BASE_URL=https://ispf.iot-solutions.ru bash tools/semantic-demo-check.sh
+# or: ISPF_BASE_URL=${ISPF_BASE_URL:-https://ispf.example.invalid} bash tools/semantic-demo-check.sh
 ```
 
 ## References

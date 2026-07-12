@@ -26,7 +26,7 @@ public final class AgentSolutionGeneratorPlaybook {
                 1. **Intake** — search_context topic=all + get_automation_schema topic=objectTypes + list_objects parent=root.platform
                 2. **Structure** — create_object CUSTOM folder from specBrief.entities[0].name (never hardcoded slugs)
                 3. **Sources** — for each entity: create_virtual_device / create_object DEVICE + configure_driver + list_variables (mandatory per device)
-                4. **Aggregation** — CUSTOM hub variables + create_binding_rule (refAt/CEL) when spec needs computed KPIs
+                4. **Aggregation** — CUSTOM hub variables + create_binding_rule (read/CEL) when spec needs computed KPIs
                 5. **Historian** — configure_variable_history on trend/chart variables (from list_variables only)
                 6. **Dashboards** — create_object DASHBOARD → set_dashboard_layout (template or custom) binding list_variables paths
                 7. **SCADA branch** — create_object MIMIC → save_mimic_diagram when P&ID/HMI graphics required

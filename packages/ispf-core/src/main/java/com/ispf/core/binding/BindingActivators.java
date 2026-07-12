@@ -1,6 +1,8 @@
 package com.ispf.core.binding;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ispf.core.ref.PlatformRef;
+import com.ispf.core.ref.PlatformRefParser;
 
 import java.util.List;
 
@@ -13,10 +15,14 @@ public record BindingActivators(
         String onEvent,
         long periodicMs,
         @JsonProperty("async") Boolean asyncFlag,
-        @JsonProperty("onContextChange") Boolean onContextChangeFlag
+        @JsonProperty("onContextChange") Boolean onContextChangeFlag,
+        String onEventRef
 ) {
     public BindingActivators {
         onVariableChange = onVariableChange != null ? List.copyOf(onVariableChange) : List.of();
+        if (onEventRef != null && onEventRef.isBlank()) {
+            onEventRef = null;
+        }
     }
 
     /** Whether this rule runs on a dedicated async executor (default false). */
@@ -35,7 +41,7 @@ public record BindingActivators(
             String onEvent,
             long periodicMs
     ) {
-        this(onStartup, onVariableChange, onEvent, periodicMs, false, false);
+        this(onStartup, onVariableChange, onEvent, periodicMs, false, false, null);
     }
 
     public BindingActivators(
@@ -45,7 +51,18 @@ public record BindingActivators(
             long periodicMs,
             boolean async
     ) {
-        this(onStartup, onVariableChange, onEvent, periodicMs, Boolean.valueOf(async), false);
+        this(onStartup, onVariableChange, onEvent, periodicMs, Boolean.valueOf(async), false, null);
+    }
+
+    public BindingActivators(
+            boolean onStartup,
+            List<BindingVariableRef> onVariableChange,
+            String onEvent,
+            long periodicMs,
+            Boolean asyncFlag,
+            Boolean onContextChangeFlag
+    ) {
+        this(onStartup, onVariableChange, onEvent, periodicMs, asyncFlag, onContextChangeFlag, null);
     }
 
     public static BindingActivators onLocalChange() {
@@ -64,11 +81,39 @@ public record BindingActivators(
                 .anyMatch(ref -> ref.matches(ruleObjectPath, changedObjectPath, changedVariable));
     }
 
+    public boolean matchesEvent(String ruleObjectPath, String firedObjectPath, String eventName) {
+        if (onEventRef != null && !onEventRef.isBlank()) {
+            try {
+                PlatformRef ref = PlatformRefParser.parse(onEventRef).resolveObject(ruleObjectPath);
+                return ref.isEvent()
+                        && ref.object().equals(firedObjectPath)
+                        && ref.name().equals(eventName);
+            } catch (RuntimeException ignored) {
+                return false;
+            }
+        }
+        if (onEvent != null && !onEvent.isBlank()) {
+            return ruleObjectPath.equals(firedObjectPath) && onEvent.equals(eventName);
+        }
+        return false;
+    }
+
+    /** @deprecated use {@link #matchesEvent(String, String, String)} */
     public boolean matchesEvent(String eventName) {
         return onEvent != null && !onEvent.isBlank() && onEvent.equals(eventName);
     }
 
     public boolean hasPeriodicSchedule() {
         return periodicMs > 0;
+    }
+
+    public PlatformRef eventRef(String ruleObjectPath) {
+        if (onEventRef != null && !onEventRef.isBlank()) {
+            return PlatformRefParser.parse(onEventRef).resolveObject(ruleObjectPath);
+        }
+        if (onEvent != null && !onEvent.isBlank()) {
+            return PlatformRef.event(ruleObjectPath, onEvent);
+        }
+        return null;
     }
 }

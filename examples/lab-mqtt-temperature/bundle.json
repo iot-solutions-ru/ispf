@@ -5,7 +5,7 @@
   "schemaName": "mqtt_temperature_lab",
   "metadata": {
     "taskVariant": "mqtt-temperature",
-    "broker": "m5.wqtt.ru:11296"
+    "broker": "mqtt-broker.example.invalid:1883"
   },
   "migrations": [
     {

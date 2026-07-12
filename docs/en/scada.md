@@ -34,7 +34,7 @@ Do not confuse three different kinds of “object”:
 | **Diagram element** | Inside `diagramJson` | tank, valve, label | Editor → **Place** tool |
 | **Data on the diagram** | Platform object variables | `level`, `open`, `alarm` | Explorer → device/model; on the diagram only **binding** |
 
-The mimic editor **does not create** devices or write telemetry — it draws symbols and specifies `objectPath` + `variableName`.
+The mimic editor **does not create** devices or write telemetry — it draws symbols and binds **`ref`** (PlatformRef slash address) to symbol properties.
 
 ---
 

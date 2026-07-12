@@ -37,7 +37,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 
 ## Ретроспектива — что сделано и где мы {#retrospective}
 
-**На 09.07.2026** · prod **0.9.105** (`ispf.iot-solutions.ru`) · оценка по коду **~7,4/10** ([competitive-scorecard](competitive-scorecard.md)).
+**На 09.07.2026** · prod **0.9.105** (`ispf.example.invalid`) · оценка по коду **~7,4/10** ([competitive-scorecard](competitive-scorecard.md)).
 
 ### Эпохи (закрыто → активно)
 

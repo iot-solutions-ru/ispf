@@ -49,7 +49,7 @@ public final class AgentObjectTreeGuide {
                 
                 - **DEVICE**: driverId, driverConfigJson, driverPointMappingsJson; poll via configure_driver / driver_control
                 - **DASHBOARD**: title, layout (JSON widgets[]), refreshIntervalMs — NOT a variable named widgets
-                - **CUSTOM**: hub for refAt bindings, aggregations, clusterError logic
+                - **CUSTOM**: hub for read(...) bindings, aggregations, clusterError logic
                 - **ALERT**: targetObjectPath, watchVariable, conditionExpr (CEL), eventName — tool configure_alert
                 - **CORRELATOR**: patternType COUNT|SEQUENCE|EVENT_CHAIN — tool configure_correlator
                 - **WORKFLOW**: BPMN in bundle or platform tree
@@ -76,7 +76,7 @@ public final class AgentObjectTreeGuide {
                 + BlueprintCatalogRoots.ABSOLUTE
                 + """
                 
-                - create_variable + create_binding_rule for cross-object data (refAt, CEL)
+                - create_variable + create_binding_rule for cross-object data (read, CEL)
                 - describe_variables before set_variable on existing objects
                 
                 ### Discovery tools (ground truth — use before create/mutate)

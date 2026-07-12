@@ -24,7 +24,7 @@ public final class CounterRateBinding implements PlatformBinding {
     static final CounterRateBinding INSTANCE = new CounterRateBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "counterRate\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*(\\d+)\\s*)?(?:,\\s*("
+            "counterRate\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*(?:,\\s*(\\d+)\\s*)?(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -48,7 +48,7 @@ public final class CounterRateBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(3),
                 "value"
         );
@@ -56,19 +56,18 @@ public final class CounterRateBinding implements PlatformBinding {
                 ? Long.parseLong(matcher.group(2))
                 : DEFAULT_COUNTER_MAX;
 
-        Variable sourceVar = object.getVariable(source.sourceVariable())
-                .orElseThrow(() -> new ExpressionException("counterRate source not found: " + source.sourceVariable()));
-        Optional<DataRecord> record = sourceVar.value();
-        if (record.isEmpty() || record.get().rowCount() == 0) {
+        var ref = BindingSourceHelper.resolveVariableSource(source.sourceVariable(), source.field());
+        Optional<Double> currentOpt = PlatformRefValueHelper.readNumericVariable(object, ref, context);
+        if (currentOpt.isEmpty()) {
             return Optional.empty();
         }
-        Map<String, Object> row = record.get().firstRow();
-        Object raw = row.get(source.field());
-        if (!(raw instanceof Number currentNumber)) {
-            return Optional.empty();
+        double current = currentOpt.get();
+        Instant updatedAt = Instant.now();
+        if (ref.isCurrentObject() || ref.object().equals(object.path())) {
+            updatedAt = object.getVariable(ref.name())
+                    .flatMap(Variable::updatedAt)
+                    .orElse(updatedAt);
         }
-        double current = currentNumber.doubleValue();
-        Instant updatedAt = sourceVar.updatedAt().orElse(Instant.now());
         long nowMs = updatedAt.toEpochMilli();
 
         String stateKey = BindingSourceHelper.stateKey(object, targetVariable);

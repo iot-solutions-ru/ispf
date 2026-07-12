@@ -75,6 +75,26 @@ export function buildPlatformBindingExpression(
   entry: PlatformBindingEntry,
   values: Record<string, string>
 ): string {
+  const path = values.path?.trim();
+  const remoteVar = values.remoteVar?.trim();
+  if (entry.id === "readRef" && path && remoteVar) {
+    return `read(${quoteString(`${path}/${remoteVar}`)})`;
+  }
+  const fn = values.function?.trim();
+  const input = values.input?.trim();
+  if (entry.id === "callRef" && fn) {
+    return input ? `call(@/fn/${fn}, @/${input})` : `call(@/fn/${fn})`;
+  }
+  if (entry.id === "callRemoteRef" && path && fn) {
+    const fnRef = `${path}/fn/${fn}`;
+    return input ? `call(${fnRef}, @/${input})` : `call(${fnRef})`;
+  }
+  if (entry.id === "avgHistorian") {
+    const source = values.source?.trim() || "sourceVar";
+    const window = values.windowBucket?.trim() || "5m";
+    return `avg(@/${source}, ${window})`;
+  }
+
   const parts: string[] = [];
 
   for (const param of entry.params) {
@@ -106,14 +126,14 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "selectField",
     name: "selectField",
-    snippet: "selectField(sourceVar)",
+    snippet: "selectField(@/sourceVar)",
     category: "signal",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
   },
   {
     id: "scale",
     name: "scale",
-    snippet: "scale(sourceVar, 0, 100, 0, 1)",
+    snippet: "scale(@/sourceVar, 0, 100, 0, 1)",
     category: "signal",
     params: [
       { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
@@ -126,7 +146,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "clamp",
     name: "clamp",
-    snippet: "clamp(sourceVar, 0, 100)",
+    snippet: "clamp(@/sourceVar, 0, 100)",
     category: "signal",
     params: [
       { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
@@ -137,7 +157,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "format",
     name: "format",
-    snippet: 'format("%.1f", sourceVar)',
+    snippet: 'format("%.1f", @/sourceVar)',
     category: "signal",
     params: [
       { key: "pattern", kind: "string", labelKey: "platformBindings.param.pattern", default: "%.1f" },
@@ -147,7 +167,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "delta",
     name: "delta",
-    snippet: "delta(sourceVar)",
+    snippet: "delta(@/sourceVar)",
     stateful: true,
     category: "stateful",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
@@ -155,7 +175,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "rate",
     name: "rate",
-    snippet: "rate(sourceVar)",
+    snippet: "rate(@/sourceVar)",
     stateful: true,
     category: "stateful",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
@@ -163,7 +183,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "counterRate",
     name: "counterRate",
-    snippet: "counterRate(ifInOctets)",
+    snippet: "counterRate(@/ifInOctets)",
     stateful: true,
     category: "stateful",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
@@ -171,7 +191,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "counterDelta",
     name: "counterDelta",
-    snippet: "counterDelta(ifInOctets)",
+    snippet: "counterDelta(@/ifInOctets)",
     stateful: true,
     category: "stateful",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
@@ -179,7 +199,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "movingAvg",
     name: "movingAvg",
-    snippet: "movingAvg(sourceVar, 60)",
+    snippet: "movingAvg(@/sourceVar, 60)",
     stateful: true,
     category: "stateful",
     params: [
@@ -190,7 +210,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "movingMin",
     name: "movingMin",
-    snippet: "movingMin(sourceVar, 30)",
+    snippet: "movingMin(@/sourceVar, 30)",
     stateful: true,
     category: "stateful",
     params: [
@@ -201,7 +221,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "movingMax",
     name: "movingMax",
-    snippet: "movingMax(sourceVar, 30)",
+    snippet: "movingMax(@/sourceVar, 30)",
     stateful: true,
     category: "stateful",
     params: [
@@ -212,7 +232,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "deadband",
     name: "deadband",
-    snippet: "deadband(sourceVar, 1.0)",
+    snippet: "deadband(@/sourceVar, 1.0)",
     stateful: true,
     category: "stateful",
     params: [
@@ -223,7 +243,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "hysteresis",
     name: "hysteresis",
-    snippet: "hysteresis(sourceVar, 80, 70)",
+    snippet: "hysteresis(@/sourceVar, 80, 70)",
     stateful: true,
     category: "stateful",
     params: [
@@ -235,7 +255,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "unitConvert",
     name: "unitConvert",
-    snippet: "unitConvert(temperature, C, F)",
+    snippet: "unitConvert(@/temperature, C, F)",
     category: "signal",
     params: [
       { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
@@ -244,9 +264,9 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
     ],
   },
   {
-    id: "refAt",
-    name: "refAt",
-    snippet: 'refAt("root.platform.devices.demo", sourceVar)',
+    id: "readRef",
+    name: "read",
+    snippet: 'read("root.platform.devices.demo/temperature")',
     category: "cross",
     params: [
       { key: "path", kind: "path", labelKey: "platformBindings.param.path" },
@@ -254,9 +274,9 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
     ],
   },
   {
-    id: "callFunction",
-    name: "callFunction",
-    snippet: "callFunction(myFunc, inputVar)",
+    id: "callRef",
+    name: "call",
+    snippet: "call(@/fn/myFunc, @/inputVar)",
     category: "function",
     params: [
       { key: "function", kind: "func", labelKey: "platformBindings.param.function" },
@@ -264,9 +284,9 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
     ],
   },
   {
-    id: "callFunctionAt",
-    name: "callFunctionAt",
-    snippet: 'callFunctionAt("root.remote", myFunc, inputVar)',
+    id: "callRemoteRef",
+    name: "call",
+    snippet: 'call(root.platform.devices.remote/fn/myFunc, @/inputVar)',
     category: "function",
     params: [
       { key: "path", kind: "path", labelKey: "platformBindings.param.path" },
@@ -277,7 +297,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "sumRecordField",
     name: "sumRecordField",
-    snippet: 'sumRecordField(tableVar, "amount")',
+    snippet: 'sumRecordField(@/tableVar, "amount")',
     category: "aggregate",
     params: [
       { key: "table", kind: "var", labelKey: "platformBindings.param.table" },
@@ -285,24 +305,22 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
     ],
   },
   {
-    id: "rollingAvg",
-    name: "rollingAvg",
-    snippet: "rollingAvg('sourceVar', '5m')",
+    id: "avgHistorian",
+    name: "avg",
+    snippet: "avg(@/sourceVar, 5m)",
     category: "aggregate",
-    stringQuoteStyle: "single",
     params: [
-      { key: "source", kind: "string", labelKey: "platformBindings.param.source", default: "sourceVar" },
+      { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
       { key: "windowBucket", kind: "string", labelKey: "platformBindings.param.windowBucket", default: "5m" },
     ],
   },
   {
     id: "rateOfChange",
     name: "rateOfChange",
-    snippet: "rateOfChange('sourceVar', '1h')",
+    snippet: "rateOfChange(@/sourceVar, 1h)",
     category: "aggregate",
-    stringQuoteStyle: "single",
     params: [
-      { key: "source", kind: "string", labelKey: "platformBindings.param.source", default: "sourceVar" },
+      { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
       { key: "windowBucket", kind: "string", labelKey: "platformBindings.param.windowBucket", default: "1h" },
     ],
   },

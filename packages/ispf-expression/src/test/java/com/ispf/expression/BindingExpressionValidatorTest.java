@@ -35,9 +35,9 @@ class BindingExpressionValidatorTest {
                 .doesNotThrowAnyException();
         assertThatCode(() -> BindingExpressionValidator.validateOrThrow("movingAvg(gauge, 60)"))
                 .doesNotThrowAnyException();
-        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("refAt(\"root.platform.devices.foo\", temperature)"))
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("read(\"root.platform.devices.foo/temperature\")"))
                 .doesNotThrowAnyException();
-        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("callFunctionAt(\"root.remote\", fn, input)"))
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("call(root.remote/fn/fn, @/input)"))
                 .doesNotThrowAnyException();
     }
 

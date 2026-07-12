@@ -83,6 +83,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0040-unified-computations-ui](0040-unified-computations-ui.md) | Unified Computations tab |
 | [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) | Multi-tag historian binding rules |
 | [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | Analytics function catalog |
+| [0043-unified-platform-ref](0043-unified-platform-ref.md) | Unified PlatformRef addressing |
 
 ## Topic chains (read in order)
 

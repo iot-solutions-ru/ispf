@@ -28,11 +28,13 @@ Or VPS Site profile per [demostands.md](../../docs/en/demostands.md).
 python deploy/setup-mqtt-historian-devices.py --devices 32 --base-url http://127.0.0.1:8080
 ```
 
-### 3. Apply derived tags
+### 3. Apply historian rules (derived tags)
 
-1. Open Explorer → `root.platform.analytics` → template **rollingAvg**
-2. Apply to 3–5 devices (or use `POST /api/v1/platform/analytics/templates/apply`)
-3. Verify `GET /api/v1/platform/analytics/tags`
+1. Explorer → device → **Computations** → **+ Rule** → type **Historian**
+2. Expression: `avg(root.platform.devices.<device>/temperature, 5m)` (adjust path and window)
+3. Verify `GET /api/v1/platform/analytics/tags` — tag path `objectPath/tag/ruleId`
+
+See [analytics-rolling-avg](../analytics-rolling-avg/) for a full REST example.
 
 ### 4. Run historian + analytics gates
 

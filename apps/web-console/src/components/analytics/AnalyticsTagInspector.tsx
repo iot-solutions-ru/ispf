@@ -15,6 +15,7 @@ import {
 import type { DataRecord } from "../../types";
 import BindingExpressionField from "../BindingExpressionField";
 import { useAnalyticsCatalog } from "../../hooks/useAnalyticsCatalog";
+import { analyticsTagObjectPath } from "../../utils/analyticsPath";
 
 interface AnalyticsTagInspectorProps {
   path: string;
@@ -33,11 +34,6 @@ function stringRecord(value: string): DataRecord {
     },
     rows: [{ value }],
   };
-}
-
-function historianTagObjectPath(tagPath: string): string {
-  const separator = tagPath.indexOf("#");
-  return separator > 0 ? tagPath.slice(0, separator) : tagPath;
 }
 
 function isTagProbeResult(
@@ -143,7 +139,7 @@ export default function AnalyticsTagInspector({
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const helper = helperMode === "cel" ? "cel" : tagQuery.data?.helper ?? "rollingAvg";
+      const helper = helperMode === "cel" ? "cel" : tagQuery.data?.helper ?? "avg";
       await setVariable(path, "analyticsHelper", stringRecord(helper));
       if (helperMode === "cel") {
         await setVariable(path, "analyticsExpression", stringRecord(expressionDraft.trim()));
@@ -170,7 +166,7 @@ export default function AnalyticsTagInspector({
         return evaluateAnalyticsTag(path);
       }
       const expression = expressionDraft.trim();
-      return evaluateAnalyticsExpression(expression, historianTagObjectPath(path));
+      return evaluateAnalyticsExpression(expression, analyticsTagObjectPath(path));
     },
     onSuccess: (result) => {
       if (isTagProbeResult(result)) {
@@ -245,12 +241,12 @@ export default function AnalyticsTagInspector({
                   id="analytics-tag-expression"
                   value={expressionDraft}
                   onChange={setExpressionDraft}
-                  objectPath={historianTagObjectPath(path)}
+                  objectPath={analyticsTagObjectPath(path)}
                   entries={celCatalog.entries}
                   placeholder={t("automation:analyticsTag.expressionPlaceholder")}
                   editorTitle={t("automation:analyticsTag.expression")}
                   onValidate={async (expression) => {
-                    const result = await validateAnalyticsExpression(expression, historianTagObjectPath(path));
+                    const result = await validateAnalyticsExpression(expression, analyticsTagObjectPath(path));
                     return {
                       valid: result.valid,
                       error: result.errors[0] ?? null,

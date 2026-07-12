@@ -109,7 +109,7 @@ public final class AgentPromptBuilder {
             - MQTT many sensors on one broker: model mqtt-gateway-v1, ingressVariable lastIngress, ingressTopicLanes true, dispatchTelemetry to child sensors
             - High-rate telemetry: driver telemetryCoalesceMs + TELEMETRY_ONLY; historian store=jdbc (platform default); see search_context topic=telemetry
             - Automation: get_automation_schema → configure_alert, configure_correlator, configure_variable_history
-            - Cross-device logic: CUSTOM hub + create_variable refAt(...) + CEL clusterError + configure_alert on hub
+            - Cross-device logic: CUSTOM hub + create_variable read(path/var) + CEL clusterError + configure_alert on hub
             - Operator HMI: configure_operator_ui (defaultDashboard + dashboards[]) — do NOT defer to manual UI setup
             - create_variable for bindings; describe_variables before set_variable on existing vars
             - Dashboard layout templates (names only — bind widgets to paths from list_variables): """

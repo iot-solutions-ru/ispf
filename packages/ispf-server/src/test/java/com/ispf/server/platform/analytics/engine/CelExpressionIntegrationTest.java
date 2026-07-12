@@ -61,7 +61,7 @@ class CelExpressionIntegrationTest {
                 bindingRulesService,
                 DEVICE,
                 RULE_ID,
-                "hist.live('" + SENSOR + "', 'temperature') + 5",
+                "live(" + SENSOR + "/temperature) + 5",
                 SENSOR,
                 "temperature",
                 "derivedValue",

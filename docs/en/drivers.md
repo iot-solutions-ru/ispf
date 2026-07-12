@@ -350,7 +350,7 @@ Point mapping: command per variable, for example `uptime`.
 
 ```json
 {
-  "host": "192.168.1.10",
+  "host": "10.0.0.10",
   "port": "22",
   "username": "admin",
   "password": "secret",

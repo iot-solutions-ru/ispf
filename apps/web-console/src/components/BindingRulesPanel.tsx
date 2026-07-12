@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../api";
-import type { BindingRule, BindingRuleKind, BindingTargetKind } from "../types";
+import type { BindingRule, BindingRuleKind, BindingTargetKind, VariableDto } from "../types";
 import BindingActivatorsEditor, { activatorsSummary } from "./BindingActivatorsEditor";
 import BindingExpressionField from "./BindingExpressionField";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
@@ -31,12 +31,13 @@ interface BindingRulesPanelProps {
   canManage: boolean;
   eventNames?: string[];
   variableNames?: string[];
+  variables?: VariableDto[];
   functionNames?: string[];
   dashboardMode?: boolean;
   ruleTemplates?: RuleTemplate[];
   /** When nested inside ObjectComputationsPanel, skip outer panel wrapper. */
   embedded?: boolean;
-  /** Open read-only historian tag inspector (`objectPath#ruleId`). */
+  /** Open read-only historian tag inspector (`objectPath/tag/ruleId`). */
   onInspectHistorian?: (tagPath: string) => void;
 }
 
@@ -47,6 +48,7 @@ export default function BindingRulesPanel({
   canManage,
   eventNames = [],
   variableNames = [],
+  variables,
   functionNames = [],
   dashboardMode = false,
   ruleTemplates = [],
@@ -374,6 +376,7 @@ export default function BindingRulesPanel({
                   }
                   objectPath={path}
                   variableNames={variableNames}
+                  variables={variables}
                   functionNames={functionNames}
                   editorTitle={t("inspector:bindings.column.expression")}
                   entries={
@@ -395,6 +398,7 @@ export default function BindingRulesPanel({
                   placeholder={t("inspector:bindings.conditionPlaceholder")}
                   objectPath={path}
                   variableNames={variableNames}
+                  variables={variables}
                   functionNames={functionNames}
                   editorTitle={t("inspector:bindings.condition")}
                   analyticsCatalogKind={editingRuleKind}
@@ -409,6 +413,8 @@ export default function BindingRulesPanel({
               <BindingActivatorsEditor
                 activators={editing.activators}
                 eventNames={eventNames}
+                objectPath={path}
+                variableNames={variableNames}
                 dashboardMode={dashboardMode}
                 onChange={(activators) => setEditing({ ...editing, activators })}
               />

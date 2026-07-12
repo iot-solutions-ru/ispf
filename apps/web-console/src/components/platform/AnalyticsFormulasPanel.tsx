@@ -103,7 +103,7 @@ export default function AnalyticsFormulasPanel() {
 
       <SaveAnalyticsFormulaModal
         open={editorOpen}
-        expression={editing?.expression ?? "rollingAvg({{sourcePath}}, 5m)"}
+        expression={editing?.expression ?? "avg({{sourcePath}}/{{sourceVariable}}, 5m)"}
         defaultKind={editing?.kind === "reactive" ? "reactive" : "historian"}
         formula={editing}
         onClose={() => {

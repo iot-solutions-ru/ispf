@@ -90,7 +90,7 @@ Dev: `npm run dev`, proxy to backend.
 
 ## Production quick start (BL-127)
 
-One command brings up the **lab / localhost** stack on a Linux host with Docker (PostgreSQL + Redis + `ispf-server` + nginx for UI). Not tied to VPS `ispf.iot-solutions.ru`.
+One command brings up the **lab / localhost** stack on a Linux host with Docker (PostgreSQL + Redis + `ispf-server` + nginx for UI). Not tied to VPS `ispf.example.invalid`.
 
 **Not for internet-facing production without hardening:** ports are bound to `127.0.0.1`, demo fixtures are disabled, default DB passwords (`ispf/ispf`) must be changed before exposing to the network. Images use pinned tags from `deploy/air-gap-images.env`. Full prod checklist: [demostands.md § Production](demostands.md).
 
@@ -131,7 +131,7 @@ PostgreSQL volumes are preserved (`ispf_prod_pg`). Full cleanup: add `-v`.
 | `deploy/nginx-local-prod.conf` | proxy `/api/`, `/ws/` → server; static SPA (no `/actuator/`) |
 | `deploy/health-check.sh` | Poll `/actuator/health` + smoke `/api/v1/info` |
 
-**Prod VPS:** for `ispf.iot-solutions.ru`, continue to use `deploy/vps-deploy-direct.ps1` (direct SCP + staging), not this quick start.
+**Prod VPS:** for `ispf.example.invalid`, continue to use `deploy/vps-deploy-direct.ps1` (direct SCP + staging), not this quick start.
 
 ## Air-gap deployment (BL-128)
 
@@ -355,8 +355,8 @@ Script `deploy/remote-setup-ispf.sh` — one-time install on Linux VPS (Ubuntu 2
 3. Places artifacts in `/opt/ispf`:
    - `ispf-server.jar` ← `/tmp/ispf-server.jar`
    - `web-console/` ← `/tmp/ispf-web-console-dist/`
-4. Creates `ispf-server.service` (port **8080**). On **prod VPS** (`ispf.iot-solutions.ru`), datasource is set via `/opt/ispf/ispf-server.env` → **PostgreSQL** in Docker (`ispf-postgres`), despite `--spring.profiles.active=local` in the unit file. Directory `/opt/ispf/data/` — service files (auto-update, installation-id), **not** H2.
-5. Configures nginx on **80** (`ai.iot-solutions.ru`): static UI + proxy `/api/`, `/ws/`, `/actuator/`.
+4. Creates `ispf-server.service` (port **8080**). On **prod VPS** (`ispf.example.invalid`), datasource is set via `/opt/ispf/ispf-server.env` → **PostgreSQL** in Docker (`ispf-postgres`), despite `--spring.profiles.active=local` in the unit file. Directory `/opt/ispf/data/` — service files (auto-update, installation-id), **not** H2.
+5. Configures nginx on **80** (`ai.example.invalid`): static UI + proxy `/api/`, `/ws/`, `/actuator/`.
 6. Optional: if `/tmp/snmpd-ispf.conf` is present — installs snmpd for demo `snmp-localhost`.
 
 Prepare and run on the server:
@@ -407,7 +407,7 @@ The script logs in (`admin`/`admin`), calls `POST /api/v1/drivers/runtime/start?
 
 > **Runbook for upgrading from pre-0.8.0.** One-time breaking change [0010-binding-rules-only](decisions/0010-binding-rules-only.md): column `binding_expr` removed (`V41`), checksum `V1` changed — **easier to recreate the DB** than migrate legacy bindings. On prod 0.9.x, normal deploy via [vps-deploy-direct.ps1](../deploy/vps-deploy-direct.ps1) — no DB recreation.
 
-### Prod VPS (`ispf.iot-solutions.ru`) — PostgreSQL in Docker
+### Prod VPS (`ispf.example.invalid`) — PostgreSQL in Docker
 
 DB: container **`ispf-postgres`** (`timescale/timescaledb`), JDBC from `/opt/ispf/ispf-server.env` (`SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/ispf`).
 
@@ -426,7 +426,7 @@ docker exec ispf-postgres psql -U ispf -d postgres \
 systemctl start ispf-server
 
 # 4. Flyway applies schema from V1 without binding_expr on clean DB
-curl -sf https://ispf.iot-solutions.ru/api/v1/info
+curl -sf ${ISPF_BASE_URL:-https://ispf.example.invalid}/api/v1/info
 ```
 
 After recreation: binding rules — Web Console → Bindings; mini-TEC — `MiniTecPlatformBootstrap` on startup.

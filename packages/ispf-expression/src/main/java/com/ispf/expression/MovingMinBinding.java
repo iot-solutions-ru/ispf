@@ -16,7 +16,7 @@ public final class MovingMinBinding implements PlatformBinding {
     static final MovingMinBinding INSTANCE = new MovingMinBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "movingMin\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
+            "movingMin\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*(?:,\\s*(" + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -35,7 +35,7 @@ public final class MovingMinBinding implements PlatformBinding {
             String expression,
             BindingEvaluationContext context
     ) {
-        return aggregate(PATTERN, object, targetVariable, expression, Math::min);
+        return aggregate(PATTERN, object, targetVariable, expression, context, Math::min);
     }
 
     static Optional<Object> aggregate(
@@ -43,6 +43,7 @@ public final class MovingMinBinding implements PlatformBinding {
             PlatformObject object,
             String targetVariable,
             String expression,
+            BindingEvaluationContext context,
             java.util.function.DoubleBinaryOperator aggregator
     ) {
         Matcher matcher = pattern.matcher(expression.trim());
@@ -50,25 +51,25 @@ public final class MovingMinBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(3),
                 "value"
         );
         double windowSec = Double.parseDouble(matcher.group(2));
         long windowMs = (long) (windowSec * 1000);
 
-        Optional<Double> currentOpt = BindingSourceHelper.readNumericField(
-                object,
-                source.sourceVariable(),
-                source.field()
-        );
+        var ref = BindingSourceHelper.resolveVariableSource(source.sourceVariable(), source.field());
+        Optional<Double> currentOpt = PlatformRefValueHelper.readNumericVariable(object, ref, context);
         if (currentOpt.isEmpty()) {
             return Optional.empty();
         }
-        long timestampMs = object.getVariable(source.sourceVariable())
-                .flatMap(Variable::updatedAt)
-                .map(Instant::toEpochMilli)
-                .orElseGet(System::currentTimeMillis);
+        long timestampMs = Instant.now().toEpochMilli();
+        if (ref.isCurrentObject() || ref.object().equals(object.path())) {
+            timestampMs = object.getVariable(ref.name())
+                    .flatMap(Variable::updatedAt)
+                    .map(Instant::toEpochMilli)
+                    .orElse(timestampMs);
+        }
 
         String stateKey = BindingSourceHelper.stateKey(object, targetVariable);
         return BindingStateStore.aggregateTimedWindow(

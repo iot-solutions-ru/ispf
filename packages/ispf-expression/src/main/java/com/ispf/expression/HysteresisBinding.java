@@ -16,7 +16,7 @@ public final class HysteresisBinding implements PlatformBinding {
     static final HysteresisBinding INSTANCE = new HysteresisBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "hysteresis\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
+            "hysteresis\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC + ")\\s*(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
@@ -41,17 +41,18 @@ public final class HysteresisBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(4),
                 "value"
         );
         double onThreshold = Double.parseDouble(matcher.group(2));
         double offThreshold = Double.parseDouble(matcher.group(3));
 
-        Optional<Double> currentOpt = BindingSourceHelper.readNumericField(
+        Optional<Double> currentOpt = BindingSourceHelper.readNumericSource(
                 object,
                 source.sourceVariable(),
-                source.field()
+                source.field(),
+                context
         );
         if (currentOpt.isEmpty()) {
             return Optional.empty();

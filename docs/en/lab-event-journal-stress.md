@@ -4,17 +4,29 @@
 
 Load stand for **EVENT_JOURNAL_ONLY** fast path ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)): mqtt driver → `fireIngress` → `EventJournalAsyncWriter` → Scylla `event_history`.
 
-**Host:** `84.42.21.226`, SSH port `5031`, user `iot-solutions`  
-**SSH alias:** `ispf-lab` (Ed25519 key `~/.ssh/ispf_lab_ed25519`)  
-**HTTP:** `http://84.42.21.226:8000` (lab nginx)  
-**Stack:** `~/ispf` — `deploy/lab-test-host-compose.yml` + `deploy/lab-stress.env`
+**Where to run:** dedicated lab host (SSH from workstation; HTTP via nginx edge).
+**Templates:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) (shared topology/env) and gitignored `deploy/lab-*` on the operator machine.
+
+SSH host, port, user, and key path — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (replace on site; never commit real values).
+
+**Where to run:** dedicated lab host (SSH from workstation; HTTP via nginx edge).
+**Templates:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) (shared topology/env) and gitignored `deploy/lab-*` on the operator machine.
+
+SSH host, port, user, and key path — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (replace on site; never commit real values).
+
+**Where to run:** dedicated lab host (SSH from workstation; HTTP via nginx edge).
+**Templates:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) (shared topology/env) and gitignored `deploy/lab-*` on the operator machine.
+
+SSH host, port, user, and key path — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (replace on site; never commit real values).
+
+**Stack:** `~/ispf` — templates from [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) or gitignored `deploy/lab-*`
 
 ### Workstation SSH (one-time)
 
 ```bash
 # First run only — password via ISPF_LAB_PASSWORD env, never commit it
 python deploy/local/tools/lab-ssh-install-key.py
-ssh ispf-lab   # thereafter
+ssh lab-host   # thereafter
 ```
 
 Copy `deploy/local/lab_ssh.example.py` → `deploy/lab_ssh.py` (gitignored) if missing; Python lab scripts use `connect_ssh()`.
@@ -192,15 +204,16 @@ Cleanup orphans: `bash lab-emqtt-cleanup.sh` (label `ispf.emqtt-bench=1`).
 ## Related documents
 
 - [load-testing](load-testing.md) — general MQTT / emqtt scenarios
+- [lab-mqtt-historian-stress](lab-mqtt-historian-stress.md) — TELEMETRY_ONLY historian (Scylla vs CH)
 - [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) — EVENT_JOURNAL_ONLY
 - [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md) — ingress pipeline
 - [automation](automation.md) — platform metrics API
 
-## VPS prod comparison (ispf.iot-solutions.ru)
+## Lab vs production VPS
 
 Same benchmark params as lab peak: **16×32k target**, **8 emqtt shards**, 60s measure, `EVENT_JOURNAL_ONLY`, Scylla journal.
 
-| | Lab (84.42.21.226) | VPS prod |
+| | Lab (dedicated hardware) | Production VPS |
 |--|-------------------|----------|
 | ISPF | 0.9.88 | 0.9.86 |
 | Scylla | 20 SMP / 48G | **1 SMP / 750M** |

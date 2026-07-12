@@ -77,8 +77,8 @@ If all JVMs show low CPU — culprit outside ISPF (Scylla, ClickHouse, Postgres)
 Script [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) — two samples of `GET /api/v1/platform/metrics` ~6s apart, prints thread groups and suspects to stdout. Handy over SSH without UI.
 
 ```bash
-scp deploy/vps-idle-thread-sample.py root@ispf.iot-solutions.ru:/tmp/
-ssh root@ispf.iot-solutions.ru python3 /tmp/vps-idle-thread-sample.py
+scp deploy/vps-idle-thread-sample.py deploy-user@production-host:/tmp/
+ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 ```
 
 Details: [demostands](demostands.md) (verification section), [vps-demostand](vps-demostand.md) (ops example).

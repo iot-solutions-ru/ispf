@@ -1,0 +1,65 @@
+[
+  {
+    "input": "@/temperature",
+    "object": "@",
+    "kind": "VARIABLE",
+    "name": "temperature",
+    "field": "value"
+  },
+  {
+    "input": "@/temperature/quality",
+    "object": "@",
+    "kind": "VARIABLE",
+    "name": "temperature",
+    "field": "quality"
+  },
+  {
+    "input": "root.platform.devices.demo-sensor-01/temperature",
+    "object": "root.platform.devices.demo-sensor-01",
+    "kind": "VARIABLE",
+    "name": "temperature",
+    "field": "value"
+  },
+  {
+    "input": "@/fn/calculate",
+    "object": "@",
+    "kind": "FUNCTION",
+    "name": "calculate",
+    "field": null
+  },
+  {
+    "input": "root.platform.devices.demo/fn/acknowledgeAlarm",
+    "object": "root.platform.devices.demo",
+    "kind": "FUNCTION",
+    "name": "acknowledgeAlarm",
+    "field": null
+  },
+  {
+    "input": "@/evt/alarmRaised",
+    "object": "@",
+    "kind": "EVENT",
+    "name": "alarmRaised",
+    "field": null
+  },
+  {
+    "input": "root.platform.devices.pump/evt/overload",
+    "object": "root.platform.devices.pump",
+    "kind": "EVENT",
+    "name": "overload",
+    "field": null
+  },
+  {
+    "input": "root.platform.devices.sensor-a/tag/avg-temp-5m",
+    "object": "root.platform.devices.sensor-a",
+    "kind": "TAG",
+    "name": "avg-temp-5m",
+    "field": null
+  },
+  {
+    "input": "temperature",
+    "object": "@",
+    "kind": "VARIABLE",
+    "name": "temperature",
+    "field": "value"
+  }
+]

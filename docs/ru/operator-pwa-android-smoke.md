@@ -6,7 +6,7 @@
 
 ## Предварительные условия
 
-- HTTPS origin (prod `https://ispf.iot-solutions.ru` or local tunnel with valid cert)
+- HTTPS origin (prod `${ISPF_BASE_URL:-https://ispf.example.invalid}` or local tunnel with valid cert)
 - Demo operator app available (`/?mode=operator&app=demo`)
 - Устройство Android с Chrome 120+ (необязательно — только для подписания выпуска)
 

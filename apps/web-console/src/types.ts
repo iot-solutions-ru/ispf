@@ -139,6 +139,9 @@ export interface VariableDto {
   historyEnabled: boolean;
   historyRetentionDays: number | null;
   telemetryPublishMode?: string | null;
+  historySampleMode?: string | null;
+  includePreviousValueInEvent?: boolean;
+  storageMode?: string | null;
   readRoles?: string[];
   writeRoles?: string[];
 }
@@ -146,12 +149,16 @@ export interface VariableDto {
 export interface BindingVariableRef {
   objectPath: string;
   variableName: string;
+  /** Canonical PlatformRef slash string (ADR-0043). */
+  ref?: string;
 }
 
 export interface BindingActivators {
   onStartup: boolean;
   onVariableChange: BindingVariableRef[];
   onEvent: string | null;
+  /** Full event ref, e.g. root.../evt/alarm or @/evt/alarm */
+  onEventRef?: string | null;
   periodicMs: number;
   /** When true, rule runs on a dedicated single-thread executor (coalesced per rule id). */
   async?: boolean;
@@ -167,6 +174,7 @@ export interface BindingTarget {
   field?: string | null;
   path?: string | null;
   eventName?: string | null;
+  ref?: string | null;
 }
 
 export type BindingRuleKind = "reactive" | "historian";

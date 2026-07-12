@@ -414,13 +414,13 @@ public class MiniTecBlueprintBootstrap {
                 sumRule("total-load", "totalLoadKw",
                         "self.consumerLoad1Kw[\"value\"] + self.consumerLoad2Kw[\"value\"] + self.consumerLoad3Kw[\"value\"]"),
                 sumRule("load-margin", "loadMarginKw", "4440 - self.totalLoadKw[\"value\"]"),
-                sumRule("bus-freq", "gridFrequencyHz", "refAt(\"" + MiniTecPaths.LOAD_MODULE + "\", frequencyHz)"),
+                sumRule("bus-freq", "gridFrequencyHz", readRef(MiniTecPaths.LOAD_MODULE, "frequencyHz")),
                 sumRule("bus-10kv", "bus10kvVoltage",
                         "10.2 + (self.totalGenPowerKw[\"value\"] / 4440.0) * 0.6"),
                 sumRule("bus-04kv", "bus04kvVoltage",
                         "0.38 + (self.totalGenPowerKw[\"value\"] / 4440.0) * 0.04"),
                 BlueprintBindingRule.of("highlight-active", "highlightActive",
-                        "refAt(\"" + MiniTecPaths.GRPB + "\", fireAlarm)[\"value\"] == true"),
+                        readRef(MiniTecPaths.GRPB, "fireAlarm") + " == true"),
                 BlueprintBindingRule.of("equip-status", "equipmentStatus",
                         "self.alarmLatched[\"value\"] == true || self.stationUnderpower[\"value\"] == true ? \"ALARM\" : (self.loadMarginKw[\"value\"] < 200 ? \"WARNING\" : \"NORMAL\")"),
                 BlueprintBindingRule.of("bus-overvoltage", "busOvervoltage", "self.bus10kvVoltage[\"value\"] > 11.0"),
@@ -430,12 +430,12 @@ public class MiniTecBlueprintBootstrap {
                 BlueprintBindingRule.of("station-underpower", "stationUnderpower",
                         "self.totalGenPowerKw[\"value\"] < self.totalLoadKw[\"value\"] - 100"),
                 BlueprintBindingRule.of("gpu-sync-fault", "gpuSyncFault",
-                        "(refAt(\"" + MiniTecPaths.GPU_01 + "\", synced)[\"value\"] == false && refAt(\""
-                                + MiniTecPaths.GPU_01 + "\", running)[\"value\"] == true) || "
-                                + "(refAt(\"" + MiniTecPaths.GPU_02 + "\", synced)[\"value\"] == false && refAt(\""
-                                + MiniTecPaths.GPU_02 + "\", running)[\"value\"] == true) || "
-                                + "(refAt(\"" + MiniTecPaths.GPU_03 + "\", synced)[\"value\"] == false && refAt(\""
-                                + MiniTecPaths.GPU_03 + "\", running)[\"value\"] == true)")
+                        "(" + readRef(MiniTecPaths.GPU_01, "synced") + " == false && "
+                                + readRef(MiniTecPaths.GPU_01, "running") + " == true) || "
+                                + "(" + readRef(MiniTecPaths.GPU_02, "synced") + " == false && "
+                                + readRef(MiniTecPaths.GPU_02, "running") + " == true) || "
+                                + "(" + readRef(MiniTecPaths.GPU_03, "synced") + " == false && "
+                                + readRef(MiniTecPaths.GPU_03, "running") + " == true)")
         );
 
         // Add hidden aggregate vars for gpu powers
@@ -463,17 +463,22 @@ public class MiniTecBlueprintBootstrap {
     }
 
     private static BlueprintBindingRule refRule(String id, String target, String remotePath, String remoteVar) {
+        String ref = remotePath + "/" + remoteVar;
         return new BlueprintBindingRule(
                 id,
                 target,
                 true,
                 10,
-                new BindingActivators(false, List.of(new BindingVariableRef(remotePath, remoteVar)), null, 0),
+                new BindingActivators(false, List.of(BindingVariableRef.fromRef(ref)), null, 0),
                 "",
-                "refAt(\"" + remotePath + "\", " + remoteVar + ")",
+                readRef(remotePath, remoteVar),
                 target,
                 "value"
         );
+    }
+
+    private static String readRef(String objectPath, String variableName) {
+        return "read(\"" + objectPath + "/" + variableName + "\")";
     }
 
     private static BlueprintBindingRule sumRule(String id, String target, String expression) {

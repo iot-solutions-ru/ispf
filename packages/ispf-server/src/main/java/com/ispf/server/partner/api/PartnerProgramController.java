@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * BL-184: deprecated — use Partner Portal service ({@code https://github.com/Michaael/Partner-portal}).
+ * BL-184: deprecated — use Partner Portal service ({@code https://github.com/your-org/Partner-portal}).
  * Kept for backward compatibility until platform proxies external tiers URL.
  */
 @RestController

@@ -28,7 +28,7 @@ Replaces separate **Bindings** and **Analytics tag** tabs in `ObjectPropertiesEd
 
 ### 2. Shared expression language
 
-- Reactive rules: CEL + platform functions + `refAt` / `self.*`
+- Reactive rules: CEL + platform functions + PlatformRef (`read`/`call`/`fire`)
 - Historian rules: builtins (`rollingAvg`, `rateOfChange`, `oee`) + CEL + `hist.*` ([analytics-platform-roadmap](../analytics-platform-roadmap.md))
 
 Historian rules are **not** a separate inspector — they are rows in the same rules table with `kind: historian` ([0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)).

@@ -45,8 +45,8 @@ public class MqttGatewayIngressDispatchService {
             .field("raw", FieldType.STRING)
             .build();
 
-    private static final Pattern CALL_FUNCTION_LAST_INGRESS = Pattern.compile(
-            "callFunction\\s*\\(\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*,\\s*lastIngress\\s*\\)",
+    private static final Pattern CALL_DISPATCH = Pattern.compile(
+            "call\\s*\\(\\s*@/fn/([A-Za-z_][A-Za-z0-9_]*)\\s*,\\s*@/lastIngress\\s*\\)",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -239,7 +239,7 @@ public class MqttGatewayIngressDispatchService {
             if (!rule.enabled()) {
                 continue;
             }
-            Matcher matcher = CALL_FUNCTION_LAST_INGRESS.matcher(rule.expression().trim());
+            Matcher matcher = CALL_DISPATCH.matcher(rule.expression().trim());
             if (!matcher.matches()) {
                 continue;
             }

@@ -73,22 +73,22 @@ python deploy/run_lab_scenario.py I-01-mqtt-historian \
 
 Enterprise L lab splits **ISPF cluster** and **load generators** onto two LAN hosts so emqtt-bench and Mosquitto do not compete with JVM replicas for CPU:
 
-| Host | Role | Services |
+| Node | Role | Services |
 |------|------|----------|
-| **192.168.100.11** | Cluster (public edge `84.42.21.226:8000`) | `lab-cluster-compose.yml` — 6× ISPF, PG, CH, NATS, Redis, nginx |
-| **192.168.100.10** | Loadgen | `lab-loadgen-compose.yml` — Mosquitto `:1883`, emqtt-bench via SSH |
+| **Application / cluster host** (`ISPF_LAB_CLUSTER_HOST`) | Cluster + public HTTP edge | `lab-cluster-compose.yml` — 6× ISPF, PG, CH, NATS, Redis, nginx |
+| **Loadgen host** (`ISPF_LAB_LOADGEN_HOST`) | Synthetic MQTT load | `lab-loadgen-compose.yml` — Mosquitto `:1883`, emqtt-bench via SSH |
 
-MQTT drivers on the cluster subscribe to **`tcp://192.168.100.10:1883`**. Publishers run on `.10` (`lab-emqtt-remote.sh` or `mqtt-ingress-load-test.py --publish-via-ssh iot-solutions@192.168.100.10`).
+MQTT drivers on the cluster subscribe to the broker URL from env (typically `tcp://<loadgen-host>:1883`). Publishers run on the loadgen host (`lab-emqtt-remote.sh` or `mqtt-ingress-load-test.py --publish-via-ssh` with `ISPF_LAB_LOADGEN_SSH`).
 
 ```bash
-# On cluster host (.11) — sync broker + scripts to loadgen, start Mosquitto
+# On cluster / application host — sync broker + scripts to loadgen, start Mosquitto
 bash ~/ispf/lab-loadgen-sync.sh
 
 # Bootstrap cluster (calls lab-loadgen-sync.sh automatically)
 bash ~/ispf/lab-cluster-bootstrap.sh
 ```
 
-Config: `deploy/lab-loadgen.env` (`ISPF_LAB_LOADGEN_HOST`, `ISPF_LAB_CLUSTER_HOST`). Cluster bind for CH/PG replica sync uses `ip route get 192.168.100.10` → typically `192.168.100.11`.
+Config: `examples/lab-mqtt-historian-stress/env/lab-loadgen.env` (`ISPF_LAB_LOADGEN_HOST`, `ISPF_LAB_CLUSTER_HOST`, `ISPF_LAB_LOADGEN_SSH`). Operator copies with real values stay in gitignored `deploy/lab-loadgen.env`.
 
 ## Three paths
 
@@ -161,7 +161,7 @@ Optional tuning before peak: `bash deploy/vps-event-journal-peak-tuning.sh` (que
 
 ### Lab stress (Scylla, multi-device emqtt)
 
-Dedicated lab host (`84.42.21.226`), **EVENT_JOURNAL_ONLY**, 16 mqtt drivers, journal store **Scylla**. Full documentation: **[lab-event-journal-stress](lab-event-journal-stress.md)**.
+Dedicated lab host, **EVENT_JOURNAL_ONLY**, 16 mqtt drivers, journal store **Scylla**. Full documentation: **[lab-event-journal-stress](lab-event-journal-stress.md)** (SSH/HTTP endpoints — in `lab-loadgen.env`, not in docs).
 
 | Metric (peak, 8 emqtt shards) | Value |
 |---------------------------------|-------|
@@ -181,7 +181,7 @@ AUTO_CALIBRATE=true bash lab-mqtt-event-journal-multi-test.sh
 
 ### VPS prod (Scylla journal, smaller Scylla footprint)
 
-Same methodology on `ispf.iot-solutions.ru` — multi-device: `deploy/vps-mqtt-event-journal-multi-test.sh`, orchestration `deploy/run_vps_max_load.py`. Single-device fair bench: `deploy/vps-ispf-fair-bench.sh` ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
+Same methodology on `ispf.example.invalid` — multi-device: `deploy/vps-mqtt-event-journal-multi-test.sh`, orchestration `deploy/run_vps_max_load.py`. Single-device fair bench: `deploy/vps-ispf-fair-bench.sh` ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
 
 | Metric | VPS prod (context) | Lab (reference) |
 |--------|-------------------|-----------------|
@@ -199,7 +199,7 @@ Scenario **sensor → dashboard**: mqtt driver subscribes to topic, `TELEMETRY_O
 # Lab: Mosquitto on VPS + synthetic publisher
 python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
   --devices 4 --messages-per-second 2000 --telemetry-coalesce-ms 50 `
-  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+  --publish-via-ssh deploy-user@production-host --skip-monitor-setup
 ```
 
 | Flag | Default | Description |
@@ -213,7 +213,30 @@ Model `mqtt-sensor-v1`: `temperature` with `historyEnabled=true`. Binding `doubl
 
 **Prod constraint:** `ispf.variable-history.min-interval-ms` (default **5000**) — DB write debounce. For high-rate loadtest: `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=100` in `/opt/ispf/ispf-server.env` + restart (see `application.yml`).
 
-Real broker `m5.wqtt.ru` — see subscribe mode below; MQTT credentials required.
+### Lab historian stress (Scylla vs ClickHouse, split topology)
+
+Dedicated lab, **TELEMETRY_ONLY**, 16 mqtt drivers, historian store **Scylla** or **ClickHouse** on the loadgen/DB host, ISPF on the application host. Full runbook: **[lab-mqtt-historian-stress](lab-mqtt-historian-stress.md)**; deploy templates: **[examples/lab-mqtt-historian-stress](../../examples/lab-mqtt-historian-stress/)**.
+
+| Store | Target (16 dev) | Historian flushed (lab 0.9.137) | Notes |
+|-------|-----------------|----------------------------------|-------|
+| Scylla | 250k msg/s | **~258k** samples/s | Scylla `COUNT(*)` may timeout — use flushed + Mosquitto |
+| Scylla | 500k msg/s | **~520–559k** samples/s | Queue may spike (~8M); drains to 0 |
+| ClickHouse | 250k msg/s | **~288k** samples/s | CH `count()` matches flushed |
+| ClickHouse | 500k msg/s | **~579k** samples/s | |
+
+```bash
+# On lab application host (see ISPF_LAB_CLUSTER_HOST in examples/lab-mqtt-historian-stress/env/lab-loadgen.env)
+DEVICES=16 RATE_PER_DEVICE=15625 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MAX=8 \
+  bash ~/ispf/lab-single-mqtt-historian-test.sh
+
+docker compose --env-file lab-stress-ch.env -f lab-test-host-compose.yml up -d --force-recreate ispf-server nginx
+DEVICES=16 RATE_PER_DEVICE=31250 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MAX=8 \
+  bash ~/ispf/lab-single-mqtt-historian-ch-test.sh
+```
+
+Lab uses `minIntervalMs=0`, ingress coalesce off, 8M historian queue, numeric payload — **not** prod defaults ([demostands](demostands.md)).
+
+Real broker `mqtt-broker.example.invalid` — see subscribe mode below; MQTT credentials required.
 
 ### Coalesce sweep (historian)
 
@@ -269,7 +292,7 @@ Report: `deploy/mqtt-coalesce-sweep-report-1782383597.json`.
 |-----------|--------|----------|---------------|
 | ~20 msg/s (synthetic) | `tcp://127.0.0.1:1883` (VPS Mosquitto) | ~20.0 | ~20.1 |
 
-*(4× `loadtest-mqtt-dev-*`, mqtt driver RUNNING, condition `self.temperature["value"] > -1000.0`. Report `deploy/mqtt-ingress-load-test-report-1782382991.json`. Real `m5.wqtt.ru` on prod: TCP OK, MQTT connect `not authorised` — drivers 0/4, events/s 0.)*
+*(4× `loadtest-mqtt-dev-*`, mqtt driver RUNNING, condition `self.temperature["value"] > -1000.0`. Report `deploy/mqtt-ingress-load-test-report-1782382991.json`. Real `mqtt-broker.example.invalid` on prod: TCP OK, MQTT connect `not authorised` — drivers 0/4, events/s 0.)*
 
 Lab push (local Mosquitto, `--mode push`) — synthetic publisher, see `mqtt-loadtest-publisher.py`.
 
@@ -280,7 +303,7 @@ Benchmark **gateway `lastIngress.raw` only** — no child sensors, no `dispatchT
 ```powershell
 python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
   --ingress-history-only --devices 4 --messages-per-second 2000 --telemetry-coalesce-ms 1 `
-  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+  --publish-via-ssh deploy-user@production-host --skip-monitor-setup
 ```
 
 Samples/s measured via `GET .../variables/history` for `lastIngress.raw` on the gateway (not global `sampleCount`). Driver uses `ingressTopicLanes=false` so parallel dispatch does not suppress historian publication.
@@ -297,10 +320,10 @@ For **>2k msg/s** use [emqtt-bench](https://github.com/emqx/emqtt-bench) via Doc
 python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
   --devices 4 --messages-per-second 10000 --telemetry-coalesce-ms 1 `
   --gateway --publisher emqtt-bench --emqtt-interval-ms 10 `
-  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+  --publish-via-ssh deploy-user@production-host --skip-monitor-setup
 
 # Standalone on VPS (50k msg/s, 4 topics):
-# ssh root@ispf.iot-solutions.ru 'bash /opt/ispf/loadtest/mqtt-emqtt-bench.sh --devices 4 --messages-per-second 50000 --duration-seconds 30'
+# ssh deploy-user@production-host 'bash /opt/ispf/loadtest/mqtt-emqtt-bench.sh --devices 4 --messages-per-second 50000 --duration-seconds 30'
 ```
 
 | Flag | Default | Description |
@@ -327,7 +350,7 @@ Creates `root.platform.devices.loadtest-dev-*` (template `virtual-lab-v1`).
 ### 2. Monitoring (probe + dashboard)
 
 ```powershell
-python deploy/setup-platform-metrics-monitor.py --base-url https://ispf.iot-solutions.ru
+python deploy/setup-platform-metrics-monitor.py --base-url ${ISPF_BASE_URL:-https://ispf.example.invalid}
 ```
 
 - Probe: `root.platform.devices.platform-metrics-probe`
@@ -353,7 +376,7 @@ Prometheus: `/actuator/prometheus` (admin role) — counters `ispf.events.fired.
 
 ```powershell
 python deploy/events-load-test.py `
-  --base-url https://ispf.iot-solutions.ru `
+  --base-url ${ISPF_BASE_URL:-https://ispf.example.invalid} `
   --concurrency 40 `
   --duration-seconds 60
 ```

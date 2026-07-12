@@ -5,16 +5,16 @@ import {
 } from "./analyticsChartBinding";
 
 describe("analyticsChartBinding", () => {
-  it("builds rollingAvg expression for chart binding catalog", () => {
-    expect(buildAnalyticsBindingExpression("rollingAvg", "temperature", "5m")).toBe(
-      "rollingAvg('temperature', '5m')"
+  it("builds avg expression for chart binding catalog", () => {
+    expect(buildAnalyticsBindingExpression("avg", "temperature", "5m")).toBe(
+      "avg(@/temperature, 5m)"
     );
   });
 
-  it("uses template window bucket for rollingAvg charts", () => {
+  it("uses template window bucket for avg charts", () => {
     expect(
       resolveAnalyticsAggregateBucket(
-        { templateId: "rollingAvg", helper: "rollingAvg", windowBucket: "5m" },
+        { templateId: "avg", helper: "avg", windowBucket: "5m" },
         "1h"
       )
     ).toBe("5m");

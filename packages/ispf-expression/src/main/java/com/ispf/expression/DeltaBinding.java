@@ -16,7 +16,7 @@ public final class DeltaBinding implements PlatformBinding {
     static final DeltaBinding INSTANCE = new DeltaBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "delta\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*("
+            "delta\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -40,14 +40,15 @@ public final class DeltaBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(2),
                 "value"
         );
-        Optional<Double> current = BindingSourceHelper.readNumericField(
+        Optional<Double> current = BindingSourceHelper.readNumericSource(
                 object,
                 source.sourceVariable(),
-                source.field()
+                source.field(),
+                context
         );
         if (current.isEmpty()) {
             return Optional.empty();

@@ -47,6 +47,11 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
         }
         if (event.type() == ObjectChangeType.EVENT_FIRED && event.variableName() != null) {
             bindingRuleEngine.onEvent(event.path(), event.variableName());
+            for (String consumerPath : dependencyIndex.eventConsumers(event.path(), event.variableName())) {
+                if (!consumerPath.equals(event.path())) {
+                    bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
+                }
+            }
             return;
         }
         if (!event.automationEligible()) {

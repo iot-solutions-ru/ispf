@@ -9,7 +9,7 @@ import java.util.List;
 public class MarketplaceProperties {
 
     private boolean enabled = true;
-    private String defaultId = "iot-solutions";
+    private String defaultId = "default-publisher";
     /** Local dev/lab bundle directory, e.g. examples/marketplace-catalog (BL-183). */
     private String localBundlesDir = "";
     private List<Endpoint> endpoints = new ArrayList<>();
@@ -49,7 +49,7 @@ public class MarketplaceProperties {
     public static class Endpoint {
         private String id = "";
         private String name = "";
-        /** Base URL, e.g. https://marketplace.iot-solutions.ru */
+        /** Base URL, e.g. https://marketplace.example.invalid */
         private String baseUrl = "";
         private String contactUrl = "";
         private boolean defaultEndpoint;

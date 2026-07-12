@@ -36,6 +36,17 @@
 - Полностью вычитаны: scorecard, acceleration-program, architecture, getting-started, roadmap (единый, вкл. фазы 25–33), scada, drivers, deployment, security, marketplace, testing, symbol-marketplace, partner-program, agent-regression, hmi-quality-gates, **все ADR (0001–0037)**, **все reference-walkthrough**.
 - ADR и walkthrough — терминологическая правка; углубить по запросу.
 
+## Анонимизация (публичная документация)
+
+В git не должно быть прод-хостов, публичных IP, SSH-пользователей/портов и личных GitHub org. Замены — как в [en/documentation-audit.md § Anonymization](../en/documentation-audit.md#anonymization-policy-public-docs).
+
+Шаблоны lab — [`examples/`](../../examples/); реальные `deploy/lab-*` — только локально (gitignore).
+
+```bash
+python deploy/tools/anonymize-repo.py
+rg 'ispf\.iot-solutions|84\.42|iot-solutions\.ru|m5\.wqtt|Michaael/' --glob '!deploy/tools/anonymize-repo.py' --glob '!docs/*/documentation-audit.md'
+```
+
 ## Скрипты сопровождения
 
 ```bash

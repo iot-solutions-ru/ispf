@@ -44,7 +44,7 @@ public class VariableSampleEntity {
     @Column(name = "value_double")
     private Double valueDouble;
 
-    @Column(name = "value_text", length = 2048)
+    @Column(name = "value_text", columnDefinition = "TEXT")
     private String valueText;
 
     public Long getId() {

@@ -4,7 +4,7 @@
 
 Сертифицированный ISPF интегратор и партнерская программа по решениям. **Партнерский портал** — отдельный сервис:
 
-- Repo: [Partner-portal](https://github.com/Michaael/Partner-portal)
+- Repo: [Partner-portal](https://github.com/your-org/Partner-portal)
 - API: `GET /api/v1/tiers`, applications, directory, training progress
 - Внутрисерверный API `GET /api/v1/partners/*` — **заглушка** (`PartnerProgramService`, `"source": "stub"`); демо-партнеры жестко запрограммированы; регистрация является синтетической до тех пор, пока партнерский портал не синхронизируется.
 
@@ -105,7 +105,7 @@
 
 | Веха | Цель |
 |-----------|--------|
-| Partner portal (apply, training progress) | [Partner-portal](https://github.com/Michaael/Partner-portal) MVP |
+| Partner portal (apply, training progress) | [Partner-portal](https://github.com/your-org/Partner-portal) MVP |
 | Первые 5 сертифицированных интеграторов | Этап 32 ГА |
 | Символ OEM + маркетплейс драйверов GA | БЛ-183, БЛ-185 |
 

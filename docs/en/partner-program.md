@@ -4,7 +4,7 @@
 
 ISPF certified integrator and solution partner program. **Partner Portal** is a separate service:
 
-- Repo: [Partner-portal](https://github.com/Michaael/Partner-portal)
+- Repo: [Partner-portal](https://github.com/your-org/Partner-portal)
 - API: `GET /api/v1/tiers`, applications, directory, training progress
 - In-server API `GET /api/v1/partners/*` — **stub** (`PartnerProgramService`, `"source": "stub"`); demo partners hardcoded; enroll is synthetic until Partner Portal sync
 
@@ -105,7 +105,7 @@ Related: [marketplace](marketplace.md), [certification](certification.md), [solu
 
 | Milestone | Target |
 |-----------|--------|
-| Partner portal (apply, training progress) | [Partner-portal](https://github.com/Michaael/Partner-portal) MVP |
+| Partner portal (apply, training progress) | [Partner-portal](https://github.com/your-org/Partner-portal) MVP |
 | First 5 certified integrators | Phase 32 GA |
 | OEM symbol + driver marketplace GA | BL-183, BL-185 |
 

@@ -226,7 +226,7 @@ public final class FixtureBlueprintDefinitions {
                                 true
                         ),
                         "",
-                        "callFunction(dispatchTelemetry, lastIngress)",
+                        "call(@/fn/dispatchTelemetry, @/lastIngress)",
                         "dispatchStatus",
                         "ok"
                 )),
@@ -537,7 +537,7 @@ public final class FixtureBlueprintDefinitions {
                                 true
                         ),
                         "",
-                        "callFunction(" + DemoFixtureBootstrap.INGEST_METER_PAYLOAD_FUNCTION + ", lastIngress)",
+                        "call(@/fn/" + DemoFixtureBootstrap.INGEST_METER_PAYLOAD_FUNCTION + ", @/lastIngress)",
                         "ingestStatus",
                         "ok"
                 )),

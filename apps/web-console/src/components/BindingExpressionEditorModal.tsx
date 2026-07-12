@@ -14,7 +14,9 @@ import {
 import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
 import AnalyticsFormulaBrowser from "./analytics/AnalyticsFormulaBrowser";
 import SaveAnalyticsFormulaModal from "./analytics/SaveAnalyticsFormulaModal";
-import type { BindingFormulaLink } from "../types";
+import ExpressionDebuggerSection from "./ExpressionDebuggerSection";
+import { PlatformRefPicker } from "./PlatformRefPicker";
+import type { BindingFormulaLink, VariableDto } from "../types";
 
 export interface BindingExpressionEditorModalProps extends BindingBuilderContext {
   open: boolean;
@@ -23,7 +25,9 @@ export interface BindingExpressionEditorModalProps extends BindingBuilderContext
   placeholder?: string;
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
-  analyticsCatalogKind?: "historian" | "reactive";
+  analyticsCatalogKind?: "historian" | "reactive" | "all";
+  inputFieldNames?: string[];
+  variables?: VariableDto[];
   formulaLink?: BindingFormulaLink | null;
   onValidate?: BindingExpressionValidator;
   onClose: () => void;
@@ -73,6 +77,8 @@ export default function BindingExpressionEditorModal({
   objectPath,
   variableNames = [],
   functionNames = [],
+  inputFieldNames = [],
+  variables,
   entries = PLATFORM_BINDING_ENTRIES,
   analyticsCatalogKind,
   formulaLink = null,
@@ -85,6 +91,7 @@ export default function BindingExpressionEditorModal({
   const [draft, setDraft] = useState(value);
   const [draftFormulaLink, setDraftFormulaLink] = useState<BindingFormulaLink | null>(formulaLink);
   const [catalogOpen, setCatalogOpen] = useState(true);
+  const [debuggerOpen, setDebuggerOpen] = useState(false);
   const [catalogQuery, setCatalogQuery] = useState("");
   const [composingId, setComposingId] = useState<string | null>(null);
   const [saveFormulaOpen, setSaveFormulaOpen] = useState(false);
@@ -95,6 +102,7 @@ export default function BindingExpressionEditorModal({
       setDraftFormulaLink(formulaLink);
       setCatalogQuery("");
       setComposingId(null);
+      setDebuggerOpen(false);
       window.requestAnimationFrame(() => textareaRef.current?.focus());
     }
   }, [open, value, formulaLink]);
@@ -207,6 +215,14 @@ export default function BindingExpressionEditorModal({
           >
             {t("bindingExpression.validate")}
           </button>
+          <button
+            type="button"
+            className={`btn small${debuggerOpen ? " primary" : ""}`}
+            disabled={disabled}
+            onClick={() => setDebuggerOpen((open) => !open)}
+          >
+            {debuggerOpen ? t("bindingExpression.debuggerHide") : t("bindingExpression.debuggerShow")}
+          </button>
           {analyticsCatalogKind && (
             <button
               type="button"
@@ -231,6 +247,24 @@ export default function BindingExpressionEditorModal({
                 onClick={() => applySnippet(name)}
               >
                 <code>{name}</code>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {inputFieldNames.length > 0 && (
+          <div className="binding-expression-variables">
+            <span className="hint">{t("bindingExpression.inputFields")}</span>
+            {inputFieldNames.map((name) => (
+              <button
+                key={name}
+                type="button"
+                className="btn btn-sm binding-expression-suggestion"
+                disabled={disabled}
+                title={t("bindingExpression.inputFieldHint", { name })}
+                onClick={() => applySnippet(`context.${name}`)}
+              >
+                <code>{`context.${name}`}</code>
               </button>
             ))}
           </div>
@@ -266,6 +300,15 @@ export default function BindingExpressionEditorModal({
 
         {catalogOpen && !analyticsCatalogKind && (
           <div className="platform-binding-catalog binding-expression-editor-catalog">
+            <div className="platform-ref-picker-row">
+              <PlatformRefPicker
+                objectPath={objectPath ?? ""}
+                kind="variable"
+                variableNames={variableNames}
+                functionNames={functionNames}
+                onChange={(ref) => applySnippet(`read(${ref})`)}
+              />
+            </div>
             <div className="platform-binding-catalog-toolbar">
               <input
                 type="search"
@@ -345,13 +388,32 @@ export default function BindingExpressionEditorModal({
         {validateMutation.error && (
           <span className="hint error">{(validateMutation.error as Error).message}</span>
         )}
+
+        {debuggerOpen && objectPath && (
+          <ExpressionDebuggerSection
+            objectPath={objectPath}
+            expression={draft}
+            variables={variables}
+            variableNames={variableNames}
+            disabled={disabled}
+            embedded
+          />
+        )}
       </div>
     </Modal>
-    {analyticsCatalogKind && (
+    {analyticsCatalogKind && analyticsCatalogKind !== "all" && (
       <SaveAnalyticsFormulaModal
         open={saveFormulaOpen}
         expression={draft}
         defaultKind={analyticsCatalogKind}
+        onClose={() => setSaveFormulaOpen(false)}
+      />
+    )}
+    {analyticsCatalogKind === "all" && (
+      <SaveAnalyticsFormulaModal
+        open={saveFormulaOpen}
+        expression={draft}
+        defaultKind="reactive"
         onClose={() => setSaveFormulaOpen(false)}
       />
     )}

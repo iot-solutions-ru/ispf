@@ -350,7 +350,7 @@ Point mapping: команда на переменную, например `uptim
 
 ```json
 {
-  "host": "192.168.1.10",
+  "host": "10.0.0.10",
   "port": "22",
   "username": "admin",
   "password": "secret",

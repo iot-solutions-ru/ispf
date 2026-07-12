@@ -35,10 +35,10 @@ class AnalyticsCatalogApiTest {
     }
 
     @Test
-    void getCatalogEntryByIdReturnsRollingAvg() throws Exception {
-        mockMvc.perform(get("/api/v1/platform/analytics/catalog/rollingAvg"))
+    void getCatalogEntryByIdReturnsAvg() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/analytics/catalog/avg"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("rollingAvg"))
+                .andExpect(jsonPath("$.id").value("avg"))
                 .andExpect(jsonPath("$.tier").value("A"))
                 .andExpect(jsonPath("$.pack").value("core"))
                 .andExpect(jsonPath("$.docAnchor").isString());

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAnalyticsTagDevice } from "./analyticsPath";
+import { analyticsTagObjectPath, isAnalyticsTagDevice } from "./analyticsPath";
 
 describe("isAnalyticsTagDevice", () => {
   it("returns true when derivedValue is listed", () => {
@@ -27,5 +27,11 @@ describe("isAnalyticsTagDevice", () => {
         variableNames: ["derivedValue"],
       }),
     ).toBe(false);
+  });
+
+  it("extracts object path from slash tag path", () => {
+    expect(
+      analyticsTagObjectPath("root.platform.devices.sensor-a/tag/avg-temp-5m"),
+    ).toBe("root.platform.devices.sensor-a");
   });
 });

@@ -34,7 +34,7 @@
 ## Этап 6 — Экспорт и поле схемы (готово)
 
 - REST: `GET .../variables/history/export?format=csv|json` (до 10 000 точек, `Content-Disposition: attachment`)
-- Параметр `field` — выбор поля схемы переменной (как в query)
+- Параметр `field` — выбор поля схемы переменной (как в query); для полного снимка переменной — `field=$record` (JSON `DataRecord` в `text`)
 - В `VariableHistoryPanel`: выпадающий список полей (если в схеме несколько числовых) и кнопки **CSV**/**JSON**
 
 ## Этап 7 — Агрегации (готово)
@@ -72,6 +72,11 @@ ispf:
     enabled: true
     min-interval-ms: 5000
     retention-days: 90   # default, если у переменной retention = null
+    record-snapshot-enabled: true   # поле $record — полный JSON DataRecord в value_text
+    # Per-variable policy (PATCH .../variables/history):
+    #   historySampleMode: CHANGES_ONLY | ALL_VALUES
+    #   includePreviousValueInEvent: boolean
+    #   storageMode: PERSISTENT | TRANSIENT
     slo:
       aggregate-max-points: 1000000
       aggregate-max-latency-ms: 2000

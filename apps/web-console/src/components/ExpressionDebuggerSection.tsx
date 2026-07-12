@@ -2,15 +2,16 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { evaluateExpression, type EvaluateExpressionStep } from "../api";
-import BindingExpressionField from "./BindingExpressionField";
 import ExpressionDebuggerWatchList from "./ExpressionDebuggerWatchList";
 import type { VariableDto } from "../types";
 
-interface ExpressionDebuggerPanelProps {
+export interface ExpressionDebuggerSectionProps {
   objectPath: string;
+  expression: string;
   variables?: VariableDto[];
-  functionNames?: string[];
-  compact?: boolean;
+  variableNames?: string[];
+  disabled?: boolean;
+  embedded?: boolean;
 }
 
 function isBindingsStep(phase: string): boolean {
@@ -35,8 +36,9 @@ function BindingsTable({ detail }: { detail: unknown }) {
   const self = record.self;
   const parent = record.parent;
   const context = record.context;
+  const input = record.input;
 
-  if (self !== undefined || parent !== undefined || context !== undefined) {
+  if (self !== undefined || parent !== undefined || context !== undefined || input !== undefined) {
     return (
       <div className="expression-debugger-bindings">
         {self !== undefined && (
@@ -57,6 +59,12 @@ function BindingsTable({ detail }: { detail: unknown }) {
             <pre className="mono compact">{JSON.stringify(context, null, 2)}</pre>
           </div>
         )}
+        {input !== undefined && (
+          <div className="expression-debugger-binding-group">
+            <span className="expression-debugger-binding-label">input</span>
+            <pre className="mono compact">{JSON.stringify(input, null, 2)}</pre>
+          </div>
+        )}
       </div>
     );
   }
@@ -73,14 +81,33 @@ function BindingsTable({ detail }: { detail: unknown }) {
   );
 }
 
-export default function ExpressionDebuggerPanel({
+function resolveWatchVariables(
+  variables: VariableDto[] | undefined,
+  variableNames: string[] | undefined
+): VariableDto[] {
+  if (variables?.length) {
+    return variables;
+  }
+  return (variableNames ?? []).map((name) => ({
+    name,
+    value: null,
+    readable: true,
+    writable: false,
+    updatedAt: null,
+    historyEnabled: false,
+    historyRetentionDays: null,
+  }));
+}
+
+export default function ExpressionDebuggerSection({
   objectPath,
-  variables = [],
-  functionNames = [],
-  compact = false,
-}: ExpressionDebuggerPanelProps) {
+  expression,
+  variables,
+  variableNames,
+  disabled = false,
+  embedded = false,
+}: ExpressionDebuggerSectionProps) {
   const { t } = useTranslation("inspector");
-  const [expression, setExpression] = useState("");
   const [targetVariable, setTargetVariable] = useState("");
   const [revealedSteps, setRevealedSteps] = useState(0);
   const [pinnedWatch, setPinnedWatch] = useState<string[]>([]);
@@ -91,9 +118,14 @@ export default function ExpressionDebuggerPanel({
     );
   }, []);
 
-  const variableNames = useMemo(
-    () => variables.map((variable) => variable.name),
-    [variables]
+  const watchVariables = useMemo(
+    () => resolveWatchVariables(variables, variableNames),
+    [variables, variableNames]
+  );
+
+  const nameOptions = useMemo(
+    () => watchVariables.map((variable) => variable.name),
+    [watchVariables]
   );
 
   const evaluateMutation = useMutation({
@@ -113,34 +145,28 @@ export default function ExpressionDebuggerPanel({
   const canRevealMore = revealedSteps < steps.length;
 
   return (
-    <div className={`expression-debugger-panel${compact ? " compact" : ""}`}>
-      <header className="expression-debugger-header">
-        <h4>{t("expressionDebugger.title")}</h4>
-        <p className="hint">{t("expressionDebugger.hint")}</p>
-      </header>
+    <div
+      className={`expression-debugger-section${embedded ? " embedded" : ""}`}
+      data-testid="expression-debugger-section"
+    >
+      {!embedded && (
+        <header className="expression-debugger-header">
+          <h4>{t("expressionDebugger.title")}</h4>
+          <p className="hint">{t("expressionDebugger.hint")}</p>
+        </header>
+      )}
 
       <div className="expression-debugger-form">
-        <label>
-          <span>{t("expressionDebugger.expression")}</span>
-          <BindingExpressionField
-            id="expression-debugger-expr"
-            value={expression}
-            onChange={setExpression}
-            objectPath={objectPath}
-            variableNames={variableNames}
-            functionNames={functionNames}
-          />
-        </label>
-
-        {variableNames.length > 0 && (
+        {nameOptions.length > 0 && (
           <label>
             <span>{t("expressionDebugger.targetVariable")}</span>
             <select
               value={targetVariable}
+              disabled={disabled}
               onChange={(e) => setTargetVariable(e.target.value)}
             >
               <option value="">{t("expressionDebugger.targetNone")}</option>
-              {variableNames.map((name) => (
+              {nameOptions.map((name) => (
                 <option key={name} value={name}>
                   {name}
                 </option>
@@ -153,7 +179,7 @@ export default function ExpressionDebuggerPanel({
           <button
             type="button"
             className="btn primary small"
-            disabled={!expression.trim() || evaluateMutation.isPending}
+            disabled={disabled || !expression.trim() || evaluateMutation.isPending}
             onClick={() => evaluateMutation.mutate()}
           >
             {evaluateMutation.isPending
@@ -170,7 +196,7 @@ export default function ExpressionDebuggerPanel({
       <ExpressionDebuggerWatchList
         pinned={pinnedWatch}
         onTogglePin={toggleWatchPin}
-        variables={variables}
+        variables={watchVariables}
         steps={steps}
         revealedSteps={revealedSteps}
       />

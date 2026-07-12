@@ -266,7 +266,7 @@ POST /api/v1/platform/analytics/expression/evaluate
 Content-Type: application/json
 
 {
-  "expression": "hist.avg('root.platform.devices.demo', 'temperature', '5m') * 2",
+  "expression": "avg(root.platform.devices.demo/temperature, 5m) * 2",
   "objectPath": "root.platform.devices.my-derived-tag",
   "asOf": "2026-07-09T10:00:00Z"
 }

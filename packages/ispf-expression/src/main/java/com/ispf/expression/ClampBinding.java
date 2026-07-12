@@ -16,7 +16,7 @@ public final class ClampBinding implements PlatformBinding {
     static final ClampBinding INSTANCE = new ClampBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "clamp\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
+            "clamp\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC + ")\\s*(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
@@ -41,14 +41,14 @@ public final class ClampBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(4),
                 "value"
         );
         double min = Double.parseDouble(matcher.group(2));
         double max = Double.parseDouble(matcher.group(3));
 
-        return BindingSourceHelper.readNumericField(object, source.sourceVariable(), source.field())
+        return BindingSourceHelper.readNumericSource(object, source.sourceVariable(), source.field(), context)
                 .map(value -> clamp(value, min, max));
     }
 

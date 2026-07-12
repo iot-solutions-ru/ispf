@@ -4,7 +4,7 @@
 
 ISPF platform can browse **remote marketplace servers**, install free bundles, and activate paid listings with an entitlement key.
 
-Default marketplace: [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) (configurable). Vendors may host their own compatible server.
+Default marketplace: [ispf-marketplace](https://github.com/your-org/ispf-marketplace) (configurable). Vendors may host their own compatible server.
 
 ## Configuration
 
@@ -12,12 +12,12 @@ Default marketplace: [ispf-marketplace](https://github.com/Michaael/ispf-marketp
 ispf:
   marketplace:
     enabled: ${ISPF_MARKETPLACE_ENABLED:true}
-    default-id: ${ISPF_MARKETPLACE_DEFAULT_ID:iot-solutions}
+    default-id: ${ISPF_MARKETPLACE_DEFAULT_ID:default-publisher}
     endpoints:
-      - id: iot-solutions
+      - id: default-publisher
         name: IoT Solutions Marketplace
         base-url: ${ISPF_MARKETPLACE_DEFAULT_URL:https://marketplace.ispf.ai}
-        contact-url: ${ISPF_MARKETPLACE_CONTACT_URL:https://iot-solutions.ru}
+        contact-url: ${ISPF_MARKETPLACE_CONTACT_URL:https://vendor.example.invalid}
         default-endpoint: true
       - id: acme
         name: Acme Solutions Store
@@ -53,7 +53,7 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` is added 
 
 ## Marketplace server contract
 
-Compatible with [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) API:
+Compatible with [ispf-marketplace](https://github.com/your-org/ispf-marketplace) API:
 
 - `GET /api/v1/catalog` → `{ listings: [...] }`
 - `GET /api/v1/catalog/{slug}/download` (free) — optional `?installationId=` returns RSA-signed bundle when marketplace signing key is configured
@@ -120,7 +120,7 @@ Paid analytics packs: marketplace `activate` signs `analytics-pack.json` inside 
 
 Catalog (`GET /api/v1/catalog`) works, but **Download bundle** or ISPF **Install** fails — bundle JSON is missing on the marketplace server (host path vs Docker volume mismatch).
 
-On the **marketplace VPS** (`ispf-marketplace.iot-solutions.ru`):
+On the **marketplace VPS** (`marketplace.example.invalid`):
 
 ```bash
 cd /opt/ispf-marketplace
@@ -128,7 +128,7 @@ git pull origin main
 bash deploy/vps-reseed-artifacts.sh
 ```
 
-ISPF only proxies the download; fix is always on the marketplace host. See [ispf-marketplace/deploy/README.md](https://github.com/Michaael/ispf-marketplace/blob/main/deploy/README.md).
+ISPF only proxies the download; fix is always on the marketplace host. See [ispf-marketplace/deploy/README.md](https://github.com/your-org/ispf-marketplace/blob/main/deploy/README.md).
 
 ## Related
 

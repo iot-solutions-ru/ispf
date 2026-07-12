@@ -61,6 +61,7 @@ marketing/
 
 # VPS, lab, load-test, and ad-hoc server ops under deploy/
 # Universal scripts stay in deploy/ — see deploy/README.md
+# Anonymized lab templates for docs: examples/lab-mqtt-historian-stress/
 deploy/local/
 !deploy/local/README.example.md
 deploy/vps-*
@@ -128,8 +129,16 @@ scripts/deploy-lab-*
 examples/mes-printing-contour/
 examples/mes-print-line/
 examples/marketplace-catalog/mes-printing-contour/
+
+# Lab historian stress — operator overrides only (templates are in examples/lab-mqtt-historian-stress/)
+examples/lab-mqtt-historian-stress/local/*
+!examples/lab-mqtt-historian-stress/local/README.example.md
 packages/ispf-server/src/test/resources/mes-printing-contour-bundle.json
 packages/ispf-server/src/test/java/com/ispf/server/application/MesPrintingContourBundleSmokeTest.java
+
+# Local debug transcripts (may contain real hosts — never commit)
+tmp_*.txt
+tmp-ci-backend-log.txt
 
 # Local only — реестр российского ПО (не публиковать в GitHub)
 docs/RUSSIAN_SOFTWARE_REGISTRY.md

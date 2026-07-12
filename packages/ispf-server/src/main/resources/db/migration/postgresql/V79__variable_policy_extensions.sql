@@ -1,0 +1,8 @@
+ALTER TABLE object_variables
+    ADD COLUMN IF NOT EXISTS history_sample_mode VARCHAR(32) NOT NULL DEFAULT 'CHANGES_ONLY';
+
+ALTER TABLE object_variables
+    ADD COLUMN IF NOT EXISTS include_previous_value_in_event BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE object_variables
+    ADD COLUMN IF NOT EXISTS storage_mode VARCHAR(32) NOT NULL DEFAULT 'PERSISTENT';

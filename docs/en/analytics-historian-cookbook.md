@@ -18,7 +18,7 @@ See [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-c
 |---------|--------|
 | Storage | `@bindingRules` on the **target device** (same JSON array as reactive rules) |
 | Kind | `"historian"` — skipped by `BindingRuleEngine`, compiled by analytics engine |
-| Tag path | `objectPath#ruleId` (e.g. `root.devices.sensor-a#avg-temp-5m`) |
+| Tag path | `objectPath/tag/ruleId` (e.g. `root.devices.sensor-a/tag/avg-temp-5m`) |
 | Live output | `target.variableName` on that device (any name — not fixed to `derivedValue`) |
 | Metadata | `@historianRuleMeta` — quality and last eval **per rule id** (see below) |
 | Reactive vs historian | Reactive = immediate CEL on change; historian = windowed aggregates / DAG |
@@ -37,13 +37,13 @@ See [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-c
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      { "objectPath": "root.platform.devices.sensor-a", "variableName": "temperature" }
+      { "ref": "root.platform.devices.sensor-a/temperature" }
     ],
-    "onEvent": null,
+    "onEventRef": null,
     "periodicMs": 60000
   },
   "condition": "",
-  "expression": "rollingAvg(root.platform.devices.sensor-a.temperature, 5m)",
+  "expression": "avg(root.platform.devices.sensor-a/temperature, 5m)",
   "windowBucket": "5m",
   "target": { "kind": "variable", "variableName": "avgTemp5m", "field": "value" }
 }
@@ -53,11 +53,11 @@ See [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-c
 
 | Form | Example | Helper |
 |------|---------|--------|
-| Builtin | `rollingAvg(path.var, 5m)` | `rollingAvg` |
-| Builtin | `rateOfChange(path.var, 1h)` | `rateOfChange` |
+| Aggregate | `avg(root.../temperature, 5m)` | `avg` |
+| Aggregate | `rateOfChange(root.../level, 1h)` | `rateOfChange` |
 | Builtin | `oee('path', 'avail', 'perf', 'qual', 8h)` | `oee` |
-| CEL + historian | `hist.avg('path', 'var', '5m')` | `cel` |
-| CEL composite | `(hist.avg('a', 't', '5m') + hist.avg('b', 't', '5m')) / 2.0` | `cel` |
+| CEL composite | `(avg(root.../sensor-a/temperature, 5m) + avg(root.../sensor-b/temperature, 5m)) / 2.0` | `cel` |
+| Live | `live(@/temperature)` | `live` |
 
 Use **double literals** in CEL (`2.0`, not `2`) when mixing with historian expansions.
 
@@ -66,9 +66,9 @@ Use **double literals** in CEL (`2.0`, not `2`) when mixing with historian expan
 | Goal | Mechanism | Doc |
 |------|-----------|-----|
 | Reusable template (`{{path}}`, `{{window}}`) | Tier B — **Save as formula** or **System → Analytics formulas** | [§ Tier B](analytics-formulas-and-packs.md#tier-b--user-defined-formulas) |
-| New function like `hist.avg` | Tier C — Java SPI pack; commercial packs via **marketplace** | [§ Tier C](analytics-formulas-and-packs.md#tier-c--extension-packs-java-spi) |
+| New aggregate primitive | Tier C — Java SPI pack; commercial packs via **marketplace** | [§ Tier C](analytics-formulas-and-packs.md#tier-c--extension-packs-java-spi) |
 
-You cannot register a new `hist.*` macro from the UI. Compose with existing `hist.*` / helpers, save as Tier B, or ship Tier C.
+Compose with `avg(ref, window)` / `live(ref)`, save as Tier B, or ship Tier C.
 
 ---
 
@@ -81,7 +81,7 @@ PUT  /api/v1/objects/by-path/binding-rules?path={devicePath}
 
 Body: JSON array of rules (reactive + historian). Historian rules auto-create the target variable if missing.
 
-**Web console:** Object inspector → **Computations** → **+ Rule** → type **Historian** → modal expression editor (**Validate** / **Apply**). Built-in helpers (`rollingAvg`, `hist.avg`, …) appear in the editor catalog — not as separate preset toolbar buttons on the tab.
+**Web console:** Object inspector → **Computations** → **+ Rule** → type **Historian** → modal expression editor (**Validate** / **Apply**). Built-in helpers (`avg`, `live`, …) appear in the editor catalog.
 
 ---
 
@@ -91,10 +91,10 @@ Static recipes in code (`HistorianComputationPresets`). **Not** object-tree temp
 
 | Preset id | Output (default) | Expression template |
 |-----------|------------------|---------------------|
-| `rollingAvg` | `avgValue` | `hist.avg('{objectPath}', '{sourceVariable}', '{windowBucket}')` or `rollingAvg(path.var, bucket)` |
-| `rateOfChange` | `rocValue` | `rateOfChange({objectPath}.{sourceVariable}, {windowBucket})` |
+| `rollingAvg` | `avgValue` | `avg({objectPath}/{sourceVariable}, {windowBucket})` |
+| `rateOfChange` | `rocValue` | `rateOfChange({objectPath}/{sourceVariable}, {windowBucket})` |
 | `oee` | `oeePct` | `oee('{sourcePath}', '{availabilityVariable}', …, '{windowBucket}')` |
-| `customCel` | `computedValue` | user CEL with `hist.*` |
+| `customCel` | `computedValue` | user CEL with `avg(ref, window)` |
 
 ---
 
@@ -111,19 +111,19 @@ Static recipes in code (`HistorianComputationPresets`). **Not** object-tree temp
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      { "objectPath": "root.platform.devices.sensor-a", "variableName": "temperature" }
+      { "ref": "root.platform.devices.sensor-a/temperature" }
     ],
-    "onEvent": null,
+    "onEventRef": null,
     "periodicMs": 60000
   },
   "condition": "",
-  "expression": "rollingAvg(root.platform.devices.sensor-a.temperature, 5m)",
+  "expression": "avg(root.platform.devices.sensor-a/temperature, 5m)",
   "windowBucket": "5m",
   "target": { "kind": "variable", "variableName": "avgTemp5m", "field": "value" }
 }
 ```
 
-**Catalog tag path:** `root.platform.devices.sensor-a#avg-temp-5m`
+**Catalog tag path:** `root.platform.devices.sensor-a/tag/avg-temp-5m`
 
 **Chart widget:** object path = device, variable = `avgTemp5m`, mode = live or history as needed.
 
@@ -205,9 +205,9 @@ Assume device `root.platform.devices.line-01` already has live/historian variabl
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      { "objectPath": "root.platform.devices.line-01", "variableName": "availabilityPct" },
-      { "objectPath": "root.platform.devices.line-01", "variableName": "performancePct" },
-      { "objectPath": "root.platform.devices.line-01", "variableName": "qualityPct" }
+      { "ref": "root.platform.devices.line-01/availabilityPct" },
+      { "ref": "root.platform.devices.line-01/performancePct" },
+      { "ref": "root.platform.devices.line-01/qualityPct" }
     ],
     "onEvent": null,
     "periodicMs": 300000
@@ -223,7 +223,7 @@ Assume device `root.platform.devices.line-01` already has live/historian variabl
 
 **MES integration:** seed A/P/Q from MES OEE reference bundle or BFF; bind alarms/dashboards to `oeePct` like any other variable.
 
-**Tag path:** `root.platform.devices.line-01#shift-oee`
+**Tag path:** `root.platform.devices.line-01/tag/shift-oee`
 
 ---
 
@@ -253,19 +253,19 @@ Device: `root.platform.devices.analytics-chain-a`
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      { "objectPath": "root.platform.devices.demo-sensor-01", "variableName": "temperature" }
+      { "ref": "root.platform.devices.demo-sensor-01/temperature" }
     ],
     "onEvent": null,
     "periodicMs": 60000
   },
   "condition": "",
-  "expression": "rollingAvg(root.platform.devices.demo-sensor-01.temperature, 1h)",
+  "expression": "avg(root.platform.devices.demo-sensor-01/temperature, 1h)",
   "windowBucket": "1h",
   "target": { "kind": "variable", "variableName": "derived-a", "field": "value" }
 }
 ```
 
-Tag: `root.platform.devices.analytics-chain-a#analytics-chain-a-rule`
+Tag: `root.platform.devices.analytics-chain-a/tag/analytics-chain-a-rule`
 
 ### Step B — second hop (derived-a → derived-b)
 
@@ -275,7 +275,7 @@ Device: `root.platform.devices.analytics-chain-b`
 {
   "id": "analytics-chain-b-rule",
   "kind": "historian",
-  "expression": "rollingAvg(root.platform.devices.analytics-chain-a.derived-a, 1h)",
+  "expression": "avg(root.platform.devices.analytics-chain-a/derived-a, 1h)",
   "windowBucket": "1h",
   "target": { "kind": "variable", "variableName": "derived-b", "field": "value" }
 }
@@ -296,7 +296,7 @@ Device: `root.platform.devices.analytics-chain-c` — source `analytics-chain-b.
 **Inspect chain:**
 
 ```http
-GET /api/v1/platform/analytics/tags/by-path?path=root.platform.devices.analytics-chain-c#analytics-chain-c-rule
+GET /api/v1/platform/analytics/tags/by-path?path=root.platform.devices.analytics-chain-c/tag/analytics-chain-c-rule
 ```
 
 Response includes `upstreamTagPaths`, `downstreamTagPaths`, and `lineage` graph.
@@ -318,14 +318,14 @@ Device: `root.platform.devices.analytics-demo.sensor-c`
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      { "objectPath": "root.platform.devices.analytics-demo.sensor-a", "variableName": "temperature" },
-      { "objectPath": "root.platform.devices.analytics-demo.sensor-b", "variableName": "temperature" }
+      { "ref": "root.platform.devices.analytics-demo.sensor-a/temperature" },
+      { "ref": "root.platform.devices.analytics-demo.sensor-b/temperature" }
     ],
     "onEvent": null,
     "periodicMs": 60000
   },
   "condition": "",
-  "expression": "(hist.avg('root.platform.devices.analytics-demo.sensor-a', 'temperature', '5m') + hist.avg('root.platform.devices.analytics-demo.sensor-b', 'temperature', '5m')) / 2.0",
+  "expression": "(avg(root.platform.devices.analytics-demo.sensor-a/temperature, 5m) + avg(root.platform.devices.analytics-demo.sensor-b/temperature, 5m)) / 2.0",
   "windowBucket": "5m",
   "target": { "kind": "variable", "variableName": "temperature", "field": "value" }
 }
@@ -360,13 +360,13 @@ Each device with historian rules has system variable `@historianRuleMeta` — a 
 | `lastEvalAt` | Last analytics engine evaluation time |
 | `lastEvalStatus` | `ok`, `error`, `skipped` |
 
-**Do not** use `@historianRuleMeta` as a `hist.avg(...)` source or paste it into expression templates. Sources are normal variables (`temperature`, `derived-a`, …) on device paths. Metadata is for diagnostics and catalog quality only.
+**Do not** use `@historianRuleMeta` as an expression source. Sources are PlatformRef addresses (`root.../temperature`, `root.../derived-a`, …). Metadata is for diagnostics and catalog quality only.
 
 ---
 
 ## Recipe 5 — full production example: `analytics-demo`
 
-Reference deployment on https://ispf.iot-solutions.ru (scripts in repo). Demonstrates ADR-0041 chain + dashboard + multi-tag query.
+Reference deployment on ${ISPF_BASE_URL:-https://ispf.example.invalid} (scripts in repo). Demonstrates ADR-0041 chain + dashboard + multi-tag query.
 
 ### Object tree
 
@@ -391,18 +391,18 @@ flowchart LR
 Each hop is a separate device with its own `@bindingRules` entry, window **5m**:
 
 ```text
-rollingAvg(root.platform.devices.analytics-demo.sensor-a.temperature, 5m)  → derived-a
-rollingAvg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)   → derived-b
-rollingAvg(root.platform.devices.analytics-demo.chain-b.derived-b, 5m)     → derived-c
+avg(root.platform.devices.analytics-demo.sensor-a/temperature, 5m)  → derived-a
+avg(root.platform.devices.analytics-demo.chain-a/derived-a, 5m)   → derived-b
+avg(root.platform.devices.analytics-demo.chain-b/derived-b, 5m)     → derived-c
 ```
 
-CEL equivalent: `hist.avg('…chain-a', 'derived-a', '5m')`.
+CEL equivalent: `avg(root.platform.devices.analytics-demo.chain-a/derived-a, 5m)`.
 
 ### Catalog tag paths
 
-- `…chain-a#chain-a-rule`
-- `…chain-b#chain-b-rule` (upstream: chain-a)
-- `…chain-c#chain-c-rule` (upstream: chain-b)
+- `…chain-a/tag/chain-a-rule`
+- `…chain-b/tag/chain-b-rule` (upstream: chain-a)
+- `…chain-c/tag/chain-c-rule` (upstream: chain-b)
 
 Check: `GET /api/v1/platform/analytics/tags?path=root.platform.devices.analytics-demo`
 
@@ -410,7 +410,7 @@ Check: `GET /api/v1/platform/analytics/tags?path=root.platform.devices.analytics
 
 | Variable | `historyEnabled` | Why |
 |----------|------------------|-----|
-| `sensor-a.temperature` | yes | Raw series for `rollingAvg` and charts |
+| `sensor-a/temperature` | yes | Raw series for `avg` and charts |
 | `chain-a.derived-a` | yes | After rule save (variable auto-created) |
 | `chain-b.derived-b` | yes | same |
 | `chain-c.derived-c` | yes | same |
@@ -422,8 +422,8 @@ Enable historian on outputs **after** rules create the variables — otherwise P
 From repo root:
 
 ```powershell
-python deploy/local/tools/setup-historian-chain-example.py https://ispf.iot-solutions.ru
-python deploy/local/tools/setup-historian-chain-dashboard.py https://ispf.iot-solutions.ru
+python deploy/local/tools/setup-historian-chain-example.py ${ISPF_BASE_URL:-https://ispf.example.invalid}
+python deploy/local/tools/setup-historian-chain-dashboard.py ${ISPF_BASE_URL:-https://ispf.example.invalid}
 ```
 
 Default credentials: `admin` / `admin` (lab/prod only where configured).
@@ -459,11 +459,11 @@ Uses `POST /api/v1/platform/analytics/query` (BL-206). Refresh ≥ ~30 s (rate l
 |--------------|--------|-------|
 | `kind: historian` in `@bindingRules` | Done | `BindingRuleKind`, REST |
 | Multiple rules / variable names per DEVICE | Done | e.g. `derived-a`, `derived-b` |
-| Tag path `objectPath#ruleId` | Done | Catalog, lineage, DAG |
+| Tag path `objectPath/tag/ruleId` | Done | Catalog, lineage, DAG |
 | Unified **Computations** tab | Done | `ObjectComputationsPanel` |
 | Reactive engine skips historian | Done | `BindingRuleEngine` |
 | Analytics engine evaluates historian | Done | `AnalyticsEngineService` |
-| `@historianRuleMeta` per rule id | Done | Not a `hist.*` source |
+| `@historianRuleMeta` per rule id | Done | Not an expression source |
 | Remove `ANALYTICS_TEMPLATE` bootstrap | Done | New configs use binding rules only |
 | Presets in code, not tree / toolbar | Done | Editor catalog only |
 | Modal expression editor | Done | `BindingExpressionEditorModal` |
@@ -483,9 +483,9 @@ Uses `POST /api/v1/platform/analytics/query` (BL-206). Refresh ≥ ~30 s (rate l
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/platform/analytics/tags?path=` | List tags (optional prefix) |
-| GET | `/api/v1/platform/analytics/tags/by-path?path=` | One tag; `path` = `objectPath#ruleId` or device path (first tag) |
+| GET | `/api/v1/platform/analytics/tags/by-path?path=` | One tag; `path` = `objectPath/tag/ruleId` or device path (first tag) |
 | POST | `/api/v1/platform/analytics/tags/backfill?path=&from=&to=` | Recompute historian window |
-| POST | `/api/v1/platform/analytics/expression/validate` | CEL + `hist.*` validation |
+| POST | `/api/v1/platform/analytics/expression/validate` | CEL + historian aggregate validation |
 | POST | `/api/v1/platform/analytics/expression/evaluate` | One-shot evaluate |
 | POST | `/api/v1/platform/analytics/query` | Multi-tag aligned historian query (charts) |
 
@@ -494,7 +494,7 @@ Uses `POST /api/v1/platform/analytics/query` (BL-206). Refresh ≥ ~30 s (rate l
 ## Dashboard binding
 
 - **Live value:** chart/value widget → device path + **output variable name** from the rule (`derived-a`, not `derivedValue`).
-- **Single historian series:** chart/sparkline → `objectPath` + `variableName` + `historyRange`.
+- **Single historian series:** chart/sparkline → `ref` or `objectPath` + `variableName` + `historyRange`.
 - **Multiple series:** chart with `chartStyle: line` + `analyticsQueryTagsJson` → `POST /api/v1/platform/analytics/query`.
 - Reference: [Recipe 5](#recipe-5--full-production-example-analytics-demo), dashboard `root.platform.dashboards.analytics-demo`.
 - Do **not** reference `root.platform.analytics.*` or `analyticsTemplateId` — removed per ADR-0041.

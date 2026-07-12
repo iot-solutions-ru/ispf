@@ -119,16 +119,25 @@ final class AgentActionTools {
             @Override
             public String description() {
                 return "Invoke a function registered on an object in the tree. "
-                        + "Args: objectPath, functionName, optional inputRows (list of maps).";
+                        + "Args: objectPath, functionName, optional ref (e.g. @/fn/name), optional inputRows.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String ref = stringArg(arguments, "ref");
                 String objectPath = stringArg(arguments, "objectPath");
                 if (objectPath.isBlank()) {
                     objectPath = stringArg(arguments, "path");
                 }
                 String functionName = stringArg(arguments, "functionName");
+                if (!ref.isBlank()) {
+                    com.ispf.core.ref.PlatformRef fnRef = com.ispf.core.ref.PlatformRefParser.parse(ref);
+                    if (!fnRef.isFunction()) {
+                        return Map.of("status", "ERROR", "error", "ref must be a function ref");
+                    }
+                    objectPath = fnRef.object();
+                    functionName = fnRef.name();
+                }
                 if (objectPath.isBlank() || functionName.isBlank()) {
                     return Map.of("status", "ERROR", "error", "objectPath and functionName are required");
                 }
@@ -344,16 +353,25 @@ final class AgentActionTools {
             @Override
             public String description() {
                 return "Fire an object event (e.g. thresholdExceeded). "
-                        + "Args: objectPath, eventName, optional appId, optional inputRows.";
+                        + "Args: objectPath, eventName, optional ref (e.g. @/evt/name), optional inputRows.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String ref = stringArg(arguments, "ref");
                 String objectPath = stringArg(arguments, "objectPath");
                 if (objectPath.isBlank()) {
                     objectPath = stringArg(arguments, "path");
                 }
                 String eventName = stringArg(arguments, "eventName");
+                if (!ref.isBlank()) {
+                    com.ispf.core.ref.PlatformRef evtRef = com.ispf.core.ref.PlatformRefParser.parse(ref);
+                    if (!evtRef.isEvent()) {
+                        return Map.of("status", "ERROR", "error", "ref must be an event ref");
+                    }
+                    objectPath = evtRef.object();
+                    eventName = evtRef.name();
+                }
                 if (objectPath.isBlank() || eventName.isBlank()) {
                     return Map.of("status", "ERROR", "error", "objectPath and eventName are required");
                 }

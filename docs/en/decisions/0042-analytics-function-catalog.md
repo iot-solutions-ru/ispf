@@ -13,7 +13,7 @@ ISPF after ADR-0041 has a working but **fragmented** surface:
 | Surface | Where | Examples |
 |---------|--------|----------|
 | Historian helpers | `AnalyticsEvaluatorRegistry` (Java) | `rollingAvg`, `rateOfChange`, `oee` |
-| Historian CEL | `hist.*` in expression compiler | `hist.avg`, `hist.min`, `hist.sum`, `hist.live` |
+| Historian CEL | PlatformRef aggregates in expression compiler | `avg`, `min`, `sum`, `live` |
 | Reactive CEL | binding rules `kind: reactive` | `movingAvg`, `delta`, `scale`, `callFunction` |
 | Dormant evaluators | engine, not wired to binding compiler | `totalizer`, `min`, `max`, `last` |
 | UI catalog | static TS (`historianExpressionBindings.ts`, `analyticsCelBindings.ts`) | partial, duplicated |
@@ -68,17 +68,17 @@ Response item schema (conceptual):
 
 ```json
 {
-  "id": "rollingAvg",
+  "id": "avg",
   "displayName": "Rolling average",
   "tier": "builtin",
   "kinds": ["historian"],
-  "syntax": "rollingAvg(sourcePath, window)",
+  "syntax": "avg(sourceRef, window)",
   "parameters": [
-    { "name": "sourcePath", "type": "tagPath", "required": true },
+    { "name": "sourceRef", "type": "platformRef", "required": true },
     { "name": "window", "type": "duration", "required": true }
   ],
   "description": "...",
-  "examples": ["rollingAvg(root.platform.devices.sensor-a.temperature, 5m)"],
+  "examples": ["avg(root.platform.devices.sensor-a/temperature, 5m)"],
   "tags": ["statistics", "smoothing"],
   "pack": "core"
 }

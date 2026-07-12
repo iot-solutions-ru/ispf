@@ -54,11 +54,11 @@ gh release create "v$Version" --title "ISPF v$Version" --notes @"
 - LLM: provider status reports missing API key; Settings tab hints for .env and run-local-with-ai.ps1
 
 ## Deploy
-VPS: ispf.iot-solutions.ru
+VPS: ispf.example.invalid
 "@ ispf-server.jar apps/web-console/web-console.zip
 
 Write-Host "=== Deploy to $VpsHost ==="
 scp deploy/vps-configure-ai-env.sh deploy/vps-apply-release.sh deploy/vps-deploy-release-with-ai.sh "${VpsHost}:/tmp/"
 ssh $VpsHost "sed -i 's/\r$//' /tmp/vps-configure-ai-env.sh /tmp/vps-apply-release.sh /tmp/vps-deploy-release-with-ai.sh; ISPF_AI_API_KEY='$AiApiKey' bash /tmp/vps-deploy-release-with-ai.sh $Version"
 
-Write-Host "=== Done. Check https://ispf.iot-solutions.ru/api/v1/ai/provider ==="
+Write-Host "=== Done. Check https://ispf.example.invalid/api/v1/ai/provider ==="

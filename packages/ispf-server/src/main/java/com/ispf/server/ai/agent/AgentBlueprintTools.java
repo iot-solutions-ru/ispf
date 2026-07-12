@@ -426,7 +426,7 @@ final class AgentBlueprintTools {
                     response.put("blueprintId", model.id());
                     response.put("objectType", instance.type().name());
                     response.put("variableCount", instance.variables().size());
-                    response.put("nextSteps", "create_binding_rule / refAt on hub variables, then list_variables");
+                    response.put("nextSteps", "create_binding_rule / read(path/var) on hub variables, then list_variables");
                     return response;
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());

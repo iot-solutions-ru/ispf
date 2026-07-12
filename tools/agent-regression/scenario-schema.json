@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ispf.iot-solutions.ru/schemas/agent-regression-scenario-v1.json",
+  "$id": "https://ispf.example.invalid/schemas/agent-regression-scenario-v1.json",
   "title": "AgentRegressionScenario",
   "type": "object",
   "required": ["id", "version", "domain", "title", "prompt"],

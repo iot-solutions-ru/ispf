@@ -732,12 +732,18 @@ final class AgentAutomationTools {
                             name,
                             historyEnabled,
                             retentionDays,
+                            null,
+                            null,
+                            null,
                             null
                     );
                     Map<String, Object> preview = new LinkedHashMap<>();
                     preview.put("name", updated.name());
                     preview.put("historyEnabled", updated.historyEnabled());
                     updated.historyRetentionDays().ifPresent(days -> preview.put("historyRetentionDays", days));
+                    preview.put("historySampleMode", updated.historySampleMode().name());
+                    preview.put("includePreviousValueInEvent", updated.includePreviousValueInEvent());
+                    preview.put("storageMode", updated.storageMode().name());
                     updated.telemetryPublishModeOverride()
                             .ifPresent(mode -> preview.put("telemetryPublishMode", mode));
                     return Map.of("status", "OK", "path", path, "variable", preview);
@@ -869,7 +875,7 @@ final class AgentAutomationTools {
                         "windowSeconds", "minOccurrences", "cooldownSeconds", "actionType", "actionTarget",
                         "payloadFilterExpr", "enabled"
                 ),
-                "note", "COUNT correlator counts events per targetObjectPath; cross-device logic use CUSTOM hub + refAt + alert",
+                "note", "COUNT correlator counts events per targetObjectPath; cross-device logic use CUSTOM hub + read(remote/ref) + alert",
                 "tool", "configure_correlator"
         );
     }
@@ -900,10 +906,10 @@ final class AgentAutomationTools {
 
     private static Map<String, Object> bindingSchema() {
         return Map.of(
-                "refAt", "refAt(\"root.platform.devices.foo\", variableName) or refAt(\"path\", var, field)",
+                "ref", "root.platform.devices.foo/temperature — read(@/temperature) for rule-local vars",
                 "cel", "CEL expressions on same object, e.g. self.member1[\"value\"] > 0 && self.member2[\"value\"] > 0",
                 "platformBindings", List.of(
-                        "refAt", "hysteresis", "counterRate", "unitConvert", "callFunction", "sqlBinding"
+                        "read", "call", "hysteresis", "counterRate", "unitConvert", "sqlBinding"
                 ),
                 "tool", "create_binding_rule"
         );
@@ -922,7 +928,7 @@ final class AgentAutomationTools {
         return List.of(
                 Map.of("type", "DEVICE", "use", "Sensors, PLCs, simulators", "keyVars", "driverConfigJson, driverPointMappingsJson, status"),
                 Map.of("type", "DASHBOARD", "use", "Operator screens", "keyVars", "title, layout, refreshIntervalMs"),
-                Map.of("type", "CUSTOM", "use", "Logic hub, aggregations, refAt bindings", "keyVars", "user-defined via create_variable"),
+                Map.of("type", "CUSTOM", "use", "Logic hub, aggregations, PlatformRef bindings", "keyVars", "user-defined via create_variable"),
                 Map.of("type", "ALERT", "use", "CEL rules → events", "parent", AutomationTreeService.ALERT_RULES_ROOT),
                 Map.of("type", "CORRELATOR", "use", "Event patterns", "parent", AutomationTreeService.CORRELATORS_ROOT),
                 Map.of("type", "WORKFLOW", "use", "BPMN automation", "parent", "root.platform.workflows"),

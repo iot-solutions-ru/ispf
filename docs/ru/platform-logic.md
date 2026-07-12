@@ -63,7 +63,7 @@ Legacy без `kind`:
     ],
     "onContextChange": true
   },
-  "condition": "context.selection.device != \"\" && refAt(context.selection.device, temperature).value > 80",
+  "condition": "context.selection.device != \"\" && read(context.selection.device + \"/temperature\") > 80",
   "expression": "\"alarm\"",
   "target": {
     "kind": "context",

@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HistorianBindingRuleCompilerTest {
 
     @Test
-    void compilesRollingAvgBuiltin() {
-        assertBuiltinCompiles("rollingAvg", "rollingAvg");
+    void compilesAvgBuiltin() {
+        assertBuiltinCompiles("avg", "avg");
     }
 
     @Test
@@ -52,7 +52,7 @@ class HistorianBindingRuleCompilerTest {
                 BindingRuleKind.HISTORIAN,
                 new BindingActivators(false, List.of(new BindingVariableRef("root.dev.a", "energy")), null, 60_000L, false, false),
                 "",
-                "energyDelta(root.platform.devices.demo-sensor-01.energy, 1h)",
+                "energyDelta(root.platform.devices.demo-sensor-01/energy, 1h)",
                 new BindingTarget("variable", "delta-a", "value", null, null),
                 "1h",
                 null
@@ -80,7 +80,7 @@ class HistorianBindingRuleCompilerTest {
                 BindingRuleKind.HISTORIAN,
                 new BindingActivators(false, List.of(new BindingVariableRef("root.dev.a", "temperature")), null, 60_000L, false, false),
                 "",
-                expressionHelper + "(root.platform.devices.demo-sensor-01.temperature, 1h)",
+                expressionHelper + "(root.platform.devices.demo-sensor-01/temperature, 1h)",
                 new BindingTarget("variable", "avg-a", "value", null, null),
                 "1h",
                 null

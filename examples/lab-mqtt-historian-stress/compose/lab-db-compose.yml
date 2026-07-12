@@ -1,0 +1,77 @@
+#   docker compose --env-file lab-db.env -f lab-db-compose.yml up -d
+name: ispf-db
+
+services:
+  postgres:
+    image: timescale/timescaledb:2.17.2-pg16
+    restart: unless-stopped
+    ports:
+      - "${ISPF_LAB_DB_BIND:-198.51.100.10}:5432:5432"
+    environment:
+      POSTGRES_DB: ispf
+      POSTGRES_USER: ispf
+      POSTGRES_PASSWORD: ${ISPF_DB_PASSWORD:-CHANGE_ME_POSTGRES}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ispf -d ispf"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  scylla:
+    image: scylladb/scylla:6.2
+    restart: unless-stopped
+    ports:
+      - "${ISPF_LAB_DB_BIND:-198.51.100.10}:9042:9042"
+    command:
+      - "--smp"
+      - "${SCYLLA_SMP:-20}"
+      - "--memory"
+      - "${SCYLLA_MEMORY:-40G}"
+      - "--overprovisioned"
+      - "1"
+      - "--api-address"
+      - "0.0.0.0"
+    volumes:
+      - scylla_data:/var/lib/scylla
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'SELECT now() FROM system.local' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 90s
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: ispf
+      CLICKHOUSE_USER: ispf
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-CHANGE_ME_CLICKHOUSE}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    mem_limit: ${CLICKHOUSE_MEM_LIMIT:-32g}
+    ports:
+      - "${ISPF_LAB_DB_BIND:-198.51.100.10}:8123:8123"
+      - "${ISPF_LAB_DB_BIND:-198.51.100.10}:9000:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - ch_data:/var/lib/clickhouse
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- --user=ispf --password=${CLICKHOUSE_PASSWORD:-CHANGE_ME_CLICKHOUSE} http://127.0.0.1:8123/ping | grep -q Ok",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  pg_data:
+  scylla_data:
+  ch_data:

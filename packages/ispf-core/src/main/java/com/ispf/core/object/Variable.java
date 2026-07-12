@@ -19,6 +19,9 @@ public class Variable {
     private final boolean writable;
     private final boolean historyEnabled;
     private final Integer historyRetentionDays;
+    private final HistorySampleMode historySampleMode;
+    private final boolean includePreviousValueInEvent;
+    private final VariableStorageMode storageMode;
     /** {@code null} or blank = inherit device {@code telemetryPublishMode}. */
     private final String telemetryPublishMode;
     private final List<String> readRoles;
@@ -74,12 +77,47 @@ public class Variable {
             List<String> readRoles,
             List<String> writeRoles
     ) {
+        this(
+                name,
+                schema,
+                readable,
+                writable,
+                initialValue,
+                historyEnabled,
+                historyRetentionDays,
+                HistorySampleMode.CHANGES_ONLY,
+                false,
+                VariableStorageMode.PERSISTENT,
+                telemetryPublishMode,
+                readRoles,
+                writeRoles
+        );
+    }
+
+    public Variable(
+            String name,
+            DataSchema schema,
+            boolean readable,
+            boolean writable,
+            DataRecord initialValue,
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            HistorySampleMode historySampleMode,
+            boolean includePreviousValueInEvent,
+            VariableStorageMode storageMode,
+            String telemetryPublishMode,
+            List<String> readRoles,
+            List<String> writeRoles
+    ) {
         this.name = name;
         this.schema = schema;
         this.readable = readable;
         this.writable = writable;
         this.historyEnabled = historyEnabled;
         this.historyRetentionDays = historyRetentionDays;
+        this.historySampleMode = historySampleMode != null ? historySampleMode : HistorySampleMode.CHANGES_ONLY;
+        this.includePreviousValueInEvent = includePreviousValueInEvent;
+        this.storageMode = storageMode != null ? storageMode : VariableStorageMode.PERSISTENT;
         this.telemetryPublishMode = normalizeTelemetryPublishMode(telemetryPublishMode);
         this.readRoles = readRoles != null ? List.copyOf(readRoles) : List.of();
         this.writeRoles = writeRoles != null ? List.copyOf(writeRoles) : List.of();
@@ -117,6 +155,21 @@ public class Variable {
         return Optional.ofNullable(historyRetentionDays);
     }
 
+    /** Historian writes on value change only, or on every accepted update. */
+    public HistorySampleMode historySampleMode() {
+        return historySampleMode;
+    }
+
+    /** When true, variable update events may carry {@code previousValue} alongside the new value. */
+    public boolean includePreviousValueInEvent() {
+        return includePreviousValueInEvent;
+    }
+
+    /** Whether live value is persisted to the config database. */
+    public VariableStorageMode storageMode() {
+        return storageMode;
+    }
+
     /**
      * Per-variable telemetry publish mode override; empty = inherit the bound driver's default.
      */
@@ -135,13 +188,58 @@ public class Variable {
     }
 
     public Variable withHistorySettings(boolean enabled, Integer retentionDays) {
-        return withStorageSettings(enabled, retentionDays, telemetryPublishMode);
+        return withPolicySettings(
+                enabled,
+                retentionDays,
+                historySampleMode,
+                includePreviousValueInEvent,
+                storageMode,
+                telemetryPublishMode
+        );
     }
 
     public Variable withStorageSettings(
             boolean historyEnabled,
             Integer historyRetentionDays,
             String telemetryPublishMode
+    ) {
+        return withPolicySettings(
+                historyEnabled,
+                historyRetentionDays,
+                historySampleMode,
+                includePreviousValueInEvent,
+                storageMode,
+                telemetryPublishMode
+        );
+    }
+
+    public Variable withPolicySettings(
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            HistorySampleMode historySampleMode,
+            boolean includePreviousValueInEvent,
+            VariableStorageMode storageMode,
+            String telemetryPublishMode
+    ) {
+        return withDefinition(
+                readable,
+                writable,
+                historyEnabled,
+                historyRetentionDays,
+                historySampleMode,
+                includePreviousValueInEvent,
+                storageMode,
+                telemetryPublishMode,
+                readRoles,
+                writeRoles
+        );
+    }
+
+    public Variable withDefinition(
+            boolean readable,
+            boolean writable,
+            boolean historyEnabled,
+            Integer historyRetentionDays
     ) {
         return withDefinition(
                 readable,
@@ -158,20 +256,19 @@ public class Variable {
             boolean readable,
             boolean writable,
             boolean historyEnabled,
-            Integer historyRetentionDays
-    ) {
-        return withDefinition(readable, writable, historyEnabled, historyRetentionDays, telemetryPublishMode, readRoles, writeRoles);
-    }
-
-    public Variable withDefinition(
-            boolean readable,
-            boolean writable,
-            boolean historyEnabled,
             Integer historyRetentionDays,
             List<String> readRoles,
             List<String> writeRoles
     ) {
-        return withDefinition(readable, writable, historyEnabled, historyRetentionDays, telemetryPublishMode, readRoles, writeRoles);
+        return withDefinition(
+                readable,
+                writable,
+                historyEnabled,
+                historyRetentionDays,
+                telemetryPublishMode,
+                readRoles,
+                writeRoles
+        );
     }
 
     public Variable withDefinition(
@@ -179,6 +276,32 @@ public class Variable {
             boolean writable,
             boolean historyEnabled,
             Integer historyRetentionDays,
+            String telemetryPublishMode,
+            List<String> readRoles,
+            List<String> writeRoles
+    ) {
+        return withDefinition(
+                readable,
+                writable,
+                historyEnabled,
+                historyRetentionDays,
+                historySampleMode,
+                includePreviousValueInEvent,
+                storageMode,
+                telemetryPublishMode,
+                readRoles,
+                writeRoles
+        );
+    }
+
+    public Variable withDefinition(
+            boolean readable,
+            boolean writable,
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            HistorySampleMode historySampleMode,
+            boolean includePreviousValueInEvent,
+            VariableStorageMode storageMode,
             String telemetryPublishMode,
             List<String> readRoles,
             List<String> writeRoles
@@ -191,6 +314,9 @@ public class Variable {
                 value.get(),
                 historyEnabled,
                 historyRetentionDays,
+                historySampleMode,
+                includePreviousValueInEvent,
+                storageMode,
                 telemetryPublishMode,
                 readRoles,
                 writeRoles

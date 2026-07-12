@@ -29,11 +29,11 @@ public final class HistorianComputationPresets {
     public static List<Preset> all() {
         return List.of(
                 new Preset(
-                        "rollingAvg",
+                        "avg",
                         "Rolling average",
                         "Historian avg over a time window",
-                        "rollingAvg",
-                        "hist.avg('{objectPath}', '{sourceVariable}', '{windowBucket}')",
+                        "avg",
+                        "avg({objectPath}/{sourceVariable}, {windowBucket})",
                         "5m",
                         60_000L,
                         "avgValue"
@@ -43,7 +43,7 @@ public final class HistorianComputationPresets {
                         "Rate of change",
                         "Delta between first and last bucket average",
                         "rateOfChange",
-                        "rateOfChange({objectPath}.{sourceVariable}, {windowBucket})",
+                        "rateOfChange({objectPath}/{sourceVariable}, {windowBucket})",
                         "1h",
                         60_000L,
                         "rocValue"
@@ -53,7 +53,7 @@ public final class HistorianComputationPresets {
                         "Totalizer",
                         "Sum of bucket averages weighted by sample count",
                         "totalizer",
-                        "totalizer({objectPath}.{sourceVariable}, {windowBucket})",
+                        "totalizer({objectPath}/{sourceVariable}, {windowBucket})",
                         "1h",
                         60_000L,
                         "totalizedValue"
@@ -63,7 +63,7 @@ public final class HistorianComputationPresets {
                         "Window minimum",
                         "Minimum historian value in the selected window",
                         "min",
-                        "min({objectPath}.{sourceVariable}, {windowBucket})",
+                        "min({objectPath}/{sourceVariable}, {windowBucket})",
                         "1h",
                         60_000L,
                         "minValue"
@@ -73,7 +73,7 @@ public final class HistorianComputationPresets {
                         "Window maximum",
                         "Maximum historian value in the selected window",
                         "max",
-                        "max({objectPath}.{sourceVariable}, {windowBucket})",
+                        "max({objectPath}/{sourceVariable}, {windowBucket})",
                         "1h",
                         60_000L,
                         "maxValue"
@@ -83,7 +83,7 @@ public final class HistorianComputationPresets {
                         "Last value",
                         "Latest historian sample with live fallback",
                         "last",
-                        "last({objectPath}.{sourceVariable}, {windowBucket})",
+                        "last({objectPath}/{sourceVariable}, {windowBucket})",
                         "1h",
                         60_000L,
                         "lastValue"
@@ -101,9 +101,9 @@ public final class HistorianComputationPresets {
                 new Preset(
                         "customCel",
                         "Custom CEL",
-                        "CEL expression with hist.* functions",
+                        "CEL expression with avg/live historian helpers",
                         "cel",
-                        "hist.avg('{objectPath}', '{sourceVariable}', '5m')",
+                        "avg({objectPath}/{sourceVariable}, 5m)",
                         "5m",
                         60_000L,
                         "computedValue"
@@ -129,6 +129,7 @@ public final class HistorianComputationPresets {
                 .replace("{availabilityVariable}", blankToDefault(request.availabilityVariable(), "availabilityPct"))
                 .replace("{performanceVariable}", blankToDefault(request.performanceVariable(), "performancePct"))
                 .replace("{qualityVariable}", blankToDefault(request.qualityVariable(), "qualityPct"));
+        String activatorRef = sourcePath + "/" + sourceVariable;
         return Map.of(
                 "id", preset.id() + "-" + System.currentTimeMillis(),
                 "name", preset.displayName(),
@@ -137,7 +138,7 @@ public final class HistorianComputationPresets {
                 "kind", BindingRuleKind.HISTORIAN.name().toLowerCase(),
                 "activators", Map.of(
                         "onStartup", false,
-                        "onVariableChange", List.of(new BindingVariableRef(sourcePath, sourceVariable)),
+                        "onVariableChange", List.of(Map.of("ref", activatorRef)),
                         "onEvent", null,
                         "periodicMs", preset.periodicMs(),
                         "async", false,

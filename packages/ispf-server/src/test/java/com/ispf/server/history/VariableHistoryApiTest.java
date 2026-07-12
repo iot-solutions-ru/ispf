@@ -70,6 +70,49 @@ class VariableHistoryApiTest {
     }
 
     @Test
+    void skipsDuplicateSamplesWhenChangesOnlyMode() {
+        DataRecord record = DataRecord.single(
+                DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build(),
+                Map.of("value", 42.0)
+        );
+        var before = variableHistoryService.query(DEVICE, "temperature", "value", null, null, 50);
+        int countBefore = before.samples().size();
+
+        variableHistoryService.recordFromDataRecordTrusted(DEVICE, "temperature", record, Instant.now());
+        var afterFirst = variableHistoryService.query(DEVICE, "temperature", "value", null, null, 50);
+        assertThat(afterFirst.samples()).hasSize(countBefore + 1);
+
+        variableHistoryService.recordFromDataRecordTrusted(DEVICE, "temperature", record, Instant.now());
+        var afterDuplicate = variableHistoryService.query(DEVICE, "temperature", "value", null, null, 50);
+        assertThat(afterDuplicate.samples()).hasSize(countBefore + 1);
+    }
+
+    @Test
+    void recordsFullVariableSnapshot() {
+        DataRecord record = DataRecord.single(
+                DataSchema.builder("temperature").field("value", FieldType.DOUBLE).field("unit", FieldType.STRING).build(),
+                Map.of("value", 17.5, "unit", "C")
+        );
+        variableHistoryService.recordFromDataRecordTrusted(DEVICE, "temperature", record, Instant.now());
+
+        var snapshot = variableHistoryService.query(
+                DEVICE,
+                "temperature",
+                VariableHistoryService.RECORD_SNAPSHOT_FIELD,
+                null,
+                null,
+                10
+        );
+        assertThat(snapshot.samples()).isNotEmpty();
+        String json = snapshot.samples().getLast().text();
+        assertThat(json).contains("\"unit\"");
+        assertThat(json).contains("C");
+        assertThat(json).contains("17.5");
+        assertThat(json).contains("\"rows\"");
+        assertThat(json).contains("\"schema\"");
+    }
+
+    @Test
     void skipsExcludedDriverVariables() {
         variableHistoryService.recordVariableUpdate(DEVICE, "driverStatus");
         var response = variableHistoryService.query(DEVICE, "driverStatus", "value", null, null, 10);

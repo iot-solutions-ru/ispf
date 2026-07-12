@@ -50,10 +50,10 @@ Points sharing the same resolved `req:` are grouped — **one TCP exchange** per
 
 ## VPS (prod)
 
-Device: **`root.platform.devices.framed-gauge-01`** on https://ispf.iot-solutions.ru
+Device: **`root.platform.devices.framed-gauge-01`** on ${ISPF_BASE_URL:-https://ispf.example.invalid}
 
 ```bash
-ssh root@ispf.iot-solutions.ru
+ssh deploy-user@production-host
 GAUGE_TCP_HOST=10.0.0.5 GAUGE_TCP_PORT=10001 GAUGE_SECURITY_CODE= GAUGE_TANK=01 GAUGE_AUTO_START=true \
   python3 /opt/ispf/bin/vps-framed-gauge-setup.py
 ```

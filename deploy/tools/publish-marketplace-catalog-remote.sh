@@ -110,7 +110,7 @@ PY
 
 echo "=== Catalog smoke ==="
 curl -fsS "http://127.0.0.1:8090/api/v1/catalog" | python3 -c "import sys,json; d=json.load(sys.stdin); print('listings:', len(d.get('listings',[])))"
-INSTALL_ID="$(curl -fsS 'https://ispf.iot-solutions.ru/api/v1/platform/installation-id' -H 'X-ISPF-Role: admin' 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin).get(\"installationId\",\"\"))' 2>/dev/null || echo '')"
+INSTALL_ID="$(curl -fsS 'https://ispf.example.invalid/api/v1/platform/installation-id' -H 'X-ISPF-Role: admin' 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin).get(\"installationId\",\"\"))' 2>/dev/null || echo '')"
 if [[ -n "$INSTALL_ID" ]]; then
   BYTES=$(curl -fsS "http://127.0.0.1:8090/api/v1/catalog/mes-platform/download?installationId=${INSTALL_ID}" | python3 -c "import sys,json; d=json.load(sys.stdin); print('license' in d)")
   echo "mes-platform signed download has license: $BYTES"

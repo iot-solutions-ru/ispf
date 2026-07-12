@@ -5,6 +5,9 @@ export interface ObjectWsMessage {
   timestamp: string;
   revision?: number;
   changedBy?: string;
+  /** Present when variable has includePreviousValueInEvent or API write with enrichment. */
+  value?: import("../types").DataRecord;
+  previousValue?: import("../types").DataRecord;
 }
 
 export const OBJECT_WS_EVENT = "ispf-object-ws-message";

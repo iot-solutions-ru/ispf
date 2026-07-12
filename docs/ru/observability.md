@@ -77,8 +77,8 @@ Env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` и время загрузки `ispf.p
 Скрипт [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) — два образца `GET /api/v1/platform/metrics` с интервалом ~6 с, выводят группы потоков и подозреваемых в стандартный вывод. Удобен по SSH без пользовательского интерфейса.
 
 ```bash
-scp deploy/vps-idle-thread-sample.py root@ispf.iot-solutions.ru:/tmp/
-ssh root@ispf.iot-solutions.ru python3 /tmp/vps-idle-thread-sample.py
+scp deploy/vps-idle-thread-sample.py deploy-user@production-host:/tmp/
+ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 ```
 
 Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).

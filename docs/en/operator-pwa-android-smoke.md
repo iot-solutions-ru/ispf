@@ -4,7 +4,7 @@ Manual acceptance for installed operator mode on Android. **Automated coverage (
 
 ## Prerequisites
 
-- HTTPS origin (prod `https://ispf.iot-solutions.ru` or local tunnel with valid cert)
+- HTTPS origin (prod `${ISPF_BASE_URL:-https://ispf.example.invalid}` or local tunnel with valid cert)
 - Demo operator app available (`/?mode=operator&app=demo`)
 - Android device with Chrome 120+ (optional — for release sign-off only)
 

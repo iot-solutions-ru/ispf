@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsTagCatalogEntryDto } from "../types/analytics";
+import type { VariableDto } from "../types";
 import AnalyticsTagInspectorModal from "./analytics/AnalyticsTagInspectorModal";
 import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
 import BindingRulesPanel from "./BindingRulesPanel";
@@ -10,6 +11,7 @@ interface ObjectComputationsPanelProps {
   canManage: boolean;
   eventNames: string[];
   variableNames: string[];
+  variables?: VariableDto[];
   functionNames: string[];
   objectType?: string;
   historianComputations?: AnalyticsTagCatalogEntryDto[];
@@ -24,6 +26,7 @@ export default function ObjectComputationsPanel({
   canManage,
   eventNames,
   variableNames,
+  variables,
   functionNames,
   historianComputations = [],
   bindingAuditEnabled = false,
@@ -48,6 +51,7 @@ export default function ObjectComputationsPanel({
           canManage={canManage}
           eventNames={eventNames}
           variableNames={variableNames}
+          variables={variables}
           functionNames={functionNames}
           embedded
           onInspectHistorian={(tagPath) => setInspectTagPath(tagPath)}

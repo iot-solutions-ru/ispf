@@ -21,17 +21,17 @@ class AnalyticsFormulaExpanderTest {
         String expanded = AnalyticsFormulaExpander.expand(
                 "rateOfChange({{levelPath}}, 1h) * {{tankArea}}",
                 Map.of(
-                        "levelPath", "root.platform.devices.tank-01.level",
+                        "levelPath", "root.platform.devices.tank-01/level",
                         "tankArea", "12.5"
                 )
         );
-        assertThat(expanded).isEqualTo("rateOfChange(root.platform.devices.tank-01.level, 1h) * 12.5");
+        assertThat(expanded).isEqualTo("rateOfChange(root.platform.devices.tank-01/level, 1h) * 12.5");
     }
 
     @Test
     void rejectsMissingParameter() {
         assertThatThrownBy(() -> AnalyticsFormulaExpander.expand(
-                "rollingAvg({{source}}, 5m)",
+                "avg({{source}}, 5m)",
                 Map.of()
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("source");

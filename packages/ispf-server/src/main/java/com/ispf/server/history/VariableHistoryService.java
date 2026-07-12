@@ -3,6 +3,8 @@ package com.ispf.server.history;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.FieldDefinition;
+import com.ispf.core.model.DataRecordValues;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.VariableHistoryProperties;
@@ -38,6 +40,11 @@ public class VariableHistoryService {
 
     private static final String RETENTION_LOCK = "variable_history_retention";
 
+    /** Historian field storing full {@link DataRecord} JSON in {@code value_text}. */
+    public static final String RECORD_SNAPSHOT_FIELD = "$record";
+
+    private static final int RECORD_SNAPSHOT_MAX_CHARS = 65_536;
+
     private final VariableHistoryProperties properties;
     private final VariableSampleRepository sampleRepository;
     private final ObjectVariableRepository variableRepository;
@@ -54,8 +61,11 @@ public class VariableHistoryService {
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
+    private final HistorianSampledAtResolver sampledAtResolver = new HistorianSampledAtResolver();
     /** Short-lived cache for historyEnabled lookups on the hot path. */
     private final ConcurrentHashMap<String, HistorizedCacheEntry> historizedCache = new ConcurrentHashMap<>();
+    /** Last historized record per variable for {@link HistorySampleMode#CHANGES_ONLY}. */
+    private final ConcurrentHashMap<String, DataRecord> lastHistorizedRecord = new ConcurrentHashMap<>();
     private static final long HISTORIZED_CACHE_TTL_MS = 10_000;
 
     public VariableHistoryService(
@@ -126,34 +136,15 @@ public class VariableHistoryService {
             return List.of();
         }
 
-        Map<String, Object> row = record.firstRow();
         Instant now = Instant.now();
         long nowMs = now.toEpochMilli();
+        Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
+        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, coalesced);
         List<VariableSampleEntity> samples = new ArrayList<>();
-
-        for (FieldDefinition field : record.schema().fields()) {
-            String fieldName = field.name();
-            Object raw = row.get(fieldName);
-            Optional<Double> numeric = toNumeric(raw);
-            if (numeric.isEmpty()) {
-                continue;
+        for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
+            if (acceptDebouncedSample(entry.getKey(), entry.getValue(), nowMs)) {
+                samples.add(entry.getValue());
             }
-
-            String debounceKey = objectPath + "|" + variableName + "|" + fieldName;
-            Long lastMs = lastSampleMs.get(debounceKey);
-            if (lastMs != null && nowMs - lastMs < properties.getMinIntervalMs()) {
-                continue;
-            }
-
-            VariableSampleEntity sample = new VariableSampleEntity();
-            sample.setObjectPath(objectPath);
-            sample.setVariableName(variableName);
-            sample.setFieldName(fieldName);
-            sample.setSampledAt(now);
-            sample.setObservedAt(observedAt != null ? observedAt : now);
-            sample.setValueDouble(numeric.get());
-            samples.add(sample);
-            lastSampleMs.put(debounceKey, nowMs);
         }
         return samples;
     }
@@ -304,6 +295,9 @@ public class VariableHistoryService {
             long nowMs,
             Map<String, VariableSampleEntity> samples
     ) {
+        if (!acceptHistorianSample(objectPath, variableName, record)) {
+            return;
+        }
         Instant effectiveObserved = observedAt != null ? observedAt : now;
 
         for (var field : record.schema().fields()) {
@@ -318,10 +312,60 @@ public class VariableHistoryService {
             sample.setObjectPath(objectPath);
             sample.setVariableName(variableName);
             sample.setFieldName(fieldName);
-            sample.setSampledAt(now);
+            sample.setSampledAt(sampledAtResolver.resolve(
+                    properties.isBenchmarkSpreadSampledAt(),
+                    debounceKey,
+                    effectiveObserved,
+                    now
+            ));
             sample.setObservedAt(effectiveObserved);
             sample.setValueDouble(numeric.get());
             samples.put(debounceKey, sample);
+        }
+        appendRecordSnapshot(objectPath, variableName, record, observedAt, now, samples);
+    }
+
+    private void appendRecordSnapshot(
+            String objectPath,
+            String variableName,
+            DataRecord record,
+            Instant observedAt,
+            Instant now,
+            Map<String, VariableSampleEntity> samples
+    ) {
+        if (!properties.isRecordSnapshotEnabled()) {
+            return;
+        }
+        String json = serializeRecordSnapshot(record);
+        if (json == null) {
+            return;
+        }
+        String debounceKey = objectPath + "|" + variableName + "|" + RECORD_SNAPSHOT_FIELD;
+        Instant effectiveObserved = observedAt != null ? observedAt : now;
+        VariableSampleEntity sample = new VariableSampleEntity();
+        sample.setObjectPath(objectPath);
+        sample.setVariableName(variableName);
+        sample.setFieldName(RECORD_SNAPSHOT_FIELD);
+        sample.setSampledAt(sampledAtResolver.resolve(
+                properties.isBenchmarkSpreadSampledAt(),
+                debounceKey,
+                effectiveObserved,
+                now
+        ));
+        sample.setObservedAt(effectiveObserved);
+        sample.setValueText(json);
+        samples.put(debounceKey, sample);
+    }
+
+    private String serializeRecordSnapshot(DataRecord record) {
+        try {
+            String json = objectMapper.writeValueAsString(record);
+            if (json.length() > RECORD_SNAPSHOT_MAX_CHARS) {
+                return json.substring(0, RECORD_SNAPSHOT_MAX_CHARS);
+            }
+            return json;
+        } catch (RuntimeException ex) {
+            return null;
         }
     }
 
@@ -690,6 +734,24 @@ public class VariableHistoryService {
     }
 
     private record HistorizedCacheEntry(boolean enabled, long loadedAtMs) {}
+
+    private boolean acceptHistorianSample(String objectPath, String variableName, DataRecord record) {
+        HistorySampleMode mode = objectManager.require(objectPath)
+                .getVariable(variableName)
+                .map(Variable::historySampleMode)
+                .orElse(HistorySampleMode.CHANGES_ONLY);
+        String key = objectPath + "|" + variableName;
+        if (mode == HistorySampleMode.ALL_VALUES) {
+            lastHistorizedRecord.put(key, record);
+            return true;
+        }
+        DataRecord last = lastHistorizedRecord.get(key);
+        if (DataRecordValues.equal(last, record)) {
+            return false;
+        }
+        lastHistorizedRecord.put(key, record);
+        return true;
+    }
 
     private int resolveRetentionDays(ObjectVariableEntity entity) {
         if (entity.getHistoryRetentionDays() != null) {

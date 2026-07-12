@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { BindingActivators } from "../types";
+import { refFromFields, fieldsFromRef } from "../utils/platformRef";
+import { PlatformRefPicker } from "./PlatformRefPicker";
 import {
   buildRemoteVariableChange,
   CUSTOM_BINDING_EVENT,
@@ -14,6 +16,8 @@ export { activatorsSummary } from "./bindingActivatorsUtils";
 interface BindingActivatorsEditorProps {
   activators: BindingActivators;
   eventNames: string[];
+  objectPath?: string;
+  variableNames?: string[];
   dashboardMode?: boolean;
   onChange: (activators: BindingActivators) => void;
 }
@@ -21,6 +25,8 @@ interface BindingActivatorsEditorProps {
 export default function BindingActivatorsEditor({
   activators,
   eventNames,
+  objectPath = "",
+  variableNames = [],
   dashboardMode = false,
   onChange,
 }: BindingActivatorsEditorProps) {
@@ -112,6 +118,44 @@ export default function BindingActivatorsEditor({
           onChange={(e) => setRemote(e.target.value, remoteVariable)}
         />
       </label>
+
+      <div className="platform-ref-picker-row full">
+        <PlatformRefPicker
+          objectPath={objectPath}
+          kind="variable"
+          value={remoteRef?.ref ?? refFromFields(remotePath, remoteVariable) ?? ""}
+          variableNames={variableNames}
+          onChange={(ref) => {
+            const fields = fieldsFromRef(ref);
+            patch({
+              onVariableChange: [{
+                objectPath: fields.objectPath ?? "self",
+                variableName: fields.name ?? "*",
+                ref: ref || undefined,
+              }],
+            });
+          }}
+        />
+      </div>
+
+      <div className="platform-ref-picker-row full">
+        <PlatformRefPicker
+          objectPath={objectPath}
+          kind="event"
+          value={
+            activators.onEventRef
+            ?? (activators.onEvent ? refFromFields("@", activators.onEvent, undefined, "event") ?? "" : "")
+          }
+          eventNames={eventNames}
+          onChange={(ref) => {
+            if (!ref) {
+              patch({ onEventRef: null });
+              return;
+            }
+            patch({ onEventRef: ref, onEvent: null });
+          }}
+        />
+      </div>
 
       <label className="full">
         {t("bindings.activators.remoteVariable")}

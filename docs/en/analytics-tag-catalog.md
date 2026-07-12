@@ -8,12 +8,12 @@ Deployed **historian computations** are discovered from `@bindingRules` entries 
 
 | Field | Value |
 |-------|--------|
-| Tag path | `objectPath#ruleId` (composite key for DAG, catalog, schedules) |
+| Tag path | `objectPath/tag/ruleId` (composite key for DAG, catalog, schedules) |
 | Object path | Device that owns the rule and output variable |
 | Output variable | `target.variableName` (arbitrary; multiple rules per device allowed) |
 | Rule id | Stable id inside `@bindingRules` on that device |
 
-Example: rule `avg-temp-5m` on `root.platform.devices.sensor-a` → tag `root.platform.devices.sensor-a#avg-temp-5m` → live var `avgTemp5m`.
+Example: rule `avg-temp-5m` on `root.platform.devices.sensor-a` → tag `root.platform.devices.sensor-a/tag/avg-temp-5m` → live var `avgTemp5m`.
 
 ## Per-rule metadata
 
@@ -25,7 +25,7 @@ Stored in system variable `@historianRuleMeta` (JSON object keyed by rule id):
 | `lastEvalAt` | ISO-8601 timestamp of last engine evaluation |
 | `lastEvalStatus` | `ok`, `error`, `skipped` |
 
-Updated by the analytics engine on each tick; read by catalog API and **Computations** inspector. **Not** a valid `hist.avg` source — see [cookbook § `@historianRuleMeta`](analytics-historian-cookbook.md#historianrulemeta--purpose-and-misuse).
+Updated by the analytics engine on each tick; read by catalog API and **Computations** inspector. **Not** a valid expression source — see [cookbook § `@historianRuleMeta`](analytics-historian-cookbook.md#historianrulemeta--purpose-and-misuse).
 
 ## Production reference
 
@@ -36,7 +36,7 @@ Full chain + dashboard: [cookbook Recipe 5](analytics-historian-cookbook.md#reci
 | Method | Path | Role | Description |
 |--------|------|------|-------------|
 | GET | `/api/v1/platform/analytics/tags?path=` | operator+ | List deployed tags under optional path prefix |
-| GET | `/api/v1/platform/analytics/tags/by-path?path=` | operator+ | Single tag; `path` = `objectPath#ruleId` or device path |
+| GET | `/api/v1/platform/analytics/tags/by-path?path=` | operator+ | Single tag; `path` = `objectPath/tag/ruleId` or device path |
 | POST | `/api/v1/platform/analytics/tags/backfill?path=&from=&to=` | developer+ | Recompute historian window for one tag |
 | POST | `/api/v1/platform/analytics/expression/validate` | developer+ | Validate CEL-over-historian expression (BL-211) |
 | POST | `/api/v1/platform/analytics/expression/evaluate` | developer+ | Evaluate expression once (BL-211) |
@@ -50,7 +50,7 @@ Full chain + dashboard: [cookbook Recipe 5](analytics-historian-cookbook.md#reci
 | PUT | `/api/v1/platform/analytics/formulas/{id}` | platform admin | Update formula; rebinds `formulaRef` rules |
 | DELETE | `/api/v1/platform/analytics/formulas/{id}` | platform admin | Delete formula |
 | POST | `/api/v1/platform/analytics/formulas/{id}/expand` | developer+ | Expand `{{param}}` template |
-| GET | `/api/v1/platform/analytics/tags/evaluate?path=` | developer+ | Probe historian tag (`objectPath#ruleId`) |
+| GET | `/api/v1/platform/analytics/tags/evaluate?path=` | developer+ | Probe historian tag (`objectPath/tag/ruleId`) |
 
 Alias paths `/derived-tags/catalog` may exist on some deployments for WAF compatibility.
 
@@ -71,15 +71,15 @@ Alias paths `/derived-tags/catalog` may exist on some deployments for WAF compat
 
 ### CEL-over-historian (BL-211)
 
-Rules whose expression contains `hist.*` compile as helper `cel`:
+Rules whose expression contains historian aggregates compile as helper `cel`:
 
 ```text
-hist.avg('root.platform.devices.sensor-a', 'temperature', '5m')
-hist.live('root.platform.devices.sensor-a', 'temperature')
-(hist.avg('…sensor-a', 'temperature', '5m') + hist.avg('…sensor-b', 'temperature', '5m')) / 2.0
+avg(root.platform.devices.sensor-a/temperature, 5m)
+live(root.platform.devices.sensor-a/temperature)
+(avg(root.platform.devices.sensor-a/temperature, 5m) + avg(root.platform.devices.sensor-b/temperature, 5m)) / 2.0
 ```
 
-Functions: `hist.avg`, `hist.min`, `hist.max`, `hist.last`, `hist.sum`, `hist.live`.
+Functions: `avg`, `min`, `max`, `last`, `sum`, `live`.
 
 ## Quality propagation
 

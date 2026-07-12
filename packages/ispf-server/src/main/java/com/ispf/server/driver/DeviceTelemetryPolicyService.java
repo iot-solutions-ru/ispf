@@ -1,7 +1,9 @@
 package com.ispf.server.driver;
 
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
+import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.context.annotation.Lazy;
@@ -106,6 +108,29 @@ public class DeviceTelemetryPolicyService {
         if (objectPath != null && !objectPath.isBlank() && variableName != null && !variableName.isBlank()) {
             variableModeCache.remove(objectPath + "|" + variableName);
         }
+    }
+
+    public HistorySampleMode historySampleMode(String objectPath, String variableName) {
+        return readVariable(objectPath, variableName)
+                .map(Variable::historySampleMode)
+                .orElse(HistorySampleMode.CHANGES_ONLY);
+    }
+
+    public boolean includePreviousValueInEvent(String objectPath, String variableName) {
+        return readVariable(objectPath, variableName)
+                .map(Variable::includePreviousValueInEvent)
+                .orElse(false);
+    }
+
+    public VariableStorageMode storageMode(String objectPath, String variableName) {
+        return readVariable(objectPath, variableName)
+                .map(Variable::storageMode)
+                .orElse(VariableStorageMode.PERSISTENT);
+    }
+
+    private Optional<Variable> readVariable(String objectPath, String variableName) {
+        return objectManager.tree().findByPath(objectPath)
+                .flatMap(node -> node.getVariable(variableName));
     }
 
     private TelemetryPublishMode resolvePublishMode(String objectPath, String variableName) {

@@ -16,5 +16,6 @@
 | [0040-unified-computations-ui](0040-unified-computations-ui.md) | Вкладка «Вычисления» |
 | [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) | Historian binding rules (мультитег) |
 | [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | Каталог analytics-функций |
+| [0043-unified-platform-ref](0043-unified-platform-ref.md) | Единый адресный язык PlatformRef |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

@@ -1,5 +1,6 @@
 import type { SheetConfig } from "../../../types/dashboard";
 import type { SheetValues } from "./sheetFormulaEngine";
+import { fieldsFromRef } from "../../../utils/platformRef";
 
 export interface IspfFormulaVarRef {
   objectPath: string;
@@ -12,6 +13,8 @@ export interface IspfFormulaVarRef {
 
 const ISPREF_RE =
   /ISPREF\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"(?:\s*,\s*"([^"]+)")?\s*\)/gi;
+/** Slash-ref alias: ISPREF("root.devices.a/temperature") or ISPREF("root.devices.a/temperature/value"). */
+const ISPREF_SLASH_RE = /ISPREF\s*\(\s*"([^"]+\/[^"]+)"\s*\)/gi;
 const ISPSUM_RE = /ISPSUM\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/gi;
 const ISPHIST_RE =
   /ISPHIST\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"(?:\s*,\s*(\d+(?:\.\d+)?))?\s*\)/gi;
@@ -51,6 +54,18 @@ export function extractIspfFormulaVarRefs(
         variableName: match[2],
         field: match[3] ?? "value",
       });
+    }
+
+    ISPREF_SLASH_RE.lastIndex = 0;
+    while ((match = ISPREF_SLASH_RE.exec(formula)) !== null) {
+      const fields = fieldsFromRef(match[1]);
+      if (fields.name) {
+        refs.push({
+          objectPath: fields.objectPath ?? defaultObjectPath,
+          variableName: fields.name,
+          field: fields.field ?? "value",
+        });
+      }
     }
 
     ISPSUM_RE.lastIndex = 0;

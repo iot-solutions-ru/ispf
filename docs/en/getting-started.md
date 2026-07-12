@@ -13,7 +13,7 @@
 
 ## Fast local dev & QA
 
-**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all ~58 driver packs** and serialize **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/Michaael/IoT-Solutions-Platform/issues/65)).
+**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all ~58 driver packs** and serialize **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/your-org/IoT-Solutions-Platform/issues/65)).
 
 ### Recommended first run (< 30 min warm cache)
 

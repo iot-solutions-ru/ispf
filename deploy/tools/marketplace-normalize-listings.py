@@ -13,7 +13,7 @@ VENDOR = {
     "vendorLegalName": 'ООО "ИОТ РЕШЕНИЯ"',
     "vendorInn": "6950228075",
     "vendorSellerKind": "company",
-    "vendorContactEmail": "info@iot-solutions.ru",
+    "vendorContactEmail": "info@vendor.example.invalid",
     "vendorContactPhone": "+7 980 630-93-33",
 }
 

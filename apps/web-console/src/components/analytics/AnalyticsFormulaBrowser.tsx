@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAnalyticsCatalog } from "../../api/analyticsCatalog";
 import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
@@ -55,20 +57,36 @@ export default function AnalyticsFormulaBrowser({
   initialFormulaLink = null,
 }: AnalyticsFormulaBrowserProps) {
   const { t } = useTranslation("inspector");
+  const mergedMode = defaultKind === "all";
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<AnalyticsFormulaKindFilter>(defaultKind);
-  const catalogQuery = useAnalyticsCatalog(kindFilter);
+  const fullCatalogQuery = useQuery({
+    queryKey: ["analytics-catalog"],
+    queryFn: fetchAnalyticsCatalog,
+    staleTime: 5 * 60_000,
+    enabled: mergedMode || kindFilter === "all",
+  });
+  const kindCatalogQuery = useAnalyticsCatalog(
+    mergedMode || kindFilter === "all" ? undefined : kindFilter
+  );
+  const catalogData = mergedMode || kindFilter === "all" ? fullCatalogQuery.data : kindCatalogQuery.data;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [applyEntry, setApplyEntry] = useState<AnalyticsCatalogEntryDto | null>(null);
 
   const effectiveFallbackEntries = useMemo(() => fallbackEntries, [fallbackEntries]);
 
   const remoteFiltered = useMemo(() => {
-    const list = catalogQuery.data ?? [];
-    return list.filter(
-      (entry) => matchesAnalyticsCatalogKindFilter(entry, kindFilter) && matchesQuery(entry, search)
-    );
-  }, [catalogQuery.data, kindFilter, search]);
+    const list = catalogData ?? [];
+    return list.filter((entry) => {
+      if (!matchesQuery(entry, search)) {
+        return false;
+      }
+      if (kindFilter === "all") {
+        return true;
+      }
+      return matchesAnalyticsCatalogKindFilter(entry, kindFilter);
+    });
+  }, [catalogData, kindFilter, search]);
 
   const fallbackFiltered = useMemo(
     () => filterPlatformBindings(search, effectiveFallbackEntries),
@@ -87,14 +105,16 @@ export default function AnalyticsFormulaBrowser({
           placeholder={t("catalog.search")}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <select
-          value={kindFilter}
-          disabled={disabled}
-          onChange={(event) => setKindFilter(event.target.value as AnalyticsFormulaKindFilter)}
-        >
-          <option value="historian">{t("catalog.kind.historian")}</option>
-          <option value="reactive">{t("catalog.kind.reactive")}</option>
-        </select>
+        {!mergedMode && (
+          <select
+            value={kindFilter}
+            disabled={disabled}
+            onChange={(event) => setKindFilter(event.target.value as AnalyticsFormulaKindFilter)}
+          >
+            <option value="historian">{t("catalog.kind.historian")}</option>
+            <option value="reactive">{t("catalog.kind.reactive")}</option>
+          </select>
+        )}
       </div>
 
       {!showRemoteCatalog && (

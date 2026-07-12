@@ -14,6 +14,18 @@ public class VariableHistoryProperties {
     /** Minimum interval between stored samples for the same (path, variable, field). */
     private long minIntervalMs = 5_000;
 
+    /**
+     * Lab/benchmark: monotonic +1ms {@code sampled_at} per series when ingress exceeds 1 sample/ms
+     * (Scylla/Cassandra timestamp clustering key is millisecond-granularity).
+     */
+    private boolean benchmarkSpreadSampledAt = false;
+
+    /**
+     * When true, each historized update also stores full {@link com.ispf.core.model.DataRecord} JSON
+     * under field {@link com.ispf.server.history.VariableHistoryService#RECORD_SNAPSHOT_FIELD}.
+     */
+    private boolean recordSnapshotEnabled = true;
+
     /** Delete samples older than this many days when variable has no explicit retention. */
     private int retentionDays = 90;
 
@@ -132,6 +144,22 @@ public class VariableHistoryProperties {
 
     public void setMinIntervalMs(long minIntervalMs) {
         this.minIntervalMs = minIntervalMs;
+    }
+
+    public boolean isBenchmarkSpreadSampledAt() {
+        return benchmarkSpreadSampledAt;
+    }
+
+    public void setBenchmarkSpreadSampledAt(boolean benchmarkSpreadSampledAt) {
+        this.benchmarkSpreadSampledAt = benchmarkSpreadSampledAt;
+    }
+
+    public boolean isRecordSnapshotEnabled() {
+        return recordSnapshotEnabled;
+    }
+
+    public void setRecordSnapshotEnabled(boolean recordSnapshotEnabled) {
+        this.recordSnapshotEnabled = recordSnapshotEnabled;
     }
 
     public int getRetentionDays() {

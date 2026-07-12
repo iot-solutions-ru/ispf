@@ -14,7 +14,7 @@ class HistorianCelPreprocessorTest {
 
     @Test
     void expandsHistAvgAndEvaluatesCelArithmetic() {
-        String expression = "hist.avg('root.devices.a', 'temperature', '5m') * 2.0";
+        String expression = "avg(root.devices.a/temperature, 5m) * 2.0";
         RecordingHistorian historian = new RecordingHistorian(21.5);
         String expanded = HistorianCelPreprocessor.expand(
                 expression,
@@ -37,7 +37,7 @@ class HistorianCelPreprocessorTest {
 
     @Test
     void expandsIntegerHistorianValuesAsDoubleLiterals() {
-        String expression = "hist.avg('root.devices.a', 'temperature', '5m') + 5";
+        String expression = "avg(root.devices.a/temperature, 5m) + 5";
         String expanded = HistorianCelPreprocessor.expand(
                 expression,
                 new RecordingHistorian(21.0),
@@ -69,8 +69,8 @@ class HistorianCelPreprocessorTest {
     @Test
     void extractsHistorianSources() {
         String expression = """
-                hist.avg('root.devices.a', 'temperature', '5m')
-                + hist.max('root.devices.b', 'pressure', 'value', '1h')
+                avg(root.devices.a/temperature, 5m)
+                + max(root.devices.b/pressure, 1h)
                 """;
         var sources = HistorianCelPreprocessor.extractSources(expression);
         assertThat(sources).hasSize(2);
@@ -82,6 +82,18 @@ class HistorianCelPreprocessorTest {
     void parseArgsSupportsQuotedPaths() {
         assertThat(HistorianCelPreprocessor.parseArgs("'root.a', 'temperature', '5m'"))
                 .containsExactly("root.a", "temperature", "5m");
+    }
+
+    @Test
+    void expandsPlatformRefAvgForm() {
+        String expression = "avg(root.devices.a/temperature, 5m) * 2.0";
+        String expanded = HistorianCelPreprocessor.expand(
+                expression,
+                new RecordingHistorian(21.5),
+                unusedLive(),
+                Instant.parse("2026-07-09T10:00:00Z")
+        );
+        assertThat(expanded).isEqualTo("21.5 * 2.0");
     }
 
     private static final class RecordingHistorian implements HistorianPort {

@@ -9,8 +9,9 @@ import {
 } from "../api/analyticsCatalog";
 import type { PlatformBindingEntry } from "../utils/platformBindings";
 import { mapAnalyticsCatalogToBindingEntries } from "../utils/historianExpressionBindings";
+import { mapMergedExpressionCatalog } from "../utils/functionExpressionCatalog";
 
-export type AnalyticsBrowserKind = "historian" | "reactive";
+export type AnalyticsBrowserKind = "historian" | "reactive" | "all";
 
 export function useAnalyticsCatalog(kind?: AnalyticsBrowserKind) {
   const query = useQuery<AnalyticsCatalogEntryDto[]>({
@@ -20,7 +21,7 @@ export function useAnalyticsCatalog(kind?: AnalyticsBrowserKind) {
   });
 
   const remoteEntries = useMemo(() => {
-    if (!kind || !query.data?.length) {
+    if (!kind || kind === "all" || !query.data?.length) {
       return [] as PlatformBindingEntry[];
     }
     return mapAnalyticsCatalogToBindingEntries(query.data, kind);
@@ -29,6 +30,27 @@ export function useAnalyticsCatalog(kind?: AnalyticsBrowserKind) {
   return {
     ...query,
     entries: remoteEntries,
+    hasRemoteEntries: (query.data?.length ?? 0) > 0,
+  };
+}
+
+export function useFunctionExpressionCatalog() {
+  const query = useQuery<AnalyticsCatalogEntryDto[]>({
+    queryKey: ["analytics-catalog"],
+    queryFn: fetchAnalyticsCatalog,
+    staleTime: 5 * 60_000,
+  });
+
+  const entries = useMemo(() => {
+    if (!query.data?.length) {
+      return [] as PlatformBindingEntry[];
+    }
+    return mapMergedExpressionCatalog(query.data);
+  }, [query.data]);
+
+  return {
+    ...query,
+    entries,
     hasRemoteEntries: (query.data?.length ?? 0) > 0,
   };
 }

@@ -74,7 +74,9 @@ export function activatorsSummary(rule: { activators: BindingActivators }): stri
   if (rule.activators.onContextChange) {
     parts.push("context");
   }
-  if (rule.activators.onEvent) {
+  if (rule.activators.onEventRef) {
+    parts.push(`eventRef:${rule.activators.onEventRef}`);
+  } else if (rule.activators.onEvent) {
     parts.push(`event:${rule.activators.onEvent}`);
   }
   if (rule.activators.periodicMs > 0) {

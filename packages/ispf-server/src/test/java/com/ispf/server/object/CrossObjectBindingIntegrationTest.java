@@ -80,7 +80,7 @@ class CrossObjectBindingIntegrationTest {
                         10,
                         BindingActivators.onRemoteChange(DEV, "sineWave"),
                         "",
-                        "refAt(\"" + DEV + "\", sineWave)",
+                        "read(\"" + DEV + "/sineWave\")",
                         new BindingTarget("member1Sine", "value")
                 )
         ));

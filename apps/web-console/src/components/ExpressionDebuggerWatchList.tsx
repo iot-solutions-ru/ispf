@@ -33,7 +33,7 @@ function extractFromBindingsDetail(detail: unknown, name: string): unknown {
   if (direct !== undefined) {
     return direct;
   }
-  for (const bucket of ["self", "parent", "context"] as const) {
+  for (const bucket of ["self", "parent", "context", "input"] as const) {
     const nested = record[bucket];
     if (nested && typeof nested === "object") {
       const hit = lookupInRecord(nested as Record<string, unknown>, name);

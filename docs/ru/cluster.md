@@ -76,7 +76,7 @@ counterRate(ifInOctets)   → переменная ifInOctetsRate
 **Кросс-объект** (на хабе-объекте):
 
 ```cel
-refAt("root.platform.devices.snmp-router-01", ifInOctetsRate)   → routerNetDown
+read(root.platform.devices.snmp-router-01/ifInOctetsRate)   → routerNetDown
 ```
 
 Цепочка на реплике **owner**, где живёт исходное устройство:
@@ -198,7 +198,7 @@ flowchart TB
 ```json
 {
   "targetVariable": "routerNetDown",
-  "expression": "refAt(\"root.platform.devices.snmp-router-01\", ifInOctetsRate)"
+  "expression": "read(root.platform.devices.snmp-router-01/ifInOctetsRate)"
 }
 ```
 
@@ -259,7 +259,7 @@ ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS=1000
 
 ```json
 {
-  "host": "192.168.1.1",
+  "host": "10.0.0.1",
   "community": "public",
   "telemetryCoalesceMs": 1000
 }
@@ -481,7 +481,7 @@ RAM — на **весь сервер** (ОС + контейнеры), не на 
 
 ### Lab BL-210 (после поднятия кластера)
 
-С рабочей станции (SSH-ключ — `ssh ispf-lab`, см. [lab-event-journal-stress](lab-event-journal-stress.md#ssh-с-рабочей-станции-один-раз)):
+С рабочей станции (SSH-алиас `lab-host` в `~/.ssh/config`; см. [lab-event-journal-stress](lab-event-journal-stress.md#ssh-с-рабочей-станции-один-раз)):
 
 ```powershell
 python deploy/run_lab_bl210_launch.py --force   # полный сброс + nohup на lab
@@ -522,7 +522,7 @@ Internet → nginx :8080 → replica-1 (unified / role all, :8081)
 | Prod-idle env | [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) + [`vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) |
 | Driver tuning | [`deploy/vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) |
 
-Проверка: `curl -sf https://ispf.iot-solutions.ru/api/v1/info` → `clusterEnabled=false`, `replicaRole=all`.
+Проверка: `curl -sf ${ISPF_BASE_URL:-https://ispf.example.invalid}/api/v1/info` → `clusterEnabled=false`, `replicaRole=all`.
 
 **Мультиреплика** (лаборатория/высокая доступность): [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), `vps-cluster-rollout.sh`, `vps-cluster-verify.sh`.
 

@@ -268,6 +268,12 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         if (event.changedBy() != null) {
             message.put("changedBy", event.changedBy());
         }
+        if (event.value() != null) {
+            message.put("value", event.value());
+        }
+        if (event.previousValue() != null) {
+            message.put("previousValue", event.previousValue());
+        }
         TextMessage payload;
         try {
             payload = new TextMessage(objectMapper.writeValueAsString(message));

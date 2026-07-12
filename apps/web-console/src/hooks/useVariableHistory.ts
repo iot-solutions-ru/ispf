@@ -8,6 +8,9 @@ import {
 } from "../api";
 import type { TrendPoint } from "./useTrendSeries";
 import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
+import { RECORD_SNAPSHOT_FIELD } from "../utils/variableHistoryFields";
+
+export { RECORD_SNAPSHOT_FIELD };
 
 export type HistoryRange = "1h" | "6h" | "24h" | "7d" | "today" | "yesterday" | "all";
 
@@ -103,7 +106,8 @@ export function useVariableHistory(
   const calendarRange = isCalendarHistoryRange(range) ? range : undefined;
   const from = calendarRange ? undefined : historyRangeFrom(range);
   const to = calendarRange || range === "all" ? undefined : new Date().toISOString();
-  const bucket = historyBucketForRange(range);
+  const isRecordSnapshot = field === RECORD_SNAPSHOT_FIELD;
+  const bucket = isRecordSnapshot ? null : historyBucketForRange(range);
   const aggregated = bucket != null;
 
   const query = useQuery<VariableHistoryQueryData>({
@@ -161,6 +165,23 @@ export function useVariableHistory(
     return [] as TrendPoint[];
   }, [query.data, formatDate]);
 
+  const textSamples = useMemo(() => {
+    if (!query.data || isAggregateResponse(query.data) || isRecordSnapshot === false) {
+      return [] as { ts: string; text: string; time: string }[];
+    }
+    return query.data.samples
+      .filter((sample) => sample.text != null && sample.text.length > 0)
+      .map((sample) => {
+        const t = Date.parse(sample.ts);
+        const date = new Date(Number.isFinite(t) ? t : Date.now());
+        return {
+          ts: sample.ts,
+          text: sample.text as string,
+          time: formatDate ? formatDate(sample.ts) : date.toLocaleString(),
+        };
+      });
+  }, [query.data, formatDate, isRecordSnapshot]);
+
   const stats = useMemo(() => {
     if (!query.data) {
       return { min: null, max: null, latest: null };
@@ -203,10 +224,12 @@ export function useVariableHistory(
   return {
     ...query,
     points,
+    textSamples,
     stats,
     field,
     range,
     aggregated,
     bucket,
+    isRecordSnapshot,
   };
 }

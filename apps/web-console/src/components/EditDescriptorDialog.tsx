@@ -1,14 +1,21 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { upsertEvent, upsertFunction } from "../api";
-import type { DataSchema, EventDescriptor, FunctionDescriptor } from "../types";
+import type { BindingFormulaLink, DataSchema, EventDescriptor, FunctionDescriptor, VariableDto } from "../types";
 import DataSchemaEditor from "./schema/DataSchemaEditor";
+import BindingExpressionField from "./BindingExpressionField";
 import { cloneSchema, emptySchema, normalizeFunctionDescriptor } from "../utils/dataSchema";
 import { DEFAULT_JAVA_FUNCTION_TEMPLATE } from "../utils/javaFunctionTemplate";
 import { defaultScriptBody } from "../utils/functionScriptSteps";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 import FunctionScriptStepsEditor from "./functionScript/FunctionScriptStepsEditor";
+import { useFunctionExpressionCatalog } from "../hooks/useAnalyticsCatalog";
+import {
+  parseFunctionExpressionBody,
+  serializeFunctionExpressionBody,
+} from "../utils/functionExpressionBody";
+import { validateFunctionExpression } from "../utils/bindingExpressionValidation";
 
 const JavaFunctionEditor = lazy(() => import("./functionScript/JavaFunctionEditor"));
 type DescriptorKind = "function" | "event";
@@ -17,6 +24,9 @@ interface EditDescriptorDialogProps {
   objectPath: string;
   kind: DescriptorKind;
   initial?: FunctionDescriptor | EventDescriptor;
+  variableNames?: string[];
+  functionNames?: string[];
+  variables?: VariableDto[];
   onClose: () => void;
   onSaved: () => void;
 }
@@ -29,7 +39,7 @@ function defaultFunction(name = ""): FunctionDescriptor {
     inputSchema: { ...emptySchema(`${base}Input`), fields: [] },
     outputSchema: {
       name: `${base}Output`,
-      fields: [{ name: "ok", type: "BOOLEAN", description: "Success", nullable: false }],
+      fields: [{ name: "result", type: "DOUBLE", description: "Result", nullable: false }],
     },
     sourceType: null,
     sourceBody: null,
@@ -55,10 +65,14 @@ export default function EditDescriptorDialog({
   objectPath,
   kind,
   initial,
+  variableNames = [],
+  functionNames = [],
+  variables,
   onClose,
   onSaved,
 }: EditDescriptorDialogProps) {
   const { t } = useTranslation(["inspector", "common"]);
+  const expressionCatalog = useFunctionExpressionCatalog();
   const isFunction = kind === "function";
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -72,12 +86,23 @@ export default function EditDescriptorDialog({
   const [sourceBody, setSourceBody] = useState("");
   const [dataSourcePath, setDataSourcePath] = useState("");
   const [version, setVersion] = useState("");
+  const [expressionText, setExpressionText] = useState("");
+  const [expressionFormulaLink, setExpressionFormulaLink] = useState<BindingFormulaLink | null>(null);
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [schemaJson, setSchemaJson] = useState("{}");
   const [parseError, setParseError] = useState<string | null>(null);
   const nameValid = isTechnicalIdentifier(name, "code");
-  const sourceDrafts = useRef<Record<string, string>>({ handler: "", script: "", java: "" });
+  const sourceDrafts = useRef<Record<string, string>>({
+    handler: "",
+    script: "",
+    java: "",
+    expression: "",
+  });
   const initializedRef = useRef(false);
+  const inputFieldNames = useMemo(
+    () => inputSchema.fields.map((field) => field.name).filter(Boolean),
+    [inputSchema.fields]
+  );
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -91,6 +116,10 @@ export default function EditDescriptorDialog({
       const fn = (initial as FunctionDescriptor | undefined) ?? defaultFunction();
       setInputSchema(cloneSchema(fn.inputSchema));
       setOutputSchema(cloneSchema(fn.outputSchema));
+      const parsedExpression =
+        fn.sourceType === "expression" ? parseFunctionExpressionBody(fn.sourceBody) : null;
+      setExpressionText(parsedExpression?.expression ?? "");
+      setExpressionFormulaLink(parsedExpression?.formulaLink ?? null);
       setSourceType(fn.sourceType ?? "");
       setSourceBody(fn.sourceBody ?? "");
       setDataSourcePath(fn.dataSourcePath ?? "");
@@ -99,6 +128,7 @@ export default function EditDescriptorDialog({
         handler: fn.sourceType ? "" : (fn.sourceBody ?? ""),
         script: fn.sourceType === "script" ? (fn.sourceBody ?? "") : "",
         java: fn.sourceType === "java" ? (fn.sourceBody ?? "") : "",
+        expression: fn.sourceType === "expression" ? (fn.sourceBody ?? "") : "",
       };
       setSchemaJson(
         JSON.stringify(
@@ -167,12 +197,34 @@ export default function EditDescriptorDialog({
     if (applyAdvancedJson()) setShowAdvancedJson(false);
   }
 
+  function persistExpressionDraft(expression: string, formulaLink: BindingFormulaLink | null) {
+    const serialized = serializeFunctionExpressionBody(expression, formulaLink);
+    sourceDrafts.current.expression = serialized;
+    setSourceBody(serialized);
+  }
+
+  function handleExpressionChange(expression: string, formulaLink?: BindingFormulaLink | null) {
+    setExpressionText(expression);
+    setExpressionFormulaLink(formulaLink ?? null);
+    persistExpressionDraft(expression, formulaLink ?? null);
+  }
+
   function changeSourceType(next: string) {
-    sourceDrafts.current[sourceType || "handler"] = sourceBody;
+    if (sourceType === "expression") {
+      persistExpressionDraft(expressionText, expressionFormulaLink);
+    } else {
+      sourceDrafts.current[sourceType || "handler"] = sourceBody;
+    }
     const draftKey = next || "handler";
     let nextBody = sourceDrafts.current[draftKey] ?? "";
     if (!nextBody && next === "java") nextBody = DEFAULT_JAVA_FUNCTION_TEMPLATE;
     if (!nextBody && next === "script") nextBody = defaultScriptBody();
+    if (next === "expression") {
+      const parsed = parseFunctionExpressionBody(nextBody);
+      setExpressionText(parsed.expression);
+      setExpressionFormulaLink(parsed.formulaLink);
+      nextBody = nextBody || serializeFunctionExpressionBody("", null);
+    }
     sourceDrafts.current[draftKey] = nextBody;
     setSourceType(next);
     setSourceBody(nextBody);
@@ -230,9 +282,16 @@ export default function EditDescriptorDialog({
       }
       if (isFunction && !showAdvancedJson) {
         const st = sourceType.trim();
-        if ((st === "java" || st === "script") && !sourceBody.trim()) {
+        if ((st === "java" || st === "script" || st === "expression") && !sourceBody.trim()) {
           setParseError(t("descriptor.sourceBodyRequired"));
           return;
+        }
+        if (st === "expression" && !expressionText.trim()) {
+          setParseError(t("descriptor.sourceBodyRequired"));
+          return;
+        }
+        if (st === "expression") {
+          persistExpressionDraft(expressionText, expressionFormulaLink);
         }
         if (st === "script") JSON.parse(sourceBody);
       }
@@ -321,6 +380,7 @@ export default function EditDescriptorDialog({
                   <option value="">{t("descriptor.sourceTypeHandler")}</option>
                   <option value="script">{t("descriptor.sourceTypeScript")}</option>
                   <option value="java">{t("descriptor.sourceTypeJava")}</option>
+                  <option value="expression">{t("descriptor.sourceTypeExpression")}</option>
                 </select>
               </label>
               <label>
@@ -331,14 +391,35 @@ export default function EditDescriptorDialog({
                   placeholder="1.0.0"
                 />
               </label>
-              <label className="full">
-                {t("descriptor.dataSourcePath")}
-                <input
-                  value={dataSourcePath}
-                  onChange={(e) => setDataSourcePath(e.target.value)}
-                  placeholder="root.platform.data-sources.app_myapp"
-                />
-              </label>
+              {sourceType !== "expression" && (
+                <label className="full">
+                  {t("descriptor.dataSourcePath")}
+                  <input
+                    value={dataSourcePath}
+                    onChange={(e) => setDataSourcePath(e.target.value)}
+                    placeholder="root.platform.data-sources.app_myapp"
+                  />
+                </label>
+              )}
+              {sourceType === "expression" && (
+                <div className="full">
+                  <span className="field-label">{t("descriptor.expressionEditor")}</span>
+                  <BindingExpressionField
+                    value={expressionText}
+                    formulaLink={expressionFormulaLink}
+                    onChange={handleExpressionChange}
+                    objectPath={objectPath}
+                    variableNames={variableNames}
+                    inputFieldNames={inputFieldNames}
+                    functionNames={functionNames}
+                    variables={variables}
+                    entries={expressionCatalog.entries}
+                    analyticsCatalogKind="all"
+                    editorTitle={t("descriptor.expressionEditor")}
+                    onValidate={(expression) => validateFunctionExpression(expression, objectPath)}
+                  />
+                </div>
+              )}
               {sourceType === "script" && (
                 <div className="full">
                   <FunctionScriptStepsEditor
@@ -368,7 +449,7 @@ export default function EditDescriptorDialog({
                   </Suspense>
                 </div>
               )}
-              {sourceType !== "script" && sourceType !== "java" && sourceBody.trim() && (
+              {sourceType !== "script" && sourceType !== "java" && sourceType !== "expression" && sourceBody.trim() && (
                 <label className="full">
                   {t("descriptor.sourceBody")}
                   <textarea
@@ -382,7 +463,11 @@ export default function EditDescriptorDialog({
                 </label>
               )}
               <p className="hint full">
-                {sourceType === "java" ? t("descriptor.javaHint") : t("descriptor.scriptHint")}
+                {sourceType === "java"
+                  ? t("descriptor.javaHint")
+                  : sourceType === "expression"
+                    ? t("descriptor.expressionHint")
+                    : t("descriptor.scriptHint")}
               </p>
             </section>
           </>

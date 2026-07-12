@@ -198,7 +198,7 @@ Audit columns (migration `V67__ai_tool_audit_metrics.sql`): `latency_ms`, `promp
 | `configure_alert` | Create/update ALERT rule (CEL condition → event) |
 | `configure_correlator` | Create/update event correlator |
 | `configure_operator_ui` | Operator HMI default dashboard + menu |
-| `create_variable` | New variable with refAt/CEL binding (CUSTOM hub logic) |
+| `create_variable` | Новая переменная с PlatformRef binding (CUSTOM hub) |
 | `list_automation` | List alert rules and correlators |
 | `get_automation_schema` | Reference for alert/correlator/dashboard/binding/operator fields |
 | `list_variables` | Read object variables + values |

@@ -16,7 +16,7 @@ public final class CounterDeltaBinding implements PlatformBinding {
     static final CounterDeltaBinding INSTANCE = new CounterDeltaBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "counterDelta\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*(\\d+)\\s*)?(?:,\\s*("
+            "counterDelta\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*(?:,\\s*(\\d+)\\s*)?(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -40,7 +40,7 @@ public final class CounterDeltaBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(3),
                 "value"
         );
@@ -48,10 +48,11 @@ public final class CounterDeltaBinding implements PlatformBinding {
                 ? Long.parseLong(matcher.group(2))
                 : CounterRateBinding.DEFAULT_COUNTER_MAX;
 
-        Optional<Double> currentOpt = BindingSourceHelper.readNumericField(
+        Optional<Double> currentOpt = BindingSourceHelper.readNumericSource(
                 object,
                 source.sourceVariable(),
-                source.field()
+                source.field(),
+                context
         );
         if (currentOpt.isEmpty()) {
             return Optional.empty();

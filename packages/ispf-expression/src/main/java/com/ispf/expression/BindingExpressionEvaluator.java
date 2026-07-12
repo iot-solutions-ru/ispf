@@ -24,21 +24,37 @@ public class BindingExpressionEvaluator {
             DataSchema targetSchema,
             BindingEvaluationContext context
     ) {
+        return evaluate(platformObject, targetVariableName, expression, targetSchema, context, Map.of());
+    }
+
+    public Optional<DataRecord> evaluate(
+            PlatformObject platformObject,
+            String targetVariableName,
+            String expression,
+            DataSchema targetSchema,
+            BindingEvaluationContext context,
+            Map<String, Object> inputContext
+    ) {
         if (expression == null || expression.isBlank()) {
             return Optional.empty();
         }
+        Map<String, Object> bindings = inputContext != null ? inputContext : Map.of();
         try {
             var platformBinding = PlatformBindingRegistry.find(expression);
             if (platformBinding.isPresent()) {
                 return platformBinding.get()
                         .evaluate(platformObject, targetVariableName, expression, context)
-                        .map(result -> toDataRecord(targetSchema, result));
+                        .map(result -> mapResult(targetSchema, result));
             }
-            Object result = engine.evaluate(expression, platformObject);
-            return Optional.of(toDataRecord(targetSchema, result));
+            Object result = engine.evaluate(expression, platformObject, bindings);
+            return Optional.of(mapResult(targetSchema, result));
         } catch (ExpressionException ignored) {
             return Optional.empty();
         }
+    }
+
+    public static DataRecord mapResult(DataSchema schema, Object result) {
+        return toDataRecord(schema, result);
     }
 
     public static boolean recordsEqual(DataRecord left, DataRecord right) {

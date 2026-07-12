@@ -107,26 +107,23 @@ public final class PlatformBindingCatalog {
                             param("toUnit", "unit", true, "Target unit", "F")
                     ),
                     "Converts supported engineering units.", List.of("unitConvert(temperature, C, F)"), false, "signal"),
-            entry("refAt", "Reference at path", "refAt(<objectPath>, <remoteVar>[, field])",
+            entry("read", "Read ref", "read(<objectPath/variable>)",
+                    List.of(param("ref", "platformRef", true, "Variable PlatformRef", null)),
+                    "Reads a variable via slash ref.", List.of("read(\"root.platform.devices.pump-01/flow\")"), false, "cross"),
+            entry("call", "Call function", "call(@/fn/<functionName>[, @/<inputVar>])",
                     List.of(
-                            param("path", "tagPath", true, "Remote object path", null),
-                            param("remoteVar", "variable", true, "Remote variable name", null)
+                            param("function", "function", true, "Function ref on this object", null),
+                            param("input", "platformRef", false, "Optional input variable ref", null)
                     ),
-                    "Reads a variable from another object in the tree.", List.of("refAt(\"root.platform.devices.pump-01\", flow)"), false, "cross"),
-            entry("callFunction", "Call function", "callFunction(<functionName>[, <sourceVar>[, field]])",
+                    "Invokes a tree function on each reactive tick.",
+                    List.of("call(@/fn/myFunc, @/inputVar)"), false, "function"),
+            entry("callRemoteRef", "Call remote function", "call(<objectPath/fn/name>[, <objectPath/inputVar>])",
                     List.of(
-                            param("function", "function", true, "Tree function name", null),
-                            param("input", "variable", false, "Optional input variable", null)
+                            param("functionRef", "platformRef", true, "Remote function ref", null),
+                            param("input", "platformRef", false, "Optional input variable ref", null)
                     ),
-                    "Invokes an application/platform tree function on each reactive tick.",
-                    List.of("callFunction(myFunc, inputVar)"), false, "function"),
-            entry("callFunctionAt", "Call function at path", "callFunctionAt(<objectPath>, <functionName>[, <sourceVar>[, field]])",
-                    List.of(
-                            param("path", "tagPath", true, "Target object path", null),
-                            param("function", "function", true, "Tree function name", null),
-                            param("input", "variable", false, "Optional input variable", null)
-                    ),
-                    "Invokes a tree function on a remote object.", List.of("callFunctionAt(\"root.remote\", myFunc, inputVar)"), false, "function"),
+                    "Invokes a tree function on a remote object.",
+                    List.of("call(root.remote/fn/myFunc, root.remote/inputVar)"), false, "function"),
             entry("sumRecordField", "Sum record field", "sumRecordField(<tableVar>, <field>)",
                     List.of(
                             param("table", "variable", true, "Table variable", null),

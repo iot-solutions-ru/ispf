@@ -6,7 +6,7 @@ on:
       base_url:
         description: "ISPF base URL (UI + API)"
         required: false
-        default: "https://ispf.iot-solutions.ru"
+        default: "https://ispf.example.invalid"
   schedule:
     # Monday 06:00 UTC — skipped automatically when secrets are missing
     - cron: "0 6 * * 1"
@@ -27,7 +27,7 @@ jobs:
       - name: Live Playwright smoke
         working-directory: apps/web-console
         env:
-          E2E_BASE_URL: ${{ inputs.base_url || 'https://ispf.iot-solutions.ru' }}
+          E2E_BASE_URL: ${{ inputs.base_url || 'https://ispf.example.invalid' }}
           E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |

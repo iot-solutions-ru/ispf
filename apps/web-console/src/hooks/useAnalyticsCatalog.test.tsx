@@ -31,40 +31,40 @@ describe("useAnalyticsCatalog", () => {
   it("maps remote historian catalog entries", async () => {
     vi.mocked(analyticsCatalogApi.fetchAnalyticsCatalog).mockResolvedValue([
       {
-        id: "rollingAvg",
+        id: "avg",
         displayName: "Rolling average",
         tier: "A",
         kinds: ["historian"],
-        syntax: "rollingAvg(source, window)",
+        syntax: "avg(<objectPath/variable>, <windowBucket?>)",
         parameters: [
           {
             name: "source",
             type: "string",
             required: true,
             description: "Source",
-            defaultValue: "'temperature'",
+            defaultValue: "root.devices.pump01/temperature",
           },
           {
             name: "window",
             type: "string",
             required: true,
             description: "Window",
-            defaultValue: "'5m'",
+            defaultValue: "5m",
           },
         ],
         description: "Historian helper",
-        examples: ["rollingAvg('temperature', '5m')"],
+        examples: ["avg(root.devices.pump01/temperature, 5m)"],
         tags: ["historian"],
         pack: "core",
-        docAnchor: "rollingAvg",
+        docAnchor: "analytics-catalog-avg",
       },
     ]);
 
     const { result } = renderHook(() => useAnalyticsCatalog("historian"), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.hasRemoteEntries).toBe(true);
-    expect(result.current.entries[0]?.id).toBe("rollingAvg");
-    expect(result.current.entries[0]?.snippet).toContain("rollingAvg");
+    expect(result.current.entries[0]?.id).toBe("avg");
+    expect(result.current.entries[0]?.snippet).toContain("avg");
   });
 
   it("returns empty entries when catalog request fails", async () => {

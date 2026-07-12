@@ -13,7 +13,7 @@ public final class MovingMaxBinding implements PlatformBinding {
     static final MovingMaxBinding INSTANCE = new MovingMaxBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "movingMax\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
+            "movingMax\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*(?:,\\s*(" + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -32,6 +32,6 @@ public final class MovingMaxBinding implements PlatformBinding {
             String expression,
             BindingEvaluationContext context
     ) {
-        return MovingMinBinding.aggregate(PATTERN, object, targetVariable, expression, Math::max);
+        return MovingMinBinding.aggregate(PATTERN, object, targetVariable, expression, context, Math::max);
     }
 }

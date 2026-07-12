@@ -1,5 +1,6 @@
 package com.ispf.server.object.pubsub;
 
+import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
@@ -48,8 +49,21 @@ public class ObjectChangePublicationService {
      * @return true when an event was published
      */
     public boolean publishVariableChange(String objectPath, String variableName, Instant observedAt) {
+        return publishVariableChange(objectPath, variableName, observedAt, null, null);
+    }
+
+    /**
+     * @return true when an event was published
+     */
+    public boolean publishVariableChange(
+            String objectPath,
+            String variableName,
+            Instant observedAt,
+            DataRecord value,
+            DataRecord previousValue
+    ) {
         if (!objectChangeProperties.isDemandDrivenPublication()) {
-            return publishLegacyVariableChange(objectPath, variableName, observedAt);
+            return publishLegacyVariableChange(objectPath, variableName, observedAt, value, previousValue);
         }
         VariableChangeInterest interest = variableSubscriptionRegistry.interest(objectPath, variableName);
         if (!interest.hasAny()) {
@@ -60,12 +74,15 @@ public class ObjectChangePublicationService {
         if (!telemetry && !automationEligible && !interest.uiRefresh()) {
             return false;
         }
+        EventPayload payload = resolveEventPayload(objectPath, variableName, value, previousValue);
         eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(
                 objectPath,
                 variableName,
                 telemetry,
                 automationEligible,
-                observedAt
+                observedAt,
+                payload.value(),
+                payload.previousValue()
         ));
         return true;
     }
@@ -83,6 +100,12 @@ public class ObjectChangePublicationService {
         // Config/API writes always fan out to automation (bindings, workflows) for eligible devices.
         boolean automationEligible = telemetryPolicyService.automationEligible(template.path(), template.variableName())
                 || interest.automation();
+        EventPayload payload = resolveEventPayload(
+                template.path(),
+                template.variableName(),
+                template.value(),
+                template.previousValue()
+        );
         // Persisted config/API writes always publish (cluster NATS sync, explorer refresh).
         eventPublisher.publishEvent(new ObjectChangeEvent(
                 ObjectChangeType.VARIABLE_UPDATED,
@@ -94,7 +117,9 @@ public class ObjectChangePublicationService {
                 telemetry,
                 automationEligible,
                 template.observedAt(),
-                false
+                false,
+                payload.value(),
+                payload.previousValue()
         ));
         return true;
     }
@@ -168,15 +193,38 @@ public class ObjectChangePublicationService {
         });
     }
 
-    private boolean publishLegacyVariableChange(String objectPath, String variableName, Instant observedAt) {
+    private boolean publishLegacyVariableChange(
+            String objectPath,
+            String variableName,
+            Instant observedAt,
+            DataRecord value,
+            DataRecord previousValue
+    ) {
         boolean automationEligible = telemetryPolicyService.automationEligible(objectPath, variableName);
+        EventPayload payload = resolveEventPayload(objectPath, variableName, value, previousValue);
         eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(
                 objectPath,
                 variableName,
                 true,
                 automationEligible,
-                observedAt
+                observedAt,
+                payload.value(),
+                payload.previousValue()
         ));
         return true;
     }
+
+    private EventPayload resolveEventPayload(
+            String objectPath,
+            String variableName,
+            DataRecord value,
+            DataRecord previousValue
+    ) {
+        if (!telemetryPolicyService.includePreviousValueInEvent(objectPath, variableName)) {
+            return new EventPayload(null, null);
+        }
+        return new EventPayload(value, previousValue);
+    }
+
+    private record EventPayload(DataRecord value, DataRecord previousValue) {}
 }

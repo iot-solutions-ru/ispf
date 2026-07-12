@@ -592,6 +592,9 @@ export interface UpdateVariableHistoryPayload {
   historyEnabled: boolean;
   historyRetentionDays: number | null;
   telemetryPublishMode?: string | null;
+  historySampleMode?: string | null;
+  includePreviousValueInEvent?: boolean;
+  storageMode?: string | null;
 }
 
 export function updateVariableHistory(

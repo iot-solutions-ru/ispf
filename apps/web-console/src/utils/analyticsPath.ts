@@ -7,8 +7,10 @@ export function isAnalyticsTagDevice(
   return object.variableNames.includes("derivedValue") || object.variableNames.includes("oeePct");
 }
 
-/** Object path from analytics tag path (`device#ruleId`). */
+const TAG_SEGMENT = "/tag/";
+
+/** Object path from analytics tag path (`device/tag/ruleId`). */
 export function analyticsTagObjectPath(tagPath: string): string {
-  const hash = tagPath.indexOf("#");
-  return hash >= 0 ? tagPath.slice(0, hash) : tagPath;
+  const idx = tagPath.indexOf(TAG_SEGMENT);
+  return idx >= 0 ? tagPath.slice(0, idx) : tagPath;
 }

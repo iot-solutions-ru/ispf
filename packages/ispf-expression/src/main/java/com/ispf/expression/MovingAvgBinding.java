@@ -16,7 +16,7 @@ public final class MovingAvgBinding implements PlatformBinding {
     static final MovingAvgBinding INSTANCE = new MovingAvgBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "movingAvg\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
+            "movingAvg\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*,\\s*(" + BindingSourceHelper.NUMERIC
                     + ")\\s*(?:,\\s*(" + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -40,25 +40,25 @@ public final class MovingAvgBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(3),
                 "value"
         );
         double windowSec = Double.parseDouble(matcher.group(2));
         long windowMs = (long) (windowSec * 1000);
 
-        Optional<Double> currentOpt = BindingSourceHelper.readNumericField(
-                object,
-                source.sourceVariable(),
-                source.field()
-        );
+        var ref = BindingSourceHelper.resolveVariableSource(source.sourceVariable(), source.field());
+        Optional<Double> currentOpt = PlatformRefValueHelper.readNumericVariable(object, ref, context);
         if (currentOpt.isEmpty()) {
             return Optional.empty();
         }
-        long timestampMs = object.getVariable(source.sourceVariable())
-                .flatMap(Variable::updatedAt)
-                .map(Instant::toEpochMilli)
-                .orElseGet(System::currentTimeMillis);
+        long timestampMs = Instant.now().toEpochMilli();
+        if (ref.isCurrentObject() || ref.object().equals(object.path())) {
+            timestampMs = object.getVariable(ref.name())
+                    .flatMap(Variable::updatedAt)
+                    .map(Instant::toEpochMilli)
+                    .orElse(timestampMs);
+        }
 
         String stateKey = BindingSourceHelper.stateKey(object, targetVariable);
         return BindingStateStore.averageTimedWindow(stateKey, timestampMs, currentOpt.get(), windowMs)

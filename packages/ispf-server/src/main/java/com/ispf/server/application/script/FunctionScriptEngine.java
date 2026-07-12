@@ -153,10 +153,16 @@ public class FunctionScriptEngine {
                 yield null;
             }
             case "invoke_function" -> {
+                com.ispf.core.ref.PlatformRef fnRef = resolveStepRef(
+                        step,
+                        com.ispf.core.ref.PlatformRefKind.FUNCTION,
+                        context
+                );
                 Map<String, Object> nestedInput = resolveInputObject(step.get("input"), vars);
+                String fnPath = fnRef.isCurrentObject() ? context.callerObjectPath() : fnRef.object();
                 DataRecord nestedOutput = context.invokeFunction(
-                        step.path("objectPath").asText(),
-                        step.path("functionName").asText(),
+                        fnPath,
+                        fnRef.name(),
                         nestedInput
                 );
                 Map<String, Object> nestedRow = ApplicationFunctionRuntime.rowAsMap(nestedOutput);
@@ -217,11 +223,18 @@ public class FunctionScriptEngine {
                 yield null;
             }
             case "readVariable" -> {
-                String objectPath = resolveObjectPath(step.path("objectPath").asText(), context);
+                com.ispf.core.ref.PlatformRef varRef = resolveStepRef(
+                        step,
+                        com.ispf.core.ref.PlatformRefKind.VARIABLE,
+                        context
+                );
+                String objectPath = varRef.isCurrentObject()
+                        ? context.callerObjectPath()
+                        : varRef.object();
                 String value = platformScriptBridge.readVariableField(
                         objectPath,
-                        step.path("variable").asText(),
-                        step.path("field").asText("value")
+                        varRef.name(),
+                        varRef.field()
                 );
                 vars.put(step.path("var").asText(), value);
                 yield null;
@@ -465,6 +478,39 @@ public class FunctionScriptEngine {
         Map<String, Object> normalized = new LinkedHashMap<>();
         row.forEach((key, value) -> normalized.put(key.toLowerCase(), value));
         return normalized;
+    }
+
+    private static com.ispf.core.ref.PlatformRef resolveStepRef(
+            JsonNode step,
+            com.ispf.core.ref.PlatformRefKind kind,
+            ScriptExecutionContext context
+    ) {
+        String ref = step.path("ref").asText(null);
+        if (ref != null && !ref.isBlank()) {
+            com.ispf.core.ref.PlatformRef parsed = com.ispf.core.ref.PlatformRefParser.parse(ref.trim());
+            if (parsed.kind() != kind) {
+                throw new IllegalArgumentException("Step ref kind mismatch: " + ref);
+            }
+            return parsed.isCurrentObject()
+                    ? parsed.resolveObject(context.callerObjectPath())
+                    : parsed;
+        }
+        if (kind == com.ispf.core.ref.PlatformRefKind.FUNCTION) {
+            return com.ispf.core.ref.PlatformRefConfig.requireFunction(
+                    null,
+                    resolveObjectPath(step.path("objectPath").asText(), context),
+                    step.path("functionName").asText()
+            );
+        }
+        if (kind == com.ispf.core.ref.PlatformRefKind.VARIABLE) {
+            return com.ispf.core.ref.PlatformRefConfig.requireVariable(
+                    null,
+                    resolveObjectPath(step.path("objectPath").asText("self"), context),
+                    step.path("variable").asText(),
+                    step.path("field").asText("value")
+            );
+        }
+        throw new IllegalArgumentException("Unsupported step ref kind: " + kind);
     }
 
     private static String resolveObjectPath(String objectPath, ScriptExecutionContext context) {

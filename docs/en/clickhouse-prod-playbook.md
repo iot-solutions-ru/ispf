@@ -20,7 +20,7 @@ Prod VPS baseline: `jdbc` for both until load requires CH ([roadmap](roadmap.md)
 
 ## Phase 0 — Prerequisites
 
-- ISPF server healthy (`curl https://ispf.iot-solutions.ru/api/v1/info`)
+- ISPF server healthy (`curl ${ISPF_BASE_URL:-https://ispf.example.invalid}/api/v1/info`)
 - Docker on host (VPS) or external CH cluster
 - Admin SSH access to `/opt/ispf`
 

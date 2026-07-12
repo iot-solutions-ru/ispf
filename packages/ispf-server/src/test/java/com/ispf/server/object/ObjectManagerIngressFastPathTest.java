@@ -74,7 +74,7 @@ class ObjectManagerIngressFastPathTest {
                 "temperature",
                 DataRecord.single(TEMPERATURE, Map.of("value", 10.0, "unit", "C"))
         );
-        objectManager.updateVariableHistory(DEVICE, "temperature", true, null, "TELEMETRY_ONLY");
+        objectManager.updateVariableHistory(DEVICE, "temperature", true, null, "TELEMETRY_ONLY", null, null, null);
         driverRuntimeService.configure(
                 DEVICE,
                 DriverBinding.of(

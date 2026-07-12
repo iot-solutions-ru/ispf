@@ -112,6 +112,8 @@ export interface DashboardWidgetBase {
   h: number;
   objectPath?: string;
   variableName?: string;
+  /** Canonical PlatformRef slash address (dual-read with objectPath + variableName). */
+  ref?: string;
   valueField?: string;
   /** When set, objectPath is taken from dashboard selection (e.g. selected order). */
   selectionKey?: string;
@@ -191,7 +193,7 @@ export interface ChartWidget extends DashboardWidgetBase {
   radarAxesJson?: string;
   /** Asset analytics template id (BL-160); uses historian aggregate bucket from template. */
   analyticsTemplateId?: string;
-  /** Resolved binding expression for editor preview, e.g. rollingAvg('temp', '5m'). */
+  /** Resolved binding expression for editor preview, e.g. avg(@/temp, 5m). */
   analyticsBindingExpression?: string;
   /**
    * Multi-series analytics query JSON array

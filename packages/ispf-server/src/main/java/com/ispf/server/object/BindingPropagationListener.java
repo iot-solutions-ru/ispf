@@ -36,6 +36,11 @@ public class BindingPropagationListener {
                 return;
             }
             bindingRuleEngine.onEvent(event.path(), event.variableName());
+            for (String consumerPath : dependencyIndex.eventConsumers(event.path(), event.variableName())) {
+                if (!consumerPath.equals(event.path())) {
+                    bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
+                }
+            }
             return;
         }
         if (event.type() == ObjectChangeType.VARIABLE_UPDATED && event.variableName() != null) {

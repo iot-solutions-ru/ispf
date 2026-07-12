@@ -6,7 +6,7 @@ import {
   type BindingBuilderContext,
   type PlatformBindingEntry,
 } from "../utils/platformBindings";
-import type { BindingFormulaLink } from "../types";
+import type { BindingFormulaLink, VariableDto } from "../types";
 import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
 
 interface BindingExpressionFieldProps extends BindingBuilderContext {
@@ -16,7 +16,9 @@ interface BindingExpressionFieldProps extends BindingBuilderContext {
   placeholder?: string;
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
-  analyticsCatalogKind?: "historian" | "reactive";
+  analyticsCatalogKind?: "historian" | "reactive" | "all";
+  inputFieldNames?: string[];
+  variables?: VariableDto[];
   formulaLink?: BindingFormulaLink | null;
   editorTitle?: string;
   onValidate?: BindingExpressionValidator;
@@ -31,6 +33,8 @@ export default function BindingExpressionField({
   objectPath,
   variableNames = [],
   functionNames = [],
+  inputFieldNames = [],
+  variables,
   entries = PLATFORM_BINDING_ENTRIES,
   analyticsCatalogKind,
   formulaLink = null,
@@ -74,6 +78,8 @@ export default function BindingExpressionField({
         objectPath={objectPath}
         variableNames={variableNames}
         functionNames={functionNames}
+        variables={variables}
+        inputFieldNames={inputFieldNames}
         entries={entries}
         analyticsCatalogKind={analyticsCatalogKind}
         formulaLink={formulaLink}

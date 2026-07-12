@@ -59,7 +59,6 @@ import ObjectAclPanel from "./ObjectAclPanel";
 import ObjectComputationsPanel from "./ObjectComputationsPanel";
 import EventJournalPanel from "./operator/EventJournalPanel";
 import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
-import ExpressionDebuggerPanel from "./ExpressionDebuggerPanel";
 import ObjectChangeHistoryPanel from "./journal/ObjectChangeHistoryPanel";
 import VariableHistoryPanel from "./VariableHistoryPanel";
 import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
@@ -89,7 +88,6 @@ type Tab =
   | "access"
   | "variables"
   | "computations"
-  | "expressions"
   | "events"
   | "functions"
   | "history";
@@ -105,7 +103,6 @@ const OBJECT_PROPERTY_TABS: readonly Tab[] = [
   "access",
   "variables",
   "computations",
-  "expressions",
   "events",
   "functions",
   "history",
@@ -431,6 +428,9 @@ export default function ObjectPropertiesEditor({
             historyEnabled: currentHistory.historyEnabled,
             historyRetentionDays: currentHistory.historyRetentionDays,
             telemetryPublishMode: telemetryModeToApi(currentHistory.telemetryPublishMode),
+            historySampleMode: currentHistory.historySampleMode,
+            includePreviousValueInEvent: currentHistory.includePreviousValueInEvent,
+            storageMode: currentHistory.storageMode,
           }, writeOpts);
         }
       }
@@ -525,7 +525,7 @@ export default function ObjectPropertiesEditor({
     if (showAccessTab) {
       list.push("access");
     }
-    list.push("variables", "computations", "expressions", "events", "functions", "history");
+    list.push("variables", "computations", "events", "functions", "history");
     return list;
   }, [canManage, ctxPreview, hasBrickMetadata, hasHaystackMetadata, isApplicationPreview, isDevicePreview, path, showAccessTab, showFederationTab]);
 
@@ -533,6 +533,10 @@ export default function ObjectPropertiesEditor({
     try {
       const storageKey = `ispf:ui:active-tab:object-properties:${path}`;
       if (sessionStorage.getItem(storageKey) === "bindings") {
+        sessionStorage.setItem(storageKey, "computations");
+        setTab("computations");
+      }
+      if (sessionStorage.getItem(storageKey) === "expressions") {
         sessionStorage.setItem(storageKey, "computations");
         setTab("computations");
       }
@@ -593,8 +597,6 @@ export default function ObjectPropertiesEditor({
         return t("tab.variables");
       case "computations":
         return t("tab.computations");
-      case "expressions":
-        return t("tab.expressions");
       case "events":
         return t("tab.events");
       case "functions":
@@ -852,6 +854,7 @@ export default function ObjectPropertiesEditor({
             canManage={canManage}
             eventNames={editorData.events.map((event) => event.name)}
             variableNames={filterUserVariableNames(editorData.variables.map((variable) => variable.name))}
+            variables={editorData.variables}
             functionNames={editorData.functions.map((fn) => fn.name)}
             objectType={ctx.type}
             historianComputations={historianComputations}
@@ -865,16 +868,6 @@ export default function ObjectPropertiesEditor({
               await reloadFromEditor();
               await queryClient.invalidateQueries({ queryKey: ["binding-audit-status", path] });
             }}
-          />
-        </section>
-      )}
-
-      {tab === "expressions" && (
-        <section className="panel">
-          <ExpressionDebuggerPanel
-            objectPath={path}
-            variables={editorData.variables}
-            functionNames={editorData.functions.map((fn) => fn.name)}
           />
         </section>
       )}
@@ -1166,6 +1159,9 @@ export default function ObjectPropertiesEditor({
           objectPath={path}
           kind={descriptorDialog.kind}
           initial={descriptorDialog.initial}
+          variableNames={filterUserVariableNames(editorData.variables.map((variable) => variable.name))}
+          functionNames={editorData.functions.map((fn) => fn.name)}
+          variables={editorData.variables}
           onClose={() => setDescriptorDialog(null)}
           onSaved={async () => {
             await queryClient.invalidateQueries({ queryKey: ["object-editor", path] });

@@ -52,7 +52,6 @@ public class AnalyticsCatalogRegistry {
     private static Map<String, AnalyticsCatalogEntry> buildBaseCatalog() {
         Map<String, AnalyticsCatalogEntry> catalog = new LinkedHashMap<>();
         registerEvaluatorBuiltins(catalog);
-        registerHistorianCelBuiltins(catalog);
         registerReactivePlatformBindings(catalog);
         registerPresets(catalog);
         return Collections.unmodifiableMap(new LinkedHashMap<>(catalog));
@@ -68,34 +67,34 @@ public class AnalyticsCatalogRegistry {
     private static void registerEvaluatorBuiltins(Map<String, AnalyticsCatalogEntry> catalog) {
         for (String helper : AnalyticsEvaluatorRegistry.builtins().helpers()) {
             AnalyticsCatalogEntry entry = switch (helper) {
-                case "rollingAvg" -> new AnalyticsCatalogEntry(
-                        "rollingAvg",
+                case "avg" -> new AnalyticsCatalogEntry(
+                        "avg",
                         "Rolling average",
                         "A",
                         List.of("historian"),
-                        "rollingAvg(<objectPath.variable>, <windowBucket?>)",
+                        "avg(<objectPath/variable>, <windowBucket?>)",
                         List.of(
-                                parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
+                                parameter("source", "string", true, "PlatformRef to source variable", null),
                                 parameter("windowBucket", "string", false, "Historian bucket (e.g. 5m, 1h)", "5m")
                         ),
                         "Returns the latest historian window average for a source.",
-                        List.of("rollingAvg(root.devices.pump01.temperature, 5m)"),
+                        List.of("avg(root.devices.pump01/temperature, 5m)"),
                         List.of("historian", "window", "builtin"),
                         "core",
-                        "analytics-catalog-rollingavg"
+                        "analytics-catalog-avg"
                 );
                 case "rateOfChange" -> new AnalyticsCatalogEntry(
                         "rateOfChange",
                         "Rate of change",
                         "A",
                         List.of("historian"),
-                        "rateOfChange(<objectPath.variable>, <windowBucket?>)",
+                        "rateOfChange(<objectPath/variable>, <windowBucket?>)",
                         List.of(
-                                parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
+                                parameter("source", "string", true, "PlatformRef to source variable", null),
                                 parameter("windowBucket", "string", false, "Historian bucket (e.g. 5m, 1h)", "5m")
                         ),
                         "Calculates delta between first and last bucket averages in the window.",
-                        List.of("rateOfChange(root.devices.pump01.flowRate, 1h)"),
+                        List.of("rateOfChange(root.devices.pump01/flowRate, 1h)"),
                         List.of("historian", "delta", "builtin"),
                         "core",
                         "analytics-catalog-rateofchange"
@@ -105,13 +104,13 @@ public class AnalyticsCatalogRegistry {
                         "Totalizer",
                         "A",
                         List.of("historian"),
-                        "totalizer(<objectPath.variable>, <windowBucket?>)",
+                        "totalizer(<objectPath/variable>, <windowBucket?>)",
                         List.of(
-                                parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
+                                parameter("source", "string", true, "PlatformRef to source variable", null),
                                 parameter("windowBucket", "string", false, "Historian bucket (e.g. 5m, 1h)", "5m")
                         ),
                         "Accumulates bucket averages over a window for counter-like metrics.",
-                        List.of("totalizer(root.devices.meter01.energy, 1h)"),
+                        List.of("totalizer(root.devices.meter01/energy, 1h)"),
                         List.of("historian", "accumulation", "builtin"),
                         "core",
                         "analytics-catalog-totalizer"
@@ -121,10 +120,10 @@ public class AnalyticsCatalogRegistry {
                         "Last sample",
                         "A",
                         List.of("historian"),
-                        "last(<objectPath.variable>)",
-                        List.of(parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null)),
+                        "last(<objectPath/variable>)",
+                        List.of(parameter("source", "string", true, "PlatformRef to source variable", null)),
                         "Reads the most recent sample, with live fallback if historian is empty.",
-                        List.of("last(root.devices.pump01.temperature)"),
+                        List.of("last(root.devices.pump01/temperature)"),
                         List.of("historian", "latest", "builtin"),
                         "core",
                         "analytics-catalog-last"
@@ -134,13 +133,13 @@ public class AnalyticsCatalogRegistry {
                         "Minimum in window",
                         "A",
                         List.of("historian"),
-                        "min(<objectPath.variable>, <windowBucket?>)",
+                        "min(<objectPath/variable>, <windowBucket?>)",
                         List.of(
-                                parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
+                                parameter("source", "string", true, "PlatformRef to source variable", null),
                                 parameter("windowBucket", "string", false, "Historian bucket (e.g. 5m, 1h)", "5m")
                         ),
                         "Returns the minimum value across historian buckets in a window.",
-                        List.of("min(root.devices.pump01.pressure, 30m)"),
+                        List.of("min(root.devices.pump01/pressure, 30m)"),
                         List.of("historian", "extrema", "builtin"),
                         "core",
                         "analytics-catalog-min"
@@ -150,13 +149,13 @@ public class AnalyticsCatalogRegistry {
                         "Maximum in window",
                         "A",
                         List.of("historian"),
-                        "max(<objectPath.variable>, <windowBucket?>)",
+                        "max(<objectPath/variable>, <windowBucket?>)",
                         List.of(
-                                parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
+                                parameter("source", "string", true, "PlatformRef to source variable", null),
                                 parameter("windowBucket", "string", false, "Historian bucket (e.g. 5m, 1h)", "5m")
                         ),
                         "Returns the maximum value across historian buckets in a window.",
-                        List.of("max(root.devices.pump01.pressure, 30m)"),
+                        List.of("max(root.devices.pump01/pressure, 30m)"),
                         List.of("historian", "extrema", "builtin"),
                         "core",
                         "analytics-catalog-max"
@@ -196,52 +195,6 @@ public class AnalyticsCatalogRegistry {
             };
             catalog.put(entry.id(), entry);
         }
-    }
-
-    private static void registerHistorianCelBuiltins(Map<String, AnalyticsCatalogEntry> catalog) {
-        registerIfAbsent(catalog, histAggregate("hist.avg", "Average in window", "avg"));
-        registerIfAbsent(catalog, histAggregate("hist.min", "Minimum in window", "min"));
-        registerIfAbsent(catalog, histAggregate("hist.max", "Maximum in window", "max"));
-        registerIfAbsent(catalog, histAggregate("hist.sum", "Sum of bucket averages", "sum"));
-        registerIfAbsent(catalog, histAggregate("hist.last", "Last sample in window", "last"));
-        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
-                "hist.live",
-                "Live variable value",
-                "A",
-                List.of("cel", "historian"),
-                "hist.live('<objectPath>', '<variable>', '<field?>')",
-                List.of(
-                        parameter("objectPath", "string", true, "Object path to read from", null),
-                        parameter("variable", "string", true, "Variable name", null),
-                        parameter("field", "string", false, "DataRecord field name", "value")
-                ),
-                "Reads live numeric value directly from object variables.",
-                List.of("hist.live('root.devices.pump01', 'temperature')"),
-                List.of("cel", "live", "historian"),
-                "core",
-                "analytics-catalog-hist-live"
-        ));
-    }
-
-    private static AnalyticsCatalogEntry histAggregate(String id, String displayName, String helper) {
-        return new AnalyticsCatalogEntry(
-                id,
-                displayName,
-                "A",
-                List.of("cel", "historian"),
-                "hist." + helper + "('<objectPath>', '<variable>', '<field?>', '<windowBucket?>')",
-                List.of(
-                        parameter("objectPath", "string", true, "Object path to query", null),
-                        parameter("variable", "string", true, "Variable name", null),
-                        parameter("field", "string", false, "DataRecord field name", "value"),
-                        parameter("windowBucket", "string", false, "Historian bucket (e.g. 5m, 1h)", "5m")
-                ),
-                "Historian aggregate CEL helper: " + helper + ".",
-                List.of("hist." + helper + "('root.devices.pump01', 'temperature', 'value', '5m')"),
-                List.of("cel", "historian", "aggregate"),
-                "core",
-                "analytics-catalog-hist-" + helper
-        );
     }
 
     private static void registerReactivePlatformBindings(Map<String, AnalyticsCatalogEntry> catalog) {

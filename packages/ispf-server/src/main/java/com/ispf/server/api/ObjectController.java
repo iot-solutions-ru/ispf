@@ -8,7 +8,9 @@ import com.ispf.server.federation.FederationProxyService;
 import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
+import com.ispf.core.object.VariableStorageMode;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.model.DataRecord;
@@ -604,7 +606,14 @@ public class ObjectController {
                     name,
                     request.historyEnabled(),
                     request.historyRetentionDays(),
-                    request.telemetryPublishMode()
+                    request.telemetryPublishMode(),
+                    request.historySampleMode() != null
+                            ? HistorySampleMode.parse(request.historySampleMode())
+                            : null,
+                    request.includePreviousValueInEvent(),
+                    request.storageMode() != null
+                            ? VariableStorageMode.parse(request.storageMode())
+                            : null
             );
             return VariableDto.from(variable);
         } catch (IllegalArgumentException e) {
@@ -794,7 +803,10 @@ public class ObjectController {
     public record UpdateVariableHistoryRequest(
             boolean historyEnabled,
             Integer historyRetentionDays,
-            String telemetryPublishMode
+            String telemetryPublishMode,
+            String historySampleMode,
+            Boolean includePreviousValueInEvent,
+            String storageMode
     ) {
     }
 

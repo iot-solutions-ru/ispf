@@ -163,7 +163,7 @@ class NewPlatformBindingsTest {
     }
 
     @Test
-    void refAtReadsRemoteFieldViaContext() {
+    void readRefReadsRemoteFieldViaContext() {
         PlatformObject local = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.devices.local",
@@ -175,7 +175,7 @@ class NewPlatformBindingsTest {
         local.addVariable(BindingTestSupport.binding(
                 "remoteTemp",
                 DOUBLE_VALUE,
-                "refAt(\"root.platform.devices.remote\", temperature)"
+                "read(\"root.platform.devices.remote/temperature\")"
         ));
 
         BindingEvaluationContext context = new BindingEvaluationContext() {
@@ -198,9 +198,9 @@ class NewPlatformBindingsTest {
     }
 
     @Test
-    void callFunctionInvokesViaContext() {
+    void callRefInvokesViaContext() {
         PlatformObject node = sensorWithSource("inputVar", 10.0);
-        node.addVariable(BindingTestSupport.binding("output", DOUBLE_VALUE, "callFunction(doubleIt, inputVar)"));
+        node.addVariable(BindingTestSupport.binding("output", DOUBLE_VALUE, "call(@/fn/doubleIt, @/inputVar)"));
 
         BindingEvaluationContext context = (objectPath, functionName, input) -> {
             if ("doubleIt".equals(functionName) && input.rowCount() > 0) {
@@ -215,12 +215,12 @@ class NewPlatformBindingsTest {
     }
 
     @Test
-    void callFunctionAtInvokesRemoteViaContext() {
+    void callRemoteRefInvokesRemoteViaContext() {
         PlatformObject node = sensorWithSource("inputVar", 5.0);
         node.addVariable(BindingTestSupport.binding(
                 "output",
                 DOUBLE_VALUE,
-                "callFunctionAt(\"root.remote\", increment, inputVar)"
+                "call(root.remote/fn/increment, @/inputVar)"
         ));
 
         BindingEvaluationContext context = (objectPath, functionName, input) -> {

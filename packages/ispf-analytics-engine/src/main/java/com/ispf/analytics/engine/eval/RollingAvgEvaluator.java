@@ -14,7 +14,7 @@ public final class RollingAvgEvaluator extends WindowedHistorianEvaluator {
 
     @Override
     public String helper() {
-        return "rollingAvg";
+        return "avg";
     }
 
     @Override
@@ -30,6 +30,6 @@ public final class RollingAvgEvaluator extends WindowedHistorianEvaluator {
             AnalyticsSourceRef source = tag.primarySource();
             value = live.readNumeric(source.path(), source.variable(), source.field()).orElse(null);
         }
-        return singleOutput(tag, value, "No historian buckets for rollingAvg");
+        return singleOutput(tag, value, "No historian buckets for avg");
     }
 }

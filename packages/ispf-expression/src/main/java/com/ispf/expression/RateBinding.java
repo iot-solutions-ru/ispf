@@ -18,7 +18,7 @@ public final class RateBinding implements PlatformBinding {
     static final RateBinding INSTANCE = new RateBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "rate\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*("
+            "rate\\(\\s*(" + BindingSourceHelper.SOURCE_ARG + ")\\s*(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
@@ -42,22 +42,22 @@ public final class RateBinding implements PlatformBinding {
             return Optional.empty();
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
-                matcher.group(1),
+                matcher.group(1).trim(),
                 matcher.group(2),
                 "value"
         );
-        Variable sourceVar = object.getVariable(source.sourceVariable())
-                .orElseThrow(() -> new ExpressionException("rate source not found: " + source.sourceVariable()));
-        Optional<Double> currentOpt = BindingSourceHelper.readNumericField(
-                object,
-                source.sourceVariable(),
-                source.field()
-        );
+        var ref = BindingSourceHelper.resolveVariableSource(source.sourceVariable(), source.field());
+        Optional<Double> currentOpt = PlatformRefValueHelper.readNumericVariable(object, ref, context);
         if (currentOpt.isEmpty()) {
             return Optional.empty();
         }
         double current = currentOpt.get();
-        Instant updatedAt = sourceVar.updatedAt().orElse(Instant.now());
+        Instant updatedAt = Instant.now();
+        if (ref.isCurrentObject() || ref.object().equals(object.path())) {
+            updatedAt = object.getVariable(ref.name())
+                    .flatMap(Variable::updatedAt)
+                    .orElse(updatedAt);
+        }
         long nowMs = updatedAt.toEpochMilli();
 
         String stateKey = BindingSourceHelper.stateKey(object, targetVariable);

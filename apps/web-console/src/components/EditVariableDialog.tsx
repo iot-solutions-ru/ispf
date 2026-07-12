@@ -142,6 +142,9 @@ export default function EditVariableDialog({
           historyEnabled: history.historyEnabled,
           historyRetentionDays: history.historyRetentionDays,
           telemetryPublishMode: telemetryModeToApi(history.telemetryPublishMode),
+          historySampleMode: history.historySampleMode,
+          includePreviousValueInEvent: history.includePreviousValueInEvent,
+          storageMode: history.storageMode,
         });
       }
       if (canEditValue && valueDirty) {

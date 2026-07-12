@@ -124,7 +124,7 @@ A complete tree-first project has **8 layers** (see `get_automation_schema topic
 
 | # | Layer | Path | Tools |
 |---|------|------|-------|
-| 1 | Hub (ABSOLUTE) | `root.platform.instances.{project}` | `ensure_absolute_instance`, binding rules, `refAt` |
+| 1 | Hub (ABSOLUTE) | `root.platform.instances.{project}` | `ensure_absolute_instance`, binding rules, PlatformRef |
 | 2 | Devices | `root.platform.devices.{project}/*` | `instantiate_instance_type`, `apply_relative_model`, `create_virtual_device` |
 | 3 | Dashboard | `root.platform.dashboards.{project}-*` | `set_dashboard_layout`, `add_dashboard_widget` |
 | 4 | SCADA | `root.platform.mimics.{project}-*` | `save_mimic_diagram`, `get_mimic_diagram` |
@@ -238,7 +238,7 @@ Observed **~100% parity** for admin/operator scenarios. Detailed registry: [road
 | `GET /api/v1/platform/installation-id` | Diagnostics / scripts |
 | Step-by-step REST D without bundle | Agent, CI, curl — mirrors UI Application lifecycle |
 
-**Prod:** https://ispf.iot-solutions.ru — `0.9.60`, `ISPF_BOOTSTRAP_FIXTURES_ENABLED=false` (demo fixtures only after `vps-factory-reset.sh --fixtures`).
+**Prod:** ${ISPF_BASE_URL:-https://ispf.example.invalid} — `0.9.60`, `ISPF_BOOTSTRAP_FIXTURES_ENABLED=false` (demo fixtures only after `vps-factory-reset.sh --fixtures`).
 
 ---
 
@@ -522,7 +522,7 @@ Use `search_context` with `topic` or keywords from this table.
 | `dashboards` | Widgets, layout, platform rules |
 | `scada` | Mimic diagrams, MIMIC objects, `scada-mimic` widget |
 | `platform-logic` | Context, visibility, CEL rules |
-| `bindings` | CEL, `counterRate`, `refAt` |
+| `bindings` | CEL, `counterRate`, `read`/`call`/`fire`, PlatformRef |
 | `drivers` | SNMP, Modbus, virtual, MQTT |
 | `workflows` | BPMN, instance cancel/signal |
 | `automation` | Alerts, correlators |

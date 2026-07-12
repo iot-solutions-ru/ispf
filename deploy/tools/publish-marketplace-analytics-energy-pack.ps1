@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $DemoDir = Join-Path $RepoRoot "examples\marketplace-analytics-energy-pack-demo"
 $ZipPath = Join-Path $DemoDir "analytics-pack-energy-1.0.0.zip"
-$Remote = "root@ispf-marketplace.iot-solutions.ru"
+$Remote = "deploy-user@marketplace.example.invalid"
 $RemoteApp = "/opt/ispf-marketplace"
 $RemoteScript = Join-Path $PSScriptRoot "publish-marketplace-analytics-energy-pack-remote.sh"
 

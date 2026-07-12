@@ -26,7 +26,7 @@ scrape_configs:
     scheme: https
     bearer_token: <admin JWT or file>
     static_configs:
-      - targets: [ispf.iot-solutions.ru]
+      - targets: [ispf.example.invalid]
 ```
 
 ### Push — OTLP → OTel Collector → Prometheus
