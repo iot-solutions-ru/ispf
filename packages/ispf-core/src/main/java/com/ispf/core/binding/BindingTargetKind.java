@@ -8,6 +8,8 @@ public final class BindingTargetKind {
     public static final String VARIABLE = "variable";
     public static final String CONTEXT = "context";
     public static final String EVENT = "event";
+    /** Evaluate expression only (call, write, queryRows side effects — no target write). */
+    public static final String ACTION = "action";
 
     private BindingTargetKind() {
     }
@@ -19,6 +21,7 @@ public final class BindingTargetKind {
         return switch (kind.trim().toLowerCase()) {
             case CONTEXT -> CONTEXT;
             case EVENT -> EVENT;
+            case ACTION -> ACTION;
             default -> VARIABLE;
         };
     }

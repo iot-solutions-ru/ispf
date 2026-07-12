@@ -42,6 +42,10 @@ public class BindingRuleEngine {
             .field("value", FieldType.STRING)
             .build();
 
+    private static final DataSchema ACTION_RESULT_SCHEMA = DataSchema.builder("bindingActionResult")
+            .field("value", FieldType.STRING)
+            .build();
+
     private final ObjectManager objectManager;
     private final BindingRulesService bindingRulesService;
     private final BindingExpressionEvaluator expressionEvaluator;
@@ -230,6 +234,9 @@ public class BindingRuleEngine {
         if (target.isEvent()) {
             return evaluateEventRule(object, rule, trigger);
         }
+        if (target.isAction()) {
+            return evaluateActionRule(object, rule, trigger);
+        }
         return evaluateVariableRule(object, rule, changedVariables, trigger);
     }
 
@@ -342,6 +349,47 @@ public class BindingRuleEngine {
                     error,
                     System.nanoTime() - start,
                     entityMapper.auditDiff(previousJson, nextJson)
+            );
+        }
+    }
+
+    private boolean evaluateActionRule(PlatformObject object, BindingRule rule, Trigger trigger) {
+        long start = System.nanoTime();
+        boolean success = true;
+        boolean changed = false;
+        String error = null;
+        try {
+            if (!conditionPasses(object, rule.condition())) {
+                return false;
+            }
+            Optional<DataRecord> computed = expressionEvaluator.evaluate(
+                    object,
+                    "_action",
+                    rule.expression(),
+                    ACTION_RESULT_SCHEMA,
+                    evaluationContext
+            );
+            if (computed.isEmpty()) {
+                success = false;
+                error = "Expression returned empty";
+                return false;
+            }
+            changed = true;
+            return true;
+        } catch (RuntimeException ex) {
+            success = false;
+            error = ex.getMessage();
+            throw ex;
+        } finally {
+            bindingAuditService.recordCel(
+                    object.path(),
+                    rule,
+                    trigger.kind().name(),
+                    success,
+                    changed,
+                    error,
+                    System.nanoTime() - start,
+                    null
             );
         }
     }

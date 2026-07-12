@@ -3,6 +3,7 @@ package com.ispf.server.object;
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingTargetKind;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -124,6 +125,24 @@ class BindingActivatorsRuntimeTest {
 
         assertThat(saved.activators().onEvent()).isEqualTo(EVENT_NAME);
         assertThat(saved.activators().onVariableChange()).isEmpty();
+    }
+
+    @Test
+    void actionRuleEvaluatesWithoutTargetVariable() {
+        ruleId = "rule-action-" + System.nanoTime();
+        bindingRulesService.upsertRule(DEVICE, new BindingRule(
+                ruleId,
+                ruleId,
+                true,
+                0,
+                new BindingActivators(false, List.of(), null, 100),
+                "",
+                "42",
+                new BindingTarget(BindingTargetKind.ACTION, null, "value", null, null)
+        ));
+        dependencyIndex.rebuild(DEVICE);
+
+        periodicScheduler.tick();
     }
 
     private void ensureDoubleVariable(String name, double initial) {

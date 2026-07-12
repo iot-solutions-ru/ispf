@@ -117,6 +117,8 @@
   "bindings.targetKind.context": "Контекст дашборда",
   "bindings.targetKind.event": "Событие платформы",
   "bindings.targetKind.variable": "Переменная",
+  "bindings.targetKind.action": "Побочный эффект (без записи)",
+  "bindings.targetActionHint": "Выражение выполняется по активаторам; результат не сохраняется. Используйте call(), write(), queryRows(), fire() и т.п.",
   "bindings.targetVariable": "Целевая переменная",
   "bindings.ruleKind": "Тип вычисления",
   "bindings.ruleKind.reactive": "Реактивная",

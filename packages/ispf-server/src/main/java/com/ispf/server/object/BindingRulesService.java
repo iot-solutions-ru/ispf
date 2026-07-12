@@ -150,6 +150,9 @@ public class BindingRulesService {
         PlatformObject object = objectManager.require(objectPath);
         BindingTarget target = rule.target();
         if (target.isVariable()) {
+            if (target.variableName() == null || target.variableName().isBlank()) {
+                throw new IllegalArgumentException("Variable target.variableName is required");
+            }
             if (object.getVariable(target.variableName()).isEmpty()) {
                 throw new IllegalArgumentException("Unknown target variable: " + target.variableName());
             }
@@ -168,6 +171,10 @@ public class BindingRulesService {
             if (target.eventName() == null || target.eventName().isBlank()) {
                 throw new IllegalArgumentException("Event target.eventName is required");
             }
+            return;
+        }
+        if (target.isAction()) {
+            return;
         }
     }
 

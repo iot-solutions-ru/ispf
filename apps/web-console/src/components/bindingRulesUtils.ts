@@ -71,6 +71,9 @@ export function targetSummary(target: BindingTarget): string {
   if (kind === "event") {
     return `event:${target.eventName ?? "?"}`;
   }
+  if (kind === "action") {
+    return "action";
+  }
   return target.variableName?.trim() || "—";
 }
 
@@ -91,6 +94,9 @@ export function isBindingRuleSaveable(rule: BindingRule): boolean {
   }
   if (kind === "event") {
     return Boolean(rule.target.eventName?.trim());
+  }
+  if (kind === "action") {
+    return true;
   }
   return Boolean(rule.target.variableName?.trim());
 }

@@ -66,7 +66,7 @@ describe("isBindingRuleSaveable", () => {
     expect(isBindingRuleSaveable(sampleRule({ expression: "  " }))).toBe(false);
   });
 
-  it("accepts context and event targets", () => {
+  it("accepts context, event, and action targets", () => {
     expect(
       isBindingRuleSaveable(
         sampleRule({
@@ -80,6 +80,14 @@ describe("isBindingRuleSaveable", () => {
         sampleRule({
           target: { kind: "event", eventName: "alarm.raised" },
           expression: "payload",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isBindingRuleSaveable(
+        sampleRule({
+          target: { kind: "action" },
+          expression: "call(@/fn/run)",
         }),
       ),
     ).toBe(true);

@@ -165,7 +165,7 @@ export interface BindingActivators {
   onContextChange?: boolean;
 }
 
-export type BindingTargetKind = "variable" | "context" | "event";
+export type BindingTargetKind = "variable" | "context" | "event" | "action";
 
 export interface BindingTarget {
   kind?: BindingTargetKind | null;

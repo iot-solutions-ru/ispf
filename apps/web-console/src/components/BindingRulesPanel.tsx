@@ -42,7 +42,7 @@ interface BindingRulesPanelProps {
   onInspectHistorian?: (tagPath: string) => void;
 }
 
-const TARGET_KINDS: BindingTargetKind[] = ["variable", "context", "event"];
+const TARGET_KINDS: BindingTargetKind[] = ["variable", "action", "context", "event"];
 
 export default function BindingRulesPanel({
   path,
@@ -113,7 +113,9 @@ export default function BindingRulesPanel({
         ? { kind, path: "params.mode" as const }
         : kind === "event"
           ? { kind, eventName: "" as const }
-          : { kind, variableName: "", field: "value" as const });
+          : kind === "action"
+            ? { kind }
+            : { kind, variableName: "", field: "value" as const });
     setEditing({ ...editing, target: nextTarget });
   };
 
@@ -289,14 +291,14 @@ export default function BindingRulesPanel({
                   <span className="hint">{t("inspector:bindings.windowBucketHint")}</span>
                 </label>
               )}
-              {(dashboardMode || editingTargetKind !== "variable") && (
+              {editingRuleKind === "reactive" && (
                 <label className="full">
                   {t("inspector:bindings.targetKind")}
                   <select
                     value={editingTargetKind}
                     onChange={(e) => setTargetKind(e.target.value as BindingTargetKind)}
                   >
-                    {TARGET_KINDS.map((kind) => (
+                    {TARGET_KINDS.filter((kind) => dashboardMode || kind !== "context").map((kind) => (
                       <option key={kind} value={kind}>
                         {t(`inspector:bindings.targetKind.${kind}`)}
                       </option>
@@ -318,6 +320,9 @@ export default function BindingRulesPanel({
                     required
                   />
                 </label>
+              )}
+              {editingTargetKind === "action" && (
+                <p className="hint full">{t("inspector:bindings.targetActionHint")}</p>
               )}
               {editingTargetKind === "context" && (
                 <label className="full">

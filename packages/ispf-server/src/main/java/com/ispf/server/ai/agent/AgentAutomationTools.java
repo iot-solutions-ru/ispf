@@ -589,7 +589,7 @@ final class AgentAutomationTools {
             @Override
             public String description() {
                 return "Create or replace a binding rule on an object. Args: path, id, expression, "
-                        + "targetVariable (for kind=variable), optional targetKind (variable|context|event), "
+                        + "targetVariable (for kind=variable), optional targetKind (variable|action|context|event), "
                         + "contextPath (context target), eventName (event target), condition (CEL), "
                         + "remoteObjectPath + remoteVariableName (cross-object activator), "
                         + "onContextChange (bool, dashboard rules), onStartup, order. "
@@ -684,6 +684,13 @@ final class AgentAutomationTools {
                             field,
                             null,
                             stringArg(arguments, "eventName")
+                    );
+                    case com.ispf.core.binding.BindingTargetKind.ACTION -> new com.ispf.core.binding.BindingTarget(
+                            com.ispf.core.binding.BindingTargetKind.ACTION,
+                            null,
+                            field,
+                            null,
+                            null
                     );
                     default -> new com.ispf.core.binding.BindingTarget(targetVariable, field);
                 };

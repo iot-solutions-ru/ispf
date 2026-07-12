@@ -43,4 +43,8 @@ public record BindingTarget(
     public boolean isEvent() {
         return BindingTargetKind.EVENT.equals(kind);
     }
+
+    public boolean isAction() {
+        return BindingTargetKind.ACTION.equals(kind);
+    }
 }
