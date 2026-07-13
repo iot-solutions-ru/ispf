@@ -86,6 +86,28 @@ export function readCachedVariables(objectPath: string): VariableDto[] | null {
   return readEnvelope<VariableDto[]>(`${PREFIX}vars:${objectPath}`)?.payload ?? null;
 }
 
+/** Drop cached variable snapshots (e.g. after demo alarm script or stale topology colors). */
+export function clearCachedVariables(objectPaths?: string[]): void {
+  try {
+    if (objectPaths?.length) {
+      for (const objectPath of objectPaths) {
+        if (objectPath?.trim()) {
+          localStorage.removeItem(`${PREFIX}vars:${objectPath.trim()}`);
+        }
+      }
+      return;
+    }
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(`${PREFIX}vars:`)) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // private mode / blocked storage
+  }
+}
+
 export function cacheManifestScreenSnapshot(
   appId: string,
   screenId: string,

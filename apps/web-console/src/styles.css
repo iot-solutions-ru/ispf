@@ -3063,6 +3063,90 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   padding: 0.35rem 0.5rem 0.5rem;
 }
 
+.dash-widget-topology-svg,
+.dash-widget-svg-interactive {
+  padding: 0.35rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dash-widget-topology-svg .topology-svg-viewport,
+.dash-widget-svg-interactive .topology-svg-viewport {
+  flex: 1;
+  min-height: 12rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  touch-action: none;
+}
+
+.dash-widget-topology-svg .topology-svg-stage {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  transition: transform 0.05s linear;
+}
+
+.dash-widget-topology-svg .topology-svg-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dash-widget-topology-svg .topology-svg-legend {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #dfe6ef;
+  font-size: 12px;
+  color: #5c7a9c;
+  pointer-events: none;
+}
+
+.dash-widget-topology-svg .topology-svg-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+.dash-widget-topology-svg .topology-svg-dot.online {
+  background: #97fec6;
+}
+
+.dash-widget-topology-svg .topology-svg-dot.offline {
+  background: #e57373;
+}
+
+.dash-widget-topology-svg .topology-svg-dot.link-up {
+  background: #178e4e;
+}
+
+.dash-widget-topology-svg .topology-svg-dot.link-down {
+  background: #d32f2f;
+}
+
+.dash-widget-topology-svg .topology-svg-reset-zoom,
+.dash-widget-svg-interactive .topology-svg-reset-zoom {
+  margin-left: auto;
+}
+
+.topology-svg-view-controls {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
+}
+
 .dash-widget-scada-mimic .scada-mimic-viewport {
   flex: 1;
   min-height: 0;
@@ -4561,7 +4645,11 @@ body.scada-mimic-editor-open {
 
 .dash-chart-body {
   flex: 1;
-  min-height: 120px;
+  min-height: 0;
+}
+
+.dash-widget-chart .dash-chart-body {
+  min-height: 4.5rem;
 }
 
 .dash-chart-placeholder {
@@ -9933,6 +10021,61 @@ body.scada-mimic-editor-open {
 
 .dashboard-theme-btop .dash-object-table tbody tr:hover td {
   background: rgba(255, 255, 255, 0.03);
+}
+
+/* Tibbo ANM / ITM light dashboard (M11 highway monitoring) */
+.dashboard-theme-itm-light.dashboard-grid-host {
+  background: #f0f3f8;
+  border: none;
+  border-radius: 0;
+  padding: 8px;
+}
+
+.dashboard-theme-itm-light .dashboard-grid-canvas {
+  background: transparent;
+}
+
+.dashboard-theme-itm-light .dash-widget {
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  color: #1e293b;
+}
+
+.dashboard-theme-itm-light .dash-widget-title {
+  color: #0b1a2f;
+  font-weight: 600;
+}
+
+.dashboard-theme-itm-light .dash-widget-metric {
+  color: #0b1a2f;
+}
+
+.dashboard-theme-itm-light .dash-object-table th {
+  color: #5c7a9c;
+  font-weight: 600;
+  font-size: 0.72rem;
+  border-bottom: 1px solid #dfe6ef;
+}
+
+.dashboard-theme-itm-light .dash-object-table td {
+  color: #1e293b;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.dashboard-theme-itm-light .dash-widget-chart .recharts-cartesian-grid-horizontal line,
+.dashboard-theme-itm-light .dash-widget-chart .recharts-cartesian-grid-vertical line {
+  stroke: #e9edf3;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .op-table td,
+.dashboard-theme-itm-light .dash-report-widget .op-table th {
+  font-size: 0.78rem;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .op-table td {
+  word-break: break-all;
 }
 
 .ai-studio-main {

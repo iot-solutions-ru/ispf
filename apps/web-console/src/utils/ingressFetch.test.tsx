@@ -74,6 +74,26 @@ describe("ingressFetch", () => {
     expect(resolveIngressFetchPath("/api/v1/info")).toBe(`${HMI_INGRESS_PREFIX}/api/v1/info`);
   });
 
+  it("re-validates cached hmi and falls back when SPA HTML is returned", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ version: "1" }))
+      .mockResolvedValueOnce(htmlResponse())
+      .mockResolvedValueOnce(jsonResponse({ online: false }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchWithIngressFallback("/api/v1/info");
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("hmi");
+
+    const response = await fetchWithIngressFallback("/api/v1/objects/variables/batch?paths=x");
+    expect(response.ok).toBe(true);
+    expect(await response.json()).toEqual({ online: false });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[1][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/objects/variables/batch?paths=x`);
+    expect(fetchMock.mock.calls[2][0]).toBe("/api/v1/objects/variables/batch?paths=x");
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("direct");
+  });
+
   it("lists hmi then direct websocket paths in auto mode", () => {
     expect(resolveIngressWebSocketPaths("/ws/objects")).toEqual([
       `${HMI_INGRESS_PREFIX}/ws/objects`,

@@ -429,11 +429,24 @@ export interface VariableEditorWidget extends DashboardWidgetBase {
 
 export interface SvgWidget extends DashboardWidgetBase {
   type: "svg-widget";
-  svgUrl: string;
+  svgUrl?: string;
   clickAction?: "function" | "toggle";
   functionName?: string;
   toggleVariable?: string;
   confirmMessage?: string;
+  /** Inline SVG + SCADA-style behaviors/bindings (like custom symbol). */
+  svgInnerJson?: string;
+  behaviorsJson?: string;
+  bindingsJson?: string;
+  bindingSchemaJson?: string;
+  hitAreasJson?: string;
+  viewBox?: string;
+  backgroundColor?: string;
+  /** @deprecated use behaviorsJson + bindingsJson */
+  topologyJson?: string;
+  showLegend?: boolean;
+  panEnabled?: boolean;
+  defaultZoom?: number;
 }
 
 /** Configurable SCADA mimic diagram with symbol library and live bindings. */
@@ -847,6 +860,10 @@ export function emptyLayout(): DashboardLayout {
 }
 
 function normalizeLayoutWidget(widget: DashboardWidget): DashboardWidget {
+  const legacyType = String((widget as { type?: string }).type ?? "");
+  if (legacyType === "topology-svg") {
+    return { ...(widget as DashboardWidget), type: "svg-widget" };
+  }
   if (widget.type === "dashboard-link") {
     const legacy = widget as DashboardLinkWidget & { dashboardPath?: string; label?: string };
     return {

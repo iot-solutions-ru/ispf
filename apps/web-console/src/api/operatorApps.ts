@@ -27,7 +27,15 @@ export async function fetchOperatorAppUi(appId: string): Promise<OperatorUi | nu
   if (!response.ok) {
     throw new Error(`Operator app UI API failed: ${response.status}`);
   }
-  return response.json() as Promise<OperatorUi>;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    return null;
+  }
+  try {
+    return (await response.json()) as OperatorUi;
+  } catch {
+    return null;
+  }
 }
 
 export async function createOperatorApp(appId: string, title: string): Promise<OperatorUi> {

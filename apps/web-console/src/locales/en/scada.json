@@ -38,6 +38,7 @@
   "props.bindings": "Bindings",
   "props.bindingObjectPath": "Object path",
   "props.bindingVariableName": "Variable",
+  "props.bindingValueField": "Value field",
   "props.bindingSelectObjectFirst": "Select an object first.",
   "props.bindingVariablesLoading": "Loading variables…",
   "props.bindingVariablesError": "Could not load variables for this object.",

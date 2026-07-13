@@ -106,6 +106,7 @@
   "props.bindingQualityField": "品质领域",
   "props.bindingSelectObjectFirst": "首先选择一个对象。",
   "props.bindingTransform": "变换",
+  "props.bindingValueField": "值字段",
   "props.bindingVariableManual": "变量名",
   "props.bindingVariableName": "变量",
   "props.bindingVariablesEmpty": "该对象上没有可读变量。",

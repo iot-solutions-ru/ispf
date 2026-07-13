@@ -106,6 +106,7 @@
   "props.bindingQualityField": "Qualitätsfeld",
   "props.bindingSelectObjectFirst": "Wählen Sie zunächst ein Objekt aus.",
   "props.bindingTransform": "Verwandeln",
+  "props.bindingValueField": "Wertefeld",
   "props.bindingVariableManual": "Variablenname",
   "props.bindingVariableName": "Variabel",
   "props.bindingVariablesEmpty": "Keine lesbaren Variablen für dieses Objekt.",

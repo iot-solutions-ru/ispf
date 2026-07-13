@@ -28,7 +28,8 @@ public class BundleManifestValidator {
             "sub-dashboard", "panel", "tab-panel", "map",
             "label", "image", "html-snippet", "object-tree", "breadcrumbs", "timer", "context-list",
             "linear-gauge", "input-form", "drawer-panel", "carousel", "steps-panel",
-            "gantt-chart", "network-graph", "spreadsheet", "liquid-gauge", "nav-menu"
+            "gantt-chart", "network-graph", "spreadsheet", "liquid-gauge", "nav-menu",
+            "scada-mimic"
     );
 
     private final FunctionScriptValidator scriptValidator;

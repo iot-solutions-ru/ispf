@@ -128,7 +128,7 @@ public final class AgentWidgetPropertiesGuide {
                 
                 **network-graph** — nodesVariable, edgesVariable (RECORD_LIST), labelField.
                 
-                **svg-widget** [req: svgUrl] — clickAction: function|toggle; functionName; toggleVariable.
+                **svg-widget** — svgUrl + clickAction (function|toggle), или SCADA-модель: behaviorsJson + bindingsJson + svgInnerJson (как custom symbol).
                 
                 ### object-only (функции и формы на объекте)
                 
@@ -407,12 +407,23 @@ public final class AgentWidgetPropertiesGuide {
         specs.put("network-graph", spec("object-variable", List.of(), netFields, null, null));
 
         List<Map<String, String>> svgFields = new ArrayList<>(basePathFields());
-        svgFields.add(f("svgUrl", "string", true, "SVG asset URL"));
+        svgFields.add(f("svgUrl", "string", false, "SVG asset URL (or svgInner in topologyJson)"));
         svgFields.add(f("clickAction", "enum", false, "function|toggle"));
         svgFields.add(f("functionName", "string", false, "When clickAction=function"));
         svgFields.add(f("toggleVariable", "string", false, "When clickAction=toggle"));
         svgFields.add(f("confirmMessage", "string", false, "Confirm dialog"));
-        specs.put("svg-widget", spec("object-variable", List.of("svgUrl"), svgFields, null, null));
+        svgFields.add(f("topologyJson", "string", false, "Legacy monolithic config (prefer behaviorsJson + bindingsJson)"));
+        svgFields.add(f("behaviorsJson", "string", false, "MimicSymbolBehavior[] — same as SCADA custom symbol"));
+        svgFields.add(f("bindingsJson", "string", false, "Record<bindKey, MimicBinding>"));
+        svgFields.add(f("bindingSchemaJson", "string", false, "Auto-synced binding slots"));
+        svgFields.add(f("svgInnerJson", "string", false, "Inline SVG markup"));
+        svgFields.add(f("hitAreasJson", "string", false, "Click targets for setSelection"));
+        svgFields.add(f("viewBox", "string", false, "SVG viewBox"));
+        svgFields.add(f("backgroundColor", "string", false, "Canvas background"));
+        svgFields.add(f("showLegend", "boolean", false, "Status legend in topology mode"));
+        svgFields.add(f("panEnabled", "boolean", false, "Pan/zoom in topology mode"));
+        svgFields.add(f("defaultZoom", "number", false, "Initial zoom in topology mode"));
+        specs.put("svg-widget", spec("object-variable", List.of(), svgFields, null, null));
 
         List<Map<String, String>> fnFields = new ArrayList<>(basePathFields());
         fnFields.add(f("functionName", "string", true, "Tree/BFF function name"));

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getAuthHeaders } from "../auth/session";
 import { fetchWithIngressFallback } from "../utils/ingressFetch";
 import type { OperatorManifest } from "../types/operatorManifest";
+import { operatorAppIdCandidates } from "../utils/operatorAppsPath";
 import {
   cacheOperatorManifest,
   readCachedOperatorManifest,
@@ -18,7 +19,15 @@ async function loadManifestFromApi(appId: string): Promise<OperatorManifest | nu
   if (!response.ok) {
     throw new Error(`Operator manifest API failed: ${response.status}`);
   }
-  return response.json();
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    return null;
+  }
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 async function loadManifestFromPublic(appId: string): Promise<OperatorManifest> {
@@ -26,30 +35,47 @@ async function loadManifestFromPublic(appId: string): Promise<OperatorManifest> 
   if (!response.ok) {
     throw new Error(`Operator manifest not found for app: ${appId}`);
   }
-  return response.json();
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    throw new Error(`Operator manifest not found for app: ${appId}`);
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(`Operator manifest not found for app: ${appId}`);
+  }
 }
 
 async function loadManifest(appId: string): Promise<OperatorManifest> {
-  try {
-    console.warn(
-      "[ISPF] Static operator manifest (operator-apps/*.manifest.json) is deprecated. "
+  console.warn(
+    "[ISPF] Static operator manifest (operator-apps/*.manifest.json) is deprecated. "
       + "Use Application bundle operatorUi / wire profile instead."
-    );
-    const fromApi = await loadManifestFromApi(appId);
-    if (fromApi) {
-      cacheOperatorManifest(appId, fromApi);
-      return fromApi;
+  );
+  const candidates = [...operatorAppIdCandidates(appId)].reverse();
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      const fromApi = await loadManifestFromApi(candidate);
+      if (fromApi) {
+        cacheOperatorManifest(appId, fromApi);
+        cacheOperatorManifest(candidate, fromApi);
+        return fromApi;
+      }
+      const fromPublic = await loadManifestFromPublic(candidate);
+      cacheOperatorManifest(appId, fromPublic);
+      cacheOperatorManifest(candidate, fromPublic);
+      return fromPublic;
+    } catch (error) {
+      lastError = error;
+      const cached = readCachedOperatorManifest(candidate) ?? readCachedOperatorManifest(appId);
+      if (cached) {
+        return cached;
+      }
     }
-    const fromPublic = await loadManifestFromPublic(appId);
-    cacheOperatorManifest(appId, fromPublic);
-    return fromPublic;
-  } catch (error) {
-    const cached = readCachedOperatorManifest(appId);
-    if (cached) {
-      return cached;
-    }
-    throw error;
   }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`Operator manifest not found for app: ${appId}`);
 }
 
 export function useOperatorManifest(appId: string | null) {

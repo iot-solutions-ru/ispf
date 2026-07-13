@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { loadOperatorAppUi } from "./useOperatorAppsRegistry";
 import type { OperatorUi } from "../types/operatorUi";
+import { operatorAppIdCandidates } from "../utils/operatorAppsPath";
 import { cacheOperatorUi, readCachedOperatorUi } from "../utils/operatorOfflineCache";
 
 async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
@@ -20,24 +21,34 @@ async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
 }
 
 async function loadOperatorUi(appId: string): Promise<OperatorUi | null> {
-  try {
-    const fromRegistry = await loadOperatorAppUi(appId);
-    if (fromRegistry) {
-      cacheOperatorUi(appId, fromRegistry);
-      return fromRegistry;
+  const candidates = [...operatorAppIdCandidates(appId)].reverse();
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      const fromRegistry = await loadOperatorAppUi(candidate);
+      if (fromRegistry) {
+        cacheOperatorUi(appId, fromRegistry);
+        cacheOperatorUi(candidate, fromRegistry);
+        return fromRegistry;
+      }
+      const fromPublic = await loadUiFromPublic(candidate);
+      if (fromPublic) {
+        cacheOperatorUi(appId, fromPublic);
+        cacheOperatorUi(candidate, fromPublic);
+        return fromPublic;
+      }
+    } catch (error) {
+      lastError = error;
+      const cached = readCachedOperatorUi(candidate) ?? readCachedOperatorUi(appId);
+      if (cached) {
+        return cached;
+      }
     }
-    const fromPublic = await loadUiFromPublic(appId);
-    if (fromPublic) {
-      cacheOperatorUi(appId, fromPublic);
-    }
-    return fromPublic;
-  } catch (error) {
-    const cached = readCachedOperatorUi(appId);
-    if (cached) {
-      return cached;
-    }
-    throw error;
   }
+  if (lastError) {
+    throw lastError;
+  }
+  return null;
 }
 
 export function useOperatorUi(appId: string | null) {

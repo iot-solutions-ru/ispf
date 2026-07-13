@@ -108,6 +108,7 @@
   "props.bindingTransform": "Преобразование",
   "props.bindingVariableManual": "Имя переменной",
   "props.bindingVariableName": "Переменная",
+  "props.bindingValueField": "Поле значения",
   "props.bindingVariablesEmpty": "У объекта нет доступных для чтения переменных.",
   "props.bindingVariablesError": "Не удалось загрузить переменные объекта.",
   "props.bindingVariablesLoading": "Загрузка переменных…",
