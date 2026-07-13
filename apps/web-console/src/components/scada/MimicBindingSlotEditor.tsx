@@ -89,6 +89,18 @@ export default function MimicBindingSlotEditor({
       </label>
 
       <label className="scada-form-field">
+        <span className="scada-form-label">{t("props.bindingValueField")}</span>
+        <input
+          type="text"
+          className="scada-form-input mono"
+          spellCheck={false}
+          placeholder="value"
+          value={binding?.valueField ?? ""}
+          onChange={(e) => onUpdate({ valueField: e.target.value || undefined })}
+        />
+      </label>
+
+      <label className="scada-form-field">
         <span className="scada-form-label">{t("props.bindingQualityField")}</span>
         <input
           type="text"

@@ -18,7 +18,15 @@ async function loadManifestFromApi(appId: string): Promise<OperatorManifest | nu
   if (!response.ok) {
     throw new Error(`Operator manifest API failed: ${response.status}`);
   }
-  return response.json();
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    return null;
+  }
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 async function loadManifestFromPublic(appId: string): Promise<OperatorManifest> {
@@ -26,7 +34,15 @@ async function loadManifestFromPublic(appId: string): Promise<OperatorManifest> 
   if (!response.ok) {
     throw new Error(`Operator manifest not found for app: ${appId}`);
   }
-  return response.json();
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    throw new Error(`Operator manifest not found for app: ${appId}`);
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(`Operator manifest not found for app: ${appId}`);
+  }
 }
 
 async function loadManifest(appId: string): Promise<OperatorManifest> {

@@ -49,7 +49,7 @@ import { AgentChatProvider } from "./context/AgentChatContext";
 import { useAgentRunStatus } from "./utils/agentRunStatus";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
-import { isOperatorAppChildPath, resolveOperatorAppIdFromPath } from "./utils/operatorAppsPath";
+import { isOperatorAppChildPath, resolveOperatorAppIdFromPath, resolveOperatorAppId as resolveRegistryOperatorAppId } from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
 
 const OperatorView = lazy(() => import("./components/operator/OperatorView"));
@@ -581,7 +581,11 @@ function AppShell() {
   }
 
   if (shouldOpenOperatorShell(session, appMode)) {
-    const operatorAppId = resolveOperatorAppId(session, searchParams);
+    const rawOperatorAppId = resolveOperatorAppId(session, searchParams);
+    const operatorAppId =
+      rawOperatorAppId && operatorAppsQuery.data?.length
+        ? resolveRegistryOperatorAppId(rawOperatorAppId, operatorAppsQuery.data)
+        : rawOperatorAppId;
     return (
       <Suspense fallback={<LazyFallback />}>
         <OperatorView

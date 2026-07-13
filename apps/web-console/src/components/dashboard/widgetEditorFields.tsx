@@ -33,6 +33,7 @@ import {
 import ScadaMimicWidgetEditorFields from "./ScadaMimicWidgetEditorFields";
 import { ObjectPathField } from "../../ui";
 import WidgetMediaUploadField from "./WidgetMediaUploadField";
+import SvgWidgetInteractiveEditor from "./SvgWidgetInteractiveEditor";
 
 type ObjectOption = { path: string; displayName: string; variableNames: string[] };
 type DashboardOption = { path: string; displayName: string };
@@ -1801,6 +1802,23 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               value={widget.confirmMessage ?? ""}
               onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
             />
+          </label>
+          <SvgWidgetInteractiveEditor widget={widget} update={update} />
+          <label>
+            <input
+              type="checkbox"
+              checked={widget.showLegend !== false}
+              onChange={(e) => update({ showLegend: e.target.checked })}
+            />
+            showLegend
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={widget.panEnabled !== false}
+              onChange={(e) => update({ panEnabled: e.target.checked })}
+            />
+            panEnabled
           </label>
         </>
       );

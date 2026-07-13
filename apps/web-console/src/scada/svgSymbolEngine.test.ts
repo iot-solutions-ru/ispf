@@ -21,13 +21,21 @@ describe("applySvgBehaviors", () => {
     expect(out).not.toMatch(/id="state-open"[^>]*display="none"/);
   });
 
-  it("updates text binding", () => {
-    const svg = '<text id="ispf-value">—</text>';
+  it("updates stroke without rebuilding markup string consumers", () => {
+    const svg = '<path id="link_a" stroke="#178E4E"/>';
     const out = applySvgBehaviors({
       svg,
-      values: { value: 12.345 },
-      behaviors: [{ bind: "value", type: "text", target: "#ispf-value", format: "number", decimals: 1 }],
+      values: { up: false },
+      behaviors: [
+        {
+          bind: "up",
+          type: "stroke",
+          target: "#link_a",
+          trueColor: "#178E4E",
+          falseColor: "#D32F2F",
+        },
+      ],
     });
-    expect(out).toContain(">12.3<");
+    expect(out).toContain('stroke="#D32F2F"');
   });
 });

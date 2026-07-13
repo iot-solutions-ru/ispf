@@ -10,6 +10,14 @@ export interface ApplySvgBehaviorsOptions {
   props?: Record<string, unknown>;
 }
 
+export interface ApplySvgBehaviorsToRootOptions {
+  root: Element;
+  values: Record<string, unknown>;
+  behaviors?: MimicSymbolBehavior[];
+  styleOverrides?: Record<string, string>;
+  props?: Record<string, unknown>;
+}
+
 function resolveBool(values: Record<string, unknown>, props: Record<string, unknown>, bind: string): boolean {
   const raw = values[bind] ?? props[bind];
   return asBool(raw);
@@ -25,27 +33,23 @@ function setAttr(el: Element, name: string, value: string): void {
 
 function queryTarget(doc: Document | Element, target: string): Element | null {
   if (target.startsWith("#")) {
+    const id = target.slice(1);
+    if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+      return doc.querySelector(`#${CSS.escape(id)}`);
+    }
     return doc.querySelector(target);
   }
   return doc.querySelector(`[data-ispf-bind-target="${target}"]`);
 }
 
-/** Apply binding values and format overrides to inner SVG markup. */
-export function applySvgBehaviors({
-  svg,
+/** Mutate an already-mounted SVG root (live fill/stroke without re-parsing markup). */
+export function applySvgBehaviorsToRoot({
+  root,
   values,
   behaviors = [],
   styleOverrides = {},
   props = {},
-}: ApplySvgBehaviorsOptions): string {
-  const raw = replaceCssVars(sanitizeSvgMarkup(svg));
-  if (!raw.trim()) return raw;
-
-  const wrapped = `<svg xmlns="http://www.w3.org/2000/svg">${raw}</svg>`;
-  const doc = new DOMParser().parseFromString(wrapped, "image/svg+xml");
-  const root = doc.documentElement;
-  if (root.querySelector("parsererror")) return raw;
-
+}: ApplySvgBehaviorsToRootOptions): void {
   for (const behavior of behaviors) {
     const el = queryTarget(root, behavior.target);
     if (!el) continue;
@@ -134,6 +138,29 @@ export function applySvgBehaviors({
     const accent = root.querySelector("#ispf-accent") ?? root.querySelector("[data-ispf-accent]");
     if (accent) setAttr(accent, "fill", styleOverrides.fill);
   }
+}
 
+/** Apply binding values and format overrides to inner SVG markup. */
+export function applySvgBehaviors({
+  svg,
+  values,
+  behaviors = [],
+  styleOverrides = {},
+  props = {},
+}: ApplySvgBehaviorsOptions): string {
+  const raw = replaceCssVars(sanitizeSvgMarkup(svg));
+  if (!raw.trim()) return raw;
+
+  const wrapped = `<svg xmlns="http://www.w3.org/2000/svg">${raw}</svg>`;
+  const doc = new DOMParser().parseFromString(wrapped, "image/svg+xml");
+  const root = doc.documentElement;
+  if (root.querySelector("parsererror")) return raw;
+
+  applySvgBehaviorsToRoot({ root, values, behaviors, styleOverrides, props });
   return root.innerHTML;
+}
+
+/** Sanitize topology SVG once before mounting; live status goes through applySvgBehaviorsToRoot. */
+export function prepareSvgInner(svg: string): string {
+  return replaceCssVars(sanitizeSvgMarkup(svg));
 }

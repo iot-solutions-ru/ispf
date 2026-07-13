@@ -98,9 +98,7 @@ export function resolveIngressWebSocketPaths(url: string): string[] {
   if (currentRoute() === "direct") {
     return [directPath];
   }
-  if (currentRoute() === "hmi") {
-    return [hmiPath];
-  }
+  // Always offer direct /ws as second choice: /hmi/ws often serves SPA HTML on single-node.
   return [hmiPath, directPath];
 }
 
@@ -130,10 +128,9 @@ export async function fetchWithIngressFallback(url: string, init?: RequestInit):
     return fetch(directPath, init);
   }
 
-  if (currentRoute() === "hmi") {
-    return fetch(hmiPath, init);
-  }
-
+  // Even when "hmi" was cached, re-validate: pilot/single-node often serves SPA HTML at /hmi/*.
+  // Blind reuse of a stale "hmi" sessionStorage value makes API callers parse HTML and fall back
+  // to offline variable caches (topology stays green despite live faults).
   try {
     const response = await fetch(hmiPath, init);
     if (!shouldFallbackFromHmiIngress(response)) {

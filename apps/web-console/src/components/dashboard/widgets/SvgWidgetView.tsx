@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invokeFunction, setVariable } from "../../../api";
@@ -11,6 +11,8 @@ import { cloneRecord, setFieldValue } from "../../../utils/record";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { resolveWidgetMediaSrc } from "../widgetMediaUrl";
+import { resolveSvgInteractiveConfig } from "../../../scada/svgWidgetInteractive";
+import SvgInteractiveBody from "./SvgInteractiveBody";
 
 interface SvgWidgetViewProps {
   widget: SvgWidget;
@@ -34,11 +36,14 @@ export default function SvgWidgetView({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const interactiveConfig = useMemo(() => resolveSvgInteractiveConfig(widget), [widget]);
+  const topologyMode = interactiveConfig !== null;
+
   const { rawValue, variable, writable } = useBoundVariable(
     togglePath,
     toggleVariable,
     widget.valueField,
-    refreshIntervalMs
+    topologyMode ? false : refreshIntervalMs
   );
 
   const functionMutation = useMutation({
@@ -81,6 +86,7 @@ export default function SvgWidgetView({
   });
 
   const clickable =
+    !topologyMode &&
     !editable &&
     (widget.clickAction === "function"
       ? Boolean(functionPath && widget.functionName)
@@ -110,10 +116,22 @@ export default function SvgWidgetView({
     <DashWidgetShell
       title={widget.title}
       stylesJson={widget.stylesJson}
-      className="dash-widget dash-widget-svg"
+      className={`dash-widget dash-widget-svg${topologyMode ? " dash-widget-svg-interactive" : ""}`}
       editable={editable}
     >
-      {!svgSrc ? (
+      {topologyMode && interactiveConfig ? (
+        <SvgInteractiveBody
+          svgUrl={widget.svgUrl}
+          config={interactiveConfig}
+          selectionKey={widget.selectionKey}
+          showLegend={widget.showLegend}
+          panEnabled={widget.panEnabled}
+          defaultZoom={widget.defaultZoom}
+          refreshIntervalMs={refreshIntervalMs}
+          editable={editable}
+          title={typeof widget.title === "string" ? widget.title : undefined}
+        />
+      ) : !svgSrc ? (
         <p className="hint">{t("view.specifySvgUrl")}</p>
       ) : (
         <button

@@ -18,7 +18,15 @@ async function loadUiFromBundleApi(appId: string): Promise<OperatorUi | null> {
     if (!response.ok) {
       throw new Error(`Operator UI API failed: ${response.status}`);
     }
-    return response.json() as Promise<OperatorUi>;
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("json")) {
+      continue;
+    }
+    try {
+      return (await response.json()) as OperatorUi;
+    } catch {
+      continue;
+    }
   }
   return null;
 }
