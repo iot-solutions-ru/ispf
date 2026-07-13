@@ -1203,27 +1203,46 @@ public class ObjectManager {
 
     private void persistVariable(String path, Variable variable) {
         synchronized (lockForVariable(path, variable.name())) {
+            ObjectVariableEntity mapped = mapper.toEntity(path, variable);
             ObjectVariableEntity entity = variableRepository
                     .findByObjectPathAndName(path, variable.name())
                     .orElseGet(ObjectVariableEntity::new);
-            ObjectVariableEntity mapped = mapper.toEntity(path, variable);
-            entity.setObjectPath(path);
-            entity.setName(variable.name());
-            entity.setSchemaJson(mapped.getSchemaJson());
-            entity.setValueJson(mapped.getValueJson());
-            entity.setReadable(mapped.isReadable());
-            entity.setWritable(mapped.isWritable());
-            entity.setUpdatedAt(mapped.getUpdatedAt());
-            entity.setHistoryEnabled(mapped.isHistoryEnabled());
-            entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
-            entity.setHistorySampleMode(mapped.getHistorySampleMode());
-            entity.setIncludePreviousValueInEvent(mapped.isIncludePreviousValueInEvent());
-            entity.setStorageMode(mapped.getStorageMode());
-            entity.setTelemetryPublishMode(mapped.getTelemetryPublishMode());
-            entity.setReadRolesJson(mapped.getReadRolesJson());
-            entity.setWriteRolesJson(mapped.getWriteRolesJson());
-            variableRepository.save(entity);
+            copyVariableEntityFields(entity, mapped, path, variable.name());
+            try {
+                variableRepository.save(entity);
+            } catch (DataIntegrityViolationException duplicate) {
+                Optional<ObjectVariableEntity> raced = variableRepository.findByObjectPathAndName(path, variable.name());
+                if (raced.isEmpty()) {
+                    throw duplicate;
+                }
+                ObjectVariableEntity retry = raced.get();
+                copyVariableEntityFields(retry, mapped, path, variable.name());
+                variableRepository.save(retry);
+            }
         }
+    }
+
+    private static void copyVariableEntityFields(
+            ObjectVariableEntity entity,
+            ObjectVariableEntity mapped,
+            String path,
+            String name
+    ) {
+        entity.setObjectPath(path);
+        entity.setName(name);
+        entity.setSchemaJson(mapped.getSchemaJson());
+        entity.setValueJson(mapped.getValueJson());
+        entity.setReadable(mapped.isReadable());
+        entity.setWritable(mapped.isWritable());
+        entity.setUpdatedAt(mapped.getUpdatedAt());
+        entity.setHistoryEnabled(mapped.isHistoryEnabled());
+        entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
+        entity.setHistorySampleMode(mapped.getHistorySampleMode());
+        entity.setIncludePreviousValueInEvent(mapped.isIncludePreviousValueInEvent());
+        entity.setStorageMode(mapped.getStorageMode());
+        entity.setTelemetryPublishMode(mapped.getTelemetryPublishMode());
+        entity.setReadRolesJson(mapped.getReadRolesJson());
+        entity.setWriteRolesJson(mapped.getWriteRolesJson());
     }
 
     @Transactional
