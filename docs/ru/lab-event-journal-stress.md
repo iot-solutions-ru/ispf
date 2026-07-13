@@ -7,6 +7,8 @@
 **Где запускать:** выделенный lab-хост (SSH с рабочей станции; HTTP через nginx).
 **Шаблоны:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) и gitignored `deploy/lab-*` на машине оператора.
 
+**Split topology (I-03 ordered suite):** см. **[lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md)** — ISPF на `198.51.100.11`, Mosquitto + Scylla на `198.51.100.10`; скрипты `lab-single-mqtt-event-journal-test.sh`, `lab-run-event-journal-peak.sh`, `lab-run-event-journal-400k.sh` в `examples/.../scripts/`.
+
 SSH-хост, порт, пользователь и ключ — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (подставьте на стенде; не коммитьте реальные значения).
 
 **Стек:** `~/ispf` — шаблоны из [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/)

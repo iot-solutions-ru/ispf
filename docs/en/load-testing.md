@@ -244,6 +244,20 @@ Ordered suite id: `I-02-mqtt-gateway`. Primary PASS metric: **`variableHistoryFl
 
 **Gateway scale (50k):** eager seed + benchmark — scripts in gitignored `deploy/lab-*` (on lab hosts under `~/ispf`); **100k msg/s** — `lab-tune-gateway-100k.sh` + measure-only `lab-run-gateway-100k-measure.sh` (after recreate use `--ensure-driver-only`). Committed addresses: `198.51.100.x`. Details: [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md#gateway-scale-50k-eager-split-lab).
 
+### Lab event journal ingress (scenario I-03)
+
+**N× mqtt driver → `EVENT_JOURNAL_ONLY` → `fireIngress` → Scylla `event_history`** on split topology. Full runbook: **[lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md)**.
+
+Ordered suite id: `I-03-mqtt-event-journal`. Primary PASS metric: **`eventsFiredTotal`** / **`eventJournalFlushedTotal`** delta (not Scylla `COUNT(*)` after peak). Committed scripts: [`examples/lab-mqtt-historian-stress/scripts/`](../../examples/lab-mqtt-historian-stress/scripts/) (`lab-single-mqtt-event-journal-test.sh`, `lab-run-event-journal-peak.sh`, `lab-run-event-journal-400k.sh`). Seed helper: gitignored `deploy/setup-mqtt-event-journal-devices.py`.
+
+| Mode | Typical eventsFired (split lab 0.9.144) |
+|------|----------------------------------------|
+| Smoke (4×500) | ~250/s |
+| Peak per-topic (16×32k) | **~319k/s** |
+| 400k fan-out (16 subs, 1 topic) | **~403k/s** |
+
+Per-topic load tops out ~330–345k/s on this stand; **≥400k** needs MQTT broker fan-out (`lab-run-event-journal-400k.sh`).
+
 Real broker `mqtt-broker.example.invalid` — see subscribe mode below; MQTT credentials required.
 
 ### Coalesce sweep (historian)

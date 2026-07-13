@@ -182,6 +182,7 @@ docker compose --env-file lab-stress.env -f lab-test-host-compose.yml \
 
 - [load-testing](load-testing.md) — общие MQTT / historian сценарии
 - [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) — I-02 gateway dispatch → child historian
+- [lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md) — I-03 EVENT_JOURNAL_ONLY → журнал Scylla (smoke / peak / 400k fan-out)
 - [lab-event-journal-stress](lab-event-journal-stress.md) — EVENT_JOURNAL_ONLY (события/с, не сэмплы)
 - [variable-history](variable-history.md) — модель historian и stores
 - [demostands](demostands.md) — профили развёртывания prod
