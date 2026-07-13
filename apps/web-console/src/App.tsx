@@ -582,10 +582,9 @@ function AppShell() {
 
   if (shouldOpenOperatorShell(session, appMode)) {
     const rawOperatorAppId = resolveOperatorAppId(session, searchParams);
-    const operatorAppId =
-      rawOperatorAppId && operatorAppsQuery.data?.length
-        ? resolveRegistryOperatorAppId(rawOperatorAppId, operatorAppsQuery.data)
-        : rawOperatorAppId;
+    const operatorAppId = rawOperatorAppId
+      ? resolveRegistryOperatorAppId(rawOperatorAppId, operatorAppsQuery.data ?? [])
+      : rawOperatorAppId;
     return (
       <Suspense fallback={<LazyFallback />}>
         <OperatorView

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   operatorAppIdCandidates,
+  preferCanonicalOperatorAppId,
   resolveOperatorAppId,
   resolveOperatorAppIdFromPath,
 } from "./operatorAppsPath";
@@ -13,6 +14,11 @@ describe("operatorAppsPath", () => {
 
   it("maps bundle visual group leaf to registry app id", () => {
     expect(resolveOperatorAppId("bundle-it-infra-monitoring", apps)).toBe("it-infra-monitoring");
+  });
+
+  it("strips bundle prefix even when registry is empty", () => {
+    expect(resolveOperatorAppId("bundle-it-infra-monitoring", [])).toBe("it-infra-monitoring");
+    expect(preferCanonicalOperatorAppId("bundle-it-infra-monitoring")).toBe("it-infra-monitoring");
   });
 
   it("resolves from operator-apps tree path with bundle prefix", () => {

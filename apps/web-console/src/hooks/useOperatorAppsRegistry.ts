@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { fetchOperatorApps, fetchOperatorAppUi } from "../api/operatorApps";
 import { getAuthHeaders } from "../auth/session";
 import { fetchWithIngressFallback } from "../utils/ingressFetch";
+import { operatorAppIdCandidates } from "../utils/operatorAppsPath";
 import type { OperatorUi } from "../types/operatorUi";
 
 const BUNDLE_API_PATHS = ["operator-ui", "hmi-ui"] as const;
@@ -32,11 +33,19 @@ async function loadUiFromBundleApi(appId: string): Promise<OperatorUi | null> {
 }
 
 export async function loadOperatorAppUi(appId: string): Promise<OperatorUi | null> {
-  const fromPlatformApi = await fetchOperatorAppUi(appId);
-  if (fromPlatformApi) {
-    return fromPlatformApi;
+  // Prefer canonical id (without bundle-) first so visual-group leaves resolve to operator-apps.
+  const candidates = [...operatorAppIdCandidates(appId)].reverse();
+  for (const candidate of candidates) {
+    const fromPlatformApi = await fetchOperatorAppUi(candidate);
+    if (fromPlatformApi) {
+      return fromPlatformApi;
+    }
+    const fromBundle = await loadUiFromBundleApi(candidate);
+    if (fromBundle) {
+      return fromBundle;
+    }
   }
-  return loadUiFromBundleApi(appId);
+  return null;
 }
 
 export function useOperatorAppsRegistry(currentUi?: OperatorUi) {

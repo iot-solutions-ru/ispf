@@ -24,16 +24,29 @@ export function operatorAppLeafFromPath(path: string): string | null {
 }
 
 export function operatorAppIdCandidates(pathLeaf: string): string[] {
-  const candidates = [pathLeaf];
-  if (pathLeaf.startsWith(BUNDLE_VISUAL_GROUP_PREFIX)) {
-    candidates.push(pathLeaf.slice(BUNDLE_VISUAL_GROUP_PREFIX.length));
+  const trimmed = pathLeaf.trim();
+  if (!trimmed) {
+    return [];
+  }
+  const candidates = [trimmed];
+  if (trimmed.startsWith(BUNDLE_VISUAL_GROUP_PREFIX)) {
+    const withoutBundle = trimmed.slice(BUNDLE_VISUAL_GROUP_PREFIX.length).trim();
+    if (withoutBundle) {
+      candidates.push(withoutBundle);
+    }
   }
   return candidates;
 }
 
+/** Prefer canonical app id: strip bundle- visual-group prefix when registry is unavailable. */
+export function preferCanonicalOperatorAppId(pathLeaf: string): string {
+  const candidates = operatorAppIdCandidates(pathLeaf);
+  return candidates[candidates.length - 1] ?? pathLeaf.trim();
+}
+
 export function resolveOperatorAppId(
   pathLeaf: string,
-  apps: { appId: string }[]
+  apps: { appId: string }[] = []
 ): string {
   for (const candidate of operatorAppIdCandidates(pathLeaf)) {
     const exact = apps.find((app) => app.appId === candidate);
@@ -47,7 +60,8 @@ export function resolveOperatorAppId(
       return sanitized.appId;
     }
   }
-  return pathLeaf;
+  // Tree leaf is often bundle-{appId}; do not keep the visual-group prefix as the API id.
+  return preferCanonicalOperatorAppId(pathLeaf);
 }
 
 /** Resolve registry app id from an operator-apps tree path. */
