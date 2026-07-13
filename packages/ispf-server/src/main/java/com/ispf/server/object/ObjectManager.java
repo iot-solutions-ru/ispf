@@ -471,18 +471,16 @@ public class ObjectManager {
     }
 
     /**
-     * Fast-path ingress (event journal / historian-only): still materialize the latest live value
-     * so poll/API reads observe driver updates without the full telemetry bus pipeline.
+     * Fast-path ingress (event journal / historian-only): skip RAM live-value update — downstream
+     * async stores do not need object-tree computed value per tick.
      */
     private Variable resolveDriverTelemetryVariable(String path, String name, DataRecord value) {
         PlatformObject node = objectTree.require(path);
-        Variable variable = node.getVariable(name).orElseGet(() -> {
+        return node.getVariable(name).orElseGet(() -> {
             Variable created = new Variable(name, value.schema(), true, false, null);
             node.addVariable(created);
             return created;
         });
-        variable.setComputedValue(value);
-        return variable;
     }
 
     public Variable setDriverTelemetryValueDirect(String path, String name, DataRecord value) {
@@ -1218,6 +1216,10 @@ public class ObjectManager {
             entity.setUpdatedAt(mapped.getUpdatedAt());
             entity.setHistoryEnabled(mapped.isHistoryEnabled());
             entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
+            entity.setHistorySampleMode(mapped.getHistorySampleMode());
+            entity.setIncludePreviousValueInEvent(mapped.isIncludePreviousValueInEvent());
+            entity.setStorageMode(mapped.getStorageMode());
+            entity.setTelemetryPublishMode(mapped.getTelemetryPublishMode());
             entity.setReadRolesJson(mapped.getReadRolesJson());
             entity.setWriteRolesJson(mapped.getWriteRolesJson());
             variableRepository.save(entity);
