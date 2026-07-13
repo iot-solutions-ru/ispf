@@ -35,6 +35,7 @@ public class RuntimeTelemetryCoalescer {
     private final ObjectChangePublicationService publicationService;
     private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
     private final TelemetryHistorianFastPath historianFastPath;
+    private final TelemetryIngressDispatcher telemetryIngressDispatcher;
     private ScheduledThreadPoolExecutor scheduler;
     private ElasticWorkerScaler schedulerScaler;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
@@ -47,13 +48,15 @@ public class RuntimeTelemetryCoalescer {
             DeviceTelemetryPolicyService policyService,
             ObjectChangePublicationService publicationService,
             @Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch,
-            @Lazy TelemetryHistorianFastPath historianFastPath
+            @Lazy TelemetryHistorianFastPath historianFastPath,
+            @Lazy TelemetryIngressDispatcher telemetryIngressDispatcher
     ) {
         this.properties = properties;
         this.policyService = policyService;
         this.publicationService = publicationService;
         this.gatewayIngressDispatch = gatewayIngressDispatch;
         this.historianFastPath = historianFastPath;
+        this.telemetryIngressDispatcher = telemetryIngressDispatcher;
     }
 
     public synchronized void ensureSchedulerStarted() {
@@ -106,8 +109,7 @@ public class RuntimeTelemetryCoalescer {
             publishIfChanged(path, variableName, value, coalesceKey, observedAt);
             return;
         }
-        if (policyService.historySampleMode(path, variableName) == HistorySampleMode.CHANGES_ONLY
-                && DataRecordValues.equal(lastPublished.get(coalesceKey), value)) {
+        if (suppressUnchangedSample(path, variableName, value, coalesceKey)) {
             return;
         }
         if (!properties.isEnabled()) {
@@ -121,6 +123,7 @@ public class RuntimeTelemetryCoalescer {
     }
 
     public void flushNow() {
+        telemetryIngressDispatcher.flushNow();
         flushAll();
         gatewayIngressDispatch.flushNow();
     }
@@ -229,11 +232,10 @@ public class RuntimeTelemetryCoalescer {
             String coalesceKey,
             Instant observedAt
     ) {
-        DataRecord last = lastPublished.get(coalesceKey);
-        if (policyService.historySampleMode(path, variableName) == HistorySampleMode.CHANGES_ONLY
-                && DataRecordValues.equal(last, value)) {
+        if (suppressUnchangedSample(path, variableName, value, coalesceKey)) {
             return;
         }
+        DataRecord last = lastPublished.get(coalesceKey);
         DataRecord previous = policyService.includePreviousValueInEvent(path, variableName) ? last : null;
         DataRecord eventValue = policyService.includePreviousValueInEvent(path, variableName) ? value : null;
         lastPublished.put(coalesceKey, value);
@@ -244,6 +246,26 @@ public class RuntimeTelemetryCoalescer {
             return;
         }
         publicationService.publishVariableChange(path, variableName, observedAt, eventValue, previous);
+    }
+
+    /**
+     * {@link HistorySampleMode#CHANGES_ONLY} suppresses historian churn on duplicate payloads, but
+     * {@link com.ispf.server.driver.TelemetryPublishMode#FULL} automation (bindings, alerts) still
+     * needs object-change ticks — same rationale as gateway child {@code ALL_VALUES} override.
+     */
+    private boolean suppressUnchangedSample(
+            String path,
+            String variableName,
+            DataRecord value,
+            String coalesceKey
+    ) {
+        if (policyService.historySampleMode(path, variableName) != HistorySampleMode.CHANGES_ONLY) {
+            return false;
+        }
+        if (!DataRecordValues.equal(lastPublished.get(coalesceKey), value)) {
+            return false;
+        }
+        return !policyService.automationEligible(path, variableName);
     }
 
     private String resolveCoalesceKey(String path, String variableName, DataRecord value) {

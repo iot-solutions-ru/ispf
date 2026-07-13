@@ -25,6 +25,9 @@ class RuntimeTelemetryCoalescerIdleTest {
     @Mock
     private TelemetryHistorianFastPath historianFastPath;
 
+    @Mock
+    private TelemetryIngressDispatcher telemetryIngressDispatcher;
+
     private RuntimeTelemetryCoalescer coalescer;
 
     @AfterEach
@@ -41,7 +44,8 @@ class RuntimeTelemetryCoalescerIdleTest {
         properties.setCoalesceEnabled(true);
         DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         coalescer = new RuntimeTelemetryCoalescer(
-                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
+                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
+                telemetryIngressDispatcher
         );
 
         assertThat(coalescer.isSchedulerStarted()).isFalse();

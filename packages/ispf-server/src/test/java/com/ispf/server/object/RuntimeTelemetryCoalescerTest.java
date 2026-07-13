@@ -44,6 +44,9 @@ class RuntimeTelemetryCoalescerTest {
     @Mock
     private com.ispf.server.history.TelemetryHistorianFastPath historianFastPath;
 
+    @Mock
+    private TelemetryIngressDispatcher telemetryIngressDispatcher;
+
     private RuntimeTelemetryCoalescer coalescer;
 
     @AfterEach
@@ -90,7 +93,8 @@ class RuntimeTelemetryCoalescerTest {
         org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor")).thenReturn(false);
         stubDefaultPolicyService(1_000, false, false);
         coalescer = new RuntimeTelemetryCoalescer(
-                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
+                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
+                telemetryIngressDispatcher
         );
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
 
@@ -101,8 +105,10 @@ class RuntimeTelemetryCoalescerTest {
     }
 
     @Test
-    void skipsUnchangedValues() {
+    void skipsUnchangedValuesWhenAutomationNotEligible() {
         coalescer = newCoalescer(true, 1_000);
+        org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor", "temperature"))
+                .thenReturn(false);
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
         DataRecord value = record(schema, 42.0);
 
@@ -114,6 +120,27 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.flushNow();
 
         verifyNoInteractions(publicationService);
+    }
+
+    @Test
+    void publishesUnchangedValuesForFullModeAutomation() {
+        coalescer = newCoalescer(true, 1_000);
+        org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor", "temperature"))
+                .thenReturn(true);
+        DataSchema schema = DataSchema.builder("temperature")
+                .field("raw", FieldType.STRING)
+                .build();
+        DataRecord value = DataRecord.single(schema, Map.of("raw", "25.0"));
+
+        coalescer.recordUpdate("root.dev.sensor", "temperature", value);
+        coalescer.flushNow();
+        clearInvocations(publicationService);
+
+        coalescer.recordUpdate("root.dev.sensor", "temperature", value);
+        coalescer.flushNow();
+
+        verify(publicationService, times(1)).publishVariableChange(
+                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -278,7 +305,8 @@ class RuntimeTelemetryCoalescerTest {
         properties.setCoalesceEnabled(coalesceEnabled);
         stubDefaultPolicyService(coalesceMs, ingressTopicLanes, ingressPayloadLanes);
         return new RuntimeTelemetryCoalescer(
-                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
+                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
+                telemetryIngressDispatcher
         ) {{
             ensureSchedulerStarted();
         }};
@@ -287,6 +315,10 @@ class RuntimeTelemetryCoalescerTest {
     private void stubDefaultPolicyService(long coalesceMs, boolean ingressTopicLanes, boolean ingressPayloadLanes) {
         org.mockito.Mockito.when(policyService.coalesceMs(org.mockito.ArgumentMatchers.anyString())).thenReturn(coalesceMs);
         org.mockito.Mockito.when(policyService.automationEligible(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+        org.mockito.Mockito.when(policyService.automationEligible(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString()
+        )).thenReturn(true);
         org.mockito.Mockito.when(policyService.ingressTopicLanes(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(ingressTopicLanes);
         org.mockito.Mockito.when(policyService.ingressPayloadLanes(org.mockito.ArgumentMatchers.anyString()))

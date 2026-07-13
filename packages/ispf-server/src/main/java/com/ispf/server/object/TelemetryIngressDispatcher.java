@@ -182,8 +182,8 @@ public class TelemetryIngressDispatcher {
         drainAllRemaining();
     }
 
-    /** For tests. */
-    void flushNow() {
+    /** For tests and graceful shutdown — drains L3 ingress queue then L4 pending coalesce. */
+    public void flushNow() {
         drainAllRemaining();
     }
 
