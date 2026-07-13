@@ -1,0 +1,12 @@
+{
+  "packId": "ispf-driver-ingress-syslog",
+  "licenseType": "Apache-2.0",
+  "minPlatformVersion": "0.9.32",
+  "jarFile": "ispf-driver-ingress-syslog.jar",
+  "drivers": [
+    {
+      "driverId": "ingress-syslog",
+      "driverClass": "com.ispf.driver.ingress.syslog.SyslogIngressDeviceDriver"
+    }
+  ]
+}

@@ -34,6 +34,9 @@ import org.snmp4j.security.SecurityProtocols;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -228,24 +231,32 @@ public class SnmpDeviceDriver implements DeviceDriver {
         }
         points.clear();
         Instant observedAt = DriverPollTimestamps.pollTick();
+        List<Map.Entry<String, SnmpPoint>> entries = new ArrayList<>(pointMappings.size());
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             SnmpPoint point = SnmpPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            try {
-                DataRecord record = getOid(point);
-                driverObject.updateVariable(entry.getKey(), record, observedAt);
-            } catch (DriverException e) {
-                if (point.optional()) {
-                    if (optionalOidWarnings.add(entry.getKey())) {
-                        driverObject.log(
-                                DeviceDriver.DriverLogLevel.DEBUG,
-                                "Optional SNMP point " + entry.getKey() + " (" + point.oid() + "): " + e.getMessage()
-                        );
-                    }
-                    continue;
-                }
-                throw e;
+            entries.add(Map.entry(entry.getKey(), point));
+        }
+
+        Map<String, DataRecord> batch = getOidsBatch(entries);
+        for (Map.Entry<String, SnmpPoint> entry : entries) {
+            String pointId = entry.getKey();
+            SnmpPoint point = entry.getValue();
+            DataRecord record = batch.get(pointId);
+            if (record != null) {
+                driverObject.updateVariable(pointId, record, observedAt);
+                continue;
             }
+            if (point.optional()) {
+                if (optionalOidWarnings.add(pointId)) {
+                    driverObject.log(
+                            DeviceDriver.DriverLogLevel.DEBUG,
+                            "Optional SNMP point " + pointId + " (" + point.oid() + ") unavailable"
+                    );
+                }
+                continue;
+            }
+            throw new DriverException("SNMP GET missing value for point " + pointId + " (" + point.oid() + ")");
         }
     }
 
@@ -260,6 +271,44 @@ public class SnmpDeviceDriver implements DeviceDriver {
         }
         setOid(point, SnmpValueMapper.fromRecord(value, point.valueKind()));
         driverObject.updateVariable(pointId, getOid(point), DriverPollTimestamps.pollTick());
+    }
+
+    private Map<String, DataRecord> getOidsBatch(List<Map.Entry<String, SnmpPoint>> entries) throws DriverException {
+        if (entries.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            PDU pdu = new PDU();
+            pdu.setType(PDU.GET);
+            for (Map.Entry<String, SnmpPoint> entry : entries) {
+                pdu.add(new VariableBinding(new OID(entry.getValue().oid())));
+            }
+
+            ResponseEvent event = snmp.send(pdu, target);
+            if (event == null || event.getResponse() == null) {
+                throw new DriverException("SNMP GET timeout (batch size " + entries.size() + ")");
+            }
+            PDU response = event.getResponse();
+            if (response.getErrorStatus() != PDU.noError) {
+                throw new DriverException("SNMP GET batch error: " + response.getErrorStatusText());
+            }
+
+            Map<String, DataRecord> results = new LinkedHashMap<>();
+            int bindings = Math.min(response.size(), entries.size());
+            for (int i = 0; i < bindings; i++) {
+                VariableBinding binding = response.get(i);
+                if (binding == null || binding.getVariable() == null || binding.getVariable() instanceof Null) {
+                    continue;
+                }
+                Map.Entry<String, SnmpPoint> entry = entries.get(i);
+                results.put(entry.getKey(), SnmpValueMapper.toRecord(binding.getVariable(), entry.getValue().valueKind()));
+            }
+            return results;
+        } catch (DriverException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DriverException("SNMP GET batch failed", e);
+        }
     }
 
     private DataRecord getOid(SnmpPoint point) throws DriverException {
