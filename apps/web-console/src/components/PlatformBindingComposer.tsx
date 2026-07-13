@@ -55,7 +55,7 @@ function ParamField({
           className="mono"
           value={value}
           disabled={disabled}
-          placeholder="@/oqSpec"
+          placeholder={t("platformBindings.oqSpecPlaceholder")}
           onChange={(event) => onChange(event.target.value)}
         />
         <button

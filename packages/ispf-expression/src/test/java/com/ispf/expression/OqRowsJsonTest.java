@@ -15,6 +15,6 @@ class OqRowsJsonTest {
                 Map.of("path", "root.a", "count", 2),
                 Map.of("path", "root.b", "name", "x\"y")
         ));
-        assertThat(json).isEqualTo("[{\"path\":\"root.a\",\"count\":2},{\"path\":\"root.b\",\"name\":\"x\\\"y\"}]");
+        assertThat(json).isEqualTo("[{\"count\":2,\"path\":\"root.a\"},{\"name\":\"x\\\"y\",\"path\":\"root.b\"}]");
     }
 }

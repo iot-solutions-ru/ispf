@@ -355,11 +355,11 @@ export default function EditDescriptorDialog({
             <label>
               {t("common:field.level")}
               <select value={level} onChange={(e) => setLevel(e.target.value)}>
-                <option value="DEBUG">DEBUG</option>
-                <option value="INFO">INFO</option>
-                <option value="WARNING">WARNING</option>
-                <option value="ERROR">ERROR</option>
-                <option value="CRITICAL">CRITICAL</option>
+                <option value="DEBUG">{t("common:logLevel.debug")}</option>
+                <option value="INFO">{t("common:logLevel.info")}</option>
+                <option value="WARNING">{t("common:logLevel.warning")}</option>
+                <option value="ERROR">{t("common:logLevel.error")}</option>
+                <option value="CRITICAL">{t("common:logLevel.critical")}</option>
               </select>
             </label>
           )}
@@ -416,7 +416,7 @@ export default function EditDescriptorDialog({
                   <input
                     value={dataSourcePath}
                     onChange={(e) => setDataSourcePath(e.target.value)}
-                    placeholder="root.platform.data-sources.app_myapp"
+                    placeholder={t("descriptor.dataSourcePathPlaceholder")}
                   />
                 </label>
               )}

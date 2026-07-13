@@ -23,7 +23,10 @@ public final class OqRowsJson {
     private static String encodeObject(Map<String, Object> row) {
         StringBuilder sb = new StringBuilder("{");
         int i = 0;
-        for (Map.Entry<String, Object> entry : row.entrySet()) {
+        var entries = row.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .toList();
+        for (Map.Entry<String, Object> entry : entries) {
             if (i++ > 0) {
                 sb.append(',');
             }

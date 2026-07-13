@@ -96,12 +96,6 @@
     "text": "LOW"
   },
   {
-    "file": "components/BindingActivatorsEditor.tsx",
-    "line": 111,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.foo"
-  },
-  {
     "file": "components/BrickMetadataPanel.tsx",
     "line": 143,
     "kind": "ui-attr",
@@ -280,42 +274,6 @@
     "line": 113,
     "kind": "jsx-text",
     "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
-  },
-  {
-    "file": "components/EditDescriptorDialog.tsx",
-    "line": 281,
-    "kind": "jsx-text",
-    "text": "DEBUG"
-  },
-  {
-    "file": "components/EditDescriptorDialog.tsx",
-    "line": 282,
-    "kind": "jsx-text",
-    "text": "INFO"
-  },
-  {
-    "file": "components/EditDescriptorDialog.tsx",
-    "line": 283,
-    "kind": "jsx-text",
-    "text": "WARNING"
-  },
-  {
-    "file": "components/EditDescriptorDialog.tsx",
-    "line": 284,
-    "kind": "jsx-text",
-    "text": "ERROR"
-  },
-  {
-    "file": "components/EditDescriptorDialog.tsx",
-    "line": 285,
-    "kind": "jsx-text",
-    "text": "CRITICAL"
-  },
-  {
-    "file": "components/EditDescriptorDialog.tsx",
-    "line": 339,
-    "kind": "ui-attr",
-    "text": "root.platform.data-sources.app_myapp"
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",

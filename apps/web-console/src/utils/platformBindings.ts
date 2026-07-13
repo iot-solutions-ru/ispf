@@ -120,6 +120,15 @@ export function buildPlatformBindingExpression(
     const fnRef = `${path}/fn/${fn}`;
     return input ? `call(${fnRef}, @/${input})` : `call(${fnRef})`;
   }
+  if (entry.id === "fireRef") {
+    const ref = values.ref?.trim();
+    if (ref) {
+      if (ref.startsWith("@") || ref.includes("/")) {
+        return `fire(${ref})`;
+      }
+      return `fire(@/evt/${ref})`;
+    }
+  }
   if (entry.id === "avgHistorian") {
     const source = formatHistorianSourceRef(values.source ?? "", ctx.objectPath);
     const window = values.windowBucket?.trim() || "5m";
@@ -366,6 +375,13 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
       { key: "ref", kind: "var", labelKey: "platformBindings.param.ref" },
       { key: "value", kind: "number", labelKey: "platformBindings.param.value", default: "0" },
     ],
+  },
+  {
+    id: "fireRef",
+    name: "fire",
+    snippet: "fire(@/evt/alarmRaised)",
+    category: "cross",
+    params: [{ key: "ref", kind: "var", labelKey: "platformBindings.param.eventRef" }],
   },
   {
     id: "callRef",
