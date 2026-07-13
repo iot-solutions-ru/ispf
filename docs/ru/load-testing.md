@@ -162,6 +162,8 @@ DEVICES=16 RATE_PER_DEVICE=31250 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MA
 
 Id в ordered suite: `I-02-mqtt-gateway`. Главная метрика PASS: дельта **`variableHistoryFlushedTotal`** (не `sampleCount` после тяжёлых прогонов I-01). Loadtest выставляет `historySampleMode=ALL_VALUES` на child при `NUMERIC_PAYLOAD`.
 
+**Gateway scale (50k):** eager seed + benchmark — скрипты в gitignored `deploy/lab-*` (на lab-хосте `~/ispf`); **100k msg/s** — `lab-tune-gateway-100k.sh` + measure-only `lab-run-gateway-100k-measure.sh` (после recreate — `--ensure-driver-only`). Адреса в git: `198.51.100.x`. Подробно: [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md#gateway-scale-50k-eager-split-lab).
+
 Реальный брокер `mqtt-broker.example.invalid` — см. subscribe mode ниже; нужны MQTT credentials.
 
 ### Объединение развертки (историк)

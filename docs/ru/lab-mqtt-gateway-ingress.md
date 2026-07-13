@@ -112,6 +112,119 @@ python deploy/run_lab_ordered_suite.py --topology single --only I-02 --reset sof
 
 Абсолютные samples/s зависят от железа и профиля stress; таблица — ориентир для регрессии на **одном** lab, не SLA прода.
 
+## Gateway scale (50k eager, split lab)
+
+Сценарий **1× mqtt-gateway → 50k pre-instantiated child sensors → `dispatchTelemetry` → historian** (2 метрики: `temperature`, `humidity`). Оркестратор на хосте приложения; emqtt на loadgen.
+
+**Анонимизация (git):** в коммите — только RFC 5737 адреса (`198.51.100.x`, см. [`examples/lab-mqtt-historian-stress/env/lab-loadgen.env`](../../examples/lab-mqtt-historian-stress/env/lab-loadgen.env)) и плейсхолдеры. Скрипты gateway scale (`deploy/lab-*`, `deploy/setup-mqtt-gateway-scale-devices.py`, `deploy/mqtt_loadtest_lib.py`) — **gitignored**; реальные SSH/хосты/пароли остаются локально на машине оператора. Перед push: `python deploy/tools/anonymize-repo.py` ([documentation-audit](documentation-audit.md#anonymization-policy-public-docs)).
+
+**Обязательно на ISPF:** `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=0` (иначе debounce 5000 ms режет throughput).
+
+**`MESSAGES_PER_SECOND`** — **суммарный** rate на все топики, не на устройство. При 50k×2 метрик = 100k топиков: `MESSAGES_PER_SECOND=100000` ≈ 2 msg/s на устройство (1 Hz на метрику).
+
+### Первичный seed (hard reset)
+
+```bash
+cd ~/ispf
+# скрипты — копия из gitignored deploy/lab-* на lab-хосте
+RESET_MODE=hard INSTANCES=50000 SEED_PARALLEL_WORKERS=8 \
+  MESSAGES_PER_SECOND=10000 WARMUP=60 PHASE=120 EMQTT_SHARD_MAX=32 \
+  bash lab-gateway-scale-run-from-loadgen.sh
+```
+
+### Measure-only (дерево уже seeded)
+
+Не пересоздавайте gateway и 50k child'ов — только restart driver + benchmark:
+
+```bash
+cd ~/ispf
+# API wait + --ensure-driver-only + stabilize 90s + emqtt measure
+bash lab-run-gateway-100k-measure.sh
+```
+
+Или вручную на loadgen (без ensure driver на app host):
+
+```bash
+EMQTT_LOCAL=1 SKIP_SEED=1 INSTANCES=50000 MESSAGES_PER_SECOND=100000 \
+  WARMUP=60 PHASE=120 EMQTT_SHARD_MAX=64 \
+  ISPF_LAB_API_BASE=http://198.51.100.11:8000 bash lab-single-mqtt-50k-gateway-test.sh
+```
+
+### Тюнинг 100k msg/s + recreate
+
+Патч `lab-stress.env`, `docker compose recreate ispf-server`. Compose **обязан** видеть пароль PG — подключайте **`lab-db.env`** (там `ISPF_DB_PASSWORD`, gitignored):
+
+```bash
+cd ~/ispf
+bash lab-tune-gateway-100k.sh          # tune + recreate + API wait
+bash lab-run-gateway-100k-measure.sh   # measure-only (не re-seed)
+# или одной командой:
+bash lab-run-gateway-100k-v3.sh
+```
+
+Ключевые env (v2/v3, lab 0.9.144):
+
+| Ключ | v1 | v2 | v3 |
+|------|----|----|-----|
+| `INGRESS_DISPATCH_THREADS_MAX` | 64 | 96 | **128** |
+| `WRITER_THREADS_MAX` | 64 | 96 | **128** |
+| `CASSANDRA_PARALLEL_BATCHES` | — | 128 | **128** |
+| `MQTT_CALLBACK_THREADS` | 256 | 256 | **256** |
+| Общее | `INGRESS_DISPATCH_COALESCE=false`, `INGRESS_BYPASS_L3=true`, `MIN_INTERVAL_MS=0`, `OVERFLOW_COALESCE=false` | | |
+
+### Результаты (lab 0.9.144, split topology, Jul 2026)
+
+| Этап | Target | Mosquitto RX | Historian flushed | Queue | Итог |
+|------|--------|--------------|-------------------|-------|------|
+| 10k baseline | 10k msg/s | ~11,2k | ~22,4k samples/s | ~0 | PASS |
+| 100k defaults | 100k msg/s | ~109,5k | ~37,5k | ~0 | FAIL |
+| v1 tune (64 workers) | 100k | ~109,4k | ~91,7k | 8M | PASS |
+| v2 tune (96 workers) | 100k | ~109,4k | ~94,6k | 8M→5,5M (60s drain) | PASS |
+| **v3 tune (128 workers)** | 100k | **~109,5k** | **~84,0k** | **8M→0** (120s drain) | **PASS** |
+
+| Параметр | Значение |
+|----------|----------|
+| Child instances | 50 000 (eager) |
+| MQTT topics | 100 000 (2 metrics) |
+| Seed workers | **8** (16+ перегружает nginx/API) |
+| emqtt shards | 32 (10k) / **64** (100k) |
+| PASS | flushed ≥ 25% цели × metrics; mosquitto rx ≥ 25% цели; `failed_workers=0` в emqtt log |
+
+Оставшийся gap (~84–95k flushed vs ~109k MQTT): historian writer + Scylla ingest; очередь 8M — рычаги `WRITER_THREADS_MAX`, `CASSANDRA_PARALLEL_BATCHES`, partition batches.
+
+### После `recreate ispf-server`
+
+Драйвер gateway **не** переподключается сам → historian **0** при живом Mosquitto RX.
+
+**Правильно:** `--ensure-driver-only` (restart driver, без delete/create дерева):
+
+```bash
+python3 loadtest/setup-mqtt-gateway-scale-devices.py \
+  --instances 50000 --telemetry-coalesce-ms 0 \
+  --base-url http://127.0.0.1:8000 \
+  --broker-url "tcp://${ISPF_MQTT_BROKER_HOST}:${ISPF_MQTT_BROKER_PORT}" \
+  --ensure-driver-only
+sleep 90   # stabilize перед measure
+```
+
+**Неправильно:** `--skip-cleanup` без `--eager` на «холодном» API сразу после recreate — nginx может отдать **502**, а старый код пытался `_create_object` заново.
+
+Скрипт `lab-run-gateway-100k-measure.sh` делает API wait (до 60×5s) + `--ensure-driver-only` + stabilize 90s.
+
+### Подводные камни (gateway scale)
+
+| Проблема | Симптом | Решение |
+|----------|---------|---------|
+| Устаревший `mqtt-emqtt-bench.sh` на loadgen | ~400 msg/s, `failed_workers=8`, emqtt ~1 с | `lab-loadgen-sync.sh` или `REMOTE_FILES` в `lab-gateway-scale-run-from-loadgen.sh`; `chmod +x` |
+| API purge 30k+ instances | часы | `RESET_MODE=hard`, не `purge` |
+| 16+ parallel seed workers | Connection reset mid-seed | `SEED_PARALLEL_WORKERS=8` |
+| `recreate` без ensure driver | historian=0, mosquitto rx > 0 | `--ensure-driver-only` + 90s stabilize |
+| 502 сразу после recreate | setup падает на `POST /objects` | API wait; не re-create gateway если уже есть |
+| PG password после compose | `password authentication failed` | `ISPF_DB_PASSWORD` из `lab-db.env` в compose (`lab-tune-gateway-100k.sh` копирует) |
+| CRLF в скриптах с Windows | `set: pipefail: invalid option` | `tr -d '\r'` на lab или pipe через `bash -s` |
+
+Ключевые файлы scale (**gitignored**, `deploy/`): `lab-gateway-scale-run-from-loadgen.sh`, `lab-single-mqtt-50k-gateway-test.sh`, `lab-tune-gateway-100k.sh`, `lab-run-gateway-100k-measure.sh`, `lab-run-gateway-100k-v3.sh`, `setup-mqtt-gateway-scale-devices.py`, `mqtt_loadtest_lib.py` (`--eager`, `--ensure-driver-only`).
+
 ## Связь с I-01 (historian stress)
 
 | | I-01 | I-02 |
@@ -134,6 +247,10 @@ python deploy/run_lab_ordered_suite.py --topology single --only I-02 --reset sof
 | `deploy/lab-single-soft-reset.py` | Soft reset + remote Scylla truncate |
 | `deploy/run_lab_ordered_suite.py` | Suite I-01…I-08; `SINGLE_LOADTEST_COMMON` с loadgen broker |
 | `deploy/lab-loadgen.env` | `ISPF_MQTT_BROKER_HOST`, `ISPF_LAB_LOADGEN_SSH` (локально, gitignored) |
+| `deploy/lab-tune-gateway-100k.sh` | Тюнинг env + recreate ispf-server (100k gateway) **(gitignored)** |
+| `deploy/lab-run-gateway-100k-measure.sh` | Measure-only: API wait + `--ensure-driver-only` + benchmark **(gitignored)** |
+| `deploy/lab-run-gateway-100k-v3.sh` | tune + measure (v3, 128 threads) **(gitignored)** |
+| `examples/lab-mqtt-historian-stress/env/lab-loadgen.env` | Анонимизированная топология split lab (в git) |
 
 Метрики: `GET /api/v1/platform/metrics` → `automation.variableHistoryFlushedTotal`, `variableHistory.flushedTotal`.
 

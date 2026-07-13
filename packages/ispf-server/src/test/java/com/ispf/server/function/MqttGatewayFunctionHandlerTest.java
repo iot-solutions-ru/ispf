@@ -1,6 +1,7 @@
 package com.ispf.server.function;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.application.script.PlatformScriptBridge;
@@ -158,6 +159,8 @@ class MqttGatewayFunctionHandlerTest {
         PlatformObject child = new PlatformObject("sensor", CHILD, ObjectType.CUSTOM, "Sensor", "", null);
         when(objectManager.require(GATEWAY)).thenReturn(gateway);
         when(objectManager.require(CHILD)).thenReturn(child);
+        when(telemetryPolicyService.historySampleMode(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(HistorySampleMode.ALL_VALUES);
         when(platformScriptBridge.instantiateModelIfMissing(
                 eq(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL),
                 eq(BlueprintCatalogRoots.INSTANCES),

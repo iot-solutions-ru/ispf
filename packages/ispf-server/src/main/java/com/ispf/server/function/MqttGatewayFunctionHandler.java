@@ -3,6 +3,7 @@ package com.ispf.server.function;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,6 +58,8 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
             .build();
 
     private static final Pattern DEFAULT_TOPIC_INDEX = Pattern.compile("ispf/loadtest/(\\d+)/temperature");
+
+    private final Set<String> gatewayChildHistorianPrimed = ConcurrentHashMap.newKeySet();
 
     private final ObjectManager objectManager;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
@@ -146,6 +151,7 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
         }
 
         String variableName = route.get().variableName();
+        ensureGatewayChildHistorianSampleMode(childPath, variableName);
         DataRecord measurement = DataRecord.single(
                 measurementSchema(variableName),
                 Map.of("value", parsed.get(), "unit", unitForVariable(variableName))
@@ -201,6 +207,27 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
             objectManager.syncPathFromDatabase(childPath);
             objectManager.require(childPath);
         }
+    }
+
+    /** Bench payloads are constant; gateway lazy children need ALL_VALUES (not CHANGES_ONLY from platform model). */
+    private void ensureGatewayChildHistorianSampleMode(String childPath, String variableName) {
+        String key = childPath + "|" + variableName;
+        if (!gatewayChildHistorianPrimed.add(key)) {
+            return;
+        }
+        if (telemetryPolicyService.historySampleMode(childPath, variableName) == HistorySampleMode.ALL_VALUES) {
+            return;
+        }
+        objectManager.updateVariableHistory(
+                childPath,
+                variableName,
+                true,
+                null,
+                null,
+                HistorySampleMode.ALL_VALUES,
+                null,
+                null
+        );
     }
 
     private static final Pattern JSON_VALUE_FIELD =

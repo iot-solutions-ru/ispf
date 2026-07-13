@@ -242,6 +242,8 @@ Lab uses `minIntervalMs=0`, ingress coalesce off, 8M historian queue, numeric pa
 
 Ordered suite id: `I-02-mqtt-gateway`. Primary PASS metric: **`variableHistoryFlushedTotal`** delta (not `sampleCount` after large I-01 runs). Loadtest sets `historySampleMode=ALL_VALUES` on child sensors when using `NUMERIC_PAYLOAD`.
 
+**Gateway scale (50k):** eager seed + benchmark — scripts in gitignored `deploy/lab-*` (on lab hosts under `~/ispf`); **100k msg/s** — `lab-tune-gateway-100k.sh` + measure-only `lab-run-gateway-100k-measure.sh` (after recreate use `--ensure-driver-only`). Committed addresses: `198.51.100.x`. Details: [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md#gateway-scale-50k-eager-split-lab).
+
 Real broker `mqtt-broker.example.invalid` — see subscribe mode below; MQTT credentials required.
 
 ### Coalesce sweep (historian)

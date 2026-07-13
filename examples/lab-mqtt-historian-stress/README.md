@@ -48,6 +48,8 @@ DEVICES=16 RATE_PER_DEVICE=15625 PHASE=90 WARMUP=20 INTERVAL_MS=1 EMQTT_SHARD_MA
 
 ClickHouse store: swap `lab-stress.env` → `lab-stress-ch.env`, run `lab-single-mqtt-historian-ch-test.sh`.
 
+Gateway scale (50k / 100k msg/s, scenario I-02 extension): orchestration scripts live in **gitignored** `deploy/lab-*` and `deploy/mqtt_loadtest_lib.py` on the operator workstation — copy to `~/ispf` on lab hosts. Committed topology template: `env/lab-loadgen.env` (`198.51.100.10` loadgen, `198.51.100.11` app). See [lab-mqtt-gateway-ingress](../../docs/en/lab-mqtt-gateway-ingress.md).
+
 ## Operator-only files (gitignored)
 
 Real lab copies live under `deploy/lab-*`, `deploy/lab_ssh.py`, `deploy/local/` — see [deploy/README.md](../../deploy/README.md) and root `.gitignore`. Workstation SSH helpers are never committed.
