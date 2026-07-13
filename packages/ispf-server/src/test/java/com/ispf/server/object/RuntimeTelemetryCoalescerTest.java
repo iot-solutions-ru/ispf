@@ -3,6 +3,7 @@ package com.ispf.server.object;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
@@ -21,6 +22,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,6 +34,9 @@ class RuntimeTelemetryCoalescerTest {
 
     @Mock
     private ObjectChangePublicationService publicationService;
+
+    @Mock
+    private DeviceTelemetryPolicyService policyService;
 
     @Mock
     private MqttGatewayIngressDispatchService gatewayIngressDispatch;
@@ -57,7 +62,8 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 2.0));
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 3.0));
 
-        verify(publicationService, times(3)).publishVariableChange("root.dev.sensor", "temperature", null);
+        verify(publicationService, times(3)).publishVariableChange(
+                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -73,25 +79,16 @@ class RuntimeTelemetryCoalescerTest {
 
         coalescer.flushNow();
 
-        verify(publicationService, times(1)).publishVariableChange("root.dev.sensor", "temperature", null);
+        verify(publicationService, times(1)).publishVariableChange(
+                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
     }
 
     @Test
     void marksTelemetryOnlyDevicesAsNotAutomationEligible() {
         RuntimeTelemetryProperties properties = new RuntimeTelemetryProperties();
         properties.setEnabled(false);
-        DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor")).thenReturn(false);
-        org.mockito.Mockito.when(historianFastPath.isHistorianOnlyEligible(
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.anyString()
-        )).thenReturn(false);
-        org.mockito.Mockito.when(historianFastPath.tryPublish(
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any()
-        )).thenReturn(false);
+        stubDefaultPolicyService(1_000, false, false);
         coalescer = new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
         );
@@ -99,7 +96,8 @@ class RuntimeTelemetryCoalescerTest {
 
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
 
-        verify(publicationService).publishVariableChange("root.dev.sensor", "temperature", null);
+        verify(publicationService).publishVariableChange(
+                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -127,7 +125,8 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.recordUpdate("root.dev.sensor", "humidity", record(schema, 55.0));
         coalescer.flushNow();
 
-        verify(publicationService, times(2)).publishVariableChange(eq("root.dev.sensor"), any(), any());
+        verify(publicationService, times(2)).publishVariableChange(
+                eq("root.dev.sensor"), any(), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -162,7 +161,8 @@ class RuntimeTelemetryCoalescerTest {
         );
         coalescer.flushNow();
 
-        verify(publicationService, times(2)).publishVariableChange(eq("root.dev.gateway"), eq("lastIngress"), any());
+        verify(publicationService, times(2)).publishVariableChange(
+                eq("root.dev.gateway"), eq("lastIngress"), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -185,7 +185,8 @@ class RuntimeTelemetryCoalescerTest {
         );
         coalescer.flushNow();
 
-        verify(publicationService, times(2)).publishVariableChange(eq("root.dev.gateway"), eq("lastIngress"), any());
+        verify(publicationService, times(2)).publishVariableChange(
+                eq("root.dev.gateway"), eq("lastIngress"), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -209,7 +210,8 @@ class RuntimeTelemetryCoalescerTest {
         );
         coalescer.flushNow();
 
-        verify(publicationService, times(1)).publishVariableChange("root.dev.gateway", "lastIngress", null);
+        verify(publicationService, times(1)).publishVariableChange(
+                eq("root.dev.gateway"), eq("lastIngress"), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -274,7 +276,15 @@ class RuntimeTelemetryCoalescerTest {
         properties.setEnabled(enabled);
         properties.setCoalesceMs(coalesceMs);
         properties.setCoalesceEnabled(coalesceEnabled);
-        DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
+        stubDefaultPolicyService(coalesceMs, ingressTopicLanes, ingressPayloadLanes);
+        return new RuntimeTelemetryCoalescer(
+                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
+        ) {{
+            ensureSchedulerStarted();
+        }};
+    }
+
+    private void stubDefaultPolicyService(long coalesceMs, boolean ingressTopicLanes, boolean ingressPayloadLanes) {
         org.mockito.Mockito.when(policyService.coalesceMs(org.mockito.ArgumentMatchers.anyString())).thenReturn(coalesceMs);
         org.mockito.Mockito.when(policyService.automationEligible(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
         org.mockito.Mockito.when(policyService.ingressTopicLanes(org.mockito.ArgumentMatchers.anyString()))
@@ -283,6 +293,10 @@ class RuntimeTelemetryCoalescerTest {
                 .thenReturn(ingressPayloadLanes);
         org.mockito.Mockito.when(policyService.parallelIngressDispatch(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(ingressTopicLanes || ingressPayloadLanes);
+        org.mockito.Mockito.when(policyService.historySampleMode(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(HistorySampleMode.CHANGES_ONLY);
+        org.mockito.Mockito.when(policyService.includePreviousValueInEvent(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(false);
         org.mockito.Mockito.when(historianFastPath.isHistorianOnlyEligible(
                 org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.anyString()
@@ -293,11 +307,6 @@ class RuntimeTelemetryCoalescerTest {
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any()
         )).thenReturn(false);
-        return new RuntimeTelemetryCoalescer(
-                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
-        ) {{
-            ensureSchedulerStarted();
-        }};
     }
 
     private static DataRecord record(DataSchema schema, double value) {

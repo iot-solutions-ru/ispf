@@ -250,12 +250,6 @@ public class DriverRuntimeService {
         Consumer<ServerDriverObject.VariableUpdate> variableUpdater = update -> {
             if (update.system()) {
                 objectManager.setSystemVariableValue(update.path(), update.variableName(), update.value());
-            } else if (usesDirectIngress(devicePath, update.variableName())) {
-                objectManager.setDriverTelemetryValue(
-                        update.path(), update.variableName(), update.value(), update.observedAt()
-                );
-            } else if (ingressBufferHolder[0] != null) {
-                ingressBufferHolder[0].submit(update.variableName(), update);
             } else {
                 objectManager.setDriverTelemetryValue(
                         update.path(), update.variableName(), update.value(), update.observedAt()
