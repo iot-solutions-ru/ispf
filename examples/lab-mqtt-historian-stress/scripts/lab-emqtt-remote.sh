@@ -35,6 +35,8 @@ quoted="$(printf '%q ' "${remote_args[@]}")"
 env_prefix=""
 [[ "${NUMERIC_PAYLOAD:-false}" == "true" ]] && env_prefix="NUMERIC_PAYLOAD=true "
 [[ "${GATEWAY_NUMERIC_TIMESTAMP:-false}" == "true" ]] && env_prefix+="GATEWAY_NUMERIC_TIMESTAMP=true "
+[[ -n "${METRICS:-}" ]] && env_prefix+="METRICS=${METRICS} "
+[[ -n "${EMQTT_CPU_LIMIT:-}" ]] && env_prefix+="EMQTT_CPU_LIMIT=${EMQTT_CPU_LIMIT} "
 remote_cmd="${env_prefix}bash ${BENCH_SH} ${quoted}"
 
 echo "==> emqtt on loadgen (${ISPF_LAB_LOADGEN_SSH}): ${env_prefix}${quoted}" >&2

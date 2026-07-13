@@ -7,15 +7,7 @@ Load stand for **EVENT_JOURNAL_ONLY** fast path ([0027-event-journal-ingress-fas
 **Where to run:** dedicated lab host (SSH from workstation; HTTP via nginx edge).
 **Templates:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) (shared topology/env) and gitignored `deploy/lab-*` on the operator machine.
 
-SSH host, port, user, and key path — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (replace on site; never commit real values).
-
-**Where to run:** dedicated lab host (SSH from workstation; HTTP via nginx edge).
-**Templates:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) (shared topology/env) and gitignored `deploy/lab-*` on the operator machine.
-
-SSH host, port, user, and key path — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (replace on site; never commit real values).
-
-**Where to run:** dedicated lab host (SSH from workstation; HTTP via nginx edge).
-**Templates:** [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mqtt-historian-stress/) (shared topology/env) and gitignored `deploy/lab-*` on the operator machine.
+**Split topology (I-03 ordered suite):** see **[lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md)** — ISPF on `198.51.100.11`, Mosquitto + Scylla on `198.51.100.10`; scripts in `examples/.../scripts/`.
 
 SSH host, port, user, and key path — `deploy/lab_ssh.py` / `examples/.../env/lab-loadgen.env` (replace on site; never commit real values).
 

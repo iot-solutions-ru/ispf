@@ -182,6 +182,7 @@ Metrics: `GET /api/v1/platform/metrics` → `automation.variableHistoryFlushedTo
 
 - [load-testing](load-testing.md) — general MQTT / historian scenarios
 - [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) — I-02 gateway dispatch → child historian
+- [lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md) — I-03 EVENT_JOURNAL_ONLY → Scylla journal (smoke / peak / 400k fan-out)
 - [lab-event-journal-stress](lab-event-journal-stress.md) — EVENT_JOURNAL_ONLY (events/s, not samples)
 - [variable-history](variable-history.md) — historian model and stores
 - [demostands](demostands.md) — prod deploy profiles

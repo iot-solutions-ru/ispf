@@ -164,6 +164,20 @@ Id в ordered suite: `I-02-mqtt-gateway`. Главная метрика PASS: д
 
 **Gateway scale (50k):** eager seed + benchmark — скрипты в gitignored `deploy/lab-*` (на lab-хосте `~/ispf`); **100k msg/s** — `lab-tune-gateway-100k.sh` + measure-only `lab-run-gateway-100k-measure.sh` (после recreate — `--ensure-driver-only`). Адреса в git: `198.51.100.x`. Подробно: [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md#gateway-scale-50k-eager-split-lab).
 
+### Lab event journal ingress (сценарий I-03)
+
+**N× mqtt-драйвер → `EVENT_JOURNAL_ONLY` → `fireIngress` → Scylla `event_history`** на split topology. Runbook: **[lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md)**.
+
+Id в ordered suite: `I-03-mqtt-event-journal`. Главная метрика PASS: дельта **`eventsFiredTotal`** / **`eventJournalFlushedTotal`** (не `COUNT(*)` Scylla после пика). Скрипты в git: [`examples/lab-mqtt-historian-stress/scripts/`](../../examples/lab-mqtt-historian-stress/scripts/). Seed: gitignored `deploy/setup-mqtt-event-journal-devices.py`.
+
+| Режим | Типичный eventsFired (split lab 0.9.144) |
+|-------|----------------------------------------|
+| Smoke (4×500) | ~250/s |
+| Peak per-topic (16×32k) | **~319k/s** |
+| 400k fan-out (16 подписчиков, 1 топик) | **~403k/s** |
+
+Per-topic на этом стенде — потолок ~330–345k/s; **≥400k** — fan-out MQTT (`lab-run-event-journal-400k.sh`).
+
 Реальный брокер `mqtt-broker.example.invalid` — см. subscribe mode ниже; нужны MQTT credentials.
 
 ### Объединение развертки (историк)

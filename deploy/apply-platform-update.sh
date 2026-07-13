@@ -34,13 +34,16 @@ TMP_UI="$(mktemp -d)"
 trap 'rm -rf "$TMP_UI"' EXIT
 unzip -oq "$UI_ZIP" -d "$TMP_UI"
 rm -rf "$INSTALL_ROOT/web-console"/*
+umask 022
 if [ -d "$TMP_UI/dist" ]; then
   cp -a "$TMP_UI/dist"/. "$INSTALL_ROOT/web-console/"
 else
   cp -a "$TMP_UI"/. "$INSTALL_ROOT/web-console/"
 fi
-chmod -R a+rX "$INSTALL_ROOT/web-console"
-find "$INSTALL_ROOT/web-console" -type d -exec chmod 755 {} +
+# shellcheck source=lib/web-console-perms.sh
+. "$INSTALL_ROOT/lib/web-console-perms.sh"
+fix_web_console_permissions "$INSTALL_ROOT/web-console"
+verify_web_console_permissions "$INSTALL_ROOT/web-console"
 
 if [ -f "$DRIVER_PACKS_TAR" ]; then
   install -d "$INSTALL_ROOT/data/drivers"
