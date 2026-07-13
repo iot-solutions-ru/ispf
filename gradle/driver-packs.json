@@ -405,6 +405,27 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-wmi"
   },
+  "ispf-driver-ingress-syslog": {
+    "driverClass": "com.ispf.driver.ingress.syslog.SyslogIngressDeviceDriver",
+    "driverId": "ingress-syslog",
+    "jarFile": "ispf-driver-ingress-syslog.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ingress-syslog"
+  },
+  "ispf-driver-ingress-snmp-trap": {
+    "driverClass": "com.ispf.driver.ingress.snmptrap.SnmpTrapIngressDeviceDriver",
+    "driverId": "ingress-snmp-trap",
+    "jarFile": "ispf-driver-ingress-snmp-trap.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ingress-snmp-trap"
+  },
+  "ispf-driver-ingress-sflow": {
+    "driverClass": "com.ispf.driver.ingress.sflow.SflowIngressDeviceDriver",
+    "driverId": "ingress-sflow",
+    "jarFile": "ispf-driver-ingress-sflow.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ingress-sflow"
+  },
   "ispf-driver-xmpp": {
     "driverClass": "com.ispf.driver.xmpp.XmppDeviceDriver",
     "driverId": "xmpp",

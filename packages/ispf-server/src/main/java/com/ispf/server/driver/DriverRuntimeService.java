@@ -741,8 +741,14 @@ public class DriverRuntimeService {
 
     private boolean deviceNeedsIngressBuffer(String devicePath) {
         return readBinding(devicePath)
-                .map(binding -> binding.pointMappings().keySet().stream()
-                        .anyMatch(variableName -> !usesDirectIngress(devicePath, variableName)))
+                .map(binding -> {
+                    // Poll-based SNMP: low rate, sync telemetry — per-device ingress pools explode thread count.
+                    if ("snmp".equalsIgnoreCase(binding.driverId())) {
+                        return false;
+                    }
+                    return binding.pointMappings().keySet().stream()
+                            .anyMatch(variableName -> !usesDirectIngress(devicePath, variableName));
+                })
                 .orElse(false);
     }
 

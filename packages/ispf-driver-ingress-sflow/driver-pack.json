@@ -1,0 +1,12 @@
+{
+  "packId": "ispf-driver-ingress-sflow",
+  "licenseType": "Apache-2.0",
+  "minPlatformVersion": "0.9.32",
+  "jarFile": "ispf-driver-ingress-sflow.jar",
+  "drivers": [
+    {
+      "driverId": "ingress-sflow",
+      "driverClass": "com.ispf.driver.ingress.sflow.SflowIngressDeviceDriver"
+    }
+  ]
+}
