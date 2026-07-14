@@ -385,6 +385,9 @@ public class MarketplaceService {
     private static String requirePackId(Map<String, Object> detail) {
         String packId = stringValue(detail.get("packId"));
         if (packId == null || packId.isBlank()) {
+            packId = stringValue(detail.get("slug"));
+        }
+        if (packId == null || packId.isBlank()) {
             throw new IllegalStateException("Listing has no packId");
         }
         return packId;

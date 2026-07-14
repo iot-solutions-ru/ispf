@@ -17,12 +17,14 @@ import java.util.UUID;
 public class ApplicationDataStore {
 
     private final JdbcTemplate jdbcTemplate;
+    private final PlatformSqlCatalog platformSqlCatalog;
     private final String applicationsTable;
     private final String migrationsTable;
     private final String seedsTable;
 
     public ApplicationDataStore(JdbcTemplate jdbcTemplate, PlatformSqlCatalog platformSqlCatalog) {
         this.jdbcTemplate = jdbcTemplate;
+        this.platformSqlCatalog = platformSqlCatalog;
         this.applicationsTable = platformSqlCatalog.table("applications");
         this.migrationsTable = platformSqlCatalog.table("application_data_migrations");
         this.seedsTable = platformSqlCatalog.table("application_data_seeds");
@@ -78,9 +80,34 @@ public class ApplicationDataStore {
         if (appId == null || appId.isBlank()) {
             return false;
         }
+        String id = appId.trim();
+        // Child tables reference applications(app_id) without ON DELETE CASCADE.
+        for (String table : List.of(
+                "application_bundle_deployments",
+                "application_data_migrations",
+                "application_data_seeds",
+                "application_functions",
+                "application_sql_bindings",
+                "application_reports",
+                "application_event_catalog"
+        )) {
+            jdbcTemplate.update(
+                    "DELETE FROM " + platformSqlCatalog.table(table) + " WHERE app_id = ?",
+                    id
+            );
+        }
+        // App-scoped tables without FK (or nullable app_id).
+        jdbcTemplate.update(
+                "DELETE FROM " + platformSqlCatalog.table("operator_app_ui") + " WHERE app_id = ?",
+                id
+        );
+        jdbcTemplate.update(
+                "DELETE FROM " + platformSqlCatalog.table("platform_schedules") + " WHERE app_id = ?",
+                id
+        );
         int deleted = jdbcTemplate.update(
                 "DELETE FROM " + applicationsTable + " WHERE app_id = ?",
-                appId.trim()
+                id
         );
         return deleted > 0;
     }

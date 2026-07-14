@@ -145,6 +145,17 @@ public class ApplicationBundleSnapshotStore {
         );
     }
 
+    /** Remove all deployment history rows for an app (required before deleting applications). */
+    public void deleteAll(String appId) {
+        if (appId == null || appId.isBlank()) {
+            return;
+        }
+        jdbcTemplate.update(
+                "DELETE FROM %s WHERE app_id = ?".formatted(deploymentsTable),
+                appId.trim()
+        );
+    }
+
     private BundleSnapshot mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
         return new BundleSnapshot(
                 UUID.fromString(rs.getString("id")),

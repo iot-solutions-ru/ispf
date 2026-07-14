@@ -81,7 +81,7 @@ public class SolutionCatalogService {
             result.put("skipped", List.of());
             result.put("errors", List.of());
         }
-        snapshotStore.deactivateAll(normalized);
+        snapshotStore.deleteAll(normalized);
         dataStore.deleteApp(normalized);
         return result;
     }
