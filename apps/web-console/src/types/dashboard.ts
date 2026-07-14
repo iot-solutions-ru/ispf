@@ -162,12 +162,24 @@ export interface IndicatorWidget extends DashboardWidgetBase {
   alarmMode?: boolean;
 }
 
+/** Telemetry chart sampling: aggregate (historian buckets), coalesce (client LWW), or raw ticks. */
+export type ChartSampleMode = "auto" | "aggregate" | "coalesce" | "raw";
+
 export interface ChartWidget extends DashboardWidgetBase {
   type: "chart";
   chartStyle?: ChartStyle;
   chartType?: ChartType;
   maxPoints?: number;
   historyRange?: WidgetHistoryRange;
+  /**
+   * How to thin high-rate telemetry. Default auto = historian aggregate when historyEnabled,
+   * else client coalesce. Use raw only for low-rate debug.
+   */
+  sampleMode?: ChartSampleMode;
+  /** Historian bucket override (`1m`…`1d`) or `auto` from historyRange / maxPoints. */
+  historyBucket?: string;
+  /** Client coalesce window for `coalesce` / auto-without-history (ms). Default 1000. */
+  liveCoalesceMs?: number;
   color?: string;
   decimals?: number;
   unit?: string;
@@ -206,6 +218,9 @@ export interface SparklineWidget extends DashboardWidgetBase {
   type: "sparkline";
   maxPoints?: number;
   historyRange?: WidgetHistoryRange;
+  sampleMode?: ChartSampleMode;
+  historyBucket?: string;
+  liveCoalesceMs?: number;
   color?: string;
   decimals?: number;
 }

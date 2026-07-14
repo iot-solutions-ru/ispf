@@ -35,7 +35,12 @@ export default function SparklineWidgetView({
     widget.valueField,
     refreshIntervalMs,
     maxPoints,
-    historyRange
+    historyRange,
+    {
+      sampleMode: widget.sampleMode,
+      historyBucket: widget.historyBucket,
+      liveCoalesceMs: widget.liveCoalesceMs,
+    },
   );
 
   const demoPoints = useMemo(() => {

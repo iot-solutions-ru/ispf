@@ -13,6 +13,8 @@ import com.ispf.server.platform.analytics.catalog.AnalyticsTagLineageService;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
 import com.ispf.server.platform.analytics.catalog.HistorianRuleMetaService;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class AnalyticsTagCatalogService {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsTagCatalogService.class);
 
     private final ObjectManager objectManager;
     private final BindingRulesService bindingRulesService;
@@ -77,16 +81,23 @@ public class AnalyticsTagCatalogService {
 
     @Transactional(readOnly = true)
     public List<AnalyticsTagDefinition> listAllTagDefinitions() {
-        if (catalogCacheLoaded) {
+        if (catalogCacheLoaded && !cachedAllTags.isEmpty()) {
             return cachedAllTags;
         }
         synchronized (catalogLock) {
-            if (catalogCacheLoaded) {
+            if (catalogCacheLoaded && !cachedAllTags.isEmpty()) {
                 return cachedAllTags;
             }
-            cachedAllTags = List.copyOf(buildAllTagDefinitions());
-            catalogCacheLoaded = true;
-            return cachedAllTags;
+            List<AnalyticsTagDefinition> built = List.copyOf(buildAllTagDefinitions());
+            // Never permanently cache an empty catalog — boot/deploy races can see no @bindingRules yet.
+            if (!built.isEmpty()) {
+                cachedAllTags = built;
+                catalogCacheLoaded = true;
+            } else {
+                cachedAllTags = List.of();
+                catalogCacheLoaded = false;
+            }
+            return built;
         }
     }
 
@@ -94,7 +105,12 @@ public class AnalyticsTagCatalogService {
         List<AnalyticsTagDefinition> tags = new ArrayList<>();
         Set<String> extensionIds = extensionHelperIds();
         for (String objectPath : objectPathsWithBindingRules()) {
-            tags.addAll(listTagDefinitionsForObject(objectPath, extensionIds));
+            try {
+                tags.addAll(listTagDefinitionsForObject(objectPath, extensionIds));
+            } catch (RuntimeException ex) {
+                // Orphan @bindingRules rows or mid-deploy tree gaps must not wipe the whole catalog.
+                log.warn("Skipping historian catalog for {}: {}", objectPath, ex.getMessage());
+            }
         }
         return tags;
     }

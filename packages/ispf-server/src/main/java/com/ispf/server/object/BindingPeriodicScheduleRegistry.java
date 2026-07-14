@@ -163,6 +163,9 @@ public class BindingPeriodicScheduleRegistry {
     }
 
     private static boolean isPeriodicRule(BindingRule rule) {
+        if (rule == null || rule.isHistorian()) {
+            return false;
+        }
         BindingActivators activators = rule.activators();
         return rule.enabled() && activators != null && activators.hasPeriodicSchedule();
     }

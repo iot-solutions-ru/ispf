@@ -3,15 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchAnalyticsQuery, type AnalyticsQueryTagInput } from "../api";
 import type { WidgetHistoryRange } from "../types/dashboard";
 import {
-  historyBucketForRangeChart,
   historyRangeFrom,
   isCalendarHistoryRange,
   type HistoryRange,
 } from "./useVariableHistory";
+import { resolveChartHistoryBucket } from "../utils/chartSampling";
 
 const MULTI_SERIES_COLORS = ["#2f81f7", "#e67e22", "#27ae60", "#9b59b6", "#e74c3c", "#16a085"];
-/** Multi-tag query is heavier than live binding; avoid dashboard poll hammering rate limiter. */
-const MULTI_QUERY_MIN_REFRESH_MS = 30_000;
+/** Multi-tag query is heavier than live binding; still advance the window often enough to show motion. */
+const MULTI_QUERY_MIN_REFRESH_MS = 10_000;
 
 export interface AnalyticsMultiSeriesPoint {
   t: number;
@@ -44,28 +44,34 @@ export function useAnalyticsMultiSeries(
 ) {
   const tags = useMemo(() => parseAnalyticsQueryTags(tagsJson), [tagsJson]);
   const refreshMs = Math.max(refreshIntervalMs, MULTI_QUERY_MIN_REFRESH_MS);
-  const bucket =
-    bucketOverride ??
-    (historyRange !== "live" && isHistoryRange(historyRange)
-      ? historyBucketForRangeChart(historyRange)
-      : "1h");
+  const bucket = resolveChartHistoryBucket(
+    historyRange,
+    bucketOverride && bucketOverride !== "auto" ? bucketOverride : undefined,
+    maxPoints,
+  );
   const calendarRange =
     isHistoryRange(historyRange) && isCalendarHistoryRange(historyRange) ? historyRange : undefined;
-  const from =
-    bucket && isHistoryRange(historyRange) && !calendarRange ? historyRangeFrom(historyRange) : undefined;
-  const to = calendarRange || historyRange === "all" ? undefined : new Date().toISOString();
 
   const query = useQuery({
-    queryKey: ["analytics-multi-query", tags, historyRange, bucket, maxPoints, from, to],
-    queryFn: () =>
-      fetchAnalyticsQuery({
+    queryKey: ["analytics-multi-query", tags, historyRange, bucket, maxPoints],
+    queryFn: () => {
+      // Sliding window must be computed per fetch — frozen from/to made charts look stuck.
+      const from =
+        historyRange === "live"
+          ? new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+          : bucket && isHistoryRange(historyRange) && !calendarRange
+            ? historyRangeFrom(historyRange)
+            : undefined;
+      const to = calendarRange || historyRange === "all" ? undefined : new Date().toISOString();
+      return fetchAnalyticsQuery({
         tags,
         bucket: bucket as string,
         from: from ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         to: to ?? new Date().toISOString(),
         agg: "avg",
         maxBuckets: maxPoints,
-      }),
+      });
+    },
     enabled: tags.length > 0 && Boolean(bucket),
     staleTime: refreshMs,
     refetchInterval: (query) => (query.state.error ? false : refreshMs),

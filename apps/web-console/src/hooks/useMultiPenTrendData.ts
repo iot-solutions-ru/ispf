@@ -49,9 +49,6 @@ function mergePenSeries(
 export function useMultiPenTrendData(pens: TrendPen[], range: HistoryRange, refreshIntervalMs = 30_000) {
   const tz = useOptionalUserTimeZone();
   const calendarRange = isCalendarHistoryRange(range) ? range : undefined;
-  const from = calendarRange ? undefined : historyRangeFrom(range);
-  const to =
-    calendarRange || range === "all" ? undefined : new Date().toISOString();
 
   const queries = useQueries({
     queries: pens.map((pen) => ({
@@ -63,6 +60,8 @@ export function useMultiPenTrendData(pens: TrendPen[], range: HistoryRange, refr
       ],
       queryFn: async () => {
         const field = pen.valueField ?? "value";
+        const from = calendarRange ? undefined : historyRangeFrom(range);
+        const to = calendarRange || range === "all" ? undefined : new Date().toISOString();
         const response = await fetchVariableHistory(pen.objectPath, pen.variableName, {
           field,
           from,

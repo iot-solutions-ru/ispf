@@ -892,6 +892,69 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
             />
           </label>
           <label>
+            {t("editor.sampleMode")}
+            <select
+              value={widget.sampleMode ?? "auto"}
+              onChange={(e) =>
+                update({
+                  sampleMode: e.target.value === "auto"
+                    ? undefined
+                    : (e.target.value as typeof widget.sampleMode),
+                })
+              }
+            >
+              <option value="auto">{t("editor.sampleModeAuto")}</option>
+              <option value="aggregate">{t("editor.sampleModeAggregate")}</option>
+              <option value="coalesce">{t("editor.sampleModeCoalesce")}</option>
+              <option value="raw">{t("editor.sampleModeRaw")}</option>
+            </select>
+            <span className="hint">{t("editor.sampleModeHint")}</span>
+          </label>
+          {(widget.sampleMode ?? "auto") !== "raw"
+            && (widget.sampleMode ?? "auto") !== "coalesce" && (
+            <label>
+              {t("editor.historyBucket")}
+              <select
+                value={widget.historyBucket ?? "auto"}
+                onChange={(e) =>
+                  update({
+                    historyBucket: e.target.value === "auto" ? undefined : e.target.value,
+                  })
+                }
+              >
+                <option value="auto">auto</option>
+                <option value="1m">1m</option>
+                <option value="5m">5m</option>
+                <option value="15m">15m</option>
+                <option value="30m">30m</option>
+                <option value="1h">1h</option>
+                <option value="6h">6h</option>
+                <option value="1d">1d</option>
+              </select>
+              <span className="hint">{t("editor.historyBucketHint")}</span>
+            </label>
+          )}
+          {((widget.sampleMode ?? "auto") === "coalesce"
+            || (widget.sampleMode ?? "auto") === "auto") && (
+            <label>
+              {t("editor.liveCoalesceMs")}
+              <input
+                type="number"
+                min={200}
+                max={60_000}
+                step={100}
+                value={widget.liveCoalesceMs ?? 1000}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  update({
+                    liveCoalesceMs: Number.isFinite(value) && value !== 1000 ? value : undefined,
+                  });
+                }}
+              />
+              <span className="hint">{t("editor.liveCoalesceMsHint")}</span>
+            </label>
+          )}
+          <label>
             {t("editor.color")}
             <input
               type="color"
@@ -950,6 +1013,24 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               value={widget.maxPoints ?? 40}
               onChange={(e) => update({ maxPoints: Number(e.target.value) })}
             />
+          </label>
+          <label>
+            {t("editor.sampleMode")}
+            <select
+              value={widget.sampleMode ?? "auto"}
+              onChange={(e) =>
+                update({
+                  sampleMode: e.target.value === "auto"
+                    ? undefined
+                    : (e.target.value as typeof widget.sampleMode),
+                })
+              }
+            >
+              <option value="auto">{t("editor.sampleModeAuto")}</option>
+              <option value="aggregate">{t("editor.sampleModeAggregate")}</option>
+              <option value="coalesce">{t("editor.sampleModeCoalesce")}</option>
+              <option value="raw">{t("editor.sampleModeRaw")}</option>
+            </select>
           </label>
           <label>
             {t("editor.color")}

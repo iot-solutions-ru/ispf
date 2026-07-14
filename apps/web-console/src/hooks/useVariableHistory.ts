@@ -95,6 +95,8 @@ export function useVariableHistory(
     limit?: number;
     enabled?: boolean;
     refreshIntervalMs?: number;
+    /** Override auto bucket; `null` forces raw samples. */
+    bucket?: string | null;
   }
 ) {
   const field = options?.field ?? "value";
@@ -104,10 +106,13 @@ export function useVariableHistory(
   const tz = useOptionalUserTimeZone();
   const formatDate = tz?.formatDate;
   const calendarRange = isCalendarHistoryRange(range) ? range : undefined;
-  const from = calendarRange ? undefined : historyRangeFrom(range);
-  const to = calendarRange || range === "all" ? undefined : new Date().toISOString();
   const isRecordSnapshot = field === RECORD_SNAPSHOT_FIELD;
-  const bucket = isRecordSnapshot ? null : historyBucketForRange(range);
+  const bucket =
+    isRecordSnapshot
+      ? null
+      : options?.bucket !== undefined
+        ? options.bucket
+        : historyBucketForRange(range);
   const aggregated = bucket != null;
 
   const query = useQuery<VariableHistoryQueryData>({
@@ -122,6 +127,9 @@ export function useVariableHistory(
       tz?.timeZone,
     ],
     queryFn: (): Promise<VariableHistoryQueryData> => {
+      // Compute window inside queryFn so refetchInterval advances the sliding range.
+      const from = calendarRange ? undefined : historyRangeFrom(range);
+      const to = calendarRange || range === "all" ? undefined : new Date().toISOString();
       const calendarOpts = calendarRange
         ? { calendarRange, timeZone: tz?.timeZone ?? "UTC" }
         : {};

@@ -20,8 +20,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,10 +34,6 @@ import java.util.StringJoiner;
 public class ClickHouseHistorianRollupStore {
 
     private static final Logger log = LoggerFactory.getLogger(ClickHouseHistorianRollupStore.class);
-
-    private static final DateTimeFormatter CH_DATETIME = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-            .withZone(ZoneOffset.UTC);
 
     private final VariableHistoryProperties historyProperties;
     private final HistorianTierProperties tierProperties;
@@ -126,8 +120,8 @@ public class ClickHouseHistorianRollupStore {
         params.put("variableName", variableName);
         params.put("fieldName", fieldName);
         params.put("bucketSeconds", String.valueOf(bucketSeconds));
-        params.put("fromTs", CH_DATETIME.format(from));
-        params.put("toTs", CH_DATETIME.format(to));
+        params.put("fromTs", ClickHouseDateTimes.WRITE.format(from));
+        params.put("toTs", ClickHouseDateTimes.WRITE.format(to));
         params.put("maxBuckets", String.valueOf(maxBuckets));
 
         String sql = """
@@ -184,7 +178,7 @@ public class ClickHouseHistorianRollupStore {
             if (node.path("max_bucket").isNull() || node.path("max_bucket").asText().isBlank()) {
                 return Optional.empty();
             }
-            return Optional.of(parseInstant(node.path("max_bucket").asText()));
+            return Optional.of(ClickHouseDateTimes.parse(node.path("max_bucket").asText()));
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to parse max bucket response", ex);
         }
@@ -249,8 +243,8 @@ public class ClickHouseHistorianRollupStore {
         params.put("variableName", subscription.variableName());
         params.put("fieldName", subscription.fieldName());
         params.put("bucketSeconds", String.valueOf(subscription.bucketWidthSec()));
-        params.put("fromTs", CH_DATETIME.format(from));
-        params.put("toTs", CH_DATETIME.format(to));
+        params.put("fromTs", ClickHouseDateTimes.WRITE.format(from));
+        params.put("toTs", ClickHouseDateTimes.WRITE.format(to));
         post(sql, "", params);
     }
 
@@ -265,12 +259,12 @@ public class ClickHouseHistorianRollupStore {
             row.put("variable_name", subscription.variableName());
             row.put("field_name", subscription.fieldName());
             row.put("bucket_width_sec", subscription.bucketWidthSec());
-            row.put("bucket_start", CH_DATETIME.format(bucket.ts()));
+            row.put("bucket_start", ClickHouseDateTimes.WRITE.format(bucket.ts()));
             row.put("avg_val", bucket.avg());
             row.put("min_val", bucket.min());
             row.put("max_val", bucket.max());
             row.put("sample_count", bucket.count());
-            row.put("materialized_at", CH_DATETIME.format(materializedAt));
+            row.put("materialized_at", ClickHouseDateTimes.WRITE.format(materializedAt));
             return objectMapper.writeValueAsString(row);
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to encode rollup row", ex);
@@ -289,7 +283,7 @@ public class ClickHouseHistorianRollupStore {
             try {
                 JsonNode node = objectMapper.readTree(line);
                 buckets.add(new VariableHistoryService.VariableHistoryBucket(
-                        parseInstant(node.path("bucket_start").asText()),
+                        ClickHouseDateTimes.parse(node.path("bucket_start").asText()),
                         node.path("avg_val").isNull() ? null : node.path("avg_val").asDouble(),
                         node.path("min_val").isNull() ? null : node.path("min_val").asDouble(),
                         node.path("max_val").isNull() ? null : node.path("max_val").asDouble(),
@@ -389,16 +383,6 @@ public class ClickHouseHistorianRollupStore {
                     .encodeToString(credentials.getBytes(StandardCharsets.UTF_8)));
         }
         return builder.build();
-    }
-
-    private static Instant parseInstant(String value) {
-        if (value == null || value.isBlank()) {
-            return Instant.EPOCH;
-        }
-        if (value.contains("T")) {
-            return Instant.parse(value.endsWith("Z") ? value : value + "Z");
-        }
-        return CH_DATETIME.parse(value, Instant::from);
     }
 
     private static String encode(String value) {

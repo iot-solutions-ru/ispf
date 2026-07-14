@@ -9,12 +9,12 @@ import {
   type CandlestickPoint,
 } from "../utils/chartOhlcUtils";
 import {
-  historyBucketForRangeChart,
   historyRangeFrom,
   isCalendarHistoryRange,
   type HistoryRange,
 } from "./useVariableHistory";
 import { resolveAnalyticsAggregateBucket, type AnalyticsTemplateRef } from "../utils/analyticsChartBinding";
+import { liveAggregateFromIso, resolveChartHistoryBucket } from "../utils/chartSampling";
 import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
 import { useTrendSeries, type TrendPoint } from "./useTrendSeries";
 
@@ -101,7 +101,12 @@ export function useChartTrendSeries(
   maxPoints: number,
   historyRange: WidgetHistoryRange = "live",
   mode: ChartSeriesMode = "line",
-  analyticsTemplate?: AnalyticsTemplateRef | null
+  analyticsTemplate?: AnalyticsTemplateRef | null,
+  sampling?: {
+    sampleMode?: import("../types/dashboard").ChartSampleMode;
+    historyBucket?: string;
+    liveCoalesceMs?: number;
+  },
 ) {
   const field = valueField ?? "value";
   const isRangeMode = mode === "range";
@@ -115,28 +120,21 @@ export function useChartTrendSeries(
     refreshIntervalMs,
     maxPoints,
     historyRange,
-    isBucketMode || Boolean(analyticsTemplate)
+    {
+      skipRangedHistory: isBucketMode || Boolean(analyticsTemplate),
+      sampleMode: sampling?.sampleMode,
+      historyBucket: sampling?.historyBucket,
+      liveCoalesceMs: sampling?.liveCoalesceMs,
+    },
   );
 
   const rangeChartBucket =
-    isBucketMode && historyRange !== "live" && isHistoryRange(historyRange)
-      ? historyBucketForRangeChart(historyRange)
+    isBucketMode
+      ? resolveChartHistoryBucket(historyRange, sampling?.historyBucket, maxPoints)
       : null;
   const aggregateBucket = resolveAnalyticsAggregateBucket(analyticsTemplate, rangeChartBucket);
   const calendarRange =
     isHistoryRange(historyRange) && isCalendarHistoryRange(historyRange) ? historyRange : undefined;
-  const defaultFrom =
-    analyticsTemplate && historyRange === "live" ? historyRangeFrom("24h") : undefined;
-  const from =
-    aggregateBucket && isHistoryRange(historyRange) && !calendarRange
-      ? historyRangeFrom(historyRange)
-      : defaultFrom;
-  const to =
-    calendarRange || (isHistoryRange(historyRange) && historyRange === "all")
-      ? undefined
-      : analyticsTemplate && historyRange === "live"
-        ? new Date().toISOString()
-        : new Date().toISOString();
 
   const aggregateQuery = useQuery({
     queryKey: [
@@ -149,8 +147,22 @@ export function useChartTrendSeries(
       aggregateBucket,
       tz?.timeZone,
     ],
-    queryFn: () =>
-      fetchVariableHistoryAggregate(objectPath, variableName, {
+    queryFn: () => {
+      const defaultFrom =
+        analyticsTemplate && historyRange === "live"
+          ? historyRangeFrom("24h")
+          : historyRange === "live" && aggregateBucket
+            ? liveAggregateFromIso(aggregateBucket, maxPoints)
+            : undefined;
+      const from =
+        aggregateBucket && isHistoryRange(historyRange) && !calendarRange
+          ? historyRangeFrom(historyRange)
+          : defaultFrom;
+      const to =
+        calendarRange || (isHistoryRange(historyRange) && historyRange === "all")
+          ? undefined
+          : new Date().toISOString();
+      return fetchVariableHistoryAggregate(objectPath, variableName, {
         field,
         bucket: aggregateBucket as string,
         from,
@@ -158,7 +170,8 @@ export function useChartTrendSeries(
         calendarRange,
         timeZone: calendarRange ? tz?.timeZone ?? "UTC" : undefined,
         limit: maxPoints,
-      }),
+      });
+    },
     enabled:
       Boolean(aggregateBucket && objectPath && variableName && trend.historyEnabled),
     staleTime: refreshIntervalMs,

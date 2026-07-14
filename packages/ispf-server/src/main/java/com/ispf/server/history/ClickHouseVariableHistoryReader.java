@@ -13,8 +13,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -25,10 +23,6 @@ import java.util.Map;
  * Read-only ClickHouse HTTP queries for variable historian samples and aggregates.
  */
 final class ClickHouseVariableHistoryReader {
-
-    private static final DateTimeFormatter CH_DATETIME = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-            .withZone(ZoneOffset.UTC);
 
     private static final String SELECT_COLUMNS = """
             coalesce(observed_at, sampled_at) AS effective_ts, sampled_at, value_double, value_text
@@ -63,8 +57,8 @@ final class ClickHouseVariableHistoryReader {
 
         String sql;
         if (from != null && to != null) {
-            params.put("fromTs", CH_DATETIME.format(from));
-            params.put("toTs", CH_DATETIME.format(to));
+            params.put("fromTs", ClickHouseDateTimes.WRITE.format(from));
+            params.put("toTs", ClickHouseDateTimes.WRITE.format(to));
             sql = """
                     SELECT %s FROM %s
                     WHERE object_path = {objectPath:String}
@@ -111,8 +105,8 @@ final class ClickHouseVariableHistoryReader {
         params.put("objectPath", objectPath);
         params.put("variableName", variableName);
         params.put("fieldName", fieldName);
-        params.put("fromTs", CH_DATETIME.format(from));
-        params.put("toTs", CH_DATETIME.format(to));
+        params.put("fromTs", ClickHouseDateTimes.WRITE.format(from));
+        params.put("toTs", ClickHouseDateTimes.WRITE.format(to));
         params.put("bucketSeconds", String.valueOf(bucketSeconds));
         params.put("maxBuckets", String.valueOf(maxBuckets));
 
@@ -153,10 +147,10 @@ final class ClickHouseVariableHistoryReader {
                 Double value = node.path("value_double").isNull() ? null : node.path("value_double").asDouble();
                 String text = node.path("value_text").isNull() ? null : node.path("value_text").asText(null);
                 samples.add(new VariableHistoryService.VariableHistorySample(
-                        parseInstant(node.path("effective_ts").asText()),
+                        ClickHouseDateTimes.parse(node.path("effective_ts").asText()),
                         value,
                         text,
-                        parseInstantOrNull(node.path("sampled_at").asText(null))
+                        ClickHouseDateTimes.parseOrNull(node.path("sampled_at").asText(null))
                 ));
             } catch (IOException ex) {
                 throw new IllegalStateException("Failed to parse ClickHouse JSONEachRow line: " + line, ex);
@@ -177,7 +171,7 @@ final class ClickHouseVariableHistoryReader {
             try {
                 JsonNode node = objectMapper.readTree(line);
                 buckets.add(new VariableHistoryService.VariableHistoryBucket(
-                        parseInstant(node.path("bucket_start").asText()),
+                        ClickHouseDateTimes.parse(node.path("bucket_start").asText()),
                         node.path("avg_val").isNull() ? null : node.path("avg_val").asDouble(),
                         node.path("min_val").isNull() ? null : node.path("min_val").asDouble(),
                         node.path("max_val").isNull() ? null : node.path("max_val").asDouble(),
@@ -188,23 +182,6 @@ final class ClickHouseVariableHistoryReader {
             }
         }
         return buckets;
-    }
-
-    private static Instant parseInstant(String value) {
-        if (value == null || value.isBlank()) {
-            return Instant.EPOCH;
-        }
-        if (value.contains("T")) {
-            return Instant.parse(value.endsWith("Z") ? value : value + "Z");
-        }
-        return CH_DATETIME.parse(value, Instant::from);
-    }
-
-    private static Instant parseInstantOrNull(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return parseInstant(value);
     }
 
     private String postQuery(String query, Map<String, String> params) {

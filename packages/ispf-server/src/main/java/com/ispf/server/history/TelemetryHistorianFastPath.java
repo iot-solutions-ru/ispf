@@ -57,7 +57,14 @@ public class TelemetryHistorianFastPath {
         long nowMs = System.currentTimeMillis();
         EligibilityCacheEntry cached = eligibilityCache.get(cacheKey);
         if (cached != null && cached.eligible() && nowMs - cached.loadedAtMs() < ELIGIBILITY_CACHE_TTL_MS) {
-            return true;
+            // Positive eligibility is cached for coalesce cost, but UI interest can appear mid-TTL —
+            // re-check so opening a live chart immediately leaves the historian-only path.
+            VariableChangeInterest interest = subscriptionRegistry.interest(objectPath, variableName);
+            if (!needsBus(objectPath, variableName, interest)) {
+                return true;
+            }
+            eligibilityCache.remove(cacheKey);
+            return false;
         }
         VariableChangeInterest interest = subscriptionRegistry.interest(objectPath, variableName);
         boolean eligible = interest.historian() && !needsBus(objectPath, variableName, interest);
@@ -120,11 +127,15 @@ public class TelemetryHistorianFastPath {
     }
 
     private boolean needsBus(String objectPath, String variableName, VariableChangeInterest interest) {
+        // UI interest must always take the object-change bus so live charts/indicators get VARIABLE_UPDATED
+        // even for TELEMETRY_ONLY devices (otherwise WS clients freeze while HTTP poll is disabled).
+        if (interest.uiRefresh()) {
+            return true;
+        }
         if (telemetryPolicyService.publishMode(objectPath, variableName) == TelemetryPublishMode.TELEMETRY_ONLY) {
             return false;
         }
-        return interest.uiRefresh()
-                || (telemetryPolicyService.automationEligible(objectPath, variableName) && interest.automation());
+        return telemetryPolicyService.automationEligible(objectPath, variableName) && interest.automation();
     }
 
     private record EligibilityCacheEntry(boolean eligible, long loadedAtMs) {}

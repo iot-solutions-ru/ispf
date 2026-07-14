@@ -86,15 +86,24 @@ export default function ChartWidgetView({
     maxPoints,
     historyRange,
     chartMode,
-    null
+    null,
+    {
+      sampleMode: widget.sampleMode,
+      historyBucket: widget.historyBucket,
+      liveCoalesceMs: widget.liveCoalesceMs,
+    },
   );
   const hasMultiQueryTags = Boolean(widget.analyticsQueryTagsJson?.trim());
+  const multiBucket =
+    widget.historyBucket && widget.historyBucket !== "auto"
+      ? widget.historyBucket
+      : undefined;
   const multiSeries = useAnalyticsMultiSeries(
     widget.analyticsQueryTagsJson,
     historyRange,
     refreshIntervalMs,
     maxPoints,
-    hasMultiQueryTags ? undefined : series.historyBucket
+    multiBucket ?? (hasMultiQueryTags ? undefined : series.historyBucket),
   );
   const useMultiSeries = multiSeries.tags.length > 0 && chartMode === "line";
 

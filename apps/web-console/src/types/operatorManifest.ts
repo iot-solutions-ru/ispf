@@ -95,6 +95,9 @@ export interface OperatorManifestChart {
   chartStyle?: "line" | "area";
   historyRange?: WidgetHistoryRange;
   maxPoints?: number;
+  sampleMode?: import("./dashboard").ChartSampleMode;
+  historyBucket?: string;
+  liveCoalesceMs?: number;
   refreshIntervalMs?: number;
   color?: string;
   decimals?: number;
@@ -216,6 +219,9 @@ export function manifestChartToWidget(
     chartStyle: chart.chartStyle ?? "area",
     historyRange: chart.historyRange ?? "live",
     maxPoints: chart.maxPoints ?? 120,
+    sampleMode: chart.sampleMode,
+    historyBucket: chart.historyBucket,
+    liveCoalesceMs: chart.liveCoalesceMs,
     color: chart.color,
     decimals: chart.decimals,
     unit: chart.unit,

@@ -4,8 +4,12 @@ import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.platform.PlatformLeaderLockService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
@@ -22,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class AnalyticsEngineScheduler {
 
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsEngineScheduler.class);
     private static final String LOCK_NAME = "analytics_engine_scheduler";
     private static final Duration LOCK_TTL = Duration.ofSeconds(30);
 
@@ -54,11 +59,16 @@ public class AnalyticsEngineScheduler {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(Ordered.LOWEST_PRECEDENCE - 10)
     public void onReady() {
         if (!engineService.isEnabled()) {
             return;
         }
-        scheduleRegistry.syncAll(catalogService.listEnabledTags());
+        // After binding-rules startup so @bindingRules objects are loadable into the catalog.
+        catalogService.invalidateCatalog();
+        List<AnalyticsTagDefinition> tags = catalogService.listEnabledTags();
+        scheduleRegistry.syncAll(tags);
+        log.info("Analytics engine scheduler ready: {} enabled historian tag(s)", tags.size());
         reschedule();
     }
 
@@ -109,9 +119,17 @@ public class AnalyticsEngineScheduler {
                 List<AnalyticsTagDefinition> dueTags = catalogService.listEnabledTags().stream()
                         .filter(tag -> duePaths.contains(tag.tagPath()))
                         .toList();
-                engineService.evaluateTags(dueTags);
-                for (AnalyticsTagDefinition tag : dueTags) {
-                    scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, null);
+                try {
+                    engineService.evaluateTags(dueTags);
+                    for (AnalyticsTagDefinition tag : dueTags) {
+                        scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, null);
+                    }
+                } catch (RuntimeException ex) {
+                    log.warn(
+                            "Analytics due-tag evaluation failed ({} tag(s)): {}",
+                            dueTags.size(),
+                            ex.getMessage()
+                    );
                 }
             }
         } finally {
