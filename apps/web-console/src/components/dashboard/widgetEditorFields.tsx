@@ -1559,6 +1559,45 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
             />
           </label>
+          <label>
+            selectionKey
+            <input
+              value={rw.selectionKey ?? ""}
+              onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+              placeholder="device"
+            />
+          </label>
+          <FormRow>
+            <DashboardPathField
+              caption={t("editor.rowTargetDashboard")}
+              value={rw.rowTargetDashboard ?? ""}
+              dashboards={ctx.dashboards}
+              onChange={(v) => update({ rowTargetDashboard: v || undefined })}
+            />
+            <FieldLabel caption="rowOpenMode">
+              <StackedSlot>
+                <select
+                  value={rw.rowOpenMode ?? "navigate"}
+                  onChange={(e) =>
+                    update({ rowOpenMode: e.target.value as "navigate" | "modal" })
+                  }
+                  disabled={!rw.rowTargetDashboard}
+                >
+                  <option value="navigate">navigate</option>
+                  <option value="modal">modal</option>
+                </select>
+              </StackedSlot>
+            </FieldLabel>
+          </FormRow>
+          <label>
+            rowTargetSelectionKey
+            <input
+              value={rw.rowTargetSelectionKey ?? ""}
+              onChange={(e) => update({ rowTargetSelectionKey: e.target.value || undefined })}
+              disabled={!rw.rowTargetDashboard}
+              placeholder="device"
+            />
+          </label>
           <KeyValueEditor
             label="rowParamsFromRowJson"
             value={rw.rowParamsFromRowJson}

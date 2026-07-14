@@ -206,15 +206,24 @@ public final class AgentWidgetPropertiesGuide {
                 - status online: забыть valueField=online при variableName=status
                 - unit и unitField: unit — статическая подпись; unitField — читать поле unit из переменной
                 - Дублировать id виджетов в одном layout
-                - w>12 или x+w>12 — виджет обрежется сеткой
+                - Использовать размеры 12-колоночной эпохи (w=3,h=2) при columns=84 — виджет будет крошечным
+                - x+w > 84 — виджет обрежется сеткой
                 
-                ### Размеры сетки (рекомендации)
+                ### Размеры сетки (fine grid 84×8 — ОБЯЗАТЕЛЬНО)
                 
-                - value/indicator/toggle: w=2–4, h=2
-                - chart: w=6–12, h=4–6
-                - object-table: w=12, h=4–6
-                - function-form: w=4–6, h=4
-                - snmp btop theme: rowHeight=52, компактные h=1–2 для метрик
+                Пиши **fine-единицы**. Квант ≈ 7. KPI = четверть/треть ширины, не «пара колонок».
+                
+                | Тип | w | h |
+                |-----|---|---|
+                | value / indicator / toggle / status-badge / gauge | **21 или 28** | **14** |
+                | dashboard-link / nav chip | 9–14 | **7** |
+                | chart / sparkline / pie-chart | **42–84** | **28–35** |
+                | object-table / report / event-feed / work-queue | **42–84** | **28–42** |
+                | function / function-form / variable-editor | **28–42** | **21–28** |
+                | scada-mimic | **84** | **56–70** |
+                
+                Ряд KPI: 4×w=21 или 3×w=28, сумма = 84, один y, один h.
+                Не ставь w<10 / h<7 (кроме nav chip). См. раздел «Визуальная композиция» в Dashboard guide.
                 """;
     }
 
@@ -318,8 +327,9 @@ public final class AgentWidgetPropertiesGuide {
         valueFields.add(f("unit", "string", false, "Static unit label"));
         valueFields.add(f("unitField", "string", false, "Field name for unit from variable"));
         valueFields.add(f("decimals", "integer", false, "Decimal places"));
-        specs.put("value", spec("object-variable", List.of("variableName"), valueFields,
-                "Single metric display", "{\"type\":\"value\",\"variableName\":\"temperature\",\"valueField\":\"value\",\"decimals\":1}"));
+                specs.put("value", spec("object-variable", List.of("variableName"), valueFields,
+                "Single metric display; place as KPI tile w=21|28 h=14",
+                "{\"type\":\"value\",\"title\":\"Temperature\",\"x\":0,\"y\":0,\"w\":28,\"h\":14,\"variableName\":\"temperature\",\"valueField\":\"value\",\"decimals\":1,\"unit\":\"°C\"}"));
 
         List<Map<String, String>> chartFields = new ArrayList<>(varFields(true));
         chartFields.add(f("chartStyle", "enum", false, "line|area"));

@@ -105,9 +105,56 @@ public final class AgentDashboardGuide {
                 {"id":"mimic","type":"scada-mimic","title":"Мнемосхема","x":0,"y":0,"w":84,"h":63,
                  "mimicPath":"<mimicPath>","panEnabled":true}
                 
-                Grid: columns=84, rowHeight=8. Позиция x,y и размер w,h — в ячейках fine grid (1/4 ширины ≈ w=21, 2 строки ≈ h=14).
-                НЕ используй старую сетку 12×72 — виджеты с w=4,h=2 будут крошечными. У каждого виджета уникальный id.
-                """;
+                ### Визуальная композиция (ОБЯЗАТЕЛЬНО — дашборд должен выглядеть презентабельно)
+                
+                Сетка: **columns=84, rowHeight=8**. Это fine grid: 1 «старая» колонка = **7** ячеек.
+                Пиши размеры СРАЗУ в fine-единицах. **ЗАПРЕЩЕНО** w=2…6 / h=1…3 — на 84-колоночной сетке
+                это крошечные «крошки», а не карточки.
+                
+                **Кванты размеров (держись их):**
+                | Роль | w | h | Примечание |
+                |------|---|---|------------|
+                | KPI tile (value/indicator/status/gauge) | **21** (¼) или **28** (⅓) | **14** | ряд из 3–4 плиток |
+                | Компактный chip (NAV/badge) | 9–14 | **7** | только верхняя полоса |
+                | Chart / sparkline / pie | **42–84** | **28–35** | график ≥ половины ширины |
+                | object-table / report / event-feed | **42–84** | **28–42** | таблица не «ленточка» |
+                | function / function-form | **28–42** | **21–28** | форма читаемая |
+                | scada-mimic | **84** | **56–70** | почти full-bleed |
+                
+                x,y,w,h — предпочтительно **кратные 7** (0,7,14,21,28,35,42,49,56,63,70,77,84).
+                
+                **Паттерны экрана (копируй структуру, подставляй variableName из list_variables):**
+                
+                1) *Overview KPI + trend* (датчик / устройство):
+                   - y=0: 3–4 KPI в ряд, сумма w = **84**, одинаковый h=14
+                   - y=14: chart w=56–84 h=28 (+ sparkline/gauge сбоку)
+                   - y=42+: действия (function) w=28 h=14 — не выше KPI
+                
+                2) *Master–detail* (парк устройств):
+                   - object-table x=0 y=0 w=35–42 h=56, selectionKey=device
+                   - справа столбик KPI/chart с тем же selectionKey, выровненный по y
+                
+                3) *Ops board*:
+                   - верх: nav-menu / dashboard-link chips h=7
+                   - ниже: KPI ряд h=14
+                   - ниже: основной контент (chart/table) h≥28
+                
+                **Правила «как HTML-лендинг, только сетка»:**
+                - Одна задача на экран → ясная иерархия: KPI сверху → главный виджет → вторичное
+                - Ряд выровнен: одинаковые `y` и `h`; без дыр — сумма w в ряду = 84 (или осознанный отступ справа)
+                - Без наложений; без «лесенки» из 8 узких виджетов друг под другом на всю ширину
+                - 4–10 виджетов на overview; не 20 мини-плиток
+                - Читаемые title; decimals/unit на метриках; chart color (#2f81f7 / #3fb950)
+                - Предпочитай set_dashboard_layout одним layoutJson (весь экран) или template=
+                
+                **Антипаттерны (ломают презентабельность):**
+                - размеры «12-колоночной» эпохи: w=3,h=2 / w=6,h=4 на columns=84
+                - все виджеты в столбик x=0,y+=h с w=12 или w=84 и крошечным h
+                - gaps: виджеты с разными h в одном ряду → «зубцы»
+                - chart без historyEnabled (пустая рамка)
+                - title «Widget 1» / пустые заголовки
+                """
+                ;
     }
 
     public static Map<String, Object> summary() {
@@ -130,16 +177,31 @@ public final class AgentDashboardGuide {
         summary.put("workflow", List.of(
                 "list_variables on target device(s) first",
                 "create_object DASHBOARD under root.platform.dashboards",
-                "prefer set_dashboard_layout template= over many add_dashboard_widget",
+                "prefer set_dashboard_layout template= or one full layoutJson over many add_dashboard_widget",
+                "compose presentable layout: columns=84 rowHeight=8; KPI tiles w=21/28 h=14; charts w≥42 h≥28",
+                "align rows (same y/h); fill width (sum w≈84); sizes multiples of 7",
                 "match selectionKey between object-table and consumers",
                 "configure_variable_history before chart widgets"
+        ));
+        summary.put("layoutQuanta", Map.of(
+                "columns", 84,
+                "rowHeight", 8,
+                "kpiTile", "w=21|28, h=14",
+                "chart", "w=42..84, h=28..35",
+                "table", "w=42..84, h=28..42",
+                "form", "w=28..42, h=21..28",
+                "navChip", "w=9..14, h=7"
         ));
         summary.put("antiPatterns", List.of(
                 "set_variable name=widgets or manual layout variable",
                 "invent variableName without list_variables",
                 "parentPath on value/chart widgets",
                 "mismatched selectionKey strings",
-                "many add_dashboard_widget calls for full screen"
+                "many add_dashboard_widget calls for full screen",
+                "legacy 12-col sizes on fine grid (w=2..6, h=1..3) — tiny crumbs",
+                "vertical stack of skinny full-width strips",
+                "uneven heights in the same row (jagged layout)",
+                "generic titles like Widget 1"
         ));
         return summary;
     }

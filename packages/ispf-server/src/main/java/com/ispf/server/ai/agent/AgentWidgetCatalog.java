@@ -202,7 +202,9 @@ public final class AgentWidgetCatalog {
         StringBuilder sb = new StringBuilder();
         sb.append("### Widget catalog (").append(CATALOG.size()).append(" types)\n");
         sb.append("Layout: DASHBOARD variable `layout` JSON {columns, rowHeight, widgets[]}.\n");
-        sb.append("Never set_variable name=widgets. Grid: x,y,w,h (12 columns).\n\n");
+        sb.append("Never set_variable name=widgets. Grid: x,y,w,h (84 columns, rowHeight 8).\n");
+        sb.append("PRESENTABLE layout: KPI tiles w=21|28 h=14 in a filled row; charts/tables w≥42 h≥28; ");
+        sb.append("sizes multiples of 7; NEVER legacy crumbs w=2..6 h=1..3.\n\n");
         sb.append("#### Data bindings\n");
         for (Map.Entry<String, String> entry : bindingGuide().entrySet()) {
             sb.append("- **").append(entry.getKey()).append("**: ").append(entry.getValue()).append('\n');

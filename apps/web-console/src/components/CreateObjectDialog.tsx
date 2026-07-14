@@ -357,7 +357,7 @@ export default function CreateObjectDialog({
                   : undefined,
         driverId: type === "DEVICE" ? driverId : undefined,
         driverPollIntervalMs: type === "DEVICE" ? pollIntervalMs : undefined,
-        autoStartDriver: false,
+        autoStartDriver: true,
       });
       return obj.path;
     },

@@ -98,6 +98,7 @@ public class DriverRuntimeController {
         );
         driverRuntimeService.configure(devicePath, binding);
         if (Boolean.TRUE.equals(request.autoStart())) {
+            driverRuntimeService.setDriverAutoStart(devicePath, true);
             return driverRuntimeService.start(devicePath);
         }
         return driverRuntimeService.status(devicePath).orElseThrow();

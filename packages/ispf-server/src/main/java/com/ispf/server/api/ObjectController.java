@@ -348,6 +348,7 @@ public class ObjectController {
                     request.driverId(),
                     request.driverPollIntervalMs(),
                     Boolean.TRUE.equals(request.autoStartDriver())
+                            || request.autoStartDriver() == null
             );
             objectManager.persistNodeTree(node.path());
         }

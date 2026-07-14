@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchVariables } from "../api";
+import { fetchVariables, setVariable } from "../api";
 import {
   configureDriver,
   fetchDriverStatus,
@@ -68,6 +68,20 @@ function parseJsonObject(text: string, invalidJson: string, invalidObject: strin
     result[key] = value === null || value === undefined ? "" : String(value);
   }
   return result;
+}
+
+function variableBool(variables: VariableDto[] | undefined, name: string, fallback: boolean): boolean {
+  const raw = variableString(variables, name);
+  if (!raw) {
+    return fallback;
+  }
+  if (raw === "true" || raw === "1") {
+    return true;
+  }
+  if (raw === "false" || raw === "0") {
+    return false;
+  }
+  return fallback;
 }
 
 function statusClass(status: string): string {
@@ -191,6 +205,25 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
     mutationFn: async () => {
       await stopDriver(devicePath);
       return startDriver(devicePath);
+    },
+    onSuccess: invalidate,
+  });
+
+  const autoStartBoot = variableBool(variablesQuery.data, "driverAutoStart", true);
+
+  const autoStartBootMutation = useMutation({
+    mutationFn: (enabled: boolean) => {
+      const existing = variablesQuery.data?.find((v) => v.name === "driverAutoStart");
+      if (existing?.value) {
+        return setVariable(devicePath, "driverAutoStart", {
+          ...existing.value,
+          rows: [{ ...(existing.value.rows?.[0] ?? {}), value: enabled }],
+        });
+      }
+      return setVariable(devicePath, "driverAutoStart", {
+        schema: { name: "booleanValue", fields: [{ name: "value", type: "BOOLEAN" }] },
+        rows: [{ value: enabled }],
+      });
     },
     onSuccess: invalidate,
   });
@@ -349,6 +382,17 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
               {t("inspector:driver.restart")}
             </button>
           </div>
+
+          <label className="driver-autostart-toggle">
+            <input
+              type="checkbox"
+              checked={autoStartBoot}
+              disabled={!canManage || autoStartBootMutation.isPending}
+              onChange={(e) => autoStartBootMutation.mutate(e.target.checked)}
+            />
+            {t("inspector:driver.autoStartOnBoot")}
+          </label>
+          <p className="hint">{t("inspector:driver.autoStartOnBootHint")}</p>
 
           <form
             className="driver-config-form"

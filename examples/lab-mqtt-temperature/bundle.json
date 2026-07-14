@@ -27,8 +27,14 @@
           "schema": {
             "name": "temperature",
             "fields": [
-              { "name": "value", "type": "DOUBLE" },
-              { "name": "unit", "type": "STRING" }
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
             ]
           },
           "readable": true,
@@ -38,11 +44,22 @@
             "schema": {
               "name": "temperature",
               "fields": [
-                { "name": "value", "type": "DOUBLE" },
-                { "name": "unit", "type": "STRING" }
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
               ]
             },
-            "rows": [{ "value": 22.5, "unit": "C" }]
+            "rows": [
+              {
+                "value": 22.5,
+                "unit": "C"
+              }
+            ]
           }
         },
         {
@@ -51,16 +68,30 @@
           "group": "config",
           "schema": {
             "name": "threshold",
-            "fields": [{ "name": "value", "type": "DOUBLE" }]
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
           },
           "readable": true,
           "writable": true,
           "defaultValue": {
             "schema": {
               "name": "threshold",
-              "fields": [{ "name": "value", "type": "DOUBLE" }]
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
             },
-            "rows": [{ "value": 35.0 }]
+            "rows": [
+              {
+                "value": 35
+              }
+            ]
           }
         },
         {
@@ -69,16 +100,30 @@
           "group": "status",
           "schema": {
             "name": "alarmActive",
-            "fields": [{ "name": "value", "type": "BOOLEAN" }]
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
           },
           "readable": true,
           "writable": false,
           "defaultValue": {
             "schema": {
               "name": "alarmActive",
-              "fields": [{ "name": "value", "type": "BOOLEAN" }]
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
             },
-            "rows": [{ "value": false }]
+            "rows": [
+              {
+                "value": false
+              }
+            ]
           }
         },
         {
@@ -87,16 +132,30 @@
           "group": "status",
           "schema": {
             "name": "booleanValue",
-            "fields": [{ "name": "value", "type": "BOOLEAN" }]
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
           },
           "readable": true,
           "writable": true,
           "defaultValue": {
             "schema": {
               "name": "booleanValue",
-              "fields": [{ "name": "value", "type": "BOOLEAN" }]
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
             },
-            "rows": [{ "value": false }]
+            "rows": [
+              {
+                "value": false
+              }
+            ]
           }
         }
       ],
@@ -108,8 +167,14 @@
           "schema": {
             "name": "temperature",
             "fields": [
-              { "name": "value", "type": "DOUBLE" },
-              { "name": "unit", "type": "STRING" }
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
             ]
           }
         }
@@ -118,12 +183,21 @@
         {
           "name": "acknowledgeAlarm",
           "description": "Acknowledge active temperature alarm",
-          "inputSchema": { "name": "voidInput", "fields": [] },
+          "inputSchema": {
+            "name": "voidInput",
+            "fields": []
+          },
           "outputSchema": {
             "name": "functionResult",
             "fields": [
-              { "name": "success", "type": "BOOLEAN" },
-              { "name": "message", "type": "STRING" }
+              {
+                "name": "success",
+                "type": "BOOLEAN"
+              },
+              {
+                "name": "message",
+                "type": "STRING"
+              }
             ]
           }
         }
@@ -135,7 +209,9 @@
           "targetVariable": "alarmActive"
         }
       ],
-      "parameters": { "unit": "C" }
+      "parameters": {
+        "unit": "C"
+      }
     }
   ],
   "objects": [
@@ -186,24 +262,57 @@
       "functionName": "listSensors",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "sensor_row",
                 "fields": [
-                  { "name": "sensorId", "type": "STRING", "description": "ID" },
-                  { "name": "objectPath", "type": "STRING", "description": "Путь" },
-                  { "name": "displayName", "type": "STRING", "description": "Датчик" },
-                  { "name": "mqttTopic", "type": "STRING", "description": "MQTT топик" },
-                  { "name": "latitude", "type": "DOUBLE", "description": "Широта" },
-                  { "name": "longitude", "type": "DOUBLE", "description": "Долгота" }
+                  {
+                    "name": "sensorId",
+                    "type": "STRING",
+                    "description": "ID"
+                  },
+                  {
+                    "name": "objectPath",
+                    "type": "STRING",
+                    "description": "Путь"
+                  },
+                  {
+                    "name": "displayName",
+                    "type": "STRING",
+                    "description": "Датчик"
+                  },
+                  {
+                    "name": "mqttTopic",
+                    "type": "STRING",
+                    "description": "MQTT топик"
+                  },
+                  {
+                    "name": "latitude",
+                    "type": "DOUBLE",
+                    "description": "Широта"
+                  },
+                  {
+                    "name": "longitude",
+                    "type": "DOUBLE",
+                    "description": "Долгота"
+                  }
                 ]
               }
             }
@@ -223,20 +332,53 @@
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "sensorId", "type": "STRING" }
+            {
+              "name": "sensorId",
+              "type": "STRING"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "sensorId", "type": "STRING", "description": "ID" },
-            { "name": "objectPath", "type": "STRING", "description": "Путь" },
-            { "name": "displayName", "type": "STRING", "description": "Датчик" },
-            { "name": "mqttTopic", "type": "STRING", "description": "MQTT топик" },
-            { "name": "latitude", "type": "DOUBLE", "description": "Широта" },
-            { "name": "longitude", "type": "DOUBLE", "description": "Долгота" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "sensorId",
+              "type": "STRING",
+              "description": "ID"
+            },
+            {
+              "name": "objectPath",
+              "type": "STRING",
+              "description": "Путь"
+            },
+            {
+              "name": "displayName",
+              "type": "STRING",
+              "description": "Датчик"
+            },
+            {
+              "name": "mqttTopic",
+              "type": "STRING",
+              "description": "MQTT топик"
+            },
+            {
+              "name": "latitude",
+              "type": "DOUBLE",
+              "description": "Широта"
+            },
+            {
+              "name": "longitude",
+              "type": "DOUBLE",
+              "description": "Долгота"
+            }
           ]
         }
       },
@@ -250,13 +392,25 @@
       "functionName": "heartbeat",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "lastTick", "type": "STRING" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lastTick",
+              "type": "STRING"
+            }
           ]
         }
       },
@@ -295,7 +449,10 @@
   "events": [
     {
       "id": "mqttLabHighTemperature",
-      "roles": ["admin", "operator"]
+      "roles": [
+        "admin",
+        "operator"
+      ]
     }
   ],
   "dashboards": [
@@ -303,13 +460,13 @@
       "path": "root.platform.dashboards.mqtt-lab-overview",
       "title": "MQTT Lab — обзор",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"sensor-table\",\"type\":\"object-table\",\"title\":\"Датчики температуры\",\"x\":0,\"y\":0,\"w\":12,\"h\":4,\"parentPath\":\"root.platform.devices.mqtt-lab.sensors\",\"selectionKey\":\"sensor\",\"rowTargetDashboard\":\"root.platform.dashboards.mqtt-lab-detail\",\"rowOpenMode\":\"navigate\",\"columnsJson\":\"[{\\\"variable\\\":\\\"temperature\\\",\\\"label\\\":\\\"°C\\\",\\\"field\\\":\\\"value\\\",\\\"decimals\\\":2},{\\\"variable\\\":\\\"driverStatus\\\",\\\"label\\\":\\\"Драйвер\\\",\\\"field\\\":\\\"value\\\"},{\\\"variable\\\":\\\"threshold\\\",\\\"label\\\":\\\"Порог\\\",\\\"field\\\":\\\"value\\\"}]\"},{\"id\":\"sensor-map\",\"type\":\"map\",\"title\":\"Карта датчиков\",\"x\":0,\"y\":4,\"w\":12,\"h\":5,\"parentPath\":\"root.platform.devices.mqtt-lab.sensors\",\"latVariable\":\"coordinates\",\"latField\":\"latitude\",\"lonField\":\"longitude\",\"labelVariable\":\"sensorLabel\",\"centerLat\":55.755,\"centerLon\":37.62,\"zoom\":11,\"selectionKey\":\"sensor\",\"rowTargetDashboard\":\"root.platform.dashboards.mqtt-lab-detail\",\"rowOpenMode\":\"navigate\"},{\"id\":\"events\",\"type\":\"event-feed\",\"title\":\"Тревоги\",\"x\":0,\"y\":9,\"w\":12,\"h\":3,\"objectPath\":\"root.platform.devices.mqtt-lab.sensors.sensor-01\",\"eventNamesJson\":\"[\\\"mqttLabHighTemperature\\\",\\\"thresholdExceeded\\\"]\",\"maxItems\":15}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sensor-table\",\"type\":\"object-table\",\"title\":\"Датчики температуры\",\"x\":0,\"y\":0,\"w\":84,\"h\":28,\"parentPath\":\"root.platform.devices.mqtt-lab.sensors\",\"selectionKey\":\"sensor\",\"rowTargetDashboard\":\"root.platform.dashboards.mqtt-lab-detail\",\"rowOpenMode\":\"navigate\",\"columnsJson\":\"[{\\\"variable\\\":\\\"temperature\\\",\\\"label\\\":\\\"°C\\\",\\\"field\\\":\\\"value\\\",\\\"decimals\\\":2},{\\\"variable\\\":\\\"driverStatus\\\",\\\"label\\\":\\\"Драйвер\\\",\\\"field\\\":\\\"value\\\"},{\\\"variable\\\":\\\"threshold\\\",\\\"label\\\":\\\"Порог\\\",\\\"field\\\":\\\"value\\\"}]\"},{\"id\":\"sensor-map\",\"type\":\"map\",\"title\":\"Карта датчиков\",\"x\":0,\"y\":28,\"w\":84,\"h\":35,\"parentPath\":\"root.platform.devices.mqtt-lab.sensors\",\"latVariable\":\"coordinates\",\"latField\":\"latitude\",\"lonField\":\"longitude\",\"labelVariable\":\"sensorLabel\",\"centerLat\":55.755,\"centerLon\":37.62,\"zoom\":11,\"selectionKey\":\"sensor\",\"rowTargetDashboard\":\"root.platform.dashboards.mqtt-lab-detail\",\"rowOpenMode\":\"navigate\"},{\"id\":\"events\",\"type\":\"event-feed\",\"title\":\"Тревоги\",\"x\":0,\"y\":63,\"w\":84,\"h\":21,\"objectPath\":\"root.platform.devices.mqtt-lab.sensors.sensor-01\",\"eventNamesJson\":\"[\\\"mqttLabHighTemperature\\\",\\\"thresholdExceeded\\\"]\",\"maxItems\":15}]}"
     },
     {
       "path": "root.platform.dashboards.mqtt-lab-detail",
       "title": "MQTT Lab — датчик",
       "refreshIntervalMs": 2000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"temp-value\",\"type\":\"value\",\"title\":\"Температура\",\"x\":0,\"y\":0,\"w\":4,\"h\":2,\"selectionKey\":\"sensor\",\"variableName\":\"temperature\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"°C\"},{\"id\":\"threshold-value\",\"type\":\"value\",\"title\":\"Порог тревоги\",\"x\":4,\"y\":0,\"w\":4,\"h\":2,\"selectionKey\":\"sensor\",\"variableName\":\"threshold\",\"valueField\":\"value\",\"decimals\":1,\"unit\":\"°C\"},{\"id\":\"driver-status\",\"type\":\"indicator\",\"title\":\"Драйвер\",\"x\":8,\"y\":0,\"w\":4,\"h\":2,\"selectionKey\":\"sensor\",\"variableName\":\"driverStatus\",\"valueField\":\"value\",\"trueLabel\":\"RUNNING\",\"falseLabel\":\"STOPPED\",\"trueColor\":\"#3fb950\",\"falseColor\":\"#8b949e\"},{\"id\":\"temp-chart\",\"type\":\"chart\",\"title\":\"История температуры\",\"x\":0,\"y\":2,\"w\":8,\"h\":5,\"selectionKey\":\"sensor\",\"variableName\":\"temperature\",\"valueField\":\"value\",\"chartStyle\":\"line\",\"maxPoints\":120,\"historyRange\":\"live\",\"color\":\"#2f81f7\",\"decimals\":2},{\"id\":\"alarm-indicator\",\"type\":\"indicator\",\"title\":\"Тревога\",\"x\":8,\"y\":2,\"w\":4,\"h\":2,\"selectionKey\":\"sensor\",\"variableName\":\"alarmActive\",\"valueField\":\"value\",\"trueLabel\":\"Активна\",\"falseLabel\":\"Норма\",\"trueColor\":\"#f85149\",\"falseColor\":\"#3fb950\"},{\"id\":\"set-temp\",\"type\":\"variable-editor\",\"title\":\"Задать температуру (локально)\",\"x\":8,\"y\":4,\"w\":4,\"h\":3,\"selectionKey\":\"sensor\",\"variablesJson\":\"[\\\"temperature\\\"]\"},{\"id\":\"ack-alarm\",\"type\":\"function-form\",\"title\":\"Квитировать тревогу\",\"x\":8,\"y\":7,\"w\":4,\"h\":2,\"selectionKey\":\"sensor\",\"functionName\":\"acknowledgeAlarm\",\"buttonLabel\":\"Квитировать\",\"fieldsJson\":\"[]\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"temp-value\",\"type\":\"value\",\"title\":\"Температура\",\"x\":0,\"y\":0,\"w\":28,\"h\":14,\"selectionKey\":\"sensor\",\"variableName\":\"temperature\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"°C\"},{\"id\":\"threshold-value\",\"type\":\"value\",\"title\":\"Порог тревоги\",\"x\":28,\"y\":0,\"w\":28,\"h\":14,\"selectionKey\":\"sensor\",\"variableName\":\"threshold\",\"valueField\":\"value\",\"decimals\":1,\"unit\":\"°C\"},{\"id\":\"driver-status\",\"type\":\"indicator\",\"title\":\"Драйвер\",\"x\":56,\"y\":0,\"w\":28,\"h\":14,\"selectionKey\":\"sensor\",\"variableName\":\"driverStatus\",\"valueField\":\"value\",\"trueLabel\":\"RUNNING\",\"falseLabel\":\"STOPPED\",\"trueColor\":\"#3fb950\",\"falseColor\":\"#8b949e\"},{\"id\":\"temp-chart\",\"type\":\"chart\",\"title\":\"История температуры\",\"x\":0,\"y\":14,\"w\":56,\"h\":35,\"selectionKey\":\"sensor\",\"variableName\":\"temperature\",\"valueField\":\"value\",\"chartStyle\":\"line\",\"maxPoints\":120,\"historyRange\":\"live\",\"color\":\"#2f81f7\",\"decimals\":2},{\"id\":\"alarm-indicator\",\"type\":\"indicator\",\"title\":\"Тревога\",\"x\":56,\"y\":14,\"w\":28,\"h\":14,\"selectionKey\":\"sensor\",\"variableName\":\"alarmActive\",\"valueField\":\"value\",\"trueLabel\":\"Активна\",\"falseLabel\":\"Норма\",\"trueColor\":\"#f85149\",\"falseColor\":\"#3fb950\"},{\"id\":\"set-temp\",\"type\":\"variable-editor\",\"title\":\"Задать температуру (локально)\",\"x\":56,\"y\":28,\"w\":28,\"h\":21,\"selectionKey\":\"sensor\",\"variablesJson\":\"[\\\"temperature\\\"]\"},{\"id\":\"ack-alarm\",\"type\":\"function-form\",\"title\":\"Квитировать тревогу\",\"x\":56,\"y\":49,\"w\":28,\"h\":14,\"selectionKey\":\"sensor\",\"functionName\":\"acknowledgeAlarm\",\"buttonLabel\":\"Квитировать\",\"fieldsJson\":\"[]\"}]}"
     }
   ],
   "operatorUi": {
@@ -317,8 +474,14 @@
     "title": "MQTT Temperature Lab",
     "defaultDashboard": "root.platform.dashboards.mqtt-lab-overview",
     "dashboards": [
-      { "path": "root.platform.dashboards.mqtt-lab-overview", "title": "Обзор" },
-      { "path": "root.platform.dashboards.mqtt-lab-detail", "title": "Датчик" }
+      {
+        "path": "root.platform.dashboards.mqtt-lab-overview",
+        "title": "Обзор"
+      },
+      {
+        "path": "root.platform.dashboards.mqtt-lab-detail",
+        "title": "Датчик"
+      }
     ],
     "eventJournalObjectPath": "root.platform.devices.mqtt-lab.sensors.sensor-01"
   }

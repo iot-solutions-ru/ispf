@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class DashboardWidgetPlacementTest {
 
     @Test
-    void scalesLegacyWidgetsOnFineGrid() {
+    void preservesCompactFineGridWidgets() {
         Map<String, Object> layout = Map.of(
                 "columns", 84,
                 "rowHeight", 8,
@@ -27,15 +27,15 @@ class DashboardWidgetPlacementTest {
         List<Map<String, Object>> widgets = (List<Map<String, Object>>) normalized.get("widgets");
 
         assertEquals(84, normalized.get("columns"));
-        assertEquals(28, widgets.get(0).get("w"));
-        assertEquals(14, widgets.get(0).get("h"));
+        assertEquals(4, widgets.get(0).get("w"));
+        assertEquals(2, widgets.get(0).get("h"));
         assertEquals(0, widgets.get(0).get("y"));
-        assertEquals(28, widgets.get(1).get("x"));
+        assertEquals(4, widgets.get(1).get("x"));
         assertEquals(0, widgets.get(1).get("y"));
     }
 
     @Test
-    void reflowsOverlappingLegacyWidgets() {
+    void reflowsOverlappingWidgetsWithoutScaling() {
         Map<String, Object> layout = Map.of(
                 "columns", 84,
                 "rowHeight", 8,
@@ -50,11 +50,12 @@ class DashboardWidgetPlacementTest {
         List<Map<String, Object>> widgets = (List<Map<String, Object>>) normalized.get("widgets");
 
         assertEquals(0, widgets.get(0).get("y"));
-        assertEquals(14, widgets.get(1).get("y"));
+        assertEquals(2, widgets.get(1).get("y"));
+        assertEquals(4, widgets.get(0).get("w"));
     }
 
     @Test
-    void migratesLegacyLayoutColumns() {
+    void doesNotMigrateLegacyGridMetadata() {
         Map<String, Object> layout = new LinkedHashMap<>();
         layout.put("columns", 12);
         layout.put("rowHeight", 72);
@@ -63,9 +64,13 @@ class DashboardWidgetPlacementTest {
         ));
 
         Map<String, Object> normalized = DashboardWidgetPlacement.normalizeLayoutMap(layout);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> widgets = (List<Map<String, Object>>) normalized.get("widgets");
 
-        assertEquals(84, normalized.get("columns"));
-        assertEquals(8, normalized.get("rowHeight"));
+        assertEquals(12, normalized.get("columns"));
+        assertEquals(72, normalized.get("rowHeight"));
+        assertEquals(6, widgets.get(0).get("w"));
+        assertEquals(2, widgets.get(0).get("h"));
     }
 
     @Test
@@ -92,13 +97,14 @@ class DashboardWidgetPlacementTest {
     }
 
     @Test
-    void scalesLegacyWidthSevenOnFineGrid() {
+    void preservesCompactNavRow() {
         Map<String, Object> layout = Map.of(
                 "columns", 84,
                 "rowHeight", 8,
                 "widgets", List.of(
-                        Map.of("id", "feed", "type", "event-feed", "x", 0, "y", 2, "w", 5, "h", 5),
-                        Map.of("id", "report", "type", "report", "x", 5, "y", 2, "w", 7, "h", 5)
+                        Map.of("id", "nav", "type", "dashboard-link", "x", 0, "y", 0, "w", 10, "h", 7),
+                        Map.of("id", "host", "type", "value", "x", 10, "y", 0, "w", 24, "h", 7),
+                        Map.of("id", "driver", "type", "status-badge", "x", 75, "y", 0, "w", 9, "h", 7)
                 )
         );
 
@@ -106,30 +112,37 @@ class DashboardWidgetPlacementTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> widgets = (List<Map<String, Object>>) normalized.get("widgets");
 
-        assertEquals(35, widgets.get(0).get("w"));
-        assertEquals(35, widgets.get(0).get("h"));
-        assertEquals(49, widgets.get(1).get("w"));
-        assertEquals(35, widgets.get(1).get("x"));
+        assertEquals(10, widgets.get(0).get("w"));
+        assertEquals(7, widgets.get(0).get("h"));
+        assertEquals(0, widgets.get(0).get("y"));
+        assertEquals(10, widgets.get(1).get("x"));
+        assertEquals(0, widgets.get(1).get("y"));
+        assertEquals(75, widgets.get(2).get("x"));
     }
 
     @Test
-    void scalesOnlyLegacyWidgetsInMixedLayout() {
-        Map<String, Object> layout = Map.of(
-                "columns", 84,
-                "rowHeight", 8,
-                "widgets", List.of(
-                        Map.of("id", "fine", "type", "value", "x", 0, "y", 0, "w", 84, "h", 14),
-                        Map.of("id", "legacy", "type", "value", "x", 0, "y", 6, "w", 6, "h", 4)
-                )
+    void prepareNewWidgetKeepsExplicitCompactSize() {
+        Map<String, Object> widget = new LinkedHashMap<>(Map.of(
+                "id", "nav",
+                "type", "dashboard-link",
+                "title", "Nav",
+                "x", 0,
+                "y", 0,
+                "w", 10,
+                "h", 7
+        ));
+
+        Map<String, Object> placed = DashboardWidgetPlacement.prepareNewWidget(
+                widget,
+                List.of(),
+                84,
+                8
         );
 
-        Map<String, Object> normalized = DashboardWidgetPlacement.normalizeLayoutMap(layout);
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> widgets = (List<Map<String, Object>>) normalized.get("widgets");
-
-        assertEquals(84, widgets.get(0).get("w"));
-        assertEquals(42, widgets.get(1).get("w"));
-        assertEquals(28, widgets.get(1).get("h"));
+        assertEquals(10, placed.get("w"));
+        assertEquals(7, placed.get("h"));
+        assertEquals(0, placed.get("x"));
+        assertEquals(0, placed.get("y"));
     }
 
     @Test

@@ -258,8 +258,8 @@ with io.open(os.path.join(ROOT, "bpmn", "defect-distribution.bpmn.xml"), encodin
     bpmn_xml = f.read()
 
 overview_layout = {
-    "columns": 12,
-    "rowHeight": 72,
+    "columns": 84,
+    "rowHeight": 8,
     "widgets": [
         {
             "id": "lines-report",
@@ -267,8 +267,8 @@ overview_layout = {
             "title": "Линии и рекомендации",
             "x": 0,
             "y": 0,
-            "w": 8,
-            "h": 5,
+            "w": 56,
+            "h": 35,
             "reportPath": "root.platform.reports.mes-defect-lines-status",
             "emptyMessage": "Нет данных",
         },
@@ -276,10 +276,10 @@ overview_layout = {
             "id": "work-queue",
             "type": "work-queue",
             "title": "Задачи диспетчера",
-            "x": 8,
+            "x": 56,
             "y": 0,
-            "w": 4,
-            "h": 5,
+            "w": 28,
+            "h": 35,
             "operatorId": "operator",
             "maxItems": 10,
         },
@@ -288,9 +288,9 @@ overview_layout = {
             "type": "report",
             "title": "Ожидающие рекомендации",
             "x": 0,
-            "y": 5,
-            "w": 12,
-            "h": 3,
+            "y": 35,
+            "w": 84,
+            "h": 21,
             "reportPath": "root.platform.reports.mes-defect-pending-recommendations",
             "emptyMessage": "Нет активных рекомендаций",
         },
@@ -298,8 +298,8 @@ overview_layout = {
 }
 
 simulator_layout = {
-    "columns": 12,
-    "rowHeight": 72,
+    "columns": 84,
+    "rowHeight": 8,
     "widgets": [
         {
             "id": "sim-a",
@@ -307,8 +307,8 @@ simulator_layout = {
             "title": "LINE-A01 (Dolphin+Dispenser)",
             "x": 0,
             "y": 0,
-            "w": 4,
-            "h": 5,
+            "w": 28,
+            "h": 35,
             "objectPath": HUB,
             "functionName": "mes_simulateDefect",
             "buttonLabel": "Симулировать брак",
@@ -326,10 +326,10 @@ simulator_layout = {
             "id": "sim-b",
             "type": "function-form",
             "title": "LINE-B01 (Dispenser)",
-            "x": 4,
+            "x": 28,
             "y": 0,
-            "w": 4,
-            "h": 5,
+            "w": 28,
+            "h": 35,
             "objectPath": HUB,
             "functionName": "mes_simulateDefect",
             "buttonLabel": "Симулировать брак",
@@ -347,10 +347,10 @@ simulator_layout = {
             "id": "sim-d",
             "type": "function-form",
             "title": "LINE-D01 (LPBS / C48)",
-            "x": 8,
+            "x": 56,
             "y": 0,
-            "w": 4,
-            "h": 5,
+            "w": 28,
+            "h": 35,
             "objectPath": HUB,
             "functionName": "mes_simulateDefect",
             "buttonLabel": "Симулировать брак",
@@ -369,9 +369,9 @@ simulator_layout = {
             "type": "event-feed",
             "title": "Журнал событий",
             "x": 0,
-            "y": 5,
-            "w": 12,
-            "h": 4,
+            "y": 35,
+            "w": 84,
+            "h": 28,
             "objectPath": HUB,
             "eventNamesJson": '["mesDefectDetected","mesDefectRouted"]',
             "maxItems": 30,
@@ -380,8 +380,8 @@ simulator_layout = {
 }
 
 orders_layout = {
-    "columns": 12,
-    "rowHeight": 72,
+    "columns": 84,
+    "rowHeight": 8,
     "widgets": [
         {
             "id": "orders-report",
@@ -389,8 +389,8 @@ orders_layout = {
             "title": "Ордера на линиях",
             "x": 0,
             "y": 0,
-            "w": 12,
-            "h": 6,
+            "w": 84,
+            "h": 42,
             "reportPath": "root.platform.reports.mes-defect-orders-detail",
             "emptyMessage": "Нет ордеров",
         }

@@ -7,17 +7,13 @@ import java.util.Map;
 
 /**
  * Fine-grid placement for dashboard widgets (84 columns × 8px row height).
- * Migrates legacy 12-column agent layouts and auto-stacks widgets missing coordinates.
+ * Coordinates are stored as fine-grid units only — no legacy 12×72 migration.
  */
 public final class DashboardWidgetPlacement {
 
     public static final int FINE_GRID_SCALE = 7;
     public static final int DEFAULT_COLUMNS = 12 * FINE_GRID_SCALE;
     public static final int DEFAULT_ROW_HEIGHT = 8;
-
-    private static final int LEGACY_COLUMNS = 12;
-    private static final int LEGACY_ROW_HEIGHT = 72;
-    private static final int LEGACY_MAX_UNIT = 12;
 
     private DashboardWidgetPlacement() {
     }
@@ -27,11 +23,6 @@ public final class DashboardWidgetPlacement {
         Map<String, Object> copy = new LinkedHashMap<>(layout);
         int columns = intField(copy.get("columns"), DEFAULT_COLUMNS);
         int rowHeight = intField(copy.get("rowHeight"), DEFAULT_ROW_HEIGHT);
-
-        if (columns == LEGACY_COLUMNS && rowHeight == LEGACY_ROW_HEIGHT) {
-            columns = DEFAULT_COLUMNS;
-            rowHeight = DEFAULT_ROW_HEIGHT;
-        }
         copy.put("columns", columns);
         copy.put("rowHeight", rowHeight);
 
@@ -47,7 +38,6 @@ public final class DashboardWidgetPlacement {
                 widgets.add(new LinkedHashMap<>((Map<String, Object>) map));
             }
         }
-        scaleLegacyWidgets(widgets, columns);
         reflowOverlappingWidgets(widgets);
         copy.put("widgets", widgets);
         return copy;
@@ -60,55 +50,8 @@ public final class DashboardWidgetPlacement {
             int rowHeight
     ) {
         Map<String, Object> prepared = new LinkedHashMap<>(widget);
-        scaleLegacyWidget(prepared, columns);
         applyDefaults(prepared, existingWidgets, columns);
         return prepared;
-    }
-
-    private static void scaleLegacyWidgets(List<Map<String, Object>> widgets, int columns) {
-        if (columns < DEFAULT_COLUMNS || widgets.isEmpty()) {
-            return;
-        }
-        for (Map<String, Object> widget : widgets) {
-            scaleLegacyWidget(widget, columns);
-        }
-    }
-
-    private static void scaleLegacyWidget(Map<String, Object> widget, int columns) {
-        if (columns < DEFAULT_COLUMNS || !looksLegacySized(widget)) {
-            return;
-        }
-        putScaled(widget, "x");
-        putScaled(widget, "y");
-        putScaled(widget, "w");
-        putScaled(widget, "h");
-    }
-
-    /**
-     * Legacy agent/bundle layouts use a 12-column grid (units 1–12). Fine-grid dashboards
-     * use 84 columns with coordinates typically &gt; 12. Values like w=7 are valid legacy
-     * widths and must not be treated as already-scaled fine units.
-     */
-    private static boolean looksLegacySized(Map<String, Object> widget) {
-        return !looksFineGridSized(widget);
-    }
-
-    private static boolean looksFineGridSized(Map<String, Object> widget) {
-        int x = intField(widget.get("x"), 0);
-        int y = intField(widget.get("y"), 0);
-        int w = intField(widget.get("w"), 0);
-        int h = intField(widget.get("h"), 0);
-        return x > LEGACY_MAX_UNIT
-                || y > LEGACY_MAX_UNIT
-                || w > LEGACY_MAX_UNIT
-                || h > LEGACY_MAX_UNIT;
-    }
-
-    private static void putScaled(Map<String, Object> widget, String key) {
-        int value = intField(widget.get(key), 0);
-        if (value > 0) {
-            widget.put(key, value * FINE_GRID_SCALE);
-        }
     }
 
     private static void applyDefaults(

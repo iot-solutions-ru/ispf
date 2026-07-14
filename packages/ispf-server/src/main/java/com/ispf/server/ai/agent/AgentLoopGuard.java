@@ -109,7 +109,8 @@ final class AgentLoopGuard {
                     You called the same tool repeatedly. Change strategy or emit {"type":"finish",...}. \
                     If the user's intent is unclear, prefer finish with a short question and result.suggestions \
                     (label + message per option, interactive=true) instead of more blind tool calls. \
-                    For dashboards: list_variables first; use set_dashboard_layout template= instead of many add_dashboard_widget; \
+                    For dashboards: list_variables first; use set_dashboard_layout template= or one presentable \
+                    layoutJson (columns=84, KPI w=21|28 h=14, charts ≥42×28) instead of many add_dashboard_widget; \
                     never set_variable name=widgets. get_widget_catalog type=<type> for exact widget fields. \
                     For SCADA mimics: save_mimic_diagram or add_mimic_elements with non-empty elements[]; \
                     list_mimic_symbols for symbolId; get_mimic_diagram to verify elementCount; never set_variable name=diagram. \

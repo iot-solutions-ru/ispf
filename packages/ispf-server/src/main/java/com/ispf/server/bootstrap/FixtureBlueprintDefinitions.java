@@ -294,6 +294,14 @@ public final class FixtureBlueprintDefinitions {
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
                         BlueprintVariableDefinition.of(
+                                "driverAutoStart",
+                                "Start this device driver automatically when the server boots (default true)",
+                                "driver",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
+                        ),
+                        BlueprintVariableDefinition.of(
                                 "timeZone",
                                 "IANA timezone for device-local timestamps (empty = inherit from parent or UTC)",
                                 "config",

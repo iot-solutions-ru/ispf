@@ -740,8 +740,8 @@ const deleteUnprocessedFormWidget = {
 };
 
 const registerEventModalLayout = {
-  columns: 12,
-  rowHeight: 64,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "machine-ctx",
@@ -752,23 +752,23 @@ const registerEventModalLayout = {
       stylesJson: MACHINE_CONTEXT_STYLES_JSON,
       x: 0,
       y: 0,
-      w: 12,
-      h: 2,
+      w: 84,
+      h: 14,
     },
     {
       ...registerEventFormWidget,
       x: 0,
-      y: 2,
-      w: 12,
-      h: 16,
+      y: 14,
+      w: 84,
+      h: 112,
     },
   ],
 };
 
 const deleteUnprocessedModalLayout = {
-  columns: 12,
-  rowHeight: 72,
-  widgets: [{ ...deleteUnprocessedFormWidget, x: 0, y: 0, w: 12, h: 6 }],
+  columns: 84,
+  rowHeight: 8,
+  widgets: [{ ...deleteUnprocessedFormWidget, x: 0, y: 0, w: 84, h: 42 }],
 };
 
 const EDIT_PROCESS_EVENT_MODAL = "root.platform.dashboards.ogp-edit-process-event-modal";
@@ -793,9 +793,9 @@ const editProcessEventFormWidget = {
 };
 
 const editProcessEventModalLayout = {
-  columns: 12,
-  rowHeight: 72,
-  widgets: [{ ...editProcessEventFormWidget, x: 0, y: 0, w: 12, h: 8 }],
+  columns: 84,
+  rowHeight: 8,
+  widgets: [{ ...editProcessEventFormWidget, x: 0, y: 0, w: 84, h: 56 }],
 };
 
 const operatorHmiTabsJson = JSON.stringify([
@@ -852,8 +852,8 @@ const operatorHmiTabsJson = JSON.stringify([
 ]);
 
 const operatorHmiLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "v-roll",
@@ -861,8 +861,8 @@ const operatorHmiLayout = {
       title: "Рулон на намотке",
       x: 0,
       y: 0,
-      w: 2,
-      h: 2,
+      w: 14,
+      h: 14,
       objectPath: HUB,
       variableName: "windingRoll",
       modelHintPath: HUB,
@@ -871,10 +871,10 @@ const operatorHmiLayout = {
       id: "v-speed",
       type: "value",
       title: "Скорость, м/мин",
-      x: 2,
+      x: 14,
       y: 0,
-      w: 2,
-      h: 2,
+      w: 14,
+      h: 14,
       objectPath: HUB,
       variableName: "speedMpm",
       decimals: 0,
@@ -884,10 +884,10 @@ const operatorHmiLayout = {
       id: "v-meter",
       type: "value",
       title: "Метраж, м",
-      x: 4,
+      x: 28,
       y: 0,
-      w: 2,
-      h: 2,
+      w: 14,
+      h: 14,
       objectPath: HUB,
       variableName: "meterM",
       decimals: 1,
@@ -897,10 +897,10 @@ const operatorHmiLayout = {
       id: "v-event",
       type: "value",
       title: "Событие машины",
-      x: 6,
+      x: 42,
       y: 0,
-      w: 3,
-      h: 2,
+      w: 21,
+      h: 14,
       objectPath: HUB,
       variableName: "lastMachineEventLabel",
       modelHintPath: HUB,
@@ -909,10 +909,10 @@ const operatorHmiLayout = {
       id: "v-pending",
       type: "value",
       title: "Необработанных",
-      x: 9,
+      x: 63,
       y: 0,
-      w: 3,
-      h: 2,
+      w: 21,
+      h: 14,
       objectPath: HUB,
       variableName: "unprocessedPending",
       decimals: 0,
@@ -923,9 +923,9 @@ const operatorHmiLayout = {
       type: "tab-panel",
       title: "Регистрация событий OGP",
       x: 0,
-      y: 2,
-      w: 12,
-      h: 18,
+      y: 14,
+      w: 84,
+      h: 126,
       tabsJson: operatorHmiTabsJson,
     },
   ],
@@ -990,8 +990,8 @@ const supervisorTabsJson = JSON.stringify([
 ]);
 
 const supervisorLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "supervisor-tabs",
@@ -999,16 +999,16 @@ const supervisorLayout = {
       title: "Начальник смены",
       x: 0,
       y: 0,
-      w: 12,
-      h: 18,
+      w: 84,
+      h: 126,
       tabsJson: supervisorTabsJson,
     },
   ],
 };
 
 const simulatorLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "sim-help",
@@ -1016,8 +1016,8 @@ const simulatorLayout = {
       title: "Симулятор OGP",
       x: 0,
       y: 0,
-      w: 12,
-      h: 2,
+      w: 84,
+      h: 14,
       htmlJson: "<p>Симуляция сигналов машины: останов, удар ножа, кнопка брака. После сигнала откройте «Регистрация события».</p>",
     },
     {
@@ -1025,9 +1025,9 @@ const simulatorLayout = {
       type: "function-form",
       title: "Сигнал с машины",
       x: 0,
-      y: 2,
-      w: 4,
-      h: 4,
+      y: 14,
+      w: 28,
+      h: 28,
       objectPath: HUB,
       functionName: "ogp_simulateSignal",
       buttonLabel: "Отправить сигнал",
@@ -1050,10 +1050,10 @@ const simulatorLayout = {
       id: "seed",
       type: "function",
       title: "Демо",
-      x: 4,
-      y: 2,
-      w: 3,
-      h: 2,
+      x: 28,
+      y: 14,
+      w: 21,
+      h: 14,
       objectPath: HUB,
       functionName: "ogp_seedDemoStage",
       buttonLabel: "Сброс демо-этапа",
@@ -1062,10 +1062,10 @@ const simulatorLayout = {
       id: "events",
       type: "event-feed",
       title: "Журнал платформы",
-      x: 4,
-      y: 4,
-      w: 8,
-      h: 4,
+      x: 28,
+      y: 28,
+      w: 56,
+      h: 28,
       objectPath: HUB,
       eventNamesJson: '["ogpUnprocessedEvent","ogpEventRegistered"]',
       maxItems: 20,
@@ -1122,20 +1122,20 @@ const addSubcodeFormWidget = {
 };
 
 const addEventCodeModalLayout = {
-  columns: 12,
-  rowHeight: 72,
-  widgets: [{ ...addEventCodeFormWidget, x: 0, y: 0, w: 12, h: 10 }],
+  columns: 84,
+  rowHeight: 8,
+  widgets: [{ ...addEventCodeFormWidget, x: 0, y: 0, w: 84, h: 70 }],
 };
 
 const addSubcodeModalLayout = {
-  columns: 12,
-  rowHeight: 72,
-  widgets: [{ ...addSubcodeFormWidget, x: 0, y: 0, w: 12, h: 6 }],
+  columns: 84,
+  rowHeight: 8,
+  widgets: [{ ...addSubcodeFormWidget, x: 0, y: 0, w: 84, h: 42 }],
 };
 
 const adminLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "codes-report",
@@ -1143,18 +1143,18 @@ const adminLayout = {
       title: "Коды событий",
       x: 0,
       y: 0,
-      w: 8,
-      h: 7,
+      w: 56,
+      h: 49,
       reportPath: "root.platform.reports.ogp-event-codes",
     },
     {
       id: "btn-add-code",
       type: "dashboard-link",
       title: "Добавить код",
-      x: 8,
+      x: 56,
       y: 0,
-      w: 4,
-      h: 2,
+      w: 28,
+      h: 14,
       targetDashboardPath: ADD_EVENT_CODE_MODAL,
       openMode: "modal",
       buttonLabel: "Добавить код",
@@ -1164,10 +1164,10 @@ const adminLayout = {
       id: "btn-add-subcode",
       type: "dashboard-link",
       title: "Добавить подкод",
-      x: 8,
-      y: 2,
-      w: 4,
-      h: 2,
+      x: 56,
+      y: 14,
+      w: 28,
+      h: 14,
       targetDashboardPath: ADD_SUBCODE_MODAL,
       openMode: "modal",
       buttonLabel: "Добавить подкод",
@@ -1177,8 +1177,8 @@ const adminLayout = {
 };
 
 const rollReleaseLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "roll-map",
@@ -1186,8 +1186,8 @@ const rollReleaseLayout = {
       title: "Карта рулона (интервалы)",
       x: 0,
       y: 0,
-      w: 8,
-      h: 5,
+      w: 56,
+      h: 35,
       reportPath: "root.platform.reports.ogp-roll-map",
       parametersJson: '{"rollId":"P1"}',
       contextParamsJson: '{"rollId":"rollId"}',
@@ -1196,10 +1196,10 @@ const rollReleaseLayout = {
       id: "build-label",
       type: "function-form",
       title: "Этикетка рулона",
-      x: 8,
+      x: 56,
       y: 0,
-      w: 4,
-      h: 4,
+      w: 28,
+      h: 28,
       objectPath: HUB,
       functionName: "ogp_buildRollLabel",
       buttonLabel: "Сформировать этикетку",
@@ -1210,9 +1210,9 @@ const rollReleaseLayout = {
       type: "report",
       title: "Данные этикетки",
       x: 0,
-      y: 5,
-      w: 12,
-      h: 4,
+      y: 35,
+      w: 84,
+      h: 28,
       reportPath: "root.platform.reports.ogp-roll-label-data",
     },
   ],

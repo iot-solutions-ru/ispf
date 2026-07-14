@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchEvents } from "../../../api";
 import type { EventFeedWidget } from "../../../types/dashboard";
 import { matchesPayloadFilter } from "../../../utils/payloadFilter";
+import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { parseDemoPreview } from "../widgetDemoPreview";
@@ -39,6 +40,8 @@ export default function EventFeedWidgetView({
 }: EventFeedWidgetViewProps) {
   const { t } = useTranslation(["widgets", "journal", "common"]);
   const styles = useWidgetStyles(widget.stylesJson);
+  const selectedObjectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
+  const pathPrefix = selectedObjectPath?.trim() || widget.objectPathPrefix?.trim() || "";
   const [mode, setMode] = usePersistentTab<JournalViewMode>(
     `event-feed-widget:${widget.id}`,
     "live",
@@ -60,7 +63,7 @@ export default function EventFeedWidgetView({
   const fetchLimit = mode === "live" ? liveMax : historyLimit;
 
   const events = useQuery({
-    queryKey: ["events", "feed", widget.objectPathPrefix, fetchLimit, mode],
+    queryKey: ["events", "feed", pathPrefix, fetchLimit, mode],
     queryFn: () => fetchEvents(undefined, fetchLimit),
     refetchInterval: mode === "live" ? refreshIntervalMs : false,
     staleTime: mode === "live" ? 0 : 30_000,
@@ -68,7 +71,7 @@ export default function EventFeedWidgetView({
 
   const filtered = useMemo(() => {
     let rows = (events.data ?? []).filter((event) => {
-      if (widget.objectPathPrefix && !event.objectPath.startsWith(widget.objectPathPrefix)) {
+      if (pathPrefix && !event.objectPath.startsWith(pathPrefix)) {
         return false;
       }
       if (eventNames.length > 0 && !eventNames.includes(event.eventName)) {
@@ -96,7 +99,7 @@ export default function EventFeedWidgetView({
     }
 
     return rows;
-  }, [eventNames, events.data, levelFilter, mode, searchFilter, widget.objectPathPrefix, widget.payloadFilterExpr]);
+  }, [eventNames, events.data, levelFilter, mode, pathPrefix, searchFilter, widget.payloadFilterExpr]);
 
   const levels = useMemo(() => {
     const set = new Set<string>();

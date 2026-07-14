@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -16,6 +16,7 @@ interface BffDataTableProps {
   filterable?: boolean;
   /** Columns with filters; default = all data columns */
   filterColumns?: string[];
+  tableStyle?: CSSProperties;
 }
 
 function formatCell(
@@ -70,6 +71,7 @@ export default function BffDataTable({
   statusColumns = [],
   filterable = false,
   filterColumns,
+  tableStyle,
 }: BffDataTableProps) {
   const { t } = useTranslation(["operator", "common"]);
   const [filterDraft, setFilterDraft] = useState<Record<string, string>>({});
@@ -94,7 +96,7 @@ export default function BffDataTable({
 
   return (
     <div className="op-table-wrap">
-      <table className="op-table">
+      <table className="op-table" style={tableStyle}>
         <thead>
           <tr>
             {selectable && <th className="op-col-select"> </th>}

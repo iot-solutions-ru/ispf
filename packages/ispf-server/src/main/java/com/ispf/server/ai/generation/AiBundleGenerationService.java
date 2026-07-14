@@ -133,6 +133,9 @@ public class AiBundleGenerationService {
                 Do NOT output Java, React, markdown fences, or prose.
                 Use camelCase field names exactly as in the example (displayName, schemaName, objectPath, functionName, layoutJson).
                 Never set fields to null. Omit unused sections instead of null placeholders.
+                Dashboard layoutJson MUST use fine grid: columns=84, rowHeight=8.
+                Presentable widgets: KPI tiles w=21|28 h=14; charts/tables w≥42 h≥28; sizes multiples of 7;
+                never legacy crumb sizes (w=2..6, h=1..3).
                 Target appId: %s
                 schemaName should be app_<appId> with hyphens replaced by underscores.
                 Required: version (semver e.g. 1.0.0), displayName, schemaName, and at least one of migrations[], functions[], dashboards[], operatorUi.

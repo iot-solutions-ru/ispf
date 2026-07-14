@@ -9,7 +9,7 @@ import {
 } from "../../../api/reports";
 import type { ReportWidget } from "../../../types/dashboard";
 import { parseJsonArray, parseJsonObject } from "../dashboardUtils";
-import { useDashboardContext } from "../DashboardContext";
+import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
 import { useWidgetStyles } from "../widgetStyles";
 import BffDataTable from "../../operator/BffDataTable";
 import ReportExportControls from "../../report/ReportExportControls";
@@ -72,7 +72,13 @@ export default function ReportWidgetView({
   editable = false,
 }: ReportWidgetViewProps) {
   const { t } = useTranslation(["widgets", "common"]);
-  const { params: sessionParams, setParams } = useDashboardContext();
+  const {
+    params: sessionParams,
+    setParams,
+    setSelection,
+    navigateToDashboard,
+    openDashboardModal,
+  } = useDashboardContext();
   const userTimeZone = useOptionalUserTimeZone();
   const styles = useWidgetStyles(widget.stylesJson);
   const [exportBusy, setExportBusy] = useState(false);
@@ -100,21 +106,50 @@ export default function ReportWidgetView({
       ? String(sessionParams[selectionParamKey])
       : null;
 
-  function applyRowSelection(row: Record<string, unknown> | null) {
+  function applyRowSelection(
+    row: Record<string, unknown> | null,
+    options?: { open?: boolean }
+  ) {
+    const pathFromRow = row ? String(row[selectionColumn] ?? "").trim() : "";
     if (Object.keys(rowParamsFromRow).length === 0) {
-      if (!row) {
-        setParams({ [selectionParamKey]: "" });
-        return;
+      setParams({ [selectionParamKey]: pathFromRow });
+    } else {
+      const patch: Record<string, unknown> = {};
+      for (const [paramKey, columnRaw] of Object.entries(rowParamsFromRow)) {
+        const column = String(columnRaw).trim();
+        patch[paramKey] = row && column ? row[column] ?? "" : "";
       }
-      setParams({ [selectionParamKey]: String(row[selectionColumn] ?? "") });
+      setParams(patch);
+    }
+
+    const selectionSlot = widget.selectionKey?.trim();
+    if (selectionSlot) {
+      setSelection(selectionSlot, pathFromRow);
+    }
+
+    if (options?.open === false || !row || !pathFromRow || !widget.rowTargetDashboard?.trim()) {
       return;
     }
-    const patch: Record<string, unknown> = {};
-    for (const [paramKey, columnRaw] of Object.entries(rowParamsFromRow)) {
-      const column = String(columnRaw).trim();
-      patch[paramKey] = row && column ? row[column] ?? "" : "";
-    }
-    setParams(patch);
+    const targetSlot =
+      widget.rowTargetSelectionKey?.trim() || selectionSlot || "device";
+    triggerDashboardOpen(
+      widget.rowOpenMode,
+      widget.rowTargetDashboard,
+      widget.title,
+      { navigateToDashboard, openDashboardModal },
+      {
+        selection: { [targetSlot]: pathFromRow },
+        params:
+          Object.keys(rowParamsFromRow).length > 0
+            ? Object.fromEntries(
+                Object.entries(rowParamsFromRow).map(([paramKey, columnRaw]) => {
+                  const column = String(columnRaw).trim();
+                  return [paramKey, column ? row[column] ?? "" : ""];
+                })
+              )
+            : { [selectionParamKey]: pathFromRow },
+      }
+    );
   }
 
   const reportMetaQuery = useQuery({
@@ -160,7 +195,7 @@ export default function ReportWidgetView({
       return;
     }
     if (widget.autoSelectFirstRow === true) {
-      applyRowSelection(runQuery.data.rows[0]);
+      applyRowSelection(runQuery.data.rows[0], { open: false });
     }
   }, [
     widget.selectable,
@@ -237,6 +272,7 @@ export default function ReportWidgetView({
               statusColumns={statusDotColumns}
               filterable={Boolean(widget.filterable) && !editable}
               filterColumns={filterColumns}
+              tableStyle={styles.table}
             />
           </>
         )}

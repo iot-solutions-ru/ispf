@@ -159,6 +159,7 @@ public class SystemObjectStructureService {
             return;
         }
         ensureDeviceTimeZoneVariable(path);
+        ensureDriverAutoStartVariable(path);
     }
 
     private void ensureDeviceTimeZoneVariable(String path) {
@@ -169,6 +170,17 @@ public class SystemObjectStructureService {
         DataRecord record = DataRecord.single(schema, java.util.Map.of("value", ""));
         PlatformObject node = objectManager.require(path);
         node.addVariable(new Variable("timeZone", schema, true, true, record));
+        objectManager.persistNodeTree(path);
+    }
+
+    private void ensureDriverAutoStartVariable(String path) {
+        if (objectManager.require(path).getVariable("driverAutoStart").isPresent()) {
+            return;
+        }
+        DataSchema schema = DataSchema.builder("booleanValue").field("value", FieldType.BOOLEAN).build();
+        DataRecord record = DataRecord.single(schema, java.util.Map.of("value", true));
+        PlatformObject node = objectManager.require(path);
+        node.addVariable(new Variable("driverAutoStart", schema, true, true, record));
         objectManager.persistNodeTree(path);
     }
 

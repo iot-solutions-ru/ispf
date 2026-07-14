@@ -10,13 +10,15 @@ import {
   resolveTopologyBindingValues,
 } from "../../../scada/topologySvgConfig";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
-import { useDashboardContext } from "../DashboardContext";
+import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
 import { resolveWidgetMediaSrc } from "../widgetMediaUrl";
 
 export interface SvgInteractiveBodyProps {
   svgUrl?: string;
   config: import("../../../scada/svgWidgetInteractive").SvgInteractiveConfig;
   selectionKey?: string;
+  hitTargetDashboard?: string;
+  hitOpenMode?: "navigate" | "modal";
   showLegend?: boolean;
   panEnabled?: boolean;
   defaultZoom?: number;
@@ -37,6 +39,8 @@ export default function SvgInteractiveBody({
   svgUrl,
   config,
   selectionKey,
+  hitTargetDashboard,
+  hitOpenMode,
   showLegend,
   panEnabled = true,
   defaultZoom = 1,
@@ -133,6 +137,16 @@ export default function SvgInteractiveBody({
         event.stopPropagation();
         if (!selectionKey?.trim()) return;
         session.setSelection(selectionKey, area.objectPath);
+        triggerDashboardOpen(
+          hitOpenMode,
+          hitTargetDashboard,
+          title,
+          {
+            navigateToDashboard: session.navigateToDashboard,
+            openDashboardModal: session.openDashboardModal,
+          },
+          { selection: { [selectionKey]: area.objectPath } }
+        );
       };
       el.addEventListener("click", handler);
       cleanups.push(() => el.removeEventListener("click", handler));
@@ -141,7 +155,7 @@ export default function SvgInteractiveBody({
     return () => {
       for (const cleanup of cleanups) cleanup();
     };
-  }, [config, editable, layerRevision, selectionKey, session]);
+  }, [config, editable, hitOpenMode, hitTargetDashboard, layerRevision, selectionKey, session, title]);
 
   useEffect(() => {
     const host = viewportRef.current;

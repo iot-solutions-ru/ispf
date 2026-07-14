@@ -205,6 +205,8 @@
   "driver.pollIntervalMs": "Интервал опроса (мс)",
   "driver.restart": "Перезапуск",
   "driver.saveAndStart": "Сохранить и старт",
+  "driver.autoStartOnBoot": "Автозапуск при старте сервера",
+  "driver.autoStartOnBootHint": "Если включено, драйвер этого устройства стартует автоматически после перезапуска ispf-server. По умолчанию включено. Глобально: Настройки платформы → driver.auto-start-on-boot.",
   "driver.start": "Старт",
   "driver.stop": "Стоп",
   "driver.subtitle": "Управление poll loop и конфигурацией. Для SNMP/MQTT/Modbus сначала задайте конфигурацию, затем «Старт».",

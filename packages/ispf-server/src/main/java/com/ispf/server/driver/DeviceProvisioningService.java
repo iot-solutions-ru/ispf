@@ -50,6 +50,7 @@ public class DeviceProvisioningService {
 
         DriverBinding binding = DriverBinding.of(resolvedDriverId, interval, configuration, Map.of());
         driverRuntimeService.configure(devicePath, binding);
+        driverRuntimeService.setDriverAutoStart(devicePath, autoStart);
         if (autoStart) {
             driverRuntimeService.start(devicePath);
         }

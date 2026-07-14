@@ -344,28 +344,28 @@ const simFieldsJson = JSON.stringify([
 ]);
 
 const overviewLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
-    { id: "lines-report", type: "report", title: "Линии и рекомендации", x: 0, y: 0, w: 8, h: 5, reportPath: "root.platform.reports.mes-defect-lines-status", emptyMessage: "Нет данных" },
-    { id: "work-queue", type: "work-queue", title: "Задачи диспетчера", x: 8, y: 0, w: 4, h: 5, operatorId: "operator", operatorAppId: "mes-defect-demo", maxItems: 10 },
-    { id: "pending-rec", type: "report", title: "Ожидающие рекомендации", x: 0, y: 5, w: 12, h: 3, reportPath: "root.platform.reports.mes-defect-pending-recommendations", emptyMessage: "Нет активных рекомендаций" },
+    { id: "lines-report", type: "report", title: "Линии и рекомендации", x: 0, y: 0, w: 56, h: 35, reportPath: "root.platform.reports.mes-defect-lines-status", emptyMessage: "Нет данных" },
+    { id: "work-queue", type: "work-queue", title: "Задачи диспетчера", x: 56, y: 0, w: 28, h: 35, operatorId: "operator", operatorAppId: "mes-defect-demo", maxItems: 10 },
+    { id: "pending-rec", type: "report", title: "Ожидающие рекомендации", x: 0, y: 35, w: 84, h: 21, reportPath: "root.platform.reports.mes-defect-pending-recommendations", emptyMessage: "Нет активных рекомендаций" },
   ],
 };
 
 const simulatorLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
-    { id: "sim-help", type: "html-snippet", title: "Как это работает", x: 0, y: 0, w: 12, h: 2, htmlJson: SIM_HELP_HTML },
+    { id: "sim-help", type: "html-snippet", title: "Как это работает", x: 0, y: 0, w: 84, h: 14, htmlJson: SIM_HELP_HTML },
     {
       id: "sim-form",
       type: "function-form",
       title: "Сообщение о браке",
       x: 0,
-      y: 2,
-      w: 5,
-      h: 6,
+      y: 14,
+      w: 35,
+      h: 42,
       objectPath: HUB,
       functionName: "mes_simulateDefect",
       buttonLabel: "Отправить в SCADA",
@@ -376,9 +376,9 @@ const simulatorLayout = {
       type: "function",
       title: "Распределение брака",
       x: 0,
-      y: 8,
-      w: 5,
-      h: 2,
+      y: 56,
+      w: 35,
+      h: 14,
       objectPath: HUB,
       workflowPath: "root.platform.workflows.mes-defect-distribution",
       buttonLabel: "Запустить распределение",
@@ -388,10 +388,10 @@ const simulatorLayout = {
       id: "events-feed",
       type: "event-feed",
       title: "Журнал событий",
-      x: 5,
-      y: 2,
-      w: 7,
-      h: 6,
+      x: 35,
+      y: 14,
+      w: 49,
+      h: 42,
       objectPath: HUB,
       eventNamesJson: '["mesDefectDetected","mesDefectRouted"]',
       maxItems: 30,
@@ -400,10 +400,10 @@ const simulatorLayout = {
 };
 
 const ordersLayout = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
-    { id: "orders-report", type: "report", title: "Ордера на линиях", x: 0, y: 0, w: 12, h: 6, reportPath: "root.platform.reports.mes-defect-orders-detail", emptyMessage: "Нет ордеров" },
+    { id: "orders-report", type: "report", title: "Ордера на линиях", x: 0, y: 0, w: 84, h: 42, reportPath: "root.platform.reports.mes-defect-orders-detail", emptyMessage: "Нет ордеров" },
   ],
 };
 
