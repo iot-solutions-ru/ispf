@@ -64,6 +64,7 @@ class VariableChangeSubscriptionRegistryTest {
         tree.register(sensor);
         when(objectManager.tree()).thenReturn(tree);
         when(webSocketPathInterest.hasPathInterest(PATH)).thenReturn(false);
+        when(webSocketPathInterest.hasVariableInterest(PATH, VAR)).thenReturn(false);
         when(federationExportInterest.hasPathInterest(PATH)).thenReturn(false);
         when(clusterPathInterest.hasPathInterest(PATH)).thenReturn(false);
         registry = new VariableChangeSubscriptionRegistry(
@@ -107,7 +108,7 @@ class VariableChangeSubscriptionRegistryTest {
 
     @Test
     void detectsWebSocketInterest() {
-        when(webSocketPathInterest.hasPathInterest(PATH)).thenReturn(true);
+        when(webSocketPathInterest.hasVariableInterest(PATH, VAR)).thenReturn(true);
 
         VariableChangeInterest interest = registry.interest(PATH, VAR);
 

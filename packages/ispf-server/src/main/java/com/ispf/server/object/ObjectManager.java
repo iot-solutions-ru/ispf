@@ -508,7 +508,7 @@ public class ObjectManager {
         });
         variable.setComputedValue(value);
         if (publishEvent) {
-            publish(ObjectChangeEvent.variableUpdated(path, name));
+            publish(ObjectChangeEvent.variableUpdated(path, name, false, true, null, value, null));
         }
         return variable;
     }

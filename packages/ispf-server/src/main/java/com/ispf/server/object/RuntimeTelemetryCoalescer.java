@@ -236,8 +236,8 @@ public class RuntimeTelemetryCoalescer {
             return;
         }
         DataRecord last = lastPublished.get(coalesceKey);
+        // Always publish the new value so WS clients can patch UI without HTTP batch refetch.
         DataRecord previous = policyService.includePreviousValueInEvent(path, variableName) ? last : null;
-        DataRecord eventValue = policyService.includePreviousValueInEvent(path, variableName) ? value : null;
         lastPublished.put(coalesceKey, value);
         if (gatewayIngressDispatch.tryScheduleDispatch(path, variableName, value)) {
             return;
@@ -245,7 +245,7 @@ public class RuntimeTelemetryCoalescer {
         if (historianFastPath.tryPublish(path, variableName, value, observedAt)) {
             return;
         }
-        publicationService.publishVariableChange(path, variableName, observedAt, eventValue, previous);
+        publicationService.publishVariableChange(path, variableName, observedAt, value, previous);
     }
 
     /**

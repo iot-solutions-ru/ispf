@@ -5,6 +5,8 @@ import {
   isObjectWebSocketConnected,
   subscribeObjectWebSocketConnection,
   useObjectPathsSubscription,
+  useObjectVariableSubscriptions,
+  type ObjectVariableInterest,
 } from "./useObjectWebSocket";
 import { variablesRefetchIntervalMs } from "./variablesQueryPolicy";
 import { isOperatorMode } from "../utils/isOperatorMode";
@@ -15,7 +17,6 @@ function mayUseOfflineVariablesCache(error: unknown): boolean {
     return true;
   }
   const message = error.message.toLowerCase();
-  // Stale localStorage must not mask auth/permission failures or demo value changes.
   if (
     message.includes("401")
     || message.includes("403")
@@ -77,6 +78,8 @@ export function useVariablesQuery(
   objectPath: string,
   refreshIntervalMs: number | false = 5000,
   enabled = true,
+  /** When set, WS interest is limited to these variables; otherwise path-wide. */
+  subscribeVariables?: string[] | null,
 ) {
   const wsConnected = useSyncExternalStore(
     subscribeObjectWebSocketConnection,
@@ -84,7 +87,14 @@ export function useVariablesQuery(
     () => false,
   );
 
-  useObjectPathsSubscription(enabled && objectPath ? [objectPath] : []);
+  const interestEnabled = enabled && Boolean(objectPath);
+  const narrowed = Boolean(subscribeVariables && subscribeVariables.length > 0);
+  useObjectVariableSubscriptions(
+    interestEnabled && narrowed
+      ? [{ path: objectPath, variables: subscribeVariables }]
+      : [],
+  );
+  useObjectPathsSubscription(interestEnabled && !narrowed && objectPath ? [objectPath] : []);
 
   return useQuery({
     queryKey: ["variables", objectPath],
@@ -99,6 +109,8 @@ export function useVariablesBatchQuery(
   objectPaths: string[],
   refreshIntervalMs: number | false = 5000,
   enabled = true,
+  /** Optional per-path variable lists. Missing path = path-wide interest. */
+  variablesByPath?: Record<string, string[] | undefined> | null,
 ) {
   const wsConnected = useSyncExternalStore(
     subscribeObjectWebSocketConnection,
@@ -107,7 +119,16 @@ export function useVariablesBatchQuery(
   );
   const uniquePaths = [...new Set(objectPaths.filter(Boolean))];
 
-  useObjectPathsSubscription(enabled && uniquePaths.length > 0 ? uniquePaths : []);
+  const interests: ObjectVariableInterest[] = enabled && uniquePaths.length > 0
+    ? uniquePaths.map((path) => {
+        const variables = variablesByPath?.[path];
+        if (variables && variables.length > 0) {
+          return { path, variables };
+        }
+        return { path };
+      })
+    : [];
+  useObjectVariableSubscriptions(interests);
 
   return useQuery({
     queryKey: ["variables-batch", uniquePaths],

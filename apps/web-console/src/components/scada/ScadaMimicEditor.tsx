@@ -31,7 +31,7 @@ import {
   type ResizeHandle,
 } from "../../scada/layoutOps";
 import { directionFromArrowKey, findElementInDirection } from "../../scada/mimicKeyboardNav";
-import { collectBindingPaths, resolveDocumentBindings } from "../../scada/bindingResolver";
+import { collectBindingInterests, collectBindingPaths, groupBindingVariablesByPath, resolveDocumentBindings } from "../../scada/bindingResolver";
 import { ensurePackLoaded, resolvePlacementSymbol } from "../../scada/symbols/registry";
 import { useVariablesBatchQuery } from "../../hooks/useVariablesQuery";
 import { useDashboardContext } from "../dashboard/DashboardContext";
@@ -139,7 +139,19 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     () => collectBindingPaths(document.elements, document.connections, session),
     [document, session]
   );
-  const variablesBatch = useVariablesBatchQuery(bindingPaths, 3000, bindingPaths.length > 0);
+  const bindingVariablesByPath = useMemo(
+    () =>
+      groupBindingVariablesByPath(
+        collectBindingInterests(document.elements, document.connections, session)
+      ),
+    [document, session]
+  );
+  const variablesBatch = useVariablesBatchQuery(
+    bindingPaths,
+    3000,
+    bindingPaths.length > 0,
+    bindingVariablesByPath
+  );
   const resolvedBindings = useMemo(
     () => resolveDocumentBindings(document.elements, document.connections, session, variablesBatch.data ?? {}),
     [document, session, variablesBatch.data]

@@ -1,8 +1,109 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { DataRecord, VariableDto } from "../types";
+import { fetchVariables } from "../api";
 import { refreshWorkQueue } from "./workQueueCache";
 import type { ObjectWsMessage } from "./objectWebSocketTypes";
 
-/** React Query invalidations for a single `/ws/objects` payload. */
+function patchVariableList(
+  list: VariableDto[],
+  variableName: string,
+  value: DataRecord,
+  updatedAt: string,
+): VariableDto[] | null {
+  const idx = list.findIndex((variable) => variable.name === variableName);
+  if (idx < 0) {
+    return null;
+  }
+  const current = list[idx];
+  if (current.value === value && current.updatedAt === updatedAt) {
+    return list;
+  }
+  const next = list.slice();
+  next[idx] = { ...current, value, updatedAt };
+  return next;
+}
+
+function mergePathIntoBatchCaches(
+  queryClient: QueryClient,
+  path: string,
+  variables: VariableDto[],
+): void {
+  queryClient.setQueryData<VariableDto[]>(["variables", path], variables);
+  queryClient.setQueriesData<Record<string, VariableDto[]>>(
+    { queryKey: ["variables-batch"] },
+    (current) => {
+      if (!current || !(path in current)) {
+        return current;
+      }
+      return { ...current, [path]: variables };
+    },
+  );
+}
+
+/**
+ * Apply one VARIABLE_UPDATED into React Query caches without invalidating
+ * the whole variables-batch (avoids full HTTP refetch storms).
+ */
+export function patchVariableCachesFromWs(
+  queryClient: QueryClient,
+  path: string,
+  variableName: string,
+  value: DataRecord | undefined,
+  updatedAt: string,
+): void {
+  if (value != null) {
+    let missedCachedVariable = false;
+
+    queryClient.setQueryData<VariableDto[]>(["variables", path], (current) => {
+      if (!current) {
+        return current;
+      }
+      const patched = patchVariableList(current, variableName, value, updatedAt);
+      if (patched == null) {
+        missedCachedVariable = true;
+        return current;
+      }
+      return patched;
+    });
+
+    queryClient.setQueriesData<Record<string, VariableDto[]>>(
+      { queryKey: ["variables-batch"] },
+      (current) => {
+        if (!current || !(path in current)) {
+          return current;
+        }
+        const patched = patchVariableList(current[path], variableName, value, updatedAt);
+        if (patched == null) {
+          missedCachedVariable = true;
+          return current;
+        }
+        if (patched === current[path]) {
+          return current;
+        }
+        return { ...current, [path]: patched };
+      },
+    );
+
+    if (!missedCachedVariable) {
+      return;
+    }
+  }
+
+  // Payload had no value, or variable missing from cached lists — refresh that path only.
+  void queryClient
+    .fetchQuery({
+      queryKey: ["variables", path],
+      queryFn: () => fetchVariables(path),
+    })
+    .then((variables) => {
+      mergePathIntoBatchCaches(queryClient, path, variables);
+    })
+    .catch(() => {
+      // Leave existing cache; next reconnect / subscription refresh will recover.
+    });
+}
+
+/** React Query updates for a single `/ws/objects` payload. */
 export function applyObjectWebSocketMessage(queryClient: QueryClient, message: ObjectWsMessage): void {
   switch (message.type) {
     case "CREATED":
@@ -13,11 +114,13 @@ export function applyObjectWebSocketMessage(queryClient: QueryClient, message: O
       queryClient.invalidateQueries({ queryKey: ["object-editor", message.path] });
       break;
     case "VARIABLE_UPDATED":
-      queryClient.invalidateQueries({ queryKey: ["variables", message.path] });
-      queryClient.invalidateQueries({ queryKey: ["variables-batch"] });
-      queryClient.invalidateQueries({ queryKey: ["events", message.path] });
-      queryClient.invalidateQueries({ queryKey: ["events", "all"] });
-      queryClient.invalidateQueries({ queryKey: ["events", "operator-sidebar"] });
+      patchVariableCachesFromWs(
+        queryClient,
+        message.path,
+        message.variableName,
+        message.value,
+        message.timestamp,
+      );
       if (message.variableName === "driverStatus") {
         queryClient.invalidateQueries({ queryKey: ["objects"] });
         queryClient.invalidateQueries({ queryKey: ["driver-status", message.path] });
@@ -36,10 +139,7 @@ export function applyObjectWebSocketMessage(queryClient: QueryClient, message: O
     queryClient.invalidateQueries({ queryKey: ["dashboard", message.path] });
     queryClient.invalidateQueries({ queryKey: ["workflow", message.path] });
   }
-  if (message.type === "UPDATED") {
-    void refreshWorkQueue(queryClient);
-  }
-  if (message.type === "VARIABLE_UPDATED" || message.type === "EVENT_FIRED") {
+  if (message.type === "EVENT_FIRED") {
     void refreshWorkQueue(queryClient);
   }
 }

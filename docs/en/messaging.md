@@ -25,6 +25,20 @@ Do not mix sync RPC and async bus in one "universal" channel.
 
 ```json
 { "type": "subscribe", "paths": ["root.platform.devices.demo-sensor-01"] }
+
+Narrow interest (recommended for HMI widgets) — only listed variables.
+Omitting `variablesByPath` for a path means path-wide (all variables on that object).
+Empty `paths` is silence (not whole-server broadcast).
+
+```json
+{
+  "type": "subscribe",
+  "paths": ["root.platform.devices.demo-sensor-01"],
+  "variablesByPath": {
+    "root.platform.devices.demo-sensor-01": ["temperature", "online"]
+  }
+}
+```
 ```
 
 ```json

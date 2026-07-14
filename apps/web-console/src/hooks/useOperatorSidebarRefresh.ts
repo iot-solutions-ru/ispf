@@ -2,44 +2,28 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { refreshWorkQueue } from "./workQueueCache";
 import type { OperatorUi } from "../types/operatorUi";
-import { collectOperatorAppWatchPaths } from "../utils/operatorSidebarScope";
-import { OBJECT_WS_EVENT, trackObjectPathSubscriptions, type ObjectWsMessage } from "./useObjectWebSocket";
+import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./useObjectWebSocket";
 
 export const OPERATOR_SIDEBAR_EVENTS_QUERY_KEY = "operator-sidebar";
 
-export function useOperatorSidebarRefresh(appId?: string, ui?: OperatorUi) {
+/**
+ * Refresh operator sidebar events / work-queue on EVENT_FIRED only.
+ * Do not subscribe to object paths: that would mark path-wide uiRefresh for every
+ * variable under the journal prefix (e.g. all SNMP vars under devices.itm).
+ */
+export function useOperatorSidebarRefresh(_appId?: string, ui?: OperatorUi) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!ui) {
       return;
     }
-    const paths = collectOperatorAppWatchPaths(ui, appId);
-    if (paths.length === 0) {
-      return;
-    }
-    return trackObjectPathSubscriptions(paths);
-  }, [appId, ui]);
-
-  useEffect(() => {
-    if (!ui) {
-      return;
-    }
     const refresh = (message: ObjectWsMessage) => {
-      if (
-        message.type === "EVENT_FIRED" ||
-        message.type === "VARIABLE_UPDATED" ||
-        message.type === "UPDATED"
-      ) {
-        void queryClient.invalidateQueries({ queryKey: ["events", OPERATOR_SIDEBAR_EVENTS_QUERY_KEY] });
+      if (message.type !== "EVENT_FIRED") {
+        return;
       }
-      if (
-        message.type === "VARIABLE_UPDATED" ||
-        message.type === "EVENT_FIRED" ||
-        message.type === "UPDATED"
-      ) {
-        void refreshWorkQueue(queryClient);
-      }
+      void queryClient.invalidateQueries({ queryKey: ["events", OPERATOR_SIDEBAR_EVENTS_QUERY_KEY] });
+      void refreshWorkQueue(queryClient);
     };
 
     const handler = (raw: Event) => {

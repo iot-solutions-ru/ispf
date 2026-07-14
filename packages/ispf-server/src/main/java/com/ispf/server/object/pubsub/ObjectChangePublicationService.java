@@ -214,16 +214,20 @@ public class ObjectChangePublicationService {
         return true;
     }
 
+    /**
+     * Live UI clients patch React Query from {@code value} on each VARIABLE_UPDATED.
+     * {@code previousValue} stays opt-in via includePreviousValueInEvent (payload size).
+     */
     private EventPayload resolveEventPayload(
             String objectPath,
             String variableName,
             DataRecord value,
             DataRecord previousValue
     ) {
-        if (!telemetryPolicyService.includePreviousValueInEvent(objectPath, variableName)) {
-            return new EventPayload(null, null);
-        }
-        return new EventPayload(value, previousValue);
+        DataRecord previous = telemetryPolicyService.includePreviousValueInEvent(objectPath, variableName)
+                ? previousValue
+                : null;
+        return new EventPayload(value, previous);
     }
 
     private record EventPayload(DataRecord value, DataRecord previousValue) {}

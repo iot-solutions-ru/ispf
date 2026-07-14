@@ -11,6 +11,7 @@ export function useBoundVariable(
     objectPath,
     refreshIntervalMs,
     Boolean(objectPath && variableName),
+    variableName ? [variableName] : null,
   );
 
   const variable = query.data?.find((item) => item.name === variableName);

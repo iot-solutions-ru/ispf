@@ -7,7 +7,9 @@ import type { MimicAction, MimicElement, ScadaMimicDocument } from "../../../typ
 import { parseMimicDocument } from "../../../scada/document";
 import { parseSelectionJson } from "../dashboardUtils";
 import {
+  collectBindingInterests,
   collectBindingPaths,
+  groupBindingVariablesByPath,
   resolveBindingValue,
   resolveDocumentBindings,
 } from "../../../scada/bindingResolver";
@@ -136,8 +138,20 @@ export default function ScadaMimicWidgetView({
     () => collectBindingPaths(document.elements, document.connections, session),
     [document, session]
   );
+  const bindingVariablesByPath = useMemo(
+    () =>
+      groupBindingVariablesByPath(
+        collectBindingInterests(document.elements, document.connections, session)
+      ),
+    [document, session]
+  );
 
-  const variablesBatch = useVariablesBatchQuery(bindingPaths, refreshIntervalMs, bindingPaths.length > 0);
+  const variablesBatch = useVariablesBatchQuery(
+    bindingPaths,
+    refreshIntervalMs,
+    bindingPaths.length > 0,
+    bindingVariablesByPath
+  );
   const variablesByPath = variablesBatch.data ?? {};
 
   const resolved = useMemo(

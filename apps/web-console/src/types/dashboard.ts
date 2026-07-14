@@ -384,6 +384,8 @@ export interface ReportWidget extends DashboardWidgetBase {
   type: "report";
   reportPath: string;
   emptyMessage?: string;
+  /** Override dashboard refresh for report runs (default: max(dashboard, 30s)). */
+  refreshIntervalMs?: number;
   /** Static run parameters (JSON object) */
   parametersJson?: string;
   /** Session param key → report parameter name mapping (JSON object) */

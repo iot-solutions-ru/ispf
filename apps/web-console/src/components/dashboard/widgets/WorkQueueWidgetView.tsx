@@ -59,10 +59,10 @@ export default function WorkQueueWidgetView({ widget, editable }: WorkQueueWidge
   const queue = useQuery({
     queryKey: workQueueQueryKey(operatorAppId),
     queryFn: () => fetchWorkQueue(50, operatorAppId),
-    refetchInterval: 3000,
+    // Live updates come from EVENT_FIRED via ObjectWebSocketCacheBridge.
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
-    refetchOnMount: "always",
-    staleTime: 0,
+    staleTime: 15_000,
   });
 
   const maxItems = widget.maxItems ?? 20;

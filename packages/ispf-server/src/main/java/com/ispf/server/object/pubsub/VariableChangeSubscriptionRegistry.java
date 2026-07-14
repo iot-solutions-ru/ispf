@@ -51,7 +51,7 @@ public class VariableChangeSubscriptionRegistry {
         boolean alerts = !automationRuleIndex.findAlertRules(objectPath, variableName).isEmpty();
         boolean workflows = !workflowTriggerIndex.findVariableWorkflows(objectPath, variableName).isEmpty();
         boolean workflowIndex = isWorkflowIndexVariable(objectPath, variableName);
-        boolean uiRefresh = webSocketPathInterest.hasPathInterest(objectPath)
+        boolean uiRefresh = webSocketPathInterest.hasVariableInterest(objectPath, variableName)
                 || clusterPathInterest.hasPathInterest(objectPath)
                 || federationExportInterest.hasPathInterest(objectPath);
         return new VariableChangeInterest(historian, bindings, alerts, workflows, workflowIndex, uiRefresh);

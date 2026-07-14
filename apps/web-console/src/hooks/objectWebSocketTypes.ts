@@ -5,8 +5,9 @@ export interface ObjectWsMessage {
   timestamp: string;
   revision?: number;
   changedBy?: string;
-  /** Present when variable has includePreviousValueInEvent or API write with enrichment. */
+  /** Present on VARIABLE_UPDATED so UI can patch bindings without HTTP batch refetch. */
   value?: import("../types").DataRecord;
+  /** Present when variable has includePreviousValueInEvent. */
   previousValue?: import("../types").DataRecord;
 }
 

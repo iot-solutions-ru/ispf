@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { applyObjectWebSocketMessage } from "./objectWebSocketCache";
 import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./objectWebSocketTypes";
 
-/** Applies React Query invalidations for every object-tree WebSocket payload. */
+/** Applies React Query cache patches for every object-tree WebSocket payload. */
 export function ObjectWebSocketCacheBridge() {
   const queryClient = useQueryClient();
 
