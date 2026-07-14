@@ -147,10 +147,10 @@ ispf:
     replica-capabilities: ${ISPF_REPLICA_CAPABILITIES:}
     replica-role: ${ISPF_REPLICA_ROLE:all}
     job-consumer-enabled: ${ISPF_CLUSTER_JOB_CONSUMER_ENABLED:true}
-    job-poll-ms: ${ISPF_CLUSTER_JOB_POLL_MS:2000}
-    job-max-concurrent: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT:2}
+    job-poll-ms: ${ISPF_CLUSTER_JOB_POLL_MS:250}
+    job-max-concurrent: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT:4}
     job-elastic-enabled: ${ISPF_CLUSTER_JOB_ELASTIC:true}
-    job-max-concurrent-min: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT_MIN:1}
+    job-max-concurrent-min: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT_MIN:2}
     job-max-concurrent-max: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT_MAX:8}
     job-elastic-scale-up-threshold: ${ISPF_CLUSTER_JOB_ELASTIC_SCALE_UP:50}
     job-elastic-scale-down-steps: ${ISPF_CLUSTER_JOB_ELASTIC_SCALE_DOWN:6}

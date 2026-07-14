@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   downloadReportExportByPath,
   fetchReport,
-  runReportByPath,
+  runReportByPathSync,
   type ReportExportFormat,
 } from "../../../api/reports";
 import type { ReportWidget } from "../../../types/dashboard";
@@ -180,9 +180,11 @@ export default function ReportWidgetView({
 
   const parametersReady = reportMetaQuery.isSuccess;
 
+  // Sync run: async job queue polls every ~2s with low concurrency, so DCN-style
+  // dashboards with several report widgets lagged 4–6s for ~5ms tree-variables queries.
   const runQuery = useQuery({
     queryKey: ["report-widget", widget.reportPath, runParameters],
-    queryFn: () => runReportByPath(widget.reportPath, runParameters),
+    queryFn: () => runReportByPathSync(widget.reportPath, runParameters),
     enabled: Boolean(widget.reportPath?.trim()) && parametersReady,
     refetchInterval: editable ? false : refreshIntervalMs,
   });
