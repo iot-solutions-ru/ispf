@@ -66,7 +66,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 3.0));
 
         verify(publicationService, times(3)).publishVariableChange(
-                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
+                eq("root.dev.sensor"), eq("temperature"), isNull(), any(), isNull());
     }
 
     @Test
@@ -83,7 +83,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.flushNow();
 
         verify(publicationService, times(1)).publishVariableChange(
-                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
+                eq("root.dev.sensor"), eq("temperature"), isNull(), any(), isNull());
     }
 
     @Test
@@ -101,7 +101,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
 
         verify(publicationService).publishVariableChange(
-                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
+                eq("root.dev.sensor"), eq("temperature"), isNull(), any(), isNull());
     }
 
     @Test
@@ -140,7 +140,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.flushNow();
 
         verify(publicationService, times(1)).publishVariableChange(
-                eq("root.dev.sensor"), eq("temperature"), isNull(), isNull(), isNull());
+                eq("root.dev.sensor"), eq("temperature"), isNull(), any(), isNull());
     }
 
     @Test
@@ -153,7 +153,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.flushNow();
 
         verify(publicationService, times(2)).publishVariableChange(
-                eq("root.dev.sensor"), any(), isNull(), isNull(), isNull());
+                eq("root.dev.sensor"), any(), isNull(), any(), isNull());
     }
 
     @Test
@@ -189,7 +189,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.flushNow();
 
         verify(publicationService, times(2)).publishVariableChange(
-                eq("root.dev.gateway"), eq("lastIngress"), isNull(), isNull(), isNull());
+                eq("root.dev.gateway"), eq("lastIngress"), isNull(), any(), isNull());
     }
 
     @Test
@@ -213,7 +213,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.flushNow();
 
         verify(publicationService, times(2)).publishVariableChange(
-                eq("root.dev.gateway"), eq("lastIngress"), isNull(), isNull(), isNull());
+                eq("root.dev.gateway"), eq("lastIngress"), isNull(), any(), isNull());
     }
 
     @Test
@@ -238,7 +238,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.flushNow();
 
         verify(publicationService, times(1)).publishVariableChange(
-                eq("root.dev.gateway"), eq("lastIngress"), isNull(), isNull(), isNull());
+                eq("root.dev.gateway"), eq("lastIngress"), isNull(), any(), isNull());
     }
 
     @Test

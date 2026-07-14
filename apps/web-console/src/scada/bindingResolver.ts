@@ -16,53 +16,60 @@ export function collectBindingPaths(
   connections: MimicConnection[],
   session?: Pick<DashboardSession, "selection" | "params">
 ): string[] {
-  const paths = new Set<string>();
+  return [...new Set(collectBindingInterests(elements, connections, session).map((entry) => entry.path))];
+}
+
+/** Live variable interests only (bindings) — action target paths are not WS live subscriptions. */
+export function collectBindingInterests(
+  elements: MimicElement[],
+  connections: MimicConnection[],
+  session?: Pick<DashboardSession, "selection" | "params">
+): Array<{ path: string; variableName: string }> {
+  const out: Array<{ path: string; variableName: string }> = [];
+  const seen = new Set<string>();
+
+  const addInterest = (binding: MimicBinding) => {
+    const target = bindingTarget(binding, session ?? { selection: {}, params: {} });
+    if (!target.objectPath?.trim() || !target.variableName?.trim()) {
+      return;
+    }
+    const path = target.objectPath.trim();
+    const variableName = target.variableName.trim();
+    const key = `${path}\0${variableName}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    out.push({ path, variableName });
+  };
+
   for (const el of elements) {
     for (const binding of Object.values(el.bindings)) {
-      addPath(paths, binding, session);
-    }
-    for (const action of el.actions ?? []) {
-      const actionPath = session
-        ? resolveWidgetPath(
-            action.objectPath,
-            action.selectionKey,
-            session.selection,
-            undefined,
-            session.params
-          )
-        : action.objectPath?.trim();
-      if (actionPath) {
-        paths.add(actionPath);
-      }
+      addInterest(binding);
     }
   }
   for (const conn of connections) {
     for (const binding of Object.values(conn.bindings ?? {})) {
       if (binding) {
-        addPath(paths, binding, session);
+        addInterest(binding);
       }
     }
   }
-  return [...paths];
+  return out;
 }
 
-function addPath(
-  paths: Set<string>,
-  binding: MimicBinding,
-  session?: Pick<DashboardSession, "selection" | "params">
-): void {
-  const objectPath = session
-    ? resolveWidgetPath(
-        binding.objectPath,
-        binding.selectionKey,
-        session.selection,
-        undefined,
-        session.params
-      )
-    : binding.objectPath?.trim();
-  if (objectPath?.trim()) {
-    paths.add(objectPath.trim());
+export function groupBindingVariablesByPath(
+  interests: Array<{ path: string; variableName: string }>
+): Record<string, string[]> {
+  const byPath: Record<string, string[]> = {};
+  for (const interest of interests) {
+    const list = byPath[interest.path] ?? [];
+    if (!list.includes(interest.variableName)) {
+      list.push(interest.variableName);
+    }
+    byPath[interest.path] = list;
   }
+  return byPath;
 }
 
 function bindingTarget(

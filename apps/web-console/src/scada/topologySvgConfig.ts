@@ -45,7 +45,16 @@ export function collectTopologyBindingPaths(
   bindings: Record<string, MimicBinding>,
   session?: Pick<DashboardSession, "selection" | "params">
 ): string[] {
-  const paths = new Set<string>();
+  return [...new Set(collectTopologyBindingInterests(bindings, session).map((entry) => entry.path))];
+}
+
+/** Per-binding (path, variable) interests for demand-driven WS subscribe. */
+export function collectTopologyBindingInterests(
+  bindings: Record<string, MimicBinding>,
+  session?: Pick<DashboardSession, "selection" | "params">
+): Array<{ path: string; variableName: string }> {
+  const out: Array<{ path: string; variableName: string }> = [];
+  const seen = new Set<string>();
   for (const binding of Object.values(bindings)) {
     const objectPath = session
       ? resolveWidgetPath(
@@ -56,11 +65,33 @@ export function collectTopologyBindingPaths(
           session.params
         )
       : binding.objectPath?.trim();
-    if (objectPath?.trim()) {
-      paths.add(objectPath.trim());
+    const variableName = binding.variableName?.trim();
+    if (!objectPath?.trim() || !variableName) {
+      continue;
     }
+    const path = objectPath.trim();
+    const key = `${path}\0${variableName}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    out.push({ path, variableName });
   }
-  return [...paths];
+  return out;
+}
+
+export function groupVariablesByPath(
+  interests: Array<{ path: string; variableName: string }>
+): Record<string, string[]> {
+  const byPath: Record<string, string[]> = {};
+  for (const interest of interests) {
+    const list = byPath[interest.path] ?? [];
+    if (!list.includes(interest.variableName)) {
+      list.push(interest.variableName);
+    }
+    byPath[interest.path] = list;
+  }
+  return byPath;
 }
 
 export function resolveTopologyBindingValues(

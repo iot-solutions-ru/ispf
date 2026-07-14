@@ -5,8 +5,10 @@ import {
   prepareSvgInner,
 } from "../../../scada/svgSymbolEngine";
 import {
+  collectTopologyBindingInterests,
   collectTopologyBindingPaths,
   extractSvgInnerFromDocument,
+  groupVariablesByPath,
   resolveTopologyBindingValues,
 } from "../../../scada/topologySvgConfig";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
@@ -61,11 +63,19 @@ export default function SvgInteractiveBody({
     () => (config ? collectTopologyBindingPaths(config.bindings, session) : []),
     [config, session]
   );
+  const bindingVariablesByPath = useMemo(
+    () =>
+      config
+        ? groupVariablesByPath(collectTopologyBindingInterests(config.bindings, session))
+        : {},
+    [config, session]
+  );
 
   const variablesBatch = useVariablesBatchQuery(
     bindingPaths,
     refreshIntervalMs,
-    bindingPaths.length > 0
+    bindingPaths.length > 0,
+    bindingVariablesByPath
   );
 
   const bindingValues = useMemo(

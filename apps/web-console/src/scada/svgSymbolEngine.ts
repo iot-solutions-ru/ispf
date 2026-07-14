@@ -28,6 +28,9 @@ function resolveNum(values: Record<string, unknown>, props: Record<string, unkno
 }
 
 function setAttr(el: Element, name: string, value: string): void {
+  if (el.getAttribute(name) === value) {
+    return;
+  }
   el.setAttribute(name, value);
 }
 
@@ -85,7 +88,9 @@ export function applySvgBehaviorsToRoot({
                 behavior.formatPattern
               )
             : fmtText(rawVal, "");
-        el.textContent = text;
+        if (el.textContent !== text) {
+          el.textContent = text;
+        }
         if (gray) setAttr(el, "fill", gray);
         break;
       }

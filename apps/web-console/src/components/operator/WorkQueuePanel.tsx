@@ -54,10 +54,10 @@ export default function WorkQueuePanel({
   const queue = useQuery({
     queryKey: workQueueQueryKey(appId),
     queryFn: () => fetchWorkQueue(50, appId),
-    refetchInterval: 3000,
+    // Live updates come from EVENT_FIRED (sidebar + ObjectWebSocketCacheBridge).
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
-    refetchOnMount: "always",
-    staleTime: 0,
+    staleTime: 15_000,
   });
 
   const tasks = useMemo(() => {

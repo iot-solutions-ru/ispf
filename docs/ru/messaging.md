@@ -25,6 +25,20 @@
 
 ```json
 { "type": "subscribe", "paths": ["root.platform.devices.demo-sensor-01"] }
+
+Узкий интерес (рекомендуется для HMI-виджетов) — только перечисленные переменные.
+Отсутствие `variablesByPath` для path = path-wide (все переменные объекта).
+Пустой `paths` = тишина (не broadcast на весь сервер).
+
+```json
+{
+  "type": "subscribe",
+  "paths": ["root.platform.devices.demo-sensor-01"],
+  "variablesByPath": {
+    "root.platform.devices.demo-sensor-01": ["temperature", "online"]
+  }
+}
+```
 ```
 
 ```json

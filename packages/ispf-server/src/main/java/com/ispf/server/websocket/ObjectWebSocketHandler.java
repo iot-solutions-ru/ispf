@@ -36,12 +36,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ObjectWebSocketHandler extends TextWebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ObjectWebSocketHandler.class);
-    private static final String SUBSCRIBE_ATTR = "subscribedPaths";
+    private static final String SUBSCRIBE_ATTR = "subscribedInterest";
 
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
-    /** Sessions with empty subscription — receive all object-change events. */
-    private final Set<WebSocketSession> broadcastSessions = ConcurrentHashMap.newKeySet();
-    /** Reverse index: subscribed path → sessions interested in that path. */
+    /** Reverse index: subscribed path → sessions interested in that path (path-wide or any variables). */
     private final ConcurrentHashMap<String, Set<WebSocketSession>> pathSubscriptions = new ConcurrentHashMap<>();
     private final WebSocketProperties webSocketProperties;
     private final ConcurrentLinkedQueue<Runnable> pendingSends = new ConcurrentLinkedQueue<>();
@@ -114,9 +112,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
-        broadcastSessions.add(session);
-        pathInterestRegistry.onBroadcastSessionAdded();
-        clusterPathInterestStore.onBroadcastSessionAdded();
+        // No broadcast: live interest starts only after an explicit non-empty subscribe.
     }
 
     @Override
@@ -200,22 +196,11 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleSubscribe(WebSocketSession session, JsonNode node) throws IOException {
-        Set<String> paths = new HashSet<>();
-        JsonNode pathsNode = node.get("paths");
-        if (pathsNode != null && pathsNode.isArray()) {
-            pathsNode.forEach(entry -> {
-                if (entry.isString()) {
-                    String path = entry.asString().trim();
-                    if (!path.isBlank()) {
-                        paths.add(path);
-                    }
-                }
-            });
-        }
+        SessionInterest next = SessionInterest.parse(node);
         @SuppressWarnings("unchecked")
-        Set<String> previous = (Set<String>) session.getAttributes().get(SUBSCRIBE_ATTR);
-        session.getAttributes().put(SUBSCRIBE_ATTR, paths);
-        updateSubscriptionIndex(session, previous, paths);
+        SessionInterest previous = (SessionInterest) session.getAttributes().get(SUBSCRIBE_ATTR);
+        session.getAttributes().put(SUBSCRIBE_ATTR, next);
+        updateSubscriptionIndex(session, previous, next);
         refreshFederationPollSubscriptions();
     }
 
@@ -281,7 +266,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             log.warn("Failed to serialize object-change message for {}: {}", event.path(), e.getMessage());
             return;
         }
-        for (WebSocketSession session : sessionsForEvent(event.path())) {
+        for (WebSocketSession session : sessionsForEvent(event.path(), event.variableName())) {
             if (!session.isOpen()) {
                 continue;
             }
@@ -308,72 +293,83 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         sendWorkers.signalWork();
     }
 
-    private Set<WebSocketSession> sessionsForEvent(String eventPath) {
-        Set<WebSocketSession> targets = new HashSet<>(broadcastSessions);
+    private Set<WebSocketSession> sessionsForEvent(String eventPath, String variableName) {
+        Set<WebSocketSession> candidates = new HashSet<>();
         if (pathSubscriptions.isEmpty()) {
-            return targets;
+            return candidates;
         }
         String prefix = "";
         for (String part : eventPath.split("\\.")) {
             prefix = prefix.isEmpty() ? part : prefix + "." + part;
             Set<WebSocketSession> subs = pathSubscriptions.get(prefix);
             if (subs != null) {
-                targets.addAll(subs);
+                candidates.addAll(subs);
             }
         }
         String childPrefix = eventPath + ".";
         for (Map.Entry<String, Set<WebSocketSession>> entry : pathSubscriptions.entrySet()) {
             if (entry.getKey().startsWith(childPrefix)) {
-                targets.addAll(entry.getValue());
+                candidates.addAll(entry.getValue());
+            }
+        }
+        if (variableName == null || variableName.isBlank()) {
+            return candidates;
+        }
+        Set<WebSocketSession> targets = new HashSet<>();
+        for (WebSocketSession session : candidates) {
+            Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);
+            if (raw instanceof SessionInterest interest && interest.allowsVariable(eventPath, variableName)) {
+                targets.add(session);
             }
         }
         return targets;
     }
 
-    private void updateSubscriptionIndex(WebSocketSession session, Set<String> previousPaths, Set<String> paths) {
-        if (broadcastSessions.remove(session)) {
-            pathInterestRegistry.onBroadcastSessionRemoved();
-            clusterPathInterestStore.onBroadcastSessionRemoved();
+    private void updateSubscriptionIndex(WebSocketSession session, SessionInterest previous, SessionInterest next) {
+        if (previous != null) {
+            clearInterest(session, previous);
         }
-        if (previousPaths != null) {
-            for (String path : previousPaths) {
-                Set<WebSocketSession> subs = pathSubscriptions.get(path);
-                if (subs != null) {
-                    subs.remove(session);
-                    if (subs.isEmpty()) {
-                        pathSubscriptions.remove(path);
-                    }
-                }
-                pathInterestRegistry.unsubscribePath(path);
-                clusterPathInterestStore.unsubscribePath(path);
-            }
-        }
-        if (paths.isEmpty()) {
-            broadcastSessions.add(session);
-            pathInterestRegistry.onBroadcastSessionAdded();
-            clusterPathInterestStore.onBroadcastSessionAdded();
+        if (next == null || next.isEmpty()) {
             return;
         }
-        for (String path : paths) {
+        for (String path : next.allPaths()) {
             pathSubscriptions.computeIfAbsent(path, ignored -> ConcurrentHashMap.newKeySet()).add(session);
-            pathInterestRegistry.subscribePath(path);
-            clusterPathInterestStore.subscribePath(path);
+            if (next.isPathWide(path)) {
+                pathInterestRegistry.subscribePath(path);
+                clusterPathInterestStore.subscribePath(path);
+            } else {
+                Set<String> variables = next.variablesFor(path);
+                pathInterestRegistry.subscribeVariables(path, variables);
+                // Cluster keeps path-level interest so owners still publish across replicas.
+                clusterPathInterestStore.subscribePath(path);
+            }
+        }
+    }
+
+    private void clearInterest(WebSocketSession session, SessionInterest interest) {
+        for (String path : interest.allPaths()) {
+            Set<WebSocketSession> subs = pathSubscriptions.get(path);
+            if (subs != null) {
+                subs.remove(session);
+                if (subs.isEmpty()) {
+                    pathSubscriptions.remove(path);
+                }
+            }
+            if (interest.isPathWide(path)) {
+                pathInterestRegistry.unsubscribePath(path);
+                clusterPathInterestStore.unsubscribePath(path);
+            } else {
+                Set<String> variables = interest.variablesFor(path);
+                pathInterestRegistry.unsubscribeVariables(path, variables);
+                clusterPathInterestStore.unsubscribePath(path);
+            }
         }
     }
 
     private void removeSessionFromIndex(WebSocketSession session) {
-        if (broadcastSessions.remove(session)) {
-            pathInterestRegistry.onBroadcastSessionRemoved();
-            clusterPathInterestStore.onBroadcastSessionRemoved();
-        }
         Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);
-        if (raw instanceof Set<?> subscribed) {
-            for (Object entry : subscribed) {
-                if (entry instanceof String path) {
-                    pathInterestRegistry.unsubscribePath(path);
-                    clusterPathInterestStore.unsubscribePath(path);
-                }
-            }
+        if (raw instanceof SessionInterest interest) {
+            clearInterest(session, interest);
         }
         for (Set<WebSocketSession> subs : pathSubscriptions.values()) {
             subs.remove(session);
@@ -386,14 +382,113 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         Set<String> federated = new HashSet<>();
         for (WebSocketSession session : sessions) {
             Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);
-            if (raw instanceof Set<?> subscribed) {
-                for (Object entry : subscribed) {
-                    if (entry instanceof String path && FederationPaths.isCatalogMirrorPath(path)) {
+            if (raw instanceof SessionInterest interest) {
+                for (String path : interest.allPaths()) {
+                    if (FederationPaths.isCatalogMirrorPath(path)) {
                         federated.add(path);
                     }
                 }
             }
         }
         federationSubscribePollService.replaceSubscriptions(federated);
+    }
+
+    /**
+     * Parsed WS {@code subscribe} payload.
+     * Path without {@code variablesByPath} entry (or with {@code "*"}) = path-wide interest.
+     */
+    static final class SessionInterest {
+        private final Set<String> pathWide;
+        private final Map<String, Set<String>> variablesByPath;
+
+        SessionInterest(Set<String> pathWide, Map<String, Set<String>> variablesByPath) {
+            this.pathWide = Set.copyOf(pathWide);
+            this.variablesByPath = Map.copyOf(variablesByPath);
+        }
+
+        static SessionInterest parse(JsonNode node) {
+            Set<String> paths = new HashSet<>();
+            JsonNode pathsNode = node.get("paths");
+            if (pathsNode != null && pathsNode.isArray()) {
+                pathsNode.forEach(entry -> {
+                    if (entry.isString()) {
+                        String path = entry.asString().trim();
+                        if (!path.isBlank()) {
+                            paths.add(path);
+                        }
+                    }
+                });
+            }
+            Map<String, Set<String>> variablesByPath = new java.util.HashMap<>();
+            JsonNode varsNode = node.get("variablesByPath");
+            if (varsNode != null && varsNode.isObject()) {
+                varsNode.properties().forEach(property -> {
+                    String path = property.getKey() == null ? "" : property.getKey().trim();
+                    if (path.isBlank() || !paths.contains(path)) {
+                        return;
+                    }
+                    Set<String> variables = new HashSet<>();
+                    JsonNode list = property.getValue();
+                    if (list != null && list.isArray()) {
+                        list.forEach(entry -> {
+                            if (entry.isString()) {
+                                String name = entry.asString().trim();
+                                if (!name.isBlank()) {
+                                    variables.add(name);
+                                }
+                            }
+                        });
+                    }
+                    if (!variables.isEmpty() && !variables.contains("*")) {
+                        variablesByPath.put(path, Set.copyOf(variables));
+                    }
+                });
+            }
+            Set<String> pathWide = new HashSet<>();
+            for (String path : paths) {
+                if (!variablesByPath.containsKey(path)) {
+                    pathWide.add(path);
+                }
+            }
+            return new SessionInterest(pathWide, variablesByPath);
+        }
+
+        boolean isEmpty() {
+            return pathWide.isEmpty() && variablesByPath.isEmpty();
+        }
+
+        Set<String> allPaths() {
+            Set<String> all = new HashSet<>(pathWide);
+            all.addAll(variablesByPath.keySet());
+            return all;
+        }
+
+        boolean isPathWide(String path) {
+            return pathWide.contains(path);
+        }
+
+        Set<String> variablesFor(String path) {
+            return variablesByPath.getOrDefault(path, Set.of());
+        }
+
+        boolean allowsVariable(String eventPath, String variableName) {
+            for (String path : pathWide) {
+                if (pathMatches(path, eventPath)) {
+                    return true;
+                }
+            }
+            for (Map.Entry<String, Set<String>> entry : variablesByPath.entrySet()) {
+                if (pathMatches(entry.getKey(), eventPath) && entry.getValue().contains(variableName)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static boolean pathMatches(String subscribed, String eventPath) {
+            return eventPath.equals(subscribed)
+                    || eventPath.startsWith(subscribed + ".")
+                    || subscribed.startsWith(eventPath + ".");
+        }
     }
 }

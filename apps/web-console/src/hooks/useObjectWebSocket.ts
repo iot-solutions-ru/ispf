@@ -8,14 +8,26 @@ import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./objectWebSocketTypes";
 export type { ObjectWsMessage } from "./objectWebSocketTypes";
 export { OBJECT_WS_EVENT } from "./objectWebSocketTypes";
 
+/** Path-wide when `variables` is omitted/empty; otherwise only listed names. */
+export interface ObjectVariableInterest {
+  path: string;
+  variables?: string[] | null;
+}
+
 let activeSocket: WebSocket | null = null;
 let wsConnected = false;
 let socketOwnerCount = 0;
 let connectionToken = "";
 let retryTimer: number | undefined;
 const wsConnectionListeners = new Set<() => void>();
-/** Ref-counted path interests merged into one WS subscribe message. */
-const pathRefCounts = new Map<string, number>();
+
+interface PathInterestState {
+  pathWide: number;
+  variables: Map<string, number>;
+}
+
+/** Ref-counted path/variable interests merged into one WS subscribe message. */
+const interestByPath = new Map<string, PathInterestState>();
 
 function setWsConnected(connected: boolean) {
   if (wsConnected === connected) {
@@ -126,43 +138,119 @@ function connectWebSocket(authToken: string, tryNextIngressPath = false) {
   };
 }
 
+function ensureInterestState(path: string): PathInterestState {
+  let state = interestByPath.get(path);
+  if (!state) {
+    state = { pathWide: 0, variables: new Map() };
+    interestByPath.set(path, state);
+  }
+  return state;
+}
+
+function pruneInterestState(path: string, state: PathInterestState) {
+  if (state.pathWide <= 0 && state.variables.size === 0) {
+    interestByPath.delete(path);
+  }
+}
+
+/** Build server subscribe payload from merged refcounts. */
+export function buildSubscribePayload(): {
+  type: "subscribe";
+  paths: string[];
+  variablesByPath: Record<string, string[]>;
+} {
+  const paths: string[] = [];
+  const variablesByPath: Record<string, string[]> = {};
+  for (const [path, state] of interestByPath) {
+    paths.push(path);
+    if (state.pathWide > 0) {
+      continue;
+    }
+    const names = [...state.variables.keys()].sort();
+    if (names.length > 0) {
+      variablesByPath[path] = names;
+    }
+  }
+  paths.sort();
+  return { type: "subscribe", paths, variablesByPath };
+}
+
 function pushMergedSubscriptionsToServer() {
   if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) {
     return;
   }
-  const paths = [...pathRefCounts.keys()];
-  activeSocket.send(JSON.stringify({ type: "subscribe", paths }));
+  activeSocket.send(JSON.stringify(buildSubscribePayload()));
 }
 
-/** @deprecated Prefer trackObjectPathSubscriptions / useObjectPathsSubscription. */
+/** @deprecated Prefer trackObjectVariableSubscriptions / useObjectPathsSubscription. */
 export function subscribeObjectPaths(paths: string[]) {
-  pathRefCounts.clear();
-  for (const path of paths) {
-    if (path.trim().length > 0) {
-      pathRefCounts.set(path.trim(), 1);
+  interestByPath.clear();
+  trackObjectVariableSubscriptions(paths.map((path) => ({ path })));
+}
+
+/**
+ * Register interest in object paths / variables; merged with other dashboard consumers.
+ * Omit `variables` (or pass empty) for path-wide interest (object explorer).
+ */
+export function trackObjectVariableSubscriptions(interests: ObjectVariableInterest[]): () => void {
+  const normalized: Array<{ path: string; variables: string[] | null }> = [];
+  for (const interest of interests) {
+    const path = interest.path?.trim();
+    if (!path) {
+      continue;
+    }
+    const raw = interest.variables;
+    if (!raw || raw.length === 0) {
+      normalized.push({ path, variables: null });
+      continue;
+    }
+    const variables = [...new Set(raw.map((name) => name.trim()).filter(Boolean))];
+    if (variables.length === 0) {
+      normalized.push({ path, variables: null });
+    } else {
+      normalized.push({ path, variables });
+    }
+  }
+
+  for (const entry of normalized) {
+    const state = ensureInterestState(entry.path);
+    if (entry.variables == null) {
+      state.pathWide += 1;
+    } else {
+      for (const variable of entry.variables) {
+        state.variables.set(variable, (state.variables.get(variable) ?? 0) + 1);
+      }
     }
   }
   pushMergedSubscriptionsToServer();
-}
 
-/** Register interest in object paths; merged with other dashboard/inspector consumers. */
-export function trackObjectPathSubscriptions(paths: string[]): () => void {
-  const unique = [...new Set(paths.filter((path) => path.trim().length > 0))];
-  for (const path of unique) {
-    pathRefCounts.set(path, (pathRefCounts.get(path) ?? 0) + 1);
-  }
-  pushMergedSubscriptionsToServer();
   return () => {
-    for (const path of unique) {
-      const next = (pathRefCounts.get(path) ?? 1) - 1;
-      if (next <= 0) {
-        pathRefCounts.delete(path);
-      } else {
-        pathRefCounts.set(path, next);
+    for (const entry of normalized) {
+      const state = interestByPath.get(entry.path);
+      if (!state) {
+        continue;
       }
+      if (entry.variables == null) {
+        state.pathWide = Math.max(0, state.pathWide - 1);
+      } else {
+        for (const variable of entry.variables) {
+          const next = (state.variables.get(variable) ?? 1) - 1;
+          if (next <= 0) {
+            state.variables.delete(variable);
+          } else {
+            state.variables.set(variable, next);
+          }
+        }
+      }
+      pruneInterestState(entry.path, state);
     }
     pushMergedSubscriptionsToServer();
   };
+}
+
+/** Path-wide interest (legacy). */
+export function trackObjectPathSubscriptions(paths: string[]): () => void {
+  return trackObjectVariableSubscriptions(paths.map((path) => ({ path })));
 }
 
 export function useObjectPathsSubscription(paths: string[]) {
@@ -178,6 +266,35 @@ export function useObjectPathsSubscription(paths: string[]) {
     const unique = pathsKey.split("\0");
     return trackObjectPathSubscriptions(unique);
   }, [pathsKey]);
+}
+
+export function useObjectVariableSubscriptions(interests: ObjectVariableInterest[]) {
+  const key = interests
+    .map((interest) => {
+      const path = interest.path?.trim() ?? "";
+      if (!path) {
+        return "";
+      }
+      const variables = interest.variables?.map((name) => name.trim()).filter(Boolean).sort() ?? [];
+      return variables.length === 0 ? `${path}\0*` : `${path}\0${variables.join(",")}`;
+    })
+    .filter(Boolean)
+    .sort()
+    .join("|");
+
+  useEffect(() => {
+    if (!key) {
+      return;
+    }
+    const parsed = key.split("|").map((entry) => {
+      const [path, variablesPart] = entry.split("\0");
+      if (variablesPart === "*") {
+        return { path, variables: null as string[] | null };
+      }
+      return { path, variables: variablesPart.split(",").filter(Boolean) };
+    });
+    return trackObjectVariableSubscriptions(parsed);
+  }, [key]);
 }
 
 export function sendPresence(path: string, username: string, mode: "view" | "edit") {

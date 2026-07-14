@@ -180,13 +180,19 @@ export default function ReportWidgetView({
 
   const parametersReady = reportMetaQuery.isSuccess;
 
-  // Sync run: async job queue polls every ~2s with low concurrency, so DCN-style
-  // dashboards with several report widgets lagged 4–6s for ~5ms tree-variables queries.
+  // Reports are heavy (SQL/tree scan). Dashboard poll (often 5s) is meant for live
+  // variable bindings — do not reuse it as report cadence. Widget may override.
+  const reportRefreshMs =
+    widget.refreshIntervalMs != null && widget.refreshIntervalMs > 0
+      ? widget.refreshIntervalMs
+      : Math.max(refreshIntervalMs, 30_000);
+
   const runQuery = useQuery({
     queryKey: ["report-widget", widget.reportPath, runParameters],
     queryFn: () => runReportByPathSync(widget.reportPath, runParameters),
     enabled: Boolean(widget.reportPath?.trim()) && parametersReady,
-    refetchInterval: editable ? false : refreshIntervalMs,
+    refetchInterval: editable ? false : reportRefreshMs,
+    staleTime: reportRefreshMs,
   });
 
   useEffect(() => {

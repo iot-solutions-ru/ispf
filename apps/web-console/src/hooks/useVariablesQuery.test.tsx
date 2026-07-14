@@ -17,6 +17,7 @@ vi.mock("./useObjectWebSocket", () => ({
   isObjectWebSocketConnected: vi.fn(() => false),
   subscribeObjectWebSocketConnection: vi.fn(() => () => {}),
   useObjectPathsSubscription: vi.fn(),
+  useObjectVariableSubscriptions: vi.fn(),
 }));
 
 describe("useVariablesQuery", () => {

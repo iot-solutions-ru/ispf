@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,6 +64,8 @@ class ObjectChangePublicationServiceTest {
                 properties,
                 clusterProperties
         );
+        // Default: keep value on events, omit previousValue unless a test overrides.
+        lenient().when(telemetryPolicyService.includePreviousValueInEvent(any(), any())).thenReturn(false);
     }
 
     @Test
@@ -212,5 +215,47 @@ class ObjectChangePublicationServiceTest {
 
         verify(eventPublisher).publishEvent(any(ObjectChangeEvent.class));
         verify(variableSubscriptionRegistry, never()).interest(eq(PATH), eq(VAR));
+    }
+
+    @Test
+    void keepsValueOnPublishedEventEvenWithoutPreviousValueFlag() {
+        when(variableSubscriptionRegistry.interest(PATH, VAR))
+                .thenReturn(new VariableChangeInterest(false, false, false, false, false, true));
+        when(telemetryPolicyService.automationEligible(PATH, VAR)).thenReturn(true);
+        when(telemetryPolicyService.includePreviousValueInEvent(PATH, VAR)).thenReturn(false);
+
+        var schema = com.ispf.core.model.DataSchema.builder("temperature")
+                .field("value", com.ispf.core.model.FieldType.DOUBLE)
+                .build();
+        var value = com.ispf.core.model.DataRecord.single(schema, java.util.Map.of("value", 21.5));
+        var previous = com.ispf.core.model.DataRecord.single(schema, java.util.Map.of("value", 20.0));
+
+        service.publishVariableChange(PATH, VAR, null, value, previous);
+
+        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().value()).isEqualTo(value);
+        assertThat(captor.getValue().previousValue()).isNull();
+    }
+
+    @Test
+    void includesPreviousValueWhenFlagEnabled() {
+        when(variableSubscriptionRegistry.interest(PATH, VAR))
+                .thenReturn(new VariableChangeInterest(false, false, false, false, false, true));
+        when(telemetryPolicyService.automationEligible(PATH, VAR)).thenReturn(true);
+        when(telemetryPolicyService.includePreviousValueInEvent(PATH, VAR)).thenReturn(true);
+
+        var schema = com.ispf.core.model.DataSchema.builder("temperature")
+                .field("value", com.ispf.core.model.FieldType.DOUBLE)
+                .build();
+        var value = com.ispf.core.model.DataRecord.single(schema, java.util.Map.of("value", 21.5));
+        var previous = com.ispf.core.model.DataRecord.single(schema, java.util.Map.of("value", 20.0));
+
+        service.publishVariableChange(PATH, VAR, null, value, previous);
+
+        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().value()).isEqualTo(value);
+        assertThat(captor.getValue().previousValue()).isEqualTo(previous);
     }
 }
