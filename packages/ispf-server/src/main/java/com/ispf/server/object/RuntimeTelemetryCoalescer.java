@@ -36,6 +36,7 @@ public class RuntimeTelemetryCoalescer {
     private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
     private final TelemetryHistorianFastPath historianFastPath;
     private final TelemetryIngressDispatcher telemetryIngressDispatcher;
+    private final BindingDependencyIndex bindingDependencyIndex;
     private ScheduledThreadPoolExecutor scheduler;
     private ElasticWorkerScaler schedulerScaler;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
@@ -49,7 +50,8 @@ public class RuntimeTelemetryCoalescer {
             ObjectChangePublicationService publicationService,
             @Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch,
             @Lazy TelemetryHistorianFastPath historianFastPath,
-            @Lazy TelemetryIngressDispatcher telemetryIngressDispatcher
+            @Lazy TelemetryIngressDispatcher telemetryIngressDispatcher,
+            @Lazy BindingDependencyIndex bindingDependencyIndex
     ) {
         this.properties = properties;
         this.policyService = policyService;
@@ -57,6 +59,7 @@ public class RuntimeTelemetryCoalescer {
         this.gatewayIngressDispatch = gatewayIngressDispatch;
         this.historianFastPath = historianFastPath;
         this.telemetryIngressDispatcher = telemetryIngressDispatcher;
+        this.bindingDependencyIndex = bindingDependencyIndex;
     }
 
     public synchronized void ensureSchedulerStarted() {
@@ -105,6 +108,11 @@ public class RuntimeTelemetryCoalescer {
 
     public void recordUpdate(String path, String variableName, DataRecord value, Instant observedAt) {
         String coalesceKey = resolveCoalesceKey(path, variableName, value);
+        // Binding rules must see every variable tick — never last-value-wins coalesce them.
+        if (bindingDependencyIndex != null && bindingDependencyIndex.hasConsumers(path, variableName)) {
+            publishIfChanged(path, variableName, value, coalesceKey, observedAt);
+            return;
+        }
         if (!properties.isCoalesceEnabled()) {
             publishIfChanged(path, variableName, value, coalesceKey, observedAt);
             return;

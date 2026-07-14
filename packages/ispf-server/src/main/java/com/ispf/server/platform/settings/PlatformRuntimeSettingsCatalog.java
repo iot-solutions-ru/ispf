@@ -124,7 +124,7 @@ final class PlatformRuntimeSettingsCatalog {
             def("automation", "object-change.async-enabled", "ISPF_OBJECT_CHANGE_ASYNC_ENABLED", "ispf.object-change.async-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("automation", "object-change.split-lanes", "ISPF_OBJECT_CHANGE_SPLIT_LANES", "ispf.object-change.split-lanes-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("automation", "object-change.coalesce-telemetry", "ISPF_OBJECT_CHANGE_COALESCE_TELEMETRY", "ispf.object-change.coalesce-telemetry-updates", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
-            def("automation", "binding.async-coalesce-enabled", "ISPF_BINDING_ASYNC_COALESCE", "ispf.binding.async-coalesce-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
+            def("automation", "binding.async-coalesce-enabled", "ISPF_BINDING_ASYNC_COALESCE", "ispf.binding.async-coalesce-enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, true),
             def("automation", "mqtt-gateway.ingress-dispatch-coalesce", "ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_COALESCE", "ispf.mqtt-gateway.ingress-dispatch-coalesce-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
             def("automation", "mqtt-gateway.ingress-bypass-l3", "ISPF_MQTT_GATEWAY_INGRESS_BYPASS_L3", "ispf.mqtt-gateway.ingress-bypass-l3-queue", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
             def("automation", "object-change.queue-capacity", "ISPF_OBJECT_CHANGE_QUEUE_CAPACITY", "ispf.object-change.queue-capacity", PlatformRuntimeSettingType.INTEGER, "10000", false, false),

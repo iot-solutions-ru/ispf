@@ -47,6 +47,9 @@ class RuntimeTelemetryCoalescerTest {
     @Mock
     private TelemetryIngressDispatcher telemetryIngressDispatcher;
 
+    @Mock
+    private BindingDependencyIndex bindingDependencyIndex;
+
     private RuntimeTelemetryCoalescer coalescer;
 
     @AfterEach
@@ -87,6 +90,21 @@ class RuntimeTelemetryCoalescerTest {
     }
 
     @Test
+    void publishesEveryTickWhenVariableHasBindingConsumers() {
+        coalescer = newCoalescer(true, 1_000);
+        org.mockito.Mockito.when(bindingDependencyIndex.hasConsumers("root.dev.sensor", "temperature"))
+                .thenReturn(true);
+        DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
+
+        coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
+        coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 2.0));
+        coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 3.0));
+
+        verify(publicationService, times(3)).publishVariableChange(
+                eq("root.dev.sensor"), eq("temperature"), isNull(), any(), isNull());
+    }
+
+    @Test
     void marksTelemetryOnlyDevicesAsNotAutomationEligible() {
         RuntimeTelemetryProperties properties = new RuntimeTelemetryProperties();
         properties.setEnabled(false);
@@ -94,7 +112,7 @@ class RuntimeTelemetryCoalescerTest {
         stubDefaultPolicyService(1_000, false, false);
         coalescer = new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
-                telemetryIngressDispatcher
+                telemetryIngressDispatcher, bindingDependencyIndex
         );
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
 
@@ -306,7 +324,7 @@ class RuntimeTelemetryCoalescerTest {
         stubDefaultPolicyService(coalesceMs, ingressTopicLanes, ingressPayloadLanes);
         return new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
-                telemetryIngressDispatcher
+                telemetryIngressDispatcher, bindingDependencyIndex
         ) {{
             ensureSchedulerStarted();
         }};

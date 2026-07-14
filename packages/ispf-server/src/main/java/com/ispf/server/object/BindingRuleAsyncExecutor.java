@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Async binding evaluation on an elastic worker pool.
  * Per {@code objectPath|ruleId} optionally coalesces bursts — only the latest pending evaluation
  * runs after the current one finishes when {@code ispf.binding.async-coalesce-enabled=true}.
+ * Default is FIFO (coalesce off): every variable tick is evaluated by its binding rule.
  */
 @Component
 public class BindingRuleAsyncExecutor {

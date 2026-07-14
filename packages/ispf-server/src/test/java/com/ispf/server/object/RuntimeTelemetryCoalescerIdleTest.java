@@ -45,7 +45,7 @@ class RuntimeTelemetryCoalescerIdleTest {
         DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         coalescer = new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
-                telemetryIngressDispatcher
+                telemetryIngressDispatcher, null
         );
 
         assertThat(coalescer.isSchedulerStarted()).isFalse();

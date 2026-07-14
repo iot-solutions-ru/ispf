@@ -22,8 +22,8 @@ public class BindingProperties {
 
     private int asyncScaleCheckIntervalMs = 200;
 
-    /** When false, each async binding evaluation is queued (FIFO per rule). */
-    private boolean asyncCoalesceEnabled = true;
+    /** When false, each async binding evaluation is queued (FIFO per rule). Default false so every variable tick runs its binding. */
+    private boolean asyncCoalesceEnabled = false;
 
     private Audit audit = new Audit();
 

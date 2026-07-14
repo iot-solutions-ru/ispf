@@ -335,7 +335,7 @@ ispf:
     async-scale-up-queue-threshold: ${ISPF_BINDING_ASYNC_SCALE_UP_THRESHOLD:50}
     async-scale-down-steps: ${ISPF_BINDING_ASYNC_SCALE_DOWN_STEPS:6}
     async-scale-check-interval-ms: ${ISPF_BINDING_ASYNC_SCALE_CHECK_MS:200}
-    async-coalesce-enabled: ${ISPF_BINDING_ASYNC_COALESCE:true}
+    async-coalesce-enabled: ${ISPF_BINDING_ASYNC_COALESCE:false}
     audit:
       enabled: ${ISPF_BINDING_AUDIT_ENABLED:false}
       mode: ${ISPF_BINDING_AUDIT_MODE:changes}

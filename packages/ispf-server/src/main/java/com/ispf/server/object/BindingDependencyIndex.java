@@ -63,6 +63,11 @@ public class BindingDependencyIndex {
         return result;
     }
 
+    /** True when at least one enabled binding rule activates on this variable change. */
+    public boolean hasConsumers(String changedObjectPath, String changedVariable) {
+        return !consumers(changedObjectPath, changedVariable).isEmpty();
+    }
+
     private void registerRule(String ruleObjectPath, BindingRule rule) {
         BindingActivators activators = rule.activators();
         for (BindingVariableRef ref : activators.onVariableChange()) {

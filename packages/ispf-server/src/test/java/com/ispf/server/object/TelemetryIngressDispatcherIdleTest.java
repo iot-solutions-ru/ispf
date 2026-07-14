@@ -19,6 +19,9 @@ class TelemetryIngressDispatcherIdleTest {
     @Mock
     private AutomationMetricsRecorder metrics;
 
+    @Mock
+    private BindingDependencyIndex bindingDependencyIndex;
+
     private TelemetryIngressDispatcher dispatcher;
 
     @AfterEach
@@ -32,7 +35,7 @@ class TelemetryIngressDispatcherIdleTest {
     void doesNotStartWorkersUntilFirstSubmit() {
         RuntimeTelemetryProperties properties = new RuntimeTelemetryProperties();
         properties.setIngressQueueEnabled(true);
-        dispatcher = new TelemetryIngressDispatcher(properties, coalescer, metrics);
+        dispatcher = new TelemetryIngressDispatcher(properties, coalescer, metrics, bindingDependencyIndex);
 
         assertThat(dispatcher.isStarted()).isFalse();
     }

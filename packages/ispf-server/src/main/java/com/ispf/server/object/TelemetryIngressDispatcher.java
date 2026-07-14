@@ -37,6 +37,7 @@ public class TelemetryIngressDispatcher {
     private final RuntimeTelemetryProperties properties;
     private final RuntimeTelemetryCoalescer coalescer;
     private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final BindingDependencyIndex bindingDependencyIndex;
 
     private final ConcurrentHashMap<String, PendingUpdate> pendingByKey = new ConcurrentHashMap<>();
     private final AtomicInteger pendingCount = new AtomicInteger();
@@ -49,11 +50,13 @@ public class TelemetryIngressDispatcher {
     public TelemetryIngressDispatcher(
             RuntimeTelemetryProperties properties,
             @Lazy RuntimeTelemetryCoalescer coalescer,
-            AutomationMetricsRecorder automationMetricsRecorder
+            AutomationMetricsRecorder automationMetricsRecorder,
+            @Lazy BindingDependencyIndex bindingDependencyIndex
     ) {
         this.properties = properties;
         this.coalescer = coalescer;
         this.automationMetricsRecorder = automationMetricsRecorder;
+        this.bindingDependencyIndex = bindingDependencyIndex;
     }
 
     public boolean isQueueEnabled() {
@@ -110,6 +113,11 @@ public class TelemetryIngressDispatcher {
         }
         ensureStarted();
         PendingUpdate update = new PendingUpdate(path, variableName, value, observedAt);
+        // Binding activators must see every tick — never L3 last-value-wins coalesce them.
+        if (bindingDependencyIndex != null && bindingDependencyIndex.hasConsumers(path, variableName)) {
+            submitFifo(update);
+            return;
+        }
         if (properties.isIngressQueueCoalesceEnabled()) {
             submitCoalesced(update);
         } else {
@@ -238,10 +246,17 @@ public class TelemetryIngressDispatcher {
     }
 
     private List<PendingUpdate> drainBatch(int maxBatch) {
-        if (properties.isIngressQueueCoalesceEnabled()) {
-            return drainCoalescedBatch(maxBatch);
+        if (!properties.isIngressQueueCoalesceEnabled()) {
+            return drainFifoBatch(maxBatch);
         }
-        return drainFifoBatch(maxBatch);
+        // Coalesce map + FIFO: binding-activation ticks always use FIFO and must still drain
+        // while last-value-wins coalesce remains enabled for other variables.
+        List<PendingUpdate> batch = new ArrayList<>(Math.min(maxBatch, Math.max(0, pendingCount.get())));
+        batch.addAll(drainFifoBatch(maxBatch));
+        if (batch.size() < maxBatch) {
+            batch.addAll(drainCoalescedBatch(maxBatch - batch.size()));
+        }
+        return batch;
     }
 
     private List<PendingUpdate> drainCoalescedBatch(int maxBatch) {
@@ -259,9 +274,13 @@ public class TelemetryIngressDispatcher {
     }
 
     private List<PendingUpdate> drainFifoBatch(int maxBatch) {
+        LinkedBlockingQueue<PendingUpdate> fifo = pendingFifo;
+        if (fifo == null || maxBatch <= 0) {
+            return List.of();
+        }
         List<PendingUpdate> batch = new ArrayList<>(Math.min(maxBatch, Math.max(0, pendingCount.get())));
         while (batch.size() < maxBatch) {
-            PendingUpdate removed = pendingFifo.poll();
+            PendingUpdate removed = fifo.poll();
             if (removed == null) {
                 break;
             }
