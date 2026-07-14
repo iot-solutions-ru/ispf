@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchObjectEditor, fetchObjects, invokeFunction } from "../../../api";
-import { runReportByPath } from "../../../api/reports";
+import { runReportByPathSync } from "../../../api/reports";
 import type {
   FunctionFormField,
   FunctionFormSelectOption,
@@ -103,7 +103,7 @@ function useFunctionFormFieldOptions(
 
   const report = useQuery({
     queryKey: ["function-form-report-options", field.optionsFromReport],
-    queryFn: () => runReportByPath(field.optionsFromReport!),
+    queryFn: () => runReportByPathSync(field.optionsFromReport!),
     enabled: field.type === "select" && Boolean(field.optionsFromReport),
     staleTime: 30_000,
   });
