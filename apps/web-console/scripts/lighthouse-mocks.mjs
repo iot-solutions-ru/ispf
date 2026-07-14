@@ -6,8 +6,8 @@ const MOCK_DASHBOARD_PATH = "root.platform.dashboards.ops-board";
 const NOW = "2026-06-28T00:00:00.000Z";
 
 const MOCK_DASHBOARD_LAYOUT = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "w1",
@@ -16,8 +16,8 @@ const MOCK_DASHBOARD_LAYOUT = {
       text: "42.5 °C",
       x: 0,
       y: 0,
-      w: 4,
-      h: 2,
+      w: 28,
+      h: 14,
     },
   ],
 };

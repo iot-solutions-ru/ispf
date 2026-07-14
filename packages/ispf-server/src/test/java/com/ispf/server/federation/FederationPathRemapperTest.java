@@ -15,7 +15,8 @@ class FederationPathRemapperTest {
     void remapsWidgetObjectPathsInLayoutJson() {
         String layoutJson = """
                 {
-                  "columns": 12,
+                  "columns": 84,
+                  "rowHeight": 8,
                   "widgets": [
                     {
                       "id": "temp-value",

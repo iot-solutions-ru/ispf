@@ -661,8 +661,9 @@ public class PlatformAgentToolRegistry {
                             "layoutJson", layoutJson,
                             "widgetCount", widgetCount(objectMapper, layoutJson),
                             "templates", DashboardService.layoutTemplateNames(),
-                            "hint", "Widgets are inside layout JSON only. Use get_widget_catalog for all types, "
-                                    + "set_dashboard_layout or add_dashboard_widget to edit."
+                            "hint", "Widgets live in layout JSON only. Presentable grid: columns=84 rowHeight=8; "
+                                    + "KPI w=21|28 h=14; charts/tables ≥42×28. "
+                                    + "get_widget_catalog for types; set_dashboard_layout or add_dashboard_widget to edit."
                     );
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
@@ -688,6 +689,8 @@ public class PlatformAgentToolRegistry {
                 return "Replace dashboard layout variable. Args: path (required), layoutJson (full JSON string) "
                         + "OR template (snmp-host-monitoring | virtual-cluster-overview | "
                         + "virtual-cluster-detail | empty). Prefer template= for standard screens. "
+                        + "Custom layoutJson MUST be columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row; "
+                        + "charts/tables w≥42 h≥28; sizes multiples of 7 — never legacy crumbs w=2..6. "
                         + "Requires DASHBOARD object at path. Never use set_variable for layout.";
             }
 
@@ -759,8 +762,9 @@ public class PlatformAgentToolRegistry {
             public String description() {
                 return "Append or replace one widget in layout.widgets[] (by id). Args: path (required), "
                         + "widget (id, type, title, x, y, w, h, variableName, valueField, objectPath OR selectionKey). "
-                        + "Grid is fine: columns=84, rowHeight=8 — use w=28 h=14 for card-sized widgets, w=84 h=63 for scada-mimic. "
-                        + "For 3+ widgets use set_dashboard_layout template= instead of many calls. "
+                        + "Fine grid columns=84 rowHeight=8: KPI tiles w=21|28 h=14; charts/tables w≥42 h≥28; "
+                        + "scada-mimic w=84 h=63; sizes multiples of 7 — never w=2..6 crumbs. "
+                        + "For 3+ widgets prefer one set_dashboard_layout layoutJson/template= over many calls. "
                         + "list_variables on device first; columnsJson must be a JSON string.";
             }
 

@@ -35,7 +35,9 @@ public final class AgentPromptBuilder {
             For bundle/manifest/SQL/BFF: search_context topic=applications or topic=solution.
             For dashboard context rules: search_context topic=platform-logic.
             For dashboards: follow Dashboard guide in Playbooks — list_variables first, prefer set_dashboard_layout
-            template= over many add_dashboard_widget; never set_variable name=widgets.
+            template= or one full layoutJson over many add_dashboard_widget; never set_variable name=widgets.
+            PRESENTATION (mandatory): columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row;
+            charts/tables w≥42 h≥28; sizes multiples of 7; NEVER legacy crumbs w=2..6 h=1..3 — ugly and unreadable.
             For widgets: get_widget_catalog type=<type> for exact fields before add_dashboard_widget;
             list_variables for variableName values; list_object_blueprints before create_object.
             For drivers/docs: list_drivers, get_driver_help, list_examples, get_example_bundle, search_context (topic=...).
@@ -120,8 +122,9 @@ public final class AgentPromptBuilder {
             - Never tell user to configure dashboards/alerts/operator/models manually in UI when agent tools exist
             - set_variable for driverConfigJson, driverPointMappingsJson, dashboard title
             - Dashboard workflow: create_object DASHBOARD → list_variables on device → set_dashboard_layout template=
-              (snmp-host-monitoring|virtual-cluster-*|empty) OR add_dashboard_widget for 1–2 widgets max.
-              Layout variable: layout (JSON {columns,rowHeight,widgets[]}). NEVER set_variable name=widgets or layout.
+              (snmp-host-monitoring|virtual-cluster-*|empty) OR one complete layoutJson; add_dashboard_widget only for 1–2 widgets.
+              Layout: {columns:84,rowHeight:8,widgets[]}. NEVER set_variable name=widgets or layout.
+              Presentation: KPI row w=21|28 h=14 filling 84; charts/tables w≥42 h≥28; multiples of 7; no w=2..6 crumbs.
             - Widget binding: value/chart use objectPath OR selectionKey+variableName; object-table/card-grid/map use parentPath;
               selectionKey strings must match between table (publisher) and consumers; drill-down: rowTargetDashboard on table
             - columnsJson/fieldsJson/stylesJson are JSON strings inside widget, not nested objects in tool arguments

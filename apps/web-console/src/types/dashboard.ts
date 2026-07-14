@@ -395,7 +395,7 @@ export interface ReportWidget extends DashboardWidgetBase {
   showTruncatedWarning?: boolean;
   /** Clickable rows — writes row columns into session.params */
   selectable?: boolean;
-  /** Report column used as row id for highlight (default id) */
+  /** Report column used as row id / object path for highlight and navigation (default id) */
   rowSelectionKey?: string;
   /** JSON map: session.params key → report row column name */
   rowParamsFromRowJson?: string;
@@ -407,6 +407,15 @@ export interface ReportWidget extends DashboardWidgetBase {
   filterable?: boolean;
   /** JSON array of column field names to filter; empty = all columns */
   columnFiltersJson?: string;
+  /**
+   * When set with selectable rows, copies path from rowSelectionKey into
+   * session selection (slot = selectionKey from DashboardWidgetBase).
+   */
+  /** Open another dashboard when a row is clicked (path from rowSelectionKey) */
+  rowTargetDashboard?: string;
+  rowOpenMode?: DashboardOpenMode;
+  /** Session selection slot written into the target dashboard (default: selectionKey) */
+  rowTargetSelectionKey?: string;
 }
 
 export interface PieChartWidget extends DashboardWidgetBase {
@@ -442,6 +451,9 @@ export interface SvgWidget extends DashboardWidgetBase {
   hitAreasJson?: string;
   viewBox?: string;
   backgroundColor?: string;
+  /** Open dashboard when a hit area is clicked (uses selectionKey path) */
+  hitTargetDashboard?: string;
+  hitOpenMode?: DashboardOpenMode;
   /** @deprecated use behaviorsJson + bindingsJson */
   topologyJson?: string;
   showLegend?: boolean;
@@ -775,7 +787,7 @@ export type DashboardWidget =
 /** Fine-grained dashboard grid (px per row unit). */
 export const DASHBOARD_ROW_HEIGHT = 8;
 export const DASHBOARD_GRID_MARGIN: readonly [number, number] = [4, 4];
-/** Legacy 12-column layouts map to this many fine columns (12 × scale). */
+/** Fine grid subdivision of a classic 12-column board → 84 columns. */
 export const DASHBOARD_FINE_GRID_SCALE = 7;
 export const DASHBOARD_COLUMNS = 12 * DASHBOARD_FINE_GRID_SCALE;
 
@@ -875,40 +887,6 @@ function normalizeLayoutWidget(widget: DashboardWidget): DashboardWidget {
   return widget;
 }
 
-/** Fine-grid dashboards use 84 columns; any coordinate &gt; 12 means already migrated. */
-function looksFineGridSized(widget: DashboardWidget): boolean {
-  const x = widget.x ?? 0;
-  const y = widget.y ?? 0;
-  const w = widget.w ?? 0;
-  const h = widget.h ?? 0;
-  return x > 12 || y > 12 || w > 12 || h > 12;
-}
-
-function looksLegacySized(widget: DashboardWidget): boolean {
-  const w = widget.w ?? 0;
-  const h = widget.h ?? 0;
-  if (w <= 0 || h <= 0) {
-    return true;
-  }
-  return !looksFineGridSized(widget);
-}
-
-function migrateLegacyGridWidget(widget: DashboardWidget): DashboardWidget {
-  if (!looksLegacySized(widget)) {
-    return widget;
-  }
-  const w = widget.w ?? 0;
-  const h = widget.h ?? 0;
-  const scale = DASHBOARD_FINE_GRID_SCALE;
-  return {
-    ...widget,
-    x: (widget.x ?? 0) * scale,
-    y: (widget.y ?? 0) * scale,
-    w: w > 0 ? w * scale : w,
-    h: h > 0 ? h * scale : h,
-  };
-}
-
 function reflowOverlappingWidgets(widgets: DashboardWidget[]): DashboardWidget[] {
   if (widgets.length < 2) {
     return widgets;
@@ -938,37 +916,18 @@ function reflowOverlappingWidgets(widgets: DashboardWidget[]): DashboardWidget[]
   return placed;
 }
 
-function migrateLegacyGridLayout(layout: DashboardLayout): DashboardLayout {
-  let columns = layout.columns ?? DASHBOARD_COLUMNS;
-  let rowHeight = layout.rowHeight ?? DASHBOARD_ROW_HEIGHT;
-  let widgets = layout.widgets.map(normalizeLayoutWidget);
-
-  if (columns === 12 && rowHeight === 72) {
-    columns = DASHBOARD_COLUMNS;
-    rowHeight = DASHBOARD_ROW_HEIGHT;
-    widgets = widgets.map((widget) => migrateLegacyGridWidget(widget));
-  } else if (columns >= DASHBOARD_COLUMNS) {
-    widgets = widgets.map((widget) => migrateLegacyGridWidget(widget));
-  }
-
-  return {
-    ...layout,
-    columns,
-    rowHeight,
-    theme: layout.theme,
-    widgets: reflowOverlappingWidgets(widgets),
-  };
-}
-
 export function normalizeDashboardLayout(
   layout: Partial<DashboardLayout> | DashboardLayout
 ): DashboardLayout {
-  return migrateLegacyGridLayout({
+  return {
     columns: layout.columns ?? DASHBOARD_COLUMNS,
     rowHeight: layout.rowHeight ?? DASHBOARD_ROW_HEIGHT,
     theme: typeof layout.theme === "string" ? layout.theme : undefined,
-    widgets: Array.isArray(layout.widgets) ? layout.widgets.map(normalizeLayoutWidget) : [],
-  });
+    layoutPreset: layout.layoutPreset,
+    widgets: reflowOverlappingWidgets(
+      Array.isArray(layout.widgets) ? layout.widgets.map(normalizeLayoutWidget) : []
+    ),
+  };
 }
 
 export function parseLayoutJson(

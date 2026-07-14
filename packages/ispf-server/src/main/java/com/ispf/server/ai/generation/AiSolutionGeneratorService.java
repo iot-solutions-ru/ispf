@@ -400,10 +400,15 @@ public class AiSolutionGeneratorService {
             String hubPath,
             String functionName
     ) {
-        String layoutJson = "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"overview-list\","
-                + "\"type\":\"function\",\"title\":\"Overview\",\"x\":0,\"y\":0,\"w\":12,\"h\":4,"
+        String layoutJson = "{\"columns\":84,\"rowHeight\":8,\"widgets\":["
+                + "{\"id\":\"overview-kpi\",\"type\":\"function\",\"title\":\"Overview\","
+                + "\"x\":0,\"y\":0,\"w\":28,\"h\":14,"
                 + "\"objectPath\":\"" + hubPath + "\",\"functionName\":\"" + functionName
-                + "\",\"buttonLabel\":\"Refresh\"}]}";
+                + "\",\"buttonLabel\":\"Refresh\"},"
+                + "{\"id\":\"overview-help\",\"type\":\"html-snippet\",\"title\":\"Status\","
+                + "\"x\":28,\"y\":0,\"w\":56,\"h\":14,"
+                + "\"htmlJson\":\"<p>Refresh Hub overview. Open Operator HMI for the live board.</p>\"}"
+                + "]}";
         Map<String, Object> dashboard = new LinkedHashMap<>();
         dashboard.put("path", path);
         dashboard.put("title", title);

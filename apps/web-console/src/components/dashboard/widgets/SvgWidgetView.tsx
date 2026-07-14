@@ -124,6 +124,8 @@ export default function SvgWidgetView({
           svgUrl={widget.svgUrl}
           config={interactiveConfig}
           selectionKey={widget.selectionKey}
+          hitTargetDashboard={widget.hitTargetDashboard}
+          hitOpenMode={widget.hitOpenMode}
           showLegend={widget.showLegend}
           panEnabled={widget.panEnabled}
           defaultZoom={widget.defaultZoom}

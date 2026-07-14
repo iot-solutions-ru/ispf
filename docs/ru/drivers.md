@@ -64,6 +64,19 @@ public interface DeviceDriver {
 
 На объекте `DEVICE` переменные группы `driver` появляются при **provisioning драйвера** (`POST /objects` с `driverId` или `PUT .../drivers/runtime/configure`), а не через auto-apply RELATIVE-моделей.
 
+### Автозапуск при старте сервера
+
+По умолчанию сконфигурированные драйверы **стартуют автоматически** после `ApplicationReady`:
+
+| Уровень | Настройка | Default |
+|---------|-----------|---------|
+| Глобально | `ispf.driver.auto-start-on-boot` / `ISPF_DRIVER_AUTO_START_ON_BOOT` (Platform Settings → Drivers) | `true` |
+| На DEVICE | переменная `driverAutoStart` (чекбокс в инспекторе драйвера) | `true` |
+
+Выключить автозапуск одного устройства: `driverAutoStart=false`. Выключить всех: global `false` (нужен рестарт сервера). Стоп драйвера в runtime **не** сбрасывает `driverAutoStart` — после ребута драйвер снова поднимется, если preference включён.
+
+Промпинг при создании DEVICE: `autoStartDriver` по умолчанию `true` (сразу старт + preference).
+
 `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedBlueprintIds`.
 
 Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).

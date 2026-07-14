@@ -218,6 +218,7 @@ final class PlatformRuntimeSettingsCatalog {
             def("cluster", "cluster.job-max-concurrent", "ISPF_CLUSTER_JOB_MAX_CONCURRENT", "ispf.cluster.job-max-concurrent", PlatformRuntimeSettingType.INTEGER, "2", false, false),
             def("cluster", "cluster.job-running-ttl-seconds", "ISPF_CLUSTER_JOB_RUNNING_TTL_SECONDS", "ispf.cluster.job-running-ttl-seconds", PlatformRuntimeSettingType.INTEGER, "1800", false, false),
 
+            def("drivers", "driver.auto-start-on-boot", "ISPF_DRIVER_AUTO_START_ON_BOOT", "ispf.driver.auto-start-on-boot", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("drivers", "driver.scheduler-threads", "ISPF_DRIVER_SCHEDULER_THREADS", "ispf.driver.scheduler-threads", PlatformRuntimeSettingType.INTEGER, "8", false, false),
             def("drivers", "driver.async-poll-enabled", "ISPF_DRIVER_ASYNC_POLL_ENABLED", "ispf.driver.async-poll-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("drivers", "driver.io-threads", "ISPF_DRIVER_IO_THREADS", "ispf.driver.io-threads", PlatformRuntimeSettingType.INTEGER, "16", false, false),

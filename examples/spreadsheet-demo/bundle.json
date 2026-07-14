@@ -20,8 +20,14 @@
           "schema": {
             "name": "deviceStatus",
             "fields": [
-              { "name": "online", "type": "BOOLEAN" },
-              { "name": "lastSeen", "type": "STRING" }
+              {
+                "name": "online",
+                "type": "BOOLEAN"
+              },
+              {
+                "name": "lastSeen",
+                "type": "STRING"
+              }
             ]
           },
           "readable": true,
@@ -30,11 +36,22 @@
             "schema": {
               "name": "deviceStatus",
               "fields": [
-                { "name": "online", "type": "BOOLEAN" },
-                { "name": "lastSeen", "type": "STRING" }
+                {
+                  "name": "online",
+                  "type": "BOOLEAN"
+                },
+                {
+                  "name": "lastSeen",
+                  "type": "STRING"
+                }
               ]
             },
-            "rows": [{ "online": true, "lastSeen": "init" }]
+            "rows": [
+              {
+                "online": true,
+                "lastSeen": "init"
+              }
+            ]
           }
         },
         {
@@ -50,8 +67,14 @@
                 "nestedSchema": {
                   "name": "sheetCellRow",
                   "fields": [
-                    { "name": "cell", "type": "STRING" },
-                    { "name": "value", "type": "STRING" }
+                    {
+                      "name": "cell",
+                      "type": "STRING"
+                    },
+                    {
+                      "name": "value",
+                      "type": "STRING"
+                    }
                   ]
                 }
               }
@@ -69,14 +92,24 @@
                   "nestedSchema": {
                     "name": "sheetCellRow",
                     "fields": [
-                      { "name": "cell", "type": "STRING" },
-                      { "name": "value", "type": "STRING" }
+                      {
+                        "name": "cell",
+                        "type": "STRING"
+                      },
+                      {
+                        "name": "value",
+                        "type": "STRING"
+                      }
                     ]
                   }
                 }
               ]
             },
-            "rows": [{ "rows": [] }]
+            "rows": [
+              {
+                "rows": []
+              }
+            ]
           }
         }
       ],
@@ -100,13 +133,13 @@
       "path": "root.platform.dashboards.sheet-demo",
       "title": "Spreadsheet demo",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"sheet-free\",\"type\":\"spreadsheet\",\"title\":\"Таблица (free, variable persist)\",\"x\":0,\"y\":0,\"w\":10,\"h\":8,\"objectPath\":\"root.platform.devices.sheet-demo-01\",\"sheetMode\":\"free\",\"persistMode\":\"variable\",\"valuesVariable\":\"sheetValues\",\"editable\":true,\"sheetConfigJson\":\"{\\\"rows\\\":12,\\\"cols\\\":8,\\\"cells\\\":{}}\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sheet-free\",\"type\":\"spreadsheet\",\"title\":\"Таблица (free, variable persist)\",\"x\":0,\"y\":0,\"w\":70,\"h\":56,\"objectPath\":\"root.platform.devices.sheet-demo-01\",\"sheetMode\":\"free\",\"persistMode\":\"variable\",\"valuesVariable\":\"sheetValues\",\"editable\":true,\"sheetConfigJson\":\"{\\\"rows\\\":12,\\\"cols\\\":8,\\\"cells\\\":{}}\"}]}"
     },
     {
       "path": "root.platform.dashboards.sheet-demo-session",
       "title": "Spreadsheet demo (session only)",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"sheet-session\",\"type\":\"spreadsheet\",\"title\":\"Таблица (session persist)\",\"x\":0,\"y\":0,\"w\":10,\"h\":8,\"objectPath\":\"root.platform.devices.sheet-demo-01\",\"sheetMode\":\"free\",\"persistMode\":\"session\",\"editable\":true,\"sheetConfigJson\":\"{\\\"rows\\\":12,\\\"cols\\\":8,\\\"cells\\\":{}}\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sheet-session\",\"type\":\"spreadsheet\",\"title\":\"Таблица (session persist)\",\"x\":0,\"y\":0,\"w\":70,\"h\":56,\"objectPath\":\"root.platform.devices.sheet-demo-01\",\"sheetMode\":\"free\",\"persistMode\":\"session\",\"editable\":true,\"sheetConfigJson\":\"{\\\"rows\\\":12,\\\"cols\\\":8,\\\"cells\\\":{}}\"}]}"
     }
   ],
   "operatorManifest": {
@@ -114,8 +147,14 @@
     "title": "Spreadsheet demo",
     "defaultDashboard": "root.platform.dashboards.sheet-demo",
     "dashboards": [
-      { "path": "root.platform.dashboards.sheet-demo", "title": "Variable persist" },
-      { "path": "root.platform.dashboards.sheet-demo-session", "title": "Session persist" }
+      {
+        "path": "root.platform.dashboards.sheet-demo",
+        "title": "Variable persist"
+      },
+      {
+        "path": "root.platform.dashboards.sheet-demo-session",
+        "title": "Session persist"
+      }
     ]
   }
 }

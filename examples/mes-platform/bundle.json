@@ -29,25 +29,55 @@
       "functionName": "mes_oee_listShifts",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "shift_row",
                 "fields": [
-                  { "name": "shiftId", "type": "STRING" },
-                  { "name": "lineCode", "type": "STRING" },
-                  { "name": "shiftLabel", "type": "STRING" },
-                  { "name": "plannedMinutes", "type": "INTEGER" },
-                  { "name": "downtimeMinutes", "type": "INTEGER" },
-                  { "name": "totalUnits", "type": "INTEGER" },
-                  { "name": "goodUnits", "type": "INTEGER" }
+                  {
+                    "name": "shiftId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "shiftLabel",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "downtimeMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "totalUnits",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "goodUnits",
+                    "type": "INTEGER"
+                  }
                 ]
               }
             }
@@ -66,19 +96,48 @@
       "descriptor": {
         "inputSchema": {
           "name": "in",
-          "fields": [{ "name": "shiftId", "type": "STRING" }]
+          "fields": [
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            }
+          ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "lineCode", "type": "STRING" },
-            { "name": "shiftLabel", "type": "STRING" },
-            { "name": "availabilityPct", "type": "INTEGER" },
-            { "name": "performancePct", "type": "INTEGER" },
-            { "name": "qualityPct", "type": "INTEGER" },
-            { "name": "oeePct", "type": "INTEGER" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lineCode",
+              "type": "STRING"
+            },
+            {
+              "name": "shiftLabel",
+              "type": "STRING"
+            },
+            {
+              "name": "availabilityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "performancePct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "qualityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "oeePct",
+              "type": "INTEGER"
+            }
           ]
         }
       },
@@ -95,16 +154,31 @@
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "shiftId", "type": "STRING" },
-            { "name": "minutes", "type": "INTEGER" }
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            },
+            {
+              "name": "minutes",
+              "type": "INTEGER"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "downtimeMinutes", "type": "INTEGER" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "downtimeMinutes",
+              "type": "INTEGER"
+            }
           ]
         }
       },
@@ -118,21 +192,39 @@
       "functionName": "mes_platform_listLines",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "line_row",
                 "fields": [
-                  { "name": "lineCode", "type": "STRING" },
-                  { "name": "displayName", "type": "STRING" },
-                  { "name": "areaPath", "type": "STRING" }
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "displayName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "areaPath",
+                    "type": "STRING"
+                  }
                 ]
               }
             }
@@ -152,17 +244,35 @@
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "workOrderPath", "type": "STRING" },
-            { "name": "operatorId", "type": "STRING" }
+            {
+              "name": "workOrderPath",
+              "type": "STRING"
+            },
+            {
+              "name": "operatorId",
+              "type": "STRING"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "confirmed", "type": "BOOLEAN" },
-            { "name": "workOrderPath", "type": "STRING" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "confirmed",
+              "type": "BOOLEAN"
+            },
+            {
+              "name": "workOrderPath",
+              "type": "STRING"
+            }
           ]
         }
       },
@@ -176,22 +286,43 @@
       "functionName": "mes_quality_listSpcSamples",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "spc_row",
                 "fields": [
-                  { "name": "sampleId", "type": "STRING" },
-                  { "name": "lineCode", "type": "STRING" },
-                  { "name": "measurementMm", "type": "DOUBLE" },
-                  { "name": "sampleTs", "type": "STRING" }
+                  {
+                    "name": "sampleId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "measurementMm",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "sampleTs",
+                    "type": "STRING"
+                  }
                 ]
               }
             }
@@ -211,19 +342,43 @@
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "batchPath", "type": "STRING" },
-            { "name": "batchId", "type": "STRING" },
-            { "name": "recipe", "type": "STRING" },
-            { "name": "phase", "type": "STRING" }
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            },
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "recipe",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "batchPath", "type": "STRING" },
-            { "name": "phase", "type": "STRING" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            }
           ]
         }
       },
@@ -239,17 +394,40 @@
       "descriptor": {
         "inputSchema": {
           "name": "in",
-          "fields": [{ "name": "batchPath", "type": "STRING" }]
+          "fields": [
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            }
+          ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "batchPath", "type": "STRING" },
-            { "name": "batchId", "type": "STRING" },
-            { "name": "recipe", "type": "STRING" },
-            { "name": "phase", "type": "STRING" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            },
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "recipe",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            }
           ]
         }
       },
@@ -266,18 +444,39 @@
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "entityType", "type": "STRING" },
-            { "name": "entityId", "type": "STRING" },
-            { "name": "payloadJson", "type": "STRING" }
+            {
+              "name": "entityType",
+              "type": "STRING"
+            },
+            {
+              "name": "entityId",
+              "type": "STRING"
+            },
+            {
+              "name": "payloadJson",
+              "type": "STRING"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "enqueued", "type": "BOOLEAN" },
-            { "name": "idempotencyKey", "type": "STRING" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "BOOLEAN"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
           ]
         }
       },
@@ -291,23 +490,47 @@
       "functionName": "mes_erp_pollOutbox",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "outbox_row",
                 "fields": [
-                  { "name": "outboxId", "type": "STRING" },
-                  { "name": "entityType", "type": "STRING" },
-                  { "name": "entityId", "type": "STRING" },
-                  { "name": "idempotencyKey", "type": "STRING" },
-                  { "name": "status", "type": "STRING" }
+                  {
+                    "name": "outboxId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "idempotencyKey",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
                 ]
               }
             }
@@ -331,48 +554,163 @@
           "name": "spcMeasurement",
           "description": "Latest critical-dimension SPC sample (mm)",
           "group": "quality",
-          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
           "historyEnabled": true,
-          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 10.02 }] }
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 10.02
+              }
+            ]
+          }
         },
         {
           "name": "spcUcl",
           "description": "Upper control limit (mm)",
           "group": "quality",
-          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
-          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 10.5 }] }
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 10.5
+              }
+            ]
+          }
         },
         {
           "name": "spcLcl",
           "description": "Lower control limit (mm)",
           "group": "quality",
-          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
-          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 9.5 }] }
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 9.5
+              }
+            ]
+          }
         },
         {
           "name": "spcTarget",
           "description": "Target / center line (mm)",
           "group": "quality",
-          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
-          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 10.0 }] }
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 10
+              }
+            ]
+          }
         },
         {
           "name": "oeePct",
           "description": "Composite OEE percent (A×P×Q) — historian rollup via BL-160 oee template",
           "group": "oee",
-          "schema": { "name": "integerValue", "fields": [{ "name": "value", "type": "INTEGER" }] },
+          "schema": {
+            "name": "integerValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
           "historyEnabled": true,
-          "defaultValue": { "schema": { "name": "integerValue", "fields": [{ "name": "value", "type": "INTEGER" }] }, "rows": [{ "value": 85 }] }
+          "defaultValue": {
+            "schema": {
+              "name": "integerValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 85
+              }
+            ]
+          }
         }
       ],
       "events": [],
@@ -390,28 +728,97 @@
           "name": "defectCode",
           "description": "Defect / NCR code",
           "group": "info",
-          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
-          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "" }] }
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
         },
         {
           "name": "severity",
           "description": "Severity label (minor, major, critical)",
           "group": "info",
-          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
-          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "minor" }] }
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "minor"
+              }
+            ]
+          }
         },
         {
           "name": "lotId",
           "description": "Material lot / batch id",
           "group": "traceability",
-          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
           "readable": true,
           "writable": true,
-          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "" }] }
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
         }
       ],
       "events": [],
@@ -444,26 +851,32 @@
     }
   ],
   "events": [
-    { "id": "workOrderDispatched", "roles": ["operator", "admin"] }
+    {
+      "id": "workOrderDispatched",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
   ],
   "dashboards": [
     {
       "path": "root.platform.dashboards.mes-platform-dispatch",
       "title": "MES Dispatch",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"dispatch-queue\",\"type\":\"work-queue\",\"title\":\"Work orders\",\"x\":0,\"y\":0,\"w\":5,\"h\":6,\"operatorId\":\"operator\",\"operatorAppId\":\"mes-platform\",\"maxItems\":10},{\"id\":\"dispatch-help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":5,\"y\":0,\"w\":7,\"h\":3,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\"},{\"id\":\"oee-shift\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":5,\"y\":3,\"w\":7,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Load seed shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"dispatch-queue\",\"type\":\"work-queue\",\"title\":\"Work orders\",\"x\":0,\"y\":0,\"w\":35,\"h\":42,\"operatorId\":\"operator\",\"operatorAppId\":\"mes-platform\",\"maxItems\":10},{\"id\":\"dispatch-help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":35,\"y\":0,\"w\":49,\"h\":21,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\"},{\"id\":\"oee-shift\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":35,\"y\":21,\"w\":49,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Load seed shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-oee",
       "title": "MES OEE",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"oee-shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":4,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"oee-kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":4,\"y\":0,\"w\":8,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"oee-lines\",\"type\":\"function\",\"title\":\"ISA-95 lines\",\"x\":0,\"y\":3,\"w\":12,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_platform_listLines\",\"buttonLabel\":\"List lines\"},{\"id\":\"oee-analytics-chart\",\"type\":\"chart\",\"title\":\"OEE trend (BL-160)\",\"x\":0,\"y\":6,\"w\":8,\"h\":4,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"oeePct\",\"valueField\":\"value\",\"historyRange\":\"24h\",\"chartStyle\":\"area\",\"decimals\":0,\"unit\":\"%\",\"analyticsTemplateId\":\"oee\",\"analyticsBindingExpression\":\"oee('oeePct', '8h')\"},{\"id\":\"oee-analytics-help\",\"type\":\"html-snippet\",\"title\":\"Asset analytics\",\"x\":8,\"y\":6,\"w\":4,\"h\":4,\"htmlJson\":\"<p>BL-160: chart uses platform <code>oee</code> analytics template with 8h historian rollup on <code>oeePct</code>. Catalog: <code>GET /api/v1/platform/analytics/templates</code>.</p>\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"oee-shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"oee-kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":28,\"y\":0,\"w\":56,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"oee-lines\",\"type\":\"function\",\"title\":\"ISA-95 lines\",\"x\":0,\"y\":21,\"w\":84,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_platform_listLines\",\"buttonLabel\":\"List lines\"},{\"id\":\"oee-analytics-chart\",\"type\":\"chart\",\"title\":\"OEE trend (BL-160)\",\"x\":0,\"y\":42,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"oeePct\",\"valueField\":\"value\",\"historyRange\":\"24h\",\"chartStyle\":\"area\",\"decimals\":0,\"unit\":\"%\",\"analyticsTemplateId\":\"oee\",\"analyticsBindingExpression\":\"oee('oeePct', '8h')\"},{\"id\":\"oee-analytics-help\",\"type\":\"html-snippet\",\"title\":\"Asset analytics\",\"x\":56,\"y\":42,\"w\":28,\"h\":28,\"htmlJson\":\"<p>BL-160: chart uses platform <code>oee</code> analytics template with 8h historian rollup on <code>oeePct</code>. Catalog: <code>GET /api/v1/platform/analytics/templates</code>.</p>\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-quality",
       "title": "MES Quality / SPC",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"spc-chart\",\"type\":\"chart\",\"title\":\"SPC — critical dimension\",\"x\":0,\"y\":0,\"w\":8,\"h\":4,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcMeasurement\",\"historyRange\":\"24h\",\"chartStyle\":\"line\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-ucl\",\"type\":\"value\",\"title\":\"UCL\",\"x\":8,\"y\":0,\"w\":2,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcUcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-target\",\"type\":\"value\",\"title\":\"Target\",\"x\":10,\"y\":0,\"w\":2,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcTarget\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-lcl\",\"type\":\"value\",\"title\":\"LCL\",\"x\":8,\"y\":2,\"w\":4,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcLcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-samples\",\"type\":\"function\",\"title\":\"SPC samples\",\"x\":0,\"y\":4,\"w\":6,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_quality_listSpcSamples\",\"buttonLabel\":\"List SPC samples\"},{\"id\":\"spc-help\",\"type\":\"html-snippet\",\"title\":\"Quality module\",\"x\":6,\"y\":4,\"w\":6,\"h\":2,\"htmlJson\":\"<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"spc-chart\",\"type\":\"chart\",\"title\":\"SPC — critical dimension\",\"x\":0,\"y\":0,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcMeasurement\",\"historyRange\":\"24h\",\"chartStyle\":\"line\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-ucl\",\"type\":\"value\",\"title\":\"UCL\",\"x\":56,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcUcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-target\",\"type\":\"value\",\"title\":\"Target\",\"x\":70,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcTarget\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-lcl\",\"type\":\"value\",\"title\":\"LCL\",\"x\":56,\"y\":14,\"w\":28,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcLcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-samples\",\"type\":\"function\",\"title\":\"SPC samples\",\"x\":0,\"y\":28,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_quality_listSpcSamples\",\"buttonLabel\":\"List SPC samples\"},{\"id\":\"spc-help\",\"type\":\"html-snippet\",\"title\":\"Quality module\",\"x\":42,\"y\":28,\"w\":42,\"h\":14,\"htmlJson\":\"<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>\"}]}"
     }
   ],
   "schedules": [
@@ -483,9 +896,18 @@
     "title": "MES Platform",
     "defaultDashboard": "root.platform.dashboards.mes-platform-dispatch",
     "dashboards": [
-      { "path": "root.platform.dashboards.mes-platform-dispatch", "title": "Dispatch" },
-      { "path": "root.platform.dashboards.mes-platform-oee", "title": "OEE" },
-      { "path": "root.platform.dashboards.mes-platform-quality", "title": "Quality" }
+      {
+        "path": "root.platform.dashboards.mes-platform-dispatch",
+        "title": "Dispatch"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-oee",
+        "title": "OEE"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-quality",
+        "title": "Quality"
+      }
     ],
     "eventJournalObjectPath": "root.platform.devices.mes-platform-hub"
   }

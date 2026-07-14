@@ -64,6 +64,19 @@ Build packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. 
 
 On a `DEVICE` object, variables in the `driver` group appear when **provisioning the driver** (`POST /objects` with `driverId` or `PUT .../drivers/runtime/configure`), not via auto-apply of RELATIVE models.
 
+### Auto-start on server boot
+
+By default, configured drivers **start automatically** after `ApplicationReady`:
+
+| Level | Setting | Default |
+|-------|---------|---------|
+| Global | `ispf.driver.auto-start-on-boot` / `ISPF_DRIVER_AUTO_START_ON_BOOT` (Platform Settings → Drivers) | `true` |
+| Per DEVICE | variable `driverAutoStart` (checkbox in driver inspector) | `true` |
+
+Disable one device: set `driverAutoStart=false`. Disable all: global `false` (requires server restart). Stopping a driver at runtime does **not** clear `driverAutoStart` — after reboot it starts again if the preference is on.
+
+Device create: `autoStartDriver` defaults to `true` (start now + keep preference).
+
 `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` embeds the schema (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) from a blueprint without writing to the model catalog and without `appliedBlueprintIds`.
 
 Fixture RELATIVE model `device-driver-v1` (when `fixtures-enabled`) — for demo/lab and explicit apply; see [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).

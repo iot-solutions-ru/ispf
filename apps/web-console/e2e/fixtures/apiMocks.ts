@@ -107,8 +107,8 @@ const MOCK_DEVICE_EDITOR = {
 };
 
 const MOCK_DASHBOARD_LAYOUT = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "w1",
@@ -117,15 +117,15 @@ const MOCK_DASHBOARD_LAYOUT = {
       text: "42.5 °C",
       x: 0,
       y: 0,
-      w: 4,
-      h: 2,
+      w: 28,
+      h: 14,
     },
   ],
 };
 
 const MOCK_DEMO_SENSOR_LAYOUT = {
-  columns: 12,
-  rowHeight: 72,
+  columns: 84,
+  rowHeight: 8,
   widgets: [
     {
       id: "w-demo-sensor",
@@ -134,8 +134,8 @@ const MOCK_DEMO_SENSOR_LAYOUT = {
       text: "21.0 °C",
       x: 0,
       y: 0,
-      w: 4,
-      h: 2,
+      w: 28,
+      h: 14,
     },
   ],
 };
@@ -242,7 +242,7 @@ export async function mockAuthenticatedApi(
       : (options as MockAuthenticatedApiOptions);
   const session = opts.session ?? MOCK_ADMIN_SESSION;
   const layout = opts.dashboardLayout
-    ? { columns: 12, rowHeight: 72, ...opts.dashboardLayout }
+    ? { columns: 84, rowHeight: 8, ...opts.dashboardLayout }
     : MOCK_DASHBOARD_LAYOUT;
   const dashboardView = {
     path: MOCK_DASHBOARD_PATH,

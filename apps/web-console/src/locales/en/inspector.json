@@ -300,6 +300,8 @@
   "driver.driverLabel": "Driver",
   "driver.pollIntervalMs": "Poll interval (ms)",
   "driver.saveAndStart": "Save and start",
+  "driver.autoStartOnBoot": "Auto-start on server boot",
+  "driver.autoStartOnBootHint": "When enabled, this device driver starts automatically after ispf-server restart. Default is on. Global override: Platform settings → driver.auto-start-on-boot.",
   "driver.configLabel": "Configuration",
   "driver.mappingsLabel": "Points (mappings)",
   "driver.mappingsValidationFailed": "Fix point mapping errors before saving",

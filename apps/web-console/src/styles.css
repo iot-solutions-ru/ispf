@@ -3033,6 +3033,127 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   box-shadow: var(--ui-shadow-surface);
 }
 
+.dash-widget-variable-editor {
+  min-height: 0;
+}
+
+.dash-variable-editor-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.dash-variable-editor-head,
+.dash-variable-editor-row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 14rem) minmax(0, 1fr) 5.5rem;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0.65rem;
+  margin: 0;
+}
+
+.dash-variable-editor-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--surface) 96%, var(--border));
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-variable-editor-row {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.dash-variable-editor-row:last-child {
+  border-bottom: none;
+}
+
+.dash-variable-editor-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-variable-editor-row input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.dash-variable-editor-row input:disabled {
+  opacity: 0.75;
+}
+
+.dash-variable-editor-row .btn.small {
+  justify-self: stretch;
+  min-height: 1.7rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.72rem;
+}
+
+.dashboard-theme-itm-light .dash-variable-editor-list {
+  border-color: #e9edf3;
+  background: #fafbfc;
+}
+
+.dashboard-theme-itm-light .dash-variable-editor-head {
+  color: #5c7a9c;
+  background: #f3f6f9;
+  border-bottom-color: #e9edf3;
+}
+
+.dashboard-theme-itm-light .dash-variable-editor-name {
+  color: #5c7a9c;
+}
+
+.dashboard-theme-itm-light .dash-variable-editor-row input {
+  border-color: #dfe6ef;
+  background: #fff;
+  color: #0b1a2f;
+}
+
+.dash-breadcrumbs {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.dashboard-theme-itm-light .dash-widget-breadcrumbs .dash-breadcrumbs {
+  color: #0b1a2f;
+  font-weight: 600;
+}
+
+.dashboard-theme-itm-light .dashboard-link-widget {
+  justify-content: center;
+}
+
+
 .dash-widget-html .dash-html-body {
   flex: 1;
   min-height: 0;
@@ -10023,6 +10144,68 @@ body.scada-mimic-editor-open {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.dashboard-theme-btop .dash-variable-editor-list {
+  border-color: #1f2937;
+  background: #06080c;
+}
+
+.dashboard-theme-btop .dash-variable-editor-head {
+  color: #6e7681;
+  background: #0d1117;
+  border-bottom-color: #1f2937;
+  font-family: Consolas, "Cascadia Code", ui-monospace, monospace;
+}
+
+.dashboard-theme-btop .dash-variable-editor-name {
+  color: #8b949e;
+  font-family: Consolas, "Cascadia Code", ui-monospace, monospace;
+  font-size: 0.7rem;
+}
+
+.dashboard-theme-btop .dash-variable-editor-row {
+  border-bottom-color: #12161f;
+}
+
+.dashboard-theme-btop .dash-variable-editor-row input {
+  border-color: #1f2937;
+  background: #0a0e14;
+  color: #c9d1d9;
+  font-family: Consolas, "Cascadia Code", ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+
+.dashboard-theme-btop .dash-variable-editor-row .btn.small {
+  font-family: Consolas, "Cascadia Code", ui-monospace, monospace;
+  font-size: 0.65rem;
+  background: #161b22;
+  border-color: #30363d;
+  color: #58a6ff;
+}
+
+.dashboard-theme-btop .dash-breadcrumbs {
+  color: #8b949e;
+  font-family: Consolas, "Cascadia Code", ui-monospace, monospace;
+}
+
+.dashboard-theme-btop .dashboard-link-btn,
+.dashboard-theme-btop .dashboard-link-widget .btn {
+  font-family: Consolas, "Cascadia Code", ui-monospace, monospace;
+  font-size: 0.72rem;
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #58a6ff;
+  min-height: 1.6rem;
+  padding: 0.15rem 0.45rem;
+}
+
+.dashboard-theme-btop .event-feed-widget,
+.dashboard-theme-btop .dash-widget-event-feed,
+.dashboard-theme-btop .journal-view-shell {
+  font-size: 0.72rem;
+  font-family: Consolas, "Cascadia Code", ui-monospace, monospace;
+  color: #c9d1d9;
+}
+
 /* Tibbo ANM / ITM light dashboard (M11 highway monitoring) */
 .dashboard-theme-itm-light.dashboard-grid-host {
   background: #f0f3f8;
@@ -10069,13 +10252,55 @@ body.scada-mimic-editor-open {
   stroke: #e9edf3;
 }
 
+/* Compact report widgets: one readable size for title, toolbar, table, hints */
+.dashboard-theme-itm-light .dash-report-widget {
+  --dash-report-font: 10px;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .dash-widget-title {
+  font-size: var(--dash-report-font) !important;
+  line-height: 1.35;
+  gap: 0.25rem;
+  padding-right: 0.5rem;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .op-table,
 .dashboard-theme-itm-light .dash-report-widget .op-table td,
 .dashboard-theme-itm-light .dash-report-widget .op-table th {
-  font-size: 0.78rem;
+  font-size: var(--dash-report-font) !important;
+  line-height: 1.35;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .op-table th,
+.dashboard-theme-itm-light .dash-report-widget .op-table td {
+  padding: 2px 4px;
 }
 
 .dashboard-theme-itm-light .dash-report-widget .op-table td {
   word-break: break-all;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .report-truncated-banner,
+.dashboard-theme-itm-light .dash-report-widget .hint,
+.dashboard-theme-itm-light .dash-report-widget .op-muted,
+.dashboard-theme-itm-light .dash-report-widget .banner {
+  font-size: var(--dash-report-font);
+  line-height: 1.35;
+  margin: 0.15rem 0;
+  padding: 0.15rem 0.3rem;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .report-export-controls-sm .report-export-format,
+.dashboard-theme-itm-light .dash-report-widget .btn-sm {
+  font-size: var(--dash-report-font) !important;
+  line-height: 1.35;
+  padding: 0.1rem 0.35rem;
+  min-height: 0;
+}
+
+.dashboard-theme-itm-light .dash-report-widget .report-export-controls-sm .report-export-format {
+  min-width: 3.25rem;
+  max-width: 4.75rem;
 }
 
 .ai-studio-main {

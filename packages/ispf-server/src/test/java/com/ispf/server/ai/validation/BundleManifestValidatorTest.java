@@ -125,9 +125,9 @@ class BundleManifestValidatorTest {
     @Test
     void acceptsDashboardWithSubDashboardAndObjectTable() {
         String layout = """
-                {"columns":12,"rowHeight":72,"widgets":[
-                  {"id":"t1","type":"object-table","title":"Devices","x":0,"y":0,"w":6,"h":4,"parentPath":"root.platform.devices"},
-                  {"id":"s1","type":"sub-dashboard","title":"Detail","x":6,"y":0,"w":6,"h":4,"targetDashboardPath":"root.platform.dashboards.demo-sensor"}
+                {"columns":84,"rowHeight":8,"widgets":[
+                  {"id":"t1","type":"object-table","title":"Devices","x":0,"y":0,"w":42,"h":28,"parentPath":"root.platform.devices"},
+                  {"id":"s1","type":"sub-dashboard","title":"Detail","x":42,"y":0,"w":42,"h":28,"targetDashboardPath":"root.platform.dashboards.demo-sensor"}
                 ]}
                 """;
         ApplicationBundleDeployService.BundleManifest manifest = manifestWithDashboard(layout);

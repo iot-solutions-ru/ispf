@@ -26,6 +26,31 @@ Demos:
 
 Default layouts: `packages/ispf-server/.../DashboardLayouts.java`.
 
+## Grid
+
+Canonical layout JSON:
+
+| Field | Value |
+|-------|-------|
+| `columns` | **84** (12×7 fine columns) |
+| `rowHeight` | **8** (px per height unit) |
+| `x`, `y`, `w`, `h` | fine-grid units (full width = `w: 84`) |
+
+There is no automatic migration from older 12×72 drafts — author layouts in **84×8** only.
+
+### Screen composition (Builder and AI)
+
+Dashboards must read as an operator board, not a pile of tiny cards.
+
+| Role | Typical `w`×`h` |
+|------|-----------------|
+| KPI (value / indicator / gauge) | **21×14** or **28×14** (3–4 tiles, sum w = 84) |
+| Chart / table / report | **≥42×28** |
+| Nav chip / badge | **9–14×7** |
+| SCADA mimic | **84×56…70** |
+
+Rules: align rows (same `y` and `h`); fill the width; prefer multiples of 7; 4–10 widgets on an overview; KPI strip → primary widget → actions. Never use legacy `w=3,h=2` on the 84-column grid — it renders as a crumb.
+
 ## Object binding: `objectPath` and `selectionKey`
 
 Widgets (`value`, `indicator`, `chart`, …) read variables from a **specific** platform object (`DEVICE`, `CUSTOM`, …). The path to that object is set in two ways.
@@ -210,14 +235,14 @@ See **Object binding** above. Historical work-order example: table + `progress` 
 
 ```json
 {
-  "columns": 12,
-  "rowHeight": 72,
+  "columns": 84,
+  "rowHeight": 8,
   "widgets": [
     {
       "id": "temp-value",
       "type": "value",
       "title": "Temperature",
-      "x": 0, "y": 0, "w": 3, "h": 2,
+      "x": 0, "y": 0, "w": 21, "h": 14,
       "objectPath": "root.platform.devices.demo-sensor-01",
       "variableName": "temperature",
       "valueField": "value",
@@ -228,8 +253,8 @@ See **Object binding** above. Historical work-order example: table + `progress` 
 }
 ```
 
-- Grid: 12 columns, position `x,y`, size `w,h` in grid units
-- `rowHeight` — row height in pixels
+- Grid: **84** fine columns, position `x,y`, size `w,h` in fine-grid units (full width = `w: 84`)
+- `rowHeight` — **8** px per grid row
 
 ## Grid layout: function-form (Lab Training exercise 6)
 
@@ -237,8 +262,8 @@ Example grid from **Lab Training** — dashboard `root.platform.dashboards.lab-f
 
 ```json
 {
-  "columns": 12,
-  "rowHeight": 72,
+  "columns": 84,
+  "rowHeight": 8,
   "widgets": [
     {
       "id": "append-row",
@@ -246,8 +271,8 @@ Example grid from **Lab Training** — dashboard `root.platform.dashboards.lab-f
       "title": "Append table row",
       "x": 0,
       "y": 0,
-      "w": 6,
-      "h": 4,
+      "w": 42,
+      "h": 28,
       "objectPath": "root.platform.devices.lab-userA-01",
       "functionName": "appendTableRow",
       "buttonLabel": "Append",
@@ -257,7 +282,7 @@ Example grid from **Lab Training** — dashboard `root.platform.dashboards.lab-f
 }
 ```
 
-`fieldsJson` matches function arguments on the `virtual-lab-v1` model. Size `w:6` on a 12-column grid is half the screen; `h:4` is height in grid rows (`rowHeight` × 4 pixels).
+`fieldsJson` matches function arguments on the `virtual-lab-v1` model. Size `w:42` on an 84-column grid is half the screen; `h:28` is height in grid rows (`rowHeight` × 28 pixels).
 
 Import ready-made layout: `POST /api/v1/platform/packages/import?packageId=lab-training` (see [lab-training](lab-training.md)).
 

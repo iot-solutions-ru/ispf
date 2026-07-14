@@ -28,7 +28,9 @@ public final class AgentSolutionGeneratorPlaybook {
                 3. **Sources** — for each entity: create_virtual_device / create_object DEVICE + configure_driver + list_variables (mandatory per device)
                 4. **Aggregation** — CUSTOM hub variables + create_binding_rule (read/CEL) when spec needs computed KPIs
                 5. **Historian** — configure_variable_history on trend/chart variables (from list_variables only)
-                6. **Dashboards** — create_object DASHBOARD → set_dashboard_layout (template or custom) binding list_variables paths
+                6. **Dashboards** — create_object DASHBOARD → set_dashboard_layout (template or custom layoutJson)
+                   Fine grid columns=84 rowHeight=8; KPI tiles w=21|28 h=14; charts/tables ≥42×28; bind list_variables paths.
+                   Never legacy crumb sizes (w=2..6). Prefer one presentable layoutJson over many add_dashboard_widget.
                 7. **SCADA branch** — create_object MIMIC → save_mimic_diagram when P&ID/HMI graphics required
                 8. **Alerts** — configure_alert on hub/device thresholds from specBrief alarms section
                 9. **Correlators** — configure_correlator when spec requires event chains (alert → workflow/report)

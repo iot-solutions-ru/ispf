@@ -18,6 +18,7 @@ import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -56,6 +57,9 @@ public class DriverRuntimeService {
     private static final DataSchema INTEGER_VALUE_SCHEMA = DataSchema.builder("integerValue")
             .field("value", FieldType.INTEGER)
             .build();
+    private static final DataSchema BOOLEAN_VALUE_SCHEMA = DataSchema.builder("booleanValue")
+            .field("value", FieldType.BOOLEAN)
+            .build();
 
     private final ObjectManager objectManager;
     private final DriverFactory driverFactory;
@@ -66,6 +70,7 @@ public class DriverRuntimeService {
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final ObjectProvider<DriverRuntimeService> self;
     private final DriverOwnershipService ownershipService;
+    private final SystemObjectStructureService structureService;
     private ElasticScheduledPool schedulerPool;
     private ScheduledThreadPoolExecutor scheduler;
     private ElasticWorkerLauncher ioWorkers;
@@ -82,7 +87,8 @@ public class DriverRuntimeService {
             DriverPackProperties driverPackProperties,
             RuntimeTelemetryProperties runtimeTelemetryProperties,
             ObjectProvider<DriverRuntimeService> self,
-            DriverOwnershipService ownershipService
+            DriverOwnershipService ownershipService,
+            SystemObjectStructureService structureService
     ) {
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
@@ -93,6 +99,7 @@ public class DriverRuntimeService {
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.self = self;
         this.ownershipService = ownershipService;
+        this.structureService = structureService;
     }
 
     @PostConstruct
@@ -135,11 +142,21 @@ public class DriverRuntimeService {
             log.info("Driver auto-start on boot disabled (ispf.driver.auto-start-on-boot=false)");
             return;
         }
-        for (PlatformObject node : objectManager.tree().childrenOf("root.platform.devices")) {
+        // Nested trees (e.g. devices.itm.sites.*.network.*) must be included — not only
+        // direct children of root.platform.devices.
+        for (PlatformObject node : objectManager.tree().all()) {
             if (node.type() != ObjectType.DEVICE) {
                 continue;
             }
             String path = node.path();
+            if (!path.equals("root.platform.devices") && !path.startsWith("root.platform.devices.")) {
+                continue;
+            }
+            try {
+                structureService.ensureDeviceDriverStructure(path);
+            } catch (Exception e) {
+                log.debug("Skip driver structure ensure for {}: {}", path, e.getMessage());
+            }
             if (!shouldAutoStart(path)) {
                 continue;
             }
@@ -184,7 +201,24 @@ public class DriverRuntimeService {
                 && "root.platform.devices.snmp-localhost".equals(devicePath)) {
             return false;
         }
-        return true;
+        // Per-device preference; missing variable defaults to true (auto-start).
+        return readDriverAutoStart(devicePath);
+    }
+
+    /** Whether this device should start on server boot. Missing variable → true. */
+    public boolean readDriverAutoStart(String devicePath) {
+        return objectManager.tree().findByPath(devicePath)
+                .flatMap(node -> boolValue(node, "driverAutoStart"))
+                .orElse(true);
+    }
+
+    public void setDriverAutoStart(String devicePath, boolean enabled) {
+        structureService.ensureDeviceDriverStructure(devicePath);
+        objectManager.setSystemVariableValue(
+                devicePath,
+                "driverAutoStart",
+                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", enabled))
+        );
     }
 
     private static boolean isLabTrainingDevice(String devicePath) {
@@ -583,6 +617,21 @@ public class DriverRuntimeService {
                 .flatMap(com.ispf.core.object.Variable::value)
                 .map(record -> record.firstRow().get("value"))
                 .map(value -> ((Number) value).intValue());
+    }
+
+    private static Optional<Boolean> boolValue(PlatformObject node, String variableName) {
+        return node.getVariable(variableName)
+                .flatMap(com.ispf.core.object.Variable::value)
+                .map(record -> record.firstRow().get("value"))
+                .map(value -> {
+                    if (value instanceof Boolean bool) {
+                        return bool;
+                    }
+                    if (value instanceof Number number) {
+                        return number.intValue() != 0;
+                    }
+                    return Boolean.parseBoolean(String.valueOf(value).trim());
+                });
     }
 
     private record ActiveDriver(

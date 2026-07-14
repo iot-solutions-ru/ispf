@@ -101,7 +101,7 @@ src/
 
 ## Dashboard builder
 
-- 12-column grid, drag-and-drop, resize
+- 84-column fine grid, drag-and-drop, resize
 - Widget add panel (all 14 types)
 - `WidgetEditorPanel` — selected widget properties
 - JSON preview layout

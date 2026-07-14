@@ -56,8 +56,47 @@ export default function VariableEditorWidgetView({
     return all.filter((item) => allowed.has(item.name));
   }, [filterNames, variablesQuery.data]);
 
+  const rows = useMemo(() => {
+    const result: Array<{
+      key: string;
+      variableName: string;
+      field: string;
+      label: string;
+      writable: boolean;
+      current: string;
+    }> = [];
+    for (const variable of variables) {
+      const fields = variable.value?.schema.fields ?? [];
+      const fieldList =
+        fields.length > 0
+          ? fields
+          : [{ name: widget.valueField ?? "value" }];
+      for (const fieldDef of fieldList) {
+        const field = fieldDef.name;
+        const currentValue = readFieldValue(variable.value?.rows[0], field);
+        result.push({
+          key: `${variable.name}:${field}`,
+          variableName: variable.name,
+          field,
+          label: fields.length > 1 ? `${variable.name}.${field}` : variable.name,
+          writable: Boolean(variable.writable),
+          current: currentValue != null ? String(currentValue) : "",
+        });
+      }
+    }
+    return result;
+  }, [variables, widget.valueField]);
+
   const mutation = useMutation({
-    mutationFn: async ({ name, field, raw }: { name: string; field: string; raw: string }) => {
+    mutationFn: async ({
+      name,
+      field,
+      raw,
+    }: {
+      name: string;
+      field: string;
+      raw: string;
+    }) => {
       const variable = variables.find((item) => item.name === name);
       if (!variable?.writable) {
         throw new Error(t("error.readOnlyVariable", { name }));
@@ -87,26 +126,27 @@ export default function VariableEditorWidgetView({
         <p className="hint">{t("view.specifyObjectGeneric")}</p>
       ) : variablesQuery.isLoading ? (
         <p className="hint">{t("common:action.loading")}</p>
-      ) : variables.length === 0 ? (
+      ) : rows.length === 0 ? (
         <p className="hint">{t("view.noVariables")}</p>
       ) : (
         <div className="dash-variable-editor-list" style={styles.body}>
-          {variables.map((variable) => {
-            const row = variable.value?.rows[0];
-            const primaryField =
-              variable.value?.schema.fields[0]?.name ?? widget.valueField ?? "value";
-            const current = readFieldValue(row, primaryField);
-            const draftKey = `${variable.name}:${primaryField}`;
-            const draft = drafts[draftKey] ?? (current != null ? String(current) : "");
-
+          <div className="dash-variable-editor-head" aria-hidden>
+            <span>{t("view.variableName", { defaultValue: "Параметр" })}</span>
+            <span>{t("view.value", { defaultValue: "Значение" })}</span>
+            <span />
+          </div>
+          {rows.map((row) => {
+            const draft = drafts[row.key] ?? row.current;
             return (
-              <label key={variable.name} className="dash-variable-editor-row">
-                <span className="dash-variable-editor-name">{variable.name}</span>
+              <div key={row.key} className="dash-variable-editor-row">
+                <span className="dash-variable-editor-name" title={row.label}>
+                  {row.label}
+                </span>
                 <input
                   value={draft}
-                  disabled={editable || !variable.writable || mutation.isPending}
+                  disabled={editable || !row.writable || mutation.isPending}
                   onChange={(event) =>
-                    setDrafts((prev) => ({ ...prev, [draftKey]: event.target.value }))
+                    setDrafts((prev) => ({ ...prev, [row.key]: event.target.value }))
                   }
                 />
                 <button
@@ -114,21 +154,21 @@ export default function VariableEditorWidgetView({
                   className="btn small"
                   disabled={
                     editable ||
-                    !variable.writable ||
+                    !row.writable ||
                     mutation.isPending ||
-                    draft === (current != null ? String(current) : "")
+                    draft === row.current
                   }
                   onClick={() =>
                     mutation.mutate({
-                      name: variable.name,
-                      field: primaryField,
+                      name: row.variableName,
+                      field: row.field,
                       raw: draft,
                     })
                   }
                 >
                   {t("common:action.save")}
                 </button>
-              </label>
+              </div>
             );
           })}
         </div>
