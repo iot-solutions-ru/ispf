@@ -791,12 +791,20 @@ public final class AgentPlaybooks {
                 - Cross-device: activator `{ "ref": "remotePath/variableName" }` or remoteObjectPath + remoteVariableName
                 - read(otherPath/varName) in expression for computed values
                 
+                ### Rolling / 1-minute average (historian — ADR-0041)
+                - Prefer create_binding_rule **ruleKind=historian** + windowBucket=1m (or 5m)
+                  expression=`avg(root.platform.devices.dev-01/sineWave, 1m)` targetVariable=avg1m
+                - Prerequisite: configure_variable_history on the **source** variable
+                - Then reactive threshold (e.g. cluster-error): `self.avg1m["value"] > 0`
+                  (or average of several avg vars). Never put avg() into a reactive CEL rule.
+                - NEVER apply_relative_blueprint rolling-avg-v1 for this; NEVER invent derivedValue + cast hacks.
+                
                 ### Event side-effects
                 - create_binding_rule targetKind=event eventName=... expression=...
                 
                 ### Inspect
                 - list_binding_rules path=...
-                - get_automation_schema topic=platform-rule
+                - get_automation_schema topic=platform-rule | binding
                 
                 Pair with object-table rowTargetDashboard + selectionKey for drill-down dashboards.
                 """;

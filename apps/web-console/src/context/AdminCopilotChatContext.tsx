@@ -261,7 +261,7 @@ export function AdminCopilotChatProvider({
 
         activeSessionIdRef.current = null;
         setActiveSessionId(null);
-        const session = await createAgentSession(rootPath, "ask");
+        const session = await createAgentSession(rootPath, "execute");
         const sessionId = session.sessionId;
         const entry = {
           id: session.sessionId,
@@ -291,7 +291,7 @@ export function AdminCopilotChatProvider({
             sessionId!,
             trimmed,
             rootPath,
-            "ask",
+            "execute",
             undefined,
             true,
             clientFocus,

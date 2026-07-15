@@ -10,6 +10,7 @@ import JournalVirtualList from "../journal/JournalVirtualList";
 import JournalExpandableItem from "../journal/JournalExpandableItem";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useSystemTabFocus } from "../../hooks/useSystemTabFocus";
 
 const LIVE_LIMIT = 25;
 const HISTORY_PAGE = 50;
@@ -24,6 +25,8 @@ interface BindingInvokeJournalPanelProps {
   compact?: boolean;
   scrollMaxHeight?: number | string;
   defaultMode?: JournalViewMode;
+  /** When true (System console), publish Admin Copilot focus. */
+  publishAdminFocus?: boolean;
 }
 
 export default function BindingInvokeJournalPanel({
@@ -34,6 +37,7 @@ export default function BindingInvokeJournalPanel({
   compact = false,
   scrollMaxHeight,
   defaultMode = "live",
+  publishAdminFocus = false,
 }: BindingInvokeJournalPanelProps) {
   const { t } = useTranslation(["runtime", "journal", "common"]);
   const [mode, setMode] = usePersistentTab<JournalViewMode>(
@@ -108,6 +112,48 @@ export default function BindingInvokeJournalPanel({
   const exportFilenameBase = fixedObjectPath
     ? `binding-journal-${fixedObjectPath.replace(/\./g, "-")}`
     : "binding-journal";
+
+  const focusDetail = useMemo(
+    () => ({
+      journalMode: mode,
+      filters: {
+        objectPath: fixedObjectPath || objectPath,
+        bindingKind,
+        ruleId: fixedRuleId || ruleFilter,
+        success: successFilter,
+        changed: changedFilter,
+        search: searchFilter,
+      },
+      resultCount: filtered.length,
+      sampleEntries: filtered.slice(0, 8).map((entry) => ({
+        ruleId: entry.ruleId,
+        ruleName: entry.ruleName,
+        targetVariable: entry.targetVariable,
+        objectPath: entry.objectPath,
+        changed: entry.changed,
+        success: entry.success,
+      })),
+      screenHint:
+        "Binding invoke journal — help debug CEL rules, propose expression fixes from failed/changed samples",
+      helpIntents: ["explainBindingFailures", "draftCelFix", "suggestActivators"],
+    }),
+    [
+      mode,
+      fixedObjectPath,
+      objectPath,
+      bindingKind,
+      fixedRuleId,
+      ruleFilter,
+      successFilter,
+      changedFilter,
+      searchFilter,
+      filtered,
+    ]
+  );
+  useSystemTabFocus("system-binding-journal", "bindings", focusDetail, {
+    active: publishAdminFocus,
+    screenTitle: "System › Binding journal",
+  });
 
   const canLoadMore =
     mode === "history"

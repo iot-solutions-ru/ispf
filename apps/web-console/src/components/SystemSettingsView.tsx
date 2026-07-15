@@ -10,6 +10,8 @@ import {
 import { DatabaseSettingsCard } from "./DatabaseSettingsCard";
 import { SettingRow } from "./SystemSettingsSettingRow";
 import { usePersistentTab } from "../hooks/usePersistentTab";
+import { usePublishAdminFocus } from "../hooks/usePublishAdminFocus";
+import type { AdminClientFocus } from "../context/AdminFocusContext";
 
 const INTEGRATIONS_TAB = "integrations" as const;
 
@@ -240,6 +242,33 @@ export default function SystemSettingsView() {
     tabId === INTEGRATIONS_TAB
       ? t("settings.tabs.integrations")
       : t(`settings.sections.${tabId}`, tabId);
+
+  const settingsFocus = useMemo((): AdminClientFocus => {
+    const sectionIds = settingsQuery.data?.sections.map((section) => section.id) ?? [];
+    const visibleSettingIds =
+      activeTab === INTEGRATIONS_TAB
+        ? [...QUICK_BOOLEAN_IDS, ...Object.keys(QUICK_SELECT_SETTINGS)]
+        : (activeSection?.settings ?? []).slice(0, 24).map((setting) => setting.id);
+    return {
+      surface: "system",
+      priority: 70,
+      detail: {
+        screenTitle: "System › Settings (Система › Настройки)",
+        systemTab: "settings",
+        settingsTab: activeTab,
+        settingsTabLabel: tabLabel(activeTab),
+        availableSettingsTabs: allTabs,
+        availableSectionIds: sectionIds,
+        visibleSettingIds,
+        actions: ["refresh", "saveChanges"],
+        screenHint:
+          activeTab === INTEGRATIONS_TAB
+            ? "Integrations quick toggles: Redis, NATS, AI, MCP, AI provider, tenant isolation"
+            : `Settings section «${activeTab}» — runtime platform config rows`,
+      },
+    };
+  }, [activeTab, activeSection, allTabs, settingsQuery.data, t]);
+  usePublishAdminFocus("system-settings", settingsFocus, Boolean(settingsQuery.data));
 
   return (
     <div className="system-settings-view">

@@ -46,8 +46,8 @@ public class BindingRulesService {
             .field("value", FieldType.STRING)
             .build();
 
-    private static final DataSchema STRING_VALUE_SCHEMA = DataSchema.builder("stringValue")
-            .field("value", FieldType.STRING)
+    private static final DataSchema DOUBLE_VALUE_SCHEMA = DataSchema.builder("doubleValue")
+            .field("value", FieldType.DOUBLE)
             .build();
 
     private final ObjectManager objectManager;
@@ -252,10 +252,10 @@ public class BindingRulesService {
         objectManager.createVariable(
                 objectPath,
                 variableName,
-                STRING_VALUE_SCHEMA,
+                DOUBLE_VALUE_SCHEMA,
                 true,
                 true,
-                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "")),
+                DataRecord.single(DOUBLE_VALUE_SCHEMA, Map.of("value", 0.0)),
                 false,
                 null
         );

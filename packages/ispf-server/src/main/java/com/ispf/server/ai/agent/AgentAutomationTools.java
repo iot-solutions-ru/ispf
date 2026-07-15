@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
+import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.expression.BindingExpressionValidator;
@@ -591,9 +592,15 @@ final class AgentAutomationTools {
                 return "Create or replace a binding rule on an object. Args: path, id, expression, "
                         + "targetVariable (for kind=variable, local target), targetRef (slash ref for cross-object variable/event), "
                         + "optional targetKind (variable|action|context|event), "
+                        + "optional ruleKind (reactive|historian, default reactive), "
+                        + "windowBucket (required for historian, e.g. 1m/5m), "
+                        + "periodicMs (historian refresh, default 60000), "
                         + "contextPath (context target), eventName (event target), condition (CEL), "
                         + "remoteObjectPath + remoteVariableName (cross-object activator), "
                         + "onContextChange (bool, dashboard rules), onStartup, order. "
+                        + "Historian rolling avg example: ruleKind=historian windowBucket=1m "
+                        + "expression=avg(root.platform.devices.dev/sineWave, 1m) targetVariable=avg1m. "
+                        + "Do NOT use rolling-avg Relative Blueprints for 1-minute averages — use historian avg(). "
                         + "For dashboard @dashboardContext rules prefer configure_platform_context_rule.";
             }
 
@@ -605,6 +612,7 @@ final class AgentAutomationTools {
                 String targetRef = stringArg(arguments, "targetRef");
                 String expression = stringArg(arguments, "expression");
                 String targetKind = com.ispf.core.binding.BindingTargetKind.normalize(stringArg(arguments, "targetKind"));
+                BindingRuleKind ruleKind = parseRuleKind(arguments);
                 if (path.isBlank() || id.isBlank() || expression.isBlank()) {
                     return Map.of("status", "ERROR", "error", "path, id, expression are required");
                 }
@@ -618,6 +626,9 @@ final class AgentAutomationTools {
                         && targetRef.isBlank()) {
                     return Map.of("status", "ERROR", "error", "eventName or targetRef is required for targetKind=event");
                 }
+                if (ruleKind == BindingRuleKind.HISTORIAN && targetVariable.isBlank() && targetRef.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "historian rules require targetVariable (or targetRef)");
+                }
                 var auth = context.authentication();
                 if (!tenantScopeService.isPathVisible(path, auth)) {
                     return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
@@ -625,37 +636,68 @@ final class AgentAutomationTools {
                 objectAccessService.requireWrite(path, auth);
                 try {
                     objectManager.require(path);
-                    BindingExpressionValidator.validateOrThrow(expression);
+                    // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
+                    if (ruleKind != BindingRuleKind.HISTORIAN) {
+                        BindingExpressionValidator.validateOrThrow(expression);
+                    }
                     String condition = optionalString(arguments, "condition");
                     if (condition != null && !condition.isBlank()) {
                         BindingExpressionValidator.validateOrThrow(condition);
                     }
-                    BindingActivators activators = buildActivators(arguments, path);
+                    BindingActivators activators = buildActivators(arguments, path, ruleKind);
                     com.ispf.core.binding.BindingTarget target = buildTarget(arguments, targetKind, targetVariable);
+                    String windowBucket = optionalString(arguments, "windowBucket");
+                    if (ruleKind == BindingRuleKind.HISTORIAN && (windowBucket == null || windowBucket.isBlank())) {
+                        windowBucket = "1m";
+                    }
                     BindingRule rule = new BindingRule(
                             id,
                             optionalString(arguments, "name"),
                             boolArg(arguments, "enabled", true),
                             intArg(arguments, "order", 0),
+                            ruleKind,
                             activators,
                             condition != null ? condition : "",
                             expression,
-                            target
+                            target,
+                            windowBucket,
+                            null
                     );
                     BindingRule saved = bindingRulesService.upsertRule(path, rule);
                     bindingDependencyIndex.rebuild(path);
                     bindingRuleEngine.runRulesForObject(path);
-                    return Map.of("status", "OK", "path", path, "ruleId", saved.id(), "target", saved.target().variableName());
+                    Map<String, Object> ok = new LinkedHashMap<>();
+                    ok.put("status", "OK");
+                    ok.put("path", path);
+                    ok.put("ruleId", saved.id());
+                    ok.put("kind", saved.kind().name());
+                    ok.put("target", saved.target().variableName());
+                    if (saved.windowBucket() != null) {
+                        ok.put("windowBucket", saved.windowBucket());
+                    }
+                    return ok;
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
                 }
             }
 
-            private BindingActivators buildActivators(Map<String, Object> arguments, String path) {
+            private BindingActivators buildActivators(
+                    Map<String, Object> arguments,
+                    String path,
+                    BindingRuleKind ruleKind
+            ) {
                 String remotePath = optionalString(arguments, "remoteObjectPath");
                 String remoteVar = optionalString(arguments, "remoteVariableName");
+                Integer periodicMs = intArg(arguments, "periodicMs", null);
                 if (remotePath != null && remoteVar != null) {
-                    return BindingActivators.onRemoteChange(remotePath, remoteVar);
+                    long period = periodicMs != null ? periodicMs.longValue()
+                            : (ruleKind == BindingRuleKind.HISTORIAN ? 60_000L : 0L);
+                    return new BindingActivators(
+                            boolArg(arguments, "onStartup", false),
+                            List.of(com.ispf.core.binding.BindingVariableRef.remote(remotePath, remoteVar)),
+                            null,
+                            period
+                    );
                 }
                 if (boolArg(arguments, "onContextChange", false)) {
                     return new BindingActivators(
@@ -667,7 +709,32 @@ final class AgentAutomationTools {
                             true
                     );
                 }
+                if (ruleKind == BindingRuleKind.HISTORIAN) {
+                    long period = periodicMs != null ? periodicMs.longValue() : 60_000L;
+                    BindingActivators defaults = BindingRulesService.defaultActivators(path, stringArg(arguments, "expression"));
+                    return new BindingActivators(
+                            boolArg(arguments, "onStartup", false),
+                            defaults.onVariableChange(),
+                            null,
+                            period
+                    );
+                }
                 return BindingRulesService.defaultActivators(path, stringArg(arguments, "expression"));
+            }
+
+            private static BindingRuleKind parseRuleKind(Map<String, Object> arguments) {
+                String raw = stringArg(arguments, "ruleKind");
+                if (raw.isBlank()) {
+                    raw = stringArg(arguments, "kind");
+                }
+                if (raw.isBlank()) {
+                    return BindingRuleKind.REACTIVE;
+                }
+                try {
+                    return BindingRuleKind.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException ex) {
+                    return BindingRuleKind.REACTIVE;
+                }
             }
 
             private com.ispf.core.binding.BindingTarget buildTarget(
@@ -932,14 +999,27 @@ final class AgentAutomationTools {
     }
 
     private static Map<String, Object> bindingSchema() {
-        return Map.of(
-                "ref", "root.platform.devices.foo/temperature — read(@/temperature) for rule-local vars",
-                "cel", "CEL expressions on same object, e.g. self.member1[\"value\"] > 0 && self.member2[\"value\"] > 0",
-                "platformBindings", List.of(
-                        "read", "call", "hysteresis", "counterRate", "unitConvert", "sqlBinding"
-                ),
-                "tool", "create_binding_rule"
-        );
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("ref", "root.platform.devices.foo/temperature — read(@/temperature) for rule-local vars");
+        schema.put("cel", "CEL expressions on same object, e.g. self.member1[\"value\"] > 0 && self.member2[\"value\"] > 0");
+        schema.put("historian", Map.of(
+                "ruleKind", "historian",
+                "windowBucket", "1m|5m|1h",
+                "expression", "avg(objectPath/variable, 1m)",
+                "example", "create_binding_rule ruleKind=historian windowBucket=1m "
+                        + "expression=avg(root.platform.devices.virt-cluster.dev-01/sineWave, 1m) "
+                        + "targetVariable=avg1m",
+                "prerequisite", "configure_variable_history historyEnabled=true on source",
+                "avoid", "Do not use rolling-avg Relative Blueprint for minute averages"
+        ));
+        schema.put("clusterErrorPattern",
+                "1) historian avg → avgVar; 2) reactive cluster-error: self.avgVar[\"value\"] > 0 "
+                        + "(or combine avgs). Never put avg() into reactive CEL.");
+        schema.put("platformBindings", List.of(
+                "read", "call", "hysteresis", "counterRate", "unitConvert", "sqlBinding"
+        ));
+        schema.put("tool", "create_binding_rule");
+        return schema;
     }
 
     private static Map<String, Object> operatorSchema() {

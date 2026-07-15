@@ -15,6 +15,7 @@ import JournalVirtualList from "../journal/JournalVirtualList";
 import JournalExpandableItem from "../journal/JournalExpandableItem";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
+import { useSystemTabFocus } from "../../hooks/useSystemTabFocus";
 
 const LIVE_LIMIT = 25;
 const HISTORY_PAGE = 50;
@@ -34,6 +35,8 @@ interface EventJournalPanelProps {
   scrollMaxHeight?: number | string;
   defaultMode?: JournalViewMode;
   showModeToggle?: boolean;
+  /** When true (System console), publish Admin Copilot focus for this journal. */
+  publishAdminFocus?: boolean;
 }
 
 export default function EventJournalPanel({
@@ -49,6 +52,7 @@ export default function EventJournalPanel({
   scrollMaxHeight,
   defaultMode = "live",
   showModeToggle = true,
+  publishAdminFocus = false,
 }: EventJournalPanelProps) {
   const { t } = useTranslation(["operator", "runtime", "journal", "common"]);
   const operatorScoped = Boolean(appId && ui);
@@ -159,6 +163,46 @@ export default function EventJournalPanel({
     : objectPath
       ? `event-journal-${objectPath.replace(/\./g, "-")}`
       : "event-journal";
+
+  const focusDetail = useMemo(
+    () => ({
+      journalMode: mode,
+      filters: {
+        objectPath: filterPath || objectPath || "",
+        eventName: eventNameFilter,
+        level: levelFilter,
+        search: searchFilter,
+      },
+      resultCount: filtered.length,
+      sampleEventNames: eventNames.slice(0, 20),
+      sampleLevels: levels.slice(0, 10),
+      sampleEvents: filtered.slice(0, 6).map((event) => ({
+        eventName: event.eventName,
+        level: event.level,
+        objectPath: event.objectPath,
+      })),
+      auditEnabled: statusQuery.data?.enabled !== false,
+      screenHint:
+        "Event journal — help diagnose fires, filter by path/event, suggest bindings or alerts from samples",
+      helpIntents: ["explainEvents", "suggestFilter", "draftAlertCondition", "draftBindingExpression"],
+    }),
+    [
+      mode,
+      filterPath,
+      objectPath,
+      eventNameFilter,
+      levelFilter,
+      searchFilter,
+      filtered,
+      eventNames,
+      levels,
+      statusQuery.data?.enabled,
+    ]
+  );
+  useSystemTabFocus("system-event-journal", "events", focusDetail, {
+    active: publishAdminFocus,
+    screenTitle: "System › Event journal",
+  });
 
   const canLoadMore =
     mode === "history"

@@ -44,6 +44,9 @@ import {
   readCachedDashboardView,
 } from "../../utils/operatorOfflineCache";
 import { applyLayoutPreset, isVideoWallPreset } from "./dashboardLayoutPresets";
+import { widgetDataBinding } from "./widgetEditorBinding";
+import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
+import type { AdminClientFocus } from "../../context/AdminFocusContext";
 
 interface DashboardBuilderProps {
   path: string;
@@ -279,6 +282,74 @@ export default function DashboardBuilder({
     if (!selectedWidgetId) return null;
     return findWidgetInLayout(layout, selectedWidgetId)?.widget ?? null;
   }, [layout, selectedWidgetId]);
+
+  const dashboardFocus = useMemo((): AdminClientFocus => {
+    return {
+      surface: "dashboard",
+      objectPath: path,
+      objectType: "DASHBOARD",
+      priority: mode === "edit" ? 75 : 45,
+      detail: {
+        screenTitle: `Dashboard › ${draftTitle ?? path}`,
+        editorMode: mode,
+        editorSidePanel,
+        widgetCount: layout.widgets?.length ?? 0,
+        dirty,
+        widgetTypes: Array.from(
+          new Set((layout.widgets ?? []).map((widget) => widget.type))
+        ).slice(0, 24),
+        screenHint:
+          mode === "edit"
+            ? "Dashboard editor — help add widgets, bind objectPath/variableName, draft fieldsJson / analytics expressions"
+            : "Dashboard view",
+        helpIntents: ["addWidget", "configureWidgetFields", "bindVariable", "draftLayout"],
+      },
+    };
+  }, [path, mode, editorSidePanel, layout.widgets, dirty, draftTitle]);
+  usePublishAdminFocus(`dashboard-builder:${path}`, dashboardFocus, true);
+
+  const selectedWidgetFocus = useMemo((): AdminClientFocus | null => {
+    if (!selectedWidget || mode !== "edit") {
+      return null;
+    }
+    const widget = selectedWidget as DashboardWidget & Record<string, unknown>;
+    return {
+      surface: "dashboard",
+      objectPath: path,
+      objectType: "DASHBOARD",
+      priority: 90,
+      detail: {
+        screenTitle: `Dashboard widget › ${widget.type}`,
+        editorMode: mode,
+        editorSidePanel,
+        widgetId: widget.id,
+        widgetType: widget.type,
+        widgetTitle: widget.title,
+        dataBinding: widgetDataBinding(widget.type),
+        objectPath: typeof widget.objectPath === "string" ? widget.objectPath : undefined,
+        variableName: typeof widget.variableName === "string" ? widget.variableName : undefined,
+        ref: typeof widget.ref === "string" ? widget.ref : undefined,
+        selectionKey: typeof widget.selectionKey === "string" ? widget.selectionKey : undefined,
+        paramKey: typeof widget.paramKey === "string" ? widget.paramKey : undefined,
+        functionName: typeof widget.functionName === "string" ? widget.functionName : undefined,
+        analyticsBindingExpression:
+          typeof widget.analyticsBindingExpression === "string"
+            ? widget.analyticsBindingExpression.slice(0, 400)
+            : undefined,
+        fieldsJson:
+          typeof widget.fieldsJson === "string" ? widget.fieldsJson.slice(0, 400) : undefined,
+        layout: { x: widget.x, y: widget.y, w: widget.w, h: widget.h },
+        screenHint:
+          "Selected dashboard widget — propose field patches, binding paths, CEL/analytics expressions for this widget type",
+        helpIntents: ["configureFields", "bindData", "draftExpression", "suggestSiblingWidgets"],
+      },
+    };
+  }, [selectedWidget, mode, path, editorSidePanel]);
+  usePublishAdminFocus(
+    `dashboard-widget:${path}:${selectedWidgetId ?? "none"}`,
+    selectedWidgetFocus,
+    Boolean(selectedWidgetFocus)
+  );
 
   const saveMutation = useMutation({
     mutationFn: async (snapshot: {

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import ClusterView from "./ClusterView";
 import SystemMetricsView from "./SystemMetricsView";
@@ -12,6 +13,8 @@ import PlatformSchedulesPanel from "./platform/PlatformSchedulesPanel";
 import SemanticExportPanel from "./platform/SemanticExportPanel";
 import SolutionCatalogPanel from "./platform/SolutionCatalogPanel";
 import { usePersistentTab } from "../hooks/usePersistentTab";
+import { usePublishAdminFocus } from "../hooks/usePublishAdminFocus";
+import type { AdminClientFocus } from "../context/AdminFocusContext";
 
 type SystemTab =
   | "metrics"
@@ -31,6 +34,8 @@ const SYSTEM_TABS: readonly SystemTab[] = [
   "metrics", "cluster", "settings", "solutions", "formulas", "events", "functions", "bindings", "changeSets", "schedules", "semanticExport", "backup",
 ];
 
+const SYSTEM_TAB_IDS = SYSTEM_TABS as readonly string[];
+
 export default function SystemView() {
   const { t } = useTranslation("system");
   const [tab, setTab] = usePersistentTab<SystemTab>("system", "metrics", SYSTEM_TABS);
@@ -49,6 +54,35 @@ export default function SystemView() {
     { id: "semanticExport", labelKey: "tab.semanticExport" },
     { id: "backup", labelKey: "tab.backup" },
   ];
+
+  const systemFocus = useMemo((): AdminClientFocus => {
+    const tabHints: Record<string, string> = {
+      metrics: "Platform metrics overview/diagnostics — explain gauges, pools, replica pressure",
+      cluster: "Cluster health nodes — explain status/profile, suggest recovery checks",
+      settings: "Runtime settings — explain integrations and env/restart impact",
+      solutions: "Solution marketplace/catalog — explain install/activation of apps and packs",
+      formulas: "Analytics formulas — draft/adapt CEL formula expressions",
+      events: "Event journal — diagnose fires, draft alerts/bindings from samples",
+      functions: "Function invoke journal — debug scripts and propose retries",
+      bindings: "Binding invoke journal — fix CEL rules from failed/changed samples",
+      changeSets: "Change sets — draft ops JSON and explain apply/preview",
+      schedules: "App schedules — draft interval invoke actions",
+      semanticExport: "Haystack/Brick semantic export — choose rootPath/includePoints",
+      backup: "Platform backup export/import JSON",
+    };
+    return {
+      surface: "system",
+      priority: 55,
+      detail: {
+        screenTitle: "System (Система)",
+        systemTab: tab,
+        availableSystemTabs: [...SYSTEM_TAB_IDS],
+        screenHint: tabHints[tab] ?? `System console tab: ${tab}`,
+        helpIntents: ["explainScreen", "gatherLiveData", "draftConfig", "createEntity"],
+      },
+    };
+  }, [tab]);
+  usePublishAdminFocus("system-view", systemFocus, true);
 
   return (
     <main className="main system-view">
@@ -80,10 +114,10 @@ export default function SystemView() {
       {tab === "solutions" && <SolutionCatalogPanel />}
       {tab === "formulas" && <AnalyticsFormulasPanel />}
       {tab === "events" && (
-        <EventJournalPanel limit={100} showFilters objectPathFilter="" />
+        <EventJournalPanel limit={100} showFilters objectPathFilter="" publishAdminFocus />
       )}
-      {tab === "functions" && <FunctionInvokeJournalPanel limit={100} showFilters />}
-      {tab === "bindings" && <BindingInvokeJournalPanel limit={100} showFilters />}
+      {tab === "functions" && <FunctionInvokeJournalPanel limit={100} showFilters publishAdminFocus />}
+      {tab === "bindings" && <BindingInvokeJournalPanel limit={100} showFilters publishAdminFocus />}
       {tab === "changeSets" && <PlatformChangeSetsPanel />}
       {tab === "schedules" && <PlatformSchedulesPanel />}
       {tab === "semanticExport" && <SemanticExportPanel />}

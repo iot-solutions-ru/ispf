@@ -108,6 +108,7 @@ public final class AgentPromptBuilder {
             - Virtual devices: create_virtual_device (OOTB multi-type). Domain plants: apply_relative_blueprint, not driver profiles
             - Never claim devices have variables/drivers unless list_variables or create_virtual_device returned telemetryVariableCount>0
             - Chart/sparkline widgets need historian: configure_variable_history path=... name=sineWave historyEnabled=true
+            - 1-minute average threshold: historian rule avg(path/var, 1m) → avgVar, then reactive CEL on avgVar; never rolling-avg Relative Blueprint for this
             - MQTT many sensors on one broker: model mqtt-gateway-v1, ingressVariable lastIngress, ingressTopicLanes true, dispatchTelemetry to child sensors
             - High-rate telemetry: driver telemetryCoalesceMs + TELEMETRY_ONLY; historian store=jdbc (platform default); see search_context topic=telemetry
             - Automation: get_automation_schema → configure_alert, configure_correlator, configure_variable_history

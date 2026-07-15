@@ -271,6 +271,56 @@ class AgentAutomationToolsTest {
     }
 
     @Test
+    void createBindingRuleHistorianSkipsReactiveCelValidation() throws Exception {
+        String path = "root.platform.devices.virt-cluster.hub";
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(objectManager.require(path)).thenReturn(
+                new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null)
+        );
+        com.ispf.core.binding.BindingRule saved = new com.ispf.core.binding.BindingRule(
+                "cluster-avg-1m",
+                "1m avg",
+                true,
+                10,
+                com.ispf.core.binding.BindingRuleKind.HISTORIAN,
+                com.ispf.core.binding.BindingActivators.onLocalChange(),
+                "",
+                "avg(root.platform.devices.virt-cluster.dev-01/sineWave, 1m)",
+                new com.ispf.core.binding.BindingTarget("avg1m", "value"),
+                "1m",
+                null
+        );
+        when(bindingRulesService.upsertRule(eq(path), any())).thenReturn(saved);
+
+        PlatformAgentTool tool = requireTool("create_binding_rule");
+        Map<String, Object> result = tool.execute(Map.of(
+                "path", path,
+                "id", "cluster-avg-1m",
+                "ruleKind", "historian",
+                "windowBucket", "1m",
+                "expression", "avg(root.platform.devices.virt-cluster.dev-01/sineWave, 1m)",
+                "targetVariable", "avg1m",
+                "periodicMs", 60000
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        assertEquals("HISTORIAN", result.get("kind"));
+        verify(bindingRulesService).upsertRule(eq(path), any());
+        verify(bindingDependencyIndex).rebuild(path);
+        verify(bindingRuleEngine).runRulesForObject(path);
+    }
+
+    @Test
+    void getAutomationSchemaBindingTopicDocumentsHistorianAvg() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "binding"), context);
+        assertEquals("OK", result.get("status"));
+        assertTrue(String.valueOf(result.get("binding")).contains("avg("));
+        assertTrue(String.valueOf(result.get("binding")).contains("historian"));
+    }
+
+    @Test
     void configureVariableHistoryEnablesHistorian() throws Exception {
         String path = "root.platform.devices.virt-cluster.dev-01";
         Variable sine = new Variable(

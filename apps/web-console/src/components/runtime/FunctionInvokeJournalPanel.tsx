@@ -11,6 +11,7 @@ import JournalVirtualList from "../journal/JournalVirtualList";
 import { ObjectPathField } from "../../ui";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useSystemTabFocus } from "../../hooks/useSystemTabFocus";
 
 const LIVE_LIMIT = 25;
 const HISTORY_PAGE = 50;
@@ -25,6 +26,7 @@ interface FunctionInvokeJournalPanelProps {
   compact?: boolean;
   scrollMaxHeight?: number | string;
   defaultMode?: JournalViewMode;
+  publishAdminFocus?: boolean;
 }
 
 export default function FunctionInvokeJournalPanel({
@@ -35,6 +37,7 @@ export default function FunctionInvokeJournalPanel({
   compact = false,
   scrollMaxHeight,
   defaultMode = "live",
+  publishAdminFocus = false,
 }: FunctionInvokeJournalPanelProps) {
   const { t } = useTranslation(["runtime", "journal", "common"]);
   const [mode, setMode] = usePersistentTab<JournalViewMode>(
@@ -103,6 +106,42 @@ export default function FunctionInvokeJournalPanel({
   const exportFilenameBase = fixedObjectPath
     ? `function-journal-${fixedObjectPath.replace(/\./g, "-")}`
     : "function-journal";
+
+  const focusDetail = useMemo(
+    () => ({
+      journalMode: mode,
+      filters: {
+        objectPath: fixedObjectPath || objectPath,
+        functionName: fixedFunctionName || functionName,
+        success: successFilter,
+        search: searchFilter,
+      },
+      resultCount: filtered.length,
+      sampleEntries: filtered.slice(0, 8).map((entry) => ({
+        objectPath: entry.objectPath,
+        functionName: entry.functionName,
+        success: entry.success,
+        errorMessage: entry.errorMessage?.slice(0, 120),
+      })),
+      screenHint:
+        "Function invoke journal — help debug scripts, suggest retry/parameters, draft call examples",
+      helpIntents: ["explainFailures", "draftInvoke", "suggestFix"],
+    }),
+    [
+      mode,
+      fixedObjectPath,
+      objectPath,
+      fixedFunctionName,
+      functionName,
+      successFilter,
+      searchFilter,
+      filtered,
+    ]
+  );
+  useSystemTabFocus("system-function-journal", "functions", focusDetail, {
+    active: publishAdminFocus,
+    screenTitle: "System › Function journal",
+  });
 
   const canLoadMore =
     mode === "history"

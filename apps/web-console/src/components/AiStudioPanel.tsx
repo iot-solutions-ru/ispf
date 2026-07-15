@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import AiAgentChat from "./AiAgentChat";
 import AiStudioBundleTab, { defaultBundleManifest } from "./AiStudioBundleTab";
@@ -6,6 +6,8 @@ import AiStudioPrefsTab from "./AiStudioPrefsTab";
 import AiStudioStatusTab from "./AiStudioStatusTab";
 import { useAgentRunStatus } from "../utils/agentRunStatus";
 import { loadAiStudioPrefs, saveAiStudioPrefs } from "../utils/agentChatStorage";
+import { usePublishAdminFocus } from "../hooks/usePublishAdminFocus";
+import type { AdminClientFocus } from "../context/AdminFocusContext";
 
 export type StudioMode = "agent" | "bundle" | "status" | "prefs";
 
@@ -29,6 +31,27 @@ export default function AiStudioPanel() {
   }, [mode]);
 
   const tabs: StudioMode[] = ["agent", "bundle", "status", "prefs"];
+
+  const studioFocus = useMemo((): AdminClientFocus => {
+    return {
+      surface: "ai-studio",
+      priority: 60,
+      detail: {
+        screenTitle: "AI Studio (Platform Studio)",
+        studioTab: mode,
+        availableStudioTabs: tabs,
+        screenHint:
+          mode === "agent"
+            ? "Build/plan agent chat for creating solutions (separate from Admin Copilot)"
+            : mode === "bundle"
+              ? "Bundle/manifest generation and validation"
+              : mode === "status"
+                ? "LLM provider status, context pack, agent tools catalog"
+                : "Local AI Studio preferences and chat index",
+      },
+    };
+  }, [mode]);
+  usePublishAdminFocus("ai-studio-panel", studioFocus, true);
 
   return (
     <div className="ai-studio-panel">

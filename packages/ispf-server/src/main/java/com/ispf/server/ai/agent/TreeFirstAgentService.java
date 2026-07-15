@@ -262,8 +262,16 @@ public class TreeFirstAgentService {
             if (interactionMode != null && !interactionMode.isBlank()) {
                 session.runState().setInteractionMode(AgentInteractionMode.fromString(interactionMode));
             }
+            // Admin Copilot is its own helper — never inherit Studio Ask/Plan mode machinery or hints.
+            if ("copilot".equalsIgnoreCase(session.runState().clientChannel())) {
+                session.runState().setInteractionMode(AgentInteractionMode.EXECUTE);
+                session.runState().resetPlan();
+                session.runState().unlockMutationsForTurn();
+            }
             final boolean askMode = profile != AgentProfile.OPERATOR
-                    && session.runState().interactionMode() == AgentInteractionMode.ASK;
+                    && session.runState().interactionMode() == AgentInteractionMode.ASK
+                    && !"copilot".equalsIgnoreCase(session.runState().clientChannel());
+            final boolean copilotChannel = "copilot".equalsIgnoreCase(session.runState().clientChannel());
             final String turnId = UUID.randomUUID().toString();
             session.runState().setPlanDepth(AgentPlanDepth.resolve(
                     llmUserText,
@@ -406,8 +414,7 @@ public class TreeFirstAgentService {
                     Map<String, Object> candidateResult = agentAction.result() != null
                             ? new LinkedHashMap<>(agentAction.result())
                             : new LinkedHashMap<>();
-                    if (askMode) {
-                        AgentPlanGuard.normalizeFinishForAskMode(candidateResult);
+                    if (copilotChannel) {
                         Optional<String> focusReject = AgentCopilotFocusGuard.rejectClarifyFinish(
                                 session.runState().clientChannel(),
                                 session.runState().clientFocus(),
@@ -429,6 +436,40 @@ public class TreeFirstAgentService {
                             messages.add(new LlmMessage("user", focusReject.get()));
                             continue;
                         }
+                    }
+                    if (askMode) {
+                        AgentPlanGuard.normalizeFinishForAskMode(candidateResult);
+                        finishSummary = agentAction.summary();
+                        finishResult = candidateResult;
+                        finalStatus = AgentTurnStatus.OK;
+                        Map<String, Object> finishStep = Map.of(
+                                "step", stepNumber,
+                                "type", "finish",
+                                "summary", finishSummary != null ? finishSummary : "",
+                                "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
+                                "result", finishResult
+                        );
+                        steps.add(finishStep);
+                        publishStep(session.sessionId(), finishStep);
+                        recordTurnAudit(
+                                session,
+                                turnId,
+                                stepNumber,
+                                "agent_finish",
+                                actor,
+                                userMessage,
+                                finalStatus,
+                                response.model(),
+                                List.of(),
+                                parsed.llmLatencyMs(),
+                                response,
+                                profile
+                        );
+                        break;
+                    }
+                    if (copilotChannel) {
+                        // Screen helper finish — no Studio plan/approval UX.
+                        AgentPlanGuard.normalizeFinishForAskMode(candidateResult);
                         finishSummary = agentAction.summary();
                         finishResult = candidateResult;
                         finalStatus = AgentTurnStatus.OK;

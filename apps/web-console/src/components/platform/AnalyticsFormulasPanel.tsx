@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsFormulaDto } from "../../api/analyticsFormulas";
 import {
@@ -6,6 +6,7 @@ import {
   useDeleteAnalyticsFormula,
 } from "../../hooks/useAnalyticsFormulas";
 import SaveAnalyticsFormulaModal from "../analytics/SaveAnalyticsFormulaModal";
+import { useSystemTabFocus } from "../../hooks/useSystemTabFocus";
 
 export default function AnalyticsFormulasPanel() {
   const { t } = useTranslation(["system", "common", "inspector"]);
@@ -14,6 +15,34 @@ export default function AnalyticsFormulasPanel() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<AnalyticsFormulaDto | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const focusDetail = useMemo(
+    () => ({
+      formulaCount: formulasQuery.data?.length ?? 0,
+      formulas: (formulasQuery.data ?? []).slice(0, 20).map((formula) => ({
+        id: formula.id,
+        kind: formula.kind,
+        displayName: formula.displayName,
+        expression:
+          typeof formula.expression === "string" && formula.expression.length > 160
+            ? `${formula.expression.slice(0, 160)}…`
+            : formula.expression,
+      })),
+      editorOpen,
+      editingFormulaId: editing?.id ?? null,
+      editingExpression: editing?.expression?.slice(0, 400) ?? null,
+      screenHint:
+        "Analytics formulas catalog — help author CEL formulas, clone/adapt expressions, suggest kind/scope",
+      helpIntents: ["draftFormula", "explainFormula", "adaptExpression"],
+    }),
+    [formulasQuery.data, editorOpen, editing]
+  );
+  useSystemTabFocus("system-formulas", "formulas", focusDetail, {
+    priority: editorOpen ? 85 : 65,
+    screenTitle: editorOpen
+      ? `System › Formulas › ${editing?.id ?? "new"}`
+      : "System › Analytics formulas",
+  });
 
   const openCreate = () => {
     setEditing(null);

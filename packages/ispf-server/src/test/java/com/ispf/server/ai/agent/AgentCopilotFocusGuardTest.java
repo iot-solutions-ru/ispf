@@ -52,6 +52,26 @@ class AgentCopilotFocusGuardTest {
     }
 
     @Test
+    void rejectsDescribeScreenWhenSystemSettingsFocused() {
+        var reject = AgentCopilotFocusGuard.rejectClarifyFinish(
+                "copilot",
+                Map.of(
+                        "surface", "system",
+                        "detail", Map.of(
+                                "screenTitle", "System › Settings",
+                                "systemTab", "settings",
+                                "settingsTab", "integrations",
+                                "visibleSettingIds", List.of("redis.enabled", "ai.enabled")
+                        )
+                ),
+                "Чтобы объяснить экран, опишите его или скопируйте содержимое с UI."
+        );
+        assertThat(reject).isPresent();
+        assertThat(reject.get()).contains("integrations");
+        assertThat(reject.get()).contains("System › Settings");
+    }
+
+    @Test
     void allowsFinishThatMentionsTheExpression() {
         var reject = AgentCopilotFocusGuard.rejectClarifyFinish(
                 "copilot",
@@ -62,6 +82,21 @@ class AgentCopilotFocusGuardTest {
                 "Выражение `self.intValue.value + self.floatValue.value` складывает int и float."
         );
         assertThat(reject).isEmpty();
+    }
+
+    @Test
+    void rejectsStudioModeAdvice() {
+        var reject = AgentCopilotFocusGuard.rejectClarifyFinish(
+                "copilot",
+                Map.of(
+                        "surface", "mimic",
+                        "objectPath", "root.platform.mimics.test",
+                        "detail", Map.of("screenTitle", "SCADA Mimic test", "elementCount", 0)
+                ),
+                "Для редактирования нужно переключиться в режим Execute — в Ask-режиме можно только читать."
+        );
+        assertThat(reject).isPresent();
+        assertThat(reject.get()).contains("Ask/Plan/Execute");
     }
 
     @Test

@@ -95,6 +95,8 @@ const SURFACE_PRIORITY: Partial<Record<AdminFocusSurface, number>> = {
   properties: 40,
   binding: 45,
   alert: 40,
+  system: 55,
+  "ai-studio": 60,
   dashboard: 30,
   report: 30,
   workflow: 30,
@@ -104,8 +106,6 @@ const SURFACE_PRIORITY: Partial<Record<AdminFocusSurface, number>> = {
   application: 30,
   "data-source": 30,
   migration: 30,
-  "ai-studio": 20,
-  system: 20,
   explorer: 10,
   other: 5,
 };
@@ -150,6 +150,21 @@ export function focusLayerLabel(focus: AdminClientFocus): string {
     if (tab) {
       return `${focus.surface}/${tab}`;
     }
+  }
+  if (focus.surface === "system") {
+    const settingsTab = typeof detail.settingsTab === "string" ? detail.settingsTab : "";
+    const systemTab = typeof detail.systemTab === "string" ? detail.systemTab : "";
+    if (settingsTab) {
+      return `system/settings/${settingsTab}`;
+    }
+    if (systemTab) {
+      return `system/${systemTab}`;
+    }
+    return "system";
+  }
+  if (focus.surface === "ai-studio") {
+    const studioTab = typeof detail.studioTab === "string" ? detail.studioTab : "";
+    return studioTab ? `ai-studio/${studioTab}` : "ai-studio";
   }
   const path = focus.objectPath?.trim();
   if (path) {
@@ -343,6 +358,9 @@ export function formatAdminFocusChip(
       if (step.surface === "binding") {
         const leaf = step.objectPath?.split(".").pop() ?? "object";
         return `${leaf}/computations`;
+      }
+      if (step.surface === "system" || step.surface === "ai-studio") {
+        return step.label;
       }
       if (step.objectPath) {
         const leaf = step.objectPath.split(".").pop() ?? step.objectPath;

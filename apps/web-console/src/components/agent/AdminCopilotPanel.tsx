@@ -46,6 +46,53 @@ function enrichMessageWithFocus(text: string, focus: AdminClientFocus | null): s
       .map((rule) => `- ${String(rule.id ?? "?")} → ${String(rule.target ?? "")} :: ${String(rule.expression ?? "")}`);
     parts.push(`Правила на экране:\n${lines.join("\n")}`);
   }
+  if (focus.surface === "system" || focus.surface === "ai-studio") {
+    const title = typeof detail.screenTitle === "string" ? detail.screenTitle : focus.surface;
+    const systemTab = typeof detail.systemTab === "string" ? detail.systemTab : "";
+    const settingsTab = typeof detail.settingsTab === "string" ? detail.settingsTab : "";
+    const studioTab = typeof detail.studioTab === "string" ? detail.studioTab : "";
+    const hint = typeof detail.screenHint === "string" ? detail.screenHint : "";
+    const ids = Array.isArray(detail.visibleSettingIds)
+      ? (detail.visibleSettingIds as unknown[]).slice(0, 12).map(String)
+      : [];
+    const samples = Array.isArray(detail.sampleEntries)
+      ? (detail.sampleEntries as Array<Record<string, unknown>>).slice(0, 4)
+      : [];
+    const screenLines = [
+      `Экран UI focus: ${title}`,
+      systemTab ? `Вкладка Система: ${systemTab}` : "",
+      settingsTab ? `Подраздел настроек: ${settingsTab}` : "",
+      studioTab ? `Вкладка AI Studio: ${studioTab}` : "",
+      hint ? `Описание: ${hint}` : "",
+      ids.length > 0 ? `Видимые настройки: ${ids.join(", ")}` : "",
+      samples.length > 0
+        ? `Примеры строк:\n${samples
+            .map((row) => `- ${JSON.stringify(row)}`)
+            .join("\n")}`
+        : "",
+    ].filter(Boolean);
+    if (screenLines.length > 0 && !trimmed.includes(String(title).slice(0, 12))) {
+      parts.push(screenLines.join("\n"));
+    }
+  }
+  if (focus.surface === "dashboard") {
+    const widgetType = typeof detail.widgetType === "string" ? detail.widgetType : "";
+    const widgetId = typeof detail.widgetId === "string" ? detail.widgetId : "";
+    const dashPath = focus.objectPath?.trim() ?? "";
+    const dashLines = [
+      dashPath ? `Dashboard: \`${dashPath}\`` : "",
+      widgetId ? `Выбранный виджет: ${widgetId} (${widgetType})` : "",
+      typeof detail.dataBinding === "string" ? `dataBinding: ${detail.dataBinding}` : "",
+      typeof detail.analyticsBindingExpression === "string"
+        ? `analyticsBindingExpression:\n\`\`\`\n${detail.analyticsBindingExpression}\n\`\`\``
+        : "",
+      typeof detail.fieldsJson === "string" ? `fieldsJson (фрагмент): ${detail.fieldsJson}` : "",
+      typeof detail.screenHint === "string" ? detail.screenHint : "",
+    ].filter(Boolean);
+    if (dashLines.length > 0) {
+      parts.push(dashLines.join("\n"));
+    }
+  }
   return parts.join("\n\n");
 }
 
@@ -69,6 +116,24 @@ function suggestionKeysForFocus(focus: AdminClientFocus | null): string[] {
         "copilot.suggest.explainComputations",
         "copilot.suggest.bindings",
         "copilot.suggest.systemLookup",
+      ];
+    case "system":
+      return [
+        "copilot.suggest.explainScreen",
+        "copilot.suggest.draftFromSamples",
+        "copilot.suggest.systemLookup",
+      ];
+    case "ai-studio":
+      return [
+        "copilot.suggest.explainStudio",
+        "copilot.suggest.systemLookup",
+        "copilot.suggest.explain",
+      ];
+    case "dashboard":
+      return [
+        "copilot.suggest.configureWidget",
+        "copilot.suggest.addWidget",
+        "copilot.suggest.draftExpression",
       ];
     case "properties":
       return [

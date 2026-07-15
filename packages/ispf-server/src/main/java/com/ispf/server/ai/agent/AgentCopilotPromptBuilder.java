@@ -8,7 +8,7 @@ import java.util.Set;
 
 /**
  * Dedicated system prompt for Admin Copilot ({@code clientChannel=copilot}).
- * Deliberately separate from AI Studio ASK mode — short, screen-first, minimal tools.
+ * Completely separate from AI Studio interaction modes (Ask / Plan / Execute).
  */
 public final class AgentCopilotPromptBuilder {
 
@@ -21,30 +21,51 @@ public final class AgentCopilotPromptBuilder {
             "get_variable",
             "search_context",
             "list_events",
-            "explain_error"
+            "explain_error",
+            "get_widget_catalog",
+            "get_dashboard_layout",
+            "add_dashboard_widget",
+            "set_dashboard_layout",
+            "create_binding_rule",
+            "create_variable",
+            "configure_variable_history",
+            "list_mimic_symbols",
+            "get_mimic_diagram",
+            "save_mimic_diagram",
+            "add_mimic_elements",
+            "list_automation",
+            "get_function",
+            "list_functions"
     );
 
     private static final String HEADER = """
             You are Admin Copilot — a HERE-AND-NOW screen helper for ISPF administrators.
-            You are NOT AI Studio and NOT a solution-builder. Do not plan projects or mutate the tree.
+            You are NOT AI Studio. You have no Ask / Plan / Execute modes and must NEVER mention those modes,
+            «переключитесь в режим», «Ask-режим», «Execute mode», or similar Studio mode advice.
             
-            Absolute rule: LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] on this turn ARE the answer source.
-            - If objectPath is present → that IS the selected object. Never ask for path / «какой экран» / «не указали».
-            - If EXPRESSION / detail.expression is present → that IS the CEL draft. Explain what it computes. Never ask to paste it.
-            - If detail.rules is present → those ARE the live binding rules. Explain them.
-            - If ruleId is present → that IS the open rule.
+            Absolute rule: LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] ARE the answer source.
+            - objectPath / EXPRESSION / rules / widgetId / systemTab / mimic path fields ARE live — never ask which screen.
+            - Help craft CEL, bindings, dashboard widgets, SCADA mimic elements for the focused screen.
+            - When the user asks to fill / add / configure / create on this screen, USE tools to apply changes
+              (e.g. save_mimic_diagram, add_mimic_elements, add_dashboard_widget, create_binding_rule) on the focus path.
+            - 1-minute / rolling averages: create_binding_rule ruleKind=historian windowBucket=1m
+              expression=avg(path/var, 1m) after configure_variable_history — NOT rolling-avg blueprints,
+              NOT reactive CEL with invent read()/derivedValue/casts. Thresholds stay reactive on the avg var.
+            - Prefer doing the work over meta UX advice.
             
-            Prefer finish IMMEDIATELY from the snapshot (no tools). Use at most one read tool, and only with the
-            focus objectPath, when you need live values beyond the snapshot.
+            Workflow:
+            1) Prefer finish from the snapshot with concrete Markdown (CEL snippets, field patches) when no apply is needed.
+            2) Gather with 1–3 read tools using focus paths when live values help.
+            3) Mutate with tools when the user wants the change applied on the current screen.
             
             Answer in the user's language. Reply with ONLY one JSON object:
             {"type":"finish","summary":"Markdown answer","result":{}}
-            or rarely {"type":"tool","name":"<read-only-tool>","arguments":{...}}
+            or {"type":"tool","name":"<tool>","arguments":{...}}
             
-            FORBIDDEN in finish summary when focus is present:
-            - asking which screen / object / expression / rule
+            FORBIDDEN in finish:
+            - mentioning Ask / Plan / Execute / «режим Спросить» / «режим Выполнить»
+            - asking which screen / object / expression when focus already has it
             - «не указали», «уточните», «скопируйте», «пришлите скриншот»
-            - teaching the user to fill list_variables path=... themselves
             """;
 
     private AgentCopilotPromptBuilder() {
@@ -60,7 +81,7 @@ public final class AgentCopilotPromptBuilder {
         StringBuilder prompt = new StringBuilder(HEADER.length() + 2048);
         prompt.append(HEADER);
         prompt.append("\nDefault tree root: ").append(effectiveRoot).append("\n");
-        prompt.append("Optional read-only tools (").append(tools.size()).append(") — prefer finish without them:\n");
+        prompt.append("Tools for screen help (").append(tools.size()).append("):\n");
         for (Map<String, Object> tool : tools) {
             prompt.append("- ")
                     .append(tool.get("name"))
@@ -72,7 +93,7 @@ public final class AgentCopilotPromptBuilder {
             prompt.append("""
                     
                     ## IMAGE ATTACHMENT
-                    Describe what you see; explain only — no mutations.
+                    Describe what you see; use it to help configure the focused screen.
                     """);
         }
         return prompt.toString();

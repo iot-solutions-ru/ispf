@@ -26,8 +26,9 @@ public final class AgentClientFocusPromptSection {
             case "copilot" -> """
                     ## Client channel: Admin Copilot (dedicated screen helper — not AI Studio)
                     Answer ONLY about the screen in LIVE UI SNAPSHOT / User UI focus / [UI CONTEXT].
-                    objectPath / EXPRESSION / rules / ruleId in focus ARE ground truth — never ask which screen/path/expression.
-                    Finish from the snapshot; do not invent tool-how-to scripts for the user.
+                    objectPath / EXPRESSION / rules / ruleId / widget / mimic fields ARE ground truth.
+                    Never ask which screen/path/expression. Never mention Ask / Plan / Execute modes.
+                    When asked to fill or configure the open screen, apply with tools — do not tell the user to switch modes.
                     """;
             case "studio" -> """
                     ## Client channel: AI Studio
@@ -99,10 +100,14 @@ public final class AgentClientFocusPromptSection {
                             + "detail.availableTabs lists what they can open. Explain that tab for objectPath.\n"
             );
             case "dashboard" -> sb.append(
-                    "Guidance: help with dashboard widgets, layouts, bindings, and operator UI for this dashboard.\n"
+                    "Guidance: dashboard editor/view is focused. detail.widgetId/widgetType/dataBinding/fields "
+                            + "describe the SELECTED widget when present. Help configure fields, bindings, "
+                            + "or draft add_dashboard_widget patches. Never ask which dashboard — use objectPath.\n"
             );
             case "mimic" -> sb.append(
-                    "Guidance: help with SCADA mimics, symbols, animations, and tag bindings.\n"
+                    "Guidance: SCADA mimic editor is open for objectPath. detail.elementCount/connectionCount describe "
+                            + "the live diagram. Help list_mimic_symbols and save_mimic_diagram / add_mimic_elements. "
+                            + "Never mention Ask/Plan/Execute — apply when the user asks to fill the mimic.\n"
             );
             case "workflow" -> sb.append(
                     "Guidance: help with BPMN workflows, forms, and process automation.\n"
@@ -112,6 +117,16 @@ public final class AgentClientFocusPromptSection {
             );
             case "alert" -> sb.append(
                     "Guidance: help with alert / alarm configuration for this object.\n"
+            );
+            case "system" -> sb.append(
+                    "Guidance: System console is open. detail.systemTab / settingsTab / screenTitle / "
+                            + "visibleSettingIds describe THIS screen. Explain what the admin can do here "
+                            + "(Refresh/Save, toggles, sections). Never ask which screen they mean.\n"
+            );
+            case "ai-studio" -> sb.append(
+                    "Guidance: AI Studio (build workspace) is open — separate from Admin Copilot. "
+                            + "detail.studioTab is agent|bundle|status|prefs. Explain that Studio tab "
+                            + "and how it differs from Copilot screen help. Never ask which screen.\n"
             );
             default -> {
             }
@@ -146,9 +161,34 @@ public final class AgentClientFocusPromptSection {
         }
         Object detail = clientFocus.get("detail");
         if (detail instanceof Map<?, ?> detailMap) {
-            String inspectorTab = stringVal(detailMap.get("inspectorTab"));
-            if (!inspectorTab.isBlank()) {
-                sb.append("inspectorTab=").append(inspectorTab).append('\n');
+            for (String key : new String[]{
+                    "screenTitle", "systemTab", "settingsTab", "settingsTabLabel",
+                    "studioTab", "screenHint", "inspectorTab"
+            }) {
+                String value = stringVal(detailMap.get(key));
+                if (!value.isBlank()) {
+                    sb.append(key).append("=").append(value).append('\n');
+                }
+            }
+            Object visibleSettingIds = detailMap.get("visibleSettingIds");
+            if (visibleSettingIds instanceof List<?> ids && !ids.isEmpty()) {
+                sb.append("visibleSettingIds=");
+                int limit = Math.min(ids.size(), 16);
+                for (int i = 0; i < limit; i++) {
+                    if (i > 0) {
+                        sb.append(',');
+                    }
+                    sb.append(stringVal(ids.get(i)));
+                }
+                sb.append('\n');
+            }
+            Object availableSystemTabs = detailMap.get("availableSystemTabs");
+            if (availableSystemTabs instanceof List<?> tabs && !tabs.isEmpty()) {
+                sb.append("availableSystemTabs=").append(tabs).append('\n');
+            }
+            Object availableStudioTabs = detailMap.get("availableStudioTabs");
+            if (availableStudioTabs instanceof List<?> tabs && !tabs.isEmpty()) {
+                sb.append("availableStudioTabs=").append(tabs).append('\n');
             }
             String ruleId = stringVal(detailMap.get("ruleId"));
             if (ruleId.isBlank()) {
@@ -189,7 +229,7 @@ public final class AgentClientFocusPromptSection {
                 sb.append('\n');
             }
         }
-        sb.append("FORBIDDEN: asking which object/rule/expression when objectPath / rules / EXPRESSION are above.");
+        sb.append("FORBIDDEN: asking which object/rule/expression/screen when the fields above are present.");
         return sb.toString();
     }
 
@@ -241,6 +281,11 @@ public final class AgentClientFocusPromptSection {
             appendDetailLine(sb, "ruleId", ruleId);
             appendDetailLine(sb, "inspectorTab", detailMap.get("inspectorTab"));
             appendDetailLine(sb, "editorTitle", detailMap.get("editorTitle"));
+            appendDetailLine(sb, "screenTitle", detailMap.get("screenTitle"));
+            appendDetailLine(sb, "systemTab", detailMap.get("systemTab"));
+            appendDetailLine(sb, "settingsTab", detailMap.get("settingsTab"));
+            appendDetailLine(sb, "studioTab", detailMap.get("studioTab"));
+            appendDetailLine(sb, "screenHint", detailMap.get("screenHint"));
             Object expression = detailMap.get("expression");
             if (expression != null && !stringVal(expression).isBlank()) {
                 String expr = stringVal(expression);

@@ -48,7 +48,17 @@ public final class AgentCopilotFocusGuard {
         String expression = stringVal(detail.get("expression"));
         String ruleId = stringVal(detail.get("ruleId"));
         boolean hasRules = detail.get("rules") instanceof List<?> list && !list.isEmpty();
-        boolean hasFocusSubject = !objectPath.isBlank() || !expression.isBlank() || hasRules || !ruleId.isBlank();
+        boolean hasScreenMeta = !stringVal(detail.get("screenTitle")).isBlank()
+                || !stringVal(detail.get("systemTab")).isBlank()
+                || !stringVal(detail.get("settingsTab")).isBlank()
+                || !stringVal(detail.get("studioTab")).isBlank()
+                || "system".equalsIgnoreCase(surface)
+                || "ai-studio".equalsIgnoreCase(surface);
+        boolean hasFocusSubject = !objectPath.isBlank()
+                || !expression.isBlank()
+                || hasRules
+                || !ruleId.isBlank()
+                || hasScreenMeta;
         if (!hasFocusSubject) {
             return Optional.empty();
         }
@@ -64,6 +74,9 @@ public final class AgentCopilotFocusGuard {
                 "какой экран",
                 "какое cel",
                 "какое выражение",
+                "опишите",
+                "опишите его",
+                "скопируйте содержимое",
                 "скопируйте",
                 "пришлите",
                 "скриншот",
@@ -79,7 +92,20 @@ public final class AgentCopilotFocusGuard {
                 "root.platform.devices.*",
                 "list_variables path",
                 "list_binding_rules path",
-                "describe_variables path"
+                "describe_variables path",
+                "режим execute",
+                "режим ask",
+                "ask-режим",
+                "ask режиме",
+                "ask mode",
+                "execute mode",
+                "режим выполнить",
+                "режим спросить",
+                "режим план",
+                "переключитесь в режим",
+                "переключиться в режим",
+                "switch to execute",
+                "switch to plan"
         );
         boolean genericEditorHandbook = containsAny(
                 lower,
@@ -109,6 +135,12 @@ public final class AgentCopilotFocusGuard {
         if (!objectPath.isBlank()) {
             hint.append("objectPath=").append(objectPath).append('\n');
         }
+        for (String key : new String[]{"screenTitle", "systemTab", "settingsTab", "studioTab", "screenHint"}) {
+            String value = stringVal(detail.get(key));
+            if (!value.isBlank()) {
+                hint.append(key).append("=").append(value).append('\n');
+            }
+        }
         if (!ruleId.isBlank()) {
             hint.append("ruleId=").append(ruleId).append('\n');
         }
@@ -134,8 +166,9 @@ public final class AgentCopilotFocusGuard {
             }
         }
         hint.append(
-                "Finish with Markdown that explains the focused screen/rule/expression. "
-                        + "Do not ask for path, expression text, or screenshot."
+                "Finish with Markdown that helps on the focused screen. "
+                        + "Do NOT mention Ask/Plan/Execute modes. "
+                        + "If the user wants changes applied, use tools on the focus path instead of asking them to switch modes."
         );
         return Optional.of(hint.toString());
     }
