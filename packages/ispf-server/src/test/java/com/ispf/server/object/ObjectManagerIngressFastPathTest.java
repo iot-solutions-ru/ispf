@@ -36,7 +36,7 @@ class ObjectManagerIngressFastPathTest {
     private DriverRuntimeService driverRuntimeService;
 
     @Test
-    void skipsRamUpdateForHistorianOnlyTelemetryOnlyIngress() {
+    void historianOnlyTelemetryStillUpdatesLiveRamValue() {
         driverRuntimeService.stop(DEVICE);
         objectManager.setVariableValue(
                 DEVICE,
@@ -63,11 +63,11 @@ class ObjectManagerIngressFastPathTest {
         );
 
         var variable = objectManager.require(DEVICE).getVariable("temperature").orElseThrow();
-        assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo(10.0);
+        assertThat(variable.value().orElseThrow().firstRow().get("raw")).isEqualTo("99.9");
     }
 
     @Test
-    void skipsRamUpdateWhenVariableOverrideIsTelemetryOnly() {
+    void historianOnlyVariableOverrideStillUpdatesLiveRamValue() {
         driverRuntimeService.stop(DEVICE);
         objectManager.setVariableValue(
                 DEVICE,
@@ -95,6 +95,6 @@ class ObjectManagerIngressFastPathTest {
         );
 
         var variable = objectManager.require(DEVICE).getVariable("temperature").orElseThrow();
-        assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo(10.0);
+        assertThat(variable.value().orElseThrow().firstRow().get("raw")).isEqualTo("99.9");
     }
 }

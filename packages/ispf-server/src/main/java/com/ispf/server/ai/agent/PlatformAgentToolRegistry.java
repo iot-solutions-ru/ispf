@@ -241,7 +241,8 @@ public class PlatformAgentToolRegistry {
                 objectMapper,
                 aiToolRegistry,
                 bundleDeployService,
-                operatorAppUiService
+                operatorAppUiService,
+                contextPackSearchService
         ));
         tools.addAll(List.of(
                 listObjectsTool(objectManager, objectAccessService, tenantScopeService, objectUiIconService),

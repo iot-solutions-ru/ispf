@@ -30,6 +30,34 @@ public final class AgentRunState {
     /** Stays true for the rest of the agent turn after plan approval (survives {@link #resetPlan()}). */
     private volatile boolean mutationsUnlockedForTurn;
     private volatile String planDepth = AgentPlanDepth.LITE.name();
+    /** Optional UI focus for the current turn (not persisted across turns). */
+    private volatile Map<String, Object> clientFocus = Map.of();
+    /** Optional UI channel: studio (build) or copilot (help with focused screen). */
+    private volatile String clientChannel = "";
+
+    public Map<String, Object> clientFocus() {
+        return clientFocus == null ? Map.of() : clientFocus;
+    }
+
+    public void setClientFocus(Map<String, Object> focus) {
+        this.clientFocus = focus == null || focus.isEmpty() ? Map.of() : Map.copyOf(focus);
+    }
+
+    public void clearClientFocus() {
+        this.clientFocus = Map.of();
+    }
+
+    public String clientChannel() {
+        return clientChannel == null ? "" : clientChannel;
+    }
+
+    public void setClientChannel(String channel) {
+        this.clientChannel = channel == null ? "" : channel.trim().toLowerCase();
+    }
+
+    public void clearClientChannel() {
+        this.clientChannel = "";
+    }
 
     public AgentPlanDepth planDepth() {
         try {
@@ -127,6 +155,11 @@ public final class AgentRunState {
 
     public void clearMutationsUnlockedForTurn() {
         this.mutationsUnlockedForTurn = false;
+    }
+
+    /** EXECUTE mode / explicit consent unlock for the remainder of the current turn. */
+    public void unlockMutationsForTurn() {
+        this.mutationsUnlockedForTurn = true;
     }
 
     public boolean isPlanningActive() {

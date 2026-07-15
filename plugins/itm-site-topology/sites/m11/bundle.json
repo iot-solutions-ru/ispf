@@ -1,0 +1,37 @@
+{
+  "version": "1.0.1",
+  "displayName": "ITM topology — m11",
+  "tablePrefix": "",
+  "schemaName": "it_infra_monitoring",
+  "metadata": {
+    "packageId": "itm-plugin-topology-m11",
+    "siteId": "m11",
+    "dependsOnApp": "it-infra-monitoring",
+    "dependsOnPackages": [
+      "itm-plugin-inventory-m11"
+    ],
+    "assets": [
+      "assets/main_topology.svg"
+    ],
+    "topologyBindings": "topology-meta.json"
+  },
+  "objects": [
+    {
+      "parentPath": "root.platform.mimics",
+      "name": "itm-m11-dcn",
+      "type": "MIMIC",
+      "displayName": "М11 DCN topology"
+    }
+  ],
+  "operatorUi": {
+    "appId": "itm-plugin-topology-m11",
+    "title": "ITM topology — m11",
+    "defaultDashboard": "root.platform.dashboards.itm-dcn",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.itm-dcn",
+        "title": "Network Topology Map"
+      }
+    ]
+  }
+}

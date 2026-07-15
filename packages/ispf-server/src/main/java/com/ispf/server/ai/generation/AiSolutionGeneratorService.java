@@ -1,47 +1,282 @@
 package com.ispf.server.ai.generation;
 
+import com.ispf.ai.LlmMessage;
+import com.ispf.ai.LlmRequest;
+import com.ispf.ai.LlmResponse;
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
+import com.ispf.server.ai.llm.LlmProviderRegistry;
+import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.application.bundle.BundleManifestJsonSupport;
+import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.server.config.AiProperties;
+import com.ispf.server.object.ObjectManager;
+import com.ispf.server.operator.OperatorAppUiService;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * BL-179/BL-180: keyword-driven blueprint draft from a natural-language prompt (no LLM).
+ * BL-180: plant description → blueprint draft and optional live apply (tree + dashboards + alerts).
+ * Keyword routing remains available as {@code mode=draft} fallback when LLM is offline.
+ * Live apply ({@code apply=true}) requires a configured LLM and returns {@code mode=live}.
  */
 @Service
 public class AiSolutionGeneratorService {
 
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9][a-z0-9-]*$");
+    private static final Pattern JSON_OBJECT = Pattern.compile("\\{[\\s\\S]*}");
 
+    private static final List<Map<String, String>> DOMAIN_CATALOG = List.of(
+            Map.of("domain", "mes", "appId", "mes-reference", "hint", "manufacturing MES OEE work orders"),
+            Map.of("domain", "oil-gas", "appId", "simulator", "hint", "oil gas tank farm pump station"),
+            Map.of("domain", "water", "appId", "simulator", "hint", "water wastewater treatment"),
+            Map.of("domain", "energy", "appId", "mini-tec", "hint", "thermal power generation turbine"),
+            Map.of("domain", "hvac", "appId", "building-hvac", "hint", "HVAC AHU comfort zones"),
+            Map.of("domain", "building", "appId", "building-hvac", "hint", "smart building BMS lighting"),
+            Map.of("domain", "warehouse", "appId", "warehouse", "hint", "warehouse logistics cold chain"),
+            Map.of("domain", "lab", "appId", "lab-training", "hint", "lab training simulator"),
+            Map.of("domain", "pipeline", "appId", "simulator", "hint", "pipeline midstream valve"),
+            Map.of("domain", "scada", "appId", "simulator", "hint", "SCADA mimic historian pumps")
+    );
+
+    private final LlmProviderRegistry llmProviderRegistry;
+    private final AiProperties aiProperties;
+    private final ObjectMapper objectMapper;
+    private final ApplicationBundleDeployService bundleDeployService;
+    private final OperatorAppUiService operatorAppUiService;
+    private final ObjectManager objectManager;
+    private final AutomationTreeService automationTreeService;
+
+    public AiSolutionGeneratorService(
+            LlmProviderRegistry llmProviderRegistry,
+            AiProperties aiProperties,
+            ObjectMapper objectMapper,
+            ApplicationBundleDeployService bundleDeployService,
+            OperatorAppUiService operatorAppUiService,
+            ObjectManager objectManager,
+            AutomationTreeService automationTreeService
+    ) {
+        this.llmProviderRegistry = llmProviderRegistry;
+        this.aiProperties = aiProperties;
+        this.objectMapper = objectMapper;
+        this.bundleDeployService = bundleDeployService;
+        this.operatorAppUiService = operatorAppUiService;
+        this.objectManager = objectManager;
+        this.automationTreeService = automationTreeService;
+    }
+
+    /** Draft only (keyword fallback when LLM unavailable). */
     public Map<String, Object> generate(String prompt) {
+        return generate(prompt, false, "system");
+    }
+
+    /**
+     * @param apply when true, deploy tree/dashboards/operator UI and configure an alert (requires LLM)
+     */
+    public Map<String, Object> generate(String prompt, boolean apply, String actor) {
         if (prompt == null || prompt.isBlank()) {
             throw new IllegalArgumentException("prompt is required");
         }
-        String domain = detectDomain(prompt);
-        DomainTemplate template = templateFor(domain);
-        String slug = slugFromPrompt(prompt, domain);
-        if (!ID_PATTERN.matcher(slug).matches()) {
-            slug = domain + "-draft";
+        if (apply && !llmProviderRegistry.isGenerationAvailable()) {
+            throw new IllegalStateException(
+                    "Live solution apply requires a configured LLM. Set ispf.ai.enabled + provider/base-url/model/api-key."
+            );
         }
 
-        Map<String, Object> bundleDraft = buildBundleDraft(slug, domain, template);
-        Map<String, Object> blueprintDraft = buildBlueprintDraft(prompt, domain, template, slug, bundleDraft);
+        DomainSelection selection = selectDomain(prompt, apply);
+        DomainTemplate template = templateFor(selection.domain());
+        String slug = slugFromPrompt(prompt, selection.domain());
+        if (apply) {
+            slug = uniqueApplySlug(slug, selection.domain());
+        }
+        if (!ID_PATTERN.matcher(slug).matches()) {
+            slug = selection.domain() + "-draft";
+        }
+
+        Map<String, Object> bundleDraft = buildBundleDraft(slug, selection.domain(), template);
+        Map<String, Object> blueprintDraft = buildBlueprintDraft(prompt, selection.domain(), template, slug, bundleDraft);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
-        result.put("mode", "stub");
-        result.put("domain", domain);
+        result.put("mode", selection.mode());
+        result.put("domain", selection.domain());
+        result.put("domainSelection", selection.source());
         result.put("bundleDraft", bundleDraft);
         result.put("blueprintDraft", blueprintDraft);
         result.put("playbook", "AgentSolutionGeneratorPlaybook");
+        if (selection.llmPreview() != null) {
+            result.put("llmPreview", selection.llmPreview());
+        }
+
+        if (apply) {
+            Map<String, Object> applied = applyLive(slug, selection.domain(), template, bundleDraft, actor);
+            result.put("mode", "live");
+            result.putAll(applied);
+        }
         return result;
     }
 
-    private static String detectDomain(String prompt) {
+    private Map<String, Object> applyLive(
+            String slug,
+            String domain,
+            DomainTemplate template,
+            Map<String, Object> bundleDraft,
+            String actor
+    ) {
+        String hubPath = "root.platform.devices." + slug + "-hub";
+        var parsed = BundleManifestJsonSupport.parse(objectMapper, bundleDraft);
+        Map<String, Object> deployResult = bundleDeployService.deploy(slug, parsed);
+
+        ensureMonitorVariable(hubPath);
+        String alertName = slug + "-monitor";
+        String alertPath = AutomationTreeService.rulePathForName(alertName);
+        if (objectManager.tree().findByPath(alertPath).isEmpty()) {
+            automationTreeService.createAlertRule(
+                    alertName,
+                    hubPath,
+                    "status",
+                    "self.status[\"value\"] > 90",
+                    "solutionGeneratedAlarm",
+                    "status",
+                    true,
+                    true,
+                    0,
+                    false,
+                    "HIGH",
+                    false,
+                    null,
+                    null,
+                    null
+            );
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> operatorUi = (Map<String, Object>) bundleDraft.get("operatorUi");
+        String title = String.valueOf(operatorUi.getOrDefault("title", template.title()));
+        String defaultDashboard = String.valueOf(operatorUi.get("defaultDashboard"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> dashboards = ((List<Map<String, Object>>) operatorUi.get("dashboards")).stream()
+                .map(row -> Map.of(
+                        "path", String.valueOf(row.get("path")),
+                        "title", String.valueOf(row.getOrDefault("title", title))
+                ))
+                .toList();
+        try {
+            operatorAppUiService.saveUi(slug, title, defaultDashboard, dashboards, null, null);
+        } catch (Exception ex) {
+            throw new IllegalStateException("operator UI save failed: " + ex.getMessage(), ex);
+        }
+
+        Map<String, Object> applied = new LinkedHashMap<>();
+        applied.put("appId", slug);
+        applied.put("hubPath", hubPath);
+        applied.put("alertPath", alertPath);
+        applied.put("dashboardPath", defaultDashboard);
+        applied.put("operatorUrlHint", "?mode=operator&app=" + slug);
+        applied.put("deploy", deployResult);
+        applied.put("actor", actor != null ? actor : "system");
+        applied.put("domain", domain);
+        return applied;
+    }
+
+    private void ensureMonitorVariable(String hubPath) {
+        if (objectManager.tree().findByPath(hubPath).isEmpty()) {
+            throw new IllegalStateException("hub device missing after deploy: " + hubPath);
+        }
+        if (objectManager.require(hubPath).getVariable("status").isPresent()) {
+            return;
+        }
+        DataSchema schema = DataSchema.builder("status").field("value", FieldType.DOUBLE).build();
+        objectManager.createVariable(
+                hubPath,
+                "status",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", 0.0)),
+                false,
+                null
+        );
+    }
+
+    private DomainSelection selectDomain(String prompt, boolean requireLlm) {
+        if (llmProviderRegistry.isGenerationAvailable()) {
+            try {
+                DomainSelection llm = selectDomainViaLlm(prompt);
+                if (llm != null) {
+                    return llm;
+                }
+            } catch (Exception ex) {
+                if (requireLlm) {
+                    throw new IllegalStateException("LLM domain selection failed: " + ex.getMessage(), ex);
+                }
+            }
+        }
+        if (requireLlm) {
+            throw new IllegalStateException("LLM domain selection required for live apply");
+        }
+        return new DomainSelection(detectDomain(prompt), "draft", "keyword", null);
+    }
+
+    private DomainSelection selectDomainViaLlm(String prompt) throws Exception {
+        String catalogJson = objectMapper.writeValueAsString(DOMAIN_CATALOG);
+        String system = """
+                You classify industrial plant descriptions for ISPF solution generator.
+                Reply with ONLY a JSON object: {"domain":"<id>","appId":"<id>"}.
+                Pick the best matching entry from this catalog:
+                %s
+                """.formatted(catalogJson);
+        LlmResponse response = llmProviderRegistry.complete(new LlmRequest(
+                aiProperties.getModel(),
+                List.of(
+                        new LlmMessage("system", system),
+                        new LlmMessage("user", prompt)
+                ),
+                Math.min(256, aiProperties.getMaxTokens()),
+                0.0
+        ));
+        String content = response.content() != null ? response.content().trim() : "";
+        Matcher matcher = JSON_OBJECT.matcher(content);
+        if (!matcher.find()) {
+            return null;
+        }
+        JsonNode node = objectMapper.readTree(matcher.group());
+        String domain = textOrEmpty(node, "domain").toLowerCase(Locale.ROOT);
+        if (domain.isBlank() || DOMAIN_CATALOG.stream().noneMatch(row -> domain.equals(row.get("domain")))) {
+            return null;
+        }
+        return new DomainSelection(domain, "llm", "llm", truncate(content, 500));
+    }
+
+    private static String textOrEmpty(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        return value == null || value.isNull() ? "" : value.asText("").trim();
+    }
+
+    private static String uniqueApplySlug(String base, String domain) {
+        String prefix = base;
+        if (prefix.length() > 36) {
+            prefix = prefix.substring(0, 36).replaceAll("-+$", "");
+        }
+        String suffix = Long.toString(System.currentTimeMillis() % 1_000_000, 36);
+        String combined = prefix + "-" + suffix;
+        if (!ID_PATTERN.matcher(combined).matches()) {
+            return domain + "-live-" + suffix;
+        }
+        return combined;
+    }
+
+    static String detectDomain(String prompt) {
         String lower = prompt.toLowerCase(Locale.ROOT);
         if (containsKeyword(lower, "mes", "dispatch", "oee", "work order", "manufacturing", "shopfloor")) {
             return "mes";
@@ -261,7 +496,7 @@ public class AiSolutionGeneratorService {
         specBrief.put("functionalRequirements", List.of(
                 functionalRequirement("FR-1", "Provision tree structure for " + template.title()),
                 functionalRequirement("FR-2", "Bind operator dashboards to live variables"),
-                functionalRequirement("FR-3", "Configure alert thresholds from spec keywords")
+                functionalRequirement("FR-3", "Configure alert thresholds from plant description")
         ));
 
         Map<String, Object> suggestedArtifacts = new LinkedHashMap<>();
@@ -287,12 +522,9 @@ public class AiSolutionGeneratorService {
         draft.put("bundleDraft", bundleDraft);
         draft.put("referenceBundle", referenceBundle);
         draft.put("nextSteps", List.of(
-                "validate_bundle on bundleDraft before import_package",
-                "create_object CUSTOM folder from specBrief.entities[0]",
-                "create_virtual_device for each DEVICE entity",
-                "set_dashboard_layout with list_variables bindings",
-                "configure_alert for threshold alarms",
-                "configure_operator_ui from bundleDraft.operatorUi"
+                "POST /api/v1/ai/solutions/generate with apply=true for live tree+dashboards+alerts",
+                "or validate_bundle on bundleDraft before import_package",
+                "configure_alert already applied on live mode hub status variable"
         ));
         return draft;
     }
@@ -306,9 +538,10 @@ public class AiSolutionGeneratorService {
         List<Map<String, Object>> objects = new ArrayList<>();
         for (Map<String, Object> entity : template.entities()) {
             if ("DEVICE".equals(entity.get("type"))) {
+                String deviceName = slug + "-" + entity.get("name");
                 objects.add(objectNode(
                         "root.platform.devices",
-                        String.valueOf(entity.get("name")),
+                        deviceName,
                         "DEVICE",
                         String.valueOf(entity.get("displayName"))
                 ));
@@ -386,7 +619,17 @@ public class AiSolutionGeneratorService {
                         "fields", List.of(
                                 Map.of("name", "error_code", "type", "STRING"),
                                 Map.of("name", "error_message", "type", "STRING"),
-                                Map.of("name", "rows", "type", "RECORD_LIST")
+                                Map.of(
+                                        "name", "rows",
+                                        "type", "RECORD_LIST",
+                                        "nestedSchema", Map.of(
+                                                "name", "row",
+                                                "fields", List.of(
+                                                        Map.of("name", "code", "type", "STRING"),
+                                                        Map.of("name", "label", "type", "STRING")
+                                                )
+                                        )
+                                )
                         )
                 )
         ));
@@ -465,6 +708,9 @@ public class AiSolutionGeneratorService {
 
     private static String truncate(String value, int maxLen) {
         return value.length() <= maxLen ? value : value.substring(0, maxLen) + "...";
+    }
+
+    private record DomainSelection(String domain, String mode, String source, String llmPreview) {
     }
 
     private record DomainTemplate(

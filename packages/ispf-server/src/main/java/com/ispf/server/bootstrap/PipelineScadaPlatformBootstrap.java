@@ -111,36 +111,15 @@ public class PipelineScadaPlatformBootstrap {
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 24)
-    public void onReady() throws Exception {
-        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
-            return;
-        }
-        BlueprintBootstrap.ensureTankFarmModels();
-        registerApplication();
-        ensureFolder();
-        for (TankSeed tank : allTanks()) {
-            ensureTank(tank);
-        }
-        ensureHub();
-        for (FormSeed form : FORMS) {
-            ensureMimic(form.mimicPath(), form.title(), form.diagramJson());
-            ensureDashboard(
-                    form.dashboardPath(),
-                    form.title(),
-                    PipelineScadaDashboardLayouts.hmiLayout(form.mimicPath(), form.title())
-            );
-        }
-        ensureMimicAlias();
-        ensureOperatorUi();
+    public void onReady() {
+        // Pipeline SCADA uses tank-farm models — marketplace / companion of tank-farm bundle.
+        // Not seeded on empty platform.
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 3)
     public void startDriversAfterBootstrap() {
-        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
-            return;
-        }
-        startDrivers();
+        // no-op — marketplace install
     }
 
     private List<TankSeed> allTanks() {

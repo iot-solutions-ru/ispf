@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ISA-88 batch and MES instance-type blueprints (BL-168).
+ * Optional ISA-88 batch and MES instance-type blueprints (BL-168).
+ * Seeded only when {@code ispf.bootstrap.mes-catalog-enabled=true}.
+ * Prefer shipping {@code batch-v1} / {@code work-order-v1} inside the {@code mes-platform} marketplace bundle.
  */
 @Component
 public class MesBlueprintBootstrap {

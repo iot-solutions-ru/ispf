@@ -34,7 +34,7 @@ public final class AgentPlanSections {
                   "tools": ["list_objects", "create_virtual_device", "list_variables"],
                   "steps": [
                     "create_object CUSTOM parent=devices name=nps — папка по specBrief.entities",
-                    "create_virtual_device profile=lab name=nps-mna-01 parent=root.platform.devices.nps",
+                    "create_virtual_device name=nps-mna-01 parent=root.platform.devices.nps",
                     "list_variables path=root.platform.devices.nps.nps-mna-01"
                   ],
                   "deliverables": ["root.platform.devices.nps.nps-mna-01", "telemetry OK"]
@@ -44,7 +44,7 @@ public final class AgentPlanSections {
                 1. ground_truth — discovery, paths, recipes, get_automation_schema
                 2. intent_scope — цель, FR mapping, naming/path policy
                 3. model_strategy — INSTANCE vs RELATIVE vs ABSOLUTE per entity
-                4. source_layer — DEVICE, drivers, virtual profiles, list_variables
+                4. source_layer — DEVICE, drivers, OOTB virtual / relative blueprints, list_variables
                 5. aggregation_layer — CUSTOM hub, create_variable, create_binding_rule
                 6. alert_layer — configure_alert, thresholds, events
                 7. correlation_layer — configure_correlator, WORKFLOW triggers (N/A if not in TZ)

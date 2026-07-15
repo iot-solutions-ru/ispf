@@ -14,15 +14,12 @@ import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 /**
- * One-shot virtual device provisioning for the tree-first agent.
+ * One-shot virtual device provisioning for the tree-first agent (OOTB, no profiles).
  */
 final class AgentVirtualDeviceTools {
 
@@ -50,11 +47,11 @@ final class AgentVirtualDeviceTools {
                         BlueprintRegistry,
                         objectMapper
                 ),
-                listVirtualProfilesTool(BlueprintRegistry)
+                describeVirtualDriverTool(BlueprintRegistry)
         );
     }
 
-    private static PlatformAgentTool listVirtualProfilesTool(BlueprintRegistry BlueprintRegistry) {
+    private static PlatformAgentTool describeVirtualDriverTool(BlueprintRegistry BlueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
@@ -63,30 +60,20 @@ final class AgentVirtualDeviceTools {
 
             @Override
             public String description() {
-                return "List virtual driver profiles with templateId and expected telemetry variables. "
-                        + "Prefer create_virtual_device over manual create_object+set_variable for simulators.";
+                return "Describe out-of-the-box virtual driver (no profiles). "
+                        + "Prefer create_virtual_device for simulators. "
+                        + "Domain plants: list_relative_blueprints + apply_relative_blueprint.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                List<Map<String, Object>> rows = new ArrayList<>();
-                for (String name : VirtualDeviceProfileCatalog.profileNames()) {
-                    VirtualDeviceProfileCatalog.resolve(name)
-                            .ifPresent(spec -> {
-                                Map<String, Object> row = VirtualDeviceProfileCatalog.profileCatalogRow(name, spec);
-                                row.put(
-                                        "templateRegistered",
-                                        BlueprintRegistry.findByName(spec.templateId()).isPresent()
-                                );
-                                rows.add(row);
-                            });
-                }
+                boolean registered = BlueprintRegistry.findByName(VirtualDeviceDefaults.TEMPLATE_ID).isPresent();
                 return Map.of(
                         "status", "OK",
                         "driverId", "virtual",
-                        "profiles", rows,
-                        "hint", "Pump/motor simulators: profile=lab (sineWave≈vibration). Flow: profile=meter. "
-                                + "Pressure+temperature: profile=unified. Always verify with list_variables."
+                        "profiles", List.of(),
+                        "defaults", VirtualDeviceDefaults.catalogRow(registered),
+                        "hint", "No profiles — one OOTB virtual device. Domain enrichment via relative blueprints."
                 );
             }
         };
@@ -110,10 +97,11 @@ final class AgentVirtualDeviceTools {
 
             @Override
             public String description() {
-                return "Create DEVICE with virtual driver profile, model template, driver config, and start driver. "
-                        + "Args: parentPath, name, displayName, profile (lab|meter|unified|demo|tank-farm-tank), "
-                        + "pollIntervalMs?, autoStart? (default true). "
-                        + "Returns path, variableCount, driverStatus. Call list_variables before finish.";
+                return "Create DEVICE with out-of-the-box virtual driver (multi-type telemetry), model "
+                        + VirtualDeviceDefaults.TEMPLATE_ID + ", start driver. "
+                        + "Args: parentPath, name, displayName, pollIntervalMs?, autoStart? (default true). "
+                        + "Ignore legacy profile arg if present. Call list_variables before finish. "
+                        + "Domain plants: apply_relative_blueprint instead of a driver profile.";
             }
 
             @Override
@@ -121,32 +109,19 @@ final class AgentVirtualDeviceTools {
                 String parentPath = stringArg(arguments, "parentPath");
                 String name = stringArg(arguments, "name");
                 String displayName = stringArg(arguments, "displayName");
-                String profile = stringArg(arguments, "profile");
-                if (parentPath.isBlank() || name.isBlank() || displayName.isBlank() || profile.isBlank()) {
+                if (parentPath.isBlank() || name.isBlank() || displayName.isBlank()) {
                     return Map.of(
                             "status", "ERROR",
-                            "error", "parentPath, name, displayName, profile are required",
-                            "availableProfiles", VirtualDeviceProfileCatalog.profileNames()
+                            "error", "parentPath, name, displayName are required"
                     );
                 }
-                Optional<VirtualDeviceProfileCatalog.ProfileSpec> specOpt =
-                        VirtualDeviceProfileCatalog.resolve(profile);
-                if (specOpt.isEmpty()) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", "Unknown profile: " + profile,
-                            "availableProfiles", VirtualDeviceProfileCatalog.profileNames()
-                    );
-                }
-                VirtualDeviceProfileCatalog.ProfileSpec spec = specOpt.get();
                 LabBlueprintBootstrap.ensureLabModels();
-                if (BlueprintRegistry.findByName(spec.templateId()).isEmpty()) {
+                if (BlueprintRegistry.findByName(VirtualDeviceDefaults.TEMPLATE_ID).isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
-                            "error", "Model not registered: " + spec.templateId()
+                            "error", "Model not registered: " + VirtualDeviceDefaults.TEMPLATE_ID
                                     + " — server bootstrap issue; contact admin",
-                            "templateId", spec.templateId(),
-                            "profile", profile
+                            "templateId", VirtualDeviceDefaults.TEMPLATE_ID
                     );
                 }
                 if (objectManager.tree().findByPath(parentPath).isEmpty()) {
@@ -175,14 +150,18 @@ final class AgentVirtualDeviceTools {
                             ObjectType.DEVICE,
                             displayName,
                             null,
-                            spec.templateId()
+                            VirtualDeviceDefaults.TEMPLATE_ID
                     );
-                    objectTemplateService.applyTemplate(node.path(), spec.templateId());
+                    objectTemplateService.applyTemplate(node.path(), VirtualDeviceDefaults.TEMPLATE_ID);
                     int pollMs = intArg(arguments, "pollIntervalMs", 2000);
                     deviceProvisioningService.provisionDriver(node.path(), "virtual", pollMs, false);
 
-                    Map<String, String> configuration = parseConfigJson(objectMapper, spec.driverConfigJson());
-                    Map<String, String> pointMappings = parseConfigJson(objectMapper, spec.driverPointMappingsJson());
+                    Map<String, String> configuration = parseConfigJson(
+                            objectMapper, VirtualDeviceDefaults.DRIVER_CONFIG
+                    );
+                    Map<String, String> pointMappings = parseConfigJson(
+                            objectMapper, VirtualDeviceDefaults.POINT_MAPPINGS
+                    );
                     driverRuntimeService.configure(
                             node.path(),
                             DriverBinding.of("virtual", pollMs, configuration, pointMappings)
@@ -207,11 +186,11 @@ final class AgentVirtualDeviceTools {
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("status", "OK");
                     result.put("path", node.path());
-                    result.put("templateId", spec.templateId());
-                    result.put("profile", profile.toLowerCase(Locale.ROOT));
+                    result.put("templateId", VirtualDeviceDefaults.TEMPLATE_ID);
+                    result.put("driverId", "virtual");
                     result.put("variableCount", variables.size());
                     result.put("telemetryVariableCount", telemetryCount);
-                    result.put("expectedVariables", spec.expectedVariables());
+                    result.put("expectedVariables", VirtualDeviceDefaults.EXPECTED_VARIABLES);
                     result.put("variables", variables);
                     if (runtimeStatus != null) {
                         result.put("driverStatus", runtimeStatus.status());

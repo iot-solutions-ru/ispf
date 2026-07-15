@@ -1,4 +1,4 @@
-import { getAuthHeaders, getStoredSession } from "../auth/session";
+import { getAuthHeaders } from "../auth/session";
 import { parseApiError } from "../utils/parseApiError";
 import type { AiAgentChatResponse, AiAgentRunProgress, AiAgentStep } from "./ai";
 
@@ -79,24 +79,34 @@ export function subscribeOperatorAgentProgress(
   onProgress: (progress: AiAgentRunProgress) => void,
   onError?: (error: Event) => void
 ): () => void {
-  const base = `/api/v1/operator-apps/${encodeURIComponent(appId)}/agent/sessions/${encodeURIComponent(sessionId)}/progress/stream`;
-  const token = getStoredSession()?.token;
-  const url = token ? `${base}?${new URLSearchParams({ token }).toString()}` : base;
-  const source = new EventSource(url);
+  // EventSource cannot send Authorization; poll Bearer-authenticated progress instead.
+  let cancelled = false;
+  let requestSeq = 0;
 
-  source.addEventListener("progress", (event) => {
-    try {
-      onProgress(JSON.parse((event as MessageEvent).data) as AiAgentRunProgress);
-    } catch {
-      // ignore malformed payloads
+  const tick = () => {
+    if (cancelled) {
+      return;
     }
-  });
-
-  source.onerror = (error) => {
-    onError?.(error);
+    const seq = ++requestSeq;
+    void fetchOperatorAgentProgress(appId, sessionId)
+      .then((progress) => {
+        if (!cancelled && seq === requestSeq) {
+          onProgress(progress);
+        }
+      })
+      .catch(() => {
+        if (!cancelled && seq === requestSeq) {
+          onError?.(new Event("error"));
+        }
+      });
   };
 
-  return () => source.close();
+  tick();
+  const timer = setInterval(tick, 500);
+  return () => {
+    cancelled = true;
+    clearInterval(timer);
+  };
 }
 
 export function cancelOperatorAgentRun(appId: string, sessionId: string): Promise<void> {

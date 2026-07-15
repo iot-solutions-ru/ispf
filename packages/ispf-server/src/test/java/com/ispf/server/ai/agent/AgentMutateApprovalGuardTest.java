@@ -9,6 +9,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentMutateApprovalGuardTest {
 
     @Test
+    void executeModeBypassesMutateApprovalGuard() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        assertThat(AgentMutateApprovalGuard.checkBeforeTool(true, state, "application_data_migrate", AgentProfile.ADMIN))
+                .isEmpty();
+        assertThat(AgentMutateApprovalGuard.checkBeforeTool(true, state, "create_object", AgentProfile.ADMIN))
+                .isEmpty();
+    }
+
+    @Test
     void blocksCreateObjectWithoutApproval() {
         AgentRunState state = new AgentRunState();
         Optional<AgentMutateApprovalGuard.BlockDecision> block =

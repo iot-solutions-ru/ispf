@@ -236,11 +236,11 @@ final class AgentLitePlanBootstrap {
 
     private static List<String> virtualPumpSteps() {
         return List.of(
-                "1. list_virtual_profiles — выбрать lab/meter/unified профиль",
+                "1. list_virtual_profiles — OOTB virtual defaults (no profiles)",
                 "2. list_objects parentPath=root.platform.devices",
-                "3. create_virtual_device profile=lab name=lab-pump-01",
+                "3. create_virtual_device name=lab-pump-01",
                 "4. configure_driver / driver_control start",
-                "5. list_variables — проверить pressure/temperature теги"
+                "5. list_variables — проверить sineWave/temperature"
         );
     }
 
@@ -248,7 +248,7 @@ final class AgentLitePlanBootstrap {
     private static List<String> pumpStationScadaSteps() {
         return List.of(
                 "1. list_objects parentPath=root.platform.devices",
-                "2. list_virtual_profiles — профили насосов/задвижек",
+                "2. list_virtual_profiles — OOTB virtual; list_relative_blueprints for domain models",
                 "3. create_virtual_device — устройства насосной станции",
                 "4. save_mimic_diagram — мнемосхема с bindings",
                 "5. create_object type=DASHBOARD + set_dashboard_layout template=scada-facility-overview",

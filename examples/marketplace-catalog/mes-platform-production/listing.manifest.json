@@ -1,7 +1,7 @@
 {
   "slug": "mes-platform-production",
   "title": "MES Platform Production",
-  "description": "Сертифицированный MES walkthrough: OEE, dispatch, SPC, batch, ERP outbox (BL-170)",
+  "description": "Certified MES walkthrough product (IoT Solutions): OEE, dispatch, SPC, batch, ERP outbox (BL-170). Installs MES catalog — not included in ISPF base platform.",
   "pricing": "free",
   "appId": "mes-platform-production",
   "vendorName": "IoT Solutions",
@@ -12,7 +12,7 @@
   "vendorContactPhone": "+7 980 630-93-33",
   "vendorContactPerson": "Marketplace Team",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.1.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -20,7 +20,8 @@
     "oee",
     "dispatch",
     "spc",
-    "batch"
+    "batch",
+    "product"
   ],
-  "changelog": "BL-170 certified production MES walkthrough bundle."
+  "changelog": "MES catalog + INSTANCE models shipped in bundle (base platform no longer seeds MES)."
 }

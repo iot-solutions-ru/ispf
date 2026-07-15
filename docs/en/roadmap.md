@@ -7,7 +7,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | | |
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
-| **Updated** | 2026-07-09 |
+| **Updated** | 2026-07-14 |
 | **Product direction** | Self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([architecture](architecture.md)) |
 
 ---
@@ -25,9 +25,9 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
 | Sprint S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Current focus:** Phases 25–33 (partial) — see [Phase 25–33](#phase-25-33--excellence-program).
+**Current focus:** **AI Autopilot (BL-177…180)** — see [Next 90 days](#next-90-days). **Deferred:** Phase 25 OT Trust; live ERP (BL-169).
 
-**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…210.
+**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…210 (OT + live ERP parked).
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
@@ -71,11 +71,11 @@ Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over th
 
 | Phase | Theme | Done highlights | Still open (typical) |
 | ----- | ----- | --------------- | -------------------- |
-| **25** OT Trust | Drivers / edge | BL-141 interop lab | BL-140 field (after named task); BL-191 matrix honesty; edge soak |
+| **25** OT Trust | Drivers / edge | BL-141 interop lab | **Deferred** — BL-140 field / BL-191 honesty / edge soak (parked) |
 | **26** HMI | Mimics / operator | BL-146 — 218 P&ID symbols | Live FPS 500@60, offline PWA 8h, CEL debugger |
 | **27** Security | MFA / tenancy | TOTP MFA Partial | Hard tenancy, per-var ACL, persistent alarm shelf |
 | **28** Historian | Tiers / SLA | BL-160 AF-lite, BL-163 Parquet | Turnkey tiers, query SLA CI, petabyte path |
-| **29** MES / ERP L4 | ISA-95 | Catalog + reference bundles (smoke) | Live ERP (BL-169 P0), field sites, genealogy |
+| **29** MES / ERP L4 | ISA-95 | Catalog + reference bundles (smoke) | Field sites, genealogy; **live ERP (BL-169) deferred** |
 | **30** Automation | CEP / BPMN | Message events Partial | Full CEP, process programs, DMN |
 | **31** AI | Autopilot | Tools + schema CI | Live LLM ≥95%, generator not stub |
 | **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
@@ -91,7 +91,7 @@ See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for clos
 | ---- | ------- |
 | P0 execution order (90 days) | [Next 90 days](#next-90-days) · [Domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09) |
 | **Quality path (usable Done)** | [Quality path to Done](#quality-path-to-done) |
-| **S31 Wave 1 backlog** | [S31 execution backlog](#s31-wave-1-execution-backlog) |
+| **S31 Wave 1 backlog (parked)** | [S31 execution backlog](#s31-wave-1-execution-backlog) — OT Trust deferred |
 | Full BL status | [BL-140…210 registry](#bl-140210--full-registry) |
 | 10/10 exit criteria | [Definition of Done](#definition-of-done--1010-overall) |
 | Closed sprint detail | [Sprint registry](#sprint-registry) · [Phase 24](#phase-24--closed) |
@@ -909,8 +909,6 @@ Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI /
 
 | Priority | Phase | Why |
 | --------- | ----- | ------ |
-| **P0** | [25 — OT Trust](#phase-25--ot-trust) + [BL-191](#bl-191193--domain-audit-follow-ups) | Without OT engineer trust, the product will not be accepted on production sites |
-| **P0** | [29 — MES / ERP L4](#phase-29--mes-platform) (BL-169) | MES without live ERP sync is an island; outbox stub is not enough |
 | **P0** | [31 — AI Autopilot](#phase-31--ai-autopilot) | Live LLM agent deploy without manual edits |
 | **P1** | [26 — HMI phase](#phase-26--hmi-excellence) | SCADA is the operator-facing face of the product |
 | **P1** | [29 — MES Platform](#phase-29--mes-platform) | Differentiates from "just SCADA"; needs field sites, not only smoke |
@@ -920,6 +918,8 @@ Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI /
 | **P2** | [BL-192 compliance](#bl-191193--domain-audit-follow-ups) | IEC 62443 / GAMP tender pack |
 | **P3** | [30 — Automation Depth](#phase-30--automation-depth) | Power users, CEP, process control |
 | **P3** | [32 — Ecosystem & Market](#phase-32--ecosystem--market) | Scale through partners |
+| **Deferred** | [25 — OT Trust](#phase-25--ot-trust) + [BL-191](#bl-191193--domain-audit-follow-ups) | Parked 2026-07-14 — resume only with a named field driver task |
+| **Deferred** | [29 — MES / ERP L4](#phase-29--mes-platform) (BL-169) | Parked 2026-07-14 — live 1C/SAP connector not in active plan |
 
 ---
 
@@ -943,8 +943,8 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | Sev | Domain | Gap | Vs market | Evidence | BL |
 | --- | ------ | --- | --------- | -------- | -- |
 | **Blocker** | IoT / OT | PRODUCTION matrix: `opc-da` stub, DNP3 no write | Kepware / Ignition | `OpcDaDeviceDriver` stub labeled PRODUCTION | [BL-191](#bl-191193--domain-audit-follow-ups), BL-140 |
-| **Blocker** | ERP L4 | Outbox marks `sent` without real ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (elevated P0) |
-| **Blocker** | AI | Live LLM ≥95% + generator stub | Differentiated AI agent path | `AiSolutionGeneratorService` `mode=stub` | BL-177…180 |
+| **Blocker** | ERP L4 | Outbox marks `sent` without real ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (deferred from 90-day plan) |
+| **Blocker** | AI | Live LLM ≥95% + generator breadth | Differentiated AI agent path | Full BL-178 ≥95% open; generator one-shot REAL | BL-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-145/187 Partial; prod `clusterEnabled=false` | BL-145, 187 |
 | High | SCADA | Live FPS 500 el + offline PWA 8h | Ignition Perspective | e2e mocked; BL-151/152 Partial | BL-151, 152 |
 | High | SCADA | Alarm shelving approval in-memory | WinCC / Ignition Alarming | `AlarmShelfApprovalService` STUB | BL-158 |
@@ -959,14 +959,16 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 
 ### 90-day execution order (from audit)
 
+> **2026-07-14:** Phase 25 OT Trust **and** live ERP (BL-169) **removed from the active 90-day plan**. Gaps remain in registry but are not scheduled.
+
 | Rank | Focus | Actions |
 | ---- | ----- | ------- |
-| **P0** | OT trust honesty | BL-191: downgrade `opc-da`; DNP3 write or BETA; field sign-offs |
-| **P0** | Live ERP L4 connector | BL-169: real 1C **or** SAP adapter + idempotent sync + DLQ |
 | **P0** | AI without stub | BL-177…180: live LLM CI ≥95%; generator not keyword-stub |
 | **P1** | SCADA operator excellence | BL-151/152/158: live FPS 500@60; offline PWA; persistent alarm shelf |
-| **P1** | MES productization | BL-164…170: 1–2 production sites; genealogy; mobile confirm |
+| **P1** | MES productization | BL-164…168, BL-170, BL-193: sites, genealogy; **not** live ERP |
 | **P2** | Historian + Security + compliance | BL-159…162, BL-155, BL-192 |
+| **Deferred** | Live ERP L4 connector | BL-169: real 1C **or** SAP — parked |
+| **Deferred** | OT trust honesty | BL-191 + BL-140 pilots — [parked Wave 1 backlog](#s31-wave-1-execution-backlog) |
 
 ---
 
@@ -974,9 +976,11 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 
 | Sprint | Phase | Theme | BL / scope | Status |
 | ------ | ----- | ---- | ---------- | ------ |
-| S31 | 25 | OT Trust wave 1 | BL-140, BL-141 | Partial |
-| S32 | 25 | OT Trust wave 2 | BL-142, BL-143 | Partial |
-| S33 | 25 | Edge + DDK | BL-144, BL-145 | Partial |
+| S31 | 31 | AI e2e + live LLM | BL-177, BL-178 | Partial (BL-177 one-shot REAL; BL-178 live ≥95% open) |
+| S32 | 31 | AI generator + continuity | BL-180 (+ BL-179 as needed) | Partial (live apply REAL; metrics/continuity open) |
+| S33 | 29 | MES genealogy lite | BL-193 | Planned (MES = marketplace product) |
+| — | 29 | Live ERP L4 (parked) | BL-169 | **Deferred** |
+| — | 25 | OT Trust waves (parked) | BL-140…145, BL-191 — [Wave 1 backlog](#s31-wave-1-execution-backlog) | **Deferred** |
 | S34 | 26 | HMI symbols + debugger | BL-146, BL-149 | Partial |
 | S35 | 26 | HMI perf + video wall | BL-147, BL-148, BL-152 | Partial |
 | S36 | 26 | Operator offline + spreadsheet | BL-150, BL-151 | Partial |
@@ -996,6 +1000,8 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 ---
 
 ## Phase 25 — OT Trust
+
+> **Deferred (2026-07-14):** not in the active 90-day plan. Keep matrix/playbook work only when a **named field driver task** appears. Execution checklist remains under [Wave 1 backlog](#s31-wave-1-execution-backlog) (parked).
 
 **Goal:** OT/IT connectivity **10/10** — production-grade drivers, interop lab, edge agents, DDK.
 
@@ -1082,7 +1088,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-166 | **Work order dispatch** | P1 | BPMN + work-queue + mobile operator confirm |
 | BL-167 | **Quality module** | P2 | SPC charts, defect tracking, traceability report |
 | BL-168 | **ISA-88 batch lite** | P2 | Recipe + phase + batch instance (workflow-backed) |
-| BL-169 | **ERP outbox (live connector)** | **P0** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog](isa95-catalog.md) Level 4 |
+| BL-169 | **ERP outbox (live connector)** | **Deferred** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog](isa95-catalog.md) Level 4 |
 | BL-170 | **MES certification bundle** | P1 | `mes-platform` bundle — deploy ≤30 min — [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) |
 
 **Phase metric:** OEE walkthrough → production MES in 1 day without custom Java.
@@ -1212,7 +1218,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-166 | 29 | Work order dispatch | P1 | Partial |
 | BL-167 | 29 | Quality module | P2 | Partial |
 | BL-168 | 29 | ISA-88 batch lite | P2 | Partial |
-| BL-169 | 29 | ERP outbox (live connector) | **P0** | Partial (stub → live required) |
+| BL-169 | 29 | ERP outbox (live connector) | **Deferred** | Partial (stub; parked — not in 90-day P0) |
 | BL-170 | 29 | MES certification bundle | P1 | Partial |
 | BL-171 | 30 | CEP engine | P3 | Partial |
 | BL-172 | 30 | Process control context | P3 | Partial |
@@ -1220,10 +1226,10 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-174 | 30 | Event filters | P3 | Partial |
 | BL-175 | 30 | ML hooks | P3 | Partial |
 | BL-176 | 30 | BPMN expansion | P2 | Partial (subprocess stub; message events) |
-| BL-177 | 31 | End-to-end agent deploy | P0 | Partial |
-| BL-178 | 31 | Agent regression suite | P0 | Partial (50 scenarios schema CI; live ≥95% not met) |
+| BL-177 | 31 | End-to-end agent deploy | P0 | **Partial→Done (one-shot)** — live LLM `AgentLiveDeploySmokeTest` + `run_deploy_playbook` for `mes-platform`; full multi-app path still hardening |
+| BL-178 | 31 | Agent regression suite | P0 | Partial (50 scenarios schema CI; live one-shot gate via `run-live-oneshot.sh`; full ≥95% not met) |
 | BL-179 | 31 | Operator agent GA | P1 | Partial |
-| BL-180 | 31 | Solution generator | P0 | Partial (keyword stub) |
+| BL-180 | 31 | Solution generator | P0 | **Partial→Done (one-shot)** — `apply:true` live tree+dashboard+alert (`AiSolutionGeneratorLiveSmokeTest`); full GA/metrics still hardening |
 | BL-181 | 31 | Agent observability v2 | P2 | Partial |
 | BL-182 | 31 | Context pack v2 | P2 | Partial |
 | BL-183 | 32 | Marketplace GA | P3 | Partial (install/uninstall) |
@@ -1234,7 +1240,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-188 | 32 | Manager-of-managers | P3 | Partial |
 | BL-189 | 32 | Competitive scorecard | P3 | **Done** (published; code verified ~7.4/10) |
 | BL-190 | 32 | Certification paths | P3 | Partial |
-| BL-191 | 25 | OT matrix honesty | **P0** | Planned |
+| BL-191 | 25 | OT matrix honesty | **Deferred** | Planned (parked — not in 90-day P0) |
 | BL-192 | 27/32 | Compliance tender pack | P2 | Planned |
 | BL-193 | 29 | MES genealogy lite | P1 | Planned |
 | BL-200 | 33 | Analytics platform charter | P2 | Planned |
@@ -1261,7 +1267,7 @@ New backlog from IoT/SCADA/MES/ERP gap audit (2026-07-09). Elevates honesty and 
 
 | ID | Phase | Task | Priority | Acceptance |
 | -- | ----- | ---- | -------- | ---------- |
-| **BL-191** | 25 | **OT PRODUCTION matrix honesty** | **P0** | `opc-da` removed from PRODUCTION or implemented; DNP3 `writePoint` works **or** maturity downgraded to BETA; scorecard OT dimension updated; no stub labeled PRODUCTION |
+| **BL-191** | 25 | **OT PRODUCTION matrix honesty** | **Deferred** | `opc-da` removed from PRODUCTION or implemented; DNP3 `writePoint` works **or** maturity downgraded to BETA; scorecard OT dimension updated; no stub labeled PRODUCTION — **parked from 90-day P0 (2026-07-14)** |
 | **BL-192** | 27 / 32 | **Compliance tender pack** | P2 | IEC 62443 mapping + GAMP-lite checklist in docs; linked from DoD / scorecard; gap register for pen-test / audit trail |
 | **BL-193** | 29 | **MES genealogy / traceability lite** | P1 | Lot ↔ material ↔ work-order ↔ quality record graph query + operator report; extends BL-167 beyond SPC samples |
 
@@ -1288,7 +1294,7 @@ Product is **10/10** when **all** of the following hold simultaneously:
 
 1. **20 PRODUCTION drivers** with interop CI and **3 field pilots signed** — **not met** (BL-140 Partial: playbooks only; [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy) — field work starts on named task)
 2. **MES bundle** — OEE + work orders + quality without custom code (BL-164…170); **at least one live ERP connector** (BL-169) — not stub-only
-3. **AI agent** — ≥95% regression scenarios green **with live LLM**, deploy without edits (BL-177, BL-178) — **not met** (CI: schema only; nightly stub results)
+3. **AI agent** — ≥95% regression scenarios green **with live LLM**, deploy without edits (BL-177, BL-178) — **partial** (BL-177 one-shot live REAL; full BL-178 ≥95% open; nightly stub not used as proof)
 4. **Historian** — turnkey 3-tier, 1B samples lab proven (BL-159…162); AF-capable analytics (BL-200…210)
 5. **Security** — MFA + per-variable ACL + hard tenancy option (BL-153…155)
 6. **HMI** — mimic 500 el @60 FPS, offline PWA 8h (BL-151, BL-152)
@@ -1332,7 +1338,9 @@ All must hold:
 
 Build **usable slices** end-to-end before breadth. Each wave ends with a **named scenario** a customer could run.
 
-#### Wave 1 — OT trust you can deploy (Phase 25 + BL-191)
+#### Wave 1 — OT trust you can deploy (Phase 25 + BL-191) — **Deferred**
+
+> Parked 2026-07-14. Do not schedule Wave 1 work in the active 90 days unless a named field driver task appears.
 
 | Usable outcome | Evidence | BL |
 | -------------- | -------- | -- |
@@ -1344,9 +1352,9 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 
 **Not Done if:** only Docker interop smoke; PRODUCTION label on stub driver; no pilot journal.
 
-### S31 execution backlog — Wave 1 (Jul–Aug 2026) {#s31-wave-1-execution-backlog}
+### S31 execution backlog — Wave 1 (parked) {#s31-wave-1-execution-backlog}
 
-> **Status: on hold** until a **named field driver implementation task** exists (customer/site + protocol + integrator ticket). Same policy as [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy). Do not run matrix/pilot work for checkbox credit.
+> **Status: deferred (2026-07-14)** — OT Trust removed from the active roadmap window. Checklist kept for when a **named field driver implementation task** exists (customer/site + protocol + integrator ticket). Same policy as [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy). **Active S31** is AI Autopilot (BL-177…), not this backlog.
 
 **Sprint goal (usable):** OT engineer trusts the driver matrix; **one Modbus plant pilot** is running with a daily soak journal — not «BL-191 closed» without code + pilot evidence.
 
@@ -1483,7 +1491,7 @@ Week 1: A1–A7 + B1–B2 + C1–C3. Week 2: B3–B4 + C4–C6 + D1 if capacity.
 
 **Scenario:** AI Studio deploys HVAC or MES demo; partner installs marketplace bundle on own VPS; analytics replica profile in Helm.
 
-**Not Done if:** keyword generator; nightly `stub-results.json`; partner enroll hardcoded; marketplace install-only without signing.
+**Not Done if:** keyword generator; treating `nightly-stub-results.json` as ≥95% proof; partner enroll hardcoded; marketplace install-only without signing.
 
 ### Phase 30 (Automation) — depth when Waves 1–3 are stable
 
@@ -1512,7 +1520,7 @@ CEP, process programs, BPMN subprocess (BL-171…176) ship **after** operator + 
 | ------- | ------------------------------ |
 | Stub marked production | `OpcDaDeviceDriver`, PRODUCTION matrix |
 | Fake ERP sync | Outbox `sent` without connector |
-| Fake AI regression | `nightly-stub-results.json` |
+| Fake AI regression | Using deprecated `nightly-stub-results.json` as ≥95% proof |
 | Fake partner program | `PartnerProgramService` `source: stub` |
 | Fake alarm shelf | `AlarmShelfApprovalService` in-memory |
 | Mocked operator perf | e2e with mocked WebSocket for FPS |
@@ -1520,13 +1528,13 @@ CEP, process programs, BPMN subprocess (BL-171…176) ship **after** operator + 
 
 ### Next 90 days — quality-focused
 
-Same P0 as [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09), framed as **usable outcomes**:
+Active P0: **AI Autopilot**. OT Trust and live ERP (BL-169) deferred:
 
 | Sprint | Usable milestone (not just BL id) |
 | ------ | --------------------------------- |
-| **S31** | On hold — drivers until field task | [S31 backlog](#s31-wave-1-execution-backlog) |
-| **S32** | ERP test system receives real outbox message; genealogy query on demo lot |
-| **S33** | One AI scenario: live LLM deploy end-to-end without human edit |
+| **S31** | One AI scenario: live LLM deploy end-to-end without human edit (BL-177 / BL-178) |
+| **S32** | Solution generator not keyword-stub (BL-180) |
+| **S33** | Genealogy query on demo lot (BL-193) |
 
 Full BL list: [Next 90 days](#next-90-days) below.
 
@@ -1546,13 +1554,15 @@ Full BL list: [Next 90 days](#next-90-days) below.
 
 ## Next 90 days
 
-Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09) P0 order.
+Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09); **OT Trust (Phase 25) and live ERP (BL-169) deferred**.
 
 | Sprint | Timeline (draft) | Scope |
 | ------ | ------------ | ----- |
-| **S31** | Jul–Aug 2026 | **On hold** — [Wave 1 backlog](#s31-wave-1-execution-backlog) until named field driver task; focus ERP/AI instead |
-| **S32** | Aug 2026 | **BL-169** live 1C **or** SAP connector (replace stub); BL-193 genealogy lite start |
-| **S33** | Sep 2026 | BL-177 e2e agent deploy; BL-178 live LLM ≥95% (no nightly stub); BL-180 generator not keyword-stub |
+| **S31** | Jul–Aug 2026 | BL-177 e2e agent deploy; BL-178 live LLM ≥95% (no nightly stub) |
+| **S32** | Aug 2026 | BL-180 generator not keyword-stub; operator agent continuity as needed |
+| **S33** | Sep 2026 | **BL-193** genealogy lite |
+
+Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 
 ---
 
@@ -1586,6 +1596,10 @@ Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-
 
 | Date | Change |
 | ---- | --------- |
+| 2026-07-14 | **MES as marketplace product:** base platform no longer seeds `root.platform.mes` / `batch-v1` / `work-order-v1`; install `mes-platform` (vendor IoT Solutions). Flag `ispf.bootstrap.mes-catalog-enabled` for legacy only |
+| 2026-07-14 | **S32 BL-180 one-shot REAL:** `POST /ai/solutions/generate` `apply:true` → live tree+dashboard+alert; keyword path is `mode=draft` (not stub success) |
+| 2026-07-14 | **S31 BL-177 one-shot REAL:** `AgentLiveDeploySmokeTest` + `run_deploy_playbook`; nightly optional live oneshot (`run-live-oneshot.sh`); `nightly-stub-results.json` deprecated as ≥95% proof |
+| 2026-07-14 | **OT Trust + live ERP deferred:** Phase 25 / BL-191 and BL-169 removed from active 90-day P0; S31–S33 → AI → generator → genealogy |
 | 2026-07-09 | **Unified roadmap:** merged `roadmap-phase-25.md` into this file; Phase 25–33 + BL-140…210 live here; phase-25 file is redirect stub |
 | 2026-07-09 | Added [§ Retrospective](#retrospective) — eras, closed vs active backlog, Phase 25–33 glance |
 | 2026-07-09 | Domain gap audit IoT/SCADA/MES/ERP: BL-169 → P0; BL-191…193; Phase 33 analytics BL-200…210 |

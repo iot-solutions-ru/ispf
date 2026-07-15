@@ -10,6 +10,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import org.springframework.security.test.context.support.WithMockUser;
 
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,7 +34,7 @@ class AiSolutionGeneratorApiTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"))
-                .andExpect(jsonPath("$.mode").value("stub"))
+                .andExpect(jsonPath("$.mode").value(anyOf(is("draft"), is("llm"))))
                 .andExpect(jsonPath("$.domain").value("scada"))
                 .andExpect(jsonPath("$.blueprintDraft.domain").value("scada"))
                 .andExpect(jsonPath("$.blueprintDraft.specBrief.entities").isArray())

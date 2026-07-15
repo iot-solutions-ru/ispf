@@ -4,6 +4,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import dev.cel.common.CelAbstractSyntaxTree;
+import dev.cel.common.CelOptions;
 import dev.cel.common.CelValidationException;
 import dev.cel.common.types.SimpleType;
 import dev.cel.compiler.CelCompiler;
@@ -26,8 +27,24 @@ public class ExpressionEngine {
     private static final Pattern PARENT_IDENT = Pattern.compile("\\bparent\\b");
     private static final Pattern CONTEXT_IDENT = Pattern.compile("\\bcontext\\b");
     private static final Pattern INPUT_IDENT = Pattern.compile("\\binput\\b");
+    /**
+     * CEL type-checks {@code dyn["ident"]} as {@code int} (via {@code index_map}), which collapses
+     * comparisons against int literals to {@code greater_int64} and then fails when the runtime
+     * value is a {@code Double}. Field select {@code dyn.ident} stays {@code dyn} and works with
+     * heterogeneous numeric comparisons — rewrite identifier string indexes to selects.
+     */
+    private static final Pattern MAP_INDEX_IDENT = Pattern.compile("\\[\"([A-Za-z_][A-Za-z0-9_]*)\"\\]");
+
+    /**
+     * Allow {@code double > int} (and siblings) so telemetry values normalized to {@code Double}
+     * can be compared with integer literals like {@code > 0} without evaluation failure.
+     */
+    private static final CelOptions CEL_OPTIONS = CelOptions.current()
+            .enableHeterogeneousNumericComparisons(true)
+            .build();
 
     private final CelCompiler compiler = CelCompilerFactory.standardCelCompilerBuilder()
+            .setOptions(CEL_OPTIONS)
             .addVar("self", SimpleType.DYN)
             .addVar("parent", SimpleType.DYN)
             .addVar("context", SimpleType.DYN)
@@ -35,10 +52,13 @@ public class ExpressionEngine {
             .build();
 
     private final CelCompiler payloadCompiler = CelCompilerFactory.standardCelCompilerBuilder()
+            .setOptions(CEL_OPTIONS)
             .addVar("payload", SimpleType.DYN)
             .build();
 
-    private final CelRuntime runtime = CelRuntimeFactory.standardCelRuntimeBuilder().build();
+    private final CelRuntime runtime = CelRuntimeFactory.standardCelRuntimeBuilder()
+            .setOptions(CEL_OPTIONS)
+            .build();
 
     private final ConcurrentHashMap<String, CompiledExpression> compiledCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PayloadCompiledExpression> payloadCompiledCache = new ConcurrentHashMap<>();
@@ -48,12 +68,24 @@ public class ExpressionEngine {
     }
 
     private CompiledExpression compileUncached(String expression) {
+        String normalized = normalizeMapIndexSelects(expression);
         try {
-            CelAbstractSyntaxTree ast = compiler.compile(expression).getAst();
+            CelAbstractSyntaxTree ast = compiler.compile(normalized).getAst();
             return new CompiledExpression(expression, ast, runtime, BindingNeeds.analyze(expression));
         } catch (CelValidationException e) {
             throw new ExpressionException("Invalid expression: " + expression, e);
         }
+    }
+
+    /**
+     * Rewrites {@code foo["bar"]} to {@code foo.bar} when {@code bar} is a CEL identifier so map
+     * field access stays {@code dyn} under type-check (see {@link #MAP_INDEX_IDENT}).
+     */
+    static String normalizeMapIndexSelects(String expression) {
+        if (expression == null || expression.isBlank() || expression.indexOf('[') < 0) {
+            return expression;
+        }
+        return MAP_INDEX_IDENT.matcher(expression).replaceAll(".$1");
     }
 
     public Object evaluate(String expression, PlatformObject platformObject) {
@@ -92,8 +124,9 @@ public class ExpressionEngine {
     }
 
     private PayloadCompiledExpression compilePayloadUncached(String expression) {
+        String normalized = normalizeMapIndexSelects(expression);
         try {
-            CelAbstractSyntaxTree ast = payloadCompiler.compile(expression).getAst();
+            CelAbstractSyntaxTree ast = payloadCompiler.compile(normalized).getAst();
             return new PayloadCompiledExpression(expression, ast, runtime);
         } catch (CelValidationException e) {
             throw new ExpressionException("Invalid expression: " + expression, e);

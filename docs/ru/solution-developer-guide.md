@@ -95,7 +95,8 @@ GET /api/v1/applications/my-terminal/data/status
 
 ### Шаг 3. JSON-функции
 
-Функции — JSON **script** с шагами (`selectOne`, `selectMany`, `update`, `insert`, `return`):
+Функции — JSON **script** с шагами (`selectOne`, `selectMany`, `exec`, `return`).
+Поля шага — **`sql`** + **`var`** (не `query` / `into`); скрипт обязан заканчиваться на `return.fields`:
 
 ```http
 POST /api/v1/applications/my-terminal/functions/deploy
@@ -110,10 +111,15 @@ Content-Type: application/json
         "steps": [
           {
             "type": "selectMany",
-            "sql": "SELECT id, status FROM ot_order WHERE status = 'ACTIVE' ORDER BY created_at",
-            "into": "rows"
+            "var": "rows",
+            "sql": "SELECT id, status FROM ot_order WHERE status = 'ACTIVE' ORDER BY created_at"
           },
-          { "type": "return", "value": "{{rows}}" }
+          {
+            "type": "return",
+            "fields": {
+              "rows": "${rows}"
+            }
+          }
         ]
       }
     }
@@ -121,7 +127,7 @@ Content-Type: application/json
 }
 ```
 
-Вызов из BPMN (service task `INVOKE_FUNCTION`) или через BFF.
+Вызов из BPMN (service task `INVOKE_FUNCTION`) или через BFF. Для таблицы SQL-строк на дашборде используйте виджет **report** (`configure_report` + `type: report`), а не `object-table` (тот виджет — только для дочерних объектов дерева).
 
 ### Шаг 4. Развертывание пакета
 

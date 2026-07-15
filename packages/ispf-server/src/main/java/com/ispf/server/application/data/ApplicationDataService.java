@@ -1,6 +1,7 @@
 package com.ispf.server.application.data;
 
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
+import com.ispf.server.datasource.DataSourceObjectService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,26 +15,38 @@ public class ApplicationDataService {
     private final ApplicationDataStore store;
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationObjectTreeService objectTreeService;
+    private final DataSourceObjectService dataSourceObjectService;
 
     public ApplicationDataService(
             ApplicationDataStore store,
             ApplicationSchemaSession schemaSession,
-            ApplicationObjectTreeService objectTreeService
+            ApplicationObjectTreeService objectTreeService,
+            DataSourceObjectService dataSourceObjectService
     ) {
         this.store = store;
         this.schemaSession = schemaSession;
         this.objectTreeService = objectTreeService;
+        this.dataSourceObjectService = dataSourceObjectService;
     }
 
     public Map<String, Object> register(String appId, String displayName, String tablePrefix, String schemaName) {
         store.registerApp(appId, displayName, tablePrefix, schemaName);
-        objectTreeService.syncApplication(appId);
         Map<String, Object> app = store.findApp(appId).orElseThrow();
+        String resolvedSchema = String.valueOf(app.get("schema_name"));
+        schemaSession.ensureSchemaExists(resolvedSchema);
+        dataSourceObjectService.ensureDataSource(
+                appId,
+                displayName != null && !displayName.isBlank() ? displayName : appId,
+                resolvedSchema,
+                "Application schema " + resolvedSchema
+        );
+        objectTreeService.syncApplication(appId);
         return Map.of(
                 "appId", appId,
                 "displayName", displayName,
                 "tablePrefix", app.get("table_prefix") != null ? app.get("table_prefix") : "",
-                "schemaName", app.get("schema_name")
+                "schemaName", resolvedSchema,
+                "dataSourcePath", dataSourceObjectService.pathForNodeName(appId)
         );
     }
 
@@ -42,6 +55,7 @@ public class ApplicationDataService {
         Map<String, Object> app = ensureApp(appId);
         String schemaName = String.valueOf(app.get("schema_name"));
         String tablePrefix = app.get("table_prefix") != null ? String.valueOf(app.get("table_prefix")) : "";
+        schemaSession.ensureSchemaExists(schemaName);
 
         List<String> applied = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
@@ -77,6 +91,7 @@ public class ApplicationDataService {
     public Map<String, Object> seed(String appId, String profile) {
         Map<String, Object> app = ensureApp(appId);
         String schemaName = String.valueOf(app.get("schema_name"));
+        schemaSession.ensureSchemaExists(schemaName);
 
         List<SeedScript> seeds = ApplicationSeedProfiles.scripts(profile);
         List<String> applied = new ArrayList<>();

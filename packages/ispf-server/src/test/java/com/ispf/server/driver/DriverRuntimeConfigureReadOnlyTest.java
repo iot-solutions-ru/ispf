@@ -55,7 +55,7 @@ class DriverRuntimeConfigureReadOnlyTest {
 
         driverRuntimeService.configure(
                 DEVICE_PATH,
-                DriverBinding.of("virtual", 1000, Map.of("profile", "lab"), Map.of())
+                DriverBinding.of("virtual", 1000, Map.of("sineAmplitude", "10.0"), Map.of())
         );
         driverRuntimeService.start(DEVICE_PATH);
 

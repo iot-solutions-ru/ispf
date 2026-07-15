@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import BindingExpressionEditorModal from "./BindingExpressionEditorModal";
+import BindingExpressionEditorModal, {
+  type BindingExpressionFocusContext,
+} from "./BindingExpressionEditorModal";
 import {
   PLATFORM_BINDING_ENTRIES,
   type BindingBuilderContext,
@@ -21,6 +23,7 @@ interface BindingExpressionFieldProps extends BindingBuilderContext {
   variables?: VariableDto[];
   formulaLink?: BindingFormulaLink | null;
   editorTitle?: string;
+  focusContext?: BindingExpressionFocusContext | null;
   onValidate?: BindingExpressionValidator;
 }
 
@@ -39,6 +42,7 @@ export default function BindingExpressionField({
   analyticsCatalogKind,
   formulaLink = null,
   editorTitle,
+  focusContext = null,
   onValidate,
 }: BindingExpressionFieldProps) {
   const { t } = useTranslation("inspector");
@@ -83,6 +87,7 @@ export default function BindingExpressionField({
         entries={entries}
         analyticsCatalogKind={analyticsCatalogKind}
         formulaLink={formulaLink}
+        focusContext={focusContext}
         onValidate={onValidate}
         onClose={() => setEditorOpen(false)}
         onApply={onChange}

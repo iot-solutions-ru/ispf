@@ -10,7 +10,7 @@ export default function AgentChatRunBootstrap({ enabled }: { enabled: boolean })
       publishAgentRunStatus({ isPending: false, pendingUserMessage: null });
       return;
     }
-    const sessionId = loadAgentChatIndex().activeSessionId;
+    const sessionId = loadAgentChatIndex("studio").activeSessionId;
     if (!sessionId) {
       return;
     }

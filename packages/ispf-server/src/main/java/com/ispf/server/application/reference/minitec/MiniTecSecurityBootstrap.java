@@ -49,16 +49,7 @@ public class MiniTecSecurityBootstrap {
     @Order(Ordered.LOWEST_PRECEDENCE - 4)
     @Transactional
     public void onReady() {
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
-            return;
-        }
-        userService.ensureUser(OPERATOR_GAS, "Operator Gas Zone", "operator-gas", List.of(IspfRoles.OPERATOR));
-        userService.ensureUser(OPERATOR_ELECTRICAL, "Operator Electrical", "operator-electrical", List.of(IspfRoles.OPERATOR));
-        userService.ensureUser(OPERATOR_ENGINEER, "Station Engineer", "operator-engineer", List.of(IspfRoles.OPERATOR));
-
-        ensureZoneAcl(MiniTecPaths.GRPB, OPERATOR_GAS);
-        ensureZoneAcl(MiniTecPaths.RUMB, OPERATOR_ELECTRICAL);
-        ensureZoneAcl(MiniTecPaths.LOAD_MODULE, OPERATOR_ELECTRICAL);
+        // Zone operator users ship with the mini-tec marketplace bundle / ops docs — not empty platform.
     }
 
     private void ensureZoneAcl(String devicePath, String owner) {

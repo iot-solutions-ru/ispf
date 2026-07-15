@@ -106,6 +106,30 @@ final class AgentPlanGuard {
             runState.resetPlan();
             return false;
         }
+        // Execute mode is the user's explicit consent to mutate — do not enter planning
+        // even when agent-require-approval-for-mutate is enabled (BL-106).
+        if (mode == AgentInteractionMode.EXECUTE) {
+            if (isApprovalMessage(userMessage, runState.planPhase())
+                    && (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
+                    || runState.planPhase() == AgentPlanPhase.PLANNING
+                    || !runState.storedPlan().isEmpty())) {
+                runState.approvePlan(approverUsername);
+                return true;
+            }
+            if (isExecuteIntentMessage(userMessage, runState.planPhase())) {
+                if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
+                        || runState.planPhase() == AgentPlanPhase.PLANNING) {
+                    if (canApprovePlan(runState)) {
+                        runState.approvePlan(approverUsername);
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            runState.setPlanPhase(AgentPlanPhase.NONE);
+            runState.unlockMutationsForTurn();
+            return false;
+        }
         if (isApprovalMessage(userMessage, runState.planPhase())) {
             if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
                     || runState.planPhase() == AgentPlanPhase.PLANNING
@@ -130,16 +154,6 @@ final class AgentPlanGuard {
             return false;
         }
         if (runState.planPhase() == AgentPlanPhase.APPROVED) {
-            return false;
-        }
-        if (mode == AgentInteractionMode.EXECUTE) {
-            if (requireApprovalForMutate
-                    && !runState.isPlanApproved()
-                    && impliesPlatformMutation(userMessage)) {
-                runState.setPlanPhase(AgentPlanPhase.PLANNING);
-                return false;
-            }
-            runState.setPlanPhase(AgentPlanPhase.NONE);
             return false;
         }
         if (mode == AgentInteractionMode.PLAN) {

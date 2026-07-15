@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../api";
@@ -21,6 +21,8 @@ import {
 import { validateBindingRuleExpression } from "../utils/bindingExpressionValidation";
 import { encodeHistorianTagPath } from "../utils/analyticsPath";
 import { useAnalyticsCatalog } from "../hooks/useAnalyticsCatalog";
+import { usePublishAdminFocus } from "../hooks/usePublishAdminFocus";
+import type { AdminClientFocus } from "../context/AdminFocusContext";
 
 interface RuleTemplate {
   id: string;
@@ -125,11 +127,61 @@ export default function BindingRulesPanel({
   const reactiveCatalog = useAnalyticsCatalog("reactive");
   const reactiveEntries = reactiveCatalog.entries;
 
+  const rulesList = rulesQuery.data;
+
+  const computationsFocus = useMemo((): AdminClientFocus => {
+    const rules = rulesList ?? [];
+    return {
+      surface: "binding",
+      objectPath: path,
+      priority: 45,
+      detail: {
+        inspectorTab: "computations",
+        ruleCount: rules.length,
+        rules: rules.slice(0, 25).map((rule) => ({
+          id: rule.id,
+          kind: ruleKind(rule),
+          target: targetSummary(rule.target),
+          expression:
+            typeof rule.expression === "string" && rule.expression.length > 160
+              ? `${rule.expression.slice(0, 160)}…`
+              : rule.expression,
+          enabled: rule.enabled !== false,
+        })),
+      },
+    };
+  }, [path, rulesList]);
+  usePublishAdminFocus(`binding-rules:${path}`, computationsFocus, !editing);
+
+  const ruleEditFocus = useMemo((): AdminClientFocus | null => {
+    if (!editing) {
+      return null;
+    }
+    return {
+      surface: "binding-rule",
+      objectPath: path,
+      priority: 70,
+      detail: {
+        ruleId: editing.id,
+        kind: ruleKind(editing),
+        target: targetSummary(editing.target),
+        targetRaw: editing.target,
+        expression: editing.expression,
+        condition: editing.condition,
+        enabled: editing.enabled !== false,
+        activators: editing.activators,
+        formulaRef: editing.formulaRef ?? null,
+      },
+    };
+  }, [editing, path]);
+  usePublishAdminFocus(`binding-rule-edit:${path}`, ruleEditFocus, Boolean(editing));
+
   if (rulesQuery.isLoading) {
     return <p>{t("inspector:bindings.loading")}</p>;
   }
 
-  const rules = rulesQuery.data ?? [];
+  const rules = rulesList ?? [];
+
   const setRuleKind = (kind: BindingRuleKind) => {
     if (!editing) {
       return;
@@ -374,6 +426,11 @@ export default function BindingRulesPanel({
                   variables={variables}
                   functionNames={functionNames}
                   editorTitle={t("inspector:bindings.column.expression")}
+                  focusContext={{
+                    ruleId: editing.id,
+                    ruleKind: editingRuleKind,
+                    target: targetSummary(editing.target),
+                  }}
                   entries={
                     editingRuleKind === "historian"
                       ? historianEntries
@@ -396,6 +453,11 @@ export default function BindingRulesPanel({
                   variables={variables}
                   functionNames={functionNames}
                   editorTitle={t("inspector:bindings.condition")}
+                  focusContext={{
+                    ruleId: editing.id,
+                    ruleKind: editingRuleKind,
+                    target: targetSummary(editing.target),
+                  }}
                   analyticsCatalogKind={editingRuleKind}
                   onValidate={(expression) =>
                     validateBindingRuleExpression(expression, path, editingRuleKind, "condition")

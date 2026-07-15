@@ -10,6 +10,30 @@
 
 См. также [observability](observability.md) — очистка Prometheus и экспорт OTLP.
 
+## Базовый уровень ordered suite (I-01…I-08)
+
+Обезличенные результаты (split lab, stress Scylla, ISPF **0.9.139…0.9.147**, июль 2026): [`examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md`](../../examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md). Цифры — ориентир регрессии на **одном** стенде, не SLA прода. Канонический текст: [en/load-testing.md](../en/load-testing.md#ordered-suite-baseline-i-01i-08).
+
+| Id | Путь | Итог | Ключевая метрика |
+|----|------|------|------------------|
+| **I-01** | N× mqtt → historian | **PASS** (stress) | Пик **~258k…579k** samples/s flushed (16 уст.; Scylla/CH) — [lab-mqtt-historian-stress](lab-mqtt-historian-stress.md) |
+| **I-02** | mqtt-gateway → child historian | **PASS** | **~4,4k** samples/s @ ~2k msg/s, coalesce 50 ms — [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) |
+| **I-03** | mqtt `EVENT_JOURNAL_ONLY` | **PASS** | Smoke **~2,4k**/s; peak ~319k/s; fan-out **~403k**/s — [lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md) |
+| **I-04** | mqtt FULL + CEL → journal | **PASS** | Smoke **~1,8k** alert/s; fan-out **~8,8k** alert/s |
+| **I-05** | virtual TELEMETRY_ONLY → historian | **PASS** | **~360** samples/s (30 уст. @ 500 ms) |
+| **I-06** | virtual FULL + CEL → journal | **PASS** (smoke + tick) | Smoke **~60** alert/s; scale best **~7,3k** alert/s (1000@100 ms) |
+| **I-07** | HTTP `POST /events/fire` | **PASS** | Лучший fail=0 **~1714** RPS (c=40); после «мусора» suite — ниже RPS или fail%; чистите loadtest correlators |
+| **I-08** | gateway `lastIngress.raw` historian | **PASS** (0.9.147) | Live ingress OK; **~3,8k** samples/s flushed @ ~2k msg/s |
+
+**Гейты:** предпочитайте монотонные счётчики платформы (`variableHistoryFlushedTotal`, `eventsFiredTotal`, `eventJournalFlushedTotal`), а не `COUNT(*)` Scylla/CH после больших прогонов. Для I-08 нужны обновление **RAM** на historian-only MQTT path и `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=0`.
+
+Примеры JSON (обезличенные): [`reports/`](../../examples/lab-mqtt-historian-stress/reports/). Заметки оператора с реальными хостами: gitignored `examples/lab-mqtt-historian-stress/local/`.
+
+```bash
+python deploy/run_lab_ordered_suite.py --topology single --profile grouped --continue-on-fail
+python deploy/run_lab_ordered_suite.py --topology single --only I-07,I-08 --reset soft
+```
+
 ## Три контура
 
 | Контур | Скрипт | Что измеряет |

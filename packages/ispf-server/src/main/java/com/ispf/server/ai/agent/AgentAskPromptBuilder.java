@@ -14,13 +14,19 @@ public final class AgentAskPromptBuilder {
             The user speaks in plain language (often Russian). Answer in the same language.
             This mode NEVER plans projects, NEVER mutates the tree, NEVER emits phase=plan or result.plan.
             
+            CRITICAL — screen context: if this turn includes LIVE UI SNAPSHOT, ## User UI focus, ## Client channel: Admin Copilot,
+            [UI CONTEXT], or an EXPRESSION: block, that IS the screen/rule/expression the user means.
+            Never ask «уточните выражение/правило/экран» when those fields are present — answer from them.
+            
             Your job: explain platform concepts, document procedures, list/describe what exists, \
             preview reports, and answer «how do I…?» with step-by-step Markdown instructions.
             For real deploy/create/configure the user must switch to Execute or Plan mode — say so briefly when relevant.
             
             Work step-by-step with read-only tools when live data helps; otherwise answer from playbooks below.
             
-            GROUND TRUTH: paths, appIds, report names — only from tool results this turn or briefing. \
+            GROUND TRUTH: paths, appIds, report names — from tool results this turn, briefing, \
+            OR from LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] on this turn (those ARE live state). \
+            If objectPath or detail.rules appear in UI focus, that IS the object — never ask the user to type the path. \
             Playbook examples (mes-reference, pump-01) are patterns, not live state.
             
             How-to questions («как упаковать bundle?», «как это сделать?»):
@@ -56,13 +62,28 @@ public final class AgentAskPromptBuilder {
             boolean hasImages,
             String sessionDocumentsSection
     ) {
+        return build(rootPath, fullToolCatalog, platformBriefing, hasImages, sessionDocumentsSection, true);
+    }
+
+    /**
+     * @param includePlaybooks when false (Admin Copilot with live UI focus), skip bulky reference playbooks
+     *                         that drown the focus block and encourage generic clarifying questions.
+     */
+    public static String build(
+            String rootPath,
+            List<Map<String, Object>> fullToolCatalog,
+            String platformBriefing,
+            boolean hasImages,
+            String sessionDocumentsSection,
+            boolean includePlaybooks
+    ) {
         String effectiveRoot = rootPath == null || rootPath.isBlank() ? "root" : rootPath.trim();
         List<Map<String, Object>> tools = readOnlyToolCatalog(fullToolCatalog);
         StringBuilder prompt = new StringBuilder(HEADER.length() + 4096);
         prompt.append(HEADER);
         prompt.append(FORMATTING);
         prompt.append("Default tree root: ").append(effectiveRoot).append("\n\n");
-        if (platformBriefing != null && !platformBriefing.isBlank()) {
+        if (platformBriefing != null && !platformBriefing.isBlank() && includePlaybooks) {
             prompt.append("## Platform knowledge (auto)\n");
             prompt.append(platformBriefing.trim()).append("\n\n");
         }
@@ -77,12 +98,19 @@ public final class AgentAskPromptBuilder {
                     .append(tool.get("description"))
                     .append("\n");
         }
-        prompt.append("\n## Reference playbooks (documentation — not live state)\n\n");
-        prompt.append(AgentPlaybooks.applicationLifecycleGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.reportsGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.platformObjectTypesGuide());
+        if (includePlaybooks) {
+            prompt.append("\n## Reference playbooks (documentation — not live state)\n\n");
+            prompt.append(AgentPlaybooks.applicationLifecycleGuide());
+            prompt.append("\n\n");
+            prompt.append(AgentPlaybooks.reportsGuide());
+            prompt.append("\n\n");
+            prompt.append(AgentPlaybooks.platformObjectTypesGuide());
+        } else {
+            prompt.append("\nUI focus is present for this Copilot turn — answer from LIVE UI SNAPSHOT / focus.\n")
+                    .append("FORBIDDEN: asking for object path, screen, rule id, or expression when those are in focus.\n")
+                    .append("If surface=binding and rules are listed, explain those rules (id, target, expression) directly.\n")
+                    .append("Optional tools: describe_variables / list_binding_rules / list_variables using the focus objectPath — never ask the user for it.\n");
+        }
         if (hasImages) {
             prompt.append("\n\n");
             prompt.append("""
@@ -99,7 +127,7 @@ public final class AgentAskPromptBuilder {
             String platformBriefing,
             boolean hasImages
     ) {
-        return build(rootPath, fullToolCatalog, platformBriefing, hasImages, "");
+        return build(rootPath, fullToolCatalog, platformBriefing, hasImages, "", true);
     }
 
     static List<Map<String, Object>> readOnlyToolCatalog(List<Map<String, Object>> fullToolCatalog) {

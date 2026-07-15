@@ -25,6 +25,7 @@ apps/web-console/blob-report/
 .env
 .env.*
 !.env.example
+deploy/.ai-smoke.env
 
 # OS
 .DS_Store

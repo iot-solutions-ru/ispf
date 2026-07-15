@@ -2,21 +2,21 @@
 
 # Операции AI-агента (BL-177…181)
 
-Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, заглушке генератора решений и виджетам наблюдения.
+Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, генератору решений и виджетам наблюдения.
 
 См. также [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).
 
 ---
 
-## Заглушка генератора решений (BL-179)
+## Генератор решений (BL-179 / BL-180)
 
-Черновик проекта по ключевым словам без LLM — первый шаг к автоматизации «опиши завода».
+Описание завода → черновик blueprint; опционально **live** apply (дерево + дашборды + alerts).
 
 | Конечная точка | Цель |
 |----------|---------|
-| `POST /api/v1/ai/solutions/generate` | Prompt → `blueprintDraft` (domain `mes` / `scada` / `hvac`) |
+| `POST /api/v1/ai/solutions/generate` | Prompt → draft; `apply:true` → live deploy (нужен LLM) |
 
-Запрос:
+Черновик:
 
 ```json
 {
@@ -24,31 +24,34 @@
 }
 ```
 
-Response (`mode: stub`):
+Ответ (`mode: draft` keyword fallback, или `mode: llm` при классификации LLM):
 
 ```json
 {
   "status": "OK",
-  "mode": "stub",
+  "mode": "draft",
   "domain": "scada",
+  "domainSelection": "keyword",
   "playbook": "AgentSolutionGeneratorPlaybook",
   "blueprintDraft": {
     "id": "scada-tank-farm-with-2-pumps",
     "title": "SCADA facility overview",
     "domain": "scada",
-    "specBrief": { "title": "...", "entities": [], "functionalRequirements": [] },
-    "suggestedArtifacts": {
-      "rootFolder": "root.platform....",
-      "devices": [],
-      "dashboards": [],
-      "alerts": [],
-      "mimics": []
-    },
-    "referenceBundle": { "appId": "simulator-profiles", "manifestPath": "examples/simulator-profiles/bundle.json" },
-    "nextSteps": ["create_object CUSTOM folder", "create_virtual_device", "..."]
+    "referenceBundle": { "appId": "simulator", "manifestPath": "examples/simulator-profiles/bundle.json" }
   }
 }
 ```
+
+Live apply (BL-180):
+
+```json
+{
+  "prompt": "Building HVAC with one AHU, overview dashboard and status alert",
+  "apply": true
+}
+```
+
+Нужен LLM (`ISPF_AI_*`). Возвращает `mode: live` с `hubPath`, `dashboardPath`, `alertPath`. Proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
 
 Ключевые слова для обнаружения домена:
 
@@ -66,10 +69,28 @@ Response (`mode: stub`):
 
 | Путь | Цель |
 |------|---------|
-| `tools/agent-regression/scenarios/*.json` | 40 curated scenarios (SCADA, MES, HVAC) |
-| `tools/agent-regression/validate-scenarios.mjs` | Schema + bundle manifest validation + pass-rate report |
+| `tools/agent-regression/scenarios/*.json` | 50 curated scenarios (SCADA, MES, HVAC) |
+| `tools/agent-regression/validate-scenarios.mjs` | Schema + bundle + pass-rate (`--oneshot` для частичных live-результатов) |
 | `AgentRegressionCiTest` | Java CI gate (schema only, no LLM) |
 | `AgentLiveDeploySmokeTest` | Opt-in live LLM mes-platform deploy (`ISPF_LLM_SMOKE=true`) |
+| `tools/agent-regression/run-live-oneshot.sh` | BL-177 one-shot → results JSON + `--enforce-rate --oneshot` |
+
+### BL-177 live one-shot (вручную / nightly с secrets)
+
+```bash
+export ISPF_LLM_SMOKE=true
+export ISPF_AI_PROVIDER=openai-compatible
+export ISPF_AI_BASE_URL=https://api.deepseek.com/v1   # пример OpenAI-совместимого LLM, НЕ Admin Console
+export ISPF_AI_MODEL=deepseek-v4-flash
+export ISPF_AI_API_KEY=…                              # не коммитить
+
+bash tools/agent-regression/run-live-oneshot.sh
+# или:
+./gradlew :packages:ispf-server:test --tests com.ispf.server.ai.agent.AgentLiveDeploySmokeTest
+```
+
+PASS: operator UI `mes-platform` live и BFF `mes_platform_listLines` → `LINE-A01` без правок человека.
+Агент использует инструмент **`run_deploy_playbook`** с `{"appId":"mes-platform"}`.
 
 Подтвердите локально:
 
@@ -77,10 +98,11 @@ Response (`mode: stub`):
 node tools/agent-regression/validate-scenarios.mjs
 ```
 
-Отчет о проходимости (ночные прямые трансляции):
+Отчёт pass rate (полный suite vs one-shot):
 
 ```bash
 node tools/agent-regression/validate-scenarios.mjs --results nightly-results.json --enforce-rate
+node tools/agent-regression/validate-scenarios.mjs --results build/agent-regression/live-oneshot-results.json --enforce-rate --oneshot
 ```
 
 Форма файла результатов:
@@ -88,13 +110,13 @@ node tools/agent-regression/validate-scenarios.mjs --results nightly-results.jso
 ```json
 {
   "scenarios": [
-    { "id": "mes-reference-deploy", "status": "OK" },
+    { "id": "mes-platform-cert", "status": "OK" },
     { "id": "scada-tank-farm", "status": "ERROR" }
   ]
 }
 ```
 
-Цель: **≥95 %** процент успешных попыток во всех сценариях. **Статус (0.9.102): не выполнено** — JSON-схема PR/nightly gates + только результаты заглушки; см. [agent-regression](agent-regression.md).
+Цель: **≥95 %** на всех сценариях (полный BL-178). **S31 one-shot** доказывает BL-177 через `--oneshot`. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
 
 ---
 
@@ -172,6 +194,6 @@ node tools/agent-regression/validate-scenarios.mjs --results nightly-results.jso
 |----|---------|-----|
 | БЛ-177 | Комплексное развертывание агента | [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
 | БЛ-178 | Пакет регрессионного агента | [agent-regression](agent-regression.md) |
-| БЛ-179 | Заглушка генератора решений | Этот документ § Генератор решений |
-| БЛ-180 | Генератор решений GA + виджет метрик | [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) |
+| БЛ-179 | Draft API генератора решений | Этот документ § Генератор решений |
+| БЛ-180 | Live apply генератора + виджет метрик | `AiSolutionGeneratorLiveSmokeTest`, playbook |
 | БЛ-181 | Наблюдаемость агентов v2 | `/agent/metrics/tools`, [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) |

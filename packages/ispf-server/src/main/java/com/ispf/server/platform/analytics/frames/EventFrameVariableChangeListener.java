@@ -2,7 +2,6 @@ package com.ispf.server.platform.analytics.frames;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.server.application.reference.mes.MesBlueprintBootstrap;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.object.ObjectManager;
@@ -47,7 +46,7 @@ public class EventFrameVariableChangeListener {
 
     private static boolean isBatchLot(PlatformObject node) {
         for (String blueprintId : node.appliedBlueprintIds()) {
-            if (blueprintId.toLowerCase().contains(MesBlueprintBootstrap.BATCH_MODEL)) {
+            if (blueprintId.toLowerCase().contains("batch-v1")) {
                 return true;
             }
         }

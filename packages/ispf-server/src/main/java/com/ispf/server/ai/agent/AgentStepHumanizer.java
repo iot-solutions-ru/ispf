@@ -42,8 +42,7 @@ public final class AgentStepHumanizer {
             case "list_relative_blueprints" -> "Смотрю RELATIVE-модели"
                     + (arg(arguments, "query").isBlank() ? "" : ": «" + arg(arguments, "query") + "»");
             case "get_object_blueprint" -> "Схема модели «" + orDefault(arg(arguments, "blueprintName"), arg(arguments, "blueprintId")) + "»";
-            case "create_virtual_device" -> "Создаю виртуальное устройство «" + arg(arguments, "name") + "» ("
-                    + arg(arguments, "profile") + ")";
+            case "create_virtual_device" -> "Создаю виртуальное устройство «" + arg(arguments, "name") + "»";
             case "driver_control" -> driverControlLabel(arguments, result);
             case "save_mimic_diagram" -> "Сохраняю элементы mimic «" + arg(arguments, "path") + "»";
             case "add_mimic_elements" -> "Добавляю символы на mimic «" + arg(arguments, "path") + "»";

@@ -11,6 +11,7 @@ import {
   groupVariablesByPath,
   resolveTopologyBindingValues,
 } from "../../../scada/topologySvgConfig";
+import { prepareTopologyHitLayer } from "../../../scada/topologyHitLayer";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
 import { resolveWidgetMediaSrc } from "../widgetMediaUrl";
@@ -117,8 +118,11 @@ export default function SvgInteractiveBody({
     if (mountedBaseRef.current === baseSvgInner) return;
     layer.innerHTML = baseSvgInner;
     mountedBaseRef.current = baseSvgInner;
+    if (config?.hitAreas?.length) {
+      prepareTopologyHitLayer(layer, config.hitAreas);
+    }
     setLayerRevision((value) => value + 1);
-  }, [baseSvgInner]);
+  }, [baseSvgInner, config?.hitAreas]);
 
   useEffect(() => {
     const layer = layerRef.current;
@@ -139,27 +143,37 @@ export default function SvgInteractiveBody({
     const cleanups: Array<() => void> = [];
     for (const area of config.hitAreas) {
       const targetId = area.id ?? `back_${area.nodeName}`;
-      const el = host.querySelector(`#${CSS.escape(targetId)}`);
-      if (!el) continue;
-      el.setAttribute("data-topology-node", area.nodeName);
-      (el as SVGElement).style.cursor = "pointer";
-      const handler = (event: Event) => {
-        event.stopPropagation();
-        if (!selectionKey?.trim()) return;
-        session.setSelection(selectionKey, area.objectPath);
-        triggerDashboardOpen(
-          hitOpenMode,
-          hitTargetDashboard,
-          title,
-          {
-            navigateToDashboard: session.navigateToDashboard,
-            openDashboardModal: session.openDashboardModal,
-          },
-          { selection: { [selectionKey]: area.objectPath } }
-        );
-      };
-      el.addEventListener("click", handler);
-      cleanups.push(() => el.removeEventListener("click", handler));
+        const targets = [
+          host.querySelector(`#${CSS.escape(targetId)}`),
+          ...[...host.querySelectorAll("[data-topology-hit-proxy]")].filter(
+            (node) => node.getAttribute("data-topology-hit-proxy") === targetId
+          ),
+        ].filter(Boolean) as Element[];
+        if (targets.length === 0) continue;
+      const label = area.label ?? area.nodeName;
+      for (const el of targets) {
+        el.setAttribute("data-topology-node", area.nodeName);
+        el.setAttribute("title", label);
+        (el as SVGElement).style.cursor = "pointer";
+        const handler = (event: Event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          if (!selectionKey?.trim() || !area.objectPath?.trim()) return;
+          session.setSelection(selectionKey, area.objectPath);
+          triggerDashboardOpen(
+            hitOpenMode,
+            hitTargetDashboard,
+            title ?? label,
+            {
+              navigateToDashboard: session.navigateToDashboard,
+              openDashboardModal: session.openDashboardModal,
+            },
+            { selection: { [selectionKey]: area.objectPath } }
+          );
+        };
+        el.addEventListener("click", handler);
+        cleanups.push(() => el.removeEventListener("click", handler));
+      }
     }
 
     return () => {
@@ -172,8 +186,10 @@ export default function SvgInteractiveBody({
     if (!host || !selectedPath) return;
     for (const el of host.querySelectorAll("[data-topology-selected]")) {
       el.removeAttribute("data-topology-selected");
-      el.removeAttribute("stroke");
-      el.removeAttribute("stroke-width");
+      if (el.getAttribute("data-topology-hit") !== "link") {
+        el.removeAttribute("stroke");
+        el.removeAttribute("stroke-width");
+      }
     }
     const area = config?.hitAreas.find((hit) => hit.objectPath === selectedPath);
     if (!area) return;
@@ -181,8 +197,10 @@ export default function SvgInteractiveBody({
     const el = host.querySelector(`#${CSS.escape(targetId)}`);
     if (!el) return;
     el.setAttribute("data-topology-selected", "1");
-    el.setAttribute("stroke", "#1e3a5f");
-    el.setAttribute("stroke-width", "3");
+    if (area.kind !== "link") {
+      el.setAttribute("stroke", "#1e3a5f");
+      el.setAttribute("stroke-width", "3");
+    }
   }, [config?.hitAreas, layerRevision, selectedPath, bindingValues]);
 
   const onWheel = useCallback(
@@ -198,6 +216,10 @@ export default function SvgInteractiveBody({
   const onPointerDown = useCallback(
     (event: React.PointerEvent) => {
       if (!panEnabled || editable || event.button !== 0) return;
+      const target = event.target as Element | null;
+      if (target?.closest?.("[data-topology-hit],[data-topology-hit-proxy],[data-topology-node]")) {
+        return;
+      }
       panDragRef.current = { x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y };
       (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     },

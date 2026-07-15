@@ -175,35 +175,26 @@ Each protocol is a separate pack (`ispf-driver-*`). Without installed packs, `GE
 
 ### virtual (`ispf-driver-virtual`)
 
-Simulator for a stand without hardware. Profile is set in `driverConfigJson.profile`:
+Out-of-the-box simulator for stands without hardware. **No profiles** — one poll path writes multi-type telemetry
+(`temperature`+quality, waves, meter/flow, geo, tables, binary, booleans, `status`). Amplitudes/period come from
+`driverConfigJson`. Domain plants (Mini-TEC, tank-farm, OGP) enrich the object via **relative blueprints**
+(variables + binding rules / functions), not via `driverConfigJson.profile`.
 
-| `profile` | Variables | Purpose |
-|-----------|-----------|---------|
-| `demo` (default) | `temperature`, `status` | Temperature sine wave |
-| `meter` | `meterLiters`, `flowRate`, `filling` | Fill: `litersPerSecond`, `filling` |
-| `weighbridge` | `grossWeight`, `tareKg` | `tareKg + meterLiters * density` |
-| `rack-signals` | `gasPresent`, `groundConnected` | Boolean signals by `rackId` |
-
-Example meter (virtual driver profile):
+Example config:
 
 ```json
 {
-  "profile": "meter",
+  "baseTemperature": "22.0",
+  "amplitude": "15.0",
+  "periodSec": "60",
+  "sineAmplitude": "10.0",
+  "sawtoothAmplitude": "5.0",
   "litersPerSecond": "120",
   "filling": "true"
 }
 ```
 
-Demo temperature config:
-
-```json
-{
-  "profile": "demo",
-  "baseTemperature": "22.0",
-  "amplitude": "15.0",
-  "periodSec": "60"
-}
-```
+Recommended model: `virtual-unified-v1` (or thinner `virtual-lab-v1` for waves). Agent: `create_virtual_device`.
 
 ### mqtt (`ispf-driver-mqtt`)
 

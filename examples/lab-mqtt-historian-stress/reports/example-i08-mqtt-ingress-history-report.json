@@ -1,0 +1,48 @@
+{
+  "comment": "Anonymized example — RFC 5737 addresses only. Measure uses variableHistoryFlushedTotal delta.",
+  "phase": {
+    "durationSec": 63.2,
+    "startHistorianSamples": 1560310,
+    "historianSamplesGenerated": 235375,
+    "historianSamplesPerSecond": 3727.82,
+    "endHistorianSamples": 1795685,
+    "eventsGenerated": 235375,
+    "eventsPerSecond": 3727.82,
+    "alertFiresGenerated": 0,
+    "alertFiresPerSecond": 0.0,
+    "historianMinIntervalMs": 0,
+    "historianTarget": {
+      "objectPath": "root.platform.devices.loadtest-mqtt-gateway",
+      "variableName": "lastIngress",
+      "fieldName": "raw"
+    },
+    "mode": "push",
+    "gateway": true,
+    "ingressHistoryOnly": true,
+    "historianOnly": true,
+    "devices": 4,
+    "brokerUrl": "tcp://198.51.100.10:1883",
+    "telemetryCoalesceMs": 1,
+    "publisher": "emqtt-bench",
+    "emqttIntervalMs": 10,
+    "fieldWindowSamples": 10000
+  },
+  "sampleDevice": "root.platform.devices.loadtest-mqtt-gateway",
+  "driverStatus": {
+    "devicePath": "root.platform.devices.loadtest-mqtt-gateway",
+    "driverId": "mqtt",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 5000,
+    "lastError": null,
+    "telemetryPublishMode": "TELEMETRY_ONLY",
+    "telemetryCoalesceMs": 1
+  },
+  "stand": {
+    "applicationHost": "198.51.100.11",
+    "loadgenHost": "198.51.100.10",
+    "ispfVersion": "0.9.147",
+    "topology": "single",
+    "outcome": "PASS"
+  }
+}

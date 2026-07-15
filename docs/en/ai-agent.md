@@ -1,20 +1,20 @@
 # AI Agent operations (BL-177…181)
 
-Operator and integrator reference for the ISPF tree-first agent, regression suite, solution generator stub, and observability widgets.
+Operator and integrator reference for the ISPF tree-first agent, regression suite, solution generator, and observability widgets.
 
 See also [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).
 
 ---
 
-## Solution generator stub (BL-179)
+## Solution generator (BL-179 / BL-180)
 
-Keyword-driven blueprint draft without LLM — first step toward “describe the plant” automation.
+Natural-language plant description → blueprint draft, optional **live** apply (tree + dashboards + alerts).
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /api/v1/ai/solutions/generate` | Prompt → `blueprintDraft` (domain `mes` / `scada` / `hvac`) |
+| `POST /api/v1/ai/solutions/generate` | Prompt → draft; `apply:true` → live deploy (requires LLM) |
 
-Request:
+Draft request:
 
 ```json
 {
@@ -22,13 +22,14 @@ Request:
 }
 ```
 
-Response (`mode: stub`):
+Draft response (`mode: draft` keyword fallback, or `mode: llm` when LLM classifies domain):
 
 ```json
 {
   "status": "OK",
-  "mode": "stub",
+  "mode": "draft",
   "domain": "scada",
+  "domainSelection": "keyword",
   "playbook": "AgentSolutionGeneratorPlaybook",
   "blueprintDraft": {
     "id": "scada-tank-farm-with-2-pumps",
@@ -42,11 +43,22 @@ Response (`mode: stub`):
       "alerts": [],
       "mimics": []
     },
-    "referenceBundle": { "appId": "simulator-profiles", "manifestPath": "examples/simulator-profiles/bundle.json" },
-    "nextSteps": ["create_object CUSTOM folder", "create_virtual_device", "..."]
+    "referenceBundle": { "appId": "simulator", "manifestPath": "examples/simulator-profiles/bundle.json" },
+    "nextSteps": ["POST … with apply=true", "…"]
   }
 }
 ```
+
+Live apply (BL-180):
+
+```json
+{
+  "prompt": "Building HVAC with one AHU, overview dashboard and status alert",
+  "apply": true
+}
+```
+
+Requires configured LLM (`ISPF_AI_*`). Returns `mode: live` with `hubPath`, `dashboardPath`, `alertPath`, operator UI. Opt-in proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
 
 Domain detection keywords:
 
@@ -64,10 +76,29 @@ Full pipeline: [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main
 
 | Path | Purpose |
 |------|---------|
-| `tools/agent-regression/scenarios/*.json` | 40 curated scenarios (SCADA, MES, HVAC) |
-| `tools/agent-regression/validate-scenarios.mjs` | Schema + bundle manifest validation + pass-rate report |
+| `tools/agent-regression/scenarios/*.json` | 50 curated scenarios (SCADA, MES, HVAC) |
+| `tools/agent-regression/validate-scenarios.mjs` | Schema + bundle manifest validation + pass-rate report (`--oneshot` for partial live results) |
 | `AgentRegressionCiTest` | Java CI gate (schema only, no LLM) |
 | `AgentLiveDeploySmokeTest` | Opt-in live LLM mes-platform deploy (`ISPF_LLM_SMOKE=true`) |
+| `tools/agent-regression/run-live-oneshot.sh` | BL-177 one-shot wrapper → results JSON + `--enforce-rate --oneshot` |
+
+### BL-177 live one-shot (manual / nightly with secrets)
+
+```bash
+# OpenAI-compatible LLM (NOT the ISPF Admin Console port)
+export ISPF_LLM_SMOKE=true
+export ISPF_AI_PROVIDER=openai-compatible
+export ISPF_AI_BASE_URL=https://api.deepseek.com/v1   # example
+export ISPF_AI_MODEL=deepseek-v4-flash
+export ISPF_AI_API_KEY=…                              # never commit
+
+bash tools/agent-regression/run-live-oneshot.sh
+# or:
+./gradlew :packages:ispf-server:test --tests com.ispf.server.ai.agent.AgentLiveDeploySmokeTest
+```
+
+PASS when operator UI `mes-platform` is live and BFF `mes_platform_listLines` returns `LINE-A01` without human edits.
+Prefer the agent tool **`run_deploy_playbook`** with `{"appId":"mes-platform"}` (loads example bundle → validate → dry-run → import → operator UI).
 
 Validate locally:
 
@@ -75,10 +106,11 @@ Validate locally:
 node tools/agent-regression/validate-scenarios.mjs
 ```
 
-Pass-rate report (nightly live runs):
+Pass-rate report (full suite vs one-shot):
 
 ```bash
 node tools/agent-regression/validate-scenarios.mjs --results nightly-results.json --enforce-rate
+node tools/agent-regression/validate-scenarios.mjs --results build/agent-regression/live-oneshot-results.json --enforce-rate --oneshot
 ```
 
 Results file shape:
@@ -86,14 +118,13 @@ Results file shape:
 ```json
 {
   "scenarios": [
-    { "id": "mes-reference-deploy", "status": "OK" },
+    { "id": "mes-platform-cert", "status": "OK" },
     { "id": "scada-tank-farm", "status": "ERROR" }
   ]
 }
 ```
 
-Target: **≥95%** live pass rate across all scenarios. **Status (0.9.102): not met** — PR/nightly gate JSON schema + stub results only; see [agent-regression](agent-regression.md).
-
+Target: **≥95%** live pass rate across all scenarios (full BL-178). **S31 one-shot** proves BL-177 with `--oneshot`. `nightly-stub-results.json` is **deprecated** — not evidence of live ≥95%.
 ---
 
 ## AI tool metrics dashboard widget (BL-180)
@@ -170,6 +201,6 @@ Embed in a platform dashboard (`root.platform.dashboards.ai-ops`) using a **char
 |----|---------|-----|
 | BL-177 | End-to-end agent deploy | [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
 | BL-178 | Agent regression suite | [agent-regression](agent-regression.md) |
-| BL-179 | Solution generator stub | This doc § Solution generator |
-| BL-180 | Solution generator GA + metrics widget | [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) |
+| BL-179 | Solution generator draft API | This doc § Solution generator |
+| BL-180 | Solution generator live apply + metrics widget | `AiSolutionGeneratorLiveSmokeTest`, playbook |
 | BL-181 | Agent observability v2 | `/agent/metrics/tools`, [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) |

@@ -12,6 +12,7 @@ import java.util.UUID;
 
 /**
  * Seeds the platform catalog skeleton on first start. Demo objects are seeded by {@link DemoFixtureBootstrap}.
+ * MES catalog is not part of the base platform — install via marketplace ({@code mes-platform}).
  * Default role templates ({@code operator-readonly}, {@code mes-supervisor}) are seeded via
  * {@link com.ispf.server.security.PlatformRoleService#ensureDefaultRoles()} on application ready.
  */
@@ -45,7 +46,7 @@ public class PlatformBootstrap {
         register(tree, "root.platform.queries", ObjectType.QUERIES, null);
         register(tree, "root.platform.event-filters", ObjectType.EVENT_FILTERS, null);
         register(tree, ProcessProgramPaths.PROCESS_PROGRAMS_ROOT, ObjectType.PROCESS_PROGRAMS, null);
-        register(tree, "root.platform.mes", ObjectType.MES, null);
+        // MES catalog (root.platform.mes.*) is not base platform — install mes-platform from IoT Solutions marketplace.
 
         register(tree, "root.platform.applications", ObjectType.APPLICATIONS, "app-folder-v1");
         registerCatalogFolder(tree, "root.platform.instances");

@@ -1,0 +1,57 @@
+{
+  "comment": "Anonymized example — RFC 5737 addresses only. Not a live attachment from a named host.",
+  "phases": [
+    {
+      "concurrency": 40,
+      "total": 102870,
+      "ok": 102870,
+      "fail": 0,
+      "rps": 1714.0,
+      "fail_rate_pct": 0.0,
+      "latency_ms": {
+        "p50": 20.3,
+        "p95": 50.4,
+        "p99": 67.8,
+        "avg": 23.3,
+        "max": 141.0,
+        "n": 102870
+      },
+      "by_op": {
+        "fire_event": {
+          "p50": 19.9,
+          "p95": 48.9,
+          "p99": 65.3,
+          "avg": 22.8,
+          "max": 141.0,
+          "n": 66724
+        },
+        "list_events_device": {
+          "p50": 19.4,
+          "p95": 47.6,
+          "p99": 63.6,
+          "avg": 22.2,
+          "max": 111.4,
+          "n": 15513
+        },
+        "list_events_global": {
+          "p50": 22.5,
+          "p95": 56.4,
+          "p99": 74.6,
+          "avg": 25.9,
+          "max": 129.1,
+          "n": 20633
+        }
+      },
+      "fail_by_op": {}
+    }
+  ],
+  "devices": [
+    "root.platform.devices.loadtest-dev-00001"
+  ],
+  "eventName": "event1",
+  "stand": {
+    "applicationHost": "198.51.100.11",
+    "ispfVersion": "0.9.147",
+    "topology": "single"
+  }
+}

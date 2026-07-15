@@ -126,5 +126,5 @@ python deploy/run_lab_ordered_suite.py --topology single --only I-03 --reset sof
 - [lab-event-journal-stress](lab-event-journal-stress.md) — legacy single-host пик (~110k)
 - [lab-mqtt-historian-stress](lab-mqtt-historian-stress.md) — I-01 historian
 - [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) — I-02 gateway
-- [load-testing](load-testing.md) — suite I-01…I-08
+- [load-testing](load-testing.md) — suite I-01…I-08; обезличенные результаты: [`examples/.../reports/ordered-suite-i01-i08.md`](../../examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md)
 - [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)

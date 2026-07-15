@@ -10,6 +10,7 @@ import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.operator.OperatorAgentMemoryLearner;
 import com.ispf.server.operator.OperatorAgentMemoryService;
 import com.ispf.server.operator.OperatorAgentResultEnricher;
@@ -74,6 +75,8 @@ class TreeFirstAgentServiceSessionTest {
     private AgentAttachmentValidator attachmentValidator;
     @Mock
     private AgentSessionDocumentService sessionDocumentService;
+    @Mock
+    private ObjectManager objectManager;
 
     private TreeFirstAgentService agentService;
     private AiProperties aiProperties;
@@ -109,7 +112,8 @@ class TreeFirstAgentServiceSessionTest {
                 attachmentValidator,
                 new AgentTurnRateLimiter(aiProperties),
                 new AgentMetricsRecorder(java.util.Optional.empty()),
-                sessionDocumentService
+                sessionDocumentService,
+                objectManager
         );
 
         lenient().when(sessionDocumentService.count(anyString())).thenReturn(0);

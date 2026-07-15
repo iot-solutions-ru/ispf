@@ -41,11 +41,12 @@ class BootstrapCleanInstallTest {
     }
 
     @Test
-    void registersMesInstanceTypesWithoutFixtures() {
-        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.BATCH_MODEL)).isPresent();
-        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.WORK_ORDER_MODEL)).isPresent();
-        assertThat(objectManager.tree().findByPath("root.platform.instance-types.batch-v1")).isPresent();
-        assertThat(objectManager.tree().findByPath("root.platform.instance-types.work-order-v1")).isPresent();
+    void doesNotRegisterMesInstanceTypesOnCleanBasePlatform() {
+        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.BATCH_MODEL)).isEmpty();
+        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.WORK_ORDER_MODEL)).isEmpty();
+        assertThat(objectManager.tree().findByPath("root.platform.mes")).isEmpty();
+        assertThat(objectManager.tree().findByPath("root.platform.instance-types.batch-v1")).isEmpty();
+        assertThat(objectManager.tree().findByPath("root.platform.instance-types.work-order-v1")).isEmpty();
     }
 
     @Test

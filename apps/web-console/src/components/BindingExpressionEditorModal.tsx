@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { validateExpression } from "../api";
@@ -19,6 +19,15 @@ import ObjectQuerySpecEditorModal from "./ObjectQuerySpecEditorModal";
 import { PlatformRefPicker } from "./PlatformRefPicker";
 import { minifyObjectQuerySpec } from "../utils/objectQuerySpecUtils";
 import type { BindingFormulaLink, VariableDto } from "../types";
+import { useAdminFocusOptional } from "../context/AdminFocusContext";
+import { useAdminCopilotChatOptional } from "../context/AdminCopilotChatContext";
+import { usePublishAdminFocus } from "../hooks/usePublishAdminFocus";
+
+export interface BindingExpressionFocusContext {
+  ruleId?: string;
+  ruleKind?: string;
+  target?: string;
+}
 
 export interface BindingExpressionEditorModalProps extends BindingBuilderContext {
   open: boolean;
@@ -31,6 +40,8 @@ export interface BindingExpressionEditorModalProps extends BindingBuilderContext
   inputFieldNames?: string[];
   variables?: VariableDto[];
   formulaLink?: BindingFormulaLink | null;
+  /** Extra parent context (e.g. binding rule being edited). */
+  focusContext?: BindingExpressionFocusContext | null;
   onValidate?: BindingExpressionValidator;
   onClose: () => void;
   onApply: (value: string, formulaLink?: BindingFormulaLink | null) => void;
@@ -84,11 +95,12 @@ export default function BindingExpressionEditorModal({
   entries = PLATFORM_BINDING_ENTRIES,
   analyticsCatalogKind,
   formulaLink = null,
+  focusContext = null,
   onValidate,
   onClose,
   onApply,
 }: BindingExpressionEditorModalProps) {
-  const { t } = useTranslation(["inspector", "common"]);
+  const { t } = useTranslation(["inspector", "common", "ai"]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(value);
   const [draftFormulaLink, setDraftFormulaLink] = useState<BindingFormulaLink | null>(formulaLink);
@@ -98,6 +110,10 @@ export default function BindingExpressionEditorModal({
   const [composingId, setComposingId] = useState<string | null>(null);
   const [saveFormulaOpen, setSaveFormulaOpen] = useState(false);
   const [objectQueryOpen, setObjectQueryOpen] = useState(false);
+  const adminFocus = useAdminFocusOptional();
+  const copilotChat = useAdminCopilotChatOptional();
+  // Unique per mounted field — inactive sibling modals must not clear the open editor's layer.
+  const focusLayerId = useId();
 
   useEffect(() => {
     if (open) {
@@ -110,6 +126,37 @@ export default function BindingExpressionEditorModal({
       window.requestAnimationFrame(() => textareaRef.current?.focus());
     }
   }, [open, value, formulaLink]);
+
+  const expressionFocus = useMemo(
+    () => ({
+      surface: "expression-editor" as const,
+      objectPath: objectPath || undefined,
+      priority: 100,
+      detail: {
+        editorTitle: title,
+        expression: draft.length > 800 ? `${draft.slice(0, 800)}…` : draft,
+        variableCount: variableNames.length,
+        sampleVariables: variableNames.slice(0, 24),
+        formulaLink: draftFormulaLink?.formulaRef ?? null,
+        debuggerOpen,
+        ...(focusContext?.ruleId ? { ruleId: focusContext.ruleId } : {}),
+        ...(focusContext?.ruleKind ? { ruleKind: focusContext.ruleKind } : {}),
+        ...(focusContext?.target ? { target: focusContext.target } : {}),
+      },
+    }),
+    [
+      objectPath,
+      draft,
+      title,
+      variableNames,
+      draftFormulaLink?.formulaRef,
+      debuggerOpen,
+      focusContext?.ruleId,
+      focusContext?.ruleKind,
+      focusContext?.target,
+    ]
+  );
+  usePublishAdminFocus(`expression-editor:${focusLayerId}`, expressionFocus, open);
 
   const builderContext = useMemo(
     () => ({ objectPath, variableNames, functionNames }),
@@ -232,11 +279,35 @@ export default function BindingExpressionEditorModal({
           <button
             type="button"
             className={`btn small${debuggerOpen ? " primary" : ""}`}
-            disabled={disabled}
+            disabled={disabled || !objectPath}
             onClick={() => setDebuggerOpen((open) => !open)}
           >
             {debuggerOpen ? t("bindingExpression.debuggerHide") : t("bindingExpression.debuggerShow")}
           </button>
+          {adminFocus && (
+            <button
+              type="button"
+              className="btn small"
+              disabled={disabled}
+              onClick={() => {
+                // Fresh Copilot thread so prior "уточните…" turns cannot override live UI focus.
+                copilotChat?.startNewChat();
+                const expr = draft.trim();
+                const rule =
+                  typeof focusContext?.ruleId === "string" && focusContext.ruleId.trim()
+                    ? focusContext.ruleId.trim()
+                    : "";
+                const prompt = expr
+                  ? rule
+                    ? `Объясни текущее CEL-выражение правила «${rule}»:\n\`\`\`\n${expr}\n\`\`\`\nЧто оно вычисляет и как связано с self / target?`
+                    : `Объясни текущее CEL-выражение в редакторе:\n\`\`\`\n${expr}\n\`\`\`\nЧто оно вычисляет?`
+                  : undefined;
+                adminFocus.requestOpenCopilot(prompt);
+              }}
+            >
+              {t("ai:copilot.ask")}
+            </button>
+          )}
           {analyticsCatalogKind && (
             <button
               type="button"
@@ -410,18 +481,31 @@ export default function BindingExpressionEditorModal({
         {validateMutation.error && (
           <span className="hint error">{(validateMutation.error as Error).message}</span>
         )}
-
-        {debuggerOpen && objectPath && (
-          <ExpressionDebuggerSection
-            objectPath={objectPath}
-            expression={draft}
-            variables={variables}
-            variableNames={variableNames}
-            disabled={disabled}
-            embedded
-          />
-        )}
       </div>
+    </Modal>
+    <Modal
+      open={debuggerOpen && Boolean(objectPath)}
+      title={t("expressionDebugger.title")}
+      onClose={() => setDebuggerOpen(false)}
+      wide
+      stackLevel={1}
+      className="expression-debugger-modal"
+      footer={
+        <button type="button" className="btn" onClick={() => setDebuggerOpen(false)}>
+          {t("common:action.close")}
+        </button>
+      }
+    >
+      {objectPath ? (
+        <ExpressionDebuggerSection
+          objectPath={objectPath}
+          expression={draft}
+          variables={variables}
+          variableNames={variableNames}
+          disabled={disabled}
+          embedded
+        />
+      ) : null}
     </Modal>
     {analyticsCatalogKind && analyticsCatalogKind !== "all" && (
       <SaveAnalyticsFormulaModal

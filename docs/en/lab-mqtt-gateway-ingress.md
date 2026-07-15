@@ -105,10 +105,23 @@ Stand: single-node ISPF on application host, Scylla + Mosquitto on loadgen host,
 |-----------|-------|
 | Topics / devices | 4 |
 | Publish rate | ~2000 msg/s |
-| Historian rate (measure) | **~2.3k samples/s** (flushed delta) |
+| Historian rate (measure) | **~4.4k samples/s** (flushed delta; remasure 0.9.147) |
 | Child sensors | 4 (lazy) |
 | Gateway coalesce | 50 ms |
 | Outcome | **I-02 PASS** |
+
+### I-08 — gateway `lastIngress.raw` historian only
+
+Same stand; no child dispatch. Historian on `lastIngress.raw`, coalesce **1 ms**, `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=0`, ISPF **0.9.147**.
+
+| Parameter | Value |
+|-----------|-------|
+| Publish rate | ~2000 msg/s |
+| Live ingress | OK (`lastIngress.raw` populated in RAM) |
+| Historian rate (flushed delta) | **~3.8k samples/s** |
+| Outcome | **I-08 PASS** |
+
+Requires RAM update on the historian-only MQTT fast path and measure via **`variableHistoryFlushedTotal`** (not capped field-history pages). Full suite table: [load-testing § Ordered suite](load-testing.md#ordered-suite-baseline-i-01i-08), [`reports/ordered-suite-i01-i08.md`](../../examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md).
 
 Absolute samples/s depend on hardware and stress profile; the table is a **single-lab regression** reference, not prod SLA.
 

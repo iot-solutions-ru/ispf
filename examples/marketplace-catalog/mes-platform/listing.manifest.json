@@ -1,7 +1,7 @@
 {
   "slug": "mes-platform",
   "title": "MES Platform",
-  "description": "MES platform: OEE, dispatch BPMN, quality SPC, ISA-88 batch lite",
+  "description": "Standalone MES product (IoT Solutions): OEE, dispatch BPMN, quality SPC, ISA-88 batch lite, MES catalog folders and instance types. Install on a clean ISPF base — not included in the platform core.",
   "pricing": "free",
   "appId": "mes-platform",
   "vendorName": "IoT Solutions",
@@ -12,12 +12,13 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.1.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "mes",
-    "bpmn"
+    "bpmn",
+    "product"
   ],
-  "changelog": "Marketplace catalog stub listing for mes-platform (BL-183)."
+  "changelog": "MES catalog + batch-v1/work-order-v1 moved from base platform bootstrap into this marketplace product (IoT Solutions)."
 }

@@ -7,6 +7,9 @@ export interface TopologySvgHitArea {
   nodeName: string;
   objectPath: string;
   id?: string;
+  /** zone = node/section fill; link = cable/path; device = optional icon hit */
+  kind?: "zone" | "link" | "device";
+  label?: string;
 }
 
 export interface TopologySvgConfig {

@@ -90,6 +90,31 @@ bash ~/ispf/lab-cluster-bootstrap.sh
 
 Config: `examples/lab-mqtt-historian-stress/env/lab-loadgen.env` (`ISPF_LAB_LOADGEN_HOST`, `ISPF_LAB_CLUSTER_HOST`, `ISPF_LAB_LOADGEN_SSH`). Operator copies with real values stay in gitignored `deploy/lab-loadgen.env`.
 
+## Ordered suite baseline (I-01…I-08)
+
+Canonical anonymized results (split lab, Scylla stress profile, ISPF **0.9.139…0.9.147**, July 2026): [`examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md`](../../examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md). Numbers below are a **single-stand regression** reference, not prod SLA.
+
+| Id | Path | Outcome | Key metric |
+|----|------|---------|------------|
+| **I-01** | N× mqtt → historian | **PASS** (stress) | Peak **~258k…579k** samples/s flushed (16 devices; Scylla/CH) — [lab-mqtt-historian-stress](lab-mqtt-historian-stress.md) |
+| **I-02** | mqtt-gateway → child historian | **PASS** | **~4.4k** samples/s @ ~2k msg/s, coalesce 50 ms — [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) |
+| **I-03** | mqtt `EVENT_JOURNAL_ONLY` | **PASS** | Smoke **~2.4k**/s; peak ~319k/s; fan-out **~403k**/s — [lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md) |
+| **I-04** | mqtt FULL + CEL → journal | **PASS** | Smoke **~1.8k** alert/s; fan-out extension **~8.8k** alert/s |
+| **I-05** | virtual TELEMETRY_ONLY → historian | **PASS** | **~360** samples/s (30 devices @ 500 ms) |
+| **I-06** | virtual FULL + CEL → journal | **PASS** (smoke + tick) | Smoke **~60** alert/s; scale best **~7.3k** alert/s (1000@100 ms) |
+| **I-07** | HTTP `POST /events/fire` | **PASS** | Best fail=0 **~1714** RPS (c=40); after suite debris expect lower RPS or fail% — purge loadtest correlators |
+| **I-08** | gateway `lastIngress.raw` historian | **PASS** (0.9.147) | Live ingress OK; **~3.8k** samples/s flushed @ ~2k msg/s |
+
+**Gates:** prefer monotonic platform counters (`variableHistoryFlushedTotal`, `eventsFiredTotal`, `eventJournalFlushedTotal`) over Scylla/CH `COUNT(*)` after large runs. I-08 also requires live RAM update on the historian-only MQTT path and `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=0`.
+
+Example JSON (anonymized): [`reports/example-i07-*.json`](../../examples/lab-mqtt-historian-stress/reports/), [`reports/example-i08-*.json`](../../examples/lab-mqtt-historian-stress/reports/). Operator-only notes with real hosts: gitignored `examples/lab-mqtt-historian-stress/local/`.
+
+```bash
+# From workstation (orchestrator is gitignored under deploy/)
+python deploy/run_lab_ordered_suite.py --topology single --profile grouped --continue-on-fail
+python deploy/run_lab_ordered_suite.py --topology single --only I-07,I-08 --reset soft
+```
+
 ## Three paths
 
 | Path | Script | What it measures |

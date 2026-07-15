@@ -13,6 +13,53 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentGroundTruthGuardTest {
 
     @Test
+    void allowsDeleteAfterListReports() {
+        List<Map<String, Object>> steps = List.of(
+                Map.of(
+                        "type", "tool",
+                        "tool", "list_reports",
+                        "arguments", Map.of(),
+                        "result", Map.of(
+                                "status", "OK",
+                                "reports", List.of(Map.of(
+                                        "path", "root.platform.reports.employees-list",
+                                        "title", "Employees"
+                                ))
+                        )
+                )
+        );
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "delete_object",
+                Map.of("path", "root.platform.reports.employees-list"),
+                steps
+        );
+        assertThat(block).isEmpty();
+    }
+
+    @Test
+    void allowsDeleteWhenPathExistsInLiveTree() {
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "delete_object",
+                Map.of("path", "root.platform.reports.employees-list"),
+                List.of(),
+                path -> path.equals("root.platform.reports.employees-list")
+        );
+        assertThat(block).isEmpty();
+    }
+
+    @Test
+    void stillBlocksDeleteWhenPathMissingFromTreeAndSteps() {
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "delete_object",
+                Map.of("path", "root.platform.reports.invented"),
+                List.of(),
+                path -> false
+        );
+        assertThat(block).isPresent();
+        assertThat(block.get().error()).contains("not created or discovered");
+    }
+
+    @Test
     void blocksCreateObjectWithoutDiscovery() {
         var block = AgentGroundTruthGuard.checkBeforeTool(
                 "create_object",
@@ -247,12 +294,14 @@ class AgentGroundTruthGuardTest {
                         "arguments", Map.of(),
                         "result", Map.of(
                                 "status", "OK",
-                                "profiles", List.of(Map.of("profile", "lab", "templateId", "virtual-lab-v1"))
+                                "driverId", "virtual",
+                                "profiles", List.of(),
+                                "defaults", Map.of("driverId", "virtual", "templateId", "virtual-unified-v1")
                         )
                 )
         );
         assertThat(AgentGroundTruthGuard.isParentGrounded(steps, "root.platform.devices")).isTrue();
-        assertThat(AgentGroundTruthGuard.isBlueprintGrounded(steps, "lab")).isTrue();
+        assertThat(AgentGroundTruthGuard.isBlueprintGrounded(steps, "virtual-unified-v1")).isTrue();
     }
 
     @Test

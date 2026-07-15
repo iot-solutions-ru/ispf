@@ -3,6 +3,7 @@ package com.ispf.server.application.reference.mes;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.core.object.ObjectType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,14 @@ class MesBlueprintBootstrapTest {
 
     @Autowired
     private BlueprintRegistry blueprintRegistry;
+
+    @Autowired
+    private MesBlueprintBootstrap mesBlueprintBootstrap;
+
+    @BeforeEach
+    void seedMesModelsForTest() {
+        mesBlueprintBootstrap.ensureMesModels();
+    }
 
     @Test
     void batchV1RegisteredAsInstanceTypeForLots() {

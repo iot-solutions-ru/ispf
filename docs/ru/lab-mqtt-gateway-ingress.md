@@ -105,10 +105,23 @@ python deploy/run_lab_ordered_suite.py --topology single --only I-02 --reset sof
 |----------|----------|
 | Устройства (топики) | 4 |
 | Publish rate | ~2000 msg/s |
-| Historian rate (measure) | **~2,3k samples/s** (flushed delta) |
+| Historian rate (measure) | **~4,4k samples/s** (flushed delta; remasure 0.9.147) |
 | Child sensors | 4 (lazy) |
 | Gateway coalesce | 50 ms |
 | Результат | **I-02 PASS** |
+
+### I-08 — только historian на gateway `lastIngress.raw`
+
+Тот же стенд; без dispatch на child. Historian на `lastIngress.raw`, coalesce **1 ms**, `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=0`, ISPF **0.9.147**.
+
+| Параметр | Значение |
+|----------|----------|
+| Publish rate | ~2000 msg/s |
+| Live ingress | OK (`lastIngress.raw` в RAM) |
+| Historian rate (flushed delta) | **~3,8k samples/s** |
+| Результат | **I-08 PASS** |
+
+Нужны запись в **RAM** на historian-only MQTT fast path и замер через **`variableHistoryFlushedTotal`** (не страницы field-history с лимитом 10k). Сводка suite: [load-testing § Ordered suite](load-testing.md#базовый-уровень-ordered-suite-i-01i-08), [`reports/ordered-suite-i01-i08.md`](../../examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md).
 
 Абсолютные samples/s зависят от железа и профиля stress; таблица — ориентир для регрессии на **одном** lab, не SLA прода.
 

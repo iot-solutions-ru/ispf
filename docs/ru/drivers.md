@@ -175,35 +175,26 @@ GET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>
 
 ### virtual (`ispf-driver-virtual`)
 
-Симулятор для стенда без железа. Профиль задаётся в `driverConfigJson.profile`:
+Симулятор «из коробки» без железа. **Без профилей** — один poll пишет multi-type телеметрию
+(`temperature`+quality, волны, meter/flow, geo, таблицы, binary, bool, `status`). Амплитуды/период —
+в `driverConfigJson`. Доменные стенды (Mini-TEC, tank-farm, OGP) обогащают объект через
+**относительные чертежи** (переменные + binding/functions), а не через `driverConfigJson.profile`.
 
-| `profile` | Переменные | Назначение |
-|-----------|------------|------------|
-| `demo` (default) | `temperature`, `status` | Синусоида температуры |
-| `meter` | `meterLiters`, `flowRate`, `filling` | Налив: `litersPerSecond`, `filling` |
-| `weighbridge` | `grossWeight`, `tareKg` | `tareKg + meterLiters * density` |
-| `rack-signals` | `gasPresent`, `groundConnected` | Булевы сигналы по `rackId` |
-
-Пример meter (virtual driver profile):
+Пример конфига:
 
 ```json
 {
-  "profile": "meter",
+  "baseTemperature": "22.0",
+  "amplitude": "15.0",
+  "periodSec": "60",
+  "sineAmplitude": "10.0",
+  "sawtoothAmplitude": "5.0",
   "litersPerSecond": "120",
   "filling": "true"
 }
 ```
 
-Конфиг demo-температуры:
-
-```json
-{
-  "profile": "demo",
-  "baseTemperature": "22.0",
-  "amplitude": "15.0",
-  "periodSec": "60"
-}
-```
+Модель: `virtual-unified-v1` (или `virtual-lab-v1` для волн). Агент: `create_virtual_device`.
 
 ### mqtt (`ispf-driver-mqtt`)
 

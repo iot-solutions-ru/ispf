@@ -10,6 +10,7 @@ import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.operator.OperatorAgentMemoryLearner;
 import com.ispf.server.operator.OperatorAgentMemoryService;
 import com.ispf.server.operator.OperatorAgentResultEnricher;
@@ -58,6 +59,7 @@ public class TreeFirstAgentService {
     private final AgentTurnRateLimiter turnRateLimiter;
     private final AgentMetricsRecorder agentMetrics;
     private final AgentSessionDocumentService sessionDocumentService;
+    private final ObjectManager objectManager;
 
     public TreeFirstAgentService(
             LlmProviderRegistry llmProviderRegistry,
@@ -78,7 +80,8 @@ public class TreeFirstAgentService {
             AgentAttachmentValidator attachmentValidator,
             AgentTurnRateLimiter turnRateLimiter,
             AgentMetricsRecorder agentMetrics,
-            AgentSessionDocumentService sessionDocumentService
+            AgentSessionDocumentService sessionDocumentService,
+            ObjectManager objectManager
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
         this.toolRegistry = toolRegistry;
@@ -99,6 +102,7 @@ public class TreeFirstAgentService {
         this.turnRateLimiter = turnRateLimiter;
         this.agentMetrics = agentMetrics;
         this.sessionDocumentService = sessionDocumentService;
+        this.objectManager = objectManager;
         this.agentRunExecutor = new DelegatingSecurityContextExecutorService(
                 Executors.newVirtualThreadPerTaskExecutor()
         );
@@ -180,7 +184,7 @@ public class TreeFirstAgentService {
 
     public Map<String, Object> run(String goal, String rootPath, Authentication authentication, String actor)
             throws Exception {
-        AgentSession session = AgentSession.create(actor, rootPath);
+        AgentSession session = sessionStore.create(actor, rootPath);
         return runTurn(session, goal, authentication, actor);
     }
 
@@ -404,6 +408,27 @@ public class TreeFirstAgentService {
                             : new LinkedHashMap<>();
                     if (askMode) {
                         AgentPlanGuard.normalizeFinishForAskMode(candidateResult);
+                        Optional<String> focusReject = AgentCopilotFocusGuard.rejectClarifyFinish(
+                                session.runState().clientChannel(),
+                                session.runState().clientFocus(),
+                                agentAction.summary()
+                        );
+                        if (focusReject.isPresent()
+                                && !AgentCopilotFocusGuard.alreadyNudged(steps)) {
+                            Map<String, Object> guardStep = Map.of(
+                                    "step", stepNumber,
+                                    "type", "guard",
+                                    "label", "Copilot UI focus",
+                                    "error", "Finish ignored live UI focus",
+                                    "hint", focusReject.get(),
+                                    "copilotFocusNudge", true
+                            );
+                            steps.add(guardStep);
+                            publishStep(session.sessionId(), guardStep);
+                            messages.add(new LlmMessage("assistant", response.content()));
+                            messages.add(new LlmMessage("user", focusReject.get()));
+                            continue;
+                        }
                         finishSummary = agentAction.summary();
                         finishResult = candidateResult;
                         finalStatus = AgentTurnStatus.OK;
@@ -718,7 +743,12 @@ public class TreeFirstAgentService {
                         Optional<AgentPreflightService.PreflightHint> preflight =
                                 AgentPreflightService.checkBeforeTool(toolName, toolArgs, steps);
                         Optional<AgentGroundTruthGuard.BlockDecision> groundBlock =
-                                AgentGroundTruthGuard.checkBeforeTool(toolName, toolArgs, steps);
+                                AgentGroundTruthGuard.checkBeforeTool(
+                                        toolName,
+                                        toolArgs,
+                                        steps,
+                                        path -> objectManager.tree().findByPath(path).isPresent()
+                                );
                         Optional<AgentWidgetBindingGuard.BlockDecision> widgetBlock =
                                 AgentWidgetBindingGuard.checkBeforeTool(toolName, toolArgs, steps);
                         if (widgetBlock.isPresent() && widgetBlock.get().blocked()) {
@@ -1194,6 +1224,16 @@ public class TreeFirstAgentService {
                     memorySection,
                     knowledgeSection
             );
+        } else if ("copilot".equalsIgnoreCase(session.runState().clientChannel())) {
+            // Dedicated Copilot agent — not AI Studio ASK (avoids huge tool/playbook "clarify path" behavior).
+            systemPrompt = AgentCopilotPromptBuilder.build(
+                    session.rootPath(),
+                    toolRegistry.toolCatalog(profile),
+                    prepared.hasImages()
+            );
+            if (hasTextAttachment(prepared.attachmentMetadata())) {
+                systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
+            }
         } else if (session.runState().interactionMode() == AgentInteractionMode.ASK) {
             String sessionDocs = sessionDocumentService.formatPromptSection(
                     session.sessionId(),
@@ -1204,7 +1244,8 @@ public class TreeFirstAgentService {
                     toolRegistry.toolCatalog(profile),
                     briefing,
                     prepared.hasImages(),
-                    sessionDocs
+                    sessionDocs,
+                    true
             );
             if (hasTextAttachment(prepared.attachmentMetadata())) {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
@@ -1224,30 +1265,65 @@ public class TreeFirstAgentService {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
             }
         }
+        // Put UI focus/channel FIRST — ASK prompts are large and models often miss a trailing block.
+        String focusLead = AgentClientFocusPromptSection.formatChannel(session.runState().clientChannel());
+        String focusBody = AgentClientFocusPromptSection.format(session.runState().clientFocus());
+        if (!focusLead.isBlank() || !focusBody.isBlank()) {
+            StringBuilder lead = new StringBuilder();
+            if (!focusLead.isBlank()) {
+                lead.append(focusLead.trim()).append("\n\n");
+            }
+            if (!focusBody.isBlank()) {
+                lead.append(focusBody.trim()).append("\n\n");
+            }
+            systemPrompt = lead + systemPrompt;
+        }
         messages.add(new LlmMessage("system", systemPrompt));
 
-        List<AgentTurn> history = session.turns();
-        int maxTurns = Math.max(1, aiProperties.getAgentMaxHistoryTurns());
-        int start = Math.max(0, history.size() - maxTurns);
-        for (int i = start; i < history.size(); i++) {
-            AgentTurn turn = history.get(i);
-            messages.add(new LlmMessage("user", turn.userMessage()));
-            messages.add(new LlmMessage("assistant", truncateForHistory(turn.assistantSummary())));
+        // Admin Copilot is a here-and-now helper — omit prior turns so old clarify-loops cannot override live UI.
+        boolean copilotHereAndNow = "copilot".equalsIgnoreCase(session.runState().clientChannel());
+        if (!copilotHereAndNow) {
+            List<AgentTurn> history = session.turns();
+            int maxTurns = Math.max(1, aiProperties.getAgentMaxHistoryTurns());
+            int start = Math.max(0, history.size() - maxTurns);
+            for (int i = start; i < history.size(); i++) {
+                AgentTurn turn = history.get(i);
+                messages.add(new LlmMessage("user", turn.userMessage()));
+                messages.add(new LlmMessage("assistant", truncateForHistory(turn.assistantSummary())));
+            }
         }
-        messages.add(buildCurrentUserMessage(prepared));
+        String liveSnapshot = AgentClientFocusPromptSection.formatLiveSnapshotReminder(
+                session.runState().clientChannel(),
+                session.runState().clientFocus()
+        );
+        if (!liveSnapshot.isBlank()) {
+            messages.add(new LlmMessage("system", liveSnapshot));
+        }
+        messages.add(buildCurrentUserMessage(prepared, session));
         return messages;
     }
 
-    private static LlmMessage buildCurrentUserMessage(AgentAttachmentValidator.PreparedUserMessage prepared) {
+    private static LlmMessage buildCurrentUserMessage(
+            AgentAttachmentValidator.PreparedUserMessage prepared,
+            AgentSession session
+    ) {
+        String text = prepared.llmText() == null ? "" : prepared.llmText();
+        String prefix = AgentClientFocusPromptSection.formatUserTurnPrefix(
+                session.runState().clientChannel(),
+                session.runState().clientFocus()
+        );
+        if (!prefix.isBlank()) {
+            text = text.isBlank() ? prefix : prefix + "\n\n" + text;
+        }
         if (prepared.imageParts().isEmpty()) {
-            return new LlmMessage("user", prepared.llmText());
+            return new LlmMessage("user", text);
         }
         List<LlmContentPart> parts = new ArrayList<>();
-        if (prepared.llmText() != null && !prepared.llmText().isBlank()) {
-            parts.add(LlmContentPart.text(prepared.llmText()));
+        if (text != null && !text.isBlank()) {
+            parts.add(LlmContentPart.text(text));
         }
         parts.addAll(prepared.imageParts());
-        return new LlmMessage("user", prepared.llmText(), List.copyOf(parts));
+        return new LlmMessage("user", text, List.copyOf(parts));
     }
 
     private void ensureLlmAvailable() {

@@ -14,6 +14,10 @@ import java.util.Set;
  * <p>
  * Universal order for every object type:
  * {@code list_objects parent=<folder>} → {@code create_object parentPath=<folder>} → configure/save tools on returned path.
+ * <p>
+ * Soft allow: if the exact path already exists in the live object tree, mutations may proceed without
+ * a prior discovery step in this turn (avoids loops when the model reuses a known path from a report
+ * list / prior turn / plan).
  */
 final class AgentGroundTruthGuard {
 
@@ -21,7 +25,8 @@ final class AgentGroundTruthGuard {
             "list_objects",
             "get_object",
             "search_objects",
-            "search_by_haystack_tags"
+            "search_by_haystack_tags",
+            "list_reports"
     );
 
     private static final Set<String> OBJECT_READ_TOOLS = Set.of(
@@ -29,6 +34,8 @@ final class AgentGroundTruthGuard {
             "get_workflow",
             "get_mimic_diagram",
             "get_dashboard_layout",
+            "get_report_schema",
+            "run_report",
             "list_variables",
             "describe_variables"
     );
@@ -42,7 +49,7 @@ final class AgentGroundTruthGuard {
             "list_virtual_profiles"
     );
 
-    /** Mutations on an existing object path — object must be discovered or created in this turn. */
+    /** Mutations on an existing object path — object must be discovered, created, or present in the tree. */
     private static final Set<String> OBJECT_PATH_MUTATION_TOOLS = Set.of(
             "delete_object",
             "set_variable",
@@ -66,6 +73,11 @@ final class AgentGroundTruthGuard {
             "deploy_tree_function"
     );
 
+    @FunctionalInterface
+    interface ObjectExists {
+        boolean test(String path);
+    }
+
     private AgentGroundTruthGuard() {
     }
 
@@ -80,15 +92,24 @@ final class AgentGroundTruthGuard {
             Map<String, Object> arguments,
             List<Map<String, Object>> steps
     ) {
+        return checkBeforeTool(toolName, arguments, steps, null);
+    }
+
+    static Optional<BlockDecision> checkBeforeTool(
+            String toolName,
+            Map<String, Object> arguments,
+            List<Map<String, Object>> steps,
+            ObjectExists objectExists
+    ) {
         if (toolName == null || toolName.isBlank()) {
             return Optional.empty();
         }
         String tool = toolName.toLowerCase(Locale.ROOT);
         if ("create_object".equals(tool) || "create_virtual_device".equals(tool)) {
-            return checkParentDiscovered(arguments, steps, tool);
+            return checkParentDiscovered(arguments, steps, tool, objectExists);
         }
         if ("instantiate_instance_type".equals(tool)) {
-            Optional<BlockDecision> parentBlock = checkParentDiscovered(arguments, steps, tool);
+            Optional<BlockDecision> parentBlock = checkParentDiscovered(arguments, steps, tool, objectExists);
             if (parentBlock.isPresent()) {
                 return parentBlock;
             }
@@ -97,7 +118,7 @@ final class AgentGroundTruthGuard {
         if ("apply_relative_blueprint".equals(tool)) {
             String objectPath = resolveObjectPath(arguments);
             if (!objectPath.isBlank()) {
-                Optional<BlockDecision> pathBlock = checkObjectPathDiscovered(objectPath, tool, steps);
+                Optional<BlockDecision> pathBlock = checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
                 if (pathBlock.isPresent()) {
                     return pathBlock;
                 }
@@ -109,7 +130,7 @@ final class AgentGroundTruthGuard {
             if (objectPath.isBlank()) {
                 return Optional.empty();
             }
-            return checkObjectPathDiscovered(objectPath, tool, steps);
+            return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
         }
         if ("ensure_absolute_instance".equals(tool)) {
             return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
@@ -120,13 +141,14 @@ final class AgentGroundTruthGuard {
     private static Optional<BlockDecision> checkParentDiscovered(
             Map<String, Object> arguments,
             List<Map<String, Object>> steps,
-            String toolName
+            String toolName,
+            ObjectExists objectExists
     ) {
         String parentPath = resolveParentPath(arguments);
         if (parentPath.isBlank()) {
             return Optional.empty();
         }
-        if (isParentGrounded(steps, parentPath)) {
+        if (isParentGrounded(steps, parentPath) || existsInTree(objectExists, parentPath)) {
             return Optional.empty();
         }
         return Optional.of(new BlockDecision(
@@ -138,9 +160,10 @@ final class AgentGroundTruthGuard {
     private static Optional<BlockDecision> checkObjectPathDiscovered(
             String objectPath,
             String toolName,
-            List<Map<String, Object>> steps
+            List<Map<String, Object>> steps,
+            ObjectExists objectExists
     ) {
-        if (isObjectPathGrounded(steps, objectPath)) {
+        if (isObjectPathGrounded(steps, objectPath) || existsInTree(objectExists, objectPath)) {
             return Optional.empty();
         }
         String parent = parentOf(objectPath);
@@ -148,6 +171,17 @@ final class AgentGroundTruthGuard {
                 "Cannot " + toolName + ": object path was not created or discovered in this turn: " + objectPath,
                 treeFirstOrderHint(parent.isBlank() ? objectPath : parent, objectPath, toolName)
         ));
+    }
+
+    private static boolean existsInTree(ObjectExists objectExists, String path) {
+        if (objectExists == null || path == null || path.isBlank()) {
+            return false;
+        }
+        try {
+            return objectExists.test(normalizePath(path));
+        } catch (RuntimeException ignored) {
+            return false;
+        }
     }
 
     private static String mutationLabel(Map<String, Object> arguments, String toolName) {
@@ -166,11 +200,13 @@ final class AgentGroundTruthGuard {
             step3 = configureTool + " path=" + objectPath + " (only after create_object returns this path)";
         }
         return """
-                Tree-first order (ALL object types — WORKFLOW, MIMIC, DASHBOARD, DEVICE, ALERT, …):
+                Tree-first order (ALL object types — WORKFLOW, MIMIC, DASHBOARD, DEVICE, ALERT, REPORT, …):
                 1. list_objects parent=%s — exact target folder (NOT parent=root for root.platform.* paths)
-                2. create_object parentPath=%s name=<name> type=<TYPE> [templateId=…]
+                   For reports you may use list_reports / get_report_schema path=...
+                2. create_object parentPath=%s name=<name> type=<TYPE> [templateId=…] (skip if reusing)
                 3. %s
-                Reuse existing objects: get_object or list_objects must return the path in this turn before mutating.
+                Reuse existing objects: get_object / list_objects / list_reports must return the path,
+                OR the path must already exist in the live tree.
                 """.formatted(parentFolder, parentFolder, step3);
     }
 
@@ -255,7 +291,7 @@ final class AgentGroundTruthGuard {
             Map<String, Object> args = stepMap(step, "arguments");
             Map<String, Object> result = stepMap(step, "result");
 
-            if ("create_object".equals(tool) || "create_virtual_device".equals(tool)) {
+            if ("create_object".equals(tool) || "create_virtual_device".equals(tool) || "configure_report".equals(tool)) {
                 if (pathsEqual(objectPath, pathFromCreateResult(result))) {
                     return true;
                 }
@@ -357,6 +393,11 @@ final class AgentGroundTruthGuard {
                 return objectListContainsPath(result, parentPathNormalized);
             }
         }
+        if ("list_reports".equals(tool)) {
+            // Catalog root for reports — listing reports grounds that folder.
+            return "root.platform.reports".equals(parentPathNormalized)
+                    || objectListContainsPath(result, parentPathNormalized);
+        }
         if ("search_objects".equals(tool) || "search_by_haystack_tags".equals(tool)) {
             return objectListContainsPath(result, parentPathNormalized);
         }
@@ -366,7 +407,10 @@ final class AgentGroundTruthGuard {
     private static boolean catalogResultContainsModel(Map<String, Object> result, String needle, String tool) {
         if ("list_virtual_profiles".equals(tool)) {
             return listContainsField(result, "profiles", "profile", needle)
-                    || listContainsField(result, "profiles", "templateId", needle);
+                    || listContainsField(result, "profiles", "templateId", needle)
+                    || stringFieldEquals(result, "driverId", needle)
+                    || nestedMapFieldEquals(result, "defaults", "templateId", needle)
+                    || nestedMapFieldEquals(result, "defaults", "driverId", needle);
         }
         return listContainsField(result, "blueprints", "blueprintName", needle)
                 || listContainsField(result, "blueprints", "name", needle)
@@ -404,6 +448,21 @@ final class AgentGroundTruthGuard {
         return value != null && needle.equals(String.valueOf(value).trim().toLowerCase(Locale.ROOT));
     }
 
+    @SuppressWarnings("unchecked")
+    private static boolean nestedMapFieldEquals(
+            Map<String, Object> result,
+            String mapKey,
+            String field,
+            String needle
+    ) {
+        Object nested = result.get(mapKey);
+        if (!(nested instanceof Map<?, ?> map)) {
+            return false;
+        }
+        Object value = map.get(field);
+        return value != null && needle.equals(String.valueOf(value).trim().toLowerCase(Locale.ROOT));
+    }
+
     private static String listedParentFromArgs(Map<String, Object> args) {
         String listedParent = normalizePath(stringArg(args, "parent"));
         if (listedParent.isBlank()) {
@@ -418,7 +477,12 @@ final class AgentGroundTruthGuard {
     @SuppressWarnings("unchecked")
     private static List<?> objectsList(Map<String, Object> result) {
         Object listObj = result.get("objects");
-        return listObj instanceof List<?> list ? list : List.of();
+        if (listObj instanceof List<?> list) {
+            return list;
+        }
+        // list_reports returns { reports: [{path, ...}] }
+        Object reports = result.get("reports");
+        return reports instanceof List<?> reportList ? reportList : List.of();
     }
 
     private static Optional<String> rowPath(Object item) {

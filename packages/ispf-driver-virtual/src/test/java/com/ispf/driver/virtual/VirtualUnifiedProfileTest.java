@@ -21,7 +21,7 @@ class VirtualUnifiedProfileTest {
     void unifiedProfileProducesAllMajorTypes() throws DriverException {
         Map<String, DataRecord> updates = new LinkedHashMap<>();
         VirtualDeviceDriver driver = new VirtualDeviceDriver();
-        DeviceDriver.DriverObject driverObject = stubDriverObject(updates, Map.of("profile", "unified", "periodSec", "10"));
+        DeviceDriver.DriverObject driverObject = stubDriverObject(updates, Map.of("periodSec", "10"));
 
         driver.initialize(driverObject);
         driver.connect();
@@ -55,7 +55,7 @@ class VirtualUnifiedProfileTest {
     void unifiedProfileIncrementsPollSequence() throws DriverException {
         Map<String, DataRecord> updates = new LinkedHashMap<>();
         VirtualDeviceDriver driver = new VirtualDeviceDriver();
-        DeviceDriver.DriverObject driverObject = stubDriverObject(updates, Map.of("profile", "unified"));
+        DeviceDriver.DriverObject driverObject = stubDriverObject(updates, Map.of());
 
         driver.initialize(driverObject);
         driver.connect();

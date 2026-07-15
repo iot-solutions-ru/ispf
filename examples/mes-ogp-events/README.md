@@ -28,7 +28,7 @@ Operator UI: `?mode=operator&app=mes-ogp-events`
 
 BFF functions: `root.platform.devices.ogp-mes-hub`
 
-Simulated line: `root.platform.devices.ogp-line-01` (virtual driver profile `ogp-print-line`)
+Simulated line: `root.platform.devices.ogp-line-01` (SQL `machine_state` + schedule `ogp-meter-tick` / SQL bindings — no virtual driver profiles)
 
 ## CI
 

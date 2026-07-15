@@ -26,7 +26,7 @@ public final class AgentPromptBuilder {
             Before create_object / create_virtual_device: list_objects parent=<exact folder> on the real parent.
             Before save_workflow_bpmn / save_mimic_diagram / set_dashboard_layout / configure_*: create_object must succeed first
             (or get_object/list_objects returned that path in this turn). Never configure a path that was not discovered or created.
-            Before apply_relative_blueprint: list_relative_blueprints or list_virtual_profiles — pick modelName/profile from result.
+            Before apply_relative_blueprint: list_relative_blueprints or list_virtual_profiles — pick modelName from result.
             If Object exists — reuse with get_object + list_variables; do not recreate.
             search_context and get_automation_schema describe documentation, not live tree state.
             
@@ -98,14 +98,14 @@ public final class AgentPromptBuilder {
             - BARE PLATFORM: never assume pre-seeded demo objects exist — list_objects / search_objects first; paths only from tool results
             - SNMP device: search_context topic=drivers query=snmp — templateId, driverConfigJson, point mappings from docs
             - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
-            - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1 (both are RELATIVE mixins); profile lab|meter|unified in driverConfigJson
+            - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1 (RELATIVE mixins); driverId=virtual with OOTB config (no profiles)
             - Before project implementation: get_automation_schema topic=projectBlueprint
             - Model selection baseline: list_instance_types + list_relative_blueprints + list_absolute_blueprints
               (then instantiate_instance_type / apply_relative_blueprint / ensure_absolute_instance)
             - Relative Blueprints: list_relative_blueprints → apply_relative_blueprint objectPath=... modelName=virtual-lab-v1
               (adds variables, events, functions to existing DEVICE); or create_object with same templateId
             - NEVER create_object DEVICE with driverId=virtual and empty/wrong templateId — use apply_relative_blueprint or create_virtual_device
-            - Virtual pump station: create_virtual_device profile=lab (pumps), profile=meter (flow), profile=unified (pressure/temp)
+            - Virtual devices: create_virtual_device (OOTB multi-type). Domain plants: apply_relative_blueprint, not driver profiles
             - Never claim devices have variables/drivers unless list_variables or create_virtual_device returned telemetryVariableCount>0
             - Chart/sparkline widgets need historian: configure_variable_history path=... name=sineWave historyEnabled=true
             - MQTT many sensors on one broker: model mqtt-gateway-v1, ingressVariable lastIngress, ingressTopicLanes true, dispatchTelemetry to child sensors

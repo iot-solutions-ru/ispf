@@ -31,6 +31,7 @@ import {
   type AiAgentTool,
   type AiAgentTurn,
   type AiProviderStatus,
+  type AgentClientFocus,
   type AgentInteractionMode,
   type AgentMessageAttachmentMeta,
   type AgentPlanState,
@@ -92,7 +93,10 @@ interface AgentChatContextValue {
   startNewChat: () => Promise<void>;
   switchSession: (sessionId: string) => Promise<void>;
   deleteChat: (sessionId: string) => Promise<void>;
-  sendMessage: (text: string, options?: { attachments?: AgentChatAttachment[] }) => Promise<void>;
+  sendMessage: (
+    text: string,
+    options?: { attachments?: AgentChatAttachment[]; clientFocus?: AgentClientFocus | null }
+  ) => Promise<void>;
   cancelRun: () => Promise<void>;
   clearLocalChatIndex: () => void;
   interactionMode: AgentInteractionMode;
@@ -278,7 +282,7 @@ export function AgentChatProvider({
 }) {
   const queryClient = useQueryClient();
   const initialPrefs = useMemo(() => loadAiStudioPrefs(), []);
-  const [chatIndex, setChatIndex] = useState<AgentChatIndex>(() => loadAgentChatIndex());
+  const [chatIndex, setChatIndex] = useState<AgentChatIndex>(() => loadAgentChatIndex("studio"));
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingSession, setLoadingSession] = useState(enabled);
@@ -327,7 +331,7 @@ export function AgentChatProvider({
 
   const persistIndex = useCallback((index: AgentChatIndex) => {
     setChatIndex(index);
-    saveAgentChatIndex(index);
+    saveAgentChatIndex(index, "studio");
   }, []);
 
   const setInteractionMode = useCallback((mode: AgentInteractionMode) => {
@@ -444,7 +448,7 @@ export function AgentChatProvider({
     (async () => {
       setLoadingSession(true);
       try {
-        const index = loadAgentChatIndex();
+        const index = loadAgentChatIndex("studio");
         setChatIndex(index);
 
         if (initialPrefs.restoreLastChat && index.activeSessionId) {
@@ -501,7 +505,9 @@ export function AgentChatProvider({
             if (cancelled) {
               return;
             }
-            setLiveSteps(live.steps ?? []);
+            if (live.steps && live.steps.length > 0) {
+              setLiveSteps(live.steps);
+            }
             if (live.planState?.planPhase) {
               setLivePlanPhase(live.planState.planPhase);
             }
@@ -535,7 +541,7 @@ export function AgentChatProvider({
     setIsPending(false);
     setLiveSteps([]);
     const session = await createAgentSession(resolveRootPath(), interactionMode);
-    registerSession(session, loadAgentChatIndex(), session.sessionId);
+    registerSession(session, loadAgentChatIndex("studio"), session.sessionId);
     turnCountRef.current = 0;
     setMessages([]);
   }, [registerSession, interactionMode]);
@@ -581,7 +587,10 @@ export function AgentChatProvider({
   );
 
   const sendMessage = useCallback(
-    async (text: string, options?: { attachments?: AgentChatAttachment[] }) => {
+    async (
+      text: string,
+      options?: { attachments?: AgentChatAttachment[]; clientFocus?: AgentClientFocus | null }
+    ) => {
       const trimmed = text.trim();
       const attachmentsToSend = options?.attachments ?? [];
       if ((!trimmed && attachmentsToSend.length === 0) || isPending) {
@@ -614,11 +623,13 @@ export function AgentChatProvider({
         const rootPath = resolveRootPath();
         const apiAttachments =
           attachmentsToSend.length > 0 ? await buildAttachmentApiPayload(attachmentsToSend) : undefined;
+        // AI Studio builds solutions — do not inject screen focus unless caller opts in.
+        const clientFocus = options?.clientFocus !== undefined ? options.clientFocus : null;
 
         if (!sessionId) {
           const session = await createAgentSession(rootPath, interactionMode);
           sessionId = session.sessionId;
-          registerSession(session, loadAgentChatIndex(), sessionId);
+          registerSession(session, loadAgentChatIndex("studio"), sessionId);
           turnCountRef.current = 0;
         }
 
@@ -628,7 +639,9 @@ export function AgentChatProvider({
         turnDeliveredRef.current = false;
         setIsPending(true);
         const onProgress = (progress: { steps?: AiAgentStep[]; planState?: AgentPlanState }) => {
-          setLiveSteps(progress.steps ?? []);
+          if (progress.steps && progress.steps.length > 0) {
+            setLiveSteps(progress.steps);
+          }
           if (progress.planState?.planPhase) {
             setLivePlanPhase(progress.planState.planPhase);
           }
@@ -641,7 +654,9 @@ export function AgentChatProvider({
             rootPath,
             interactionMode,
             apiAttachments,
-            true
+            true,
+            clientFocus,
+            "studio"
           );
           if (isAgentAcceptedResponse(ack)) {
             return waitForAgentTurnCompletion(sessionId!, onProgress, {
@@ -717,7 +732,7 @@ export function AgentChatProvider({
     setIsPending(false);
     setLiveSteps([]);
     setLivePlanPhase(undefined);
-    const cleared = clearAgentChatIndex();
+    const cleared = clearAgentChatIndex("studio");
     setChatIndex(cleared);
     setActiveSessionId(null);
     activeSessionIdRef.current = null;

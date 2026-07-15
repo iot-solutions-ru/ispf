@@ -480,9 +480,7 @@
       "events": [],
       "functions": [],
       "bindings": [],
-      "parameters": {
-        "driverProfile": "ogp-print-line"
-      }
+      "parameters": {}
     }
   ],
   "objects": [
@@ -499,7 +497,7 @@
       "name": "ogp-line-01",
       "type": "DEVICE",
       "displayName": "OGP Print Line 01",
-      "description": "Simulated OGP print line",
+      "description": "Simulated OGP print line (SQL tick, no driver profile)",
       "templateId": "ogp-line-v1"
     }
   ],
@@ -1780,6 +1778,46 @@
       "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
       "triggerFunctionName": "ogp_simulateSignal,ogp_advanceMeter,ogp_seedDemoStage",
       "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-line-01",
+      "variable": "windingRoll",
+      "query": "SELECT winding_roll AS v FROM machine_state WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-line-01",
+      "variable": "speedMpm",
+      "query": "SELECT CASE WHEN machine_stop THEN 0 ELSE speed_mpm END AS v FROM machine_state WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-line-01",
+      "variable": "meterM",
+      "query": "SELECT meter_m AS v FROM machine_state WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-line-01",
+      "variable": "machineStop",
+      "query": "SELECT machine_stop AS v FROM machine_state WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-line-01",
+      "variable": "lastMachineEventLabel",
+      "query": "SELECT last_event_label AS v FROM machine_state WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "valueField": "v",
+      "enabled": true
     }
   ],
   "reports": [
@@ -2163,7 +2201,7 @@
       "path": "root.platform.dashboards.ogp-register-event-modal",
       "title": "Регистрация события",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":64,\"widgets\":[{\"id\":\"machine-ctx\",\"type\":\"report\",\"title\":\"Данные с машины\",\"reportPath\":\"root.platform.reports.ogp-machine-context\",\"statusDotColumnsJson\":\"[\\\"status\\\"]\",\"stylesJson\":\"{\\\"card\\\":{\\\"borderLeft\\\":\\\"4px solid #f97316\\\",\\\"boxShadow\\\":\\\"0 1px 3px rgba(0,0,0,0.08)\\\"},\\\"title\\\":{\\\"fontWeight\\\":\\\"700\\\",\\\"fontSize\\\":\\\"0.85rem\\\"}}\",\"x\":0,\"y\":0,\"w\":12,\"h\":2},{\"id\":\"register-wizard\",\"type\":\"function-form\",\"title\":\"Регистрация события\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_registerEvent\",\"validateFunctionName\":\"ogp_validateRegistration\",\"wizardStepsJson\":\"[{\\\"id\\\":\\\"1\\\",\\\"label\\\":\\\"Регистрация события\\\"},{\\\"id\\\":\\\"2\\\",\\\"label\\\":\\\"Описание события\\\"},{\\\"id\\\":\\\"3\\\",\\\"label\\\":\\\"Подтверждение регистрации\\\"}]\",\"buttonLabel\":\"Зарегистрировать\",\"confirmMessage\":\"Запись о событии будет добавлена в систему. Убедитесь, что данные введены верно.\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventCode\\\",\\\"label\\\":\\\"Код события\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"deleteNow\\\",\\\"label\\\":\\\"Удаляем сразу\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"colSpan\\\":1,\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"subcodes\\\",\\\"label\\\":\\\"Заезды на настройку\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"120\\\\\\\"}\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-subcodes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\",\\\"optionsFilterField\\\":\\\"eventCode\\\",\\\"optionsFilterColumn\\\":\\\"parent_code\\\"},{\\\"name\\\":\\\"unprocessedId\\\",\\\"label\\\":\\\"ID необработанного\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"1\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"unprocessedId\\\"},{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"P1\\\",\\\"colSpan\\\":1,\\\"required\\\":true,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-rolls\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\"},{\\\"name\\\":\\\"side\\\",\\\"label\\\":\\\"Сторона\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"PM\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"PM\\\",\\\"label\\\":\\\"PM\\\"},{\\\"value\\\":\\\"Passer\\\",\\\"label\\\":\\\"Passer\\\"}]},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"0\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"rows\\\",\\\"label\\\":\\\"Ряд\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"2\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"1\\\",\\\"label\\\":\\\"1\\\"},{\\\"value\\\":\\\"2\\\",\\\"label\\\":\\\"2\\\"},{\\\"value\\\":\\\"3\\\",\\\"label\\\":\\\"3\\\"},{\\\"value\\\":\\\"all\\\",\\\"label\\\":\\\"Все ряды\\\"}]},{\\\"name\\\":\\\"card1\\\",\\\"label\\\":\\\"Карточка 1\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Жёлтая\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"500\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"card2\\\",\\\"label\\\":\\\"Карточка 2\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Синяя\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"startAt\\\",\\\"label\\\":\\\"Начало, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"10:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"endAt\\\",\\\"label\\\":\\\"Конец, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"17:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"wholeStage\\\",\\\"label\\\":\\\"Весь этап\\\",\\\"type\\\":\\\"checkbox\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2}]\",\"paramBindingsJson\":\"{\\\"unprocessedId\\\":\\\"unprocessedId\\\"}\",\"requireSessionParamsJson\":\"[\\\"unprocessedId\\\"]\",\"syncFieldsToSessionJson\":\"{\\\"eventCode\\\":\\\"eventCode\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":2,\"w\":12,\"h\":16}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"machine-ctx\",\"type\":\"report\",\"title\":\"Данные с машины\",\"reportPath\":\"root.platform.reports.ogp-machine-context\",\"statusDotColumnsJson\":\"[\\\"status\\\"]\",\"stylesJson\":\"{\\\"card\\\":{\\\"borderLeft\\\":\\\"4px solid #f97316\\\",\\\"boxShadow\\\":\\\"0 1px 3px rgba(0,0,0,0.08)\\\"},\\\"title\\\":{\\\"fontWeight\\\":\\\"700\\\",\\\"fontSize\\\":\\\"0.85rem\\\"}}\",\"x\":0,\"y\":0,\"w\":84,\"h\":14},{\"id\":\"register-wizard\",\"type\":\"function-form\",\"title\":\"Регистрация события\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_registerEvent\",\"validateFunctionName\":\"ogp_validateRegistration\",\"wizardStepsJson\":\"[{\\\"id\\\":\\\"1\\\",\\\"label\\\":\\\"Регистрация события\\\"},{\\\"id\\\":\\\"2\\\",\\\"label\\\":\\\"Описание события\\\"},{\\\"id\\\":\\\"3\\\",\\\"label\\\":\\\"Подтверждение регистрации\\\"}]\",\"buttonLabel\":\"Зарегистрировать\",\"confirmMessage\":\"Запись о событии будет добавлена в систему. Убедитесь, что данные введены верно.\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventCode\\\",\\\"label\\\":\\\"Код события\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"deleteNow\\\",\\\"label\\\":\\\"Удаляем сразу\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"colSpan\\\":1,\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"subcodes\\\",\\\"label\\\":\\\"Заезды на настройку\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"120\\\\\\\"}\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-subcodes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\",\\\"optionsFilterField\\\":\\\"eventCode\\\",\\\"optionsFilterColumn\\\":\\\"parent_code\\\"},{\\\"name\\\":\\\"unprocessedId\\\",\\\"label\\\":\\\"ID необработанного\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"1\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"unprocessedId\\\"},{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"P1\\\",\\\"colSpan\\\":1,\\\"required\\\":true,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-rolls\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\"},{\\\"name\\\":\\\"side\\\",\\\"label\\\":\\\"Сторона\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"PM\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"PM\\\",\\\"label\\\":\\\"PM\\\"},{\\\"value\\\":\\\"Passer\\\",\\\"label\\\":\\\"Passer\\\"}]},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"0\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"rows\\\",\\\"label\\\":\\\"Ряд\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"2\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"1\\\",\\\"label\\\":\\\"1\\\"},{\\\"value\\\":\\\"2\\\",\\\"label\\\":\\\"2\\\"},{\\\"value\\\":\\\"3\\\",\\\"label\\\":\\\"3\\\"},{\\\"value\\\":\\\"all\\\",\\\"label\\\":\\\"Все ряды\\\"}]},{\\\"name\\\":\\\"card1\\\",\\\"label\\\":\\\"Карточка 1\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Жёлтая\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"500\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"card2\\\",\\\"label\\\":\\\"Карточка 2\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Синяя\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"startAt\\\",\\\"label\\\":\\\"Начало, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"10:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"endAt\\\",\\\"label\\\":\\\"Конец, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"17:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"wholeStage\\\",\\\"label\\\":\\\"Весь этап\\\",\\\"type\\\":\\\"checkbox\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2}]\",\"paramBindingsJson\":\"{\\\"unprocessedId\\\":\\\"unprocessedId\\\"}\",\"requireSessionParamsJson\":\"[\\\"unprocessedId\\\"]\",\"syncFieldsToSessionJson\":\"{\\\"eventCode\\\":\\\"eventCode\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":14,\"w\":84,\"h\":112}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-delete-unprocessed-modal",

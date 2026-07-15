@@ -1,7 +1,7 @@
 {
   "slug": "mini-tec",
   "title": "Mini TEC",
-  "description": "Платный эталон — цифровой двойник мини-ТЭЦ: ГПУ, ГРПБ, РУМБ, ДГУ, мнемосхемы и operator UI",
+  "description": "Цифровой двойник мини-ТЭЦ: ГПУ, ГРПБ, РУМБ, ДГУ, нагрузка. Полный бандл (модели, объекты, SQL-симуляция). Не входит в пустую платформу.",
   "pricing": "paid",
   "appId": "mini-tec",
   "vendorName": "IoT Solutions",
@@ -12,12 +12,13 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 19900,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.1.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "telemetry",
-    "lab"
+    "energy",
+    "digital-twin"
   ],
-  "changelog": "Marketplace catalog stub listing for mini-tec (BL-183)."
+  "changelog": "1.1.0 — extracted from platform fixtures into self-contained bundle with SQL GPU simulation."
 }

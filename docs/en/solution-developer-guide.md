@@ -95,7 +95,8 @@ GET /api/v1/applications/my-terminal/data/status
 
 ### Step 3. JSON functions
 
-Functions are JSON **scripts** with steps (`selectOne`, `selectMany`, `update`, `insert`, `return`):
+Functions are JSON **scripts** with steps (`selectOne`, `selectMany`, `exec`, `return`).
+Field names are **`sql`** + **`var`** (not `query` / `into`); every script must end with `return.fields`:
 
 ```http
 POST /api/v1/applications/my-terminal/functions/deploy
@@ -110,10 +111,15 @@ Content-Type: application/json
         "steps": [
           {
             "type": "selectMany",
-            "sql": "SELECT id, status FROM ot_order WHERE status = 'ACTIVE' ORDER BY created_at",
-            "into": "rows"
+            "var": "rows",
+            "sql": "SELECT id, status FROM ot_order WHERE status = 'ACTIVE' ORDER BY created_at"
           },
-          { "type": "return", "value": "{{rows}}" }
+          {
+            "type": "return",
+            "fields": {
+              "rows": "${rows}"
+            }
+          }
         ]
       }
     }
@@ -121,7 +127,7 @@ Content-Type: application/json
 }
 ```
 
-Invoke from BPMN (service task `INVOKE_FUNCTION`) or via BFF.
+Invoke from BPMN (service task `INVOKE_FUNCTION`) or via BFF. For listing SQL rows on a dashboard use a **report** widget (`configure_report` + `type: report`), not `object-table` (tree children only).
 
 ### Step 4. Bundle deploy
 

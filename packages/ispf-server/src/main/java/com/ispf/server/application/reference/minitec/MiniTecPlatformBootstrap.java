@@ -92,8 +92,16 @@ public class MiniTecPlatformBootstrap {
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 22)
-    public void onReady() throws Exception {
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
+    public void onReady() {
+        // Mini-TEC is marketplace-only — not seeded on empty platform / fixtures.
+        // Install: import_package / deploy examples/mini-tec/bundle.json (appId=mini-tec).
+    }
+
+    /**
+     * Optional local/test seed of the former fixture tree. Prefer marketplace bundle deploy.
+     */
+    public void seedForTests() throws Exception {
+        if (!clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         BlueprintBootstrap.ensureMiniTecModels();
@@ -120,10 +128,7 @@ public class MiniTecPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 5)
     public void startDriversAfterBootstrap() {
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
-            return;
-        }
-        startDrivers();
+        // Drivers start via marketplace install / operator configure_driver — not fixture bootstrap.
     }
 
     private void ensureSqlSchema() {

@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "displayName": "ITM integrations — Трасса М11",
+  "tablePrefix": "",
+  "schemaName": "it_infra_monitoring",
+  "metadata": {
+    "packageId": "itm-plugin-integrations-m11",
+    "siteId": "m11",
+    "dependsOnApp": "it-infra-monitoring",
+    "ldap": {
+      "enabled": false,
+      "url": "ldap://ad.example.invalid:389",
+      "baseDn": "DC=example,DC=invalid",
+      "bindDn": "CN=ispf-svc,OU=Service,DC=example,DC=invalid"
+    },
+    "opcDa": {
+      "enabled": false,
+      "cmsBridgeHost": "127.0.0.1",
+      "cmsBridgePort": 135
+    },
+    "roles": ["noc", "operator", "admin", "viewer"]
+  },
+  "events": [
+    { "id": "itmAdAuthFailure", "roles": ["admin", "noc"] },
+    { "id": "itmCmsBridgeDown", "roles": ["admin", "noc"] }
+  ],
+  "migrations": [
+    {
+      "id": "itm_integrations_m11_note",
+      "sql": "CREATE TABLE IF NOT EXISTS itm_integrations_m11_meta (site_id VARCHAR(64) PRIMARY KEY, note VARCHAR(256)); INSERT INTO itm_integrations_m11_meta (site_id, note) SELECT 'm11', 'LDAP/OPC stubs — configure in metadata' WHERE NOT EXISTS (SELECT 1 FROM itm_integrations_m11_meta WHERE site_id = 'm11');"
+    }
+  ]
+}

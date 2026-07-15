@@ -1,4 +1,4 @@
-import { getAuthHeaders, getStoredSession } from "../auth/session";
+import { getAuthHeaders } from "../auth/session";
 import { parseApiError } from "../utils/parseApiError";
 
 export interface AiValidationResult {
@@ -106,6 +106,7 @@ export interface AiAgentSession extends AiAgentSessionSummary {
 
 export interface AiAgentRunProgress {
   running: boolean;
+  completed?: boolean;
   sessionId?: string;
   userMessage?: string;
   steps?: AiAgentStep[];
@@ -582,13 +583,26 @@ export function waitUntilAgentRunIdle(sessionId: string, timeoutMs = 25_000): Pr
   });
 }
 
+export type AgentClientFocus = {
+  surface: string;
+  objectPath?: string;
+  objectType?: string;
+  editorTabId?: string;
+  detail?: Record<string, unknown>;
+};
+
+/** UI surface that initiated the turn — guides prompt bias (help vs build). */
+export type AgentClientChannel = "studio" | "copilot";
+
 export function sendAgentMessage(
   sessionId: string,
   message: string,
   rootPath?: string,
   interactionMode?: AgentInteractionMode,
   attachments?: AgentMessageAttachment[],
-  async = true
+  async = true,
+  clientFocus?: AgentClientFocus | null,
+  clientChannel?: AgentClientChannel | null
 ): Promise<AiAgentChatResponse | AiAgentAcceptedResponse> {
   const url = `/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/messages${
     async ? "?async=true" : ""
@@ -599,7 +613,14 @@ export function sendAgentMessage(
       "Content-Type": "application/json",
       ...getAuthHeaders(),
     },
-    body: JSON.stringify({ message, rootPath, interactionMode, attachments }),
+    body: JSON.stringify({
+      message,
+      rootPath,
+      interactionMode,
+      attachments,
+      ...(clientFocus ? { clientFocus } : {}),
+      ...(clientChannel ? { clientChannel } : {}),
+    }),
   }).then(async (response) => {
     if (!response.ok) {
       return throwAiHttpError(response, `Send message failed: ${response.status}`);
@@ -616,12 +637,22 @@ export interface WaitForAgentTurnOptions {
 /** Ignore early running=false before the server registers the async run. */
 const POST_SEND_GRACE_MS = 8_000;
 /** Require running=false to stay stable before treating the run as finished. */
-const RUN_IDLE_CONFIRM_MS = 2_000;
+const RUN_IDLE_CONFIRM_MS = 400;
 /** Poll session for a new turn after running=false (LLM + DB commit can take minutes). */
 const TURN_FETCH_ATTEMPTS = 120;
 const TURN_FETCH_DELAY_MS = 500;
 const TURN_FETCH_LATE_PAUSE_MS = 10_000;
 const TURN_FETCH_LATE_ATTEMPTS = 80;
+
+const FALLBACK_PROVIDER: AiProviderStatus = {
+  enabled: true,
+  providerId: "unknown",
+  available: true,
+};
+
+function hasTerminalProgressStep(progress: AiAgentRunProgress): boolean {
+  return (progress.steps ?? []).some((step) => step.type === "finish" || step.type === "error");
+}
 
 export function isAgentTurnResultDeliveryError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -632,11 +663,8 @@ export async function fetchNewAgentTurnResponse(
   sessionId: string,
   baselineTurnCount: number
 ): Promise<AiAgentChatResponse | null> {
-  const [session, provider, contextPack] = await Promise.all([
-    fetchAgentSession(sessionId),
-    fetchAiProviderStatus(),
-    fetchAiContextPack().catch(() => ({ contextPackVersion: "" } as AiContextPackInfo)),
-  ]);
+  // Session is the source of truth; provider/context must not block delivering the turn.
+  const session = await fetchAgentSession(sessionId);
   if (session.turns.length <= baselineTurnCount) {
     return null;
   }
@@ -644,6 +672,10 @@ export async function fetchNewAgentTurnResponse(
   if (!turn) {
     return null;
   }
+  const [provider, contextPack] = await Promise.all([
+    fetchAiProviderStatus().catch(() => FALLBACK_PROVIDER),
+    fetchAiContextPack().catch(() => ({ contextPackVersion: "" } as AiContextPackInfo)),
+  ]);
   return sessionTurnToChatResponse(session, turn, provider, contextPack.contextPackVersion ?? "");
 }
 
@@ -679,6 +711,7 @@ export function waitForAgentTurnCompletion(
     const waitStartedAt = Date.now();
     let sawRunning = false;
     let idleSince: number | null = null;
+    let lastSteps: AiAgentStep[] = [];
 
     const cleanup = () => {
       if (sessionPollTimer) {
@@ -752,13 +785,24 @@ export function waitForAgentTurnCompletion(
       }
     };
 
-    const considerFinish = (running: boolean) => {
+    const considerFinish = (progress: AiAgentRunProgress) => {
       if (settled) {
+        return;
+      }
+      const running = progress.running === true;
+      const completed = progress.completed === true;
+      const terminal = hasTerminalProgressStep(progress);
+      if (running && !terminal && !completed) {
+        sawRunning = true;
+        idleSince = null;
         return;
       }
       if (running) {
         sawRunning = true;
-        idleSince = null;
+      }
+      // finish/error already published, or run closed with completed snapshot — start turn fetch now
+      if (completed || terminal) {
+        void finish();
         return;
       }
       const now = Date.now();
@@ -776,21 +820,31 @@ export function waitForAgentTurnCompletion(
     };
 
     sessionPollTimer = setInterval(() => {
-      void loadCompletedTurn().then((response) => {
-        if (response) {
-          settle(response);
-        }
-      });
-    }, 1000);
+      void loadCompletedTurn()
+        .then((response) => {
+          if (response) {
+            settle(response);
+          }
+        })
+        .catch(() => {
+          // keep polling — transient session/provider errors must not kill settle
+        });
+    }, 500);
 
     unsubscribe = subscribeAgentRunProgress(
       sessionId,
       (progress) => {
+        if (progress.steps && progress.steps.length > 0) {
+          lastSteps = progress.steps;
+        } else if (lastSteps.length > 0 && !progress.running) {
+          // completed snapshot without steps shouldn't blank the UI
+          progress = { ...progress, steps: lastSteps };
+        }
         onProgress?.(progress);
-        considerFinish(progress.running === true);
+        considerFinish(progress);
       },
       () => {
-        // SSE errors — session turn polling continues
+        // Poll errors — session turn polling continues
       }
     );
   });
@@ -799,6 +853,7 @@ export function waitForAgentTurnCompletion(
 export function fetchAgentRunProgress(sessionId: string): Promise<AiAgentRunProgress> {
   return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/progress`, {
     headers: getAuthHeaders(),
+    cache: "no-store",
   }).then(async (response) => {
     if (!response.ok) {
       return throwAiHttpError(response, `Fetch progress failed: ${response.status}`);
@@ -812,26 +867,35 @@ export function subscribeAgentRunProgress(
   onProgress: (progress: AiAgentRunProgress) => void,
   onError?: (error: Event) => void
 ): () => void {
-  const base = `/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/progress/stream`;
-  const token = getStoredSession()?.token;
-  const url = token ? `${base}?${new URLSearchParams({ token }).toString()}` : base;
-  const source = new EventSource(url);
+  // EventSource cannot send Authorization; query-token auth was removed for security.
+  // Poll the Bearer-authenticated progress endpoint instead.
+  let cancelled = false;
+  let requestSeq = 0;
 
-  source.addEventListener("progress", (event) => {
-    try {
-      const progress = JSON.parse((event as MessageEvent).data) as AiAgentRunProgress;
-      onProgress(progress);
-    } catch {
-      // ignore malformed SSE payloads
+  const tick = () => {
+    if (cancelled) {
+      return;
     }
-  });
-
-  source.onerror = (error) => {
-    onError?.(error);
+    const seq = ++requestSeq;
+    void fetchAgentRunProgress(sessionId)
+      .then((progress) => {
+        // Apply latest response only — never block ticks behind a hung request.
+        if (!cancelled && seq === requestSeq) {
+          onProgress(progress);
+        }
+      })
+      .catch(() => {
+        if (!cancelled && seq === requestSeq) {
+          onError?.(new Event("error"));
+        }
+      });
   };
 
+  tick();
+  const timer = setInterval(tick, 500);
   return () => {
-    source.close();
+    cancelled = true;
+    clearInterval(timer);
   };
 }
 

@@ -227,11 +227,11 @@ class SpecIntakeScenarioTest {
     }
 
     @Test
-    void tankFarmTankProfileRegistered() {
-        assertThat(VirtualDeviceProfileCatalog.resolve("tank-farm-tank")).isPresent();
-        var spec = VirtualDeviceProfileCatalog.resolve("tank-farm-tank").orElseThrow();
-        assertThat(spec.expectedVariables()).contains("fillLevelMm");
-        Map<String, Object> row = VirtualDeviceProfileCatalog.profileCatalogRow("tank-farm-tank", spec);
-        assertThat(row).containsKey("semanticLabels");
+    void virtualDeviceDefaultsRegistered() {
+        assertThat(VirtualDeviceDefaults.TEMPLATE_ID).isEqualTo("virtual-unified-v1");
+        assertThat(VirtualDeviceDefaults.EXPECTED_VARIABLES).contains("sineWave", "meterLiters", "temperature");
+        Map<String, Object> row = VirtualDeviceDefaults.catalogRow(true);
+        assertThat(row).containsEntry("driverId", "virtual");
+        assertThat(row).containsKey("hint");
     }
 }

@@ -38,11 +38,12 @@ public class MiniTecBlueprintBootstrap {
     public static final String HUB_MODEL = "mini-tec-station-hub-v1";
 
     public static final String GPU_DRIVER_CONFIG_TEMPLATE =
-            "{\"profile\":\"tec-gpu\",\"ratedPowerKw\":\"%s\",\"unitIndex\":\"%d\"}";
-    public static final String GRPB_DRIVER_CONFIG = "{\"profile\":\"tec-grpb\"}";
-    public static final String RUMB_DRIVER_CONFIG = "{\"profile\":\"tec-rumb\"}";
-    public static final String DGU_DRIVER_CONFIG = "{\"profile\":\"tec-dgu\"}";
-    public static final String LOAD_DRIVER_CONFIG = "{\"profile\":\"tec-load\"}";
+            "{\"ratedPowerKw\":\"%s\",\"unitIndex\":\"%d\"}";
+    /** Domain telemetry must come from relative blueprint logic (bindings/functions), not driver profiles. */
+    public static final String GRPB_DRIVER_CONFIG = "{}";
+    public static final String RUMB_DRIVER_CONFIG = "{}";
+    public static final String DGU_DRIVER_CONFIG = "{}";
+    public static final String LOAD_DRIVER_CONFIG = "{}";
 
     public static final String TEC_POINT_MAPPINGS = "{\"status\":\"sim\"}";
 

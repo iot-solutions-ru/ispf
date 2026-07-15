@@ -197,7 +197,6 @@ class MesPlatformApiTest {
                                   "driverId": "virtual",
                                   "pollIntervalMs": 500,
                                   "configuration": {
-                                    "profile": "meter",
                                     "litersPerSecond": "200",
                                     "filling": "true"
                                   },

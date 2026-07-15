@@ -1,0 +1,51 @@
+{
+  "figmaPrototype": "https://www.figma.com/proto/vdNr7tIl9f3RSdvaGkBuaV/Highway_M11_27.04.20",
+  "screens": [
+    {
+      "figmaFrame": "Network Overview",
+      "dashboardId": "itm-overview",
+      "legacyWidget": "networkOverview"
+    },
+    {
+      "figmaFrame": "Top 10",
+      "dashboardId": "itm-top10",
+      "legacyWidget": "top10"
+    },
+    {
+      "figmaFrame": "Alerts",
+      "dashboardId": "itm-alarms",
+      "legacyWidget": "alerts"
+    },
+    {
+      "figmaFrame": "IP SLA Summary",
+      "dashboardId": "itm-sla",
+      "legacyWidget": "ipSLASummary"
+    },
+    {
+      "figmaFrame": "IP SLA Top 10",
+      "dashboardId": "itm-sla-top10",
+      "legacyWidget": "ipSLATop10"
+    },
+    {
+      "figmaFrame": "Traffic Summary",
+      "dashboardId": "itm-traffic",
+      "legacyWidget": "trafficSummary"
+    },
+    {
+      "figmaFrame": "VoIP Summary",
+      "dashboardId": "itm-services-voip",
+      "legacyWidget": "voIPSummary"
+    },
+    {
+      "figmaFrame": "Virtualization Overview",
+      "dashboardId": "itm-servers",
+      "legacyWidget": "virtualizationOverview"
+    },
+    {
+      "figmaFrame": "Network Topology Map / DCN",
+      "dashboardId": "itm-dcn",
+      "legacyWidget": "dcn",
+      "figmaNodeHint": "0-22"
+    }
+  ]
+}

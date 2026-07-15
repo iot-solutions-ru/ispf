@@ -66,6 +66,8 @@ import { historianTagOwnedByObject } from "../utils/analyticsPath";
 import { resolveApplicationAppId } from "../utils/applicationPath";
 import EditLeaseBanner from "./EditLeaseBanner";
 import { usePersistentTab } from "../hooks/usePersistentTab";
+import { usePublishAdminFocus } from "../hooks/usePublishAdminFocus";
+import type { AdminClientFocus } from "../context/AdminFocusContext";
 
 interface ObjectPropertiesEditorProps {
   path: string;
@@ -551,6 +553,27 @@ export default function ObjectPropertiesEditor({
       setTab("general");
     }
   }, [editorData, setTab, tab, tabs]);
+
+  const propertiesFocus = useMemo((): AdminClientFocus => {
+    const objectType = ctxPreview?.type ?? editorQuery.data?.object?.type;
+    return {
+      surface: "properties",
+      objectPath: path,
+      objectType,
+      priority: 40,
+      detail: {
+        inspectorTab: tab,
+        availableTabs: tabs,
+        displayName: editorQuery.data?.object?.displayName ?? ctxPreview?.displayName,
+        variableNames: filterUserVariableNames(
+          (editorQuery.data?.variables ?? []).map((variable) => variable.name)
+        ).slice(0, 40),
+        eventNames: (editorQuery.data?.events ?? []).map((event) => event.name).slice(0, 30),
+        functionNames: (editorQuery.data?.functions ?? []).map((fn) => fn.name).slice(0, 30),
+      },
+    };
+  }, [ctxPreview, editorQuery.data, path, tab, tabs]);
+  usePublishAdminFocus(`object-properties:${path}`, propertiesFocus, Boolean(path));
 
   if (editorQuery.error && !editorData) {
     return <div className="editor-loading error">{t("objectEditor.loadError")}</div>;

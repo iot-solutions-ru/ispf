@@ -14,7 +14,7 @@ Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI
 | 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#phase-30--automation-depth) — BL-176 |
 | 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [roadmap](roadmap.md#phase-29--mes-platform) — BL-164…170 |
 | 8 | Low-code velocity | 8.0 | **8.0** | **10** | [roadmap](roadmap.md#phase-26--hmi-excellence), [roadmap](roadmap.md#phase-31--ai-autopilot) — BL-146…152, BL-177…180 |
-| 9 | AI-assisted development | 9.0 | **6.5** | **10** | [roadmap](roadmap.md#phase-31--ai-autopilot) — BL-177…182 |
+| 9 | AI-assisted development | 9.0 | **7.0** | **10** | [roadmap](roadmap.md#phase-31--ai-autopilot) — BL-177…182 |
 | 10 | Security / RBAC / tenancy | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#phase-27--enterprise-security) — BL-153…157 |
 | 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [roadmap](roadmap.md#phase-25--ot-trust), [roadmap](roadmap.md#phase-28--historian-at-scale), [roadmap](roadmap.md#phase-32--ecosystem--market) — BL-144…145, BL-186…187 |
 | 12 | Ecosystem / marketplace | 4.0 | **5.0** | **10** | [roadmap](roadmap.md#phase-32--ecosystem--market) — BL-183…185 |
@@ -34,7 +34,7 @@ From [roadmap](roadmap.md) (Phases 25–33 / DoD). Status on **0.9.102**:
 | Criterion | Status |
 |-----------|--------|
 | All **14 dimensions ≥9.5**, none ≤8 (BL-189) | **Not met** — code verified mean ~7.4; highest 9.5 (stack modernity) |
-| Agent regression **≥95% green** with live LLM (BL-178) | **Not met** — CI validates JSON schemas only; nightly uses `nightly-stub-results.json` |
+| Agent regression **≥95% green** with live LLM (BL-178) | **Not met** — schema CI + optional **REAL** one-shot (`run-live-oneshot.sh` / `AgentLiveDeploySmokeTest`); full 50@≥95% open. `nightly-stub-results.json` **deprecated** (not pass proof) |
 | Marketplace GA checklist complete (BL-183) | **Partial** — local bundle install real; partner/symbol/cert paths stub |
 | Competitive scorecard published per release (BL-189) | **Met** — this document |
 
@@ -52,9 +52,9 @@ Evidence classes: **REAL** (runtime + tests), **PARTIAL** (core works, known gap
 | 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC default; BL-210 lab gates + JVM multi-tag gate **defined** (`analytics-scale-gate.sh`); score **≥9.5** after Enterprise L lab sign-off |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; `AlarmShelfApprovalService` in-memory **stub** |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; not full BPMN 2.0 spec |
-| 7 | MES / ISA-95 | 6.5 | **PARTIAL** | `MesPlatformBootstrap` + bundle JSON/SQL/script BFF; `MesPlatformProductionBundleSmokeTest` — no standalone MES engine module |
+| 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES is marketplace product (`mes-platform`, vendor IoT Solutions); base platform does not seed `root.platform.mes`. Bundle JSON/SQL/script BFF; no standalone MES engine module |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
-| 9 | AI-assisted dev | 6.5 | **PARTIAL** | Agent tools mutate platform (`AgentE2eDeployIntegrationTest` without LLM); `AiSolutionGeneratorService` returns `"mode": "stub"`; `AgentRegressionCiTest` schema-only |
+| 9 | AI-assisted dev | 7.0 | **PARTIAL** | **REAL** one-shot live LLM deploy (`AgentLiveDeploySmokeTest`) + **REAL** solution apply (`AiSolutionGeneratorLiveSmokeTest`, `mode=live`); draft fallback `mode=draft` (not stub); full BL-178 ≥95% not met |
 | 10 | Security / RBAC | 7.5 | **PARTIAL** | TOTP MFA + `required-for-admin` **REAL**; `TenantIsolationValidator` **stub** |
 | 11 | Deploy / scale / edge | 7.0 | **PARTIAL** | Federation services in `com.ispf.server.federation.*`; Helm skeleton; no CI load proof for cluster scale |
 | 12 | Ecosystem / marketplace | 5.0 | **PARTIAL** | Local catalog install **REAL**; `PartnerProgramService` / `MarketplaceSymbolListingService` `"source": "stub"` |
@@ -67,7 +67,7 @@ Evidence classes: **REAL** (runtime + tests), **PARTIAL** (core works, known gap
 |-------|----------|
 | `opc-da` marked PRODUCTION but driver is stub | `DriverProductionMatrix.java`, `OpcDaDeviceDriver.java` |
 | DNP3 PRODUCTION without write | `Dnp3DeviceDriver.writePoint()` |
-| Agent nightly pass rate not measured | `tools/agent-regression/nightly-stub-results.json`, `run-nightly.sh` |
+| Full agent ≥95% live not measured | Optional one-shot REAL; stub file deprecated — need full live suite for BL-178 |
 | Partner enroll is synthetic | `PartnerProgramService.java` — hardcoded demo partners |
 
 ---
@@ -78,7 +78,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 
 1. **OT drivers (6.5 → 9+):** matrix honesty — `opc-da` stub / DNP3 write (**BL-191**); field pilot sign-offs after **named field driver task** (BL-140 Partial).
 2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** P0); production MES sites; genealogy lite (**BL-193**).
-3. **AI (6.5 → 9+):** live LLM regression in CI (`validate-scenarios.mjs --live --enforce-rate`); remove stub nightly results; real solution generator or document as keyword-only.
+3. **AI (7.0 → 9+):** expand beyond S31/S32 one-shots to full live 50@≥95% (`--enforce-rate`); broaden generator beyond catalog templates.
 4. **Ecosystem (5.0 → 9+):** persist partner enrollments; symbol pack install beyond in-memory stub; external signed bundles.
 5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
 6. **HMI (7.5 → 9+):** FPS gate on live WebSocket mimic path; alarm shelving persistence.

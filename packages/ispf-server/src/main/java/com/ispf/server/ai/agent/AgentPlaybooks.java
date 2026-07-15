@@ -98,11 +98,11 @@ public final class AgentPlaybooks {
 
     public static String virtualMeterLab() {
         return """
-                ## Virtual driver — meter profile (lab-training / MES)
+                ## Virtual driver — meter / filling (lab-training / MES)
                 
                 Цель: симулятор налива без железа.
                 
-                Предпочтительно: create_virtual_device profile=meter (один вызов — модель, конфиг, старт драйвера).
+                Предпочтительно: create_virtual_device (OOTB virtual уже пишет meterLiters/flowRate/filling).
                 
                 Или вручную:
                 1. create_object parentPath=root.platform.devices name=virtual-meter type=DEVICE
@@ -111,11 +111,11 @@ public final class AgentPlaybooks {
                 + """
                 , driverId=virtual, autoStartDriver=false
                 2. set_variable path=... name=driverConfigJson value="""
-                + VirtualDeviceProfileCatalog.METER_DRIVER_CONFIG
+                + LabBlueprintBootstrap.UNIFIED_DRIVER_CONFIG
                 + """
                 
                 3. set_variable path=... name=driverPointMappingsJson value="""
-                + VirtualDeviceProfileCatalog.METER_POINT_MAPPINGS
+                + LabBlueprintBootstrap.UNIFIED_POINT_MAPPINGS
                 + """
                 
                 4. configure_driver devicePath=... driverId=virtual autoStart=true
@@ -132,18 +132,18 @@ public final class AgentPlaybooks {
                 Use ONLY after SIF intake: specBrief + gapMatrix + approved selectedPhase=full + domainAdapter=industrial_oil_gas.
                 
                 Entity lexicon (names from specBrief.entities — never invent slugs):
-                | Kind in TZ | profile | Signals (from list_variables) |
-                |------------|---------|-------------------------------|
-                | gate valve (ЗД) | unified | temperature, pressure, flowRate |
-                | pump (НМ, НПВ) | lab | sineWave (vibration proxy), sawtoothWave |
-                | flow meter (СИКН) | meter | meterLiters, flowRate |
-                | tank / reservoir | tank-farm-tank | fillLevelMm, rateMmPerHour, valveOpen |
+                | Kind in TZ | template / approach | Signals (from list_variables) |
+                |------------|--------------------|-------------------------------|
+                | gate valve (ЗД) | create_virtual_device (OOTB) | temperature, pressure, flowRate |
+                | pump (НМ, НПВ) | create_virtual_device (OOTB) | sineWave (vibration proxy), sawtoothWave |
+                | flow meter (СИКН) | create_virtual_device (OOTB) | meterLiters, flowRate |
+                | tank / reservoir | relative blueprint tank-farm-tank-v1 | fillLevelMm, rateMmPerHour, valveOpen |
                 
                 Execution checklist (domainAdapter=industrial_oil_gas):
                 0. get_automation_schema topic=objectTypes + search_platform_recipes query="pump station" + list_objects parent=root.platform.devices
                 0b. objectTypesCoverage: DEVICE, CUSTOM, ALERT, MIMIC, DASHBOARD, REPORT/CORRELATOR/WORKFLOW if TZ requires
                 1. create_object CUSTOM folder — name from specBrief (not hardcoded pump-station)
-                2. For each entity in specBrief (full TZ): create_virtual_device profile from lexicon → list_variables (mandatory)
+                2. For each entity in specBrief (full TZ): create_virtual_device (or apply_relative_blueprint for tanks) → list_variables (mandatory)
                 3. configure_variable_history on chart vars (from list_variables only)
                 4. create_object MIMIC → save_mimic_diagram bindings from list_variables → get_mimic_diagram verify elementCount>0
                 5. create_object DASHBOARD → set_dashboard_layout template=scada-facility-overview (replace mimicPath in template)
@@ -151,7 +151,7 @@ public final class AgentPlaybooks {
                 7. configure_operator_ui defaultDashboard=<dashboardPath>
                 8. finish only after zero ERROR steps in turn
                 
-                NEVER: use meter profile for gate valves; use tank profile for pumps; bind chart without configure_variable_history.
+                NEVER: invent driver profiles; bind chart without configure_variable_history.
                 """
                 + industrialAbbreviationsGuide();
     }
@@ -160,8 +160,8 @@ public final class AgentPlaybooks {
         return """
                 
                 ### Oil & gas abbreviations (adapter industrial_oil_gas only)
-                ЗД — gate valve (unified, NOT meter). НМ/НПВ — pump motor (lab). СИКН — metering (meter).
-                РВС/резервуар — tank-farm-tank. LSTM/ML forecast — out_of_scope in gapMatrix (user gate), not in platform execution.
+                ЗД — gate valve (OOTB virtual). НМ/НПВ — pump motor (OOTB sineWave). СИКН — metering (OOTB meterLiters).
+                РВС/резервуар — relative blueprint tank-farm-tank-v1. LSTM/ML forecast — out_of_scope in gapMatrix (user gate), not in platform execution.
                 """;
     }
 
@@ -757,6 +757,22 @@ public final class AgentPlaybooks {
                 - list_applications
                 
                 After any deploy: list_variables / invoke_bff to verify tree paths.
+                
+                ### SQL CRUD mini-app (table + add/delete on dashboard)
+                1. register_application appId=employees-app displayName=Employees tablePrefix=emp_
+                2. application_data_migrate scripts=[{id:employees,sql:"CREATE TABLE IF NOT EXISTS emp_employees (id SERIAL PRIMARY KEY, fio TEXT NOT NULL, position TEXT NOT NULL)"}]
+                   — never use schema-qualified table names; never create table named like app_* (that is the schema)
+                3. configure_report reportId=employees-list reportType=sql
+                     dataSourcePath=root.platform.data-sources.employees-app
+                     query="SELECT id, fio, position FROM emp_employees ORDER BY id"
+                     — for listing rows on HMI use widget type=report (NOT object-table)
+                4. deploy_app_function addEmployee / deleteEmployee with sourceBody steps using **sql**+**var** (not query), always end with return.fields
+                   Example add:
+                   {"steps":[{"type":"exec","sql":"INSERT INTO emp_employees (fio, position) VALUES (?, ?)","params":["${input.fio}","${input.position}"]},{"type":"return","fields":{"ok":true}}]}
+                5. create_object DASHBOARD + set_dashboard_layout widgets: report + function-form (add) + function-form (delete with id field)
+                6. configure_operator_ui defaultDashboard=...
+                
+                object-table is for **tree children** (devices/objects), not SQL rows.
                 """;
     }
 
@@ -846,6 +862,14 @@ public final class AgentPlaybooks {
                 
                 ### Script deploy example
                 deploy_tree_function sourceType=script sourceBody={"steps":[{"type":"return","fields":{"ok":true}}]}
+                
+                App SQL script (deploy_app_function) — keys are **sql** and **var**, never **query**:
+                {"steps":[
+                  {"type":"selectMany","var":"rows","sql":"SELECT id, name FROM emp_item ORDER BY id"},
+                  {"type":"return","fields":{"rows":"${rows}"}}
+                ]}
+                Writes: {"type":"exec","sql":"INSERT ... VALUES (?, ?)","params":["${input.a}","${input.b}"]} then return.fields.
+                Must include at least one return step with fields object.
                 
                 search_context topic=functions for full OBJECT_FUNCTIONS.md (Java security limits, script steps).
                 """;

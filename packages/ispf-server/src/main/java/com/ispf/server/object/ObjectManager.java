@@ -171,7 +171,9 @@ public class ObjectManager {
         blueprintPersistence.ifAvailable(BlueprintPersistenceService::restoreCustomBlueprints);
         intrinsicBlueprintMigration.ifAvailable(SystemIntrinsicBlueprintMigration::migrate);
         platformReferenceBlueprintBootstrap.ifAvailable(PlatformReferenceBlueprintBootstrap::ensureReferenceModels);
-        mesBlueprintBootstrap.ifAvailable(MesBlueprintBootstrap::ensureMesModels);
+        if (bootstrapProperties.isMesCatalogEnabled()) {
+            mesBlueprintBootstrap.ifAvailable(MesBlueprintBootstrap::ensureMesModels);
+        }
         if (shouldApplyFixtureBlueprints()) {
             demoFixtureBootstrap.ifAvailable(demo ->
                     demo.seedDemos(blueprintApplicationRunner.getObject()));
@@ -456,7 +458,13 @@ public class ObjectManager {
         }
         if (historianFastPath.isHistorianOnlyEligible(path, name)
                 && historianFastPath.tryPublish(path, name, value, observedAt)) {
-            return resolveDriverTelemetryVariable(path, name, value);
+            // Keep live values updated: gateway lastIngress and loadtest ingress gates read RAM.
+            // Still skip the object-change bus for historian-only TELEMETRY_ONLY ticks.
+            Variable variable = setDriverTelemetryValueInMemory(path, name, value);
+            if (gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
+                return variable;
+            }
+            return variable;
         }
         Variable variable = setDriverTelemetryValueInMemory(path, name, value);
         if (gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
@@ -471,8 +479,8 @@ public class ObjectManager {
     }
 
     /**
-     * Fast-path ingress (event journal / historian-only): skip RAM live-value update — downstream
-     * async stores do not need object-tree computed value per tick.
+     * Event-journal-only fast path: skip RAM live-value update — journal stores do not need
+     * object-tree computed value per tick. Historian-only path updates RAM (see above).
      */
     private Variable resolveDriverTelemetryVariable(String path, String name, DataRecord value) {
         PlatformObject node = objectTree.require(path);
@@ -906,7 +914,9 @@ public class ObjectManager {
         ensureBootstrapNode("root.platform.queries", ObjectType.QUERIES, null);
         ensureBootstrapNode("root.platform.event-filters", ObjectType.EVENT_FILTERS, null);
         ensureBootstrapNode("root.platform.event-frames", ObjectType.EVENT_FRAMES, null);
-        ensureBootstrapNode("root.platform.mes", ObjectType.MES, null);
+        if (bootstrapProperties.isMesCatalogEnabled()) {
+            ensureBootstrapNode("root.platform.mes", ObjectType.MES, null);
+        }
         ensureBootstrapNode(FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
         ensureBootstrapNode("root.tenant", ObjectType.TENANT, null);
     }

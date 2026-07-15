@@ -94,7 +94,6 @@ class VirtualSimulatorProfilesTest {
                                   "driverId": "virtual",
                                   "pollIntervalMs": 500,
                                   "configuration": {
-                                    "profile": "meter",
                                     "litersPerSecond": "100",
                                     "filling": "true"
                                   },
@@ -121,9 +120,10 @@ class VirtualSimulatorProfilesTest {
                                   "driverId": "virtual",
                                   "pollIntervalMs": 60000,
                                   "configuration": {
-                                    "profile": "weighbridge",
                                     "tareKg": "15000",
-                                    "density": "0.85"
+                                    "density": "0.85",
+                                    "filling": "true",
+                                    "litersPerSecond": "100"
                                   },
                                   "autoStart": true
                                 }

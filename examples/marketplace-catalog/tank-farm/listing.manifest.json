@@ -1,0 +1,24 @@
+{
+  "slug": "tank-farm",
+  "title": "Резервуарный парк (демо)",
+  "description": "SCADA-демо резервуарного парка: модели танков/хаба, SQL-симуляция уровней, дашборд. Устанавливается бандлом, не сидится на пустой платформе.",
+  "pricing": "free",
+  "appId": "tank-farm-demo",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.1.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "scada",
+    "tank-farm",
+    "telemetry"
+  ],
+  "changelog": "1.1.0 — self-contained marketplace bundle; SQL tick simulation; removed from platform fixtures."
+}

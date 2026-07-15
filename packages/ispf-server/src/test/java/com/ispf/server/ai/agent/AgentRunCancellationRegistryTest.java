@@ -47,6 +47,21 @@ class AgentRunCancellationRegistryTest {
         assertThat(registry.isRunning(sessionId)).isFalse();
     }
 
+    @Test
+    void closeKeepsCompletedProgressSnapshotWithSteps() {
+        AgentRunCancellationRegistry registry = new AgentRunCancellationRegistry();
+        String sessionId = "sess-done";
+        var handle = registry.start(sessionId, "hello", Map.of("planPhase", "approved"));
+        registry.recordStep(sessionId, Map.of("step", 1, "type", "finish", "summary", "Готово"));
+        handle.close();
+        assertThat(registry.isRunning(sessionId)).isFalse();
+        Map<String, Object> progress = registry.progress(sessionId);
+        assertThat(progress.get("running")).isEqualTo(false);
+        assertThat(progress.get("completed")).isEqualTo(true);
+        assertThat(progress.get("steps")).asList().hasSize(1);
+        assertThat(progress.get("stepsCompleted")).isEqualTo(1);
+    }
+
     /** Test helper — package-private field access via reflection for idle timestamp. */
     private static final class RunStateAccessor {
         static void setLastProgressMs(AgentRunCancellationRegistry registry, String sessionId, long ms) {

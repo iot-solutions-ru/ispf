@@ -90,33 +90,15 @@ public class TankFarmPlatformBootstrap {
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 23)
-    public void onReady() throws Exception {
-        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
-            return;
-        }
-        BlueprintBootstrap.ensureTankFarmModels();
-        registerApplication();
-        ensureFolder();
-        for (TankSeed tank : allTanks()) {
-            ensureTank(tank);
-        }
-        ensureHub();
-        ensureMimic(TankFarmPaths.MIMIC, "Резервуарный парк (демо)", TankFarmMimicDocument.DIAGRAM_JSON);
-        ensureDashboard(
-                TankFarmPaths.DASHBOARD,
-                "Мнемосхема резервуарного парка",
-                TankFarmDashboardLayouts.HMI_LAYOUT
-        );
-        ensureOperatorUi();
+    public void onReady() {
+        // Tank-farm is marketplace-only — not seeded on empty platform / fixtures.
+        // Install: examples/tank-farm/bundle.json (appId=tank-farm-demo).
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 4)
     public void startDriversAfterBootstrap() {
-        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
-            return;
-        }
-        startDrivers();
+        // Drivers via marketplace install.
     }
 
     private List<TankSeed> allTanks() {

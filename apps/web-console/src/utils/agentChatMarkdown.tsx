@@ -128,7 +128,11 @@ function renderInlineMarkdown(text: string, keyPrefix: string): ReactNode[] {
 }
 
 export const AgentChatMessageBody = memo(function AgentChatMessageBody({ text }: { text: string }) {
-  const blocks = useMemo(() => parseAgentMarkdownBlocks(text), [text]);  if (blocks.length === 0) {
+  const blocks = useMemo(() => parseAgentMarkdownBlocks(text), [text]);
+  if (blocks.length === 0) {
+    if (!text?.trim()) {
+      return <span className="op-muted">…</span>;
+    }
     return null;
   }
 

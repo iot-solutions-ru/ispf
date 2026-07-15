@@ -161,7 +161,8 @@ export default function DashboardBuilder({
   };
 
   const handleNavigateDashboard = (targetPath: string, options?: OpenDashboardOptions) => {
-    applySession(options);
+    // Apply selection on the *target* dashboard via onNavigateDashboard options —
+    // do not merge into the source session (that used to stick the previous device).
     if (!embeddedModal) {
       setModalDashboard(null);
     }

@@ -1,6 +1,17 @@
 package com.ispf.server.ai.generation;
 
+import com.ispf.server.ai.llm.LlmProviderRegistry;
+import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.server.config.AiProperties;
+import com.ispf.server.object.ObjectManager;
+import com.ispf.server.operator.OperatorAppUiService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -11,14 +22,42 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class AiSolutionGeneratorServiceTest {
 
-    private final AiSolutionGeneratorService service = new AiSolutionGeneratorService();
+    @Mock
+    private LlmProviderRegistry llmProviderRegistry;
+    @Mock
+    private ApplicationBundleDeployService bundleDeployService;
+    @Mock
+    private OperatorAppUiService operatorAppUiService;
+    @Mock
+    private ObjectManager objectManager;
+    @Mock
+    private AutomationTreeService automationTreeService;
+
+    private AiSolutionGeneratorService service;
 
     private static final Set<String> EXPECTED_DOMAINS = Set.of(
             "mes", "oil-gas", "water", "energy", "hvac", "building", "warehouse", "lab", "pipeline", "scada"
     );
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(llmProviderRegistry.isGenerationAvailable()).thenReturn(false);
+        service = new AiSolutionGeneratorService(
+                llmProviderRegistry,
+                new AiProperties(),
+                new ObjectMapper(),
+                bundleDeployService,
+                operatorAppUiService,
+                objectManager,
+                automationTreeService
+        );
+    }
 
     @Test
     void detectsAllTenDomains() {
@@ -58,7 +97,8 @@ class AiSolutionGeneratorServiceTest {
 
             @SuppressWarnings("unchecked")
             Map<String, Object> referenceBundle = (Map<String, Object>) draft.get("referenceBundle");
-            assertEquals("stub", result.get("mode"));
+            assertEquals("draft", result.get("mode"));
+            assertEquals("keyword", result.get("domainSelection"));
             assertTrue(referenceBundle.containsKey("appId"));
             assertTrue(referenceBundle.containsKey("manifestPath"));
             assertDeployableBundleDraft((Map<String, Object>) result.get("bundleDraft"));
@@ -76,7 +116,7 @@ class AiSolutionGeneratorServiceTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> draft = (Map<String, Object>) result.get("blueprintDraft");
         assertEquals("scada", draft.get("domain"));
-        assertEquals("stub", result.get("mode"));
+        assertEquals("draft", result.get("mode"));
         assertNotNull(draft.get("specBrief"));
         assertNotNull(draft.get("suggestedArtifacts"));
         assertDeployableBundleDraft((Map<String, Object>) result.get("bundleDraft"));
@@ -101,19 +141,27 @@ class AiSolutionGeneratorServiceTest {
     }
 
     @Test
-    void rejectsBlankPrompt() {
+    void blankPromptRejected() {
         assertThrows(IllegalArgumentException.class, () -> service.generate("  "));
     }
 
+    @Test
+    void applyWithoutLlmFailsFast() {
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> service.generate("HVAC plant with AHU and comfort alert", true, "admin")
+        );
+        assertTrue(ex.getMessage().contains("LLM"));
+    }
+
+    @SuppressWarnings("unchecked")
     private static void assertDeployableBundleDraft(Map<String, Object> bundleDraft) {
         assertNotNull(bundleDraft);
-        assertEquals("1.0.0", bundleDraft.get("version"));
-        assertFalse(bundleDraft.get("displayName").toString().isBlank());
-        assertFalse(bundleDraft.get("schemaName").toString().isBlank());
-        assertTrue(bundleDraft.containsKey("migrations"));
-        assertTrue(bundleDraft.containsKey("objects"));
-        assertTrue(bundleDraft.containsKey("functions"));
-        assertTrue(bundleDraft.containsKey("dashboards"));
-        assertTrue(bundleDraft.containsKey("operatorUi"));
+        assertFalse(String.valueOf(bundleDraft.get("version")).isBlank());
+        assertTrue(bundleDraft.get("objects") instanceof List<?>);
+        assertFalse(((List<?>) bundleDraft.get("objects")).isEmpty());
+        assertTrue(bundleDraft.get("dashboards") instanceof List<?>);
+        assertFalse(((List<?>) bundleDraft.get("dashboards")).isEmpty());
+        assertTrue(bundleDraft.get("operatorUi") instanceof Map<?, ?>);
     }
 }

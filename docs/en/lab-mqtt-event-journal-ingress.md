@@ -126,5 +126,5 @@ Committed docs and [`examples/lab-mqtt-historian-stress/`](../../examples/lab-mq
 - [lab-event-journal-stress](lab-event-journal-stress.md) — legacy single-host multi-device peak (~110k, Scylla-saturated)
 - [lab-mqtt-historian-stress](lab-mqtt-historian-stress.md) — I-01 historian (TELEMETRY_ONLY)
 - [lab-mqtt-gateway-ingress](lab-mqtt-gateway-ingress.md) — I-02 gateway → child historian
-- [load-testing](load-testing.md) — ordered suite I-01…I-08
+- [load-testing](load-testing.md) — ordered suite I-01…I-08; anonymized results in [`examples/.../reports/ordered-suite-i01-i08.md`](../../examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md)
 - [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)

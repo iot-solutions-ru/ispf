@@ -1,0 +1,1757 @@
+{
+  "version": "1.0.0",
+  "displayName": "ITM inventory — Трасса М11",
+  "tablePrefix": "",
+  "schemaName": "it_infra_monitoring",
+  "metadata": {
+    "packageId": "itm-plugin-inventory-m11",
+    "siteId": "m11",
+    "siteLabel": "Трасса М11",
+    "dependsOnApp": "it-infra-monitoring",
+    "deviceCount": 99,
+    "snmpHost": "127.0.0.1"
+  },
+  "blueprints": [
+    {
+      "name": "itm-network-device-v1",
+      "description": "SNMP-monitored IT infrastructure device (MIB-II, IF-MIB, HOST-RESOURCES)",
+      "type": "RELATIVE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "hostLabel",
+          "group": "config",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "device"
+              }
+            ]
+          }
+        },
+        {
+          "name": "topologyElementId",
+          "group": "config",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "snmpHost",
+          "group": "config",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "127.0.0.1"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deviceRole",
+          "group": "config",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "switch"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sysName",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "sysDescr",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "sysUpTime",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "sysLocation",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "sysContact",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifNumber",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifDescr",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifSpeed",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifOperStatus",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "historyEnabled": true,
+          "historySampleMode": "ALL_VALUES",
+          "historyRetentionDays": 7,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifInOctets",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "historyEnabled": true,
+          "historySampleMode": "ALL_VALUES",
+          "historyRetentionDays": 7,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifOutOctets",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "historyEnabled": true,
+          "historySampleMode": "ALL_VALUES",
+          "historyRetentionDays": 7,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifInErrors",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifOutErrors",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifInUcastPkts",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ifOutUcastPkts",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "hrMemorySize",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "historyEnabled": true,
+          "historySampleMode": "ALL_VALUES",
+          "historyRetentionDays": 7,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "hrSystemProcesses",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "hrSystemNumUsers",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "hrProcessorLoad",
+          "group": "telemetry",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "historyEnabled": true,
+          "historySampleMode": "ALL_VALUES",
+          "historyRetentionDays": 7,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "linkStatus",
+          "group": "status",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "trunkStatus",
+          "group": "status",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "status",
+          "group": "status",
+          "schema": {
+            "name": "deviceStatus",
+            "fields": [
+              {
+                "name": "online",
+                "type": "BOOLEAN"
+              },
+              {
+                "name": "lastseen",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "deviceStatus",
+              "fields": [
+                {
+                  "name": "online",
+                  "type": "BOOLEAN"
+                },
+                {
+                  "name": "lastseen",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "online": true,
+                "lastseen": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "activeAlarms",
+          "group": "status",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices.itm.sites",
+      "name": "m11",
+      "type": "CUSTOM",
+      "displayName": "Трасса М11"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11",
+      "name": "network",
+      "type": "CUSTOM",
+      "displayName": "Сеть DCN"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11",
+      "name": "servers",
+      "type": "CUSTOM",
+      "displayName": "Серверы"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11",
+      "name": "isp",
+      "type": "CUSTOM",
+      "displayName": "Каналы ISP"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11",
+      "name": "voip",
+      "type": "CUSTOM",
+      "displayName": "VoIP"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11",
+      "name": "sections",
+      "type": "CUSTOM",
+      "displayName": "Участки"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections",
+      "name": "section1",
+      "type": "CUSTOM",
+      "displayName": "Участок 1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections",
+      "name": "section2",
+      "type": "CUSTOM",
+      "displayName": "Участок 2"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections",
+      "name": "section3",
+      "type": "CUSTOM",
+      "displayName": "Участок 3"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections",
+      "name": "section4",
+      "type": "CUSTOM",
+      "displayName": "Участок 4"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections",
+      "name": "section5",
+      "type": "CUSTOM",
+      "displayName": "Участок 5"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections",
+      "name": "section6",
+      "type": "CUSTOM",
+      "displayName": "Участок 6"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "tp12",
+      "type": "DEVICE",
+      "displayName": "ТП12",
+      "description": "DCN node ТП12",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "tp14",
+      "type": "DEVICE",
+      "displayName": "ТП14",
+      "description": "DCN node ТП14",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "tp16",
+      "type": "DEVICE",
+      "displayName": "ТП16",
+      "description": "DCN node ТП16",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "cpu5",
+      "type": "DEVICE",
+      "displayName": "ЦПУ5",
+      "description": "DCN node ЦПУ5",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "deu19",
+      "type": "DEVICE",
+      "displayName": "ДЭУ19",
+      "description": "DCN node ДЭУ19",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "deu19tp12",
+      "type": "DEVICE",
+      "displayName": "ДЭУ19-ТП12",
+      "description": "DCN node ДЭУ19-ТП12",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "tspu5deu19",
+      "type": "DEVICE",
+      "displayName": "ЦПУ5-ДЭУ19",
+      "description": "DCN node ЦПУ5-ДЭУ19",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "tp16tspu5",
+      "type": "DEVICE",
+      "displayName": "ТП16-ЦПУ5",
+      "description": "DCN node ТП16-ЦПУ5",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "pkadtp16",
+      "type": "DEVICE",
+      "displayName": "ПКАД-ТП16",
+      "description": "DCN node ПКАД-ТП16",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "sw-dcn-core-01",
+      "type": "DEVICE",
+      "displayName": "Core SW #1",
+      "description": "Cisco Catalyst 9300 demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "sw-dcn-core-02",
+      "type": "DEVICE",
+      "displayName": "Core SW #2",
+      "description": "Cisco Catalyst 9300 demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "sw-dcn-access-01",
+      "type": "DEVICE",
+      "displayName": "Access SW #1",
+      "description": "Huawei S5735 demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "sw-dcn-access-02",
+      "type": "DEVICE",
+      "displayName": "Access SW #2",
+      "description": "Huawei S5735 demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "fw-dcn-01",
+      "type": "DEVICE",
+      "displayName": "FW DCN #1",
+      "description": "FortiGate demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "fw-dcn-02",
+      "type": "DEVICE",
+      "displayName": "FW DCN #2",
+      "description": "FortiGate demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "rtr-m11-north",
+      "type": "DEVICE",
+      "displayName": "Router North",
+      "description": "Juniper MX demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "rtr-m11-south",
+      "type": "DEVICE",
+      "displayName": "Router South",
+      "description": "Juniper MX demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "lb-dcn-01",
+      "type": "DEVICE",
+      "displayName": "Load Balancer",
+      "description": "F5 BIG-IP demo",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "ntp-dcn-01",
+      "type": "DEVICE",
+      "displayName": "NTP",
+      "description": "NTP server SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "dns-dcn-01",
+      "type": "DEVICE",
+      "displayName": "DNS",
+      "description": "BIND server SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "probe-netflow-01",
+      "type": "DEVICE",
+      "displayName": "NetFlow Probe",
+      "description": "sFlow/NetFlow collector",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "sw-mgmt-01",
+      "type": "DEVICE",
+      "displayName": "Mgmt SW",
+      "description": "Out-of-band management switch",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.network",
+      "name": "ups-dcn-01",
+      "type": "DEVICE",
+      "displayName": "UPS DCN",
+      "description": "APC Smart-UPS SNMP card",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "nms-01",
+      "type": "DEVICE",
+      "displayName": "NMS / ISPF",
+      "description": "Monitoring platform host",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "app-mon-01",
+      "type": "DEVICE",
+      "displayName": "App Monitor",
+      "description": "Application monitoring",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "app-report-01",
+      "type": "DEVICE",
+      "displayName": "Report Server",
+      "description": "Reporting services",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "db-primary",
+      "type": "DEVICE",
+      "displayName": "DB Primary",
+      "description": "PostgreSQL primary",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "db-replica",
+      "type": "DEVICE",
+      "displayName": "DB Replica",
+      "description": "PostgreSQL replica",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "backup-01",
+      "type": "DEVICE",
+      "displayName": "Backup Server",
+      "description": "Veeam backup host",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "log-01",
+      "type": "DEVICE",
+      "displayName": "Log Collector",
+      "description": "Syslog/ELK node",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "es-01",
+      "type": "DEVICE",
+      "displayName": "Elasticsearch",
+      "description": "Search/analytics node",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "vm-hypervisor-01",
+      "type": "DEVICE",
+      "displayName": "VM Host #1",
+      "description": "KVM hypervisor",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "vm-hypervisor-02",
+      "type": "DEVICE",
+      "displayName": "VM Host #2",
+      "description": "KVM hypervisor",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "storage-01",
+      "type": "DEVICE",
+      "displayName": "Storage",
+      "description": "SAN/NAS management",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.servers",
+      "name": "radius-01",
+      "type": "DEVICE",
+      "displayName": "RADIUS",
+      "description": "802.1X authentication",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.isp",
+      "name": "isp-primary",
+      "type": "DEVICE",
+      "displayName": "ISP Primary",
+      "description": "Main WAN channel",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.isp",
+      "name": "isp-backup",
+      "type": "DEVICE",
+      "displayName": "ISP Backup",
+      "description": "Backup WAN channel",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.isp",
+      "name": "isp-rostelecom",
+      "type": "DEVICE",
+      "displayName": "Ростелеком",
+      "description": "Provider A uplink",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.isp",
+      "name": "isp-rtk",
+      "type": "DEVICE",
+      "displayName": "РТК",
+      "description": "Provider B uplink",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.isp",
+      "name": "isp-megafon",
+      "type": "DEVICE",
+      "displayName": "Мегафон LTE",
+      "description": "LTE backup channel",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.isp",
+      "name": "cpe-isp-edge",
+      "type": "DEVICE",
+      "displayName": "CPE Edge",
+      "description": "ISP edge router",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.isp",
+      "name": "modem-lte-backup",
+      "type": "DEVICE",
+      "displayName": "LTE Modem",
+      "description": "4G backup modem",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "avaya-gw",
+      "type": "DEVICE",
+      "displayName": "Avaya GW",
+      "description": "Media gateway",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "avaya-cm",
+      "type": "DEVICE",
+      "displayName": "Avaya CM",
+      "description": "Communication Manager",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "sbc-primary",
+      "type": "DEVICE",
+      "displayName": "SBC Primary",
+      "description": "Session border controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "sbc-backup",
+      "type": "DEVICE",
+      "displayName": "SBC Backup",
+      "description": "Session border controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "mgw-01",
+      "type": "DEVICE",
+      "displayName": "MGW #1",
+      "description": "Media gateway trunk",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "mgw-02",
+      "type": "DEVICE",
+      "displayName": "MGW #2",
+      "description": "Media gateway trunk",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "trunk-moscow",
+      "type": "DEVICE",
+      "displayName": "Trunk Moscow",
+      "description": "SIP trunk to Moscow",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "trunk-spb",
+      "type": "DEVICE",
+      "displayName": "Trunk SPb",
+      "description": "SIP trunk to SPb",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.voip",
+      "name": "trunk-noc",
+      "type": "DEVICE",
+      "displayName": "Trunk NOC",
+      "description": "NOC hotline trunk",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "sw-section1",
+      "type": "DEVICE",
+      "displayName": "SW участок 1",
+      "description": "Section access switch",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "ap-section1",
+      "type": "DEVICE",
+      "displayName": "WiFi AP 1",
+      "description": "Section WiFi access point",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "nvr-section1",
+      "type": "DEVICE",
+      "displayName": "NVR 1",
+      "description": "Video surveillance NVR",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "plc-section1",
+      "type": "DEVICE",
+      "displayName": "PLC 1",
+      "description": "Roadside PLC controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "vms-section1",
+      "type": "DEVICE",
+      "displayName": "Табло 1",
+      "description": "Variable message sign",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "toll-section1",
+      "type": "DEVICE",
+      "displayName": "ТСПУ 1",
+      "description": "Toll collection unit",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "ups-section1",
+      "type": "DEVICE",
+      "displayName": "UPS 1",
+      "description": "Section UPS SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section1",
+      "name": "weather-section1",
+      "type": "DEVICE",
+      "displayName": "Метео 1",
+      "description": "Weather station",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "sw-section2",
+      "type": "DEVICE",
+      "displayName": "SW участок 2",
+      "description": "Section access switch",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "ap-section2",
+      "type": "DEVICE",
+      "displayName": "WiFi AP 2",
+      "description": "Section WiFi access point",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "nvr-section2",
+      "type": "DEVICE",
+      "displayName": "NVR 2",
+      "description": "Video surveillance NVR",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "plc-section2",
+      "type": "DEVICE",
+      "displayName": "PLC 2",
+      "description": "Roadside PLC controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "vms-section2",
+      "type": "DEVICE",
+      "displayName": "Табло 2",
+      "description": "Variable message sign",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "toll-section2",
+      "type": "DEVICE",
+      "displayName": "ТСПУ 2",
+      "description": "Toll collection unit",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "ups-section2",
+      "type": "DEVICE",
+      "displayName": "UPS 2",
+      "description": "Section UPS SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section2",
+      "name": "weather-section2",
+      "type": "DEVICE",
+      "displayName": "Метео 2",
+      "description": "Weather station",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "sw-section3",
+      "type": "DEVICE",
+      "displayName": "SW участок 3",
+      "description": "Section access switch",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "ap-section3",
+      "type": "DEVICE",
+      "displayName": "WiFi AP 3",
+      "description": "Section WiFi access point",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "nvr-section3",
+      "type": "DEVICE",
+      "displayName": "NVR 3",
+      "description": "Video surveillance NVR",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "plc-section3",
+      "type": "DEVICE",
+      "displayName": "PLC 3",
+      "description": "Roadside PLC controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "vms-section3",
+      "type": "DEVICE",
+      "displayName": "Табло 3",
+      "description": "Variable message sign",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "toll-section3",
+      "type": "DEVICE",
+      "displayName": "ТСПУ 3",
+      "description": "Toll collection unit",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "ups-section3",
+      "type": "DEVICE",
+      "displayName": "UPS 3",
+      "description": "Section UPS SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section3",
+      "name": "weather-section3",
+      "type": "DEVICE",
+      "displayName": "Метео 3",
+      "description": "Weather station",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "sw-section4",
+      "type": "DEVICE",
+      "displayName": "SW участок 4",
+      "description": "Section access switch",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "ap-section4",
+      "type": "DEVICE",
+      "displayName": "WiFi AP 4",
+      "description": "Section WiFi access point",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "nvr-section4",
+      "type": "DEVICE",
+      "displayName": "NVR 4",
+      "description": "Video surveillance NVR",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "plc-section4",
+      "type": "DEVICE",
+      "displayName": "PLC 4",
+      "description": "Roadside PLC controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "vms-section4",
+      "type": "DEVICE",
+      "displayName": "Табло 4",
+      "description": "Variable message sign",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "toll-section4",
+      "type": "DEVICE",
+      "displayName": "ТСПУ 4",
+      "description": "Toll collection unit",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "ups-section4",
+      "type": "DEVICE",
+      "displayName": "UPS 4",
+      "description": "Section UPS SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section4",
+      "name": "weather-section4",
+      "type": "DEVICE",
+      "displayName": "Метео 4",
+      "description": "Weather station",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "sw-section5",
+      "type": "DEVICE",
+      "displayName": "SW участок 5",
+      "description": "Section access switch",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "ap-section5",
+      "type": "DEVICE",
+      "displayName": "WiFi AP 5",
+      "description": "Section WiFi access point",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "nvr-section5",
+      "type": "DEVICE",
+      "displayName": "NVR 5",
+      "description": "Video surveillance NVR",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "plc-section5",
+      "type": "DEVICE",
+      "displayName": "PLC 5",
+      "description": "Roadside PLC controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "vms-section5",
+      "type": "DEVICE",
+      "displayName": "Табло 5",
+      "description": "Variable message sign",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "toll-section5",
+      "type": "DEVICE",
+      "displayName": "ТСПУ 5",
+      "description": "Toll collection unit",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "ups-section5",
+      "type": "DEVICE",
+      "displayName": "UPS 5",
+      "description": "Section UPS SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section5",
+      "name": "weather-section5",
+      "type": "DEVICE",
+      "displayName": "Метео 5",
+      "description": "Weather station",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "sw-section6",
+      "type": "DEVICE",
+      "displayName": "SW участок 6",
+      "description": "Section access switch",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "ap-section6",
+      "type": "DEVICE",
+      "displayName": "WiFi AP 6",
+      "description": "Section WiFi access point",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "nvr-section6",
+      "type": "DEVICE",
+      "displayName": "NVR 6",
+      "description": "Video surveillance NVR",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "plc-section6",
+      "type": "DEVICE",
+      "displayName": "PLC 6",
+      "description": "Roadside PLC controller",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "vms-section6",
+      "type": "DEVICE",
+      "displayName": "Табло 6",
+      "description": "Variable message sign",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "toll-section6",
+      "type": "DEVICE",
+      "displayName": "ТСПУ 6",
+      "description": "Toll collection unit",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "ups-section6",
+      "type": "DEVICE",
+      "displayName": "UPS 6",
+      "description": "Section UPS SNMP",
+      "templateId": "itm-network-device-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.itm.sites.m11.sections.section6",
+      "name": "weather-section6",
+      "type": "DEVICE",
+      "displayName": "Метео 6",
+      "description": "Weather station",
+      "templateId": "itm-network-device-v1"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "itm_inventory_m11_seed",
+      "sql": "INSERT INTO itm_sla_daily (site_id, metric_date, availability_pct, packet_loss_pct, mean_rtt_ms) SELECT 'm11', CURRENT_DATE, 99.5, 0.1, 2.5 WHERE NOT EXISTS (SELECT 1 FROM itm_sla_daily WHERE site_id = 'm11' AND metric_date = CURRENT_DATE);"
+    }
+  ]
+}

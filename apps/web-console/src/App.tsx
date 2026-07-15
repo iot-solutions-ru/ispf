@@ -46,6 +46,10 @@ import LoginView from "./components/LoginView";
 import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
 import ShellPreferences from "./components/ShellPreferences";
 import { AgentChatProvider } from "./context/AgentChatContext";
+import { AdminFocusProvider } from "./context/AdminFocusContext";
+import { AdminCopilotChatProvider } from "./context/AdminCopilotChatContext";
+import AdminCopilotFab from "./components/agent/AdminCopilotFab";
+import AdminWorkspaceFocusSync from "./components/agent/AdminWorkspaceFocusSync";
 import { useAgentRunStatus } from "./utils/agentRunStatus";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
@@ -490,8 +494,9 @@ function AppShell() {
   const isAdmin = isAdminSession(session);
   const canConfigure = isConfiguratorSession(session);
   const primaryRole = getPrimaryRole(session);
-  const agentRun = useAgentRunStatus();
-  const mountAgentChat = canConfigure && (workspaceTab === "ai-studio" || agentRun.isPending);
+  const showAiStudio = canConfigure && workspaceTab === "ai-studio";
+  // Keep provider mounted for FAB even when Studio tab is hidden.
+  const mountAgentChat = canConfigure;
 
   const handleLogout = async () => {
     await logout();
@@ -599,9 +604,20 @@ function AppShell() {
     );
   }
 
-  return (
+  const shell = (
     <div className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}`} data-testid="admin-shell">
       {canConfigure && <AgentChatRunBootstrap enabled />}
+      {mountAgentChat && (
+        <>
+          <AdminWorkspaceFocusSync
+            workspaceTab={workspaceTab}
+            selectedPath={selectedPath}
+            activeEditor={activeEditor}
+            showPropertiesEditor={showPropertiesEditor}
+          />
+          {!isMobileLayout && <AdminCopilotFab />}
+        </>
+      )}
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">ISPF</span>
@@ -776,18 +792,12 @@ function AppShell() {
           </Suspense>
         )}
 
-        {mountAgentChat && workspaceTab === "ai-studio" && (
+        {showAiStudio && (
           <main className="main ai-studio-main">
-            <AgentChatProvider enabled>
-              <Suspense fallback={<LazyFallback />}>
-                <AiStudioPanel />
-              </Suspense>
-            </AgentChatProvider>
+            <Suspense fallback={<LazyFallback />}>
+              <AiStudioPanel />
+            </Suspense>
           </main>
-        )}
-
-        {mountAgentChat && workspaceTab !== "ai-studio" && (
-          <AgentChatProvider enabled />
         )}
 
         {activeEditor && workspaceTab === activeEditor.id && !showPropertiesEditor && (
@@ -917,5 +927,17 @@ function AppShell() {
         />
       )}
     </div>
+  );
+
+  if (!mountAgentChat) {
+    return <AdminFocusProvider>{shell}</AdminFocusProvider>;
+  }
+
+  return (
+    <AdminFocusProvider>
+      <AgentChatProvider enabled>
+        <AdminCopilotChatProvider enabled>{shell}</AdminCopilotChatProvider>
+      </AgentChatProvider>
+    </AdminFocusProvider>
   );
 }

@@ -25,12 +25,25 @@ public class AgentRunCancellationRegistry {
         final List<Map<String, Object>> steps = Collections.synchronizedList(new ArrayList<>());
     }
 
+    private static final class CompletedSnapshot {
+        final long completedAtMs;
+        final Map<String, Object> progress;
+
+        CompletedSnapshot(long completedAtMs, Map<String, Object> progress) {
+            this.completedAtMs = completedAtMs;
+            this.progress = progress;
+        }
+    }
+
     /** Runs with no step progress longer than this are treated as stale (orphaned async turn). */
     private static final long STALE_IDLE_MS = 15 * 60 * 1000L;
     /** Hard cap — never block a session longer than this. */
     private static final long STALE_MAX_MS = 2 * 60 * 60 * 1000L;
+    /** Keep last progress visible after close so the UI can settle without F5. */
+    private static final long COMPLETED_TTL_MS = 60_000L;
 
     private final ConcurrentHashMap<String, RunState> runsBySession = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CompletedSnapshot> completedBySession = new ConcurrentHashMap<>();
 
     public void touch(String sessionId) {
         if (sessionId == null || sessionId.isBlank()) {
@@ -55,11 +68,12 @@ public class AgentRunCancellationRegistry {
 
     public RunHandle start(String sessionId, String userMessage, Map<String, Object> planState) {
         clearStaleRun(sessionId);
+        completedBySession.remove(sessionId);
         RunState state = new RunState();
         state.userMessage = userMessage != null ? userMessage : "";
         state.planState = planState != null ? new LinkedHashMap<>(planState) : Map.of();
         runsBySession.put(sessionId, state);
-        return () -> runsBySession.remove(sessionId, state);
+        return () -> closeRun(sessionId, state);
     }
 
     public void syncPlanState(String sessionId, Map<String, Object> planState) {
@@ -113,7 +127,7 @@ public class AgentRunCancellationRegistry {
         }
         RunState state = runsBySession.get(sessionId);
         if (state != null && isStale(state)) {
-            runsBySession.remove(sessionId, state);
+            closeRun(sessionId, state);
             return true;
         }
         return false;
@@ -121,7 +135,12 @@ public class AgentRunCancellationRegistry {
 
     public void forceClear(String sessionId) {
         if (sessionId != null && !sessionId.isBlank()) {
-            runsBySession.remove(sessionId);
+            RunState state = runsBySession.get(sessionId);
+            if (state != null) {
+                closeRun(sessionId, state);
+            } else {
+                completedBySession.remove(sessionId);
+            }
         }
     }
 
@@ -149,19 +168,44 @@ public class AgentRunCancellationRegistry {
             return Map.of("running", false);
         }
         RunState state = runsBySession.get(sessionId);
-        if (state == null) {
-            return Map.of("running", false);
+        if (state != null) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("running", true);
+            map.put("sessionId", sessionId);
+            map.put("userMessage", state.userMessage);
+            map.put("steps", List.copyOf(state.steps));
+            map.put("stepsCompleted", state.steps.size());
+            if (state.planState != null && !state.planState.isEmpty()) {
+                map.put("planState", state.planState);
+            }
+            return map;
         }
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("running", true);
-        map.put("sessionId", sessionId);
-        map.put("userMessage", state.userMessage);
-        map.put("steps", List.copyOf(state.steps));
-        map.put("stepsCompleted", state.steps.size());
+        CompletedSnapshot done = completedBySession.get(sessionId);
+        if (done != null) {
+            long age = System.currentTimeMillis() - done.completedAtMs;
+            if (age <= COMPLETED_TTL_MS) {
+                return done.progress;
+            }
+            completedBySession.remove(sessionId, done);
+        }
+        return Map.of("running", false);
+    }
+
+    private void closeRun(String sessionId, RunState state) {
+        if (!runsBySession.remove(sessionId, state)) {
+            return;
+        }
+        Map<String, Object> snap = new LinkedHashMap<>();
+        snap.put("running", false);
+        snap.put("completed", true);
+        snap.put("sessionId", sessionId);
+        snap.put("userMessage", state.userMessage);
+        snap.put("steps", List.copyOf(state.steps));
+        snap.put("stepsCompleted", state.steps.size());
         if (state.planState != null && !state.planState.isEmpty()) {
-            map.put("planState", state.planState);
+            snap.put("planState", state.planState);
         }
-        return map;
+        completedBySession.put(sessionId, new CompletedSnapshot(System.currentTimeMillis(), snap));
     }
 
     @FunctionalInterface

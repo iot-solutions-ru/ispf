@@ -29,14 +29,14 @@ public class TankFarmBlueprintBootstrap {
 
     public static String tankDriverConfig(int tankIndex, double initialLevelMm, double rateBiasMmPerHour) {
         return String.format(
-                "{\"profile\":\"tank-farm-tank\",\"tankIndex\":\"%d\",\"initialLevelMm\":\"%.0f\",\"rateBiasMmPerHour\":\"%.0f\",\"maxLevelMm\":\"10000\"}",
+                "{\"tankIndex\":\"%d\",\"initialLevelMm\":\"%.0f\",\"rateBiasMmPerHour\":\"%.0f\",\"maxLevelMm\":\"10000\"}",
                 tankIndex,
                 initialLevelMm,
                 rateBiasMmPerHour
         );
     }
 
-    public static final String MANIFOLD_HUB_DRIVER_CONFIG = "{\"profile\":\"tank-farm-hub\"}";
+    public static final String MANIFOLD_HUB_DRIVER_CONFIG = "{}";
 
     private static final DataSchema MEAS = DataSchema.builder("measurement")
             .field("value", FieldType.DOUBLE)
@@ -95,7 +95,7 @@ public class TankFarmBlueprintBootstrap {
         vars.add(meas("rateMmPerHour", "Level change rate", "telemetry", "mm/h", 0));
         vars.add(meas("maxLevelMm", "Max level", "config", "mm", 10000));
         vars.add(boolVar("valveOpen", "Outlet valve open", "status", false, false));
-        vars.addAll(driverVars("{\"profile\":\"tank-farm-tank\"}"));
+        vars.addAll(driverVars("{\"tankIndex\":\"1\",\"initialLevelMm\":\"5000\",\"rateBiasMmPerHour\":\"0\",\"maxLevelMm\":\"10000\"}"));
         return model(TANK_MODEL, "Storage tank (demo)", ObjectType.DEVICE, vars, List.of());
     }
 

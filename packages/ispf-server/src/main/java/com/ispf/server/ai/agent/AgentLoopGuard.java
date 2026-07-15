@@ -58,7 +58,7 @@ final class AgentLoopGuard {
             return """
                     Object created. For virtual simulators use create_virtual_device next time. \
                     If driverId=virtual: set templateId from list_relative_blueprints OR recreate with create_virtual_device; \
-                    set driverConfigJson profile from list_virtual_profiles, configure_driver autoStart=true, list_variables before finish.""";
+                    set driverConfigJson from list_virtual_profiles defaults, configure_driver autoStart=true, list_variables before finish.""";
         }
         if ("save_workflow_bpmn".equals(lastTool) && lastStepGroundTruthBlocked(steps)) {
             return AgentGroundTruthGuard.treeFirstOrderHint(

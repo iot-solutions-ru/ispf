@@ -1,34 +1,35 @@
 package com.ispf.driver.virtual;
 
 import com.ispf.core.model.DataRecord;
-import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.TelemetryQuality;
 
-import java.time.Instant;
 import java.util.Map;
 
 /**
- * Simulated device driver for demos and integration tests.
- * Profiles: demo, meter, weighbridge, rack-signals, lab, unified, tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load, ogp-print-line, tank-farm-tank, tank-farm-hub.
+ * Out-of-the-box virtual simulator — one poll path, no profiles.
+ * <p>
+ * Writes multi-type synthetic telemetry (waves, measurements with quality, nested geo/health,
+ * tables, binary, meter, booleans, status). Amplitude/period knobs come from driver configuration.
+ * <p>
+ * Domain reference plants (Mini-TEC, tank-farm, OGP) must enrich via relative blueprints
+ * (variables + binding rules / object functions), not via driver profile switches.
  */
 public class VirtualDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "virtual",
             "Virtual Simulator Driver",
-            "0.3.0",
-            "Synthetic telemetry: demo, meter, weighbridge, rack-signals, lab waves, unified multi-type showcase",
+            "0.4.0",
+            "Out-of-the-box multi-type synthetic telemetry. Domain enrichment: relative blueprints.",
             "ISPF",
             Map.ofEntries(
-                    Map.entry("profile", "demo"),
                     Map.entry("baseTemperature", "22.0"),
                     Map.entry("amplitude", "15.0"),
                     Map.entry("periodSec", "60"),
                     Map.entry("litersPerSecond", "120"),
+                    Map.entry("filling", "true"),
                     Map.entry("tareKg", "15000"),
                     Map.entry("density", "0.85"),
                     Map.entry("rackId", "rack-1"),
@@ -41,89 +42,13 @@ public class VirtualDeviceDriver implements DeviceDriver {
                     Map.entry("baseLatitude", "55.7558"),
                     Map.entry("baseLongitude", "37.6173"),
                     Map.entry("orbitRadiusM", "50"),
-                    Map.entry("serialNumber", "VIRT-UNIFIED-001"),
-                    Map.entry("firmwareVersion", "1.0.0-unified"),
-                    Map.entry("ratedPowerKw", "1480"),
-                    Map.entry("unitIndex", "1"),
-                    Map.entry("tankIndex", "11"),
-                    Map.entry("initialLevelMm", "5000"),
-                    Map.entry("rateBiasMmPerHour", "0"),
-                    Map.entry("maxLevelMm", "10000")
+                    Map.entry("serialNumber", "VIRT-001"),
+                    Map.entry("firmwareVersion", "1.0.0")
             )
     );
 
-    private static final DataSchema WAVE_SCHEMA = DataSchema.builder("waveReading")
-            .field("value", FieldType.DOUBLE)
-            .build();
-
-    private static final DataSchema TEMPERATURE_SCHEMA = DataSchema.builder("temperature")
-            .field("value", FieldType.DOUBLE)
-            .field("unit", FieldType.STRING)
-            .field("quality", FieldType.STRING)
-            .build();
-
-    private static final DataSchema STATUS_SCHEMA = DataSchema.builder("deviceStatus")
-            .field("online", FieldType.BOOLEAN)
-            .field("lastSeen", FieldType.STRING)
-            .build();
-
-    private static final DataSchema METER_SCHEMA = DataSchema.builder("meterReading")
-            .field("value", FieldType.DOUBLE)
-            .field("unit", FieldType.STRING)
-            .build();
-
-    private static final DataSchema FLOW_SCHEMA = DataSchema.builder("flowRate")
-            .field("value", FieldType.DOUBLE)
-            .field("unit", FieldType.STRING)
-            .build();
-
-    private static final DataSchema FILLING_SCHEMA = DataSchema.builder("filling")
-            .field("value", FieldType.BOOLEAN)
-            .build();
-
-    private static final DataSchema WEIGHT_SCHEMA = DataSchema.builder("grossWeight")
-            .field("value", FieldType.DOUBLE)
-            .field("unit", FieldType.STRING)
-            .build();
-
-    private static final DataSchema SIGNAL_SCHEMA = DataSchema.builder("rackSignal")
-            .field("value", FieldType.BOOLEAN)
-            .build();
-
     private DriverObject driverObject;
-    private String profile = "demo";
-    private double baseTemperature = 22.0;
-    private double amplitude = 15.0;
-    private double sineAmplitude = 10.0;
-    private double sawtoothAmplitude = 5.0;
-    private double triangleAmplitude = 5.0;
-    private double periodSec = 60.0;
-    private double litersPerSecond = 120.0;
-    private double tareKg = 15_000.0;
-    private double density = 0.85;
-    private String rackId = "rack-1";
-    private boolean gasConnected = true;
-    private boolean groundConnected = true;
-    private boolean filling = true;
-    private double meterLiters;
-    private long lastPollAt;
-    private final long startedAt = System.currentTimeMillis();
     private final VirtualUnifiedPoll.UnifiedState unifiedState = new VirtualUnifiedPoll.UnifiedState();
-    private final VirtualTecPoll.GpuState tecGpuState = new VirtualTecPoll.GpuState();
-    private final VirtualTecPoll.GrpbState tecGrpbState = new VirtualTecPoll.GrpbState();
-    private final VirtualTecPoll.RumbState tecRumbState = new VirtualTecPoll.RumbState();
-    private final VirtualTecPoll.DguState tecDguState = new VirtualTecPoll.DguState();
-    private final VirtualTecPoll.LoadState tecLoadState = new VirtualTecPoll.LoadState();
-    private final VirtualOgpPoll.OgpState ogpState = new VirtualOgpPoll.OgpState();
-    private final VirtualTankFarmPoll.TankState tankFarmTankState = new VirtualTankFarmPoll.TankState();
-    private final VirtualTankFarmPoll.ManifoldHubState tankFarmHubState = new VirtualTankFarmPoll.ManifoldHubState();
-    private int demoPollSequence;
-    private double ratedPowerKw = 1480.0;
-    private int unitIndex = 1;
-    private int tankIndex = 11;
-    private double initialLevelMm = 5000;
-    private double rateBiasMmPerHour = 0;
-    private double maxLevelMm = 10000;
     private volatile boolean connected;
 
     @Override
@@ -134,60 +59,12 @@ public class VirtualDeviceDriver implements DeviceDriver {
     @Override
     public void initialize(DriverObject driverObject) {
         this.driverObject = driverObject;
-        driverObject.configuration().forEach(this::applyConfig);
-        readConfig("profile", value -> profile = value.toLowerCase());
-        readConfig("baseTemperature", value -> baseTemperature = Double.parseDouble(value));
-        readConfig("amplitude", value -> amplitude = Double.parseDouble(value));
-        readConfig("sineAmplitude", value -> sineAmplitude = Double.parseDouble(value));
-        readConfig("sawtoothAmplitude", value -> sawtoothAmplitude = Double.parseDouble(value));
-        readConfig("triangleAmplitude", value -> triangleAmplitude = Double.parseDouble(value));
-        readConfig("periodSec", value -> periodSec = Double.parseDouble(value));
-        readConfig("litersPerSecond", value -> litersPerSecond = Double.parseDouble(value));
-        readConfig("tareKg", value -> tareKg = Double.parseDouble(value));
-        readConfig("density", value -> density = Double.parseDouble(value));
-        readConfig("rackId", value -> rackId = value);
-        readConfig("gasConnected", value -> gasConnected = Boolean.parseBoolean(value));
-        readConfig("groundConnected", value -> groundConnected = Boolean.parseBoolean(value));
-        readConfig("filling", value -> filling = Boolean.parseBoolean(value));
-        readConfig("ratedPowerKw", value -> ratedPowerKw = Double.parseDouble(value));
-        readConfig("unitIndex", value -> unitIndex = Integer.parseInt(value));
-        readConfig("tankIndex", value -> tankIndex = Integer.parseInt(value));
-        readConfig("initialLevelMm", value -> initialLevelMm = Double.parseDouble(value));
-        readConfig("rateBiasMmPerHour", value -> rateBiasMmPerHour = Double.parseDouble(value));
-        readConfig("maxLevelMm", value -> maxLevelMm = Double.parseDouble(value));
-        lastPollAt = System.currentTimeMillis();
-    }
-
-    private void applyConfig(String key, String value) {
-        switch (key) {
-            case "profile" -> profile = value.toLowerCase();
-            case "baseTemperature" -> baseTemperature = Double.parseDouble(value);
-            case "amplitude" -> amplitude = Double.parseDouble(value);
-            case "sineAmplitude" -> sineAmplitude = Double.parseDouble(value);
-            case "sawtoothAmplitude" -> sawtoothAmplitude = Double.parseDouble(value);
-            case "triangleAmplitude" -> triangleAmplitude = Double.parseDouble(value);
-            case "periodSec" -> periodSec = Double.parseDouble(value);
-            case "litersPerSecond" -> litersPerSecond = Double.parseDouble(value);
-            case "tareKg" -> tareKg = Double.parseDouble(value);
-            case "density" -> density = Double.parseDouble(value);
-            case "rackId" -> rackId = value;
-            case "gasConnected" -> gasConnected = Boolean.parseBoolean(value);
-            case "groundConnected" -> groundConnected = Boolean.parseBoolean(value);
-            case "filling" -> filling = Boolean.parseBoolean(value);
-            case "ratedPowerKw" -> ratedPowerKw = Double.parseDouble(value);
-            case "unitIndex" -> unitIndex = Integer.parseInt(value);
-            case "tankIndex" -> tankIndex = Integer.parseInt(value);
-            case "initialLevelMm" -> initialLevelMm = Double.parseDouble(value);
-            case "rateBiasMmPerHour" -> rateBiasMmPerHour = Double.parseDouble(value);
-            case "maxLevelMm" -> maxLevelMm = Double.parseDouble(value);
-            default -> { }
-        }
     }
 
     @Override
     public void connect() {
         connected = true;
-        driverObject.log(DriverLogLevel.INFO, "Virtual driver connected (profile=" + profile + ")");
+        driverObject.log(DriverLogLevel.INFO, "Virtual driver connected");
     }
 
     @Override
@@ -206,26 +83,6 @@ public class VirtualDeviceDriver implements DeviceDriver {
         if (!connected) {
             throw new DriverException("Not connected");
         }
-        switch (profile) {
-            case "meter" -> readMeterProfile();
-            case "weighbridge" -> readWeighbridgeProfile();
-            case "rack-signals" -> readRackSignalsProfile();
-            case "lab" -> readLabProfile();
-            case "unified" -> readUnifiedProfile();
-            case "tec-gpu" -> VirtualTecPoll.pollGpu(driverObject, tecGpuState, ratedPowerKw, unitIndex);
-            case "tec-grpb" -> VirtualTecPoll.pollGrpb(driverObject, tecGrpbState);
-            case "tec-rumb" -> VirtualTecPoll.pollRumb(driverObject, tecRumbState);
-            case "tec-dgu" -> VirtualTecPoll.pollDgu(driverObject, tecDguState);
-            case "tec-load" -> VirtualTecPoll.pollLoad(driverObject, tecLoadState);
-            case "ogp-print-line" -> VirtualOgpPoll.poll(driverObject, ogpState);
-            case "tank-farm-tank" -> VirtualTankFarmPoll.pollTank(
-                    driverObject, tankFarmTankState, tankIndex, initialLevelMm, rateBiasMmPerHour, maxLevelMm);
-            case "tank-farm-hub" -> VirtualTankFarmPoll.pollManifoldHub(driverObject, tankFarmHubState);
-            default -> readDemoProfile();
-        }
-    }
-
-    private void readUnifiedProfile() {
         VirtualUnifiedPoll.poll(
                 driverObject,
                 unifiedState,
@@ -233,147 +90,8 @@ public class VirtualDeviceDriver implements DeviceDriver {
         );
     }
 
-    private void readDemoProfile() {
-        Instant observed = Instant.now();
-        double elapsedSec = (System.currentTimeMillis() - startedAt) / 1000.0;
-        double temperature = baseTemperature + amplitude * Math.sin(2 * Math.PI * elapsedSec / periodSec);
-        demoPollSequence++;
-        String quality = switch ((demoPollSequence / 8) % 3) {
-            case 0 -> TelemetryQuality.normalize(TelemetryQuality.Level.GOOD);
-            case 1 -> TelemetryQuality.normalize(TelemetryQuality.Level.UNCERTAIN);
-            default -> TelemetryQuality.normalize(TelemetryQuality.Level.BAD);
-        };
-        driverObject.updateVariable(
-                "temperature",
-                DataRecord.single(TEMPERATURE_SCHEMA, Map.of(
-                        "value", temperature,
-                        "unit", "C",
-                        "quality", quality
-                )),
-                observed
-        );
-        driverObject.updateVariable(
-                "status",
-                DataRecord.single(STATUS_SCHEMA, Map.of(
-                        "online", true,
-                        "lastSeen", observed.toString()
-                )),
-                observed
-        );
-    }
-
-    private void readMeterProfile() {
-        long now = System.currentTimeMillis();
-        double deltaSec = lastPollAt > 0 ? (now - lastPollAt) / 1000.0 : 0.0;
-        lastPollAt = now;
-        if (filling && deltaSec > 0) {
-            meterLiters += litersPerSecond * deltaSec;
-        }
-        driverObject.updateVariable(
-                "meterLiters",
-                DataRecord.single(METER_SCHEMA, Map.of("value", meterLiters, "unit", "L"))
-        );
-        driverObject.updateVariable(
-                "flowRate",
-                DataRecord.single(FLOW_SCHEMA, Map.of(
-                        "value", filling ? litersPerSecond : 0.0,
-                        "unit", "L/s"
-                ))
-        );
-        driverObject.updateVariable(
-                "filling",
-                DataRecord.single(FILLING_SCHEMA, Map.of("value", filling))
-        );
-    }
-
-    private void readWeighbridgeProfile() {
-        double actualLiters = readNumericVariable("meterLiters", meterLiters);
-        double grossKg = tareKg + actualLiters * density;
-        driverObject.updateVariable(
-                "grossWeight",
-                DataRecord.single(WEIGHT_SCHEMA, Map.of("value", grossKg, "unit", "kg"))
-        );
-        driverObject.updateVariable(
-                "tareKg",
-                DataRecord.single(WEIGHT_SCHEMA, Map.of("value", tareKg, "unit", "kg"))
-        );
-    }
-
-    private void readLabProfile() {
-        double effectiveSineAmplitude = sineAmplitude > 0 ? sineAmplitude : amplitude;
-        double elapsedSec = (System.currentTimeMillis() - startedAt) / 1000.0;
-        double sine = effectiveSineAmplitude * Math.sin(2 * Math.PI * elapsedSec / periodSec);
-        double phase = elapsedSec % periodSec;
-        double sawtooth = sawtoothAmplitude * (2.0 * (phase / periodSec) - 1.0);
-        double phaseNorm = phase / periodSec;
-        double triangle = triangleAmplitude * (phaseNorm < 0.5 ? 4.0 * phaseNorm - 1.0 : 3.0 - 4.0 * phaseNorm);
-        driverObject.updateVariable(
-                "sineWave",
-                DataRecord.single(WAVE_SCHEMA, Map.of("value", sine))
-        );
-        driverObject.updateVariable(
-                "sawtoothWave",
-                DataRecord.single(WAVE_SCHEMA, Map.of("value", sawtooth))
-        );
-        driverObject.updateVariable(
-                "triangleWave",
-                DataRecord.single(WAVE_SCHEMA, Map.of("value", triangle))
-        );
-        driverObject.updateVariable(
-                "status",
-                DataRecord.single(STATUS_SCHEMA, Map.of(
-                        "online", true,
-                        "lastSeen", Instant.now().toString()
-                ))
-        );
-    }
-
-    private void readRackSignalsProfile() {
-        boolean gas = gasConnected && !rackId.isBlank();
-        boolean ground = groundConnected && !rackId.isBlank();
-        driverObject.updateVariable(
-                "gasPresent",
-                DataRecord.single(SIGNAL_SCHEMA, Map.of("value", gas))
-        );
-        driverObject.updateVariable(
-                "groundConnected",
-                DataRecord.single(SIGNAL_SCHEMA, Map.of("value", ground))
-        );
-    }
-
-    private double readNumericVariable(String name, double fallback) {
-        return driverObject.getVariable(name)
-                .map(record -> {
-                    Object raw = record.firstRow().get("value");
-                    if (raw instanceof Number number) {
-                        return number.doubleValue();
-                    }
-                    if (raw != null) {
-                        try {
-                            return Double.parseDouble(raw.toString());
-                        } catch (NumberFormatException ignored) {
-                            return fallback;
-                        }
-                    }
-                    return fallback;
-                })
-                .orElse(fallback);
-    }
-
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         throw new DriverException("Virtual driver is read-only");
-    }
-
-    private void readConfig(String name, java.util.function.Consumer<String> consumer) {
-        driverObject.getVariable(name).ifPresent(record -> {
-            Object raw = record.firstRow().get("value");
-            if (raw == null) {
-                raw = record.firstRow().get("raw");
-            }
-            if (raw != null) {
-                consumer.accept(raw.toString());
-            }
-        });
     }
 }

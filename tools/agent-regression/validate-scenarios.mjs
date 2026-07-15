@@ -13,6 +13,7 @@ const scenariosDir = path.join(repoRoot, "tools/agent-regression/scenarios");
 const live = process.argv.includes("--live");
 const reportOnly = process.argv.includes("--report");
 const enforceRate = process.argv.includes("--enforce-rate");
+const oneshot = process.argv.includes("--oneshot");
 const resultsArgIndex = process.argv.indexOf("--results");
 const resultsPath = resultsArgIndex >= 0 ? process.argv[resultsArgIndex + 1] : null;
 
@@ -207,18 +208,32 @@ if (liveResults) {
   let total = 0;
   const missing = [];
   const failed = [];
-  for (const file of files) {
-    const scenario = readJson(path.join(scenariosDir, file));
-    total++;
-    const status = liveResults.get(scenario.id);
-    if (!status) {
-      missing.push(scenario.id);
-      continue;
+  if (oneshot) {
+    for (const [scenarioId, status] of liveResults.entries()) {
+      total++;
+      if (status === "OK" || status === "PASS" || status === "PASSED" || status === "SUCCESS") {
+        passed++;
+      } else {
+        failed.push(scenarioId);
+      }
     }
-    if (status === "OK" || status === "PASS" || status === "PASSED" || status === "SUCCESS") {
-      passed++;
-    } else {
-      failed.push(scenario.id);
+    if (total < 1) {
+      fail("--oneshot requires at least one scenario in --results");
+    }
+  } else {
+    for (const file of files) {
+      const scenario = readJson(path.join(scenariosDir, file));
+      total++;
+      const status = liveResults.get(scenario.id);
+      if (!status) {
+        missing.push(scenario.id);
+        continue;
+      }
+      if (status === "OK" || status === "PASS" || status === "PASSED" || status === "SUCCESS") {
+        passed++;
+      } else {
+        failed.push(scenario.id);
+      }
     }
   }
   summary.live = {
@@ -227,6 +242,7 @@ if (liveResults) {
     rate: total > 0 ? passed / total : 0,
     missing,
     failed,
+    oneshot,
   };
   if (enforceRate && summary.live.rate < TARGET_PASS_RATE) {
     printPassRateReport(summary);

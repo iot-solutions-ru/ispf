@@ -1,0 +1,946 @@
+{
+  "version": "1.1.0",
+  "displayName": "Резервуарный парк (демо)",
+  "tablePrefix": "",
+  "schemaName": "app_tank_farm_demo",
+  "metadata": {
+    "domain": "tank-farm",
+    "changelog": "Marketplace self-contained tank-farm: models, devices, SQL simulation tick (no platform fixture seed)."
+  },
+  "migrations": [
+    {
+      "id": "tank_farm_sim",
+      "sql": "CREATE TABLE IF NOT EXISTS tank_sim ( tank_code VARCHAR(32) PRIMARY KEY, tank_index INTEGER NOT NULL DEFAULT 1, level_mm DOUBLE PRECISION NOT NULL DEFAULT 5000, rate_mm_per_h DOUBLE PRECISION NOT NULL DEFAULT 0, rate_bias_mm_per_h DOUBLE PRECISION NOT NULL DEFAULT 0, max_level_mm DOUBLE PRECISION NOT NULL DEFAULT 10000, valve_open BOOLEAN NOT NULL DEFAULT false, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() ); CREATE TABLE IF NOT EXISTS hub_sim ( id INTEGER PRIMARY KEY, line_pressure_mpa DOUBLE PRECISION NOT NULL DEFAULT 0.82, line_flow_m3h DOUBLE PRECISION NOT NULL DEFAULT 1180, line_temp_c DOUBLE PRECISION NOT NULL DEFAULT 11, delta_pressure_mpa DOUBLE PRECISION NOT NULL DEFAULT 0.03, total_volume_m3 DOUBLE PRECISION NOT NULL DEFAULT 81000, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() ); INSERT INTO hub_sim (id) SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM hub_sim WHERE id = 1); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-11', 1, 1662, -430, -430, 10000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-11'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-12', 2, 1667, 85, 85, 10000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-12'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-13', 3, 1481, -120, -120, 10000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-13'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-14', 4, 1597, 40, 40, 10000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-14'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-15', 5, 1620, -210, -210, 10000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-15'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-16', 6, 6352, 15, 15, 10000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-16'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-17', 7, 1762, -55, -55, 10000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-17'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-18', 8, 11726, 220, 220, 14000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-18'); INSERT INTO tank_sim (tank_code, tank_index, level_mm, rate_mm_per_h, rate_bias_mm_per_h, max_level_mm) SELECT 'tank-19', 9, 1702, -180, -180, 14000 WHERE NOT EXISTS (SELECT 1 FROM tank_sim WHERE tank_code = 'tank-19');"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "tank-farm-tank-v1",
+      "description": "Storage tank (marketplace)",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "suitabilityExpression": "",
+      "variables": [
+        {
+          "name": "fillLevelMm",
+          "description": "Fill level",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 5000,
+                "unit": "mm"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rateMmPerHour",
+          "description": "Level change rate",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "mm/h"
+              }
+            ]
+          }
+        },
+        {
+          "name": "maxLevelMm",
+          "description": "Max level",
+          "group": "config",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 10000,
+                "unit": "mm"
+              }
+            ]
+          }
+        },
+        {
+          "name": "valveOpen",
+          "description": "Outlet valve open",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config (OOTB virtual; domain sim via SQL tick)",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start driver",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "tank-farm-hub-v1",
+      "description": "Manifold hub (marketplace)",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "suitabilityExpression": "",
+      "variables": [
+        {
+          "name": "linePressureMpa",
+          "description": "Line pressure",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.82,
+                "unit": "MPa"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lineFlowM3h",
+          "description": "Line flow",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 1180,
+                "unit": "m³/h"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lineTempC",
+          "description": "Line temperature",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 11,
+                "unit": "°C"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deltaPressureMpa",
+          "description": "Delta pressure",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.03,
+                "unit": "MPa"
+              }
+            ]
+          }
+        },
+        {
+          "name": "totalVolumeM3",
+          "description": "Total volume",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 81000,
+                "unit": "m³"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config (OOTB virtual; domain sim via SQL tick)",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start driver",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "tank-farm-demo",
+      "type": "CUSTOM",
+      "displayName": "Резервуарный парк (демо)",
+      "description": "Marketplace tank-farm folder"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "hub",
+      "type": "DEVICE",
+      "displayName": "Manifold hub",
+      "templateId": "tank-farm-hub-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-11",
+      "type": "DEVICE",
+      "displayName": "РВС-11",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-12",
+      "type": "DEVICE",
+      "displayName": "РВС-12",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-13",
+      "type": "DEVICE",
+      "displayName": "РВС-13",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-14",
+      "type": "DEVICE",
+      "displayName": "РВС-14",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-15",
+      "type": "DEVICE",
+      "displayName": "РВС-15",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-16",
+      "type": "DEVICE",
+      "displayName": "РВС-16",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-17",
+      "type": "DEVICE",
+      "displayName": "РВС-17",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-18",
+      "type": "DEVICE",
+      "displayName": "РВС-18",
+      "templateId": "tank-farm-tank-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.tank-farm-demo",
+      "name": "tank-19",
+      "type": "DEVICE",
+      "displayName": "РВС-19",
+      "templateId": "tank-farm-tank-v1"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "functionName": "tank_farm_tick",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE tank_sim SET rate_mm_per_h = rate_bias_mm_per_h + SIN(EXTRACT(EPOCH FROM NOW()) / 45.0 + tank_index * 0.7) * 35, level_mm = GREATEST(500, LEAST(max_level_mm - 200, level_mm + (rate_bias_mm_per_h + SIN(EXTRACT(EPOCH FROM NOW()) / 45.0 + tank_index * 0.7) * 35) / 3600.0 * 5)), valve_open = ABS(rate_bias_mm_per_h + SIN(EXTRACT(EPOCH FROM NOW()) / 45.0 + tank_index * 0.7) * 35) > 5, updated_at = NOW()\"},{\"type\":\"exec\",\"sql\":\"UPDATE hub_sim SET line_pressure_mpa = 0.78 + SIN(EXTRACT(EPOCH FROM NOW()) / 70.0) * 0.06, line_flow_m3h = 1180 + SIN(EXTRACT(EPOCH FROM NOW()) / 50.0) * 80, line_temp_c = 11 + SIN(EXTRACT(EPOCH FROM NOW()) / 90.0) * 2.5, delta_pressure_mpa = 0.03 + ABS(SIN(EXTRACT(EPOCH FROM NOW()) / 35.0)) * 0.025, total_volume_m3 = 81000 + SIN(EXTRACT(EPOCH FROM NOW()) / 120.0) * 1200, updated_at = NOW() WHERE id = 1\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\"}}]}"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-11'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-11'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-11'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-12'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-12'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-12'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-13'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-13'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-13'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-14'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-14'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-14'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-15'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-15'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-15'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-16'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-16'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-16'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-17'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-17'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-17'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-18'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-18'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-18'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+      "variable": "fillLevelMm",
+      "query": "SELECT level_mm AS value, 'mm' AS unit FROM tank_sim WHERE tank_code = 'tank-19'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+      "variable": "rateMmPerHour",
+      "query": "SELECT rate_mm_per_h AS value, 'mm/h' AS unit FROM tank_sim WHERE tank_code = 'tank-19'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+      "variable": "valveOpen",
+      "query": "SELECT valve_open AS value FROM tank_sim WHERE tank_code = 'tank-19'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "variable": "linePressureMpa",
+      "query": "SELECT line_pressure_mpa AS value, 'MPa' AS unit FROM hub_sim WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "variable": "lineFlowM3h",
+      "query": "SELECT line_flow_m3h AS value, 'm³/h' AS unit FROM hub_sim WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "variable": "lineTempC",
+      "query": "SELECT line_temp_c AS value, '°C' AS unit FROM hub_sim WHERE id = 1",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    }
+  ],
+  "schedules": [
+    {
+      "scheduleId": "tank-farm-sim-tick",
+      "enabled": true,
+      "intervalMs": 5000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.tank-farm-demo.hub",
+        "functionName": "tank_farm_tick"
+      }
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.tank-farm-overview",
+      "title": "Резервуарный парк",
+      "refreshIntervalMs": 3000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"t11\",\"type\":\"value\",\"title\":\"РВС-11 уровень\",\"x\":0,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.tank-11\",\"variableName\":\"fillLevelMm\",\"decimals\":0},{\"id\":\"t12\",\"type\":\"value\",\"title\":\"РВС-12 уровень\",\"x\":21,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.tank-12\",\"variableName\":\"fillLevelMm\",\"decimals\":0},{\"id\":\"hub-p\",\"type\":\"value\",\"title\":\"Давление линии\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.hub\",\"variableName\":\"linePressureMpa\",\"decimals\":3},{\"id\":\"hub-f\",\"type\":\"value\",\"title\":\"Расход линии\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.hub\",\"variableName\":\"lineFlowM3h\",\"decimals\":1}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "tank-farm-demo",
+    "title": "Резервуарный парк",
+    "defaultDashboard": "root.platform.dashboards.tank-farm-overview",
+    "dashboards": [
+      "root.platform.dashboards.tank-farm-overview"
+    ],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

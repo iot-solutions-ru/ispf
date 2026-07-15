@@ -206,7 +206,33 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Agent regression schema + pass-rate stub (BL-178)
-        env:
-          AGENT_REGRESSION_RESULTS: tools/agent-regression/nightly-stub-results.json
+      - name: Agent regression schema only (BL-178)
         run: bash tools/agent-regression/run-nightly.sh
+        # Do not use nightly-stub-results.json as proof of ≥95% live pass rate.
+
+      - name: Setup Java for optional live one-shot
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: BL-177 live one-shot (skip if AI secrets missing)
+        env:
+          ISPF_AI_PROVIDER: openai-compatible
+          ISPF_AI_BASE_URL: ${{ secrets.ISPF_AI_BASE_URL }}
+          ISPF_AI_MODEL: ${{ secrets.ISPF_AI_MODEL }}
+          ISPF_AI_API_KEY: ${{ secrets.ISPF_AI_API_KEY }}
+          AGENT_LIVE_ONESHOT_RESULTS: build/agent-regression/live-oneshot-results.json
+        run: |
+          if [ -z "${ISPF_AI_API_KEY}" ] || [ -z "${ISPF_AI_BASE_URL}" ]; then
+            echo "SKIP live one-shot: configure repo secrets ISPF_AI_API_KEY and ISPF_AI_BASE_URL"
+            exit 0
+          fi
+          export ISPF_LLM_SMOKE=true
+          if [ -z "${ISPF_AI_MODEL}" ]; then
+            export ISPF_AI_MODEL=gpt-4o-mini
+          fi
+          bash tools/agent-regression/run-live-oneshot.sh

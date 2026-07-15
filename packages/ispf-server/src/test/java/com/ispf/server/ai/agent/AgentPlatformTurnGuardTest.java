@@ -51,7 +51,7 @@ class AgentPlatformTurnGuardTest {
                 Map.of(
                         "type", "tool",
                         "tool", "create_virtual_device",
-                        "arguments", Map.of("profile", "lab"),
+                        "arguments", Map.of("name", "pump-01"),
                         "result", Map.of(
                                 "status", "OK",
                                 "path", "root.platform.devices.pump-01",

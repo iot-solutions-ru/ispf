@@ -1,0 +1,24 @@
+{
+  "slug": "mes-ogp-events",
+  "title": "MES OGP Event Registration",
+  "description": "Регистрация производственных событий OGP: hub BFF, SQL machine_state, schedule tick, operator HMI. Marketplace-only — не в пустой платформе.",
+  "pricing": "paid",
+  "appId": "mes-ogp-events",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 24900,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "ogp",
+    "events"
+  ],
+  "changelog": "SQL simulation tick; no virtual driver profiles."
+}

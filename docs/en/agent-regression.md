@@ -57,12 +57,17 @@ bash scripts/run-agent-regression.sh --live
 | Stage | Gate |
 |-------|------|
 | PR | `agent-regression` job in [ci.yml](../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (schema + manifest; **fails on schema errors**) |
-| Nightly | `run-nightly.sh` validates schemas; **default:** `AGENT_REGRESSION_RESULTS=tools/agent-regression/nightly-stub-results.json` (stub pass rate, not live LLM). Live ≥95% requires real agent run + `--enforce-rate` |
-| Manual live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` (BL-177 mes-platform one-shot) |
+| Nightly | `run-nightly.sh` schema validation only. Optional BL-177 live one-shot when secrets `ISPF_AI_API_KEY` + `ISPF_AI_BASE_URL` are set (`run-live-oneshot.sh`). **`nightly-stub-results.json` is deprecated** — not live ≥95% proof |
+| Manual live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` |
 
 **Current scenario count:** 50 (SCADA, MES, HVAC).
 
-Pass-rate reporter (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — **target** ≥95% **live** agent pass rate. **Not met on 0.9.102** (CI + nightly default: schema/stub only). See [competitive-scorecard](competitive-scorecard.md).
+Pass-rate reporter:
+
+- Full suite: `validate-scenarios.mjs --results nightly.json --enforce-rate` — target ≥95% across all 50 (full BL-178; **not met**)
+- One-shot: `validate-scenarios.mjs --results build/agent-regression/live-oneshot-results.json --enforce-rate --oneshot` — S31 BL-177 proof
+
+See [competitive-scorecard](competitive-scorecard.md).
 
 ## Related
 

@@ -1,6 +1,10 @@
-const STORAGE_KEY = "ispf-agent-chats";
+const STORAGE_KEY_STUDIO = "ispf-agent-chats";
+const STORAGE_KEY_COPILOT = "ispf-agent-chats-copilot";
 const PENDING_KEY = "ispf-agent-pending";
 const PREFS_KEY = "ispf-ai-studio-prefs";
+const COPILOT_PREFS_KEY = "ispf-copilot-prefs";
+
+export type AgentChatChannel = "studio" | "copilot";
 
 export interface AgentChatIndexEntry {
   id: string;
@@ -21,6 +25,12 @@ export interface AiStudioPrefs {
   interactionMode: "auto" | "plan" | "execute" | "ask";
 }
 
+export interface CopilotPrefs {
+  restoreLastChat: boolean;
+  /** Copilot defaults to ask — help with the focused screen. */
+  interactionMode: "auto" | "plan" | "execute" | "ask";
+}
+
 const DEFAULT_INDEX: AgentChatIndex = {
   activeSessionId: null,
   chats: [],
@@ -34,9 +44,19 @@ const DEFAULT_PREFS: AiStudioPrefs = {
   interactionMode: "auto",
 };
 
-export function loadAgentChatIndex(): AgentChatIndex {
+const DEFAULT_COPILOT_PREFS: CopilotPrefs = {
+  /** Copilot is here-and-now — never restore a deep prior chat. */
+  restoreLastChat: false,
+  interactionMode: "ask",
+};
+
+function storageKeyForChannel(channel: AgentChatChannel): string {
+  return channel === "copilot" ? STORAGE_KEY_COPILOT : STORAGE_KEY_STUDIO;
+}
+
+export function loadAgentChatIndex(channel: AgentChatChannel = "studio"): AgentChatIndex {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKeyForChannel(channel));
     if (!raw) {
       return { ...DEFAULT_INDEX };
     }
@@ -50,8 +70,11 @@ export function loadAgentChatIndex(): AgentChatIndex {
   }
 }
 
-export function saveAgentChatIndex(index: AgentChatIndex): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(index));
+export function saveAgentChatIndex(
+  index: AgentChatIndex,
+  channel: AgentChatChannel = "studio"
+): void {
+  localStorage.setItem(storageKeyForChannel(channel), JSON.stringify(index));
 }
 
 export function upsertChatEntry(index: AgentChatIndex, entry: AgentChatIndexEntry): AgentChatIndex {
@@ -69,9 +92,9 @@ export function removeChatEntry(index: AgentChatIndex, sessionId: string): Agent
   return { ...index, chats, activeSessionId };
 }
 
-export function clearAgentChatIndex(): AgentChatIndex {
+export function clearAgentChatIndex(channel: AgentChatChannel = "studio"): AgentChatIndex {
   const cleared = { ...DEFAULT_INDEX };
-  saveAgentChatIndex(cleared);
+  saveAgentChatIndex(cleared, channel);
   return cleared;
 }
 
@@ -115,4 +138,25 @@ export function loadAiStudioPrefs(): AiStudioPrefs {
 
 export function saveAiStudioPrefs(prefs: AiStudioPrefs): void {
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+}
+
+export function loadCopilotPrefs(): CopilotPrefs {
+  try {
+    const raw = localStorage.getItem(COPILOT_PREFS_KEY);
+    if (!raw) {
+      return { ...DEFAULT_COPILOT_PREFS };
+    }
+    const parsed = JSON.parse(raw) as Partial<CopilotPrefs>;
+    return {
+      // Always false: Admin Copilot answers from live UI focus, not prior threads.
+      restoreLastChat: false,
+      interactionMode: parsed.interactionMode ?? DEFAULT_COPILOT_PREFS.interactionMode,
+    };
+  } catch {
+    return { ...DEFAULT_COPILOT_PREFS };
+  }
+}
+
+export function saveCopilotPrefs(prefs: CopilotPrefs): void {
+  localStorage.setItem(COPILOT_PREFS_KEY, JSON.stringify(prefs));
 }

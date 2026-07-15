@@ -22,6 +22,7 @@ spring:
 ispf:
   bootstrap:
     fixtures-enabled: true
+    mes-catalog-enabled: false
   security:
     rbac-enabled: false
     local-role-header-enabled: true

@@ -59,8 +59,11 @@ export function useDashboardContextSync({
     }
     const serverSession = sessionFromServerContext(contextQuery.data.context);
     hydratedRef.current = true;
-    if (!sessionsEqual(sessionRef.current, serverSession)) {
-      onSessionChange(mergeSession(sessionRef.current, serverSession));
+    // Client session wins: navigation / sessionStorage selection must not be
+    // overwritten by a stale @dashboardContext (e.g. always opening cpu5).
+    const merged = mergeSession(serverSession, sessionRef.current);
+    if (!sessionsEqual(sessionRef.current, merged)) {
+      onSessionChange(merged);
     }
   }, [contextQuery.data, enabled, onSessionChange]);
 
@@ -110,8 +113,9 @@ export function useDashboardContextSync({
       void fetchDashboardContext(path).then((view) => {
         queryClient.setQueryData(["dashboard-context", path], view);
         const serverSession = sessionFromServerContext(view.context);
-        if (!sessionsEqual(sessionRef.current, serverSession)) {
-          onSessionChange(serverSession);
+        const merged = mergeSession(serverSession, sessionRef.current);
+        if (!sessionsEqual(sessionRef.current, merged)) {
+          onSessionChange(merged);
         }
       });
     };

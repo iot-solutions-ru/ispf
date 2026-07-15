@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "MES Platform (BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)",
   "tablePrefix": "",
   "schemaName": "app_mes_platform",
@@ -14,6 +14,55 @@
     }
   ],
   "objects": [
+    {
+      "parentPath": "root.platform",
+      "name": "mes",
+      "type": "MES",
+      "displayName": "MES",
+      "description": "Manufacturing operations catalog (IoT Solutions MES product)"
+    },
+    {
+      "parentPath": "root.platform.mes",
+      "name": "work-orders",
+      "type": "WORK_ORDERS",
+      "displayName": "Work Orders",
+      "description": "MES work orders"
+    },
+    {
+      "parentPath": "root.platform.mes",
+      "name": "operations",
+      "type": "OPERATIONS",
+      "displayName": "Operations",
+      "description": "MES operations"
+    },
+    {
+      "parentPath": "root.platform.mes",
+      "name": "lots",
+      "type": "LOTS",
+      "displayName": "Lots",
+      "description": "MES lots / batches"
+    },
+    {
+      "parentPath": "root.platform.mes",
+      "name": "shifts",
+      "type": "SHIFTS",
+      "displayName": "Shifts",
+      "description": "MES shifts"
+    },
+    {
+      "parentPath": "root.platform.mes",
+      "name": "quality-records",
+      "type": "QUALITY_RECORDS",
+      "displayName": "Quality Records",
+      "description": "MES quality records"
+    },
+    {
+      "parentPath": "root.platform.mes",
+      "name": "instances",
+      "type": "MES_INSTANCES",
+      "displayName": "MES Instances",
+      "description": "MES plant instances"
+    },
     {
       "parentPath": "root.platform.devices",
       "name": "mes-platform-hub",
@@ -545,6 +594,246 @@
   ],
   "blueprints": [
     {
+      "name": "work-order-v1",
+      "description": "Manufacturing work order instance — dispatch, line, status (BL-164 / BL-166)",
+      "type": "INSTANCE",
+      "targetObjectType": "WORK_ORDER",
+      "variables": [
+        {
+          "name": "orderNumber",
+          "description": "Work order number",
+          "group": "info",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "lineCode",
+          "description": "ISA-95 line code",
+          "group": "routing",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "status",
+          "description": "Lifecycle status (planned, dispatched, in-progress, complete)",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "planned"
+              }
+            ]
+          }
+        },
+        {
+          "name": "priority",
+          "description": "Priority label (low, normal, high, urgent)",
+          "group": "config",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "normal"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "batch-v1",
+      "description": "ISA-88 batch instance — recipe, phase, batch identity (BL-168)",
+      "type": "INSTANCE",
+      "targetObjectType": "LOT",
+      "variables": [
+        {
+          "name": "batchId",
+          "description": "Batch identifier",
+          "group": "info",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "recipe",
+          "description": "Recipe id or name",
+          "group": "config",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "phase",
+          "description": "Current ISA-88 phase (charge, react, discharge, …)",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "idle"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "mes-platform-hub-v1",
       "description": "MES platform hub — SPC telemetry and control limits (BL-167)",
       "type": "RELATIVE",
@@ -910,5 +1199,10 @@
       }
     ],
     "eventJournalObjectPath": "root.platform.devices.mes-platform-hub"
+  },
+  "metadata": {
+    "product": "mes",
+    "publisher": "IoT Solutions",
+    "delivery": "marketplace"
   }
 }

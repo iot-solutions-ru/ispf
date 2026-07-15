@@ -1,17 +1,2701 @@
 {
-  "version": "1.0.0",
-  "displayName": "Mini TEC",
+  "version": "1.1.0",
+  "displayName": "Мини-ТЭЦ (эталон)",
   "tablePrefix": "",
   "schemaName": "app_mini_tec",
+  "migrations": [
+    {
+      "id": "tec_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS tec_daily_journal (journal_date DATE PRIMARY KEY, total_energy_kwh DOUBLE PRECISION NOT NULL DEFAULT 0, total_reactive_kvarh DOUBLE PRECISION NOT NULL DEFAULT 0, total_running_hours DOUBLE PRECISION NOT NULL DEFAULT 0, start_count INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS tec_consumer_load (consumer_code VARCHAR(64) PRIMARY KEY, consumer_name VARCHAR(256) NOT NULL, nominal_load_kw INTEGER NOT NULL); INSERT INTO tec_consumer_load (consumer_code, consumer_name, nominal_load_kw) SELECT 'consumer-1', 'Потребитель 1', 2430 WHERE NOT EXISTS (SELECT 1 FROM tec_consumer_load WHERE consumer_code = 'consumer-1'); INSERT INTO tec_consumer_load (consumer_code, consumer_name, nominal_load_kw) SELECT 'consumer-2', 'Потребитель 2', 1200 WHERE NOT EXISTS (SELECT 1 FROM tec_consumer_load WHERE consumer_code = 'consumer-2'); INSERT INTO tec_consumer_load (consumer_code, consumer_name, nominal_load_kw) SELECT 'consumer-3', 'Резервная нагрузка', 500 WHERE NOT EXISTS (SELECT 1 FROM tec_consumer_load WHERE consumer_code = 'consumer-3');"
+    },
+    {
+      "id": "tec_gpu_sim_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS gpu_sim ( unit_code VARCHAR(32) PRIMARY KEY, unit_index INTEGER NOT NULL, rated_kw DOUBLE PRECISION NOT NULL DEFAULT 1480, load_pct DOUBLE PRECISION NOT NULL DEFAULT 70, target_load_pct DOUBLE PRECISION NOT NULL DEFAULT 70, setpoint_kw DOUBLE PRECISION NOT NULL DEFAULT 1000, running BOOLEAN NOT NULL DEFAULT true, was_running BOOLEAN NOT NULL DEFAULT true, start_count INTEGER NOT NULL DEFAULT 0, running_hours DOUBLE PRECISION NOT NULL DEFAULT 0, energy_kwh DOUBLE PRECISION NOT NULL DEFAULT 0, cmd_start BOOLEAN NOT NULL DEFAULT false, cmd_stop BOOLEAN NOT NULL DEFAULT false, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() ); INSERT INTO gpu_sim (unit_code, unit_index, rated_kw) SELECT 'gpu-01', 1, 1480 WHERE NOT EXISTS (SELECT 1 FROM gpu_sim WHERE unit_code = 'gpu-01'); INSERT INTO gpu_sim (unit_code, unit_index, rated_kw) SELECT 'gpu-02', 2, 1480 WHERE NOT EXISTS (SELECT 1 FROM gpu_sim WHERE unit_code = 'gpu-02'); INSERT INTO gpu_sim (unit_code, unit_index, rated_kw) SELECT 'gpu-03', 3, 1480 WHERE NOT EXISTS (SELECT 1 FROM gpu_sim WHERE unit_code = 'gpu-03');"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "mini-tec-gpu-v1",
+      "description": "Gas piston unit",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "jacketWaterTemp",
+          "description": "Jacket water temperature",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 75,
+                "unit": "C"
+              }
+            ]
+          }
+        },
+        {
+          "name": "jacketWaterPressure",
+          "description": "Jacket water pressure",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 1.8,
+                "unit": "bar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lubeOilTemp",
+          "description": "Lube oil temperature",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 70,
+                "unit": "C"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lubeOilPressure",
+          "description": "Lube oil pressure",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 4.5,
+                "unit": "bar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "coolantTemp",
+          "description": "Coolant temperature",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 68,
+                "unit": "C"
+              }
+            ]
+          }
+        },
+        {
+          "name": "exhaustGasTemp",
+          "description": "Exhaust gas temperature",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 420,
+                "unit": "C"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rpm",
+          "description": "Engine speed",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "rpm"
+              }
+            ]
+          }
+        },
+        {
+          "name": "activePowerKw",
+          "description": "Active power",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "kW"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reactivePowerKvar",
+          "description": "Reactive power",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "kVAr"
+              }
+            ]
+          }
+        },
+        {
+          "name": "runningHours",
+          "description": "Running hours",
+          "group": "exploitation",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "h"
+              }
+            ]
+          }
+        },
+        {
+          "name": "energyKwh",
+          "description": "Active energy",
+          "group": "exploitation",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "kWh"
+              }
+            ]
+          }
+        },
+        {
+          "name": "setpointPowerKw",
+          "description": "Power setpoint",
+          "group": "control",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 1000,
+                "unit": "kW"
+              }
+            ]
+          }
+        },
+        {
+          "name": "running",
+          "description": "Running",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "synced",
+          "description": "Synchronized",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "detonation",
+          "description": "Detonation",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdStart",
+          "description": "Start command",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdStop",
+          "description": "Stop command",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "startCount",
+          "description": "Start count",
+          "group": "exploitation",
+          "schema": {
+            "name": "intValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "intValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "mini-tec-grpb-v1",
+      "description": "Gas metering / block",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "gasOutletPressure",
+          "description": "Gas outlet pressure",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 2.5,
+                "unit": "bar"
+              }
+            ]
+          }
+        },
+        {
+          "name": "gasFlowRate",
+          "description": "Gas flow",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 700,
+                "unit": "m3/h"
+              }
+            ]
+          }
+        },
+        {
+          "name": "gasVolume",
+          "description": "Gas volume",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "m3"
+              }
+            ]
+          }
+        },
+        {
+          "name": "valvePosition",
+          "description": "Valve position",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 80,
+                "unit": "%"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pzkTripped",
+          "description": "PZK tripped",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "gasLeak",
+          "description": "Gas leak",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "fireAlarm",
+          "description": "Fire alarm",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdValveOpen",
+          "description": "Valve open cmd",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdValveClose",
+          "description": "Valve close cmd",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdGasTrip",
+          "description": "Gas trip cmd",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "mini-tec-rumb-v1",
+      "description": "Switchgear",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "breakerClosed",
+          "description": "Breaker closed",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        },
+        {
+          "name": "interlockOk",
+          "description": "Interlock OK",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        },
+        {
+          "name": "emergencyStop",
+          "description": "E-stop",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdBreakerClose",
+          "description": "Close cmd",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdBreakerOpen",
+          "description": "Open cmd",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "mini-tec-dgu-v1",
+      "description": "Diesel genset",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "running",
+          "description": "Running",
+          "group": "status",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "fuelLevelPct",
+          "description": "Fuel level",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 85,
+                "unit": "%"
+              }
+            ]
+          }
+        },
+        {
+          "name": "coolantTemp",
+          "description": "Coolant temp",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 25,
+                "unit": "C"
+              }
+            ]
+          }
+        },
+        {
+          "name": "activePowerKw",
+          "description": "Active power",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "kW"
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdStart",
+          "description": "Start",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdStop",
+          "description": "Stop",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "mini-tec-load-module-v1",
+      "description": "Load module",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "activePowerKw",
+          "description": "Active power",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 500,
+                "unit": "kW"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reactivePowerKvar",
+          "description": "Reactive power",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 60,
+                "unit": "kVAr"
+              }
+            ]
+          }
+        },
+        {
+          "name": "apparentPowerKva",
+          "description": "Apparent power",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 504,
+                "unit": "kVA"
+              }
+            ]
+          }
+        },
+        {
+          "name": "frequencyHz",
+          "description": "Frequency",
+          "group": "telemetry",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 50,
+                "unit": "Hz"
+              }
+            ]
+          }
+        },
+        {
+          "name": "loadSetpointPct",
+          "description": "Load setpoint",
+          "group": "control",
+          "schema": {
+            "name": "measurement",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "measurement",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 35,
+                "unit": "%"
+              }
+            ]
+          }
+        },
+        {
+          "name": "cmdSetLoad",
+          "description": "Apply load cmd",
+          "group": "control",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "mini-tec-station-hub-v1",
+      "description": "Station hub / simulation scheduler host",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "driverId",
+          "description": "Driver id",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "virtual"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverConfigJson",
+          "description": "Driver config",
+          "group": "driver",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "{}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "driverAutoStart",
+          "description": "Auto-start",
+          "group": "driver",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mini-tec-plant",
+      "type": "CUSTOM",
+      "displayName": "Мини-ТЭЦ",
+      "description": "Marketplace mini-TEC plant"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "gpu-01",
+      "type": "DEVICE",
+      "displayName": "GPU-01",
+      "templateId": "mini-tec-gpu-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "gpu-02",
+      "type": "DEVICE",
+      "displayName": "GPU-02",
+      "templateId": "mini-tec-gpu-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "gpu-03",
+      "type": "DEVICE",
+      "displayName": "GPU-03",
+      "templateId": "mini-tec-gpu-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "grpb",
+      "type": "DEVICE",
+      "displayName": "ГРПБ",
+      "templateId": "mini-tec-grpb-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "rumb-10kv",
+      "type": "DEVICE",
+      "displayName": "РУМБ 10/0.4",
+      "templateId": "mini-tec-rumb-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "dgu",
+      "type": "DEVICE",
+      "displayName": "ДГУ",
+      "templateId": "mini-tec-dgu-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "load-module",
+      "type": "DEVICE",
+      "displayName": "Нагрузка",
+      "templateId": "mini-tec-load-module-v1"
+    },
+    {
+      "parentPath": "root.platform.devices.mini-tec-plant",
+      "name": "station-hub",
+      "type": "DEVICE",
+      "displayName": "Станционный hub",
+      "templateId": "mini-tec-station-hub-v1"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
+      "functionName": "mini_tec_sim_tick",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE gpu_sim SET cmd_start = false, cmd_stop = false, target_load_pct = CASE WHEN cmd_stop THEN 0 WHEN cmd_start THEN LEAST(100, target_load_pct + 5) WHEN setpoint_kw > 0 THEN LEAST(100, setpoint_kw / NULLIF(rated_kw,0) * 100) ELSE target_load_pct END, load_pct = CASE WHEN load_pct < target_load_pct THEN LEAST(target_load_pct, load_pct + 2.5) WHEN load_pct > target_load_pct THEN GREATEST(target_load_pct, load_pct - 4.0) ELSE load_pct END, running = (load_pct > 2), start_count = start_count + CASE WHEN load_pct > 2 AND NOT was_running THEN 1 ELSE 0 END, was_running = (load_pct > 2), running_hours = running_hours + CASE WHEN load_pct > 2 THEN 0.001 ELSE 0 END, energy_kwh = energy_kwh + (rated_kw * load_pct / 100.0) / 3600.0 * 5, updated_at = NOW()\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\"}}]}"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+      "variable": "activePowerKw",
+      "query": "SELECT (rated_kw * load_pct / 100.0) AS value, 'kW' AS unit FROM gpu_sim WHERE unit_code = 'gpu-01'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+      "variable": "rpm",
+      "query": "SELECT CASE WHEN running THEN 1500 + load_pct * 0.5 ELSE 0 END AS value, 'rpm' AS unit FROM gpu_sim WHERE unit_code = 'gpu-01'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+      "variable": "running",
+      "query": "SELECT running AS value FROM gpu_sim WHERE unit_code = 'gpu-01'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+      "variable": "jacketWaterTemp",
+      "query": "SELECT (75 + load_pct * 0.25 + SIN(EXTRACT(EPOCH FROM NOW()) / 30.0) * 2) AS value, 'C' AS unit FROM gpu_sim WHERE unit_code = 'gpu-01'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+      "variable": "runningHours",
+      "query": "SELECT running_hours AS value, 'h' AS unit FROM gpu_sim WHERE unit_code = 'gpu-01'",
+      "refreshIntervalMs": 5000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+      "variable": "energyKwh",
+      "query": "SELECT energy_kwh AS value, 'kWh' AS unit FROM gpu_sim WHERE unit_code = 'gpu-01'",
+      "refreshIntervalMs": 5000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+      "variable": "activePowerKw",
+      "query": "SELECT (rated_kw * load_pct / 100.0) AS value, 'kW' AS unit FROM gpu_sim WHERE unit_code = 'gpu-02'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+      "variable": "rpm",
+      "query": "SELECT CASE WHEN running THEN 1500 + load_pct * 0.5 ELSE 0 END AS value, 'rpm' AS unit FROM gpu_sim WHERE unit_code = 'gpu-02'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+      "variable": "running",
+      "query": "SELECT running AS value FROM gpu_sim WHERE unit_code = 'gpu-02'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+      "variable": "jacketWaterTemp",
+      "query": "SELECT (75 + load_pct * 0.25 + SIN(EXTRACT(EPOCH FROM NOW()) / 30.0) * 2) AS value, 'C' AS unit FROM gpu_sim WHERE unit_code = 'gpu-02'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+      "variable": "runningHours",
+      "query": "SELECT running_hours AS value, 'h' AS unit FROM gpu_sim WHERE unit_code = 'gpu-02'",
+      "refreshIntervalMs": 5000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+      "variable": "energyKwh",
+      "query": "SELECT energy_kwh AS value, 'kWh' AS unit FROM gpu_sim WHERE unit_code = 'gpu-02'",
+      "refreshIntervalMs": 5000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+      "variable": "activePowerKw",
+      "query": "SELECT (rated_kw * load_pct / 100.0) AS value, 'kW' AS unit FROM gpu_sim WHERE unit_code = 'gpu-03'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+      "variable": "rpm",
+      "query": "SELECT CASE WHEN running THEN 1500 + load_pct * 0.5 ELSE 0 END AS value, 'rpm' AS unit FROM gpu_sim WHERE unit_code = 'gpu-03'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+      "variable": "running",
+      "query": "SELECT running AS value FROM gpu_sim WHERE unit_code = 'gpu-03'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+      "variable": "jacketWaterTemp",
+      "query": "SELECT (75 + load_pct * 0.25 + SIN(EXTRACT(EPOCH FROM NOW()) / 30.0) * 2) AS value, 'C' AS unit FROM gpu_sim WHERE unit_code = 'gpu-03'",
+      "refreshIntervalMs": 2000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+      "variable": "runningHours",
+      "query": "SELECT running_hours AS value, 'h' AS unit FROM gpu_sim WHERE unit_code = 'gpu-03'",
+      "refreshIntervalMs": 5000,
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+      "variable": "energyKwh",
+      "query": "SELECT energy_kwh AS value, 'kWh' AS unit FROM gpu_sim WHERE unit_code = 'gpu-03'",
+      "refreshIntervalMs": 5000,
+      "enabled": true
+    }
+  ],
+  "schedules": [
+    {
+      "scheduleId": "mini-tec-sim-tick",
+      "enabled": true,
+      "intervalMs": 5000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
+        "functionName": "mini_tec_sim_tick"
+      }
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "tec-daily-energy",
+      "title": "Суточный журнал энергии",
+      "description": "Учёт кВт·ч и наработки",
+      "reportType": "sql",
+      "query": "SELECT journal_date, total_energy_kwh, total_reactive_kvarh, total_running_hours, start_count FROM tec_daily_journal ORDER BY journal_date DESC",
+      "columns": [
+        {
+          "field": "journal_date",
+          "label": "Дата"
+        },
+        {
+          "field": "total_energy_kwh",
+          "label": "кВт·ч"
+        },
+        {
+          "field": "total_reactive_kvarh",
+          "label": "кВАр·ч"
+        },
+        {
+          "field": "total_running_hours",
+          "label": "Наработка, ч"
+        },
+        {
+          "field": "start_count",
+          "label": "Пуски"
+        }
+      ],
+      "maxRows": 365
+    },
+    {
+      "reportId": "tec-gpu-run-hours",
+      "title": "Наработка ГПУ",
+      "description": "Показатели эксплуатации газопоршневых модулей",
+      "reportType": "tree-variables",
+      "devicePathPattern": "root.platform.devices.mini-tec-plant.gpu-*",
+      "variableName": "runningHours",
+      "columns": [
+        {
+          "field": "devicepath",
+          "label": "Агрегат"
+        },
+        {
+          "field": "value",
+          "label": "Наработка, ч"
+        }
+      ],
+      "maxRows": 10
+    }
+  ],
+  "events": [
+    {
+      "id": "gpuProtOverload",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "gpuProtOverloadCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "busProtUndervoltage",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "busProtUndervoltageCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbGasLeak",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbGasLeakCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbFire",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbFireCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "stationUnderpower",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "stationUnderpowerCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mini-tec-overview",
+      "title": "Мини-ТЭЦ — обзор",
+      "refreshIntervalMs": 3000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"g1\",\"type\":\"value\",\"title\":\"ГПУ-1 P\",\"x\":0,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.mini-tec-plant.gpu-01\",\"variableName\":\"activePowerKw\",\"decimals\":0},{\"id\":\"g2\",\"type\":\"value\",\"title\":\"ГПУ-2 P\",\"x\":21,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.mini-tec-plant.gpu-02\",\"variableName\":\"activePowerKw\",\"decimals\":0},{\"id\":\"g3\",\"type\":\"value\",\"title\":\"ГПУ-3 P\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.mini-tec-plant.gpu-03\",\"variableName\":\"activePowerKw\",\"decimals\":0},{\"id\":\"rpm\",\"type\":\"value\",\"title\":\"ГПУ-1 RPM\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.mini-tec-plant.gpu-01\",\"variableName\":\"rpm\",\"decimals\":0}]}"
+    }
+  ],
   "metadata": {
-    "changelog": "Catalog stub bundle for mini-tec",
-    "domain": "mini-tec"
+    "description": "Marketplace digital twin for mini-TEC. Self-contained: blueprints, devices, SQL GPU sim tick, dashboards. Not seeded on empty platform.",
+    "changelog": "1.1.0 — extracted from platform fixtures; simulation via SQL schedule."
   },
   "operatorUi": {
     "appId": "mini-tec",
-    "title": "Mini TEC",
-    "defaultDashboard": "",
-    "dashboards": [],
+    "title": "Мини-ТЭЦ",
+    "defaultDashboard": "root.platform.dashboards.mini-tec-overview",
+    "dashboards": [
+      "root.platform.dashboards.mini-tec-overview"
+    ],
     "eventJournalObjectPath": "root.platform"
   }
 }

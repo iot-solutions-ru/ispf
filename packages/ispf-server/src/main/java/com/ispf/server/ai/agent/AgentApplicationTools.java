@@ -58,8 +58,9 @@ final class AgentApplicationTools {
 
             @Override
             public String description() {
-                return "Register application record (isolated SQL schema). Args: appId, displayName, "
-                        + "optional tablePrefix, schemaName.";
+                return "Register application record (isolated SQL schema + data-source). Args: appId, displayName, "
+                        + "optional tablePrefix, schemaName. Creates schema app_<appId> and "
+                        + "root.platform.data-sources.<appId> for reports/functions.";
             }
 
             @Override
@@ -125,8 +126,10 @@ final class AgentApplicationTools {
 
             @Override
             public String description() {
-                return "Apply SQL migrations to app schema. Args: appId, version, scripts[] "
-                        + "({id, sql}). Use get_example_bundle for migration patterns.";
+                return "Apply SQL migrations to app schema (auto-creates schema if missing). Args: appId, version, scripts[] "
+                        + "({id, sql}). Tables must use tablePrefix from register_application. "
+                        + "Do not qualify with schema name (CREATE TABLE emp_x, not app_xxx.emp_x). "
+                        + "Use get_example_bundle for migration patterns.";
             }
 
             @Override
@@ -380,6 +383,13 @@ final class AgentApplicationTools {
             public String description() {
                 return "Deploy application BFF function (script engine with SQL steps). Args: appId, objectPath, "
                         + "functionName, sourceType=script, sourceBody (JSON steps), optional version, inputSchema, outputSchema. "
+                        + "sourceBody MUST use keys sql+var (not query), and end with return.fields. "
+                        + "Example list: {\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT id, fio FROM emp_employees ORDER BY id\"},"
+                        + "{\"type\":\"return\",\"fields\":{\"rows\":\"${rows}\"}}]}. "
+                        + "If outputSchema has RECORD/RECORD_LIST fields, include nestedSchema (or omit outputSchema). "
+                        + "Prefer configure_report + report widget for listing (no list-function schema needed). "
+                        + "Example write: {\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO emp_employees (fio, position) VALUES (?, ?)\","
+                        + "\"params\":[\"${input.fio}\",\"${input.position}\"]},{\"type\":\"return\",\"fields\":{\"ok\":true}}]}. "
                         + "For Java logic on tree use deploy_tree_function sourceType=java. "
                         + "Prefer import_package for full bundles.";
             }

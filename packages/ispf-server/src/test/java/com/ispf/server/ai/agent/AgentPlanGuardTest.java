@@ -215,6 +215,27 @@ class AgentPlanGuardTest {
     }
 
     @Test
+    void executeModeIgnoresRequireApprovalForMutateFlag() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        state.setPlanPhase(AgentPlanPhase.AWAITING_APPROVAL);
+        state.setStoredPlan(Map.of("goal", "employees CRUD", "steps", List.of("migrate")));
+        AgentPlanGuard.beginTurn(
+                state,
+                "Создай таблицу сотрудников и CRUD дашборд",
+                AgentProfile.ADMIN,
+                true,
+                "admin"
+        );
+        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.NONE);
+        assertThat(state.isMutationsUnlockedForTurn()).isTrue();
+        assertThat(AgentPlanGuard.checkBeforeTool(state, "application_data_migrate", AgentProfile.ADMIN)).isEmpty();
+        assertThat(AgentMutateApprovalGuard.checkBeforeTool(
+                true, state, "application_data_migrate", AgentProfile.ADMIN
+        )).isEmpty();
+    }
+
+    @Test
     void executeModeBlocksMutationsWhileAwaitingApproval() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.EXECUTE);
@@ -510,7 +531,7 @@ class AgentPlanGuardTest {
                         "summary", "Создать виртуальные устройства по specBrief с list_variables.",
                         "steps", List.of(
                                 "list_objects parentPath=root.platform.devices",
-                                "create_virtual_device profile=lab name=nm-1"
+                                "create_virtual_device name=nm-1"
                         )
                 ), Map.of(
                         "id", "operator_layer",

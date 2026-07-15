@@ -31,7 +31,7 @@ public class LabBlueprintBootstrap {
     public static final String TREE_VARIABLES_REPORT_TYPE = "tree-variables";
 
     public static final String LAB_DRIVER_CONFIG =
-            "{\"profile\":\"lab\",\"sineAmplitude\":\"10.0\",\"sawtoothAmplitude\":\"5.0\","
+            "{\"sineAmplitude\":\"10.0\",\"sawtoothAmplitude\":\"5.0\","
                     + "\"triangleAmplitude\":\"5.0\",\"periodSec\":\"60\"}";
 
     public static final String LAB_POINT_MAPPINGS = """
@@ -57,12 +57,12 @@ public class LabBlueprintBootstrap {
             """.trim();
 
     public static final String UNIFIED_DRIVER_CONFIG =
-            "{\"profile\":\"unified\",\"baseTemperature\":\"22.0\",\"amplitude\":\"15.0\",\"periodSec\":\"60\","
+            "{\"baseTemperature\":\"22.0\",\"amplitude\":\"15.0\",\"periodSec\":\"60\","
                     + "\"sineAmplitude\":\"10.0\",\"sawtoothAmplitude\":\"5.0\",\"triangleAmplitude\":\"5.0\","
                     + "\"litersPerSecond\":\"120\",\"filling\":\"true\",\"tareKg\":\"15000\",\"density\":\"0.85\","
                     + "\"rackId\":\"rack-1\",\"gasConnected\":\"true\",\"groundConnected\":\"true\","
                     + "\"baseLatitude\":\"55.7558\",\"baseLongitude\":\"37.6173\",\"orbitRadiusM\":\"50\","
-                    + "\"serialNumber\":\"VIRT-UNIFIED-001\",\"firmwareVersion\":\"1.0.0-unified\","
+                    + "\"serialNumber\":\"VIRT-001\",\"firmwareVersion\":\"1.0.0\","
                     + "\"lastMaintenanceIso\":\"2026-01-15T08:00:00Z\"}";
 
     public static final String UNIFIED_POINT_MAPPINGS =

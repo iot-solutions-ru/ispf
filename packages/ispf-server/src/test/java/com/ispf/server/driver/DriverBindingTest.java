@@ -16,22 +16,22 @@ class DriverBindingTest {
         DriverBinding binding = DriverBinding.parse(
                 "virtual",
                 1000,
-                "{\"profile\":\"lab\",\"telemetryPublishMode\":\"TELEMETRY_ONLY\",\"telemetryCoalesceMs\":\"500\"}",
+                "{\"sineAmplitude\":\"10.0\",\"telemetryPublishMode\":\"TELEMETRY_ONLY\",\"telemetryCoalesceMs\":\"500\"}",
                 "{}",
                 objectMapper
         );
 
         assertThat(binding.telemetryPublishMode()).isEqualTo(TelemetryPublishMode.TELEMETRY_ONLY);
         assertThat(binding.telemetryCoalesceMs()).isEqualTo(500);
-        assertThat(binding.configuration()).isEqualTo(Map.of("profile", "lab"));
+        assertThat(binding.configuration()).isEqualTo(Map.of("sineAmplitude", "10.0"));
         assertThat(binding.configurationWithPolicy()).containsEntry("telemetryPublishMode", "TELEMETRY_ONLY")
                 .containsEntry("telemetryCoalesceMs", "500")
-                .containsEntry("profile", "lab");
+                .containsEntry("sineAmplitude", "10.0");
     }
 
     @Test
     void defaultsToFullPublishMode() {
-        DriverBinding binding = DriverBinding.of("virtual", 1000, Map.of("profile", "lab"), Map.of());
+        DriverBinding binding = DriverBinding.of("virtual", 1000, Map.of("periodSec", "60"), Map.of());
 
         assertThat(binding.telemetryPublishMode()).isEqualTo(TelemetryPublishMode.FULL);
         assertThat(TelemetryPublishMode.FULL.automationEligible()).isTrue();

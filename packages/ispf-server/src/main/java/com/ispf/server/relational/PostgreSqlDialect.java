@@ -19,7 +19,9 @@ public class PostgreSqlDialect extends AbstractRelationalDialect {
 
     @Override
     public boolean requiresSchemaDdlBeforeSwitch() {
-        return false;
+        // SET search_path TO <missing> succeeds, but CREATE TABLE then fails with
+        // SQLSTATE 3F000 "no schema has been selected to create in".
+        return true;
     }
 
     @Override

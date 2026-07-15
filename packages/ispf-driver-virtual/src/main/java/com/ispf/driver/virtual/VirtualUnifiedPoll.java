@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.zip.CRC32;
 
 /**
- * Single {@code profile=unified} poll — synthetic telemetry covering all common ISPF field types.
+ * Default virtual-driver poll — synthetic telemetry covering all common ISPF field types.
  */
 final class VirtualUnifiedPoll {
 
@@ -272,10 +272,15 @@ final class VirtualUnifiedPoll {
             String lastMaintenanceIso
     ) {
         static UnifiedConfig fromMap(Map<String, String> configuration) {
+            double amplitude = parseDouble(configuration, "amplitude", 15.0);
+            double sineAmplitude = parseDouble(configuration, "sineAmplitude", 10.0);
+            if (sineAmplitude <= 0) {
+                sineAmplitude = amplitude;
+            }
             return new UnifiedConfig(
                     parseDouble(configuration, "baseTemperature", 22.0),
-                    parseDouble(configuration, "amplitude", 15.0),
-                    parseDouble(configuration, "sineAmplitude", 10.0),
+                    amplitude,
+                    sineAmplitude,
                     parseDouble(configuration, "sawtoothAmplitude", 5.0),
                     parseDouble(configuration, "triangleAmplitude", 5.0),
                     parseDouble(configuration, "periodSec", 60.0),
@@ -289,8 +294,8 @@ final class VirtualUnifiedPoll {
                     parseDouble(configuration, "baseLatitude", 55.7558),
                     parseDouble(configuration, "baseLongitude", 37.6173),
                     parseDouble(configuration, "orbitRadiusM", 50.0),
-                    configuration.getOrDefault("serialNumber", "VIRT-UNIFIED-001"),
-                    configuration.getOrDefault("firmwareVersion", "1.0.0-unified"),
+                    configuration.getOrDefault("serialNumber", "VIRT-001"),
+                    configuration.getOrDefault("firmwareVersion", "1.0.0"),
                     configuration.getOrDefault("lastMaintenanceIso", "2026-01-15T08:00:00Z")
             );
         }

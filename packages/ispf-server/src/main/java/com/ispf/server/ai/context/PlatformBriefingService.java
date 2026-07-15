@@ -68,12 +68,7 @@ public class PlatformBriefingService {
     );
 
     private static final List<Map<String, String>> VIRTUAL_PROFILES = List.of(
-            Map.of("profile", "demo", "vars", "temperature, status", "use", "default simulator"),
-            Map.of("profile", "meter", "vars", "meterLiters, flowRate, filling", "use", "filling simulation"),
-            Map.of("profile", "weighbridge", "vars", "grossWeight, tareKg", "use", "weighbridge + meter"),
-            Map.of("profile", "rack-signals", "vars", "gasPresent, groundConnected", "use", "rack safety signals"),
-            Map.of("profile", "lab", "vars", "sineWave, sawtoothWave, triangleWave, status", "use", "wave simulators / virtual cluster"),
-            Map.of("profile", "unified", "vars", "all types: waves, geo, tables, binary, meter, health", "use", "showcase / virtual-unified-v1")
+            Map.of("driverId", "virtual", "vars", "temperature, waves, meter, geo, tables, binary, status", "use", "OOTB multi-type simulator")
     );
 
     private final AiProperties aiProperties;
@@ -157,16 +152,17 @@ public class PlatformBriefingService {
     }
 
     private void appendVirtualProfiles(StringBuilder sb) {
-        sb.append("\n### Virtual driver profiles\n");
+        sb.append("\n### Virtual driver (no profiles)\n");
         for (Map<String, String> profile : VIRTUAL_PROFILES) {
             sb.append("- ")
-                    .append(profile.get("profile"))
+                    .append(profile.getOrDefault("driverId", "virtual"))
                     .append(": ")
                     .append(profile.get("vars"))
                     .append(" — ")
                     .append(profile.get("use"))
                     .append('\n');
         }
+        sb.append("Domain plants: relative blueprints (list_relative_blueprints), not driver profiles.\n");
     }
 
     private void appendWidgetCatalog(StringBuilder sb) {

@@ -35,7 +35,8 @@ class AgentDeployPlaybookToolsTest {
                 new ObjectMapper(),
                 aiToolRegistry,
                 bundleDeployService,
-                operatorAppUiService
+                operatorAppUiService,
+                org.mockito.Mockito.mock(com.ispf.server.ai.context.ContextPackSearchService.class)
         );
         context = new AgentContext("admin", null, new AgentRunState());
     }
@@ -66,6 +67,11 @@ class AgentDeployPlaybookToolsTest {
         assertEquals("OK", result.get("status"));
         assertEquals("blueprint", result.get("nextStep"));
         assertTrue(context.runState().completedPlanSteps().contains("deploy:discover"));
+    }
+
+    @Test
+    void runDeployPlaybookToolRegistered() {
+        assertTrue(tools.stream().anyMatch(t -> "run_deploy_playbook".equals(t.name())));
     }
 
     private PlatformAgentTool requireTool(String name) {

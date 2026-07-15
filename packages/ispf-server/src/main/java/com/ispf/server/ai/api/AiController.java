@@ -4,6 +4,7 @@ import com.ispf.server.ai.audit.AgentAuditExportService;
 import com.ispf.server.ai.audit.AgentMetricsService;
 import com.ispf.server.ai.audit.AgentTraceService;
 import com.ispf.server.ai.agent.AgentAttachmentValidator;
+import com.ispf.server.ai.agent.AgentClientFocusPromptSection;
 import com.ispf.server.ai.agent.AgentInteractionMode;
 import com.ispf.server.ai.agent.AgentSession;
 import com.ispf.server.ai.agent.AgentSessionDocumentRecord;
@@ -361,6 +362,8 @@ public class AiController {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is required");
         }
+        session.runState().setClientFocus(AgentClientFocusPromptSection.sanitize(request.clientFocus()));
+        session.runState().setClientChannel(request.clientChannel());
         boolean hasAttachments = request.attachments() != null && !request.attachments().isEmpty();
         if ((request.message() == null || request.message().isBlank()) && !hasAttachments) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is required");
@@ -447,11 +450,20 @@ public class AiController {
 
     @PostMapping("/solutions/generate")
     public Map<String, Object> generateSolution(
+            Authentication authentication,
             @Valid @RequestBody GenerateSolutionRequest request
     ) {
         try {
-            return solutionGeneratorService.generate(request.prompt());
+            return solutionGeneratorService.generate(
+                    request.prompt(),
+                    Boolean.TRUE.equals(request.apply()),
+                    actor(authentication)
+            );
         } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), ex);
+        } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
     }
@@ -523,7 +535,8 @@ public class AiController {
     }
 
     public record GenerateSolutionRequest(
-            @NotBlank String prompt
+            @NotBlank String prompt,
+            Boolean apply
     ) {
     }
 
@@ -550,7 +563,9 @@ public class AiController {
             String message,
             String rootPath,
             String interactionMode,
-            List<AgentAttachmentRequest> attachments
+            List<AgentAttachmentRequest> attachments,
+            Map<String, Object> clientFocus,
+            String clientChannel
     ) {
     }
 }

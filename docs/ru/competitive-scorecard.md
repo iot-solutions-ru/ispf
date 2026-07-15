@@ -16,7 +16,7 @@
 | 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-176 |
 | 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [roadmap](roadmap.md#этап-29--платформа-mes) — BL-164…170 |
 | 8 | Скорость low-code | 8.0 | **8.0** | **10** | [roadmap](roadmap.md#этап-26--совершенство-hmi), [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-146…152, BL-177…180 |
-| 9 | AI-assisted разработка | 9.0 | **6.5** | **10** | [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-177…182 |
+| 9 | AI-assisted разработка | 9.0 | **7.0** | **10** | [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-177…182 |
 | 10 | Security / RBAC / мультитенантность | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-27--безопасность-предприятия) — BL-153…157 |
 | 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [roadmap](roadmap.md#этап-25--ot-trust), [roadmap](roadmap.md#фаза-28--историк-в-масштабе), [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-144…145, BL-186…187 |
 | 12 | Экосистема / маркетплейс | 4.0 | **5.0** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-183…185 |
@@ -36,7 +36,7 @@
 | Критерий | Статус |
 |----------|--------|
 | Все **14 измерений ≥9.5**, ни одно ≤8 (BL-189) | **Не выполнено** — среднее ~7.4; максимум 9.5 (stack modernity) |
-| Agent regression **≥95% green** с live LLM (BL-178) | **Не выполнено** — CI валидирует только JSON-схемы; nightly использует `nightly-stub-results.json` |
+| Agent regression **≥95% green** с live LLM (BL-178) | **Не выполнено** — schema CI + опциональный **REAL** one-shot (`run-live-oneshot.sh` / `AgentLiveDeploySmokeTest`); полный 50@≥95% открыт. `nightly-stub-results.json` **устарел** (не proof) |
 | Marketplace GA checklist complete (BL-183) | **Частично** — локальная установка bundle реальна; partner/symbol/cert — stub |
 | Competitive scorecard published per release (BL-189) | **Выполнено** — этот документ |
 
@@ -54,9 +54,9 @@
 | 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC по умолчанию; нет in-repo throughput benchmark уровня PI |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; `AlarmShelfApprovalService` in-memory **STUB** |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; не полная BPMN 2.0 |
-| 7 | MES / ISA-95 | 6.5 | **PARTIAL** | `MesPlatformBootstrap` + bundle JSON/SQL/script BFF; `MesPlatformProductionBundleSmokeTest` — нет отдельного MES-модуля |
+| 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES — marketplace product (`mes-platform`, vendor IoT Solutions); база не сидит `root.platform.mes`. Bundle JSON/SQL/script BFF; нет отдельного MES-модуля |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
-| 9 | AI-assisted dev | 6.5 | **PARTIAL** | Agent tools мутируют платформу (`AgentE2eDeployIntegrationTest` без LLM); `AiSolutionGeneratorService` → `"mode": "stub"`; `AgentRegressionCiTest` — только схема |
+| 9 | AI-assisted dev | 7.0 | **PARTIAL** | **REAL** one-shot live LLM (`AgentLiveDeploySmokeTest`) + **REAL** solution apply (`AiSolutionGeneratorLiveSmokeTest`, `mode=live`); draft fallback `mode=draft`; полный BL-178 ≥95% не выполнен |
 | 10 | Security / RBAC | 7.5 | **PARTIAL** | TOTP MFA + `required-for-admin` **REAL**; `TenantIsolationValidator` **STUB** |
 | 11 | Deploy / scale / edge | 7.0 | **PARTIAL** | Federation в `com.ispf.server.federation.*`; Helm skeleton; нет CI load proof для cluster scale |
 | 12 | Ecosystem / marketplace | 5.0 | **PARTIAL** | Локальная установка каталога **REAL**; `PartnerProgramService` / `MarketplaceSymbolListingService` → `"source": "stub"` |
@@ -69,7 +69,7 @@
 |----------|-----|
 | `opc-da` в PRODUCTION, но driver — stub | `DriverProductionMatrix.java`, `OpcDaDeviceDriver.java` |
 | DNP3 PRODUCTION без write | `Dnp3DeviceDriver.writePoint()` |
-| Nightly pass rate агента не измеряется | `tools/agent-regression/nightly-stub-results.json`, `run-nightly.sh` |
+| Полный agent ≥95% live не измеряется | Опциональный one-shot REAL; stub-файл устарел — для БЛ-178 нужен полный live suite |
 | Partner enroll синтетический | `PartnerProgramService.java` — hardcoded demo partners |
 
 ---
@@ -80,7 +80,7 @@
 
 1. **OT drivers (6.5 → 9+):** честность матрицы — `opc-da` stub / DNP3 write (**БЛ-191**); field pilot sign-offs после **именованной полевой задачи** (БЛ-140 Частичный).
 2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites; genealogy lite (**БЛ-193**).
-3. **AI (6.5 → 9+):** live LLM regression в CI (`validate-scenarios.mjs --live --enforce-rate`); убрать stub nightly; реальный solution generator или явно keyword-only.
+3. **AI (7.0 → 9+):** расширить S31/S32 one-shot до полного live 50@≥95% (`--enforce-rate`); расширить generator beyond catalog templates.
 4. **Ecosystem (5.0 → 9+):** persist partner enrollments; установка symbol pack beyond in-memory stub; внешние signed bundles.
 5. **Historian (7.0 → 9+):** lab benchmark + CI gate (БЛ-161); AF-capable analytics plane ([analytics-platform-roadmap](analytics-platform-roadmap.md) БЛ-200…210).
 6. **HMI (7.5 → 9+):** FPS gate на live WebSocket mimic; persistence alarm shelving.

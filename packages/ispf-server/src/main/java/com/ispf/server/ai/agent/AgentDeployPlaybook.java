@@ -116,6 +116,8 @@ public final class AgentDeployPlaybook {
                 3. Domain adapter selected when applicable (industrial_oil_gas, building_hvac, mes_reference)
                 
                 ### Pipeline (strict order)
+                Prefer **run_deploy_playbook appId=…** for one-shot BL-177 when a matching example bundle exists.
+                Otherwise:
                 1. **Discover** — list_objects, search_context, get_automation_schema topic=all
                 2. **Blueprint** — get_example_bundle appId=<from spec or recipes> sections=[manifest,migrations,functions,operatorUi]
                 3. **Validate** — validate_bundle appId=... manifest={...} → status OK (fix errors before proceed)

@@ -7778,9 +7778,9 @@ body.scada-mimic-editor-open {
 }
 
 .expression-debugger-section.embedded {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -12556,7 +12556,8 @@ body.scada-mimic-editor-open {
   font-size: 0.85rem;
 }
 
-.operator-agent-fab {
+.operator-agent-fab,
+.admin-copilot-fab {
   position: fixed;
   right: 1.25rem;
   bottom: 1.25rem;
@@ -12573,7 +12574,43 @@ body.scada-mimic-editor-open {
   cursor: pointer;
 }
 
-.operator-agent-fab.open {
+/* Must beat .operator-agent-drawer (z-index 1201) and stacked modals (20010+). */
+.admin-copilot-fab,
+.admin-copilot-fab.open {
+  z-index: 30050;
+}
+
+.admin-copilot-drawer.operator-agent-drawer,
+.admin-copilot-drawer {
+  z-index: 30040;
+}
+
+.admin-copilot-head-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.admin-copilot-mode-row {
+  padding: 0.45rem 0.9rem;
+  border-bottom: 1px solid var(--border, #30363d);
+}
+
+.admin-copilot-mode-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.admin-copilot-mode-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.operator-agent-fab.open,
+.admin-copilot-fab.open {
   background: #30363d;
 }
 

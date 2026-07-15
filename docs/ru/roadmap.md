@@ -7,7 +7,7 @@
 | | |
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
-| **Обновлено** | 09.07.2026 |
+| **Обновлено** | 14.07.2026 |
 | **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([architecture](architecture.md)) |
 
 ---
@@ -25,9 +25,9 @@
 | Спринт S01–S30 | 30 | 30 | 0 | 0 | — |
 | Спринт S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Текущий фокус:** Фаза 25–33 Фазы 25–33 (Частичный) — см. [Этап 25–33](#phase-25-33--excellence-program).
+**Текущий фокус:** **автопилот ИИ (БЛ-177…180)** — см. [Ближайшие 90 дней](#ближайшие-90-дней). **Отложено:** фаза 25 OT Trust; живой ERP (БЛ-169).
 
-**Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210.
+**Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210 (OT + живой ERP на паузе).
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
@@ -71,11 +71,11 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 
 | Фаза | Тема | Готово (акценты) | Ещё открыто (типично) |
 | ---- | ---- | ---------------- | --------------------- |
-| **25** OT Trust | Драйверы / edge | БЛ-141 interop lab | БЛ-140 поле (после именованной задачи); БЛ-191 честность матрицы; edge soak |
+| **25** OT Trust | Драйверы / edge | БЛ-141 interop lab | **Отложено** — БЛ-140 поле / БЛ-191 честность / edge soak (parked) |
 | **26** HMI | Mimics / operator | БЛ-146 — 218 P&ID символов | Live FPS 500@60, offline PWA 8ч, CEL debugger |
 | **27** Security | MFA / tenancy | TOTP MFA Partial | Hard tenancy, per-var ACL, persistent alarm shelf |
 | **28** Historian | Tiers / SLA | БЛ-160 AF-lite, БЛ-163 Parquet | Turnkey tiers, query SLA CI, petabyte path |
-| **29** MES / ERP L4 | ISA-95 | Каталог + reference bundles (smoke) | Живой ERP (БЛ-169 P0), field sites, genealogy |
+| **29** MES / ERP L4 | ISA-95 | Каталог + reference bundles (smoke) | Field sites, genealogy; **живой ERP (БЛ-169) отложен** |
 | **30** Automation | CEP / BPMN | Message events Partial | Полный CEP, process programs, DMN |
 | **31** AI | Autopilot | Tools + schema CI | Live LLM ≥95%, generator не stub |
 | **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
@@ -91,7 +91,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | ----- | ------ |
 | Порядок P0 на 90 дней | [Ближайшие 90 дней](#ближайшие-90-дней) · [Аудит доменов](#аудит-доменов--iot--scada--mes--erp-09072026) |
 | **Качественный путь к Done** | [Качественный путь к Done](#quality-path-to-done) |
-| **Backlog S31 — Волна 1** | [Backlog S31](#s31-wave-1-execution-backlog) |
+| **Backlog S31 — Волна 1 (parked)** | [Backlog S31](#s31-wave-1-execution-backlog) — OT Trust отложен |
 | Полный статус БЛ | [Реестр БЛ-140…210](#бл-140210--полный-реестр) |
 | Критерии выхода 10/10 | [Определение готовности](#определение-готовности--общая-оценка-1010) |
 | Детали закрытых спринтов | [Реестр спринтов](#реестр-спринтов) · [Этап 24](#этап-24--закрыт) |
@@ -909,8 +909,6 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | Приоритет | Фаза | Почему |
 | --------- | ----- | ------ |
-| **P0** | [25 — OT Trust](#phase-25--ot-trust) + [БЛ-191](#бл-191193--аудит-доменов-follow-up) | Без доверия ОТ-инженеров продукт не примут на продакшен-объекте |
-| **P0** | [29 — MES / ERP L4](#этап-29--платформа-mes) (БЛ-169) | MES без живой синхронизации с ERP — остров; stub outbox недостаточно |
 | **P0** | [31 — Автопилот ИИ](#фаза-31--автопилот-ии) | Единственный ров, который действующие лица не скопируют за год |
 | **P1** | [26 — HMI phase](#этап-26--совершенство-hmi) | SCADA — лицевой продукт для операторов |
 | **P1** | [29 — Платформа MES](#этап-29--платформа-mes) | Отличается от «просто SCADA»; нужны полевые объекты, не только smoke |
@@ -920,6 +918,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | **П2** | [БЛ-192 compliance](#бл-191193--аудит-доменов-follow-up) | Пакет IEC 62443 / GAMP для тендеров |
 | **P3** | [30 — Глубина автоматизации](#этап-30--глубина-автоматизации) | Опытные пользователи, CEP, управление процессами |
 | **P3** | [32 — Экосистема и рынок](#этап-32--экосистема-и-рынок) | Масштабирование через партнёров |
+| **Отложено** | [25 — OT Trust](#phase-25--ot-trust) + [БЛ-191](#бл-191193--аудит-доменов-follow-up) | Пауза 14.07.2026 — возобновлять только при именованной полевой задаче на драйвер |
+| **Отложено** | [29 — MES / ERP L4](#этап-29--платформа-mes) (БЛ-169) | Пауза 14.07.2026 — живой коннектор 1C/SAP не в активном плане |
 
 ---
 
@@ -943,8 +943,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | Sev | Домен | Пробел | Vs рынок | Доказательство | БЛ |
 | --- | ----- | ------ | -------- | -------------- | -- |
 | **Blocker** | IoT / OT | PRODUCTION-матрица: `opc-da` stub, DNP3 без write | Kepware / Ignition | `OpcDaDeviceDriver` stub помечен PRODUCTION | [БЛ-191](#бл-191193--аудит-доменов-follow-up), БЛ-140 |
-| **Blocker** | ERP L4 | Outbox помечает `sent` без реального ERP | B2MML / 1C / SAP IDoc | Только stub-коннектор | **БЛ-169** (повышен до P0) |
-| **Blocker** | AI | Live LLM ≥95% + generator stub | Собственный AI-ров | `AiSolutionGeneratorService` `mode=stub` | БЛ-177…180 |
+| **Blocker** | ERP L4 | Outbox помечает `sent` без реального ERP | B2MML / 1C / SAP IDoc | Только stub-коннектор | **БЛ-169** (снят с 90-дневного плана) |
+| **Blocker** | AI | Live LLM ≥95% + generator breadth | Собственный AI-ров | Полный БЛ-178 ≥95% открыт; generator one-shot REAL | БЛ-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30д | Ignition Edge | БЛ-145/187 Partial; prod `clusterEnabled=false` | БЛ-145, 187 |
 | High | SCADA | Live FPS 500 el + offline PWA 8ч | Ignition Perspective | e2e mocked; БЛ-151/152 Partial | БЛ-151, 152 |
 | High | SCADA | Alarm shelving approval in-memory | WinCC / Ignition Alarming | `AlarmShelfApprovalService` STUB | БЛ-158 |
@@ -959,14 +959,16 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ### Порядок исполнения на 90 дней (из аудита)
 
+> **14.07.2026:** Фаза 25 OT Trust **и** живой ERP (БЛ-169) **убраны из активного 90-дневного плана**. Пробелы остаются в реестре, но не в расписании.
+
 | Ранг | Фокус | Действия |
 | ---- | ----- | -------- |
-| **P0** | Честность OT trust | БЛ-191: downgrade `opc-da`; DNP3 write или BETA; field sign-off |
-| **P0** | Живой ERP L4 коннектор | БЛ-169: реальный адаптер 1C **или** SAP + idempotent sync + DLQ |
 | **P0** | AI без stub | БЛ-177…180: live LLM CI ≥95%; generator не keyword-stub |
 | **P1** | SCADA operator excellence | БЛ-151/152/158: live FPS 500@60; offline PWA; persistent alarm shelf |
-| **P1** | MES productization | БЛ-164…170: 1–2 production sites; genealogy; mobile confirm |
+| **P1** | MES productization | БЛ-164…168, БЛ-170, БЛ-193: sites, genealogy; **не** живой ERP |
 | **P2** | Historian + Security + compliance | БЛ-159…162, БЛ-155, БЛ-192 |
+| **Отложено** | Живой ERP L4 коннектор | БЛ-169: реальный 1C **или** SAP — parked |
+| **Отложено** | Честность OT trust | БЛ-191 + пилоты БЛ-140 — [parked backlog Волна 1](#s31-wave-1-execution-backlog) |
 
 ---
 
@@ -974,9 +976,11 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | Спринт | Фаза | Тема | БЛ/область | Статус |
 | ------ | ----- | ---- | ---------- | ------ |
-| С31 | 25 | OT Trust волна 1 | [Backlog S31](#s31-wave-1-execution-backlog): БЛ-191, БЛ-141, пилот БЛ-140 | Частичный |
-| С32 | 25 | OT Trust волна 2 | БЛ-142, БЛ-143 | Частичный |
-| С33 | 25 | Эдж + ДДК | БЛ-144, БЛ-145 | Частичный |
+| С31 | 31 | AI e2e + live LLM | БЛ-177, БЛ-178 | Частичный (БЛ-177 one-shot REAL; БЛ-178 live ≥95% открыт) |
+| С32 | 31 | AI generator + continuity | БЛ-180 (+ БЛ-179 по необходимости) | Частичный (live apply REAL; metrics/continuity открыты) |
+| С33 | 29 | MES genealogy lite | БЛ-193 | Частичный |
+| — | 29 | Живой ERP L4 (parked) | БЛ-169 | **Отложено** |
+| — | 25 | OT Trust waves (parked) | БЛ-140…145, БЛ-191 — [Backlog Волна 1](#s31-wave-1-execution-backlog) | **Отложено** |
 | С34 | 26 | Символы HMI + отладчик | БЛ-146, БЛ-149 | Частичный |
 | С35 | 26 | HMI-перформанс + видеостена | БЛ-147, БЛ-148, БЛ-152 | Частичный |
 | С36 | 26 | Оператор офлайн + таблица | БЛ-150, БЛ-151 | Частичный |
@@ -996,6 +1000,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 ---
 
 ## Этап 25 — OT Trust
+
+> **Отложено (14.07.2026):** не в активном 90-дневном плане. Матрицу/playbook трогать только при **именованной полевой задаче на драйвер**. Чеклист — [Backlog Волна 1](#s31-wave-1-execution-backlog) (parked).
 
 **Цель:** подключение OT/IT **10/10** — драйверы промышленного уровня, лаборатория взаимодействия, граничные агенты, DDK.
 
@@ -1082,7 +1088,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-166 | **Отправка заказа на работу** | Р1 | BPMN + рабочая очередь + подтверждение мобильного оператора |
 | БЛ-167 | **Модуль качества** | П2 | Диаграммы SPC, отслеживание дефектов, отчеты о прослеживаемости |
 | БЛ-168 | **Облегченная пакетная обработка ISA-88** | П2 | Рецепт + этап + экземпляр пакета (на основе рабочего процесса) |
-| БЛ-169 | **Исходящие ERP (живой коннектор)** | **P0** | Реальный адаптер SAP **или** 1C (не stub); идемпотентная синхронизация + retry/DLQ; round-trip НСИ (заказы/материалы) — [isa95-catalog](isa95-catalog.md) Level 4 |
+| БЛ-169 | **Исходящие ERP (живой коннектор)** | **Отложено** | Реальный адаптер SAP **или** 1C (не stub); идемпотентная синхронизация + retry/DLQ; round-trip НСИ (заказы/материалы) — [isa95-catalog](isa95-catalog.md) Level 4 |
 | БЛ-170 | **Пакет сертификации MES** | Р1 | `mes-platform` пакет — развертывание ≤30 мин — [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) |
 
 **Этап метрики:** Прохождение OEE → производство MES за 1 день без пользовательской Java.
@@ -1212,7 +1218,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-166 | 29 | Отправка заказов на работу | Р1 | Частичный |
 | БЛ-167 | 29 | Модуль качества | П2 | Частичный |
 | БЛ-168 | 29 | ISA-88 пакетный облегченный | П2 | Частичный |
-| БЛ-169 | 29 | Исходящие ERP (живой коннектор) | **P0** | Частичный (stub → нужен live) |
+| БЛ-169 | 29 | Исходящие ERP (живой коннектор) | **Отложено** | Частичный (stub; parked — не в 90-дневном P0) |
 | БЛ-170 | 29 | Пакет сертификации MES | Р1 | Частичный |
 | БЛ-171 | 30 | КЭП двигатель | P3 | Частичный |
 | БЛ-172 | 30 | Контекст управления процессом | P3 | Частичный |
@@ -1220,10 +1226,10 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-174 | 30 | Фильтры событий | P3 | Частичный |
 | БЛ-175 | 30 | крючки ML | P3 | Частичный |
 | БЛ-176 | 30 | Расширение BPMN | П2 | Частичный (заглушка подпроцесса; события сообщения) |
-| БЛ-177 | 31 | Комплексное развертывание агента | P0 | Частичный |
-| БЛ-178 | 31 | Пакет регрессионного агента | P0 | Частичный (50 сценариев схемы CI; в реальном времени ≥95% не выполняются) |
+| БЛ-177 | 31 | Комплексное развертывание агента | P0 | **Частичный→Done (one-shot)** — live LLM `AgentLiveDeploySmokeTest` + `run_deploy_playbook` для `mes-platform` |
+| БЛ-178 | 31 | Набор регрессии агента | P0 | Частичный (50 сценариев schema CI; live one-shot через `run-live-oneshot.sh`; полный ≥95% не выполнен) |
 | БЛ-179 | 31 | Оператор-агент GA | Р1 | Частичный |
-| БЛ-180 | 31 | Генератор решений | P0 | Частично (заглушка ключевого слова) |
+| БЛ-180 | 31 | Генератор решений | P0 | **Частичный→Done (one-shot)** — `apply:true` live дерево+dashboard+alert (`AiSolutionGeneratorLiveSmokeTest`); полный GA/metrics ещё hardening |
 | БЛ-181 | 31 | Наблюдаемость агентов v2 | П2 | Частичный |
 | БЛ-182 | 31 | Контекстный пакет v2 | П2 | Частичный |
 | БЛ-183 | 32 | Marketplace GA | P3 | Частичная (установка/удаление) |
@@ -1234,7 +1240,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-188 | 32 | Менеджер-менеджеров | P3 | Частичный |
 | БЛ-189 | 32 | Конкурентная система показателей | P3 | **Готово** (опубликовано; проверено по коду ~7.4/10) |
 | БЛ-190 | 32 | Пути сертификации | P3 | Частичный |
-| БЛ-191 | 25 | Честность OT-матрицы | **P0** | Планируется |
+| БЛ-191 | 25 | Честность OT-матрицы | **Отложено** | Планируется (parked — не в 90-дневном P0) |
 | БЛ-192 | 27/32 | Compliance tender pack | П2 | Планируется |
 | БЛ-193 | 29 | MES genealogy lite | Р1 | Планируется |
 | БЛ-200 | 33 | Charter аналитической платформы | P2 | Планируется |
@@ -1261,7 +1267,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | ID | Фаза | Задача | Приоритет | Принятие |
 | -- | ----- | ------ | --------- | ---------- |
-| **БЛ-191** | 25 | **Честность PRODUCTION-матрицы OT** | **P0** | `opc-da` снят с PRODUCTION или реализован; DNP3 `writePoint` работает **или** maturity → BETA; обновлено измерение OT в scorecard; ноль stub с меткой PRODUCTION |
+| **БЛ-191** | 25 | **Честность PRODUCTION-матрицы OT** | **Отложено** | `opc-da` снят с PRODUCTION или реализован; DNP3 `writePoint` работает **или** maturity → BETA; обновлено измерение OT в scorecard; ноль stub с меткой PRODUCTION | — **снято с 90-дневного P0 (14.07.2026)**
 | **БЛ-192** | 27 / 32 | **Compliance tender pack** | П2 | Маппинг IEC 62443 + чеклист GAMP-lite в docs; ссылка из DoD / scorecard; реестр пробелов для pen-test / audit trail |
 | **БЛ-193** | 29 | **MES genealogy / прослеживаемость lite** | Р1 | Граф lot ↔ material ↔ work-order ↔ quality record + отчёт оператора; расширение БЛ-167 за пределы SPC samples |
 
@@ -1288,7 +1294,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 1. **20 ПРОИЗВОДСТВЕННЫХ драйверов** с interop CI и **3 подписанных полевых пилота** — **не выполнено** (БЛ-140 Частичный: только playbooks; [gate ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy) — поле по именованной задаче)
 2. **Пакет MES** — OEE + заказы + качество без индивидуального кода (BL-164…170); **хотя бы один живой ERP-коннектор** (БЛ-169) — не только stub
-3. **Агент ИИ** — ≥95 % сценариев регрессии, зелёный **с действующим LLM**, развертывание без правок (BL-177, BL-178) — **не выполнено** (CI: только схема; ночные незавершенные результаты)
+3. **Агент ИИ** — ≥95 % сценариев регрессии, зелёный **с действующим LLM**, развертывание без правок (BL-177, BL-178) — **частично** (BL-177 one-shot live REAL; полный BL-178 ≥95% открыт; nightly stub не используется как proof)
 4. **Историк** — 3-х уровневый, 1Б проверенных образцов (БЛ-159…162); AF-capable analytics (БЛ-200…210)
 5. **Безопасность** — MFA + список управления доступом для каждой переменной + опция strict tenant isolation (BL-153…155)
 6. **HMI** — mimic на 500 эл при 60 кадрах в секунду, автономное PWA 8 часов (BL-151, BL-152)
@@ -1332,7 +1338,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 Сначала **пригодные срезы** end-to-end, потом ширина. Каждая волна заканчивается **именованным сценарием** для заказчика.
 
-#### Волна 1 — OT trust, который можно поставить (Фаза 25 + БЛ-191)
+#### Волна 1 — OT trust, который можно поставить (Фаза 25 + БЛ-191) — **Отложено**
+
+> Пауза 14.07.2026. Не планировать Волну 1 в активные 90 дней, пока нет именованной полевой задачи на драйвер.
 
 | Пригодный результат | Доказательство | БЛ |
 | ------------------- | -------------- | -- |
@@ -1344,9 +1352,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Не Done если:** только Docker interop smoke; PRODUCTION на stub; нет журнала пилота.
 
-### Backlog S31 — Волна 1 (июл–авг 2026) {#s31-wave-1-execution-backlog}
+### Backlog S31 — Волна 1 (parked) {#s31-wave-1-execution-backlog}
 
-> **Статус: on hold** до появления **именованной полевой задачи на реализацию драйвера** (площадка + протокол + тикет интегратора). Та же политика, что [gate ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy). Не делать matrix/pilot «для галочки».
+> **Статус: отложено (14.07.2026)** — OT Trust убран из активного окна roadmap. Чеклист сохранён на случай **именованной полевой задачи на драйвер** (площадка + протокол + тикет интегратора). Та же политика, что [gate ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy). **Активный S31** — автопилот ИИ (БЛ-177…), не этот backlog.
 
 **Цель спринта (пригодный результат):** ОТ-инженер доверяет матрице драйверов; **один пилот Modbus plant** идёт с ежедневным журналом soak — не «БЛ-191 закрыт» без кода и пилота.
 
@@ -1456,7 +1464,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Сценарий:** AI Studio деплоит HVAC/MES demo; партнёр ставит bundle на свой VPS; analytics replica в Helm.
 
-**Не Done если:** keyword generator; `nightly-stub-results.json`; partner enroll hardcoded; marketplace без signing.
+**Не Done если:** treating keyword-only draft as GA; использование `nightly-stub-results.json` как proof ≥95%; partner enroll hardcoded; marketplace без signing.
 
 ### Фаза 30 (Automation) — глубина после волн 1–3
 
@@ -1485,7 +1493,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | ------- | ------ |
 | Stub = PRODUCTION | `OpcDaDeviceDriver`, матрица |
 | Фейковый ERP | Outbox `sent` без коннектора |
-| Фейковая AI regression | `nightly-stub-results.json` |
+| Фейковая AI regression | Использование устаревшего `nightly-stub-results.json` как proof ≥95% |
 | Фейковые партнёры | `PartnerProgramService` stub |
 | Фейковый alarm shelf | in-memory |
 | Mocked perf | e2e с mocked WebSocket |
@@ -1493,13 +1501,13 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 
 ### Ближайшие 90 дней — через призму качества
 
-Те же P0, что в [аудите доменов](#аудит-доменов--iot--scada--mes--erp-09072026), как **пригодные вехи**:
+Активный P0: **автопилот ИИ**. OT Trust и живой ERP (БЛ-169) отложены:
 
 | Спринт | Пригодная веха (не только id BL) |
 | ------ | -------------------------------- |
-| **S31** | On hold — драйверы до полевой задачи | [Backlog S31](#s31-wave-1-execution-backlog) |
-| **S32** | Тестовая ERP получает реальное outbox-сообщение; genealogy на demo lot |
-| **S33** | Один AI-сценарий: live LLM deploy end-to-end без правок человека |
+| **S31** | Один AI-сценарий: live LLM deploy end-to-end без правок человека (БЛ-177 / БЛ-178) |
+| **S32** | Generator не keyword-stub (БЛ-180) |
+| **S33** | Genealogy на demo lot (БЛ-193) |
 
 Полный список BL: [Ближайшие 90 дней](#ближайшие-90-дней) ниже.
 
@@ -1519,13 +1527,15 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 
 ## Ближайшие 90 дней
 
-Согласовано с [аудитом доменов](#аудит-доменов--iot--scada--mes--erp-09072026) — порядок P0.
+Согласовано с [аудитом доменов](#аудит-доменов--iot--scada--mes--erp-09072026); **OT Trust (фаза 25) и живой ERP (БЛ-169) отложены**.
 
 | Спринт | Срок (проект) | Область применения |
 | ------ | ------------ | ----- |
-| **S31** | июл–авг 2026 | **On hold** — [backlog Волна 1](#s31-wave-1-execution-backlog) до полевой задачи на драйвер; фокус ERP/AI |
-| **S32** | авг 2026 | **БЛ-169** живой коннектор 1C **или** SAP (вместо stub); старт БЛ-193 genealogy lite |
-| **S33** | сен 2026 | e2e агент БЛ-177; БЛ-178 live LLM ≥95% (без nightly stub); БЛ-180 generator не keyword-stub |
+| **S31** | июл–авг 2026 | e2e агент БЛ-177; БЛ-178 live LLM ≥95% (без nightly stub) |
+| **S32** | авг 2026 | БЛ-180 generator не keyword-stub; operator agent по необходимости |
+| **S33** | сен 2026 | **БЛ-193** genealogy lite |
+
+Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP БЛ-169.
 
 ---
 
@@ -1559,6 +1569,10 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 
 | Дата | Изменение |
 | ---- | --------- |
+| 14.07.2026 | **MES = marketplace product:** база не сидирует `root.platform.mes` / `batch-v1` / `work-order-v1`; установка `mes-platform` (vendor IoT Solutions). Флаг `ispf.bootstrap.mes-catalog-enabled` только для legacy |
+| 14.07.2026 | **S32 БЛ-180 one-shot REAL:** `POST /ai/solutions/generate` `apply:true` → live дерево+dashboard+alert; keyword path = `mode=draft` |
+| 14.07.2026 | **S31 БЛ-177 one-shot REAL:** `AgentLiveDeploySmokeTest` + `run_deploy_playbook`; nightly опциональный live oneshot; `nightly-stub-results.json` устарел как proof ≥95% |
+| 14.07.2026 | **OT Trust + живой ERP отложены:** фаза 25 / БЛ-191 и БЛ-169 убраны из активного 90-дневного P0; S31–S33 → AI → generator → genealogy |
 | 09.07.2026 | **Единый roadmap:** `roadmap-phase-25.md` влит в этот файл; Фаза 25–33 + БЛ-140…210 здесь; phase-25 — redirect stub |
 | 09.07.2026 | Добавлена [§ Ретроспектива](#retrospective) — эпохи, закрытый vs активный backlog, обзор Фазы 25–33 |
 | 09.07.2026 | Аудит доменов IoT/SCADA/MES/ERP: БЛ-169 → P0; БЛ-191…193; Фаза 33 analytics БЛ-200…210 |

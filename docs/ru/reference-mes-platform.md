@@ -2,22 +2,24 @@
 
 # MES Platform walkthrough (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)
 
-Сквозной путь сертификации: **каталог MES платформы → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** без custom Java.
+Сквозной путь сертификации: **установить MES-продукт из marketplace → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** без custom Java.
+
+**Поставка:** MES — **продукт marketplace IoT Solutions**, не часть базовой платформы ISPF. Чистая установка **не** создаёт `root.platform.mes` и MES INSTANCE-модели, пока не установлен бандл `mes-platform` / `mes-platform-production`. Опционально (legacy): `ispf.bootstrap.mes-catalog-enabled=true`.
 
 **Статус Wave 8 (завершён):** BL-164…BL-170 сертифицированы. Production walkthrough ≤30 мин проверен; `MesPlatformGaSmokeTest` деплоит `mes-platform-production` и проверяет OEE, dispatch, quality, batch, ERP и включённый outbox schedule.
 
 | Bundle | `appId` | Artifacts | Status |
 |--------|---------|-----------|--------|
-| Certification skeleton | `mes-platform` | [examples/mes-platform/](../examples/mes-platform/) | Reference |
-| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../examples/mes-platform-production/) | **Certified** (BL-170) |
+| Certification skeleton | `mes-platform` | [examples/mes-platform/](../examples/mes-platform/), listing `mes-platform` (vendor **IoT Solutions**) | Product |
+| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../examples/mes-platform-production/), listing `mes-platform-production` | **Certified** (BL-170) |
 
-**См. также:** [isa95-catalog](isa95-catalog.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [object-model](object-model.md).
+**См. также:** [isa95-catalog](isa95-catalog.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [marketplace](marketplace.md), [object-model](object-model.md).
 
 ---
 
-## Platform MES catalog (BL-164)
+## Каталог MES (BL-164) — через marketplace-бандл
 
-Создаётся при старте сервера через `MesPlatformBootstrap` и Flyway `V2__mes_platform_catalog.sql`:
+Создаётся при установке бандла **mes-platform** (или production) — **не** при старте «голого» сервера:
 
 | Path | ObjectType | Purpose |
 |------|------------|---------|
@@ -29,7 +31,7 @@
 | `...mes.quality-records` | `QUALITY_RECORDS` | Quality records (`QUALITY_RECORD`) + `quality-record-v1` |
 | `...mes.instances` | `MES_INSTANCES` | Иерархия site / area / line |
 
-Типы экземпляров `batch-v1` и `work-order-v1` регистрируются под `root.platform.instance-types` при старте (`MesBlueprintBootstrap`).
+Типы экземпляров `batch-v1` и `work-order-v1` регистрируются под `root.platform.instance-types` тем же бандлом (`blueprints[]`). Enum `ObjectType` остаётся в `ispf-core` для типизации узлов; **контент** — marketplace.
 
 ---
 

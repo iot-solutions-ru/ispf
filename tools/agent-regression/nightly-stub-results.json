@@ -1,6 +1,8 @@
 {
   "generatedAt": "2026-07-08T03:05:21.167Z",
   "mode": "nightly-stub",
+  "deprecated": true,
+  "deprecation": "Do not use as evidence of ≥95% live agent pass rate (BL-178). Prefer tools/agent-regression/run-live-oneshot.sh + --oneshot with real LLM results.",
   "scenarios": [
     {
       "id": "hvac-ahu-comfort",

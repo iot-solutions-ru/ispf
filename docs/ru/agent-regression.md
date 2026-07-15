@@ -59,12 +59,17 @@ bash scripts/run-agent-regression.sh --live
 | Этап | Шлюз |
 |-------|------|
 | PR | job `agent-regression` в [ci.yml](../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (схема + манифест; **падает при ошибках схемы**). **Только schema/manifest — без живого LLM** |
-| Nightly | `run-nightly.sh` валидирует схемы; **по умолчанию:** `AGENT_REGRESSION_RESULTS=tools/agent-regression/nightly-stub-results.json` (**заглушка** pass rate, **не** живой LLM). Live ≥95% требует реального прогона агента + `--enforce-rate` |
-| Ручной live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` (BL-177 mes-platform one-shot) |
+| Nightly | `run-nightly.sh` — только схемы. Опциональный BL-177 live one-shot при secrets `ISPF_AI_API_KEY` + `ISPF_AI_BASE_URL` (`run-live-oneshot.sh`). **`nightly-stub-results.json` устарел** — не доказательство live ≥95% |
+| Ручной live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` |
 
 **Текущее число сценариев:** 50 (SCADA, MES, HVAC).
 
-Репортёр pass rate (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — **цель** ≥95% **живого** прогона агента. **Не достигнуто на 0.9.102**: CI на PR и nightly по умолчанию проверяют **только схемы и заглушку** (`nightly-stub-results.json`), а не реальный pass rate LLM. См. [competitive-scorecard](competitive-scorecard.md).
+Репортёр pass rate:
+
+- Полный suite: `validate-scenarios.mjs --results nightly.json --enforce-rate` — цель ≥95% (полный BL-178, **не достигнуто**)
+- One-shot: `--results …/live-oneshot-results.json --enforce-rate --oneshot` — proof BL-177 (S31)
+
+См. [competitive-scorecard](competitive-scorecard.md).
 
 ## См. также
 

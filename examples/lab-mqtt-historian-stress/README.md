@@ -11,7 +11,8 @@ Addresses use [RFC 5737](https://datatracker.ietf.org/doc/html/rfc5737) document
 | `compose/` | Docker Compose for ISPF app, loadgen (Mosquitto), DB (PG + Scylla + CH) |
 | `env/` | Stress profiles (`lab-stress.env`, `lab-stress-ch.env`) and topology (`lab-loadgen.env`, `lab-db.env`) |
 | `scripts/` | Bootstrap, emqtt remote, I-01 historian benchmarks (Scylla / ClickHouse), **I-03 event journal** (smoke / peak / 400k fan-out) |
-| `local/README.example.md` | How to keep real hosts and secrets **out of git** |
+| `reports/` | Anonymized **I-01…I-08** baseline narrative + example JSON (RFC 5737) |
+| `local/` | **Gitignored** operator notes with real hosts (`local/README.example.md` only is tracked) |
 
 ## On lab hosts
 
@@ -59,6 +60,12 @@ bash lab-run-event-journal-400k.sh                    # ~400k events/s (MQTT fan
 See [lab-mqtt-event-journal-ingress](../../docs/en/lab-mqtt-event-journal-ingress.md) (RU: [docs/ru/...](../../docs/ru/lab-mqtt-event-journal-ingress.md)).
 
 Gateway scale (50k / 100k msg/s, scenario I-02 extension): orchestration scripts live in **gitignored** `deploy/lab-*` and `deploy/mqtt_loadtest_lib.py` on the operator workstation — copy to `~/ispf` on lab hosts. Committed topology template: `env/lab-loadgen.env` (`198.51.100.10` loadgen, `198.51.100.11` app). See [lab-mqtt-gateway-ingress](../../docs/en/lab-mqtt-gateway-ingress.md).
+
+## Ordered suite results (I-01…I-08)
+
+Public (anonymized): [`reports/ordered-suite-i01-i08.md`](reports/ordered-suite-i01-i08.md) · docs: [load-testing](../../docs/en/load-testing.md#ordered-suite-baseline-i-01i-08).
+
+Private (real IPs/SSH): copy into `local/ordered-suite-operator-notes.md` (gitignored). Template hint: [`local/README.example.md`](local/README.example.md).
 
 ## Operator-only files (gitignored)
 

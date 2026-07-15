@@ -21,25 +21,27 @@ public class ApplicationSchemaSession {
         this.dialect = dialect;
     }
 
-    /** Creates application schema if missing — call from writable transactions (migrations/deploy). */
+    /**
+     * Creates application schema if missing. Uses a connection from the pool without relying on the
+     * caller's read-only transaction (report previews are {@code readOnly=true}).
+     */
     public void ensureSchemaExists(String schemaName) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try {
+        try (Connection connection = dataSource.getConnection()) {
             createSchemaIfMissing(connection, schemaName);
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to ensure application schema: " + schemaName, ex);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public void runInSchema(String schemaName, Runnable action) {
+        ensureSchemaExists(schemaName);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         String previousSchema = null;
         RuntimeException actionError = null;
         try {
             previousSchema = currentSchema(connection);
-            activateSchema(connection, schemaName);
+            // Never CREATE on the transactional connection — may be read-only (reports).
+            switchSearchPath(connection, schemaName);
             try {
                 action.run();
             } catch (RuntimeException ex) {
@@ -89,7 +91,8 @@ public class ApplicationSchemaSession {
                     rollbackIfNeeded(connection, actionError);
                     if (previousSchema != null && !previousSchema.isBlank()
                             && !dialect.defaultPlatformSchema().equalsIgnoreCase(previousSchema)) {
-                        activateSchema(connection, previousSchema);
+                        // Restore only — never CREATE SCHEMA (may be inside read-only tx).
+                        switchSearchPath(connection, previousSchema);
                     }
                 } catch (SQLException ex) {
                     if (actionError != null) {
@@ -114,21 +117,18 @@ public class ApplicationSchemaSession {
         }
     }
 
-    private void activateSchema(Connection connection, String schemaName) throws SQLException {
-        String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
-        try (Statement statement = connection.createStatement()) {
-            if (dialect.requiresSchemaDdlBeforeSwitch()) {
-                createSchemaIfMissing(connection, schemaName);
-            }
-            statement.execute(dialect.activateSchemaSql(quoted));
+    private void restoreSchema(Connection connection, String previousSchema) throws SQLException {
+        if (previousSchema != null && !previousSchema.isBlank()) {
+            switchSearchPath(connection, previousSchema);
+        } else {
+            resetSchema(connection);
         }
     }
 
-    private void restoreSchema(Connection connection, String previousSchema) throws SQLException {
-        if (previousSchema != null && !previousSchema.isBlank()) {
-            activateSchema(connection, previousSchema);
-        } else {
-            resetSchema(connection);
+    private void switchSearchPath(Connection connection, String schemaName) throws SQLException {
+        String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute(dialect.activateSchemaSql(quoted));
         }
     }
 

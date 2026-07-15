@@ -1,5 +1,6 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.server.ai.context.ContextPackSearchService;
 import com.ispf.server.ai.tool.AiToolRegistry;
 import com.ispf.server.ai.validation.BundleValidationResult;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
@@ -24,10 +25,18 @@ final class AgentDeployPlaybookTools {
             ObjectMapper objectMapper,
             AiToolRegistry aiToolRegistry,
             ApplicationBundleDeployService bundleDeployService,
-            OperatorAppUiService operatorAppUiService
+            OperatorAppUiService operatorAppUiService,
+            ContextPackSearchService contextPackSearchService
     ) {
         return List.of(
                 getDeployPlaybookTool(),
+                runDeployPlaybookTool(
+                        objectMapper,
+                        aiToolRegistry,
+                        bundleDeployService,
+                        operatorAppUiService,
+                        contextPackSearchService
+                ),
                 deployStepTool("deploy_step_discover", "discover", null, null, null, null),
                 deployStepTool("deploy_step_blueprint", "blueprint", null, null, null, null),
                 deployStepValidateTool(objectMapper, aiToolRegistry),
@@ -50,6 +59,7 @@ final class AgentDeployPlaybookTools {
             @Override
             public String description() {
                 return "End-to-end deploy playbook (BL-177): ordered steps, tools, and reference text. "
+                        + "Prefer run_deploy_playbook appId=… for one-shot deploy. "
                         + "Optional arg: step (discover|blueprint|validate|dry_run|import|operator_ui|verify|automation|finish).";
             }
 
@@ -81,6 +91,136 @@ final class AgentDeployPlaybookTools {
                 return result;
             }
         };
+    }
+
+    @SuppressWarnings("unchecked")
+    private static PlatformAgentTool runDeployPlaybookTool(
+            ObjectMapper objectMapper,
+            AiToolRegistry aiToolRegistry,
+            ApplicationBundleDeployService bundleDeployService,
+            OperatorAppUiService operatorAppUiService,
+            ContextPackSearchService contextPackSearchService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "run_deploy_playbook";
+            }
+
+            @Override
+            public String description() {
+                return "BL-177 one-shot: load example bundle by appId, validate, dry-run, import_package, "
+                        + "configure operator UI. Args: appId (required, e.g. mes-platform). "
+                        + "Use this instead of calling each deploy_step_* manually.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                try {
+                    return executePipeline(arguments, context);
+                } catch (Exception ex) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName()
+                    );
+                }
+            }
+
+            @SuppressWarnings("unchecked")
+            private Map<String, Object> executePipeline(Map<String, Object> arguments, AgentContext context)
+                    throws Exception {
+                String appId = stringArg(arguments, "appId");
+                if (appId.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "appId is required");
+                }
+                Map<String, Object> example = contextPackSearchService.exampleBundle(appId, List.of());
+                if (!"OK".equals(String.valueOf(example.get("status")))) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", example.getOrDefault("error", "example bundle not found"),
+                            "appId", appId
+                    );
+                }
+                Object manifestRaw = example.get("manifest");
+                if (!(manifestRaw instanceof Map<?, ?>)) {
+                    return Map.of("status", "ERROR", "error", "example manifest missing", "appId", appId);
+                }
+                Map<String, Object> manifest = (Map<String, Object>) manifestRaw;
+                List<Map<String, Object>> pipeline = new ArrayList<>();
+
+                Map<String, Object> validate = deployStepValidateTool(objectMapper, aiToolRegistry)
+                        .execute(Map.of("appId", appId, "manifest", manifest), context);
+                pipeline.add(named("validate", validate));
+                if (!ok(validate)) {
+                    return failPipeline(appId, pipeline, "validate");
+                }
+
+                Map<String, Object> dryRun = deployStepDryRunTool(objectMapper, aiToolRegistry)
+                        .execute(Map.of("appId", appId, "manifest", manifest), context);
+                pipeline.add(named("dry_run", dryRun));
+                if (!ok(dryRun)) {
+                    return failPipeline(appId, pipeline, "dry_run");
+                }
+
+                Map<String, Object> imported = deployStepImportTool(objectMapper, bundleDeployService)
+                        .execute(Map.of("appId", appId, "manifest", manifest), context);
+                pipeline.add(named("import", imported));
+                if (!ok(imported)) {
+                    return failPipeline(appId, pipeline, "import");
+                }
+
+                Object operatorUiRaw = manifest.get("operatorUi");
+                if (operatorUiRaw instanceof Map<?, ?> operatorUiMap) {
+                    Map<String, Object> uiArgs = new LinkedHashMap<>();
+                    uiArgs.put("appId", operatorUiMap.get("appId") != null ? operatorUiMap.get("appId") : appId);
+                    uiArgs.put("title", operatorUiMap.get("title"));
+                    uiArgs.put("defaultDashboard", operatorUiMap.get("defaultDashboard"));
+                    uiArgs.put("dashboards", operatorUiMap.get("dashboards"));
+                    Map<String, Object> ui = deployStepOperatorUiTool(operatorAppUiService)
+                            .execute(uiArgs, context);
+                    pipeline.add(named("operator_ui", ui));
+                    if (!ok(ui)) {
+                        return failPipeline(appId, pipeline, "operator_ui");
+                    }
+                } else {
+                    pipeline.add(named("operator_ui", Map.of("status", "SKIPPED", "reason", "no operatorUi in manifest")));
+                }
+
+                Map<String, Object> verify = deployStepVerifyTool()
+                        .execute(Map.of("appId", appId), context);
+                pipeline.add(named("verify", verify));
+                context.runState().markCompletedPlanStep("deploy:finish");
+
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("status", "OK");
+                result.put("playbook", "AgentDeployPlaybook");
+                result.put("tool", "run_deploy_playbook");
+                result.put("appId", appId);
+                result.put("pipeline", pipeline);
+                result.put("operatorUrlHint", "?mode=operator&app=" + appId);
+                return result;
+            }
+        };
+    }
+
+    private static boolean ok(Map<String, Object> stepResult) {
+        return "OK".equals(String.valueOf(stepResult.get("status")));
+    }
+
+    private static Map<String, Object> named(String step, Map<String, Object> result) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("step", step);
+        row.putAll(result);
+        return row;
+    }
+
+    private static Map<String, Object> failPipeline(String appId, List<Map<String, Object>> pipeline, String failedStep) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", "ERROR");
+        result.put("appId", appId);
+        result.put("failedStep", failedStep);
+        result.put("pipeline", pipeline);
+        return result;
     }
 
     private static PlatformAgentTool deployStepTool(
