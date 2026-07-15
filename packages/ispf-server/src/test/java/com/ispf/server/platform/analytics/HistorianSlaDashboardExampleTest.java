@@ -23,7 +23,7 @@ class HistorianSlaDashboardExampleTest {
         JsonNode layout = MAPPER.readTree(Files.readString(exampleDir.resolve("dashboard-layout.json")));
         JsonNode bff = MAPPER.readTree(Files.readString(exampleDir.resolve("bff-functions.example.json")));
 
-        assertEquals(12, layout.path("columns").asInt());
+        assertEquals(84, layout.path("columns").asInt());
         assertTrue(layout.path("widgets").isArray());
         assertTrue(widgetIds(layout).contains("hist-agg-p95"));
         assertTrue(widgetIds(layout).contains("hist-raw-p95"));

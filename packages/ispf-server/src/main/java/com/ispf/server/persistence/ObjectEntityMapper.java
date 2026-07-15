@@ -28,6 +28,12 @@ public class ObjectEntityMapper {
     public ObjectNodeEntity toEntity(PlatformObject node) {
         ObjectNodeEntity entity = new ObjectNodeEntity();
         entity.setId(node.id());
+        copyNodeFields(entity, node);
+        return entity;
+    }
+
+    /** Updates a managed node row without replacing the entity identity (Hibernate-safe upsert). */
+    public void copyNodeFields(ObjectNodeEntity entity, PlatformObject node) {
         entity.setPath(node.path());
         entity.setType(node.type());
         entity.setDisplayName(node.displayName());
@@ -44,11 +50,16 @@ public class ObjectEntityMapper {
         entity.setBindingAuditEnabled(node.bindingAuditEnabled());
         entity.setFunctionAuditEnabled(node.functionAuditEnabled());
         entity.setEventJournalEnabled(node.eventJournalEnabled());
-        return entity;
     }
 
     public ObjectVariableEntity toEntity(String objectPath, Variable variable) {
         ObjectVariableEntity entity = new ObjectVariableEntity();
+        copyVariableFields(entity, objectPath, variable);
+        return entity;
+    }
+
+    /** Updates a managed variable row without replacing the entity identity (Hibernate-safe upsert). */
+    public void copyVariableFields(ObjectVariableEntity entity, String objectPath, Variable variable) {
         entity.setObjectPath(objectPath);
         entity.setName(variable.name());
         entity.setSchemaJson(writeJson(variable.schema()));
@@ -67,7 +78,6 @@ public class ObjectEntityMapper {
         }
         entity.setReadRolesJson(writeStringList(variable.readRoles()));
         entity.setWriteRolesJson(writeStringList(variable.writeRoles()));
-        return entity;
     }
 
     public Variable toVariable(ObjectVariableEntity entity) {

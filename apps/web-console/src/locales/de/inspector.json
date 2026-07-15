@@ -203,6 +203,8 @@
   "driver.noDriverId": "Gerät hat keinen driverId. Modell anwenden (z. B. snmp-agent-v1) oder Formular ausfüllen und Speichern und starten.",
   "driver.pollInterval": "Abfrageintervall",
   "driver.pollIntervalMs": "Abfrageintervall (ms)",
+  "driver.autoStartOnBoot": "Autostart beim Serverstart",
+  "driver.autoStartOnBootHint": "Wenn aktiviert, startet der Gerätetreiber automatisch nach einem Neustart von ispf-server. Standard: ein. Global: Plattformeinstellungen → driver.auto-start-on-boot.",
   "driver.restart": "Neustart",
   "driver.saveAndStart": "Speichern und starten",
   "driver.start": "Starten",

@@ -203,6 +203,8 @@
   "driver.noDriverId": "设备未设置 driverId。应用模型（如 snmp-agent-v1）或填写下方表单并点击保存并启动。",
   "driver.pollInterval": "轮询间隔",
   "driver.pollIntervalMs": "轮询间隔 (毫秒)",
+  "driver.autoStartOnBoot": "服务器启动时自动启动",
+  "driver.autoStartOnBootHint": "启用后，ispf-server 重启后会自动启动此设备驱动。默认开启。全局覆盖：平台设置 → driver.auto-start-on-boot。",
   "driver.restart": "重启",
   "driver.saveAndStart": "保存并启动",
   "driver.start": "启动",

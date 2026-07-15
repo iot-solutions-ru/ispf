@@ -1,5 +1,10 @@
 package com.ispf.server.platform.analytics.engine;
 
+import com.ispf.core.binding.BindingActivators;
+import com.ispf.core.binding.BindingRule;
+import com.ispf.core.binding.BindingRuleKind;
+import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagLineageService;
@@ -59,12 +64,13 @@ class AnalyticsTagCatalogServiceTest {
         when(extensionRegistry.registeredFunctions()).thenReturn(List.of());
         when(jdbcTemplate.queryForList(any(String.class), eq(String.class), any()))
                 .thenReturn(List.of(DEVICE_A, DEVICE_B));
-        when(bindingRulesService.listRules(DEVICE_A)).thenReturn(List.of());
-        when(bindingRulesService.listRules(DEVICE_B)).thenReturn(List.of());
     }
 
     @Test
     void usesBindingRulesIndexInsteadOfFullTreeScan() {
+        when(bindingRulesService.listRules(DEVICE_A)).thenReturn(List.of());
+        when(bindingRulesService.listRules(DEVICE_B)).thenReturn(List.of());
+
         catalogService.listAllTagDefinitions();
 
         verify(jdbcTemplate).queryForList(any(String.class), eq(String.class), any());
@@ -74,10 +80,27 @@ class AnalyticsTagCatalogServiceTest {
     }
 
     @Test
+    void doesNotCacheEmptyCatalog() {
+        when(bindingRulesService.listRules(DEVICE_A)).thenReturn(List.of());
+        when(bindingRulesService.listRules(DEVICE_B)).thenReturn(List.of());
+
+        catalogService.listAllTagDefinitions();
+        catalogService.listAllTagDefinitions();
+
+        verify(bindingRulesService, times(2)).listRules(DEVICE_A);
+        verify(bindingRulesService, times(2)).listRules(DEVICE_B);
+    }
+
+    @Test
     void cachesCompiledCatalogUntilInvalidated() {
+        BindingRule historianRule = historianAvgRule("rule-a");
+        when(bindingRulesService.listRules(DEVICE_A)).thenReturn(List.of(historianRule));
+        when(bindingRulesService.listRules(DEVICE_B)).thenReturn(List.of());
+
         var first = catalogService.listAllTagDefinitions();
         var second = catalogService.listAllTagDefinitions();
 
+        assertThat(first).isNotEmpty();
         assertThat(second).isSameAs(first);
         verify(bindingRulesService, times(1)).listRules(DEVICE_A);
         verify(bindingRulesService, times(1)).listRules(DEVICE_B);
@@ -87,5 +110,21 @@ class AnalyticsTagCatalogServiceTest {
 
         verify(bindingRulesService, times(2)).listRules(DEVICE_A);
         verify(bindingRulesService, times(2)).listRules(DEVICE_B);
+    }
+
+    private static BindingRule historianAvgRule(String id) {
+        return new BindingRule(
+                id,
+                id,
+                true,
+                0,
+                BindingRuleKind.HISTORIAN,
+                new BindingActivators(false, List.of(new BindingVariableRef(DEVICE_A, "temperature")), null, 60_000L, false, false),
+                "",
+                "avg(" + DEVICE_A + "/temperature, 1h)",
+                new BindingTarget("variable", "avg-temp", "value", null, null),
+                "1h",
+                null
+        );
     }
 }

@@ -1175,8 +1175,17 @@ public class ObjectManager {
     }
 
     private void persistNode(PlatformObject node) {
+        if (node.id() == null || node.id().isBlank()) {
+            throw new IllegalStateException("Cannot persist node without id: " + node.path());
+        }
+        Optional<ObjectNodeEntity> existing = nodeRepository.findByPath(node.path());
+        if (existing.isPresent()) {
+            ObjectNodeEntity entity = existing.get();
+            mapper.copyNodeFields(entity, node);
+            nodeRepository.save(entity);
+            return;
+        }
         ObjectNodeEntity mapped = mapper.toEntity(node);
-        nodeRepository.findByPath(node.path()).ifPresent(existing -> mapped.setId(existing.getId()));
         try {
             nodeRepository.save(mapped);
         } catch (DataIntegrityViolationException duplicate) {
@@ -1184,9 +1193,9 @@ public class ObjectManager {
             if (raced.isEmpty()) {
                 throw duplicate;
             }
-            ObjectNodeEntity retry = mapper.toEntity(node);
-            retry.setId(raced.get().getId());
-            nodeRepository.save(retry);
+            ObjectNodeEntity entity = raced.get();
+            mapper.copyNodeFields(entity, node);
+            nodeRepository.save(entity);
         }
     }
 
@@ -1203,19 +1212,26 @@ public class ObjectManager {
 
     private void persistVariable(String path, Variable variable) {
         synchronized (lockForVariable(path, variable.name())) {
+            Optional<ObjectVariableEntity> existing =
+                    variableRepository.findByObjectPathAndName(path, variable.name());
+            if (existing.isPresent()) {
+                ObjectVariableEntity entity = existing.get();
+                mapper.copyVariableFields(entity, path, variable);
+                variableRepository.save(entity);
+                return;
+            }
             ObjectVariableEntity mapped = mapper.toEntity(path, variable);
-            variableRepository.findByObjectPathAndName(path, variable.name())
-                    .ifPresent(existing -> mapped.setId(existing.getId()));
             try {
                 variableRepository.save(mapped);
             } catch (DataIntegrityViolationException duplicate) {
-                Optional<ObjectVariableEntity> raced = variableRepository.findByObjectPathAndName(path, variable.name());
+                Optional<ObjectVariableEntity> raced =
+                        variableRepository.findByObjectPathAndName(path, variable.name());
                 if (raced.isEmpty()) {
                     throw duplicate;
                 }
-                ObjectVariableEntity retry = mapper.toEntity(path, variable);
-                retry.setId(raced.get().getId());
-                variableRepository.save(retry);
+                ObjectVariableEntity entity = raced.get();
+                mapper.copyVariableFields(entity, path, variable);
+                variableRepository.save(entity);
             }
         }
     }
