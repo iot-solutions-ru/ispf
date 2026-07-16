@@ -8632,6 +8632,25 @@ body.scada-mimic-editor-open {
   border-top: 1px solid var(--border);
 }
 
+.operator-apps-chrome-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.operator-apps-chrome-options > strong {
+  margin-bottom: 0.15rem;
+}
+
+.operator-apps-chrome-options .operator-apps-dashboard-row {
+  padding: 0.45rem 0;
+  border-radius: 6px;
+}
+
 .operator-apps-dashboard-row {
   display: flex;
   flex-direction: row;

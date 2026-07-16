@@ -164,9 +164,19 @@ export default function OperatorDashboardApp({
   );
   const activePath = viewKind === "report" ? activeReportPath : activeDashboardPath;
   const sidebarDrawer = useOperatorSidebarDrawer([viewKind, activePath]);
+  const { open: drawerOpen, close: closeSidebar, toggle: toggleSidebar } = sidebarDrawer;
+  const hideTasksAndEvents = ui?.hideTasksAndEvents === true;
+  const hideDashboardNav = ui?.hideDashboardNav === true;
+  const sidebarOpen = hideTasksAndEvents ? false : drawerOpen;
   const [layoutPreset, setLayoutPreset] = useState<DashboardLayoutPreset | undefined>();
   const [federationPeerId, setFederationPeerId] = useState<string | null>(resolveFederationPeerFromUrl);
   const videoWallMode = viewKind === "dashboard" && isVideoWallPreset(layoutPreset);
+
+  useEffect(() => {
+    if (hideTasksAndEvents && drawerOpen) {
+      closeSidebar();
+    }
+  }, [hideTasksAndEvents, drawerOpen, closeSidebar]);
 
   useEffect(() => {
     setLayoutPreset(undefined);
@@ -348,7 +358,7 @@ export default function OperatorDashboardApp({
   return (
     <div
       className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}${
-        sidebarDrawer.open ? " operator-shell--sidebar-open" : ""
+        sidebarOpen ? " operator-shell--sidebar-open" : ""
       }${videoWallMode && layoutPreset ? ` operator-shell--${layoutPreset}` : ""}`}
       data-testid="operator-shell"
     >
@@ -366,8 +376,10 @@ export default function OperatorDashboardApp({
           onLogout={onLogout}
           onSelectDashboard={navigateDashboard}
           onSelectReport={navigateReport}
-          sidebarOpen={sidebarDrawer.open}
-          onToggleSidebar={sidebarDrawer.toggle}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={toggleSidebar}
+          hideTasksAndEvents={hideTasksAndEvents}
+          hideDashboardNav={hideDashboardNav}
         />
       )}
       <OperatorOfflineBanner
@@ -379,8 +391,8 @@ export default function OperatorDashboardApp({
       <OperatorShellFrame
         layoutClassName="operator-dashboard-layout"
         mainClassName="operator-dashboard operator-dashboard-shell-host"
-        sidebarOpen={sidebarDrawer.open}
-        onSidebarClose={sidebarDrawer.close}
+        sidebarOpen={sidebarOpen}
+        onSidebarClose={closeSidebar}
         main={
           viewKind === "report" ? (
             <ReportBuilder key={activeReportPath} path={activeReportPath} operatorMode />
@@ -406,7 +418,11 @@ export default function OperatorDashboardApp({
             />
           )
         }
-        sidebar={<OperatorSidebar appId={appId} operatorId={operatorId} ui={ui} />}
+        sidebar={
+          hideTasksAndEvents ? null : (
+            <OperatorSidebar appId={appId} operatorId={operatorId} ui={ui} />
+          )
+        }
       />
       {alarmBar.position === "bottom" && <AlarmBarOverlay {...alarmBar} />}
       {alarmBar.enabled && (
@@ -439,6 +455,8 @@ function OperatorDashboardChrome({
   onSelectReport,
   sidebarOpen,
   onToggleSidebar,
+  hideTasksAndEvents,
+  hideDashboardNav,
 }: {
   ui: OperatorUi;
   viewKind: OperatorViewKind;
@@ -454,6 +472,8 @@ function OperatorDashboardChrome({
   onSelectReport: (path: string) => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
+  hideTasksAndEvents: boolean;
+  hideDashboardNav: boolean;
 }) {
   const { t } = useTranslation(["operator", "common"]);
   const activeTitle =
@@ -477,12 +497,14 @@ function OperatorDashboardChrome({
             selectedPeerId={federationPeerId}
             onSelectPeer={onFederationPeerChange}
           />
-          <OperatorSidebarToggle
-            open={sidebarOpen}
-            onClick={onToggleSidebar}
-            appId={appId}
-            ui={ui}
-          />
+          {!hideTasksAndEvents && (
+            <OperatorSidebarToggle
+              open={sidebarOpen}
+              onClick={onToggleSidebar}
+              appId={appId}
+              ui={ui}
+            />
+          )}
           <OperatorPreferences />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>
@@ -496,28 +518,30 @@ function OperatorDashboardChrome({
           )}
         </div>
       </header>
-      <nav className="op-nav" data-testid="operator-nav">
-        {ui.dashboards.map((dashboard) => (
-          <button
-            key={dashboard.path}
-            type="button"
-            className={`btn small ${viewKind === "dashboard" && dashboard.path === activePath ? "primary" : ""}`}
-            onClick={() => onSelectDashboard(dashboard.path)}
-          >
-            {dashboard.title}
-          </button>
-        ))}
-        {(ui.reports ?? []).map((report) => (
-          <button
-            key={report.path}
-            type="button"
-            className={`btn small ${viewKind === "report" && report.path === activePath ? "primary" : ""}`}
-            onClick={() => onSelectReport(report.path)}
-          >
-            {report.title}
-          </button>
-        ))}
-      </nav>
+      {!hideDashboardNav && (
+        <nav className="op-nav" data-testid="operator-nav">
+          {ui.dashboards.map((dashboard) => (
+            <button
+              key={dashboard.path}
+              type="button"
+              className={`btn small ${viewKind === "dashboard" && dashboard.path === activePath ? "primary" : ""}`}
+              onClick={() => onSelectDashboard(dashboard.path)}
+            >
+              {dashboard.title}
+            </button>
+          ))}
+          {(ui.reports ?? []).map((report) => (
+            <button
+              key={report.path}
+              type="button"
+              className={`btn small ${viewKind === "report" && report.path === activePath ? "primary" : ""}`}
+              onClick={() => onSelectReport(report.path)}
+            >
+              {report.title}
+            </button>
+          ))}
+        </nav>
+      )}
     </>
   );
 }

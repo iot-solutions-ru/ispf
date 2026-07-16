@@ -653,12 +653,17 @@ public class ApplicationBundleDeployService {
             Map<String, Object> typed = (Map<String, Object>) alarmBarMap;
             alarmBar = typed;
         }
-        String uiExtrasJson = null;
+        Map<String, Object> extras = new LinkedHashMap<>();
         if (alarmBar != null && !alarmBar.isEmpty()) {
-            Map<String, Object> extras = new LinkedHashMap<>();
             extras.put("alarmBar", alarmBar);
-            uiExtrasJson = objectMapper.writeValueAsString(extras);
         }
+        if (Boolean.TRUE.equals(ui.get("hideTasksAndEvents"))) {
+            extras.put("hideTasksAndEvents", true);
+        }
+        if (Boolean.TRUE.equals(ui.get("hideDashboardNav"))) {
+            extras.put("hideDashboardNav", true);
+        }
+        String uiExtrasJson = extras.isEmpty() ? null : objectMapper.writeValueAsString(extras);
         operatorAppUiStore.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 appId,
                 title,

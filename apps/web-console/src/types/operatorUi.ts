@@ -27,6 +27,10 @@ export interface OperatorUi {
   alarmBar?: OperatorAlarmBarConfig;
   /** Custom instructions for the operator AI assistant (admin-authored). */
   agentInstructions?: string;
+  /** When true, hide the Tasks & events sidebar toggle (and the drawer). */
+  hideTasksAndEvents?: boolean;
+  /** When true, hide the top dashboard/report navigation strip. */
+  hideDashboardNav?: boolean;
 }
 
 export function resolveOperatorDashboard(

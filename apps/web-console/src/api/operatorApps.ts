@@ -68,6 +68,8 @@ export async function saveOperatorAppUi(appId: string, ui: OperatorUi): Promise<
       dashboards: ui.dashboards,
       alarmBar: ui.alarmBar ?? null,
       agentInstructions: ui.agentInstructions?.trim() || null,
+      hideTasksAndEvents: ui.hideTasksAndEvents === true,
+      hideDashboardNav: ui.hideDashboardNav === true,
     }),
   });
   if (!response.ok) {

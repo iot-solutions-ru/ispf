@@ -51,6 +51,8 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [alarmBar, setAlarmBar] = useState<OperatorAlarmBarConfig | undefined>(undefined);
   const [agentInstructions, setAgentInstructions] = useState("");
+  const [hideTasksAndEvents, setHideTasksAndEvents] = useState(false);
+  const [hideDashboardNav, setHideDashboardNav] = useState(false);
 
   const uiQuery = useQuery({
     queryKey: ["operator-app-ui", selectedAppId],
@@ -66,6 +68,8 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       setSelectedPaths(ui.dashboards.map((item) => item.path));
       setAlarmBar(ui.alarmBar);
       setAgentInstructions(ui.agentInstructions ?? "");
+      setHideTasksAndEvents(ui.hideTasksAndEvents === true);
+      setHideDashboardNav(ui.hideDashboardNav === true);
       return;
     }
     if (pathLeaf) {
@@ -74,6 +78,8 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       setSelectedPaths([]);
       setAlarmBar(undefined);
       setAgentInstructions("");
+      setHideTasksAndEvents(false);
+      setHideDashboardNav(false);
     }
   }, [uiQuery.data, pathLeaf]);
 
@@ -126,6 +132,8 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       dashboards,
       alarmBar,
       agentInstructions: agentInstructions.trim() || undefined,
+      ...(hideTasksAndEvents ? { hideTasksAndEvents: true } : {}),
+      ...(hideDashboardNav ? { hideDashboardNav: true } : {}),
     };
   };
 
@@ -139,7 +147,18 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       return true;
     }
     return JSON.stringify(ui) !== JSON.stringify(draft);
-  }, [uiQuery.data, title, defaultDashboard, selectedPaths, selectedAppId, availableDashboards, alarmBar, agentInstructions]);
+  }, [
+    uiQuery.data,
+    title,
+    defaultDashboard,
+    selectedPaths,
+    selectedAppId,
+    availableDashboards,
+    alarmBar,
+    agentInstructions,
+    hideTasksAndEvents,
+    hideDashboardNav,
+  ]);
 
   const handleSave = () => {
     const ui = buildUi();
@@ -233,6 +252,41 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
                   </li>
                 ))}
               </ul>
+            </div>
+
+            <div className="full operator-apps-chrome-options">
+              <strong>{t("operatorApps.chromeOptions")}</strong>
+              <p className="hint">{t("operatorApps.chromeOptionsHint")}</p>
+              <label className="operator-apps-dashboard-row">
+                <input
+                  type="checkbox"
+                  className="operator-apps-dashboard-check"
+                  checked={hideTasksAndEvents}
+                  disabled={!canManage}
+                  onChange={(e) => setHideTasksAndEvents(e.target.checked)}
+                />
+                <span className="operator-apps-dashboard-meta">
+                  <span className="operator-apps-dashboard-title">
+                    {t("operatorApps.hideTasksAndEvents")}
+                  </span>
+                  <span className="hint">{t("operatorApps.hideTasksAndEventsHint")}</span>
+                </span>
+              </label>
+              <label className="operator-apps-dashboard-row">
+                <input
+                  type="checkbox"
+                  className="operator-apps-dashboard-check"
+                  checked={hideDashboardNav}
+                  disabled={!canManage}
+                  onChange={(e) => setHideDashboardNav(e.target.checked)}
+                />
+                <span className="operator-apps-dashboard-meta">
+                  <span className="operator-apps-dashboard-title">
+                    {t("operatorApps.hideDashboardNav")}
+                  </span>
+                  <span className="hint">{t("operatorApps.hideDashboardNavHint")}</span>
+                </span>
+              </label>
             </div>
 
             <OperatorAlarmBarEditor
