@@ -1,5 +1,7 @@
 # Field pilot playbook (BL-140)
 
+> **Status:** Lab — OT validation runbooks. Hub: [doc-status.md](doc-status.md).
+
 Repeatable OT field-pilot runbooks for three reference scenarios. Each pilot validates **PRODUCTION** drivers, write round-trip, historian ingest, and operator HMI without middleware between ISPF and the plant edge.
 
 Prerequisites: ISPF ≥ 0.9.32, [driver-interop-lab](driver-interop-lab.md) green locally, operator account with device admin role.

@@ -2,6 +2,8 @@
 
 # Release dogfood checklist
 
+> **Status:** Internal — Release checklist. Hub: [doc-status.md](doc-status.md).
+
 Short gate before tagging a release. Prefer failing a step over skipping it.
 
 Related: [demostands](demostands.md), [observability](observability.md), [golden-path-alarm-smoke](../../deploy/tools/golden-path-alarm-smoke.py).

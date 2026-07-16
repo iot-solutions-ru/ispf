@@ -2,6 +2,8 @@
 
 # Variable history — phases
 
+> **Status:** Stable — Time-series, retention. Hub: [doc-status.md](doc-status.md).
+
 ## Phase 1 — Storage and write (done)
 
 - Table `variable_samples`, write on `VARIABLE_UPDATED` with debounce

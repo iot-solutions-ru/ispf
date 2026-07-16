@@ -2,6 +2,8 @@
 
 # ISPF — продуктовая документация
 
+> **Статус:** Stable — Возможности, сценарии, карта документации. Теги: [doc-status](../en/doc-status.md).
+
 **IoT Solutions Platform Framework (ISPF)** — middleware для IoT, SCADA и промышленной автоматизации. Единая модель данных, HMI, автоматизация и прикладной слой без отраслевого Java в ядре.
 
 Этот документ — **точка входа для всех ролей**. Детали реализации — в других разделах [docs/ru/readme.md](readme.md) (канон: [docs/en/readme.md](../en/readme.md)).

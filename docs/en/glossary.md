@@ -2,6 +2,8 @@
 
 # ISPF Glossary
 
+> **Status:** Stable — Terms and definitions. Hub: [doc-status.md](doc-status.md).
+
 A concise dictionary of platform terms. Product overview: [product](product.md).
 
 ---
@@ -30,7 +32,7 @@ A concise dictionary of platform terms. Product overview: [product](product.md).
 
 **Blueprint** — see **Model**.
 
-**Bundle** — a ZIP application package: manifest, SQL, functions, operator UI, reports. Deployed via `POST /applications/{id}/deploy`.
+**Bundle** — a JSON application manifest (SQL migrations, functions, operator UI, reports, objects). Deployed via `POST /api/v1/applications/{id}/deploy` (`Content-Type: application/json`). Not a multipart ZIP upload.
 
 **BPMN** — Business Process Model and Notation. Notation for describing workflow. ISPF uses BPMN 2.0 XML with namespace extensions `http://ispf.io/bpmn`.
 

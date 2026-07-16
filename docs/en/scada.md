@@ -2,6 +2,8 @@
 
 # SCADA — ISPF mimic diagrams
 
+> **Status:** Stable — Mimics, symbols, bindings. Hub: [doc-status.md](doc-status.md).
+
 Configurable mimic diagrams / P&ID / single-line diagrams with an SVG symbol catalog, live bindings to the object-tree variables, and HMI-driven control.
 
 **See also:** [scada-mimic](scada-mimic.md) (`diagramJson` schema, REST API), [widgets.md § scada-mimic](widgets.md), [dashboards](dashboards.md), [bindings](bindings.md).

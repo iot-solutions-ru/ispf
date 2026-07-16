@@ -107,7 +107,7 @@ Related: [marketplace](marketplace.md), [certification](certification.md), [solu
 
 | Milestone | Target |
 |-----------|--------|
-| Partner portal (apply, training progress) | [Partner-portal](https://github.com/your-org/Partner-portal) MVP |
+| Partner portal (apply, training progress) | External MVP — **not in this repo** |
 | First 5 certified integrators | Phase 32 GA |
 | OEM symbol + driver marketplace GA | BL-183, BL-185 |
 

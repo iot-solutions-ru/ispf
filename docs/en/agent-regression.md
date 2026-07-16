@@ -1,5 +1,7 @@
 # Agent regression suite (BL-178)
 
+> **Status:** Lab — Scenario CI gates. Hub: [doc-status.md](doc-status.md).
+
 Foundation for CI agent scenario validation: curated prompts, bundle references, and schema checks before live agent runs against a platform instance.
 
 ## Layout

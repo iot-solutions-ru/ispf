@@ -2,6 +2,8 @@
 
 # Plugins and Application Solutions
 
+> **Status:** Stable — Core vs packs vs bundles. Hub: [doc-status.md](doc-status.md).
+
 ## Principle
 
 | Layer | Repository / branch | License |

@@ -2,6 +2,8 @@
 
 # MES Platform walkthrough (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)
 
+> **Статус:** Beta — Marketplace MES; smoke ≠ завод. Теги: [doc-status](../en/doc-status.md).
+
 Сквозной путь сертификации: **установить MES-продукт из marketplace → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** без custom Java.
 
 **Поставка:** MES — **продукт marketplace IoT Solutions**, не часть базовой платформы ISPF. Чистая установка **не** создаёт `root.platform.mes` и MES INSTANCE-модели, пока не установлен бандл `mes-platform` / `mes-platform-production`. Опционально (legacy): `ispf.bootstrap.mes-catalog-enabled=true`.

@@ -2,6 +2,8 @@
 
 # Full documentation audit — 2026-07-16
 
+> **Status:** Internal — Content honesty pass. Hub: [doc-status.md](doc-status.md).
+
 **Scope:** ~149 EN + ~148 RU markdown pages + ADR index (not every line of every lab report). Method: automated link/language sweeps + layered human review (public / builder / ops-ecosystem) against code and [competitive-scorecard](competitive-scorecard.md).
 
 **Pass status of tooling (this date):**
@@ -142,7 +144,15 @@ Docs are **deep and professionally maintained** as an internal platform wiki. Fo
 |---|---|
 | Date | 2026-07-16 |
 | Scorecard reference | ~7.4/10 code-verified (audit baseline **0.9.102**; prod often **0.9.105+**) |
-| Next action | Optional Wave D+: Status one-liners on remaining hub pages; capture Builder EN pack; regenerate AI context pack if process requires |
+| Next action | Optional: capture Builder EN pack / hero GIF; regenerate AI context pack; deeper RU mid-body polish on huge files (`api.md`, `drivers.md`, `cluster.md`) |
+
+## Wave D+ changelog (applied)
+
+- Status one-liners on **all** EN hub pages + mirrored RU hub pages (`docs/ru/doc-status.md` pointer).
+- Quick links / operator + web-console: dual ports JAR `:8080` + Vite `:5173`.
+- Leftover honesty P0/P1: Bearer-default auth, JSON deploy (not ZIP), remove `your-org` URLs, 84-grid widget sizes, pack license ≠ platform AGPL, JDK 25 registry, marketplace GA soften, ADR-0006/0016 AGPL tense.
+- RU honesty sync: product/platform core, SCADA/OT/historian (19), AI/ops/ecosystem (marketplace/scorecard/load-testing/release-dogfood/…).
+- Residual: not full paragraph EN↔RU parity on enormous mid-bodies; no hero GIF; scorecard scores not re-audited.
 
 ## Wave D changelog (applied)
 

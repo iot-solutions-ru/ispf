@@ -2,6 +2,8 @@
 
 # Нагрузочное тестирование автоматизации ISPF
 
+> **Статус:** Lab — Baseline throughput. Теги: [doc-status](../en/doc-status.md).
+
 Нагрузочные сценарии для измерения пропускной способности **API событий HTTP** и **внутреннего конвейера автоматизации** (драйвер → правило оповещения → журнал событий).
 
 Базовый показатель зафиксирован на прод-стенде, версия **0.9.18**, июнь 2026 г. **Профиль развёртывания** для нагрузочного теста — пропускная способность ([demostands](demostands.md)); не в восторге от простоя/крайнего окружения.
@@ -351,7 +353,17 @@ python deploy/events-load-test.py `
 
 JUnit-аналог: `EventFireLoadTest` (150 concurrent HTTP).
 
-**CI-шлюз (BL-113):** рабочий процесс `.github/workflows/load-test.yml` — ночной + `workflow_dispatch`, прогон `EventFireLoadTest` + `ListDevicesLoadTest`, порог `ISPF_LOAD_P99_CEILING_MS` (по умолчанию 3000 мс), артефакты логов Gradle. Шаги Gradle с `set -o pipefail`, чтобы тест на падение не маскировалось `tee`.
+**CI-шлюз (BL-113):** workflow `.github/workflows/load-test.yml` — nightly + `workflow_dispatch`, прогон `EventFireLoadTest`, `ListDevicesLoadTest` и `AnalyticsMultiTagQueryLoadTest` (BL-210), порог `ISPF_LOAD_P99_CEILING_MS` / `ISPF_ANALYTICS_LOAD_P95_CEILING_MS` (по умолчанию 3000 мс), артефакты логов Gradle. Шаги Gradle с `set -o pipefail`, чтобы падение теста не маскировалось `tee`.
+
+## Analytics platform scale gates (BL-210)
+
+| Gate | Script / test | Default ceiling |
+|------|---------------|-----------------|
+| Multi-tag query (10×7d×1h) | `AnalyticsMultiTagQueryLoadTest` | p95 **3000 ms** |
+| Lab multi-tag + catalog + CH | `deploy/local/tools/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows |
+| 50k-tag catalog seed | `deploy/local/tools/seed-analytics-scale-catalog.py` | `--tags 50000` |
+
+Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../../examples/analytics-platform/enterprise-l/README.md). SLO: [variable-history](variable-history.md) § Analytics SLO.
 
 ## Внутренний нагрузочный тест
 

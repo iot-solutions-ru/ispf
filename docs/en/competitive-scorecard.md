@@ -1,5 +1,7 @@
 # ISPF competitive scorecard (BL-189)
 
+> **Status:** Stable — Code-verified readiness. Hub: [doc-status.md](doc-status.md).
+
 Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
 
 **Version pin (do not conflate):**

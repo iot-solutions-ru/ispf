@@ -2,6 +2,8 @@
 
 # Analytics platform roadmap — BL-200…210 (AF-capable)
 
+> **Status:** Charter — BL-200…210 charter. Hub: [doc-status.md](doc-status.md).
+
 **Goal:** evolve from **AF-lite** (BL-160) to an **AF-capable** analytics plane — derived tags, materialized rollups, multi-tag queries — deployable on **one server** or **role-separated cluster**.
 
 | | |

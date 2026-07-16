@@ -4,6 +4,8 @@
 
 Accepted (2026-06-21)
 
+> **License note:** Platform core is **AGPL v3** (+ optional commercial dual-license). Historical Apache wording in this ADR is superseded — see [license.md](../license.md).
+
 ## Context
 
 [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) delivers an in-server tree-first agent (`TreeFirstAgentService`) with a bounded ReAct loop and Java tool handlers in `PlatformAgentToolRegistry`. External clients (Cursor IDE, CI pipelines, custom assistants) increasingly speak the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for tool discovery and invocation.
@@ -58,7 +60,7 @@ Estimated effort: **1 sprint** (stdio + HTTP SSE, auth, integration test with mo
 
 - Cursor and other MCP hosts can operate the platform without custom REST glue.
 - Tool behaviour stays identical to Web Console agent and audit (`ai_tool_audit` entries tagged `source=mcp`).
-- Additional dependency (MCP SDK) isolated behind `mcp` profile — Apache core default unchanged.
+- Additional dependency (MCP SDK) isolated behind `mcp` profile — AGPL core default unchanged.
 - Future: expose ContextPack slices as MCP `resources` — **Done** (Phase 17.3, `McpResourceAdapter`, URIs `contextpack://<slice>`).
 
 ## Alternatives considered

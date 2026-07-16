@@ -2,6 +2,8 @@
 
 # Automation: events, alerts, correlators
 
+> **Status:** Stable — Alerts, correlators. Hub: [doc-status.md](doc-status.md).
+
 **See also:** [workflows](workflows.md), [0039-unified-alarm-architecture](decisions/0039-unified-alarm-architecture.md), [0014-automation-pipeline-evolution](decisions/0014-automation-pipeline-evolution.md), [operator-guide](operator-guide.md).
 
 ## Events

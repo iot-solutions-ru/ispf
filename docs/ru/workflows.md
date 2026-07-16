@@ -2,6 +2,8 @@
 
 # Рабочий процесс и BPMN
 
+> **Статус:** Beta — Подмножество BPMN (не полный 2.0). Теги: [doc-status](../en/doc-status.md).
+
 ## Обзор
 
 Рабочий процесс — объект типа `WORKFLOW` с моделью `workflow-v1`. Движок: чистая Java в `ispf-plugin-workflow` (без Camunda/Flowable).

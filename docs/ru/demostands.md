@@ -2,11 +2,13 @@
 
 # Профили развёртывания ISPF
 
+> **Статус:** Lab — Prod, lab, edge. Теги: [doc-status](../en/doc-status.md).
+
 Руководство по выбору конфигурации в зависимости от цели: **промышленный продукт**, **высокая пропускная способность**, **демо/HMI**, **edge с ограниченным процессором**.
 
 Не привязано к конкретному хосту. Примеры скриптов и env — в [`deploy/`](../../deploy/).
 
-См. также: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
+См. также: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
 ## Как выбрать профиль
 
@@ -95,7 +97,7 @@ Operators → nginx (ip_hash / health) → replica-1..N
 | Высокий поток событий без CEL | `EVENT_JOURNAL_ONLY` | [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) |
 | Устройство в дереве, но не требуется | `STOPPED` | Не держать БЕГ «на всякий случай» |
 
-Драйверы: зрелость **PRODUCTION** ([drivers](drivers.md), [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md)).
+Драйверы: зрелость зависит от `driverId` — см. honesty-заметку в [drivers](drivers.md) (registry **PRODUCTION** ≠ ready-for-field для всех ID) и [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md).
 
 ### Безопасность и соответствие
 

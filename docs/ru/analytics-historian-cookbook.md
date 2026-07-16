@@ -2,13 +2,15 @@
 
 # Cookbook: historian-вычисления
 
+> **Статус:** Stable — Recipes, binding rules, rollups. Хаб: [doc-status.md](doc-status.md).
+
 Рецепты для **historian binding rules** (`kind: historian` в `@bindingRules`). Одно правило = один analytics-тег со своей выходной переменной, расписанием и выражением.
 
 См. [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md) и [analytics-tag-catalog](analytics-tag-catalog.md).
 
-**Дорожная карта (как в PI AF):** единый каталог формул, плагины и свои формулы — [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (BL-212–216). Каталог и «сохранить/применить формулу» доступны в редакторе выражений; менеджер формул — **Система → Формулы analytics**.
+**Каталог формул (стиль PI AF):** единый каталог, extension packs и site formulas — [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (BL-212–216; детали исполнения — charter [analytics-platform-roadmap](analytics-platform-roadmap.md)). Каталог и «сохранить/применить формулу» доступны в редакторе выражений; менеджер формул — **Система → Формулы analytics**.
 
-**Полный гайд (Tier A/B/C, API, покупка пакетов в маркетплейсе):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
+**Полный гайд (Tier A/B/C, API, marketplace packs):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
 
 ---
 
@@ -18,7 +20,7 @@
 |---------|----------|
 | Хранение | `@bindingRules` на **целевом устройстве** (тот же JSON-массив, что и реактивные правила) |
 | Kind | `"historian"` — `BindingRuleEngine` пропускает; analytics engine компилирует и считает |
-| Путь тега | `objectPath/tag/ruleId` (напр. `root.devices.sensor-a#avg-temp-5m`) |
+| Путь тега | `objectPath/tag/ruleId` (напр. `root.devices.sensor-a/tag/avg-temp-5m`) |
 | Live-значение | `target.variableName` на устройстве (любое имя, не только `derivedValue`) |
 | Метаданные | `@historianRuleMeta` — quality и last eval **по id правила** (см. ниже) |
 | Reactive vs historian | Reactive — мгновенный CEL; historian — окна historian и DAG |
@@ -416,3 +418,5 @@ python deploy/local/tools/setup-historian-chain-dashboard.py ${ISPF_BASE_URL:-ht
 
 - [bindings](bindings.md)
 - [0040-unified-computations-ui](decisions/0040-unified-computations-ui.md), [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)
+
+> **Note:** [analytics-platform-roadmap](analytics-platform-roadmap.md) — charter/roadmap; не трактовать как полный shipped-статус без сверки с EN hub и backlog.

@@ -1,28 +1,30 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/api.md](../en/api.md).
 
-﻿# REST API (v1)
+# REST API (v1)
 
-Базовый URL: `http://localhost:8080`
+> **Статус:** Stable — справочник endpoints. Хаб: [doc-status.md](doc-status.md).
 
-Авторизация: JWT (Keycloak) или заголовок `X-ISPF-Role: admin|developer|operator` (профиль `local`).  
+Base URL: `http://localhost:8080`
+
+Аутентификация: **Bearer**-токен после `POST /api/v1/auth/login` (профиль `local` создаёт `admin`/`admin`; JWT/Keycloak — в других профилях). Передавайте `Authorization: Bearer <token>` на защищённых endpoints. Опциональный заголовок `X-ISPF-Role` по умолчанию **выключен** (`ispf.security.local-role-header-enabled=false`).  
 Матрица ролей: [security](security.md).
 
 ## Платформа
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | GET | `/api/v1/info` | public | Имя, версия, `javaVersion`, `springBootVersion`, `capabilities[]` |
-| ПОЛУЧИТЬ | `/api/v1/platform/metrics` | админ | Сводные метрики платформы (время выполнения, БД, дерево, драйверы, подключения, безопасность, историк, автоматизация) |
+| GET | `/api/v1/platform/metrics` | admin | Сводные метрики платформы (runtime, DB, tree, drivers, connections, security, historian, automation) |
 | GET | `/api/v1/platform/haystack/export` | operator+ | Экспорт Haystack grid для поддерева (`rootPath`, `includePoints`) |
-| GET | `/api/v1/platform/haystack/search` | operator+ | Поиск по тегам AND (`tags`, `rootPath`, `entityKind`, `limit`) |
-| ПОЛУЧИТЬ | `/api/v1/platform/haystack/query` | оператор+ | Запрос фильтра Haystack (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — см. [0023-haystack-query-runtime](decisions/0023-haystack-query-runtime.md) |
+| GET | `/api/v1/platform/haystack/search` | operator+ | AND-поиск по тегам (`tags`, `rootPath`, `entityKind`, `limit`) |
+| GET | `/api/v1/platform/haystack/query` | operator+ | Haystack filter query (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — см. [0023-haystack-query-runtime](decisions/0023-haystack-query-runtime.md) |
 | GET | `/api/v1/platform/update/status` | admin | Проверка обновлений с GitHub Releases |
 | POST | `/api/v1/platform/update/check` | admin | Принудительная проверка релиза |
 | POST | `/api/v1/platform/update/apply` | admin | Скачать релиз и перезапустить сервер (VPS, `apply-enabled=true`) |
 | GET | `/api/v1/auth/me` | public | Principal и роли |
 | POST | `/api/v1/expressions/validate` | admin | Валидация CEL |
 
-**Запрос фильтра Haystack (BL-102):**
+**Haystack filter query (BL-102):**
 
 ```http
 GET /api/v1/platform/haystack/query?filter=point+and+temp&rootPath=root.platform.devices.lab-userA-01&entityKind=point
@@ -46,12 +48,12 @@ GET /api/v1/platform/haystack/query?filter=point+and+temp&rootPath=root.platform
 }
 ```
 
-Filter v1: marker conjunction with `and` (e.g. `equip and ahu`). Legacy tag search: `GET /platform/haystack/search?tags=equip&tags=temp`.
+Filter v1: конъюнкция маркеров через `and` (напр. `equip and ahu`). Legacy tag search: `GET /platform/haystack/search?tags=equip&tags=temp`.
 
 ## Объекты
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | GET | `/api/v1/objects` | operator+ | Список (`?parent=` — дочерние) |
 | GET | `/api/v1/objects/by-path` | operator+ | Объект по `path` |
 | GET | `/api/v1/objects/by-path/editor` | operator+ | Объект + events + functions |
@@ -61,9 +63,9 @@ Filter v1: marker conjunction with `and` (e.g. `equip and ahu`). Legacy tag sear
 | PUT | `/api/v1/objects/reorder` | admin | Порядок дочерних (`parentPath`, `orderedPaths`) |
 | GET | `/api/v1/objects/by-path/variables` | operator+ | Список переменных |
 | GET | `/api/v1/objects/by-path/variables/detail` | operator+ | Одна переменная (`name`) |
-| ПОЛУЧИТЬ | `/api/v1/objects/by-path/variables/history` | оператор+ | История переменная (`path`, `name`, `field`, `from`, `to`, `limit`; только при `historyEnabled`) |
-| ПОЛУЧИТЬ | `/api/v1/objects/by-path/variables/history/aggregate` | оператор+ | Агрегаты (`bucket`, `from`, `to`, `limit` — до 2000 интервалов; `avg`/`min`/`max`/`count`) |
-| ПОЛУЧИТЬ | `/api/v1/objects/by-path/variables/history/export` | оператор+ | Скачать историю (`format=csv\|json`, те же фильтры, `limit` до 10000) |
+| GET | `/api/v1/objects/by-path/variables/history` | operator+ | История переменной (`path`, `name`, `field`, `from`, `to`, `limit`; только при `historyEnabled`) |
+| GET | `/api/v1/objects/by-path/variables/history/aggregate` | operator+ | Агрегаты (`bucket`, `from`, `to`, `limit` — до 2000 buckets; `avg`/`min`/`max`/`count`; `dataSource`: `rollup`/`raw`/`none`) |
+| GET | `/api/v1/objects/by-path/variables/history/export` | operator+ | Скачать историю (`format=csv\|json`, те же фильтры, `limit` до 10000) |
 | PATCH | `/api/v1/objects/by-path/variables/history` | admin | `historyEnabled`, `historyRetentionDays` |
 | PUT | `/api/v1/objects/by-path/variables` | admin | Записать значение |
 
@@ -85,47 +87,47 @@ Content-Type: application/json
 }
 ```
 
-| Поле | Описание |
-|------|----------|
-| `templateId` | Явное применение модели (INSTANCE name или RELATIVE mixin) |
+| Field | Description |
+|-------|-------------|
+| `templateId` | Явное применение blueprint (INSTANCE name или RELATIVE mixin) |
 | `driverId` | Для `DEVICE`: provisioning драйвера после create |
-| `autoApplyRelativeBlueprints` | По умолчанию `true`. ОТНОСИТЕЛЬНЫЕ миксины с **пустым** CEL не применяются; нужен непустой `suitabilityExpression` |
+| `autoApplyRelativeBlueprints` | По умолчанию `true`. RELATIVE-миксины с **пустым** CEL не применяются; нужен непустой `suitabilityExpression` |
 
-`mqtt-sensor-v1` — fixture-модель (`ispf.bootstrap.fixtures-enabled`). См. [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+`mqtt-sensor-v1` — fixture blueprint (`ispf.bootstrap.fixtures-enabled`). См. [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
-## функции
+## Функции
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
-| POST | `/api/v1/objects/by-path/functions/invoke` | operator+ | Вызов (`path`, `name`, body) |
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| POST | `/api/v1/objects/by-path/functions/invoke` | operator+ | Invoke (`path`, `name`, body) |
 
 ## Дашборды
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | GET | `/api/v1/dashboards/by-path` | operator+ | title, layoutJson, refreshIntervalMs |
 | PUT | `/api/v1/dashboards/by-path/layout` | admin | Сохранить layout JSON |
 | PUT | `/api/v1/dashboards/by-path/title` | admin | Заголовок экрана |
 
-## Рабочие процессы
+## Workflows
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | GET | `/api/v1/workflows/by-path` | operator+ | BPMN, status, instance state |
 | PUT | `/api/v1/workflows/by-path/bpmn` | admin | Сохранить BPMN XML |
 | PUT | `/api/v1/workflows/by-path/status` | admin | `DRAFT` / `ACTIVE` / `STOPPED` |
-| POST | `/api/v1/workflows/by-path/run` | admin | Запуск экземпляра |
-| POST | `/api/v1/workflows/instances/{instanceId}/cancel` | operator+ | Отмена экземпляра |
+| POST | `/api/v1/workflows/by-path/run` | admin | Запуск instance |
+| POST | `/api/v1/workflows/instances/{instanceId}/cancel` | operator+ | Отмена instance |
 
-## Приложения (REQ-PF)
+## Applications (REQ-PF)
 
-Платформенный уровень для развертывания прикладных решений без Java в `ispf-server`.  
+Платформенный слой для deploy прикладных решений без Java в `ispf-server`.  
 Полное описание: [applications](applications.md).
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | POST | `/api/v1/applications` | admin | Регистрация приложения |
-| ПОСТ | `/api/v1/applications/{appId}/deploy` | админ | Bundle Deploy (миграции + функции + расписания + отчеты) |
+| POST | `/api/v1/applications/{appId}/deploy` | admin | Bundle deploy (migrations + functions + schedules + reports) |
 | GET | `/api/v1/applications/{appId}/reports` | admin | Список SQL-отчётов |
 | POST | `/api/v1/applications/{appId}/reports/deploy` | admin | Deploy одного отчёта |
 | POST | `/api/v1/applications/{appId}/reports/{reportId}/run` | operator+ | Выполнить отчёт |
@@ -134,27 +136,27 @@ Content-Type: application/json
 | GET | `/api/v1/applications/{appId}/data/status` | admin | Статус миграций |
 | POST | `/api/v1/applications/{appId}/functions/deploy` | admin | Deploy script-функции |
 | POST | `/api/v1/bff/invoke` | operator+ | Универсальный BFF-шлюз к функциям |
-| GET | `/api/v1/schedules` | admin | Список расписаний |
-| POST | `/api/v1/schedules` | admin | Создать/обновить расписание |
+| GET | `/api/v1/schedules` | admin | Список schedules |
+| POST | `/api/v1/schedules` | admin | Создать/обновить schedule |
 
-Подробнее: [applications](applications.md), [reports](reports.md), [plugins](plugins.md).
+См. также: [applications](applications.md), [reports](reports.md), [plugins](plugins.md).
 
-## Рабочая очередь
+## Work Queue
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | GET | `/api/v1/work-queue` | operator+ | Открытые user tasks (`limit`) |
 | POST | `/api/v1/work-queue/claim` | operator+ | `taskId`, `operatorId` |
 | POST | `/api/v1/work-queue/complete` | operator+ | Завершить задачу |
 
 ## События
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | GET | `/api/v1/events` | operator+ | Журнал (`objectPath`, `limit` ≤ 200) |
 | POST | `/api/v1/events/fire` | operator+ | Публикация события |
 
-### Пожарное событие
+### Публикация события
 
 ```http
 POST /api/v1/events/fire
@@ -170,40 +172,40 @@ Content-Type: application/json
 }
 ```
 
-## Правила оповещений
+## Alert Rules
 
-| Метод | Путь | Роли |
-|--------|------|------|
+| Method | Path | Roles |
+|--------|------|-------|
 | GET | `/api/v1/alert-rules` | admin |
 | GET | `/api/v1/alert-rules/by-path?path=` | admin |
 | POST | `/api/v1/alert-rules` | admin |
 | PUT | `/api/v1/alert-rules/by-path?path=` | admin |
 | DELETE | `/api/v1/alert-rules/by-path?path=` | admin |
 
-## Корреляторы событий
+## Event Correlators
 
-| Метод | Путь | Роли |
-|--------|------|------|
+| Method | Path | Roles |
+|--------|------|-------|
 | GET | `/api/v1/correlators` | admin |
 | GET | `/api/v1/correlators/by-path?path=` | admin |
 | POST | `/api/v1/correlators` | admin |
 | PUT | `/api/v1/correlators/by-path?path=` | admin |
 | DELETE | `/api/v1/correlators/by-path?path=` | admin |
 
-## Драйверы
+## Drivers
 
-| Метод | Путь | Роли | Описание |
-|--------|------|------|----------|
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
 | GET | `/api/v1/drivers` | operator+ | Каталог SPI-драйверов |
 | GET | `/api/v1/drivers/runtime/status` | operator+ | Статус poll loop |
-| POST | `/api/v1/drivers/runtime/start` | admin | Запуск (`devicePath`) |
-| POST | `/api/v1/drivers/runtime/stop` | admin | Остановка |
-| PUT | `/api/v1/drivers/runtime/configure` | admin | Конфиг + point mappings |
+| POST | `/api/v1/drivers/runtime/start` | admin | Старт (`devicePath`) |
+| POST | `/api/v1/drivers/runtime/stop` | admin | Стоп |
+| PUT | `/api/v1/drivers/runtime/configure` | admin | Config + point mappings |
 
-## Плагин моделей
+## Blueprints Plugin
 
-| Метод | Путь | Роли |
-|--------|------|------|
+| Method | Path | Roles |
+|--------|------|-------|
 | GET | `/api/v1/blueprints` | admin |
 | GET | `/api/v1/blueprints/{id}` | admin |
 | GET | `/api/v1/blueprints/by-name/{name}` | admin |
@@ -215,19 +217,78 @@ Content-Type: application/json
 | POST | `/api/v1/blueprints/from-object` | admin |
 | GET | `/api/v1/blueprints/attachments` | admin |
 
-## Привод
+## Platform analytics (BL-160, BL-206)
 
-| Путь | Доступ |
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| GET | `/api/v1/platform/analytics/templates` | operator+ | Список analytics templates |
+| GET | `/api/v1/platform/analytics/tags?path=` | operator+ | Список deployed analytics tags (catalog, lineage) |
+| GET | `/api/v1/platform/analytics/tags/by-path?path=` | operator+ | Запись каталога analytics tag |
+| POST | `/api/v1/platform/analytics/templates/apply` | admin | Применить template к устройству |
+| POST | `/api/v1/platform/analytics/query` | operator+ | Multi-tag aligned aggregate query |
+| POST | `/api/v1/platform/analytics/query/export?format=csv\|parquet` | operator+ | Экспорт результата query |
+| POST | `/api/v1/platform/analytics/tags/backfill` | admin | Пересчёт derived tag window |
+| POST | `/api/v1/platform/analytics/rollups/rebuild` | admin | Rebuild materialized rollups |
+| GET | `/api/v1/platform/analytics/frames/active` | operator+ | Список active event frames |
+| POST | `/api/v1/platform/analytics/frames/open-shift` | admin | Открыть shift frame из MES `mes_oee_shift` |
+| POST | `/api/v1/platform/analytics/frames/open` | admin | Открыть custom event frame |
+| POST | `/api/v1/platform/analytics/frames/close` | admin | Закрыть event frame |
+| GET | `/api/v1/platform/analytics/frames/downtime-report` | operator+ | Минуты downtime по frame |
+| GET | `/api/v1/platform/analytics/historian-sla` | operator+ | Snapshot SLA historian query |
+| GET | `/api/v1/platform/analytics/analytics-slo` | operator+ | SLO targets analytics platform (BL-210) |
+
+### Multi-tag query
+
+```http
+POST /api/v1/platform/analytics/query
+Content-Type: application/json
+
+{
+  "tags": [
+    { "path": "root.platform.devices.demo-sensor-01", "variable": "temperature", "field": "value", "label": "temp" },
+    { "path": "root.platform.devices.other", "variable": "pressure", "field": "value" }
+  ],
+  "from": "2026-07-01T00:00:00Z",
+  "to": "2026-07-08T00:00:00Z",
+  "bucket": "1h",
+  "agg": "avg",
+  "maxBuckets": 500
+}
+```
+
+Ответ включает выровненные `timestamps[]`, per-series `values[]` (null если bucket отсутствует), `dataSource` на серию (`rollup` или `raw`) и `latencyMs`. Single-tag aggregate остаётся на `GET .../history/aggregate` с полем `dataSource`.
+
+Лимиты (настраиваемые): max 20 tags на query, timeout 3s, soft rate limit 120/min.
+
+### Analytics CEL expression (BL-211)
+
+```http
+POST /api/v1/platform/analytics/expression/validate
+POST /api/v1/platform/analytics/expression/evaluate
+Content-Type: application/json
+
+{
+  "expression": "avg(root.platform.devices.demo/temperature, 5m) * 2",
+  "objectPath": "root.platform.devices.my-derived-tag",
+  "asOf": "2026-07-09T10:00:00Z"
+}
+```
+
+Поддерживаемые функции `hist.*`: `avg`, `min`, `max`, `last`, `sum`, `live`. Deployed tags: задайте `analyticsHelper` = `cel` и `analyticsExpression` на устройстве; engine оценивает по расписанию.
+
+## Actuator
+
+| Path | Access |
 |------|--------|
 | `/actuator/health` | public |
 | `/actuator/prometheus` | public |
 | `/actuator/metrics` | authorized |
 
-## Вебсокет
+## WebSocket
 
 **Endpoint:** `WS /ws/objects`
 
-Без аутентификации (dev). Сообщения при ремонте объектов:
+Без аутентификации (dev). Сообщения при изменении объектов:
 
 ```json
 {
@@ -242,4 +303,4 @@ Content-Type: application/json
 
 ## Коды ошибок
 
-Стандартные HTTP: `400` (проверка), `404` (ObjectNotFoundException), `403` (RBAC), `500`.
+Стандартные HTTP: `400` (validation), `404` (ObjectNotFoundException), `403` (RBAC), `500`.

@@ -2,6 +2,8 @@
 
 # Комплект разработки драйверов (DDK)
 
+> **Статус:** Stable — Custom driver SDK. Хаб: [doc-status.md](doc-status.md).
+
 **BL-144** — каркас для пользовательских пакетов драйверов вне ядра monorepo или как новый `ispf-driver-*` модуль.
 
 ## Когда использовать
@@ -15,9 +17,9 @@
 | Путь | Описание |
 | ---- | -------- |
 | [`packages/ispf-driver-ddk`](../../packages/ispf-driver-ddk/) | Gradle-модуль DDK (исходники шаблонов + дымовой тест) |
-| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Копируемый заглушка: драйвер, тест, `driver-pack.json`, `build.gradle.kts` |
-| [licensed-driver-packs](licensed-driver-packs.md) | Расположение во время выполнения и соединение |
-| [driver-promotion](driver-promotion.md) | Чеклист ПРОДАКШН |
+| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Копируемый stub: драйвер, тест, `driver-pack.json`, `build.gradle.kts` |
+| [licensed-driver-packs](licensed-driver-packs.md) | Runtime layout и licensing |
+| [driver-promotion](driver-promotion.md) | Чеклист PRODUCTION |
 | [driver-interop-lab](driver-interop-lab.md) | CI-взаимодействие после продвижения |
 
 ## Рабочий процесс
@@ -49,11 +51,11 @@ cp -r packages/ispf-driver-ddk/template packages/ispf-driver-acme-widget
 
 **Правило входа:** горячий путь не пишется в БД; только `updateVariable` ([Входной контракт ADR](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)).
 
-### 3. Петлевая проверка
+### 3. Loopback-тест
 
 Минимум один JUnit-тест со stub-сервером на `127.0.0.1` (см. `TemplateDeviceDriverTest`). Без hardware в CI.
 
-### 4. Пакет «Собрать»
+### 4. Сборка pack
 
 ```bash
 ./gradlew :packages:ispf-driver-acme-widget:assembleDriverPack
@@ -62,7 +64,7 @@ ls build/driver-packs/ispf-driver-acme-widget/
 
 ### 5. Развертывание пакета
 
-Скопируйте каталог в `${ISPF_DRIVER_PACKS_DIR}/` на расстоянии. Перезапуск ISPF → `LicensedDriverPackLoader` регистрирует драйвер.
+Скопируйте каталог в `${ISPF_DRIVER_PACKS_DIR}/` на сервере. Перезапуск ISPF → `LicensedDriverPackLoader` регистрирует драйвер.
 
 ### 6. Продвижение
 

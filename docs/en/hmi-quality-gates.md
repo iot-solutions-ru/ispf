@@ -1,5 +1,7 @@
 # HMI quality gates (S21 / BL-92–95, BL-152)
 
+> **Status:** Lab — Lighthouse, axe, FPS. Hub: [doc-status.md](doc-status.md).
+
 Operator HMI quality: Lighthouse, bundle budget, axe a11y, SCADA mimic FPS.
 
 See [acceleration-program](acceleration-program.md) · [roadmap § S21](roadmap.md).

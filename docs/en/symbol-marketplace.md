@@ -111,7 +111,7 @@ Symbol vendors join the [Partner program](partner-program.md) at **OEM** level:
 | ID | Deliverable |
 |----|-------------|
 | BL-146 | P&ID symbol library v2 (platform reference pack) |
-| BL-183 | Marketplace GA (shared install/activate flow) |
+| BL-183 | Marketplace readiness (shared install/activate flow) |
 | BL-185 | Symbol marketplace docs + listing contract (this document) |
 
 ---

@@ -2,6 +2,8 @@
 
 # Load testing ISPF automation
 
+> **Status:** Lab — Throughput baselines. Hub: [doc-status.md](doc-status.md).
+
 Load scenarios to measure throughput of **HTTP events API** and the **internal automation pipeline** (driver → alert rule → event journal).
 
 Baseline recorded on prod stand, version **0.9.18**, June 2026. **Deploy profile** for load-test — throughput ([demostands](demostands.md)); do not use idle/edge env.

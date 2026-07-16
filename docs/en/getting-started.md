@@ -80,7 +80,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 3. Double-click `dashboards.demo-sensor` — **Dashboard Builder**.  
 4. Expand `alert-rules` → `temperature-threshold-exceeded` — CEL alert.  
 5. Double-click `workflows.demo-alarm-handler` — **BPMN** demo.  
-6. Open operator mode: `http://localhost:5173?mode=operator` (or log in as `operator`).
+6. Open operator mode: `http://localhost:8080?mode=operator` (all-in-one JAR) or `http://localhost:5173?mode=operator` (Vite), or log in as `operator`.
 
 Language: use the console language selector (**English** recommended for screenshots / OSS).
 

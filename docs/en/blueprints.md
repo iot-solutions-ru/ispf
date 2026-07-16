@@ -2,6 +2,8 @@
 
 # Blueprints plugin
 
+> **Status:** Stable — Models / templates. Hub: [doc-status.md](doc-status.md).
+
 Module `ispf-plugin-blueprint` — **blueprint** system (object structure templates). One engine, three kinds in the tree and API.
 
 ## Three model kinds (`BlueprintType`)

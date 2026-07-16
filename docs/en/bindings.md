@@ -2,6 +2,8 @@
 
 # Binding rules (mandatory rules)
 
+> **Status:** Stable — CEL and platform bindings. Hub: [doc-status.md](doc-status.md).
+
 A **binding rule** is a declarative rule for computing variable values on an object: **when** (activators) → **if** (condition, CEL) → **how** (expression) → **where** (target).
 
 Rules are stored in system variable `@bindingRules` (JSON array, reserved). Runtime — **`BindingRuleEngine`** (unified binding engine since v0.8.0).

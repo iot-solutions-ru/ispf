@@ -2,6 +2,8 @@
 
 # ISPF cluster (multi-replica)
 
+> **Status:** Beta — Multi-replica HA (capability vs demostand). Hub: [doc-status.md](doc-status.md).
+
 Guide to horizontal API scaling: multiple JVM replicas, one object tree in PostgreSQL, live value synchronization via NATS ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
 
 See also: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md), [deployment](deployment.md), [messaging](messaging.md), [bindings](bindings.md).

@@ -2,6 +2,8 @@
 
 # Лицензия и граница поставки
 
+> **Статус:** Stable — **AGPL v3** + dual-license. Теги: [doc-status](../en/doc-status.md).
+
 ## Платформа (ядро ISPF)
 
 **IoT Solutions Platform Framework (ISPF)** — оболочка платформы и ядро ​​монорепозитория:

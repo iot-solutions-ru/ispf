@@ -2,6 +2,8 @@
 
 # Analytics formulas and extension packs
 
+> **Status:** Stable — Expression packs, deploy. Hub: [doc-status.md](doc-status.md).
+
 How to create, reuse, and distribute historian computations beyond a single binding rule. Covers **Tier A** (built-ins), **Tier B** (user formulas), and **Tier C** (Java extension packs + marketplace).
 
 **See also:** [analytics-historian-cookbook](analytics-historian-cookbook.md) (recipes), [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (architecture), [analytics-tag-catalog](analytics-tag-catalog.md) (deployed tags API).

@@ -1,5 +1,7 @@
 # ADR-0038: Analytics platform architecture (AF-capable)
 
+> **Status:** Stable — Architecture ADR. Hub: [doc-status.md](../doc-status.md).
+
 ## Status
 
 **Proposed** (2026-07-09)

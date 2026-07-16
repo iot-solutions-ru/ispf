@@ -2,6 +2,8 @@
 
 # Solution Developer Guide
 
+> **Status:** Stable — Deploy, operator UI, bundles. Hub: [doc-status.md](doc-status.md).
+
 How to build an application solution on ISPF **without changing core Java**: application registration, SQL data, JSON functions, bundle deploy, operator UI, and reports.
 
 Product overview: [product](product.md). Full API: [applications](applications.md). **Stable platform ↔ solution boundary:** [solution-developer-public-api](solution-developer-public-api.md).

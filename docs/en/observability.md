@@ -2,6 +2,8 @@
 
 # Observability (ISPF)
 
+> **Status:** Stable — Metrics, diagnostics. Hub: [doc-status.md](doc-status.md).
+
 ISPF is a **universal platform**: primary observability is **first-party** — System → Metrics and the object-tree dashboard `root.platform.dashboards.platform-metrics` (Platform Self-Diagnostics), fed by `platform-metrics-probe`. Prometheus / Grafana / OTLP remain **optional export** for sites that already run an external stack.
 
 ## First-party self-diagnostics (preferred)

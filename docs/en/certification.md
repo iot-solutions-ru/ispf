@@ -1,5 +1,7 @@
 # Certification paths (BL-190)
 
+> **Status:** Draft — Training paths / exams. Hub: [doc-status.md](doc-status.md).
+
 Stub curriculum for ISPF certification. Full exams and proctoring ship with Phase 32 GA; labs below are runnable today on lab/VPS hosts.
 
 Aligns with [partner-program](partner-program.md) commercial tiers.

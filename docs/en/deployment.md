@@ -2,6 +2,8 @@
 
 # Deployment and configuration
 
+> **Status:** Stable — Docker, env vars. Hub: [doc-status.md](doc-status.md).
+
 ## Docker Compose
 
 ```bash
@@ -44,7 +46,7 @@ Artifact: `:packages:ispf-server:bootRun` or JAR from `build/libs/`.
 | Profile | File | Scenario |
 |---------|------|----------|
 | default | application.yml | PostgreSQL + JWT |
-| local | application-local.yml | H2 file, X-ISPF-Role |
+| local | application-local.yml | H2 file, Bearer after `POST /api/v1/auth/login` (`X-ISPF-Role` off by default) |
 | dev | application-dev.yml | Full stack + MQTT/NATS |
 | test | application-test.yml | H2 memory, tests |
 

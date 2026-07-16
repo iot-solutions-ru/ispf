@@ -2,6 +2,8 @@
 
 # ISPF application development principles
 
+> **Status:** Stable — P1–P10 target approach. Hub: [doc-status.md](doc-status.md).
+
 Canonical rules for **solution developers** and **AI agents** (tree-first agent, AI Studio, MCP). Hub links: [architecture.md](architecture.md), [ADR-0001](decisions/0001-app-platform-boundary.md), [solution-developer-guide.md](solution-developer-guide.md), [agent-knowledge.md](agent-knowledge.md), [platform-logic.md](platform-logic.md).
 
 API and widget details live in linked docs below.

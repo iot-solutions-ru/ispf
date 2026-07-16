@@ -2,6 +2,8 @@
 
 # Platform applications (REQ-PF)
 
+> **Status:** Stable — Bundles, BFF, scheduler. Hub: [doc-status.md](doc-status.md).
+
 Platform layer for deploying application solutions **without industry Java code in `ispf-server`**. Aligns with [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) and REQ-PF requirements.
 
 **Roadmap and REQ-PF status:** [roadmap](roadmap.md) (Part A).

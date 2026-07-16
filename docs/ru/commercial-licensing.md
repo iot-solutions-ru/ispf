@@ -2,6 +2,8 @@
 
 # Лицензирование коммерческого пакета
 
+> **Статус:** Stable — Enterprise. Теги: [doc-status](../en/doc-status.md).
+
 Коммерческий пакет RSA-лицензирование при развертывании. Архитектурное решение: [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
 
 ## Принцип

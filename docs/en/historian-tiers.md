@@ -1,5 +1,7 @@
 # Historian tiers (BL-159, BL-202)
 
+> **Status:** Beta — JDBC, ClickHouse, dual-write. Hub: [doc-status.md](doc-status.md).
+
 Turnkey **hot → warm → cold** profile. Config: `ispf.historian.tiers` in `application.yml`; tier routing when `deploy-profile=three-tier` (BL-202).
 
 **See also:** [variable-history](variable-history.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap](analytics-platform-roadmap.md), [analytics-historian-cookbook](analytics-historian-cookbook.md), [deployment](deployment.md).

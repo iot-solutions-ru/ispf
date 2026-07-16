@@ -2,6 +2,8 @@
 
 # Driver promotion process
 
+> **Status:** Stable — PRODUCTION + ready-for-field. Hub: [doc-status.md](doc-status.md).
+
 How to move drivers from **stub** / **beta** to **production** (Phase 3.2).
 
 ## Labels

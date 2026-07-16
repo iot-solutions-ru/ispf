@@ -2,6 +2,8 @@
 
 ﻿# Безопасность и RBAC
 
+> **Статус:** Stable — RBAC, MFA. Теги: [doc-status](../en/doc-status.md).
+
 ## Модель
 
 ISPF использует **ролевой доступ** на уровне HTTP API:

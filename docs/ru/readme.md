@@ -16,7 +16,7 @@
 3. [Модель объектов](object-model.md) — дерево (устройства, дашборды, правила — узлы)  
 4. [Лицензия](license.md) — граница AGPL / Enterprise  
 
-После запуска: `devices.demo-sensor-01` → правило тревоги → `dashboards.demo-sensor` → [режим оператора](http://localhost:5173?mode=operator).
+После запуска: `devices.demo-sensor-01` → правило тревоги → `dashboards.demo-sensor` → режим оператора ([JAR](http://localhost:8080?mode=operator) / [Vite](http://localhost:5173?mode=operator)).
 
 ---
 
@@ -35,7 +35,7 @@
 
 **Статус vs коммерческие платформы:** [Competitive scorecard](competitive-scorecard.md). Бэклог: [Roadmap](roadmap.md).
 
-**Теги статуса документов:** [doc-status.md](../en/doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
+**Теги статуса документов:** [doc-status.md](doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
 
 ---
 
@@ -74,7 +74,7 @@
 | [Roadmap](roadmap.md) | Charter | Фазы и бэклог |
 | [Конкурентный scorecard](competitive-scorecard.md) | Stable | Готовность по коду |
 | [Индекс ADR](decisions/readme.md) | Stable | Архитектурные решения |
-| [Теги статуса (EN)](../en/doc-status.md) | Stable | Словарь статусов |
+| [Теги статуса](doc-status.md) | Stable | Словарь статусов |
 
 </details>
 
@@ -185,5 +185,7 @@
 | --- | --- |
 | API | http://localhost:8080/api/v1 |
 | Health | http://localhost:8080/actuator/health |
-| Admin console | http://localhost:5173 |
-| Operator HMI | http://localhost:5173?mode=operator |
+| Admin (all-in-one JAR) | http://localhost:8080 |
+| Operator HMI (all-in-one JAR) | http://localhost:8080?mode=operator |
+| Admin (Vite dev) | http://localhost:5173 |
+| Operator HMI (Vite dev) | http://localhost:5173?mode=operator |

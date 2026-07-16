@@ -219,5 +219,5 @@ Recommended release process:
 
 1. Generate CycloneDX/SPDX SBOM for Gradle and npm.
 2. Verify all `UNKNOWN` licenses manually.
-3. Remove/replace GPL components from Apache/core profile or explicitly mark delivery as copyleft/GPL-containing.
+3. Remove/replace GPL components from AGPL/core profile or explicitly mark delivery as copyleft/GPL-containing.
 4. Attach `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md`, npm/Java SBOM and upstream license files to binary distribution.

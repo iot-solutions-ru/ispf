@@ -2,6 +2,8 @@
 
 # Testing
 
+> **Status:** Stable — Unit, integration. Hub: [doc-status.md](doc-status.md).
+
 ## Running tests
 
 ```bash
@@ -73,8 +75,13 @@ After `bootRun --spring.profiles.active=local`:
 
 ```bash
 curl http://localhost:8080/api/v1/info
-curl -H "X-ISPF-Role: admin" http://localhost:8080/api/v1/objects
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}' | jq -r .token)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 ```
+
+(`X-ISPF-Role` is **off by default**; do not use it in smoke unless `ispf.security.local-role-header-enabled=true`.)
 
 Web Console: open `demo-sensor` dashboard, verify live values.
 

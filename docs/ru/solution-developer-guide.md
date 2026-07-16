@@ -2,39 +2,41 @@
 
 # Руководство разработчика решений
 
-Как создать прикладное решение на ISPF **без изменений ядра Java**: приложения для регистрации, SQL-данные, JSON-функции, пакетное развертывание, пользовательский интерфейс оператора и отчёты.
+> **Статус:** Stable — Deploy, operator UI, bundles. Теги: [doc-status](doc-status.md).
 
-Обзор продукта: [product](product.md). Полный API: [applications](applications.md). **Стабильная граница платформы ↔ решение:** [solution-developer-public-api](solution-developer-public-api.md).
+Как собрать прикладное решение на ISPF **без изменений ядра Java**: регистрация приложения, SQL-данные, JSON-функции, bundle deploy, operator UI и отчёты.
+
+Обзор продукта: [product](product.md). Полный API: [applications](applications.md). **Стабильная граница platform ↔ solution:** [solution-developer-public-api](solution-developer-public-api.md).
 
 ---
 
 ## Основной принцип
 
-**Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и рабочих процессах **дерева объектов**. Ваше решение не включает Java на сервер: оно выполняет механизмы декларативной-конфигурации ISPF (модели, BPMN, скрипт-функции, объекты, правила оповещений). Bundle Deploy — способ **доставить** эту конфигурацию в платформу. Полный привод P1–P10 (для людей и агентов): [application-principles](application-principles.md). См. также [architecture](architecture.md).
+**Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и workflows на **дереве объектов**. Ваше решение не добавляет Java на сервер: оно конфигурирует механизмы ISPF декларативно (blueprints, BPMN, script functions, objects, alert rules). Bundle deploy — способ **доставить** эту конфигурацию на платформу. Полные принципы P1–P10 (для людей и агентов): [application-principles](application-principles.md). См. также [architecture](architecture.md).
 
 ## Что такое «решение» на ISPF
 
-**Решение (приложение)** — зарегистрированное приложение с изолированной SQL-схемой, скрипт-функциями, бандлом (объекты, дашборды, BPMN, модели) и пользовательским интерфейсом оператора. Логика решения **исполняется** на узлах дерева объектов и через среду выполнения платформы; запись `applications` — реестр и схема приложения, не параллельный движок.
+**Решение (application)** — зарегистрированное приложение с изолированной SQL-схемой, script-функциями, bundle (objects, dashboards, BPMN, blueprints) и operator UI. Логика решения **исполняется** на узлах дерева объектов и через platform runtime; запись `applications` — реестр и app schema, не параллельный движок.
 
-| Идея | Где живёт | Пример |
-|-----------|-----------|--------|
-| **Бизнес-логика** | Конфигурация дерева объектов | модель, переменная + CEL, `WORKFLOW`, `ALERT`, скрипт-функция |
+| Понятие | Где живёт | Пример |
+|---------|-----------|--------|
+| **Бизнес-логика** | Механизмы дерева объектов | blueprint, variable + CEL, `WORKFLOW`, `ALERT`, script function |
 | **Platform object** | Дерево объектов | `root.platform.devices.pump-01` |
 | **Application** | Реестр + schema `app_myapp` | `my-terminal` |
 | **Operator app** | `operator_app_ui` + дерево `operator-apps` | `platform`, `oil-terminal` |
 
-**Сходимость по дереву (этап 5.5):** после `POST .../deploy` функция адресуется как `{appId}.functions.{name}` на пути к объекту; Привязки SQL могут существовать как `bindingExpression: sqlBinding('appId','var')` переменные; `objects[]` в комплекте обновляет периодические узлы (согласовывает), а не только создаёт новые.
+**Tree-first convergence (Phase 5.5):** после `POST .../deploy` функции адресуются как `{appId}.functions.{name}` на object path; SQL bindings могут жить как `bindingExpression: sqlBinding('appId','var')` на переменной; `objects[]` в bundle обновляет существующие узлы (reconcile), а не только создаёт новые.
 
-> **Не эквивалентно считать уровень приложения как среда выполнения.** Запись `applications` — реестр и изолированная SQL-схема; Вызов, рабочий процесс, оповещения и дашборды работают через **API дерева объектов**. Если бандл ещё возникает только `/applications/{appId}/functions/invoke` без древовидных путей — мигрируйте на Tree-First (см. [APPLICATIONS.md § Deprecation path](applications.md)).
+> **Не используйте application layer как runtime.** Запись `applications` — реестр и изолированная SQL-схема; invoke, workflow, alerts и dashboards идут через **object tree API**. Если bundle всё ещё вызывает только `/applications/{appId}/functions/invoke` без tree paths — мигрируйте на tree-first (см. [applications](applications.md)).
 
-### Миграция устаревшего пакета по дереву
+### Миграция legacy bundle на tree-first
 
-| Было (наследие) | Стало (Target approach) |
-|---------------|-------------------|
-| Только `POST .../functions/invoke` по appId | `POST /bff/invoke` или `objects/by-path/functions/invoke` по `{appId}.functions.*` |
+| Было (legacy) | Стало (target approach) |
+|---------------|-------------------------|
+| Только `POST .../functions/invoke` по appId | `POST /bff/invoke` или `objects/by-path/functions/invoke` на `{appId}.functions.*` |
 | `screens[]` в operator manifest | `operatorUi` + dashboards в `dashboards[]` / дереве |
-| Новые `objects[]` только создать | Согласование: повторное развертывание обновляет переменные узлы |
-| Imperative sync Java → variables | CEL bindings, `sqlBinding()`, script steps |
+| `objects[]` только создаёт новые узлы | Reconcile: redeploy обновляет существующие узлы |
+| Imperative Java sync → variables | CEL bindings, `sqlBinding()`, script steps |
 
 ---
 
@@ -64,11 +66,11 @@ Content-Type: application/json
 }
 ```
 
-Или через admin console: выберите `root.platform.applications` → **+ Deploy-приложение**.
+Или через admin console: выберите `root.platform.applications` → **+ Deploy application**.
 
 ### Шаг 2. SQL-миграция
 
-Приложение SQL **не** открывается на платформе Flyway. Миграции деплоятся по изолированной схеме:
+SQL приложения **не** управляется platform Flyway. Миграции деплоятся в изолированную схему:
 
 ```http
 POST /api/v1/applications/my-terminal/data/migrate
@@ -85,7 +87,7 @@ Content-Type: application/json
 }
 ```
 
-Повторный вызов с тем же `version` + `id` — идемпотентен.
+Повторный вызов с тем же `version` + `id` идемпотентен.
 
 Проверка результата:
 
@@ -95,8 +97,8 @@ GET /api/v1/applications/my-terminal/data/status
 
 ### Шаг 3. JSON-функции
 
-Функции — JSON **script** с шагами (`selectOne`, `selectMany`, `exec`, `return`).
-Поля шага — **`sql`** + **`var`** (не `query` / `into`); скрипт обязан заканчиваться на `return.fields`:
+Функции — JSON **scripts** с шагами (`selectOne`, `selectMany`, `exec`, `return`).
+Имена полей — **`sql`** + **`var`** (не `query` / `into`); каждый скрипт должен заканчиваться `return.fields`:
 
 ```http
 POST /api/v1/applications/my-terminal/functions/deploy
@@ -127,11 +129,11 @@ Content-Type: application/json
 }
 ```
 
-Вызов из BPMN (service task `INVOKE_FUNCTION`) или через BFF. Для таблицы SQL-строк на дашборде используйте виджет **report** (`configure_report` + `type: report`), а не `object-table` (тот виджет — только для дочерних объектов дерева).
+Вызов из BPMN (service task `INVOKE_FUNCTION`) или через BFF. Для списка SQL-строк на дашборде используйте виджет **report** (`configure_report` + `type: report`), а не `object-table` (только дочерние узлы дерева).
 
 ### Шаг 4. Bundle deploy (канон: JSON)
 
-**Канонический API:** `POST /api/v1/applications/{appId}/deploy` с телом **JSON** (`Content-Type: application/json`). Multipart ZIP на текущем сервере нет. Полный справочник полей: [applications](applications.md).
+**Канонический API:** `POST /api/v1/applications/{appId}/deploy` с телом **JSON** (`Content-Type: application/json`). Multipart ZIP deploy на текущем сервере нет. Полный справочник полей: [applications](applications.md#bundle-deploy-req-pf-03).
 
 Минимальный пример:
 
@@ -171,13 +173,13 @@ Content-Type: application/json
 }
 ```
 
-Layout дашбордов — сетка **84×8** ([dashboards](dashboards.md)), не legacy `columns: 12` / `rowHeight: 72`.
+Layout дашбордов — сетка **84×8** ([dashboards](dashboards.md)), никогда не legacy `columns: 12` / `rowHeight: 72`.
 
 ### Шаг 5. Интерфейс оператора
 
-Пользовательский интерфейс оператора определяет, какие дашборды видит оператор и как они организованы.
+Operator UI определяет, какие дашборды видит оператор и как они организованы.
 
-**Способ А — через API операторских приложений (рекомендуется):**
+**Способ A — API operator apps (рекомендуется):**
 
 ```http
 PUT /api/v1/operator-apps/my-terminal/ui
@@ -199,15 +201,23 @@ Content-Type: application/json
 }
 ```
 
-**Способ Б — через консоль администратора:**
+**Способ B — admin console:**
 
-1. `root.platform.operator-apps` → **+ Приложение «Оператор»**
-2. Открыть созданный узел → панель Панель приложений оператора.
-3. Настройте заголовок, список дашбордов, панель управления по умолчанию.
+1. `root.platform.operator-apps` → **+ Operator app**
+2. Откройте созданный узел → панель Operator Apps.
+3. Настройте title, список дашбордов, default dashboard.
 
-**Способ C — в bundle** (`operatorUi` в manifest) — подхватывается при deploy.
+**Способ C — в bundle** (`operatorUi` в манифесте) — применяется при deploy.
 
 ### Шаг 6. Проверка
+
+All-in-one JAR:
+
+```
+http://localhost:8080?mode=operator&app=my-terminal
+```
+
+Vite dev:
 
 ```
 http://localhost:5173?mode=operator&app=my-terminal
@@ -219,27 +229,27 @@ http://localhost:5173?mode=operator&app=my-terminal
 
 Дашборды — **объекты платформы** типа `DASHBOARD`. Создайте их в admin console:
 
-1. `root.platform.dashboards` → **+ Объект**
-2. Дважды кликните → Конструктор дашбордов
+1. `root.platform.dashboards` → **+ Object**
+2. Двойной клик → Dashboard Builder
 3. Добавьте виджеты, привяжите к объектам (`objectPath`) или таблицам (`selectionKey`)
-4. Укажите путь дашборда в интерфейсе оператора.
+4. Укажите path дашборда в operator UI.
 
 Виджеты для прикладных экранов:
 
 | Виджет | Применение |
-|--------|------------|
+|--------|-----------|
 | `object-table` | Список заказов/устройств с выбором строки |
-| `function-button` | Вызов platform function или app function |
+| `function-button` | Вызов platform или app function |
 | `dashboard-link` | Навигация между экранами |
-| `card-grid` | Карточки с KPI |
+| `card-grid` | KPI-карточки |
 
-Подробнее: [dashboards](dashboards.md).
+См. [dashboards](dashboards.md).
 
 ---
 
-## BFF (бэкенд для внешнего интерфейса)
+## BFF (backend for frontend)
 
-Для сложных экранов используйте BFF. **Каноническое тело** (tree-first):
+Для сложных экранов (пагинация, формы) используйте BFF. **Каноническое тело** (tree-first):
 
 ```http
 POST /api/v1/bff/invoke
@@ -257,7 +267,7 @@ Content-Type: application/json
 }
 ```
 
-После deploy функции доступны на дереве как `{appId}.functions.{name}`. Подробнее: [applications](applications.md). Предпочитайте **дашборды + function-button / function-form**.
+После deploy функции также адресуются на дереве как `{appId}.functions.{name}`. Детали и wire rules: [applications](applications.md#bff-req-pf-06). Предпочитайте **dashboards + function-button / function-form** вместо custom operator manifest shell.
 
 ---
 
@@ -267,15 +277,15 @@ Content-Type: application/json
 GET /api/v1/applications/my-terminal/reports/daily-summary?format=csv
 ```
 
-Отчёт описан в bundle (`reports[]`) или деплоится отдельно. Экспорт — CSV.
+Отчёт задаётся в bundle (`reports[]`) или деплоится отдельно. Экспорт — CSV.
 
-Подробнее: [reports](reports.md).
+См. [reports](reports.md).
 
 ---
 
 ## Расписания
 
-Функции периодического вызова:
+Периодический вызов функций:
 
 ```http
 POST /api/v1/schedules
@@ -304,48 +314,48 @@ Service task с `ispf:actionType="INVOKE_FUNCTION"`:
   ispf:resultVariable="orders"/>
 ```
 
-Задача пользователя → Задача в Work Queue для оператора.
+User task → задача Work Queue для оператора.
 
-Подробнее: [workflows](workflows.md).
+См. [workflows](workflows.md).
 
 ---
 
-## Структура структуры
+## Пример структуры
 
 ```
 examples/demo-app/
-├── manifest.yaml
+├── bundle.json                 # or fragment files composed into POST …/deploy JSON
 ├── functions/
 │   └── demo_listItems.script.json
 └── sql/
     └── V1__demo.sql
 ```
 
-Запуск демо: зарегистрируйте приложение, выполните миграцию + развертывание функций в [applications](applications.md).
+Запуск демо: зарегистрируйте app, затем `POST …/deploy` JSON (или пошагово migrate + function deploy) по [applications](applications.md).
 
 ---
 
-## Ограничения и лучшие практики
+## Ограничения и практики
 
 | Правило | Почему |
 |---------|--------|
-| SQL только в приложениях схемы | Изоляция от столов-платформ |
-| Префикс таблиц (`tablePrefix`) | Guard от коллизий |
-| Не менять Java `ispf-server` | Отраслевой код — в bundle |
-| Дашборды — объекты-платформы | Единый HMI для администратора и оператора |
+| SQL только в app schema | Изоляция от таблиц платформы |
+| Префикс таблиц (`tablePrefix`) | Защита от коллизий |
+| Не менять Java `ispf-server` | Отраслевой код живёт в bundle |
+| Дашборды — объекты платформы | Единый HMI для admin и operator |
 | Operator UI на сервере | Не хранить конфиг в `public/` |
-| функции — идемпотентные задержки | Безопасный передислокация |
+| Функции — идемпотентный deploy | Безопасный redeploy |
 
 ---
 
-## Чеклист перед производством
+## Чеклист перед production
 
 - [ ] Приложение зарегистрировано, схема создана
 - [ ] Миграции применены (`GET .../data/status`)
-- [ ] Функции задеплоены и протестированы через BFF
-- [ ] Дашборды созданы и установлены в пользовательском интерфейсе оператора.
+- [ ] Функции задеплоены и проверены через BFF
+- [ ] Дашборды созданы и указаны в operator UI
 - [ ] Operator app доступен по `?mode=operator&app=<id>`
-- [ ] RBAC: операторы имеют роль `operator`, не `admin`
+- [ ] RBAC: у операторов роль `operator`, не `admin`
 - [ ] Keycloak настроен (профиль `dev`/prod)
 
 ---
@@ -353,8 +363,8 @@ examples/demo-app/
 ## Связанные документы
 
 - [applications](applications.md) — полный REQ-PF API
-- [reports](reports.md) — отчеты SQL
+- [reports](reports.md) — SQL-отчёты
 - [dashboards](dashboards.md) — виджеты
-- [web-console](web-console.md) — интерфейс администратора для настройки
+- [web-console](web-console.md) — admin UI для настройки
 - [glossary](glossary.md) — термины
 - [roadmap](roadmap.md) — статус REQ-PF

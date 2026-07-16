@@ -2,6 +2,8 @@
 
 # Historian computations cookbook
 
+> **Status:** Stable — Recipes, binding rules, rollups. Hub: [doc-status.md](doc-status.md).
+
 Recipes for **historian binding rules** (`kind: historian` in `@bindingRules`). Each rule is one analytics tag with its own output variable, schedule, and expression.
 
 See [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md) and [analytics-tag-catalog](analytics-tag-catalog.md).

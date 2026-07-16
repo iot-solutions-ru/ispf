@@ -1,5 +1,7 @@
 # Analytics tag catalog (BL-209 / ADR-0041)
 
+> **Status:** Stable — Deployed analytics tags. Hub: [doc-status.md](doc-status.md).
+
 Deployed **historian computations** are discovered from `@bindingRules` entries with `kind: historian` on `DEVICE` objects. Each rule produces one catalog tag and one live output variable.
 
 **Cookbook (OEE, tag chains):** [analytics-historian-cookbook](analytics-historian-cookbook.md)

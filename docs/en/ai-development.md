@@ -2,6 +2,8 @@
 
 # AI Development Layer (REQ-FW-40…44)
 
+> **Status:** Beta — ContextPack, Studio; BL-178 open. Hub: [doc-status.md](doc-status.md).
+
 Platform-side development infrastructure for solution developers. AI reads curated context, generates **declarative bundle JSON**, runs validation gates, and publishes through the existing deploy API. The **tree-first agent** (FW-44) operates on the live object tree step-by-step.
 
 **Target approach:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
@@ -259,7 +261,7 @@ Optional profile **`mcp`** exposes the same platform agent tools to external MCP
 
 | Transport | Endpoint/mode | Auth |
 |-----------|---------------|------|
-| HTTP JSON-RPC | `POST /api/v1/ai/mcp` | Same as agent API (admin bearer/local role header) |
+| HTTP JSON-RPC | `POST /api/v1/ai/mcp` | Same as agent API: admin **Bearer** after `POST /api/v1/auth/login` (`X-ISPF-Role` off by default) |
 | stdio | `ispf.mcp.stdio-enabled=true` | Actor `mcp-stdio` (local dev only) |
 
 Enable:

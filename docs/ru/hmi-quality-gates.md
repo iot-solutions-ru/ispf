@@ -2,9 +2,11 @@
 
 # Контроль качества HMI (S21 / BL-92–95, BL-152)
 
+> **Статус:** Lab — Lighthouse, axe, FPS. Хаб: [doc-status.md](doc-status.md).
+
 Качество HMI оператора: Lighthouse, бюджет бандла, доступность axe, FPS мнемосхемы SCADA.
 
-См. [acceleration-program](acceleration-program.md) · [roadmap](roadmap.md).
+См. [acceleration-program](acceleration-program.md) · [roadmap § S21](roadmap.md).
 
 ## Проверки
 

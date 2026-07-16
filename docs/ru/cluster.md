@@ -2,7 +2,9 @@
 
 # Кластер ISPF (мультиреплика)
 
-Руководство по горизонтальному масштабированию API: несколько JVM-репликов, одно дерево объектов в PostgreSQL, синхронизация живых значений через NATS ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
+> **Статус:** Beta — Multi-replica HA (capability vs demostand). Хаб: [doc-status.md](doc-status.md).
+
+Руководство по горизонтальному масштабированию API: несколько JVM-реплик, одно дерево объектов в PostgreSQL, синхронизация live-значений через NATS ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
 
 См. также: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md), [deployment](deployment.md), [messaging](messaging.md), [bindings](bindings.md).
 
@@ -11,7 +13,7 @@
 | | **Кластер** | **Федерация** |
 |---|-------------|---------------|
 | Дерево объектов | Одно `root.platform.*` в одной БД | Несколько площадок / edge-агентов |
-| Реплики | N JVM без гражданства за LB | Коммуникационный хаб ↔ говорил |
+| Реплики | N stateless JVM за LB | Hub ↔ spoke |
 | Драйвер | Ровно один опрос на устройстве | См. [federation](federation.md) |
 
 ## Топология (пример VPS/лаб)
@@ -32,12 +34,12 @@
 
 Создайте: [`deploy/docker-compose.cluster.yml`](../../deploy/docker-compose.cluster.yml), VPS: [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml).
 
-каждая реплика при старте:
+Каждая реплика при старте:
 
-1. Пролётный путь (один раз на БД).
+1. Flyway migrations (один раз на БД).
 2. `loadFromDatabase()` — одинаковое дерево на всех узлах.
 3. Регистрация в `platform_cluster_replicas` + пульс.
-4. Захватите `platform_driver_locks` для устройств, назначенных на этот узлу.
+4. Захват `platform_driver_locks` для устройств, назначенных на этот узел.
 
 ## Где живут данные
 
@@ -666,4 +668,4 @@ upstream ispf_hmi_ws {
 - [0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md) — зеркало оперативной памяти
 - [0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md) — синхронизация конфигурации/структуры CRUD
 - [0024-demand-driven-variable-change-pubsub](decisions/0024-demand-driven-variable-change-pubsub.md) — публикация по требованию
-- ДОРОЖНАЯ КАРТА БЛ-134…143
+- [roadmap.md](roadmap.md) — BL-134…143

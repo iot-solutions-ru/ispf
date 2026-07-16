@@ -2,6 +2,8 @@
 
 # ISPF inclusion in the Russian software registry
 
+> **Status:** Internal — Rights-holder / RU market. Hub: [doc-status.md](doc-status.md).
+
 Guide for the rights holder: what to prepare, how to assemble the technical package, and how to submit an application at [reestr.digital.gov.ru](https://reestr.digital.gov.ru).
 
 **Not legal advice.** Before submission, align the package with counsel and, if needed, a registry consultant.
@@ -226,7 +228,7 @@ See [air-gap-deployment](air-gap-deployment.md) — single tar with images, JAR,
 |-----------|---------|-------------|
 | API server | 4 vCPU, 8 GB RAM, 50 GB disk | 8 vCPU, 16 GB RAM, SSD |
 | Server OS | Linux x86_64 (Ubuntu 22.04+, Astra, РЕД ОС — per matrix §8) | Ubuntu 24.04 LTS |
-| JRE | Temurin 21+ (in Docker image) | 25 |
+| JRE | JDK/JRE 25 (in Docker image) | 25 |
 | DBMS | PostgreSQL 16 + TimescaleDB | Separate PG cluster |
 | HMI client | Modern browser (Chromium, Firefox, Yandex Browser) | 1920×1080 |
 | Network | TCP 8080 (api), 443 (HTTPS UI), device access per driver protocols | TLS termination on nginx |

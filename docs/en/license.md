@@ -2,6 +2,8 @@
 
 # License and delivery boundaries
 
+> **Status:** Stable — AGPL v3 + dual-license. Hub: [doc-status.md](doc-status.md).
+
 ## Platform (ISPF core)
 
 **IoT Solutions Platform Framework (ISPF)** — platform shell and monorepo core:

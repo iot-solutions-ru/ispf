@@ -2,6 +2,8 @@
 
 # История применения — этапы
 
+> **Статус:** Stable — Time-series, retention. Теги: [doc-status](../en/doc-status.md).
+
 ## Этап 1 — Хранение и запись (готово)
 
 - Таблица `variable_samples`, запись на `VARIABLE_UPDATED` с debounce

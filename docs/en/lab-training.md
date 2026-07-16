@@ -2,6 +2,8 @@
 
 # Lab Training — 18 exercises
 
+> **Status:** Lab — Training sample packs. Hub: [doc-status.md](doc-status.md).
+
 The **Lab Training** package demonstrates Ignition-style Virtual Device, automation, reports, and ISPF dashboards. All objects import from `examples/lab-training/bundle.json`.
 
 ## Quick start

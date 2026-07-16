@@ -2,6 +2,8 @@
 
 # Commercial bundle licensing
 
+> **Status:** Stable — Enterprise terms. Hub: [doc-status.md](doc-status.md).
+
 RSA licensing for commercial bundles at deploy time. Architectural decision: [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
 
 ## Principle

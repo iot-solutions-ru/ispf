@@ -2,9 +2,11 @@
 
 # REST API (v1)
 
+> **Status:** Stable — Endpoints reference. Hub: [doc-status.md](doc-status.md).
+
 Base URL: `http://localhost:8080`
 
-Authentication: JWT (Keycloak) or header `X-ISPF-Role: admin|developer|operator` (`local` profile).  
+Authentication: **Bearer** token after `POST /api/v1/auth/login` (`local` seeds `admin`/`admin`; JWT/Keycloak in other profiles). Optional `X-ISPF-Role` header auth is **off by default** (`ispf.security.local-role-header-enabled=false`).  
 Role matrix: [security](security.md).
 
 ## Platform

@@ -1,5 +1,7 @@
 # ADR-0042: Unified analytics function catalog and extensibility
 
+> **Status:** Stable — Function catalog. Hub: [doc-status.md](../doc-status.md).
+
 ## Status
 
 **Accepted** (2026-07-10)

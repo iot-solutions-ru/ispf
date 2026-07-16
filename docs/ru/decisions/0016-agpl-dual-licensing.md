@@ -7,7 +7,7 @@
 
 ## Контекст
 
-ISPF переходит с Apache 2.0 core на **AGPL-3.0** с **dual licensing** (community + commercial EULA).
+ISPF перешёл с Apache 2.0 core на **AGPL-3.0** с **dual licensing** (community + commercial EULA).
 Все device driver'ы вынесены из `ispf-server.jar` в **driver packs** (1 driver = 1 pack = 1 license).
 
 ## Решение

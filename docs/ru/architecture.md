@@ -2,13 +2,17 @@
 
 # Архитектура ISPF
 
-## Зрение
+> **Статус:** Stable — Видение, слои, расширяемость. Теги: [doc-status](doc-status.md).
 
-**IoT Solutions Platform Framework (ISPF)** — middleware-платформа для IoT, промышленной автоматизации и IT-операций. Единая модель данных и API для устройств, HMI-дашбордов, алертов и BPMN-автоматизации.
+**См. также:** [object-model](object-model.md), [cluster](cluster.md), [application-principles](application-principles.md), [decisions/readme.md](decisions/readme.md).
+
+## Видение
+
+**IoT Solutions Platform Framework (ISPF)** — middleware для IoT, промышленной автоматизации и IT-операций. Единая модель данных и API для устройств, HMI-дашбордов, алертов и BPMN-автоматизации.
 
 ## Основной принцип: бизнес-логика в механизмах платформы
 
-Бизнес-логика прикладного решения **живёт на платформе** — в declarative-конфигурации **дерева объектов**, а не в отраслевом Java-коде сервера.
+Бизнес-логика прикладного решения **живёт на платформе** — в декларативной конфигурации **дерева объектов**, а не в отраслевом Java-коде сервера.
 
 | Механизм | Что описывает |
 |----------|---------------|
@@ -26,9 +30,9 @@ Bundle deploy ([applications](applications.md)) — **упаковка и дос
 
 **Запрещено в `main`:** отраслевой Java в `ispf-server`, hardcoded BFF routes, дублирование логики вне object tree. См. [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
 
-**Развитие platform:** усиление выразительности механизмов object tree (Phase 5). См. [ROADMAP.md § Phase 5](roadmap.md).
+**Развитие платформы:** усиление выразительности механизмов object tree (Phase 5). См. [roadmap.md § Phase 5](roadmap.md).
 
-## Базовая модель предметной области
+## Базовая доменная модель
 
 ```mermaid
 graph TB
@@ -59,7 +63,7 @@ graph TB
 - `DataSchema` — поля (`FieldType`)
 - `DataRecord` — строки с валидацией
 
-### Модели (Templates)
+### Модели (шаблоны)
 
 `BlueprintDefinition` — blueprint: variables, events, functions, bindings.  
 См. [blueprints](blueprints.md).
@@ -114,9 +118,9 @@ counterRate(ifInOctets)
 
 ## Модель безопасности
 
-OAuth2 JWT (Keycloak) или header-based RBAC (`local`).  
-Roles: `admin`, `operator`.  
-См. [security](security.md).
+OAuth2 JWT (Keycloak) или Bearer после `POST /api/v1/auth/login` (`local`).  
+Роли: `admin`, `operator`.  
+Заголовок `X-ISPF-Role` по умолчанию выключен. См. [security](security.md).
 
 ## Поток данных: телеметрия
 
@@ -148,7 +152,7 @@ Event fire → event_history
 - Keycloak / OIDC
 - Static web-console behind CDN/ingress
 
-**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Multi-replica: driver ownership, NATS live mirror — см. **[cluster](cluster.md)**. Несколько площадок / edge-агентов — [federation](federation.md), [ROADMAP.md § Phase 4–8](roadmap.md).
+**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Multi-replica: driver ownership, NATS live mirror — см. **[cluster](cluster.md)**. Несколько площадок / edge-агентов — [federation](federation.md), [roadmap.md § Phase 4–8](roadmap.md).
 
 См. [deployment](deployment.md).
 

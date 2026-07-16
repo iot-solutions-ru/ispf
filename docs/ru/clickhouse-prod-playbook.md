@@ -1,8 +1,10 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/clickhouse-prod-playbook.md](../en/clickhouse-prod-playbook.md).
 
-# Учебное пособие по производству ClickHouse (BL-114)
+# ClickHouse production playbook (BL-114)
 
-Руководство по эксплуатации ClickHouse в рабочей среде ISPF: **журнал событий**, **архиватор переменных** и путь миграции **двойная запись**.
+> **Статус:** Lab — Production rollout. Хаб: [doc-status.md](doc-status.md).
+
+Руководство по эксплуатации ClickHouse в рабочей среде ISPF: **журнал событий**, **variable historian** и путь миграции **двойная запись**.
 
 Связано: [deployment](deployment.md), [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).
 
@@ -10,7 +12,7 @@
 
 ## Когда использовать ClickHouse
 
-| Рабочая нагрузка | По умолчанию | КликХаус |
+| Рабочая нагрузка | По умолчанию | ClickHouse |
 |----------|---------|------------|
 | Event journal | PostgreSQL/Timescale | `ISPF_EVENT_JOURNAL_STORE=clickhouse` @ ~100+ events/s |
 | Variable historian | PostgreSQL/Timescale | `ISPF_VARIABLE_HISTORY_STORE=clickhouse` @ high sample rate |

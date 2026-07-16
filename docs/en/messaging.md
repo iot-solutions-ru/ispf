@@ -2,6 +2,8 @@
 
 # Messaging contract (ISPF)
 
+> **Status:** Stable — NATS / MQTT notes. Hub: [doc-status.md](doc-status.md).
+
 Contract for buses and synchronous platform ↔ solution calls. REQ-FW-32.
 
 ## Principle

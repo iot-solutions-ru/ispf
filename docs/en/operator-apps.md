@@ -2,6 +2,8 @@
 
 # Operator Apps
 
+> **Status:** Stable — Operator shell configuration. Hub: [doc-status.md](doc-status.md).
+
 Operator applications are **dashboard-UI** configs (`operator_app_ui`) pointing at `DASHBOARD` objects on the tree. Legacy `*.manifest.json` is deprecated.
 
 ## URLs

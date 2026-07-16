@@ -2,6 +2,8 @@
 
 # Объединение объектов (шип PF-13)
 
+> **Статус:** Beta — Hub / edge (caveats зрелости). Теги: [doc-status](../en/doc-status.md).
+
 Реализация Spike REQ-PF-13: реестр одноранговых инстансов, чтение/запись прокси-объектов и синхронизация каталога.
 
 Полная концепция — [federation](federation.md), дорожная карта [ROADMAP.md § Phase 4–8](roadmap.md).

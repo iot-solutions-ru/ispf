@@ -2,6 +2,8 @@
 
 ﻿# Плагин Blueprints
 
+> **Статус:** Stable — Модели / шаблоны. Теги: [doc-status](../en/doc-status.md).
+
 Модуль `ispf-plugin-blueprint` — система **blueprint** (шаблоны структуры объектов). Один движок, три вида в дереве и API.
 
 ## Три вида моделей (`BlueprintType`)

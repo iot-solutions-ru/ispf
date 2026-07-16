@@ -2,6 +2,8 @@
 
 # MES reference walkthrough
 
+> **Status:** Lab — End-to-end MES path. Hub: [doc-status.md](doc-status.md).
+
 End-to-end reference scenario for ISPF solution developers: **dispatch order → tank → loading rack → completion**. No custom Java in `ispf-server`.
 
 Artifacts: [examples/mes-reference/](../../examples/mes-reference/), bundle `appId` = `mes-reference`.

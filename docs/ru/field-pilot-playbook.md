@@ -1,10 +1,12 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/field-pilot-playbook.md](../en/field-pilot-playbook.md).
 
-# Playbook полевого пилота (БЛ-140)
+# Playbook полевого пилота (BL-140)
 
-Повторяемые инструкции для полевых пилотов OT для трех эталонных сценариев. Каждый пилотный проект проверяет **ПРОИЗВОДСТВЕННЫЕ** драйверы, записывает данные туда и обратно, принимает архивные данные и использует HMI оператора без промежуточного программного обеспечения между ISPF и периферией предприятия.
+> **Статус:** Lab — OT validation runbooks. Хаб: [doc-status.md](doc-status.md).
 
-Предварительные требования: ISPF ≥ 0.9.32, [driver-interop-lab](driver-interop-lab.md) зелёный локально, учетная запись оператора с ролью администратора устройства.
+Повторяемые runbook'и OT field-pilot для трёх эталонных сценариев. Каждый пилот проверяет драйверы с меткой **PRODUCTION**, write round-trip, ingest в historian и operator HMI без middleware между ISPF и plant edge.
+
+Предварительные требования: ISPF ≥ 0.9.32, [driver-interop-lab](driver-interop-lab.md) зелёный локально, учётная запись оператора с ролью device admin.
 
 ### Gate ready-for-field (политика) {#ready-for-field-gate-policy}
 
@@ -18,9 +20,9 @@
 
 | Сценарий | Основной драйвер | Типичный сайт | Критерии успеха | Статус |
 | -------- | -------------- | ------------ | ---------------- | ------ |
-| **Завод Modbus** | `modbus-tcp` | Резервуарный парк PLC/RTU, насосные станции | опрос более 50 тегов <2 с; FC16 записывает туда и обратно; live-симуляция | **Playbook-ready** |
-| **Парк MQTT** | `mqtt` | Распределенные шлюзы, пакетная телеметрия | 10+ устройств на общем брокере; подписка на вход; сигнализация о несвежем | **Playbook-ready** |
-| **Линия OPC UA** | `opcua` + `opcua-server` | Ячейки упаковочной/сборочной линии | Просмотр + подписка; внешняя обратная запись UA; Имитатор SCADA | **Playbook-ready** |
+| **Modbus plant** | `modbus-tcp` | PLC / RTU tank farm, pump skids | 50+ тегов poll <2 с; FC16 write round-trip; live mimic | **Playbook-ready** |
+| **MQTT fleet** | `mqtt` | Распределённые шлюзы, telemetry burst | 10+ устройств на общем брокере; subscribe ingress; alarm on stale | **Playbook-ready** |
+| **OPC UA line** | `opcua` + `opcua-server` | Ячейки упаковочной / сборочной линии | Browse + subscribe; external UA write-back; SCADA mimic | **Playbook-ready** |
 
 Цель выдержки: **минимум 7 дней** на пилота; регистрировать инциденты в пилотном журнале (см. § [Журнал soak](#журнал-инцидентов-soak) и § Закрытие).
 
@@ -155,7 +157,7 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 
 ## Журнал инцидентов soak {#журнал-инцидентов-soak}
 
-Ежедневный лог **7-дневной выдержки** (полевое доказательство БЛ-140). Копируйте таблицу в тикет; полный backlog спринта: [roadmap.md § S31](roadmap.md#s31-wave-1-execution-backlog).
+Ежедневный лог **7-дневной выдержки** (полевое доказательство BL-140). Копируйте таблицу в тикет; полный backlog спринта: [roadmap.md § S31](roadmap.md#s31-wave-1-execution-backlog).
 
 | День | Дата | Тегов online | Инциденты (P0/P1) | Historian OK | HMI live | Заметки |
 | ---- | ---- | ------------ | ----------------- | ------------ | -------- | ------- |
@@ -191,7 +193,7 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 | MQTT-парк | ✅ Mosquitto + тесты драйверов | ✅ §2 | ✅ ниже | Playbook-ready |
 | Линия OPC UA | ✅ opcua + тесты opcua-сервера | ✅ §3 | ✅ ниже | Playbook-ready |
 
-Матрица lab, шаги валидации и шаблон sign-off **опубликованы** (БЛ-140 Partial — playbook). **Ready-for-field** и **Done** по БЛ-140 — после полевой задачи, реализации и завершённого soak sign-off.
+Матрица lab, шаги валидации и шаблон sign-off **опубликованы** (BL-140 Partial — playbook). **Ready-for-field** и **Done** по BL-140 — после полевой задачи, реализации и завершённого soak sign-off.
 
 ---
 

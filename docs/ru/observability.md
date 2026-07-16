@@ -2,6 +2,8 @@
 
 # Наблюдаемость (ISPF)
 
+> **Статус:** Stable — Метрики, диагностика. Теги: [doc-status](../en/doc-status.md).
+
 Конвейер автоматизации экспорта метрик: **Prometheus Scraping** (pull) и **OTLP** (push, серверные части, совместимые с OpenTelemetry).
 
 ## Прометей (по умолчанию в проде)
@@ -86,11 +88,11 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 
 Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).
 
-**Основная самодиагностика** — Admin → System → Metrics и дашборд `root.platform.dashboards.platform-metrics` (probe `platform-metrics-probe`). Grafana JSON — **опциональный** экспорт: [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json).
+**Опциональный экспорт Grafana** (те же серии Micrometer): [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../../deploy/grafana/README.md). Предпочитайте first-party dashboards выше, если Prometheus уже не эксплуатируете.
 
-Сессии WebSocket: переменная probe / `GET /api/v1/platform/metrics` → `websocketClients`.
+**WebSocket sessions** в Prometheus пока не экспортируются — first-party Metrics / probe variable `websocketClients` — source of truth (`GET /api/v1/platform/metrics`).
 
-**Golden path smoke** (alarm → journal → ack): [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py).
+**Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py) на сервере с fixtures (`demo-sensor-01`).
 
 ## Экспорт метрик OTLP (необязательно, 0.9.9+)
 

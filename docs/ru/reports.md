@@ -2,6 +2,8 @@
 
 # Отчёты приложений (REQ-PF-12)
 
+> **Статус:** Stable — SQL-отчёты, CSV. Теги: [doc-status](../en/doc-status.md).
+
 Generic-слой SQL-отчётов. **Сначала дерево (этапы 12–14):** определение объекта `REPORT` в `root.platform.reports.*` (модель `report-v1`); Схема SQL — через **`dataSourcePath`** → `root.platform.data-sources.*`.
 
 Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и делегирует в дерево. Импорт bundle: `POST /api/v1/platform/packages/import`.

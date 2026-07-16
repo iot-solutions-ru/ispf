@@ -1,5 +1,7 @@
 # MES Platform walkthrough (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)
 
+> **Status:** Beta — Marketplace MES; smoke ≠ plant. Hub: [doc-status.md](doc-status.md).
+
 End-to-end path: **install MES marketplace product → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** without custom Java.
 
 **Product delivery:** MES is an **IoT Solutions marketplace product**, not part of the base ISPF platform. A clean install does **not** create `root.platform.mes` or MES INSTANCE models until you install `mes-platform` / `mes-platform-production` from the marketplace (or deploy the example bundle). Optional legacy flag: `ispf.bootstrap.mes-catalog-enabled=true`.

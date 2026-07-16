@@ -2,6 +2,8 @@
 
 # Workflow & BPMN
 
+> **Status:** Beta — BPMN subset (not full 2.0). Hub: [doc-status.md](doc-status.md).
+
 ## Overview
 
 A workflow is an object of type `WORKFLOW` with model `workflow-v1`. The engine is pure Java in `ispf-plugin-workflow` (no Camunda/Flowable).

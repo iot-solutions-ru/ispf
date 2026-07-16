@@ -2,7 +2,9 @@
 
 # Библиотека символов SCADA (BL-94)
 
-Полный справочник по **символам пакета P&ID**, **загрузке пользовательского SVG** и **библиотеке документов** в редакторе мнемосхем ISPF.
+> **Статус:** Stable — P&ID pack (218 символов). Хаб: [doc-status.md](doc-status.md).
+
+Полный справочник по **символам P&ID pack**, **загрузке пользовательского SVG** и **библиотеке документа** в редакторе мнемосхем ISPF.
 
 См. также: [scada](scada.md), [scada-mimic](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
 
@@ -21,12 +23,12 @@ Regenerate: `npm run build:pid-symbols --prefix apps/web-console`
 
 ---
 
-## Символы стандартной упаковки
+## Символы стандартного pack
 
-1. Откройте редактор мнемосхем (Проводник → Мнемосхема → **Редактировать диаграмму**).
-2. Инструмент **Место** → категория **упаковочные баки** / **упаковочные клапаны** / …
-3. Нажмите холст → элемент получит `symbolId: pack.ispf-pid.vertical-tank` (пример).
-4. Привязки в панели свойств → переменные устройства.
+1. Откройте редактор мнемосхем (Explorer → mimic → **Edit diagram**).
+2. Инструмент **Place** → категория **pack-tanks** / **pack-valves** / …
+3. Клик по холсту → элемент получает `symbolId: pack.ispf-pid.vertical-tank` (пример).
+4. Bindings в панели свойств → переменные устройства.
 
 Символы пакета в репозитории представлены в виде **статического SVG**; они не копируются в `diagramJson`, если вы не конвертируете их в библиотеку (ниже).
 
@@ -133,7 +135,7 @@ cd apps/web-console && npm run test -- src/scada/customSvg.test.ts src/scada/sym
 
 ## Юридическая информация
 
-- Пакет **ispf-pid-v1**: оригинальная работа Apache-2.0 ([license](license.md)).
+- Пакет **ispf-pid-v1**: оригинальная работа Apache-2.0 ([pid-symbols-legal.md](pid-symbols-legal.md), [LICENSE](../../apps/web-console/src/scada/symbols/packs/ispf-pid-v1/LICENSE.md) пакета).
 - **Не** импортируйте изображения производителей SymbolFactory/TIA/P&ID, защищенные авторским правом.
 - Legacy WMF importer (`tools/symbol-import/`) is **deprecated**.
 

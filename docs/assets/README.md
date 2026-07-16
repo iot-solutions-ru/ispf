@@ -27,8 +27,11 @@ cd apps/web-console && npm run dev
 Optional — ensure the virtual sensor is running:
 
 ```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}' | jq -r .token)
 curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01" \
-  -H "X-ISPF-Role: admin"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **UI language:** switch console to **English** before pressing Record.

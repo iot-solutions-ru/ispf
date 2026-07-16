@@ -2,6 +2,8 @@
 
 # SCADA mimic — diagramJson and API reference
 
+> **Status:** Stable — `diagramJson`, REST API. Hub: [doc-status.md](doc-status.md).
+
 Technical reference for document format and REST API. Overview of capabilities, workflow, and architecture: **[scada](scada.md)**.
 
 ---

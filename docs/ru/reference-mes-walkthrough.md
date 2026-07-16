@@ -2,6 +2,8 @@
 
 # MES reference walkthrough
 
+> **Статус:** Lab — Сквозной MES-путь. Теги: [doc-status](../en/doc-status.md).
+
 Сквозной reference-сценарий ISPF для разработчиков решений: **наряд на отгрузку → резервуар → эстакада → завершение**. Без custom Java в `ispf-server`.
 
 Артефакты: [examples/mes-reference/](../../examples/mes-reference/), bundle `appId` = `mes-reference`.

@@ -2,6 +2,8 @@
 
 # Дашборды и виджеты
 
+> **Статус:** Stable — сетка 84×8 канонична. Скриншоты: [assets/README](../assets/README.md). Хаб: [doc-status.md](doc-status.md).
+
 **Справочник всех виджетов** (назначение, настройки, примеры): **[widgets](widgets.md)**.
 
 ## Обзор
@@ -59,7 +61,7 @@ Layout по умолчанию: `packages/ispf-server/.../DashboardLayouts.java`
 
 ### Откуда берётся `objectPath`
 
-`objectPath` — **поле в JSON-виджете** внутри переменного `layout` объекта `DASHBOARD`. Его не передаёт родительский React-компонент во время выполнения.
+`objectPath` — **поле в JSON виджета** внутри переменной `layout` объекта `DASHBOARD`. Его не передаёт родительский React-компонент в runtime.
 
 | Источник | Когда |
 |----------|--------|
@@ -214,7 +216,7 @@ sequenceDiagram
 
 ## Логика дашборда (Правило Платформы)
 
-**Статус:** спецификация (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md)); время выполнения — по фазам реализации.
+**Статус:** спецификация (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md)); runtime — по фазам реализации.
 
 Сегодня `DashboardContext` в web-console — React state + `sessionStorage`. Целевая модель:
 
@@ -260,7 +262,7 @@ sequenceDiagram
 
 ## Grid Layout: форма-функция-форма (лабораторное задание 6)
 
-Пример сетки из пакета **Lab Training** — дашборд `root.platform.dashboards.lab-form-grid`. Один виджет `function-form` вызывает функцию `appendTableRow` на устройстве виртуальной лаборатории и вводит текст в переменную `table`:
+Пример сетки из пакета **Lab Training** — дашборд `root.platform.dashboards.lab-form-grid`. Один виджет `function-form` вызывает функцию `appendTableRow` на устройстве виртуальной лаборатории и пишет в переменную `table`:
 
 ```json
 {
@@ -284,7 +286,7 @@ sequenceDiagram
 }
 ```
 
-Поля `fieldsJson` Соответствует аргументам функций модели `virtual-lab-v1`. Размер `w:42` на сетке 84 колонок — половина экрана; `h:28` задаёт высоту в строках сетки (`rowHeight` × 28 пикселей).
+Поля `fieldsJson` соответствуют аргументам функций модели `virtual-lab-v1`. Размер `w:42` на сетке 84 колонок — половина экрана; `h:28` задаёт высоту в строках сетки (`rowHeight` × 28 пикселей).
 
 Импорт готового layout: `POST /api/v1/platform/packages/import?packageId=lab-training` (см. [lab-training](lab-training.md)).
 

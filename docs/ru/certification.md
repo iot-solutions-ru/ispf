@@ -2,7 +2,9 @@
 
 # Пути сертификации (BL-190)
 
-Курсовая программа для сертификации ISPF. Полные экзамены и прокторинг включены в Фазу 32 GA; Приведенные ниже лабораторные работы сегодня можно запустить на лабораторных/VPS-хостах.
+> **Статус:** Draft — Учебные треки / exams. Теги: [doc-status](../en/doc-status.md).
+
+Черновик учебной программы сертификации ISPF. Полные экзамены и прокторинг — Фаза 32 GA; лаборатории ниже можно запустить сегодня на lab/VPS-хостах.
 
 Соответствует коммерческим уровням [partner-program](partner-program.md).
 
@@ -32,7 +34,7 @@
 | Панели мониторинга | [dashboards](dashboards.md) | Виджеты «Значение + диаграмма» |
 | Пользовательский интерфейс оператора | [operator-guide](operator-guide.md) | Настроить приложение оператора |
 
-**Экзамен (завершение):** Развертывание пакета с одним дашбордом; режим оператора загружается без консоли администратора.
+**Exam (stub):** Deploy bundle с одним dashboard; operator mode загружается без admin console.
 
 ### Уровень 2 — Автоматизация (~24 ч)
 
@@ -43,7 +45,7 @@
 | Alerts | [automation](automation.md) | `configure_alert` + fire event |
 | Рабочие процессы | [workflows](workflows.md) | Пользовательская задача в рабочей очереди |
 
-**Обследование (заготовка):** Оповещение → коррелятор → путь уведомления оператора.
+**Exam (stub):** Alert → correlator → operator notification path.
 
 ### Уровень 3 — Производство (~32 ч.)
 
@@ -53,11 +55,11 @@
 | Федерация | [federation](federation.md) | Привязать удаленное устройство |
 | ИИ-агент | [ai-development](ai-development.md) | Сценарий генератора решений (BL-177) |
 
-**Экзамен (завершение):** Комплексное развертывание агента – адаптация пользовательского интерфейса оператора без редактирования дерева вручную.
+**Exam (stub):** Комплексное развёртывание агента — адаптация operator UI без ручного редактирования дерева.
 
 ---
 
-## Банк экзаменационных вопросов (заготовка)
+## Exam question bank (stub)
 
 Машиночитаемые банки живут под [`examples/certification/`](../../examples/certification/). Формат: JSON с `track`, `level`, `version` и `questions[]` (`id`, `type`, `topic`, `prompt`, `options`, `correctIndex`, `reference`).
 
@@ -67,7 +69,7 @@
 | [`solution-developer-l2.json`](../../examples/certification/solution-developer-l2.json) | Разработчик решений | L2 Автоматизация | 6 |
 | [`platform-admin-core.json`](../../examples/certification/platform-admin-core.json) | Администратор платформы | Ядро | 8 |
 
-**Оценка (незавершённая версия):** Интеграция партнерского портала/LMS оценивает множественный выбор на местном уровне; практические лабораторные работы остаются проверенными инструктором до прокторинга Фазы 32 GA.
+**Grading (stub):** Partner Portal / LMS integration оценивает multiple-choice локально; практические labs остаются instructor-verified до Phase 32 GA proctoring.
 
 **Пример импорта:**
 
@@ -90,7 +92,7 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 | Историк | [historian-tiers](historian-tiers.md) | Горячий ярус + экспорт паркета (BL-163) |
 | Наблюдаемость | [observability](observability.md) | Сбор метрик + пакет диагностики |
 
-**Экзамен (завершение):** Усиленное развертывание на одном узле + тренировка резервного копирования/восстановления; Скрипт проверки ClickHouse зелёный.
+**Exam (stub):** Hardened single-node deploy + backup/restore drill; ClickHouse verify script green.
 
 ### Расширенные модули (~16 ч)
 
@@ -100,7 +102,7 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 | Мультитенант | [multi-tenant](multi-tenant.md) | Тест записи изоляции тенанта |
 | Центр Федерации | [federation](federation.md) | Хаб с 2+ узлами (BL-188) |
 
-**Экзамен (незавершенный):** Тренировка по аварийному переключению; Клиент A не может читать переменные клиента B.
+**Exam (stub):** Failover drill; tenant A не может читать переменные tenant B.
 
 ---
 
@@ -117,7 +119,7 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 
 ## Выравнивание регрессии агента
 
-Сертификационные лаборатории питают [набор регрессии агента](agent-regression.md). Цель: показатель успешной сдачи сценария ≥95 % (BL-178) до выставления живым агентом оценок на экспертных экзаменах.
+Сертификационные labs питают [agent regression suite](agent-regression.md). Цель: ≥95% scenario pass rate (BL-178) **до** live agent grading на Expert exams — **не достигнуто** на полном live suite (см. [competitive-scorecard](competitive-scorecard.md)).
 
 ---
 

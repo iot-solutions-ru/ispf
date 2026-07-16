@@ -2,6 +2,8 @@
 
 # Security and RBAC
 
+> **Status:** Stable — RBAC, MFA. Hub: [doc-status.md](doc-status.md).
+
 ## Model
 
 ISPF uses **role-based access** at the HTTP API level:

@@ -1,5 +1,7 @@
 # AI Agent operations (BL-177…181)
 
+> **Status:** Beta — Agent API; ≥95% gate not met. Hub: [doc-status.md](doc-status.md).
+
 Operator and integrator reference for the ISPF tree-first agent, regression suite, solution generator, and observability widgets.
 
 See also [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).

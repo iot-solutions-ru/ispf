@@ -2,6 +2,8 @@
 
 # Быстрый старт
 
+> **Статус:** Stable — Try ISPF + QA для контрибьюторов. Теги: [doc-status](doc-status.md).
+
 Два трека:
 
 1. **[Попробовать ISPF](#попробовать-ispf-15-минут)** — запуск и демо (новички).  
@@ -78,7 +80,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 3. Дважды кликните `dashboards.demo-sensor` — **Dashboard Builder**.  
 4. Раскройте `alert-rules` → `temperature-threshold-exceeded` — CEL-правило.  
 5. Дважды кликните `workflows.demo-alarm-handler` — демо **BPMN**.  
-6. Режим оператора: `http://localhost:5173?mode=operator` (или вход как `operator`).
+6. Режим оператора: `http://localhost:8080?mode=operator` (all-in-one JAR) или `http://localhost:5173?mode=operator` (Vite), или вход как `operator`.
 
 Язык: селектор в шапке (**English** удобен для OSS-скриншотов).
 

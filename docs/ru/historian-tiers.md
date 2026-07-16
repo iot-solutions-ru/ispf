@@ -1,24 +1,40 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/historian-tiers.md](../en/historian-tiers.md).
 
-# Уровни историка (BL-159)
+# Уровни историка (BL-159, BL-202)
 
-Готовый архивный профиль **горячий → теплый → холодный** для развертываний ISPF. Конфигурация находится в `application.yml` под `ispf.historian.tiers`; Обеспечение многоуровневой маршрутизации является последующей работой (BL-160+).
+> **Статус:** Beta — JDBC, ClickHouse, dual-write. Хаб: [doc-status.md](doc-status.md).
 
-**См. также:** [variable-history](variable-history.md), [decisions/0035-historian-dual-write.md](decisions/0035-historian-dual-write.md), [deployment](deployment.md).
+Готовый профиль **hot → warm → cold**. Конфиг: `ispf.historian.tiers` в `application.yml`; маршрутизация уровней при `deploy-profile=three-tier` (BL-202).
+
+**См. также:** [variable-history](variable-history.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap](analytics-platform-roadmap.md) (charter / roadmap), [analytics-historian-cookbook](analytics-historian-cookbook.md), [deployment](deployment.md).
+
+---
+
+## Модель уровней
+
+| Уровень | Store по умолчанию | Retention | Роль |
+|---------|--------------------|-----------|------|
+| **hot** | PostgreSQL / Timescale (`jdbc`) | 7 дней | Live-запись, тренды оператора, недавние агрегаты |
+| **warm** | ClickHouse | 90 дней | Analytics, длинные дашборды, цель dual-write |
+| **cold** | S3 + Parquet (`cold`) | 10 лет | Compliance-архив, источник bulk-экспорта |
+
+Hot может включить **dual-write** в warm ClickHouse (`dual-write-enabled: true`), пока недавние сэмплы остаются на JDBC; при включённой маршрутизации устаревшие сэмплы уходят в warm автоматически.
 
 ---
 
-## Модель уровня
+## Маршрутизация уровней (BL-202)
 
-| Уровень | Магазин по умолчанию | Удержание | Роль |
-|------|---------------|-----------|------|
-| **горячий** | PostgreSQL/Шкала времени (`jdbc`) | 7 дней | Живые записи, тенденции операторов, последние агрегаты |
-| **теплый** | КликХаус | 90 дней | Аналитика, дашборды дальнего действия, цель двойной записи |
-| **холодно** | S3 + Паркет (`cold`) | 10 лет | Архив соответствия, источник массового экспорта |
+При `ispf.historian.deploy-profile=three-tier` (по умолчанию) сервер включает **warm tier routing**, если `ispf.historian.tiers.warm.enabled` не задан явно:
 
-Горячий уровень может включать **двойную запись** для разогрева ClickHouse (`dual-write-enabled: true`) без изменения пути чтения (все еще JDBC до переключения).
+| Путь | Поведение |
+|------|-----------|
+| **Write** | `TierRoutingVariableHistoryWriteStore` — недавние сэмплы → JDBC hot; старше hot retention → ClickHouse warm; опциональный dual-write для hot-окна |
+| **Read** | `TierRoutingVariableHistoryQueryStore` — диапазоны через hot cutoff объединяют JDBC + ClickHouse |
+| **Cold** | Ночной `HistorianColdArchiveRunner` экспортирует Parquet за день, покидающий warm retention (когда `ispf.historian.cold-archive.enabled=true`) |
 
----
+Профиль `hot-only` оставляет только JDBC (`warm.enabled=false`).
+
+Java: `HistorianTierDeployProfileEnvironmentPostProcessor`, `HistorianColdArchiveService`.
 
 ## Конфигурация по умолчанию
 
@@ -53,46 +69,51 @@ Java binding: `HistorianTierProperties` + `HistorianTierProfile` (`com.ispf.serv
 
 ---
 
-## Развертывание фрагмента профиля (prod/VPS)
+## Фрагмент deploy-профиля (prod / VPS)
 
-**трехуровневый** профиль производства в один клик для создания архива данных в любом масштабе. Подайте заявку после проверки ClickHouse (`vps-clickhouse-verify.sh`).
+Однокликовый профиль **three-tier** для production-историка на масштабе. Применять после проверки ClickHouse (`vps-clickhouse-verify.sh`).
 
 ```bash
 # /opt/ispf/config/runtime-settings.properties (or env on systemd unit)
 ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier
 ISPF_VARIABLE_HISTORY_STORE=jdbc
-ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true
-ISPF_VARIABLE_HISTORY_RETENTION_DAYS=7
-ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://127.0.0.1:8123
-ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE=ispf
 ISPF_HISTORIAN_TIER_HOT_RETENTION_DAYS=7
 ISPF_HISTORIAN_TIER_WARM_RETENTION_DAYS=90
+ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://127.0.0.1:8123
+ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE=ispf
 ISPF_HISTORIAN_TIER_COLD_BUCKET=ispf-historian-archive
 ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
+# Optional: enable nightly Parquet export (local tree or S3-mounted path)
+ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true
+ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 ```
 
-**Lab-only (single tier):** set `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only`, `ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=false`, omit cold bucket.
+`three-tier` автоматически ставит `ispf.historian.tiers.warm.enabled=true`. Override: `ISPF_HISTORIAN_TIER_WARM_ENABLED=false`.
 
-**Переключение горячего запроса:** установите `ISPF_VARIABLE_HISTORY_STORE=clickhouse` только после выдержки двойной записи и лабораторного шлюза SLO — см. [variable-history](variable-history.md).
+**Только lab (один уровень):** `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only` — только JDBC, без warm routing.
 
----
-
-## Контрольный список операций
-
-1. Включите гипертаблицу шкалы времени на `variable_samples` (автоматически при наличии расширения).
-2. Разверните ClickHouse; запустить `vps-clickhouse-verify.sh`.
-3. Установите вышеперечисленные переменные среды горячей двойной записи + уровня хранения.
-4. Отслеживайте ошибки добавления CH в журналы сервера (рекомендуется вторичная запись).
-5. Запланируйте задание экспорта холодного уровня (BL-163), когда требуется архив Parquet.
+**Cutover warm read (полный CH primary):** `ISPF_VARIABLE_HISTORY_STORE=clickhouse` только после dual-write soak и lab SLO gate — см. [variable-history](variable-history.md). При store=`clickhouse` маршрутизация уровней обходится.
 
 ---
 
-## Соответствующая дорожная карта
+## Ops-чеклист
 
-| БЛ | Тема |
-|----|-------|
-| БЛ-159 | Этот документ + конфигурация уровня |
-| БЛ-161 | SLO запроса — [variable-history](variable-history.md) |
-| БЛ-160+ | AF-lite → AF-capable — [analytics-platform-roadmap](analytics-platform-roadmap.md) (БЛ-200…210) |
-| БЛ-162 | Журнал событий CH переключение |
-| БЛ-163 | Тенденция экспорта CSV/Паркет оптом |
+1. Включить Timescale hypertable на `variable_samples` (автоматически при наличии extension).
+2. Развернуть ClickHouse; запустить `vps-clickhouse-verify.sh`.
+3. Задать `ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier` и env retention выше.
+4. Следить за ошибками append в CH в логах сервера (warm path на dual-write — best-effort).
+5. Включить `ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true`, когда нужен Parquet-архив; синхронизировать `local-root` в S3 или смонтировать bucket. Cold **query** через Athena/Trino вне scope (в BL-202 — только export).
+
+---
+
+## Связанный roadmap
+
+| BL | Тема |
+|----|------|
+| BL-159 | Модель конфига уровней |
+| BL-202 | Маршрутизация уровней + cold Parquet export (этот документ) |
+| BL-161 | Query SLO — [variable-history](variable-history.md) |
+| BL-201 | AF-lite templates — [reference-asset-analytics](reference-asset-analytics.md) |
+| BL-163 | On-demand trend export CSV/Parquet |
+
+> **Note:** [analytics-platform-roadmap](analytics-platform-roadmap.md) остаётся charter/roadmap; статус исполнения смотрите в EN hub и backlog, не как «уже shipped».

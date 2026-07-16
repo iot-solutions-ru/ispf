@@ -2,6 +2,8 @@
 
 # Solution Developer Public API
 
+> **Status:** Stable — Stable platform ↔ bundle boundary. Hub: [doc-status.md](doc-status.md).
+
 Stable boundary between **platform** (ISPF core) and **solution** (your bundle). Detailed workflow — [solution-developer-guide](solution-developer-guide.md). Architectural boundaries — [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
 
 ---

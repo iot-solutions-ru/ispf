@@ -2,6 +2,8 @@
 
 # Тестирование
 
+> **Статус:** Stable — Unit, integration. Теги: [doc-status](../en/doc-status.md).
+
 ## Запуск
 
 ```bash
@@ -73,8 +75,13 @@ JUnit 5, Java 25, Spring Boot 4.
 
 ```bash
 curl http://localhost:8080/api/v1/info
-curl -H "X-ISPF-Role: admin" http://localhost:8080/api/v1/objects
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}' | jq -r .token)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 ```
+
+(`X-ISPF-Role` **выключен по умолчанию**; не использовать в smoke, пока не включён `ispf.security.local-role-header-enabled=true`.)
 
 Web Console: открыть `demo-sensor` dashboard, убедиться в live-значениях.
 

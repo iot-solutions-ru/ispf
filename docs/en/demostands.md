@@ -2,6 +2,8 @@
 
 # ISPF deployment profiles
 
+> **Status:** Lab — Prod, lab, edge topologies. Hub: [doc-status.md](doc-status.md).
+
 Guide to choosing a configuration based on your goal: **industrial production**, **high throughput**, **demo/HMI**, or **edge with limited CPU**.
 
 Not tied to a specific host. Example scripts and env files are in [`deploy/`](../../deploy/).
@@ -98,7 +100,7 @@ Targeted trimming (single node, consistently low queues): pin workers via env, b
 | High event flow without CEL | `EVENT_JOURNAL_ONLY` | [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) |
 | Device in tree but not required | `STOPPED` | Do not keep RUNNING "just in case" |
 
-Drivers: **PRODUCTION** maturity ([drivers](drivers.md), [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md)).
+Drivers: maturity varies by `driverId` — see honesty note in [drivers](drivers.md) (registry **PRODUCTION** ≠ ready-for-field for all IDs) and [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md).
 
 ### Security and compliance
 

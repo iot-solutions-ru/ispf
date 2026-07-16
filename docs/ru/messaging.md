@@ -2,18 +2,20 @@
 
 # Контракт обмена сообщениями (ISPF)
 
+> **Статус:** Stable — NATS / MQTT notes. Хаб: [doc-status.md](doc-status.md).
+
 Контракт шин и синхронных вызовов платформы ↔ решение. REQ-FW-32.
 
 ## Принцип
 
 | Канал | Семантика | Когда использовать |
 |-------|-----------|-------------------|
-| **Вызов REST/BFF** | Запрос/ответ синхронизации | CRUD, функции приложения, развертывание, отчёты |
-| **WebSocket `/ws/objects`** | Внести изменения в дерево объектов | Live HMI, проводник, обновление переменных |
+| **Вызов REST/BFF** | Синхронный request/response | CRUD, функции приложения, развертывание, отчёты |
+| **WebSocket `/ws/objects`** | Push изменений дерева объектов | Live HMI, проводник, обновление переменных |
 | **Журнал событий (БД)** | Надежный асинхронный журнал | Лента событий оператора, аудит, корреляторы |
-| **НАТС** | Асинхронная публикация/подписка между репликами | Разветвление реплики, побочные эффекты рабочего процесса |
+| **NATS** | Асинхронная публикация/подписка между репликами | Разветвление реплики, побочные эффекты рабочего процесса |
 
-Не смешивайте синхронизацию RPC и асинхронную шину в одном «универсальном» канале.
+Не смешивайте sync RPC и async-шину в одном «универсальном» канале.
 
 ## Дерево объектов WebSocket
 
@@ -60,11 +62,11 @@
 
 ## NATS subjects (production, `ispf.nats.enabled=true`)
 
-| Тематический узор | Издатель | Потребитель | Полезная нагрузка |
+| Subject pattern | Publisher | Consumer | Payload |
 |-----------------|-----------|----------|---------|
-| `ispf.object.{path}.{changeType}` | `NatsEventBridge` | внешние интеграторы | путь, тип, имя переменной, временная метка, источник |
+| `ispf.object.{path}.{changeType}` | `NatsEventBridge` | внешние интеграторы | path, type, variableName, timestamp, source |
 | `ispf.events.{changeType}` | `NatsEventBridge` (replica fan-out) | `NatsObjectChangeSubscriber` | same |
-| `ispf.events.{changeType}` (JetStream) | `NatsEventBridge` когда `jet-stream-enabled` | `NatsObjectChangeSubscriber` потребитель длительного пользования | та же полезная нагрузка сохраняется в потоке `ispf-automation` |
+| `ispf.events.{changeType}` (JetStream) | `NatsEventBridge` когда `jet-stream-enabled` | durable consumer `NatsObjectChangeSubscriber` | та же payload в stream `ispf-automation` |
 | `ispf.workflow.{workflowPath}.{event}` | `WorkflowService` | external / analytics | workflowPath, event, payload |
 | BPMN `publish_nats` task | workflow engine | custom | task-defined subject + message |
 

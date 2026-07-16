@@ -1,5 +1,7 @@
 # License compliance (engineering checklist)
 
+> **Status:** Stable — Obligations checklist. Hub: [doc-status.md](doc-status.md).
+
 Engineering procedures for ISPF releases. **Not legal advice** — counsel review required
 for commercial contracts and third-party asset redistribution.
 

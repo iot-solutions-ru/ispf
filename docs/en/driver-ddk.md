@@ -2,6 +2,8 @@
 
 # Driver Development Kit (DDK)
 
+> **Status:** Stable — Custom driver SDK. Hub: [doc-status.md](doc-status.md).
+
 **BL-144** — scaffold for custom driver packs outside the core monorepo or as a new `ispf-driver-*` module.
 
 ## When to use

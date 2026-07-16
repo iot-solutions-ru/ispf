@@ -2,6 +2,8 @@
 
 # Операции AI-агента (BL-177…181)
 
+> **Статус:** Beta — Agent API; gate ≥95% не закрыт. Теги: [doc-status](../en/doc-status.md).
+
 Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, генератору решений и виджетам наблюдения.
 
 См. также [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).

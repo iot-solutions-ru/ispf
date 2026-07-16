@@ -2,6 +2,8 @@
 
 # ISPF Platform Roadmap
 
+> **Status:** Charter — Phases and backlog. Hub: [doc-status.md](doc-status.md).
+
 Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** — append new phases here; do not split into `roadmap-phase-N.md`.
 
 | | |

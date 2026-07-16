@@ -2,6 +2,8 @@
 
 # Application reports (REQ-PF-12)
 
+> **Status:** Stable — SQL reports, CSV export. Hub: [doc-status.md](doc-status.md).
+
 Generic SQL report layer. **Tree-first (Phase 12–14):** definition on `REPORT` object in `root.platform.reports.*` (model `report-v1`); SQL schema — via **`dataSourcePath`** → `root.platform.data-sources.*`.
 
 Legacy API `/api/v1/applications/{appId}/reports/*` is retained and delegates to the tree. Bundle import: `POST /api/v1/platform/packages/import`.

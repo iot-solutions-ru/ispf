@@ -2,6 +2,8 @@
 
 # AGENT_KNOWLEDGE — ISPF internal agent reference
 
+> **Status:** Internal — Agent routing map. Hub: [doc-status.md](doc-status.md).
+
 Reference document for the **tree-first agent**, AI Studio, and MCP clients. It describes **all approaches to building applications/solutions** and provides a **documentation map** for the platform.
 
 **How to read this:** `search_context(query=..., topic=...)` returns full slices from ContextPack. This file is a **router**: what to choose and where to go next.

@@ -55,7 +55,7 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` is added 
 
 ## Marketplace server contract
 
-Compatible with [ispf-marketplace](https://github.com/your-org/ispf-marketplace) API:
+Compatible with a remote marketplace catalog API (separate host; configure `ISPF_MARKETPLACE_DEFAULT_URL`):
 
 - `GET /api/v1/catalog` → `{ listings: [...] }`
 - `GET /api/v1/catalog/{slug}/download` (free) — optional `?installationId=` returns RSA-signed bundle when marketplace signing key is configured
@@ -73,9 +73,9 @@ Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `
 
 Paid **analytics extension packs** (Tier C historian functions) use the same install/activate API as apps. After install, helpers appear in `GET /api/v1/platform/analytics/catalog` with `pack: <packId>`.
 
-## Marketplace GA checklist (BL-183)
+## Marketplace readiness checklist (BL-183)
 
-Foundation for Phase 32 marketplace GA. Track in release planning; not all items required for dev/lab browse.
+Foundation for Phase 32 marketplace readiness. Track in release planning; not all items required for dev/lab browse. Do not read every “Shipped” row as full external/partner GA.
 
 | # | Item | Status |
 |---|------|--------|

@@ -1,5 +1,7 @@
 # Architecture Decision Records (ADR)
 
+> **Status:** Stable — Architecture decision records. Hub: [../doc-status.md](../doc-status.md).
+
 English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/decisions/readme.md).
 
 ## Writing style

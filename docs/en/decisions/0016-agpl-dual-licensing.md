@@ -6,7 +6,7 @@ Accepted (2026-06-27)
 
 ## Context
 
-ISPF is moving from an Apache 2.0 core to **AGPL-3.0** with **dual licensing** (community + commercial EULA).
+ISPF has moved from an Apache 2.0 core to **AGPL-3.0** with **dual licensing** (community + commercial EULA).
 All device drivers are extracted from `ispf-server.jar` into **driver packs** (1 driver = 1 pack = 1 license).
 
 ## Decision

@@ -2,6 +2,8 @@
 
 ﻿# Публичный API для решений разработчиков
 
+> **Статус:** Stable — Граница platform ↔ bundle. Теги: [doc-status](../en/doc-status.md).
+
 Стабильная граница между **платформой** (ядро ISPF) и **решением** (ваш пакет). Подробный рабочий процесс — [solution-developer-guide](solution-developer-guide.md). Архитектурные границы — [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
 
 ---

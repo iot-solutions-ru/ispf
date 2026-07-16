@@ -2,6 +2,8 @@
 
 # Object federation (spike PF-13)
 
+> **Status:** Beta — Hub / edge (maturity caveats). Hub: [doc-status.md](doc-status.md).
+
 Spike REQ-PF-13 implementation: peer registry, proxy object read/write, and catalog sync.
 
 Full concept — [federation](federation.md), roadmap [roadmap.md § Phase 4–8](roadmap.md).

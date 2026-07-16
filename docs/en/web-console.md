@@ -10,7 +10,7 @@ React 19 + Vite 6 + TanStack Query. Catalog: `apps/web-console/`.
 
 ### Administrator (default)
 
-URL: `http://localhost:5173`
+URL: `http://localhost:8080` (all-in-one JAR) or `http://localhost:5173` (Vite dev)
 
 | Area | Features |
 |------|----------|
@@ -32,7 +32,7 @@ Double-click in the tree:
 
 ### Operator HMI
 
-URL: `http://localhost:5173?mode=operator`
+URL: `http://localhost:8080?mode=operator` (JAR) or `http://localhost:5173?mode=operator` (Vite)
 
 - Full-screen dashboard (read-only)
 - Sidebar: work queue + event journal
@@ -40,7 +40,7 @@ URL: `http://localhost:5173?mode=operator`
 
 ### Operator app (dashboards)
 
-URL: `http://localhost:5173?mode=operator&app=platform`
+URL: `http://localhost:8080?mode=operator&app=platform` (JAR) or `http://localhost:5173?mode=operator&app=platform` (Vite)
 
 Generic operator shell with no industry-specific code in `main`:
 
@@ -64,7 +64,9 @@ No client-side router. State lives in `App.tsx`:
 
 ## Roles
 
-Header selector → `X-ISPF-Role: admin|operator` (`src/auth/role.ts`).
+Sign in via the login screen; the console uses **Bearer** after `POST /api/v1/auth/login`. Role comes from the authenticated user.
+
+`X-ISPF-Role` / header Role selector is **off by default** (`ispf.security.local-role-header-enabled=false`) — opt-in for local-only experiments. See [security](security.md).
 
 | Role | UI |
 |------|-----|
@@ -75,7 +77,7 @@ Header selector → `X-ISPF-Role: admin|operator` (`src/auth/role.ts`).
 
 ```
 src/
-├── App.tsx                 # Shell, tabs, role selector
+├── App.tsx                 # Shell, tabs, login
 ├── api.ts                  # REST client
 ├── api/bff.ts              # POST /bff/invoke (ispf-operator-v1)
 ├── types/                  # dashboard, workflow, bff, operatorUi, operatorManifest (legacy)

@@ -2,6 +2,8 @@
 
 # Operator Guide
 
+> **Status:** Stable — HMI, work queue, events. Hub: [doc-status.md](doc-status.md).
+
 Guide for users with the **operator** role — equipment monitoring, work queue tasks, events, and reports.
 
 Product overview: [product](product.md). UI technical details: [web-console](web-console.md).
@@ -10,19 +12,21 @@ Product overview: [product](product.md). UI technical details: [web-console](web
 
 ## Sign In
 
-1. Open the Web Console: `http://<host>:5173`
+1. Open the Web Console: `http://<host>:8080` (all-in-one JAR) or `http://<host>:5173` (Vite dev)
 2. Sign in with an operator account (demo: `operator` / `operator`).
 3. After sign-in, **Operator HMI** opens — full-screen mode without the object tree or editors.
 
 If you have the admin role but need operator mode:
 
 ```
+http://<host>:8080?mode=operator
 http://<host>:5173?mode=operator
 ```
 
 For a specific application:
 
 ```
+http://<host>:8080?mode=operator&app=platform
 http://<host>:5173?mode=operator&app=platform
 ```
 

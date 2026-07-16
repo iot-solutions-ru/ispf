@@ -2,9 +2,11 @@
 
 # Справочник виджетов дашборда
 
+> **Статус:** Stable — All widget types. Хаб: [doc-status.md](doc-status.md).
+
 Полное описание всех типов виджетов ISPF: назначение, использование в HMI, расположение полей и примеры.
 
-**См. также:** [dashboards](dashboards.md) (сетка, `selectionKey`, навигация), [operator-guide](operator-guide.md) (роль оператора), [bindings](bindings.md) (привязки платформы в запросе), [spreadsheet-widget](spreadsheet-widget.md) (формулы и таблицы).
+**См. также:** [dashboards](dashboards.md) (сетка, `selectionKey`, навигация), [operator-guide](operator-guide.md) (роль оператора), [bindings](bindings.md) (привязки платформы в переменных), [spreadsheet-widget](spreadsheet-widget.md) (формулы и таблицы).
 
 ---
 
@@ -26,7 +28,7 @@
 | `paramKey` | string | Читать значение из `session.params[key]` |
 | `contextPathKey` | string | Путь объекта из `session.params[key]` |
 | `modelHintPath` | string | Только редактор: образец объекта для dropdown переменных |
-| `stylesJson` | строка | JSON стилей элементов карточки (см. [DASHBOARDS.md § styleJson](dashboards.md)) |
+| `stylesJson` | строка | JSON стилей элементов карточки (см. [dashboards.md § stylesJson](dashboards.md)) |
 | `demoPreviewJson` | string | Превью в редакторе без live-данных |
 
 **Приоритет пути к объекту:** если задано `selectionKey` и в сеансе есть выбор → используется выбранный путь; иначе `objectPath`.
@@ -170,7 +172,7 @@
 {
   "type": "chart",
   "title": "Температура",
-  "w": 8, "h": 4,
+  "w": 56, "h": 4,
   "selectionKey": "device",
   "variableName": "temperature",
   "historyRange": "24h",
@@ -792,14 +794,14 @@
 
 ## Рекомендуемые размеры (ш × в)
 
-| Виджет | Размер |
+| Виджет | Размер (сетка 84) |
 |--------|--------|
-| значение, индикатор, переключатель | ш=2–4, ч=2 |
-| диаграмма | ш=6–12, ч=4–6 |
-| объект-таблица | ш=12, час=4–6 |
-| функция-форма | ш=4–6, ч=4 |
-| электронная таблица | ш=8–12, ч=5–8 |
-| карта | ш=8–12, ч=6–8 |
+| значение, индикатор, переключатель | ш=14–28, ч=2 |
+| диаграмма | ш=42–84, ч=4–6 |
+| объект-таблица | ш=84, ч=4–6 |
+| функция-форма | ш=28–42, ч=4 |
+| электронная таблица | ш=56–84, ч=5–8 |
+| карта | ш=56–84, ч=6–8 |
 
 ---
 

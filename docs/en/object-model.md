@@ -2,6 +2,8 @@
 
 # Object model
 
+> **Status:** Stable — Tree, variables, events, functions. Hub: [doc-status.md](doc-status.md).
+
 ISPF business logic is expressed through **tree node composition**: models (blueprints), variables, events, functions, workflow, and automation nodes. See [architecture.md § Core principle](architecture.md).
 
 ## Hierarchy

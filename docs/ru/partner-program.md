@@ -107,7 +107,7 @@
 
 | Веха | Цель |
 |-----------|--------|
-| Partner portal (apply, training progress) | [Partner-portal](https://github.com/your-org/Partner-portal) MVP |
+| Partner portal (apply, training progress) | Внешний MVP — **не в этом repo** |
 | Первые 5 сертифицированных интеграторов | Этап 32 ГА |
 | Символ OEM + маркетплейс драйверов GA | БЛ-183, БЛ-185 |
 

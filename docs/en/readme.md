@@ -16,7 +16,7 @@
 3. [Object model](object-model.md) — the tree (devices, dashboards, rules as nodes)  
 4. [License](license.md) — AGPL / Enterprise boundary  
 
-Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.demo-sensor` → [operator mode](http://localhost:5173?mode=operator).
+Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.demo-sensor` → operator mode ([JAR](http://localhost:8080?mode=operator) / [Vite](http://localhost:5173?mode=operator)).
 
 ---
 
@@ -185,5 +185,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | --- | --- |
 | API | http://localhost:8080/api/v1 |
 | Health | http://localhost:8080/actuator/health |
-| Admin console | http://localhost:5173 |
-| Operator HMI | http://localhost:5173?mode=operator |
+| Admin (all-in-one JAR) | http://localhost:8080 |
+| Operator HMI (all-in-one JAR) | http://localhost:8080?mode=operator |
+| Admin (Vite dev) | http://localhost:5173 |
+| Operator HMI (Vite dev) | http://localhost:5173?mode=operator |

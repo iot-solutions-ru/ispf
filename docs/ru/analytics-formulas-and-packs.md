@@ -2,6 +2,8 @@
 
 # Формулы analytics и пакеты расширений
 
+> **Статус:** Stable — Expression packs, deploy. Хаб: [doc-status.md](doc-status.md).
+
 Как создавать, переиспользовать и распространять historian-вычисления сверх одного binding rule. Охватывает **Tier A** (встроенные), **Tier B** (свои формулы) и **Tier C** (Java-пакеты + маркетплейс).
 
 **См. также:** [analytics-historian-cookbook](analytics-historian-cookbook.md) (рецепты), [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (архитектура), [analytics-tag-catalog](analytics-tag-catalog.md) (API развёрнутых тегов).
@@ -197,7 +199,7 @@ ${ISPF_ANALYTICS_PACKS_DIR}/
 ### Runtime (сегодня)
 
 - Open packs в classpath сервера загружаются при старте (`AnalyticsPackLoader`, `ServiceLoader`).
-- Drop-in каталог + проверка лицензии по аналогии с driver packs — **БЛ-216** (см. roadmap).
+- Drop-in каталог + проверка лицензии по аналогии с driver packs — **BL-216** (см. [analytics-platform-roadmap](analytics-platform-roadmap.md); charter, не «уже shipped»).
 
 ### Конфигурация (планируется GA)
 
@@ -216,7 +218,7 @@ ispf:
 
 Коммерческие и community **analytics extension packs** распространяются по тому же контракту, что application bundles и symbol packs ([marketplace](marketplace.md)).
 
-**Статус:** контракт листинга и поток для оператора описаны здесь; установка в `ISPF_ANALYTICS_PACKS_DIR` на платформе — **БЛ-216** (в работе). Open pack `energyDelta` уже в ядре без маркетплейса.
+**Статус:** контракт листинга и поток для оператора описаны здесь; установка в `ISPF_ANALYTICS_PACKS_DIR` на платформе — **BL-216** (в работе; roadmap = charter). Open pack `energyDelta` уже в ядре без маркетплейса.
 
 ### Поток для оператора
 
@@ -274,7 +276,7 @@ acme-mes-kpi-1.0.0.zip
 
 1. Реализовать SPI; тесты против `ispf-analytics-api`.
 2. Собрать подписанный `analytics-pack.json` + JAR ([commercial-licensing](commercial-licensing.md)).
-3. Опубликовать листинг на [ispf-marketplace](https://github.com/your-org/ispf-marketplace) с `artifactKind: analytics-pack`.
+3. Опубликовать листинг на совместимом marketplace-хосте (см. [marketplace](marketplace.md)) с `artifactKind: analytics-pack`.
 4. Interop CI: функции в каталоге после install на lab ISPF.
 5. Партнёрская программа: OEM tier, revenue share ([partner-program](partner-program.md)).
 
@@ -303,4 +305,6 @@ acme-mes-kpi-1.0.0.zip
 - [analytics-tag-catalog](analytics-tag-catalog.md)
 - [marketplace](marketplace.md)
 - [licensed-driver-packs](licensed-driver-packs.md)
-- [analytics-platform-roadmap](analytics-platform-roadmap.md) — БЛ-212…216
+- [analytics-platform-roadmap](analytics-platform-roadmap.md) — BL-212…216 (charter)
+
+> **Note:** [analytics-platform-roadmap](analytics-platform-roadmap.md) — charter/roadmap; не трактовать как полный shipped-статус без сверки с EN hub и backlog.

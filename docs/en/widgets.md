@@ -2,6 +2,8 @@
 
 # Dashboard widget reference
 
+> **Status:** Stable — All widget types. Hub: [doc-status.md](doc-status.md).
+
 Complete description of all ISPF widget types: purpose, HMI usage, layout fields, and examples.
 
 **See also:** [dashboards](dashboards.md) (grid, `selectionKey`, navigation), [operator-guide](operator-guide.md) (operator role), [bindings](bindings.md) (platform bindings in variables), [spreadsheet-widget](spreadsheet-widget.md) (formulas and grids).
@@ -170,7 +172,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 {
   "type": "chart",
   "title": "Temperature",
-  "w": 8, "h": 4,
+  "w": 56, "h": 4,
   "selectionKey": "device",
   "variableName": "temperature",
   "historyRange": "24h",
@@ -792,14 +794,14 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 
 ## Recommended sizes (w × h)
 
-| Widget | Size |
+| Widget | Size (84-grid) |
 |--------|------|
-| value, indicator, toggle | w=2–4, h=2 |
-| chart | w=6–12, h=4–6 |
-| object-table | w=12, h=4–6 |
-| function-form | w=4–6, h=4 |
-| spreadsheet | w=8–12, h=5–8 |
-| map | w=8–12, h=6–8 |
+| value, indicator, toggle | w=14–28, h=2 |
+| chart | w=42–84, h=4–6 |
+| object-table | w=84, h=4–6 |
+| function-form | w=28–42, h=4 |
+| spreadsheet | w=56–84, h=5–8 |
+| map | w=56–84, h=6–8 |
 
 ---
 

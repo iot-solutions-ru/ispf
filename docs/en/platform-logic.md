@@ -2,6 +2,8 @@
 
 # Unified platform logic (Platform Rule)
 
+> **Status:** Beta — Rules; `@dashboardContext` readiness varies. Hub: [doc-status.md](doc-status.md).
+
 One mechanism for variable bindings, dashboard logic, and event side effects.
 
 **Status:** specification (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), **Proposed**). Runtime extensions — phases 1–3.

@@ -2,6 +2,8 @@
 
 # ISPF Architecture
 
+> **Status:** Stable — Vision, layers, extensibility. Hub: [doc-status.md](doc-status.md).
+
 **See also:** [object-model](object-model.md), [cluster](cluster.md), [application-principles](application-principles.md), [decisions/readme.md](decisions/readme.md).
 
 ## Vision

@@ -1,5 +1,7 @@
 # ClickHouse production playbook (BL-114)
 
+> **Status:** Lab — Production rollout. Hub: [doc-status.md](doc-status.md).
+
 Ops guide for enabling ClickHouse on ISPF production: **event journal**, **variable historian**, and **dual-write** migration path.
 
 Related: [deployment](deployment.md), [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).

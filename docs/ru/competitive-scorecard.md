@@ -2,6 +2,8 @@
 
 # Конкурентный scorecard ISPF (BL-189)
 
+> **Статус:** Stable — Готовность по коду. Теги: [doc-status](../en/doc-status.md).
+
 Матрица публичной готовности для Phases 25–33 (фазы 25–33).
 
 **Версии (не смешивать):**
@@ -60,12 +62,12 @@
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators в `EventCorrelatorService` |
 | 2 | SCADA / HMI | 7.5 | **REAL** | `ispf-pid-v1` manifest `totalSymbols: 218`; `ScadaMimicEditor.tsx`; video wall в `dashboardLayoutPresets.ts`; e2e FPS в `quality-gates.spec.ts` (mocked operator API) |
 | 3 | OT/IT drivers | 6.5 | **PARTIAL** | 20 `PRODUCTION` в `DriverProductionMatrix`; Milo OPC UA, j2mod, S7, BACnet4J — реальные; `opc-da` в коде **stub**, но в матрице PRODUCTION; DNP3 `writePoint` throws |
-| 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC по умолчанию; нет in-repo throughput benchmark уровня PI |
+| 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC по умолчанию; lab gates BL-210 + JVM multi-tag gate **определены** (`analytics-scale-gate.sh`); оценка **≥9.5** после Enterprise L lab sign-off |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; `AlarmShelfApprovalService` in-memory **STUB** |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; не полная BPMN 2.0 |
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES — marketplace product (`mes-platform`, vendor IoT Solutions); база не сидит `root.platform.mes`. Bundle JSON/SQL/script BFF; нет отдельного MES-модуля |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
-| 9 | AI-assisted dev | 7.0 | **PARTIAL** | **REAL** one-shot live LLM (`AgentLiveDeploySmokeTest`) + **REAL** solution apply (`AiSolutionGeneratorLiveSmokeTest`, `mode=live`); draft fallback `mode=draft`; полный BL-178 ≥95% не выполнен |
+| 9 | AI-assisted dev | 7.0 | **PARTIAL** | **REAL** one-shot live LLM deploy (`AgentLiveDeploySmokeTest`) + **REAL** solution apply (`AiSolutionGeneratorLiveSmokeTest`, `mode=live`); draft fallback `mode=draft` (не stub); полный BL-178 ≥95% **не выполнен** |
 | 10 | Security / RBAC | 7.5 | **PARTIAL** | TOTP MFA + `required-for-admin` **REAL**; `TenantIsolationValidator` **STUB** |
 | 11 | Deploy / scale / edge | 7.0 | **PARTIAL** | Federation в `com.ispf.server.federation.*`; Helm skeleton; нет CI load proof для cluster scale |
 | 12 | Ecosystem / marketplace | 5.0 | **PARTIAL** | Локальная установка каталога **REAL**; `PartnerProgramService` / `MarketplaceSymbolListingService` → `"source": "stub"` |
@@ -91,7 +93,7 @@
 2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites; genealogy lite (**БЛ-193**).
 3. **AI (7.0 → 9+):** расширить S31/S32 one-shot до полного live 50@≥95% (`--enforce-rate`); расширить generator beyond catalog templates.
 4. **Ecosystem (5.0 → 9+):** persist partner enrollments; установка symbol pack beyond in-memory stub; внешние signed bundles.
-5. **Historian (7.0 → 9+):** lab benchmark + CI gate (БЛ-161); AF-capable analytics plane ([analytics-platform-roadmap](analytics-platform-roadmap.md) БЛ-200…210).
+5. **Historian (7.0 → 9+):** прогнать Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, catalog 50k, CH 1B) — BL-210; затем обновить scorecard до **≥9.5** с датированным sign-off.
 6. **HMI (7.5 → 9+):** FPS gate на live WebSocket mimic; persistence alarm shelving.
 7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**).
 

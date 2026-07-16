@@ -2,6 +2,8 @@
 
 # Каталог analytics-тегов (BL-209 / ADR-0041)
 
+> **Статус:** Stable — Deployed analytics tags. Хаб: [doc-status.md](doc-status.md).
+
 Развёрнутые **historian-вычисления** обнаруживаются из `@bindingRules` с `kind: historian` на объектах `DEVICE`. Одно правило = один тег каталога и одна live-переменная.
 
 **Cookbook (OEE, цепочки):** [analytics-historian-cookbook](analytics-historian-cookbook.md)
@@ -10,12 +12,12 @@
 
 | Поле | Значение |
 |------|----------|
-| Путь тега | `objectPath#ruleId` |
+| Путь тега | `objectPath/tag/ruleId` (составной ключ для DAG, каталога, schedules) |
 | Объект | Устройство с правилом и выходной переменной |
 | Выход | `target.variableName` (несколько правил на устройство — норма) |
 | Id правила | Стабильный id в `@bindingRules` |
 
-Пример: правило `avg-temp-5m` на `root.platform.devices.sensor-a` → тег `…sensor-a#avg-temp-5m` → переменная `avgTemp5m`.
+Пример: правило `avg-temp-5m` на `root.platform.devices.sensor-a` → тег `root.platform.devices.sensor-a/tag/avg-temp-5m` → переменная `avgTemp5m`.
 
 ## Метаданные правила (`@historianRuleMeta`)
 
@@ -38,7 +40,7 @@
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/v1/platform/analytics/tags?path=` | Список тегов |
-| GET | `/api/v1/platform/analytics/tags/by-path?path=` | Один тег (`objectPath#ruleId`) |
+| GET | `/api/v1/platform/analytics/tags/by-path?path=` | Один тег; `path` = `objectPath/tag/ruleId` или путь устройства |
 | POST | `/api/v1/platform/analytics/tags/backfill` | Backfill окна |
 | POST | `/api/v1/platform/analytics/expression/validate` | Валидация CEL + `hist.*` |
 | POST | `/api/v1/platform/analytics/query` | Мультитеговый запрос |
@@ -52,7 +54,7 @@
 | PUT | `/api/v1/platform/analytics/formulas/{id}` | Обновить; перепривязка `formulaRef` |
 | DELETE | `/api/v1/platform/analytics/formulas/{id}` | Удалить формулу |
 | POST | `/api/v1/platform/analytics/formulas/{id}/expand` | Развернуть шаблон `{{param}}` |
-| GET | `/api/v1/platform/analytics/tags/evaluate?path=` | Probe historian-тега (`objectPath#ruleId`) |
+| GET | `/api/v1/platform/analytics/tags/evaluate?path=` | Probe historian-тега (`objectPath/tag/ruleId`) |
 
 Поля ответа каталога, CEL-over-historian и propagation quality — см. [английскую версию](../en/analytics-tag-catalog.md).
 

@@ -1,5 +1,7 @@
 # Air-gap deployment (BL-128)
 
+> **Status:** Stable — Offline installs. Hub: [doc-status.md](doc-status.md).
+
 Runbook for installing and updating ISPF on hosts **without outbound internet**. Complements [deployment](deployment.md) (online quick start) and [commercial-licensing](commercial-licensing.md) (RSA bundle / driver pack licenses).
 
 ## When to use

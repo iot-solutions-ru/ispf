@@ -2,6 +2,8 @@
 
 # SCADA symbol library (BL-94)
 
+> **Status:** Stable — P&ID pack (218 symbols). Hub: [doc-status.md](doc-status.md).
+
 Complete reference for **P&ID pack symbols**, **custom SVG upload**, and **document library** in ISPF mimic editor.
 
 See also: [scada](scada.md), [scada-mimic](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
@@ -133,7 +135,7 @@ cd apps/web-console && npm run test -- src/scada/customSvg.test.ts src/scada/sym
 
 ## Legal
 
-- **ispf-pid-v1** pack: Apache-2.0 original work ([license](license.md)).
+- **ispf-pid-v1** pack: Apache-2.0 original work ([pid-symbols-legal.md](pid-symbols-legal.md), pack [LICENSE](../../apps/web-console/src/scada/symbols/packs/ispf-pid-v1/LICENSE.md)).
 - Do **not** import vendor SymbolFactory / TIA / copyrighted P&ID art.
 - Legacy WMF importer (`tools/symbol-import/`) is **deprecated**.
 

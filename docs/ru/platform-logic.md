@@ -1,28 +1,30 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/platform-logic.md](../en/platform-logic.md).
 
-# Единая логика платформы (Правило платформы)
+# Единая логика платформы (Platform Rule)
 
-Один механизм для привязки функций, логики дашборда и побочных эффектов.
+> **Статус:** Beta — Правила; @dashboardContext — зрелость разная. Теги: [doc-status](../en/doc-status.md).
 
-**Статус:** спецификация (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), **Предлагается**). Продление времени выполнения — по фазам 1–3.
+Один механизм для variable bindings, логики дашборда и event side effects.
+
+**Статус:** спецификация (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), **Proposed**). Runtime-расширения — фазы 1–3.
 
 ---
 
 ## Модель для человека
 
 ```
-КОГДА  →  ЕСЛИ (CEL)  →  ТОГДА (записать результат)
+WHEN  →  IF (CEL)  →  THEN (write result)
 ```
 
-Та же ментальная модель, что [обязательные правила](bindings.md):
+Тот же паттерн, что у [binding rules](bindings.md):
 
-- **Обязательное правило** на устройстве → пишется в переменную.
-- **Dashboard rule** на объекте `DASHBOARD` → пишет в `@dashboardContext` или fire event.
-- **Правило оповещения** на `ALERT` → отдельный объект, но условие = CEL (будущая унификация пользовательского интерфейса — не в области действия v1).
+- **Binding rule** на устройстве → пишет в переменную.
+- **Dashboard rule** на объекте `DASHBOARD` → пишет в `@dashboardContext` или публикует event.
+- **Alert rule** на `ALERT` → отдельный объект, но условие = CEL (будущая унификация UI — вне scope v1).
 
 ---
 
-## JSON: правило платформы (= BindingRule)
+## JSON: Platform Rule (= BindingRule)
 
 ### Effect `variable` (сегодня, default)
 
@@ -32,7 +34,7 @@
   "enabled": true,
   "order": 10,
   "activators": {
-    "onVariableChange": [{ "objectPath": "self", "variableName": "temperature" }]
+    "onVariableChange": [{ "ref": "@/temperature" }]
   },
   "condition": "",
   "expression": "self.temperature.value",
@@ -97,10 +99,10 @@ Legacy без `kind`:
 
 | Поле | Статус | Назначение |
 |------|--------|------------|
-| `onStartup` | есть | старт / attach модели |
-| `onVariableChange` | есть | телеметрия, переменные |
-| `onEvent` | есть | имя platform event |
-| `periodicMs` | есть | периодический пересчет; индекс `platform_binding_periodic_rules`, пробуждение по `next_run_at` ([bindings](bindings.md)) |
+| `onStartup` | exists | старт / attach модели |
+| `onVariableChange` | exists | телеметрия, переменные |
+| `onEvent` | exists | имя platform event |
+| `periodicMs` | exists | периодический пересчёт; индекс `platform_binding_periodic_rules`, wake по `next_run_at` ([bindings](bindings.md)) |
 | `onContextChange` | **planned** | изменение `@dashboardContext` |
 
 ---
@@ -119,7 +121,7 @@ Reserved JSON-переменная на объекте `DASHBOARD` (модель
 
 Web-console `DashboardSession` зеркалирует эту структуру.
 
-### Публикация контекста (издатели)
+### Издатели контекста
 
 | Источник | Действие |
 |----------|----------|
@@ -131,10 +133,10 @@ Web-console `DashboardSession` зеркалирует эту структуру.
 
 Все publishers (фаза 1+) → **PUT `@dashboardContext`**, не только React state.
 
-### Потребление (потребители)
+### Потребители
 
 | Поле виджета | Читает из контекста |
-|--------------|-------------------|
+|--------------|---------------------|
 | `selectionKey` | `selection[key]` |
 | `paramKey` | `params[key]` |
 | `contextPathKey` | `params[key]` как object path |
@@ -142,23 +144,23 @@ Web-console `DashboardSession` зеркалирует эту структуру.
 
 ---
 
-## Инвентарь наследие → Правило платформы
+## Legacy inventory → Platform Rule
 
-| Наследие | Где | Миграция | Статус |
+| Legacy | Где | Миграция | Статус |
 |--------|-----|----------|--------|
-| `showWhenJson` | поле функциональной формы | Правило CEL для объекта формы или правило на дашборде `context.params.*` | время выполнения сохранён; Миграция пользовательского интерфейса — этап 3 |
-| `payloadFilterExpr` | лента событий | CEL `condition` на правило/фильтр на стороне сервера | время выполнения сохранён; подсказка об устаревании в редакторе |
-| `requireSessionParamsJson` | ссылка, форма | `condition` на непустые ключи в контексте | время выполнения сохранён; подсказка об устаревании в редакторе |
+| `showWhenJson` | поле function-form | CEL rule на объекте формы или dashboard rule на `context.params.*` | runtime сохранён; UI migration — фаза 3 |
+| `payloadFilterExpr` | event-feed | CEL `condition` на правиле / server-side filter | runtime сохранён; deprecation hint в редакторе |
+| `requireSessionParamsJson` | link, form | `condition` на непустые ключи в context | runtime сохранён; deprecation hint в редакторе |
 | Dashboard session only (sessionStorage) | operator | `@dashboardContext` + WS | фаза 1 ✅ |
-| Для каждого виджета `visible` логическое значение | макет | статическое значение по умолчанию; время выполнения → правила → `widgets.*.visible` | фаза 2 ✅ |
-| Большой двоичный объект сеанса электронной таблицы | `params[sheet:…]` | связывающие клетки + `onContextChange`; дополнительные правила экспорта | запланировано |
-| Оповещение CEL | ПРЕДУПРЕЖДЕНИЕ объект | остается; тот же редактор CEL | — |
+| Per-widget `visible` boolean | layout | static default; runtime → rules → `widgets.*.visible` | фаза 2 ✅ |
+| Spreadsheet session blob | `params[sheet:…]` | binding cells + `onContextChange`; optional export rules | planned |
+| Alert CEL | объект ALERT | остаётся; тот же CEL editor | — |
 
 **Не добавлять:** `behaviorJson`, `visibleWhen` на виджете, отдельный dashboard DSL.
 
 ---
 
-## Пользовательский интерфейс
+## UI
 
 | Место | Компонент |
 |-------|-----------|
@@ -168,9 +170,9 @@ Web-console `DashboardSession` зеркалирует эту структуру.
 
 ---
 
-## REST/движок (планируется)
+## REST / engine (planned)
 
-- Существующий CRUD `/binding-rules` — без изменений URL.
+- Существующий CRUD `/binding-rules` — URL без изменений.
 - `BindingRuleEngine.evaluateOnContextChange(dashboardPath, contextJson)` — фаза 1.
 - CEL validate: `POST /api/v1/expressions/validate` (уже есть).
 
@@ -182,17 +184,17 @@ Web-console `DashboardSession` зеркалирует эту структуру.
 
 **Rules на `root.platform.dashboards.snmp-host-monitoring`:**
 
-1. Когда температура на выбранном устройстве > 80 → `params.mode = "alarm"`.
+1. Когда температура выбранного устройства > 80 → `params.mode = "alarm"`.
 2. Когда `params.mode == "alarm"` → `widgets.alarm-panel.visible = true`.
 3. Когда `params.mode == "normal"` → `widgets.alarm-panel.visible = false`.
-4. В режиме → Тревога → Пожар `hmi.dashboard.alarm`.
+4. Когда mode → alarm → fire `hmi.dashboard.alarm`.
 
-Виджеты **без** условных полей в формате JSON.
+Виджеты **без** условных полей в JSON layout.
 
 ---
 
 ## Связанные документы
 
-- [bindings](bindings.md) — правила привязки, CEL, API
-- [dashboards](dashboards.md) — макет, виджеты, контекст
+- [bindings](bindings.md) — binding rules, CEL, API
+- [dashboards](dashboards.md) — layout, widgets, context
 - [decisions/0019-platform-rule-unification.md](decisions/0019-platform-rule-unification.md)
