@@ -2,6 +2,8 @@
 
 # Dashboards and widgets
 
+> **Status:** Stable — 84×8 grid is canonical. Screenshots: [assets/README](../assets/README.md).
+
 **Full widget reference** (purpose, settings, examples): **[widgets](widgets.md)**.
 
 ## Overview

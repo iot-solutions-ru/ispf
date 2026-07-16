@@ -2,6 +2,8 @@
 
 # ISPF — Product Documentation
 
+> **Status:** Stable — public product entry. Hub tags: [doc-status.md](doc-status.md).
+
 **IoT Solutions Platform Framework (ISPF)** is middleware for IoT, SCADA, and industrial automation. It provides a unified data model, HMI, automation, and an application layer without domain-specific Java in the core.
 
 This document is the **entry point for all roles**. Implementation details live in the other sections of [docs/en/readme.md](readme.md).

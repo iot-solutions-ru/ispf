@@ -1,6 +1,15 @@
 # ISPF competitive scorecard (BL-189)
 
-Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)). **Current column:** **Code verified** — evidence from `main` source and tests (release **0.9.102**, July 2026).
+Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
+
+**Version pin (do not conflate):**
+
+| Pin | Meaning |
+|-----|---------|
+| **0.9.102** | Last **full code audit** of this scorecard (July 2026). Scores and evidence tables below are frozen to that audit. |
+| **0.9.105+** | Typical current `main` / prod demostand label in roadmap and deploy docs. **Not** a re-scored matrix — ship notes may advance without reopening every dimension. |
+
+**Current column:** **Code verified** — evidence from `main` source and tests at audit baseline **0.9.102**.
 
 Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI, Siemens Opcenter, Tulip, mature context-tree IIoT platforms.
 
@@ -24,6 +33,8 @@ Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI
 **Overall (code verified): ~7.4/10** — simple mean of the 14 dimensions above.
 
 **Program wave 8 (Jul 2026)** previously claimed ~9.8/10 from shipped BL artifacts; **code audit (0.9.102)** supersedes that figure. See [§ Code audit evidence](#code-audit-evidence-0102) and [§ Gaps to target](#gaps-to-target).
+
+**Docs hygiene (Waves A–D, Jul 2026):** hub paths, AGPL/auth honesty, status tags, and link audit improved DX packaging. Dimension **13 Documentation / DX** stays **8.5** until the next full code audit re-scores it — do not invent a new overall from README work alone.
 
 ---
 

@@ -24,8 +24,9 @@ ADR: [en/decisions/](en/decisions/) · [ru/decisions/](ru/decisions/)
 
 ## Maintenance
 
+- [doc-status](en/doc-status.md) — Stable / Beta / Draft / Charter / Lab / Internal tags
 - [documentation-audit](en/documentation-audit.md) — structure, naming, link policy, **anonymization**
 - `python deploy/tools/anonymize-repo.py` — replace real hosts/users in all committed text files
 - `python deploy/tools/anonymize-docs.py` — markdown-only (wrapper)
-- `python tools/docs-audit/audit_links.py` — verify internal links
+- `python tools/docs-audit/audit_links.py` — verify internal + repo-root relative links
 - `python tools/docs-audit/audit_en_language.py` — no Cyrillic in `docs/en/`

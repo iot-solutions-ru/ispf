@@ -2,6 +2,8 @@
 
 # Web Console
 
+> **Status:** Stable — admin + operator shells. Capture convention: [assets/README](../assets/README.md).
+
 React 19 + Vite 6 + TanStack Query. Catalog: `apps/web-console/`.
 
 ## Operating modes

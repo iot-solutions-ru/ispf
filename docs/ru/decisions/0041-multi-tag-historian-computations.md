@@ -32,7 +32,7 @@
 - **Путь тега** — `objectPath#ruleId`
 - **Reactive engine** пропускает `historian`; **analytics engine** компилирует и считает
 
-Рецепты (OEE, цепочки, CEL): [analytics-historian-cookbook](../../analytics-historian-cookbook.md). Эталон на prod: cookbook **рецепт 5** (`analytics-demo`).
+Рецепты (OEE, цепочки, CEL): [analytics-historian-cookbook](../analytics-historian-cookbook.md). Эталон на prod: cookbook **рецепт 5** (`analytics-demo`).
 
 ### 2. Убрать каталог `ANALYTICS_TEMPLATE`
 
@@ -68,10 +68,10 @@
 | Эталон prod + дашборд + скрипты deploy/tools | ✅ |
 | API `/templates/*` | устарело, не для новых конфигураций |
 
-Полная таблица сверки — [cookbook § Сверка с планом](../../analytics-historian-cookbook.md#сверка-с-планом-adr-0040--adr-0041).
+Полная таблица сверки — [cookbook § Сверка с планом](../analytics-historian-cookbook.md#сверка-с-планом-adr-0040--adr-0041).
 
 ## См. также
 
 - [0040-unified-computations-ui](0040-unified-computations-ui.md)
-- [analytics-historian-cookbook](../../analytics-historian-cookbook.md)
-- [analytics-tag-catalog](../../analytics-tag-catalog.md)
+- [analytics-historian-cookbook](../analytics-historian-cookbook.md)
+- [analytics-tag-catalog](../analytics-tag-catalog.md)

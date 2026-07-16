@@ -141,8 +141,17 @@ Docs are **deep and professionally maintained** as an internal platform wiki. Fo
 | | |
 |---|---|
 | Date | 2026-07-16 |
-| Scorecard reference | ~7.4/10 code-verified (see file for version pin) |
-| Next action | **Wave B + Wave C applied on `main` (2026-07-16)** — continue with Wave D (status tags) |
+| Scorecard reference | ~7.4/10 code-verified (audit baseline **0.9.102**; prod often **0.9.105+**) |
+| Next action | Optional Wave D+: Status one-liners on remaining hub pages; capture Builder EN pack; regenerate AI context pack if process requires |
+
+## Wave D changelog (applied)
+
+- New [doc-status.md](doc-status.md) vocabulary; **Status** column on EN/RU hub catalogs.
+- Status one-liners on `product`, `getting-started`, `dashboards`, `web-console` (marketplace/partner already bannered).
+- `audit_links.py`: also validates repo-root relatives (`packages/`, `examples/`, `LICENSE`, …).
+- Screenshot convention: Builder EN pack table in [assets/README](../assets/README.md); pointers from dashboards / web-console.
+- Competitive scorecard: dual pin **0.9.102** (audit) vs **0.9.105+** (prod/roadmap); DX score not inflated by docs-only work.
+- Cleared remaining broken relatives surfaced by expanded auditor (kebab-case ADRs, `../../gradle`, analytics/operator stubs, missing `.cursor` rule → deployment pointers).
 
 ## Wave C changelog (applied)
 

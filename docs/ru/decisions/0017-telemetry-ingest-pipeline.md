@@ -95,6 +95,6 @@ flowchart LR
 
 - [load-testing](../load-testing.md) — baselines and scripts
 - [variable-history](../variable-history.md) — configuration
-- [BINDINGS](../BINDINGS.md) — `activators.async`
+- [BINDINGS](../bindings.md) — `activators.async`
 - [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) — dual-lane bus
 - [0009-timescaledb-retention](0009-timescaledb-retention.md) — Timescale retention

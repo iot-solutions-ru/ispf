@@ -110,7 +110,7 @@ Scripts (no fixed throughput claims — measure on your hardware):
 
 Setup helper: `deploy/setup-mqtt-event-journal.py` (single device); multi-device: `deploy/setup-mqtt-event-journal-devices.py` with `--bench-no-l0-coalesce`.
 
-See [load-testing](../load-testing.md) and **[LAB_EVENT_JOURNAL_STRESS](../LAB_EVENT_JOURNAL_STRESS.md)** (Scylla lab host, multi-device emqtt, metrics interpretation).
+See [load-testing](../load-testing.md) and **[lab-event-journal-stress](../lab-event-journal-stress.md)** (Scylla lab host, multi-device emqtt, metrics interpretation).
 
 **Lab baseline (2026-07-04, ISPF 0.9.88, 16 mqtt devices, Scylla):** sustained journal **~110k events/s** (~6.8k/device); `eventsFired` → flushed → Scylla meta **100%** (no journal loss). Apparent «~17% efficiency vs configured MQTT target» is an emqtt formula / CPU-cap artifact, not ISPF dropping messages. Bottleneck at peak: Scylla write CPU.
 

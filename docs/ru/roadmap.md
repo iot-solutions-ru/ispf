@@ -31,7 +31,7 @@
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
-Развертывание на VPS — только по запросу ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc)).
+Развертывание на VPS — только по запросу (см. [deployment](deployment.md) / [demostands](demostands.md); скрипт `deploy/vps-deploy-direct.ps1`).
 
 ---
 

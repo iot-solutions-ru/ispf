@@ -22,7 +22,7 @@ ${ISPF_DRIVER_PACKS_DIR}/
 
 Output: `build/driver-packs/<packId>/` with `driver-pack.json`, `LICENSE`, and JAR.
 
-Источник каталога: [gradle/driver-packs.json](../gradle/driver-packs.json) (восстановить через `python tools/generate-driver-packs-json.py`).
+Источник каталога: [gradle/driver-packs.json](../../gradle/driver-packs.json) (восстановить через `python tools/generate-driver-packs-json.py`).
 
 ## Настроить
 

@@ -20,7 +20,7 @@ ${ISPF_DRIVER_PACKS_DIR}/
 
 Output: `build/driver-packs/<packId>/` with `driver-pack.json`, `LICENSE`, and JAR.
 
-Catalog source: [gradle/driver-packs.json](../gradle/driver-packs.json) (regenerate via `python tools/generate-driver-packs-json.py`).
+Catalog source: [gradle/driver-packs.json](../../gradle/driver-packs.json) (regenerate via `python tools/generate-driver-packs-json.py`).
 
 ## Configure
 

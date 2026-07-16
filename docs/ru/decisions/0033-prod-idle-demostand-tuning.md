@@ -82,7 +82,7 @@ Risks:
 **Документация**
 
 - [DEMOSTANDS](../DEMOSTANDS.md) — основной guide
-- [VPS_DEMOSTAND](../VPS_DEMOSTAND.md) — пример ops на одном хосте
+- [vps-demostand](../vps-demostand.md) — пример ops на одном хосте
 - [deployment](../deployment.md), [cluster](../cluster.md)
 
 ## Связанные материалы

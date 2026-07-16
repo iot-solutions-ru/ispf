@@ -35,6 +35,8 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 
 **Status vs commercial platforms:** [Competitive scorecard](competitive-scorecard.md) (code-verified). Long backlog: [Roadmap](roadmap.md).
 
+**Doc status tags:** [doc-status.md](doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
+
 ---
 
 ## Full catalog
@@ -42,135 +44,136 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 <details>
 <summary><strong>Product</strong></summary>
 
-| Document | Audience | Description |
-|----------|----------|-------------|
-| [Product overview](product.md) | All | Capabilities, scenarios, doc map |
-| [Operator guide](operator-guide.md) | Operator | HMI, work queue, events |
-| [Solution developer guide](solution-developer-guide.md) | App developer | Deploy, operator UI, bundles |
-| [Application principles](application-principles.md) | Developer, Agent | P1–P10 target approach |
-| [Public API](solution-developer-public-api.md) | App developer | Stable platform ↔ bundle boundary |
-| [Glossary](glossary.md) | All | Terms and definitions |
-| [Web Console](web-console.md) | Admin | Explorer, System, AI Studio |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [Product overview](product.md) | Stable | Capabilities, scenarios, doc map |
+| [Operator guide](operator-guide.md) | Stable | HMI, work queue, events |
+| [Solution developer guide](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
+| [Application principles](application-principles.md) | Stable | P1–P10 target approach |
+| [Public API](solution-developer-public-api.md) | Stable | Stable platform ↔ bundle boundary |
+| [Glossary](glossary.md) | Stable | Terms and definitions |
+| [Web Console](web-console.md) | Stable | Explorer, System, AI Studio |
 
 </details>
 
 <details>
 <summary><strong>Platform</strong></summary>
 
-| Document | Description |
-|----------|-------------|
-| [Getting started](getting-started.md) | Try ISPF + contributor QA |
-| [Architecture](architecture.md) | Vision, layers, extensibility |
-| [Object model](object-model.md) | Tree, variables, events, functions |
-| [Bindings](bindings.md) | CEL and platform bindings |
-| [Platform logic](platform-logic.md) | Rules, dashboard context |
-| [Blueprints](blueprints.md) | Models / templates |
-| [Variable history](variable-history.md) | Time-series, retention |
-| [API](api.md) | Endpoints reference |
-| [Applications](applications.md) | Bundles, BFF, scheduler |
-| [Reports](reports.md) | SQL reports, CSV export |
-| [Roadmap](roadmap.md) | Phases and backlog |
-| [Competitive scorecard](competitive-scorecard.md) | Code-verified readiness |
-| [ADR index](decisions/readme.md) | Architecture decision records |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [Getting started](getting-started.md) | Stable | Try ISPF + contributor QA |
+| [Architecture](architecture.md) | Stable | Vision, layers, extensibility |
+| [Object model](object-model.md) | Stable | Tree, variables, events, functions |
+| [Bindings](bindings.md) | Stable | CEL and platform bindings |
+| [Platform logic](platform-logic.md) | Beta | Rules; `@dashboardContext` readiness varies |
+| [Blueprints](blueprints.md) | Stable | Models / templates |
+| [Variable history](variable-history.md) | Stable | Time-series, retention |
+| [API](api.md) | Stable | Endpoints reference |
+| [Applications](applications.md) | Stable | Bundles, BFF, scheduler |
+| [Reports](reports.md) | Stable | SQL reports, CSV export |
+| [Roadmap](roadmap.md) | Charter | Phases and backlog |
+| [Competitive scorecard](competitive-scorecard.md) | Stable | Code-verified readiness |
+| [ADR index](decisions/readme.md) | Stable | Architecture decision records |
+| [Doc status tags](doc-status.md) | Stable | Status vocabulary |
 
 </details>
 
 <details>
 <summary><strong>SCADA / HMI</strong></summary>
 
-| Document | Description |
-|----------|-------------|
-| [SCADA overview](scada.md) | Mimics, symbols, bindings |
-| [SCADA mimic reference](scada-mimic.md) | `diagramJson`, REST API |
-| [Symbol library](scada-symbol-library.md) | P&ID pack (218 symbols) |
-| [Widgets catalog](widgets.md) | All widget types |
-| [Dashboards](dashboards.md) | Layout, `selectionKey` |
-| [HMI quality gates](hmi-quality-gates.md) | Lighthouse, axe, FPS |
-| [Spreadsheet widget](spreadsheet-widget.md) | Formulas and bindings |
-| [Operator apps](operator-apps.md) | Operator shell configuration |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [SCADA overview](scada.md) | Stable | Mimics, symbols, bindings |
+| [SCADA mimic reference](scada-mimic.md) | Stable | `diagramJson`, REST API |
+| [Symbol library](scada-symbol-library.md) | Stable | P&ID pack (218 symbols) |
+| [Widgets catalog](widgets.md) | Stable | All widget types |
+| [Dashboards](dashboards.md) | Stable | Layout 84×8, `selectionKey` |
+| [HMI quality gates](hmi-quality-gates.md) | Lab | Lighthouse, axe, FPS |
+| [Spreadsheet widget](spreadsheet-widget.md) | Stable | Formulas and bindings |
+| [Operator apps](operator-apps.md) | Stable | Operator shell configuration |
 
 </details>
 
 <details>
 <summary><strong>OT / drivers / historian</strong></summary>
 
-| Document | Description |
-|----------|-------------|
-| [Drivers catalog](drivers.md) | Built-in drivers |
-| [Driver DDK](driver-ddk.md) | Custom driver SDK |
-| [Driver promotion](driver-promotion.md) | PRODUCTION matrix |
-| [Field pilot playbook](field-pilot-playbook.md) | OT validation runbooks |
-| [Historian tiers](historian-tiers.md) | JDBC, ClickHouse, dual-write |
-| [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Production rollout |
-| [Cluster](cluster.md) | Multi-replica HA |
-| [Messaging](messaging.md) | NATS / MQTT notes |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [Drivers catalog](drivers.md) | Beta | Packs; maturity honesty vs PRODUCTION matrix |
+| [Driver DDK](driver-ddk.md) | Stable | Custom driver SDK |
+| [Driver promotion](driver-promotion.md) | Stable | PRODUCTION + ready-for-field |
+| [Field pilot playbook](field-pilot-playbook.md) | Lab | OT validation runbooks |
+| [Historian tiers](historian-tiers.md) | Beta | JDBC, ClickHouse, dual-write |
+| [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Lab | Production rollout |
+| [Cluster](cluster.md) | Beta | Multi-replica HA (capability vs demostand) |
+| [Messaging](messaging.md) | Stable | NATS / MQTT notes |
 
 </details>
 
 <details>
 <summary><strong>Analytics</strong></summary>
 
-| Document | Description |
-|----------|-------------|
-| [Historian cookbook](analytics-historian-cookbook.md) | Recipes, binding rules, rollups |
-| [Formulas and packs](analytics-formulas-and-packs.md) | Expression packs, deploy |
-| [Analytics roadmap](analytics-platform-roadmap.md) | BL-200…210 charter |
-| [Tag catalog API](analytics-tag-catalog.md) | Deployed analytics tags |
-| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Architecture ADR |
-| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Function catalog |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [Historian cookbook](analytics-historian-cookbook.md) | Stable | Recipes, binding rules, rollups |
+| [Formulas and packs](analytics-formulas-and-packs.md) | Stable | Expression packs, deploy |
+| [Analytics roadmap](analytics-platform-roadmap.md) | Charter | BL-200…210 charter |
+| [Tag catalog API](analytics-tag-catalog.md) | Stable | Deployed analytics tags |
+| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Stable | Architecture ADR |
+| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Stable | Function catalog |
 
 </details>
 
 <details>
 <summary><strong>AI / automation / MES</strong></summary>
 
-| Document | Description |
-|----------|-------------|
-| [AI development](ai-development.md) | ContextPack, tools, Studio |
-| [AI agent](ai-agent.md) | Agent API and metrics |
-| [Agent knowledge](agent-knowledge.md) | Internal agent routing map |
-| [Agent regression](agent-regression.md) | Scenario CI gates |
-| [Automation](automation.md) | Alerts, correlators |
-| [Workflows](workflows.md) | BPMN engine |
-| [MES platform reference](reference-mes-platform.md) | ISA-95 bundles |
-| [MES walkthrough](reference-mes-walkthrough.md) | End-to-end MES path |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 open |
+| [AI agent](ai-agent.md) | Beta | Agent API; ≥95% gate not met |
+| [Agent knowledge](agent-knowledge.md) | Internal | Agent routing map |
+| [Agent regression](agent-regression.md) | Lab | Scenario CI gates |
+| [Automation](automation.md) | Stable | Alerts, correlators |
+| [Workflows](workflows.md) | Beta | BPMN subset (not full 2.0) |
+| [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ plant |
+| [MES walkthrough](reference-mes-walkthrough.md) | Lab | End-to-end MES path |
 
 </details>
 
 <details>
 <summary><strong>Operations</strong> (deploy, labs, CI — heavier runbooks)</summary>
 
-| Document | Description |
-|----------|-------------|
-| [Deployment](deployment.md) | Docker, env vars |
-| [Demostand profiles](demostands.md) | Prod, lab, edge topologies |
-| [Air-gap deployment](air-gap-deployment.md) | Offline installs |
-| [Federation](federation.md) | Hub / edge peers |
-| [Security](security.md) | RBAC, MFA |
-| [Observability](observability.md) | Metrics, diagnostics |
-| [Testing](testing.md) | Unit, integration |
-| [Load testing](load-testing.md) | Throughput baselines |
-| [Release dogfood](release-dogfood.md) | Release checklist |
-| [Lab training](lab-training.md) | Training lab packs |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [Deployment](deployment.md) | Stable | Docker, env vars |
+| [Demostand profiles](demostands.md) | Lab | Prod, lab, edge topologies |
+| [Air-gap deployment](air-gap-deployment.md) | Stable | Offline installs |
+| [Federation](federation.md) | Beta | Hub / edge (maturity caveats) |
+| [Security](security.md) | Stable | RBAC, MFA |
+| [Observability](observability.md) | Stable | Metrics, diagnostics |
+| [Testing](testing.md) | Stable | Unit, integration |
+| [Load testing](load-testing.md) | Lab | Throughput baselines |
+| [Release dogfood](release-dogfood.md) | Internal | Release checklist |
+| [Lab training](lab-training.md) | Lab | Training sample packs |
 
 </details>
 
 <details>
 <summary><strong>Ecosystem & legal</strong></summary>
 
-| Document | Description |
-|----------|-------------|
-| [Marketplace](marketplace.md) | Catalog and install |
-| [Symbol marketplace](symbol-marketplace.md) | Symbol pack distribution |
-| [Partner program](partner-program.md) | Integrator tiers |
-| [Certification](certification.md) | Training paths |
-| [License](license.md) | **AGPL v3** platform + dual-license |
-| [Commercial licensing](commercial-licensing.md) | Enterprise terms |
-| [License compliance](license-compliance.md) | Obligations checklist |
-| [Plugins](plugins.md) | Core vs packs vs bundles |
-| [Documentation audit](documentation-audit.md) | Structure, naming, link audit |
-| [Full docs audit 2026-07-16](documentation-full-audit-2026-07-16.md) | Content honesty pass (P0–P2) |
-| [Russian software registry](russian-software-registry.md) | RU registry process (optional market) |
+| Document | Status | Description |
+|----------|--------|-------------|
+| [Marketplace](marketplace.md) | Draft | Partial BL-183; not full GA |
+| [Symbol marketplace](symbol-marketplace.md) | Draft | Listing API stub |
+| [Partner program](partner-program.md) | Draft | Design; in-server API stub |
+| [Certification](certification.md) | Draft | Training paths / exams |
+| [License](license.md) | Stable | **AGPL v3** + dual-license |
+| [Commercial licensing](commercial-licensing.md) | Stable | Enterprise terms |
+| [License compliance](license-compliance.md) | Stable | Obligations checklist |
+| [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
+| [Documentation audit](documentation-audit.md) | Internal | Structure, naming, link audit |
+| [Full docs audit 2026-07-16](documentation-full-audit-2026-07-16.md) | Internal | Content honesty pass |
+| [Russian software registry](russian-software-registry.md) | Internal | Rights-holder / RU market |
 
 </details>
 

@@ -91,7 +91,7 @@ Risks:
 
 ## Связанные материалы
 
-- [STORAGE_PORTABILITY_INVENTORY](../STORAGE_PORTABILITY_INVENTORY.md)
+- [storage-portability-inventory](../storage-portability-inventory.md)
 - [deployment](../deployment.md) § Storage deployment modes
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
 - [BLUEPRINTS](../BLUEPRINTS.md) — `data-source-v1`

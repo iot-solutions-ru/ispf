@@ -35,6 +35,8 @@
 
 **Статус vs коммерческие платформы:** [Competitive scorecard](competitive-scorecard.md). Бэклог: [Roadmap](roadmap.md).
 
+**Теги статуса документов:** [doc-status.md](../en/doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
+
 ---
 
 ## Полный каталог
@@ -42,134 +44,136 @@
 <details>
 <summary><strong>Продукт</strong></summary>
 
-| Документ | Аудитория | Описание |
-|----------|-----------|----------|
-| [Обзор продукта](product.md) | Все | Возможности, сценарии, карта документации |
-| [Руководство оператора](operator-guide.md) | Оператор | HMI, work queue, события |
-| [Руководство разработчика решений](solution-developer-guide.md) | Разработчик приложений | Deploy, operator UI, bundles |
-| [Принципы приложений](application-principles.md) | Разработчик, агент | Target approach P1–P10 |
-| [Публичный API](solution-developer-public-api.md) | Разработчик приложений | Граница platform ↔ bundle |
-| [Глоссарий](glossary.md) | Все | Термины |
-| [Web Console](web-console.md) | Админ | Explorer, System, AI Studio |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [Обзор продукта](product.md) | Stable | Возможности, сценарии, карта документации |
+| [Руководство оператора](operator-guide.md) | Stable | HMI, work queue, события |
+| [Руководство разработчика решений](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
+| [Принципы приложений](application-principles.md) | Stable | Target approach P1–P10 |
+| [Публичный API](solution-developer-public-api.md) | Stable | Граница platform ↔ bundle |
+| [Глоссарий](glossary.md) | Stable | Термины |
+| [Web Console](web-console.md) | Stable | Explorer, System, AI Studio |
 
 </details>
 
 <details>
 <summary><strong>Платформа</strong></summary>
 
-| Документ | Описание |
-|----------|----------|
-| [Быстрый старт](getting-started.md) | Try ISPF + QA для контрибьюторов |
-| [Архитектура](architecture.md) | Видение, слои, расширяемость |
-| [Модель объектов](object-model.md) | Дерево, переменные, события, функции |
-| [Привязки](bindings.md) | CEL и platform bindings |
-| [Логика платформы](platform-logic.md) | Правила, контекст дашборда |
-| [Blueprints](blueprints.md) | Модели / шаблоны |
-| [История переменных](variable-history.md) | Time-series, retention |
-| [API](api.md) | Справочник endpoints |
-| [Приложения](applications.md) | Bundles, BFF, scheduler |
-| [Отчёты](reports.md) | SQL-отчёты, CSV |
-| [Roadmap](roadmap.md) | Фазы и бэклог |
-| [Конкурентный scorecard](competitive-scorecard.md) | Готовность по коду |
-| [Индекс ADR](decisions/readme.md) | Архитектурные решения |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [Быстрый старт](getting-started.md) | Stable | Try ISPF + QA для контрибьюторов |
+| [Архитектура](architecture.md) | Stable | Видение, слои, расширяемость |
+| [Модель объектов](object-model.md) | Stable | Дерево, переменные, события, функции |
+| [Привязки](bindings.md) | Stable | CEL и platform bindings |
+| [Логика платформы](platform-logic.md) | Beta | Правила; `@dashboardContext` — зрелость разная |
+| [Blueprints](blueprints.md) | Stable | Модели / шаблоны |
+| [История переменных](variable-history.md) | Stable | Time-series, retention |
+| [API](api.md) | Stable | Справочник endpoints |
+| [Приложения](applications.md) | Stable | Bundles, BFF, scheduler |
+| [Отчёты](reports.md) | Stable | SQL-отчёты, CSV |
+| [Roadmap](roadmap.md) | Charter | Фазы и бэклог |
+| [Конкурентный scorecard](competitive-scorecard.md) | Stable | Готовность по коду |
+| [Индекс ADR](decisions/readme.md) | Stable | Архитектурные решения |
+| [Теги статуса (EN)](../en/doc-status.md) | Stable | Словарь статусов |
 
 </details>
 
 <details>
 <summary><strong>SCADA / HMI</strong></summary>
 
-| Документ | Описание |
-|----------|----------|
-| [Обзор SCADA](scada.md) | Мнемосхемы, символы, привязки |
-| [Справочник SCADA mimic](scada-mimic.md) | `diagramJson`, REST API |
-| [Библиотека символов](scada-symbol-library.md) | P&ID pack (218 символов) |
-| [Каталог виджетов](widgets.md) | Все типы виджетов |
-| [Дашборды](dashboards.md) | Layout, `selectionKey` |
-| [HMI quality gates](hmi-quality-gates.md) | Lighthouse, axe, FPS |
-| [Виджет spreadsheet](spreadsheet-widget.md) | Формулы и привязки |
-| [Operator apps](operator-apps.md) | Конфигурация operator shell |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [Обзор SCADA](scada.md) | Stable | Мнемосхемы, символы, привязки |
+| [Справочник SCADA mimic](scada-mimic.md) | Stable | `diagramJson`, REST API |
+| [Библиотека символов](scada-symbol-library.md) | Stable | P&ID pack (218 символов) |
+| [Каталог виджетов](widgets.md) | Stable | Все типы виджетов |
+| [Дашборды](dashboards.md) | Stable | Layout 84×8, `selectionKey` |
+| [HMI quality gates](hmi-quality-gates.md) | Lab | Lighthouse, axe, FPS |
+| [Виджет spreadsheet](spreadsheet-widget.md) | Stable | Формулы и привязки |
+| [Operator apps](operator-apps.md) | Stable | Конфигурация operator shell |
 
 </details>
 
 <details>
 <summary><strong>OT / драйверы / historian</strong></summary>
 
-| Документ | Описание |
-|----------|----------|
-| [Каталог драйверов](drivers.md) | Встроенные драйверы |
-| [Driver DDK](driver-ddk.md) | SDK пользовательских драйверов |
-| [Driver promotion](driver-promotion.md) | Матрица PRODUCTION |
-| [Field pilot playbook](field-pilot-playbook.md) | Runbook OT-валидации |
-| [Уровни historian](historian-tiers.md) | JDBC, ClickHouse, dual-write |
-| [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Продакшен rollout |
-| [Кластер](cluster.md) | Multi-replica HA |
-| [Messaging](messaging.md) | NATS / MQTT |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [Каталог драйверов](drivers.md) | Beta | Packs; честность зрелости vs матрица PRODUCTION |
+| [Driver DDK](driver-ddk.md) | Stable | SDK пользовательских драйверов |
+| [Driver promotion](driver-promotion.md) | Stable | PRODUCTION + ready-for-field |
+| [Field pilot playbook](field-pilot-playbook.md) | Lab | Runbook OT-валидации |
+| [Уровни historian](historian-tiers.md) | Beta | JDBC, ClickHouse, dual-write |
+| [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Lab | Продакшен rollout |
+| [Кластер](cluster.md) | Beta | Multi-replica HA (capability vs demostand) |
+| [Messaging](messaging.md) | Stable | NATS / MQTT |
 
 </details>
 
 <details>
 <summary><strong>Analytics</strong></summary>
 
-| Документ | Описание |
-|----------|----------|
-| [Historian cookbook](analytics-historian-cookbook.md) | Рецепты, binding rules, rollups |
-| [Formulas and packs](analytics-formulas-and-packs.md) | Пакеты выражений |
-| [Analytics roadmap](analytics-platform-roadmap.md) | Чартер BL-200…210 |
-| [Tag catalog API](analytics-tag-catalog.md) | Analytics-теги |
-| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Архитектура |
-| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Каталог функций |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [Historian cookbook](analytics-historian-cookbook.md) | Stable | Рецепты, binding rules, rollups |
+| [Formulas and packs](analytics-formulas-and-packs.md) | Stable | Пакеты выражений |
+| [Analytics roadmap](analytics-platform-roadmap.md) | Charter | Чартер BL-200…210 |
+| [Tag catalog API](analytics-tag-catalog.md) | Stable | Analytics-теги |
+| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Stable | Архитектура |
+| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Stable | Каталог функций |
 
 </details>
 
 <details>
 <summary><strong>AI / автоматизация / MES</strong></summary>
 
-| Документ | Описание |
-|----------|----------|
-| [AI development](ai-development.md) | ContextPack, tools, Studio |
-| [AI agent](ai-agent.md) | Agent API и метрики |
-| [Agent knowledge](agent-knowledge.md) | Карта маршрутизации агента |
-| [Agent regression](agent-regression.md) | CI-гейты сценариев |
-| [Автоматизация](automation.md) | Алерты, корреляторы |
-| [Workflows](workflows.md) | BPMN-движок |
-| [MES platform reference](reference-mes-platform.md) | ISA-95 bundles |
-| [MES walkthrough](reference-mes-walkthrough.md) | Сквозной MES-путь |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 open |
+| [AI agent](ai-agent.md) | Beta | Agent API; gate ≥95% не закрыт |
+| [Agent knowledge](agent-knowledge.md) | Internal | Карта маршрутизации агента |
+| [Agent regression](agent-regression.md) | Lab | CI-гейты сценариев |
+| [Автоматизация](automation.md) | Stable | Алерты, корреляторы |
+| [Workflows](workflows.md) | Beta | Подмножество BPMN (не полный 2.0) |
+| [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ завод |
+| [MES walkthrough](reference-mes-walkthrough.md) | Lab | Сквозной MES-путь |
 
 </details>
 
 <details>
-<summary><strong>Эксплуатация</strong> (deploy, labs, CI — тяжёлые runbook’и)</summary>
+<summary><strong>Эксплуатация</strong> (deploy, labs, CI)</summary>
 
-| Документ | Описание |
-|----------|----------|
-| [Развёртывание](deployment.md) | Docker, env vars |
-| [Профили демостендов](demostands.md) | Prod, lab, edge |
-| [Air-gap](air-gap-deployment.md) | Офлайн-установка |
-| [Федерация](federation.md) | Hub / edge peers |
-| [Безопасность](security.md) | RBAC, MFA |
-| [Наблюдаемость](observability.md) | Метрики, диагностика |
-| [Тестирование](testing.md) | Unit, integration |
-| [Нагрузочное тестирование](load-testing.md) | Baseline throughput |
-| [Release dogfood](release-dogfood.md) | Чеклист релиза |
-| [Lab training](lab-training.md) | Учебные packs |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [Развёртывание](deployment.md) | Stable | Docker, env vars |
+| [Профили демостендов](demostands.md) | Lab | Prod, lab, edge |
+| [Air-gap](air-gap-deployment.md) | Stable | Офлайн-установка |
+| [Федерация](federation.md) | Beta | Hub / edge (caveats зрелости) |
+| [Безопасность](security.md) | Stable | RBAC, MFA |
+| [Наблюдаемость](observability.md) | Stable | Метрики, диагностика |
+| [Тестирование](testing.md) | Stable | Unit, integration |
+| [Нагрузочное тестирование](load-testing.md) | Lab | Baseline throughput |
+| [Release dogfood](release-dogfood.md) | Internal | Чеклист релиза |
+| [Lab training](lab-training.md) | Lab | Учебные packs |
 
 </details>
 
 <details>
 <summary><strong>Экосистема и право</strong></summary>
 
-| Документ | Описание |
-|----------|----------|
-| [Marketplace](marketplace.md) | Каталог и установка |
-| [Symbol marketplace](symbol-marketplace.md) | Symbol packs |
-| [Партнёрская программа](partner-program.md) | Уровни интеграторов |
-| [Сертификация](certification.md) | Учебные треки |
-| [Лицензия](license.md) | **AGPL v3** + dual-license |
-| [Commercial licensing](commercial-licensing.md) | Enterprise |
-| [License compliance](license-compliance.md) | Чеклист обязательств |
-| [Plugins](plugins.md) | Core vs packs vs bundles |
-| [Аудит документации](documentation-audit.md) | Структура, ссылки |
-| [Реестр российского ПО](russian-software-registry.md) | Процесс реестра (опционально) |
+| Документ | Статус | Описание |
+|----------|--------|----------|
+| [Marketplace](marketplace.md) | Draft | Partial BL-183; не полный GA |
+| [Symbol marketplace](symbol-marketplace.md) | Draft | Listing API stub |
+| [Партнёрская программа](partner-program.md) | Draft | Design; in-server API stub |
+| [Сертификация](certification.md) | Draft | Учебные треки / exams |
+| [Лицензия](license.md) | Stable | **AGPL v3** + dual-license |
+| [Commercial licensing](commercial-licensing.md) | Stable | Enterprise |
+| [License compliance](license-compliance.md) | Stable | Чеклист обязательств |
+| [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
+| [Аудит документации](documentation-audit.md) | Internal | Структура, ссылки |
+| [Полный аудит docs 2026-07-16](../en/documentation-full-audit-2026-07-16.md) | Internal | Content honesty pass |
+| [Реестр российского ПО](russian-software-registry.md) | Internal | Правообладатель / RU market |
 
 </details>
 

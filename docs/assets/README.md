@@ -64,6 +64,20 @@ Same length, English UI: Operator Mini-CHP → open **AI assistant** → one sho
 
 **Still worth capturing (English):** mimic / P&ID editor → `ispf-mimic-editor.png`; full-res AI Studio (`ispf-ai-studio.png`); optional sharper Explorer overwrite.
 
+## Builder EN pack (docs + marketing)
+
+Use the same English UI rule. Prefer **native window resolution** (not chat-compressed). Point docs at these files when they exist; until then keep existing assets.
+
+| File | Capture | Used by |
+| ---- | ------- | ------- |
+| `ispf-dashboard-builder.png` | Dashboards → edit layout (84×8 grid visible) | [dashboards.md](../en/dashboards.md), README spare |
+| `ispf-mimic-editor.png` | SCADA mimic editor with 2–3 symbols bound | [scada.md](../en/scada.md), [web-console.md](../en/web-console.md) |
+| `ispf-widget-inspector.png` | Inspector open on a chart / KPI widget | [widgets.md](../en/widgets.md) |
+| `ispf-ai-studio.png` | AI Studio Agent (full window) | README, [ai-development.md](../en/ai-development.md) |
+| `ispf-explorer-en.png` | Explorer + device properties | README, [web-console.md](../en/web-console.md) |
+
+**Do not** ship RU-only screenshots in the root README hero row. Localize separately under `docs/assets/ru/` if needed later.
+
 ## Social / OG
 
 Crop hero frame to **1200×630** for LinkedIn / Twitter / HN link previews → `ispf-og-1200x630.png` (host on [ispf.ai](https://ispf.ai) or add here later).

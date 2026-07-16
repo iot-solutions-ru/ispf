@@ -2,6 +2,8 @@
 
 # Getting started
 
+> **Status:** Stable — Try path + contributor QA. Hub tags: [doc-status.md](doc-status.md).
+
 Two tracks:
 
 1. **[Try ISPF](#try-ispf-15-minutes)** — run the platform and open the demo (newcomers).  

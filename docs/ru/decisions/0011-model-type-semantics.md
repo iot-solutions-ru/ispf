@@ -73,6 +73,6 @@
 ## Связанные материалы
 
 - [BLUEPRINTS](../BLUEPRINTS.md)
-- [BINDINGS](../BINDINGS.md)
+- [BINDINGS](../bindings.md)
 - [0010-binding-rules-only](0010-binding-rules-only.md) (binding rules only)
 - [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md) (fixtures + CEL auto-apply)

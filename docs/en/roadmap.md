@@ -31,7 +31,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
-VPS deploy — on request only ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc)).
+VPS deploy — on request only (see [deployment](deployment.md) / [demostands](demostands.md); script `deploy/vps-deploy-direct.ps1`).
 
 ---
 
