@@ -169,6 +169,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | [License compliance](license-compliance.md) | Obligations checklist |
 | [Plugins](plugins.md) | Core vs packs vs bundles |
 | [Documentation audit](documentation-audit.md) | Structure, naming, link audit |
+| [Full docs audit 2026-07-16](documentation-full-audit-2026-07-16.md) | Content honesty pass (P0–P2) |
 | [Russian software registry](russian-software-registry.md) | RU registry process (optional market) |
 
 </details>

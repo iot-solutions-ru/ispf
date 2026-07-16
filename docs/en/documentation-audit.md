@@ -1,5 +1,7 @@
 # Documentation audit (2026-07-08)
 
+**Full content pass (2026-07-16):** [documentation-full-audit-2026-07-16.md](documentation-full-audit-2026-07-16.md) — P0–P2 findings across public / builder / ops layers (license honesty, auth/JDK, OT PRODUCTION labels, broken `../../` links, ecosystem stubs).
+
 ## Structure
 
 | Path | Purpose |
