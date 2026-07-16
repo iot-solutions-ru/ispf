@@ -1,3 +1,4 @@
+# Dependabot version updates (weekly). Touch this file to re-run update jobs.
 version: 2
 updates:
   - package-ecosystem: gradle
