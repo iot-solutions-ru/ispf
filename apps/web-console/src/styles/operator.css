@@ -1168,4 +1168,27 @@
   color: var(--danger);
 }
 
+.op-launcher-starters {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.op-launcher-starters h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.op-launcher-starters .btn {
+  margin-top: 0.75rem;
+}
+
+.op-launcher-card-static {
+  cursor: default;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 

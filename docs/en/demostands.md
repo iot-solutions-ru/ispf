@@ -6,7 +6,7 @@ Guide to choosing a configuration based on your goal: **industrial production**,
 
 Not tied to a specific host. Example scripts and env files are in [`deploy/`](../deploy/).
 
-See also: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
+See also: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
 ## How to choose a profile
 
@@ -400,7 +400,9 @@ Use when there is **no** point running a polling JVM on the gateway: all SCADA o
 | [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) | Thread diagnostics |
 | [`deploy/loadtest-cleanup.py`](../deploy/loadtest-cleanup.py) | Load-test prep |
 | [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py) | Golden path: fire → journal → ack (fixtures) |
-| [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) | Grafana: automation + telemetry hot path |
+| [`docs/en/release-dogfood.md`](release-dogfood.md) | Pre-tag dogfood checklist |
+| [`docs/en/operator-apps.md`](operator-apps.md) | Operator starters (alarm / work-queue / HMI wall) |
+| [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) | Optional Grafana export |
 
 ---
 

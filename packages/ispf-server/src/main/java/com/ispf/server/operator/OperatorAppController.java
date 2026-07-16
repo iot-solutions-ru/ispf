@@ -18,14 +18,35 @@ import java.util.Map;
 public class OperatorAppController {
 
     private final OperatorAppUiService service;
+    private final OperatorStarterTemplatesService starterTemplatesService;
 
-    public OperatorAppController(OperatorAppUiService service) {
+    public OperatorAppController(
+            OperatorAppUiService service,
+            OperatorStarterTemplatesService starterTemplatesService
+    ) {
         this.service = service;
+        this.starterTemplatesService = starterTemplatesService;
     }
 
     @GetMapping
     public List<Map<String, Object>> listApps() {
         return service.listApps();
+    }
+
+    @GetMapping("/starters")
+    public List<Map<String, Object>> listStarters() {
+        return starterTemplatesService.listStarters();
+    }
+
+    @PostMapping("/starters/install")
+    public Map<String, Object> installStarters() {
+        try {
+            return starterTemplatesService.installStarters(false);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
+        }
     }
 
     @GetMapping("/{appId}/ui")

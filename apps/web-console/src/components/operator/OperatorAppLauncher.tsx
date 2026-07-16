@@ -1,6 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { fetchOperatorApps, type OperatorAppEntry } from "../../api/operatorApps";
+import {
+  fetchOperatorApps,
+  fetchOperatorStarters,
+  installOperatorStarters,
+  type OperatorAppEntry,
+} from "../../api/operatorApps";
 import ShellPreferences from "../ShellPreferences";
 
 interface OperatorAppLauncherProps {
@@ -18,10 +23,24 @@ async function loadAppsIndex() {
 
 export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: OperatorAppLauncherProps) {
   const { t } = useTranslation(["operator", "common"]);
+  const queryClient = useQueryClient();
   const appsQuery = useQuery({
     queryKey: ["operator-apps"],
     queryFn: loadAppsIndex,
   });
+  const startersQuery = useQuery({
+    queryKey: ["operator-starters"],
+    queryFn: fetchOperatorStarters,
+  });
+  const installMutation = useMutation({
+    mutationFn: installOperatorStarters,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["operator-apps"] });
+    },
+  });
+
+  const appIds = new Set((appsQuery.data ?? []).map((app) => app.appId));
+  const missingStarters = (startersQuery.data ?? []).filter((starter) => !appIds.has(starter.appId));
 
   return (
     <div className="operator-shell" data-testid="operator-shell">
@@ -55,6 +74,36 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
             </button>
           ))}
         </div>
+
+        {missingStarters.length > 0 && (
+          <section className="op-launcher-starters" data-testid="operator-starters">
+            <h3>{t("operator:launcher.startersTitle")}</h3>
+            <p className="op-muted">{t("operator:launcher.startersHint")}</p>
+            <div className="op-launcher-grid">
+              {missingStarters.map((starter) => (
+                <div key={starter.appId} className="op-launcher-card op-launcher-card-static">
+                  <strong>{starter.title}</strong>
+                  <span className="op-muted">{starter.appId}</span>
+                  {starter.description && <span className="op-muted">{starter.description}</span>}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn primary"
+              disabled={installMutation.isPending}
+              onClick={() => installMutation.mutate()}
+            >
+              {installMutation.isPending
+                ? t("common:action.loading")
+                : t("operator:launcher.installStarters")}
+            </button>
+            {installMutation.error && (
+              <p className="op-alert op-alert-error">{String(installMutation.error)}</p>
+            )}
+          </section>
+        )}
+
         <p className="op-muted op-launcher-hint">{t("operator:launcher.hint")}</p>
       </main>
     </div>

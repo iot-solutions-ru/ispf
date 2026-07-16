@@ -39,6 +39,40 @@ export async function fetchOperatorAppUi(appId: string): Promise<OperatorUi | nu
   }
 }
 
+export interface OperatorStarterTemplate {
+  appId: string;
+  title: string;
+  description?: string;
+}
+
+export async function fetchOperatorStarters(): Promise<OperatorStarterTemplate[]> {
+  const response = await fetchWithIngressFallback("/api/v1/operator-apps/starters", {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error(`Operator starters API failed: ${response.status}`);
+  }
+  return response.json() as Promise<OperatorStarterTemplate[]>;
+}
+
+export async function installOperatorStarters(): Promise<{
+  installed: string[];
+  apps: OperatorStarterTemplate[];
+}> {
+  const response = await fetch("/api/v1/operator-apps/starters/install", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Install starters failed: ${response.status}`);
+  }
+  return response.json();
+}
+
 export async function createOperatorApp(appId: string, title: string): Promise<OperatorUi> {
   const response = await fetch(`/api/v1/operator-apps/${encodeURIComponent(appId)}`, {
     method: "POST",
