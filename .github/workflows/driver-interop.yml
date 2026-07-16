@@ -118,7 +118,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Post driver interop PR comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           MATRIX_RESULT: ${{ needs.matrix.result }}
           FIXTURES_RESULT: ${{ needs.docker-fixtures-smoke.result }}
