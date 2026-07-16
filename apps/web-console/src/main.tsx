@@ -7,7 +7,7 @@ import { ObjectWebSocketCacheBridge } from "./hooks/ObjectWebSocketCacheBridge";
 import { UserTimeZoneProvider } from "./context/UserTimeZoneContext";
 import { i18nReady } from "./i18n";
 import { initThemeOnDocument } from "./themeInit";
-import "./styles.css";
+import "./styles/index.css";
 
 initThemeOnDocument();
 

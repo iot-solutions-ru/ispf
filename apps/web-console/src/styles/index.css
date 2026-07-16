@@ -1,0 +1,7 @@
+/* Feature-split stylesheet entry. Order matches former monolithic styles.css. */
+@import "./tokens-shell.css";
+@import "./explorer.css";
+@import "./dashboard.css";
+@import "./operator.css";
+@import "./widgets.css";
+@import "./themes-platform.css";

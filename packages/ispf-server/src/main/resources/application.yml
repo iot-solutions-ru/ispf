@@ -187,7 +187,9 @@ ispf:
   alarm-shelf:
     approval-required: ${ISPF_ALARM_SHELF_APPROVAL_REQUIRED:false}
   websocket:
-    allowed-origin-patterns: ${ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:*}
+    # Default: localhost-only patterns. Use * only in local/test (see application-local.yml).
+    # Production: set ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS or activate prod profile.
+    allowed-origin-patterns: ${ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*,https://localhost:*,https://127.0.0.1:*}
     send-threads: ${ISPF_WEBSOCKET_SEND_THREADS:2}
     send-elastic-enabled: ${ISPF_WEBSOCKET_SEND_ELASTIC:true}
     send-threads-min: ${ISPF_WEBSOCKET_SEND_THREADS_MIN:2}

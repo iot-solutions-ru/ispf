@@ -137,8 +137,19 @@ examples/lab-mqtt-historian-stress/local/*
 packages/ispf-server/src/test/resources/mes-printing-contour-bundle.json
 packages/ispf-server/src/test/java/com/ispf/server/application/MesPrintingContourBundleSmokeTest.java
 
-# Local debug transcripts (may contain real hosts — never commit)
+# Local debug transcripts / scratch (may contain real hosts — never commit)
 tmp_*.txt
+tmp-*.txt
+tmp-*.json
+tmp-*.py
+tmp-*.ps1
+tmp-*.sh
+tmp-*.cjs
+tmp-*.mjs
+/tmp*
+packages.zip
+apps/web-console/tmp-bpmn-*
+apps/web-console/web-console-hotfix.zip
 tmp-ci-backend-log.txt
 
 # Local only — реестр российского ПО (не публиковать в GitHub)

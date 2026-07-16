@@ -158,8 +158,16 @@ Checked in `ObjectAccessService.requireVariableRead/Write` on read/write/history
 
 ## Production recommendations
 
-- Do not use `local` profile
+- Prefer `--spring.profiles.active=prod` (see `application-prod.yml`) or set the env vars below
+- Do not expose `local` profile on internet-facing hosts
 - Keycloak or another IdP with shortest practical JWT TTL
 - TLS at ingress
 - Restrict `permitAll` endpoints
 - Secrets via vault, not in config files
+- Set `ISPF_LICENSE_ENFORCE=true` and `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true`
+- Set `ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS` to your console origin(s) (default is localhost-only; `local`/`test` keep `*`)
+- Keep `ispf.security.local-role-header-enabled=false`
+
+Default users (`admin`/`admin`, …) are intentional for **local / test / lab** only — not a production defect.
+
+`StartupSecurityGuard` logs warnings at startup when license enforce, signed bundles, WS origins, or RBAC look unsafe outside `local`/`test`.

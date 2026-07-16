@@ -158,8 +158,16 @@ Docker Compose поднимает Keycloak на порт **8180**.
 
 ## Рекомендации для производства
 
-- Не использовать профиль `local`
+- Предпочтительно `--spring.profiles.active=prod` (см. `application-prod.yml`) или переменные окружения ниже
+- Не выставлять профиль `local` на internet-facing хостах
 - Keycloak или другой IdP с самым коротким TTL JWT
 - TLS на входе
 - Ограничить `permitAll` endpoints
-- Секреты через хранилище, не в написании
+- Секреты через хранилище, не в конфиге
+- `ISPF_LICENSE_ENFORCE=true` и `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true`
+- `ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS` — origin(ы) консоли (по умолчанию localhost; в `local`/`test` остаётся `*`)
+- `ispf.security.local-role-header-enabled=false`
+
+Учётные записи по умолчанию (`admin`/`admin` и т.п.) допустимы только в **local / test / lab** — это не дефект.
+
+`StartupSecurityGuard` пишет предупреждения при старте, если вне `local`/`test` ослаблены license enforce, signed bundles, WS origins или RBAC.

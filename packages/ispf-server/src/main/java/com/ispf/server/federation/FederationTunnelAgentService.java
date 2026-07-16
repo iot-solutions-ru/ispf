@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -102,9 +100,12 @@ public class FederationTunnelAgentService {
             try {
                 AgentRuntime runtime = new AgentRuntime(agentId);
                 runtimes.put(agentId, runtime);
-                URI uri = buildUri(agentStore.findById(agentId).orElseThrow());
-                WebSocket webSocket = httpClient.newWebSocketBuilder()
-                        .connectTimeout(Duration.ofSeconds(15))
+                FederationOutboundAgent connected = agentStore.findById(agentId).orElseThrow();
+                URI uri = buildUri(connected);
+                WebSocket.Builder wsBuilder = httpClient.newWebSocketBuilder()
+                        .connectTimeout(Duration.ofSeconds(15));
+                applyTunnelAuthHeaders(wsBuilder, connected);
+                WebSocket webSocket = wsBuilder
                         .buildAsync(uri, new AgentListener(agentId, runtime))
                         .join();
                 runtime.webSocket = webSocket;
@@ -389,23 +390,23 @@ public class FederationTunnelAgentService {
     }
 
     private URI buildUri(FederationOutboundAgent agent) {
-        String wsUrl = toWebSocketUrl(agent);
-        StringBuilder uri = new StringBuilder(wsUrl).append("/ws/federation/tunnel?");
-        if (agent.sessionTokenEnc() != null && agent.linkedPeerId() != null && secretCipher.isEnabled()) {
-            String token = secretCipher.decrypt(agent.sessionTokenEnc());
-            uri.append("sessionToken=").append(encode(token));
-            uri.append("&peerId=").append(agent.linkedPeerId());
-        } else {
-            String code = secretCipher.decrypt(agent.registrationCodeEnc());
-            uri.append("registrationCode=").append(encode(code));
-            uri.append("&siteName=").append(encode(agent.name()));
-            uri.append("&pathPrefix=").append(encode(agent.pathPrefix()));
-        }
-        return URI.create(uri.toString());
+        // Auth travels in headers (see applyTunnelAuthHeaders); keep URI free of secrets.
+        return URI.create(toWebSocketUrl(agent) + "/ws/federation/tunnel");
     }
 
-    private static String encode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    private void applyTunnelAuthHeaders(WebSocket.Builder builder, FederationOutboundAgent agent) {
+        if (agent.sessionTokenEnc() != null && agent.linkedPeerId() != null && secretCipher.isEnabled()) {
+            String token = secretCipher.decrypt(agent.sessionTokenEnc());
+            builder.header(FederationTunnelHandshakeInterceptor.HEADER_SESSION_TOKEN, token);
+            builder.header(FederationTunnelHandshakeInterceptor.HEADER_PEER_ID, agent.linkedPeerId().toString());
+            return;
+        }
+        String code = secretCipher.decrypt(agent.registrationCodeEnc());
+        builder.header(FederationTunnelHandshakeInterceptor.HEADER_REGISTRATION_CODE, code);
+        builder.header(FederationTunnelHandshakeInterceptor.HEADER_SITE_NAME, agent.name());
+        if (agent.pathPrefix() != null && !agent.pathPrefix().isBlank()) {
+            builder.header(FederationTunnelHandshakeInterceptor.HEADER_PATH_PREFIX, agent.pathPrefix());
+        }
     }
 
     private static String toWebSocketUrl(FederationOutboundAgent agent) {

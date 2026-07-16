@@ -10,7 +10,8 @@ rights described in [CLA.md](CLA.md) (dual licensing / commercial relicensing).
 
 1. Sign or accept [CLA.md](CLA.md) (Contributor License Agreement).
 2. Do not commit industry-specific Java, customer bundles, or secrets.
-3. See [docs/en/plugins.md](docs/en/plugins.md) and [docs/en/license.md](docs/en/license.md) for boundaries.
+3. Do not commit local scratch (`tmp*`, `*.log`, `packages.zip`, `web-console-hotfix.zip`, `apps/web-console/tmp-bpmn-*`).
+4. See [docs/en/plugins.md](docs/en/plugins.md) and [docs/en/license.md](docs/en/license.md) for boundaries.
 
 ## Driver changes
 

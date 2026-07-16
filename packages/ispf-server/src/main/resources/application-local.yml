@@ -28,6 +28,11 @@ ispf:
     rbac-enabled: true
     token-auth-enabled: true
     local-default-role: ""
+  license:
+    enforce: false
+    require-signed-bundles: false
+  websocket:
+    allowed-origin-patterns: "*"
   mqtt:
     enabled: false
   nats:

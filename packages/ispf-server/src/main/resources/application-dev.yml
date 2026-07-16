@@ -8,6 +8,12 @@ spring:
 ispf:
   ai:
     agent-require-approval-for-mutate: false
+  license:
+    # Dev labs often load unsigned example packs; prod profile tightens this.
+    enforce: ${ISPF_LICENSE_ENFORCE:false}
+    require-signed-bundles: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:false}
+  websocket:
+    allowed-origin-patterns: ${ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:*}
   mqtt:
     enabled: true
     broker-url: tcp://localhost:1883

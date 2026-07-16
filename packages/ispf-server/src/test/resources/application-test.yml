@@ -50,6 +50,9 @@ ispf:
   license:
     data-dir: ${java.io.tmpdir}/ispf-test-${random.uuid}
     enforce: false
+    require-signed-bundles: false
+  websocket:
+    allowed-origin-patterns: "*"
   agent:
     store-forward:
       persist-to-disk: false

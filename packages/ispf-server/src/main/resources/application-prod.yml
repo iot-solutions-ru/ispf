@@ -1,0 +1,13 @@
+# Production-oriented defaults. Activate with --spring.profiles.active=prod
+# (or prod,dev / prod + OIDC issuer overrides). Local/test keep relaxed defaults.
+
+ispf:
+  license:
+    enforce: ${ISPF_LICENSE_ENFORCE:true}
+    require-signed-bundles: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:true}
+  security:
+    local-role-header-enabled: false
+    rbac-enabled: true
+  websocket:
+    # Override with your public console origin(s), comma-separated Spring patterns.
+    allowed-origin-patterns: ${ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:https://localhost,http://localhost,https://127.0.0.1,http://127.0.0.1}

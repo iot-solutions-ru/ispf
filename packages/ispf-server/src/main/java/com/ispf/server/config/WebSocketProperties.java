@@ -23,9 +23,11 @@ public class WebSocketProperties {
 
     /**
      * Comma-separated origin patterns for {@code /ws/**} (Spring allowedOriginPatterns syntax).
-     * Default {@code *} keeps local dev working; set a host list on internet-facing deployments.
+     * Default is localhost-only; {@code application-local.yml} / {@code application-test.yml} use {@code *}.
+     * Internet-facing deployments should set an explicit host list (or activate {@code prod} profile).
      */
-    private String allowedOriginPatterns = "*";
+    private String allowedOriginPatterns =
+            "http://localhost:*,http://127.0.0.1:*,https://localhost:*,https://127.0.0.1:*";
 
     public int getSendThreads() {
         return sendThreads;
@@ -88,12 +90,22 @@ public class WebSocketProperties {
     }
 
     public void setAllowedOriginPatterns(String allowedOriginPatterns) {
-        this.allowedOriginPatterns = allowedOriginPatterns == null ? "*" : allowedOriginPatterns;
+        this.allowedOriginPatterns = allowedOriginPatterns == null
+                ? "http://localhost:*,http://127.0.0.1:*,https://localhost:*,https://127.0.0.1:*"
+                : allowedOriginPatterns;
     }
 
     public String[] resolvedAllowedOriginPatterns() {
-        String raw = allowedOriginPatterns == null ? "*" : allowedOriginPatterns.trim();
-        if (raw.isEmpty() || "*".equals(raw)) {
+        String raw = allowedOriginPatterns == null ? "" : allowedOriginPatterns.trim();
+        if (raw.isEmpty()) {
+            return new String[] {
+                    "http://localhost:*",
+                    "http://127.0.0.1:*",
+                    "https://localhost:*",
+                    "https://127.0.0.1:*"
+            };
+        }
+        if ("*".equals(raw)) {
             return new String[] {"*"};
         }
         return java.util.Arrays.stream(raw.split(","))
