@@ -27,15 +27,9 @@ Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as sep
 
 > **Business logic lives on the platform** — models, variables, events, functions, and workflows. The core ships generic engines; solutions are declarative configuration (bundle deploy), not core forks. See [architecture](docs/en/architecture.md).
 
-```mermaid
-flowchart LR
-  D[OT drivers] --> T[Object tree]
-  T --> H[HMI]
-  T --> A[Alerts]
-  A --> W[BPMN]
-  H --> Op[Operators]
-  W --> Op
-```
+<p align="center">
+  <img src="docs/assets/ispf-architecture-flow.svg" alt="ISPF flow: OT drivers to object tree to HMI, alerts, BPMN, and operators" width="920" />
+</p>
 
 ## Why try it
 
