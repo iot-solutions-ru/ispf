@@ -74,11 +74,13 @@ Honest positioning: closer to an **open Ignition-class application platform** th
 
 **Portable zip** (JDK **25**): download `ispf-*-portable.zip` from [GitHub Releases](https://github.com/Michaael/IoT-Solutions-Platform/releases), unzip, then `start.bat` (Windows) or `./start.sh` (Linux/macOS).
 
+Uses an **embedded H2** file DB (no PostgreSQL to install). After first start: `data/ispf-local.mv.db` next to the JAR.
+
 **Container** ([GitHub Packages](https://github.com/Michaael?tab=packages&repo_name=IoT-Solutions-Platform)):
 
 ```bash
 docker pull ghcr.io/michaael/ispf-server:latest
-docker run --rm -p 8080:8080 ghcr.io/michaael/ispf-server:latest
+docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/michaael/ispf-server:latest
 ```
 
 Open http://localhost:8080 — login `admin` / `admin`. Operator HMI: http://localhost:8080?mode=operator

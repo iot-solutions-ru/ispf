@@ -19,6 +19,7 @@ COPY --chown=ispf:ispf ispf-server.jar /opt/ispf/ispf-server.jar
 
 USER ispf
 
+# local profile → embedded H2 at ${ISPF_DATA_DIR}/ispf-local.mv.db (no Postgres).
 ENV ISPF_DATA_DIR=/opt/ispf/data \
     SPRING_PROFILES_ACTIVE=local \
     JAVA_OPTS="-XX:MaxRAMPercentage=75"

@@ -105,6 +105,10 @@ jobs:
             echo ""
             echo "Then open http://localhost:8080"
             echo "Login: admin / admin"
+            echo ""
+            echo "Database: embedded H2 (no PostgreSQL)."
+            echo "  Created on first start: data/ispf-local.mv.db"
+            echo "  To reset: stop ISPF and delete the data/ folder."
           } > "$PORTABLE_DIR/README.txt"
           zip -r "ispf-${VERSION}-portable.zip" "$PORTABLE_DIR"
 

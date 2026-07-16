@@ -23,6 +23,8 @@ Download **`ispf-*-portable.zip`** from [GitHub Releases](https://github.com/Mic
 ./start.sh
 ```
 
+No PostgreSQL needed — the portable build uses **embedded H2** (`data/ispf-local.mv.db` after first start).
+
 Open http://localhost:8080 — login `admin` / `admin`. Then continue from [§2 Sign in](#2-sign-in-local-profile) (use port 8080 instead of 5173).
 
 ### Option B — from source

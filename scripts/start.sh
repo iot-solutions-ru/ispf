@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ISPF all-in-one launcher (Linux / macOS). Requires JDK 25+ on PATH.
 # Place this file next to ispf-server.jar, or pass the JAR path as $1.
+# Database: embedded H2 file (no PostgreSQL). File: data/ispf-local.mv.db
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,9 +25,14 @@ if ! command -v java >/dev/null 2>&1; then
   exit 1
 fi
 
-export ISPF_DATA_DIR="${ISPF_DATA_DIR:-$SCRIPT_DIR/data}"
+# Relative ./data keeps the H2 JDBC URL portable.
+export ISPF_DATA_DIR="${ISPF_DATA_DIR:-./data}"
 mkdir -p "$ISPF_DATA_DIR"
 
-echo "Starting ISPF (local profile, H2) — open http://localhost:8080"
-echo "Default login: admin / admin"
+echo "Starting ISPF (local profile)"
+echo "  UI:       http://localhost:8080"
+echo "  Login:    admin / admin"
+echo "  Database: embedded H2 — ${SCRIPT_DIR}/data/ispf-local.mv.db"
+echo "            (no separate PostgreSQL required)"
+echo
 exec java -jar "$JAR" --spring.profiles.active=local
