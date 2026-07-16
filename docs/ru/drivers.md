@@ -53,12 +53,25 @@ Poll-драйверы передают `updateVariable(name, value, observedAt)`
 ```java
 public interface DeviceDriver {
     DriverMetadata metadata();
-    void connect(Map<String, String> config) throws DriverException;
+    void initialize(DriverObject driverObject);
+    void connect() throws DriverException;
     void disconnect();
-    void readPoints() throws DriverException;
+    boolean isConnected();
+    void readPoints(Map<String, String> pointMappings) throws DriverException;
     void writePoint(String pointId, DataRecord value) throws DriverException;
+
+    interface DriverObject {
+        PlatformObject deviceObject();
+        void updateVariable(String name, DataRecord value);
+        default void updateVariable(String name, DataRecord value, Instant observedAt) { … }
+        Optional<DataRecord> getVariable(String name);
+        void log(DriverLogLevel level, String message);
+        default Map<String, String> configuration() { return Map.of(); }
+    }
 }
 ```
+
+**Ingress contract:** hot path `updateVariable` не должен писать в DB/historian/disk. Исходник: [`DeviceDriver.java`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java). SDK: [driver-ddk](driver-ddk.md).
 
 Регистрация через **driver packs** в `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop по `pollIntervalMs`.
 

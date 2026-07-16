@@ -129,38 +129,49 @@ Content-Type: application/json
 
 Invoke from BPMN (service task `INVOKE_FUNCTION`) or via BFF. For listing SQL rows on a dashboard use a **report** widget (`configure_report` + `type: report`), not `object-table` (tree children only).
 
-### Step 4. Bundle deploy
+### Step 4. Bundle deploy (canonical: JSON)
 
-Bundle is a ZIP with manifest, functions, SQL, operator UI:
+**Canonical API:** `POST /api/v1/applications/{appId}/deploy` with a **JSON** body (`Content-Type: application/json`). There is no multipart ZIP deploy on the current server. Full field reference: [applications](applications.md#bundle-deploy-req-pf-03).
+
+Minimal example:
 
 ```http
 POST /api/v1/applications/my-terminal/deploy
-Content-Type: multipart/form-data
+Authorization: Bearer <admin-token>
+Content-Type: application/json
 
-file: my-terminal-bundle.zip
+{
+  "version": "1.0.0",
+  "displayName": "Oil Terminal",
+  "tablePrefix": "ot_",
+  "schemaName": "oil_terminal",
+  "objects": [],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.terminal-overview",
+      "title": "Overview",
+      "layoutJson": "{ \"columns\": 84, \"rowHeight\": 8, \"widgets\": [] }"
+    }
+  ],
+  "migrations": [],
+  "functions": [],
+  "operatorUi": {
+    "title": "Oil Terminal",
+    "dashboards": [
+      { "dashboardPath": "root.platform.dashboards.terminal-overview", "label": "Overview" }
+    ],
+    "defaultDashboardPath": "root.platform.dashboards.terminal-overview"
+  },
+  "reports": [
+    {
+      "name": "daily-summary",
+      "sql": "SELECT status, COUNT(*) FROM ot_order GROUP BY status"
+    }
+  ]
+}
 ```
 
-Manifest (`manifest.yaml`):
-
-```yaml
-appId: my-terminal
-version: 1.0.0
-displayName: Oil Terminal
-tablePrefix: ot_
-schemaName: oil_terminal
-functions:
-  - path: functions/listOrders.script.json
-migrations:
-  - path: sql/V1__orders.sql
-operatorUi:
-  title: Oil Terminal
-  dashboards:
-    - path: root.platform.dashboards.terminal-overview
-      label: Overview
-reports:
-  - name: daily-summary
-    sql: SELECT status, COUNT(*) FROM ot_order GROUP BY status
-```
+Dashboard layouts must use the **84×8** grid ([dashboards](dashboards.md)) — never legacy `columns: 12` / `rowHeight: 72`.
 
 ### Step 5. Operator interface
 
@@ -228,20 +239,25 @@ See [dashboards](dashboards.md).
 
 ## BFF (backend for frontend)
 
-For complex screens (paginated tables, forms) use BFF:
+For complex screens (paginated tables, forms) use BFF. **Canonical body** (tree-first):
 
 ```http
 POST /api/v1/bff/invoke
+Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "appId": "my-terminal",
-  "function": "listOrders",
-  "params": {}
+  "objectPath": "root.platform.applications.my-terminal.functions",
+  "functionName": "listOrders",
+  "input": {
+    "schema": { "name": "in", "fields": [] },
+    "rows": [{}]
+  },
+  "wireProfile": "ispf-operator-v1"
 }
 ```
 
-Wire profile `ispf-operator-v1` is the standard contract for legacy manifest shell. For new solutions use **dashboards + function-button** instead of custom manifest.
+After deploy, functions are also addressable on the tree as `{appId}.functions.{name}`. Details and wire rules: [applications](applications.md#bff-req-pf-06). Prefer **dashboards + function-button / function-form** over a custom operator manifest shell.
 
 ---
 
@@ -298,14 +314,14 @@ See [workflows](workflows.md).
 
 ```
 examples/demo-app/
-├── manifest.yaml
+├── bundle.json                 # or fragment files composed into POST …/deploy JSON
 ├── functions/
 │   └── demo_listItems.script.json
 └── sql/
     └── V1__demo.sql
 ```
 
-Run demo: register app, run migration + function deploy per [applications](applications.md).
+Run demo: register app, then `POST …/deploy` JSON (or stepwise migrate + function deploy) per [applications](applications.md).
 
 ---
 

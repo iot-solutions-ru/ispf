@@ -104,9 +104,9 @@ Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 
 ## Tree-first agent (FW-44)
 
-ReAct loop on the platform with a hard step cap (default 96, `ispf.ai.agent-max-steps`). The agent runs until it finishes or hits the cap — **no mid-run pauses**. Cooperative **cancel** while running (`POST .../cancel`); live steps via `GET .../progress` (UI polls ~1s). Admin-only.
+ReAct loop on the platform with a hard step cap (**default 256**, `ispf.ai.agent-max-steps` / `ISPF_AI_AGENT_MAX_STEPS`). The agent runs until it finishes or hits the cap — **no mid-run pauses**. Cooperative **cancel** while running (`POST .../cancel`); live steps via `GET .../progress` (UI polls ~1s). Admin-only.
 
-**Multi-turn sessions** (Cursor-like): each chat is a server-side in-memory session with turn history replayed to the LLM (compact user/assistant summaries, no raw tool JSON). `AgentRunState` (validate → import gates) persists for the whole chat.
+**Multi-turn sessions** (Cursor-like): each chat is a **PostgreSQL-backed** session (`agent_sessions` / `agent_turns`, TTL via `ispf.ai.agent-session-ttl-hours`, default 24h). Turn history is replayed to the LLM (compact user/assistant summaries, no raw tool JSON). `AgentRunState` (validate → import gates) persists for the whole chat. JVM restart keeps history until TTL.
 
 | Endpoint | Purpose |
 |----------|---------|

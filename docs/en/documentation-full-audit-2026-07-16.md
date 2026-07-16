@@ -142,7 +142,15 @@ Docs are **deep and professionally maintained** as an internal platform wiki. Fo
 |---|---|
 | Date | 2026-07-16 |
 | Scorecard reference | ~7.4/10 code-verified (see file for version pin) |
-| Next action | **Wave B applied on `main` (2026-07-16)** — see changelog below; continue with Wave C |
+| Next action | **Wave B + Wave C applied on `main` (2026-07-16)** — continue with Wave D (status tags) |
+
+## Wave C changelog (applied)
+
+- 84-grid samples: `widgets.md`, `applications.md`, `ai-agent.md` reference layout (EN/RU).
+- Canonical JSON deploy + tree-first BFF in `solution-developer-guide.md` (EN/RU); removed multipart ZIP myth.
+- `DeviceDriver` SPI snippet aligned with `ispf-driver-api` (EN/RU).
+- MES / AI headlines softened vs competitive-scorecard; AI step cap default **256** + Postgres sessions.
+- `docs/ru/product.md` re-translated from current EN.
 
 ## Wave B changelog (applied)
 

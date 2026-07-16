@@ -6,12 +6,12 @@
 
 **Поставка:** MES — **продукт marketplace IoT Solutions**, не часть базовой платформы ISPF. Чистая установка **не** создаёт `root.platform.mes` и MES INSTANCE-модели, пока не установлен бандл `mes-platform` / `mes-platform-production`. Опционально (legacy): `ispf.bootstrap.mes-catalog-enabled=true`.
 
-**Статус Wave 8 (завершён):** BL-164…BL-170 сертифицированы. Production walkthrough ≤30 мин проверен; `MesPlatformGaSmokeTest` деплоит `mes-platform-production` и проверяет OEE, dispatch, quality, batch, ERP и включённый outbox schedule.
+> **Честность vs [competitive-scorecard](competitive-scorecard.md):** измерение MES **~6.5 PARTIAL**. «Certified» / Wave 8 ниже = **smoke / walkthrough** (`MesPlatformGaSmokeTest`, lab ≤30 мин), **не** plant-ready MES и не live ERP. ERP outbox — stub/schedule.
 
 | Bundle | `appId` | Artifacts | Status |
 |--------|---------|-----------|--------|
 | Certification skeleton | `mes-platform` | [examples/mes-platform/](../../examples/mes-platform/), listing `mes-platform` (vendor **IoT Solutions**) | Product |
-| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../../examples/mes-platform-production/), listing `mes-platform-production` | **Certified** (BL-170) |
+| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../../examples/mes-platform-production/), listing `mes-platform-production` | Smoke-certified (BL-170) |
 
 **См. также:** [isa95-catalog](isa95-catalog.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [marketplace](marketplace.md), [object-model](object-model.md).
 

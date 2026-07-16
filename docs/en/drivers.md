@@ -53,12 +53,25 @@ Drivers implement the `DeviceDriver` SPI (`packages/ispf-driver-api`):
 ```java
 public interface DeviceDriver {
     DriverMetadata metadata();
-    void connect(Map<String, String> config) throws DriverException;
+    void initialize(DriverObject driverObject);
+    void connect() throws DriverException;
     void disconnect();
-    void readPoints() throws DriverException;
+    boolean isConnected();
+    void readPoints(Map<String, String> pointMappings) throws DriverException;
     void writePoint(String pointId, DataRecord value) throws DriverException;
+
+    interface DriverObject {
+        PlatformObject deviceObject();
+        void updateVariable(String name, DataRecord value);
+        default void updateVariable(String name, DataRecord value, Instant observedAt) { … }
+        Optional<DataRecord> getVariable(String name);
+        void log(DriverLogLevel level, String message);
+        default Map<String, String> configuration() { return Map.of(); }
+    }
 }
 ```
+
+**Ingress contract:** hot path `updateVariable` must not write DB/historian/disk — durable storage is async in the server. Full source: [`DeviceDriver.java`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java). SDK walkthrough: [driver-ddk](driver-ddk.md).
 
 Registration via **driver packs** in `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop at `pollIntervalMs`.
 

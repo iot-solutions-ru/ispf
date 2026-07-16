@@ -166,7 +166,7 @@ Content-Type: application/json
     {
       "path": "root.platform.myapp.ops",
       "title": "Operator Board",
-      "layoutJson": "{ \"columns\": 12, \"rowHeight\": 72, \"widgets\": [] }"
+      "layoutJson": "{ \"columns\": 84, \"rowHeight\": 8, \"widgets\": [] }"
     }
   ],
   "workflows": [

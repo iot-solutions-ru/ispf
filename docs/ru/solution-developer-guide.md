@@ -129,38 +129,49 @@ Content-Type: application/json
 
 Вызов из BPMN (service task `INVOKE_FUNCTION`) или через BFF. Для таблицы SQL-строк на дашборде используйте виджет **report** (`configure_report` + `type: report`), а не `object-table` (тот виджет — только для дочерних объектов дерева).
 
-### Шаг 4. Развертывание пакета
+### Шаг 4. Bundle deploy (канон: JSON)
 
-Бандл — ZIP с манифестом, функциями, SQL, пользовательским интерфейсом оператора:
+**Канонический API:** `POST /api/v1/applications/{appId}/deploy` с телом **JSON** (`Content-Type: application/json`). Multipart ZIP на текущем сервере нет. Полный справочник полей: [applications](applications.md).
+
+Минимальный пример:
 
 ```http
 POST /api/v1/applications/my-terminal/deploy
-Content-Type: multipart/form-data
+Authorization: Bearer <admin-token>
+Content-Type: application/json
 
-file: my-terminal-bundle.zip
+{
+  "version": "1.0.0",
+  "displayName": "Oil Terminal",
+  "tablePrefix": "ot_",
+  "schemaName": "oil_terminal",
+  "objects": [],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.terminal-overview",
+      "title": "Overview",
+      "layoutJson": "{ \"columns\": 84, \"rowHeight\": 8, \"widgets\": [] }"
+    }
+  ],
+  "migrations": [],
+  "functions": [],
+  "operatorUi": {
+    "title": "Oil Terminal",
+    "dashboards": [
+      { "dashboardPath": "root.platform.dashboards.terminal-overview", "label": "Overview" }
+    ],
+    "defaultDashboardPath": "root.platform.dashboards.terminal-overview"
+  },
+  "reports": [
+    {
+      "name": "daily-summary",
+      "sql": "SELECT status, COUNT(*) FROM ot_order GROUP BY status"
+    }
+  ]
+}
 ```
 
-Manifest (`manifest.yaml`):
-
-```yaml
-appId: my-terminal
-version: 1.0.0
-displayName: Oil Terminal
-tablePrefix: ot_
-schemaName: oil_terminal
-functions:
-  - path: functions/listOrders.script.json
-migrations:
-  - path: sql/V1__orders.sql
-operatorUi:
-  title: Oil Terminal
-  dashboards:
-    - path: root.platform.dashboards.terminal-overview
-      label: Overview
-reports:
-  - name: daily-summary
-    sql: SELECT status, COUNT(*) FROM ot_order GROUP BY status
-```
+Layout дашбордов — сетка **84×8** ([dashboards](dashboards.md)), не legacy `columns: 12` / `rowHeight: 72`.
 
 ### Шаг 5. Интерфейс оператора
 
@@ -228,20 +239,25 @@ http://localhost:5173?mode=operator&app=my-terminal
 
 ## BFF (бэкенд для внешнего интерфейса)
 
-Для сложных экранов (таблиц с пагинацией, форм) используйте BFF:
+Для сложных экранов используйте BFF. **Каноническое тело** (tree-first):
 
 ```http
 POST /api/v1/bff/invoke
+Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "appId": "my-terminal",
-  "function": "listOrders",
-  "params": {}
+  "objectPath": "root.platform.applications.my-terminal.functions",
+  "functionName": "listOrders",
+  "input": {
+    "schema": { "name": "in", "fields": [] },
+    "rows": [{}]
+  },
+  "wireProfile": "ispf-operator-v1"
 }
 ```
 
-Профиль провода `ispf-operator-v1` — стандартный контракт для устаревшей оболочки манифеста. Для новых решений используйте **дашборды + функциональную кнопку** вместо пользовательского манифеста.
+После deploy функции доступны на дереве как `{appId}.functions.{name}`. Подробнее: [applications](applications.md). Предпочитайте **дашборды + function-button / function-form**.
 
 ---
 

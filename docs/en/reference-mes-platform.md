@@ -1,15 +1,15 @@
 # MES Platform walkthrough (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)
 
-End-to-end certification path: **install MES marketplace product → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** without custom Java.
+End-to-end path: **install MES marketplace product → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** without custom Java.
 
 **Product delivery:** MES is an **IoT Solutions marketplace product**, not part of the base ISPF platform. A clean install does **not** create `root.platform.mes` or MES INSTANCE models until you install `mes-platform` / `mes-platform-production` from the marketplace (or deploy the example bundle). Optional legacy flag: `ispf.bootstrap.mes-catalog-enabled=true`.
 
-**Wave 8 status (complete):** BL-164…BL-170 certified. Production walkthrough ≤30 min verified; `MesPlatformGaSmokeTest` deploys `mes-platform-production` and asserts OEE, dispatch, quality, batch, ERP, and enabled outbox schedule.
+> **Honesty vs [competitive-scorecard](competitive-scorecard.md):** MES dimension is **~6.5 PARTIAL**. “Certified” / Wave 8 below means **smoke / walkthrough** (`MesPlatformGaSmokeTest`, ≤30 min lab path) — **not** plant-ready MES or live ERP. ERP outbox remains a stub/schedule path.
 
 | Bundle | `appId` | Artifacts | Status |
 |--------|---------|-----------|--------|
-| Certification skeleton | `mes-platform` | [examples/mes-platform/](../../examples/mes-platform/), marketplace listing `mes-platform` (vendor **IoT Solutions**) | Product |
-| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../../examples/mes-platform-production/), marketplace listing `mes-platform-production` | **Certified** (BL-170) |
+| Certification skeleton | `mes-platform` | [examples/mes-platform/](../../examples/mes-platform/), marketplace listing `mes-platform` (vendor **IoT Solutions**) | Product (lab) |
+| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../../examples/mes-platform-production/), marketplace listing `mes-platform-production` | Smoke-certified (BL-170) |
 **See also:** [isa95-catalog](isa95-catalog.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [marketplace](marketplace.md), [object-model](object-model.md).
 
 ---

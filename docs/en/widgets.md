@@ -18,7 +18,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | `type` | string | Widget type (`value`, `chart`, …) |
 | `title` | string | Card title on HMI |
 | `x`, `y` | number | Grid position (0-based) |
-| `w`, `h` | number | Width and height in grid units (`columns` usually 12) |
+| `w`, `h` | number | Width and height on the **84×8** fine grid (full width = `w: 84`; see [dashboards](dashboards.md)) |
 | `objectPath` | string | Static object path (`root.platform.devices.foo`) |
 | `selectionKey` | string | Selection slot name; path from `selection[key]` (see [dashboards](dashboards.md)) |
 | `variableName` | string | Variable name on the object |
@@ -87,7 +87,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
   "id": "temp",
   "type": "value",
   "title": "Temperature",
-  "x": 0, "y": 0, "w": 3, "h": 2,
+  "x": 0, "y": 0, "w": 21, "h": 14,
   "objectPath": "root.platform.devices.demo-sensor-01",
   "variableName": "temperature",
   "valueField": "value",

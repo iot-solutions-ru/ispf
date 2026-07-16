@@ -116,7 +116,7 @@ node tools/agent-regression/validate-scenarios.mjs --results build/agent-regress
 }
 ```
 
-Цель: **≥95 %** на всех сценариях (полный BL-178). **S31 one-shot** доказывает BL-177 через `--oneshot`. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
+**Цель (не достигнута):** ≥95 % live на всех сценариях (полный BL-178). По [competitive-scorecard](competitive-scorecard.md) AI **~7.0 PARTIAL** — one-shot/smoke **REAL**, полный gate ≥95% **открыт**. **S31 one-shot** доказывает BL-177 через `--oneshot`. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
 
 ---
 

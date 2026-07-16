@@ -18,7 +18,7 @@
 | `type` | string | Тип виджета (`value`, `chart`, …) |
 | `title` | string | Заголовок карточки на HMI |
 | `x`, `y` | number | Позиция на сетке (0-based) |
-| `w`, `h` | number | Ширина и высота в единицах сетки (`columns` обычно 12) |
+| `w`, `h` | number | Ширина и высота на сетке **84×8** (полная ширина = `w: 84`; см. [dashboards](dashboards.md)) |
 | `objectPath` | string | Статический путь объекта (`root.platform.devices.foo`) |
 | `selectionKey` | строка | Выбор имени слота; путь берётся из `selection[key]` (см. [dashboards](dashboards.md)) |
 | `variableName` | string | Имя переменной на объекте |
@@ -87,7 +87,7 @@
   "id": "temp",
   "type": "value",
   "title": "Температура",
-  "x": 0, "y": 0, "w": 3, "h": 2,
+  "x": 0, "y": 0, "w": 21, "h": 14,
   "objectPath": "root.platform.devices.demo-sensor-01",
   "variableName": "temperature",
   "valueField": "value",

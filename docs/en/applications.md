@@ -10,14 +10,14 @@ Platform layer for deploying application solutions **without industry Java code 
 
 | REQ-PF | Capability | API / component |
 |--------|------------|-----------------|
-| 01 | Application Function Runtime | `POST /applications/{appId}/functions/deploy`, JSON script engine |
-| 02 | Application Data Layer | `POST /applications/{appId}/data/migrate` |
-| 03 | Application Package Deploy | `POST /applications/{appId}/deploy` |
+| 01 | Application Function Runtime | `POST /api/v1/applications/{appId}/functions/deploy`, JSON script engine |
+| 02 | Application Data Layer | `POST /api/v1/applications/{appId}/data/migrate` |
+| 03 | Application Package Deploy | `POST /api/v1/applications/{appId}/deploy` (JSON body) |
 | 04 | BPMN `invoke_function` | `WorkflowActionType.INVOKE_FUNCTION` |
-| 05 | Platform Scheduler | `GET/POST /schedules` |
-| 06 | BFF Wire Gateway | `POST /bff/invoke` |
+| 05 | Platform Scheduler | `GET/POST /api/v1/schedules` |
+| 06 | BFF Wire Gateway | `POST /api/v1/bff/invoke` |
 | 07 | Model Registry Persistence | `model_definitions` + auto-save on model CRUD |
-| 10 | Workflow Cancel | `POST /workflows/instances/{id}/cancel` |
+| 10 | Workflow Cancel | `POST /api/v1/workflows/instances/{id}/cancel` |
 
 ## Application registration
 
@@ -166,7 +166,7 @@ Content-Type: application/json
     {
       "path": "root.platform.myapp.ops",
       "title": "Operator Board",
-      "layoutJson": "{ \"columns\": 12, \"rowHeight\": 72, \"widgets\": [] }"
+      "layoutJson": "{ \"columns\": 84, \"rowHeight\": 8, \"widgets\": [] }"
     }
   ],
   "workflows": [

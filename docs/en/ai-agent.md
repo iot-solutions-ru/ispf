@@ -124,7 +124,8 @@ Results file shape:
 }
 ```
 
-Target: **≥95%** live pass rate across all scenarios (full BL-178). **S31 one-shot** proves BL-177 with `--oneshot`. `nightly-stub-results.json` is **deprecated** — not evidence of live ≥95%.
+**Target (not met):** ≥95% live pass rate across all scenarios (full BL-178). As of the code-verified [competitive-scorecard](competitive-scorecard.md), AI-assisted development is **~7.0 PARTIAL** — one-shot / live smoke paths are **REAL**; the full 50-scenario ≥95% gate is **open**. **S31 one-shot** proves BL-177 with `--oneshot`. `nightly-stub-results.json` is **deprecated** — not evidence of live ≥95%.
+
 ---
 
 ## AI tool metrics dashboard widget (BL-180)
@@ -141,53 +142,39 @@ Embed in a platform dashboard (`root.platform.dashboards.ai-ops`) using a **char
 
 ```json
 {
-  "version": 2,
+  "columns": 84,
+  "rowHeight": 8,
   "widgets": [
     {
       "id": "ai-tool-latency",
       "type": "chart",
       "title": "Agent tool latency (7d)",
-      "grid": { "x": 0, "y": 0, "w": 6, "h": 4 },
-      "options": {
-        "chartType": "bar",
-        "binding": {
-          "source": "bff",
-          "function": "ai_toolMetricsChart",
-          "args": { "days": 7, "metric": "avgLatencyMs" }
-        }
-      }
+      "x": 0, "y": 0, "w": 42, "h": 28,
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "variableName": "temperature"
     },
     {
       "id": "ai-tool-errors",
       "type": "chart",
       "title": "Agent tool error rate (7d)",
-      "grid": { "x": 6, "y": 0, "w": 6, "h": 4 },
-      "options": {
-        "chartType": "bar",
-        "binding": {
-          "source": "bff",
-          "function": "ai_toolMetricsChart",
-          "args": { "days": 7, "metric": "errorRate" }
-        }
-      }
+      "x": 42, "y": 0, "w": 42, "h": 28,
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "variableName": "temperature"
     },
     {
       "id": "ai-tool-tokens",
-      "type": "indicator",
-      "title": "Agent tokens (7d)",
-      "grid": { "x": 0, "y": 4, "w": 4, "h": 2 },
-      "options": {
-        "binding": {
-          "source": "bff",
-          "function": "ai_toolMetricsTotals",
-          "args": { "days": 7 }
-        },
-        "format": "integer"
-      }
+      "type": "value",
+      "title": "Sample KPI tile",
+      "x": 0, "y": 28, "w": 21, "h": 14,
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "variableName": "temperature",
+      "decimals": 0
     }
   ]
 }
 ```
+
+> Sketch only: bind real charts to `GET /api/v1/ai/agent/metrics/tools` via a BFF/script function when available. Layout uses the canonical **84×8** grid ([dashboards](dashboards.md)).
 
 **BFF sketch** (`ai_toolMetricsChart`): admin HTTP `GET /api/v1/ai/agent/metrics/tools`, map `tools[]` to `{ label: tool, value: metric }` rows for the chart widget.
 
