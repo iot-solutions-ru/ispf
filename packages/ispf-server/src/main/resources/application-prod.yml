@@ -8,6 +8,8 @@ ispf:
   security:
     local-role-header-enabled: false
     rbac-enabled: true
+  federation:
+    block-loopback-hosts: ${ISPF_FEDERATION_BLOCK_LOOPBACK:true}
   websocket:
     # Override with your public console origin(s), comma-separated Spring patterns.
     allowed-origin-patterns: ${ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:https://localhost,http://localhost,https://127.0.0.1,http://127.0.0.1}

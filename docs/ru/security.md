@@ -167,6 +167,7 @@ Docker Compose поднимает Keycloak на порт **8180**.
 - `ISPF_LICENSE_ENFORCE=true` и `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true`
 - `ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS` — origin(ы) консоли (по умолчанию localhost; в `local`/`test` остаётся `*`)
 - `ispf.security.local-role-header-enabled=false`
+- Federation outbound login: `ISPF_FEDERATION_BLOCK_LOOPBACK=true` (prod) и опционально `ISPF_FEDERATION_OUTBOUND_URL_ALLOWLIST`
 
 Учётные записи по умолчанию (`admin`/`admin` и т.п.) допустимы только в **local / test / lab** — это не дефект.
 

@@ -2,6 +2,8 @@ package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.config.FederationSecurityProperties;
+import com.ispf.server.security.OutboundUrlSafety;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class FederationService {
     private final FederationPeerAuthService authService;
     private final FederationTunnelHubService tunnelHubService;
     private final FederationPeerHealthService peerHealthService;
+    private final FederationSecurityProperties federationSecurityProperties;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -41,7 +44,8 @@ public class FederationService {
             FederationWebSocketFanoutService webSocketFanout,
             @Lazy FederationPeerAuthService authService,
             @Lazy FederationTunnelHubService tunnelHubService,
-            @Lazy FederationPeerHealthService peerHealthService
+            @Lazy FederationPeerHealthService peerHealthService,
+            FederationSecurityProperties federationSecurityProperties
     ) {
         this.peerStore = peerStore;
         this.objectMapper = objectMapper;
@@ -49,6 +53,7 @@ public class FederationService {
         this.authService = authService;
         this.tunnelHubService = tunnelHubService;
         this.peerHealthService = peerHealthService;
+        this.federationSecurityProperties = federationSecurityProperties;
     }
 
     public List<FederationPeer> listPeers() {
@@ -83,7 +88,12 @@ public class FederationService {
         if (password == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "password is required");
         }
-        String url = baseUrl.trim().replaceAll("/+$", "") + "/api/v1/auth/login";
+        URI safeBase = OutboundUrlSafety.requireSafeHttpUrl(
+                baseUrl.trim().replaceAll("/+$", ""),
+                federationSecurityProperties.getOutboundUrlAllowlist(),
+                federationSecurityProperties.isBlockLoopbackHosts()
+        );
+        String url = safeBase.toString().replaceAll("/+$", "") + "/api/v1/auth/login";
         try {
             String json = objectMapper.writeValueAsString(Map.of("username", username.trim(), "password", password));
             HttpRequest request = HttpRequest.newBuilder(URI.create(url))
@@ -439,5 +449,13 @@ public class FederationService {
         if (draft.baseUrl() == null || draft.baseUrl().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "baseUrl is required");
         }
+        if (draft.connectionMode() != FederationConnectionMode.TUNNEL_INBOUND) {
+            OutboundUrlSafety.requireSafeHttpUrl(
+                    draft.baseUrl(),
+                    federationSecurityProperties.getOutboundUrlAllowlist(),
+                    federationSecurityProperties.isBlockLoopbackHosts()
+            );
+        }
     }
 }
+

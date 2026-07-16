@@ -159,6 +159,11 @@ ispf:
     job-elastic-scale-check-interval-ms: ${ISPF_CLUSTER_JOB_ELASTIC_SCALE_CHECK_MS:500}
     job-running-ttl-seconds: ${ISPF_CLUSTER_JOB_RUNNING_TTL_SECONDS:1800}
   federation:
+    # Empty allowlist = any non-blocked host. Set hosts for locked-down prod peers.
+    outbound-url-allowlist: ${ISPF_FEDERATION_OUTBOUND_URL_ALLOWLIST:}
+    # true in prod profile — blocks 127.0.0.1/localhost outbound federation login.
+    block-loopback-hosts: ${ISPF_FEDERATION_BLOCK_LOOPBACK:false}
+
     outbound-buffer:
       max-bytes: ${ISPF_FEDERATION_OUTBOUND_BUFFER_MAX_BYTES:2097152}
       drop-policy: ${ISPF_FEDERATION_OUTBOUND_BUFFER_DROP_POLICY:DROP_OLDEST}

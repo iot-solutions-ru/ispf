@@ -60,6 +60,8 @@ public class BindingRulesService {
     private final BindingFormulaResolver bindingFormulaResolver;
     private final AnalyticsTagCatalogService tagCatalogService;
     private final ConcurrentHashMap<String, Object> rulesLocks = new ConcurrentHashMap<>();
+    /** Parsed rules cache — invalidated on every {@link #saveRules}. */
+    private final ConcurrentHashMap<String, List<BindingRule>> rulesCache = new ConcurrentHashMap<>();
 
     public BindingRulesService(
             ObjectManager objectManager,
@@ -84,8 +86,23 @@ public class BindingRulesService {
     }
 
     public List<BindingRule> listRules(String objectPath) {
+        List<BindingRule> cached = rulesCache.get(objectPath);
+        if (cached != null) {
+            return cached;
+        }
         PlatformObject object = objectManager.require(objectPath);
-        return readRules(object);
+        List<BindingRule> rules = List.copyOf(readRules(object));
+        rulesCache.put(objectPath, rules);
+        return rules;
+    }
+
+    /** Drop cached rules for one object (or all when {@code objectPath} is null). */
+    public void invalidateRulesCache(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            rulesCache.clear();
+            return;
+        }
+        rulesCache.remove(objectPath);
     }
 
     public List<BindingRule> saveRules(String objectPath, List<BindingRule> rules) {
@@ -98,16 +115,18 @@ public class BindingRulesService {
             }
             boolean historianChanged = normalized.stream().anyMatch(BindingRule::isHistorian);
             writeRules(objectPath, normalized);
+            List<BindingRule> frozen = List.copyOf(normalized);
+            rulesCache.put(objectPath, frozen);
             periodicScheduleRegistry.syncObject(
                     objectPath,
-                    normalized.stream().filter(BindingRule::isReactive).toList()
+                    frozen.stream().filter(BindingRule::isReactive).toList()
             );
             periodicScheduler.reschedule();
             if (historianChanged) {
                 engineScheduler.syncSchedules();
             }
             tagCatalogService.invalidateCatalog();
-            return normalized;
+            return frozen;
         }
     }
 

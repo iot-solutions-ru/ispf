@@ -18,7 +18,6 @@ import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
 import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.config.BootstrapProperties;
-import com.ispf.server.config.MqttGatewayProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.federation.FederationPaths;
@@ -34,9 +33,6 @@ import com.ispf.server.plugin.blueprint.BlueprintApplicationRunner;
 import com.ispf.server.plugin.blueprint.BlueprintBootstrap;
 import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
 import com.ispf.server.plugin.blueprint.SystemIntrinsicBlueprintMigration;
-import com.ispf.server.history.TelemetryHistorianFastPath;
-import com.ispf.server.event.TelemetryEventJournalFastPath;
-import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import org.springframework.beans.factory.ObjectProvider;
@@ -85,15 +81,10 @@ public class ObjectManager {
     private final ObjectChangePublicationService publicationService;
     private final ObjectProvider<ObjectManager> self;
     private final ObjectConfigAuditService configAuditService;
-    private final RuntimeTelemetryCoalescer telemetryCoalescer;
-    private final TelemetryIngressDispatcher telemetryIngressDispatcher;
-    private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
-    private final MqttGatewayProperties mqttGatewayProperties;
-    private final TelemetryHistorianFastPath historianFastPath;
-    private final TelemetryEventJournalFastPath eventJournalFastPath;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
     private final ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService;
+    private final ObjectProvider<DriverTelemetryService> driverTelemetryService;
     private final ConcurrentHashMap<String, Object> variablePersistLocks = new ConcurrentHashMap<>();
     private volatile boolean initialized;
 
@@ -115,15 +106,10 @@ public class ObjectManager {
             @org.springframework.context.annotation.Lazy ObjectChangePublicationService publicationService,
             ObjectProvider<ObjectManager> self,
             ObjectConfigAuditService configAuditService,
-            @org.springframework.context.annotation.Lazy RuntimeTelemetryCoalescer telemetryCoalescer,
-            @org.springframework.context.annotation.Lazy TelemetryIngressDispatcher telemetryIngressDispatcher,
-            @org.springframework.context.annotation.Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch,
-            @org.springframework.context.annotation.Lazy MqttGatewayProperties mqttGatewayProperties,
-            @org.springframework.context.annotation.Lazy TelemetryHistorianFastPath historianFastPath,
-            @org.springframework.context.annotation.Lazy TelemetryEventJournalFastPath eventJournalFastPath,
             @org.springframework.context.annotation.Lazy DeviceTelemetryPolicyService telemetryPolicyService,
             JavaFunctionRuntimeService javaFunctionRuntimeService,
-            ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService
+            ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService,
+            ObjectProvider<DriverTelemetryService> driverTelemetryService
     ) {
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
@@ -142,15 +128,10 @@ public class ObjectManager {
         this.publicationService = publicationService;
         this.self = self;
         this.configAuditService = configAuditService;
-        this.telemetryCoalescer = telemetryCoalescer;
-        this.telemetryIngressDispatcher = telemetryIngressDispatcher;
-        this.gatewayIngressDispatch = gatewayIngressDispatch;
-        this.mqttGatewayProperties = mqttGatewayProperties;
-        this.historianFastPath = historianFastPath;
-        this.eventJournalFastPath = eventJournalFastPath;
         this.telemetryPolicyService = telemetryPolicyService;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
         this.clusterBootstrapService = clusterBootstrapService;
+        this.driverTelemetryService = driverTelemetryService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -448,41 +429,18 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value) {
-        return setDriverTelemetryValue(path, name, value, null);
+        return driverTelemetryService.getObject().setDriverTelemetryValue(path, name, value, null);
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value, Instant observedAt) {
-        if (eventJournalFastPath.isEligible(path, name)
-                && eventJournalFastPath.tryFire(path, name, value, observedAt)) {
-            return resolveDriverTelemetryVariable(path, name, value);
-        }
-        if (historianFastPath.isHistorianOnlyEligible(path, name)
-                && historianFastPath.tryPublish(path, name, value, observedAt)) {
-            // Keep live values updated: gateway lastIngress and loadtest ingress gates read RAM.
-            // Still skip the object-change bus for historian-only TELEMETRY_ONLY ticks.
-            Variable variable = setDriverTelemetryValueInMemory(path, name, value);
-            if (gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
-                return variable;
-            }
-            return variable;
-        }
-        Variable variable = setDriverTelemetryValueInMemory(path, name, value);
-        if (gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
-            return variable;
-        }
-        if (telemetryIngressDispatcher.isQueueEnabled()) {
-            telemetryIngressDispatcher.submit(path, name, value, observedAt);
-        } else {
-            telemetryCoalescer.recordUpdate(path, name, value, observedAt);
-        }
-        return variable;
+        return driverTelemetryService.getObject().setDriverTelemetryValue(path, name, value, observedAt);
     }
 
     /**
      * Event-journal-only fast path: skip RAM live-value update — journal stores do not need
      * object-tree computed value per tick. Historian-only path updates RAM (see above).
      */
-    private Variable resolveDriverTelemetryVariable(String path, String name, DataRecord value) {
+    Variable resolveDriverTelemetryVariable(String path, String name, DataRecord value) {
         PlatformObject node = objectTree.require(path);
         return node.getVariable(name).orElseGet(() -> {
             Variable created = new Variable(name, value.schema(), true, false, null);
@@ -492,10 +450,10 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValueDirect(String path, String name, DataRecord value) {
-        return setDriverTelemetryValueInMemory(path, name, value);
+        return applyDriverTelemetryInMemory(path, name, value);
     }
 
-    private Variable setDriverTelemetryValueInMemory(String path, String name, DataRecord value) {
+    Variable applyDriverTelemetryInMemory(String path, String name, DataRecord value) {
         PlatformObject node = require(path);
         Variable variable = node.getVariable(name).orElseGet(() -> {
             Variable created = new Variable(name, value.schema(), true, false, null);

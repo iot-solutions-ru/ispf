@@ -7,7 +7,7 @@ import {
   FieldPairs,
   WidgetDataSourceFields,
   WidgetTypeSpecificFields,
-} from "./widgetEditorFields";
+} from "./widgetFields";
 import { WidgetStylesEditor } from "./widgetEditorStructured";
 import {
   bringWidgetForward,

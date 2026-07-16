@@ -15,9 +15,10 @@ import {
 } from "./auth/oidc";
 import {
   resolveInitialAppMode,
-  resolveOperatorAppId,
   shouldOpenOperatorShell,
 } from "./auth/routing";
+import { AuthLoadingCard, AuthLoginGate } from "./shell/AuthBootstrapViews";
+import OperatorShellGate from "./shell/OperatorShellGate";
 import type { EditorTab, ObjectType } from "./types";
 import { resolveEditorObjectType, isSpecializedEditorObject } from "./utils/editorObject";
 import { buildObjectTree } from "./utils/tree";
@@ -42,7 +43,6 @@ import {
 } from "./components/dashboard/DashboardContext";
 import AgentChatStatusBar from "./components/AgentChatStatusBar";
 import AgentChatRunBootstrap from "./components/AgentChatRunBootstrap";
-import LoginView from "./components/LoginView";
 import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
 import ShellPreferences from "./components/ShellPreferences";
 import { AgentChatProvider } from "./context/AgentChatContext";
@@ -53,10 +53,9 @@ import AdminWorkspaceFocusSync from "./components/agent/AdminWorkspaceFocusSync"
 import { useAgentRunStatus } from "./utils/agentRunStatus";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
-import { isOperatorAppChildPath, resolveOperatorAppIdFromPath, resolveOperatorAppId as resolveRegistryOperatorAppId } from "./utils/operatorAppsPath";
+import { isOperatorAppChildPath, resolveOperatorAppIdFromPath } from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
 
-const OperatorView = lazy(() => import("./components/operator/OperatorView"));
 const SystemView = lazy(() => import("./components/SystemView"));
 const AiStudioPanel = lazy(() => import("./components/AiStudioPanel"));
 const ReportBuilder = lazy(() => import("./components/report/ReportBuilder"));
@@ -569,38 +568,24 @@ function AppShell() {
   };
 
   if (oidcBootstrapping || authBootstrapping) {
-    return (
-      <div className="login-shell">
-        <div className="login-card">
-          <div className="login-card-head">
-            <ShellPreferences />
-          </div>
-          <p className="login-sub">{t("shell:login.oidcCompleting")}</p>
-        </div>
-      </div>
-    );
+    return <AuthLoadingCard />;
   }
 
   if (!session?.token) {
-    return <LoginView onLoggedIn={handleLoggedIn} />;
+    return <AuthLoginGate onLoggedIn={handleLoggedIn} />;
   }
 
   if (shouldOpenOperatorShell(session, appMode)) {
-    const rawOperatorAppId = resolveOperatorAppId(session, searchParams);
-    const operatorAppId = rawOperatorAppId
-      ? resolveRegistryOperatorAppId(rawOperatorAppId, operatorAppsQuery.data ?? [])
-      : rawOperatorAppId;
     return (
-      <Suspense fallback={<LazyFallback />}>
-        <OperatorView
-          appId={operatorAppId}
-          operatorId={session.username}
-          onSelectApp={selectOperatorApp}
-          onSwitchAdmin={canConfigure ? () => setAppMode("admin") : undefined}
-          session={session}
-          onLogout={() => void handleLogout()}
-        />
-      </Suspense>
+      <OperatorShellGate
+        session={session}
+        searchParams={searchParams}
+        operatorApps={operatorAppsQuery.data}
+        canConfigure={canConfigure}
+        onSelectApp={selectOperatorApp}
+        onSwitchAdmin={() => setAppMode("admin")}
+        onLogout={() => void handleLogout()}
+      />
     );
   }
 

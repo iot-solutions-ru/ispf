@@ -167,6 +167,7 @@ Checked in `ObjectAccessService.requireVariableRead/Write` on read/write/history
 - Set `ISPF_LICENSE_ENFORCE=true` and `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true`
 - Set `ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS` to your console origin(s) (default is localhost-only; `local`/`test` keep `*`)
 - Keep `ispf.security.local-role-header-enabled=false`
+- Federation outbound login: `ISPF_FEDERATION_BLOCK_LOOPBACK=true` (prod default) and optional `ISPF_FEDERATION_OUTBOUND_URL_ALLOWLIST`
 
 Default users (`admin`/`admin`, …) are intentional for **local / test / lab** only — not a production defect.
 
