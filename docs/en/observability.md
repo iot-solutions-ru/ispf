@@ -18,6 +18,9 @@ Key ISPF metrics (Micrometer):
 | `ispf.alert.fires.total` | counter | Alert rule firings |
 | `ispf.alert.evaluations.total` | counter | CEL evaluations |
 | `ispf.correlator.triggers.total` | counter | Correlator triggers |
+| `ispf.telemetry.coalesce_drops.total` | counter | Last-value coalesce skipped/superseded samples |
+| `ispf.telemetry.binding_bypass.total` | counter | Binding consumer present — coalesce skipped |
+| `ispf.telemetry.historian_only.total` | counter | Historian fast path without object-change bus |
 | `ispf.object_change.queue.size{lane=telemetry\|automation\|total}` | gauge | Async queue depth |
 | `ispf.object_change.workers.active{lane=telemetry\|automation}` | gauge | Active worker threads (elastic mode) |
 | `ispf.object_change.processed.total` | gauge | Processed object-change events |
@@ -83,7 +86,11 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 
 Details: [demostands](demostands.md) (verification section), [vps-demostand](vps-demostand.md) (ops example).
 
-**Grafana dashboard** (all pipeline metrics): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](readme.md). Local stack: `docker compose -f deploy/docker-compose.observability.yml up -d`.
+**Grafana dashboard** (automation + telemetry hot path): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](../deploy/grafana/README.md). Local stack: `docker compose -f deploy/docker-compose.observability.yml up -d`.
+
+**WebSocket sessions** are not exported on `/actuator/prometheus` yet — use `GET /api/v1/platform/metrics` → `connections.websocketClients` until a Micrometer gauge exists.
+
+**Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py) against a fixtures-enabled server (`demo-sensor-01`).
 
 ## OTLP metrics export (optional, 0.9.9+)
 

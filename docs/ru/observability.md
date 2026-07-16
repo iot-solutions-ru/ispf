@@ -18,6 +18,9 @@
 | `ispf.alert.fires.total` | counter | Срабатывания alert rules |
 | `ispf.alert.evaluations.total` | counter | Оценки CEL |
 | `ispf.correlator.triggers.total` | counter | Срабатывания correlators |
+| `ispf.telemetry.coalesce_drops.total` | counter | Last-value coalesce: пропущенные/заменённые сэмплы |
+| `ispf.telemetry.binding_bypass.total` | counter | Есть binding-consumer — coalesce пропущен |
+| `ispf.telemetry.historian_only.total` | counter | Historian fast path без object-change bus |
 | `ispf.object_change.queue.size{lane=telemetry\|automation\|total}` | gauge | Глубина async-очередей |
 | `ispf.object_change.workers.active{lane=telemetry\|automation}` | gauge | Активные worker-потоки (elastic mode) |
 | `ispf.object_change.processed.total` | gauge | Обработанные object-change events |
@@ -83,7 +86,11 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 
 Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).
 
-**Панель управления Grafana** (все метрики конвейера): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](readme.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.
+**Панель Grafana** (automation + telemetry hot path): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../deploy/grafana/README.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.
+
+Сессии WebSocket пока не в Prometheus — `GET /api/v1/platform/metrics` → `connections.websocketClients`.
+
+**Golden path smoke** (alarm → journal → ack): [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py).
 
 ## Экспорт метрик OTLP (необязательно, 0.9.9+)
 

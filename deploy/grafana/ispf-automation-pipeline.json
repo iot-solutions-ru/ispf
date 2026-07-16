@@ -248,12 +248,260 @@
       ]
     },
     {
+      "id": 104,
+      "type": "row",
+      "title": "Telemetry hot path (Wave 2+)",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Coalesce drops /s",
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(ispf_telemetry_coalesce_drops_total[$__rate_interval])",
+          "legendFormat": "coalesce drops",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Binding bypass /s",
+      "gridPos": {
+        "x": 8,
+        "y": 17,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(ispf_telemetry_binding_bypass_total[$__rate_interval])",
+          "legendFormat": "binding bypass",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Historian-only /s",
+      "gridPos": {
+        "x": 16,
+        "y": 17,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(ispf_telemetry_historian_only_total[$__rate_interval])",
+          "legendFormat": "historian only",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "type": "timeseries",
+      "title": "Telemetry ingress pending / workers",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ispf_telemetry_ingress_pending_lanes",
+          "legendFormat": "pending lanes",
+          "refId": "A"
+        },
+        {
+          "expr": "ispf_telemetry_ingress_workers_active",
+          "legendFormat": "workers",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "type": "timeseries",
+      "title": "Variable history queue / flushed /s",
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ispf_variable_history_queue_size",
+          "legendFormat": "queue",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(ispf_variable_history_flushed_total[$__rate_interval])",
+          "legendFormat": "flushed /s",
+          "refId": "B"
+        }
+      ]
+    },
+    {
       "id": 101,
       "type": "row",
       "title": "Object-change bus (dual lane)",
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 31,
         "w": 24,
         "h": 1
       },
@@ -266,7 +514,7 @@
       "title": "Queue depth by lane",
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 32,
         "w": 8,
         "h": 8
       },
@@ -311,7 +559,7 @@
       "title": "Active workers by lane",
       "gridPos": {
         "x": 8,
-        "y": 17,
+        "y": 32,
         "w": 8,
         "h": 8
       },
@@ -356,7 +604,7 @@
       "title": "Processed /s",
       "gridPos": {
         "x": 16,
-        "y": 17,
+        "y": 32,
         "w": 8,
         "h": 8
       },
@@ -401,7 +649,7 @@
       "title": "Queue drops /s",
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 40,
         "w": 6,
         "h": 4
       },
@@ -450,7 +698,7 @@
       "title": "Total queue (all lanes)",
       "gridPos": {
         "x": 6,
-        "y": 25,
+        "y": 40,
         "w": 6,
         "h": 4
       },
@@ -499,7 +747,7 @@
       "title": "Automation queue",
       "gridPos": {
         "x": 12,
-        "y": 25,
+        "y": 40,
         "w": 6,
         "h": 4
       },
@@ -548,7 +796,7 @@
       "title": "Telemetry queue",
       "gridPos": {
         "x": 18,
-        "y": 25,
+        "y": 40,
         "w": 6,
         "h": 4
       },
@@ -597,7 +845,7 @@
       "title": "Event journal",
       "gridPos": {
         "x": 0,
-        "y": 29,
+        "y": 44,
         "w": 24,
         "h": 1
       },
@@ -610,7 +858,7 @@
       "title": "Journal async queue size",
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 45,
         "w": 8,
         "h": 7
       },
@@ -655,7 +903,7 @@
       "title": "Journal flushed /s",
       "gridPos": {
         "x": 8,
-        "y": 30,
+        "y": 45,
         "w": 8,
         "h": 7
       },
@@ -700,7 +948,7 @@
       "title": "Sync fallback /s (queue full)",
       "gridPos": {
         "x": 16,
-        "y": 30,
+        "y": 45,
         "w": 8,
         "h": 7
       },
@@ -745,7 +993,7 @@
       "title": "Event history records",
       "gridPos": {
         "x": 0,
-        "y": 37,
+        "y": 52,
         "w": 8,
         "h": 4
       },
@@ -794,7 +1042,7 @@
       "title": "Workflow instances running",
       "gridPos": {
         "x": 8,
-        "y": 37,
+        "y": 52,
         "w": 8,
         "h": 4
       },
@@ -843,7 +1091,7 @@
       "title": "Variable history samples",
       "gridPos": {
         "x": 16,
-        "y": 37,
+        "y": 52,
         "w": 8,
         "h": 4
       },
@@ -892,7 +1140,7 @@
       "title": "Drivers & database",
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 56,
         "w": 24,
         "h": 1
       },
@@ -905,7 +1153,7 @@
       "title": "Drivers active / connected",
       "gridPos": {
         "x": 0,
-        "y": 42,
+        "y": 57,
         "w": 12,
         "h": 7
       },
@@ -955,7 +1203,7 @@
       "title": "DB pool connections",
       "gridPos": {
         "x": 12,
-        "y": 42,
+        "y": 57,
         "w": 12,
         "h": 7
       },
@@ -1011,7 +1259,8 @@
     "ispf",
     "automation",
     "prometheus",
-    "otlp"
+    "otlp",
+    "hot-path"
   ],
   "templating": {
     "list": [
@@ -1044,5 +1293,5 @@
   "title": "ISPF Automation Pipeline",
   "uid": "ispf-automation-pipeline",
   "version": 1,
-  "description": "All ISPF automation pipeline Micrometer metrics. Prometheus pull: /actuator/prometheus. OTLP push: ISPF → OTel Collector → Prometheus exporter :8889."
+  "description": "ISPF automation + telemetry hot-path Micrometer metrics. Includes coalesce_drops / binding_bypass / historian_only. Prometheus pull: /actuator/prometheus (admin). OTLP push: ISPF → OTel Collector → Prometheus exporter :8889. WebSocket session count is not on Prometheus yet — use GET /api/v1/platform/metrics."
 }

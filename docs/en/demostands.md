@@ -399,6 +399,8 @@ Use when there is **no** point running a polling JVM on the gateway: all SCADA o
 | [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh) | Throughput / Prod L journal |
 | [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) | Thread diagnostics |
 | [`deploy/loadtest-cleanup.py`](../deploy/loadtest-cleanup.py) | Load-test prep |
+| [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py) | Golden path: fire → journal → ack (fixtures) |
+| [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) | Grafana: automation + telemetry hot path |
 
 ---
 

@@ -133,6 +133,102 @@ def main() -> None:
     ]
     y += 7
 
+    panels.append(row(104, "Telemetry hot path (Wave 2+)", y))
+    y += 1
+    panels += [
+        ts(
+            40,
+            "Coalesce drops /s",
+            0,
+            y,
+            8,
+            7,
+            [
+                {
+                    "expr": f"rate(ispf_telemetry_coalesce_drops_total[{RATE}])",
+                    "legendFormat": "coalesce drops",
+                    "refId": "A",
+                }
+            ],
+        ),
+        ts(
+            41,
+            "Binding bypass /s",
+            8,
+            y,
+            8,
+            7,
+            [
+                {
+                    "expr": f"rate(ispf_telemetry_binding_bypass_total[{RATE}])",
+                    "legendFormat": "binding bypass",
+                    "refId": "A",
+                }
+            ],
+        ),
+        ts(
+            42,
+            "Historian-only /s",
+            16,
+            y,
+            8,
+            7,
+            [
+                {
+                    "expr": f"rate(ispf_telemetry_historian_only_total[{RATE}])",
+                    "legendFormat": "historian only",
+                    "refId": "A",
+                }
+            ],
+        ),
+    ]
+    y += 7
+    panels += [
+        ts(
+            43,
+            "Telemetry ingress pending / workers",
+            0,
+            y,
+            12,
+            7,
+            [
+                {
+                    "expr": "ispf_telemetry_ingress_pending_lanes",
+                    "legendFormat": "pending lanes",
+                    "refId": "A",
+                },
+                {
+                    "expr": "ispf_telemetry_ingress_workers_active",
+                    "legendFormat": "workers",
+                    "refId": "B",
+                },
+            ],
+            unit="short",
+        ),
+        ts(
+            44,
+            "Variable history queue / flushed /s",
+            12,
+            y,
+            12,
+            7,
+            [
+                {
+                    "expr": "ispf_variable_history_queue_size",
+                    "legendFormat": "queue",
+                    "refId": "A",
+                },
+                {
+                    "expr": f"rate(ispf_variable_history_flushed_total[{RATE}])",
+                    "legendFormat": "flushed /s",
+                    "refId": "B",
+                },
+            ],
+            unit="short",
+        ),
+    ]
+    y += 7
+
     panels.append(row(101, "Object-change bus (dual lane)", y))
     y += 1
     panels += [
@@ -264,7 +360,7 @@ def main() -> None:
         "panels": panels,
         "refresh": "10s",
         "schemaVersion": 39,
-        "tags": ["ispf", "automation", "prometheus", "otlp"],
+        "tags": ["ispf", "automation", "prometheus", "otlp", "hot-path"],
         "templating": {
             "list": [
                 {
@@ -290,9 +386,11 @@ def main() -> None:
         "uid": "ispf-automation-pipeline",
         "version": 1,
         "description": (
-            "All ISPF automation pipeline Micrometer metrics. "
-            "Prometheus pull: /actuator/prometheus. "
-            "OTLP push: ISPF → OTel Collector → Prometheus exporter :8889."
+            "ISPF automation + telemetry hot-path Micrometer metrics. "
+            "Includes coalesce_drops / binding_bypass / historian_only. "
+            "Prometheus pull: /actuator/prometheus (admin). "
+            "OTLP push: ISPF → OTel Collector → Prometheus exporter :8889. "
+            "WebSocket session count is not on Prometheus yet — use GET /api/v1/platform/metrics."
         ),
     }
 

@@ -24,6 +24,13 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web-console/package-lock.json
 
+      - name: Golden path API smoke (alarm → journal → ack)
+        env:
+          BASE_URL: ${{ inputs.base_url || 'https://ispf.example.invalid' }}
+          ISPF_USERNAME: ${{ secrets.E2E_USERNAME }}
+          ISPF_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: python3 deploy/tools/golden-path-alarm-smoke.py
+
       - name: Live Playwright smoke
         working-directory: apps/web-console
         env:
