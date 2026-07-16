@@ -38,7 +38,7 @@ jobs:
           cache: gradle
 
       - name: Restore dev driver packs
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         id: driver-packs-cache
         with:
           path: build/driver-packs
@@ -59,7 +59,7 @@ jobs:
 
       - name: Save dev driver packs
         if: steps.driver-packs-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: build/driver-packs
           key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
