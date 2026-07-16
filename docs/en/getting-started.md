@@ -13,6 +13,20 @@ Two tracks:
 
 ## Try ISPF (≈15 minutes)
 
+### Option A — all-in-one JAR (fastest)
+
+Download **`ispf-*-portable.zip`** from [GitHub Releases](https://github.com/Michaael/IoT-Solutions-Platform/releases) (JDK **25**). Unzip, then:
+
+```bash
+# Windows: double-click start.bat
+# Linux / macOS:
+./start.sh
+```
+
+Open http://localhost:8080 — login `admin` / `admin`. Then continue from [§2 Sign in](#2-sign-in-local-profile) (use port 8080 instead of 5173).
+
+### Option B — from source
+
 ### Requirements
 
 | Component | Version |
@@ -34,8 +48,10 @@ cd apps/web-console && npm install && npm run dev
 
 | URL | Purpose |
 | --- | ------- |
-| http://localhost:5173 | Admin console (login screen) |
-| http://localhost:5173?mode=operator | Operator HMI |
+| http://localhost:8080 | Admin console (all-in-one JAR) |
+| http://localhost:5173 | Admin console (Vite dev) |
+| http://localhost:8080?mode=operator | Operator HMI (all-in-one JAR) |
+| http://localhost:5173?mode=operator | Operator HMI (Vite dev) |
 | http://localhost:8080/api/v1/info | Version / capabilities |
 | http://localhost:8080/actuator/health | Health |
 

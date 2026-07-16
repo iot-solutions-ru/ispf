@@ -2,8 +2,11 @@ package com.ispf.server.config;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 public final class IspfAuthorizationRules {
+
+    private static final RequestMatcher EMBEDDED_WEB_CONSOLE = WebConsoleSecurity::isPublicConsoleRequest;
 
     private IspfAuthorizationRules() {
     }
@@ -19,6 +22,9 @@ public final class IspfAuthorizationRules {
                 "/actuator/health",
                 "/ws/**"
         ).permitAll();
+
+        // All-in-one JAR: login page + static assets + SPA deep links on the same origin.
+        auth.requestMatchers(EMBEDDED_WEB_CONSOLE).permitAll();
 
         auth.requestMatchers("/actuator/prometheus")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);

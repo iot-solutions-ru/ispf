@@ -81,11 +81,33 @@ dependencies {
     testRuntimeOnly("com.h2database:h2")
 }
 
+val webConsoleDistDir = rootProject.layout.projectDirectory.dir("apps/web-console/dist")
+
+fun shouldEmbedWebConsole(): Boolean {
+    // Opt-in only: auto-embedding a local apps/web-console/dist would pollute test
+    // classpath and every bootJar. Release workflow passes -PembedWebConsole=true.
+    if (findProperty("embedWebConsole")?.toString() != "true") {
+        return false
+    }
+    val indexHtml = webConsoleDistDir.file("index.html").asFile
+    if (!indexHtml.exists()) {
+        throw GradleException(
+            "embedWebConsole=true but apps/web-console/dist/index.html is missing. " +
+                "Build the console first: cd apps/web-console && npm ci && npm run build"
+        )
+    }
+    return true
+}
+
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveBaseName.set("ispf-server")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(rootProject.file("LICENSE")) { into("META-INF") }
     from(rootProject.file("NOTICE")) { into("META-INF") }
+    doFirst {
+        // Fail early on release builds that require an all-in-one JAR.
+        shouldEmbedWebConsole()
+    }
 }
 
 springBoot {
@@ -98,6 +120,14 @@ tasks.named<ProcessResources>("processResources") {
     dependsOn(rootProject.tasks.named("buildContextPack"))
     from(rootProject.file("gradle/driver-packs.json")) {
         into("driver-pack")
+    }
+    // All-in-one JAR: serve the built web console from classpath:/static when dist exists
+    // (release workflow builds the console first; local bootJar skips when dist is absent).
+    if (shouldEmbedWebConsole()) {
+        from(webConsoleDistDir) {
+            into("static")
+        }
+        logger.lifecycle("Embedding web-console from {}", webConsoleDistDir.asFile)
     }
 }
 

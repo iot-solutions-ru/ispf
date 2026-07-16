@@ -383,9 +383,20 @@ ssh user@host 'bash /tmp/remote-setup-ispf.sh'
 | `deploy/apply-platform-update.sh` | Установка jar + UI из staging и перезапуск systemd (вызывается API обновления) |
 | `deploy/remote-update-ispf.sh` | Ручное обновление с `/tmp` артефактов |
 
+### All-in-one JAR (проба / один хост)
+
+Релизный workflow встраивает web console в `ispf-server.jar` (`-PembedWebConsole=true`). Один файл для Windows, Linux и macOS (JDK 25+):
+
+```bash
+# Portable zip из Releases: start.bat (Windows) или ./start.sh (Linux/macOS)
+java -jar ispf-server.jar --spring.profiles.active=local
+```
+
+UI + API: http://localhost:8080. Для production с nginx по-прежнему можно отдавать `web-console.zip` с диска (split deploy ниже).
+
 ### Автообновление с GitHub Releases
 
-1. Опубликуйте релиз: `git tag v0.1.1 && git push origin v0.1.1` — workflow `.github/workflows/release.yml` соберёт `ispf-server.jar` и `web-console.zip`.
+1. Опубликуйте релиз: `git tag v0.1.1 && git push origin v0.1.1` — workflow `.github/workflows/release.yml` соберёт all-in-one `ispf-server.jar` и `web-console.zip` (nginx split deploy).
 2. На VPS в `ispf-server.service` включено:
    - `ISPF_UPDATE_CHECK_ENABLED=true` — периодическая проверка (по умолчанию раз в час)
    - `ISPF_UPDATE_APPLY_ENABLED=true` — кнопка «Обновить и перезапустить» в админ-консоли

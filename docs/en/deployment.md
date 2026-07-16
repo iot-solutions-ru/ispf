@@ -383,9 +383,20 @@ Additional scripts:
 | `deploy/apply-platform-update.sh` | Install jar + UI from staging and restart systemd (called by update API) |
 | `deploy/remote-update-ispf.sh` | Manual update from `/tmp` artifacts |
 
+### All-in-one JAR (trial / single host)
+
+Release workflow embeds the web console into `ispf-server.jar` (`-PembedWebConsole=true`). Same file runs on Windows, Linux, and macOS (JDK 25+):
+
+```bash
+# Portable zip from Releases: start.bat (Windows) or ./start.sh (Linux/macOS)
+java -jar ispf-server.jar --spring.profiles.active=local
+```
+
+UI + API: http://localhost:8080. For production with nginx, keep serving `web-console.zip` from disk (split deploy below).
+
 ### Auto-update from GitHub Releases
 
-1. Publish a release: `git tag v0.1.1 && git push origin v0.1.1` — workflow `.github/workflows/release.yml` builds `ispf-server.jar` and `web-console.zip`.
+1. Publish a release: `git tag v0.1.1 && git push origin v0.1.1` — workflow `.github/workflows/release.yml` builds all-in-one `ispf-server.jar` and `web-console.zip` (nginx split deploy).
 2. On VPS, `ispf-server.service` has:
    - `ISPF_UPDATE_CHECK_ENABLED=true` — periodic check (default: once per hour)
    - `ISPF_UPDATE_APPLY_ENABLED=true` — "Update and restart" button in admin console

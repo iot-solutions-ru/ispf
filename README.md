@@ -70,6 +70,21 @@ Honest positioning: closer to an **open Ignition-class application platform** th
 
 ## Quick start
 
+### All-in-one release JAR (Windows / Linux / macOS)
+
+**Requirements:** JDK **25** only. Download `ispf-server.jar` from [GitHub Releases](https://github.com/Michaael/IoT-Solutions-Platform/releases) (web console is embedded).
+
+```bash
+# Preferred: download ispf-*-portable.zip from Releases, unzip, then:
+#   Windows:  start.bat
+#   Linux:    ./start.sh
+java -jar ispf-server.jar --spring.profiles.active=local
+```
+
+Open http://localhost:8080 — login `admin` / `admin`. Operator HMI: http://localhost:8080?mode=operator
+
+### From source (dev)
+
 **Requirements:** JDK **25**, Node.js 20+, Docker optional (Postgres/NATS/Keycloak for fuller stacks).
 
 ```bash
@@ -82,8 +97,10 @@ cd apps/web-console && npm install && npm run dev
 
 | URL | Purpose |
 | --- | ------- |
-| http://localhost:5173 | Admin console |
-| http://localhost:5173?mode=operator | Operator HMI |
+| http://localhost:8080 | Admin console (all-in-one JAR) |
+| http://localhost:5173 | Admin console (Vite dev) |
+| http://localhost:8080?mode=operator | Operator HMI (all-in-one JAR) |
+| http://localhost:5173?mode=operator | Operator HMI (Vite dev) |
 | http://localhost:8080/api/v1/info | Version / capabilities |
 | http://localhost:8080/actuator/health | Health |
 
