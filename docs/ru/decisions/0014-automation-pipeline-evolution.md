@@ -88,6 +88,6 @@ Legacy-объекты без `triggerType`, но с `variableName`, продол
 
 ## Связанные материалы
 
-- [AutomationRuleIndex](../../packages/ispf-server/src/main/java/com/ispf/server/automation/AutomationRuleIndex.java)
-- [WorkflowEventTriggerIndex](../../packages/ispf-server/src/main/java/com/ispf/server/workflow/WorkflowEventTriggerIndex.java)
-- [ObjectChangeEventBus](../../packages/ispf-server/src/main/java/com/ispf/server/object/bus/ObjectChangeEventBus.java)
+- [AutomationRuleIndex](../../../packages/ispf-server/src/main/java/com/ispf/server/automation/AutomationRuleIndex.java)
+- [WorkflowEventTriggerIndex](../../../packages/ispf-server/src/main/java/com/ispf/server/workflow/WorkflowEventTriggerIndex.java)
+- [ObjectChangeEventBus](../../../packages/ispf-server/src/main/java/com/ispf/server/object/bus/ObjectChangeEventBus.java)

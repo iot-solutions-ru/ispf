@@ -445,7 +445,7 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 | [variable-history](variable-history.md) | REST historian phases |
 | [demostands](demostands.md) | Deploy profiles |
 | [cluster](cluster.md) | Replica cluster |
-| [examples/mes-platform/README.md](../examples/mes-platform/README.md) | OEE analytics chart (BL-160) |
+| [examples/mes-platform/README.md](../../examples/mes-platform/README.md) | OEE analytics chart (BL-160) |
 
 ---
 

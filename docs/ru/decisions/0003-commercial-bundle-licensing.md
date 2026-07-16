@@ -5,9 +5,11 @@
 Статус: **Принято**  
 Дата: 2026-06-22
 
+> **Уточнение по лицензии ядра:** платформа — **AGPL v3** (+ опционально Enterprise) — [0016-agpl-dual-licensing](0016-agpl-dual-licensing.md). Этот ADR по-прежнему про **RSA-привязку bundle / driver pack**.
+
 ## Контекст
 
-Ядро ISPF — Apache 2.0 без DRM. Коммерческие решения (bundle, driver pack) поставляются отдельно; нужна проверяемая привязка к установке без лицензирования самого ядра.
+Платформа ISPF поставляется под AGPL (community) без DRM на ядровых движках. Коммерческие решения (bundle, driver pack) поставляются отдельно; нужна проверяемая привязка к установке без лицензирования каждого deploy как «лицензия ядра».
 
 ## Решение
 
@@ -17,7 +19,7 @@
 4. **`contentSha256`** — SHA-256 canonical JSON manifest **без** поля `license`.
 5. **Публичный ключ** — в конфиге platform (`ispf.license.public-key-pem`); закрытый — у поставщика (`tools/license-builder/`).
 6. **`ispf.license.enforce`:** `true` — invalid license → HTTP 403; `false` — WARN (local/dev).
-7. Bundle **без** `license` — deploy без изменений (Apache reference apps).
+7. Bundle **без** `license` — deploy без изменений (открытые reference apps).
 
 ## Последствия
 

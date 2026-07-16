@@ -4,9 +4,11 @@
 
 Accepted (2026-06-22)
 
+> **Supersession (license of core):** platform core is **AGPL v3** with optional Enterprise dual-license — [0016-agpl-dual-licensing](0016-agpl-dual-licensing.md). This ADR still governs **bundle / driver-pack RSA binding**; replace “Apache core” below with “AGPL platform” when reading.
+
 ## Context
 
-The ISPF core is Apache 2.0 without DRM. Commercial solutions (bundle, driver pack) ship separately; we need verifiable binding to an installation without licensing the core itself.
+The ISPF platform ships under AGPL (community) without DRM on the core engines. Commercial solutions (bundle, driver pack) ship separately; we need verifiable binding to an installation without turning every deploy into a core license check.
 
 ## Decision
 
@@ -16,7 +18,7 @@ The ISPF core is Apache 2.0 without DRM. Commercial solutions (bundle, driver pa
 4. **`contentSha256`** — SHA-256 of canonical JSON manifest **without** the `license` field.
 5. **Public key** — in platform config (`ispf.license.public-key-pem`); private key — with vendor (`tools/license-builder/`).
 6. **`ispf.license.enforce`:** `true` — invalid license → HTTP 403; `false` — WARN (local/dev).
-7. Bundle **without** `license` — deploy unchanged (Apache reference apps).
+7. Bundle **without** `license` — deploy unchanged (open reference apps).
 
 ## Consequences
 

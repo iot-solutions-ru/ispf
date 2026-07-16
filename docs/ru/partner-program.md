@@ -2,11 +2,13 @@
 
 # Партнерская программа (BL-184)
 
-Сертифицированный ISPF интегратор и партнерская программа по решениям. **Партнерский портал** — отдельный сервис:
+> **Статус: Draft / не GA.** Трек ниже — целевой дизайн. Внутрисерверный `GET /api/v1/partners/*` — **заглушка** (`PartnerProgramService`, `"source": "stub"`). Partner Portal в этом репозитории **не поставляется**. См. [competitive-scorecard](competitive-scorecard.md), измерение 12.
 
-- Repo: [Partner-portal](https://github.com/your-org/Partner-portal)
-- API: `GET /api/v1/tiers`, applications, directory, training progress
-- Внутрисерверный API `GET /api/v1/partners/*` — **заглушка** (`PartnerProgramService`, `"source": "stub"`); демо-партнеры жестко запрограммированы; регистрация является синтетической до тех пор, пока партнерский портал не синхронизируется.
+Сертифицированный интегратор / partner program (план):
+
+- Внешний Partner Portal — **не в этом repo**
+- Планируемый API: `GET /api/v1/tiers`, applications, directory, training progress
+- Сейчас: демо-партнёры hardcoded; enroll синтетический
 
 Связано: [marketplace](marketplace.md), [certification](certification.md), [solution-developer-guide](solution-developer-guide.md).
 

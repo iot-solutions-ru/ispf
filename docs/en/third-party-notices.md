@@ -2,7 +2,7 @@
 
 # Third-Party Notices
 
-The ISPF distribution includes third-party components licensed differently from ISPF code. When distributing source or binary builds, retain [LICENSE](../LICENSE), [NOTICE](../NOTICE), this file, and license/notice files of dependencies themselves.
+The ISPF distribution includes third-party components licensed differently from ISPF code. When distributing source or binary builds, retain [LICENSE](../../LICENSE), [NOTICE](../../NOTICE), this file, and license/notice files of dependencies themselves.
 
 This document is an engineering inventory, not legal advice. For public release or commercial delivery, generate an SBOM and obtain legal review.
 

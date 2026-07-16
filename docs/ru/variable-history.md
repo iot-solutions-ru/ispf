@@ -97,7 +97,7 @@ ispf:
 
 Лабораторные gates (этап 28): сценарии `deploy/run_lab_historian_*.py` должны утверждать совокупную задержку относительно `aggregate-max-latency-ms` при нагрузке `aggregate-max-points`.
 
-Ссылка на дашборд: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (макет виджета BL-161 + BFF sketch).
+Ссылка на дашборд: [examples/historian-sla-dashboard](../../examples/historian-sla-dashboard/) (макет виджета BL-161 + BFF sketch).
 
 Многоуровневые профили хранения и развертывания: [historian-tiers](historian-tiers.md).
 

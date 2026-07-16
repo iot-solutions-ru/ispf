@@ -2,7 +2,7 @@
 
 Third reference application for solution developers: **office floor zones**, comfort setpoints, and Haystack-oriented metadata — without custom Java in `ispf-server`.
 
-Artifacts: [examples/building-hvac-app/](../examples/building-hvac-app/), bundle `appId` = `building-hvac`.
+Artifacts: [examples/building-hvac-app/](../../examples/building-hvac-app/), bundle `appId` = `building-hvac`.
 
 ## Domain
 

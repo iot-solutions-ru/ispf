@@ -137,7 +137,7 @@ Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 | FW-52 | `GET /agent/metrics`, `AgentPromptVersions` | `AgentMetricsService`, AI Studio |
 | FW-53 | `PlanDepth.LITE` default | `AgentSpecPlanValidator`, `AgentPlanPromptSection` |
 
-В **режиме запроса** используется выделенный [`AgentAskPromptBuilder`](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — конвейер планирования отсутствует.
+В **режиме запроса** используется выделенный [`AgentAskPromptBuilder`](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — конвейер планирования отсутствует.
 
 Audit columns (migration `V67__ai_tool_audit_metrics.sql`): `latency_ms`, `prompt_tokens`, `completion_tokens`, `turn_id`, `step_no`, `interaction_mode`, `prompt_profile`.
 

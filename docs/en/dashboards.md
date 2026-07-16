@@ -529,7 +529,7 @@ In `free` mode `cells` in `sheetConfigJson` are **optional seed** values and `bi
 
 Lab demo: `root.platform.dashboards.lab-calculator` (`sheetMode: configured`), `sheetValues` on lab device.
 
-**Reference package:** [examples/spreadsheet-demo](../examples/spreadsheet-demo/) — `sheet-storage-v1` model, device `root.platform.devices.sheet-demo-01`, two dashboards (session/variable persist).
+**Reference package:** [examples/spreadsheet-demo](../../examples/spreadsheet-demo/) — `sheet-storage-v1` model, device `root.platform.devices.sheet-demo-01`, two dashboards (session/variable persist).
 
 Full `sheetConfigJson`, `dataRegion`, `conditionalStyles` reference — [spreadsheet-widget](spreadsheet-widget.md).
 

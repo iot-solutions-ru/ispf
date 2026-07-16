@@ -37,8 +37,8 @@
 | Wall time PR pipeline | ~17 мин в среднем (49 runs), нестабильный success | `tools/acceleration/collect-baseline.py` | ≤25 мин (`pr-fast`) |
 | CI success rate (14d) | **20.4%** (выборка июль 2026) | `gh run list --workflow=ci.yml` | ≥95% |
 | Flaky e2e (квартал) | 0 формального карантина | Playwright в CI | Политика triage (S20-04) |
-| Nightly load gate | Pass @ p99≤3000 ms | [load-test.yml](../.github/workflows/load-test.yml) | Держать зелёным |
-| Cluster ownership tests | Pass | [cluster-load-test.yml](../.github/workflows/cluster-load-test.yml) | Держать зелёным |
+| Nightly load gate | Pass @ p99≤3000 ms | [load-test.yml](../../.github/workflows/load-test.yml) | Держать зелёным |
+| Cluster ownership tests | Pass | [cluster-load-test.yml](../../.github/workflows/cluster-load-test.yml) | Держать зелёным |
 
 ### Backend scale (JVM gates)
 

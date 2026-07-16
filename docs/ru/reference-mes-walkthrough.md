@@ -4,7 +4,7 @@
 
 Сквозной reference-сценарий ISPF для разработчиков решений: **наряд на отгрузку → резервуар → эстакада → завершение**. Без custom Java в `ispf-server`.
 
-Артефакты: [examples/mes-reference/](../examples/mes-reference/), bundle `appId` = `mes-reference`.
+Артефакты: [examples/mes-reference/](../../examples/mes-reference/), bundle `appId` = `mes-reference`.
 
 ## Домен (упрощённый MES)
 
@@ -24,7 +24,7 @@
 | 1 | Deploy bundle | `POST /api/v1/applications/mes-reference/deploy` | schema `app_mes_ref`, migrations, functions | Admin |
 | 2 | Список нарядов | BFF `mes_listOrders` @ `demo-sensor-01` | SQL read | Operator UI journal path |
 | 3 | Старт налива | BFF `mes_startFilling` + `orderNo` | status → `filling` | Кнопка формы (будущий dashboard) |
-| 4 | Виртуальный счётчик | `virtual` driver profile `meter` + `filling=true` | `meterLiters`, `flowRate` | См. [MesPlatformApiTest](../packages/ispf-server/src/test/java/com/ispf/server/mes/MesPlatformApiTest.java) |
+| 4 | Виртуальный счётчик | `virtual` driver profile `meter` + `filling=true` | `meterLiters`, `flowRate` | См. [MesPlatformApiTest](../../packages/ispf-server/src/test/java/com/ispf/server/mes/MesPlatformApiTest.java) |
 | 5 | Завершение | BFF `mes_completeFilling` | status → `completed` | Operator confirm |
 | 6 | Перегрев эстакады | alert `mesRackOverTemp` при `temperature > 85` | correlator → `alarmActive=true` | Alarm panel |
 | 7 | *(опционально)* BPMN workflow | `workflows[]` в bundle → deploy | side-effect через `publish_nats` или `fire_event` | Admin / automation |

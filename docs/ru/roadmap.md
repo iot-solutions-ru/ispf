@@ -800,7 +800,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | ID | Назначение | БЛ | СП | Статус |
 | -- | ---------- | -- | -- | ------ |
-| С24-01 | Эталонный комплект OEE | БЛ-121 | 5 | Готово — [mes-oee-reference](../examples/mes-oee-reference/) |
+| С24-01 | Эталонный комплект OEE | БЛ-121 | 5 | Готово — [mes-oee-reference](../../examples/mes-oee-reference/) |
 | S24-02 | BPMN timer catch + boundary | BL-122 | 8 | Done — `WorkflowEngine.fireDueTimers`, `POST .../timer` |
 | С24-03 | Шаблоны эскалации | БЛ-123 | 3 | Готово — [reference-escalation-templates](reference-escalation-templates.md) |
 | С24-04 | Каталог ИСА-95 | БЛ-124 | 3 | Готово — [isa95-catalog](isa95-catalog.md) |
@@ -1005,7 +1005,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Цель:** подключение OT/IT **10/10** — драйверы промышленного уровня, лаборатория взаимодействия, граничные агенты, DDK.
 
-**Пробел сегодня:** 58 `driverId` в каталоге, ~13 `PRODUCTION` в [DriverProductionMatrix](../packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
+**Пробел сегодня:** 58 `driverId` в каталоге, ~13 `PRODUCTION` в [DriverProductionMatrix](../../packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
 
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |

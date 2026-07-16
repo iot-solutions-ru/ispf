@@ -61,7 +61,7 @@ Live apply (BL-180):
 | `hvac` | hvac, building, comfort, zone, ahu, chiller |
 | `scada` | scada, pump, tank, mimic, modbus, snmp, historian |
 
-Полный конвейер: [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java).
+Полный конвейер: [AgentSolutionGeneratorPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java).
 
 ---
 
@@ -192,7 +192,7 @@ node tools/agent-regression/validate-scenarios.mjs --results build/agent-regress
 
 | ID | Особенность | Док |
 |----|---------|-----|
-| БЛ-177 | Комплексное развертывание агента | [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
+| БЛ-177 | Комплексное развертывание агента | [AgentDeployPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
 | БЛ-178 | Пакет регрессионного агента | [agent-regression](agent-regression.md) |
 | БЛ-179 | Draft API генератора решений | Этот документ § Генератор решений |
 | БЛ-180 | Live apply генератора + виджет метрик | `AiSolutionGeneratorLiveSmokeTest`, playbook |

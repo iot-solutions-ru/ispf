@@ -8,13 +8,13 @@
 
 | Path | License |
 |------|---------|
-| `packages/ispf-core`, `packages/ispf-server`, `packages/ispf-expression`, … | [GNU AGPL v3](../LICENSE) |
-| `apps/web-console/` | [GNU AGPL v3](../LICENSE) |
-| `docs/` | [GNU AGPL v3](../LICENSE) |
+| `packages/ispf-core`, `packages/ispf-server`, `packages/ispf-expression`, … | [GNU AGPL v3](../../LICENSE) |
+| `apps/web-console/` | [GNU AGPL v3](../../LICENSE) |
+| `docs/` | [GNU AGPL v3](../../LICENSE) |
 
 **Dual licensing:** community uses AGPL; enterprise — [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md) + `platform-license.json` (AGPL obligation exemption under contract).
 
-Copyright: **© 2026 ISPF Core Contributors** — see [LICENSE](../LICENSE) and [NOTICE](../NOTICE).
+Copyright: **© 2026 ISPF Core Contributors** — see [LICENSE](../../LICENSE) and [NOTICE](../../NOTICE).
 
 ## Device drivers — driver packs only
 
@@ -60,7 +60,7 @@ Declarative bundle JSON is **not** platform source code; AGPL platform **does no
 
 ## Distribution obligations
 
-1. Retain [LICENSE](../LICENSE) and [NOTICE](../NOTICE).
+1. Retain [LICENSE](../../LICENSE) and [NOTICE](../../NOTICE).
 2. Include [third-party-notices](third-party-notices.md) and follow [license-compliance](license-compliance.md).
 3. For driver packs — LICENSE and notices of each pack.
 4. Comply with AGPL / GPL / LGPL / MPL dependencies in packs.

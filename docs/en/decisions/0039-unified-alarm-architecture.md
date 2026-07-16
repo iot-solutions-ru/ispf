@@ -154,7 +154,7 @@ Same node type as today — extended `POST /api/v1/alert-rules` body:
 }
 ```
 
-See [examples/alert-rule-evolution/](../../examples/alert-rule-evolution/).
+See [examples/alert-rule-evolution/](../../../examples/alert-rule-evolution/).
 
 ### 8. Implementation order
 

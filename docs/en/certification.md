@@ -57,13 +57,13 @@ Maps to Partner **Associate → Professional** in [partner-program](partner-prog
 
 ## Exam question bank (stub)
 
-Machine-readable banks live under [`examples/certification/`](../examples/certification/). Format: JSON with `track`, `level`, `version`, and `questions[]` (`id`, `type`, `topic`, `prompt`, `options`, `correctIndex`, `reference`).
+Machine-readable banks live under [`examples/certification/`](../../examples/certification/). Format: JSON with `track`, `level`, `version`, and `questions[]` (`id`, `type`, `topic`, `prompt`, `options`, `correctIndex`, `reference`).
 
 | Bank file | Track | Level | Questions |
 | --------- | ----- | ----- | --------- |
-| [`solution-developer-l1.json`](../examples/certification/solution-developer-l1.json) | Solution developer | L1 Foundation | 8 |
-| [`solution-developer-l2.json`](../examples/certification/solution-developer-l2.json) | Solution developer | L2 Automation | 6 |
-| [`platform-admin-core.json`](../examples/certification/platform-admin-core.json) | Platform admin | Core | 8 |
+| [`solution-developer-l1.json`](../../examples/certification/solution-developer-l1.json) | Solution developer | L1 Foundation | 8 |
+| [`solution-developer-l2.json`](../../examples/certification/solution-developer-l2.json) | Solution developer | L2 Automation | 6 |
+| [`platform-admin-core.json`](../../examples/certification/platform-admin-core.json) | Platform admin | Core | 8 |
 
 **Grading (stub):** Partner Portal / LMS integration scores multiple-choice locally; practical labs remain instructor-verified until Phase 32 GA proctoring.
 

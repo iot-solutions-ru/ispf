@@ -35,8 +35,8 @@ Frozen on `main`, July 2026. Acceleration improves from these points — no new 
 | PR pipeline wall time | ~17 min avg (49 runs), unstable success | `tools/acceleration/collect-baseline.py` | ≤25 min (`pr-fast`) |
 | CI success rate (14d) | **20.4%** (Jul 2026 sample) | `gh run list --workflow=ci.yml` | ≥95% |
 | Flaky e2e (quarter) | 0 formal quarantine | Playwright in CI | Triage policy (S20-04) |
-| Nightly load gate | Pass @ p99≤3000 ms | [load-test.yml](../.github/workflows/load-test.yml) | Keep green |
-| Cluster ownership tests | Pass | [cluster-load-test.yml](../.github/workflows/cluster-load-test.yml) | Keep green |
+| Nightly load gate | Pass @ p99≤3000 ms | [load-test.yml](../../.github/workflows/load-test.yml) | Keep green |
+| Cluster ownership tests | Pass | [cluster-load-test.yml](../../.github/workflows/cluster-load-test.yml) | Keep green |
 
 ### Backend scale (JVM gates)
 

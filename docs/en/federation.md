@@ -172,7 +172,7 @@ Tunnel and store-forward ITs poll async connect/replay; budgets live in `Federat
 | `BUFFER_DRAIN_TIMEOUT_SECONDS` | 90 | 120 | `FederationStoreForwardIntegrationTest` |
 | `CONNECT_RETRY_INTERVAL_MS` | 5000 | 5000 | tunnel connect retry |
 
-Tests marked `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — no parallel run with other IT classes. Nightly gate: [ci-nightly.yml](../.github/workflows/ci-nightly.yml) job **Federation integration gate (S27)**. On timeout failure triage per [ci-flaky-triage](ci-flaky-triage.md) (P1 if &lt;1×/week).
+Tests marked `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — no parallel run with other IT classes. Nightly gate: [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) job **Federation integration gate (S27)**. On timeout failure triage per [ci-flaky-triage](ci-flaky-triage.md) (P1 if &lt;1×/week).
 
 **Ops checklist:**
 
@@ -391,7 +391,7 @@ Web Console: health column badge on **Federation peers** panel (green/yellow/red
      └──────────────┘    └──────────────┘    └──────────────┘
 ```
 
-Deploy profiles: hub uses standard VPS stack; edges use [docker-compose.edge-arm.yml](../deploy/docker-compose.edge-arm.yml) with outbound tunnel enabled.
+Deploy profiles: hub uses standard VPS stack; edges use [docker-compose.edge-arm.yml](../../deploy/docker-compose.edge-arm.yml) with outbound tunnel enabled.
 
 ### Hub setup checklist
 
@@ -440,7 +440,7 @@ Follow [Recovery runbook + SLO (BL-120)](#recovery-runbook--slo-bl-120-s22-05):
 - Dashboard layout writes proxy to **remote** dashboard (BL-46).
 - MoM operator app is read-only for config; agent copilot read-only ([roadmap](roadmap.md)).
 
-See also: [operator-guide](operator-guide.md), [deploy/docker-compose.edge-arm.yml](../deploy/docker-compose.edge-arm.yml), [roadmap](roadmap.md) BL-188.
+See also: [operator-guide](operator-guide.md), [deploy/docker-compose.edge-arm.yml](../../deploy/docker-compose.edge-arm.yml), [roadmap](roadmap.md) BL-188.
 
 ## Spike / production backlog
 

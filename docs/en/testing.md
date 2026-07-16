@@ -115,7 +115,7 @@ bash deploy/cluster-smoke-test.sh          # round-robin, failover, driver recla
 python deploy/cluster-scale-load-test.py   # 1 vs 3 replica throughput (floor 1.8×)
 ```
 
-CI: workflow [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) — JDBC ownership (weekly) + compose smoke/scale (`workflow_dispatch`).
+CI: workflow [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) — JDBC ownership (weekly) + compose smoke/scale (`workflow_dispatch`).
 
 ## CI (recommended)
 

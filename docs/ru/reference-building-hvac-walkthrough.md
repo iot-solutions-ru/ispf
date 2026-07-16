@@ -4,7 +4,7 @@
 
 Третье эталонное приложение для разработчиков решений: **зоны офисных этажей**, уставки комфорта и метаданные в стиле Haystack — без custom Java в `ispf-server`.
 
-Артефакты: [examples/building-hvac-app/](../examples/building-hvac-app/), bundle `appId` = `building-hvac`.
+Артефакты: [examples/building-hvac-app/](../../examples/building-hvac-app/), bundle `appId` = `building-hvac`.
 
 ## Домен
 

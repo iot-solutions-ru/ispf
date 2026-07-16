@@ -137,7 +137,7 @@ See [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observ
 | FW-52 | `GET /agent/metrics`, `AgentPromptVersions` | `AgentMetricsService`, AI Studio |
 | FW-53 | `PlanDepth.LITE` default | `AgentSpecPlanValidator`, `AgentPlanPromptSection` |
 
-**Ask mode** uses dedicated [`AgentAskPromptBuilder`](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — no planning pipeline.
+**Ask mode** uses dedicated [`AgentAskPromptBuilder`](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — no planning pipeline.
 
 Audit columns (migration `V67__ai_tool_audit_metrics.sql`): `latency_ms`, `prompt_tokens`, `completion_tokens`, `turn_id`, `step_no`, `interaction_mode`, `prompt_profile`.
 

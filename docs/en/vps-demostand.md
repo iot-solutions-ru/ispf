@@ -11,7 +11,7 @@ This page is **operational notes** for one prod example: single-node Docker behi
 **Demo / idle** from [demostands.md § Demo / idle](demostands.md):
 
 - `ISPF_CLUSTER_ENABLED=false`, unified role `all`
-- Overlay [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env)
+- Overlay [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env)
 - 2 RUNNING drivers (others STOPPED): SNMP `TELEMETRY_ONLY`, one virtual `FULL` for demo automation
 
 ## Typical topology (single-node Docker)
@@ -22,19 +22,19 @@ Internet → nginx :8080
               PostgreSQL, Redis
 ```
 
-Compose: [`deploy/docker-compose.vps-single.yml`](../deploy/docker-compose.vps-single.yml).
+Compose: [`deploy/docker-compose.vps-single.yml`](../../deploy/docker-compose.vps-single.yml).
 
 ## Operations
 
 | Action | Script |
 |----------|--------|
-| Apply idle env + recreate | [`deploy/vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) |
-| Tune drivers via API | [`deploy/vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) |
-| Full jar+UI rollout | [`deploy/vps-single-rollout.sh`](../deploy/vps-single-rollout.sh) |
-| Thread diagnostics | [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) |
-| Build + SCP staging | [`deploy/vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1) |
+| Apply idle env + recreate | [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) |
+| Tune drivers via API | [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) |
+| Full jar+UI rollout | [`deploy/vps-single-rollout.sh`](../../deploy/vps-single-rollout.sh) |
+| Thread diagnostics | [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) |
+| Build + SCP staging | [`deploy/vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) |
 
-**Important:** on Docker stand do not use [`apply-platform-update.sh`](../deploy/apply-platform-update.sh) — it is for systemd. After env change — recreate container, not `docker restart`.
+**Important:** on Docker stand do not use [`apply-platform-update.sh`](../../deploy/apply-platform-update.sh) — it is for systemd. After env change — recreate container, not `docker restart`.
 
 Migration from multi-replica: `vps-single-rollout.sh`. Back to cluster: [cluster](cluster.md).
 

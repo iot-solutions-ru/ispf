@@ -8,8 +8,8 @@ End-to-end certification path: **install MES marketplace product → deploy bund
 
 | Bundle | `appId` | Artifacts | Status |
 |--------|---------|-----------|--------|
-| Certification skeleton | `mes-platform` | [examples/mes-platform/](../examples/mes-platform/), marketplace listing `mes-platform` (vendor **IoT Solutions**) | Product |
-| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../examples/mes-platform-production/), marketplace listing `mes-platform-production` | **Certified** (BL-170) |
+| Certification skeleton | `mes-platform` | [examples/mes-platform/](../../examples/mes-platform/), marketplace listing `mes-platform` (vendor **IoT Solutions**) | Product |
+| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../../examples/mes-platform-production/), marketplace listing `mes-platform-production` | **Certified** (BL-170) |
 **See also:** [isa95-catalog](isa95-catalog.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [marketplace](marketplace.md), [object-model](object-model.md).
 
 ---
@@ -39,8 +39,8 @@ Instance types `batch-v1` and `work-order-v1` are registered under `root.platfor
 | BPMN workflow | `root.platform.workflows.mes-work-order-dispatch` |
 | Correlator | `workOrderDispatched` → RUN_WORKFLOW (bundle, disabled) |
 | Operator UI | Dashboard `mes-platform-dispatch` with `work-queue` widget |
-| Instantiate example | [work-order-instantiate.example.json](../examples/mes-platform/work-order-instantiate.example.json) |
-| BPMN source | [examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml](../examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml) |
+| Instantiate example | [work-order-instantiate.example.json](../../examples/mes-platform/work-order-instantiate.example.json) |
+| BPMN source | [examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml](../../examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml) |
 
 Fire `workOrderDispatched` on the hub (or enable correlator) to create an operator work-queue task.
 
@@ -64,7 +64,7 @@ Create a `QUALITY_RECORD` under `root.platform.mes.quality-records` and apply `q
 | Artifact | Purpose |
 |----------|---------|
 | INSTANCE `batch-v1` | `batchId`, `recipe`, `phase` on `LOT` under `root.platform.mes.lots` |
-| Instantiate example | [batch-instantiate.example.json](../examples/mes-platform/batch-instantiate.example.json) |
+| Instantiate example | [batch-instantiate.example.json](../../examples/mes-platform/batch-instantiate.example.json) |
 | BFF `mes_batch_runPhase` | Advance phase in `mes_batch_run` registry |
 | BFF `mes_batch_getStatus` | Read batch path → phase |
 
@@ -72,7 +72,7 @@ Create a `QUALITY_RECORD` under `root.platform.mes.quality-records` and apply `q
 
 ## ERP outbox pattern (BL-169)
 
-Idempotent SAP / 1C sync stub — [erp-outbox.json](../examples/mes-platform/erp-outbox.json)
+Idempotent SAP / 1C sync stub — [erp-outbox.json](../../examples/mes-platform/erp-outbox.json)
 
 | Field | Purpose |
 |-------|---------|
@@ -86,7 +86,7 @@ Idempotent SAP / 1C sync stub — [erp-outbox.json](../examples/mes-platform/erp
 
 ## Production bundle (BL-170)
 
-Full walkthrough: [examples/mes-platform-production/](../examples/mes-platform-production/)
+Full walkthrough: [examples/mes-platform-production/](../../examples/mes-platform-production/)
 
 **One-command deploy + smoke** (local or VPS):
 

@@ -531,7 +531,7 @@ Operator URL: `?ctx.device=root.platform.devices.d1` или `?ctx={"selection":{
 
 Lab demo: `root.platform.dashboards.lab-calculator` (`sheetMode: configured`), переменная `sheetValues` на lab device.
 
-**Эталонный пакет:** [examples/spreadsheet-demo](../examples/spreadsheet-demo/) — модель `sheet-storage-v1`, устройство `root.platform.devices.sheet-demo-01`, два дашборда (сессия/переменная persist).
+**Эталонный пакет:** [examples/spreadsheet-demo](../../examples/spreadsheet-demo/) — модель `sheet-storage-v1`, устройство `root.platform.devices.sheet-demo-01`, два дашборда (сессия/переменная persist).
 
 Полный справочник полей `sheetConfigJson`, `dataRegion`, `conditionalStyles` — в [spreadsheet-widget](spreadsheet-widget.md).
 

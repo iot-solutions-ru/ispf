@@ -77,7 +77,7 @@ Env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` и время загрузки `ispf.p
 
 ### CLI (один узел, SSH)
 
-Скрипт [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) — два образца `GET /api/v1/platform/metrics` с интервалом ~6 с, выводят группы потоков и подозреваемых в стандартный вывод. Удобен по SSH без пользовательского интерфейса.
+Скрипт [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) — два образца `GET /api/v1/platform/metrics` с интервалом ~6 с, выводят группы потоков и подозреваемых в стандартный вывод. Удобен по SSH без пользовательского интерфейса.
 
 ```bash
 scp deploy/vps-idle-thread-sample.py deploy-user@production-host:/tmp/
@@ -86,11 +86,11 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 
 Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).
 
-**Основная самодиагностика** — Admin → System → Metrics и дашборд `root.platform.dashboards.platform-metrics` (probe `platform-metrics-probe`). Grafana JSON — **опциональный** экспорт: [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json).
+**Основная самодиагностика** — Admin → System → Metrics и дашборд `root.platform.dashboards.platform-metrics` (probe `platform-metrics-probe`). Grafana JSON — **опциональный** экспорт: [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json).
 
 Сессии WebSocket: переменная probe / `GET /api/v1/platform/metrics` → `websocketClients`.
 
-**Golden path smoke** (alarm → journal → ack): [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py).
+**Golden path smoke** (alarm → journal → ack): [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py).
 
 ## Экспорт метрик OTLP (необязательно, 0.9.9+)
 
@@ -166,7 +166,7 @@ HTTP requests получают стандартные Spring Boot spans (`http.s
 
 ### Локальный коллектор
 
-Готовый конфиг: [`deploy/otel-collector-minimal.yaml`](../deploy/otel-collector-minimal.yaml) — OTLP HTTP `:4318`, отладка + Прометей `:8889`.
+Готовый конфиг: [`deploy/otel-collector-minimal.yaml`](../../deploy/otel-collector-minimal.yaml) — OTLP HTTP `:4318`, отладка + Прометей `:8889`.
 
 ```bash
 docker run --rm -p 4318:4318 -p 8889:8889 \

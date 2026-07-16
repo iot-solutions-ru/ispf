@@ -117,9 +117,9 @@ Lab scripts:
 
 SLO targets API: `GET /api/v1/platform/analytics/analytics-slo`. Historian + analytics targets also appear under `analyticsSlo` in `GET .../historian-sla`.
 
-Walkthroughs: [examples/analytics-platform/site-m](../examples/analytics-platform/site-m/), [enterprise-l](../examples/analytics-platform/enterprise-l/). Gap register: [analytics-platform-gaps](analytics-platform-gaps.md).
+Walkthroughs: [examples/analytics-platform/site-m](../../examples/analytics-platform/site-m/), [enterprise-l](../../examples/analytics-platform/enterprise-l/). Gap register: [analytics-platform-gaps](analytics-platform-gaps.md).
 
-Dashboard reference: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (BL-161 widget layout + BFF sketch).
+Dashboard reference: [examples/historian-sla-dashboard](../../examples/historian-sla-dashboard/) (BL-161 widget layout + BFF sketch).
 
 Multi-tier retention and deploy profiles: [historian-tiers](historian-tiers.md).
 

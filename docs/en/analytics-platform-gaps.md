@@ -40,4 +40,4 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 
 - [analytics-platform-roadmap](analytics-platform-roadmap.md)
 - [decisions/0038-analytics-platform-architecture.md](decisions/0038-analytics-platform-architecture.md)
-- [examples/analytics-platform/](../examples/analytics-platform/)
+- [examples/analytics-platform/](../../examples/analytics-platform/)

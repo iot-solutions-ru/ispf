@@ -26,4 +26,4 @@
 ## Связанные материалы
 
 - REQ-PF-01, Phase 5 tree-first — [roadmap](../roadmap.md)
-- [examples/](../examples/) — reference bundles
+- [examples/](../../../examples/) — reference bundles

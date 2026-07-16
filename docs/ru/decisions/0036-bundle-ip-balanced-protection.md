@@ -50,4 +50,4 @@ RSA-лицензия на manifest ([0003-commercial-bundle-licensing](0003-comm
 - [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md) — RSA при deploy
 - [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) — bundle = упаковка дерева
 - [commercial-licensing](../commercial-licensing.md)
-- [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)
+- [LICENSE-COMMERCIAL](../../../LICENSE-COMMERCIAL.md)

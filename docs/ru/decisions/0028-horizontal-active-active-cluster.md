@@ -49,7 +49,7 @@ Clients → nginx (round-robin REST, sticky WS) → ispf-server × N
 | ---- | ---- | --------- |
 | REST / BFF / reports | Active-active | Stateless handlers; shared DB; nginx round-robin |
 | WebSocket `/ws/objects` | Active-active + sticky | Client pinned to one replica; NATS fan-out syncs other replicas |
-| Platform schedulers | Active-passive (one leader) | `platform_leader_locks` ([PlatformLeaderLockService](../../packages/ispf-server/src/main/java/com/ispf/server/platform/PlatformLeaderLockService.java)) |
+| Platform schedulers | Active-passive (one leader) | `platform_leader_locks` ([PlatformLeaderLockService](../../../packages/ispf-server/src/main/java/com/ispf/server/platform/PlatformLeaderLockService.java)) |
 | Device driver poll loops | **Exactly-one owner** | `platform_driver_locks` + `DriverOwnershipService` (BL-136) |
 | Binding periodic tick | Active-passive (one leader) | Existing leader lock on `binding_periodic_scheduler` |
 | Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139)) |
@@ -85,7 +85,7 @@ Reference: `deploy/nginx-cluster.conf`, `deploy/docker-compose.cluster.yml`.
 | `ISPF_REDIS_ENABLED` | Optional | Shared correlator windows / ACL cache |
 | `ISPF_DB_URL` | Required | Same JDBC URL on all replicas |
 
-Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml](../../packages/ispf-server/src/main/resources/application.yml).
+Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml](../../../packages/ispf-server/src/main/resources/application.yml).
 
 ## Последствия
 

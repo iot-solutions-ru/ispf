@@ -21,11 +21,15 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 In `DriverProductionMatrix` — **20** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **8** at **BETA**. Top-20 industrial: **19** **PRODUCTION** + `iec104-server` (BETA, loopback partner). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-| `driverId` | Maturity | Interop module |
-| ---------- | -------- | -------------- |
+> **Honesty (code audit / scorecard):** registry **PRODUCTION** ≠ ready-for-field. Known gaps still labeled PRODUCTION in matrix/docs historically: `opc-da` / `opc-bridge` (connectivity shell + parser tests), `dnp3` (**read/poll**; `writePoint` not implemented). Treat those as **BETA for field pilots** until promoted through [driver-promotion](driver-promotion.md) ready-for-field. See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+
+| `driverId` | Maturity (registry) | Notes / interop |
+| ---------- | ------------------- | --------------- |
 | `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | see interop lab |
-| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab |
-| `iec104`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`, `gps-tracker` | PRODUCTION | see interop lab |
+| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab; OPC UA often SecurityPolicy None in lab |
+| `iec104`, `dlms`, `ethernet-ip`, `gps-tracker` | PRODUCTION | see interop lab |
+| `dnp3` | PRODUCTION (registry) | **Poll/read only** — write not implemented; field = BETA |
+| `opc-da`, `opc-bridge` | PRODUCTION (registry) | **Shell / mapping tests** — not full DA stack; field = BETA |
 | `iec104-server` | BETA | interop partner for `iec104` |
 
 ### observedAt (source timestamps, BL-79)
@@ -573,7 +577,7 @@ Point mapping: `index:dataType` — `BINARY_INPUT`, `BINARY_OUTPUT`, `ANALOG_INP
 
 On each `readPoints`, `Request.classRequest(0,1,2,3)` runs; values and DNP3 flags (`status`) are updated on the object variables.
 
-Maturity: **production** (Class 0/1/2/3 poll; loopback test `Dnp3DeviceDriverTest`, BL-140).
+Maturity: **production** in registry for Class 0/1/2/3 **poll/read** (loopback `Dnp3DeviceDriverTest`, BL-140). **`writePoint` is not implemented** — do not plan control/write field pilots on DNP3 until write lands; treat as BETA for write scenarios.
 
 ### dlms (`ispf-driver-dlms`)
 

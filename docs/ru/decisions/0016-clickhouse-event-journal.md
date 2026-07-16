@@ -41,7 +41,7 @@ TTL occurred_at + INTERVAL 90 DAY;
 ## Последствия
 
 - Prod default остаётся `jdbc` (Timescale); ClickHouse — opt-in для high-throughput deployment'ов.
-- Локальный CH: [deploy/docker-compose.clickhouse.yml](../../deploy/docker-compose.clickhouse.yml).
+- Локальный CH: [deploy/docker-compose.clickhouse.yml](../../../deploy/docker-compose.clickhouse.yml).
 - Метрика `ispf.event_history.records` — O(1) counter на обоих backend'ах.
 - Correlator payload filter читает последнее событие через store (не JPA).
 

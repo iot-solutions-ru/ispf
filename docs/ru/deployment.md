@@ -198,7 +198,7 @@ bash ~/ispf/lab-cluster-bootstrap.sh
 # Ingress: http://<lab>:8000/
 ```
 
-Артефакты: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/lab-cluster-bootstrap.sh`](../deploy/lab-cluster-bootstrap.sh), [`deploy/local/nginx/cluster-lab.conf`](../deploy/local/nginx/cluster-lab.conf).
+Артефакты: [`deploy/lab-cluster-compose.yml`](../../deploy/lab-cluster-compose.yml), [`deploy/lab-cluster-bootstrap.sh`](../../deploy/lab-cluster-bootstrap.sh), [`deploy/local/nginx/cluster-lab.conf`](../../deploy/local/nginx/cluster-lab.conf).
 
 **Локальный CI-стек (3 универсальные реплики):**
 
@@ -207,8 +207,8 @@ bash deploy/cluster-quickstart.sh
 # UI + API: http://127.0.0.1:8088/
 ```
 
-Compose: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml).  
-Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf).
+Compose: [`deploy/docker-compose.cluster.yml`](../../deploy/docker-compose.cluster.yml).  
+Ingress: [`deploy/nginx-cluster.conf`](../../deploy/nginx-cluster.conf).
 
 ### Required env (each replica)
 
@@ -268,7 +268,7 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 | Compose smoke | `bash deploy/cluster-smoke-test.sh` |
 | Config/structure sync smoke | `bash deploy/cluster-smoke-test.sh --config-sync` |
 | Scale-out 1.8× | `python deploy/cluster-scale-load-test.py` |
-| CI | [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) |
+| CI | [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) |
 
 ### Prod VPS (пример single-node)
 
@@ -276,12 +276,12 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 
 | Script | When |
 |--------|------|
-| [`vps-single-rollout.sh`](../deploy/vps-single-rollout.sh) | Jar + UI на single-node; миграция cluster → single |
-| [`vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) | Merge prod-idle overlay + **recreate** container (не `docker restart`) |
-| [`vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) | После recreate: SNMP `TELEMETRY_ONLY`, demo-sensor `FULL` |
-| [`vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) | Thread CPU diagnostic (SSH) |
-| [`ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) | Demo-idle overlay ([demostands](demostands.md)) |
-| [`vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1) | Локальная сборка + SCP staging |
+| [`vps-single-rollout.sh`](../../deploy/vps-single-rollout.sh) | Jar + UI на single-node; миграция cluster → single |
+| [`vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) | Merge prod-idle overlay + **recreate** container (не `docker restart`) |
+| [`vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) | После recreate: SNMP `TELEMETRY_ONLY`, demo-sensor `FULL` |
+| [`vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) | Thread CPU diagnostic (SSH) |
+| [`ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) | Demo-idle overlay ([demostands](demostands.md)) |
+| [`vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) | Локальная сборка + SCP staging |
 
 ```powershell
 .\deploy\vps-deploy-direct.ps1 -Version <ver> -SkipTests -SkipDriverPacks
@@ -295,17 +295,17 @@ bash /opt/ispf/bin/vps-demostand-tune-drivers.sh   # если нужен demo-id
 curl -sf http://127.0.0.1:8080/api/v1/info
 ```
 
-**Не использовать** [`apply-platform-update.sh`](../deploy/apply-platform-update.sh) на Docker single-node — скрипт для **systemd** `:8080`.
+**Не использовать** [`apply-platform-update.sh`](../../deploy/apply-platform-update.sh) на Docker single-node — скрипт для **systemd** `:8080`.
 
 #### Multi-replica cluster (опционально)
 
 | Script | When |
 |--------|------|
-| [`vps-deploy-direct.ps1 -Cluster`](../deploy/vps-deploy-direct.ps1) | Routine jar + UI rollout |
-| [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) | Restart replicas after staging upload |
-| [`vps-cluster-bootstrap.sh`](../deploy/vps-cluster-bootstrap.sh) | First-time cluster install only |
-| [`vps-cluster-factory-reset.sh`](../deploy/vps-cluster-factory-reset.sh) | Drop PG + reset Scylla/Redis |
-| [`vps-cluster-verify.sh`](../deploy/vps-cluster-verify.sh) | Post-deploy health; `--config-sync` smoke |
+| [`vps-deploy-direct.ps1 -Cluster`](../../deploy/vps-deploy-direct.ps1) | Routine jar + UI rollout |
+| [`vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh) | Restart replicas after staging upload |
+| [`vps-cluster-bootstrap.sh`](../../deploy/vps-cluster-bootstrap.sh) | First-time cluster install only |
+| [`vps-cluster-factory-reset.sh`](../../deploy/vps-cluster-factory-reset.sh) | Drop PG + reset Scylla/Redis |
+| [`vps-cluster-verify.sh`](../../deploy/vps-cluster-verify.sh) | Post-deploy health; `--config-sync` smoke |
 
 ```powershell
 .\deploy\vps-deploy-direct.ps1 -Version <ver> -SkipTests -Cluster
@@ -405,7 +405,7 @@ bash deploy/start-snmp-driver.sh
 
 ## Обновление до v0.8.0+
 
-> **Runbook для апгрейда с pre-0.8.0.** Разовый breaking change [0010-binding-rules-only](decisions/0010-binding-rules-only.md): колонка `binding_expr` удалена (`V41`), checksum `V1` изменён — **проще пересоздать БД**, чем мигрировать legacy-привязки. На prod 0.9.x обычный deploy через [vps-deploy-direct.ps1](../deploy/vps-deploy-direct.ps1) — без пересоздания БД.
+> **Runbook для апгрейда с pre-0.8.0.** Разовый breaking change [0010-binding-rules-only](decisions/0010-binding-rules-only.md): колонка `binding_expr` удалена (`V41`), checksum `V1` изменён — **проще пересоздать БД**, чем мигрировать legacy-привязки. На prod 0.9.x обычный deploy через [vps-deploy-direct.ps1](../../deploy/vps-deploy-direct.ps1) — без пересоздания БД.
 
 ### Prod VPS (`ispf.example.invalid`) — PostgreSQL в Docker
 

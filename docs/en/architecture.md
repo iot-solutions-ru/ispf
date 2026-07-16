@@ -164,7 +164,7 @@ See [deployment](deployment.md).
 6. **NATS subjects** — messageTask in BPMN ([workflows](workflows.md))
 7. **Application bundle** — deploy functions and migrations **outside** core ([applications](applications.md), [plugins](plugins.md))
 
-Commercial and domain extensions **do not** belong in the Apache 2.0 `main` tree.
+Commercial and domain extensions **do not** belong in the AGPL community `main` tree (optional Enterprise dual-license — [license](license.md)).
 
 ## Reference stands
 

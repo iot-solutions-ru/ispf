@@ -800,7 +800,7 @@ Artifact: [acceleration-program](acceleration-program.md), `tools/acceleration/c
 
 | ID | Purpose | BL | SP | Status |
 | -- | ---------- | -- | -- | ------ |
-| S24-01 | OEE reference bundle | BL-121 | 5 | Done — [mes-oee-reference](../examples/mes-oee-reference/) |
+| S24-01 | OEE reference bundle | BL-121 | 5 | Done — [mes-oee-reference](../../examples/mes-oee-reference/) |
 | S24-02 | BPMN timer catch + boundary | BL-122 | 8 | Done — `WorkflowEngine.fireDueTimers`, `POST .../timer` |
 | S24-03 | Escalation templates | BL-123 | 3 | Done — [reference-escalation-templates](reference-escalation-templates.md) |
 | S24-04 | ISA-95 catalog | BL-124 | 3 | Done — [isa95-catalog](isa95-catalog.md) |
@@ -1005,7 +1005,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 **Goal:** OT/IT connectivity **10/10** — production-grade drivers, interop lab, edge agents, DDK.
 
-**Gap today:** 58 `driverId` entries in catalog, ~13 `PRODUCTION` in [DriverProductionMatrix](../packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
+**Gap today:** 58 `driverId` entries in catalog, ~13 `PRODUCTION` in [DriverProductionMatrix](../../packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |

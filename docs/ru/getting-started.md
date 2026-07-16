@@ -15,7 +15,7 @@
 
 | Компонент | Версия |
 |-----------|--------|
-| JDK | 21+ |
+| JDK | **25** (Gradle toolchain; `JavaLanguageVersion.of(25)`) |
 | Gradle | Wrapper в репозитории |
 | Node.js | 20+ |
 | Docker Desktop | Опционально — только для полного стека PostgreSQL / Keycloak / MQTT |
@@ -23,7 +23,7 @@
 ### 1. Запуск API + консоли
 
 ```bash
-# Терминал 1 — профиль local (H2, без OAuth; sync небольшого набора dev driver packs)
+# Терминал 1 — профиль local (H2 file DB; sync небольшого набора dev driver packs)
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 
 # Терминал 2 — Web Console
@@ -32,36 +32,48 @@ cd apps/web-console && npm install && npm run dev
 
 | URL | Назначение |
 | --- | ---------- |
-| http://localhost:5173 | Консоль администратора |
+| http://localhost:5173 | Консоль администратора (экран входа) |
 | http://localhost:5173?mode=operator | Operator HMI |
 | http://localhost:8080/api/v1/info | Версия / capabilities |
 | http://localhost:8080/actuator/health | Health |
 
 `bootRun` по умолчанию вызывает **`syncDevDriverPacks`** (≈8 packs). Полный каталог: `-Dispf.driver.packs=all`.
 
-### 2. Первые шаги в UI
+### 2. Вход (`local`)
+
+Пустая БД создаёт пользователей: **`admin` / `admin`** (также `developer` / `developer`, `operator` / `operator`). Войдите через экран логина Web Console.
+
+API (Bearer — нужен для большинства вызовов):
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}' | jq -r .token)
+
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
+```
+
+Заголовок `X-ISPF-Role` по умолчанию **выключен** (`ispf.security.local-role-header-enabled=false`). Не рассчитывайте на селектор Role в шапке для обычного local. Подробнее: [security](security.md).
+
+### 3. Первые шаги в UI
 
 1. Откройте дерево объектов — ветка `root.platform`.  
 2. Раскройте `devices` → `demo-sensor-01` — temperature, threshold, alarm.  
 3. Дважды кликните `dashboards.demo-sensor` — **Dashboard Builder**.  
 4. Раскройте `alert-rules` → `temperature-threshold-exceeded` — CEL-правило.  
 5. Дважды кликните `workflows.demo-alarm-handler` — демо **BPMN**.  
-6. Переключите роль на **operator** или откройте `?mode=operator`.
+6. Режим оператора: `http://localhost:5173?mode=operator` (или вход как `operator`).
 
-Язык: селектор в шапке консоли (**English** удобен для OSS-скриншотов).
+Язык: селектор в шапке (**English** удобен для OSS-скриншотов).
 
-### 3. Старт драйвера demo-sensor
+### 4. Старт драйвера demo-sensor
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01" \
-  -H "X-ISPF-Role: admin"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 Температура — синусоида; при превышении порога срабатывают `alarmActive` и alert rule.
-
-### Выбор роли (профиль `local`)
-
-Селектор **Role** / **Роль** в шапке: `admin` или `operator` (заголовок `X-ISPF-Role`).
 
 ### Дальше после демо
 
@@ -91,7 +103,7 @@ docker compose up -d
 | Профиль | БД | Auth | MQTT/NATS |
 |---------|-----|------|-----------|
 | *(default)* | PostgreSQL | JWT Keycloak | выкл. |
-| `local` | H2 file | `X-ISPF-Role` | выкл. |
+| `local` | H2 file | Bearer после `POST /api/v1/auth/login` | выкл. |
 | `dev` | PostgreSQL | JWT Keycloak localhost:8180 | вкл. |
 | `test` | H2 memory | выкл. | выкл. |
 

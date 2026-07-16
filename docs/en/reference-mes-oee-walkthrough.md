@@ -4,7 +4,7 @@
 
 End-to-end reference scenario for ISPF solution developers: **line shift → OEE KPI (Availability × Performance × Quality) → downtime registration**. No custom Java in `ispf-server`.
 
-Artifacts: [examples/mes-oee-reference/](../examples/mes-oee-reference/), bundle `appId` = `mes-oee-reference`.
+Artifacts: [examples/mes-oee-reference/](../../examples/mes-oee-reference/), bundle `appId` = `mes-oee-reference`.
 
 ## Domain (simplified OEE)
 

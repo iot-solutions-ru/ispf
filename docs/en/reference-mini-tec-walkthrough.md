@@ -4,7 +4,7 @@
 
 End-to-end **optional demo** of ISPF for a **mini-CHP plant control system**: 3× gas piston units (GPU), gas pressure reduction block (GRPB), 10/0.4 kV switchgear (RUMB), diesel generator (DGU), load module, station hub, protections, operator HMI with single-line diagram. No custom Java in `ispf-server` (bootstrap + bundle). **Not part of platform roadmap** — see [roadmap.md § Phase 18](roadmap.md).
 
-Artifacts: [examples/mini-tec/](../examples/mini-tec/), `appId` = `mini-tec`.
+Artifacts: [examples/mini-tec/](../../examples/mini-tec/), `appId` = `mini-tec`.
 
 See also [examples/mini-tec/README.md](readme.md), agent playbook `miniTecReference()` in `AgentPlaybooks.java`.
 

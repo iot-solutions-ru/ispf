@@ -41,7 +41,7 @@
 
 ## Рабочий процесс CI
 
-GitHub Actions: [`.github/workflows/driver-interop.yml`](../.github/workflows/driver-interop.yml)
+GitHub Actions: [`.github/workflows/driver-interop.yml`](../../.github/workflows/driver-interop.yml)
 
 1. **docker-fixtures-smoke** — `docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait`, затем `deploy/tools/driver-interop-smoke.sh` (MQTT/Modbus/OPC UA), `down -v`.
 2. **matrix** — `./gradlew :packages:<module>:test` для каждого модуля из топ-20.

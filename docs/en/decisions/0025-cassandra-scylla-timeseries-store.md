@@ -35,7 +35,7 @@ PostgreSQL remains for the relational core (object tree, workflow, RBAC).
 ## Consequences
 
 - Prod default remains `jdbc`; Cassandra/Scylla is opt-in for existing CQL clusters.
-- Local dev: [deploy/docker-compose.scylla.yml](../../deploy/docker-compose.scylla.yml).
+- Local dev: [deploy/docker-compose.scylla.yml](../../../deploy/docker-compose.scylla.yml).
 - Verify: `deploy/vps-cassandra-verify.sh`.
 - ClickHouse and Cassandra can be combined (e.g. journal → Scylla, historian → ClickHouse).
 

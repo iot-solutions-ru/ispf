@@ -152,7 +152,7 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|
 
 ## Example
 
-[examples/demo-app/](../examples/demo-app/) — `POST /api/v1/platform/packages/import?packageId=demo` or legacy deploy on `demo`, reports in `root.platform.reports.*`.
+[examples/demo-app/](../../examples/demo-app/) — `POST /api/v1/platform/packages/import?packageId=demo` or legacy deploy on `demo`, reports in `root.platform.reports.*`.
 
 ## Related documents
 

@@ -2,11 +2,13 @@
 
 # Partner program (BL-184)
 
-ISPF certified integrator and solution partner program. **Partner Portal** is a separate service:
+> **Status: Draft / not GA.** Curriculum and tiers below are the design target. In-server `GET /api/v1/partners/*` is a **stub** (`PartnerProgramService`, `"source": "stub"`). There is no shipping Partner Portal in this repository yet. See [competitive-scorecard](competitive-scorecard.md) dimension 12.
 
-- Repo: [Partner-portal](https://github.com/your-org/Partner-portal)
-- API: `GET /api/v1/tiers`, applications, directory, training progress
-- In-server API `GET /api/v1/partners/*` — **stub** (`PartnerProgramService`, `"source": "stub"`); demo partners hardcoded; enroll is synthetic until Partner Portal sync
+ISPF certified integrator and solution partner program (planned). Design notes:
+
+- External Partner Portal — **not in this repo** (configure separately when available)
+- Planned API surface: `GET /api/v1/tiers`, applications, directory, training progress
+- Today: demo partners hardcoded; enroll is synthetic until a real portal syncs
 
 Related: [marketplace](marketplace.md), [certification](certification.md), [solution-developer-guide](solution-developer-guide.md).
 

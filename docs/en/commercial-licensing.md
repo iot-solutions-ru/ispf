@@ -68,7 +68,7 @@ File `{data-dir}/platform-license.json` — Enterprise exemption from AGPL (see 
 
 ## Vendor
 
-CLI: [tools/license-builder/README.md](readme.md).
+CLI: [tools/license-builder/README.md](../../tools/license-builder/README.md).
 
 ## Deploy behavior
 

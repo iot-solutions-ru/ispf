@@ -32,7 +32,7 @@
 
 ### 2. Профиль `prod-idle` (env overlay для demo / idle)
 
-Файл [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) — эталон **demo-idle**; для **edge** уменьшить workers до 1 (см. DEMOSTANDS).
+Файл [`deploy/ispf-server.prod-idle.env`](../../../deploy/ispf-server.prod-idle.env) — эталон **demo-idle**; для **edge** уменьшить workers до 1 (см. DEMOSTANDS).
 
 - `ISPF_*_ELASTIC=false` для object-change, L3 ingress, binding-async, driver I/O;
 - фиксированные `*_WORKERS` / `*_THREADS` (не только min/max);
@@ -42,13 +42,13 @@
 
 **Конвенция:** при `elastic=false` Spring `*Properties.resolved*()` использует **фиксированное** поле `*WORKERS`/`*THREADS`.
 
-Применение: merge в `ispf-server.env` + **recreate** контейнера ([`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) — шаблон для любого хоста).
+Применение: merge в `ispf-server.env` + **recreate** контейнера ([`deploy/vps-apply-prod-idle-env.sh`](../../../deploy/vps-apply-prod-idle-env.sh) — шаблон для любого хоста).
 
 ### 3. Driver publish modes
 
 - Опросные драйверы с многими точками → `TELEMETRY_ONLY` + coalesce ≥ poll interval.
 - `FULL` — только на устройствах, где нужны alerts/workflows в demo.
-- Пример API-скрипта: [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh).
+- Пример API-скрипта: [`deploy/vps-demostand-tune-drivers.sh`](../../../deploy/vps-demostand-tune-drivers.sh).
 
 ### 4. Single unified node для idle demo
 

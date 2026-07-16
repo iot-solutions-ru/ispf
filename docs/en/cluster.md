@@ -30,7 +30,7 @@ See also: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-acti
               Redis (path interest, ACL, correlator)
 ```
 
-Compose: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml); VPS: [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml).
+Compose: [`deploy/docker-compose.cluster.yml`](../../deploy/docker-compose.cluster.yml); VPS: [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml).
 
 Each replica on startup:
 
@@ -362,7 +362,7 @@ Details: [0031-cluster-replica-roles-platform-jobs](decisions/0031-cluster-repli
 
 ## Cluster startup and configuration
 
-This section is the **canonical order** for bringing up a multi-profile cluster: shared infrastructure first, staggered JVM replicas, ingress last. Applies to VPS (`network_mode: host`, unique ports) and lab Docker stacks ([`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml)).
+This section is the **canonical order** for bringing up a multi-profile cluster: shared infrastructure first, staggered JVM replicas, ingress last. Applies to VPS (`network_mode: host`, unique ports) and lab Docker stacks ([`deploy/lab-cluster-compose.yml`](../../deploy/lab-cluster-compose.yml)).
 
 ### Design rules
 
@@ -402,12 +402,12 @@ This section is the **canonical order** for bringing up a multi-profile cluster:
 | replica-4 | `io` | no | Driver ownership, replica-sync, schedulers |
 | replica-6 | `compute` | no | `platform_jobs` consumer (async reports) |
 
-Lab compose + nginx: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/local/nginx/cluster-lab.conf`](../deploy/local/nginx/cluster-lab.conf).  
-VPS host-network example: [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml) (ports `8081`…`8084`).
+Lab compose + nginx: [`deploy/lab-cluster-compose.yml`](../../deploy/lab-cluster-compose.yml), [`deploy/local/nginx/cluster-lab.conf`](../../deploy/local/nginx/cluster-lab.conf).  
+VPS host-network example: [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml) (ports `8081`…`8084`).
 
 ### Startup order (staged bootstrap)
 
-Automated: [`deploy/lab-cluster-bootstrap.sh`](../deploy/lab-cluster-bootstrap.sh), [`deploy/vps-cluster-bootstrap.sh`](../deploy/vps-cluster-bootstrap.sh).
+Automated: [`deploy/lab-cluster-bootstrap.sh`](../../deploy/lab-cluster-bootstrap.sh), [`deploy/vps-cluster-bootstrap.sh`](../../deploy/vps-cluster-bootstrap.sh).
 
 ```text
 Phase 0  Stop conflicting stacks (free ingress port)
@@ -490,7 +490,7 @@ Writes for catalog seeding and operator API must hit **edge-api**, not `io` or `
 
 ### Lab scenario preflight (clean slate)
 
-Before **each** isolated load/functional scenario on the lab cluster: full wipe (`docker compose down -v` on cluster + stress stacks), staged bootstrap, readiness gates (object tree HTTP 200, 6/6 replicas, empty CH). Script: [`deploy/lab-cluster-reset.sh`](../deploy/lab-cluster-reset.sh); wrapper: [`deploy/lab-scenario-run.sh`](../deploy/lab-scenario-run.sh). Policy: [load-testing.md § Clean slate](load-testing.md#clean-slate-policy-lab-cluster).
+Before **each** isolated load/functional scenario on the lab cluster: full wipe (`docker compose down -v` on cluster + stress stacks), staged bootstrap, readiness gates (object tree HTTP 200, 6/6 replicas, empty CH). Script: [`deploy/lab-cluster-reset.sh`](../../deploy/lab-cluster-reset.sh); wrapper: [`deploy/lab-scenario-run.sh`](../../deploy/lab-scenario-run.sh). Policy: [load-testing.md § Clean slate](load-testing.md#clean-slate-policy-lab-cluster).
 
 ### Lab BL-210 pipeline (after cluster is UP)
 
@@ -532,15 +532,15 @@ Internet → nginx :8080 → replica-1 (unified / role all, :8081)
 
 | Artifact | Path |
 |----------|------|
-| Compose | [`deploy/docker-compose.vps-single.yml`](../deploy/docker-compose.vps-single.yml) |
-| Nginx | [`deploy/nginx-vps-single.conf`](../deploy/nginx-vps-single.conf) |
-| Rollout | [`deploy/vps-single-rollout.sh`](../deploy/vps-single-rollout.sh) |
-| Prod-idle env | [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) + [`vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) |
-| Driver tuning | [`deploy/vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) |
+| Compose | [`deploy/docker-compose.vps-single.yml`](../../deploy/docker-compose.vps-single.yml) |
+| Nginx | [`deploy/nginx-vps-single.conf`](../../deploy/nginx-vps-single.conf) |
+| Rollout | [`deploy/vps-single-rollout.sh`](../../deploy/vps-single-rollout.sh) |
+| Prod-idle env | [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) + [`vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) |
+| Driver tuning | [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) |
 
 Verify: `curl -sf ${ISPF_BASE_URL:-https://ispf.example.invalid}/api/v1/info` → `clusterEnabled=false`, `replicaRole=all`.
 
-**Multi-replica** (lab / HA): [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), `vps-cluster-rollout.sh`, `vps-cluster-verify.sh`.
+**Multi-replica** (lab / HA): [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml), `vps-cluster-rollout.sh`, `vps-cluster-verify.sh`.
 
 ## Operations
 
@@ -590,7 +590,7 @@ python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8
 
 ### nginx
 
-Split ingress by role (see [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf)):
+Split ingress by role (see [`deploy/nginx-cluster-lab.conf`](../../deploy/nginx-cluster-lab.conf)):
 
 | Path | Upstream | Use |
 |------|----------|-----|
@@ -610,21 +610,21 @@ Operator and admin traffic use **different URL prefixes** on purpose ([ADR-0032]
 | Admin (`?mode=admin` or default) | `/api/...` | `/ws/...` |
 | Operator (`?mode=operator`) | `/hmi/api/...` | `/hmi/ws/...` |
 
-Implementation: `resolveIngressPath()` in [`apps/web-console/src/utils/ingressPath.ts`](../apps/web-console/src/utils/ingressPath.ts). The browser always talks to **one origin**; it does not pick individual replicas.
+Implementation: `resolveIngressPath()` in [`apps/web-console/src/utils/ingressPath.ts`](../../apps/web-console/src/utils/ingressPath.ts). The browser always talks to **one origin**; it does not pick individual replicas.
 
 #### Client-side fallback (no nginx / single JVM / Caddy)
 
 Ingress is not always nginx. The web console probes `/hmi` on first operator requests and **falls back to `/api`** when the `/hmi` path is not wired (SPA HTML, 502/504, etc.):
 
-- [`fetchWithIngressFallback()`](../apps/web-console/src/utils/ingressFetch.ts) — REST
+- [`fetchWithIngressFallback()`](../../apps/web-console/src/utils/ingressFetch.ts) — REST
 - WebSocket — try `/hmi/ws/objects`, then `/ws/objects` on failed connect
 - Result cached in `sessionStorage` (`ispf-ingress-route`) for the browser session; cleared on logout
 
 | Deployment | Typical behaviour |
 |------------|-------------------|
 | **Cluster** with split ingress | First JSON from `/hmi/api` → cache `hmi`; LB chooses replica |
-| **All-in-one** (`unified` profile) | Either nginx aliases `/hmi/api` → same JVM ([`nginx-vps-single.conf`](../deploy/nginx-vps-single.conf)), or client fallback to `/api` |
-| **Dev** (`vite`) | Proxy rewrites `/hmi` → `localhost:8080` ([`vite.config.ts`](../apps/web-console/vite.config.ts)) |
+| **All-in-one** (`unified` profile) | Either nginx aliases `/hmi/api` → same JVM ([`nginx-vps-single.conf`](../../deploy/nginx-vps-single.conf)), or client fallback to `/api` |
+| **Dev** (`vite`) | Proxy rewrites `/hmi` → `localhost:8080` ([`vite.config.ts`](../../apps/web-console/vite.config.ts)) |
 
 The client does **not** implement client-side round-robin across hmi replicas. That is always the job of the reverse proxy upstream.
 
@@ -646,7 +646,7 @@ upstream ispf_hmi_ws {
 }
 ```
 
-Lab reference (single hmi node today): [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf). Live tag values stay consistent across hmi replicas via NATS RAM mirror ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) when `ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true`.
+Lab reference (single hmi node today): [`deploy/nginx-cluster-lab.conf`](../../deploy/nginx-cluster-lab.conf). Live tag values stay consistent across hmi replicas via NATS RAM mirror ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) when `ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true`.
 
 If the **entire** hmi upstream is down and the client falls back to `/api` on `edge-api`, reads still work; config mutations from operator UI may hit `503 REPLICA_CAPABILITY_DENIED` on paths that require `config-write` (edge-api only).
 
@@ -670,11 +670,11 @@ If the **entire** hmi upstream is down and the client falls back to `/api` on `e
 .\deploy\vps-deploy-direct.ps1 -Version 0.9.93 -SkipTests -Cluster
 ```
 
-Deploy uses [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) (rolling replica restart, no `docker-compose --force-recreate`).
+Deploy uses [`vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh) (rolling replica restart, no `docker-compose --force-recreate`).
 
-Initial cluster install: [`vps-cluster-bootstrap.sh`](../deploy/vps-cluster-bootstrap.sh).
+Initial cluster install: [`vps-cluster-bootstrap.sh`](../../deploy/vps-cluster-bootstrap.sh).
 
-Reset DB: [`vps-cluster-factory-reset.sh`](../deploy/vps-cluster-factory-reset.sh).
+Reset DB: [`vps-cluster-factory-reset.sh`](../../deploy/vps-cluster-factory-reset.sh).
 
 ## Related ADRs and backlog
 

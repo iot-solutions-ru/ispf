@@ -14,8 +14,8 @@
 
 | Path | Description |
 | ---- | -------- |
-| [`packages/ispf-driver-ddk`](../packages/ispf-driver-ddk/) | DDK Gradle module (template sources + smoke test) |
-| [`packages/ispf-driver-ddk/template/`](../packages/ispf-driver-ddk/template/) | Copyable stub: driver, test, `driver-pack.json`, `build.gradle.kts` |
+| [`packages/ispf-driver-ddk`](../../packages/ispf-driver-ddk/) | DDK Gradle module (template sources + smoke test) |
+| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Copyable stub: driver, test, `driver-pack.json`, `build.gradle.kts` |
 | [licensed-driver-packs](licensed-driver-packs.md) | Runtime layout and licensing |
 | [driver-promotion](driver-promotion.md) | PRODUCTION checklist |
 | [driver-interop-lab](driver-interop-lab.md) | CI interop after promotion |
@@ -40,14 +40,14 @@ Module automatically receives plugin `ispf-driver-pack` (see root `build.gradle.
 
 ### 2. Implement SPI
 
-`DeviceDriver` ([`ispf-driver-api`](../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)):
+`DeviceDriver` ([`ispf-driver-api`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)):
 
 - `metadata()` — `driverId`, config schema, maturity
 - `initialize` / `connect` / `disconnect`
 - `readPoints(Map<variableName, pointMapping>)`
 - `writePoint` — when capability `write` is declared
 
-**Ingress rule:** hot path does not write to DB; only `updateVariable` ([ADR ingress contract](../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)).
+**Ingress rule:** hot path does not write to DB; only `updateVariable` ([ADR ingress contract](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)).
 
 ### 3. Loopback test
 
@@ -67,7 +67,7 @@ Copy directory to `${ISPF_DRIVER_PACKS_DIR}/` on server. Restart ISPF → `Licen
 ### 6. Promotion
 
 1. Entry in `DriverProductionMatrix` with `loopbackTestSourcePath` and `interopGradleModule`.
-2. Add module to [`.github/workflows/driver-interop.yml`](../.github/workflows/driver-interop.yml).
+2. Add module to [`.github/workflows/driver-interop.yml`](../../.github/workflows/driver-interop.yml).
 3. Update [drivers](drivers.md).
 
 ## Point mapping convention (template)

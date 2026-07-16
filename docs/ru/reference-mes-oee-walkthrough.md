@@ -4,7 +4,7 @@
 
 Сквозной reference-сценарий ISPF для разработчиков решений: **смена линии → KPI OEE (Availability × Performance × Quality) → регистрация простоя**. Без custom Java в `ispf-server`.
 
-Артефакты: [examples/mes-oee-reference/](../examples/mes-oee-reference/), bundle `appId` = `mes-oee-reference`.
+Артефакты: [examples/mes-oee-reference/](../../examples/mes-oee-reference/), bundle `appId` = `mes-oee-reference`.
 
 ## Домен (упрощённый OEE)
 

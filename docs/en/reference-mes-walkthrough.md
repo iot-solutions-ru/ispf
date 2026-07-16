@@ -4,7 +4,7 @@
 
 End-to-end reference scenario for ISPF solution developers: **dispatch order → tank → loading rack → completion**. No custom Java in `ispf-server`.
 
-Artifacts: [examples/mes-reference/](../examples/mes-reference/), bundle `appId` = `mes-reference`.
+Artifacts: [examples/mes-reference/](../../examples/mes-reference/), bundle `appId` = `mes-reference`.
 
 ## Domain (simplified MES)
 
@@ -24,7 +24,7 @@ Order statuses: `pending` → `filling` → `completed`.
 | 1 | Deploy bundle | `POST /api/v1/applications/mes-reference/deploy` | schema `app_mes_ref`, migrations, functions | Admin |
 | 2 | List orders | BFF `mes_listOrders` @ `demo-sensor-01` | SQL read | Operator UI journal path |
 | 3 | Start filling | BFF `mes_startFilling` + `orderNo` | status → `filling` | Form button (future dashboard) |
-| 4 | Virtual meter | `virtual` driver profile `meter` + `filling=true` | `meterLiters`, `flowRate` | See [MesPlatformApiTest](../packages/ispf-server/src/test/java/com/ispf/server/mes/MesPlatformApiTest.java) |
+| 4 | Virtual meter | `virtual` driver profile `meter` + `filling=true` | `meterLiters`, `flowRate` | See [MesPlatformApiTest](../../packages/ispf-server/src/test/java/com/ispf/server/mes/MesPlatformApiTest.java) |
 | 5 | Complete | BFF `mes_completeFilling` | status → `completed` | Operator confirm |
 | 6 | Rack overheat | alert `mesRackOverTemp` when `temperature > 85` | correlator → `alarmActive=true` | Alarm panel |
 | 7 | *(optional)* BPMN workflow | `workflows[]` in bundle → deploy | side-effect via `publish_nats` or `fire_event` | Admin / automation |

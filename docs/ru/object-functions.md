@@ -139,7 +139,7 @@ call(@/fn/acknowledgeAlarm)
 
 Опционально: `"objectPath"` в `sourceBody` для записи на другой объект; `"value": false` для сброса.
 
-Справочное приложение mini-TEC использует `pulse` для запуска/остановки; сложная логика — `script` + `writeVariable` ([`MiniTecFunctionScripts.java`](../packages/ispf-server/src/main/java/com/ispf/server/application/reference/minitec/MiniTecFunctionScripts.java)).
+Справочное приложение mini-TEC использует `pulse` для запуска/остановки; сложная логика — `script` + `writeVariable` ([`MiniTecFunctionScripts.java`](../../packages/ispf-server/src/main/java/com/ispf/server/application/reference/minitec/MiniTecFunctionScripts.java)).
 
 ### 1.3 Virtual Lab — `calculate`, `fireEvent1`, `fireEvent2`, `appendTableRow`
 

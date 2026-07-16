@@ -139,7 +139,7 @@ Universal SCADA **command pulse** pattern: write `true` to a bool variable (`cmd
 
 Optional: `"objectPath"` in `sourceBody` to write on another object; `"value": false` to reset.
 
-The reference mini-TEC application uses `pulse` for start/stop; complex logic uses `script` + `writeVariable` ([`MiniTecFunctionScripts.java`](../packages/ispf-server/src/main/java/com/ispf/server/application/reference/minitec/MiniTecFunctionScripts.java)).
+The reference mini-TEC application uses `pulse` for start/stop; complex logic uses `script` + `writeVariable` ([`MiniTecFunctionScripts.java`](../../packages/ispf-server/src/main/java/com/ispf/server/application/reference/minitec/MiniTecFunctionScripts.java)).
 
 ### 1.3 Virtual Lab — `calculate`, `fireEvent1`, `fireEvent2`, `appendTableRow`
 

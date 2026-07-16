@@ -4,7 +4,7 @@
 
 Reference patterns for **event correlator → workflow → operator task → timeout escalation** on ISPF without custom Java.
 
-Artifacts: [examples/escalation-templates/](../examples/escalation-templates/).
+Artifacts: [examples/escalation-templates/](../../examples/escalation-templates/).
 
 ## Pattern A — Recurring threshold → workflow
 

@@ -5,13 +5,15 @@
 Статус: **Принято**  
 Дата: 2026-06-19 (формализовано 2026-06-22)
 
+> **Лицензия (2026-07):** платформа `main` — **GNU AGPL v3** (+ опционально Enterprise). См. [0016-agpl-dual-licensing](0016-agpl-dual-licensing.md). Упоминания Apache 2.0 ниже — исторические.
+
 ## Контекст
 
 ISPF — middleware-платформа (framework), а не готовое отраслевое решение. Прикладные команды хотят доставлять логику через deploy API; platform-команда должна расширять только generic-механизмы, иначе `main` разрастается отраслевым Java.
 
 ## Решение
 
-1. **Platform (`main`, Apache 2.0)** реализует generic engines один раз: object tree, CEL, BPMN, script runtime, drivers, bundle deploy, BFF gateway.
+1. **Platform (`main`, AGPL v3)** реализует generic engines один раз: object tree, CEL, BPMN, script runtime, drivers, bundle deploy, BFF gateway.
 2. **Solution** наполняет механизмы **declarative-конфигурацией**: models, variables, events, functions, workflows, dashboards — через bundle deploy и REST API.
 3. **Запрещено в `main`:**
    - отраслевой Java в `packages/ispf-server/`;

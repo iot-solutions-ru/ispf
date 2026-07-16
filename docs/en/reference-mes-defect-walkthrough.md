@@ -6,7 +6,7 @@ End-to-end reference scenario: **line scrap event → order binding → route fo
 
 All data is **fictional** (demo lines, orders `DEMO-*`, neutral route codes).
 
-Artifacts: [examples/mes-defect-demo/](../examples/mes-defect-demo/), bundle `appId` = `mes-defect-demo`.
+Artifacts: [examples/mes-defect-demo/](../../examples/mes-defect-demo/), bundle `appId` = `mes-defect-demo`.
 
 Reference BPMN (drawio): [docs/assets/mes-defect-bpmn.drawio.xml](assets/mes-defect-bpmn.drawio.xml).
 

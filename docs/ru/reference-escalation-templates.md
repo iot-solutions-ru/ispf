@@ -4,7 +4,7 @@
 
 Эталонные паттерны для цепочки **коррелятор событий → workflow → задача оператора → эскалация по тайм-ауту** в ISPF без custom Java.
 
-Артефакты: [examples/escalation-templates/](../examples/escalation-templates/).
+Артефакты: [examples/escalation-templates/](../../examples/escalation-templates/).
 
 ## Паттерн A — повторяющийся порог → workflow
 

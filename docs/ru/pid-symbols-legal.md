@@ -5,7 +5,7 @@
 **Статус:** Опция **B** реализована (2026-06) — исходное функциональное оформление ISA/ISO.
 
 Пакет: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`  
-Генератор: [`tools/symbol-pack-isa`](../tools/symbol-pack-isa)  
+Генератор: [`tools/symbol-pack-isa`](../../tools/symbol-pack-isa)  
 Лицензия: **Apache-2.0** (основные участники ISPF)
 
 ## Текущая модель

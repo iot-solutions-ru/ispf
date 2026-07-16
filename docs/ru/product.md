@@ -64,7 +64,7 @@ graph LR
 - **Единая модель** — устройство, дашборд, рабочий процесс и правила оповещения — узлы одного дерева; логика решений выражается через их переменные, события, функции и BPMN.
 - **Расширяемость без разветвления ядра** — отраслевые решения деплоятся как бандлы (модели, объекты, JSON-функции, BPMN, пользовательский интерфейс оператора) **в механизмах платформы**, без Java на сервере.
 - **Облачный стек** — Spring Boot 4.0, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket, опционально NATS/MQTT/Keycloak.
-- **58 встроенных драйверов** — от Modbus и OPC UA до SNMP, Kafka и JDBC ([каталог](drivers.md)).
+- **~60 driver packs** (не внутри `ispf-server.jar`; maturity разный — см. [каталог](drivers.md)).
 - **Платформа AGPL v3** — опционально Enterprise dual-license; driver packs и application bundles могут иметь отдельные условия ([license](license.md), [plugins](plugins.md)).
 
 ---

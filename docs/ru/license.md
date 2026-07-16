@@ -8,13 +8,13 @@
 
 | Путь | Лицензия |
 |------|----------|
-| `packages/ispf-core`, `packages/ispf-server`, `packages/ispf-expression`, … | [GNU AGPL v3](../LICENSE) |
-| `apps/web-console/` | [GNU AGPL v3](../LICENSE) |
-| `docs/` | [GNU AGPL v3](../LICENSE) |
+| `packages/ispf-core`, `packages/ispf-server`, `packages/ispf-expression`, … | [GNU AGPL v3](../../LICENSE) |
+| `apps/web-console/` | [GNU AGPL v3](../../LICENSE) |
+| `docs/` | [GNU AGPL v3](../../LICENSE) |
 
 **Двойное лицензирование:** сообщество использует AGPL; предприятие — [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md) + `platform-license.json` (освобождение от обязательств AGPL по договору).
 
-Копирайт: **© 2026 Основные участники ISPF** — см. [ЛИЦЕНЗИЯ](../LICENSE) и [УВЕДОМЛЕНИЕ](../NOTICE).
+Копирайт: **© 2026 Основные участники ISPF** — см. [ЛИЦЕНЗИЯ](../../LICENSE) и [УВЕДОМЛЕНИЕ](../../NOTICE).
 
 ## Драйверы устройств — только пакеты драйверов
 
@@ -60,7 +60,7 @@ ${ISPF_DRIVER_PACKS_DIR}/ispf-driver-modbus/
 
 ## Обязательства при распространении
 
-1. Сохраните [ЛИЦЕНЗИЮ](../LICENSE) и [УВЕДОМЛЕНИЕ](../NOTICE).
+1. Сохраните [ЛИЦЕНЗИЮ](../../LICENSE) и [УВЕДОМЛЕНИЕ](../../NOTICE).
 2. Приложите [third-party-notices](third-party-notices.md) и следом [license-compliance](license-compliance.md).
 3. Для пакетов драйверов — ЛИЦЕНЗИЯ и уведомления для каждого пакета.
 4. Соблюдайте зависимости AGPL/GPL/LGPL/MPL в пакетах.

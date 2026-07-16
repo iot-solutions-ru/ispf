@@ -27,11 +27,13 @@
 | идентификатор драйвера | Было | Стало | Примечание |
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
-| `dnp3` | BETA | **PRODUCTION** | Class 0/1/2/3 poll via `io.stepfunc:dnp3` |
+| `dnp3` | BETA | **PRODUCTION** (только poll) | Class 0/1/2/3 poll; **write не реализован** |
 | `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
 | `ethernet-ip` | BETA | **PRODUCTION** | CIP session registration + tag path loopback |
-| `opc-da` | BETA | **PRODUCTION** | Connectivity shell + parser tests |
-| `opc-bridge` | BETA | **PRODUCTION** | Bridge point mapping + parser tests |
+| `opc-da` | BETA | **PRODUCTION** (shell) | Connectivity shell + parser — **не** ready-for-field DA |
+| `opc-bridge` | BETA | **PRODUCTION** (shell) | Bridge mapping + parser — полный OPC через внешний bridge |
+
+**Политика:** shell и read-only master нельзя продавать как field-ready PRODUCTION. См. ready-for-field ниже и scorecard OT.
 
 ## Статус (июнь 2026)
 

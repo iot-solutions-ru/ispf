@@ -14,8 +14,8 @@
 
 | Путь | Описание |
 | ---- | -------- |
-| [`packages/ispf-driver-ddk`](../packages/ispf-driver-ddk/) | Gradle-модуль DDK (исходники шаблонов + дымовой тест) |
-| [`packages/ispf-driver-ddk/template/`](../packages/ispf-driver-ddk/template/) | Копируемый заглушка: драйвер, тест, `driver-pack.json`, `build.gradle.kts` |
+| [`packages/ispf-driver-ddk`](../../packages/ispf-driver-ddk/) | Gradle-модуль DDK (исходники шаблонов + дымовой тест) |
+| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Копируемый заглушка: драйвер, тест, `driver-pack.json`, `build.gradle.kts` |
 | [licensed-driver-packs](licensed-driver-packs.md) | Расположение во время выполнения и соединение |
 | [driver-promotion](driver-promotion.md) | Чеклист ПРОДАКШН |
 | [driver-interop-lab](driver-interop-lab.md) | CI-взаимодействие после продвижения |
@@ -40,14 +40,14 @@ cp -r packages/ispf-driver-ddk/template packages/ispf-driver-acme-widget
 
 ### 2. Реализовать SPI
 
-`DeviceDriver` ([`ispf-driver-api`](../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)):
+`DeviceDriver` ([`ispf-driver-api`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)):
 
 - `metadata()` — `driverId`, config schema, maturity
 - `initialize` / `connect` / `disconnect`
 - `readPoints(Map<variableName, pointMapping>)`
 - `writePoint` — если заявлен capability `write`
 
-**Правило входа:** горячий путь не пишется в БД; только `updateVariable` ([Входной контракт ADR](../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)).
+**Правило входа:** горячий путь не пишется в БД; только `updateVariable` ([Входной контракт ADR](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)).
 
 ### 3. Петлевая проверка
 
@@ -67,7 +67,7 @@ ls build/driver-packs/ispf-driver-acme-widget/
 ### 6. Продвижение
 
 1. Запись в `DriverProductionMatrix` с `loopbackTestSourcePath` и `interopGradleModule`.
-2. Добавить модуль в [`.github/workflows/driver-interop.yml`](../.github/workflows/driver-interop.yml).
+2. Добавить модуль в [`.github/workflows/driver-interop.yml`](../../.github/workflows/driver-interop.yml).
 3. Обновить [drivers](drivers.md).
 
 ## Соглашение о сопоставлении точек (шаблон)

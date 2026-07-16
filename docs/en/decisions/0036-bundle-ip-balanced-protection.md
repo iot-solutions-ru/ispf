@@ -49,4 +49,4 @@ Hard **export gate** (`restrict-bundle-export`) — **not planned** without a se
 - [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md) — RSA at deploy
 - [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) — bundle = tree packaging
 - [commercial-licensing](../commercial-licensing.md)
-- [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)
+- [LICENSE-COMMERCIAL](../../../LICENSE-COMMERCIAL.md)

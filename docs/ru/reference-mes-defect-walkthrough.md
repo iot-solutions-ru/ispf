@@ -6,7 +6,7 @@
 
 Все данные **вымышленные** (демо-линии, ордера `DEMO-*`, нейтральные коды маршрутов).
 
-Артефакты: [examples/mes-defect-demo/](../examples/mes-defect-demo/), bundle `appId` = `mes-defect-demo`.
+Артефакты: [examples/mes-defect-demo/](../../examples/mes-defect-demo/), bundle `appId` = `mes-defect-demo`.
 
 Референс BPMN (drawio): [docs/assets/mes-defect-bpmn.drawio.xml](assets/mes-defect-bpmn.drawio.xml).
 

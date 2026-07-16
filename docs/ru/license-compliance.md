@@ -18,8 +18,8 @@ Check runtime: `GET /api/v1/platform/license`
 
 Поставляется с каждым выпуском:
 
-1. [LICENSE](../LICENSE) (AGPL)
-2. [NOTICE](../NOTICE)
+1. [LICENSE](../../LICENSE) (AGPL)
+2. [NOTICE](../../NOTICE)
 3. [third-party-notices](third-party-notices.md)
 4. Java + npm SBOM (рекомендуется CycloneDX)
 5. Для каждого пакета драйверов: `LICENSE`, `THIRD_PARTY-NOTICE.txt`, `NOTICE-EXTERNAL-DEPS.txt` (если есть)
@@ -55,7 +55,7 @@ Web console static files include `legal/*` (copied at build via `scripts/copy-le
 
 ## Пакет символов P&ID
 
-Исходные функциональные символы ISA/ISO — **Apache-2.0**, созданные [`tools/symbol-pack-isa`](../tools/symbol-pack-isa).
+Исходные функциональные символы ISA/ISO — **Apache-2.0**, созданные [`tools/symbol-pack-isa`](../../tools/symbol-pack-isa).
 
 - [license](license.md)
 - [pid-symbols-legal](pid-symbols-legal.md)

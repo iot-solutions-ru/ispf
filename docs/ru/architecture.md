@@ -162,7 +162,7 @@ Event fire → event_history
 6. **NATS subjects** — messageTask в BPMN ([workflows](workflows.md))
 7. **Application bundle** — deploy функций и миграций **вне** ядра ([applications](applications.md), [plugins](plugins.md))
 
-Коммерческие и отраслевые расширения **не** входят в Apache 2.0-дерево `main`.
+Коммерческие и отраслевые расширения **не** входят в AGPL community-дерево `main` (опционально Enterprise dual-license — [license](license.md)).
 
 ## Эталонные стенды
 

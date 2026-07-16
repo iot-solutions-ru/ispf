@@ -4,7 +4,7 @@
 
 Сквозной **опциональный demo** ISPF для **АСУ ТП мини-ТЭЦ**: 3×ГПУ, ГРПБ, РУМБ, ДГУ, нагрузочный модуль, станционный hub, защиты, operator HMI с однолинейной схемой. Без custom Java в `ispf-server` (bootstrap + bundle). **Не входит в platform roadmap** — см. [ROADMAP.md § Phase 18](roadmap.md).
 
-Артефакты: [examples/mini-tec/](../examples/mini-tec/), `appId` = `mini-tec`.
+Артефакты: [examples/mini-tec/](../../examples/mini-tec/), `appId` = `mini-tec`.
 
 См. также [examples/mini-tec/README.md](readme.md), agent playbook `miniTecReference()` в `AgentPlaybooks.java`.
 

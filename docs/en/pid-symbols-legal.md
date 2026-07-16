@@ -3,7 +3,7 @@
 **Status:** Option **B** implemented (2026-06) — original ISA/ISO functional artwork.
 
 Pack: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`  
-Generator: [`tools/symbol-pack-isa`](../tools/symbol-pack-isa)  
+Generator: [`tools/symbol-pack-isa`](../../tools/symbol-pack-isa)  
 License: **Apache-2.0** (ISPF Core Contributors)
 
 ## Current model

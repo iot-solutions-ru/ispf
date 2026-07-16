@@ -42,10 +42,10 @@ test.skip(true, "ci-flake #1234 — quarantine until 2026-07-20");
 
 | Рабочий процесс | Триггер | Область применения |
 | -------- | ------- | ----- |
-| [ci.yml](../.github/workflows/ci.yml) | PR | pr-fast: модуль + сборка, фильтры путей, без загрузки/e2e |
-| [ci-nightly.yml](../.github/workflows/ci-nightly.yml) | нажмите `main`, ежедневный cron | Полное: load gates, Playwright, владение кластером |
-| [load-test.yml](../.github/workflows/load-test.yml) | ночной хрон | Только загрузочные шлюзы JVM |
-| [e2e-live.yml](../.github/workflows/e2e-live.yml) | еженедельно + рассылка | Прод дым (секреты) |
+| [ci.yml](../../.github/workflows/ci.yml) | PR | pr-fast: модуль + сборка, фильтры путей, без загрузки/e2e |
+| [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) | нажмите `main`, ежедневный cron | Полное: load gates, Playwright, владение кластером |
+| [load-test.yml](../../.github/workflows/load-test.yml) | ночной хрон | Только загрузочные шлюзы JVM |
+| [e2e-live.yml](../../.github/workflows/e2e-live.yml) | еженедельно + рассылка | Прод дым (секреты) |
 
 ## Известные горячие точки (базовый показатель на июль 2026 г.)
 

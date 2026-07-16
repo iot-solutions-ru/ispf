@@ -10,8 +10,8 @@
 
 | Bundle | `appId` | Artifacts | Status |
 |--------|---------|-----------|--------|
-| Certification skeleton | `mes-platform` | [examples/mes-platform/](../examples/mes-platform/), listing `mes-platform` (vendor **IoT Solutions**) | Product |
-| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../examples/mes-platform-production/), listing `mes-platform-production` | **Certified** (BL-170) |
+| Certification skeleton | `mes-platform` | [examples/mes-platform/](../../examples/mes-platform/), listing `mes-platform` (vendor **IoT Solutions**) | Product |
+| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../../examples/mes-platform-production/), listing `mes-platform-production` | **Certified** (BL-170) |
 
 **См. также:** [isa95-catalog](isa95-catalog.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [marketplace](marketplace.md), [object-model](object-model.md).
 
@@ -42,8 +42,8 @@
 | BPMN workflow | `root.platform.workflows.mes-work-order-dispatch` |
 | Correlator | `workOrderDispatched` → RUN_WORKFLOW (bundle, disabled) |
 | Operator UI | Dashboard `mes-platform-dispatch` с виджетом `work-queue` |
-| Instantiate example | [work-order-instantiate.example.json](../examples/mes-platform/work-order-instantiate.example.json) |
-| BPMN source | [examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml](../examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml) |
+| Instantiate example | [work-order-instantiate.example.json](../../examples/mes-platform/work-order-instantiate.example.json) |
+| BPMN source | [examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml](../../examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml) |
 
 Вызовите `workOrderDispatched` на hub (или включите correlator), чтобы создать задачу оператора в work queue.
 
@@ -67,7 +67,7 @@
 | Artifact | Purpose |
 |----------|---------|
 | INSTANCE `batch-v1` | `batchId`, `recipe`, `phase` на `LOT` под `root.platform.mes.lots` |
-| Instantiate example | [batch-instantiate.example.json](../examples/mes-platform/batch-instantiate.example.json) |
+| Instantiate example | [batch-instantiate.example.json](../../examples/mes-platform/batch-instantiate.example.json) |
 | BFF `mes_batch_runPhase` | Переход фазы в реестре `mes_batch_run` |
 | BFF `mes_batch_getStatus` | Чтение batch path → phase |
 
@@ -75,7 +75,7 @@
 
 ## ERP outbox pattern (BL-169)
 
-Идемпотентная заглушка синхронизации SAP / 1C — [erp-outbox.json](../examples/mes-platform/erp-outbox.json)
+Идемпотентная заглушка синхронизации SAP / 1C — [erp-outbox.json](../../examples/mes-platform/erp-outbox.json)
 
 | Field | Purpose |
 |-------|---------|
@@ -89,7 +89,7 @@
 
 ## Production bundle (BL-170)
 
-Полный walkthrough: [examples/mes-platform-production/](../examples/mes-platform-production/)
+Полный walkthrough: [examples/mes-platform-production/](../../examples/mes-platform-production/)
 
 **Deploy + smoke одной командой** (локально или VPS):
 

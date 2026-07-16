@@ -4,7 +4,7 @@
 
 Руководство по выбору конфигурации в зависимости от цели: **промышленный продукт**, **высокая пропускная способность**, **демо/HMI**, **edge с ограниченным процессором**.
 
-Не привязано к конкретному хосту. Примеры скриптов и env — в [`deploy/`](../deploy/).
+Не привязано к конкретному хосту. Примеры скриптов и env — в [`deploy/`](../../deploy/).
 
 См. также: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
@@ -53,7 +53,7 @@ Operators → nginx (TLS) → ISPF unified (:8081)
               PostgreSQL (Timescale), Redis (опционально)
 ```
 
-Compose-пример: [`deploy/docker-compose.prod-stack.yml`](../deploy/docker-compose.prod-stack.yml). Удаленная установка: [`deploy/remote-setup-ispf.sh`](../deploy/remote-setup-ispf.sh).
+Compose-пример: [`deploy/docker-compose.prod-stack.yml`](../../deploy/docker-compose.prod-stack.yml). Удаленная установка: [`deploy/remote-setup-ispf.sh`](../../deploy/remote-setup-ispf.sh).
 
 **Кластер высокой доступности (Prod M/L):**
 
@@ -63,7 +63,7 @@ Operators → nginx (ip_hash / health) → replica-1..N
               опционально: ClickHouse, Scylla
 ```
 
-См. [cluster](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), развертывание [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh).
+См. [cluster](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml), развертывание [`vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh).
 
 | `ISPF_REPLICA_PROFILE` | Когда |
 |--------|-------|
@@ -80,9 +80,9 @@ Operators → nginx (ip_hash / health) → replica-1..N
 - много binding/alert rules на `FULL` устройствах;
 - рост `objectChangeQueueSize` / `eventJournalQueueSize` в пике.
 
-ввести настройки по умолчанию `application.yml`; при устойчивом отставании — увеличьте максимальное количество рабочих и емкость очереди ([`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh) как образец для журнала).
+ввести настройки по умолчанию `application.yml`; при устойчивом отставании — увеличьте максимальное количество рабочих и емкость очереди ([`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) как образец для журнала).
 
-**Не применяйте** [`ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) на prod с визуализацией автоматизации — это профиль **demo-idle**, нерабочий prod.
+**Не применяйте** [`ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) на prod с визуализацией автоматизации — это профиль **demo-idle**, нерабочий prod.
 
 Точечное урезание (если один узел и стабильно низкая очередь): зафиксируйте рабочие через env, но проверьте метрики после каждого изменения.
 
@@ -118,7 +118,7 @@ Operators → nginx (ip_hash / health) → replica-1..N
 | Журнал событий | Временная шкала `event_history` (jdbc) | ClickHouse (сборник правил [deployment](deployment.md)) |
 | Удержание | `ISPF_*_RETENTION_DAYS`, Политика временных рамок ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) | + архив CH |
 
-Пролетный путь: прибытие при старте; перед обновлением — резервное копирование БД. Ремонт: [`deploy/vps-flyway-repair.sh`](../deploy/vps-flyway-repair.sh).
+Пролетный путь: прибытие при старте; перед обновлением — резервное копирование БД. Ремонт: [`deploy/vps-flyway-repair.sh`](../../deploy/vps-flyway-repair.sh).
 
 ### Наблюдаемость и эксплуатация
 
@@ -126,7 +126,7 @@ Operators → nginx (ip_hash / health) → replica-1..N
 - **Диагностика:** Администратор → Система → Метрики; при инциденте — `GET /api/v1/platform/metrics`, кластерная диагностика.
 - **Проверка метрик:** только во время событий (переключение времени выполнения), а не при загрузке продукта.
 - **Backup:** регулярный `pg_dump`; проверка restore.
-- **Развертывание:** промежуточный jar + пользовательский интерфейс, последовательный перезапуск реплики ([`vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1)); в Docker — **пересоздать** при смене env.
+- **Развертывание:** промежуточный jar + пользовательский интерфейс, последовательный перезапуск реплики ([`vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1)); в Docker — **пересоздать** при смене env.
 - **Не делать** сброс настроек при рассинхронизации конфига — [0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md), `vps-cluster-verify.sh --config-sync`.
 
 ### Env-ориентиры (прод, не простаивает)
@@ -224,7 +224,7 @@ Prod L: добавьте `ISPF_EVENT_JOURNAL_STORE=clickhouse`, `ISPF_VARIABLE_H
 | L3 | `TelemetryIngressDispatcher` | 4→32 |
 | Л5 | Журнал событий / авторы переменной истории | 4→32 |
 
-Пиковая настройка: [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh). См. [load-testing](load-testing.md).
+Пиковая настройка: [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh). См. [load-testing](load-testing.md).
 
 ---
 
@@ -249,7 +249,7 @@ Prod L: добавьте `ISPF_EVENT_JOURNAL_STORE=clickhouse`, `ISPF_VARIABLE_H
 | L3 ingress | `ISPF_RUNTIME_TELEMETRY_INGRESS_ELASTIC_WORKERS=false`, min/max 1–2 |
 | Driver I/O / ingress buffer | `ISPF_DRIVER_IO_THREADS=2`, `ISPF_DRIVER_INGRESS_BUFFER_THREADS=1` |
 
-Готовый оверлей: [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env). Применение (объединить + **пересоздать** контейнер): [`deploy/vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh).
+Готовый оверлей: [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env). Применение (объединить + **пересоздать** контейнер): [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh).
 
 Дополнительно для простоя:
 
@@ -272,12 +272,12 @@ SERVER_TOMCAT_THREADS_MAX=50
 | 1–2 устройства для алертов/workflow | `FULL`, умеренный poll (2–5s) |
 | Остальные объекты в дереве | `STOPPED`, не RUNNING |
 
-Пример настройки API-скрипта: [`deploy/vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) (шаблон — подставьте свои `devicePath`).
+Пример настройки API-скрипта: [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) (шаблон — подставьте свои `devicePath`).
 
 ### Диагностика
 
 - Пользовательский интерфейс: Администратор → Система → Метрики → **Диагностика нагрузки**.
-- CLI: [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py).
+- CLI: [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py).
 
 **Здоровый простой:** очередь изменения объекта/журнала/историка = 0; `pressureScore` &lt; 25; потоки `binding-async` и `telemetry-ingress` — результат, не десятки.
 
@@ -385,17 +385,17 @@ JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
 
 | Файл | Профиль |
 |------|---------|
-| [`deploy/docker-compose.prod-stack.yml`](../deploy/docker-compose.prod-stack.yml) | Продукция S (PG + ISPF + nginx) |
-| [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml) | Производство M/L (мультиреплика) |
-| [`deploy/vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1) | Deploy jar + UI (staging) |
-| [`deploy/vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) | Rolling restart реплик |
-| [`deploy/docker-compose.edge-arm.yml`](../deploy/docker-compose.edge-arm.yml) | Edge ARM64 (legacy path) |
-| [`deploy/edge/arm64/docker-compose.yml`](../deploy/edge/arm64/docker-compose.yml) | Шлюз Edge ARM64 (BL-187, профиль Pi) |
-| [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) | **Только** демо-холостой ход/пограничная базовая линия |
-| [`deploy/vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) | Merge idle env + recreate |
-| [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh) | Пропускная способность / Журнал Prod L |
-| [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) | Диагностика потоков |
-| [`deploy/loadtest-cleanup.py`](../deploy/loadtest-cleanup.py) | Подготовка к load-test |
+| [`deploy/docker-compose.prod-stack.yml`](../../deploy/docker-compose.prod-stack.yml) | Продукция S (PG + ISPF + nginx) |
+| [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml) | Производство M/L (мультиреплика) |
+| [`deploy/vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) | Deploy jar + UI (staging) |
+| [`deploy/vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh) | Rolling restart реплик |
+| [`deploy/docker-compose.edge-arm.yml`](../../deploy/docker-compose.edge-arm.yml) | Edge ARM64 (legacy path) |
+| [`deploy/edge/arm64/docker-compose.yml`](../../deploy/edge/arm64/docker-compose.yml) | Шлюз Edge ARM64 (BL-187, профиль Pi) |
+| [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) | **Только** демо-холостой ход/пограничная базовая линия |
+| [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) | Merge idle env + recreate |
+| [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) | Пропускная способность / Журнал Prod L |
+| [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) | Диагностика потоков |
+| [`deploy/loadtest-cleanup.py`](../../deploy/loadtest-cleanup.py) | Подготовка к load-test |
 
 ---
 

@@ -68,7 +68,7 @@ Admin передаёт `installationId` поставщику для выпуск
 
 ## Поставщик
 
-CLI: [tools/license-builder/README.md](readme.md).
+CLI: [tools/license-builder/README.md](../../tools/license-builder/README.md).
 
 ## Поведение развертывания
 

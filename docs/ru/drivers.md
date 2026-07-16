@@ -21,11 +21,15 @@
 
 В `DriverProductionMatrix` — **20** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **8** **BETA**. Top-20 industrial: **19** **PRODUCTION** + `iec104-server` (BETA, loopback partner). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-| `driverId` | Maturity | Interop module |
-| ---------- | -------- | -------------- |
+> **Честность (code audit / scorecard):** registry **PRODUCTION** ≠ ready-for-field. Известные пробелы: `opc-da` / `opc-bridge` (shell + parser), `dnp3` (poll/read; `writePoint` не реализован). Для field pilot считайте их **BETA**. См. [driver-promotion](driver-promotion.md), [competitive-scorecard](competitive-scorecard.md).
+
+| `driverId` | Maturity (registry) | Notes / interop |
+| ---------- | ------------------- | --------------- |
 | `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | см. interop lab |
 | `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab |
-| `iec104`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`, `gps-tracker` | PRODUCTION | см. interop lab |
+| `iec104`, `dlms`, `ethernet-ip`, `gps-tracker` | PRODUCTION | см. interop lab |
+| `dnp3` | PRODUCTION (registry) | **Только poll/read** — write нет; field = BETA |
+| `opc-da`, `opc-bridge` | PRODUCTION (registry) | **Shell / mapping** — не полный DA; field = BETA |
 | `iec104-server` | BETA | interop partner для `iec104` |
 
 ### observedAt (source timestamps, BL-79)

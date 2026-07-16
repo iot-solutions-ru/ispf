@@ -58,7 +58,7 @@ bash scripts/run-agent-regression.sh --live
 
 | Этап | Шлюз |
 |-------|------|
-| PR | job `agent-regression` в [ci.yml](../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (схема + манифест; **падает при ошибках схемы**). **Только schema/manifest — без живого LLM** |
+| PR | job `agent-regression` в [ci.yml](../../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (схема + манифест; **падает при ошибках схемы**). **Только schema/manifest — без живого LLM** |
 | Nightly | `run-nightly.sh` — только схемы. Опциональный BL-177 live one-shot при secrets `ISPF_AI_API_KEY` + `ISPF_AI_BASE_URL` (`run-live-oneshot.sh`). **`nightly-stub-results.json` устарел** — не доказательство live ≥95% |
 | Ручной live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` |
 
@@ -74,6 +74,6 @@ bash scripts/run-agent-regression.sh --live
 ## См. также
 
 - [ai-development](ai-development.md) — инструменты и playbook агента
-- [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — рецепт e2e-деплоя BL-177
-- [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — рецепт factory spec BL-180
+- [AgentDeployPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — рецепт e2e-деплоя BL-177
+- [AgentSolutionGeneratorPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — рецепт factory spec BL-180
 - [roadmap](roadmap.md) — BL-177, BL-178

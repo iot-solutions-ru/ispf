@@ -442,7 +442,7 @@ JUnit equivalent: `EventFireLoadTest` (150 concurrent HTTP).
 | Lab multi-tag + catalog + CH | `deploy/local/tools/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows |
 | 50k-tag catalog seed | `deploy/local/tools/seed-analytics-scale-catalog.py` | `--tags 50000` |
 
-Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../examples/analytics-platform/enterprise-l/README.md). SLO table: [variable-history](variable-history.md) § Analytics SLO.
+Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../../examples/analytics-platform/enterprise-l/README.md). SLO table: [variable-history](variable-history.md) § Analytics SLO.
 
 ## Internal load test
 

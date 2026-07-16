@@ -142,4 +142,14 @@ Docs are **deep and professionally maintained** as an internal platform wiki. Fo
 |---|---|
 | Date | 2026-07-16 |
 | Scorecard reference | ~7.4/10 code-verified (see file for version pin) |
-| Next action | Execute **Wave B** on `main` |
+| Next action | **Wave B applied on `main` (2026-07-16)** — see changelog below; continue with Wave C |
+
+## Wave B changelog (applied)
+
+- Bulk-fixed ~324 broken `../packages|examples|LICENSE|…` links under `docs/en` + `docs/ru` (`tools/docs-audit/fix_repo_relative_links.py`).
+- Getting-started EN/RU: JDK **25**, Bearer login (`admin`/`admin`), demoted `X-ISPF-Role`.
+- Root README + product: Java 25 / driver-packs wording.
+- Architecture + ADR-0001/0003 EN/RU: AGPL supersession notes.
+- Partner + marketplace EN/RU: Draft / Partial banners; removed `your-org` portal links.
+- Drivers + driver-promotion EN/RU: honesty for `opc-da` / `opc-bridge` / DNP3 write gap.
+- `commercial-licensing.md`: fixed license-builder relative link.

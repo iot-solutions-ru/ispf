@@ -313,7 +313,7 @@ Activate body: `{ "activationCode": "..." }` — `installationId` added server-s
 
 1. Implement SPI pack; test against `ispf-analytics-api`.
 2. Build signed `analytics-pack.json` + JAR; run license builder ([commercial-licensing](commercial-licensing.md)).
-3. Publish listing on [ispf-marketplace](https://github.com/your-org/ispf-marketplace) with `artifactKind: analytics-pack`.
+3. Publish listing on your marketplace host (compatible catalog API) with `artifactKind: analytics-pack`.
 4. Interop CI: functions appear in catalog after install on lab ISPF.
 5. Partner program: OEM tier for marketplace revenue share ([partner-program](partner-program.md)).
 

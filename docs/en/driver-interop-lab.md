@@ -41,7 +41,7 @@ Source of truth: `DriverProductionMatrix.TOP_20_INDUSTRIAL` in `packages/ispf-se
 
 ## CI workflow
 
-GitHub Actions: [`.github/workflows/driver-interop.yml`](../.github/workflows/driver-interop.yml)
+GitHub Actions: [`.github/workflows/driver-interop.yml`](../../.github/workflows/driver-interop.yml)
 
 1. **docker-fixtures-smoke** — `docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait`, then `deploy/tools/driver-interop-smoke.sh` (MQTT / Modbus / OPC UA), `down -v`.
 2. **matrix** — `./gradlew :packages:<module>:test` for each module from top-20.

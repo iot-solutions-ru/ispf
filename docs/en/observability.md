@@ -15,7 +15,7 @@ ISPF is a **universal platform**: primary observability is **first-party** — S
 Bootstrap (default on):
 
 - `ispf.platform-metrics-probe.ensure-on-startup=true` — creates probe device, variables, and dashboard layout if missing
-- Manual repair / load-test: [`deploy/setup-platform-metrics-monitor.py`](../deploy/setup-platform-metrics-monitor.py)
+- Manual repair / load-test: [`deploy/setup-platform-metrics-monitor.py`](../../deploy/setup-platform-metrics-monitor.py)
 
 Open the dashboard from Explorer (`root.platform.dashboards.platform-metrics`) or via the **Open dashboard** button on the Metrics hot-path card.
 
@@ -92,7 +92,7 @@ If all JVMs show low CPU — culprit outside ISPF (Scylla, ClickHouse, Postgres)
 
 ### CLI (single-node, SSH)
 
-Script [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) — two samples of `GET /api/v1/platform/metrics` ~6s apart, prints thread groups and suspects to stdout. Handy over SSH without UI.
+Script [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) — two samples of `GET /api/v1/platform/metrics` ~6s apart, prints thread groups and suspects to stdout. Handy over SSH without UI.
 
 ```bash
 scp deploy/vps-idle-thread-sample.py deploy-user@production-host:/tmp/
@@ -101,11 +101,11 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 
 Details: [demostands](demostands.md) (verification section), [vps-demostand](vps-demostand.md) (ops example).
 
-**Optional Grafana export** (same Micrometer series): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](../deploy/grafana/README.md). Prefer first-party dashboards above unless you already operate Prometheus.
+**Optional Grafana export** (same Micrometer series): [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](../../deploy/grafana/README.md). Prefer first-party dashboards above unless you already operate Prometheus.
 
 **WebSocket sessions** on Prometheus are not exported yet — first-party Metrics / probe variable `websocketClients` is the source of truth (`GET /api/v1/platform/metrics`).
 
-**Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py) against a fixtures-enabled server (`demo-sensor-01`).
+**Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py) against a fixtures-enabled server (`demo-sensor-01`).
 
 ## OTLP metrics export (optional, 0.9.9+)
 
@@ -181,7 +181,7 @@ HTTP requests get standard Spring Boot spans (`http.server.requests`) automatica
 
 ### Local collector
 
-Ready config: [`deploy/otel-collector-minimal.yaml`](../deploy/otel-collector-minimal.yaml) — OTLP HTTP `:4318`, debug + Prometheus `:8889`.
+Ready config: [`deploy/otel-collector-minimal.yaml`](../../deploy/otel-collector-minimal.yaml) — OTLP HTTP `:4318`, debug + Prometheus `:8889`.
 
 ```bash
 docker run --rm -p 4318:4318 -p 8889:8889 \

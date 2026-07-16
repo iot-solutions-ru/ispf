@@ -60,7 +60,7 @@ Runtime на узле правила: `activeInstanceCount`, `pendingInstanceCou
 
 ### Пример temperature > 80
 
-См. [examples/alert-rule-evolution/](../../examples/alert-rule-evolution/) — тот же `POST /api/v1/alert-rules`, дополнительные ключи.
+См. [examples/alert-rule-evolution/](../../../examples/alert-rule-evolution/) — тот же `POST /api/v1/alert-rules`, дополнительные ключи.
 
 ### Вне scope
 

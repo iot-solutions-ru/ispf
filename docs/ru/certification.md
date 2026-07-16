@@ -59,13 +59,13 @@
 
 ## Банк экзаменационных вопросов (заготовка)
 
-Машиночитаемые банки живут под [`examples/certification/`](../examples/certification/). Формат: JSON с `track`, `level`, `version` и `questions[]` (`id`, `type`, `topic`, `prompt`, `options`, `correctIndex`, `reference`).
+Машиночитаемые банки живут под [`examples/certification/`](../../examples/certification/). Формат: JSON с `track`, `level`, `version` и `questions[]` (`id`, `type`, `topic`, `prompt`, `options`, `correctIndex`, `reference`).
 
 | Банковский файл | Трек | Уровень | Вопросы |
 | --------- | ----- | ----- | --------- |
-| [`solution-developer-l1.json`](../examples/certification/solution-developer-l1.json) | Разработчик решений | Фонд L1 | 8 |
-| [`solution-developer-l2.json`](../examples/certification/solution-developer-l2.json) | Разработчик решений | L2 Автоматизация | 6 |
-| [`platform-admin-core.json`](../examples/certification/platform-admin-core.json) | Администратор платформы | Ядро | 8 |
+| [`solution-developer-l1.json`](../../examples/certification/solution-developer-l1.json) | Разработчик решений | Фонд L1 | 8 |
+| [`solution-developer-l2.json`](../../examples/certification/solution-developer-l2.json) | Разработчик решений | L2 Автоматизация | 6 |
+| [`platform-admin-core.json`](../../examples/certification/platform-admin-core.json) | Администратор платформы | Ядро | 8 |
 
 **Оценка (незавершённая версия):** Интеграция партнерского портала/LMS оценивает множественный выбор на местном уровне; практические лабораторные работы остаются проверенными инструктором до прокторинга Фазы 32 GA.
 

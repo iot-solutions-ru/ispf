@@ -4,7 +4,7 @@
 
 Guide to choosing a configuration based on your goal: **industrial production**, **high throughput**, **demo/HMI**, or **edge with limited CPU**.
 
-Not tied to a specific host. Example scripts and env files are in [`deploy/`](../deploy/).
+Not tied to a specific host. Example scripts and env files are in [`deploy/`](../../deploy/).
 
 See also: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
@@ -53,7 +53,7 @@ Operators → nginx (TLS) → ISPF unified (:8081)
               PostgreSQL (Timescale), Redis (optional)
 ```
 
-Compose example: [`deploy/docker-compose.prod-stack.yml`](../deploy/docker-compose.prod-stack.yml). Remote install: [`deploy/remote-setup-ispf.sh`](../deploy/remote-setup-ispf.sh).
+Compose example: [`deploy/docker-compose.prod-stack.yml`](../../deploy/docker-compose.prod-stack.yml). Remote install: [`deploy/remote-setup-ispf.sh`](../../deploy/remote-setup-ispf.sh).
 
 **High-availability cluster (Prod M/L):**
 
@@ -63,9 +63,9 @@ Operators → nginx (ip_hash / health) → replica-1..N
               optional: ClickHouse, Scylla
 ```
 
-See [cluster](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), rollout [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh).
+See [cluster](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml), rollout [`vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh).
 
-**Analytics scale-out (Prod L + ClickHouse):** add internal `analytics` replicas so driver `io` nodes stay free of rollup materializer CPU. Lab stack: [`deploy/docker-compose.analytics.yml`](../deploy/docker-compose.analytics.yml). Helm: `analytics.enabled=true`, `analytics.replicaCount`, optional `analytics.affinity` to pin pods near ClickHouse.
+**Analytics scale-out (Prod L + ClickHouse):** add internal `analytics` replicas so driver `io` nodes stay free of rollup materializer CPU. Lab stack: [`deploy/docker-compose.analytics.yml`](../../deploy/docker-compose.analytics.yml). Helm: `analytics.enabled=true`, `analytics.replicaCount`, optional `analytics.affinity` to pin pods near ClickHouse.
 
 | `ISPF_REPLICA_PROFILE` | When |
 |------------------------|------|
@@ -83,9 +83,9 @@ In production, **keep elastic enabled** (default) when you have:
 - many binding/alert rules on `FULL` devices;
 - rising `objectChangeQueueSize` / `eventJournalQueueSize` at peak.
 
-Start with defaults from `application.yml`; if lag persists, increase max workers and queue capacity ([`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh) as a journal tuning example).
+Start with defaults from `application.yml`; if lag persists, increase max workers and queue capacity ([`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) as a journal tuning example).
 
-**Do not apply** [`ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) on production with live automation visualization — that is a **demo-idle** profile, not working production.
+**Do not apply** [`ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) on production with live automation visualization — that is a **demo-idle** profile, not working production.
 
 Targeted trimming (single node, consistently low queues): pin workers via env, but verify metrics after every change.
 
@@ -121,7 +121,7 @@ Drivers: **PRODUCTION** maturity ([drivers](drivers.md), [0022-driver-production
 | Event journal | Timescale `event_history` (jdbc) | ClickHouse (rule set in [deployment](deployment.md)) |
 | Retention | `ISPF_*_RETENTION_DAYS`, Timescale policy ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) | + CH archive |
 
-Flyway path: migrations on startup; backup DB before upgrade. Repair: [`deploy/vps-flyway-repair.sh`](../deploy/vps-flyway-repair.sh).
+Flyway path: migrations on startup; backup DB before upgrade. Repair: [`deploy/vps-flyway-repair.sh`](../../deploy/vps-flyway-repair.sh).
 
 ### Observability and operations
 
@@ -129,7 +129,7 @@ Flyway path: migrations on startup; backup DB before upgrade. Repair: [`deploy/v
 - **Diagnostics:** Admin → System → Metrics; during incidents — `GET /api/v1/platform/metrics`, cluster diagnostics.
 - **Metrics probe:** only during events (runtime toggle), not on product startup.
 - **Backup:** regular `pg_dump`; verify restore.
-- **Deploy:** staged jar + UI, rolling replica restart ([`vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1)); in Docker — **recreate** when env changes.
+- **Deploy:** staged jar + UI, rolling replica restart ([`vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1)); in Docker — **recreate** when env changes.
 - **Do not** factory-reset on config desync — [0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md), `vps-cluster-verify.sh --config-sync`.
 
 ### Env reference (prod, not idle)
@@ -227,7 +227,7 @@ In demos, do not fix CPU by mass STOP. In production — RUNNING only for device
 | L3 | `TelemetryIngressDispatcher` | 4→32 |
 | L5 | Event journal / variable history writers | 4→32 |
 
-Peak tuning: [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh). See [load-testing](load-testing.md).
+Peak tuning: [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh). See [load-testing](load-testing.md).
 
 ---
 
@@ -252,7 +252,7 @@ With `ISPF_*_ELASTIC=false`, Spring uses **fixed** `*_WORKERS` / `*_THREADS`, no
 | L3 ingress | `ISPF_RUNTIME_TELEMETRY_INGRESS_ELASTIC_WORKERS=false`, min/max 1–2 |
 | Driver I/O / ingress buffer | `ISPF_DRIVER_IO_THREADS=2`, `ISPF_DRIVER_INGRESS_BUFFER_THREADS=1` |
 
-Ready overlay: [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env). Apply (merge + **recreate** container): [`deploy/vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh).
+Ready overlay: [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env). Apply (merge + **recreate** container): [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh).
 
 Additional idle settings:
 
@@ -275,12 +275,12 @@ SERVER_TOMCAT_THREADS_MAX=50
 | 1–2 devices for alerts/workflow | `FULL`, moderate poll (2–5s) |
 | Other objects in tree | `STOPPED`, not RUNNING |
 
-Example API tuning script: [`deploy/vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) (template — substitute your `devicePath` values).
+Example API tuning script: [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) (template — substitute your `devicePath` values).
 
 ### Diagnostics
 
 - UI: Admin → System → Metrics → **Load diagnostics**.
-- CLI: [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py).
+- CLI: [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py).
 
 **Healthy idle:** object-change/journal/historian queue = 0; `pressureScore` < 25; `binding-async` and `telemetry-ingress` threads — single digits, not tens.
 
@@ -388,21 +388,21 @@ Use when there is **no** point running a polling JVM on the gateway: all SCADA o
 
 | File | Profile |
 |------|---------|
-| [`deploy/docker-compose.prod-stack.yml`](../deploy/docker-compose.prod-stack.yml) | Production S (PG + ISPF + nginx) |
-| [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml) | Production M/L (multi-replica) |
-| [`deploy/vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1) | Deploy jar + UI (staging) |
-| [`deploy/vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) | Rolling replica restart |
-| [`deploy/docker-compose.edge-arm.yml`](../deploy/docker-compose.edge-arm.yml) | Edge ARM64 (legacy path) |
-| [`deploy/edge/arm64/docker-compose.yml`](../deploy/edge/arm64/docker-compose.yml) | Edge ARM64 gateway (BL-187, Pi profile) |
-| [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) | **Only** demo-idle / edge baseline |
-| [`deploy/vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) | Merge idle env + recreate |
-| [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh) | Throughput / Prod L journal |
-| [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) | Thread diagnostics |
-| [`deploy/loadtest-cleanup.py`](../deploy/loadtest-cleanup.py) | Load-test prep |
-| [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py) | Golden path: fire → journal → ack (fixtures) |
+| [`deploy/docker-compose.prod-stack.yml`](../../deploy/docker-compose.prod-stack.yml) | Production S (PG + ISPF + nginx) |
+| [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml) | Production M/L (multi-replica) |
+| [`deploy/vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) | Deploy jar + UI (staging) |
+| [`deploy/vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh) | Rolling replica restart |
+| [`deploy/docker-compose.edge-arm.yml`](../../deploy/docker-compose.edge-arm.yml) | Edge ARM64 (legacy path) |
+| [`deploy/edge/arm64/docker-compose.yml`](../../deploy/edge/arm64/docker-compose.yml) | Edge ARM64 gateway (BL-187, Pi profile) |
+| [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) | **Only** demo-idle / edge baseline |
+| [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) | Merge idle env + recreate |
+| [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) | Throughput / Prod L journal |
+| [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) | Thread diagnostics |
+| [`deploy/loadtest-cleanup.py`](../../deploy/loadtest-cleanup.py) | Load-test prep |
+| [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py) | Golden path: fire → journal → ack (fixtures) |
 | [`docs/en/release-dogfood.md`](release-dogfood.md) | Pre-tag dogfood checklist |
 | [`docs/en/operator-apps.md`](operator-apps.md) | Operator starters (alarm / work-queue / HMI wall) |
-| [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) | Optional Grafana export |
+| [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) | Optional Grafana export |
 
 ---
 

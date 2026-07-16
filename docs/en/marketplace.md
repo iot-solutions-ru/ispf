@@ -2,9 +2,11 @@
 
 # Marketplace integration
 
+> **Status: Partial (BL-183).** Local / configured remote catalog browse + free install paths are real. Partner catalogs, symbol listing API, and full “marketplace GA” are **not** complete — see [competitive-scorecard](competitive-scorecard.md) dimension 12 and the checklist below. Do not treat every “Shipped” row as external partner readiness.
+
 ISPF platform can browse **remote marketplace servers**, install free bundles, and activate paid listings with an entitlement key.
 
-Default marketplace: [ispf-marketplace](https://github.com/your-org/ispf-marketplace) (configurable). Vendors may host their own compatible server.
+Default marketplace URL is **configurable** (`ISPF_MARKETPLACE_DEFAULT_URL`, often `https://marketplace.ispf.ai` in demos). Point it at your own compatible marketplace host for production.
 
 ## Configuration
 
@@ -96,9 +98,9 @@ Reference listing + bundle for marketplace server seeding and integrator tests:
 
 | File | Purpose |
 |------|---------|
-| [examples/marketplace-demo/listing.manifest.json](../examples/marketplace-demo/listing.manifest.json) | Catalog entry fields (slug, vendor, pricing) |
-| [examples/marketplace-demo/bundle.json](../examples/marketplace-demo/bundle.json) | Installable application bundle (`appId=marketplace-demo`) |
-| [examples/marketplace-analytics-pack-demo/listing.manifest.json](../examples/marketplace-analytics-pack-demo/listing.manifest.json) | Tier C analytics pack listing (`artifactKind: analytics-pack`) |
+| [examples/marketplace-demo/listing.manifest.json](../../examples/marketplace-demo/listing.manifest.json) | Catalog entry fields (slug, vendor, pricing) |
+| [examples/marketplace-demo/bundle.json](../../examples/marketplace-demo/bundle.json) | Installable application bundle (`appId=marketplace-demo`) |
+| [examples/marketplace-analytics-pack-demo/listing.manifest.json](../../examples/marketplace-analytics-pack-demo/listing.manifest.json) | Tier C analytics pack listing (`artifactKind: analytics-pack`) |
 
 Publish flow (marketplace server):
 
@@ -128,7 +130,7 @@ git pull origin main
 bash deploy/vps-reseed-artifacts.sh
 ```
 
-ISPF only proxies the download; fix is always on the marketplace host. See [ispf-marketplace/deploy/README.md](https://github.com/your-org/ispf-marketplace/blob/main/deploy/README.md).
+ISPF only proxies the download; fix is always on the marketplace host (see that server’s deploy runbook).
 
 ## Related
 

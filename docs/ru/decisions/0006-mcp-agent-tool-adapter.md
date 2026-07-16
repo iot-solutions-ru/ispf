@@ -19,7 +19,7 @@
 3. **Auth**: MCP connections требуют те же admin credentials, что и `/api/v1/ai/agent/**` (Bearer token или настроенный API key header). Actor identity попадает в `AgentContext`.
 4. **Session model**: MCP clients могут:
    - использовать **stateless** single tool calls (без chat history), или
-   - передать `sessionId` в tool arguments для привязки к persistent DB sessions ([`agent_sessions`](../packages/ispf-server/src/main/resources/db/migration/V38__agent_sessions.sql)).
+   - передать `sessionId` в tool arguments для привязки к persistent DB sessions ([`agent_sessions`](../../../packages/ispf-server/src/main/resources/db/migration/postgresql/V1__baseline.sql) (section formerly `V38__agent_sessions`)).
 5. **Transport**: начать с **stdio** MCP для local dev и **SSE/HTTP** для remote hub; по умолчанию не в core JAR (profile `mcp`).
 6. **Вне scope v1**: MCP resources/prompts для ContextPack (только tools); auto-import без validate/dry-run gates.
 

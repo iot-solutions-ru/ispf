@@ -64,7 +64,7 @@ graph LR
 - **Unified model** — device, dashboard, workflow, and alert rule are tree nodes; logic uses variables, events, functions, and BPMN.
 - **Bundles, not core forks** — industry solutions deploy as configuration into platform mechanisms ([applications](applications.md)).
 - **Stack** — Spring Boot 4, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket; optional NATS/MQTT/Keycloak.
-- **58 built-in drivers** — [drivers](drivers.md).
+- **~60 driver packs** (not inside `ispf-server.jar`; maturity varies — see [drivers](drivers.md)).
 - **AGPL v3 platform** — optional Enterprise dual-license; driver packs and application bundles may use separate terms ([license](license.md), [plugins](plugins.md)).
 
 ---

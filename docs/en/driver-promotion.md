@@ -27,11 +27,13 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 | driverId | Was | Now | Note |
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
-| `dnp3` | BETA | **PRODUCTION** | Class 0/1/2/3 poll via `io.stepfunc:dnp3` |
+| `dnp3` | BETA | **PRODUCTION** (poll only) | Class 0/1/2/3 poll; **write not implemented** — field write = not ready |
 | `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
 | `ethernet-ip` | BETA | **PRODUCTION** | CIP session registration + tag path loopback |
-| `opc-da` | BETA | **PRODUCTION** | Connectivity shell + parser tests |
-| `opc-bridge` | BETA | **PRODUCTION** | Bridge point mapping + parser tests |
+| `opc-da` | BETA | **PRODUCTION** (shell) | Connectivity shell + parser tests — **not** ready-for-field DA |
+| `opc-bridge` | BETA | **PRODUCTION** (shell) | Bridge point mapping + parser tests — full OPC via external bridge |
+
+**Policy:** connectivity shells and read-only masters must not be sold as field-ready PRODUCTION. Use [Ready-for-field](#ready-for-field-field-pilots) below; scorecard OT dimension tracks these gaps.
 
 ## Status (June 2026)
 

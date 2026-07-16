@@ -64,7 +64,7 @@ flowchart LR
 | Real HMI, not only a device gateway | Admin Explorer + operator mode |
 | Alarms that do something | CEL alert rules → correlators → BPMN |
 | Industry solutions without forking the core | Declarative **bundles** |
-| Modern self-hosted stack | Spring Boot 4, Java 21+, React 19, PostgreSQL/TimescaleDB |
+| Modern self-hosted stack | Spring Boot 4, Java 25, React 19, PostgreSQL/TimescaleDB |
 
 Honest positioning: closer to an **open Ignition-class application platform** than to a pure MQTT broker or Node-RED flow tool. See the [competitive scorecard](docs/en/competitive-scorecard.md).
 
@@ -80,7 +80,7 @@ Honest positioning: closer to an **open Ignition-class application platform** th
 
 ## Quick start
 
-**Requirements:** JDK 21+, Node.js 20+, Docker optional (Postgres/NATS/Keycloak for fuller stacks).
+**Requirements:** JDK **25**, Node.js 20+, Docker optional (Postgres/NATS/Keycloak for fuller stacks).
 
 ```bash
 # API — local profile (H2, no OAuth; syncs a small set of dev driver packs)

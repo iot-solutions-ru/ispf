@@ -115,7 +115,7 @@ bash deploy/cluster-smoke-test.sh          # round-robin, failover, driver recla
 python deploy/cluster-scale-load-test.py   # 1 vs 3 replica throughput (floor 1.8×)
 ```
 
-CI: рабочий процесс [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) — владение JDBC (еженедельно) + создание дыма/масштабирования (`workflow_dispatch`).
+CI: рабочий процесс [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) — владение JDBC (еженедельно) + создание дыма/масштабирования (`workflow_dispatch`).
 
 ## CI (рекомендация)
 
