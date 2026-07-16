@@ -1,7 +1,7 @@
 {
-  "contextPackVersion": "ispf-0.9.158",
-  "generatedAt": "2026-07-15T08:52:05.583196+00:00",
-  "platformVersion": "0.9.158",
+  "contextPackVersion": "ispf-0.9.166",
+  "generatedAt": "2026-07-16T12:52:58.717522+00:00",
+  "platformVersion": "0.9.166",
   "bundleManifest": {
     "fields": [
       "version",
@@ -1940,6 +1940,18 @@
       "path": "docs/en/decisions/0044-object-query.md",
       "title": "ADR-0044: Object Query (OQ)",
       "keywords": "adr decision 0044-object-query ADR-0044: Object Query (OQ)"
+    },
+    {
+      "id": "adr-0045-java-function-sandbox",
+      "path": "docs/en/decisions/0045-java-function-sandbox.md",
+      "title": "ADR-0045: Java function sandbox (phase 1)",
+      "keywords": "adr decision 0045-java-function-sandbox ADR-0045: Java function sandbox (phase 1)"
+    },
+    {
+      "id": "adr-0046-nats-cluster-package",
+      "path": "docs/en/decisions/0046-nats-cluster-package.md",
+      "title": "ADR-0046: NATS in `cluster` package + TRANSIENT binding persist skip",
+      "keywords": "adr decision 0046-nats-cluster-package ADR-0046: NATS in `cluster` package + TRANSIENT binding persist skip"
     }
   ],
   "apiSlice": {
@@ -14066,5 +14078,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "773e528004bc4d1f521b545b7a880013b22dc5a2f44485c89868d5abfedd26be"
+  "contentSha256": "2ffb6f2fdb6d033e6fc19cdeb7dac1e0d191a86b961920466352f7785911397f"
 }
