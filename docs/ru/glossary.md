@@ -40,7 +40,7 @@
 
 ## C
 
-**CEL (Common Expression Language)** — язык выражений Google. Используется в bindings, alert rules и условиях workflow gateways.
+**CEL (Common Expression Language)** — язык выражений Google. Используется в bindings, alert rules и условиях workflow gateways. Полный справочник ISPF: [expression-language](expression-language.md).
 
 **Claim** — действие оператора в work queue: закрепление user task за собой.
 
