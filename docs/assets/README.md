@@ -2,6 +2,8 @@
 
 Screenshots used by the root [README](../../README.md). Prefer **English UI** for global OSS (console language switcher → **EN** before capture).
 
+**GitHub gotcha:** the file bytes must match the extension. A JPEG saved as `.png` is served as `Content-Type: image/png` with `X-Content-Type-Options: nosniff` — browsers refuse to paint it (looks like a broken image). Same for fake `.gif`. Verify with: `python -c "from pathlib import Path; b=Path('docs/assets/FILE').read_bytes()[:8]; print(b.hex())"` — PNG starts `89504e47`, JPEG `ffd8ff`, GIF `474946`.
+
 ## Hero GIF (highest conversion)
 
 | | |
