@@ -26,6 +26,7 @@ jobs:
               - 'buildSrc/**'
               - 'gradle/**'
               - 'gradlew'
+              - 'build.gradle.kts'
               - 'settings.gradle.kts'
               - 'tools/ai-pack/**'
               - 'tools/license-audit/**'
