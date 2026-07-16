@@ -274,7 +274,7 @@ Content-Type: application/json
 }
 ```
 
-Supported `hist.*` functions: `avg`, `min`, `max`, `last`, `sum`, `live`. Deployed tags: set `analyticsHelper` to `cel` and `analyticsExpression` on the device; engine evaluates on schedule.
+Supported CEL helpers (bare names — not `hist.*`): `avg`, `min`, `max`, `last`, `sum`, `live`. See [expression-language](expression-language.md). Deployed tags: set `analyticsHelper` to `cel` and `analyticsExpression` on the device; engine evaluates on schedule.
 
 ## Actuator
 
