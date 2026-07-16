@@ -30,19 +30,19 @@ Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as sep
 ```mermaid
 flowchart LR
   subgraph Sources
-    D[Modbus / OPC UA / MQTT / SNMP / …]
+    D["OT drivers: Modbus, OPC UA, MQTT, SNMP"]
   end
   subgraph ISPF
-    T[Object tree]
-    H[HMI dashboards]
-    A[Alerts + correlators]
-    W[BPMN workflows]
+    T["Object tree"]
+    H["HMI dashboards"]
+    A["Alerts and correlators"]
+    W["BPMN workflows"]
   end
   D --> T
   T --> H
   T --> A
   A --> W
-  H --> Op[Operators]
+  H --> Op["Operators"]
   W --> Op
 ```
 
