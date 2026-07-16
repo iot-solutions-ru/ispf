@@ -196,5 +196,6 @@ Widgets **without** conditional fields in JSON layout.
 ## Related documents
 
 - [bindings](bindings.md) — binding rules, CEL, API
+- [expression-language](expression-language.md) — full function / literal / example reference
 - [dashboards](dashboards.md) — layout, widgets, context
 - [decisions/0019-platform-rule-unification.md](decisions/0019-platform-rule-unification.md)

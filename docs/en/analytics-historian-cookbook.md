@@ -8,7 +8,7 @@ Recipes for **historian binding rules** (`kind: historian` in `@bindingRules`). 
 
 See [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md) and [analytics-tag-catalog](analytics-tag-catalog.md).
 
-**Formula catalog (PI AF–style):** unified catalog, extension packs, and site formulas — [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (BL-212–216). Use the expression editor catalog for insert/apply; manage saved formulas under **System → Analytics formulas**.
+**Formula catalog (PI AF–style):** unified catalog, extension packs, and site formulas — [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (BL-212–216). Use the expression editor catalog for insert/apply; manage saved formulas under **System → Analytics formulas**. Language reference: [expression-language](expression-language.md).
 
 **Full guide (Tier A/B/C, APIs, marketplace packs):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
 

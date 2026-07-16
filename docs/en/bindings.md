@@ -8,6 +8,8 @@ A **binding rule** is a declarative rule for computing variable values on an obj
 
 Rules are stored in system variable `@bindingRules` (JSON array, reserved). Runtime — **`BindingRuleEngine`** (unified binding engine since v0.8.0).
 
+**Full language reference** (CEL literals/operators, all platform bindings, historian helpers, examples): **[expression-language](expression-language.md)**.
+
 See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md), ADR [0043-unified-platform-ref](decisions/0043-unified-platform-ref.md).
 
 ---
@@ -157,9 +159,11 @@ Activator **`onContextChange`** — recalculate when `@dashboardContext` changes
 
 | Kind | Example |
 |-----|--------|
-| **CEL** | `read(@/temperature) + 1.0` or CEL `self.temperature.value + 1.0` on current object |
-| **Platform binding** | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)`, `queryScalar(@/oqSpec, "count")` |
+| **CEL** | `self.temperature.value + 1.0` on the current object (prefer doubles) |
+| **Platform binding** (whole expression) | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)`, `queryScalar(@/oqSpec, "count")` |
 | **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
+
+> **Note:** `read(...)` is a **platform binding**, not a CEL function — it cannot be mixed with `+` in the same string. For local arithmetic use CEL `self.*`. Full tables: [expression-language](expression-language.md).
 
 Validation: `POST /api/v1/expressions/validate` or Web Console **Validate**.
 

@@ -8,6 +8,8 @@
 
 Правила хранятся в системной переменной `@bindingRules` (JSON-массив, reserved). Runtime — **`BindingRuleEngine`** (единый движок привязок с v0.8.0).
 
+**Полный справочник языка** (литералы/операторы CEL, все platform bindings, historian helpers, примеры): **[expression-language](expression-language.md)**.
+
 См. также: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md), ADR [0043-unified-platform-ref](decisions/0043-unified-platform-ref.md).
 
 ---
@@ -157,9 +159,11 @@
 
 | Вид | Пример |
 |-----|--------|
-| **CEL** | `read(@/temperature) + 1.0` или CEL `self.temperature.value + 1.0` на текущем объекте |
-| **Platform binding** | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)`, `queryScalar(@/oqSpec, "count")` |
+| **CEL** | `self.temperature.value + 1.0` на текущем объекте (лучше double) |
+| **Platform binding** (целое выражение) | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)`, `queryScalar(@/oqSpec, "count")` |
 | **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
+
+> **Важно:** `read(...)` — **platform binding**, не CEL-функция; нельзя смешивать с `+` в одной строке. Локальная арифметика — CEL `self.*`. Полные таблицы: [expression-language](expression-language.md).
 
 Валидация: `POST /api/v1/expressions/validate` или **Validate** в Web Console.
 

@@ -28,6 +28,7 @@
 | **Делаю решение / bundle** | [Разработчик решений](solution-developer-guide.md) · [Приложения](applications.md) · [Принципы](application-principles.md) |
 | **Подключаю OT / драйверы** | [Драйверы](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
 | **Собираю HMI / SCADA** | [Дашборды](dashboards.md) · [SCADA](scada.md) · [Виджеты](widgets.md) |
+| **Пишу выражения / CEL** | [Язык выражений](expression-language.md) · [Привязки](bindings.md) |
 | **Автоматизирую тревоги / BPMN** | [Автоматизация](automation.md) · [Workflows](workflows.md) |
 | **Использую ИИ-студию / агента** | [AI development](ai-development.md) · [AI agent](ai-agent.md) |
 | **Внедряю / эксплуатирую** | [Развёртывание](deployment.md) · [Безопасность](security.md) · [Наблюдаемость](observability.md) |
@@ -65,6 +66,7 @@
 | [Архитектура](architecture.md) | Stable | Видение, слои, расширяемость |
 | [Модель объектов](object-model.md) | Stable | Дерево, переменные, события, функции |
 | [Привязки](bindings.md) | Stable | CEL и platform bindings |
+| [Язык выражений](expression-language.md) | Stable | Полный справочник CEL / bindings / historian |
 | [Логика платформы](platform-logic.md) | Beta | Правила; `@dashboardContext` — зрелость разная |
 | [Blueprints](blueprints.md) | Stable | Модели / шаблоны |
 | [История переменных](variable-history.md) | Stable | Time-series, retention |

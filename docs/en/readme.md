@@ -28,6 +28,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | **Building a solution / bundle** | [Solution developer guide](solution-developer-guide.md) · [Applications](applications.md) · [Application principles](application-principles.md) |
 | **Wiring OT / drivers** | [Drivers](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
 | **Building HMI / SCADA** | [Dashboards](dashboards.md) · [SCADA](scada.md) · [Widgets](widgets.md) |
+| **Writing expressions / CEL** | [Expression language](expression-language.md) · [Bindings](bindings.md) |
 | **Automating alarms / workflows** | [Automation](automation.md) · [Workflows](workflows.md) |
 | **Using AI Studio / agent** | [AI development](ai-development.md) · [AI agent](ai-agent.md) |
 | **Deploying / operating** | [Deployment](deployment.md) · [Security](security.md) · [Observability](observability.md) |
@@ -65,6 +66,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | [Architecture](architecture.md) | Stable | Vision, layers, extensibility |
 | [Object model](object-model.md) | Stable | Tree, variables, events, functions |
 | [Bindings](bindings.md) | Stable | CEL and platform bindings |
+| [Expression language](expression-language.md) | Stable | Full CEL / bindings / historian function reference |
 | [Platform logic](platform-logic.md) | Beta | Rules; `@dashboardContext` readiness varies |
 | [Blueprints](blueprints.md) | Stable | Models / templates |
 | [Variable history](variable-history.md) | Stable | Time-series, retention |

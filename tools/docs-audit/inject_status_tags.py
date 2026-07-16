@@ -24,6 +24,7 @@ STATUS: dict[str, tuple[str, str]] = {
     "architecture.md": ("Stable", "layers and extensibility"),
     "object-model.md": ("Stable", "tree model"),
     "bindings.md": ("Stable", "CEL / bindings"),
+    "expression-language.md": ("Stable", "full CEL / bindings / historian reference"),
     "platform-logic.md": ("Beta", "rules; @dashboardContext readiness varies"),
     "blueprints.md": ("Stable", "models / templates"),
     "variable-history.md": ("Stable", "time-series / retention"),

@@ -40,7 +40,7 @@ A concise dictionary of platform terms. Product overview: [product](product.md).
 
 ## C
 
-**CEL (Common Expression Language)** — Google's expression language. Used in bindings, alert rules, and workflow gateway conditions.
+**CEL (Common Expression Language)** — Google's expression language. Used in bindings, alert rules, and workflow gateway conditions. Full ISPF reference (literals, operators, platform bindings, historian helpers): [expression-language](expression-language.md).
 
 **Claim** — an operator action in the work queue: assigning a user task to oneself.
 
