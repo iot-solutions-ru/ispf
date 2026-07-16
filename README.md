@@ -1,4 +1,4 @@
-﻿# ISPF — Open-source industrial IoT / SCADA
+# ISPF — Open-source industrial IoT / SCADA
 
 **Self-hosted platform for devices, HMI, alarms, historian, and workflows — one object tree, one API, one UI.**
 
@@ -29,20 +29,11 @@ Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as sep
 
 ```mermaid
 flowchart LR
-  subgraph Sources
-    D["OT drivers: Modbus, OPC UA, MQTT, SNMP"]
-  end
-  subgraph ISPF
-    T["Object tree"]
-    H["HMI dashboards"]
-    A["Alerts and correlators"]
-    W["BPMN workflows"]
-  end
-  D --> T
-  T --> H
-  T --> A
-  A --> W
-  H --> Op["Operators"]
+  D[OT drivers] --> T[Object tree]
+  T --> H[HMI]
+  T --> A[Alerts]
+  A --> W[BPMN]
+  H --> Op[Operators]
   W --> Op
 ```
 
