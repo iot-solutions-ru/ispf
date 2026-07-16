@@ -1,6 +1,8 @@
 spring:
   datasource:
-    url: jdbc:h2:file:./data/ispf-local;MODE=PostgreSQL;AUTO_SERVER=TRUE
+    # DATABASE_TO_LOWER matches application-test.yml — required for H2 2.4 + MODE=PostgreSQL
+    # so unquoted identifiers resolve to Flyway's lowercase tables (platform_users, …).
+    url: jdbc:h2:file:${ISPF_DATA_DIR:./data}/ispf-local;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
     password:
     driver-class-name: org.h2.Driver

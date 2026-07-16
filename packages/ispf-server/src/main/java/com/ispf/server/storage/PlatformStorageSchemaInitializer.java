@@ -52,15 +52,16 @@ public class PlatformStorageSchemaInitializer {
     }
 
     private void verifyRelationalCatalog() {
-        StorageStartupRetry.run("PostgreSQL platform catalog", () -> {
+        StorageStartupRetry.run("Platform relational catalog", () -> {
+            // Quoted identifiers stay lowercase on H2 MODE=PostgreSQL without DATABASE_TO_LOWER.
             Integer migrationCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history",
+                    "SELECT COUNT(*) FROM \"flyway_schema_history\"",
                     Integer.class
             );
             if (migrationCount == null || migrationCount <= 0) {
                 throw new IllegalStateException("Flyway migrations have not been applied");
             }
-            jdbcTemplate.queryForObject("SELECT COUNT(*) FROM object_nodes", Integer.class);
+            jdbcTemplate.queryForObject("SELECT COUNT(*) FROM \"object_nodes\"", Integer.class);
         });
         log.info("Platform relational schema verified (Flyway migrations applied)");
     }

@@ -70,13 +70,11 @@ public class PlatformUserService {
 
     @Transactional
     public void ensureDefaultUsers() {
-        if (!userStore.exists()) {
-            createUser("admin", "Administrator", "admin", List.of(IspfRoles.ADMIN));
-            createUser("developer", "Developer", "developer", List.of(IspfRoles.DEVELOPER));
-            createUser("operator", "Operator", "operator", List.of(IspfRoles.OPERATOR));
-        } else {
-            ensureUser("developer", "Developer", "developer", List.of(IspfRoles.DEVELOPER));
-        }
+        // Always ensure the three local defaults (idempotent). Do not skip admin/operator
+        // when the table already has other rows — that left portable installs unable to log in.
+        ensureUser("admin", "Administrator", "admin", List.of(IspfRoles.ADMIN));
+        ensureUser("developer", "Developer", "developer", List.of(IspfRoles.DEVELOPER));
+        ensureUser("operator", "Operator", "operator", List.of(IspfRoles.OPERATOR));
         objectTreeService.syncAll();
     }
 
