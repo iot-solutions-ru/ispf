@@ -65,7 +65,7 @@ graph LR
 - **Bundles, not core forks** — industry solutions deploy as configuration into platform mechanisms ([applications](applications.md)).
 - **Stack** — Spring Boot 4, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket; optional NATS/MQTT/Keycloak.
 - **58 built-in drivers** — [drivers](drivers.md).
-- **Apache 2.0 core** — commercial bundles separate ([plugins](plugins.md)).
+- **AGPL v3 platform** — optional Enterprise dual-license; driver packs and application bundles may use separate terms ([license](license.md), [plugins](plugins.md)).
 
 ---
 
@@ -290,8 +290,8 @@ Full reference: [api](api.md).
 
 | Component | License |
 |-----------|---------|
-| ISPF core (`main`) | Apache 2.0 |
-| Commercial plugins and app bundles | Separate license, outside `main` |
+| ISPF platform (`main`) | GNU AGPL v3 (+ optional Enterprise dual-license) |
+| Driver packs / commercial plugins / app bundles | Separate terms — see [license](license.md), [plugins](plugins.md) |
 
 Details: [license](license.md), [plugins](plugins.md).
 

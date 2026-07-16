@@ -65,7 +65,7 @@ graph LR
 - **Расширяемость без разветвления ядра** — отраслевые решения деплоятся как бандлы (модели, объекты, JSON-функции, BPMN, пользовательский интерфейс оператора) **в механизмах платформы**, без Java на сервере.
 - **Облачный стек** — Spring Boot 4.0, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket, опционально NATS/MQTT/Keycloak.
 - **58 встроенных драйверов** — от Modbus и OPC UA до SNMP, Kafka и JDBC ([каталог](drivers.md)).
-- **Apache 2.0 ядра** — коммерческие отраслевые пакеты — отдельно ([plugins](plugins.md)).
+- **Платформа AGPL v3** — опционально Enterprise dual-license; driver packs и application bundles могут иметь отдельные условия ([license](license.md), [plugins](plugins.md)).
 
 ---
 
@@ -290,8 +290,8 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
 
 | Компонент | Лицензия |
 |-----------|----------|
-| Ядро ISPF (`main`) | Apache 2.0 |
-| Коммерческие плагины и app bundle | Отдельная лицензия, вне `main` |
+| Платформа ISPF (`main`) | GNU AGPL v3 (+ опционально Enterprise dual-license) |
+| Driver packs / коммерческие плагины / app bundles | Отдельные условия — см. [license](license.md), [plugins](plugins.md) |
 
 Подробнее: [license](license.md), [plugins](plugins.md).
 

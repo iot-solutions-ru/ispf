@@ -114,6 +114,8 @@ Full guide: [Getting started](docs/en/getting-started.md) · [Начать ра�
 
 ## Documentation
 
+**Start here:** [Try ISPF (≈15 min)](docs/en/getting-started.md#try-ispf-15-minutes) · [Docs hub by role](docs/en/readme.md)
+
 | | English (canonical) | Русский |
 | --- | ------------------- | ------- |
 | Hub | [docs/en/readme.md](docs/en/readme.md) | [docs/ru/readme.md](docs/ru/readme.md) |
@@ -123,6 +125,7 @@ Full guide: [Getting started](docs/en/getting-started.md) · [Начать ра�
 | Drivers | [drivers.md](docs/en/drivers.md) | [drivers.md](docs/ru/drivers.md) |
 | Solution developer | [solution-developer-guide.md](docs/en/solution-developer-guide.md) | [solution-developer-guide.md](docs/ru/solution-developer-guide.md) |
 | API | [api.md](docs/en/api.md) | [api.md](docs/ru/api.md) |
+| License | [license.md](docs/en/license.md) | [license.md](docs/ru/license.md) |
 | Roadmap | [roadmap.md](docs/en/roadmap.md) | [roadmap.md](docs/ru/roadmap.md) |
 
 More: [operator guide](docs/en/operator-guide.md) · [glossary](docs/en/glossary.md) · [ADRs](docs/en/decisions/readme.md) · [doc hub](docs/README.md)
