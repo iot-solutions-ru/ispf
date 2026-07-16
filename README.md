@@ -70,15 +70,15 @@ Honest positioning: closer to an **open Ignition-class application platform** th
 
 ## Quick start
 
-### All-in-one release JAR (Windows / Linux / macOS)
+### All-in-one release (Windows / Linux / macOS)
 
-**Requirements:** JDK **25** only. Download `ispf-server.jar` from [GitHub Releases](https://github.com/Michaael/IoT-Solutions-Platform/releases) (web console is embedded).
+**Portable zip** (JDK **25**): download `ispf-*-portable.zip` from [GitHub Releases](https://github.com/Michaael/IoT-Solutions-Platform/releases), unzip, then `start.bat` (Windows) or `./start.sh` (Linux/macOS).
+
+**Container** ([GitHub Packages](https://github.com/Michaael?tab=packages&repo_name=IoT-Solutions-Platform)):
 
 ```bash
-# Preferred: download ispf-*-portable.zip from Releases, unzip, then:
-#   Windows:  start.bat
-#   Linux:    ./start.sh
-java -jar ispf-server.jar --spring.profiles.active=local
+docker pull ghcr.io/michaael/ispf-server:latest
+docker run --rm -p 8080:8080 ghcr.io/michaael/ispf-server:latest
 ```
 
 Open http://localhost:8080 — login `admin` / `admin`. Operator HMI: http://localhost:8080?mode=operator
