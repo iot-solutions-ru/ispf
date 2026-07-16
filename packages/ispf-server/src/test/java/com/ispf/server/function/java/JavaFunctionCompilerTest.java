@@ -73,4 +73,28 @@ class JavaFunctionCompilerTest {
             """;
         assertThrows(IllegalArgumentException.class, () -> JavaFunctionCompiler.compile(source));
     }
+
+    @Test
+    void rejectsProcessHandleAndUrlClassLoader() {
+        assertThrows(IllegalArgumentException.class, () -> JavaFunctionCompiler.compile("""
+            public class BadFn implements com.ispf.core.function.ObjectJavaFunction {
+                public com.ispf.core.model.DataRecord invoke(
+                        com.ispf.core.model.DataRecord input,
+                        com.ispf.core.function.JavaFunctionContext context) {
+                    ProcessHandle.current();
+                    return input;
+                }
+            }
+            """));
+        assertThrows(IllegalArgumentException.class, () -> JavaFunctionCompiler.compile("""
+            public class BadFn implements com.ispf.core.function.ObjectJavaFunction {
+                public com.ispf.core.model.DataRecord invoke(
+                        com.ispf.core.model.DataRecord input,
+                        com.ispf.core.function.JavaFunctionContext context) {
+                    new URLClassLoader(new java.net.URL[0]);
+                    return input;
+                }
+            }
+            """));
+    }
 }

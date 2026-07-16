@@ -1,4 +1,4 @@
-package com.ispf.server.workflow;
+package com.ispf.server.cluster;
 
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;

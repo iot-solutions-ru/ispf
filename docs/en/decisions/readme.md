@@ -84,6 +84,9 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) | Multi-tag historian binding rules |
 | [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | Analytics function catalog |
 | [0043-unified-platform-ref](0043-unified-platform-ref.md) | Unified PlatformRef addressing |
+| [0044-object-query](0044-object-query.md) | Object Query (OQ) |
+| [0045-java-function-sandbox](0045-java-function-sandbox.md) | Java function sandbox (phase 1) |
+| [0046-nats-cluster-package](0046-nats-cluster-package.md) | NATS cluster package + TRANSIENT persist skip |
 
 ## Topic chains (read in order)
 

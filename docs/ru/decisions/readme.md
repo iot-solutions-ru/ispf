@@ -17,5 +17,8 @@
 | [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) | Historian binding rules (мультитег) |
 | [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | Каталог analytics-функций |
 | [0043-unified-platform-ref](0043-unified-platform-ref.md) | Единый адресный язык PlatformRef |
+| [0044-object-query](0044-object-query.md) | Object Query (OQ) |
+| [0045-java-function-sandbox](0045-java-function-sandbox.md) | Песочница Java-функций (фаза 1) |
+| [0046-nats-cluster-package](0046-nats-cluster-package.md) | NATS в `cluster` + TRANSIENT persist skip |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

@@ -3,7 +3,7 @@ package com.ispf.server.storage;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.config.VariableHistoryProperties;
-import com.ispf.server.workflow.NatsJetStreamSupport;
+import com.ispf.server.cluster.NatsJetStreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.ContextRefreshedEvent;

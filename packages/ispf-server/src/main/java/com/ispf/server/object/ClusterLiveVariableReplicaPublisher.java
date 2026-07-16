@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
-import com.ispf.server.workflow.NatsEventBridge;
+import com.ispf.server.cluster.NatsEventBridge;
 import jakarta.annotation.PreDestroy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

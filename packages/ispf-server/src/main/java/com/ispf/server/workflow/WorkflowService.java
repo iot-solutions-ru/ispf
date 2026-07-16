@@ -1,5 +1,7 @@
 package com.ispf.server.workflow;
 
+import com.ispf.server.cluster.NatsEventBridge;
+
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.PlatformObject;

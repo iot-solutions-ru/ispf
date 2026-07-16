@@ -362,6 +362,9 @@ ispf:
       elastic-scale-down-steps: ${ISPF_BINDING_AUDIT_ELASTIC_SCALE_DOWN:6}
       elastic-scale-check-interval-ms: ${ISPF_BINDING_AUDIT_ELASTIC_SCALE_CHECK_MS:200}
   function:
+    java:
+      # In-process Java functions (javax.tools). Keep true for local/test; prod profile defaults false.
+      enabled: ${ISPF_FUNCTION_JAVA_ENABLED:true}
     audit:
       enabled: ${ISPF_FUNCTION_AUDIT_ENABLED:false}
       mode: ${ISPF_FUNCTION_AUDIT_MODE:errors}

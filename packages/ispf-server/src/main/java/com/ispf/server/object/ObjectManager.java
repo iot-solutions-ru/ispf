@@ -1203,6 +1203,10 @@ public class ObjectManager {
 
     @Transactional
     public void persistBindingRuleTarget(String path, Variable variable) {
+        // TRANSIENT targets stay RAM-only after setComputedValue — skip DB churn on hot ticks.
+        if (variable != null && variable.storageMode() == VariableStorageMode.TRANSIENT) {
+            return;
+        }
         persistVariable(path, variable);
     }
 

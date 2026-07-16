@@ -13,7 +13,7 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.VariableChangeInterest;
 import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
-import com.ispf.server.workflow.NatsEventBridge;
+import com.ispf.server.cluster.NatsEventBridge;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

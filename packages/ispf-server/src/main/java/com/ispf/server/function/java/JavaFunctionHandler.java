@@ -22,6 +22,9 @@ public class JavaFunctionHandler implements FunctionHandler {
 
     @Override
     public boolean supports(String objectPath, String functionName) {
+        if (!runtimeService.isEnabled()) {
+            return false;
+        }
         PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
         if (node == null) {
             return false;

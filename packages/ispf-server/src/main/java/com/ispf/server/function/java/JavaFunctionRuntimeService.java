@@ -4,6 +4,7 @@ import com.ispf.core.function.JavaFunctionContext;
 import com.ispf.core.function.ObjectJavaFunction;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.server.config.FunctionProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -12,7 +13,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class JavaFunctionRuntimeService {
 
+    private final FunctionProperties functionProperties;
     private final Map<String, CompiledJavaFunction> compiled = new ConcurrentHashMap<>();
+
+    public JavaFunctionRuntimeService(FunctionProperties functionProperties) {
+        this.functionProperties = functionProperties;
+    }
+
+    public boolean isEnabled() {
+        return functionProperties.isJavaEnabled();
+    }
 
     public void syncOnSave(String objectPath, FunctionDescriptor function, FunctionDescriptor before) {
         if (before != null && before.hasJavaBody()) {
@@ -37,6 +47,7 @@ public class JavaFunctionRuntimeService {
     }
 
     public void compileAndRegister(String objectPath, FunctionDescriptor function) {
+        requireEnabled();
         JavaFunctionCompiler.CompiledArtifact artifact = JavaFunctionCompiler.compile(function.sourceBody());
         ObjectJavaFunction instance = JavaFunctionCompiler.instantiate(artifact);
         compiled.put(
@@ -46,11 +57,21 @@ public class JavaFunctionRuntimeService {
     }
 
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
+        requireEnabled();
         CompiledJavaFunction fn = get(objectPath, functionName);
         if (fn == null) {
             throw new IllegalStateException("Java function is not compiled: " + functionName);
         }
         return fn.instance().invoke(input, new JavaFunctionContext(objectPath, functionName));
+    }
+
+    private void requireEnabled() {
+        if (!isEnabled()) {
+            throw new IllegalStateException(
+                    "Java functions are disabled (ispf.function.java.enabled=false). "
+                            + "Enable only on trusted local/dev hosts; see ADR-0045."
+            );
+        }
     }
 
     private static String key(String objectPath, String functionName) {

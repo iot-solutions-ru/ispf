@@ -26,6 +26,10 @@ public class JavaFunctionBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 5)
     public void warmUpCompiledFunctions() {
+        if (!runtimeService.isEnabled()) {
+            log.info("Java function warm-up skipped (ispf.function.java.enabled=false)");
+            return;
+        }
         for (var node : objectManager.tree().all()) {
             for (FunctionDescriptor function : node.functions().values()) {
                 if (!function.hasJavaBody()) {

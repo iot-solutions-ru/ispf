@@ -1,8 +1,8 @@
 package com.ispf.server.platform;
 
 import com.ispf.server.config.NatsProperties;
-import com.ispf.server.workflow.NatsEventBridge;
-import com.ispf.server.workflow.NatsJetStreamSupport;
+import com.ispf.server.cluster.NatsEventBridge;
+import com.ispf.server.cluster.NatsJetStreamSupport;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.api.ConsumerInfo;
 import io.nats.client.api.StreamInfo;

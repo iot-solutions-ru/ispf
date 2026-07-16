@@ -6,7 +6,24 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "ispf.function")
 public class FunctionProperties {
 
+    private Java java = new Java();
     private Audit audit = new Audit();
+
+    /**
+     * In-process Java function compile/execute. Prefer {@code false} outside trusted local/dev
+     * (see application-prod.yml). Regex denylist is not a process sandbox — ADR-0045.
+     */
+    public static class Java {
+        private boolean enabled = true;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
 
     public static class Audit {
         /** Master kill switch — when false, no function audit writes regardless of per-object flags. */
@@ -163,6 +180,18 @@ public class FunctionProperties {
         public void setFlushIntervalMs(long flushIntervalMs) {
             this.flushIntervalMs = flushIntervalMs;
         }
+    }
+
+    public Java getJava() {
+        return java;
+    }
+
+    public void setJava(Java java) {
+        this.java = java != null ? java : new Java();
+    }
+
+    public boolean isJavaEnabled() {
+        return java != null && java.isEnabled();
     }
 
     public Audit getAudit() {

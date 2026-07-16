@@ -1,4 +1,4 @@
-package com.ispf.server.workflow;
+package com.ispf.server.cluster;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;

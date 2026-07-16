@@ -1,7 +1,7 @@
 package com.ispf.server.object.pubsub;
 
 import com.ispf.server.object.ObjectChangeType;
-import com.ispf.server.workflow.NatsEventBridge;
+import com.ispf.server.cluster.NatsEventBridge;
 import org.springframework.stereotype.Service;
 
 /**

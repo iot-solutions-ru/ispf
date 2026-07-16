@@ -1,4 +1,4 @@
-package com.ispf.server.workflow;
+package com.ispf.server.cluster;
 
 import io.nats.client.Connection;
 import io.nats.client.Consumer;
