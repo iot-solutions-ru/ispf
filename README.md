@@ -11,13 +11,6 @@ Website: [ispf.ai](https://ispf.ai) · Repo: [github.com/Michaael/IoT-Solutions-
 Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as separate products. **ISPF** puts them on a hierarchical **object tree**: a device, dashboard, alert rule, correlator, and BPMN workflow are all nodes with the same API.
 
 <!-- Hero: when ready, drop docs/assets/ispf-hero.gif and change src below (script: docs/assets/README.md). -->
-<p align="center">
-  <img src="docs/assets/ispf-operator-hmi.png" alt="ISPF operator HMI — Mini-CHP station summary with live KPIs and AI assistant" width="920" />
-</p>
-
-<p align="center">
-  <img src="docs/assets/ispf-explorer-en.png" alt="ISPF admin Explorer (English) — object tree, virtual cluster device, blueprints" width="920" />
-</p>
 
 <p align="center">
   <img src="docs/assets/ispf-scada-snmp.png" alt="ISPF admin console — SNMP host monitoring dashboard and object tree" width="450" />
@@ -31,9 +24,6 @@ Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as sep
   <img src="docs/assets/ispf-alert-rule.png" alt="ISPF CEL alert rule editor" width="450" />
 </p>
 
-<p align="center">
-  <img src="docs/assets/ispf-ai-studio.png" alt="ISPF AI Studio — English admin console, natural-language agent for devices, dashboards, and SCADA" width="920" />
-</p>
 
 > **Business logic lives on the platform** — models, variables, events, functions, and workflows. The core ships generic engines; solutions are declarative configuration (bundle deploy), not core forks. See [architecture](docs/en/architecture.md).
 
