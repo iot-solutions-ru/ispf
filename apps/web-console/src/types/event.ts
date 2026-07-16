@@ -30,6 +30,7 @@ export interface AlertRule {
   ackRequired?: boolean;
   rateLimitSeconds?: number;
   lastConditionMet: boolean | null;
+  latchedActive?: boolean | null;
   notificationWebhookUrl?: string | null;
   notificationEmailTarget?: string | null;
   createdAt: string;

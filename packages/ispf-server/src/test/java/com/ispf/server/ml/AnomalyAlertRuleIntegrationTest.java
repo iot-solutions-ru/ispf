@@ -109,7 +109,7 @@ class AnomalyAlertRuleIntegrationTest {
         Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
         while (Instant.now().isBefore(deadline)) {
             String body = mockMvc.perform(get("/api/v1/events")
-                            .param("objectPath", DEMO_DEVICE)
+                            .param("objectPath", AutomationTreeService.rulePathForName(RULE_NAME))
                             .param("limit", "20"))
                     .andExpect(status().isOk())
                     .andReturn()

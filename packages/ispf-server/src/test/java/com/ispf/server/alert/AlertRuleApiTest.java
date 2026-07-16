@@ -118,7 +118,9 @@ class AlertRuleApiTest {
                                 """))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "10"))
+        mockMvc.perform(get("/api/v1/events")
+                        .param("objectPath", AutomationTreeService.rulePathForName("Temperature threshold exceeded"))
+                        .param("limit", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].eventName", hasItem("thresholdExceeded")));
     }
@@ -197,7 +199,7 @@ class AlertRuleApiTest {
         Instant deadline = Instant.now().plus(Duration.ofSeconds(5));
         while (Instant.now().isBefore(deadline)) {
             String body = mockMvc.perform(get("/api/v1/events")
-                            .param("objectPath", INDEX_TEST_DEVICE)
+                            .param("objectPath", AutomationTreeService.rulePathForName(INDEX_TEST_RULE))
                             .param("limit", "10"))
                     .andExpect(status().isOk())
                     .andReturn()
@@ -310,7 +312,9 @@ class AlertRuleApiTest {
     }
 
     private int countThresholdExceededEvents() throws Exception {
-        String body = mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "50"))
+        String body = mockMvc.perform(get("/api/v1/events")
+                        .param("objectPath", AutomationTreeService.rulePathForName("Temperature threshold exceeded"))
+                        .param("limit", "50"))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()

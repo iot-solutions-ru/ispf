@@ -4,6 +4,34 @@ import { fetchVariables } from "../api";
 import { refreshWorkQueue } from "./workQueueCache";
 import type { ObjectWsMessage } from "./objectWebSocketTypes";
 
+/** Debounce HTTP fallback when VARIABLE_UPDATED arrives without `value`. */
+const pendingPathRefresh = new Map<string, ReturnType<typeof setTimeout>>();
+const PATH_REFRESH_DEBOUNCE_MS = 400;
+
+function schedulePathRefresh(queryClient: QueryClient, path: string): void {
+  const existing = pendingPathRefresh.get(path);
+  if (existing !== undefined) {
+    clearTimeout(existing);
+  }
+  pendingPathRefresh.set(
+    path,
+    setTimeout(() => {
+      pendingPathRefresh.delete(path);
+      void queryClient
+        .fetchQuery({
+          queryKey: ["variables", path],
+          queryFn: () => fetchVariables(path),
+        })
+        .then((variables) => {
+          mergePathIntoBatchCaches(queryClient, path, variables);
+        })
+        .catch(() => {
+          // Leave existing cache; next reconnect / subscription refresh will recover.
+        });
+    }, PATH_REFRESH_DEBOUNCE_MS),
+  );
+}
+
 function patchVariableList(
   list: VariableDto[],
   variableName: string,
@@ -89,18 +117,8 @@ export function patchVariableCachesFromWs(
     }
   }
 
-  // Payload had no value, or variable missing from cached lists — refresh that path only.
-  void queryClient
-    .fetchQuery({
-      queryKey: ["variables", path],
-      queryFn: () => fetchVariables(path),
-    })
-    .then((variables) => {
-      mergePathIntoBatchCaches(queryClient, path, variables);
-    })
-    .catch(() => {
-      // Leave existing cache; next reconnect / subscription refresh will recover.
-    });
+  // Payload had no value, or variable missing from cached lists — refresh that path (debounced).
+  schedulePathRefresh(queryClient, path);
 }
 
 /** React Query updates for a single `/ws/objects` payload. */

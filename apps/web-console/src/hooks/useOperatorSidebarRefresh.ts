@@ -15,7 +15,7 @@ export function useOperatorSidebarRefresh(_appId?: string, ui?: OperatorUi) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!ui) {
+    if (!_appId && !ui) {
       return;
     }
     const refresh = (message: ObjectWsMessage) => {
@@ -31,5 +31,5 @@ export function useOperatorSidebarRefresh(_appId?: string, ui?: OperatorUi) {
     };
     window.addEventListener(OBJECT_WS_EVENT, handler);
     return () => window.removeEventListener(OBJECT_WS_EVENT, handler);
-  }, [queryClient, ui]);
+  }, [_appId, queryClient, ui]);
 }

@@ -2,6 +2,8 @@ package com.ispf.server.automation;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.EventDescriptor;
+import com.ispf.core.object.EventLevel;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -35,6 +37,16 @@ public class AutomationTreeService {
 
     public static final String ALERT_RULES_ROOT = "root.platform.alert-rules";
     public static final String CORRELATORS_ROOT = "root.platform.correlators";
+
+    /** Payload schema for events published from ALERT rule nodes. */
+    public static final DataSchema ALERT_FIRE_PAYLOAD_SCHEMA = DataSchema.builder("alertFirePayload")
+            .field("targetObjectPath", FieldType.STRING)
+            .field("watchVariable", FieldType.STRING)
+            .field("alertRulePath", FieldType.STRING)
+            .field("value", FieldType.STRING)
+            .field("message", FieldType.STRING)
+            .field("alertPriority", FieldType.STRING)
+            .build();
 
     private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
@@ -358,8 +370,9 @@ public class AutomationTreeService {
         }
         objectManager.persistNodeTree(path);
         AlertRule rule = getAlertRule(path);
+        ensureAlertRuleEvents(path, rule.eventName(), rule.clearEventName());
         indexRefresh.afterAlertRuleUpdated(previous, rule);
-        return rule;
+        return getAlertRule(path);
     }
 
     public void setAlertRuleConditionTrueSince(String path, Instant conditionTrueSince) {
@@ -683,6 +696,39 @@ public class AutomationTreeService {
         if (lastConditionMet != null) {
             alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
             alertRuleRuntimeFlusher.flushNow(path);
+        }
+        ensureAlertRuleEvents(path, eventName, clearEventName);
+    }
+
+    /**
+     * Ensure raise/clear event descriptors exist on the ALERT rule node (not on the target device).
+     */
+    @Transactional
+    public void ensureAlertRuleEvents(String alertPath, String eventName, String clearEventName) {
+        requireAlertRule(alertPath);
+        PlatformObject alert = objectManager.require(alertPath);
+        if (eventName != null && !eventName.isBlank() && !alert.events().containsKey(eventName)) {
+            objectManager.upsertEvent(
+                    alertPath,
+                    new EventDescriptor(
+                            eventName,
+                            "Alert raise event",
+                            ALERT_FIRE_PAYLOAD_SCHEMA,
+                            EventLevel.ERROR
+                    )
+            );
+            alert = objectManager.require(alertPath);
+        }
+        if (clearEventName != null && !clearEventName.isBlank() && !alert.events().containsKey(clearEventName)) {
+            objectManager.upsertEvent(
+                    alertPath,
+                    new EventDescriptor(
+                            clearEventName,
+                            "Alert clear event",
+                            ALERT_FIRE_PAYLOAD_SCHEMA,
+                            EventLevel.WARNING
+                    )
+            );
         }
     }
 

@@ -6,9 +6,11 @@ import {
   OPERATOR_SIDEBAR_EVENTS_QUERY_KEY,
   useOperatorSidebarRefresh,
 } from "../../hooks/useOperatorSidebarRefresh";
+import { useOperatorLiveEventsCleared } from "../../hooks/useOperatorLiveEventsCleared";
 import type { ObjectEvent } from "../../types/event";
 import type { OperatorUi } from "../../types/operatorUi";
 import { filterOperatorSidebarEvents } from "../../utils/operatorSidebarScope";
+import { filterEventsAfterLiveClear } from "../../utils/operatorLiveEventsCleared";
 import { mapEventJournalExportRow } from "../../utils/journalExport";
 import JournalViewShell, { JOURNAL_VIEW_MODES, type JournalViewMode } from "../journal/JournalViewShell";
 import JournalVirtualList from "../journal/JournalVirtualList";
@@ -76,6 +78,7 @@ export default function EventJournalPanel({
   const fetchLimit = mode === "live" ? liveLimit : historyLimit;
 
   useOperatorSidebarRefresh(appId, operatorScoped ? ui : undefined);
+  const { clearedAtMs, clearVisible } = useOperatorLiveEventsCleared(appId);
 
   const statusQuery = useQuery({
     queryKey: ["event-journal-status", statusObjectPath ?? "all"],
@@ -100,21 +103,29 @@ export default function EventJournalPanel({
       }
       return fetchEvents(objectPath, fetchLimit);
     },
+    // Always poll/fetch: RecentEventCache still serves live events when durable journal is off.
+    // Gating on journal-status.enabled froze the list after the first paint.
     refetchInterval: mode === "live" ? (operatorScoped ? 5000 : 8000) : false,
     staleTime: mode === "live" ? 0 : 30_000,
-    enabled: statusQuery.data?.enabled !== false,
   });
 
   const rawItems = useMemo(() => {
+    let rows: ObjectEvent[];
     if (!operatorScoped || !ui || !appId) {
-      return events.data ?? [];
+      rows = events.data ?? [];
+    } else {
+      rows = filterOperatorSidebarEvents(events.data ?? [], {
+        appId,
+        ui,
+        operatorApps,
+      });
     }
-    return filterOperatorSidebarEvents(events.data ?? [], {
-      appId,
-      ui,
-      operatorApps,
-    });
-  }, [appId, events.data, operatorApps, operatorScoped, ui]);
+    // Clear only affects the live feed; history keeps the full record.
+    if (mode === "live" && appId) {
+      return filterEventsAfterLiveClear(rows, clearedAtMs);
+    }
+    return rows;
+  }, [appId, clearedAtMs, events.data, mode, operatorApps, operatorScoped, ui]);
 
   const eventNames = useMemo(() => {
     const set = new Set<string>(knownEventNames ?? []);
@@ -229,13 +240,16 @@ export default function EventJournalPanel({
               ? t("eventJournal.filter", { path: objectPath })
               : undefined;
 
-  const emptyMessage = journalDisabled
-    ? (fixedObjectPath || operatorJournalPath
-      ? t("runtime:eventJournal.objectDisabledEmpty")
-      : t("runtime:eventJournal.disabledEmpty"))
-    : operatorScoped
-      ? t("eventJournal.emptyScoped")
-      : t("eventJournal.empty");
+  const emptyMessage = operatorScoped
+    ? t("eventJournal.emptyScoped")
+    : t("eventJournal.empty");
+
+  const canClearLive =
+    Boolean(appId)
+    && mode === "live"
+    && filtered.length > 0
+    && !events.isLoading
+    && !events.error;
 
   return (
     <JournalViewShell
@@ -254,6 +268,18 @@ export default function EventJournalPanel({
       className="event-journal-panel"
       exportFilenameBase={exportFilenameBase}
       exportRows={exportRows}
+      actions={
+        canClearLive ? (
+          <button
+            type="button"
+            className="btn small"
+            title={t("eventJournal.clearHint")}
+            onClick={clearVisible}
+          >
+            {t("eventJournal.clear")}
+          </button>
+        ) : undefined
+      }
       filters={
         (mode === "history" || (showFilters && !fixedObjectPath)) ? (
           <div className="journal-filters form-grid">

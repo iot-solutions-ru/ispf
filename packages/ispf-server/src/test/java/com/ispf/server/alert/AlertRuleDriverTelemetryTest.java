@@ -91,7 +91,9 @@ class AlertRuleDriverTelemetryTest {
         telemetryCoalescer.flushNow();
         TimeUnit.MILLISECONDS.sleep(750);
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", DEVICE).param("limit", "10"))
+        mockMvc.perform(get("/api/v1/events")
+                        .param("objectPath", AutomationTreeService.rulePathForName(RULE_NAME))
+                        .param("limit", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].eventName", hasItem("event1")));
     }
@@ -122,7 +124,9 @@ class AlertRuleDriverTelemetryTest {
         telemetryCoalescer.flushNow();
         TimeUnit.MILLISECONDS.sleep(750);
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", DEVICE_TELEMETRY_ONLY).param("limit", "10"))
+        mockMvc.perform(get("/api/v1/events")
+                        .param("objectPath", AutomationTreeService.rulePathForName(RULE_NAME_TELEMETRY_ONLY))
+                        .param("limit", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].eventName").isEmpty());
     }

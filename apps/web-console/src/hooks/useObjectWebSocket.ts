@@ -19,6 +19,11 @@ let wsConnected = false;
 let socketOwnerCount = 0;
 let connectionToken = "";
 let retryTimer: number | undefined;
+let watchdogTimer: number | undefined;
+let lastMessageAt = 0;
+/** No frames while subscribed → treat as half-open and force reconnect. */
+const WS_STALE_MS = 45_000;
+const WS_WATCHDOG_MS = 10_000;
 const wsConnectionListeners = new Set<() => void>();
 
 interface PathInterestState {
@@ -71,8 +76,16 @@ function clearRetryTimer() {
   }
 }
 
+function clearWatchdogTimer() {
+  if (watchdogTimer !== undefined) {
+    window.clearInterval(watchdogTimer);
+    watchdogTimer = undefined;
+  }
+}
+
 function teardownSocket() {
   clearRetryTimer();
+  clearWatchdogTimer();
   if (activeSocket) {
     activeSocket.close();
     activeSocket = null;
@@ -100,14 +113,30 @@ function connectWebSocket(authToken: string, tryNextIngressPath = false) {
   const socket = openWebSocket(authToken, wsPathIndex);
   activeSocket = socket;
   let opened = false;
+  lastMessageAt = Date.now();
 
   socket.onopen = () => {
     opened = true;
+    lastMessageAt = Date.now();
     setWsConnected(true);
     pushMergedSubscriptionsToServer();
+    clearWatchdogTimer();
+    watchdogTimer = window.setInterval(() => {
+      if (activeSocket !== socket || socket.readyState !== WebSocket.OPEN) {
+        return;
+      }
+      if (interestByPath.size === 0) {
+        lastMessageAt = Date.now();
+        return;
+      }
+      if (Date.now() - lastMessageAt >= WS_STALE_MS) {
+        socket.close();
+      }
+    }, WS_WATCHDOG_MS);
   };
 
   socket.onmessage = (event) => {
+    lastMessageAt = Date.now();
     try {
       const message = JSON.parse(event.data) as ObjectWsMessage;
       window.dispatchEvent(new CustomEvent(OBJECT_WS_EVENT, { detail: message }));
@@ -121,6 +150,7 @@ function connectWebSocket(authToken: string, tryNextIngressPath = false) {
   };
 
   socket.onclose = () => {
+    clearWatchdogTimer();
     if (activeSocket === socket) {
       activeSocket = null;
     }

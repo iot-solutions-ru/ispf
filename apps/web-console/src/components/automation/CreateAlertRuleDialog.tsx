@@ -1,40 +1,52 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { createAlertRule, validateExpression } from "../../api";
-import type { CreateAlertRulePayload } from "../../types/automation";
-import { ObjectPathField } from "../../ui";
+import { createAlertRule, fetchVariables, validateExpression } from "../../api";
+import type { AlertRuleFormValues } from "../../types/automation";
+import AlertRuleFormFields, { toCreateAlertRulePayload } from "./AlertRuleFormFields";
 
 interface CreateAlertRuleDialogProps {
   onClose: () => void;
   onCreated: () => void;
 }
 
-const DEFAULT: CreateAlertRulePayload = {
+const DEFAULT: AlertRuleFormValues = {
   name: "",
   objectPath: "root.platform.devices.demo-sensor-01",
   watchVariable: "temperature",
-  conditionExpr: "temperature.value > threshold.value",
+  conditionExpr: 'self.temperature["value"] > 80.0',
   eventName: "thresholdExceeded",
   payloadVariable: "",
   enabled: true,
   edgeTrigger: true,
+  delaySeconds: 0,
+  sustainWhileTrue: false,
+  priority: "HIGH",
+  ackRequired: false,
+  rateLimitSeconds: 0,
+  deactivateDelaySeconds: 0,
+  pollIntervalMs: 0,
 };
 
 export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAlertRuleDialogProps) {
   const { t } = useTranslation(["automation", "common"]);
-  const [form, setForm] = useState<CreateAlertRulePayload>({ ...DEFAULT });
+  const [form, setForm] = useState<AlertRuleFormValues>({ ...DEFAULT });
   const [exprError, setExprError] = useState<string | null>(null);
 
-  const mutation = useMutation({
-    mutationFn: () =>
-      createAlertRule({
-        ...form,
-        payloadVariable: form.payloadVariable?.trim() || undefined,
-        deactivateExpr: form.deactivateExpr?.trim() || undefined,
-        clearEventName: form.clearEventName?.trim() || undefined,
-        triggerMessage: form.triggerMessage?.trim() || undefined,
-      }),
+  const targetPath = form.objectPath.trim();
+  const targetVariablesQuery = useQuery({
+    queryKey: ["variables", targetPath],
+    queryFn: () => fetchVariables(targetPath),
+    enabled: targetPath.length > 0,
+  });
+
+  const targetVariableNames = useMemo(() => {
+    const list = targetVariablesQuery.data ?? [];
+    return list.map((item) => item.name).sort((a, b) => a.localeCompare(b));
+  }, [targetVariablesQuery.data]);
+
+  const createMutation = useMutation({
+    mutationFn: () => createAlertRule(toCreateAlertRulePayload(form, (form.name ?? "").trim())),
     onSuccess: () => onCreated(),
   });
 
@@ -44,149 +56,62 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
   });
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div className="modal modal-wide alert-rule-modal" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{t("automation:alertRule.newTitle")}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>✕</button>
+          <button type="button" className="icon-btn" onClick={onClose}>
+            ✕
+          </button>
         </header>
         <form
-          className="form-grid"
           onSubmit={(e) => {
             e.preventDefault();
-            mutation.mutate();
+            if (!form.name?.trim() || !!exprError) {
+              return;
+            }
+            createMutation.mutate();
           }}
         >
-          <label>
-            {t("common:table.name")} *
-            <input
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              required
-            />
-          </label>
-          <label>
-            {t("automation:alertRule.event")}
-            <input
-              value={form.eventName}
-              onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
-              required
-            />
-          </label>
-          <ObjectPathField
-            className="full"
-            label={t("automation:alertRule.targetObject")}
-            value={form.objectPath}
-            onChange={(objectPath) => setForm((f) => ({ ...f, objectPath }))}
-          />
-          <label>
-            {t("automation:alertRule.variable")}
-            <input
-              value={form.watchVariable}
-              onChange={(e) => setForm((f) => ({ ...f, watchVariable: e.target.value }))}
-              required
-            />
-          </label>
-          <label>
-            {t("automation:alertRule.payloadVariable")}
-            <input
-              value={form.payloadVariable ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, payloadVariable: e.target.value }))}
-              placeholder={t("automation:alertRule.optionalPlaceholder")}
-            />
-          </label>
-          <label className="full">
-            {t("automation:alertRule.celCondition")}
-            <textarea
-              rows={3}
-              value={form.conditionExpr}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, conditionExpr: e.target.value }));
+          <AlertRuleFormFields
+            value={form}
+            onChange={(patch) => {
+              setForm((current) => ({ ...current, ...patch }));
+              if (patch.conditionExpr !== undefined) {
                 setExprError(null);
-              }}
-              onBlur={() => validateMutation.mutate()}
-              required
-            />
-            {exprError && <span className="hint error">{exprError}</span>}
-          </label>
-          <label className="full">
-            {t("automation:alertRule.deactivateExpr")}
-            <textarea
-              rows={2}
-              value={form.deactivateExpr ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, deactivateExpr: e.target.value }))}
-              placeholder={t("automation:alertRule.deactivateExprPlaceholder")}
-            />
-          </label>
-          <label>
-            {t("automation:alertRule.clearEvent")}
-            <input
-              value={form.clearEventName ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, clearEventName: e.target.value }))}
-            />
-          </label>
-          <label>
-            {t("automation:alertRule.deactivateDelaySeconds")}
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={form.deactivateDelaySeconds ?? 0}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, deactivateDelaySeconds: Number(e.target.value) }))
               }
-            />
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={form.enabled}
-              onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
-            />
-            {t("automation:alertRule.enabled")}
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={form.edgeTrigger}
-              onChange={(e) => setForm((f) => ({ ...f, edgeTrigger: e.target.checked }))}
-            />
-            {t("automation:alertRule.edgeTriggerHint")}
-          </label>
-          <label>
-            {t("automation:alertRule.priority")}
-            <select
-              value={form.priority ?? "HIGH"}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  priority: e.target.value as CreateAlertRulePayload["priority"],
-                }))
+            }}
+            canManage
+            showName
+            creating
+            targetVariableNames={targetVariableNames}
+            alertEventNames={[]}
+            exprError={exprError}
+            onValidateCel={() => {
+              if (form.conditionExpr.trim()) {
+                validateMutation.mutate();
               }
-            >
-              <option value="CRITICAL">CRITICAL</option>
-              <option value="HIGH">HIGH</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="LOW">LOW</option>
-            </select>
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={form.ackRequired ?? false}
-              onChange={(e) => setForm((f) => ({ ...f, ackRequired: e.target.checked }))}
-            />
-            {t("automation:alertRule.ackRequired")}
-          </label>
-          {mutation.error && (
-            <p className="hint error full">{(mutation.error as Error).message}</p>
+            }}
+          />
+          {createMutation.error && (
+            <p className="hint error">{(createMutation.error as Error).message}</p>
           )}
-          <footer className="full form-actions">
-            <button type="button" className="btn" onClick={onClose}>{t("common:action.cancel")}</button>
+          <footer className="form-actions">
+            <button type="button" className="btn" onClick={onClose}>
+              {t("common:action.cancel")}
+            </button>
             <button
               type="submit"
               className="btn primary"
-              disabled={mutation.isPending || !form.name || !!exprError}
+              disabled={
+                createMutation.isPending
+                || !form.name?.trim()
+                || !form.objectPath.trim()
+                || !form.watchVariable.trim()
+                || !form.eventName.trim()
+                || !form.conditionExpr.trim()
+                || !!exprError
+              }
             >
               {t("common:action.create")}
             </button>

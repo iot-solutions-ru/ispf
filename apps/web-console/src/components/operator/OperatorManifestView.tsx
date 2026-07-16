@@ -98,7 +98,11 @@ export default function OperatorManifestView({
           </span>
         </div>
         <div className="topbar-actions">
-          <OperatorSidebarToggle open={sidebarDrawer.open} onClick={sidebarDrawer.toggle} />
+          <OperatorSidebarToggle
+            open={sidebarDrawer.open}
+            onClick={sidebarDrawer.toggle}
+            appId={appId}
+          />
           <OperatorPreferences />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>

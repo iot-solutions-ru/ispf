@@ -81,7 +81,10 @@ public class RecentEventCache {
             if (event == null) {
                 continue;
             }
-            if (objectPathFilter == null || objectPathFilter.isBlank() || objectPathFilter.equals(event.objectPath())) {
+            if (objectPathFilter == null
+                    || objectPathFilter.isBlank()
+                    || objectPathFilter.equals(event.objectPath())
+                    || event.objectPath().startsWith(objectPathFilter + ".")) {
                 result.add(event);
             }
         }

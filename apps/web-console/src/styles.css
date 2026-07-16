@@ -5514,7 +5514,7 @@ body.scada-mimic-editor-open {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  z-index: 130;
+  z-index: 220;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
@@ -5846,10 +5846,11 @@ body.scada-mimic-editor-open {
 
 .operator-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .operator-dashboard {
@@ -5868,13 +5869,92 @@ body.scada-mimic-editor-open {
 }
 
 .operator-sidebar {
-  position: relative;
-  z-index: 40;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(100vw - 2.5rem, 360px);
+  z-index: 210;
   isolation: isolate;
   border-left: 1px solid var(--border);
   background: var(--bg-elevated);
   overflow: hidden;
   min-height: 0;
+  transform: translateX(100%);
+  transition: transform 0.22s ease;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.45);
+}
+
+.operator-layout--sidebar-open .operator-sidebar,
+.operator-shell--sidebar-open .operator-sidebar {
+  transform: translateX(0);
+}
+
+.operator-sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  position: relative;
+}
+
+.operator-sidebar-toggle-label {
+  white-space: nowrap;
+}
+
+.operator-sidebar-toggle-badges {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.operator-sidebar-toggle-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--surface, #1a1d24);
+}
+
+.operator-sidebar-toggle-badge--tasks {
+  background: color-mix(in srgb, var(--accent, #2f81f7) 88%, #000);
+}
+
+.operator-sidebar-toggle-badge--events {
+  background: color-mix(in srgb, var(--danger, #dc2626) 90%, #000);
+}
+
+.operator-sidebar-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.operator-sidebar-mobile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.25rem;
 }
 
 .operator-sidebar-inner {
@@ -6238,6 +6318,63 @@ body.scada-mimic-editor-open {
 
 .modal.modal-wide {
   width: min(640px, 96vw);
+}
+
+.modal.modal-wide.alert-rule-modal {
+  width: min(720px, 96vw);
+  max-height: min(92vh, 100%);
+  overflow-y: auto;
+}
+
+.alert-rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.alert-rule-roles-hint {
+  margin: 0;
+}
+
+.alert-rule-fieldset {
+  margin: 0;
+  padding: 0.75rem 0.9rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  min-width: 0;
+}
+
+.alert-rule-fieldset legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.alert-rule-fieldset .form-grid {
+  margin-top: 0.35rem;
+}
+
+.alert-rule-required {
+  color: var(--danger);
+  font-weight: 600;
+  margin-left: 0.15rem;
+}
+
+.alert-rule-status-grid .field-caption {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.alert-rule-status-grid .hint {
+  margin: 0;
+}
+
+.alert-rule-inspector-form .form-actions {
+  margin-top: 0.75rem;
 }
 
 .dashboard-modal-backdrop {
@@ -7568,67 +7705,13 @@ body.scada-mimic-editor-open {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger, #dc2626) 35%, transparent);
 }
 
-.operator-sidebar-toggle {
-  display: none;
-}
-
-.operator-sidebar-backdrop {
-  display: none;
-}
-
-.operator-sidebar-mobile-head {
-  display: none;
-}
-
 @media (max-width: 900px) {
   .operator-layout {
     grid-template-columns: 1fr;
   }
 
-  .operator-sidebar-toggle {
-    display: inline-flex;
-  }
-
   .operator-sidebar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
     width: min(100vw - 2.5rem, 360px);
-    max-height: none;
-    border-left: 1px solid var(--border);
-    border-top: none;
-    transform: translateX(100%);
-    transition: transform 0.22s ease;
-    z-index: 210;
-    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.45);
-  }
-
-  .operator-layout--sidebar-open .operator-sidebar,
-  .operator-shell--sidebar-open .operator-sidebar {
-    transform: translateX(0);
-  }
-
-  .operator-sidebar-mobile-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.65rem 0.75rem 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0.25rem;
-  }
-
-  .operator-sidebar-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    border: none;
-    padding: 0;
-    margin: 0;
-    background: rgba(0, 0, 0, 0.45);
-    cursor: pointer;
   }
 
   .op-nav {

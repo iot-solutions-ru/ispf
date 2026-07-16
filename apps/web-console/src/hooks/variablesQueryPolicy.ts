@@ -1,10 +1,13 @@
-/** When WebSocket is connected, live invalidations replace polling. */
+/**
+ * Keep HTTP polling even when WebSocket reports connected.
+ * Half-open sockets and VARIABLE_UPDATED without `value` otherwise freeze widgets.
+ */
 export function variablesRefetchIntervalMs(
   refreshIntervalMs: number | false,
-  webSocketConnected: boolean,
+  _webSocketConnected: boolean,
 ): number | false {
   if (refreshIntervalMs === false || refreshIntervalMs <= 0) {
     return false;
   }
-  return webSocketConnected ? false : refreshIntervalMs;
+  return refreshIntervalMs;
 }

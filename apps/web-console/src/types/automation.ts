@@ -29,7 +29,21 @@ export interface CreateAlertRulePayload {
   clearEventName?: string;
   notificationWebhookUrl?: string;
   notificationEmailTarget?: string;
+  anomalyModelId?: string;
 }
+
+/** Editable alert-rule fields shared by create dialog and inspector. */
+export type AlertRuleFormValues = Omit<CreateAlertRulePayload, "name"> & {
+  name?: string;
+};
+
+export interface AlertRuleRuntimeStatus {
+  lastFiredAt?: string;
+  lastConditionMet?: boolean;
+  latchedActive?: boolean;
+  conditionTrueSince?: string;
+  deactivateTrueSince?: string;
+};
 
 export interface EventFilterPayload {
   filterId: string;

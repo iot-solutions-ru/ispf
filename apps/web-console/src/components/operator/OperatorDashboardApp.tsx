@@ -477,7 +477,12 @@ function OperatorDashboardChrome({
             selectedPeerId={federationPeerId}
             onSelectPeer={onFederationPeerChange}
           />
-          <OperatorSidebarToggle open={sidebarOpen} onClick={onToggleSidebar} />
+          <OperatorSidebarToggle
+            open={sidebarOpen}
+            onClick={onToggleSidebar}
+            appId={appId}
+            ui={ui}
+          />
           <OperatorPreferences />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>

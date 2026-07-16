@@ -27,6 +27,8 @@ export interface JournalViewShellProps {
   className?: string;
   exportFilenameBase?: string;
   exportRows?: JournalExportRow[];
+  /** Extra controls in the journal header (e.g. clear live feed). */
+  actions?: ReactNode;
   children: ReactNode;
 }
 
@@ -49,6 +51,7 @@ export default function JournalViewShell({
   className = "",
   exportFilenameBase,
   exportRows,
+  actions,
   children,
 }: JournalViewShellProps) {
   const { t } = useTranslation(["journal", "common"]);
@@ -91,6 +94,7 @@ export default function JournalViewShell({
             </nav>
           )}
           {typeof count === "number" && <span className="badge">{count}</span>}
+          {actions}
           {exportFilenameBase && exportRows && (
             <JournalExportButtons
               filenameBase={exportFilenameBase}

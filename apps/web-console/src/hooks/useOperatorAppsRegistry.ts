@@ -1,6 +1,6 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { fetchOperatorApps, fetchOperatorAppUi } from "../api/operatorApps";
+import { fetchOperatorApps, fetchOperatorAppUi, type OperatorAppEntry } from "../api/operatorApps";
 import { getAuthHeaders } from "../auth/session";
 import { fetchWithIngressFallback } from "../utils/ingressFetch";
 import { operatorAppIdCandidates } from "../utils/operatorAppsPath";
@@ -32,13 +32,19 @@ async function loadUiFromBundleApi(appId: string): Promise<OperatorUi | null> {
   return null;
 }
 
-export async function loadOperatorAppUi(appId: string): Promise<OperatorUi | null> {
+export async function loadOperatorAppUi(
+  appId: string,
+  options?: { source?: OperatorAppEntry["source"] }
+): Promise<OperatorUi | null> {
   // Prefer canonical id (without bundle-) first so visual-group leaves resolve to operator-apps.
   const candidates = [...operatorAppIdCandidates(appId)].reverse();
+  const skipPlatformApi = options?.source === "bundle";
   for (const candidate of candidates) {
-    const fromPlatformApi = await fetchOperatorAppUi(candidate);
-    if (fromPlatformApi) {
-      return fromPlatformApi;
+    if (!skipPlatformApi) {
+      const fromPlatformApi = await fetchOperatorAppUi(candidate);
+      if (fromPlatformApi) {
+        return fromPlatformApi;
+      }
     }
     const fromBundle = await loadUiFromBundleApi(candidate);
     if (fromBundle) {
@@ -60,7 +66,10 @@ export function useOperatorAppsRegistry(currentUi?: OperatorUi) {
   const uiQueries = useQueries({
     queries: appIds.map((appId) => ({
       queryKey: ["operator-ui", appId],
-      queryFn: () => loadOperatorAppUi(appId),
+      queryFn: () => {
+        const source = appsQuery.data?.find((app) => app.appId === appId)?.source;
+        return loadOperatorAppUi(appId, { source });
+      },
       enabled: Boolean(appId),
       staleTime: 60_000,
     })),

@@ -90,6 +90,8 @@ final class AgentAutomationTools {
                         + "Args: path (existing) OR name (creates under alert-rules), targetObjectPath, watchVariable, "
                         + "conditionExpr (CEL, e.g. self.temperature[\"value\"] > 85), eventName, "
                         + "payloadVariable?, enabled?, edgeTrigger?, delaySeconds?, sustainWhileTrue?. "
+                        + "Condition evaluates on targetObjectPath; eventName is auto-created and fired on the ALERT rule node. "
+                        + "Operator alarmBar objectPathPrefix should be root.platform.alert-rules (or rule path). "
                         + "Use get_automation_schema for field names.";
             }
 
@@ -953,6 +955,8 @@ final class AgentAutomationTools {
                         "payloadVariable", "enabled", "edgeTrigger", "delaySeconds", "sustainWhileTrue"
                 ),
                 "conditionExample", "self.temperature[\"value\"] > 85",
+                "firePath", "ALERT rule node (rule path), not targetObjectPath",
+                "alarmBarHint", "objectPathPrefix=root.platform.alert-rules, eventNames=[eventName]",
                 "tool", "configure_alert"
         );
     }

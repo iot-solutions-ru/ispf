@@ -68,7 +68,9 @@ class MesOgpAlertRuleTest {
         var rules = automationTreeService.findEnabledAlertRules(HUB, "unprocessedPending");
         assertFalse(rules.isEmpty(), "Expected OGP alert rule in index");
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", HUB).param("limit", "5"))
+        mockMvc.perform(get("/api/v1/events")
+                        .param("objectPath", AutomationTreeService.rulePathForName("OGP unprocessed event alert"))
+                        .param("limit", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.eventName=='ogpUnprocessedEvent')]").exists());
     }

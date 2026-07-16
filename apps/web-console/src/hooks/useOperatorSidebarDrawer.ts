@@ -1,17 +1,43 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  OPERATOR_SIDEBAR_DESKTOP_MIN_PX,
-  shouldUseOperatorSidebarDrawer,
-} from "../utils/operatorShellLayout";
+import { shouldLockBodyForOperatorSidebar } from "../utils/operatorShellLayout";
+
+const SIDEBAR_OPEN_STORAGE_KEY = "ispf-operator-sidebar-open";
+
+function readStoredOpen(): boolean {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_OPEN_STORAGE_KEY);
+    if (raw === "0") {
+      return false;
+    }
+    if (raw === "1") {
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  // Default open on wide screens so existing operator layouts keep the journal visible.
+  return typeof window !== "undefined" ? window.innerWidth > 900 : true;
+}
 
 export function useOperatorSidebarDrawer(closeWhen: readonly unknown[]) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(readStoredOpen);
 
   const close = useCallback(() => setOpen(false), []);
   const toggle = useCallback(() => setOpen((value) => !value), []);
 
   useEffect(() => {
-    close();
+    try {
+      localStorage.setItem(SIDEBAR_OPEN_STORAGE_KEY, open ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [open]);
+
+  useEffect(() => {
+    // Close on navigation so a new dashboard starts clean on mobile; keep preference on desktop.
+    if (shouldLockBodyForOperatorSidebar(window.innerWidth)) {
+      close();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- close drawer on navigation/context change
   }, closeWhen);
 
@@ -29,18 +55,7 @@ export function useOperatorSidebarDrawer(closeWhen: readonly unknown[]) {
   }, [open, close]);
 
   useEffect(() => {
-    const media = window.matchMedia(`(min-width: ${OPERATOR_SIDEBAR_DESKTOP_MIN_PX}px)`);
-    const onChange = () => {
-      if (media.matches) {
-        setOpen(false);
-      }
-    };
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, []);
-
-  useEffect(() => {
-    if (!open || !shouldUseOperatorSidebarDrawer(window.innerWidth)) {
+    if (!open || !shouldLockBodyForOperatorSidebar(window.innerWidth)) {
       return;
     }
     const previous = document.body.style.overflow;

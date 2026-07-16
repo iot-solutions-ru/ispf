@@ -172,7 +172,14 @@ public class RuntimeTelemetryCoalescer {
                     update.value(),
                     update.observedAt()
             )) {
-                publicationService.publishVariableChange(update.path(), update.variableName(), update.observedAt());
+                // Include value so WS clients can patch UI without an HTTP refetch storm.
+                publicationService.publishVariableChange(
+                        update.path(),
+                        update.variableName(),
+                        update.observedAt(),
+                        update.value(),
+                        null
+                );
             }
         }
         if (!historianBatch.isEmpty()) {

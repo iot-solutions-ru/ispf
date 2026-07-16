@@ -1,7 +1,5 @@
 package com.ispf.server.alert;
 
-import com.ispf.core.object.EventLevel;
-import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.automation.AutomationTreeService;
@@ -53,23 +51,27 @@ class AlertRuleLatchTest {
 
     @Test
     void firesRaiseThenClearWithDeactivateExpr() throws Exception {
-        ensureDeviceWithEvents();
+        ensureDevice();
         createLatchRule();
+
+        String rulePath = AutomationTreeService.rulePathForName(RULE_NAME);
+        assertTrue(objectManager.require(rulePath).events().containsKey("thresholdExceeded"));
+        assertTrue(objectManager.require(rulePath).events().containsKey("thresholdCleared"));
 
         setTemperature(95.0);
         assertTrue(waitForEvent("thresholdExceeded", 5_000));
 
-        AlertRule latched = automationTreeService.getAlertRule(AutomationTreeService.rulePathForName(RULE_NAME));
+        AlertRule latched = automationTreeService.getAlertRule(rulePath);
         assertTrue(Boolean.TRUE.equals(latched.latchedActive()));
 
         setTemperature(65.0);
         assertTrue(waitForEvent("thresholdCleared", 5_000));
 
-        AlertRule cleared = automationTreeService.getAlertRule(AutomationTreeService.rulePathForName(RULE_NAME));
+        AlertRule cleared = automationTreeService.getAlertRule(rulePath);
         assertTrue(!Boolean.TRUE.equals(cleared.latchedActive()));
     }
 
-    private void ensureDeviceWithEvents() {
+    private void ensureDevice() {
         if (objectManager.tree().findByPath(DEVICE).isEmpty()) {
             PlatformObject device = objectManager.create(
                     "root.platform.devices",
@@ -82,15 +84,6 @@ class AlertRuleLatchTest {
             objectTemplateService.applyTemplate(device.path(), "mqtt-sensor-v1");
             objectManager.persistNodeTree(device.path());
         }
-        ensureEvent(DEVICE, "thresholdExceeded");
-        ensureEvent(DEVICE, "thresholdCleared");
-    }
-
-    private void ensureEvent(String path, String eventName) {
-        if (objectManager.require(path).events().containsKey(eventName)) {
-            return;
-        }
-        objectManager.upsertEvent(path, new EventDescriptor(eventName, "Test event", null, EventLevel.WARNING));
     }
 
     private void createLatchRule() throws Exception {
@@ -134,9 +127,10 @@ class AlertRuleLatchTest {
     }
 
     private boolean waitForEvent(String eventName, long timeoutMs) throws Exception {
+        String rulePath = AutomationTreeService.rulePathForName(RULE_NAME);
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (System.currentTimeMillis() < deadline) {
-            String body = mockMvc.perform(get("/api/v1/events").param("objectPath", DEVICE).param("limit", "20"))
+            String body = mockMvc.perform(get("/api/v1/events").param("objectPath", rulePath).param("limit", "20"))
                     .andExpect(status().isOk())
                     .andReturn()
                     .getResponse()

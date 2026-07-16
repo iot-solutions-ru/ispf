@@ -119,6 +119,43 @@ export function matchAlarmRule(
   return null;
 }
 
+/** Platform alert-rule node that fired this event (events usually land on the rule path). */
+export function findPlatformAlertRuleForEvent(
+  event: ObjectEvent,
+  alertRules: import("../types/event").AlertRule[],
+): import("../types/event").AlertRule | undefined {
+  const byId = alertRules.find((rule) => rule.id === event.objectPath);
+  if (byId) {
+    return byId;
+  }
+  return alertRules.find((rule) => rule.eventName === event.eventName && rule.enabled);
+}
+
+/** True when the platform alert rule still considers the condition active. */
+export function isPlatformAlertConditionActive(
+  rule: import("../types/event").AlertRule | undefined,
+): boolean {
+  if (!rule) {
+    return false;
+  }
+  return rule.lastConditionMet === true || rule.latchedActive === true;
+}
+
+/**
+ * Historical / polled events should only resurface the bar while the condition is still true.
+ * Live EVENT_FIRED bypasses this (condition just became true).
+ */
+export function shouldResurfaceAlarmFromFeed(
+  event: ObjectEvent,
+  operatorRule: OperatorAlarmRule,
+  alertRules: import("../types/event").AlertRule[],
+): boolean {
+  if (operatorRule.persistUntilDismiss) {
+    return true;
+  }
+  return isPlatformAlertConditionActive(findPlatformAlertRuleForEvent(event, alertRules));
+}
+
 export function payloadValue(event: ObjectEvent, key: string): unknown {
   const row = event.payload?.rows?.[0];
   if (!row) {

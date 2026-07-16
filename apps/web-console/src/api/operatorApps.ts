@@ -5,6 +5,7 @@ import type { OperatorUi } from "../types/operatorUi";
 export interface OperatorAppEntry {
   appId: string;
   title: string;
+  source?: "operator-apps" | "bundle";
 }
 
 export async function fetchOperatorApps(): Promise<OperatorAppEntry[]> {

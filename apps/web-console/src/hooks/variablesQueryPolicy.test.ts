@@ -6,7 +6,7 @@ describe("variablesRefetchIntervalMs", () => {
     expect(variablesRefetchIntervalMs(5000, false)).toBe(5000);
   });
 
-  it("disables polling when WebSocket pushes live invalidations", () => {
-    expect(variablesRefetchIntervalMs(5000, true)).toBe(false);
+  it("keeps polling when WebSocket is connected", () => {
+    expect(variablesRefetchIntervalMs(5000, true)).toBe(5000);
   });
 });

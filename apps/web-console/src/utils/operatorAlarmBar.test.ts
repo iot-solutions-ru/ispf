@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { ObjectEvent } from "../types/event";
 import type { OperatorAlarmRule } from "../types/operatorAlarmBar";
-import { buildActiveAlarm, resolveAlarmBarConfig, resolveAlarmNavigateParams } from "./operatorAlarmBar";
+import {
+  buildActiveAlarm,
+  resolveAlarmBarConfig,
+  resolveAlarmNavigateParams,
+  shouldResurfaceAlarmFromFeed,
+} from "./operatorAlarmBar";
 
 function event(partial: Partial<ObjectEvent> & Pick<ObjectEvent, "eventName" | "level">): ObjectEvent {
   return {
@@ -97,5 +102,59 @@ describe("buildActiveAlarm", () => {
     );
     expect(active.ackRequired).toBe(true);
     expect(active.hideAcknowledge).toBe(false);
+  });
+});
+
+describe("shouldResurfaceAlarmFromFeed", () => {
+  const baseRule: import("../types/event").AlertRule = {
+    id: "root.platform.alert-rules.virt-cluster-error-alert",
+    name: "virt-cluster-error-alert",
+    objectPath: "root.platform.devices.virt-cluster.hub",
+    watchVariable: "clusterError",
+    conditionExpr: "x",
+    eventName: "virtClusterError",
+    payloadVariable: null,
+    enabled: true,
+    edgeTrigger: false,
+    lastConditionMet: false,
+    latchedActive: false,
+    createdAt: "2026-07-16T00:00:00Z",
+    updatedAt: "2026-07-16T00:00:00Z",
+  };
+
+  it("does not resurface when platform condition is clear", () => {
+    const operatorRule: OperatorAlarmRule = { id: "virt", eventNames: ["virtClusterError"] };
+    const evt = event({
+      eventName: "virtClusterError",
+      level: "ERROR",
+      objectPath: baseRule.id,
+    });
+    expect(shouldResurfaceAlarmFromFeed(evt, operatorRule, [baseRule])).toBe(false);
+  });
+
+  it("resurfaces when lastConditionMet is true", () => {
+    const operatorRule: OperatorAlarmRule = { id: "virt", eventNames: ["virtClusterError"] };
+    const evt = event({
+      eventName: "virtClusterError",
+      level: "ERROR",
+      objectPath: baseRule.id,
+    });
+    expect(
+      shouldResurfaceAlarmFromFeed(evt, operatorRule, [{ ...baseRule, lastConditionMet: true }]),
+    ).toBe(true);
+  });
+
+  it("resurfaces persistUntilDismiss even when condition is clear", () => {
+    const operatorRule: OperatorAlarmRule = {
+      id: "virt",
+      eventNames: ["virtClusterError"],
+      persistUntilDismiss: true,
+    };
+    const evt = event({
+      eventName: "virtClusterError",
+      level: "ERROR",
+      objectPath: baseRule.id,
+    });
+    expect(shouldResurfaceAlarmFromFeed(evt, operatorRule, [baseRule])).toBe(true);
   });
 });
