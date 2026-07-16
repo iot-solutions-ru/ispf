@@ -1,129 +1,154 @@
-﻿# IoT Solutions Platform Framework (ISPF)
+﻿# ISPF — Open-source industrial IoT / SCADA
 
-Modern IoT/SCADA platform on a cloud-native 2026 stack.
+**Self-hosted platform for devices, HMI, alarms, historian, and workflows — one object tree, one API, one UI.**
 
-**Status:** active development on `main` — full admin + operator HMI, application platform (REQ-PF), production-ready local/dev profiles.
+Website: [ispf.ai](https://ispf.ai) · Repo: [github.com/Michaael/IoT-Solutions-Platform](https://github.com/Michaael/IoT-Solutions-Platform)
 
-## Core idea
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-English%20%7C%20Русский-0A7EA4)](docs/README.md)
+[![Stack](https://img.shields.io/badge/stack-Spring%20Boot%204%20%2B%20React%2019-informational)](docs/en/architecture.md)
 
-**Business logic lives on the platform** — in models, variables, events, functions, and workflows on the object tree. The core provides generic engines; solutions are declarative configuration (including bundle deploy). See [architecture](docs/en/architecture.md).
+Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as separate products. **ISPF** puts them on a hierarchical **object tree**: a device, dashboard, alert rule, correlator, and BPMN workflow are all nodes with the same API.
 
-ISPF is built around a **hierarchical object tree** with typed variables, events, functions, and computed bindings:
+<!-- Hero: when ready, drop docs/assets/ispf-hero.gif and change src below (script: docs/assets/README.md). -->
+<p align="center">
+  <img src="docs/assets/ispf-operator-hmi.png" alt="ISPF operator HMI — Mini-CHP station summary with live KPIs and AI assistant" width="920" />
+</p>
 
-| Concept | Implementation |
-| -------- | -------------- |
-| Object tree | `ObjectTree` / REST API, drag-and-drop sibling order |
-| Typed data | `DataRecord` + `DataSchema` |
-| Computed bindings | Google CEL (`ispf-expression`) |
-| Device drivers | `DeviceDriver` SPI — **58 driverId** (Modbus, OPC UA, SNMP, MQTT, JDBC, …) |
-| HMI | Dashboard builder — 14 widget types, variable history on charts |
-| Automation | BPMN workflow, alert rules and correlators as **tree nodes** |
-| Application layer | REQ-PF: bundle deploy, functions, reports, BFF, scheduler |
-| Storage | PostgreSQL + TimescaleDB (prod), H2 (local/test); Redis, NATS optional |
-| UI | Spring Boot 4.0 + Java 25 + React 19 (Vite) |
-| Integration | REST + WebSocket |
+<p align="center">
+  <img src="docs/assets/ispf-explorer-en.png" alt="ISPF admin Explorer (English) — object tree, virtual cluster device, blueprints" width="920" />
+</p>
 
-## Documentation
+<p align="center">
+  <img src="docs/assets/ispf-scada-snmp.png" alt="ISPF admin console — SNMP host monitoring dashboard and object tree" width="450" />
+  &nbsp;
+  <img src="docs/assets/ispf-object-tree.png" alt="ISPF object tree — MQTT Meter Bus device properties" width="450" />
+</p>
 
-**Start here:**
+<p align="center">
+  <img src="docs/assets/ispf-bpmn-workflow.png" alt="ISPF BPMN workflow — MES work-order dispatch with live journal" width="450" />
+  &nbsp;
+  <img src="docs/assets/ispf-alert-rule.png" alt="ISPF CEL alert rule editor" width="450" />
+</p>
 
-| | |
-| --- | --- |
-| **English (canonical)** | [docs/en/readme.md](docs/en/readme.md) |
-| **Русский** | [docs/ru/readme.md](docs/ru/readme.md) |
-| **Doc hub** | [docs/README.md](docs/README.md) |
+<p align="center">
+  <img src="docs/assets/ispf-ai-studio.png" alt="ISPF AI Studio — English admin console, natural-language agent for devices, dashboards, and SCADA" width="920" />
+</p>
 
-**Essential links:**
+> **Business logic lives on the platform** — models, variables, events, functions, and workflows. The core ships generic engines; solutions are declarative configuration (bundle deploy), not core forks. See [architecture](docs/en/architecture.md).
 
-| Topic | English | Русский |
-| ----- | ------- | ------- |
-| Product overview | [product.md](docs/en/product.md) | [product.md](docs/ru/product.md) |
-| Getting started | [getting-started.md](docs/en/getting-started.md) | [getting-started.md](docs/ru/getting-started.md) |
-| Architecture | [architecture.md](docs/en/architecture.md) | [architecture.md](docs/ru/architecture.md) |
-| Operator guide | [operator-guide.md](docs/en/operator-guide.md) | [operator-guide.md](docs/ru/operator-guide.md) |
-| Solution developer | [solution-developer-guide.md](docs/en/solution-developer-guide.md) | [solution-developer-guide.md](docs/ru/solution-developer-guide.md) |
-| REST API | [api.md](docs/en/api.md) | [api.md](docs/ru/api.md) |
-| Drivers | [drivers.md](docs/en/drivers.md) | [drivers.md](docs/ru/drivers.md) |
-| Roadmap | [roadmap.md](docs/en/roadmap.md) | [roadmap.md](docs/ru/roadmap.md) |
-| ADR index | [decisions/readme.md](docs/en/decisions/readme.md) | [decisions/readme.md](docs/ru/decisions/readme.md) |
-| Glossary | [glossary.md](docs/en/glossary.md) | [glossary.md](docs/ru/glossary.md) |
-
-## Repository layout
-
+```mermaid
+flowchart LR
+  subgraph Sources
+    D[Modbus / OPC UA / MQTT / SNMP / …]
+  end
+  subgraph ISPF
+    T[Object tree]
+    H[HMI dashboards]
+    A[Alerts + correlators]
+    W[BPMN workflows]
+  end
+  D --> T
+  T --> H
+  T --> A
+  A --> W
+  H --> Op[Operators]
+  W --> Op
 ```
-iot-solutions-platform-framework/
-├── packages/
-│   ├── ispf-core/              # Domain: objects, DataRecord, ObjectType
-│   ├── ispf-expression/        # CEL engine
-│   ├── ispf-driver-api/        # Driver SPI
-│   ├── ispf-driver-*/          # Protocol drivers
-│   ├── ispf-plugin-blueprint/  # Models plugin
-│   ├── ispf-plugin-workflow/   # BPMN engine
-│   └── ispf-server/            # Spring Boot API + JPA + Flyway
-├── apps/web-console/           # React console (Explorer, System, Operator)
-├── examples/                   # demo-app, mes-reference, lab-training, …
-├── tools/license-builder/      # RSA keys + commercial bundle signing
-├── docs/
-│   ├── en/                     # Canonical English docs
-│   └── ru/                     # Russian docs
-├── deploy/
-└── docker-compose.yml
-```
+
+## Why try it
+
+| You want… | ISPF gives you… |
+| ----------- | ---------------- |
+| One model instead of tag soup + side systems | Object tree + CEL bindings |
+| Real HMI, not only a device gateway | Admin Explorer + operator mode |
+| Alarms that do something | CEL alert rules → correlators → BPMN |
+| Industry solutions without forking the core | Declarative **bundles** |
+| Modern self-hosted stack | Spring Boot 4, Java 21+, React 19, PostgreSQL/TimescaleDB |
+
+Honest positioning: closer to an **open Ignition-class application platform** than to a pure MQTT broker or Node-RED flow tool. See the [competitive scorecard](docs/en/competitive-scorecard.md).
+
+## Features at a glance
+
+- **Object tree** — typed variables, events, functions; REST + WebSocket
+- **~58 drivers** — Modbus, OPC UA, MQTT, SNMP, JDBC, and more ([drivers](docs/en/drivers.md))
+- **HMI** — dashboard builder, charts with variable history, SCADA mimics
+- **Automation** — alert rules, correlators, BPMN workflows as tree nodes
+- **Applications** — bundle deploy, reports, BFF functions, scheduler
+- **Storage** — H2 for local; PostgreSQL + TimescaleDB for prod; Redis/NATS optional
+- **AI-assisted solution tooling** — agent / generator paths in docs ([ai-development](docs/en/ai-development.md))
 
 ## Quick start
 
-```bash
-# Infrastructure (optional for dev)
-docker compose up -d
+**Requirements:** JDK 21+, Node.js 20+, Docker optional (Postgres/NATS/Keycloak for fuller stacks).
 
-# API (local — no OAuth, H2)
+```bash
+# API — local profile (H2, no OAuth; syncs a small set of dev driver packs)
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 
-# Web Console
+# Web console (separate terminal)
 cd apps/web-console && npm install && npm run dev
 ```
 
 | URL | Purpose |
 | --- | ------- |
-| http://localhost:8080/api/v1/info | Version and capabilities |
-| http://localhost:8080/actuator/health | Health check |
-| http://localhost:5173 | Web Console (admin) |
+| http://localhost:5173 | Admin console |
 | http://localhost:5173?mode=operator | Operator HMI |
+| http://localhost:8080/api/v1/info | Version / capabilities |
+| http://localhost:8080/actuator/health | Health |
 
-Details: [docs/en/getting-started.md](docs/en/getting-started.md)
+Full guide: [Getting started](docs/en/getting-started.md) · [Начать работу](docs/ru/getting-started.md)
 
-## Demo objects
+> Avoid a cold `./gradlew test` on first day — it builds the full driver matrix and can take a long time. Prefer `bootRun` + the console, or `./tools/ci/pr-fast.sh` / `.\tools\ci\pr-fast.ps1` before a PR.
+
+### Demo objects (local profile)
 
 | Path | Purpose |
 | ---- | ------- |
 | `root.platform.devices.demo-sensor-01` | Virtual sensor + alarm |
-| `root.platform.devices.snmp-localhost` | SNMP agent |
 | `root.platform.dashboards.demo-sensor` | HMI dashboard |
-| `root.platform.workflows.demo-alarm-handler` | BPMN demo |
 | `root.platform.alert-rules.temperature-threshold-exceeded` | CEL alert rule |
 | `root.platform.correlators.alarm-handler-on-threshold-event` | Correlator → workflow |
+| `root.platform.workflows.demo-alarm-handler` | BPMN demo |
+| `root.platform.devices.snmp-localhost` | SNMP agent |
 
-## RBAC
+## Documentation
 
-| Profile | Mechanism |
-| ------- | --------- |
-| `local` | `X-ISPF-Role: admin\|operator` |
-| `dev` | JWT Keycloak, realm `ispf` |
+| | English (canonical) | Русский |
+| --- | ------------------- | ------- |
+| Hub | [docs/en/readme.md](docs/en/readme.md) | [docs/ru/readme.md](docs/ru/readme.md) |
+| Product | [product.md](docs/en/product.md) | [product.md](docs/ru/product.md) |
+| Getting started | [getting-started.md](docs/en/getting-started.md) | [getting-started.md](docs/ru/getting-started.md) |
+| Architecture | [architecture.md](docs/en/architecture.md) | [architecture.md](docs/ru/architecture.md) |
+| Drivers | [drivers.md](docs/en/drivers.md) | [drivers.md](docs/ru/drivers.md) |
+| Solution developer | [solution-developer-guide.md](docs/en/solution-developer-guide.md) | [solution-developer-guide.md](docs/ru/solution-developer-guide.md) |
+| API | [api.md](docs/en/api.md) | [api.md](docs/ru/api.md) |
+| Roadmap | [roadmap.md](docs/en/roadmap.md) | [roadmap.md](docs/ru/roadmap.md) |
 
-See [security](docs/en/security.md).
+More: [operator guide](docs/en/operator-guide.md) · [glossary](docs/en/glossary.md) · [ADRs](docs/en/decisions/readme.md) · [doc hub](docs/README.md)
 
-## Tests
+## Repository layout
 
-```bash
-./gradlew test
+```text
+iot-solutions-platform-framework/
+├── packages/           # Core, CEL, drivers, server (Spring Boot)
+├── apps/web-console/   # React admin + operator UI
+├── examples/           # demo-app, MES/HVAC references, labs
+├── docs/en · docs/ru   # Canonical EN + Russian docs
+├── deploy/             # Compose, VPS, Grafana, edge
+└── docker-compose.yml
 ```
 
 ## License
 
 **[GNU Affero General Public License v3.0](LICENSE)** — platform (`ispf-server`, `web-console`, core packages).
 
-Commercial Enterprise license: [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md), [commercial-licensing](docs/en/commercial-licensing.md).
+Optional **Enterprise** dual-license: [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md) · [commercial licensing](docs/en/commercial-licensing.md).
 
-Device drivers ship as separate **driver packs**. Application bundles use customer EULA.
+Driver packs and application bundles may use separate terms. Details: [license](docs/en/license.md) · [NOTICE](NOTICE).
 
-More: [license](docs/en/license.md), [plugins](docs/en/plugins.md), [NOTICE](NOTICE).
+## Contributing & feedback
+
+Issues and PRs welcome — especially driver/HMI bugs, docs fixes, and real-plant pilot feedback.
+
+If ISPF helps your project, a GitHub ★ helps others discover it. For OT / integrator discussions, open an issue with your stack (protocols, historian size, HMI constraints).
