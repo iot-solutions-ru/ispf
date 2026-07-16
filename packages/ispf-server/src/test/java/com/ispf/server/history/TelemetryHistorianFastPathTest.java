@@ -54,7 +54,8 @@ class TelemetryHistorianFastPathTest {
                 telemetryPolicyService,
                 subscriptionRegistry,
                 variableHistoryService,
-                publicationService
+                publicationService,
+                java.util.Optional.empty()
         );
     }
 

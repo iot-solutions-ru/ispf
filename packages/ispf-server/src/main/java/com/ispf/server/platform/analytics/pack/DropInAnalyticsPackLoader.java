@@ -30,6 +30,11 @@ import java.util.zip.ZipInputStream;
 
 /**
  * Loads Tier C analytics packs from {@link AnalyticsPackProperties#getPacksDir()} (BL-216).
+ *
+ * <p><strong>Security:</strong> JARs are loaded in-process via {@link URLClassLoader}. Treat pack
+ * install as admin-equivalent code execution. Production must set {@code ispf.license.enforce=true}
+ * (and signed bundles) so unsigned/open packs cannot load. Future hardening: isolate the pack
+ * classloader parent / run packs out-of-process.
  */
 @Component
 @Order(100)

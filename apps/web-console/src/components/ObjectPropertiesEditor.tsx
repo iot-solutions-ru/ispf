@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -57,7 +57,6 @@ import TreeSubtreeExportPanel from "./TreeSubtreeExportPanel";
 import PackageImportPanel from "./PackageImportPanel";
 import ObjectAclPanel from "./ObjectAclPanel";
 import ObjectComputationsPanel from "./ObjectComputationsPanel";
-import EventJournalPanel from "./operator/EventJournalPanel";
 import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
 import ObjectChangeHistoryPanel from "./journal/ObjectChangeHistoryPanel";
 import VariableHistoryPanel from "./VariableHistoryPanel";
@@ -68,6 +67,13 @@ import EditLeaseBanner from "./EditLeaseBanner";
 import { usePersistentTab } from "../hooks/usePersistentTab";
 import { usePublishAdminFocus } from "../hooks/usePublishAdminFocus";
 import type { AdminClientFocus } from "../context/AdminFocusContext";
+import {
+  OBJECT_EDITOR_TABS,
+  visibleObjectEditorTabs,
+  type ObjectEditorTab,
+} from "./objectEditor/tabs";
+
+const EventJournalPanel = lazy(() => import("./operator/EventJournalPanel"));
 
 interface ObjectPropertiesEditorProps {
   path: string;
@@ -80,36 +86,7 @@ interface ObjectPropertiesEditorProps {
   embedded?: boolean;
 }
 
-type Tab =
-  | "general"
-  | "federation"
-  | "driver"
-  | "haystack"
-  | "brick"
-  | "deploy"
-  | "export"
-  | "access"
-  | "variables"
-  | "computations"
-  | "events"
-  | "functions"
-  | "history";
-
-const OBJECT_PROPERTY_TABS: readonly Tab[] = [
-  "general",
-  "federation",
-  "driver",
-  "haystack",
-  "brick",
-  "deploy",
-  "export",
-  "access",
-  "variables",
-  "computations",
-  "events",
-  "functions",
-  "history",
-];
+type Tab = ObjectEditorTab;
 
 interface EditorState {
   displayName: string;
@@ -271,7 +248,7 @@ export default function ObjectPropertiesEditor({
   const [tab, setTab] = usePersistentTab<Tab>(
     `object-properties:${path}`,
     "general",
-    OBJECT_PROPERTY_TABS
+    OBJECT_EDITOR_TABS
   );
   const [revision, setRevision] = useState<number>(0);
   const [remoteRevision, setRemoteRevision] = useState<number | null>(null);
@@ -493,7 +470,6 @@ export default function ObjectPropertiesEditor({
 
   const editorData = resolveInspectorEditor(path, editorQuery.data);
   const ctxPreview = editorData?.object;
-  const isRootPath = path === "root";
   const isDevicePreview = ctxPreview?.type === "DEVICE";
   const hasHaystackMetadata = Boolean(
     editorQuery.data?.variables?.some((variable) => variable.name === "haystackTags")
@@ -501,36 +477,19 @@ export default function ObjectPropertiesEditor({
   const hasBrickMetadata = Boolean(
     editorQuery.data?.variables?.some((variable) => variable.name === "brickClass")
   );
-  const isApplicationPreview = ctxPreview?.type === "APPLICATION";
-  const showFederationTab = canManage && path !== "root" && !isRootPath;
-  const showAccessTab = canManageAcl && !isDevicePreview && !isApplicationPreview;
 
-  const tabs = useMemo((): Tab[] => {
-    const list: Tab[] = ["general"];
-    if (showFederationTab) {
-      list.push("federation");
-    }
-    if (isDevicePreview) {
-      list.push("driver");
-      if (hasHaystackMetadata) {
-        list.push("haystack");
-      }
-      if (hasBrickMetadata) {
-        list.push("brick");
-      }
-    }
-    if (isApplicationPreview) {
-      list.push("deploy");
-    }
-    if (canManage && ctxPreview && path.startsWith("root.platform")) {
-      list.push("export");
-    }
-    if (showAccessTab) {
-      list.push("access");
-    }
-    list.push("variables", "computations", "events", "functions", "history");
-    return list;
-  }, [canManage, ctxPreview, hasBrickMetadata, hasHaystackMetadata, isApplicationPreview, isDevicePreview, path, showAccessTab, showFederationTab]);
+  const tabs = useMemo(
+    (): Tab[] =>
+      visibleObjectEditorTabs({
+        path,
+        canManage,
+        canManageAcl,
+        objectType: ctxPreview?.type,
+        hasHaystackMetadata,
+        hasBrickMetadata,
+      }),
+    [canManage, canManageAcl, ctxPreview?.type, hasBrickMetadata, hasHaystackMetadata, path]
+  );
 
   useEffect(() => {
     try {
@@ -1050,12 +1009,14 @@ export default function ObjectPropertiesEditor({
               {t("events.auditEnabled")}
             </label>
           )}
-          <EventJournalPanel
-            objectPath={path}
-            knownEventNames={editorData.events.map((event) => event.name)}
-            compact
-            scrollMaxHeight={360}
-          />
+          <Suspense fallback={<p className="hint">{t("common:action.loading")}</p>}>
+            <EventJournalPanel
+              objectPath={path}
+              knownEventNames={editorData.events.map((event) => event.name)}
+              compact
+              scrollMaxHeight={360}
+            />
+          </Suspense>
         </section>
       )}
 

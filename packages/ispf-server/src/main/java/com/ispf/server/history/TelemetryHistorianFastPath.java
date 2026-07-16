@@ -8,7 +8,10 @@ import com.ispf.server.object.CoalescedTelemetryUpdate;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import com.ispf.server.object.pubsub.VariableChangeInterest;
 import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,6 +30,7 @@ public class TelemetryHistorianFastPath {
     private final VariableChangeSubscriptionRegistry subscriptionRegistry;
     private final VariableHistoryService variableHistoryService;
     private final ObjectChangePublicationService publicationService;
+    private final Optional<AutomationMetricsRecorder> metricsRecorder;
     private final ConcurrentHashMap<String, EligibilityCacheEntry> eligibilityCache = new ConcurrentHashMap<>();
 
     public TelemetryHistorianFastPath(
@@ -34,13 +38,15 @@ public class TelemetryHistorianFastPath {
             DeviceTelemetryPolicyService telemetryPolicyService,
             VariableChangeSubscriptionRegistry subscriptionRegistry,
             VariableHistoryService variableHistoryService,
-            ObjectChangePublicationService publicationService
+            ObjectChangePublicationService publicationService,
+            Optional<AutomationMetricsRecorder> metricsRecorder
     ) {
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.telemetryPolicyService = telemetryPolicyService;
         this.subscriptionRegistry = subscriptionRegistry;
         this.variableHistoryService = variableHistoryService;
         this.publicationService = publicationService;
+        this.metricsRecorder = metricsRecorder != null ? metricsRecorder : Optional.empty();
     }
 
     /**
@@ -84,6 +90,7 @@ public class TelemetryHistorianFastPath {
             return false;
         }
         variableHistoryService.recordFromDataRecordTrusted(objectPath, variableName, value, observedAt);
+        metricsRecorder.ifPresent(AutomationMetricsRecorder::recordTelemetryHistorianOnly);
         return true;
     }
 

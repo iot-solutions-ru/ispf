@@ -54,16 +54,16 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
 
         List<VariableSampleEntity> rows;
         if (from != null && to != null) {
-            rows = sampleRepository.findByEffectiveTimestampBetweenOrderByEffectiveTimestampAsc(
+            // Newest cappedLimit within range (DESC + reverse) — avoid loading the full range into memory.
+            rows = new ArrayList<>(sampleRepository.findByEffectiveTimestampBetweenOrderByEffectiveTimestampDesc(
                     objectPath,
                     variableName,
                     fieldName,
                     from,
-                    to
-            );
-            if (rows.size() > cappedLimit) {
-                rows = rows.subList(rows.size() - cappedLimit, rows.size());
-            }
+                    to,
+                    PageRequest.of(0, cappedLimit)
+            ));
+            rows = rows.reversed();
         } else {
             rows = new ArrayList<>(sampleRepository.findByObjectPathAndVariableNameAndFieldNameOrderByEffectiveTimestampDesc(
                     objectPath,

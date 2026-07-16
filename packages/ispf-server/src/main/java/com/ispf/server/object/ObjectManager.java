@@ -413,10 +413,7 @@ public class ObjectManager {
         if (path == null || path.isBlank() || "root".equals(path)) {
             throw new IllegalArgumentException("Cannot delete root object");
         }
-        List<ObjectNodeEntity> toDelete = nodeRepository.findAllByOrderByPathAsc().stream()
-                .filter(e -> e.getPath().equals(path) || e.getPath().startsWith(path + "."))
-                .sorted(Comparator.comparingInt(e -> -e.getPath().length()))
-                .toList();
+        List<ObjectNodeEntity> toDelete = nodeRepository.findByPathPrefixOrderByPathLengthDesc(path);
         if (toDelete.isEmpty() && objectTree.findByPath(path).isEmpty()) {
             throw new ObjectNotFoundException(path);
         }

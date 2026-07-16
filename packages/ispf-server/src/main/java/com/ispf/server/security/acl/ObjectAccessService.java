@@ -14,6 +14,15 @@ import java.util.Set;
 @Service
 public class ObjectAccessService {
 
+    /**
+     * Empty ACL is fail-open for solution trees, but fail-closed for sensitive platform
+     * branches (admin always bypasses earlier). Operators/developers need an explicit grant.
+     */
+    private static final List<String> FAIL_CLOSED_EMPTY_ACL_PREFIXES = List.of(
+            "root.platform.security",
+            "root.platform.tenants"
+    );
+
     private final ObjectAclStore aclStore;
 
     public ObjectAccessService(ObjectAclStore aclStore) {
@@ -162,7 +171,8 @@ public class ObjectAccessService {
         }
         List<ObjectAclStore.ObjectAclEntry> entries = aclStore.findEffectiveEntries(objectPath);
         if (entries.isEmpty()) {
-            return true;
+            // Fail-open for normal solution paths; fail-closed for sensitive platform trees.
+            return !isFailClosedEmptyAclPath(objectPath);
         }
         Set<String> roles = extractRoles(authentication);
         String username = authentication != null ? authentication.getName() : null;
@@ -197,6 +207,18 @@ public class ObjectAccessService {
             case "VIEWER" -> Set.of("READ", "VIEWER").contains(normalizedRequired);
             default -> false;
         };
+    }
+
+    static boolean isFailClosedEmptyAclPath(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return false;
+        }
+        for (String prefix : FAIL_CLOSED_EMPTY_ACL_PREFIXES) {
+            if (objectPath.equals(prefix) || objectPath.startsWith(prefix + ".")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isAdmin(Authentication authentication) {

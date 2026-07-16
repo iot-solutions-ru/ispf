@@ -52,6 +52,24 @@ public interface VariableSampleRepository extends JpaRepository<VariableSampleEn
             WHERE s.objectPath = :objectPath
               AND s.variableName = :variableName
               AND s.fieldName = :fieldName
+              AND COALESCE(s.observedAt, s.sampledAt) >= :from
+              AND COALESCE(s.observedAt, s.sampledAt) <= :to
+            ORDER BY COALESCE(s.observedAt, s.sampledAt) DESC
+            """)
+    List<VariableSampleEntity> findByEffectiveTimestampBetweenOrderByEffectiveTimestampDesc(
+            @Param("objectPath") String objectPath,
+            @Param("variableName") String variableName,
+            @Param("fieldName") String fieldName,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT s FROM VariableSampleEntity s
+            WHERE s.objectPath = :objectPath
+              AND s.variableName = :variableName
+              AND s.fieldName = :fieldName
             ORDER BY COALESCE(s.observedAt, s.sampledAt) DESC
             """)
     List<VariableSampleEntity> findByObjectPathAndVariableNameAndFieldNameOrderByEffectiveTimestampDesc(

@@ -64,6 +64,9 @@ public class AutomationMetricsRecorder {
     private final AtomicLong variableHistoryCoalescedCount = new AtomicLong();
     private final AtomicLong telemetryIngressCoalescedCount = new AtomicLong();
     private final AtomicLong telemetryIngressLaneEvictedCount = new AtomicLong();
+    private final AtomicLong telemetryBindingBypassCount = new AtomicLong();
+    private final AtomicLong telemetryHistorianOnlyCount = new AtomicLong();
+    private final AtomicLong telemetryCoalesceDropCount = new AtomicLong();
     private final AtomicLong variableHistoryFlushedCount = new AtomicLong();
     private final EnumMap<EventFireSource, AtomicLong> eventsFiredBySource = new EnumMap<>(EventFireSource.class);
     private final EnumMap<WorkflowStartTrigger, AtomicLong> workflowStartsByTrigger = new EnumMap<>(WorkflowStartTrigger.class);
@@ -91,6 +94,9 @@ public class AutomationMetricsRecorder {
         Counter.builder("ispf.correlator.triggers.total").register(registry);
         Counter.builder("ispf.object_change.queue.dropped.total").register(registry);
         Counter.builder("ispf.event_journal.queue_full.sync_fallback.total").register(registry);
+        Counter.builder("ispf.telemetry.binding_bypass.total").register(registry);
+        Counter.builder("ispf.telemetry.historian_only.total").register(registry);
+        Counter.builder("ispf.telemetry.coalesce_drops.total").register(registry);
         registry.gauge(
                 "ispf.object_change.processed.total",
                 objectChangeProcessed,
@@ -252,6 +258,24 @@ public class AutomationMetricsRecorder {
         telemetryIngressLaneEvictedCount.incrementAndGet();
     }
 
+    /** Binding consumer present — coalesce skipped so every tick is published. */
+    public void recordTelemetryBindingBypass() {
+        telemetryBindingBypassCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.telemetry.binding_bypass.total").increment());
+    }
+
+    /** Historian-only fast path handled the tick without the object-change bus. */
+    public void recordTelemetryHistorianOnly() {
+        telemetryHistorianOnlyCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.telemetry.historian_only.total").increment());
+    }
+
+    /** Last-value coalesce dropped an unchanged or superseded sample. */
+    public void recordTelemetryCoalesceDrop() {
+        telemetryCoalesceDropCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.telemetry.coalesce_drops.total").increment());
+    }
+
     public void recordVariableHistoryFlushed(long count) {
         variableHistoryFlushedCount.addAndGet(count);
     }
@@ -277,6 +301,9 @@ public class AutomationMetricsRecorder {
         section.put("variableHistoryQueueSize", variableHistoryQueueSize());
         section.put("variableHistoryFlushedTotal", variableHistoryFlushedCount.get());
         section.put("variableHistorySyncFallbackTotal", variableHistorySyncFallbackCount.get());
+        section.put("telemetryBindingBypassTotal", telemetryBindingBypassCount.get());
+        section.put("telemetryHistorianOnlyTotal", telemetryHistorianOnlyCount.get());
+        section.put("telemetryCoalesceDropsTotal", telemetryCoalesceDropCount.get());
         return section;
     }
 

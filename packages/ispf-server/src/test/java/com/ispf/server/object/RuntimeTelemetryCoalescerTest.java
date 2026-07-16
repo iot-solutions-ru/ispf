@@ -112,7 +112,7 @@ class RuntimeTelemetryCoalescerTest {
         stubDefaultPolicyService(1_000, false, false);
         coalescer = new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
-                telemetryIngressDispatcher, bindingDependencyIndex
+                telemetryIngressDispatcher, bindingDependencyIndex, java.util.Optional.empty()
         );
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
 
@@ -324,7 +324,7 @@ class RuntimeTelemetryCoalescerTest {
         stubDefaultPolicyService(coalesceMs, ingressTopicLanes, ingressPayloadLanes);
         return new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath,
-                telemetryIngressDispatcher, bindingDependencyIndex
+                telemetryIngressDispatcher, bindingDependencyIndex, java.util.Optional.empty()
         ) {{
             ensureSchedulerStarted();
         }};

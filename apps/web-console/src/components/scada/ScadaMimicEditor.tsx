@@ -34,7 +34,7 @@ import { directionFromArrowKey, findElementInDirection } from "../../scada/mimic
 import { collectBindingInterests, collectBindingPaths, groupBindingVariablesByPath, resolveDocumentBindings } from "../../scada/bindingResolver";
 import { ensurePackLoaded, resolvePlacementSymbol } from "../../scada/symbols/registry";
 import { useVariablesBatchQuery } from "../../hooks/useVariablesQuery";
-import { useDashboardContext } from "../dashboard/DashboardContext";
+import { useMimicHostSession } from "./MimicHostContext";
 import ScadaMimicCanvas from "./ScadaMimicCanvas";
 import SymbolPalette from "./SymbolPalette";
 import MimicPropertiesPanel from "./MimicPropertiesPanel";
@@ -81,7 +81,8 @@ interface ScadaMimicEditorProps {
 
 export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: ScadaMimicEditorProps) {
   const { t } = useTranslation("scada");
-  const session = useDashboardContext();
+  /** Binding host session — not DashboardContext (editor boundary). */
+  const session = useMimicHostSession();
   const {
     present: document,
     setPresent: setDocumentState,

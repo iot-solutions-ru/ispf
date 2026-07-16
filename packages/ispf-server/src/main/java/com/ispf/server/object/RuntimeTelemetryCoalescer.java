@@ -11,6 +11,7 @@ import com.ispf.driver.ingress.ElasticWorkerScaler;
 import com.ispf.driver.ingress.ThreadPoolResize;
 import jakarta.annotation.PreDestroy;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +38,7 @@ public class RuntimeTelemetryCoalescer {
     private final TelemetryHistorianFastPath historianFastPath;
     private final TelemetryIngressDispatcher telemetryIngressDispatcher;
     private final BindingDependencyIndex bindingDependencyIndex;
+    private final Optional<AutomationMetricsRecorder> metricsRecorder;
     private ScheduledThreadPoolExecutor scheduler;
     private ElasticWorkerScaler schedulerScaler;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
@@ -51,7 +53,8 @@ public class RuntimeTelemetryCoalescer {
             @Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch,
             @Lazy TelemetryHistorianFastPath historianFastPath,
             @Lazy TelemetryIngressDispatcher telemetryIngressDispatcher,
-            @Lazy BindingDependencyIndex bindingDependencyIndex
+            @Lazy BindingDependencyIndex bindingDependencyIndex,
+            Optional<AutomationMetricsRecorder> metricsRecorder
     ) {
         this.properties = properties;
         this.policyService = policyService;
@@ -60,6 +63,7 @@ public class RuntimeTelemetryCoalescer {
         this.historianFastPath = historianFastPath;
         this.telemetryIngressDispatcher = telemetryIngressDispatcher;
         this.bindingDependencyIndex = bindingDependencyIndex;
+        this.metricsRecorder = metricsRecorder != null ? metricsRecorder : Optional.empty();
     }
 
     public synchronized void ensureSchedulerStarted() {
@@ -110,6 +114,7 @@ public class RuntimeTelemetryCoalescer {
         String coalesceKey = resolveCoalesceKey(path, variableName, value);
         // Binding rules must see every variable tick — never last-value-wins coalesce them.
         if (bindingDependencyIndex != null && bindingDependencyIndex.hasConsumers(path, variableName)) {
+            metricsRecorder.ifPresent(AutomationMetricsRecorder::recordTelemetryBindingBypass);
             publishIfChanged(path, variableName, value, coalesceKey, observedAt);
             return;
         }
@@ -118,6 +123,7 @@ public class RuntimeTelemetryCoalescer {
             return;
         }
         if (suppressUnchangedSample(path, variableName, value, coalesceKey)) {
+            metricsRecorder.ifPresent(AutomationMetricsRecorder::recordTelemetryCoalesceDrop);
             return;
         }
         if (!properties.isEnabled()) {
