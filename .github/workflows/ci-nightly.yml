@@ -109,7 +109,7 @@ jobs:
 
       - name: Upload backend logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nightly-backend-${{ github.run_id }}
           path: nightly-*.log
@@ -170,7 +170,7 @@ jobs:
       - name: Generate CI dashboard
         run: python tools/acceleration/ci-dashboard.py
       - name: Upload CI dashboard
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-dashboard-${{ github.run_id }}
           path: |

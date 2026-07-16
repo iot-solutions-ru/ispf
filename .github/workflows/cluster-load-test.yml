@@ -41,7 +41,7 @@ jobs:
 
       - name: Upload cluster test logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cluster-ownership-${{ github.run_id }}
           path: cluster-ownership.log
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload baseline logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cluster-baseline-${{ github.run_id }}
           path: cluster-baseline-list-devices.log
@@ -132,7 +132,7 @@ jobs:
 
       - name: Upload scale report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cluster-scale-${{ github.run_id }}
           path: deploy/cluster-scale-report.json
