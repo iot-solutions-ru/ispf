@@ -33,6 +33,7 @@ public class PlatformMetricsProbeService {
     private final PlatformMetricsService metricsService;
     private final ObjectManager objectManager;
 
+    /** Session override from Load diagnostics UI (OR with {@link PlatformMetricsProbeProperties#isEnabled()}). */
     private volatile boolean diagnosticsProbeEnabled;
 
     private Long lastEventHistoryRecords;
@@ -51,14 +52,14 @@ public class PlatformMetricsProbeService {
 
     @EventListener(ApplicationReadyEvent.class)
     void bootstrap() {
-        if (!diagnosticsProbeEnabled) {
+        if (!shouldSync()) {
             return;
         }
         if (!probeDeviceExists()) {
-            log.debug("Diagnostics metrics probe: device {} not found", DEVICE_PATH);
+            log.debug("Metrics probe: device {} not found yet", DEVICE_PATH);
             return;
         }
-        log.info("Diagnostics metrics probe syncing to {}", DEVICE_PATH);
+        log.info("Metrics probe syncing to {}", DEVICE_PATH);
         syncOnce();
     }
 
@@ -69,23 +70,26 @@ public class PlatformMetricsProbeService {
     public void setDiagnosticsProbeEnabled(boolean enabled) {
         diagnosticsProbeEnabled = enabled;
         if (enabled) {
-            log.info("Diagnostics metrics probe enabled (Load diagnostics, interval {}ms)",
-                    properties.getIntervalMs());
+            log.info("Diagnostics metrics probe enabled (interval {}ms)", properties.getIntervalMs());
             if (probeDeviceExists()) {
                 syncOnce();
             }
             return;
         }
-        log.info("Diagnostics metrics probe disabled");
+        log.info("Diagnostics metrics probe session flag off (property enabled={})", properties.isEnabled());
     }
 
     public boolean probeDeviceExists() {
         return objectManager.tree().findByPath(DEVICE_PATH).isPresent();
     }
 
+    private boolean shouldSync() {
+        return properties.isEnabled() || diagnosticsProbeEnabled;
+    }
+
     @Scheduled(fixedDelayString = "${ispf.platform-metrics-probe.interval-ms:5000}")
     void poll() {
-        if (!diagnosticsProbeEnabled || !probeDeviceExists()) {
+        if (!shouldSync() || !probeDeviceExists()) {
             return;
         }
         syncOnce();
@@ -104,6 +108,8 @@ public class PlatformMetricsProbeService {
             Map<String, Object> automation = (Map<String, Object>) snapshot.getOrDefault("automation", Map.of());
             @SuppressWarnings("unchecked")
             Map<String, Object> history = (Map<String, Object>) snapshot.getOrDefault("variableHistory", Map.of());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> connections = (Map<String, Object>) snapshot.getOrDefault("connections", Map.of());
 
             long events = longValue(automation.get("eventHistoryRecords"));
             long alertFires = longValue(automation.get("alertFiresTotal"));
@@ -114,6 +120,13 @@ public class PlatformMetricsProbeService {
             writeInteger("alertFiresTotal", alertFires);
             writeDouble("alertFiresPerSecond", rates.alertFiresPerSecond());
             writeInteger("objectChangeQueueSize", longValue(automation.get("objectChangeQueueSize")));
+            writeInteger("eventJournalQueueSize", longValue(automation.get("eventJournalQueueSize")));
+            writeInteger("variableHistoryQueueSize", longValue(automation.get("variableHistoryQueueSize")));
+            writeInteger("objectChangeDroppedTotal", longValue(automation.get("objectChangeDroppedTotal")));
+            writeInteger("telemetryCoalesceDropsTotal", longValue(automation.get("telemetryCoalesceDropsTotal")));
+            writeInteger("telemetryBindingBypassTotal", longValue(automation.get("telemetryBindingBypassTotal")));
+            writeInteger("telemetryHistorianOnlyTotal", longValue(automation.get("telemetryHistorianOnlyTotal")));
+            writeInteger("websocketClients", longValue(connections.get("websocketClients")));
             writeDouble("heapUsedMb", doubleValue(runtime.get("heapUsedMb")));
             writeInteger("activeConnections", longValue(database.get("activeConnections")));
             writeInteger("threadsAwaitingConnection", longValue(database.get("threadsAwaitingConnection")));

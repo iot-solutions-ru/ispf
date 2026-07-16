@@ -514,6 +514,187 @@ public final class DashboardLayouts {
             }
             """;
 
+    /**
+     * First-party self-diagnostics HMI bound to {@code platform-metrics-probe}.
+     * Primary observability surface — Prometheus/Grafana remain optional export.
+     */
+    public static final String PLATFORM_SELF_DIAGNOSTICS_DASHBOARD = """
+            {
+              "columns": 84,
+              "rowHeight": 8,
+              "widgets": [
+                {
+                  "id": "coalesce-drops",
+                  "type": "value",
+                  "title": "Coalesce drops",
+                  "x": 0, "y": 0, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "telemetryCoalesceDropsTotal",
+                  "valueField": "value",
+                  "decimals": 0
+                },
+                {
+                  "id": "binding-bypass",
+                  "type": "value",
+                  "title": "Binding bypass",
+                  "x": 21, "y": 0, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "telemetryBindingBypassTotal",
+                  "valueField": "value",
+                  "decimals": 0
+                },
+                {
+                  "id": "historian-only",
+                  "type": "value",
+                  "title": "Historian-only",
+                  "x": 42, "y": 0, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "telemetryHistorianOnlyTotal",
+                  "valueField": "value",
+                  "decimals": 0
+                },
+                {
+                  "id": "ws-clients",
+                  "type": "value",
+                  "title": "WebSocket clients",
+                  "x": 63, "y": 0, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "websocketClients",
+                  "valueField": "value",
+                  "decimals": 0
+                },
+                {
+                  "id": "oc-queue",
+                  "type": "gauge",
+                  "title": "Object-change queue",
+                  "x": 0, "y": 14, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "objectChangeQueueSize",
+                  "valueField": "value",
+                  "min": 0,
+                  "max": 10000,
+                  "decimals": 0
+                },
+                {
+                  "id": "journal-queue",
+                  "type": "gauge",
+                  "title": "Event journal queue",
+                  "x": 21, "y": 14, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "eventJournalQueueSize",
+                  "valueField": "value",
+                  "min": 0,
+                  "max": 10000,
+                  "decimals": 0
+                },
+                {
+                  "id": "history-queue",
+                  "type": "gauge",
+                  "title": "Variable history queue",
+                  "x": 42, "y": 14, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "variableHistoryQueueSize",
+                  "valueField": "value",
+                  "min": 0,
+                  "max": 10000,
+                  "decimals": 0
+                },
+                {
+                  "id": "events-rate",
+                  "type": "gauge",
+                  "title": "Events / s",
+                  "x": 63, "y": 14, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "eventsPerSecond",
+                  "valueField": "value",
+                  "min": 0,
+                  "max": 500,
+                  "decimals": 1
+                },
+                {
+                  "id": "heap",
+                  "type": "value",
+                  "title": "Heap used (MB)",
+                  "x": 0, "y": 28, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "heapUsedMb",
+                  "valueField": "value",
+                  "decimals": 1,
+                  "unit": "MB"
+                },
+                {
+                  "id": "db-active",
+                  "type": "value",
+                  "title": "DB active connections",
+                  "x": 21, "y": 28, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "activeConnections",
+                  "valueField": "value",
+                  "decimals": 0
+                },
+                {
+                  "id": "drivers",
+                  "type": "value",
+                  "title": "Active drivers",
+                  "x": 42, "y": 28, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "activeDrivers",
+                  "valueField": "value",
+                  "decimals": 0
+                },
+                {
+                  "id": "workflows",
+                  "type": "value",
+                  "title": "Workflows running",
+                  "x": 63, "y": 28, "w": 21, "h": 14,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "workflowInstancesRunning",
+                  "valueField": "value",
+                  "decimals": 0
+                },
+                {
+                  "id": "oc-queue-chart",
+                  "type": "chart",
+                  "title": "Object-change queue (trend)",
+                  "x": 0, "y": 42, "w": 42, "h": 28,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "objectChangeQueueSize",
+                  "valueField": "value",
+                  "chartStyle": "area",
+                  "maxPoints": 120,
+                  "historyRange": "live",
+                  "refreshIntervalMs": 5000
+                },
+                {
+                  "id": "coalesce-chart",
+                  "type": "chart",
+                  "title": "Coalesce drops (trend)",
+                  "x": 42, "y": 42, "w": 42, "h": 28,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "telemetryCoalesceDropsTotal",
+                  "valueField": "value",
+                  "chartStyle": "area",
+                  "maxPoints": 120,
+                  "historyRange": "live",
+                  "refreshIntervalMs": 5000
+                },
+                {
+                  "id": "events-chart",
+                  "type": "chart",
+                  "title": "Event journal growth",
+                  "x": 0, "y": 70, "w": 84, "h": 28,
+                  "objectPath": "root.platform.devices.platform-metrics-probe",
+                  "variableName": "eventHistoryRecords",
+                  "valueField": "value",
+                  "chartStyle": "area",
+                  "maxPoints": 120,
+                  "historyRange": "live",
+                  "refreshIntervalMs": 5000
+                }
+              ]
+            }
+            """;
+
     private DashboardLayouts() {
     }
 }

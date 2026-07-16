@@ -2,9 +2,24 @@
 
 # Observability (ISPF)
 
-Automation pipeline metrics export: **Prometheus scrape** (pull) and **OTLP** (push, OpenTelemetry-compatible backends).
+ISPF is a **universal platform**: primary observability is **first-party** — System → Metrics and the object-tree dashboard `root.platform.dashboards.platform-metrics` (Platform Self-Diagnostics), fed by `platform-metrics-probe`. Prometheus / Grafana / OTLP remain **optional export** for sites that already run an external stack.
 
-## Prometheus (default on prod)
+## First-party self-diagnostics (preferred)
+
+| Surface | What it shows |
+|---------|----------------|
+| Admin → **System → Metrics** | Hot-path strip (coalesce / binding bypass / historian-only, queues, WebSocket clients) + full section tables |
+| Dashboard **Platform Self-Diagnostics** | Live value/gauge/chart widgets bound to `root.platform.devices.platform-metrics-probe` |
+| Probe sync | `ispf.platform-metrics-probe.enabled=true` (default) writes API snapshot into probe variables every `interval-ms` |
+
+Bootstrap (default on):
+
+- `ispf.platform-metrics-probe.ensure-on-startup=true` — creates probe device, variables, and dashboard layout if missing
+- Manual repair / load-test: [`deploy/setup-platform-metrics-monitor.py`](../deploy/setup-platform-metrics-monitor.py)
+
+Open the dashboard from Explorer (`root.platform.dashboards.platform-metrics`) or via the **Open dashboard** button on the Metrics hot-path card.
+
+## Prometheus (optional export)
 
 | Endpoint | Auth | Format |
 |----------|------|--------|
@@ -86,9 +101,9 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 
 Details: [demostands](demostands.md) (verification section), [vps-demostand](vps-demostand.md) (ops example).
 
-**Grafana dashboard** (automation + telemetry hot path): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](../deploy/grafana/README.md). Local stack: `docker compose -f deploy/docker-compose.observability.yml up -d`.
+**Optional Grafana export** (same Micrometer series): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](../deploy/grafana/README.md). Prefer first-party dashboards above unless you already operate Prometheus.
 
-**WebSocket sessions** are not exported on `/actuator/prometheus` yet — use `GET /api/v1/platform/metrics` → `connections.websocketClients` until a Micrometer gauge exists.
+**WebSocket sessions** on Prometheus are not exported yet — first-party Metrics / probe variable `websocketClients` is the source of truth (`GET /api/v1/platform/metrics`).
 
 **Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py) against a fixtures-enabled server (`demo-sensor-01`).
 

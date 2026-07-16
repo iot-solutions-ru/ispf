@@ -10,6 +10,7 @@ import YargHealthCard from "./YargHealthCard";
 import McpHealthCard from "./McpHealthCard";
 import PlatformLicenseCard from "./PlatformLicenseCard";
 import StorageHealthCard from "./StorageHealthCard";
+import HotPathMetricsCard from "./HotPathMetricsCard";
 import { useUserTimeZone } from "../context/UserTimeZoneContext";
 
 const METRIC_KEYS = [
@@ -25,6 +26,11 @@ const METRIC_KEYS = [
   "workflowInstancesCompleted", "workflowInstancesFailed", "workflowInstancesCancelled",
   "alertRules", "eventCorrelators", "applicationFunctions", "applicationFunctionVersions",
   "platformSchedules", "platformSchedulesEnabled",
+  "telemetryCoalesceDropsTotal", "telemetryBindingBypassTotal", "telemetryHistorianOnlyTotal",
+  "objectChangeQueueSize", "eventJournalQueueSize", "variableHistoryQueueSize",
+  "objectChangeDroppedTotal", "objectChangeProcessedTotal", "eventsFiredTotal", "alertFiresTotal",
+  "correlatorTriggersTotal", "workflowStartsTotal", "eventJournalFlushedTotal",
+  "eventJournalSyncFallbackTotal", "variableHistoryFlushedTotal", "variableHistorySyncFallbackTotal",
   "processCpuPercent", "systemCpuPercent", "heapUsedPercent", "pressureScore", "topSuspect",
   "turnsStartedTotal", "turnsCompletedTotal", "turnsRateLimitedTotal", "turnsLastHour",
   "avgStepsPerTurn", "guardBlocksByType",
@@ -160,6 +166,7 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
                   time: formatDate(metricsQuery.data.timestamp),
                 })}
               </p>
+              <HotPathMetricsCard data={metricsQuery.data} />
               <AutomationIndexStatsCard />
               <StorageHealthCard />
               <div className="system-metrics-grid system-backend-health-grid">

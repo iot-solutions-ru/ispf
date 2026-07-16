@@ -86,9 +86,9 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 
 Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).
 
-**Панель Grafana** (automation + telemetry hot path): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../deploy/grafana/README.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.
+**Основная самодиагностика** — Admin → System → Metrics и дашборд `root.platform.dashboards.platform-metrics` (probe `platform-metrics-probe`). Grafana JSON — **опциональный** экспорт: [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json).
 
-Сессии WebSocket пока не в Prometheus — `GET /api/v1/platform/metrics` → `connections.websocketClients`.
+Сессии WebSocket: переменная probe / `GET /api/v1/platform/metrics` → `websocketClients`.
 
 **Golden path smoke** (alarm → journal → ack): [`deploy/tools/golden-path-alarm-smoke.py`](../deploy/tools/golden-path-alarm-smoke.py).
 

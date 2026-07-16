@@ -5,7 +5,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "ispf.platform-metrics-probe")
 public class PlatformMetricsProbeProperties {
 
-    private boolean enabled = false;
+    /**
+     * When true, probe sync runs continuously (feeds self-diagnostic dashboards).
+     * Load-diagnostics UI can still force-enable via runtime flag.
+     */
+    private boolean enabled = true;
+
+    /** Seed probe device + platform-metrics dashboard on startup. */
+    private boolean ensureOnStartup = true;
+
     private long intervalMs = 5000;
 
     public boolean isEnabled() {
@@ -14,6 +22,14 @@ public class PlatformMetricsProbeProperties {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isEnsureOnStartup() {
+        return ensureOnStartup;
+    }
+
+    public void setEnsureOnStartup(boolean ensureOnStartup) {
+        this.ensureOnStartup = ensureOnStartup;
     }
 
     public long getIntervalMs() {

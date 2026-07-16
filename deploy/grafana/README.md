@@ -1,6 +1,8 @@
-# Grafana: ISPF Automation Pipeline
+# Grafana: ISPF Automation Pipeline (optional export)
 
-Dashboard **`ISPF Automation Pipeline`** (`uid: ispf-automation-pipeline`) — все Micrometer-метрики automation pipeline из [OBSERVABILITY.md](../../docs/en/observability.md).
+Primary observability is **inside ISPF**: System → Metrics + dashboard `root.platform.dashboards.platform-metrics` (Platform Self-Diagnostics). This Grafana JSON is for sites that already scrape Prometheus — same series, external UI.
+
+Dashboard **`ISPF Automation Pipeline`** (`uid: ispf-automation-pipeline`) — Micrometer metrics from [observability.md](../../docs/en/observability.md).
 
 ## Метрики на дашборде
 

@@ -477,6 +477,51 @@ code,
   font-size: 0.95rem;
 }
 
+.system-hot-path-card {
+  margin-bottom: 1rem;
+}
+
+.system-hot-path-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.system-hot-path-header h3 {
+  margin: 0 0 0.25rem;
+}
+
+.system-hot-path-header .hint {
+  margin: 0;
+}
+
+.system-hot-path-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+}
+
+.system-hot-path-stat {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.55rem 0.7rem;
+  background: var(--bg, transparent);
+}
+
+.system-hot-path-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.system-hot-path-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .system-metrics-table th {
   width: 55%;
   font-weight: 500;
