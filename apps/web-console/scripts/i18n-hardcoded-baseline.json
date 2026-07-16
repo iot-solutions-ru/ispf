@@ -1,5 +1,83 @@
 [
   {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 31,
+    "kind": "cyrillic",
+    "text": "? `Текущее CEL правила «${ruleId}»:\\n\\`\\`\\`\\n${expression}\\n\\`\\`\\``"
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 32,
+    "kind": "cyrillic",
+    "text": ": `Текущее CEL в редакторе:\\n\\`\\`\\`\\n${expression}\\n\\`\\`\\``"
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 36,
+    "kind": "cyrillic",
+    "text": "parts.push(`Объект UI focus: \\`${path}\\``);"
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 47,
+    "kind": "cyrillic",
+    "text": "parts.push(`Правила на экране:\\n${lines.join(\"\\n\")}`);"
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 62,
+    "kind": "cyrillic",
+    "text": "`Экран UI focus: ${title}`,"
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 63,
+    "kind": "cyrillic",
+    "text": "systemTab ? `Вкладка Система: ${systemTab}` : \"\","
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 64,
+    "kind": "cyrillic",
+    "text": "settingsTab ? `Подраздел настроек: ${settingsTab}` : \"\","
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 65,
+    "kind": "cyrillic",
+    "text": "studioTab ? `Вкладка AI Studio: ${studioTab}` : \"\","
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 66,
+    "kind": "cyrillic",
+    "text": "hint ? `Описание: ${hint}` : \"\","
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 67,
+    "kind": "cyrillic",
+    "text": "ids.length > 0 ? `Видимые настройки: ${ids.join(\", \")}` : \"\","
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 69,
+    "kind": "cyrillic",
+    "text": "? `Примеры строк:\\n${samples"
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 84,
+    "kind": "cyrillic",
+    "text": "widgetId ? `Выбранный виджет: ${widgetId} (${widgetType})` : \"\","
+  },
+  {
+    "file": "components/agent/AdminCopilotPanel.tsx",
+    "line": 89,
+    "kind": "cyrillic",
+    "text": "typeof detail.fieldsJson === \"string\" ? `fieldsJson (фрагмент): ${detail.fieldsJson}` : \"\","
+  },
+  {
     "file": "components/AiStudioStatusTab.tsx",
     "line": 157,
     "kind": "jsx-text",
@@ -18,38 +96,38 @@
     "text": "deployApplicationFunction(appId, parseJson(functionText) as Record"
   },
   {
-    "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 174,
+    "file": "components/automation/AlertRuleFormFields.tsx",
+    "line": 120,
     "kind": "jsx-text",
     "text": "CRITICAL"
   },
   {
-    "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 175,
+    "file": "components/automation/AlertRuleFormFields.tsx",
+    "line": 121,
     "kind": "jsx-text",
     "text": "HIGH"
   },
   {
-    "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 176,
+    "file": "components/automation/AlertRuleFormFields.tsx",
+    "line": 122,
     "kind": "jsx-text",
     "text": "MEDIUM"
   },
   {
-    "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 177,
+    "file": "components/automation/AlertRuleFormFields.tsx",
+    "line": 123,
     "kind": "jsx-text",
     "text": "LOW"
   },
   {
-    "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 198,
+    "file": "components/automation/AlertRuleFormFields.tsx",
+    "line": 380,
     "kind": "ui-attr",
     "text": "https://hooks.example.com/alerts"
   },
   {
-    "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 207,
+    "file": "components/automation/AlertRuleFormFields.tsx",
+    "line": 389,
     "kind": "ui-attr",
     "text": "ops@example.com|Alert|Threshold exceeded"
   },
@@ -72,28 +150,16 @@
     "text": "EVENT_CHAIN"
   },
   {
-    "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 167,
-    "kind": "jsx-text",
-    "text": "CRITICAL"
+    "file": "components/BindingExpressionEditorModal.tsx",
+    "line": 302,
+    "kind": "cyrillic",
+    "text": "? `Объясни текущее CEL-выражение правила «${rule}»:\\n\\`\\`\\`\\n${expr}\\n\\`\\`\\`\\nЧто оно вычисляет и как связано с self / t"
   },
   {
-    "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 168,
-    "kind": "jsx-text",
-    "text": "HIGH"
-  },
-  {
-    "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 169,
-    "kind": "jsx-text",
-    "text": "MEDIUM"
-  },
-  {
-    "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 170,
-    "kind": "jsx-text",
-    "text": "LOW"
+    "file": "components/BindingExpressionEditorModal.tsx",
+    "line": 303,
+    "kind": "cyrillic",
+    "text": ": `Объясни текущее CEL-выражение в редакторе:\\n\\`\\`\\`\\n${expr}\\n\\`\\`\\`\\nЧто оно вычисляет?`"
   },
   {
     "file": "components/BrickMetadataPanel.tsx",
@@ -144,94 +210,112 @@
     "text": "root.platform.mimics.my-mimic"
   },
   {
+    "file": "components/dashboard/SvgWidgetInteractiveEditor.tsx",
+    "line": 119,
+    "kind": "ui-attr",
+    "text": "/itm-assets/m11/main_topology.svg"
+  },
+  {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1004,
+    "line": 1086,
     "kind": "ui-attr",
     "text": "root.platform.workflows..."
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1132,
+    "line": 1214,
     "kind": "ui-attr",
     "text": "gpu-*"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1146,
+    "line": 1228,
     "kind": "jsx-text",
     "text": "DEVICE"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1147,
+    "line": 1229,
     "kind": "jsx-text",
     "text": "FOLDER"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1148,
+    "line": 1230,
     "kind": "jsx-text",
     "text": "DASHBOARD"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1149,
+    "line": 1231,
     "kind": "jsx-text",
     "text": "CUSTOM"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1170,
+    "line": 1252,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1193,
+    "line": 1275,
     "kind": "ui-attr",
     "text": "count>10 && name contains abc"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1468,
+    "line": 1550,
     "kind": "ui-attr",
     "text": "root.platform.reports.ready-items"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1756,
+    "line": 1877,
     "kind": "ui-attr",
     "text": "SVG"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1762,
+    "line": 1883,
     "kind": "ui-attr",
     "text": "/lab-assets/button.svg"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1979,
+    "line": 2117,
     "kind": "ui-attr",
     "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 2038,
+    "line": 2176,
     "kind": "ui-attr",
     "text": "HTML"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 408,
+    "line": 409,
     "kind": "ui-attr",
     "text": "root.platform.dashboards.detail"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 646,
+    "line": 647,
     "kind": "ui-attr",
     "text": "root.platform.devices"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 928,
+    "kind": "jsx-text",
+    "text": "15m"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 929,
+    "kind": "jsx-text",
+    "text": "30m"
   },
   {
     "file": "components/dashboard/widgetEditorStructured.tsx",
@@ -259,21 +343,63 @@
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 103,
+    "line": 112,
     "kind": "jsx-text",
     "text": "(editable && series.points.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 107,
+    "line": 116,
     "kind": "jsx-text",
     "text": "(editable && isRangeChart && series.rangePoints.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 113,
+    "line": 122,
     "kind": "jsx-text",
     "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
+  },
+  {
+    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
+    "line": 257,
+    "kind": "cyrillic",
+    "text": "return <p className=\"hint\">Укажите behaviorsJson и bindingsJson (как у SCADA-символа).</p>;"
+  },
+  {
+    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
+    "line": 266,
+    "kind": "cyrillic",
+    "text": "return <p className=\"hint\">Загрузка SVG…</p>;"
+  },
+  {
+    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
+    "line": 269,
+    "kind": "cyrillic",
+    "text": "return <p className=\"hint\">SVG не загружен.</p>;"
+  },
+  {
+    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
+    "line": 309,
+    "kind": "cyrillic",
+    "text": "<i className=\"topology-svg-dot online\" /> Узел online"
+  },
+  {
+    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
+    "line": 312,
+    "kind": "cyrillic",
+    "text": "<i className=\"topology-svg-dot offline\" /> Узел offline"
+  },
+  {
+    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
+    "line": 315,
+    "kind": "cyrillic",
+    "text": "<i className=\"topology-svg-dot link-up\" /> Линк up"
+  },
+  {
+    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
+    "line": 318,
+    "kind": "cyrillic",
+    "text": "<i className=\"topology-svg-dot link-down\" /> Линк down"
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
@@ -469,19 +595,19 @@
   },
   {
     "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 155,
+    "line": 201,
     "kind": "ui-attr",
     "text": "root.platform.devices…"
   },
   {
     "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 165,
+    "line": 211,
     "kind": "jsx-text",
     "text": "CEL"
   },
   {
     "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 166,
+    "line": 212,
     "kind": "jsx-text",
     "text": "SQL"
   },
@@ -496,6 +622,18 @@
     "line": 127,
     "kind": "ui-attr",
     "text": "#ispf-label"
+  },
+  {
+    "file": "components/SystemSettingsView.tsx",
+    "line": 256,
+    "kind": "cyrillic",
+    "text": "screenTitle: \"System › Settings (Система › Настройки)\","
+  },
+  {
+    "file": "components/SystemView.tsx",
+    "line": 77,
+    "kind": "cyrillic",
+    "text": "screenTitle: \"System (Система)\","
   },
   {
     "file": "components/TenantsPanel.tsx",
@@ -516,8 +654,26 @@
     "text": "ISPF task properties"
   },
   {
+    "file": "context/AdminCopilotChatContext.tsx",
+    "line": 65,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "context/AdminCopilotChatContext.tsx",
+    "line": 66,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "context/AdminFocusContext.tsx",
+    "line": 177,
+    "kind": "jsx-text",
+    "text": "| undefined): Record"
+  },
+  {
     "file": "context/AgentChatContext.tsx",
-    "line": 92,
+    "line": 100,
     "kind": "jsx-text",
     "text": "Promise"
   },
@@ -541,7 +697,7 @@
   },
   {
     "file": "context/AgentChatContext.tsx",
-    "line": 96,
+    "line": 99,
     "kind": "jsx-text",
     "text": "Promise"
   },
