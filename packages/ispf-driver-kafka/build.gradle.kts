@@ -2,7 +2,7 @@ dependencies {
     implementation(project(":packages:ispf-driver-api"))
     implementation(project(":packages:ispf-core"))
 
-    implementation("org.apache.kafka:kafka-clients:3.9.2")
+    implementation("org.apache.kafka:kafka-clients:4.3.1")
 
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:3.9.0")
     testRuntimeOnly("org.scala-lang:scala-library:2.13.15")
