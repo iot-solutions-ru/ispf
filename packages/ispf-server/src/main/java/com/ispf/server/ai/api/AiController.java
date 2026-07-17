@@ -125,6 +125,12 @@ public class AiController {
         return toolRegistry.contextPackInfo();
     }
 
+    @PostMapping("/tools/context-pack/refresh")
+    public Map<String, Object> refreshContextPack(Authentication authentication) {
+        objectAccessService.requireAdmin(authentication);
+        return toolRegistry.refreshContextPack();
+    }
+
     @PostMapping("/tools/validate-bundle")
     public Map<String, Object> validateBundle(
             Authentication authentication,

@@ -28,5 +28,20 @@ class ContextPackBuildTest {
         assertTrue(pack.get("featureIndex") instanceof List<?> features && !features.isEmpty());
         assertTrue(pack.get("docChunks") instanceof List<?> chunks && !chunks.isEmpty());
         assertTrue(pack.get("docCatalog") instanceof List<?> catalog && !catalog.isEmpty());
+        assertTrue(pack.get("competitiveGapIndex") instanceof List<?> gaps && gaps.size() >= 5);
+        Object firstGap = ((List<?>) pack.get("competitiveGapIndex")).getFirst();
+        assertTrue(firstGap instanceof Map<?, ?> row
+                && row.containsKey("dimension")
+                && row.containsKey("gap"));
+    }
+
+    @Test
+    void contextPackInfoExposesGapsAndLiveOverlay() {
+        Map<String, Object> info = contextPackService.info();
+        assertTrue(((Number) info.get("competitiveGapCount")).intValue() >= 5);
+        assertTrue(info.get("topReadinessGaps") instanceof List<?> top && !top.isEmpty());
+        assertTrue(info.get("livePlatform") instanceof Map<?, ?> live
+                && live.containsKey("driverCount")
+                && live.containsKey("cacheEpoch"));
     }
 }

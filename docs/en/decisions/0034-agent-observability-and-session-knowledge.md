@@ -38,6 +38,7 @@ We explicitly **do not** embed Dify, LangGraph, or AutoAgent as runtime dependen
 
 - `AGENT_PROMPT_VERSION` constant written to audit.
 - `GET /api/v1/ai/agent/metrics?days=N` — aggregates for AI Studio.
+- `GET /api/v1/ai/agent/metrics/tools?days=N` — per-tool cost/latency/errorRate (BL-181); AI Studio `AgentMetricsPanel` table.
 
 ### FW-53 — Plan depth LITE vs FULL
 

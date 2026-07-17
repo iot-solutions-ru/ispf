@@ -40,7 +40,7 @@ public class MarketplaceBundleController {
         return localBundleService.listLocalBundles();
     }
 
-    /** BL-185: symbol pack marketplace listing stub. */
+    /** BL-185: symbol pack marketplace listing (local examples + bundled reference). */
     @GetMapping("/symbols")
     public Map<String, Object> listSymbolPacks() {
         return symbolListingService.listSymbolPacks();
@@ -52,6 +52,8 @@ public class MarketplaceBundleController {
             return symbolListingService.installSymbolPack(packId);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), ex);
         }
     }
 

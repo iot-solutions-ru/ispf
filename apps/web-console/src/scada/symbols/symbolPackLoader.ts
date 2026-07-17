@@ -1,6 +1,7 @@
 /**
- * Lazy-loaded P&ID symbol pack (ispf-pid-v1) — original ISA/ISO artwork from tools/symbol-pack-isa.
+ * Lazy-loaded P&ID symbol pack (ispf-pid-v1) + installed marketplace packs (BL-185).
  */
+import { fetchInstalledSymbolPacks, fetchSymbolPackDetail } from "../../api/scadaSymbolPacks";
 import type { MimicPort } from "../../types/scadaMimic";
 import { CustomSvgSymbol } from "./customSvg";
 import type { RegisteredSymbol } from "./registry";
@@ -18,14 +19,14 @@ export const PACK_CATEGORY_IDS = [
   "pack-misc",
 ] as const;
 
-export type PackCategoryId = (typeof PACK_CATEGORY_IDS)[number];
+export type PackCategoryId = (typeof PACK_CATEGORY_IDS)[number] | string;
 
 export interface PackManifest {
   version: number;
   id: string;
   generatedAt: string;
   totalSymbols: number;
-  categories: { id: PackCategoryId; file: string; count: number }[];
+  categories: { id: string; file: string; count: number }[];
 }
 
 export interface PackSymbolRecord {
@@ -53,10 +54,12 @@ const chunkLoaders: Record<string, () => Promise<{ default: PackSymbolRecord[] }
 };
 
 let manifestPromise: Promise<PackManifest | null> | null = null;
-const loadedCategories = new Map<PackCategoryId, PackSymbolRecord[]>();
+const loadedCategories = new Map<string, PackSymbolRecord[]>();
 const registeredById = new Map<string, RegisteredSymbol>();
+const installedCategoryIds = new Set<string>();
 let initPromise: Promise<void> | null = null;
 let loadedAll = false;
+let installedPacksPromise: Promise<void> | null = null;
 
 function packRecordToRegistered(rec: PackSymbolRecord): RegisteredSymbol {
   return {
@@ -119,10 +122,39 @@ export async function ensurePackLoaded(): Promise<void> {
   initPromise = (async () => {
     const manifest = await loadPackManifest();
     if (!manifest) return;
-    await Promise.all(manifest.categories.map((c) => loadPackCategory(c.id)));
+    await Promise.all(manifest.categories.map((c) => loadPackCategory(c.id as PackCategoryId)));
     loadedAll = true;
   })();
   return initPromise;
+}
+
+/** BL-185: load drop-in packs installed under ISPF_SYMBOL_PACKS_DIR. */
+export async function ensureInstalledPacksLoaded(): Promise<void> {
+  if (installedPacksPromise) return installedPacksPromise;
+  installedPacksPromise = (async () => {
+    try {
+      const list = await fetchInstalledSymbolPacks();
+      for (const pack of list.packs ?? []) {
+        if (!pack.packId || pack.packId === PACK_ID) continue;
+        const detail = await fetchSymbolPackDetail(pack.packId);
+        for (const category of detail.categories ?? []) {
+          const symbols = (category.symbols ?? []) as PackSymbolRecord[];
+          if (!symbols.length) continue;
+          const categoryId = String(category.id);
+          installedCategoryIds.add(categoryId);
+          loadedCategories.set(categoryId, symbols);
+          registerRecords(symbols);
+        }
+      }
+    } catch {
+      // Palette still works with bundled ispf-pid-v1 when API is unavailable.
+    }
+  })();
+  return installedPacksPromise;
+}
+
+export function listInstalledPackCategoryIds(): string[] {
+  return [...installedCategoryIds].sort();
 }
 
 export function getPackSymbol(id: string): RegisteredSymbol | undefined {

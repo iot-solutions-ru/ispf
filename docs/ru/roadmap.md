@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
-| **Обновлено** | 14.07.2026 |
+| **Обновлено** | 17.07.2026 |
 | **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([architecture](architecture.md)) |
 
 ---
@@ -21,7 +21,7 @@
 | РЕК-ПФ | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
 | БЛ-01…139 | 139 | 138 | 0 | 0 | 1 |
-| БЛ-140…210 | 65 | 26 | 37 | 2 | 0 |
+| БЛ-140…210 | 65 | 29 | 34 | 1 | 0 |
 | Фаза 0–24 | 25 | 25 | 0 | — | — |
 | Фаза 25–33 | 9 | 0 | 9 | 0 | — |
 | Спринт S01–S30 | 30 | 30 | 0 | 0 | — |
@@ -878,7 +878,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | Категория | Всего | Готово | Частичный | Планируется | Отменено |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Этап 25–33 | 9 | 0 | 9 | 0 | — |
-| БЛ-140…210 | 65 | 26 | 37 | 2 | 0 |
+| БЛ-140…210 | 65 | 29 | 34 | 1 | 0 |
 | Спринт S31–S46 (черновик) | 16 | 0 | 16 | 0 | — |
 
 ## Конкурентный показатель (базовый уровень → проверенный код → целевой показатель)
@@ -994,7 +994,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | С42 | 29 | Диспетчеризация MES + качество | БЛ-166, БЛ-167, БЛ-168 | Частичный |
 | С43 | 30 | КЭП + управление процессом | БЛ-171, БЛ-172, БЛ-173 | Частичный |
 | С44 | 31 | AI e2e развертывание | БЛ-177, БЛ-178 | Частичный |
-| С45 | 31 | Генератор решений искусственного интеллекта | БЛ-179, БЛ-180, БЛ-181 | Частичный |
+| С45 | 31 | Генератор решений искусственного интеллекта | БЛ-179, БЛ-180, БЛ-181 | Частичный (БЛ-181 Готово) |
 | С46 | 32 | Marketplace + partners | БЛ-183, БЛ-184, БЛ-189 | Частичный |
 
 Ориентир: **~2 недели на спринт**, Фаза 25–32 ≈ **18–24 месяца**.
@@ -1232,11 +1232,11 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-178 | 31 | Набор регрессии агента | P0 | Частичный (50 сценариев schema CI; live one-shot через `run-live-oneshot.sh`; полный ≥95% не выполнен) |
 | БЛ-179 | 31 | Оператор-агент GA | Р1 | Частичный |
 | БЛ-180 | 31 | Генератор решений | P0 | **Частичный→Done (one-shot)** — `apply:true` live дерево+dashboard+alert (`AiSolutionGeneratorLiveSmokeTest`); полный GA/metrics ещё hardening |
-| БЛ-181 | 31 | Наблюдаемость агентов v2 | П2 | Частичный |
-| БЛ-182 | 31 | Контекстный пакет v2 | П2 | Частичный |
+| БЛ-181 | 31 | Наблюдаемость агентов v2 | П2 | **Готово** — `/agent/metrics` + `/agent/metrics/tools`; таблица tools в AI Studio; retry разбора LLM + один transient tool retry (`AgentToolTransientRetry`); `AgentMetricsApiTest` |
+| БЛ-182 | 31 | Контекстный пакет v2 | П2 | **Готово** — `competitiveGapIndex` searchable (`topic=gaps`); live overlay на context-pack info + refresh API; MCP slices; AI Studio Status |
 | БЛ-183 | 32 | Marketplace GA | P3 | Частичная (установка/удаление) |
 | БЛ-184 | 32 | Партнерская программа | P3 | Частичный |
-| БЛ-185 | 32 | Symbol marketplace | P3 | Планируется |
+| БЛ-185 | 32 | Symbol marketplace | P3 | **Готово** — drop-in install в `ISPF_SYMBOL_PACKS_DIR`; `GET /api/v1/scada/symbol-packs`; mimic palette; demo `examples/marketplace-symbol-hvac-demo` |
 | БЛ-186 | 32 | Карта руля K8s | П2 | Частичный |
 | БЛ-187 | 32 | Краевой профиль ARM | П2 | Частичный |
 | БЛ-188 | 32 | Менеджер-менеджеров | P3 | Частичный |
@@ -1571,6 +1571,9 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 
 | Дата | Изменение |
 | ---- | --------- |
+| 17.07.2026 | **БЛ-185 Symbol marketplace Готово:** filesystem symbol packs + scada API + mimic palette; local HVAC demo; remote free zip через MarketplaceService |
+| 17.07.2026 | **БЛ-182 Контекстный пакет v2 Готово:** readiness gap index searchable + live platform overlay на `/tools/context-pack`; admin refresh; MCP `competitive-gap-index` / `live-platform` |
+| 17.07.2026 | **БЛ-181 Наблюдаемость агентов v2 Готово:** таблица cost/latency по tool в AI Studio; admin `/agent/metrics/tools`; auto-retry transient tool + LLM action parse retry |
 | 14.07.2026 | **MES = marketplace product:** база не сидирует `root.platform.mes` / `batch-v1` / `work-order-v1`; установка `mes-platform` (vendor IoT Solutions). Флаг `ispf.bootstrap.mes-catalog-enabled` только для legacy |
 | 14.07.2026 | **S32 БЛ-180 one-shot REAL:** `POST /ai/solutions/generate` `apply:true` → live дерево+dashboard+alert; keyword path = `mode=draft` |
 | 14.07.2026 | **S31 БЛ-177 one-shot REAL:** `AgentLiveDeploySmokeTest` + `run_deploy_playbook`; nightly опциональный live oneshot; `nightly-stub-results.json` устарел как proof ≥95% |

@@ -1,0 +1,61 @@
+[
+  {
+    "id": "pack.hvac.ahu",
+    "category": "pack-hvac",
+    "nameEn": "Air handling unit",
+    "nameRu": "Приточная установка",
+    "defaultWidth": 96,
+    "defaultHeight": 64,
+    "viewBox": "0 0 96 64",
+    "svg": "<g><rect x=\"8\" y=\"12\" width=\"80\" height=\"40\" rx=\"4\" fill=\"var(--bg-elevated)\" stroke=\"var(--border)\" stroke-width=\"2\"/><circle cx=\"28\" cy=\"32\" r=\"10\" fill=\"none\" stroke=\"var(--border)\" stroke-width=\"2\"/><circle cx=\"68\" cy=\"32\" r=\"10\" fill=\"none\" stroke=\"var(--border)\" stroke-width=\"2\"/></g>",
+    "ports": [
+      { "id": "w", "x": 0, "y": 32 },
+      { "id": "e", "x": 96, "y": 32 }
+    ],
+    "tags": ["hvac", "ahu"]
+  },
+  {
+    "id": "pack.hvac.fan-coil",
+    "category": "pack-hvac",
+    "nameEn": "Fan coil",
+    "nameRu": "Фанкойл",
+    "defaultWidth": 64,
+    "defaultHeight": 48,
+    "viewBox": "0 0 64 48",
+    "svg": "<g><rect x=\"8\" y=\"8\" width=\"48\" height=\"32\" rx=\"3\" fill=\"var(--bg-elevated)\" stroke=\"var(--border)\" stroke-width=\"2\"/><path d=\"M20 24 h24\" stroke=\"var(--border)\" stroke-width=\"2\"/><circle cx=\"32\" cy=\"24\" r=\"6\" fill=\"none\" stroke=\"var(--border)\" stroke-width=\"2\"/></g>",
+    "ports": [
+      { "id": "w", "x": 0, "y": 24 },
+      { "id": "e", "x": 64, "y": 24 }
+    ],
+    "tags": ["hvac", "fan"]
+  },
+  {
+    "id": "pack.hvac.damper",
+    "category": "pack-hvac",
+    "nameEn": "Damper",
+    "nameRu": "Заслонка",
+    "defaultWidth": 48,
+    "defaultHeight": 48,
+    "viewBox": "0 0 48 48",
+    "svg": "<g><rect x=\"6\" y=\"6\" width=\"36\" height=\"36\" rx=\"2\" fill=\"var(--bg-elevated)\" stroke=\"var(--border)\" stroke-width=\"2\"/><line x1=\"10\" y1=\"24\" x2=\"38\" y2=\"14\" stroke=\"var(--border)\" stroke-width=\"2\"/><line x1=\"10\" y1=\"34\" x2=\"38\" y2=\"24\" stroke=\"var(--border)\" stroke-width=\"2\"/></g>",
+    "ports": [
+      { "id": "w", "x": 0, "y": 24 },
+      { "id": "e", "x": 48, "y": 24 }
+    ],
+    "tags": ["hvac", "damper"]
+  },
+  {
+    "id": "pack.hvac.temp-sensor",
+    "category": "pack-hvac",
+    "nameEn": "Temperature sensor",
+    "nameRu": "Датчик температуры",
+    "defaultWidth": 40,
+    "defaultHeight": 40,
+    "viewBox": "0 0 40 40",
+    "svg": "<g><circle cx=\"20\" cy=\"20\" r=\"12\" fill=\"var(--bg-elevated)\" stroke=\"var(--border)\" stroke-width=\"2\"/><text x=\"20\" y=\"24\" text-anchor=\"middle\" fill=\"var(--border)\" font-size=\"10\" font-family=\"system-ui,sans-serif\">T</text></g>",
+    "ports": [
+      { "id": "s", "x": 20, "y": 40 }
+    ],
+    "tags": ["hvac", "sensor"]
+  }
+]

@@ -524,6 +524,8 @@ ispf:
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}
   analytics-pack:
     packs-dir: ${ISPF_ANALYTICS_PACKS_DIR:./data/analytics-packs}
+  scada:
+    symbol-packs-dir: ${ISPF_SYMBOL_PACKS_DIR:./data/symbol-packs}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}

@@ -1,31 +1,42 @@
 package com.ispf.server.application.bundle;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class MarketplaceSymbolListingServiceTest {
 
-    private final MarketplaceSymbolListingService service = new MarketplaceSymbolListingService();
+    @Autowired
+    private MarketplaceSymbolListingService service;
 
     @Test
-    void listsReferencePidPackStub() {
+    void listsBundledAndLocalCatalog() {
         Map<String, Object> response = service.listSymbolPacks();
 
-        assertEquals("OK", response.get("status"));
-        assertEquals("stub", response.get("source"));
-        assertEquals(2, response.get("count"));
+        assertThat(response.get("status")).isEqualTo("OK");
+        assertThat(response.get("source")).isIn("local", "bundled");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> listings = (List<Map<String, Object>>) response.get("listings");
-        Map<String, Object> listing = listings.getFirst();
-        assertEquals("ispf-pid-v1", listing.get("slug"));
-        assertEquals("symbol-pack", listing.get("artifactKind"));
-        assertEquals("free", listing.get("pricing"));
-        assertEquals("ispf-pid-v1", listing.get("packId"));
-        assertEquals(218, listing.get("symbolCount"));
+        assertThat(listings).isNotEmpty();
+        assertThat(listings.getFirst().get("slug")).isEqualTo("ispf-pid-v1");
+        assertThat(listings.getFirst().get("artifactKind")).isEqualTo("symbol-pack");
+    }
+
+    @Test
+    void installsLocalHvacDemoToFilesystem() {
+        Map<String, Object> installed = service.installSymbolPack("hvac-equipment-v1");
+        assertThat(installed.get("status")).isEqualTo("OK");
+        assertThat(installed.get("packId")).isEqualTo("hvac-equipment-v1");
+        assertThat(installed.get("source")).isEqualTo("local-marketplace");
+        assertThat(installed.get("path")).asString().contains("hvac-equipment-v1");
     }
 }

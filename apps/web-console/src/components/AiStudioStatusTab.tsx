@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import AgentMetricsPanel from "./agent/AgentMetricsPanel";
 import {
   fetchAiAgentTools,
@@ -8,12 +8,14 @@ import {
   fetchAiContextPack,
   fetchAiModels,
   fetchAiProviderStatus,
+  refreshAiContextPack,
 } from "../api/ai";
 import { useUserTimeZone } from "../context/UserTimeZoneContext";
 
 export default function AiStudioStatusTab() {
   const { t } = useTranslation(["ai", "common"]);
   const { formatDate } = useUserTimeZone();
+  const queryClient = useQueryClient();
   const [toolQuery, setToolQuery] = useState("");
 
   const providerQuery = useQuery({
@@ -23,6 +25,12 @@ export default function AiStudioStatusTab() {
   const contextPackQuery = useQuery({
     queryKey: ["ai-context-pack"],
     queryFn: fetchAiContextPack,
+  });
+  const refreshPackMutation = useMutation({
+    mutationFn: refreshAiContextPack,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["ai-context-pack"], data);
+    },
   });
   const toolsQuery = useQuery({
     queryKey: ["ai-agent-tools"],
@@ -199,8 +207,46 @@ export default function AiStudioStatusTab() {
                   <dd>{formatDate(contextPack.generatedAt)}</dd>
                 </div>
               )}
+              {contextPack.competitiveGapCount != null && (
+                <div>
+                  <dt>{t("settings.readinessGaps")}</dt>
+                  <dd>{contextPack.competitiveGapCount}</dd>
+                </div>
+              )}
+              {contextPack.livePlatform?.driverCount != null && (
+                <div>
+                  <dt>{t("settings.liveDrivers")}</dt>
+                  <dd>{contextPack.livePlatform.driverCount}</dd>
+                </div>
+              )}
+              {contextPack.livePlatform?.applicationCount != null && (
+                <div>
+                  <dt>{t("settings.liveApps")}</dt>
+                  <dd>{contextPack.livePlatform.applicationCount}</dd>
+                </div>
+              )}
             </dl>
           )}
+          {contextPack?.topReadinessGaps && contextPack.topReadinessGaps.length > 0 && (
+            <ul className="ai-studio-gap-list">
+              {contextPack.topReadinessGaps.slice(0, 3).map((gap) => (
+                <li key={String(gap.dimension)}>
+                  <span>{gap.dimension}</span>
+                  <strong>gap {gap.gap}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            className="btn"
+            disabled={refreshPackMutation.isPending}
+            onClick={() => refreshPackMutation.mutate()}
+          >
+            {refreshPackMutation.isPending
+              ? t("settings.refreshingContextPack")
+              : t("settings.refreshContextPack")}
+          </button>
         </section>
       </div>
 

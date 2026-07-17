@@ -42,11 +42,23 @@ Outputs:
 - `ai/context/generated/ispf-context-pack.json`
 - `packages/ispf-server/src/main/resources/ai/context-pack.json`
 
-Pack includes bundle schema fields, script steps, widget types, API doc slices, reference examples, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (index of all `docs/*.md`), and **docChunks** for scored search.
+Pack includes bundle schema fields, script steps, widget types, API doc slices, reference examples, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (index of all `docs/*.md`), **docChunks** for scored search, and **competitiveGapIndex** (readiness gap index from [competitive-scorecard](competitive-scorecard.md) — BL-182).
 
-Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`).
+Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`). Readiness gaps: `search_context topic=gaps`.
 
 CI and release workflows run `python tools/ai-pack/build.py` before server tests/build (`ISPF_VERSION` from tag in release).
+
+### Context pack v2 (BL-182)
+
+| Surface | Behavior |
+|---------|----------|
+| `GET /api/v1/ai/tools/context-pack` | Metadata + `competitiveGapCount` / `topReadinessGaps` + `livePlatform` overlay |
+| `POST /api/v1/ai/tools/context-pack/refresh` | Admin: evict pack cache + bump live epoch |
+| `search_context topic=gaps\|readiness` | Scored hits over `competitiveGapIndex` |
+| Live overlay | `ContextPackLiveOverlayService` — drivers, apps, object counts; invalidates with `PlatformBriefingCacheEpoch` |
+| AI Studio Status | Shows gap count, live drivers/apps, refresh button |
+
+Classpath JSON stays build-time curated (ADR-0004); live state is an overlay, not a runtime rebuild of docs/examples.
 
 ---
 
@@ -60,6 +72,7 @@ Each agent chat injects a compact **Platform knowledge (auto)** block into the s
 | Virtual profiles | Built-in cheat sheet |
 | Reference examples | ContextPack `exampleSummaries` |
 | Features | ContextPack `featureIndex` |
+| Readiness gaps | Top rows from `competitiveGapIndex` |
 | Live snapshot | Deployed apps + bundle versions + tree children under session `rootPath` |
 
 Config:
@@ -81,7 +94,8 @@ Admin-only REST API:
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /api/v1/ai/tools/context-pack` | Context pack metadata |
+| `GET /api/v1/ai/tools/context-pack` | Context pack metadata + readiness gaps + live overlay |
+| `POST /api/v1/ai/tools/context-pack/refresh` | Evict pack cache + refresh live overlay (admin) |
 | `POST /api/v1/ai/tools/validate-bundle` | Semantic bundle validation (no DB writes) |
 | `POST /api/v1/ai/tools/dry-run-deploy` | Validate + list `wouldApply` sections |
 | `GET /api/v1/ai/models` | List models from active LLM provider |
@@ -294,6 +308,8 @@ MCP clients can read static ContextPack slices without tool calls:
 | `contextpack://feature-index` | Platform features |
 | `contextpack://example-summaries` | Reference bundles |
 | `contextpack://doc-chunks` | Documentation chunks |
+| `contextpack://competitive-gap-index` | Readiness / competitive gap index |
+| `contextpack://live-platform` | Live drivers, apps, object counts |
 
 Example: `{"method":"resources/read","params":{"uri":"contextpack://script-steps"}}`
 

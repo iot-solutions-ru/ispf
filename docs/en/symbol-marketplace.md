@@ -4,7 +4,7 @@ Catalog and distribution for SCADA/HMI symbol packs — P&ID primitives, equipme
 
 Related: [marketplace](marketplace.md), [scada-mimic](scada-mimic.md), [roadmap](roadmap.md) (BL-146, BL-185).
 
-**Status (0.9.102):** reference pack `ispf-pid-v1` (218 symbols) ships in web-console. Server listing/install API is **stub** (`MarketplaceSymbolListingService`, `"source": "stub"`). See [competitive-scorecard](competitive-scorecard.md).
+**Status:** **Done (local GA)** — filesystem install under `ISPF_SYMBOL_PACKS_DIR`, `GET /api/v1/scada/symbol-packs`, mimic palette loads installed packs. Reference pack `ispf-pid-v1` remains bundled in web-console. Remote partner review / paid OEM path still follows [partner-program](partner-program.md).
 
 ---
 
@@ -12,66 +12,77 @@ Related: [marketplace](marketplace.md), [scada-mimic](scada-mimic.md), [roadmap]
 
 | In scope | Out of scope (v1) |
 |----------|-------------------|
-| SVG symbol libraries (tanks, valves, pumps, pipes) | Full 3D asset store |
+| SVG symbol libraries (tanks, valves, pumps, pipes, HVAC) | Full 3D asset store |
 | Symbol pack manifest + license metadata | In-editor purchase flow |
-| Install via platform marketplace API | Custom symbol editor SaaS |
-| Binding hints for mimic widgets | Auto P&ID from CAD import |
+| Install via platform marketplace API → filesystem | Custom symbol editor SaaS |
+| Mimic palette loads installed packs | Auto P&ID from CAD import |
 
 ---
 
 ## Symbol pack format
 
+Runtime format (what the mimic editor loads) — category JSON with **inline SVG**:
+
+```
+{packId}/
+  manifest.json
+  equipment.json   # PackSymbolRecord[]
+  LICENSE.md
+```
+
+`manifest.json`:
+
 ```json
 {
-  "packId": "ispf-symbols-pid-v2",
-  "version": "2.0.0",
-  "displayName": "P&ID Symbol Library v2",
-  "license": "SYMBOL-PACK-PID",
-  "symbols": [
-    {
-      "id": "tank-vertical",
-      "category": "equipment",
-      "tags": ["tank", "storage", "pid"],
-      "svgPath": "symbols/tank-vertical.svg",
-      "defaultSize": { "width": 80, "height": 120 },
-      "bindingSlots": ["fillLevel", "alarmState"]
-    }
-  ],
-  "categories": ["equipment", "valves", "instruments", "piping"]
+  "version": 1,
+  "id": "hvac-equipment-v1",
+  "license": "Apache-2.0",
+  "totalSymbols": 4,
+  "categories": [
+    { "id": "pack-hvac", "file": "equipment.json", "count": 4 }
+  ]
 }
 ```
 
-| Field | Required | Description |
-|-------|:--------:|-------------|
-| `packId` | ✓ | Stable identifier |
-| `version` | ✓ | Semver |
-| `license` | ✓ | SPDX or custom symbol license ref |
-| `symbols[].id` | ✓ | Unique within pack |
-| `symbols[].svgPath` | ✓ | Relative path inside pack archive |
-| `symbols[].bindingSlots` | — | Suggested variable bindings for mimic editor |
-
-Legal: see [apps/web-console/public/legal/SYMBOL-PACK-PID-LICENSE.md](../../apps/web-console/public/legal/SYMBOL-PACK-PID-LICENSE.md).
+Legal: see [apps/web-console/public/legal/SYMBOL-PACK-PID-LICENSE.md](../../apps/web-console/public/legal/SYMBOL-PACK-PID-LICENSE.md) and [pid-symbols-legal](pid-symbols-legal.md).
 
 ---
 
 ## Distribution
 
-Symbol packs ship through the same marketplace contract as application bundles ([marketplace](marketplace.md)):
-
 | Step | Action |
 |------|--------|
-| 1 | Vendor publishes listing with `artifactKind: symbol-pack` |
-| 2 | Platform downloads pack archive to `ISPF_SYMBOL_PACKS_DIR` |
-| 3 | Web Console mimic editor loads catalog from `GET /api/v1/scada/symbol-packs` |
-| 4 | Paid packs require entitlement activation (same as app bundles) |
+| 1 | Vendor publishes listing with `artifactKind: symbol-pack` (or local `examples/marketplace-symbol-*`) |
+| 2 | Platform installs pack under `ISPF_SYMBOL_PACKS_DIR/{packId}/` |
+| 3 | Mimic editor loads `GET /api/v1/scada/symbol-packs` + `/{packId}` |
+| 4 | Paid remote packs use the same entitlement activate path as app bundles (zip artifact) |
 
-Configuration (planned):
+### Configuration
 
 ```yaml
 ispf:
   scada:
-    symbol-packs-dir: ${ISPF_SYMBOL_PACKS_DIR:/opt/ispf/symbol-packs}
-    marketplace-enabled: true
+    symbol-packs-dir: ${ISPF_SYMBOL_PACKS_DIR:./data/symbol-packs}
+```
+
+### API
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/api/v1/marketplace/symbols` | Catalog (bundled `ispf-pid-v1` + local examples) |
+| POST | `/api/v1/marketplace/symbols/{id}/install` | Install free local/remote pack |
+| GET | `/api/v1/scada/symbol-packs` | Installed packs on this node |
+| GET | `/api/v1/scada/symbol-packs/{packId}` | Pack detail + symbols for palette |
+
+### Demo listing
+
+| Path | Purpose |
+|------|---------|
+| [examples/marketplace-symbol-hvac-demo](../../examples/marketplace-symbol-hvac-demo/) | Free HVAC pack (`hvac-equipment-v1`) |
+
+```bash
+curl -X POST /api/v1/marketplace/symbols/hvac-equipment-v1/install
+curl /api/v1/scada/symbol-packs/hvac-equipment-v1
 ```
 
 ---
@@ -80,10 +91,9 @@ ispf:
 
 | Surface | Behavior |
 |---------|----------|
-| Mimic editor palette | Browse installed symbol packs by category |
-| Drag-drop | Insert symbol with default size + binding slots |
-| Marketplace panel | Browse remote symbol listings; install free / activate paid |
-| Agent `save_mimic_diagram` | May reference `symbolPackId` + `symbolId` in element metadata |
+| Mimic editor palette | Bundled `ispf-pid-v1` + installed drop-in packs (`ensureInstalledPacksLoaded`) |
+| Drag-drop | Insert symbol with default size + ports |
+| Marketplace | `GET/POST /api/v1/marketplace/symbols` |
 
 ---
 
@@ -91,28 +101,18 @@ ispf:
 
 1. SVG optimized for web (no embedded scripts).
 2. License file included in pack root.
-3. Minimum icon set for category (e.g. 20+ P&ID primitives for `pid` tag).
-4. Interop test: one reference mimic using pack symbols passes CI snapshot.
+3. Minimum icon set for category (e.g. 20+ P&ID primitives for `pid` tag; HVAC demo uses 4 for lab).
+4. Interop: pack symbols render in mimic editor after install.
 
 ---
 
 ## OEM partner path
 
-Symbol vendors join the [Partner program](partner-program.md) at **OEM** level:
+Symbol vendors join the [Partner program](partner-program.md) at **OEM** level (BL-184 — secondary to this GA):
 
 - Signed pack uploads
 - Marketplace listing review
 - Revenue share on paid symbol packs
-
----
-
-## Roadmap
-
-| ID | Deliverable |
-|----|-------------|
-| BL-146 | P&ID symbol library v2 (platform reference pack) |
-| BL-183 | Marketplace readiness (shared install/activate flow) |
-| BL-185 | Symbol marketplace docs + listing contract (this document) |
 
 ---
 

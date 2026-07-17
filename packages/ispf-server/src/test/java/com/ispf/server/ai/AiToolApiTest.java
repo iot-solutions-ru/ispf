@@ -35,7 +35,19 @@ class AiToolApiTest {
     void contextPackInfoIsAvailable() throws Exception {
         mockMvc.perform(get("/api/v1/ai/tools/context-pack"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.contextPackVersion").exists());
+                .andExpect(jsonPath("$.contextPackVersion").exists())
+                .andExpect(jsonPath("$.competitiveGapCount").exists())
+                .andExpect(jsonPath("$.livePlatform.driverCount").exists());
+    }
+
+    @Test
+    @WithMockUser(roles = "admin")
+    void adminCanRefreshContextPackLiveOverlay() throws Exception {
+        mockMvc.perform(post("/api/v1/ai/tools/context-pack/refresh"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.refreshed").value(true))
+                .andExpect(jsonPath("$.livePlatform.cacheEpoch").exists());
     }
 
     @Test

@@ -166,7 +166,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | Document | Status | Description |
 |----------|--------|-------------|
 | [Marketplace](marketplace.md) | Draft | Partial BL-183; not full GA |
-| [Symbol marketplace](symbol-marketplace.md) | Draft | Listing API stub |
+| [Symbol marketplace](symbol-marketplace.md) | Stable | Local install + scada API (BL-185) |
 | [Partner program](partner-program.md) | Draft | Design; in-server API stub |
 | [Certification](certification.md) | Draft | Training paths / exams |
 | [License](license.md) | Stable | **AGPL v3** + dual-license |

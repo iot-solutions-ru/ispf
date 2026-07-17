@@ -9,7 +9,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | | |
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
-| **Updated** | 2026-07-14 |
+| **Updated** | 2026-07-17 |
 | **Product direction** | Self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([architecture](architecture.md)) |
 
 ---
@@ -21,7 +21,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | REQ-PF | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
 | BL-01…139 | 139 | 138 | 0 | 0 | 1 |
-| BL-140…210 | 65 | 26 | 37 | 2 | 0 |
+| BL-140…210 | 65 | 29 | 34 | 1 | 0 |
 | Phase 0–24 | 25 | 25 | 0 | — | — |
 | Phase 25–33 | 9 | 0 | 9 | 0 | — |
 | Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
@@ -67,7 +67,7 @@ Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over th
 | ------ | ---------------- | ------- |
 | **Done** | BL-141, 146, 160, 163, 189, 201, 202 | Accepted / shipped with evidence |
 | **Partial** | BL-140, most of 142–190, 164–188, … | Foundation exists; tail open (field task, stub, soak, or live gate missing) |
-| **Planned** | BL-185, 191–193, 200, 203–210 | Not started or charter-only |
+| **Planned** | BL-191–193, 200, 203–210 | Not started or charter-only |
 
 ### Phase 25–33 at a glance
 
@@ -878,7 +878,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | Category | Total | Done | Partial | Planned | Cancelled |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Phase 25–33 | 9 | 0 | 9 | 0 | — |
-| BL-140…210 | 65 | 26 | 37 | 2 | 0 |
+| BL-140…210 | 65 | 29 | 34 | 1 | 0 |
 | Sprint S31–S46 (draft) | 16 | 0 | 16 | 0 | — |
 
 ## Competitive scorecard (baseline → code verified → target)
@@ -994,7 +994,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | S42 | 29 | MES dispatch + quality | BL-166, BL-167, BL-168 | Partial |
 | S43 | 30 | CEP + process control | BL-171, BL-172, BL-173 | Partial |
 | S44 | 31 | AI e2e deploy | BL-177, BL-178 | Partial |
-| S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | Partial |
+| S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | Partial (BL-181 Done) |
 | S46 | 32 | Marketplace + partners | BL-183, BL-184, BL-189 | Partial |
 
 Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
@@ -1232,11 +1232,11 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-178 | 31 | Agent regression suite | P0 | Partial→Done (bundle path) — schema 52 + `AgentBundleDeploySuiteTest` ≥95% no-LLM; live LLM full suite still on-demand via `run-live-suite.sh` |
 | BL-179 | 31 | Operator agent GA | P1 | **Done** — scoped tools + memory + ru/en; `OperatorAgentContinuityIntegrationTest` (memory across turns, scope deny, readonly allowlist) |
 | BL-180 | 31 | Solution generator | P0 | **Partial→Done (one-shot)** — `apply:true` live tree+dashboard+alert (`AiSolutionGeneratorLiveSmokeTest`); full GA/metrics still hardening |
-| BL-181 | 31 | Agent observability v2 | P2 | Partial |
-| BL-182 | 31 | Context pack v2 | P2 | Partial |
+| BL-181 | 31 | Agent observability v2 | P2 | **Done** — `/agent/metrics` + `/agent/metrics/tools`; AI Studio tool table; LLM parse retry + one transient tool retry (`AgentToolTransientRetry`); `AgentMetricsApiTest` |
+| BL-182 | 31 | Context pack v2 | P2 | **Done** — `competitiveGapIndex` searchable (`topic=gaps`); live overlay on context-pack info + refresh API; MCP slices; AI Studio Status |
 | BL-183 | 32 | Marketplace GA | P3 | Partial (install/uninstall) |
 | BL-184 | 32 | Partner program | P3 | Partial |
-| BL-185 | 32 | Symbol marketplace | P3 | Planned |
+| BL-185 | 32 | Symbol marketplace | P3 | **Done** — drop-in install to `ISPF_SYMBOL_PACKS_DIR`; `GET /api/v1/scada/symbol-packs`; mimic palette loads installed packs; demo `examples/marketplace-symbol-hvac-demo` |
 | BL-186 | 32 | K8s Helm chart | P2 | Partial |
 | BL-187 | 32 | ARM edge profile | P2 | Partial |
 | BL-188 | 32 | Manager-of-managers | P3 | Partial |
@@ -1598,6 +1598,9 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 
 | Date | Change |
 | ---- | --------- |
+| 2026-07-17 | **BL-185 Symbol marketplace Done:** filesystem symbol packs + scada API + mimic palette; local HVAC demo install; remote free zip via MarketplaceService |
+| 2026-07-17 | **BL-182 Context pack v2 Done:** readiness gap index searchable + live platform overlay on `/tools/context-pack`; admin refresh; MCP `competitive-gap-index` / `live-platform` |
+| 2026-07-17 | **BL-181 Agent observability v2 Done:** AI Studio tool cost/latency table; admin `/agent/metrics/tools`; transient tool auto-retry + LLM action parse retry |
 | 2026-07-14 | **MES as marketplace product:** base platform no longer seeds `root.platform.mes` / `batch-v1` / `work-order-v1`; install `mes-platform` (vendor IoT Solutions). Flag `ispf.bootstrap.mes-catalog-enabled` for legacy only |
 | 2026-07-17 | **BL-179 Operator agent GA:** `OperatorAgentContinuityIntegrationTest` — memory across turns, ru/en prompt headers, path scope deny, operator-readonly tool allowlist |
 | 2026-07-17 | **BL-178 bundle suite REAL (no LLM):** `AgentBundleDeploySuiteTest` deploys all bundle-linked scenarios via playbook tools ≥95%; hybrid live suite tries tools before LLM |

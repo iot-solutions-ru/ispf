@@ -243,6 +243,7 @@ public class PlatformBriefingService {
     private void appendLiveSnapshot(StringBuilder sb, String rootPath) {
         sb.append("\n### Live instance snapshot\n");
         appendServerAndPackVersions(sb);
+        appendTopReadinessGaps(sb);
         List<Map<String, Object>> apps = new ArrayList<>();
         for (Map<String, Object> app : applicationDataStore.listAllApps()) {
             String appId = String.valueOf(app.get("app_id"));
@@ -286,6 +287,28 @@ public class PlatformBriefingService {
                     .append(packVersion)
                     .append(") is older than server — use list_objects/list_applications for live state, ")
                     .append("not search_context alone.\n");
+        }
+    }
+
+    private void appendTopReadinessGaps(StringBuilder sb) {
+        List<Map<String, Object>> gaps = ContextPackService.topGaps(
+                ContextPackService.competitiveGaps(contextPackService.loadPack()),
+                5
+        );
+        if (gaps.isEmpty()) {
+            return;
+        }
+        sb.append("Top readiness gaps (search_context topic=gaps):\n");
+        for (Map<String, Object> gap : gaps) {
+            sb.append("- ")
+                    .append(gap.get("dimension"))
+                    .append(" gap=")
+                    .append(gap.get("gap"))
+                    .append(" (current=")
+                    .append(gap.get("current"))
+                    .append(" target=")
+                    .append(gap.get("target"))
+                    .append(")\n");
         }
     }
 

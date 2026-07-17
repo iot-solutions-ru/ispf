@@ -42,6 +42,9 @@ public class ContextPackSearchService {
         if (matchesTopic(normalizedTopic, "examples", "all")) {
             collectExampleHits(pack, q, hits);
         }
+        if (matchesTopic(normalizedTopic, "gaps", "readiness", "all")) {
+            collectGapHits(pack, q, hits);
+        }
         collectDocChunkHits(pack, q, hits, normalizedTopic);
         if (matchesTopic(normalizedTopic, "agent-knowledge", "all")) {
             collectDocCatalogHits(pack, q, hits);
@@ -213,6 +216,33 @@ public class ContextPackSearchService {
                     hits.add(hit("example", String.valueOf(row.get("appId")), score, castMap(row)));
                 }
             }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void collectGapHits(Map<String, Object> pack, String q, List<Map<String, Object>> hits) {
+        for (Map<String, Object> row : ContextPackService.competitiveGaps(pack)) {
+            int score = scoreRow(row, q, Set.of("dimension", "phaseRef", "keywords"));
+            // Broad readiness queries should still surface the largest gaps.
+            if (q.contains("gap") || q.contains("readiness") || q.contains("scorecard") || q.contains("competitive")) {
+                score += 10 + (int) Math.round(gapBoost(row));
+            }
+            if (score > 0) {
+                String id = String.valueOf(row.getOrDefault("dimension", row.get("rank")));
+                hits.add(hit("gap", id, score, row));
+            }
+        }
+    }
+
+    private static double gapBoost(Map<String, Object> row) {
+        Object gap = row.get("gap");
+        if (gap instanceof Number number) {
+            return number.doubleValue();
+        }
+        try {
+            return Double.parseDouble(String.valueOf(gap));
+        } catch (Exception ignored) {
+            return 0.0;
         }
     }
 

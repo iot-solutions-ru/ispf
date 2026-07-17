@@ -2,6 +2,7 @@ package com.ispf.server.application.bundle;
 
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.platform.analytics.pack.DropInAnalyticsPackLoader;
+import com.ispf.server.scada.symbol.DropInSymbolPackLoader;
 import com.ispf.server.config.MarketplaceProperties;
 import com.ispf.server.license.CommercialBundleLicenseSigner;
 import com.ispf.server.license.InstallationIdService;
@@ -38,6 +39,7 @@ public class MarketplaceService {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final DropInAnalyticsPackLoader analyticsPackLoader;
+    private final DropInSymbolPackLoader symbolPackLoader;
 
     @Autowired
     public MarketplaceService(
@@ -49,7 +51,8 @@ public class MarketplaceService {
             CommercialBundleLicenseSigner bundleLicenseSigner,
             Optional<BuildProperties> buildProperties,
             ObjectMapper objectMapper,
-            DropInAnalyticsPackLoader analyticsPackLoader
+            DropInAnalyticsPackLoader analyticsPackLoader,
+            DropInSymbolPackLoader symbolPackLoader
     ) {
         this(
                 properties,
@@ -61,6 +64,7 @@ public class MarketplaceService {
                 buildProperties,
                 objectMapper,
                 analyticsPackLoader,
+                symbolPackLoader,
                 HttpClient.newBuilder()
                         .connectTimeout(Duration.ofSeconds(15))
                         .followRedirects(HttpClient.Redirect.NORMAL)
@@ -78,6 +82,7 @@ public class MarketplaceService {
             Optional<BuildProperties> buildProperties,
             ObjectMapper objectMapper,
             DropInAnalyticsPackLoader analyticsPackLoader,
+            DropInSymbolPackLoader symbolPackLoader,
             HttpClient httpClient
     ) {
         this.properties = properties;
@@ -89,6 +94,7 @@ public class MarketplaceService {
         this.buildProperties = buildProperties;
         this.objectMapper = objectMapper;
         this.analyticsPackLoader = analyticsPackLoader;
+        this.symbolPackLoader = symbolPackLoader;
         this.httpClient = httpClient;
     }
 
@@ -177,6 +183,9 @@ public class MarketplaceService {
         assertListingCompatible(detail);
         if (isAnalyticsPackListing(detail)) {
             return installAnalyticsPackListing(endpoint, slug, detail, "free-download");
+        }
+        if (isSymbolPackListing(detail)) {
+            return installSymbolPackListing(endpoint, slug, detail, "free-download");
         }
         String appId = requireAppId(detail);
         String installationId = installationIdService.ensureInstallationId();
@@ -380,6 +389,38 @@ public class MarketplaceService {
         }
         String kind = stringValue(detail.get("kind"));
         return "analytics-pack".equalsIgnoreCase(kind) || "analytics_pack".equalsIgnoreCase(kind);
+    }
+
+    private static boolean isSymbolPackListing(Map<String, Object> detail) {
+        String artifactKind = stringValue(detail.get("artifactKind"));
+        if ("symbol-pack".equalsIgnoreCase(artifactKind)) {
+            return true;
+        }
+        String kind = stringValue(detail.get("kind"));
+        return "symbol-pack".equalsIgnoreCase(kind) || "symbol_pack".equalsIgnoreCase(kind);
+    }
+
+    private Map<String, Object> installSymbolPackListing(
+            MarketplaceProperties.Endpoint endpoint,
+            String slug,
+            Map<String, Object> detail,
+            String source
+    ) throws Exception {
+        String installationId = installationIdService.ensureInstallationId();
+        byte[] zipBytes = httpGetBytes(buildFreeDownloadUrl(endpoint, slug, installationId));
+        String packId = requirePackId(detail);
+        Map<String, Object> installed = symbolPackLoader.installZipArchive(zipBytes, packId);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", "OK");
+        result.put("artifactKind", "symbol-pack");
+        result.put("packId", packId);
+        result.put("symbolCount", installed.get("totalSymbols"));
+        result.put("path", installed.get("path"));
+        result.put("marketplaceId", endpoint.getId());
+        result.put("listingSlug", slug);
+        result.put("installedFrom", source);
+        result.put("installationId", installationId);
+        return result;
     }
 
     private static String requirePackId(Map<String, Object> detail) {

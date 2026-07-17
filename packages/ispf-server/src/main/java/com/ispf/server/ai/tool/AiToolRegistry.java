@@ -42,6 +42,10 @@ public class AiToolRegistry {
         return contextPackService.info();
     }
 
+    public Map<String, Object> refreshContextPack() {
+        return contextPackService.refresh();
+    }
+
     public Map<String, Object> validateBundle(
             String appId,
             ApplicationBundleDeployService.BundleManifest manifest,

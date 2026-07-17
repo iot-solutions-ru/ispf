@@ -2,13 +2,13 @@
 
 # Symbol marketplace (BL-185)
 
-> **Статус:** Draft — Listing API stub. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Done (local GA). Теги: [doc-status](../en/doc-status.md). Канон: [en/symbol-marketplace.md](../en/symbol-marketplace.md).
 
 Каталог и распространение пакетов символов SCADA/HMI — примитивы P&ID, значки оборудования, анимированные состояния и привязки мнемосхем, совместимые с [scada](scada.md) и `diagramJson` v2.
 
 Связанные: [marketplace](marketplace.md), [scada-mimic](scada-mimic.md), [roadmap](roadmap.md) (BL-146, BL-185).
 
-**Статус (0.9.102):** справочный пакет `ispf-pid-v1` (218 символов) поставляется в веб-консоли. API листинга/установки сервера — **заглушка** (`MarketplaceSymbolListingService`, `"source": "stub"`). См. [competitive-scorecard](competitive-scorecard.md).
+**Статус:** **Готово (local GA)** — install в `ISPF_SYMBOL_PACKS_DIR`, `GET /api/v1/scada/symbol-packs`, palette грузит installed packs. Reference `ispf-pid-v1` остаётся bundled. Demo: `examples/marketplace-symbol-hvac-demo`.
 
 ---
 

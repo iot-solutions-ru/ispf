@@ -42,9 +42,20 @@ python tools/ai-pack/build.py
 - `ai/context/generated/ispf-context-pack.json`
 - `packages/ispf-server/src/main/resources/ai/context-pack.json`
 
-Пакет включает поля схемы пакета, шаги сценария, типы виджетов, фрагменты документации API, справочные примеры, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (индекс всех `docs/*.md`) и **docChunks** для оцениваемого поиска.
+Пакет включает поля схемы пакета, шаги сценария, типы виджетов, фрагменты документации API, справочные примеры, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (индекс всех `docs/*.md`), **docChunks** для оцениваемого поиска и **competitiveGapIndex** (индекс readiness gaps — BL-182).
 
-Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`).
+Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`). Gaps: `search_context topic=gaps`.
+
+### Context pack v2 (BL-182)
+
+| Поверхность | Поведение |
+|---------|----------|
+| `GET /api/v1/ai/tools/context-pack` | Метаданные + `competitiveGapCount` / `topReadinessGaps` + `livePlatform` |
+| `POST /api/v1/ai/tools/context-pack/refresh` | Admin: сброс кэша пакета + bump live epoch |
+| `search_context topic=gaps\|readiness` | Поиск по `competitiveGapIndex` |
+| AI Studio Status | Счётчик gaps, live drivers/apps, кнопка refresh |
+
+Classpath JSON остаётся build-time (ADR-0004); live state — overlay, не runtime-rebuild docs/examples.
 
 Рабочие процессы CI и выпуска выполняются `python tools/ai-pack/build.py` перед тестированием/сборкой сервера (`ISPF_VERSION` из тега в выпуске).
 
@@ -60,6 +71,7 @@ Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context
 | Виртуальные профили | Встроенная шпаргалка |
 | Reference examples | ContextPack `exampleSummaries` |
 | Features | ContextPack `featureIndex` |
+| Readiness gaps | Топ строк из `competitiveGapIndex` |
 | Живой снимок | Развернутые приложения + версии пакета + дочерние элементы дерева в сеансе `rootPath` |
 
 Конфигурация:
@@ -81,7 +93,8 @@ REST API только для администратора:
 
 | Конечная точка | Цель |
 |----------|---------|
-| `GET /api/v1/ai/tools/context-pack` | Context pack metadata |
+| `GET /api/v1/ai/tools/context-pack` | Context pack metadata + readiness gaps + live overlay |
+| `POST /api/v1/ai/tools/context-pack/refresh` | Evict pack cache + refresh live overlay (admin) |
 | `POST /api/v1/ai/tools/validate-bundle` | Semantic bundle validation (no DB writes) |
 | `POST /api/v1/ai/tools/dry-run-deploy` | Validate + list `wouldApply` sections |
 | `GET /api/v1/ai/models` | List models from active LLM provider |
@@ -293,6 +306,8 @@ ispf:
 | `contextpack://driver-catalog` | Driver index |
 | `contextpack://feature-index` | Platform features |
 | `contextpack://example-summaries` | Reference bundles |
+| `contextpack://competitive-gap-index` | Readiness / competitive gap index |
+| `contextpack://live-platform` | Live drivers, apps, object counts |
 | `contextpack://doc-chunks` | Documentation chunks |
 
 Example: `{"method":"resources/read","params":{"uri":"contextpack://script-steps"}}`

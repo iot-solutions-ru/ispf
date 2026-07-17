@@ -1,5 +1,5 @@
 {
-  "_comment": "BL-181: deploy as platform script functions (admin-only HTTP to /api/v1/ai/agent/metrics/tools).",
+  "_comment": "BL-181 (optional dashboard BFF): deploy as platform script functions (admin-only HTTP to /api/v1/ai/agent/metrics/tools). AI Studio AgentMetricsPanel already consumes the same API.",
   "functions": [
     {
       "path": "root.platform.applications.platform.functions.ai_toolMetricsChart",

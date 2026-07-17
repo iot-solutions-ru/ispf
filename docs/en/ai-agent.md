@@ -130,57 +130,24 @@ Results file shape:
 
 ---
 
-## AI tool metrics dashboard widget (BL-180)
+## Agent observability v2 (BL-181)
 
-Admin observability for per-tool agent cost and reliability. Data source:
+Admin observability for turn aggregates and per-tool cost/latency/reliability.
 
-| Endpoint | Fields |
-|----------|--------|
-| `GET /api/v1/ai/agent/metrics/tools?days=7` | `tools[]`: `tool`, `callCount`, `avgLatencyMs`, `promptTokens`, `completionTokens`, `errorCount`, `errorRate` |
+| Endpoint | Auth | Fields |
+|----------|------|--------|
+| `GET /api/v1/ai/agent/metrics?days=7` | admin | `turnsByStatus`, `avgStepsPerTurn`, `topFailingTools`, token/latency sums, `toolLatencyBreakdown` |
+| `GET /api/v1/ai/agent/metrics/tools?days=7` | admin | `tools[]`: `tool`, `callCount`, `avgLatencyMs`, `maxLatencyMs`, `promptTokens`, `completionTokens`, `errorCount`, `errorRate` |
 
-### Reference dashboard layout
+**AI Studio (REAL):** Status tab → `AgentMetricsPanel` loads both endpoints — turn cards plus a **Cost / latency by tool** table (`fetchAgentToolMetrics`).
 
-Embed in a platform dashboard (`root.platform.dashboards.ai-ops`) using a **chart** widget bound to the tool metrics API via a BFF or script function. Minimal reference layout:
+**Failure auto-retry (REAL):**
+- LLM JSON action parse: `AgentLlmActionResolver` nudges and retries
+- Transient tool **exceptions** (timeout / connection / 5xx / rate-limit): one automatic retry in `TreeFirstAgentService` (`AgentToolTransientRetry`); result may include `retried: true`. Business `status: ERROR` maps are not retried.
 
-```json
-{
-  "columns": 84,
-  "rowHeight": 8,
-  "widgets": [
-    {
-      "id": "ai-tool-latency",
-      "type": "chart",
-      "title": "Agent tool latency (7d)",
-      "x": 0, "y": 0, "w": 42, "h": 28,
-      "objectPath": "root.platform.devices.demo-sensor-01",
-      "variableName": "temperature"
-    },
-    {
-      "id": "ai-tool-errors",
-      "type": "chart",
-      "title": "Agent tool error rate (7d)",
-      "x": 42, "y": 0, "w": 42, "h": 28,
-      "objectPath": "root.platform.devices.demo-sensor-01",
-      "variableName": "temperature"
-    },
-    {
-      "id": "ai-tool-tokens",
-      "type": "value",
-      "title": "Sample KPI tile",
-      "x": 0, "y": 28, "w": 21, "h": 14,
-      "objectPath": "root.platform.devices.demo-sensor-01",
-      "variableName": "temperature",
-      "decimals": 0
-    }
-  ]
-}
-```
+### Optional dashboard / BFF
 
-> Sketch only: bind real charts to `GET /api/v1/ai/agent/metrics/tools` via a BFF/script function when available. Layout uses the canonical **84×8** grid ([dashboards](dashboards.md)).
-
-**BFF sketch** (`ai_toolMetricsChart`): admin HTTP `GET /api/v1/ai/agent/metrics/tools`, map `tools[]` to `{ label: tool, value: metric }` rows for the chart widget.
-
-**AI Studio panel:** Web Console already ships `AgentMetricsPanel` (`apps/web-console/src/components/agent/AgentMetricsPanel.tsx`) for turn-level metrics via `GET /api/v1/ai/agent/metrics`. Extend with a tool breakdown tab calling `/agent/metrics/tools` for the same data in the studio UI.
+Reference layout and BFF mapping live under `examples/agent-metrics-dashboard/`. Bind chart widgets to `GET /api/v1/ai/agent/metrics/tools` when you want the same series on an operator dashboard (canonical **84×8** grid — [dashboards](dashboards.md)).
 
 ---
 

@@ -15,6 +15,22 @@ export interface AiContextPackInfo {
   generatedAt?: string;
   contentSha256?: string;
   exampleCount?: number;
+  competitiveGapCount?: number;
+  topReadinessGaps?: Array<{
+    dimension?: string;
+    gap?: number;
+    current?: number;
+    target?: number;
+    phaseRef?: string;
+  }>;
+  livePlatform?: {
+    refreshedAt?: string;
+    cacheEpoch?: number;
+    serverVersion?: string;
+    driverCount?: number;
+    applicationCount?: number;
+    objectCounts?: Record<string, number>;
+  };
 }
 
 export interface AiProviderStatus {
@@ -193,6 +209,18 @@ export function fetchAiContextPack(): Promise<AiContextPackInfo> {
   }).then(async (response) => {
     if (!response.ok) {
       throw new Error(parseApiError(await response.text(), `Context pack failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function refreshAiContextPack(): Promise<AiContextPackInfo> {
+  return fetch("/api/v1/ai/tools/context-pack/refresh", {
+    method: "POST",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Context pack refresh failed: ${response.status}`));
     }
     return response.json();
   });
@@ -455,6 +483,41 @@ export function fetchAgentMetrics(days = 7): Promise<AiAgentMetrics> {
   }).then(async (response) => {
     if (!response.ok) {
       return throwAiHttpError(response, `Agent metrics failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export interface AiAgentToolMetricRow {
+  tool: string;
+  callCount: number;
+  avgLatencyMs: number;
+  maxLatencyMs: number;
+  promptTokens: number;
+  completionTokens: number;
+  errorCount: number;
+  errorRate: number;
+}
+
+export interface AiAgentToolMetrics {
+  days: number;
+  since: string;
+  toolCount: number;
+  totalCalls: number;
+  promptTokensSum: number;
+  completionTokensSum: number;
+  latencyMsSum: number;
+  errorCountSum: number;
+  tools: AiAgentToolMetricRow[];
+}
+
+export function fetchAgentToolMetrics(days = 7): Promise<AiAgentToolMetrics> {
+  return fetch(`/api/v1/ai/agent/metrics/tools?days=${days}`, {
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Agent tool metrics failed: ${response.status}`);
     }
     return response.json();
   });

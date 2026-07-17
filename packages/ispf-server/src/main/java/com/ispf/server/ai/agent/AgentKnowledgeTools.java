@@ -44,8 +44,9 @@ final class AgentKnowledgeTools {
 
             @Override
             public String description() {
-                return "Search ISPF platform knowledge (docs, drivers, features, examples). "
-                        + "Args: query (string), optional topic (drivers|workflows|dashboards|examples|features|all).";
+                return "Search ISPF platform knowledge (docs, drivers, features, examples, readiness gaps). "
+                        + "Args: query (string), optional topic "
+                        + "(drivers|workflows|dashboards|examples|features|gaps|readiness|agent-knowledge|all).";
             }
 
             @Override

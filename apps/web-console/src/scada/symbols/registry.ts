@@ -6,8 +6,10 @@ import { CustomSvgSymbol } from "./customSvg";
 import { getPackRecord, getPackRecordForLegacyBuiltin, LEGACY_BUILTIN_TO_PACK } from "./legacyBuiltinPackMap";
 import {
   PACK_CATEGORY_IDS,
+  ensureInstalledPacksLoaded,
   ensurePackLoaded,
   getPackSymbol,
+  listInstalledPackCategoryIds,
   listPackSymbols,
   listPackSymbolsByCategory,
   loadPackManifest,
@@ -173,8 +175,9 @@ export function resolvePlacementSymbol(
 
 export function listSymbolsByCategory(category: string): RegisteredSymbol[] {
   const base = SYMBOLS.filter((s) => s.category === category);
-  if ((PACK_CATEGORY_IDS as readonly string[]).includes(category)) {
-    return [...base, ...listPackSymbolsByCategory(category)];
+  const pack = listPackSymbolsByCategory(category);
+  if (pack.length > 0 || (PACK_CATEGORY_IDS as readonly string[]).includes(category)) {
+    return [...base, ...pack];
   }
   return base;
 }
@@ -185,7 +188,12 @@ export function listAllSymbols(): RegisteredSymbol[] {
 
 export const SYMBOL_CATEGORIES = ["common", ...PACK_CATEGORY_IDS] as const;
 
-export { ensurePackLoaded, loadPackManifest, LEGACY_BUILTIN_TO_PACK };
+export function listPaletteCategories(): string[] {
+  const extra = listInstalledPackCategoryIds().filter((id) => !(PACK_CATEGORY_IDS as readonly string[]).includes(id));
+  return [...SYMBOL_CATEGORIES, ...extra, "custom"];
+}
+
+export { ensureInstalledPacksLoaded, ensurePackLoaded, loadPackManifest, LEGACY_BUILTIN_TO_PACK };
 
 export function symbolSize(
   element: Pick<MimicElement, "symbolId" | "scale" | "props">,

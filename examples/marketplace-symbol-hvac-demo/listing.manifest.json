@@ -1,0 +1,19 @@
+{
+  "slug": "hvac-equipment-v1",
+  "title": "HVAC Equipment Symbols",
+  "description": "AHU, fan coil, damper, and sensor glyphs for building automation mimics (BL-185 demo).",
+  "pricing": "free",
+  "artifactKind": "symbol-pack",
+  "packId": "hvac-equipment-v1",
+  "vendorName": "Building Apps Lab",
+  "vendorLegalName": "Building Apps Lab Contributors",
+  "vendorSellerKind": "company",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "license": "Apache-2.0",
+  "symbolCount": 4,
+  "categories": ["pack-hvac"],
+  "tags": ["hvac", "building", "scada", "demo"],
+  "changelog": "Initial HVAC symbol pack for marketplace drop-in install."
+}

@@ -1,31 +1,57 @@
 package com.ispf.server.application.bundle;
 
+import com.ispf.server.scada.symbol.DropInSymbolPackLoader;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * BL-185: stub symbol marketplace catalog for dev/lab (remote install planned).
+ * BL-185: symbol marketplace catalog — local examples + bundled reference + installed packs.
  */
 @Service
 public class MarketplaceSymbolListingService {
 
     private static final AtomicLong INSTALL_SEQ = new AtomicLong(1);
-    private final Map<String, Map<String, Object>> installedPacks = new ConcurrentHashMap<>();
+
+    private final MarketplaceSymbolPackLocalService localService;
+    private final DropInSymbolPackLoader symbolPackLoader;
+
+    public MarketplaceSymbolListingService(
+            MarketplaceSymbolPackLocalService localService,
+            DropInSymbolPackLoader symbolPackLoader
+    ) {
+        this.localService = localService;
+        this.symbolPackLoader = symbolPackLoader;
+    }
 
     public Map<String, Object> listSymbolPacks() {
+        List<Map<String, Object>> listings = new ArrayList<>();
+        listings.add(bundledPidListing());
+
+        Map<String, Object> local = localService.listLocalPacks();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> localPacks = (List<Map<String, Object>>) local.getOrDefault("packs", List.of());
+        for (Map<String, Object> pack : localPacks) {
+            if (!"OK".equals(pack.get("validationStatus"))) {
+                continue;
+            }
+            Map<String, Object> listing = new LinkedHashMap<>(pack);
+            listing.put("artifactKind", "symbol-pack");
+            listings.add(listing);
+        }
+
         Map<String, Object> response = new LinkedHashMap<>();
-        List<Map<String, Object>> listings = catalogListings();
         response.put("status", "OK");
-        response.put("source", "stub");
+        response.put("source", localPacks.isEmpty() ? "bundled" : "local");
         response.put("count", listings.size());
         response.put("listings", listings);
-        response.put("installedCount", installedPacks.size());
+        response.put("installedCount", symbolPackLoader.listInstalledPacks().size());
+        response.put("installed", symbolPackLoader.listInstalledPacks());
         return response;
     }
 
@@ -33,53 +59,35 @@ public class MarketplaceSymbolListingService {
         if (packId == null || packId.isBlank()) {
             throw new IllegalArgumentException("pack id is required");
         }
-        Map<String, Object> listing = findListing(packId.trim());
-        if (listing == null) {
-            throw new IllegalArgumentException("Unknown symbol pack: " + packId);
+        String id = packId.trim();
+        if ("ispf-pid-v1".equals(id)) {
+            Map<String, Object> response = new LinkedHashMap<>(bundledPidListing());
+            response.put("status", "OK");
+            response.put("source", "bundled");
+            response.put("action", "install");
+            response.put("installationId", "symbol-bundled-" + INSTALL_SEQ.getAndIncrement());
+            response.put(
+                    "message",
+                    "Reference pack ispf-pid-v1 ships in the web-console mimic editor; no filesystem install required"
+            );
+            return response;
         }
-        if (!"free".equalsIgnoreCase(String.valueOf(listing.getOrDefault("pricing", "free")))) {
-            throw new IllegalArgumentException("Local install supports free symbol packs only");
-        }
-
-        String installationId = "symbol-install-" + INSTALL_SEQ.getAndIncrement() + "-"
-                + UUID.randomUUID().toString().substring(0, 8);
-        Map<String, Object> installed = new LinkedHashMap<>(listing);
-        installed.put("installationId", installationId);
-        installed.put("installedAt", java.time.Instant.now().toString());
-        installedPacks.put(packId.trim(), installed);
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", "OK");
-        response.put("source", "stub");
-        response.put("action", "install");
-        response.put("installationId", installationId);
-        response.put("packId", listing.get("packId"));
-        response.put("slug", listing.get("slug"));
-        response.put("version", listing.get("version"));
-        response.put("symbolCount", listing.get("symbolCount"));
-        response.put(
-                "message",
-                "Symbol pack registered in platform stub; mimic editor reload pending Phase 32 GA"
-        );
-        return response;
-    }
-
-    private Map<String, Object> findListing(String packId) {
-        for (Map<String, Object> listing : catalogListings()) {
-            String slug = String.valueOf(listing.get("slug"));
-            String id = String.valueOf(listing.get("packId"));
-            if (packId.equals(slug) || packId.equals(id)) {
-                return listing;
+        try {
+            Map<String, Object> result = localService.installLocalPack(id);
+            if ("ERROR".equals(result.get("status"))) {
+                throw new IllegalArgumentException(String.valueOf(result.getOrDefault("errors", "install failed")));
             }
+            result.put("installationId", "symbol-install-" + INSTALL_SEQ.getAndIncrement() + "-"
+                    + UUID.randomUUID().toString().substring(0, 8));
+            return result;
+        } catch (IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex.getMessage(), ex);
         }
-        return null;
     }
 
-    private static List<Map<String, Object>> catalogListings() {
-        return List.of(referencePidPack(), hvacEquipmentPack());
-    }
-
-    private static Map<String, Object> referencePidPack() {
+    private Map<String, Object> bundledPidListing() {
         Map<String, Object> listing = new LinkedHashMap<>();
         listing.put("slug", "ispf-pid-v1");
         listing.put("title", "P&ID Symbol Library v1");
@@ -95,27 +103,9 @@ public class MarketplaceSymbolListingService {
         listing.put("vendorName", "ISPF Core");
         listing.put("vendorLegalName", "IoT Solutions Platform Contributors");
         listing.put("minIspfVersion", "0.9.30");
-        listing.put("tags", List.of("pid", "scada", "reference"));
-        return listing;
-    }
-
-    private static Map<String, Object> hvacEquipmentPack() {
-        Map<String, Object> listing = new LinkedHashMap<>();
-        listing.put("slug", "hvac-equipment-v1");
-        listing.put("title", "HVAC Equipment Symbols");
-        listing.put("description", "AHU, fan coil, damper, and sensor glyphs for building automation mimics.");
-        listing.put("artifactKind", "symbol-pack");
-        listing.put("pricing", "free");
-        listing.put("packId", "hvac-equipment-v1");
-        listing.put("version", "1.0.0");
-        listing.put("latestVersion", "1.0.0");
-        listing.put("license", "Apache-2.0");
-        listing.put("symbolCount", 48);
-        listing.put("categories", List.of("equipment", "instruments", "hvac"));
-        listing.put("vendorName", "Building Apps Lab");
-        listing.put("vendorLegalName", "Building Apps Lab Contributors");
-        listing.put("minIspfVersion", "0.9.30");
-        listing.put("tags", List.of("hvac", "building", "scada"));
+        listing.put("tags", List.of("pid", "scada", "reference", "bundled"));
+        listing.put("installed", true);
+        listing.put("source", "bundled");
         return listing;
     }
 }

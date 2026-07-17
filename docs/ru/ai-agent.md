@@ -122,71 +122,24 @@ node tools/agent-regression/validate-scenarios.mjs --results build/agent-regress
 
 ---
 
-## Виджет панели показателей инструмента AI (BL-180)
+## Наблюдаемость агентов v2 (BL-181)
 
-Наблюдение администратора за стоимостью и надежностью каждого агента для каждого инструмента. Источник данных:
+Админ-наблюдаемость: агрегаты ходов и стоимость/задержка/надёжность по каждому tool.
 
-| Конечная точка | Поля |
-|----------|--------|
-| `GET /api/v1/ai/agent/metrics/tools?days=7` | `tools[]`: `tool`, `callCount`, `avgLatencyMs`, `promptTokens`, `completionTokens`, `errorCount`, `errorRate` |
+| Конечная точка | Auth | Поля |
+|----------|------|--------|
+| `GET /api/v1/ai/agent/metrics?days=7` | admin | `turnsByStatus`, `avgStepsPerTurn`, `topFailingTools`, суммы токенов/latency, `toolLatencyBreakdown` |
+| `GET /api/v1/ai/agent/metrics/tools?days=7` | admin | `tools[]`: `tool`, `callCount`, `avgLatencyMs`, `maxLatencyMs`, `promptTokens`, `completionTokens`, `errorCount`, `errorRate` |
 
-### Референсный layout дашборда
+**AI Studio (REAL):** вкладка Status → `AgentMetricsPanel` загружает оба endpoint — карточки ходов и таблица **стоимость / задержка по tool** (`fetchAgentToolMetrics`).
 
-Встраивайте в дашборд платформы (`root.platform.dashboards.ai-ops`) с помощью виджета **диаграммы**, привязанного к API метрик инструмента через BFF или функцию скрипта. Минимальный эталонный макет:
+**Автоповтор при сбое (REAL):**
+- разбор JSON-действия LLM: `AgentLlmActionResolver` nudges + retry
+- транзиентные **исключения** tool (timeout / connection / 5xx / rate-limit): один автоматический retry в `TreeFirstAgentService` (`AgentToolTransientRetry`); в результате может быть `retried: true`. Бизнес-ответы `status: ERROR` не повторяются.
 
-```json
-{
-  "version": 2,
-  "widgets": [
-    {
-      "id": "ai-tool-latency",
-      "type": "chart",
-      "title": "Agent tool latency (7d)",
-      "grid": { "x": 0, "y": 0, "w": 6, "h": 4 },
-      "options": {
-        "chartType": "bar",
-        "binding": {
-          "source": "bff",
-          "function": "ai_toolMetricsChart",
-          "args": { "days": 7, "metric": "avgLatencyMs" }
-        }
-      }
-    },
-    {
-      "id": "ai-tool-errors",
-      "type": "chart",
-      "title": "Agent tool error rate (7d)",
-      "grid": { "x": 6, "y": 0, "w": 6, "h": 4 },
-      "options": {
-        "chartType": "bar",
-        "binding": {
-          "source": "bff",
-          "function": "ai_toolMetricsChart",
-          "args": { "days": 7, "metric": "errorRate" }
-        }
-      }
-    },
-    {
-      "id": "ai-tool-tokens",
-      "type": "indicator",
-      "title": "Agent tokens (7d)",
-      "grid": { "x": 0, "y": 4, "w": 4, "h": 2 },
-      "options": {
-        "binding": {
-          "source": "bff",
-          "function": "ai_toolMetricsTotals",
-          "args": { "days": 7 }
-        },
-        "format": "integer"
-      }
-    }
-  ]
-}
-```
+### Опциональный дашборд / BFF
 
-**Эскиз BFF** (`ai_toolMetricsChart`): HTTP администратора `GET /api/v1/ai/agent/metrics/tools`, сопоставьте `tools[]` со строками `{ label: tool, value: metric }` для виджета диаграммы.
-
-**Панель AI Studio:** Веб-консоль уже поставляется с `AgentMetricsPanel` (`apps/web-console/src/components/agent/AgentMetricsPanel.tsx`) для показателей уровня хода через `GET /api/v1/ai/agent/metrics`. Расширьте вкладку разбивки инструментов, вызывающую `/agent/metrics/tools` для получения тех же данных в пользовательском интерфейсе студии.
+Референсный layout и маппинг BFF — в `examples/agent-metrics-dashboard/`. Привязывайте chart-виджеты к `GET /api/v1/ai/agent/metrics/tools`, если нужны те же ряды на операторском дашборде (сетка **84×8** — [dashboards](dashboards.md)).
 
 ---
 

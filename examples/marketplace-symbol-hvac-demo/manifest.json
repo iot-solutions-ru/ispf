@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "hvac-equipment-v1",
+  "license": "Apache-2.0",
+  "authorship": "Building Apps Lab Contributors (2026)",
+  "generatedAt": "2026-07-17T00:00:00.000Z",
+  "generator": "examples/marketplace-symbol-hvac-demo",
+  "totalSymbols": 4,
+  "categories": [
+    {
+      "id": "pack-hvac",
+      "file": "equipment.json",
+      "count": 4
+    }
+  ]
+}

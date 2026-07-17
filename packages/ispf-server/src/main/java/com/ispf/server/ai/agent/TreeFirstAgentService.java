@@ -757,11 +757,7 @@ public class TreeFirstAgentService {
                         toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
                         executedTool = toolName;
                     } else {
-                        try {
-                            toolResult = toolRegistry.execute(toolName, toolArgs, context);
-                        } catch (Exception ex) {
-                            toolResult = Map.of("status", "ERROR", "error", ex.getMessage());
-                        }
+                        toolResult = executeToolWithTransientRetry(toolName, toolArgs, context);
                         if ("list_reports".equals(toolName)) {
                             toolResult = OperatorAgentTurnGuard.enrichListReportsResult(toolResult, userMessage);
                         }
@@ -847,11 +843,7 @@ public class TreeFirstAgentService {
                                 executedTool = toolName;
                                 agentMetrics.recordGuardBlock("mutateApproval");
                             } else {
-                                try {
-                                    toolResult = toolRegistry.execute(toolName, toolArgs, context);
-                                } catch (Exception ex) {
-                                    toolResult = Map.of("status", "ERROR", "error", ex.getMessage());
-                                }
+                                toolResult = executeToolWithTransientRetry(toolName, toolArgs, context);
                                 if ("list_reports".equals(toolName)) {
                                     toolResult = OperatorAgentTurnGuard.enrichListReportsResult(toolResult, userMessage);
                                 }
@@ -1373,6 +1365,43 @@ public class TreeFirstAgentService {
                     "LLM provider is not configured. Set ispf.ai.provider and base-url/model."
             );
         }
+    }
+
+    /**
+     * BL-181: one automatic retry when the tool throws a transient exception.
+     * Business ERROR maps are not retried (avoids double mutations).
+     */
+    private Map<String, Object> executeToolWithTransientRetry(
+            String toolName,
+            Map<String, Object> toolArgs,
+            AgentContext context
+    ) {
+        try {
+            return toolRegistry.execute(toolName, toolArgs, context);
+        } catch (Exception ex) {
+            if (!AgentToolTransientRetry.isTransient(ex)) {
+                return toolErrorResult(ex, false);
+            }
+            agentMetrics.recordGuardBlock("toolTransientRetry");
+            try {
+                Map<String, Object> retried = toolRegistry.execute(toolName, toolArgs, context);
+                Map<String, Object> out = new LinkedHashMap<>(retried);
+                out.put("retried", true);
+                return out;
+            } catch (Exception retryEx) {
+                return toolErrorResult(retryEx, true);
+            }
+        }
+    }
+
+    private static Map<String, Object> toolErrorResult(Exception ex, boolean retried) {
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("status", "ERROR");
+        error.put("error", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName());
+        if (retried) {
+            error.put("retried", true);
+        }
+        return error;
     }
 
     private static String truncateForHistory(String summary) {

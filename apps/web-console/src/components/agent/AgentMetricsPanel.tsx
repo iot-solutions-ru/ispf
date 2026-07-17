@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { fetchAgentMetrics } from "../../api/ai";
+import { fetchAgentMetrics, fetchAgentToolMetrics } from "../../api/ai";
 
 export default function AgentMetricsPanel() {
   const { t } = useTranslation("ai");
@@ -8,7 +8,12 @@ export default function AgentMetricsPanel() {
     queryKey: ["ai-agent-metrics", 7],
     queryFn: () => fetchAgentMetrics(7),
   });
+  const toolMetricsQuery = useQuery({
+    queryKey: ["ai-agent-tool-metrics", 7],
+    queryFn: () => fetchAgentToolMetrics(7),
+  });
   const metrics = metricsQuery.data;
+  const toolMetrics = toolMetricsQuery.data;
 
   if (metricsQuery.isLoading) {
     return <p className="op-muted">{t("agent.metrics.loading")}</p>;
@@ -19,6 +24,7 @@ export default function AgentMetricsPanel() {
 
   const turnsByStatus = (metrics.turnsByStatus ?? {}) as Record<string, number>;
   const topFailing = (metrics.topFailingTools ?? []) as Array<{ tool: string; errorCount: number }>;
+  const tools = toolMetrics?.tools ?? [];
 
   return (
     <section className="ai-agent-metrics-panel">
@@ -54,6 +60,43 @@ export default function AgentMetricsPanel() {
             ))}
           </ul>
         </>
+      )}
+      <h5>{t("agent.metrics.toolsTitle")}</h5>
+      {toolMetricsQuery.isLoading && (
+        <p className="op-muted">{t("agent.metrics.toolsLoading")}</p>
+      )}
+      {!toolMetricsQuery.isLoading && tools.length === 0 && (
+        <p className="op-muted">{t("agent.metrics.toolsEmpty")}</p>
+      )}
+      {tools.length > 0 && (
+        <div className="ai-agent-metrics-table-wrap">
+          <table className="ai-agent-metrics-table">
+            <thead>
+              <tr>
+                <th>{t("agent.metrics.colTool")}</th>
+                <th>{t("agent.metrics.colCalls")}</th>
+                <th>{t("agent.metrics.colAvgLatency")}</th>
+                <th>{t("agent.metrics.colTokens")}</th>
+                <th>{t("agent.metrics.colErrorRate")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tools.slice(0, 30).map((row) => (
+                <tr key={row.tool}>
+                  <td>
+                    <code>{row.tool}</code>
+                  </td>
+                  <td>{row.callCount}</td>
+                  <td>{Number(row.avgLatencyMs ?? 0).toFixed(1)}</td>
+                  <td>
+                    {Number(row.promptTokens ?? 0) + Number(row.completionTokens ?? 0)}
+                  </td>
+                  <td>{Number(row.errorRate ?? 0).toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

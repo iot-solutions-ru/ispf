@@ -1,4 +1,4 @@
-/* Split from styles.css lines 10182-14569 ù do not reorder imports in index.css */
+/* Split from styles.css lines 10182-14569 ? do not reorder imports in index.css */
 /* btop-inspired dashboard theme (SNMP Host Monitoring) */
 .dashboard-theme-btop.dashboard-grid-host {
   background: #06080c;
@@ -371,7 +371,7 @@
   gap: 1rem;
 }
 
-/* ùù AI Studio: Status tab ùù */
+/* ?? AI Studio: Status tab ?? */
 .ai-studio-status {
   display: flex;
   flex-direction: column;
@@ -545,6 +545,27 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.ai-studio-gap-list {
+  margin: 0.5rem 0 0.65rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ai-studio-gap-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.ai-studio-gap-list strong {
+  white-space: nowrap;
+  font-weight: 600;
 }
 
 .ai-studio-metric-hint {
@@ -1170,7 +1191,7 @@
   text-wrap: pretty;
 }
 
-/* ùù AI Studio: Preferences tab ùù */
+/* ?? AI Studio: Preferences tab ?? */
 .ai-studio-prefs {
   display: flex;
   flex-direction: column;
@@ -2445,6 +2466,39 @@
   opacity: 0.75;
 }
 
+.ai-agent-metrics-failures {
+  margin: 0.35rem 0 0.75rem 1.1rem;
+  padding: 0;
+}
+
+.ai-agent-metrics-table-wrap {
+  margin-top: 0.35rem;
+  overflow-x: auto;
+}
+
+.ai-agent-metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ai-agent-metrics-table th,
+.ai-agent-metrics-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.ai-agent-metrics-table th {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.ai-agent-metrics-table code {
+  font-size: 0.78rem;
+}
+
 .ai-agent-step-list {
   margin: 0.5rem 0 0.75rem 1.1rem;
   padding: 0;
@@ -2947,7 +3001,7 @@
   color: #ef4444;
 }
 
-/* Platform SQL editors (data sources, migrations, reports, ù) */
+/* Platform SQL editors (data sources, migrations, reports, ?) */
 .platform-sql-editor {
   display: flex;
   flex-direction: column;
@@ -3468,7 +3522,7 @@
   overflow: auto;
 }
 
-/* ?ù??ù? UI polish: animations, images, stagger, a11y ?ù??ù? */
+/* ?????? UI polish: animations, images, stagger, a11y ?????? */
 
 @keyframes ui-fade-in {
   from {
@@ -3868,7 +3922,7 @@
   gap: 0.35rem;
 }
 
-/* Recharts ù follow app theme tokens */
+/* Recharts ? follow app theme tokens */
 .recharts-cartesian-axis-tick text,
 .recharts-polar-angle-axis-tick text,
 .recharts-polar-radius-axis-tick text {
@@ -4103,7 +4157,7 @@
   resize: vertical;
 }
 
-/* ùù UI kit: object path + tree picker ùù */
+/* ?? UI kit: object path + tree picker ?? */
 html {
   -webkit-font-smoothing: antialiased;
 }

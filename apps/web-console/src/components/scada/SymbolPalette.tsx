@@ -3,10 +3,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MimicCustomSymbol } from "../../types/scadaMimic";
 import {
-  SYMBOL_CATEGORIES,
+  ensureInstalledPacksLoaded,
   ensurePackLoaded,
   listAllSymbols,
   listDocumentCustomSymbols,
+  listPaletteCategories,
   listSymbolsByCategory,
   type RegisteredSymbol,
 } from "../../scada/symbols/registry";
@@ -14,7 +15,6 @@ import { packSymbolLabel, packSymbolMatchesSearch } from "../../scada/symbols/sy
 import { IconSearch } from "./ScadaEditorIcons";
 import SymbolPreview from "./SymbolPreview";
 
-const PALETTE_CATEGORIES = [...SYMBOL_CATEGORIES, "custom"] as const;
 const ITEM_HEIGHT = 52;
 
 interface SymbolPaletteProps {
@@ -24,15 +24,19 @@ interface SymbolPaletteProps {
   onUploadCustomSymbol?: (file: File) => void;
 }
 
+function isPackSymbol(sym: RegisteredSymbol): boolean {
+  return sym.id.startsWith("pack.");
+}
+
 function symbolLabel(sym: RegisteredSymbol, t: (key: string) => string, locale: string): string {
-  if (sym.id.startsWith("pack.ispf-pid.")) {
+  if (isPackSymbol(sym)) {
     return packSymbolLabel(sym, locale);
   }
   return sym.displayName ?? t(sym.nameKey);
 }
 
 function symbolMatchesSearch(sym: RegisteredSymbol, q: string, t: (key: string) => string, locale: string): boolean {
-  if (sym.id.startsWith("pack.ispf-pid.")) {
+  if (isPackSymbol(sym)) {
     return packSymbolMatchesSearch(sym, q);
   }
   const label = symbolLabel(sym, t, locale).toLowerCase();
@@ -55,13 +59,15 @@ export default function SymbolPalette({
 
   useEffect(() => {
     let cancelled = false;
-    ensurePackLoaded().then(() => {
+    Promise.all([ensurePackLoaded(), ensureInstalledPacksLoaded()]).then(() => {
       if (!cancelled) setPackReady(true);
     });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const paletteCategories = useMemo(() => listPaletteCategories(), [packReady]);
 
   const documentCustom = useMemo(() => listDocumentCustomSymbols(customSymbols), [customSymbols]);
 
@@ -78,11 +84,12 @@ export default function SymbolPalette({
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { custom: documentCustom.length };
-    for (const cat of SYMBOL_CATEGORIES) {
+    for (const cat of paletteCategories) {
+      if (cat === "custom") continue;
       counts[cat] = listSymbolsByCategory(cat).length;
     }
     return counts;
-  }, [documentCustom.length, packReady]);
+  }, [documentCustom.length, packReady, paletteCategories]);
 
   const totalCount = listAllSymbols().length + documentCustom.length;
 
@@ -122,9 +129,9 @@ export default function SymbolPalette({
             }}
             disabled={Boolean(search.trim())}
           >
-            {PALETTE_CATEGORIES.map((cat) => (
+            {paletteCategories.map((cat) => (
               <option key={cat} value={cat}>
-                {t(`categories.${cat}`)} ({categoryCounts[cat] ?? 0})
+                {t(`categories.${cat}`, { defaultValue: cat })} ({categoryCounts[cat] ?? 0})
               </option>
             ))}
           </select>

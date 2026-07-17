@@ -28,7 +28,9 @@ public class McpResourceAdapter {
             new ResourceDescriptor("driver-catalog", "Driver catalog index from ContextPack"),
             new ResourceDescriptor("feature-index", "Platform feature index"),
             new ResourceDescriptor("example-summaries", "Reference bundle example summaries"),
-            new ResourceDescriptor("doc-chunks", "Documentation chunks for platform topics")
+            new ResourceDescriptor("doc-chunks", "Documentation chunks for platform topics"),
+            new ResourceDescriptor("competitive-gap-index", "Readiness / competitive gap index (BL-182)"),
+            new ResourceDescriptor("live-platform", "Live platform overlay: drivers, apps, object counts")
     );
 
     private final ContextPackService contextPackService;
@@ -87,6 +89,8 @@ public class McpResourceAdapter {
                 yield optionalPackKey(pack, "examples");
             }
             case "doc-chunks" -> optionalPackKey(pack, "docChunks");
+            case "competitive-gap-index" -> optionalPackKey(pack, "competitiveGapIndex");
+            case "live-platform" -> Optional.of(contextPackService.info().get("livePlatform"));
             default -> Optional.empty();
         };
     }

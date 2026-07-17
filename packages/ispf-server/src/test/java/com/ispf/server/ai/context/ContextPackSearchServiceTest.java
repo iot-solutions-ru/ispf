@@ -46,6 +46,28 @@ class ContextPackSearchServiceTest {
     }
 
     @Test
+    void findsReadinessGapsByTopic() {
+        when(contextPackService.loadPack()).thenReturn(Map.of(
+                "contextPackVersion", "ispf-0.9.166",
+                "competitiveGapIndex", List.of(Map.of(
+                        "rank", 1,
+                        "dimension", "Ecosystem / marketplace",
+                        "gap", 5.0,
+                        "current", 5.0,
+                        "target", 10.0,
+                        "keywords", "marketplace competitive gap scorecard"
+                ))
+        ));
+
+        Map<String, Object> result = searchService.search("marketplace readiness gap", "gaps");
+
+        assertEquals("OK", result.get("status"));
+        List<?> hits = (List<?>) result.get("hits");
+        assertTrue(hits.size() >= 1);
+        assertTrue(hits.getFirst().toString().contains("Ecosystem"));
+    }
+
+    @Test
     void returnsExampleBundleSubset() {
         when(contextPackService.loadPack()).thenReturn(Map.of(
                 "examples", List.of(Map.of(
