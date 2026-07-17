@@ -41,7 +41,7 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-registry-otlp")
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
-    implementation("org.apache.cassandra:java-driver-core:4.19.2")
+    implementation("org.apache.cassandra:java-driver-core:4.19.3")
 
     implementation("com.haulmont.yarg:yarg:2.2.22") {
         exclude(group = "javax.xml.bind", module = "jaxb-api")
