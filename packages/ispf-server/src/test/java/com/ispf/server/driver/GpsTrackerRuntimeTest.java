@@ -94,7 +94,7 @@ class GpsTrackerRuntimeTest {
                 .andExpect(jsonPath("$.status").value("RUNNING"))
                 .andExpect(jsonPath("$.driverId").value("gps-tracker"));
 
-        Thread.sleep(200);
+        Thread.sleep(500);
         try (Socket client = new Socket("127.0.0.1", listenPort)) {
             OutputStream out = client.getOutputStream();
             out.write((NMEA_LINE + "\r\n").getBytes(StandardCharsets.UTF_8));
@@ -102,18 +102,32 @@ class GpsTrackerRuntimeTest {
             Thread.sleep(300);
         }
 
-        mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
-                .andExpect(status().isOk());
-
         mockMvc.perform(get("/api/v1/objects/by-path/variables")
                         .param("path", devicePath))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].name", hasItem("gpsFeed")));
 
-        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
-                        .param("path", devicePath)
-                        .param("name", "gpsFeed"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.value.rows[0].value").value(NMEA_LINE));
+        awaitGpsFeedValue(NMEA_LINE, 10_000);
+    }
+
+    private void awaitGpsFeedValue(String expected, long timeoutMs) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        String lastBody = "";
+        while (System.currentTimeMillis() < deadline) {
+            mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
+                    .andExpect(status().isOk());
+            lastBody = mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                            .param("path", devicePath)
+                            .param("name", "gpsFeed"))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            if (lastBody.contains(expected)) {
+                return;
+            }
+            Thread.sleep(200);
+        }
+        throw new AssertionError("gpsFeed did not contain NMEA within " + timeoutMs + "ms: " + lastBody);
     }
 }

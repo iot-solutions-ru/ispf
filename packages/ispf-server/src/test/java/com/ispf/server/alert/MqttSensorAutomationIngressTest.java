@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -83,14 +82,24 @@ class MqttSensorAutomationIngressTest {
             objectManager.setDriverTelemetryValue(DEVICE, "temperature", constantPayload);
         }
         telemetryCoalescer.flushNow();
-        TimeUnit.MILLISECONDS.sleep(750);
+        // Alert raises are journaled on the ALERT rule node (not the watched device).
+        awaitEventOnPath(AutomationTreeService.rulePathForName(RULE_NAME), "thresholdExceeded", 10_000);
+    }
 
-        String eventsBody = mockMvc.perform(get("/api/v1/events").param("objectPath", DEVICE).param("limit", "10"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        assertThat(eventsBody).contains("thresholdExceeded");
+    private void awaitEventOnPath(String objectPath, String eventName, long timeoutMs) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+        while (System.nanoTime() < deadline) {
+            String body = mockMvc.perform(get("/api/v1/events").param("objectPath", objectPath).param("limit", "20"))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            if (body.contains(eventName)) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
+        throw new AssertionError(eventName + " event was not fired on " + objectPath + " within " + timeoutMs + "ms");
     }
 
     private void ensureMqttSensorDevice() throws Exception {

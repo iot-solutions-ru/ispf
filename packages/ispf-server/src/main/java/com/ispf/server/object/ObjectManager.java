@@ -42,6 +42,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -86,6 +87,7 @@ public class ObjectManager {
     private final ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService;
     private final ObjectProvider<DriverTelemetryService> driverTelemetryService;
     private final ConcurrentHashMap<String, Object> variablePersistLocks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> nodePersistLocks = new ConcurrentHashMap<>();
     private volatile boolean initialized;
 
     public ObjectManager(
@@ -835,18 +837,9 @@ public class ObjectManager {
             }
             Variable created = new Variable(name, schema, false, false, value);
             node.addVariable(created);
-            try {
-                persistVariable(path, created);
-            } catch (DataIntegrityViolationException duplicate) {
-                node.removeVariable(name);
-                Optional<ObjectVariableEntity> raced = variableRepository.findByObjectPathAndName(path, name);
-                if (raced.isEmpty()) {
-                    throw duplicate;
-                }
-                ObjectVariableEntity entity = raced.get();
-                node.addVariable(mapper.toVariable(entity));
-                return setSystemVariableValue(path, name, value);
-            }
+            // Do not catch DataIntegrityViolationException here: after a failed IDENTITY insert
+            // Hibernate marks the session unusable; continuing poisons ApplicationReady bootstrap.
+            persistVariable(path, created);
             publish(ObjectChangeEvent.variableUpdated(path, name));
             return created;
         }
@@ -1143,25 +1136,36 @@ public class ObjectManager {
         if (node.id() == null || node.id().isBlank()) {
             throw new IllegalStateException("Cannot persist node without id: " + node.path());
         }
-        Optional<ObjectNodeEntity> existing = nodeRepository.findByPath(node.path());
-        if (existing.isPresent()) {
-            ObjectNodeEntity entity = existing.get();
-            mapper.copyNodeFields(entity, node);
-            nodeRepository.save(entity);
+        synchronized (lockForNode(node.path())) {
+            Optional<ObjectNodeEntity> existing = nodeRepository.findByPath(node.path());
+            if (existing.isPresent()) {
+                ObjectNodeEntity entity = existing.get();
+                mapper.copyNodeFields(entity, node);
+                nodeRepository.save(entity);
+                return;
+            }
+            // Inserts run in REQUIRES_NEW so a duplicate-key race rolls back only the short TX
+            // and does not mark the outer ApplicationReady transaction rollback-only / poison
+            // the Hibernate session (AssertionFailure on later flush).
+            try {
+                self.getObject().insertNodeInNewTx(node);
+            } catch (DataIntegrityViolationException duplicate) {
+                ObjectNodeEntity raced = nodeRepository.findByPath(node.path()).orElseThrow(() -> duplicate);
+                mapper.copyNodeFields(raced, node);
+                nodeRepository.save(raced);
+            }
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void insertNodeInNewTx(PlatformObject node) {
+        if (nodeRepository.findByPath(node.path()).isPresent()) {
             return;
         }
-        ObjectNodeEntity mapped = mapper.toEntity(node);
-        try {
-            nodeRepository.save(mapped);
-        } catch (DataIntegrityViolationException duplicate) {
-            Optional<ObjectNodeEntity> raced = nodeRepository.findByPath(node.path());
-            if (raced.isEmpty()) {
-                throw duplicate;
-            }
-            ObjectNodeEntity entity = raced.get();
-            mapper.copyNodeFields(entity, node);
-            nodeRepository.save(entity);
-        }
+        ObjectNodeEntity created = new ObjectNodeEntity();
+        created.setId(node.id());
+        mapper.copyNodeFields(created, node);
+        nodeRepository.saveAndFlush(created);
     }
 
     private int nextSortOrder(String parentPath) {
@@ -1175,6 +1179,10 @@ public class ObjectManager {
         return variablePersistLocks.computeIfAbsent(path + '\0' + name, ignored -> new Object());
     }
 
+    private Object lockForNode(String path) {
+        return nodePersistLocks.computeIfAbsent(path, ignored -> new Object());
+    }
+
     private void persistVariable(String path, Variable variable) {
         synchronized (lockForVariable(path, variable.name())) {
             Optional<ObjectVariableEntity> existing =
@@ -1185,20 +1193,26 @@ public class ObjectManager {
                 variableRepository.save(entity);
                 return;
             }
-            ObjectVariableEntity mapped = mapper.toEntity(path, variable);
             try {
-                variableRepository.save(mapped);
+                self.getObject().insertVariableInNewTx(path, variable);
             } catch (DataIntegrityViolationException duplicate) {
-                Optional<ObjectVariableEntity> raced =
-                        variableRepository.findByObjectPathAndName(path, variable.name());
-                if (raced.isEmpty()) {
-                    throw duplicate;
-                }
-                ObjectVariableEntity entity = raced.get();
-                mapper.copyVariableFields(entity, path, variable);
-                variableRepository.save(entity);
+                ObjectVariableEntity raced = variableRepository
+                        .findByObjectPathAndName(path, variable.name())
+                        .orElseThrow(() -> duplicate);
+                mapper.copyVariableFields(raced, path, variable);
+                variableRepository.save(raced);
             }
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void insertVariableInNewTx(String path, Variable variable) {
+        if (variableRepository.findByObjectPathAndName(path, variable.name()).isPresent()) {
+            return;
+        }
+        ObjectVariableEntity created = new ObjectVariableEntity();
+        mapper.copyVariableFields(created, path, variable);
+        variableRepository.saveAndFlush(created);
     }
 
     @Transactional

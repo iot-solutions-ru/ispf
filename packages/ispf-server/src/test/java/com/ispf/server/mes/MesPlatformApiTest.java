@@ -1,5 +1,6 @@
 package com.ispf.server.mes;
 
+import com.ispf.server.automation.AutomationTreeService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,9 +169,24 @@ class MesPlatformApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.value.rows[0].value").value(true));
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].eventName", hasItem("thresholdExceeded")));
+        awaitEventName("thresholdExceeded", 10_000);
+    }
+
+    private void awaitEventName(String eventName, long timeoutMs) throws Exception {
+        String rulePath = AutomationTreeService.rulePathForName("Temperature threshold exceeded");
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            String body = mockMvc.perform(get("/api/v1/events").param("objectPath", rulePath).param("limit", "20"))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            if (body.contains(eventName)) {
+                return;
+            }
+            Thread.sleep(100);
+        }
+        throw new AssertionError(eventName + " event was not fired on " + rulePath + " within " + timeoutMs + "ms");
     }
 
     @Test

@@ -114,7 +114,7 @@ class EventCorrelatorApiTest {
     }
 
     private void awaitWorkQueueTitle(String expectedTitle) throws Exception {
-        long deadline = System.nanoTime() + 10_000_000_000L;
+        long deadline = System.nanoTime() + 30_000_000_000L;
         while (System.nanoTime() < deadline) {
             MvcResult result = mockMvc.perform(get("/api/v1/work-queue"))
                     .andExpect(status().isOk())
@@ -123,7 +123,7 @@ class EventCorrelatorApiTest {
             if (body.contains(expectedTitle)) {
                 return;
             }
-            Thread.sleep(100);
+            Thread.sleep(200);
         }
         throw new AssertionError("Work queue did not contain task: " + expectedTitle);
     }

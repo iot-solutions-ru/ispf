@@ -11,7 +11,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -126,10 +125,22 @@ class LabAutomationTest {
                                 """))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].eventName", hasItem("thresholdExceeded")));
-        assertEquals(baseline + 1, countThresholdExceededEvents());
+        awaitThresholdExceededCount(baseline + 1, 10_000);
+    }
+
+    private void awaitThresholdExceededCount(int expected, long timeoutMs) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        int last = -1;
+        while (System.currentTimeMillis() < deadline) {
+            last = countThresholdExceededEvents();
+            if (last >= expected) {
+                assertEquals(expected, last);
+                return;
+            }
+            Thread.sleep(100);
+        }
+        throw new AssertionError(
+                "thresholdExceeded count expected " + expected + " but was " + last + " within " + timeoutMs + "ms");
     }
 
     @Test
@@ -279,7 +290,8 @@ class LabAutomationTest {
     }
 
     private int countThresholdExceededEvents() throws Exception {
-        String body = mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "50"))
+        String rulePath = AutomationTreeService.rulePathForName("Lab sustained delay rule");
+        String body = mockMvc.perform(get("/api/v1/events").param("objectPath", rulePath).param("limit", "50"))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()

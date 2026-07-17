@@ -178,7 +178,9 @@ public class EventCorrelatorService {
 
         Instant now = Instant.now();
         for (EventCorrelator correlator : correlators.values()) {
-            if (!matchesObject(correlator.objectPath(), objectPath)) {
+            // Alert raises fire on the ALERT node; payload.targetObjectPath carries the watched device.
+            Optional<String> actionPath = resolveCorrelatorActionPath(correlator, objectPath, eventName);
+            if (actionPath.isEmpty()) {
                 continue;
             }
             if (isInCooldown(correlator, now)) {
@@ -195,12 +197,47 @@ public class EventCorrelatorService {
             };
             if (triggered) {
                 automationMetricsRecorder.recordCorrelatorTrigger();
-                executeAction(correlator, objectPath);
+                executeAction(correlator, actionPath.get());
                 automationTreeService.setCorrelatorLastTriggeredAt(correlator.id(), now);
                 windowStore.clearCorrelator(correlator.id());
             }
         }
         windowStore.purgeOlderThan(now.minus(1, ChronoUnit.HOURS));
+    }
+
+    /**
+     * Prefer an exact objectPath match; otherwise match alert payload {@code targetObjectPath}
+     * so device-scoped correlators still react to ALERT-node raises (ADR-0039).
+     */
+    private Optional<String> resolveCorrelatorActionPath(
+            EventCorrelator correlator,
+            String eventPath,
+            String eventName
+    ) {
+        if (matchesObject(correlator.objectPath(), eventPath)) {
+            return Optional.of(eventPath);
+        }
+        return readTargetObjectPath(eventPath, eventName)
+                .filter(target -> matchesObject(correlator.objectPath(), target));
+    }
+
+    private Optional<String> readTargetObjectPath(String eventPath, String eventName) {
+        Optional<String> fromCache = recentEventCache.findLatest(eventPath, eventName)
+                .flatMap(event -> targetObjectPathFromPayload(payloadMap(event)));
+        if (fromCache.isPresent()) {
+            return fromCache;
+        }
+        return eventJournalStore.findLatest(eventPath, eventName)
+                .flatMap(record -> targetObjectPathFromPayload(payloadMap(record)));
+    }
+
+    private static Optional<String> targetObjectPathFromPayload(Map<String, Object> payload) {
+        Object raw = payload.get("targetObjectPath");
+        if (raw == null) {
+            return Optional.empty();
+        }
+        String text = String.valueOf(raw).trim();
+        return text.isEmpty() ? Optional.empty() : Optional.of(text);
     }
 
     @Transactional
