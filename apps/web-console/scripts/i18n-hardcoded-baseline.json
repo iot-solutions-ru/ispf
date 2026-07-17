@@ -216,108 +216,6 @@
     "text": "/itm-assets/m11/main_topology.svg"
   },
   {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1086,
-    "kind": "ui-attr",
-    "text": "root.platform.workflows..."
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1214,
-    "kind": "ui-attr",
-    "text": "gpu-*"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1228,
-    "kind": "jsx-text",
-    "text": "DEVICE"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1229,
-    "kind": "jsx-text",
-    "text": "FOLDER"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1230,
-    "kind": "jsx-text",
-    "text": "DASHBOARD"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1231,
-    "kind": "jsx-text",
-    "text": "CUSTOM"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1252,
-    "kind": "ui-attr",
-    "text": "root.platform.devices"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1275,
-    "kind": "ui-attr",
-    "text": "count>10 && name contains abc"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1550,
-    "kind": "ui-attr",
-    "text": "root.platform.reports.ready-items"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1877,
-    "kind": "ui-attr",
-    "text": "SVG"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1883,
-    "kind": "ui-attr",
-    "text": "/lab-assets/button.svg"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 2117,
-    "kind": "ui-attr",
-    "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 2176,
-    "kind": "ui-attr",
-    "text": "HTML"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 409,
-    "kind": "ui-attr",
-    "text": "root.platform.dashboards.detail"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 647,
-    "kind": "ui-attr",
-    "text": "root.platform.devices"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 928,
-    "kind": "jsx-text",
-    "text": "15m"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 929,
-    "kind": "jsx-text",
-    "text": "30m"
-  },
-  {
     "file": "components/dashboard/widgetEditorStructured.tsx",
     "line": 561,
     "kind": "ui-attr",
@@ -328,6 +226,108 @@
     "line": 768,
     "kind": "ui-attr",
     "text": "0.88rem"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1086,
+    "kind": "ui-attr",
+    "text": "root.platform.workflows..."
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1214,
+    "kind": "ui-attr",
+    "text": "gpu-*"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1228,
+    "kind": "jsx-text",
+    "text": "DEVICE"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1229,
+    "kind": "jsx-text",
+    "text": "FOLDER"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1230,
+    "kind": "jsx-text",
+    "text": "DASHBOARD"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1231,
+    "kind": "jsx-text",
+    "text": "CUSTOM"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1252,
+    "kind": "ui-attr",
+    "text": "root.platform.devices"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1275,
+    "kind": "ui-attr",
+    "text": "count>10 && name contains abc"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1550,
+    "kind": "ui-attr",
+    "text": "root.platform.reports.ready-items"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1877,
+    "kind": "ui-attr",
+    "text": "SVG"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 1883,
+    "kind": "ui-attr",
+    "text": "/lab-assets/button.svg"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 2117,
+    "kind": "ui-attr",
+    "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 2176,
+    "kind": "ui-attr",
+    "text": "HTML"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 409,
+    "kind": "ui-attr",
+    "text": "root.platform.dashboards.detail"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 647,
+    "kind": "ui-attr",
+    "text": "root.platform.devices"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 928,
+    "kind": "jsx-text",
+    "text": "15m"
+  },
+  {
+    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
+    "line": 929,
+    "kind": "jsx-text",
+    "text": "30m"
   },
   {
     "file": "components/dashboard/widgets/CarouselWidgetView.tsx",
