@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { createSecurityUser } from "../api/securityUsers";
 import { fetchSecurityRoles } from "../api/securityRoles";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
+import { localizedRoleDescription } from "../utils/localizedRoleDescription";
 
 interface CreateSecurityUserDialogProps {
   onClose: () => void;
@@ -97,11 +98,14 @@ export default function CreateSecurityUserDialog({
               onChange={(e) => setRole(e.target.value)}
               disabled={availableRoles.length === 0}
             >
-              {availableRoles.map((item) => (
-                <option key={item.name} value={item.name}>
-                  {item.name}{item.description ? ` — ${item.description}` : ""}
-                </option>
-              ))}
+              {availableRoles.map((item) => {
+                const desc = localizedRoleDescription(t, item.name, item.description);
+                return (
+                  <option key={item.name} value={item.name}>
+                    {item.name}{desc ? ` — ${desc}` : ""}
+                  </option>
+                );
+              })}
             </select>
           </label>
           {mutation.error && (

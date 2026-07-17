@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchSecurityRoles } from "../api/securityRoles";
+import { localizedRoleDescription } from "../utils/localizedRoleDescription";
 import CreateSecurityRoleDialog from "./CreateSecurityRoleDialog";
 
 interface SecurityRolesPanelProps {
@@ -59,7 +60,7 @@ export default function SecurityRolesPanel({ canManage, onSelectRole }: Security
                 </button>
               </td>
               <td>{role.displayName}</td>
-              <td>{role.description || t("common:empty.dash")}</td>
+              <td>{localizedRoleDescription(t, role.name, role.description) || t("common:empty.dash")}</td>
               <td>{role.builtIn ? t("roles.type.builtIn") : role.template ? t("roles.type.template") : t("roles.type.custom")}</td>
             </tr>
           ))}

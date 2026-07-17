@@ -8,6 +8,10 @@ import {
   saveDashboardTitle,
   saveDashboardRefreshInterval,
 } from "../../api";
+import {
+  applyDashboardLayoutTemplate,
+  fetchDashboardLayoutTemplates,
+} from "../../api/dashboardsCore";
 import type { DashboardLayout, DashboardLayoutPreset, DashboardView, DashboardWidget, WidgetType } from "../../types/dashboard";
 import { layoutToJson, newWidget, resolveDashboardLayout } from "../../types/dashboard";
 import WidgetPalette from "./WidgetPalette";
@@ -47,6 +51,7 @@ import { applyLayoutPreset, isVideoWallPreset } from "./dashboardLayoutPresets";
 import { widgetDataBinding } from "./widgetEditorBinding";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
 import type { AdminClientFocus } from "../../context/AdminFocusContext";
+import PathBreadcrumb from "../PathBreadcrumb";
 
 interface DashboardBuilderProps {
   path: string;
@@ -54,6 +59,7 @@ interface DashboardBuilderProps {
   onOpenProperties?: () => void;
   operatorMode?: boolean;
   embeddedModal?: boolean;
+  onSelectObjectPath?: (path: string) => void;
   onNavigateDashboard?: (path: string, options?: OpenDashboardOptions) => void;
   onOpenDashboardModal?: (path: string, title?: string, options?: OpenDashboardOptions) => void;
   session?: DashboardSession;
@@ -89,6 +95,7 @@ export default function DashboardBuilder({
   onOpenProperties,
   operatorMode = false,
   embeddedModal = false,
+  onSelectObjectPath,
   onNavigateDashboard,
   onOpenDashboardModal,
   session,
@@ -221,6 +228,13 @@ export default function DashboardBuilder({
   const objects = useQuery({
     queryKey: ["objects", "dashboard-bindings"],
     queryFn: () => fetchObjects(undefined, false),
+  });
+
+  const layoutTemplatesQuery = useQuery({
+    queryKey: ["dashboard-layout-templates"],
+    queryFn: fetchDashboardLayoutTemplates,
+    staleTime: 60_000,
+    enabled: !operatorMode,
   });
 
   const layout = useMemo(() => {
@@ -438,6 +452,17 @@ export default function DashboardBuilder({
     [layout]
   );
 
+  const applyLayoutTemplateMutation = useMutation({
+    mutationFn: (template: string) => applyDashboardLayoutTemplate(path, template),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["dashboard", path], data);
+      setDraftLayout(null);
+      setDraftTitle(null);
+      setDraftRefreshMs(null);
+      queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+    },
+  });
+
   const deleteWidget = useCallback(() => {
     const widgetId = selectedWidgetIdRef.current;
     if (!widgetId) return;
@@ -555,6 +580,43 @@ export default function DashboardBuilder({
       ? ` dashboard-shell--${layout.layoutPreset}`
       : "";
 
+  const isEmptyLayout = layout.widgets.length === 0;
+  const emptyLayoutPanel =
+    !operatorMode && isEmptyLayout ? (
+      <div className="dashboard-empty-state">
+        <strong>{t("empty.title")}</strong>
+        <p className="hint">{t("empty.hint")}</p>
+        <div className="dashboard-empty-state__actions">
+          <select
+            className="dashboard-empty-state__select"
+            defaultValue=""
+            disabled={applyLayoutTemplateMutation.isPending || layoutTemplatesQuery.isLoading}
+            onChange={(e) => {
+              const template = e.target.value;
+              e.target.value = "";
+              if (!template) return;
+              if (!window.confirm(t("settings.layoutTemplateConfirm", { template }))) {
+                return;
+              }
+              applyLayoutTemplateMutation.mutate(template);
+            }}
+          >
+            <option value="">{t("empty.templatePlaceholder")}</option>
+            {(layoutTemplatesQuery.data ?? []).map((template) => (
+              <option key={template} value={template}>
+                {template}
+              </option>
+            ))}
+          </select>
+          {mode !== "edit" && (
+            <button type="button" className="btn primary" onClick={() => setMode("edit")}>
+              {t("empty.openEditor")}
+            </button>
+          )}
+        </div>
+      </div>
+    ) : null;
+
   return (
     <div
       className={`dashboard-shell ${operatorMode ? "operator-dashboard-shell" : ""}${
@@ -574,7 +636,11 @@ export default function DashboardBuilder({
             ) : (
               <h2>{title}</h2>
             )}
-            <code className="path-code">{path}</code>
+            {onSelectObjectPath ? (
+              <PathBreadcrumb path={path} onSelectPath={onSelectObjectPath} />
+            ) : (
+              <code className="path-code">{path}</code>
+            )}
           </div>
           <div className="dashboard-toolbar-actions">
             <button
@@ -686,6 +752,7 @@ export default function DashboardBuilder({
           >
             <DashboardEditorProvider value={editorContextValue}>
               <main className="dashboard-canvas dashboard-canvas--editor">
+                {emptyLayoutPanel}
                 <DashboardGrid
                   layout={layout}
                   refreshIntervalMs={refreshIntervalMs}
@@ -710,6 +777,8 @@ export default function DashboardBuilder({
               onLayoutChange={updateLayoutSettings}
               onRefreshIntervalChange={setDraftRefreshMs}
               onApplyPreset={handleApplyLayoutPreset}
+              onApplyLayoutTemplate={(template) => applyLayoutTemplateMutation.mutate(template)}
+              applyLayoutTemplatePending={applyLayoutTemplateMutation.isPending}
             />
           ) : editorSidePanel === "rules" ? (
             <DashboardRulesPanel path={path} widgets={layout.widgets} />
@@ -742,6 +811,7 @@ export default function DashboardBuilder({
             closeDashboardModal={handleCloseDashboardModal}
           >
             <main className="dashboard-canvas">
+              {emptyLayoutPanel}
               <DashboardGrid
                 layout={layout}
                 refreshIntervalMs={refreshIntervalMs}

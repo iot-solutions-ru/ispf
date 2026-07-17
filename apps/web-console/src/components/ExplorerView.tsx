@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ObjectPropertiesEditor from "./ObjectPropertiesEditor";
-import DriverWriteDialog from "./DriverWriteDialog";
 import OperatorAppsPanel from "./OperatorAppsPanel";
 import SecurityUsersPanel from "./SecurityUsersPanel";
 import SecurityUserInspector from "./SecurityUserInspector";
@@ -59,6 +57,7 @@ interface ExplorerViewProps {
   canConfigure: boolean;
   isPlatformAdmin: boolean;
   onCreateApplication?: () => void;
+  onCreateInFolder?: (parentPath: string) => void;
   showBackToTree?: boolean;
   onBackToTree?: () => void;
 }
@@ -75,11 +74,11 @@ export default function ExplorerView({
   canConfigure,
   isPlatformAdmin,
   onCreateApplication,
+  onCreateInFolder,
   showBackToTree = false,
   onBackToTree,
 }: ExplorerViewProps) {
   const { t } = useTranslation(["explorer", "common"]);
-  const [driverWriteOpen, setDriverWriteOpen] = useState(false);
 
   if (!selectedPath) {
     return <div className="inspector-empty">{t("explorer:empty.selectObject")}</div>;
@@ -112,7 +111,6 @@ export default function ExplorerView({
     && isSpecializedEditorObject(selectedPath, selectedObject.type, selectedObject.templateId),
   );
   const isVisualGroup = selectedObject?.type === "VISUAL_GROUP";
-  const isDevice = selectedObject?.type === "DEVICE";
   const hideToolbar =
     isOperatorAppChild
     ||     isUsersRoot
@@ -160,15 +158,6 @@ export default function ExplorerView({
       )}
       {!hideToolbar && !opensInEditor && (
         <div className="explorer-toolbar explorer-toolbar-hint-only">
-          {isDevice && canConfigure && (
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setDriverWriteOpen(true)}
-            >
-              {t("explorer:driver.writePoint")}
-            </button>
-          )}
           <span className="hint">{t("common:hint.objectPropertiesTabs")}</span>
         </div>
       )}
@@ -235,6 +224,11 @@ export default function ExplorerView({
           onCreateApplication={
             selectedPath === APPLICATIONS_ROOT && canConfigure ? onCreateApplication : undefined
           }
+          onCreate={
+            selectedPath !== APPLICATIONS_ROOT && canConfigure && onCreateInFolder
+              ? () => onCreateInFolder(selectedPath)
+              : undefined
+          }
           canManage={canConfigure}
         />
       ) : (
@@ -245,13 +239,7 @@ export default function ExplorerView({
           canManage={canConfigure}
           canManageAcl={isPlatformAdmin}
           onDeleted={onDeleted}
-        />
-      )}
-      {driverWriteOpen && isDevice && selectedPath && (
-        <DriverWriteDialog
-          devicePath={selectedPath}
-          canManage={canConfigure}
-          onClose={() => setDriverWriteOpen(false)}
+          onSelectPath={onSelectPath}
         />
       )}
     </div>

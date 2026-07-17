@@ -223,7 +223,9 @@ export default function EventJournalPanel({
 
   const journalDisabled = statusQuery.data?.enabled === false;
   const journalHint = !statusQuery.data?.masterEnabled
-    ? t("runtime:eventJournal.masterDisabledHint")
+    ? mode === "live"
+      ? t("runtime:eventJournal.masterDisabledLiveHint")
+      : t("runtime:eventJournal.masterDisabledHint")
     : fixedObjectPath && !statusQuery.data?.objectEnabled
       ? t("runtime:eventJournal.objectDisabledHint")
       : mode === "history"
@@ -263,6 +265,18 @@ export default function EventJournalPanel({
       error={events.error ?? statusQuery.error}
       empty={filtered.length === 0}
       emptyMessage={emptyMessage}
+      emptyHint={
+        filtered.length === 0 && mode === "live" && showModeToggle
+          ? t("eventJournal.emptyLiveHint")
+          : undefined
+      }
+      emptyAction={
+        filtered.length === 0 && mode === "live" && showModeToggle ? (
+          <button type="button" className="btn" onClick={() => setMode("history")}>
+            {t("eventJournal.viewHistory")}
+          </button>
+        ) : undefined
+      }
       compact={compact}
       scrollMaxHeight={scrollMaxHeight ?? (compact ? 280 : 400)}
       className="event-journal-panel"
@@ -364,10 +378,19 @@ function EventRow({
   const { t } = useTranslation(["operator", "journal"]);
   const { formatDate } = useUserTimeZone();
   const payload = event.payload?.rows?.[0];
-  const detail =
-    payload && typeof payload.value !== "undefined"
-      ? `${payload.value}${payload.unit ? ` ${payload.unit}` : ""}`
-      : null;
+  const detail = (() => {
+    if (!payload) {
+      return null;
+    }
+    const message = typeof payload.message === "string" ? payload.message.trim() : "";
+    if (message) {
+      return message;
+    }
+    if (payload.value == null) {
+      return null;
+    }
+    return `${payload.value}${payload.unit ? ` ${payload.unit}` : ""}`;
+  })();
   const sections = useMemo(
     () => [
       {

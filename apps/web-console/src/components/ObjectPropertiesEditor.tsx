@@ -84,6 +84,8 @@ interface ObjectPropertiesEditorProps {
   canManageAcl?: boolean;
   /** Render inside Explorer detail pane (no breadcrumb). */
   embedded?: boolean;
+  /** Navigate to a parent path when breadcrumb is clicked. */
+  onSelectPath?: (path: string) => void;
 }
 
 type Tab = ObjectEditorTab;
@@ -100,7 +102,10 @@ function historyFromVariable(v: VariableDto): VariableHistoryState {
   return historyStateFromVariable(v);
 }
 
-function historyEqual(a: VariableHistoryState, b: VariableHistoryState): boolean {
+function historyEqual(
+  a: VariableHistoryState | null | undefined,
+  b: VariableHistoryState | null | undefined,
+): boolean {
   return historyStateEqual(a, b);
 }
 
@@ -134,10 +139,10 @@ function VariableEditorRow({
   onOpenSettings,
 }: {
   variable: VariableDto;
-  record: DataRecord;
-  baseline: DataRecord;
-  history: VariableHistoryState;
-  historyBaseline: VariableHistoryState;
+  record?: DataRecord;
+  baseline?: DataRecord;
+  history?: VariableHistoryState;
+  historyBaseline?: VariableHistoryState;
   onChange: (next: DataRecord) => void;
   onHistoryChange: (next: VariableHistoryState) => void;
   onOpenSettings?: () => void;
@@ -146,9 +151,12 @@ function VariableEditorRow({
   const { t } = useTranslation(["inspector", "common"]);
   const [showHistory, setShowHistory] = useState(false);
   const [showJson, setShowJson] = useState(false);
-  const dirty = !recordsEqual(record, baseline);
-  const historyDirty = !historyEqual(history, historyBaseline);
-  const row = record.rows[0] ?? {};
+  const safeRecord = record ?? ensureRecord(variable);
+  const safeHistory = history ?? historyFromVariable(variable);
+  const safeHistoryBaseline = historyBaseline ?? historyFromVariable(variable);
+  const dirty = !recordsEqual(safeRecord, baseline ?? safeRecord);
+  const historyDirty = !historyEqual(safeHistory, safeHistoryBaseline);
+  const row = safeRecord.rows[0] ?? {};
   const disabled = !variable.writable;
 
   return (
@@ -169,8 +177,8 @@ function VariableEditorRow({
                 ACL-W
               </span>
             )}
-            {history.historyEnabled && (
-              <span className="badge hist" title={formatHistoryRetention(history.historyRetentionDays)}>
+            {safeHistory.historyEnabled && (
+              <span className="badge hist" title={formatHistoryRetention(safeHistory.historyRetentionDays)}>
                 H
               </span>
             )}
@@ -195,7 +203,7 @@ function VariableEditorRow({
         <div className="binding-panel">
           <VariableHistoryFields
             idPrefix={`prop-${variable.name}`}
-            value={history}
+            value={safeHistory}
             onChange={onHistoryChange}
           />
         </div>
@@ -206,7 +214,7 @@ function VariableEditorRow({
           className="json-editor compact"
           rows={6}
           disabled={disabled}
-          value={JSON.stringify(record, null, 2)}
+          value={JSON.stringify(safeRecord, null, 2)}
           onChange={(e) => {
             try {
               onChange(JSON.parse(e.target.value));
@@ -217,16 +225,16 @@ function VariableEditorRow({
         />
       ) : (
         <div className="property-fields">
-          {record.schema.fields.map((field) => (
+          {safeRecord.schema.fields.map((field) => (
             <VariableFieldEditor
               key={field.name}
               field={field}
               value={row[field.name]}
               disabled={disabled}
-              onChange={(val) => onChange(setFieldValue(record, field.name, val))}
+              onChange={(val) => onChange(setFieldValue(safeRecord, field.name, val))}
             />
           ))}
-          {record.schema.fields.length === 0 && (
+          {safeRecord.schema.fields.length === 0 && (
             <p className="hint">{t("objectEditor.emptyVariableSchema")}</p>
           )}
         </div>
@@ -242,6 +250,7 @@ export default function ObjectPropertiesEditor({
   canManage = false,
   canManageAcl = false,
   embedded = false,
+  onSelectPath,
 }: ObjectPropertiesEditorProps) {
   const { t } = useTranslation(["inspector", "common", "objectTree"]);
   const queryClient = useQueryClient();
@@ -592,12 +601,32 @@ export default function ObjectPropertiesEditor({
   return (
     <div className={`properties-editor inspector${embedded ? " properties-editor-embedded" : ""}`}>
       <div className="properties-editor-toolbar">
-        {!embedded && (
+        {onSelectPath && (
           <div className="breadcrumb">
             {crumbs.map((part, index) => {
               const crumbPath = crumbs.slice(0, index + 1).join(".");
+              const isLast = index === crumbs.length - 1;
+              const clickable = !isLast;
               return (
-                <span key={crumbPath} className="crumb">
+                <span
+                  key={crumbPath}
+                  className={`crumb ${isLast ? "crumb--current" : ""}${clickable ? " crumb--link" : ""}`}
+                  onClick={() => {
+                    if (clickable) {
+                      onSelectPath(crumbPath);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (clickable && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      onSelectPath(crumbPath);
+                    }
+                  }}
+                  role={clickable ? "button" : undefined}
+                  tabIndex={clickable ? 0 : undefined}
+                  aria-current={isLast ? "page" : undefined}
+                  title={crumbPath}
+                >
                   {index > 0 && <span className="crumb-sep">/</span>}
                   <span>{part}</span>
                 </span>
@@ -606,16 +635,28 @@ export default function ObjectPropertiesEditor({
           </div>
         )}
         <div className={`toolbar-actions${embedded ? " toolbar-actions-full" : ""}`}>
-          <button type="button" className="btn" onClick={() => void reloadFromEditor()}>
+          <button
+            type="button"
+            className="btn"
+            aria-label={t("common:action.refresh")}
+            onClick={() => void reloadFromEditor()}
+          >
             {t("common:action.refresh")}
           </button>
-          <button type="button" className="btn" disabled={!isDirty} onClick={revert}>
+          <button
+            type="button"
+            className="btn"
+            disabled={!isDirty}
+            aria-label={t("common:action.revert")}
+            onClick={revert}
+          >
             {t("common:action.revert")}
           </button>
           <button
             type="button"
             className="btn primary"
             disabled={!isDirty || saveMutation.isPending || (staleRemote && !forceNextSave)}
+            aria-label={t("common:action.save")}
             onClick={() => saveMutation.mutate()}
           >
             {t("common:action.save")}
@@ -624,6 +665,7 @@ export default function ObjectPropertiesEditor({
             <button
               type="button"
               className="btn danger"
+              aria-label={t("common:action.delete")}
               onClick={() => {
                 if (confirm(t("common:action.confirmDeleteNamed", { name: ctx.displayName }))) {
                   deleteMutation.mutate();
@@ -714,72 +756,84 @@ export default function ObjectPropertiesEditor({
 
       {tab === "general" && (
         <section className="panel">
-          <div className="form-grid">
-            {isPlatformRoot && canManage && (
-              <div className="full">
-                <PackageImportPanel />
-              </div>
-            )}
-            <label>
-              {t("common:field.displayName")}
-              <input
-                value={state.displayName}
-                onChange={(e) => setState((s) => s && { ...s, displayName: e.target.value })}
-              />
-            </label>
-            <label>
-              {t("common:table.type")}
-              <input value={ctx.type} readOnly className="readonly" />
-            </label>
-            <label>
-              {t("common:field.path")}
-              <input value={ctx.path} readOnly className="readonly" />
-            </label>
-            <label>
-              {t("common:field.primaryBlueprint")}
-              <input
-                value={
-                  ctx.appliedBlueprints?.find((m) => m.primary)?.name ?? ctx.templateId ?? "—"
-                }
-                readOnly
-                className="readonly"
-              />
-            </label>
-            {(ctx.appliedBlueprints?.length ?? 0) > 0 && (
-              <div className="full">
-                <span className="field-label">{t("common:field.appliedBlueprints")}</span>
-                <ul className="applied-models-list">
-                  {ctx.appliedBlueprints!.map((model) => (
-                    <li key={model.id}>
-                      <code>{model.name}</code> ({model.type}
-                      {model.primary ? ", primary" : ""})
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <label>
-              Revision
-              <input value={String(revision)} readOnly className="readonly" />
-            </label>
-            <label className="full">
-              {t("common:field.description")}
-              <textarea
-                rows={3}
-                value={state.description}
-                onChange={(e) => setState((s) => s && { ...s, description: e.target.value })}
-              />
-            </label>
-            <label className="full">
-              {t("common:field.iconInTree")}
-              <IconPicker
-                path={ctx.path}
-                type={ctx.type}
-                value={state.iconId}
-                disabled={isRoot}
-                onChange={(iconId) => setState((s) => s && { ...s, iconId })}
-              />
-            </label>
+          <div className="form-section">
+            <div className="form-section-title">{t("tab.general")}</div>
+            <div className="form-grid">
+              {isPlatformRoot && canManage && (
+                <div className="full">
+                  <PackageImportPanel />
+                </div>
+              )}
+              <label>
+                {t("common:field.displayName")}
+                <input
+                  value={state.displayName}
+                  onChange={(e) => setState((s) => s && { ...s, displayName: e.target.value })}
+                />
+              </label>
+              <label className="full">
+                {t("common:field.description")}
+                <textarea
+                  rows={3}
+                  value={state.description}
+                  onChange={(e) => setState((s) => s && { ...s, description: e.target.value })}
+                />
+              </label>
+              <label className="full">
+                {t("common:field.iconInTree")}
+                <IconPicker
+                  path={ctx.path}
+                  type={ctx.type}
+                  value={state.iconId}
+                  disabled={isRoot}
+                  onChange={(iconId) => setState((s) => s && { ...s, iconId })}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-title">
+              {t("common:section.info")}
+              <span className="hint">{t("common:hint.adminOnly")}</span>
+            </div>
+            <div className="form-grid">
+              <label>
+                {t("common:table.type")}
+                <input value={ctx.type} readOnly className="readonly" />
+              </label>
+              <label>
+                {t("common:field.path")}
+                <input value={ctx.path} readOnly className="readonly" />
+              </label>
+              <label>
+                {t("common:field.primaryBlueprint")}
+                <input
+                  value={
+                    ctx.appliedBlueprints?.find((m) => m.primary)?.name ?? ctx.templateId ?? "—"
+                  }
+                  readOnly
+                  className="readonly"
+                />
+              </label>
+              {(ctx.appliedBlueprints?.length ?? 0) > 0 && (
+                <div className="full">
+                  <span className="field-label">{t("common:field.appliedBlueprints")}</span>
+                  <ul className="applied-models-list">
+                    {ctx.appliedBlueprints!.map((model) => (
+                      <li key={model.id}>
+                        <code>{model.name}</code> ({model.type}
+                        {model.primary ? ", primary" : ""})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <label>
+                Revision
+                <input value={String(revision)} readOnly className="readonly" />
+              </label>
+            </div>
           </div>
         </section>
       )}
@@ -949,7 +1003,21 @@ export default function ObjectPropertiesEditor({
             </div>
           )}
           {editorData.events.length === 0 ? (
-            <p className="hint">{t("events.empty")}</p>
+            <div className="empty-state">
+              <p className="empty-state-title">{t("events.empty")}</p>
+              <p className="empty-state-hint op-muted">{t("events.emptyHint")}</p>
+              {canManage && !ctx.federated && (
+                <div className="empty-state-actions">
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => setDescriptorDialog({ kind: "event" })}
+                  >
+                    {t("events.add")}
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <ul className="event-list editable-list">
               {editorData.events.map((ev) => (

@@ -1,7 +1,7 @@
 {
   "studio.title": "AI Studio",
   "studio.tab.agent": "Agent",
-  "studio.tab.bundle": "Bundle package",
+  "studio.tab.bundle": "App package",
   "studio.tab.status": "Status",
   "studio.tab.prefs": "Preferences",
   "studio.backgroundBusy": "Agent is running in the background — switch to the Agent tab",
@@ -172,7 +172,8 @@
   "status.visionNo": "not supported",
   "status.referenceScenarios": "Reference scenarios",
   "status.referenceScenariosIntro": "Spec→validate→deploy paths covered by automated regression tests",
-  "status.scenarioSteps": "plan steps",
+  "status.scenarioSteps_one": "{{count}} plan step",
+  "status.scenarioSteps_other": "{{count}} plan steps",
   "prefs.title": "Agent preferences",
   "prefs.subtitle": "Local browser settings — behavior and chat list",
   "copilot.title": "Admin Copilot",

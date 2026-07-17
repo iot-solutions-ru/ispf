@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchSecurityRoles } from "../api/securityRoles";
+import { localizedRoleDescription } from "../utils/localizedRoleDescription";
 import SecurityMfaPanel from "./SecurityMfaPanel";
 import { SECURITY_ROLES_ROOT } from "../utils/securityRolePath";
 import { SECURITY_USERS_ROOT } from "../utils/securityUserPath";
@@ -80,7 +81,7 @@ export default function SecurityRootPanel({ canManage, onSelectPath }: SecurityR
                     </button>
                   </td>
                   <td>{role.displayName}</td>
-                  <td>{role.description || t("common:empty.dash")}</td>
+                  <td>{localizedRoleDescription(t, role.name, role.description) || t("common:empty.dash")}</td>
                 </tr>
               ))}
             </tbody>

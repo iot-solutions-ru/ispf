@@ -52,6 +52,7 @@ const CATALOG_CONTAINER_TYPES: ReadonlySet<ObjectType> = new Set([
   "BINDINGS",
   "MIGRATIONS",
   "SCREENS",
+  "MIMICS",
 ]);
 
 const EXACT_CATALOG_PATHS: ReadonlySet<string> = new Set([
@@ -79,6 +80,7 @@ const EXACT_CATALOG_PATHS: ReadonlySet<string> = new Set([
   "root.platform.applications",
   "root.platform.operator-apps",
   "root.platform.security",
+  "root.platform.mimics",
 ]);
 
 export interface SystemFolderListMeta {
@@ -128,6 +130,7 @@ function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType |
       "root.platform.applications": "APPLICATIONS",
       "root.platform.operator-apps": "OPERATOR_APPS",
       "root.platform.security": "SECURITY",
+      "root.platform.mimics": "MIMICS",
     };
     return byPath[path] ?? null;
   }

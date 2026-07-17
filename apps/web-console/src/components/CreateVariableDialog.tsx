@@ -6,13 +6,21 @@ import type { DataRecord, DataSchema } from "../types";
 import DataSchemaEditor from "./schema/DataSchemaEditor";
 import DataRecordValueEditor from "./schema/DataRecordValueEditor";
 import VariableHistoryFields, { type VariableHistoryState } from "./VariableHistoryFields";
-import { emptySchema, syncRecordSchema } from "../utils/dataSchema";
+import { scalarValueSchema, syncRecordSchema, type SchemaFieldType } from "../utils/dataSchema";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 
 interface CreateVariableDialogProps {
   objectPath: string;
   onClose: () => void;
   onSaved: () => void;
+}
+
+type SchemaPreset = "DOUBLE" | "BOOLEAN" | "STRING" | "INTEGER";
+
+const PRESETS: SchemaPreset[] = ["DOUBLE", "BOOLEAN", "STRING", "INTEGER"];
+
+function schemaForPreset(preset: SchemaPreset, schemaName: string): DataSchema {
+  return scalarValueSchema(schemaName, preset as SchemaFieldType);
 }
 
 export default function CreateVariableDialog({
@@ -24,9 +32,10 @@ export default function CreateVariableDialog({
   const [name, setName] = useState("");
   const [readable, setReadable] = useState(true);
   const [writable, setWritable] = useState(false);
-  const [schema, setSchema] = useState<DataSchema>(emptySchema("value"));
+  const [schemaPreset, setSchemaPreset] = useState<SchemaPreset>("DOUBLE");
+  const [schema, setSchema] = useState<DataSchema>(() => scalarValueSchema("value", "DOUBLE"));
   const [record, setRecord] = useState<DataRecord>(() => ({
-    schema: emptySchema("value"),
+    schema: scalarValueSchema("value", "DOUBLE"),
     rows: [],
   }));
   const [history, setHistory] = useState<VariableHistoryState>({
@@ -42,16 +51,30 @@ export default function CreateVariableDialog({
 
   const schemaName = useMemo(() => name.trim() || "value", [name]);
 
+  function applyPreset(preset: SchemaPreset) {
+    setSchemaPreset(preset);
+    const next = schemaForPreset(preset, schemaName);
+    setSchema(next);
+    setRecord((prev) => syncRecordSchema(prev, next));
+  }
+
   function handleSchemaChange(next: DataSchema) {
     const named = { ...next, name: schemaName };
     setSchema(named);
     setRecord((prev) => syncRecordSchema(prev, named));
+    const only = named.fields.length === 1 ? named.fields[0] : null;
+    if (only?.name === "value" && PRESETS.includes(only.type as SchemaPreset)) {
+      setSchemaPreset(only.type as SchemaPreset);
+    }
   }
 
   const mutation = useMutation({
     mutationFn: () => {
       const varName = name.trim();
       const finalSchema: DataSchema = { ...schema, name: varName || schema.name };
+      if (finalSchema.fields.length === 0) {
+        throw new Error(t("variables.schemaRequired"));
+      }
       const payload: CreateVariablePayload = {
         name: varName,
         schema: finalSchema,
@@ -112,6 +135,19 @@ export default function CreateVariableDialog({
 
         <section className="modal-section">
           <h4>{t("variables.schemaSection")}</h4>
+          <div className="btn-row variable-schema-presets" role="group" aria-label={t("variables.schemaPresetLabel")}>
+            {PRESETS.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                className={`btn small${schemaPreset === preset ? " primary" : ""}`}
+                onClick={() => applyPreset(preset)}
+              >
+                {t(`variables.schemaPreset.${preset}`)}
+              </button>
+            ))}
+          </div>
+          <p className="hint">{t("variables.schemaPresetHint")}</p>
           <DataSchemaEditor
             value={{ ...schema, name: schemaName }}
             onChange={handleSchemaChange}

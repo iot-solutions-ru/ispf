@@ -47,7 +47,7 @@ describe("applyRemoteVariables", () => {
     expect(state.variables.temperature.rows[0].value).toBe(99.0);
   });
 
-  it("ignores unknown variables and uiIcon", () => {
+  it("ignores uiIcon but adopts newly created variables", () => {
     const state = { variables: { temperature: record(21.5) } };
     const baseline = { variables: { temperature: record(21.5) } };
 
@@ -69,6 +69,14 @@ describe("applyRemoteVariables", () => {
       baseline,
     );
 
-    expect(merged).toBeNull();
+    expect(merged?.state.variables.pressure.rows[0].value).toBe(3.0);
+    expect(merged?.baseline.variables.pressure.rows[0].value).toBe(3.0);
+    expect(merged?.state.variables.uiIcon).toBeUndefined();
+    expect(merged?.state.variableHistory?.pressure).toEqual(
+      expect.objectContaining({ historyEnabled: false }),
+    );
+    expect(merged?.baseline.variableHistory?.pressure).toEqual(
+      expect.objectContaining({ historyEnabled: false }),
+    );
   });
 });

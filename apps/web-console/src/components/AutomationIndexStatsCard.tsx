@@ -20,34 +20,32 @@ export default function AutomationIndexStatsCard() {
         <div className="op-alert op-alert-error">{t("automationIndex.loadError")}</div>
       )}
       {statsQuery.data && (
-        <table className="op-table system-metrics-table">
-          <tbody>
-            <tr>
-              <th>{t("automationIndex.alertRulesIndexed")}</th>
-              <td>{statsQuery.data.alertRulesIndexed}</td>
-            </tr>
-            <tr>
-              <th>{t("automationIndex.correlatorsIndexed")}</th>
-              <td>{statsQuery.data.correlatorsIndexed}</td>
-            </tr>
-            <tr>
-              <th>{t("automationIndex.workflowTriggersIndexed")}</th>
-              <td>{statsQuery.data.workflowTriggersIndexed}</td>
-            </tr>
-            <tr>
-              <th>{t("automationIndex.lastRebuildAt")}</th>
-              <td>
-                {statsQuery.data.lastRebuildAt ? (
-                  <time dateTime={statsQuery.data.lastRebuildAt}>
-                    {formatDate(statsQuery.data.lastRebuildAt)}
-                  </time>
-                ) : (
-                  t("common:empty.dash")
-                )}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="automation-index-stats">
+          <div className="automation-index-stat">
+            <span className="automation-index-stat-label">{t("automationIndex.alertRulesIndexed")}</span>
+            <span className="automation-index-stat-value">{statsQuery.data.alertRulesIndexed}</span>
+          </div>
+          <div className="automation-index-stat">
+            <span className="automation-index-stat-label">{t("automationIndex.correlatorsIndexed")}</span>
+            <span className="automation-index-stat-value">{statsQuery.data.correlatorsIndexed}</span>
+          </div>
+          <div className="automation-index-stat">
+            <span className="automation-index-stat-label">{t("automationIndex.workflowTriggersIndexed")}</span>
+            <span className="automation-index-stat-value">{statsQuery.data.workflowTriggersIndexed}</span>
+          </div>
+          <div className="automation-index-stat">
+            <span className="automation-index-stat-label">{t("automationIndex.lastRebuildAt")}</span>
+            <span className="automation-index-stat-value" style={{ fontSize: "0.95rem" }}>
+              {statsQuery.data.lastRebuildAt ? (
+                <time dateTime={statsQuery.data.lastRebuildAt}>
+                  {formatDate(statsQuery.data.lastRebuildAt)}
+                </time>
+              ) : (
+                t("common:empty.dash")
+              )}
+            </span>
+          </div>
+        </div>
       )}
     </section>
   );

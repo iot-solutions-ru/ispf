@@ -61,11 +61,26 @@ public class DashboardController {
         return new DashboardService.DashboardView(localPath, title, refreshIntervalMs, layout, layoutJson);
     }
 
+    @GetMapping("/layout-templates")
+    public java.util.List<String> listLayoutTemplates() {
+        return DashboardService.layoutTemplateNames();
+    }
+
     @PutMapping("/by-path/layout")
     public DashboardService.DashboardView saveLayout(
             @RequestParam String path,
             @RequestBody SaveLayoutRequest request
     ) {
+        String template = request.template() != null ? request.template().trim() : "";
+        if (!template.isBlank()) {
+            if (federationProxyService.resolve(path).isPresent()) {
+                throw new IllegalArgumentException("Layout templates cannot be applied to federated dashboards");
+            }
+            return dashboardService.applyTemplateLayout(path, template);
+        }
+        if (request.layoutJson() == null || request.layoutJson().isBlank()) {
+            throw new IllegalArgumentException("layoutJson or template is required");
+        }
         return federationProxyService.resolve(path)
                 .map(target -> federationProxyService.proxyDashboardSaveLayout(target, request.layoutJson()))
                 .orElseGet(() -> dashboardService.saveLayout(path, request.layoutJson()));
@@ -81,7 +96,12 @@ public class DashboardController {
                 .orElseGet(() -> dashboardService.updateTitle(path, request.title()));
     }
 
-    public record SaveLayoutRequest(@NotBlank String layoutJson) {
+    public record SaveLayoutRequest(String layoutJson, String template) {
+        public SaveLayoutRequest {
+            if ((layoutJson == null || layoutJson.isBlank()) && (template == null || template.isBlank())) {
+                throw new IllegalArgumentException("layoutJson or template is required");
+            }
+        }
     }
 
     public record SaveTitleRequest(@NotBlank String title) {

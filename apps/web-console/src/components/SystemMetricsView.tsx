@@ -34,6 +34,7 @@ const METRIC_KEYS = [
   "processCpuPercent", "systemCpuPercent", "heapUsedPercent", "pressureScore", "topSuspect",
   "turnsStartedTotal", "turnsCompletedTotal", "turnsRateLimitedTotal", "turnsLastHour",
   "avgStepsPerTurn", "guardBlocksByType",
+  "asyncEnabled", "queueSize", "flushedTotal", "droppedTotal", "processedTotal",
 ] as const;
 
 type MetricsSubTab = "overview" | "diagnostics";
@@ -47,12 +48,14 @@ function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
 
   const metricLabel = (key: string) => {
     const labelKey = `metrics.${key}`;
-    return METRIC_KEYS.includes(key as (typeof METRIC_KEYS)[number])
-      ? t(labelKey)
-      : key;
+    if (METRIC_KEYS.includes(key as (typeof METRIC_KEYS)[number])) {
+      return t(labelKey);
+    }
+    const translated = t(labelKey, { defaultValue: "" });
+    return translated || key;
   };
 
-  const formatMetricValue = (value: unknown): string => {
+  const formatScalar = (value: unknown): string => {
     if (value == null) {
       return t("common:empty.dash");
     }
@@ -65,23 +68,65 @@ function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
     return String(value);
   };
 
+  const formatMetricValue = (value: unknown): string => {
+    if (value == null) {
+      return t("common:empty.dash");
+    }
+    if (typeof value === "boolean" || typeof value === "number") {
+      return formatScalar(value);
+    }
+    if (typeof value === "object") {
+      const record = value as Record<string, unknown>;
+      if (typeof record.title === "string" && record.title.trim()) {
+        const detail = typeof record.detail === "string" ? record.detail.trim() : "";
+        return detail ? `${record.title} — ${detail}` : record.title;
+      }
+      if (!Array.isArray(value)) {
+        const parts = Object.entries(record).map(
+          ([k, v]) => `${metricLabel(k)}: ${formatScalar(v)}`,
+        );
+        if (parts.length > 0) {
+          return parts.join(" · ");
+        }
+      }
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return t("common:empty.dash");
+      }
+    }
+    return String(value);
+  };
+
   return (
     <section className="system-metrics-card">
       <h3>{section.title}</h3>
       <table className="op-table system-metrics-table">
         <tbody>
-          {entries.map(([key, value]) => (
-            <tr key={key}>
-              <th>{metricLabel(key)}</th>
-              <td>
-                {typeof value === "string" && value.includes("T") && value.endsWith("Z") ? (
-                  <time dateTime={value}>{formatDate(value)}</time>
-                ) : (
-                  formatMetricValue(value)
-                )}
-              </td>
-            </tr>
-          ))}
+          {entries.map(([key, value]) => {
+            let tone = "";
+            if (typeof value === "number") {
+              if (key === "pressureScore" || key === "heapUsedPercent" || key === "processCpuPercent") {
+                if (value >= 85) tone = "metric-tone-bad";
+                else if (value >= 65) tone = "metric-tone-warn";
+                else tone = "metric-tone-ok";
+              } else if (key === "driversWithError" || key === "objectChangeDroppedTotal") {
+                tone = value > 0 ? "metric-tone-bad" : "metric-tone-ok";
+              }
+            }
+            return (
+              <tr key={key}>
+                <th>{metricLabel(key)}</th>
+                <td className={tone || undefined}>
+                  {typeof value === "string" && value.includes("T") && value.endsWith("Z") ? (
+                    <time dateTime={value}>{formatDate(value)}</time>
+                  ) : (
+                    formatMetricValue(value)
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </section>

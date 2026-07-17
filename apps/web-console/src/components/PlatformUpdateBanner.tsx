@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   applyPlatformUpdate,
@@ -6,9 +7,36 @@ import {
   fetchPlatformUpdateStatus,
 } from "../api/platformUpdate";
 
+const DISMISS_KEY = "ispf.ui.platformUpdate.dismissedFingerprint";
+
+function statusFingerprint(status: {
+  checkError?: string | null;
+  updateAvailable?: boolean;
+  latestVersion?: string | null;
+  applyState?: string | null;
+}): string {
+  if (status.updateAvailable) {
+    return `update:${status.latestVersion ?? "yes"}`;
+  }
+  if (status.applyState === "FAILED") {
+    return `failed:${status.applyState}`;
+  }
+  if (status.checkError) {
+    return `checkError:${status.checkError}`;
+  }
+  return "idle";
+}
+
 export default function PlatformUpdateBanner() {
   const { t } = useTranslation("shell");
   const queryClient = useQueryClient();
+  const [dismissedFingerprint, setDismissedFingerprint] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem(DISMISS_KEY);
+    } catch {
+      return null;
+    }
+  });
 
   const statusQuery = useQuery({
     queryKey: ["platform-update"],
@@ -38,15 +66,42 @@ export default function PlatformUpdateBanner() {
   });
 
   const status = statusQuery.data;
+
+  function dismiss(fingerprint: string | null) {
+    setDismissedFingerprint(fingerprint);
+    try {
+      if (fingerprint) {
+        sessionStorage.setItem(DISMISS_KEY, fingerprint);
+      } else {
+        sessionStorage.removeItem(DISMISS_KEY);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  useEffect(() => {
+    if (!status) {
+      return;
+    }
+    const applying = status.applyState === "DOWNLOADING" || status.applyState === "RESTARTING";
+    if (applying) {
+      dismiss(null);
+    }
+  }, [status?.applyState]);
+
   if (!status) {
     return null;
   }
 
   const applying = status.applyState === "DOWNLOADING" || status.applyState === "RESTARTING";
   const failed = status.applyState === "FAILED";
-  const showBanner = status.updateAvailable || applying || failed;
+  const showUpdate = Boolean(status.updateAvailable) || applying || failed;
+  const showCheckError = Boolean(status.checkError) && !showUpdate;
+  const fingerprint = statusFingerprint(status);
+  const dismissed = !applying && dismissedFingerprint === fingerprint;
 
-  if (!showBanner && !status.checkError) {
+  if ((!showUpdate && !showCheckError) || dismissed) {
     return null;
   }
 
@@ -60,6 +115,8 @@ export default function PlatformUpdateBanner() {
     }
     applyMutation.mutate();
   };
+
+  const canDismiss = !applying;
 
   return (
     <div
@@ -92,7 +149,7 @@ export default function PlatformUpdateBanner() {
             </span>
           </>
         )}
-        {!applying && !failed && !status.updateAvailable && status.checkError && (
+        {showCheckError && (
           <>
             <strong>{t("platformUpdate.checkError")}</strong>
             <span>{status.checkError}</span>
@@ -123,6 +180,17 @@ export default function PlatformUpdateBanner() {
             onClick={() => checkMutation.mutate()}
           >
             {t("platformUpdate.checkAgain")}
+          </button>
+        )}
+        {canDismiss && (
+          <button
+            type="button"
+            className="btn small platform-update-banner-dismiss"
+            aria-label={t("platformUpdate.dismiss")}
+            title={t("platformUpdate.dismiss")}
+            onClick={() => dismiss(fingerprint)}
+          >
+            ✕
           </button>
         )}
       </div>

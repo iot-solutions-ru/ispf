@@ -221,7 +221,8 @@ export default function AiStudioStatusTab() {
                 </div>
                 <p className="ai-studio-scenario-prompt">{scenario.prompt}</p>
                 <p className="op-muted ai-studio-scenario-meta">
-                  {scenario.assignmentType} · {scenario.planSteps.length} {t("status.scenarioSteps")}
+                  {scenario.assignmentType} ·{" "}
+                  {t("status.scenarioSteps", { count: scenario.planSteps.length })}
                 </p>
               </li>
             ))}

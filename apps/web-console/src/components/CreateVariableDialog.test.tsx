@@ -56,7 +56,6 @@ describe("CreateVariableDialog", () => {
     renderDialog();
 
     await user.type(screen.getByPlaceholderText("myVariable"), "temperature");
-    await user.click(screen.getByRole("button", { name: "+ Field" }));
     await user.click(screen.getByRole("button", { name: "Create" }));
 
     await waitFor(() => expect(api.createVariable).toHaveBeenCalled());
@@ -66,6 +65,10 @@ describe("CreateVariableDialog", () => {
         name: "temperature",
         readable: true,
         writable: false,
+        schema: expect.objectContaining({
+          name: "temperature",
+          fields: [expect.objectContaining({ name: "value", type: "DOUBLE" })],
+        }),
       }),
     );
     expect(onSaved).toHaveBeenCalled();

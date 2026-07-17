@@ -47,10 +47,7 @@ export function persistTimeZone(timeZone: string): void {
 }
 
 export function timeZoneLabel(timeZone: string): string {
-  if (timeZone === "UTC") {
-    return "UTC";
-  }
-  return timeZone.replace(/_/g, " ");
+  return timeZone;
 }
 
 export function normalizeTimeZoneList(current: string | undefined): string[] {

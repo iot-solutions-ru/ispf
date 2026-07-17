@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createObject, createEventFilter, upsertFunction } from "../api";
@@ -7,6 +7,11 @@ import { fetchInstanceTypes, instantiateBlueprint } from "../api/blueprints";
 import { registerApplication } from "../api/applications";
 import { saveReportDefinition } from "../api/reports";
 import { createOperatorApp } from "../api/operatorApps";
+import { installVirtClusterPreset } from "../api/platformPresets";
+import {
+  applyDashboardLayoutTemplate,
+  fetchDashboardLayoutTemplates,
+} from "../api/dashboardsCore";
 import { useDataSourceOptions } from "./platform/useDataSourceOptions";
 import {
   createDataSource,
@@ -67,6 +72,7 @@ export default function CreateObjectDialog({
   onCreated,
 }: CreateObjectDialogProps) {
   const { t } = useTranslation(["explorer", "common", "platform"]);
+  const titleId = useId();
   const mode = resolveCreateDialogMode(parentPath);
   const isMimicCatalog = parentPath.endsWith(".mimics");
   const [name, setName] = useState("");
@@ -81,6 +87,7 @@ export default function CreateObjectDialog({
     setTypeSelection(defaultType);
   }, [parentPath, presetType]);
   const [driverId, setDriverId] = useState("virtual");
+  const [applyVirtualLab, setApplyVirtualLab] = useState(true);
   const [pollIntervalMs, setPollIntervalMs] = useState(DEFAULT_POLL_INTERVAL_MS);
   const [configPreview, setConfigPreview] = useState("{}");
   const [reportDataSourcePath, setReportDataSourcePath] = useState("root.platform.data-sources.demo");
@@ -102,9 +109,16 @@ export default function CreateObjectDialog({
   const [scheduleIntervalMs, setScheduleIntervalMs] = useState(60_000);
   const [scheduleObjectPath, setScheduleObjectPath] = useState("root.platform.devices.demo-sensor-01");
   const [scheduleFunctionName, setScheduleFunctionName] = useState("");
+  const [dashboardLayoutTemplate, setDashboardLayoutTemplate] = useState("");
   const nameValid = isTechnicalIdentifier(name, "pathSegment");
 
   const dataSourcesQuery = useDataSourceOptions();
+  const dashboardTemplatesQuery = useQuery({
+    queryKey: ["dashboard-layout-templates"],
+    queryFn: fetchDashboardLayoutTemplates,
+    staleTime: 60_000,
+    enabled: mode === "object" && type === "DASHBOARD",
+  });
 
   const dialogTitle = useMemo(() => {
     switch (mode) {
@@ -354,28 +368,51 @@ export default function CreateObjectDialog({
                 ? "report-v1"
                 : type === "WORKFLOW"
                   ? "workflow-v1"
-                  : undefined,
+                  : type === "DEVICE" && driverId === "virtual" && applyVirtualLab
+                    ? "virtual-lab-v1"
+                    : undefined,
         driverId: type === "DEVICE" ? driverId : undefined,
         driverPollIntervalMs: type === "DEVICE" ? pollIntervalMs : undefined,
         autoStartDriver: true,
       });
+      if (type === "DASHBOARD" && dashboardLayoutTemplate.trim()) {
+        await applyDashboardLayoutTemplate(obj.path, dashboardLayoutTemplate.trim());
+      }
       return obj.path;
     },
     onSuccess: (path) => onCreated(path),
+  });
+
+  const virtClusterMutation = useMutation({
+    mutationFn: () => installVirtClusterPreset({ wireOperatorApp: true, operatorAppId: "platform" }),
+    onSuccess: (result) => onCreated(result.overviewDashboard || result.folder),
   });
 
   const handleDriverChange = (nextDriverId: string) => {
     setDriverId(nextDriverId);
     const driver = driversQuery.data?.find((item) => item.id === nextDriverId);
     setConfigPreview(formatDriverConfigJson(driver));
+    if (nextDriverId !== "virtual") {
+      setApplyVirtualLab(false);
+    } else {
+      setApplyVirtualLab(true);
+    }
   };
 
+  const showVirtClusterPreset = mode === "object" && parentPath === "root.platform.devices";
+
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal modal-create-object" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="modal modal-create-object"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+      >
         <header>
-          <h3>{dialogTitle}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>
+          <h3 id={titleId}>{dialogTitle}</h3>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={t("common:action.close")}>
             ✕
           </button>
         </header>
@@ -383,6 +420,26 @@ export default function CreateObjectDialog({
           <p className="hint">
             {t("dialog.parent")} <code>{parentPath}</code>
           </p>
+          {showVirtClusterPreset && (
+            <div className="full" style={{ marginBottom: "0.75rem" }}>
+              <p className="hint">{t("dialog.virtClusterHint")}</p>
+              <button
+                type="button"
+                className="btn"
+                disabled={virtClusterMutation.isPending || mutation.isPending}
+                onClick={() => virtClusterMutation.mutate()}
+              >
+                {virtClusterMutation.isPending
+                  ? t("dialog.virtClusterInstalling")
+                  : t("dialog.virtClusterInstall")}
+              </button>
+              {virtClusterMutation.error && (
+                <p className="hint error">
+                  {(virtClusterMutation.error as Error).message}
+                </p>
+              )}
+            </div>
+          )}
           {mode === "application" && (
             <>
               <p className="hint">{t("dialog.deployAppHint")}</p>
@@ -633,6 +690,25 @@ export default function CreateObjectDialog({
               </label>
             )}
 
+            {mode === "object" && type === "DASHBOARD" && (
+              <label className="full">
+                {t("dialog.dashboardLayoutTemplate")}
+                <select
+                  value={dashboardLayoutTemplate}
+                  onChange={(e) => setDashboardLayoutTemplate(e.target.value)}
+                  disabled={dashboardTemplatesQuery.isLoading}
+                >
+                  <option value="">{t("dialog.dashboardLayoutTemplateNone")}</option>
+                  {(dashboardTemplatesQuery.data ?? []).map((template) => (
+                    <option key={template} value={template}>
+                      {template}
+                    </option>
+                  ))}
+                </select>
+                <span className="hint">{t("dialog.dashboardLayoutTemplateHint")}</span>
+              </label>
+            )}
+
             {mode === "object" && type === "DEVICE" && !selectedInstanceModel && (
               <>
                 <label>
@@ -664,6 +740,16 @@ export default function CreateObjectDialog({
                     }
                   />
                 </label>
+                {driverId === "virtual" && (
+                  <label className="full" style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <input
+                      type="checkbox"
+                      checked={applyVirtualLab}
+                      onChange={(e) => setApplyVirtualLab(e.target.checked)}
+                    />
+                    <span>{t("dialog.applyVirtualLab")}</span>
+                  </label>
+                )}
                 {selectedDriver?.description && (
                   <p className="hint full">{selectedDriver.description}</p>
                 )}
@@ -677,7 +763,11 @@ export default function CreateObjectDialog({
                     spellCheck={false}
                   />
                 </label>
-                <p className="hint full">{t("dialog.deviceDriverHint")}</p>
+                <p className="hint full">
+                  {driverId === "virtual" && applyVirtualLab
+                    ? t("dialog.virtualLabHint")
+                    : t("dialog.deviceDriverHint")}
+                </p>
               </>
             )}
 

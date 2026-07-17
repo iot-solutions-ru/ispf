@@ -58,7 +58,12 @@ export function historyStateFromVariable(variable: {
   };
 }
 
-export function historyStateEqual(a: VariableHistoryState, b: VariableHistoryState): boolean {
+export function historyStateEqual(
+  a: VariableHistoryState | null | undefined,
+  b: VariableHistoryState | null | undefined,
+): boolean {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
   return (
     a.historyEnabled === b.historyEnabled
     && a.historyRetentionDays === b.historyRetentionDays

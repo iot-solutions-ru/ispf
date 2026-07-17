@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsTagCatalogEntryDto } from "../types/analytics";
-import type { VariableDto } from "../types";
+import type { BindingRule, VariableDto } from "../types";
 import AnalyticsTagInspectorModal from "./analytics/AnalyticsTagInspectorModal";
 import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
 import BindingRulesPanel from "./BindingRulesPanel";
+import { defaultBindingActivators } from "./bindingActivatorsUtils";
 
 interface ObjectComputationsPanelProps {
   path: string;
@@ -37,6 +38,53 @@ export default function ObjectComputationsPanel({
   const { t } = useTranslation(["inspector", "common"]);
   const [inspectTagPath, setInspectTagPath] = useState<string | null>(null);
 
+  const ruleTemplates = useMemo(() => {
+    const targetVar = variableNames.find((n) => n !== "@bindingRules") ?? "";
+    const remoteRead: BindingRule = {
+      id: "remote_read",
+      name: "remote_read",
+      enabled: true,
+      order: 0,
+      kind: "reactive",
+      activators: {
+        ...defaultBindingActivators(),
+        onStartup: true,
+        onVariableChange: [
+          {
+            objectPath: "root.platform.devices.example",
+            variableName: "sineWave",
+          },
+        ],
+      },
+      condition: "",
+      expression: 'read("root.platform.devices.example/sineWave")',
+      target: { kind: "variable", variableName: targetVar, field: "value" },
+    };
+    const localExpr: BindingRule = {
+      id: "local_expr",
+      name: "local_expr",
+      enabled: true,
+      order: 10,
+      kind: "reactive",
+      activators: {
+        ...defaultBindingActivators(),
+        onStartup: true,
+        onVariableChange: targetVar
+          ? [{ objectPath: path, variableName: targetVar }]
+          : [],
+      },
+      condition: "",
+      expression: targetVar
+        ? `self.${targetVar}["value"] > 0`
+        : 'self.member1Sine["value"] > 0 && self.member2Sine["value"] > 0',
+      target: { kind: "variable", variableName: targetVar || "clusterError", field: "value" },
+    };
+    return [
+      { id: "remote-read", label: t("inspector:bindings.templates.remoteRead"), rule: remoteRead },
+      { id: "local-expr", label: t("inspector:bindings.templates.localExpression"), rule: localExpr },
+    ];
+  }, [path, t, variableNames]);
+
   return (
     <>
       <p className="hint computations-intro">{t("inspector:computations.intro")}</p>
@@ -53,6 +101,7 @@ export default function ObjectComputationsPanel({
           variableNames={variableNames}
           variables={variables}
           functionNames={functionNames}
+          ruleTemplates={ruleTemplates}
           embedded
           onInspectHistorian={(tagPath) => setInspectTagPath(tagPath)}
         />

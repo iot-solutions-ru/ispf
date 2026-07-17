@@ -2,6 +2,7 @@ import { createContext, useRef, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import JournalExportButtons from "./JournalExportButtons";
 import type { JournalExportRow } from "../../utils/journalExport";
+import EmptyState from "../ui/EmptyState";
 
 export const JournalScrollContext = createContext<RefObject<HTMLDivElement | null> | null>(null);
 
@@ -19,6 +20,8 @@ export interface JournalViewShellProps {
   error?: unknown;
   empty?: boolean;
   emptyMessage?: string;
+  emptyHint?: string;
+  emptyAction?: ReactNode;
   filters?: ReactNode;
   footer?: ReactNode;
   scrollMaxHeight?: number | string;
@@ -43,6 +46,8 @@ export default function JournalViewShell({
   error,
   empty,
   emptyMessage,
+  emptyHint,
+  emptyAction,
   filters,
   footer,
   scrollMaxHeight = 320,
@@ -69,7 +74,7 @@ export default function JournalViewShell({
           </div>
         )}
         <div className="journal-panel-head-actions">
-          {mode === "live" && (
+          {mode === "live" && !showModeToggle && (
             <span className="journal-live-badge" title={t("journal:liveHint")}>
               <span className="journal-live-dot" aria-hidden />
               {t("journal:mode.live")}
@@ -112,7 +117,15 @@ export default function JournalViewShell({
       )}
       {isLoading && <p className="hint">{t("common:action.loading")}</p>}
       {empty && !isLoading && !error && (
-        <p className="hint">{emptyMessage ?? t("journal:empty")}</p>
+        emptyAction || emptyHint ? (
+          <EmptyState
+            title={emptyMessage ?? t("journal:empty")}
+            hint={emptyHint}
+            action={emptyAction}
+          />
+        ) : (
+          <p className="hint">{emptyMessage ?? t("journal:empty")}</p>
+        )
       )}
 
       {!empty && !error && (

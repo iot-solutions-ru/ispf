@@ -6,6 +6,7 @@ import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
 import { ISPF_OPERATOR_WIRE_PROFILE } from "../../types/bff";
 import { resolveOperatorScreen } from "../../types/operatorManifest";
 import OperatorPreferences from "./OperatorPreferences";
+import OperatorAppMissing from "./OperatorAppMissing";
 import ManifestScreen from "./ManifestScreen";
 import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
@@ -25,6 +26,7 @@ interface OperatorManifestViewProps {
   onSwitchAdmin?: () => void;
   session?: AuthSession;
   onLogout?: () => void;
+  onMissingApp?: () => void;
 }
 
 function resolveScreenFromUrl(): string | null {
@@ -37,6 +39,7 @@ export default function OperatorManifestView({
   onSwitchAdmin,
   session,
   onLogout,
+  onMissingApp,
 }: OperatorManifestViewProps) {
   const { t } = useTranslation(["operator", "common"]);
   const queryClient = useQueryClient();
@@ -74,6 +77,15 @@ export default function OperatorManifestView({
   }
 
   if (manifestQuery.error || !manifest || !activeScreen) {
+    if (onMissingApp) {
+      return (
+        <OperatorAppMissing
+          appId={appId}
+          onPickApp={onMissingApp}
+          onSwitchAdmin={onSwitchAdmin}
+        />
+      );
+    }
     return (
       <div className="operator-shell op-loading">
         {manifestQuery.error

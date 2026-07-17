@@ -20,6 +20,11 @@ type Props = {
   onLogout: () => void;
 };
 
+function isKnownOperatorApp(appId: string, apps: OperatorAppEntry[]): boolean {
+  const resolved = resolveRegistryOperatorAppId(appId, apps);
+  return apps.some((app) => app.appId === resolved);
+}
+
 export default function OperatorShellGate({
   session,
   searchParams,
@@ -30,9 +35,26 @@ export default function OperatorShellGate({
   onLogout,
 }: Props) {
   const rawOperatorAppId = resolveOperatorAppId(session, searchParams);
-  const operatorAppId = rawOperatorAppId
-    ? resolveRegistryOperatorAppId(rawOperatorAppId, operatorApps ?? [])
-    : rawOperatorAppId;
+  // Wait for registry so a stale autoStartApp (e.g. "platform") does not hang on manifest load.
+  if (rawOperatorAppId && operatorApps === undefined) {
+    return <LazyFallback />;
+  }
+
+  let operatorAppId: string | null = null;
+  if (rawOperatorAppId && operatorApps) {
+    const resolved = resolveRegistryOperatorAppId(rawOperatorAppId, operatorApps);
+    if (isKnownOperatorApp(rawOperatorAppId, operatorApps)) {
+      operatorAppId = resolved;
+    } else if (typeof window !== "undefined") {
+      // Drop unknown ?app=; ignore invalid autoStartApp so we open the launcher once.
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("app")) {
+        url.searchParams.delete("app");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+  }
+
   return (
     <Suspense fallback={<LazyFallback />}>
       <OperatorView

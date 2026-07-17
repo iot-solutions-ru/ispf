@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   fetchOperatorApps,
+  fetchOperatorAppUi,
   fetchOperatorStarters,
   installOperatorStarters,
   type OperatorAppEntry,
@@ -14,11 +15,12 @@ interface OperatorAppLauncherProps {
 }
 
 async function loadAppsIndex() {
-  try {
-    return await fetchOperatorApps();
-  } catch {
-    return [{ appId: "platform", title: "Platform HMI" } satisfies OperatorAppEntry];
-  }
+  return fetchOperatorApps();
+}
+
+function appInitial(title: string, appId: string): string {
+  const source = (title || appId).trim();
+  return (source.charAt(0) || "?").toUpperCase();
 }
 
 export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: OperatorAppLauncherProps) {
@@ -39,7 +41,16 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
     },
   });
 
-  const appIds = new Set((appsQuery.data ?? []).map((app) => app.appId));
+  const apps = appsQuery.data ?? [];
+  const uiQueries = useQueries({
+    queries: apps.map((app) => ({
+      queryKey: ["operator-app-ui", app.appId],
+      queryFn: () => fetchOperatorAppUi(app.appId),
+      staleTime: 60_000,
+    })),
+  });
+
+  const appIds = new Set(apps.map((app) => app.appId));
   const missingStarters = (startersQuery.data ?? []).filter((starter) => !appIds.has(starter.appId));
 
   return (
@@ -62,17 +73,43 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
         {appsQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}
         {appsQuery.error && <p className="op-alert op-alert-error">{String(appsQuery.error)}</p>}
         <div className="op-launcher-grid">
-          {(appsQuery.data ?? []).map((app: OperatorAppEntry) => (
-            <button
-              key={app.appId}
-              type="button"
-              className="op-launcher-card"
-              onClick={() => onOpenApp(app.appId)}
-            >
-              <strong>{app.title}</strong>
-              <span className="op-muted">{app.appId}</span>
-            </button>
-          ))}
+          {apps.map((app: OperatorAppEntry, index) => {
+            const ui = uiQueries[index]?.data ?? null;
+            const ready = Boolean(ui?.defaultDashboard);
+            const alarmsOn = Boolean(ui?.alarmBar?.enabled);
+            const dashCount = ui?.dashboards?.length ?? 0;
+            return (
+              <button
+                key={app.appId}
+                type="button"
+                className={`op-launcher-card${ready ? " op-launcher-card--ready" : ""}`}
+                onClick={() => onOpenApp(app.appId)}
+              >
+                <span className="op-launcher-card-icon" aria-hidden>
+                  {appInitial(app.title, app.appId)}
+                </span>
+                <span className="op-launcher-card-body">
+                  <strong>{app.title}</strong>
+                  <span className="op-muted">{app.appId}</span>
+                  <span className="op-launcher-card-meta">
+                    <span
+                      className={`op-launcher-status ${ready ? "op-launcher-status--ok" : "op-launcher-status--idle"}`}
+                    >
+                      {ready ? t("launcher.statusReady") : t("launcher.statusSetup")}
+                    </span>
+                    {alarmsOn && (
+                      <span className="op-launcher-alarm-badge" title={t("launcher.alarmsEnabled")}>
+                        {t("launcher.alarmsOn")}
+                      </span>
+                    )}
+                    {dashCount > 0 && (
+                      <span className="op-muted">{t("launcher.dashboards", { count: dashCount })}</span>
+                    )}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {missingStarters.length > 0 && (
@@ -82,9 +119,14 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
             <div className="op-launcher-grid">
               {missingStarters.map((starter) => (
                 <div key={starter.appId} className="op-launcher-card op-launcher-card-static">
-                  <strong>{starter.title}</strong>
-                  <span className="op-muted">{starter.appId}</span>
-                  {starter.description && <span className="op-muted">{starter.description}</span>}
+                  <span className="op-launcher-card-icon" aria-hidden>
+                    {appInitial(starter.title, starter.appId)}
+                  </span>
+                  <span className="op-launcher-card-body">
+                    <strong>{starter.title}</strong>
+                    <span className="op-muted">{starter.appId}</span>
+                    {starter.description && <span className="op-muted">{starter.description}</span>}
+                  </span>
                 </div>
               ))}
             </div>

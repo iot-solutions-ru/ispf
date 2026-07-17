@@ -240,6 +240,8 @@ public class DashboardService {
                 "demo-sensor",
                 "virtual-cluster-overview",
                 "virtual-cluster-detail",
+                "monitoring-overview",
+                "scada-facility-overview",
                 "empty"
         );
     }

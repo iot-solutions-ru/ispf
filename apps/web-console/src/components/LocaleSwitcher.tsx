@@ -3,7 +3,8 @@ import { loadLocale } from "../i18n";
 import { LOCALE_LABELS, SUPPORTED_LOCALES, type AppLocale } from "../i18n/locales";
 
 export default function LocaleSwitcher() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation("shell");
+  const label = t("admin.language.label");
 
   const current = (SUPPORTED_LOCALES.includes(i18n.language as AppLocale)
     ? i18n.language
@@ -11,7 +12,7 @@ export default function LocaleSwitcher() {
 
   return (
     <label className="locale-switcher">
-      <span className="sr-only">Language</span>
+      <span className="sr-only">{label}</span>
       <select
         className="locale-switcher-select"
         value={current}
@@ -19,7 +20,7 @@ export default function LocaleSwitcher() {
           const locale = event.target.value as AppLocale;
           void loadLocale(locale).then(() => i18n.changeLanguage(locale));
         }}
-        aria-label="Language"
+        aria-label={label}
       >
         {SUPPORTED_LOCALES.map((locale) => (
           <option key={locale} value={locale}>

@@ -34,6 +34,7 @@ import { useLazyObjectTree } from "./hooks/useLazyObjectTree";
 import { useMobileLayout } from "./hooks/useMobileLayout";
 import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
 import ObjectTree from "./components/ObjectTree";
+import WorkspaceTabs, { type WorkspaceTabItem } from "./components/WorkspaceTabs";
 import CreateObjectDialog from "./components/CreateObjectDialog";
 import {
   emptySession,
@@ -50,10 +51,15 @@ import { AdminFocusProvider } from "./context/AdminFocusContext";
 import { AdminCopilotChatProvider } from "./context/AdminCopilotChatContext";
 import AdminCopilotFab from "./components/agent/AdminCopilotFab";
 import AdminWorkspaceFocusSync from "./components/agent/AdminWorkspaceFocusSync";
+import CommandPalette from "./components/CommandPalette";
 import { useAgentRunStatus } from "./utils/agentRunStatus";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
-import { isOperatorAppChildPath, resolveOperatorAppIdFromPath } from "./utils/operatorAppsPath";
+import {
+  isOperatorAppChildPath,
+  resolveOperatorAppId as resolveRegistryOperatorAppId,
+  resolveOperatorAppIdFromPath,
+} from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
 
 const SystemView = lazy(() => import("./components/SystemView"));
@@ -76,21 +82,15 @@ function LazyFallback() {
 
 let tabCounter = 1;
 
-function AiStudioWorkspaceTabButton({
-  active,
-  onClick,
-}: {
-  active: boolean;
-  onClick: () => void;
-}) {
+function AiStudioWorkspaceTabLabel() {
   const chat = useAgentRunStatus();
   const busy = chat.isPending;
   const { t } = useTranslation("shell");
   return (
-    <button type="button" className={active ? "active" : ""} onClick={onClick}>
+    <span className="ai-studio-tab-label">
       {t("admin.tab.aiStudio")}
       {busy && <span className="tab-pending-dot" title={t("admin.agentBusyTitle")} />}
-    </button>
+    </span>
   );
 }
 
@@ -207,8 +207,22 @@ function AppShell() {
     return () => window.removeEventListener(SESSION_INVALID_EVENT, onSessionInvalid);
   }, []);
 
+  const operatorAppsQuery = useQuery({
+    queryKey: ["operator-apps"],
+    queryFn: fetchOperatorApps,
+    enabled: Boolean(session?.token),
+  });
+
   useEffect(() => {
     if (!session?.autoStartEnabled || !session.autoStartApp) {
+      return;
+    }
+    const apps = operatorAppsQuery.data;
+    if (!apps) {
+      return;
+    }
+    const resolved = resolveRegistryOperatorAppId(session.autoStartApp, apps);
+    if (!apps.some((app) => app.appId === resolved)) {
       return;
     }
     const params = new URLSearchParams(window.location.search);
@@ -218,11 +232,11 @@ function AppShell() {
     if (!params.get("app")) {
       const url = new URL(window.location.href);
       url.searchParams.set("mode", "operator");
-      url.searchParams.set("app", session.autoStartApp);
+      url.searchParams.set("app", resolved);
       window.history.replaceState({}, "", url.toString());
       setAppMode("operator");
     }
-  }, [session, setAppMode]);
+  }, [session, setAppMode, operatorAppsQuery.data]);
 
   useEffect(() => {
     const fromUrl = searchParams.get("path");
@@ -242,6 +256,7 @@ function AppShell() {
   const [createParentPath, setCreateParentPath] = useState<string | null>(null);
   const [createPresetType, setCreatePresetType] = useState<ObjectType | null>(null);
   const [treeFilter, setTreeFilter] = useState("");
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isMobileLayout = useMobileLayout();
   const [mobileExplorerPane, setMobileExplorerPane] = useState<"tree" | "detail">("tree");
   const sidebarRef = useRef<HTMLElement | null>(null);
@@ -337,45 +352,24 @@ function AppShell() {
     }
   };
 
-  const handleTreeRowSelect = useCallback(
-    (row: TreeRowSelection, event: { metaKey: boolean; shiftKey: boolean }) => {
-      setSelectedPath(row.path);
-      writeSelectedPath(row.path);
-      syncAdminPathToUrl(row.path);
-      setWorkspaceTab("explorer");
-      if (isMobileLayout) {
-        setMobileExplorerPane("detail");
-      }
-
-      if (event.shiftKey && selectionAnchorRef.current) {
-        const start = visibleRowKeys.indexOf(selectionAnchorRef.current);
-        const end = visibleRowKeys.indexOf(row.key);
-        if (start !== -1 && end !== -1) {
-          const [from, to] = start < end ? [start, end] : [end, start];
-          setSelectedKeys(new Set(visibleRowKeys.slice(from, to + 1)));
-          return;
-        }
-      }
-
-      if (event.metaKey) {
-        setSelectedKeys((current) => {
-          const next = new Set(current);
-          if (next.has(row.key)) {
-            next.delete(row.key);
-          } else {
-            next.add(row.key);
-          }
-          return next;
-        });
-        selectionAnchorRef.current = row.key;
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k") {
         return;
       }
-
-      setSelectedKeys(new Set([row.key]));
-      selectionAnchorRef.current = row.key;
-    },
-    [isMobileLayout, visibleRowKeys],
-  );
+      const target = event.target;
+      if (
+        target instanceof HTMLElement
+        && target.closest("textarea, [contenteditable=''], [contenteditable='true']")
+      ) {
+        return;
+      }
+      event.preventDefault();
+      setCommandPaletteOpen((open) => !open);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const showObjectTreeSidebar =
     workspaceTab !== "system"
@@ -427,6 +421,52 @@ function AppShell() {
     }
     setWorkspaceTab(tab.id);
   };
+
+  const handleTreeRowSelect = useCallback(
+    (row: TreeRowSelection, event: { metaKey: boolean; shiftKey: boolean }) => {
+      setSelectedPath(row.path);
+      writeSelectedPath(row.path);
+      syncAdminPathToUrl(row.path);
+      setWorkspaceTab("explorer");
+      if (isMobileLayout) {
+        setMobileExplorerPane("detail");
+      }
+
+      if (event.shiftKey && selectionAnchorRef.current) {
+        const start = visibleRowKeys.indexOf(selectionAnchorRef.current);
+        const end = visibleRowKeys.indexOf(row.key);
+        if (start !== -1 && end !== -1) {
+          const [from, to] = start < end ? [start, end] : [end, start];
+          setSelectedKeys(new Set(visibleRowKeys.slice(from, to + 1)));
+          return;
+        }
+      }
+
+      if (event.metaKey) {
+        setSelectedKeys((current) => {
+          const next = new Set(current);
+          if (next.has(row.key)) {
+            next.delete(row.key);
+          } else {
+            next.add(row.key);
+          }
+          return next;
+        });
+        selectionAnchorRef.current = row.key;
+        return;
+      }
+
+      setSelectedKeys(new Set([row.key]));
+      selectionAnchorRef.current = row.key;
+
+      // Dashboards: single-click opens the HMI editor (properties remain via "Open properties").
+      const ctx = objectList.find((c) => c.path === row.path);
+      if (ctx?.type === "DASHBOARD") {
+        openEditor(row.path);
+      }
+    },
+    [isMobileLayout, visibleRowKeys, objectList, openEditor],
+  );
 
   const openCreateApplication = () => {
     setCreatePresetType(null);
@@ -508,7 +548,11 @@ function AppShell() {
       (prev) => {
         const next = new URLSearchParams(prev);
         next.set("mode", "operator");
-        next.set("app", appId);
+        if (appId.trim()) {
+          next.set("app", appId.trim());
+        } else {
+          next.delete("app");
+        }
         next.delete("screen");
         next.delete("dashboard");
         next.delete("report");
@@ -518,12 +562,6 @@ function AppShell() {
     );
     setAppMode("operator");
   };
-
-  const operatorAppsQuery = useQuery({
-    queryKey: ["operator-apps"],
-    queryFn: fetchOperatorApps,
-    enabled: Boolean(session?.token),
-  });
 
   const openOperatorAppFromPath = useCallback(
     (path: string) => {
@@ -540,10 +578,18 @@ function AppShell() {
     queryClient.invalidateQueries();
     const params = new URLSearchParams(window.location.search);
     const urlApp = params.get("app");
-    if (next.autoStartEnabled && next.autoStartApp && !urlApp) {
+    const apps = operatorAppsQuery.data;
+    const autoStartResolved =
+      next.autoStartEnabled && next.autoStartApp && apps
+        ? resolveRegistryOperatorAppId(next.autoStartApp, apps)
+        : null;
+    const autoStartKnown =
+      Boolean(autoStartResolved)
+      && Boolean(apps?.some((app) => app.appId === autoStartResolved));
+    if (autoStartKnown && autoStartResolved && !urlApp) {
       const url = new URL(window.location.href);
       url.searchParams.set("mode", "operator");
-      url.searchParams.set("app", next.autoStartApp);
+      url.searchParams.set("app", autoStartResolved);
       url.searchParams.delete("screen");
       url.searchParams.delete("dashboard");
       window.history.replaceState({}, "", url.toString());
@@ -590,7 +636,15 @@ function AppShell() {
   }
 
   const shell = (
-    <div className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}`} data-testid="admin-shell">
+    <div
+      className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}${
+        mountAgentChat && !isMobileLayout ? " admin-shell--with-fab" : ""
+      }`}
+      data-testid="admin-shell"
+    >
+      <a href="#main-content" className="skip-link">
+        {t("shell:admin.skipToContent")}
+      </a>
       {canConfigure && <AgentChatRunBootstrap enabled />}
       {mountAgentChat && (
         <>
@@ -603,6 +657,20 @@ function AppShell() {
           {!isMobileLayout && <AdminCopilotFab />}
         </>
       )}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        objects={objectList}
+        canConfigure={canConfigure}
+        isAdmin={isAdmin}
+        onSelectPath={selectPathInExplorer}
+        onOpenWorkspace={(tab) => setWorkspaceTab(tab)}
+        onCreate={
+          canConfigure
+            ? () => setCreateParentPath(selectedPath || "root.platform.devices")
+            : undefined
+        }
+      />
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">ISPF</span>
@@ -617,6 +685,14 @@ function AppShell() {
           </div>
         </div>
         <div className="topbar-actions">
+          <button
+            type="button"
+            className="btn"
+            title={t("shell:commandPalette.openShortcut")}
+            onClick={() => setCommandPaletteOpen(true)}
+          >
+            {t("shell:commandPalette.open")}
+          </button>
           <ShellPreferences />
           <button type="button" className="btn" onClick={() => void handleLogout()}>
             {t("common:action.logout")}
@@ -626,56 +702,54 @@ function AppShell() {
 
       {isAdmin && <PlatformUpdateBanner />}
 
-      <nav className="workspace-tabs">
-        <button
-          type="button"
-          data-testid="workspace-tab-explorer"
-          className={workspaceTab === "explorer" ? "active" : ""}
-          onClick={() => {
-            setWorkspaceTab("explorer");
-            if (isMobileLayout) {
-              setMobileExplorerPane("tree");
-            }
-          }}
-        >
-          {t("shell:admin.tab.explorer")}
-        </button>
-        {isAdmin && (
-          <button
-            type="button"
-            data-testid="workspace-tab-system"
-            className={workspaceTab === "system" ? "active" : ""}
-            onClick={() => setWorkspaceTab("system")}
-          >
-            {t("shell:admin.tab.system")}
-          </button>
+      <WorkspaceTabs
+        tabs={(
+          [
+            {
+              id: "explorer",
+              label: t("shell:admin.tab.explorer"),
+              active: workspaceTab === "explorer",
+              testId: "workspace-tab-explorer",
+              onClick: () => {
+                setWorkspaceTab("explorer");
+                if (isMobileLayout) {
+                  setMobileExplorerPane("tree");
+                }
+              },
+            },
+            ...(isAdmin
+              ? [
+                  {
+                    id: "system",
+                    label: t("shell:admin.tab.system"),
+                    active: workspaceTab === "system",
+                    testId: "workspace-tab-system",
+                    onClick: () => setWorkspaceTab("system"),
+                  },
+                ]
+              : []),
+            ...(canConfigure
+              ? [
+                  {
+                    id: "ai-studio",
+                    label: <AiStudioWorkspaceTabLabel />,
+                    title: t("shell:admin.tab.aiStudio"),
+                    active: workspaceTab === "ai-studio",
+                    testId: "workspace-tab-ai-studio",
+                    onClick: () => setWorkspaceTab("ai-studio"),
+                  },
+                ]
+              : []),
+            ...editorTabs.map((tab) => ({
+              id: tab.id,
+              label: tab.title,
+              active: workspaceTab === tab.id,
+              onClick: () => setWorkspaceTab(tab.id),
+              onClose: () => closeEditor(tab.id),
+            })),
+          ] as WorkspaceTabItem[]
         )}
-        {canConfigure && (
-          <AiStudioWorkspaceTabButton
-            active={workspaceTab === "ai-studio"}
-            onClick={() => setWorkspaceTab("ai-studio")}
-          />
-        )}
-        {editorTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`editor-tab ${workspaceTab === tab.id ? "active" : ""}`}
-            onClick={() => setWorkspaceTab(tab.id)}
-          >
-            <span>{tab.title}</span>
-            <span
-              className="tab-close"
-              onClick={(e) => {
-                e.stopPropagation();
-                closeEditor(tab.id);
-              }}
-            >
-              ×
-            </span>
-          </button>
-        ))}
-      </nav>
+      />
 
       <AgentChatStatusBar
         workspaceTab={workspaceTab}
@@ -688,7 +762,24 @@ function AppShell() {
         {showObjectTreeSidebar && (
           <aside className="sidebar" ref={sidebarRef}>
             <div className="sidebar-head">
-              <h3>{t("shell:admin.treeTitle")}</h3>
+              <div className="sidebar-head-title">
+                <h3>{t("shell:admin.treeTitle")}</h3>
+                {canConfigure && (
+                  <button
+                    type="button"
+                    className="btn small primary"
+                    aria-label={t("shell:admin.createChild")}
+                    title={t("shell:admin.createChild")}
+                    onClick={() => {
+                      setCreatePresetType(null);
+                      setCreateParentPath(selectedPath ?? "root");
+                      setShowCreate(true);
+                    }}
+                  >
+                    + {t("common:action.create")}
+                  </button>
+                )}
+              </div>
               <input
                 type="search"
                 placeholder={t("common:action.search")}
@@ -745,7 +836,7 @@ function AppShell() {
         )}
 
         {showExplorerMain && (
-          <main className="main explorer-main" ref={explorerMainRef}>
+          <main id="main-content" className="main explorer-main" ref={explorerMainRef}>
             <Suspense fallback={<LazyFallback />}>
               <ExplorerView
                 selectedPath={selectedPath}
@@ -764,6 +855,7 @@ function AppShell() {
                 canConfigure={canConfigure}
                 isPlatformAdmin={isAdmin}
                 onCreateApplication={openCreateApplication}
+                onCreateInFolder={(parentPath) => setCreateParentPath(parentPath)}
                 showBackToTree={isMobileLayout}
                 onBackToTree={() => setMobileExplorerPane("tree")}
               />
@@ -793,6 +885,7 @@ function AppShell() {
                   path={activeEditor.path}
                   onClose={() => closeEditor(activeEditor.id)}
                   onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                  onSelectObjectPath={selectPathInExplorer}
                   session={dashboardSessions[activeEditor.id]}
                   onSessionChange={(next) => {
                     setDashboardSessions((current) => ({
@@ -869,12 +962,13 @@ function AppShell() {
         )}
 
         {activeEditor && workspaceTab === activeEditor.id && showPropertiesEditor && (
-          <main className="main editor-main">
+          <main id="main-content" className="main editor-main">
             <ObjectPropertiesEditor
               key={activeEditor.path}
               path={activeEditor.path}
               canManage={canConfigure}
               canManageAcl={isAdmin}
+              onSelectPath={selectPathInExplorer}
               onClose={() => {
                 setPropertiesTabPath(null);
               }}

@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import type { DashboardLayout, DashboardLayoutPreset } from "../../types/dashboard";
 import { DASHBOARD_COLUMNS, DASHBOARD_ROW_HEIGHT } from "../../types/dashboard";
+import { fetchDashboardLayoutTemplates } from "../../api/dashboardsCore";
 import { applyLayoutPreset, clearLayoutPreset } from "./dashboardLayoutPresets";
 
 interface DashboardSettingsPanelProps {
@@ -10,6 +12,8 @@ interface DashboardSettingsPanelProps {
   onLayoutChange: (patch: Partial<DashboardLayout>) => void;
   onRefreshIntervalChange: (ms: number) => void;
   onApplyPreset?: (preset: DashboardLayoutPreset) => void;
+  onApplyLayoutTemplate?: (template: string) => void;
+  applyLayoutTemplatePending?: boolean;
 }
 
 const THEME_OPTIONS: Array<{ id: string; labelKey?: string; label?: string }> = [
@@ -23,8 +27,16 @@ export default function DashboardSettingsPanel({
   onLayoutChange,
   onRefreshIntervalChange,
   onApplyPreset,
+  onApplyLayoutTemplate,
+  applyLayoutTemplatePending,
 }: DashboardSettingsPanelProps) {
   const { t } = useTranslation("dashboard");
+  const templatesQuery = useQuery({
+    queryKey: ["dashboard-layout-templates"],
+    queryFn: fetchDashboardLayoutTemplates,
+    staleTime: 60_000,
+    enabled: Boolean(onApplyLayoutTemplate),
+  });
 
   return (
     <aside className="dashboard-sidebar">
@@ -55,6 +67,32 @@ export default function DashboardSettingsPanel({
           </select>
           <span className="hint">{t("settings.layoutPresetHint")}</span>
         </label>
+        {onApplyLayoutTemplate && (
+          <label>
+            {t("settings.layoutTemplate")}
+            <select
+              defaultValue=""
+              disabled={applyLayoutTemplatePending || templatesQuery.isLoading}
+              onChange={(e) => {
+                const template = e.target.value;
+                e.target.value = "";
+                if (!template) return;
+                if (!window.confirm(t("settings.layoutTemplateConfirm", { template }))) {
+                  return;
+                }
+                onApplyLayoutTemplate(template);
+              }}
+            >
+              <option value="">{t("settings.layoutTemplatePlaceholder")}</option>
+              {(templatesQuery.data ?? []).map((template) => (
+                <option key={template} value={template}>
+                  {template}
+                </option>
+              ))}
+            </select>
+            <span className="hint">{t("settings.layoutTemplateHint")}</span>
+          </label>
+        )}
         <label>
           {t("settings.refreshInterval")}
           <input

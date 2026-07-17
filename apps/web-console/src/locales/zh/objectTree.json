@@ -47,6 +47,8 @@
   "path.root__platform__security.title": "Security",
   "path.root__platform__security__roles.description": "RBAC role 定义。每个 ROLE 子项存储 roleName 和 description；users 在 roles 变量中按 name 引用 roles。Built-in admin 和 operator roles 在首次启动时 seed。Custom roles 扩展 REST、WebSocket 和 UI 功能的 authorization checks。",
   "path.root__platform__security__roles.title": "Roles",
+  "path.root__platform__mimics.title": "Mimics",
+  "path.root__platform__mimics.description": "SCADA 流程图目录。每个 MIMIC 子对象存储工艺示意（罐、阀、管线），用于操作员 HMI。在此创建后嵌入仪表盘或打开 Mimic 编辑器。",
   "path.root__platform__security__users.description": "Platform user account 文件夹。每个 USER 子项镜像一次 login：username、displayName、role list、enabled flag 和 operator auto-start（登录后打开特定 Operator App）。Admin users 看到完整 admin console；operator users 进入 operator mode。CRUD：Security → Users 或 POST/PUT/DELETE /api/v1/security/users（admin role）。删除 USER 节点会删除 backing account。",
   "path.root__platform__security__users.title": "Users",
   "path.root__platform__workflows.description": "BPMN 2.0 workflow 目录。WORKFLOW children 是与 NATS、device functions、timers 和 user tasks 集成的 automation processes。在 Workflow editor 激活；链接 Operator App 使 user tasks 显示在 operator sidebar Work queue。Correlators 在 event patterns 匹配时启动 workflow。",

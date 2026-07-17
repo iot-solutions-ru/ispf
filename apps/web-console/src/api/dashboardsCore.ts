@@ -29,6 +29,17 @@ export function saveDashboardLayout(path: string, layoutJson: string): Promise<D
   });
 }
 
+export function fetchDashboardLayoutTemplates(): Promise<string[]> {
+  return request("/api/v1/dashboards/layout-templates");
+}
+
+export function applyDashboardLayoutTemplate(path: string, template: string): Promise<DashboardView> {
+  return request(`/api/v1/dashboards/by-path/layout?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify({ template }),
+  });
+}
+
 export function saveDashboardTitle(path: string, title: string): Promise<DashboardView> {
   return request(`/api/v1/dashboards/by-path/title?path=${encodeURIComponent(path)}`, {
     method: "PUT",

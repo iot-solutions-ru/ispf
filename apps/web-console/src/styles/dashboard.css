@@ -359,6 +359,26 @@ body.dashboard-editor-fullscreen {
   overflow: auto;
 }
 
+.dashboard-empty-state {
+  margin: 0 0 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px dashed color-mix(in srgb, var(--border, #3a4454) 80%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel, #151b24) 88%, transparent);
+}
+
+.dashboard-empty-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.dashboard-empty-state__select {
+  min-width: min(100%, 16rem);
+}
+
 .dashboard-grid-host {
   position: relative;
   width: 100%;

@@ -557,6 +557,14 @@ export default function AgentChatArtifacts({
   );
 }
 
+function suggestionChipLabel(text: string, max = 56): string {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= max) {
+    return normalized;
+  }
+  return `${normalized.slice(0, max - 1)}…`;
+}
+
 export function AgentStarterSuggestions({
   onPick,
   i18nNs = "ai",
@@ -569,17 +577,25 @@ export function AgentStarterSuggestions({
   const { t } = useTranslation(i18nNs);
 
   return (
-    <div className="operator-agent-suggestions">
+    <div className="operator-agent-suggestions operator-agent-suggestions--chips">
       <p className="op-muted">{t("agent.emptyHint")}</p>
-      <ul>
-        {suggestionKeys.map((key) => (
-          <li key={key}>
-            <button type="button" className="btn link" onClick={() => onPick(t(key))}>
-              {t(key)}
+      <div className="agent-starter-chip-grid" role="list">
+        {suggestionKeys.map((key) => {
+          const full = t(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              role="listitem"
+              className="agent-starter-chip"
+              title={full}
+              onClick={() => onPick(full)}
+            >
+              {suggestionChipLabel(full)}
             </button>
-          </li>
-        ))}
-      </ul>
+          );
+        })}
+      </div>
     </div>
   );
 }

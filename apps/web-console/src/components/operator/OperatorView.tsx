@@ -2,6 +2,7 @@ import type { AuthSession } from "../../auth/session";
 import { useTranslation } from "react-i18next";
 import { useOperatorUi } from "../../hooks/useOperatorUi";
 import OperatorAppLauncher from "./OperatorAppLauncher";
+import OperatorAppMissing from "./OperatorAppMissing";
 import OperatorDashboardApp from "./OperatorDashboardApp";
 import OperatorManifestView from "./OperatorManifestView";
 
@@ -38,6 +39,7 @@ export default function OperatorView({
       onSwitchAdmin={onSwitchAdmin}
       session={session}
       onLogout={onLogout}
+      onSelectApp={onSelectApp}
     />
   );
 }
@@ -48,12 +50,14 @@ function OperatorAppEntry({
   onSwitchAdmin,
   session,
   onLogout,
+  onSelectApp,
 }: {
   appId: string;
   operatorId: string;
   onSwitchAdmin?: () => void;
   session?: AuthSession;
   onLogout?: () => void;
+  onSelectApp?: (appId: string) => void;
 }) {
   const { t } = useTranslation("operator");
   const uiQuery = useOperatorUi(appId);
@@ -74,6 +78,18 @@ function OperatorAppEntry({
     );
   }
 
+  // No dashboard UI — try legacy manifest; if that is also gone, show a clear recovery screen
+  // instead of hanging on "Loading manifest…".
+  if (uiQuery.isError) {
+    return (
+      <OperatorAppMissing
+        appId={appId}
+        onPickApp={onSelectApp ? () => onSelectApp("") : undefined}
+        onSwitchAdmin={onSwitchAdmin}
+      />
+    );
+  }
+
   return (
     <OperatorManifestView
       appId={appId}
@@ -81,6 +97,7 @@ function OperatorAppEntry({
       onSwitchAdmin={onSwitchAdmin}
       session={session}
       onLogout={onLogout}
+      onMissingApp={onSelectApp ? () => onSelectApp("") : undefined}
     />
   );
 }

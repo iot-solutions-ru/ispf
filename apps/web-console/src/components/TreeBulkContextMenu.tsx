@@ -140,9 +140,18 @@ export default function TreeBulkContextMenu({
     <>
       <div
         className="tree-context-menu-backdrop"
-        onClick={onClose}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
         onContextMenu={(event) => {
           event.preventDefault();
+          event.stopPropagation();
           onClose();
         }}
       />

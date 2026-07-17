@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { fetchSecurityRoles, updateSecurityRole } from "../api/securityRoles";
 import { deleteObject } from "../api";
 import { roleNameFromSecurityRolePath } from "../utils/securityRolePath";
+import { localizedRoleDescription } from "../utils/localizedRoleDescription";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 
 interface SecurityRoleInspectorProps {
@@ -29,14 +30,17 @@ export default function SecurityRoleInspector({
   });
 
   const role = rolesQuery.data?.find((item) => item.name === roleName);
+  const baselineDescription = role
+    ? localizedRoleDescription(t, role.name, role.description)
+    : "";
 
   useEffect(() => {
     if (!role) {
       return;
     }
     setDisplayName(role.displayName);
-    setDescription(role.description);
-  }, [role]);
+    setDescription(baselineDescription);
+  }, [role, baselineDescription]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -68,7 +72,7 @@ export default function SecurityRoleInspector({
     return <div className="inspector-empty error">{t("role.notFound")}</div>;
   }
 
-  const dirty = displayName !== role.displayName || description !== role.description;
+  const dirty = displayName !== role.displayName || description !== baselineDescription;
 
   return (
     <div className="inspector security-user-inspector">

@@ -21,15 +21,15 @@ export default function ResolvedTimeZoneBadge({ objectPath }: ResolvedTimeZoneBa
 
   if (tzQuery.error || !tzQuery.data?.timeZone) {
     return (
-      <span className="resolved-timezone-badge is-error" role="status">
+      <p className="resolved-timezone-badge is-error" role="status">
         {t("timeZone.error")}
-      </span>
+      </p>
     );
   }
 
   return (
-    <span className="resolved-timezone-badge" role="status">
+    <p className="resolved-timezone-badge" role="status">
       {t("timeZone.resolved", { zone: tzQuery.data.timeZone })}
-    </span>
+    </p>
   );
 }

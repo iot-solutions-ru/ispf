@@ -1,5 +1,20 @@
 {
   "admin.agentBusyTitle": "代理正在运行任务",
+  "admin.createChild": "创建子对象",
+  "admin.skipToContent": "跳转到主要内容",
+  "commandPalette.title": "命令面板",
+  "commandPalette.open": "搜索",
+  "commandPalette.openShortcut": "命令面板 (Ctrl+K)",
+  "commandPalette.placeholder": "跳转到对象、仪表板或操作…",
+  "commandPalette.footer": "↑↓ 导航 · Enter 打开 · Esc 关闭",
+  "commandPalette.createObject": "创建对象…",
+  "commandPalette.hintExplorer": "工作区",
+  "commandPalette.hintSystem": "工作区",
+  "commandPalette.hintAi": "工作区",
+  "commandPalette.hintCreate": "操作",
+  "admin.tab.close": "关闭 {{title}}",
+  "admin.tab.more": "更多",
+  "admin.tab.overflow": "隐藏标签",
   "admin.tab.aiStudio": "人工智能工作室",
   "admin.tab.explorer": "探险家",
   "admin.tab.system": "系统",
@@ -7,6 +22,8 @@
   "admin.theme.label": "配色主题",
   "admin.theme.light": "浅色",
   "admin.theme.system": "跟随系统",
+  "admin.timezone.label": "时区",
+  "admin.language.label": "语言",
   "admin.title": "管理控制台",
   "admin.treeLoading": "加载中...",
   "admin.treeTitle": "对象树",
@@ -36,5 +53,6 @@
   "platformUpdate.openRelease": "控制台将在 20-40 秒内不可用。",
   "platformUpdate.restarting": "重启服务器",
   "platformUpdate.updating": "平台更新中...",
-  "platformUpdate.versionLine": "当前 {{current}} → {{latest}}"
+  "platformUpdate.versionLine": "当前 {{current}} → {{latest}}",
+  "platformUpdate.dismiss": "关闭"
 }

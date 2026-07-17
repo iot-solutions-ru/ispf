@@ -47,6 +47,8 @@
   "path.root__platform__security.title": "Sicherheit",
   "path.root__platform__security__roles.description": "RBAC-Rollendefinitionen. Jedes untergeordnete ROLE-Element speichert den Rollennamen und die Beschreibung. Benutzer verweisen in ihrer Rollenvariable namentlich auf Rollen. Integrierte Administrator- und Operator-Rollen werden beim ersten Start festgelegt. Benutzerdefinierte Rollen erweitern die Autorisierungsprüfungen auf REST-, WebSocket- und UI-Funktionen.",
   "path.root__platform__security__roles.title": "Rollen",
+  "path.root__platform__mimics.title": "Mimics",
+  "path.root__platform__mimics.description": "Katalog der SCADA-Mimic-Diagramme. Jedes MIMIC-Kind speichert ein Prozessschema (Tanks, Ventile, Pipelines) für die Operator-HMI. Mimics hier anlegen, dann in Dashboards einbinden oder den Mimic-Editor öffnen.",
   "path.root__platform__security__users.description": "Ordner des Plattformbenutzerkontos. Jedes USER-Kind spiegelt eine Anmeldung wider: Benutzername, Anzeigename, Rollenliste, aktiviertes Flag und Operator-Autostart (öffnen Sie nach der Anmeldung eine bestimmte Operator-App). Admin-Benutzer sehen die vollständige Admin-Konsole; Operator-Benutzer landen im Operator-Modus. CRUD über Sicherheit → Benutzer oder POST/PUT/DELETE /api/v1/security/users (Administratorrolle). Durch das Löschen eines USER-Knotens wird das Sicherungskonto entfernt.",
   "path.root__platform__security__users.title": "Benutzer",
   "path.root__platform__workflows.description": "BPMN 2.0 workflow catalog. WORKFLOW children: automation mit NATS, device functions, timers, user tasks. Aktivierung im Workflow editor; Operator App verknüpfen für user tasks in operator sidebar Work queue. Correlators starten workflows bei passenden event patterns.",

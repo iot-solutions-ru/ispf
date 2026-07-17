@@ -26,6 +26,17 @@ export function newSchemaField(name = "field"): SchemaField {
   return { name, type: "STRING", description: "", nullable: true };
 }
 
+/** Default scalar schema for new variables (telemetry / computed metrics). */
+export function scalarValueSchema(
+  schemaName = "value",
+  type: SchemaFieldType = "DOUBLE"
+): DataSchema {
+  return {
+    name: schemaName,
+    fields: [{ name: "value", type, description: "", nullable: true }],
+  };
+}
+
 export function cloneSchema(schema: DataSchema): DataSchema {
   return JSON.parse(JSON.stringify(schema)) as DataSchema;
 }

@@ -61,7 +61,7 @@ public class AgentMetricsService {
                 FROM %s
                 WHERE created_at >= ?
                   AND status = 'ERROR'
-                  AND tool_name LIKE 'agent_tool_%'
+                  AND tool_name LIKE 'agent_tool_%%'
                 GROUP BY tool_name
                 ORDER BY cnt DESC
                 LIMIT 10

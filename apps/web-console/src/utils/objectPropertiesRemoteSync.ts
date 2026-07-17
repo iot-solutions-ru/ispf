@@ -1,8 +1,30 @@
 import type { DataRecord, VariableDto } from "../types";
 import { ensureRecord, recordsEqual } from "./record";
 
+/** Subset of VariableHistoryState needed when adopting remote variables. */
+export interface RemoteVariableHistoryState {
+  historyEnabled: boolean;
+  historyRetentionDays: number | null;
+  telemetryPublishMode: "INHERIT" | "FULL" | "TELEMETRY_ONLY" | "EVENT_JOURNAL_ONLY";
+  historySampleMode: "CHANGES_ONLY" | "ALL_VALUES";
+  includePreviousValueInEvent: boolean;
+  storageMode: "PERSISTENT" | "TRANSIENT";
+}
+
 export interface RemoteVariableEditorState {
   variables: Record<string, DataRecord>;
+  variableHistory?: Record<string, RemoteVariableHistoryState>;
+}
+
+function historyFromVariable(variable: VariableDto): RemoteVariableHistoryState {
+  return {
+    historyEnabled: variable.historyEnabled ?? false,
+    historyRetentionDays: variable.historyRetentionDays ?? null,
+    telemetryPublishMode: "INHERIT",
+    historySampleMode: "CHANGES_ONLY",
+    includePreviousValueInEvent: false,
+    storageMode: "PERSISTENT",
+  };
 }
 
 /** Merge server-side variable telemetry into inspector state; skip in-flight user edits. */
@@ -15,17 +37,30 @@ export function applyRemoteVariables<T extends RemoteVariableEditorState>(
   let baselineChanged = false;
   const nextStateVars = { ...state.variables };
   const nextBaselineVars = { ...baseline.variables };
+  const nextStateHistory = { ...(state.variableHistory ?? {}) };
+  const nextBaselineHistory = { ...(baseline.variableHistory ?? {}) };
+  let historyTouched = false;
 
   for (const variable of remote) {
     if (variable.name === "uiIcon") {
       continue;
     }
     const name = variable.name;
-    if (!(name in baseline.variables)) {
-      continue;
-    }
     const current = state.variables[name];
     const baseRec = baseline.variables[name];
+    // Newly created variables appear in the live list before local state rebuilds — adopt them.
+    if (!(name in baseline.variables)) {
+      const next = ensureRecord(variable);
+      const hist = historyFromVariable(variable);
+      nextStateVars[name] = next;
+      nextBaselineVars[name] = next;
+      nextStateHistory[name] = hist;
+      nextBaselineHistory[name] = hist;
+      stateChanged = true;
+      baselineChanged = true;
+      historyTouched = true;
+      continue;
+    }
     if (current && baseRec && !recordsEqual(current, baseRec)) {
       continue;
     }
@@ -44,7 +79,23 @@ export function applyRemoteVariables<T extends RemoteVariableEditorState>(
     return null;
   }
   return {
-    state: stateChanged ? { ...state, variables: nextStateVars } : state,
-    baseline: baselineChanged ? { ...baseline, variables: nextBaselineVars } : baseline,
+    state: stateChanged
+      ? {
+          ...state,
+          variables: nextStateVars,
+          ...(historyTouched || state.variableHistory
+            ? { variableHistory: nextStateHistory }
+            : {}),
+        }
+      : state,
+    baseline: baselineChanged
+      ? {
+          ...baseline,
+          variables: nextBaselineVars,
+          ...(historyTouched || baseline.variableHistory
+            ? { variableHistory: nextBaselineHistory }
+            : {}),
+        }
+      : baseline,
   };
 }

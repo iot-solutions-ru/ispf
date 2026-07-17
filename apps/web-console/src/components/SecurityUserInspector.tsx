@@ -10,16 +10,12 @@ import { fetchSecurityRoles } from "../api/securityRoles";
 import { fetchOperatorApps, type OperatorAppEntry } from "../api/operatorApps";
 import { deleteObject } from "../api";
 import { usernameFromSecurityUserPath } from "../utils/securityUserPath";
+import { localizedRoleDescription } from "../utils/localizedRoleDescription";
 import SecurityUserAutoStartFields from "./SecurityUserAutoStartFields";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 
 async function loadOperatorApps(): Promise<OperatorAppEntry[]> {
-  try {
-    const apps = await fetchOperatorApps();
-    return apps.length ? apps : [{ appId: "platform", title: "Platform HMI" }];
-  } catch {
-    return [{ appId: "platform", title: "Platform HMI" }];
-  }
+  return fetchOperatorApps();
 }
 
 function serverSupportsAutoStart(users: Awaited<ReturnType<typeof fetchSecurityUsers>> | undefined): boolean {
@@ -199,11 +195,14 @@ export default function SecurityUserInspector({
                   onChange={(e) => setRole(e.target.value)}
                   disabled={!canManage || (rolesQuery.data ?? []).length === 0}
                 >
-                  {(rolesQuery.data ?? []).map((item) => (
-                    <option key={item.name} value={item.name}>
-                      {item.name}{item.description ? ` — ${item.description}` : ""}
-                    </option>
-                  ))}
+                  {(rolesQuery.data ?? []).map((item) => {
+                    const desc = localizedRoleDescription(t, item.name, item.description);
+                    return (
+                      <option key={item.name} value={item.name}>
+                        {item.name}{desc ? ` — ${desc}` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
               </label>
               <div className="security-user-switch-field">

@@ -1,5 +1,20 @@
 {
   "admin.agentBusyTitle": "Der Agent führt eine Aufgabe aus",
+  "admin.createChild": "Untergeordnetes Objekt erstellen",
+  "admin.skipToContent": "Zum Hauptinhalt springen",
+  "commandPalette.title": "Befehlspalette",
+  "commandPalette.open": "Suche",
+  "commandPalette.openShortcut": "Befehlspalette (Ctrl+K)",
+  "commandPalette.placeholder": "Zu Objekt, Dashboard oder Aktion…",
+  "commandPalette.footer": "↑↓ navigieren · Enter öffnen · Esc schließen",
+  "commandPalette.createObject": "Objekt erstellen…",
+  "commandPalette.hintExplorer": "Arbeitsbereich",
+  "commandPalette.hintSystem": "Arbeitsbereich",
+  "commandPalette.hintAi": "Arbeitsbereich",
+  "commandPalette.hintCreate": "Aktion",
+  "admin.tab.close": "{{title}} schließen",
+  "admin.tab.more": "Mehr",
+  "admin.tab.overflow": "Ausgeblendete Tabs",
   "admin.tab.aiStudio": "AI Studio",
   "admin.tab.explorer": "Entdecker",
   "admin.tab.system": "System",
@@ -7,6 +22,8 @@
   "admin.theme.label": "Farbschema",
   "admin.theme.light": "Hell",
   "admin.theme.system": "System",
+  "admin.timezone.label": "Zeitzone",
+  "admin.language.label": "Sprache",
   "admin.title": "Admin-Konsole",
   "admin.treeLoading": "Laden…",
   "admin.treeTitle": "Objektbaum",
@@ -36,5 +53,6 @@
   "platformUpdate.openRelease": "Die Konsole ist 20–40 Sekunden lang nicht verfügbar.",
   "platformUpdate.restarting": "Server wird neu gestartet",
   "platformUpdate.updating": "Plattform wird aktualisiert…",
-  "platformUpdate.versionLine": "Aktuell {{current}} → {{latest}}"
+  "platformUpdate.versionLine": "Aktuell {{current}} → {{latest}}",
+  "platformUpdate.dismiss": "Ausblenden"
 }

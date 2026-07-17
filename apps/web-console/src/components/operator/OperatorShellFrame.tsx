@@ -1,5 +1,6 @@
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ReactNode } from "react";
+import { shouldLockBodyForOperatorSidebar } from "../../utils/operatorShellLayout";
 
 interface OperatorShellFrameProps {
   main: ReactNode;
@@ -19,10 +20,22 @@ export default function OperatorShellFrame({
   mainClassName = "operator-dashboard",
 }: OperatorShellFrameProps) {
   const { t } = useTranslation("operator");
+  const [compact, setCompact] = useState(() =>
+    typeof window !== "undefined" ? shouldLockBodyForOperatorSidebar(window.innerWidth) : false
+  );
+
+  useEffect(() => {
+    const onResize = () => setCompact(shouldLockBodyForOperatorSidebar(window.innerWidth));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Backdrop only on compact viewports — on desktop it stole clicks from dashboard widgets.
+  const showBackdrop = sidebarOpen && compact;
 
   return (
     <>
-      {sidebarOpen ? (
+      {showBackdrop ? (
         <button
           type="button"
           className="operator-sidebar-backdrop"
