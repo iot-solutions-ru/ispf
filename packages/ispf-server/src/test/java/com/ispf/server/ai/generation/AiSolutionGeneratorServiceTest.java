@@ -154,6 +154,13 @@ class AiSolutionGeneratorServiceTest {
         assertTrue(ex.getMessage().contains("LLM"));
     }
 
+    @Test
+    void draftUsesCatalogCompositionNotPrimitives() {
+        Map<String, Object> result = service.generate("SCADA pump station mimic");
+        assertEquals("draft", result.get("mode"));
+        assertEquals("catalog-template", result.get("composition"));
+    }
+
     @SuppressWarnings("unchecked")
     private static void assertDeployableBundleDraft(Map<String, Object> bundleDraft) {
         assertNotNull(bundleDraft);

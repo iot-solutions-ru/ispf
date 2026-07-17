@@ -1,0 +1,81 @@
+{
+  "version": "1.0.0",
+  "displayName": "Platform Primitive Fixture",
+  "tablePrefix": "",
+  "schemaName": "app_platform_primitive",
+  "metadata": {
+    "purpose": "Minimal platform velocity fixture — tree + dashboard + operator UI, no vertical domain"
+  },
+  "migrations": [
+    {
+      "id": "platform_primitive_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS platform_primitive_item (id UUID PRIMARY KEY, code VARCHAR(64) NOT NULL, label VARCHAR(128) NOT NULL);\nINSERT INTO platform_primitive_item (id, code, label) SELECT 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'ITEM-1', 'Primitive item' WHERE NOT EXISTS (SELECT 1 FROM platform_primitive_item WHERE code = 'ITEM-1');"
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "platform-primitive-hub",
+      "type": "DEVICE",
+      "displayName": "Platform primitive hub"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "platform-primitive-device-01",
+      "type": "DEVICE",
+      "displayName": "Platform primitive device"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.platform-primitive-hub",
+      "functionName": "platform_primitive_listItems",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "row",
+                "fields": [
+                  { "name": "code", "type": "STRING" },
+                  { "name": "label", "type": "STRING" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT code, label FROM platform_primitive_item ORDER BY code\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.platform-primitive-overview",
+      "title": "Platform primitive overview",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"overview-kpi\",\"type\":\"function\",\"title\":\"Items\",\"x\":0,\"y\":0,\"w\":40,\"h\":14,\"objectPath\":\"root.platform.devices.platform-primitive-hub\",\"functionName\":\"platform_primitive_listItems\",\"buttonLabel\":\"Refresh\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "platform-primitive",
+    "title": "Platform Primitive",
+    "defaultDashboard": "root.platform.dashboards.platform-primitive-overview",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.platform-primitive-overview",
+        "title": "Overview"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.platform-primitive-hub"
+  }
+}

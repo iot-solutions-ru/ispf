@@ -62,14 +62,18 @@ bash scripts/run-agent-regression.sh --live
 |-------|------|
 | PR | job `agent-regression` в [ci.yml](../../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (схема + манифест; **падает при ошибках схемы**). **Только schema/manifest — без живого LLM** |
 | Nightly | `run-nightly.sh` — только схемы. Опциональный BL-177 live one-shot при secrets `ISPF_AI_API_KEY` + `ISPF_AI_BASE_URL` (`run-live-oneshot.sh`). **`nightly-stub-results.json` устарел** — не доказательство live ≥95% |
-| Ручной live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` |
+| Platform gate | `run-platform-gate.sh` — fixture + generator + **`AgentBundleDeploySuiteTest`** (≥95% bundles) + **BL-179** `OperatorAgentContinuityIntegrationTest` |
+| Live suite | `run-live-suite.sh` — hybrid: сначала tool playbook, LLM fallback; режимы `platform`/`bundle`/`full` |
+| Ручной live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` (`AGENT_LIVE_APP_ID` опционально) |
 
-**Текущее число сценариев:** 50 (SCADA, MES, HVAC).
+**Текущее число сценариев:** 52 (SCADA, MES, HVAC), включая `kind: platform-primitive`.
 
 Репортёр pass rate:
 
-- Полный suite: `validate-scenarios.mjs --results nightly.json --enforce-rate` — цель ≥95% (полный BL-178, **не достигнуто**)
+- Полный suite: `AGENT_LIVE_SUITE_MODE=full bash tools/agent-regression/run-live-suite.sh` → `--enforce-rate` (BL-178; нужен LLM)
+- Subset: `AGENT_LIVE_SUITE_MODE=platform|bundle` → `--enforce-rate --oneshot`
 - One-shot: `--results …/live-oneshot-results.json --enforce-rate --oneshot` — proof BL-177 (S31)
+- Platform gate (без LLM): `bash tools/agent-regression/run-platform-gate.sh`
 
 См. [competitive-scorecard](competitive-scorecard.md).
 

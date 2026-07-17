@@ -210,7 +210,7 @@ jobs:
         run: bash tools/agent-regression/run-nightly.sh
         # Do not use nightly-stub-results.json as proof of ≥95% live pass rate.
 
-      - name: Setup Java for optional live one-shot
+      - name: Setup Java for platform gate + optional live one-shot
         uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -218,6 +218,22 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      - name: Platform velocity gate (deterministic + optional live)
+        env:
+          ISPF_AI_PROVIDER: openai-compatible
+          ISPF_AI_BASE_URL: ${{ secrets.ISPF_AI_BASE_URL }}
+          ISPF_AI_MODEL: ${{ secrets.ISPF_AI_MODEL }}
+          ISPF_AI_API_KEY: ${{ secrets.ISPF_AI_API_KEY }}
+          AGENT_PLATFORM_GATE_RESULTS: build/agent-regression/platform-gate-results.json
+        run: |
+          if [ -n "${ISPF_AI_API_KEY}" ] && [ -n "${ISPF_AI_BASE_URL}" ]; then
+            export ISPF_LLM_SMOKE=true
+            if [ -z "${ISPF_AI_MODEL}" ]; then
+              export ISPF_AI_MODEL=gpt-4o-mini
+            fi
+          fi
+          bash tools/agent-regression/run-platform-gate.sh
 
       - name: BL-177 live one-shot (skip if AI secrets missing)
         env:
@@ -236,3 +252,32 @@ jobs:
             export ISPF_AI_MODEL=gpt-4o-mini
           fi
           bash tools/agent-regression/run-live-oneshot.sh
+
+      - name: BL-178 live suite (platform mode; skip if AI secrets missing)
+        timeout-minutes: 120
+        env:
+          ISPF_AI_PROVIDER: openai-compatible
+          ISPF_AI_BASE_URL: ${{ secrets.ISPF_AI_BASE_URL }}
+          ISPF_AI_MODEL: ${{ secrets.ISPF_AI_MODEL }}
+          ISPF_AI_API_KEY: ${{ secrets.ISPF_AI_API_KEY }}
+          AGENT_LIVE_SUITE_MODE: platform
+          AGENT_LIVE_SUITE_RESULTS: build/agent-regression/live-suite-results.json
+          AGENT_LIVE_SUITE_ENFORCE: "true"
+        run: |
+          if [ -z "${ISPF_AI_API_KEY}" ] || [ -z "${ISPF_AI_BASE_URL}" ]; then
+            echo "SKIP live suite: configure repo secrets ISPF_AI_API_KEY and ISPF_AI_BASE_URL"
+            exit 0
+          fi
+          export ISPF_LLM_SMOKE=true
+          if [ -z "${ISPF_AI_MODEL}" ]; then
+            export ISPF_AI_MODEL=gpt-4o-mini
+          fi
+          bash tools/agent-regression/run-live-suite.sh
+
+      - name: Upload live suite results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: agent-live-suite-results
+          path: build/agent-regression/live-suite-results.json
+          if-no-files-found: ignore

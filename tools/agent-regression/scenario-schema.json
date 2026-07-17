@@ -9,6 +9,11 @@
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "version": { "type": "string" },
     "domain": { "type": "string", "enum": ["scada", "mes", "hvac"] },
+    "kind": {
+      "type": "string",
+      "enum": ["platform-primitive"],
+      "description": "Platform velocity fixture (not a vertical product scenario)"
+    },
     "title": { "type": "string", "minLength": 3 },
     "description": { "type": "string" },
     "prompt": { "type": "string", "minLength": 10 },

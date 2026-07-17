@@ -60,14 +60,28 @@ bash scripts/run-agent-regression.sh --live
 |-------|------|
 | PR | `agent-regression` job in [ci.yml](../../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (schema + manifest; **fails on schema errors**) |
 | Nightly | `run-nightly.sh` schema validation only. Optional BL-177 live one-shot when secrets `ISPF_AI_API_KEY` + `ISPF_AI_BASE_URL` are set (`run-live-oneshot.sh`). **`nightly-stub-results.json` is deprecated** — not live ≥95% proof |
-| Manual live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` |
+| Platform gate | `run-platform-gate.sh` — primitive fixture + generator + **`AgentBundleDeploySuiteTest`** (≥95% bundles) + **BL-179** `OperatorAgentContinuityIntegrationTest` |
+| Live suite | `run-live-suite.sh` — hybrid: tool playbook first, LLM fallback; modes `platform`/`bundle`/`full` |
+| Manual live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` (`AGENT_LIVE_APP_ID` optional) |
 
-**Current scenario count:** 50 (SCADA, MES, HVAC).
+**Current scenario count:** 52 (SCADA, MES, HVAC) including `kind: platform-primitive` velocity fixtures.
 
 Pass-rate reporter:
 
-- Full suite: `validate-scenarios.mjs --results nightly.json --enforce-rate` — target ≥95% across all 50 (full BL-178; **not met**)
+- Full suite: `AGENT_LIVE_SUITE_MODE=full bash tools/agent-regression/run-live-suite.sh` → `live-suite-results.json` + `--enforce-rate` (BL-178; needs LLM budget)
+- Platform / bundle subset: `AGENT_LIVE_SUITE_MODE=platform|bundle` → `--enforce-rate --oneshot` on results present
 - One-shot: `validate-scenarios.mjs --results build/agent-regression/live-oneshot-results.json --enforce-rate --oneshot` — S31 BL-177 proof
+- Platform gate (no LLM required): `bash tools/agent-regression/run-platform-gate.sh`
+
+Nightly CI runs **platform** live suite when AI secrets are set. Full 52-scenario live gate is manual / on-demand:
+
+```bash
+export ISPF_LLM_SMOKE=true ISPF_AI_BASE_URL=... ISPF_AI_API_KEY=...
+export AGENT_LIVE_SUITE_MODE=full AGENT_LIVE_SUITE_ENFORCE=true
+bash tools/agent-regression/run-live-suite.sh
+```
+
+Platform-primitive scenarios exercise **engines** (deploy playbook / generator), not vertical products.
 
 See [competitive-scorecard](competitive-scorecard.md).
 

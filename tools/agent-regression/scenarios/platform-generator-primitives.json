@@ -1,0 +1,10 @@
+{
+  "id": "platform-generator-primitives",
+  "version": "1",
+  "domain": "scada",
+  "kind": "platform-primitive",
+  "title": "Solution generator platform primitives",
+  "description": "Live apply must compose hub + devices + dashboard + alert from plant spec, not DOMAIN_CATALOG templates.",
+  "prompt": "Describe a small monitoring plant with two devices and an overview dashboard plus a high-status alert on the hub. Apply as platform primitives.",
+  "playbook": "AgentSolutionGeneratorPlaybook"
+}

@@ -110,7 +110,7 @@ final class AgentDeployPlaybookTools {
             @Override
             public String description() {
                 return "BL-177 one-shot: load example bundle by appId, validate, dry-run, import_package, "
-                        + "configure operator UI. Args: appId (required, e.g. mes-platform). "
+                        + "configure operator UI. Args: appId (required — any context-pack example). "
                         + "Use this instead of calling each deploy_step_* manually.";
             }
 

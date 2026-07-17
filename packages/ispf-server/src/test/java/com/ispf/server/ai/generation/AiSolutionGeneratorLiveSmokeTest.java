@@ -62,6 +62,7 @@ class AiSolutionGeneratorLiveSmokeTest {
     void plantDescriptionAppliesTreeDashboardAndAlert() throws Exception {
         Map<String, Object> result = solutionGeneratorService.generate(PROMPT, true, "admin");
         assertEquals("live", result.get("mode"), () -> "unexpected result: " + result);
+        assertEquals("primitives", result.get("composition"), () -> "unexpected result: " + result);
         assertNotNull(result.get("appId"));
         assertNotNull(result.get("hubPath"));
         assertNotNull(result.get("alertPath"));

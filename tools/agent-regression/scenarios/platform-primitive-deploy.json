@@ -1,0 +1,22 @@
+{
+  "id": "platform-primitive-deploy",
+  "version": "1",
+  "domain": "scada",
+  "kind": "platform-primitive",
+  "title": "Platform primitive deploy playbook",
+  "description": "Domain-agnostic fixture: tree + dashboard + operator UI via deploy playbook (no vertical BFF).",
+  "prompt": "Deploy the platform-primitive example bundle with run_deploy_playbook. Verify operator UI is live. Do not invent MES or HVAC domain objects.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "platform-primitive",
+    "manifestPath": "examples/platform-primitive/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["run_deploy_playbook", "deploy_step_import"],
+    "requiredObjectPaths": [
+      "root.platform.devices.platform-primitive-hub",
+      "root.platform.dashboards.platform-primitive-overview"
+    ]
+  }
+}

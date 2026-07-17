@@ -23,8 +23,9 @@ final class AgentRegressionScenarioValidator {
 
     private static final Set<String> DOMAINS = Set.of("scada", "mes", "hvac");
     private static final Set<String> SCENARIO_PROPERTIES = Set.of(
-            "id", "version", "domain", "title", "description", "prompt", "playbook", "bundle", "acceptance"
+            "id", "version", "domain", "kind", "title", "description", "prompt", "playbook", "bundle", "acceptance"
     );
+    private static final Set<String> KINDS = Set.of("platform-primitive");
     private static final Set<String> BUNDLE_PROPERTIES = Set.of("appId", "manifestPath");
     private static final Set<String> ACCEPTANCE_PROPERTIES = Set.of(
             "validateBundle", "requiredTools", "requiredObjectPaths"
@@ -109,6 +110,11 @@ final class AgentRegressionScenarioValidator {
         result.domain = domain;
         if (!domain.isBlank() && !DOMAINS.contains(domain)) {
             result.errors.add("invalid domain: " + domain);
+        }
+
+        String kind = scenario.path("kind").asText("");
+        if (!kind.isBlank() && !KINDS.contains(kind)) {
+            result.errors.add("invalid kind: " + kind);
         }
 
         String id = scenario.path("id").asText("");

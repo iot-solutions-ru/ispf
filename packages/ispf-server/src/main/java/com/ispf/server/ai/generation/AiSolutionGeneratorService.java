@@ -27,14 +27,17 @@ import java.util.regex.Pattern;
 
 /**
  * BL-180: plant description → blueprint draft and optional live apply (tree + dashboards + alerts).
- * Keyword routing remains available as {@code mode=draft} fallback when LLM is offline.
- * Live apply ({@code apply=true}) requires a configured LLM and returns {@code mode=live}.
+ * Keyword / {@code DOMAIN_CATALOG} routing remains {@code mode=draft} offline fallback only.
+ * Live apply ({@code apply=true}) composes platform primitives from an LLM plant spec
+ * ({@code composition=primitives}) — not a vertical catalog template.
  */
 @Service
 public class AiSolutionGeneratorService {
 
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9][a-z0-9-]*$");
     private static final Pattern JSON_OBJECT = Pattern.compile("\\{[\\s\\S]*}");
+    private static final String COMPOSITION_PRIMITIVES = "primitives";
+    private static final String COMPOSITION_CATALOG = "catalog-template";
 
     private static final List<Map<String, String>> DOMAIN_CATALOG = List.of(
             Map.of("domain", "mes", "appId", "mes-reference", "hint", "manufacturing MES OEE work orders"),
@@ -93,12 +96,13 @@ public class AiSolutionGeneratorService {
             );
         }
 
-        DomainSelection selection = selectDomain(prompt, apply);
+        if (apply) {
+            return generateLivePrimitives(prompt, actor);
+        }
+
+        DomainSelection selection = selectDomain(prompt, false);
         DomainTemplate template = templateFor(selection.domain());
         String slug = slugFromPrompt(prompt, selection.domain());
-        if (apply) {
-            slug = uniqueApplySlug(slug, selection.domain());
-        }
         if (!ID_PATTERN.matcher(slug).matches()) {
             slug = selection.domain() + "-draft";
         }
@@ -109,6 +113,7 @@ public class AiSolutionGeneratorService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
         result.put("mode", selection.mode());
+        result.put("composition", COMPOSITION_CATALOG);
         result.put("domain", selection.domain());
         result.put("domainSelection", selection.source());
         result.put("bundleDraft", bundleDraft);
@@ -117,13 +122,124 @@ public class AiSolutionGeneratorService {
         if (selection.llmPreview() != null) {
             result.put("llmPreview", selection.llmPreview());
         }
-
-        if (apply) {
-            Map<String, Object> applied = applyLive(slug, selection.domain(), template, bundleDraft, actor);
-            result.put("mode", "live");
-            result.putAll(applied);
-        }
         return result;
+    }
+
+    private Map<String, Object> generateLivePrimitives(String prompt, String actor) {
+        PlantSpec spec = composePlantSpecViaLlm(prompt);
+        DomainTemplate template = templateFromPlantSpec(spec);
+        String domain = "platform";
+        String slug = spec.slug() != null && !spec.slug().isBlank()
+                ? spec.slug()
+                : slugFromPrompt(prompt, domain);
+        slug = uniqueApplySlug(slug, domain);
+        if (!ID_PATTERN.matcher(slug).matches()) {
+            slug = "plant-live-" + Long.toString(System.currentTimeMillis() % 1_000_000, 36);
+        }
+
+        Map<String, Object> bundleDraft = buildBundleDraft(slug, domain, template);
+        Map<String, Object> blueprintDraft = buildBlueprintDraft(prompt, domain, template, slug, bundleDraft);
+        Map<String, Object> applied = applyLive(slug, domain, template, bundleDraft, actor);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", "OK");
+        result.put("mode", "live");
+        result.put("composition", COMPOSITION_PRIMITIVES);
+        result.put("domain", domain);
+        result.put("domainSelection", "llm-plant-spec");
+        result.put("bundleDraft", bundleDraft);
+        result.put("blueprintDraft", blueprintDraft);
+        result.put("playbook", "AgentSolutionGeneratorPlaybook");
+        if (spec.llmPreview() != null) {
+            result.put("llmPreview", spec.llmPreview());
+        }
+        result.putAll(applied);
+        return result;
+    }
+
+    private PlantSpec composePlantSpecViaLlm(String prompt) {
+        try {
+            String system = """
+                    You extract a minimal ISPF platform plant spec from a free-form description.
+                    Reply with ONLY a JSON object (no markdown):
+                    {
+                      "title":"<short plant title>",
+                      "slug":"<optional kebab-case id>",
+                      "devices":[{"name":"<kebab-case>","displayName":"<label>"}]
+                    }
+                    Rules:
+                    - 1..6 DEVICE entries that should appear under root.platform.devices (besides the hub).
+                    - name: lowercase kebab-case [a-z0-9-], no spaces.
+                    - Do NOT pick industry catalog ids or reference bundle appIds.
+                    - Prefer concrete equipment from the prompt; if vague, invent 2 generic devices.
+                    """;
+            LlmResponse response = llmProviderRegistry.complete(new LlmRequest(
+                    aiProperties.getModel(),
+                    List.of(
+                            new LlmMessage("system", system),
+                            new LlmMessage("user", prompt)
+                    ),
+                    Math.min(512, aiProperties.getMaxTokens()),
+                    0.0
+            ));
+            String content = response.content() != null ? response.content().trim() : "";
+            Matcher matcher = JSON_OBJECT.matcher(content);
+            if (!matcher.find()) {
+                throw new IllegalStateException("LLM plant spec missing JSON object");
+            }
+            JsonNode node = objectMapper.readTree(matcher.group());
+            String title = textOrEmpty(node, "title");
+            if (title.isBlank()) {
+                title = "Generated plant";
+            }
+            String slug = textOrEmpty(node, "slug").toLowerCase(Locale.ROOT)
+                    .replaceAll("[^a-z0-9-]+", "-")
+                    .replaceAll("^-+|-+$", "");
+            List<Map<String, Object>> devices = new ArrayList<>();
+            JsonNode devicesNode = node.get("devices");
+            if (devicesNode != null && devicesNode.isArray()) {
+                for (JsonNode device : devicesNode) {
+                    String name = textOrEmpty(device, "name").toLowerCase(Locale.ROOT)
+                            .replaceAll("[^a-z0-9-]+", "-")
+                            .replaceAll("^-+|-+$", "");
+                    String displayName = textOrEmpty(device, "displayName");
+                    if (name.isBlank()) {
+                        continue;
+                    }
+                    if (displayName.isBlank()) {
+                        displayName = name;
+                    }
+                    devices.add(entity(name, displayName, "DEVICE"));
+                    if (devices.size() >= 6) {
+                        break;
+                    }
+                }
+            }
+            if (devices.isEmpty()) {
+                devices.add(entity("device-01", "Primary device", "DEVICE"));
+                devices.add(entity("device-02", "Secondary device", "DEVICE"));
+            }
+            devices.add(0, entity("process-area", title + " area", "CUSTOM"));
+            return new PlantSpec(title, slug.isBlank() ? null : slug, devices, truncate(content, 500));
+        } catch (IllegalStateException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalStateException("LLM plant spec failed: " + ex.getMessage(), ex);
+        }
+    }
+
+    private static DomainTemplate templateFromPlantSpec(PlantSpec spec) {
+        return new DomainTemplate(
+                spec.title(),
+                "platform-primitives",
+                "platform",
+                spec.entities(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "platform_plant_item",
+                "platform_listItems"
+        );
     }
 
     private Map<String, Object> applyLive(
@@ -711,6 +827,14 @@ public class AiSolutionGeneratorService {
     }
 
     private record DomainSelection(String domain, String mode, String source, String llmPreview) {
+    }
+
+    private record PlantSpec(
+            String title,
+            String slug,
+            List<Map<String, Object>> entities,
+            String llmPreview
+    ) {
     }
 
     private record DomainTemplate(

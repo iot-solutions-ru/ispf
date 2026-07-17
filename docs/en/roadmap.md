@@ -979,7 +979,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | Sprint | Phase | Theme | BL / scope | Status |
 | ------ | ----- | ---- | ---------- | ------ |
 | S31 | 31 | AI e2e + live LLM | BL-177, BL-178 | Partial (BL-177 one-shot REAL; BL-178 live ≥95% open) |
-| S32 | 31 | AI generator + continuity | BL-180 (+ BL-179 as needed) | Partial (live apply REAL; metrics/continuity open) |
+| S32 | 31 | AI generator + continuity | BL-180 (+ BL-179) | Partial (BL-179 Done; BL-180 primitives live; metrics/observability open) |
 | S33 | 29 | MES genealogy lite | BL-193 | Planned (MES = marketplace product) |
 | — | 29 | Live ERP L4 (parked) | BL-169 | **Deferred** |
 | — | 25 | OT Trust waves (parked) | BL-140…145, BL-191 — [Wave 1 backlog](#s31-wave-1-execution-backlog) | **Deferred** |
@@ -1229,8 +1229,8 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-175 | 30 | ML hooks | P3 | Partial |
 | BL-176 | 30 | BPMN expansion | P2 | Partial (subprocess stub; message events) |
 | BL-177 | 31 | End-to-end agent deploy | P0 | **Partial→Done (one-shot)** — live LLM `AgentLiveDeploySmokeTest` + `run_deploy_playbook` for `mes-platform`; full multi-app path still hardening |
-| BL-178 | 31 | Agent regression suite | P0 | Partial (50 scenarios schema CI; live one-shot gate via `run-live-oneshot.sh`; full ≥95% not met) |
-| BL-179 | 31 | Operator agent GA | P1 | Partial |
+| BL-178 | 31 | Agent regression suite | P0 | Partial→Done (bundle path) — schema 52 + `AgentBundleDeploySuiteTest` ≥95% no-LLM; live LLM full suite still on-demand via `run-live-suite.sh` |
+| BL-179 | 31 | Operator agent GA | P1 | **Done** — scoped tools + memory + ru/en; `OperatorAgentContinuityIntegrationTest` (memory across turns, scope deny, readonly allowlist) |
 | BL-180 | 31 | Solution generator | P0 | **Partial→Done (one-shot)** — `apply:true` live tree+dashboard+alert (`AiSolutionGeneratorLiveSmokeTest`); full GA/metrics still hardening |
 | BL-181 | 31 | Agent observability v2 | P2 | Partial |
 | BL-182 | 31 | Context pack v2 | P2 | Partial |
@@ -1599,6 +1599,10 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 | Date | Change |
 | ---- | --------- |
 | 2026-07-14 | **MES as marketplace product:** base platform no longer seeds `root.platform.mes` / `batch-v1` / `work-order-v1`; install `mes-platform` (vendor IoT Solutions). Flag `ispf.bootstrap.mes-catalog-enabled` for legacy only |
+| 2026-07-17 | **BL-179 Operator agent GA:** `OperatorAgentContinuityIntegrationTest` — memory across turns, ru/en prompt headers, path scope deny, operator-readonly tool allowlist |
+| 2026-07-17 | **BL-178 bundle suite REAL (no LLM):** `AgentBundleDeploySuiteTest` deploys all bundle-linked scenarios via playbook tools ≥95%; hybrid live suite tries tools before LLM |
+| 2026-07-17 | **BL-178 live suite harness:** `AgentLiveRegressionSuiteTest` + `run-live-suite.sh` (modes platform/bundle/full); nightly runs platform mode with AI secrets; full 52@≥95% on-demand |
+| 2026-07-17 | **Platform velocity gate:** `platform-primitive` fixture, `run-platform-gate.sh`; live apply generator `composition=primitives` (catalog draft only) |
 | 2026-07-14 | **S32 BL-180 one-shot REAL:** `POST /ai/solutions/generate` `apply:true` → live tree+dashboard+alert; keyword path is `mode=draft` (not stub success) |
 | 2026-07-14 | **S31 BL-177 one-shot REAL:** `AgentLiveDeploySmokeTest` + `run_deploy_playbook`; nightly optional live oneshot (`run-live-oneshot.sh`); `nightly-stub-results.json` deprecated as ≥95% proof |
 | 2026-07-14 | **OT Trust + live ERP deferred:** Phase 25 / BL-191 and BL-169 removed from active 90-day P0; S31–S33 → AI → generator → genealogy |
