@@ -21,7 +21,7 @@ dependencies {
     implementation(project(":packages:ispf-ai-openai-compatible"))
     implementation(project(":packages:ispf-ai-ollama"))
 
-    implementation("io.nats:jnats:2.20.5")
+    implementation("io.nats:jnats:2.26.0")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
