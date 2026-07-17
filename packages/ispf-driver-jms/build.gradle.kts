@@ -4,5 +4,5 @@ dependencies {
 
     implementation("org.apache.activemq:activemq-client:6.2.7")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
 }

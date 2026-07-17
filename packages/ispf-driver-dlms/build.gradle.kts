@@ -5,5 +5,5 @@ dependencies {
     implementation("org.gurux:gurux.dlms:4.0.79")
     implementation("org.gurux:gurux.net:1.0.32")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
 }

@@ -4,5 +4,5 @@ dependencies {
 
     implementation("org.neo4j.driver:neo4j-java-driver:6.2.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
 }

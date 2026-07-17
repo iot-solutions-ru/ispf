@@ -4,5 +4,5 @@ dependencies {
 
     implementation("commons-net:commons-net:3.13.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
 }

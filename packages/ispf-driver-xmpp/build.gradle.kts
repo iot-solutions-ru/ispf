@@ -6,5 +6,5 @@ dependencies {
     implementation("org.igniterealtime.smack:smack-im:4.4.8")
     implementation("org.igniterealtime.smack:smack-extensions:4.4.8")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
 }

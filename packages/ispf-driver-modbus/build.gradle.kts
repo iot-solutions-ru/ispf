@@ -4,5 +4,5 @@ dependencies {
 
     implementation("com.ghgande:j2mod:3.2.1")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
 }

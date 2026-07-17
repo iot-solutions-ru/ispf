@@ -6,5 +6,5 @@ dependencies {
     implementation("org.eclipse.milo:sdk-server:0.6.16")
 
     testImplementation("org.eclipse.milo:sdk-client:0.6.16")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
 }
