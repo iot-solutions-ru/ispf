@@ -29,7 +29,7 @@ import {
   buildDemoTrendPoints,
   parseDemoPreview,
 } from "../widgetDemoPreview";
-import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/chartTheme";
+import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import CandlestickChartBody from "./CandlestickChartBody";
 import ChartBubbleWidgetView from "./ChartBubbleWidgetView";
 import ChartRadarWidgetView from "./ChartRadarWidgetView";

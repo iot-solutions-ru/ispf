@@ -6,19 +6,19 @@ import {
   parseAgentArtifacts,
   type AgentArtifactLink,
   type AgentArtifactTablePreview,
-} from "../../utils/agentArtifacts";
+} from "../../utils/agent/agentArtifacts";
 import type {
   AgentGapMatrixRow,
   AgentPlanQuestion,
   AgentPlanSection,
   AgentSpecBrief,
   OperatorAgentSuggestion,
-} from "../../utils/operatorAgentArtifacts";
+} from "../../utils/operator/operatorAgentArtifacts";
 import {
   formatPlanQuestionAnswer,
   isExecuteIntentSuggestion,
   localizeCompletenessGaps,
-} from "../../utils/operatorAgentArtifacts";
+} from "../../utils/operator/operatorAgentArtifacts";
 
 export interface AgentChatArtifactsProps {
   result?: Record<string, unknown>;

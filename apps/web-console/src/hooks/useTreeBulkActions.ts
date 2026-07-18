@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { bulkDeleteObjects, updateGroupMembers } from "../api";
 import type { ObjectSummary } from "../types";
-import { canDeleteObjectPath } from "../utils/platformSystemPaths";
+import { canDeleteObjectPath } from "../utils/platform/platformSystemPaths";
 import {
   filterVisualGroupsInCatalog,
   resolveVisualGroupCatalogParent,
-} from "../utils/createObjectMode";
-import { parseTreeRowKey } from "../utils/treeRowKey";
+} from "../utils/object/createObjectMode";
+import { parseTreeRowKey } from "../utils/tree/treeRowKey";
 
 export interface TreeBulkActionsConfig {
   visibleRowKeys: string[];

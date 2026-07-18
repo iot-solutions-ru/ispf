@@ -104,7 +104,7 @@ python deploy/events-load-test.py --base-url ${ISPF_BASE_URL:-https://ispf.examp
 python deploy/events-internal-load-test.py --skip-monitor-setup --condition-expr-file deploy/loadtest-sinewave-condition.txt
 ```
 
-## Cluster tests (BL-137/138)
+## Cluster tests (BL-137/138 + Wave 6)
 
 JDBC driver ownership and failover between replicas:
 
@@ -118,11 +118,15 @@ Multi-replica compose smoke (Docker):
 
 ```bash
 bash deploy/cluster-quickstart.sh          # build + up + smoke
-bash deploy/cluster-smoke-test.sh          # round-robin, failover, driver reclaim
+# Round-robin, failover, reclaim SLO, ADR-0030 config-sync, ADR-0029 live-var lag
+ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS=1 \
+  bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
 python deploy/cluster-scale-load-test.py   # 1 vs 3 replica throughput (floor 1.8×)
 ```
 
 CI: workflow [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) — JDBC ownership (weekly) + compose smoke/scale (`workflow_dispatch`).
+
+Chaos / soak under load (lab journal, REAL vs PARTIAL): **[cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md)**. CI does **not** prove multi-hour soak or kill-owner under sustained ingress.
 
 ## CI (recommended)
 

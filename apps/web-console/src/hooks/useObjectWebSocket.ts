@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { getStoredSession } from "../auth/session";
 import { SESSION_INVALID_EVENT, SESSION_UPDATED_EVENT } from "../auth/validateSession";
-import { isFederatedCatalogPath } from "../utils/federationPath";
-import { preferDirectIngressRoute, resolveIngressWebSocketPaths } from "../utils/ingressFetch";
+import { isFederatedCatalogPath } from "../utils/federation/federationPath";
+import { preferDirectIngressRoute, resolveIngressWebSocketPaths } from "../utils/ingress/ingressFetch";
 import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./objectWebSocketTypes";
 
 export type { ObjectWsMessage } from "./objectWebSocketTypes";

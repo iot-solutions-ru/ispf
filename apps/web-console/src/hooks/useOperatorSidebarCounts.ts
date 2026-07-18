@@ -12,8 +12,8 @@ import type { OperatorUi } from "../types/operatorUi";
 import {
   filterOperatorSidebarEvents,
   filterOperatorSidebarTasks,
-} from "../utils/operatorSidebarScope";
-import { filterEventsAfterLiveClear } from "../utils/operatorLiveEventsCleared";
+} from "../utils/operator/operatorSidebarScope";
+import { filterEventsAfterLiveClear } from "../utils/operator/operatorLiveEventsCleared";
 
 const LIVE_EVENT_LIMIT = 80;
 

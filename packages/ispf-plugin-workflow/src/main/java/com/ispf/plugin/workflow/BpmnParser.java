@@ -15,8 +15,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * BPMN 2.0 parser for ISPF workflows — startEvent, serviceTask, userTask, messageTask,
- * exclusiveGateway, parallelGateway, endEvent, sequenceFlow with conditions.
+ * BPMN subset parser for ISPF workflows (ADR-0047). Supported: start/end, service/user/message
+ * tasks, exclusive/parallel gateways, embedded subProcess, intermediate catch (signal/timer/message),
+ * message throw, boundary timer, sequenceFlow with conditions. Unsupported elements fail at parse.
  */
 public class BpmnParser {
 
@@ -34,6 +35,8 @@ public class BpmnParser {
             if (process == null) {
                 throw new WorkflowException("BPMN process element not found");
             }
+
+            rejectUnsupportedElements(process);
 
             String processId = process.getAttribute("id");
             String processName = process.getAttribute("name");
@@ -278,6 +281,24 @@ public class BpmnParser {
             }
         }
 
+        for (Element nested : elements(subProcess, "subProcess")) {
+            parseSubProcess(
+                    nested,
+                    nodeTypes,
+                    serviceTasks,
+                    userTasks,
+                    messageTasks,
+                    signalCatchEvents,
+                    messageCatchEvents,
+                    messageThrowEvents,
+                    timerCatchEvents,
+                    boundaryTimers,
+                    subProcesses,
+                    endEventToSubProcess,
+                    sequenceFlows
+            );
+        }
+
         for (Element flow : elements(subProcess, "sequenceFlow")) {
             sequenceFlows.add(parseSequenceFlow(flow));
         }
@@ -290,6 +311,48 @@ public class BpmnParser {
                 id,
                 new SubProcessDefinition(id, subProcess.getAttribute("name"), subStartNodeId, List.copyOf(subEndNodeIds))
         );
+    }
+
+    /**
+     * ADR-0047 freeze: reject elements outside the ISPF BPMN subset with a clear error.
+     */
+    private static void rejectUnsupportedElements(Element process) throws WorkflowException {
+        rejectNamedElements(process, "callActivity",
+                "callActivity is not supported (ISPF BPMN subset)");
+        rejectNamedElements(process, "businessRuleTask",
+                "businessRuleTask / DMN is not supported (ISPF BPMN subset)");
+        rejectNamedElements(process, "inclusiveGateway",
+                "inclusiveGateway is not supported (ISPF BPMN subset)");
+        rejectNamedElements(process, "eventBasedGateway",
+                "eventBasedGateway is not supported (ISPF BPMN subset)");
+        rejectNamedElements(process, "multiInstanceLoopCharacteristics",
+                "multi-instance is not supported (ISPF BPMN subset)");
+        rejectNamedElements(process, "compensateEventDefinition",
+                "compensation / compensate events are not supported (ISPF BPMN subset)");
+
+        NodeList subProcesses = process.getElementsByTagNameNS("*", "subProcess");
+        for (int i = 0; i < subProcesses.getLength(); i++) {
+            Element sub = (Element) subProcesses.item(i);
+            if ("true".equalsIgnoreCase(sub.getAttribute("triggeredByEvent"))) {
+                String id = sub.getAttribute("id");
+                throw new WorkflowException(
+                        "Event subprocess is not supported (ISPF BPMN subset): "
+                                + (id == null || id.isBlank() ? "<unknown>" : id));
+            }
+        }
+    }
+
+    private static void rejectNamedElements(Element scope, String localName, String message)
+            throws WorkflowException {
+        NodeList nodes = scope.getElementsByTagNameNS("*", localName);
+        if (nodes.getLength() > 0) {
+            Element first = (Element) nodes.item(0);
+            String id = first.getAttribute("id");
+            if (id != null && !id.isBlank()) {
+                throw new WorkflowException(message + ": " + id);
+            }
+            throw new WorkflowException(message);
+        }
     }
 
     private SequenceFlowDefinition parseSequenceFlow(Element flow) {

@@ -23,14 +23,14 @@ import {
   resolveAlarmBarConfig,
   resolveAlarmNavigateParams,
   shouldResurfaceAlarmFromFeed,
-} from "../utils/operatorAlarmBar";
-import { playAlarmSound, playBeepFallback } from "../utils/alarmSound";
+} from "../utils/operator/operatorAlarmBar";
+import { playAlarmSound, playBeepFallback } from "../utils/operator/alarmSound";
 import {
   isOperatorAlarmSoundEnabled,
   OPERATOR_PREFERENCES_CHANGED_EVENT,
   showOperatorAlarmNotification,
-} from "../utils/operatorPreferences";
-import { collectOperatorAppWatchPaths } from "../utils/operatorSidebarScope";
+} from "../utils/operator/operatorPreferences";
+import { collectOperatorAppWatchPaths } from "../utils/operator/operatorSidebarScope";
 
 interface UseOperatorAlarmBarOptions {
   ui?: OperatorUi;

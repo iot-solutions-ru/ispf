@@ -7,9 +7,9 @@ import {
   type AnalyticsCatalogEntryDto,
   type AnalyticsCatalogValidateRequest,
 } from "../api/analyticsCatalog";
-import type { PlatformBindingEntry } from "../utils/platformBindings";
-import { mapAnalyticsCatalogToBindingEntries } from "../utils/historianExpressionBindings";
-import { mapMergedExpressionCatalog } from "../utils/functionExpressionCatalog";
+import type { PlatformBindingEntry } from "../utils/platform/platformBindings";
+import { mapAnalyticsCatalogToBindingEntries } from "../utils/analytics/historianExpressionBindings";
+import { mapMergedExpressionCatalog } from "../utils/functionScript/functionExpressionCatalog";
 
 export type AnalyticsBrowserKind = "historian" | "reactive" | "all";
 

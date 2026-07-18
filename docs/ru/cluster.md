@@ -6,7 +6,7 @@
 
 Руководство по горизонтальному масштабированию API: несколько JVM-реплик, одно дерево объектов в PostgreSQL, синхронизация live-значений через NATS ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
 
-См. также: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md), [deployment](deployment.md), [messaging](messaging.md), [bindings](bindings.md).
+См. также: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md), [deployment](deployment.md), [messaging](messaging.md), [bindings](bindings.md), [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md) (Wave 6: REAL vs PARTIAL).
 
 ## Кластер ≠ федерация
 
@@ -562,17 +562,19 @@ curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8083/api/v1/platform/
 ### Дым / CI
 
 ```bash
-bash deploy/cluster-smoke-test.sh
-bash deploy/cluster-smoke-test.sh --config-sync
+ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS=1 \
+  bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
 python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8
 ```
+
+Chaos под нагрузкой и soak 30–60 мин (лаб-журнал): [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md).
 
 ### Контрольный список аварийного переключения
 
 1. `curl https://ispf.example/api/v1/info` — 200 с любой живой реплики.
 2. Остановить одну реплику — REST через LB без 502.
-3. Блокировки драйверов мигрируют в пределах TTL + аварийное сканирование.
-4. HMI на других репликах продолжает получать текущие значения (ADR-0029).
+3. Блокировки драйверов мигрируют в пределах TTL + failover scan (compose smoke SLO по умолчанию 45s).
+4. HMI на других репликах продолжает получать текущие значения (ADR-0029); smoke `--live-var-lag` покрывает API/config path.
 
 ### nginx
 

@@ -8,6 +8,13 @@ configurations.all {
     exclude(group = "ch.qos.reload4j", module = "reload4j")
 }
 
+// ispf-ai-agent depends on this project; include its outputs via soft classpath
+// (not project()) to avoid a Gradle circular dependency.
+val aiAgentProject = project(":packages:ispf-ai-agent")
+val aiAgentMainOutput = aiAgentProject.layout.buildDirectory.dir("classes/java/main")
+val aiAgentMainResources = aiAgentProject.layout.buildDirectory.dir("resources/main")
+val aiAgentJar = aiAgentProject.tasks.named("jar")
+
 dependencies {
     implementation(project(":packages:ispf-core"))
     implementation(project(":packages:ispf-expression"))
@@ -102,6 +109,8 @@ fun shouldEmbedWebConsole(): Boolean {
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveBaseName.set("ispf-server")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    dependsOn(aiAgentJar)
+    classpath(aiAgentJar)
     from(rootProject.file("LICENSE")) { into("META-INF") }
     from(rootProject.file("NOTICE")) { into("META-INF") }
     doFirst {
@@ -139,6 +148,8 @@ fun driverPackEnsureTaskName(): String =
 tasks.named<Test>("test") {
     dependsOn(tasks.named("bootBuildInfo"))
     dependsOn(rootProject.tasks.named(driverPackEnsureTaskName()))
+    dependsOn(aiAgentProject.tasks.named("classes"))
+    classpath += files(aiAgentMainOutput, aiAgentMainResources)
     val packsPath = driverPacksDir.get().asFile.absolutePath
     environment("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
@@ -161,5 +172,7 @@ tasks.named<Test>("test") {
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
     dependsOn(rootProject.tasks.named(driverPackEnsureTaskName()))
+    dependsOn(aiAgentProject.tasks.named("classes"))
+    classpath += files(aiAgentMainOutput, aiAgentMainResources)
     environment("ISPF_DRIVER_PACKS_DIR", driverPacksDir.get().asFile.absolutePath)
 }

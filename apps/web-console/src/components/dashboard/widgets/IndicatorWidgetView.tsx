@@ -4,7 +4,7 @@ import { setVariable } from "../../../api";
 import type { IndicatorWidget } from "../../../types/dashboard";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { cloneRecord, setFieldValue } from "../../../utils/record";
+import { cloneRecord, setFieldValue } from "../../../utils/ui/record";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 

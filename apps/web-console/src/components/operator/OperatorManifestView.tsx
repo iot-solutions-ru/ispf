@@ -15,8 +15,8 @@ import OperatorAgentFab from "./OperatorAgentFab";
 import OperatorOfflineBanner from "./OperatorOfflineBanner";
 import OperatorOfflineBadge from "./OperatorOfflineBadge";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
-import { cachedAtForManifest } from "../../utils/operatorOfflineCache";
-import { syncOperatorCachesOnReconnect } from "../../utils/operatorOfflineSync";
+import { cachedAtForManifest } from "../../utils/operator/operatorOfflineCache";
+import { syncOperatorCachesOnReconnect } from "../../utils/operator/operatorOfflineSync";
 
 import type { AuthSession } from "../../auth/session";
 

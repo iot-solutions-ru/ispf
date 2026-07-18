@@ -36,21 +36,41 @@
 
 ## Поддерживаемые элементы BPMN
 
+ISPF реализует **подмножество BPMN**, не полный BPMN 2.0. Движок: чистая Java в `ispf-plugin-workflow`. Решение: [0047-custom-bpmn-subset-engine](../en/decisions/0047-custom-bpmn-subset-engine.md) (**Accepted** 2026-07-18 — freeze subset). Русское краткое зеркало: [decisions/0047-custom-bpmn-subset-engine](decisions/0047-custom-bpmn-subset-engine.md).
+
 | Элемент | Поддержка |
 |---------|-----------|
 | `startEvent` | Да |
 | `endEvent` | Да |
 | `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |
 | `userTask` | Очередь оператора, claim/complete |
-| `intermediateCatchEvent` | Ожидание сигнала (`ispf:signal`) или таймера (`ispf:durationSeconds`) |
-| `boundaryEvent` | Таймер на user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) |
+| `intermediateCatchEvent` | Ожидание сигнала (`ispf:signal`), таймера (`ispf:durationSeconds`) или сообщения (`messageEventDefinition` / `ispf:message`) |
+| `boundaryEvent` | Таймер на user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) — ветка escalation |
 | `messageTask` | Публикация в NATS (если enabled) |
 | `exclusiveGateway` | Условные переходы (CEL) |
 | `parallelGateway` | Fork/join, execution tokens |
-| `subProcess` | Встроенный подпроцесс — вход во внутреннее начало, выход во внутренний конец (заглушка BL-176) |
+| `subProcess` | Встроенный подпроцесс — вход во внутреннее начало, выход во внутренний конец (вложенный embedded OK; не event subprocess) |
 | `sequenceFlow` | `ispf:condition`, `ispf:default` |
+| Message catch / throw | Да — catch ждёт `deliverMessage`; throw — `intermediateThrowEvent` + `messageEventDefinition` (не-message throw отклоняется при parse) |
 
 Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
+
+## Не поддерживается (явные non-goals)
+
+Вне subset ISPF. Парсер **отклоняет** их с понятной ошибкой (freeze ADR-0047); на silent ignore полагаться нельзя. Палитра WorkflowBuilder не должна намекать на поддержку.
+
+| Элемент / возможность | Статус |
+|-----------------------|--------|
+| `callActivity` | Не поддерживается |
+| Multi-instance (`multiInstanceLoopCharacteristics`) | Не поддерживается |
+| `inclusiveGateway` | Не поддерживается |
+| `eventBasedGateway` | Не поддерживается |
+| Compensation / compensate events | Не поддерживается |
+| Event subprocess | Не поддерживается |
+| DMN / business rule task | Не поддерживается |
+| Полный импорт BPMN 2.0 из моделей Camunda/Flowable | Не цель — проектируйте по этой странице |
+
+Типичный BPMN из других инструментов часто не заработает, пока не сведён к таблице поддерживаемых элементов.
 
 ## ISPF-атрибуты
 
@@ -118,6 +138,26 @@ Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
 
 Экземпляр переходит в `WAITING` к доставке сигнала. Альтернатива отмене через API отмены — инцидент может «разбудить» процесс и продолжить ветку обработки.
 
+### промежуточныйCatchEvent (сообщение)
+
+```xml
+<intermediateCatchEvent id="waitAck" name="Wait ERP ack">
+  <messageEventDefinition messageRef="erpAck"/>
+</intermediateCatchEvent>
+```
+
+Или `ispf:message="erpAck"` на catch. Экземпляр ждёт, пока `deliverMessage` передаст совпадающее имя.
+
+### промежуточныйThrowEvent (сообщение)
+
+```xml
+<intermediateThrowEvent id="shipMsg" name="Ship order">
+  <messageEventDefinition messageRef="orderShipped"/>
+</intermediateThrowEvent>
+```
+
+Публикация через message executor (`channel=bpmn-throw`, subject = имя сообщения). Не-message throw отклоняется при parse.
+
 ### промежуточныйCatchEvent (таймер)
 
 ```xml
@@ -179,8 +219,8 @@ POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 
 ## Пользовательский интерфейс
 
-- **WorkflowBuilder** — статус, запуск, редактор BPMN (bpmn-js)
-- **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`
+- **WorkflowBuilder** — статус, запуск, редактор BPMN (bpmn-js); статус продукта **Beta — подмножество BPMN** (см. таблицы выше)
+- **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`; палитра отфильтрована под subset ISPF (`ispfPaletteFilter.ts`). Жёсткий gate — reject при parse (ADR-0047).
 
 ### Диаграмма без разметки (DI)
 
@@ -230,6 +270,17 @@ Content-Type: application/json
 }
 ```
 
+## Доставка сообщения
+
+```http
+POST /api/v1/workflows/instances/{instanceId}/message
+Content-Type: application/json
+
+{"message":"erpAck","operatorId":"operator-1"}
+```
+
+Продолжает `WAITING` экземпляр на message catch с совпадающим именем. Неверное имя → явная ошибка.
+
 ## Срабатывание таймера
 
 ```http
@@ -250,6 +301,7 @@ PUT  /api/v1/workflows/by-path/status?path=...   body: { "status": "ACTIVE" }
 POST /api/v1/workflows/by-path/run?path=...
 POST /api/v1/workflows/instances/{instanceId}/cancel
 POST /api/v1/workflows/instances/{instanceId}/signal
+POST /api/v1/workflows/instances/{instanceId}/message
 POST /api/v1/workflows/instances/{instanceId}/timer
 POST /api/v1/workflows/signal
 ```
@@ -260,4 +312,4 @@ POST /api/v1/workflows/signal
 
 ## Тесты
 
-`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest`, `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`.
+`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (включая reject-list неподдерживаемых элементов), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`.

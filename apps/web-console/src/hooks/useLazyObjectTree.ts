@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchObjects } from "../api";
 import i18n from "../i18n";
 import type { ObjectSummary, TreeNode } from "../types";
-import { buildObjectTree, parentObjectPath } from "../utils/tree";
-import { objectTreeKey } from "../utils/treeRowKey";
+import { buildObjectTree, parentObjectPath } from "../utils/tree/tree";
+import { objectTreeKey } from "../utils/tree/treeRowKey";
 import type { ObjectWsMessage } from "./useObjectWebSocket";
 import { OBJECT_WS_EVENT } from "./useObjectWebSocket";
 

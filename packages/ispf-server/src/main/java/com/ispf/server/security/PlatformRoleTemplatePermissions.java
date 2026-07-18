@@ -1,6 +1,6 @@
 package com.ispf.server.security;
 
-import com.ispf.server.ai.agent.OperatorAgentToolAllowlist;
+import com.ispf.server.security.OperatorAgentToolAllowlist;
 
 import java.util.LinkedHashSet;
 import java.util.List;

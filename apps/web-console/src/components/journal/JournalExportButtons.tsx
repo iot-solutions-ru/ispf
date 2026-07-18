@@ -3,7 +3,7 @@ import {
   downloadJournalExport,
   type JournalExportFormat,
   type JournalExportRow,
-} from "../../utils/journalExport";
+} from "../../utils/journal/journalExport";
 
 interface JournalExportButtonsProps {
   filenameBase: string;

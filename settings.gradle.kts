@@ -81,4 +81,5 @@ include(
     "packages:ispf-ai-api",
     "packages:ispf-ai-openai-compatible",
     "packages:ispf-ai-ollama",
+    "packages:ispf-ai-agent",
 )

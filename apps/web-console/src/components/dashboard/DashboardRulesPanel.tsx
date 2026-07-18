@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import BindingRulesPanel from "../BindingRulesPanel";
+import BindingRulesPanel from "../binding/BindingRulesPanel";
 import { dashboardRuleTemplates } from "./dashboardRuleTemplates";
 import type { DashboardWidget } from "../../types/dashboard";
 

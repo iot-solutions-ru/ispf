@@ -1,7 +1,7 @@
 import { createContext, useRef, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import JournalExportButtons from "./JournalExportButtons";
-import type { JournalExportRow } from "../../utils/journalExport";
+import type { JournalExportRow } from "../../utils/journal/journalExport";
 import EmptyState from "../ui/EmptyState";
 
 export const JournalScrollContext = createContext<RefObject<HTMLDivElement | null> | null>(null);

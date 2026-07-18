@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ShellPreferences from "../ShellPreferences";
+import ShellPreferences from "../ui/ShellPreferences";
 import {
   isOperatorAlarmSoundEnabled,
   isOperatorBrowserNotifyEnabled,
@@ -8,7 +8,7 @@ import {
   setOperatorAlarmSoundEnabled,
   setOperatorBrowserNotifyEnabled,
   OPERATOR_PREFERENCES_CHANGED_EVENT,
-} from "../../utils/operatorPreferences";
+} from "../../utils/operator/operatorPreferences";
 
 export default function OperatorPreferences() {
   const { t } = useTranslation("operator");

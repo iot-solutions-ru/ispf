@@ -1,6 +1,6 @@
 package com.ispf.server.security;
 
-import com.ispf.server.ai.agent.OperatorAgentToolAllowlist;
+import com.ispf.server.security.OperatorAgentToolAllowlist;
 import com.ispf.server.config.IspfRoles;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;

@@ -5,7 +5,7 @@ import { fetchVariables, setVariable } from "../../../api";
 import type { VariableEditorWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { ensureRecord, setFieldValue } from "../../../utils/record";
+import { ensureRecord, setFieldValue } from "../../../utils/ui/record";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 

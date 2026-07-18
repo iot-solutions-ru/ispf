@@ -5,8 +5,8 @@ import { invokeFunction } from "../../api";
 import { proxyFederationFunctionInvoke } from "../../api/federation";
 import type { DataRecord, FunctionDescriptor } from "../../types";
 import DataRecordValueEditor from "../schema/DataRecordValueEditor";
-import { emptyRecord } from "../../utils/record";
-import { cloneSchema } from "../../utils/dataSchema";
+import { emptyRecord } from "../../utils/ui/record";
+import { cloneSchema } from "../../utils/schema/dataSchema";
 
 interface InvokeFunctionDialogProps {
   objectPath: string;

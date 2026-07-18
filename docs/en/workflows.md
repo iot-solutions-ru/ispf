@@ -36,21 +36,41 @@ Workflow object variables:
 
 ## Supported BPMN elements
 
+ISPF implements a **BPMN subset**, not full BPMN 2.0. Engine: pure Java in `ispf-plugin-workflow`. Decision record: [0047-custom-bpmn-subset-engine](decisions/0047-custom-bpmn-subset-engine.md) (**Accepted** 2026-07-18 — subset freeze).
+
 | Element | Support |
 |---------|---------|
 | `startEvent` | Yes |
 | `endEvent` | Yes |
 | `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |
 | `userTask` | Operator queue, claim/complete |
-| `intermediateCatchEvent` | Signal wait (`ispf:signal`) or timer (`ispf:durationSeconds`) |
-| `boundaryEvent` | Timer on user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) |
+| `intermediateCatchEvent` | Signal wait (`ispf:signal`), timer (`ispf:durationSeconds`), or message (`messageEventDefinition` / `ispf:message`) |
+| `boundaryEvent` | Timer on user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) — escalation path |
 | `messageTask` | NATS publish (if enabled) |
 | `exclusiveGateway` | Conditional transitions (CEL) |
 | `parallelGateway` | Fork/join, execution tokens |
-| `subProcess` | Embedded subprocess — enter inner start, exit on inner end (BL-176 stub) |
+| `subProcess` | Embedded subprocess — enter inner start, exit on inner end (nested embedded OK; not event subprocess) |
 | `sequenceFlow` | `ispf:condition`, `ispf:default` |
+| Message catch / throw | Yes — catch waits until `deliverMessage`; throw is `intermediateThrowEvent` + `messageEventDefinition` (non-message throw rejected at parse) |
 
 Extension namespace: `http://ispf.io/bpmn` (prefix `ispf:`).
+
+## Not supported (explicit non-goals)
+
+These are **out of the ISPF subset**. The parser **rejects** them with a clear error (ADR-0047 freeze); do not rely on silent ignore. WorkflowBuilder palette must not imply support.
+
+| Element / feature | Status |
+|-------------------|--------|
+| `callActivity` | Not supported |
+| Multi-instance (`multiInstanceLoopCharacteristics`) | Not supported |
+| `inclusiveGateway` | Not supported |
+| `eventBasedGateway` | Not supported |
+| Compensation / compensate events | Not supported |
+| Event subprocess | Not supported |
+| DMN / business rule task | Not supported |
+| Full BPMN 2.0 import from Camunda/Flowable models | Not a goal — design against this page |
+
+Generic BPMN pasted from other tools will often fail or behave incorrectly until it is reduced to the supported table.
 
 ## ISPF attributes
 
@@ -118,6 +138,26 @@ The condition is a CEL expression evaluated in the context of workflow instance 
 
 The instance moves to `WAITING` until the signal is delivered. As an alternative to cancellation via the cancel API, an incident can "wake" the process and continue the handling branch.
 
+### intermediateCatchEvent (message)
+
+```xml
+<intermediateCatchEvent id="waitAck" name="Wait ERP ack">
+  <messageEventDefinition messageRef="erpAck"/>
+</intermediateCatchEvent>
+```
+
+Or `ispf:message="erpAck"` on the catch event. The instance waits until `deliverMessage` supplies the matching name.
+
+### intermediateThrowEvent (message)
+
+```xml
+<intermediateThrowEvent id="shipMsg" name="Ship order">
+  <messageEventDefinition messageRef="orderShipped"/>
+</intermediateThrowEvent>
+```
+
+Publishes via the message executor (`channel=bpmn-throw`, subject = message name). Non-message throw definitions are rejected at parse.
+
 ### intermediateCatchEvent (timer)
 
 ```xml
@@ -179,8 +219,8 @@ Definition: `WorkflowDefinitions.DEMO_ALARM_HANDLER`.
 
 ## UI
 
-- **WorkflowBuilder** — status, run, BPMN editor (bpmn-js)
-- **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`
+- **WorkflowBuilder** — status, run, BPMN editor (bpmn-js); product status **Beta — BPMN subset** (see tables above)
+- **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`; palette filtered to the ISPF subset (`ispfPaletteFilter.ts` — no pool/participant, data objects/stores, generic `task`, or group). Hard gate remains parser reject (ADR-0047).
 
 ### Diagram without layout (DI)
 
@@ -230,6 +270,17 @@ Content-Type: application/json
 }
 ```
 
+## Message delivery
+
+```http
+POST /api/v1/workflows/instances/{instanceId}/message
+Content-Type: application/json
+
+{"message":"erpAck","operatorId":"operator-1"}
+```
+
+Continues a `WAITING` instance that is at a message catch for the matching name. Wrong name → clear error.
+
 ## Timer firing
 
 ```http
@@ -250,6 +301,7 @@ PUT  /api/v1/workflows/by-path/status?path=...   body: { "status": "ACTIVE" }
 POST /api/v1/workflows/by-path/run?path=...
 POST /api/v1/workflows/instances/{instanceId}/cancel
 POST /api/v1/workflows/instances/{instanceId}/signal
+POST /api/v1/workflows/instances/{instanceId}/message
 POST /api/v1/workflows/instances/{instanceId}/timer
 POST /api/v1/workflows/signal
 ```
@@ -260,4 +312,4 @@ Tables: `workflow_instances`, `workflow_user_tasks` (Flyway V2).
 
 ## Tests
 
-`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest`, `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`.
+`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (includes unsupported-element reject list), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`.

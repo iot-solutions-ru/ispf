@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import ApplicationDeployPanel from "../ApplicationDeployPanel";
-import { resolveApplicationAppId } from "../../utils/applicationPath";
+import ApplicationDeployPanel from "./ApplicationDeployPanel";
+import { resolveApplicationAppId } from "../../utils/platform/applicationPath";
 
 interface ApplicationObjectPanelProps {
   path: string;

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { AiAgentStep } from "../../api/ai";
-import { buildAgentTurnGraph } from "../../utils/agentTurnGraph";
+import { buildAgentTurnGraph } from "../../utils/agent/agentTurnGraph";
 
 export default function AgentTurnGraph({ steps }: { steps: AiAgentStep[] }) {
   const { t } = useTranslation("ai");

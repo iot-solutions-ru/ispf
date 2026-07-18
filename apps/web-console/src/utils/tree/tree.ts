@@ -1,0 +1,157 @@
+import type { ObjectSummary, TreeNode } from "../../types";
+import { objectTreeKey, treeParentPath } from "./treeRowKey";
+import { APPLICATIONS_ROOT } from "../object/createObjectMode";
+
+/** Hide legacy mirror subfolders under an app; keep the Applications folder and app nodes visible. */
+function isHiddenLegacyApplicationPath(path: string): boolean {
+  if (path === APPLICATIONS_ROOT) {
+    return false;
+  }
+  const prefix = `${APPLICATIONS_ROOT}.`;
+  if (!path.startsWith(prefix)) {
+    return false;
+  }
+  const rest = path.slice(prefix.length);
+  return rest.includes(".");
+}
+
+function compareObjects(a: ObjectSummary, b: ObjectSummary): number {
+  const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+  if (order !== 0) {
+    return order;
+  }
+  return a.displayName.localeCompare(b.displayName, undefined, { sensitivity: "base" });
+}
+
+export function parentObjectPath(path: string): string | null {
+  if (path === "root") {
+    return null;
+  }
+  const dot = path.lastIndexOf(".");
+  return dot === -1 ? "root" : path.slice(0, dot);
+}
+
+/** Direct children of parentPath from a flat object list (lazy tree / reorder). */
+export function siblingObjectPaths(parentPath: string, objects: ObjectSummary[]): string[] {
+  return objects
+    .filter((obj) => {
+      if (obj.groupRef) {
+        return false;
+      }
+      const parent = parentObjectPath(obj.path);
+      return parent === parentPath && !isHiddenLegacyApplicationPath(obj.path);
+    })
+    .sort(compareObjects)
+    .map((obj) => obj.path);
+}
+
+export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
+  const byKey = new Map(objects.map((c) => [objectTreeKey(c), c]));
+  const childMap = new Map<string, ObjectSummary[]>();
+
+  for (const ctx of objects) {
+    if (ctx.groupRef) {
+      const parentPath = treeParentPath(ctx);
+      if (!childMap.has(parentPath)) {
+        childMap.set(parentPath, []);
+      }
+      childMap.get(parentPath)!.push(ctx);
+      continue;
+    }
+    const dot = ctx.path.lastIndexOf(".");
+    const parentPath = dot === -1 ? "" : ctx.path.slice(0, dot);
+    if (!childMap.has(parentPath)) {
+      childMap.set(parentPath, []);
+    }
+    childMap.get(parentPath)!.push(ctx);
+  }
+
+  for (const list of childMap.values()) {
+    list.sort(compareObjects);
+  }
+
+  function build(parentPath: string): TreeNode[] {
+    const children = childMap.get(parentPath) ?? [];
+    return children
+      .filter((c) => byKey.has(objectTreeKey(c)) && !isHiddenLegacyApplicationPath(c.path))
+      .map((object) => ({
+        object,
+        children: object.groupRef
+          ? (object.type === "VISUAL_GROUP" ? build(object.path) : [])
+          : build(object.path),
+      }));
+  }
+
+  const fromEmptyParent = build("");
+  if (fromEmptyParent.length > 0) {
+    return fromEmptyParent;
+  }
+  return build("root");
+}
+
+export function objectIcon(type: string): string {
+  switch (type) {
+    case "ROOT":
+      return "⬢";
+    case "DEVICE":
+      return "◉";
+    case "BLUEPRINT":
+      return "▣";
+    case "DASHBOARD":
+      return "▦";
+    case "APPLICATION":
+      return "▤";
+    case "VISUAL_GROUP":
+      return "◎";
+    case "DATA_SOURCES":
+    case "DATA_SOURCE":
+      return "🗄";
+    case "OPERATOR_APPS":
+      return "🖥";
+    case "REPORT":
+      return "▧";
+    case "USER":
+      return "◎";
+    case "AGENT":
+      return "⬡";
+    default:
+      return "◈";
+  }
+}
+
+export function formatVariableValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+export function recordDisplayValue(record: { rows: Array<Record<string, unknown>> } | null): string {
+  if (!record || record.rows.length === 0) {
+    return "—";
+  }
+  const row = record.rows[0];
+  const keys = Object.keys(row);
+  if (keys.length === 1) {
+    return formatVariableValue(row[keys[0]]);
+  }
+  return JSON.stringify(row, null, 2);
+}
+
+/** Single-line preview for tables (no pretty-print). */
+export function recordCompactValue(
+  record: { rows: Array<Record<string, unknown>> } | null
+): string {
+  if (!record || record.rows.length === 0) {
+    return "—";
+  }
+  const row = record.rows[0];
+  const keys = Object.keys(row);
+  if (keys.length === 1) {
+    return formatVariableValue(row[keys[0]]);
+  }
+  return keys.map((key) => `${key}: ${formatVariableValue(row[key])}`).join(", ");
+}

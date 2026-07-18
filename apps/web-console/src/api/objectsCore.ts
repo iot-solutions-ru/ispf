@@ -11,7 +11,7 @@ import type {
   BindingRule,
 } from "../types";
 import { getAuthHeaders } from "../auth/session";
-import { fetchWithIngressFallback } from "../utils/ingressFetch";
+import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
 import { request, writeHeaders, type ObjectWriteOptions } from "./httpClient";
 
 export function fetchObjects(parent?: string, lite = true): Promise<ObjectSummary[]> {

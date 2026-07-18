@@ -7,7 +7,7 @@ import {
   installOperatorStarters,
   type OperatorAppEntry,
 } from "../../api/operatorApps";
-import ShellPreferences from "../ShellPreferences";
+import ShellPreferences from "../ui/ShellPreferences";
 
 interface OperatorAppLauncherProps {
   onOpenApp: (appId: string) => void;

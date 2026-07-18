@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { loadOperatorAppUi } from "./useOperatorAppsRegistry";
 import type { OperatorUi } from "../types/operatorUi";
-import { operatorAppIdCandidates } from "../utils/operatorAppsPath";
-import { cacheOperatorUi, readCachedOperatorUi } from "../utils/operatorOfflineCache";
+import { operatorAppIdCandidates } from "../utils/operator/operatorAppsPath";
+import { cacheOperatorUi, readCachedOperatorUi } from "../utils/operator/operatorOfflineCache";
 
 async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
   const response = await fetch(`/operator-apps/${appId}.ui.json`);

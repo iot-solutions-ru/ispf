@@ -29,8 +29,8 @@ import OperatorOfflineBadge from "./OperatorOfflineBadge";
 import OperatorFederationPeerSelector from "./OperatorFederationPeerSelector";
 import OperatorVideoWallGrid from "./OperatorVideoWallGrid";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
-import { cachedAtForOperatorUi } from "../../utils/operatorOfflineCache";
-import { syncOperatorCachesOnReconnect } from "../../utils/operatorOfflineSync";
+import { cachedAtForOperatorUi } from "../../utils/operator/operatorOfflineCache";
+import { syncOperatorCachesOnReconnect } from "../../utils/operator/operatorOfflineSync";
 
 interface OperatorDashboardAppProps {
   appId: string;

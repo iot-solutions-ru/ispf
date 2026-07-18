@@ -12,7 +12,7 @@ import {
 import { AgentRunDetails } from "../agent/AgentRunDetails";
 import OperatorAgentArtifactsView from "./OperatorAgentArtifacts";
 import { AgentStarterSuggestions } from "../agent/AgentChatArtifacts";
-import { AgentChatMessageBody } from "../../utils/agentChatMarkdown";
+import { AgentChatMessageBody } from "../../utils/agent/agentChatMarkdown";
 
 interface ChatMessage {
   id: string;

@@ -86,4 +86,5 @@ Risks:
 - [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live telemetry mirror
 - [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven (telemetry only in cluster)
 - [cluster](../cluster.md) — operator guide and troubleshooting
+- [cluster-chaos-soak-runbook](../cluster-chaos-soak-runbook.md) — config-sync chaos steps + CI evidence class
 - ROADMAP BL-143 — integration test + smoke `--config-sync`

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchPlatformLicense } from "../../api/platformLicense";
-import { parseManifestLicense } from "../../utils/bundleLicenseUi";
+import { parseManifestLicense } from "../../utils/platform/bundleLicenseUi";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
 interface BundleLicenseInfoPanelProps {

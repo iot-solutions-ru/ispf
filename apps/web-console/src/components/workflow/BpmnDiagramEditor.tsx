@@ -4,6 +4,7 @@ import BpmnModeler from "bpmn-js/lib/Modeler";
 import ispfModdle from "../../bpmn/ispf-moddle.json";
 import { EMPTY_BPMN } from "../../bpmn/constants";
 import { ensureBpmnDiagram } from "../../bpmn/ensureDiagram";
+import { createIspfPaletteFilterProvider } from "../../bpmn/ispfPaletteFilter";
 import { WORKFLOW_ISPF_ACTIONS, type WorkflowIspfAction } from "../../types/automation";
 import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-js.css";
@@ -78,6 +79,7 @@ export default function BpmnDiagramEditor({ xml, onChange }: BpmnDiagramEditorPr
       container,
       keyboard: { bindTo: document },
       moddleExtensions: { ispf: ispfModdle },
+      additionalModules: [createIspfPaletteFilterProvider()],
     });
     modelerRef.current = modeler;
 

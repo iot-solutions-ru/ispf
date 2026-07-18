@@ -6,7 +6,7 @@ import type { GanttChartWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { cloneRecord } from "../../../utils/record";
+import { cloneRecord } from "../../../utils/ui/record";
 import {
   type GanttRow,
   type GanttViewport,
@@ -21,7 +21,7 @@ import {
   patchGanttRowTimes,
   timeAtTrackPixel,
   zoomGanttViewport,
-} from "../../../utils/ganttChartView";
+} from "../../../utils/analytics/ganttChartView";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { useEditorDemoRows } from "../widgetDemoPreview";

@@ -67,7 +67,7 @@ python deploy/run_lab_scenario.py I-01-mqtt-historian \
 **Exceptions (document explicitly if used):**
 
 - **BL-210 bulk gates** (50k catalog + 1B CH seed) — one reset, then seed phases; do not reset between seed and gate within the same scenario id.
-- **Soak / combined load (Wave 6)** — single reset at start; no reset during the 30–60 min window.
+- **Soak / combined load (Wave 6)** — single reset at start; no reset during the 30–60 min window. Procedures + REAL vs PARTIAL evidence: [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md).
 
 **Time budget:** ~10–20 min per reset (bootstrap + object-tree load). A suite of 25 scenarios ≈ 4–8 h of reset overhead alone — plan parallelization only across **separate lab hosts**, not skipped resets on one host.
 

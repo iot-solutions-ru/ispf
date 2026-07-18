@@ -1,6 +1,6 @@
 package com.ispf.server.cache;
 
-import com.ispf.server.ai.context.PlatformBriefingCacheEpoch;
+import com.ispf.server.cache.PlatformBriefingCacheEpoch;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import org.springframework.context.event.EventListener;

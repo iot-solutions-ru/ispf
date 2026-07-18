@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { setVariable, validateExpression } from "../../api";
 import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
-import { variableBoolean, variableNumber, variableString } from "../../utils/variableFieldValue";
-import { cloneRecord, setFieldValue } from "../../utils/record";
-import ObjectFederationBindSection from "../ObjectFederationBindSection";
+import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
+import { cloneRecord, setFieldValue } from "../../utils/ui/record";
+import ObjectFederationBindSection from "../federation/ObjectFederationBindSection";
 
 interface ProcessProgramInspectorProps {
   path: string;

@@ -8,7 +8,7 @@ import {
 } from "../api";
 import type { TrendPoint } from "./useTrendSeries";
 import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
-import { RECORD_SNAPSHOT_FIELD } from "../utils/variableHistoryFields";
+import { RECORD_SNAPSHOT_FIELD } from "../utils/object/variableHistoryFields";
 
 export { RECORD_SNAPSHOT_FIELD };
 

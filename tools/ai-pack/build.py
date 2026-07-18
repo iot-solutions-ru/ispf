@@ -19,7 +19,7 @@ OUT_DIR = ROOT / "ai" / "context" / "generated"
 SERVER_RESOURCE = (
     ROOT
     / "packages"
-    / "ispf-server"
+    / "ispf-ai-agent"
     / "src"
     / "main"
     / "resources"

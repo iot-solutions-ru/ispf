@@ -102,6 +102,7 @@ Risks:
 - [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven pub/sub
 - [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live variable RAM mirror
 - [roadmap](../roadmap.md) — cluster backlog
-- [cluster](../cluster.md) — runbook
+- [cluster](../cluster.md) — operator guide
+- [cluster-chaos-soak-runbook](../cluster-chaos-soak-runbook.md) — Wave 6 chaos/soak evidence (REAL vs PARTIAL)
 - [deployment](../deployment.md) — multi-instance deploy
 - [messaging](../messaging.md) — NATS replica fan-out

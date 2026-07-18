@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ObjectTree from "../components/ObjectTree";
+import ObjectTree from "../components/objectEditor/ObjectTree";
 import { useLazyObjectTree } from "../hooks/useLazyObjectTree";
 import type { ObjectType } from "../types";
-import { selectionFromObject } from "../utils/treeRowKey";
+import { selectionFromObject } from "../utils/tree/treeRowKey";
 import Modal from "./Modal";
 
 export interface ObjectTreePickerDialogProps {

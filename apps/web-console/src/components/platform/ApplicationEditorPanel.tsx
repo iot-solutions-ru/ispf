@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchObjectEditor } from "../../api";
-import ApplicationDeployPanel from "../ApplicationDeployPanel";
-import { resolveApplicationAppId } from "../../utils/applicationPath";
+import ApplicationDeployPanel from "./ApplicationDeployPanel";
+import { resolveApplicationAppId } from "../../utils/platform/applicationPath";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
 
 interface ApplicationEditorPanelProps {

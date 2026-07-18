@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchVariables } from "../api";
 import { pollDriver, writeDriverPoint } from "../api/drivers";
 import { parseDriverPointMappings, parseDriverWriteValue } from "../utils/driverPointMappings";
-import { variableString } from "../utils/variableFieldValue";
+import { variableString } from "../utils/object/variableFieldValue";
 
 interface DriverWriteFormProps {
   devicePath: string;

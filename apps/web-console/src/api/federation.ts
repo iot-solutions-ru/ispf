@@ -1,5 +1,5 @@
 import { getAuthHeaders } from "../auth/session";
-import { parseApiError } from "../utils/parseApiError";
+import { parseApiError } from "../utils/ui/parseApiError";
 
 export type FederationAuthMode = "STATIC_TOKEN" | "SERVICE_ACCOUNT";
 export type FederationAuthStatus = "OK" | "EXPIRING" | "FAILED";

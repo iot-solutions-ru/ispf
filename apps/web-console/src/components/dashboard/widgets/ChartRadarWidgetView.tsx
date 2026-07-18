@@ -13,10 +13,10 @@ import type { ChartWidget } from "../../../types/dashboard";
 import { useChartRadarSeries } from "../../../hooks/useChartRadarSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
-import { CHART_POLAR_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/chartTheme";
+import { CHART_POLAR_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import WidgetDragHandle from "../WidgetDragHandle";
 import { parseDemoPreview } from "../widgetDemoPreview";
-import { parseDemoRadarRows } from "../../../utils/chartRadarBubbleUtils";
+import { parseDemoRadarRows } from "../../../utils/analytics/chartRadarBubbleUtils";
 
 interface ChartRadarWidgetViewProps {
   widget: ChartWidget;

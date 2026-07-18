@@ -10,7 +10,7 @@ import {
   type HistoryRange,
 } from "./useVariableHistory";
 import { readFieldValue } from "../types/dashboard";
-import { isPlottableTelemetryQuality, readRowQuality } from "../utils/telemetryQuality";
+import { isPlottableTelemetryQuality, readRowQuality } from "../utils/analytics/telemetryQuality";
 import {
   appendCoalescedTrendPoint,
   coalesceTrendPoints,
@@ -18,7 +18,7 @@ import {
   liveAggregateFromIso,
   resolveChartHistoryBucket,
   resolveEffectiveSampleMode,
-} from "../utils/chartSampling";
+} from "../utils/analytics/chartSampling";
 import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
 
 export interface TrendPoint {

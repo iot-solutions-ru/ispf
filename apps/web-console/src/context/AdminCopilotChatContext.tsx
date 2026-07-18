@@ -40,7 +40,7 @@ import {
   saveCopilotPrefs,
   upsertChatEntry,
   type AgentChatIndex,
-} from "../utils/agentChatStorage";
+} from "../utils/agent/agentChatStorage";
 import i18n from "../i18n";
 
 export interface CopilotChatMessage {

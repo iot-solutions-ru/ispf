@@ -7,7 +7,7 @@ import {
   isCalendarHistoryRange,
   type HistoryRange,
 } from "./useVariableHistory";
-import { resolveChartHistoryBucket } from "../utils/chartSampling";
+import { resolveChartHistoryBucket } from "../utils/analytics/chartSampling";
 
 const MULTI_SERIES_COLORS = ["#2f81f7", "#e67e22", "#27ae60", "#9b59b6", "#e74c3c", "#16a085"];
 /** Multi-tag query is heavier than live binding; still advance the window often enough to show motion. */

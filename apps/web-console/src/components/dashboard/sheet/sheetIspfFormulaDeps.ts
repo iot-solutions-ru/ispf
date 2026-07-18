@@ -1,6 +1,6 @@
 import type { SheetConfig } from "../../../types/dashboard";
 import type { SheetValues } from "./sheetFormulaEngine";
-import { fieldsFromRef } from "../../../utils/platformRef";
+import { fieldsFromRef } from "../../../utils/platform/platformRef";
 
 export interface IspfFormulaVarRef {
   objectPath: string;

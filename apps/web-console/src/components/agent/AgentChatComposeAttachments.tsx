@@ -8,7 +8,7 @@ import {
   providerAllowsImages,
   revokeAttachmentPreviews,
   type AgentChatAttachment,
-} from "../../utils/agentChatAttachments";
+} from "../../utils/agent/agentChatAttachments";
 
 export interface AgentChatComposeAttachmentsProps {
   provider: AiProviderStatus | undefined;

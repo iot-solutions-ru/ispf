@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { isLicenseRelatedError, licenseErrorHintKey } from "../../utils/bundleLicenseUi";
+import { isLicenseRelatedError, licenseErrorHintKey } from "../../utils/platform/bundleLicenseUi";
 
 interface BundleLicenseErrorAlertProps {
   error: unknown;

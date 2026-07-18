@@ -1,5 +1,5 @@
 import type { AuthMe } from "../api";
-import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingressFetch";
+import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingress/ingressFetch";
 import {
   clearStoredSession,
   getStoredSession,

@@ -14,8 +14,8 @@ import {
   parseDemoNetworkGraphPreview,
   parseNetworkGraphData,
   toCytoscapeElements,
-} from "../../../utils/networkGraphData";
-import { useThemeColors } from "../../../utils/themeColors";
+} from "../../../utils/analytics/networkGraphData";
+import { useThemeColors } from "../../../utils/ui/themeColors";
 
 interface NetworkGraphWidgetViewProps {
   widget: NetworkGraphWidget;

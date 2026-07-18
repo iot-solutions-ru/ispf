@@ -18,7 +18,7 @@ export interface PlatformUpdateStatus {
 }
 
 import { getAuthHeaders } from "../auth/session";
-import { parseApiError } from "../utils/parseApiError";
+import { parseApiError } from "../utils/ui/parseApiError";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {

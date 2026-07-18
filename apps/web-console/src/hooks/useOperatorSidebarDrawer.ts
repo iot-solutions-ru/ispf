@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { shouldLockBodyForOperatorSidebar } from "../utils/operatorShellLayout";
+import { shouldLockBodyForOperatorSidebar } from "../utils/operator/operatorShellLayout";
 
 const SIDEBAR_OPEN_STORAGE_KEY = "ispf-operator-sidebar-open";
 

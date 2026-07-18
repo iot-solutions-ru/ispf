@@ -8,7 +8,7 @@ import {
   CORRELATOR_ACTION_TYPES,
   correlatorActionTargetLabel,
   correlatorActionTargetPlaceholder,
-} from "../../utils/correlatorAction";
+} from "../../utils/automation/correlatorAction";
 import { ObjectPathField } from "../../ui";
 
 interface CreateCorrelatorDialogProps {

@@ -5,7 +5,7 @@ import {
   buildRadarRows,
   parseRadarAxesJson,
   type ChartRadarRow,
-} from "../utils/chartRadarBubbleUtils";
+} from "../utils/analytics/chartRadarBubbleUtils";
 
 export function useChartRadarSeries(
   objectPath: string,

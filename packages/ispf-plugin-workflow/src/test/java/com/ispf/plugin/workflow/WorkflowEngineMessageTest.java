@@ -6,6 +6,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class WorkflowEngineMessageTest {
 
@@ -89,5 +90,26 @@ class WorkflowEngineMessageTest {
 
         assertThat(thrown).containsExactly("erpAck");
         assertThat(instance.status()).isEqualTo(InstanceStatus.COMPLETED);
+    }
+
+    @Test
+    void rejectsWrongMessageNameOnDeliver() throws Exception {
+        WorkflowEngine engine = new WorkflowEngine();
+        BpmnProcess process = engine.parse(MESSAGE_BPMN);
+        WorkflowInstance instance = engine.start("root.workflows.message-demo", process);
+
+        engine.step(instance, process, (task, ignored) -> { }, expr -> true);
+        engine.step(instance, process, (task, ignored) -> { }, expr -> true);
+        assertThat(instance.status()).isEqualTo(InstanceStatus.WAITING);
+
+        assertThatThrownBy(() -> engine.deliverMessage(
+                instance,
+                process,
+                "wrongMessage",
+                (task, ignored) -> { },
+                (task, ignored) -> { },
+                expr -> true
+        )).isInstanceOf(WorkflowException.class)
+                .hasMessageContaining("wrongMessage");
     }
 }

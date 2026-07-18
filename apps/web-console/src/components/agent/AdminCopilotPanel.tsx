@@ -8,7 +8,7 @@ import {
 } from "../../context/AdminFocusContext";
 import { AgentRunDetails } from "./AgentRunDetails";
 import AgentChatArtifacts, { AgentStarterSuggestions } from "./AgentChatArtifacts";
-import { AgentChatMessageBody } from "../../utils/agentChatMarkdown";
+import { AgentChatMessageBody } from "../../utils/agent/agentChatMarkdown";
 
 interface AdminCopilotPanelProps {
   open: boolean;

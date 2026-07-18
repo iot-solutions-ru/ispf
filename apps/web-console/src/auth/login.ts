@@ -1,6 +1,6 @@
 import type { AuthSession } from "./session";
 import { clearStoredSession, setStoredSession } from "./session";
-import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingressFetch";
+import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingress/ingressFetch";
 
 export interface LoginResponse {
   token: string;

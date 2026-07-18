@@ -35,3 +35,7 @@ FW-40…43 provide one-shot bundle generation with validation gates. Solution de
 | MCP-only, no in-server agent | Studio and CI need server-side orchestration |
 | Native OpenAI tool_calls only | Breaks Ollama/custom providers; JSON ReAct is portable |
 | Auto-import without gates | Violates 0004 |
+
+## Amendment (2026-07-18) — Gradle module
+
+Per [0048](0048-server-modularization-seams.md) Wave 3, agent/tool sources under `com.ispf.server.ai.*` live in Gradle module `packages/ispf-ai-agent` (package names unchanged). REST paths `/api/v1/ai/**` remain stable; the server app soft-wires the module onto the runtime classpath and component-scans `com.ispf.server`.

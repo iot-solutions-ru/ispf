@@ -1,5 +1,7 @@
 {
   "kicker": "Workflow · BPMN / NATS",
+  "betaBadge": "Beta — BPMN subset",
+  "betaHint": "ISPF implements a BPMN subset (not full 2.0). The palette hides unsupported shapes; unsupported XML is rejected when saving/parsing.",
   "loading": "Loading workflow…",
   "loadError": "Failed to load workflow: {{message}}",
   "status.draft": "Draft",

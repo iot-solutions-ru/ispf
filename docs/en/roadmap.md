@@ -1108,7 +1108,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-173 | **Queries engine** | P2 | Dynamic cross-object queries in tree |
 | BL-174 | **Event filters** | P3 | Reusable event log filters |
 | BL-175 | **ML hooks** | P3 | Anomaly detection SPI + reference model |
-| BL-176 | **BPMN expansion** | P2 | Message events, escalation, compensation, DMN lite — [workflows](workflows.md) |
+| BL-176 | **BPMN subset freeze** | P2 | Embedded subprocess + message catch/throw; parse reject of unsupported elements — [workflows](workflows.md), [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) |
 
 **Phase metric:** escalation + CEP + process program in one project without ad-hoc scripts.
 
@@ -1227,7 +1227,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-173 | 30 | Queries engine | P2 | Partial |
 | BL-174 | 30 | Event filters | P3 | Partial |
 | BL-175 | 30 | ML hooks | P3 | Partial |
-| BL-176 | 30 | BPMN expansion | P2 | Partial (subprocess stub; message events) |
+| BL-176 | 30 | BPMN subset freeze | P2 | **Done** — embedded/nested `subProcess`; message catch/throw; parse reject (`callActivity`, multi-instance, inclusive/event-based gateways, compensation, event subprocess, DMN); ADR-0047 Accepted |
 | BL-177 | 31 | End-to-end agent deploy | P0 | **Partial→Done (one-shot)** — live LLM `AgentLiveDeploySmokeTest` + `run_deploy_playbook` for `mes-platform`; full multi-app path still hardening |
 | BL-178 | 31 | Agent regression suite | P0 | Partial→Done (bundle path) — schema 52 + `AgentBundleDeploySuiteTest` ≥95% no-LLM; live LLM full suite still on-demand via `run-live-suite.sh` |
 | BL-179 | 31 | Operator agent GA | P1 | **Done** — scoped tools + memory + ru/en; `OperatorAgentContinuityIntegrationTest` (memory across turns, scope deny, readonly allowlist) |

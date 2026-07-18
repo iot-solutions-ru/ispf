@@ -255,21 +255,21 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 - [ ] Shared PostgreSQL reachable from all nodes; Flyway migrations applied once
 - [ ] NATS enabled with `ISPF_NATS_REPLICA_EVENTS=true` for cross-replica UI sync
 - [ ] Redis enabled (recommended) for correlator windows / ACL cache
-- [ ] Nginx upstream lists all healthy `ispf-server-*` backends; `/ws/` uses `ip_hash`
+- [ ] Nginx: API upstream round-robin (или least_conn); `/ws/` — `ip_hash` (`deploy/nginx-cluster.conf`)
 - [ ] `GET /api/v1/platform/cluster/health` (admin) — all nodes `UP`, driver locks visible
-- [ ] Smoke: `bash deploy/cluster-smoke-test.sh` (round-robin, REST failover, driver reclaim)
-- [ ] Config sync: `bash deploy/cluster-smoke-test.sh --config-sync` ([0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md))
+- [ ] Smoke: `bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag` (round-robin, failover, reclaim SLO, ADR-0030, ADR-0029 lag)
 - [ ] Scale gate (lab/CI): `python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8`
 - [ ] Kill one replica: REST via LB stays 200; driver locks migrate within TTL + failover scan
+- [ ] Журнал chaos/soak при заявлении HA под нагрузкой: [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md) (REAL vs PARTIAL)
 
 **Automated gates**
 
 | Gate | Command / workflow |
 | ---- | ------------------ |
 | JDBC ownership | `./gradlew :packages:ispf-server:test --tests com.ispf.server.driver.ClusterFailoverIntegrationTest` |
-| Compose smoke | `bash deploy/cluster-smoke-test.sh` |
-| Config/structure sync smoke | `bash deploy/cluster-smoke-test.sh --config-sync` |
+| Compose smoke | `bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag` |
 | Scale-out 1.8× | `python deploy/cluster-scale-load-test.py` |
+| Chaos / soak evidence | [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md) |
 | CI | [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) |
 
 ### Prod VPS (пример single-node)

@@ -8,7 +8,7 @@ import {
   patchFromSession,
   sessionFromServerContext,
   sessionsEqual,
-} from "../utils/dashboardContext";
+} from "../utils/dashboard/dashboardContext";
 import { OBJECT_WS_EVENT, trackObjectPathSubscriptions, type ObjectWsMessage } from "./useObjectWebSocket";
 
 const SYNC_DEBOUNCE_MS = 300;

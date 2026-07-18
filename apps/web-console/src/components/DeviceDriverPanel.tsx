@@ -18,7 +18,7 @@ import { validateDriverPointMappingsJson } from "../utils/driverPointMappingVali
 import {
   buildHaystackMappingTemplate,
   COMMON_HAYSTACK_MARKER_TAGS,
-} from "../utils/haystackMappingHints";
+} from "../utils/object/haystackMappingHints";
 import { pollDriver, browseDriverNodes } from "../api/drivers";
 
 interface DeviceDriverPanelProps {

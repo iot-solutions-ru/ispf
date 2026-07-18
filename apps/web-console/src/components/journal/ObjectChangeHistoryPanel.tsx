@@ -6,9 +6,9 @@ import {
   formatAuditValue,
   hasObjectAuditDiff,
   parseObjectAuditSummary,
-} from "../../utils/objectAuditSummary";
-import { mapObjectAuditExportRow } from "../../utils/journalExport";
-import { sortByNewestFirst } from "../../utils/journalSort";
+} from "../../utils/object/objectAuditSummary";
+import { mapObjectAuditExportRow } from "../../utils/journal/journalExport";
+import { sortByNewestFirst } from "../../utils/journal/journalSort";
 import JournalViewShell, { JOURNAL_VIEW_MODES, type JournalViewMode } from "./JournalViewShell";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 import { usePersistentTab } from "../../hooks/usePersistentTab";

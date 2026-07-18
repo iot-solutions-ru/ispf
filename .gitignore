@@ -56,6 +56,8 @@ deploy/events-*-report-*.json
 deploy/load-test-report-*.json
 deploy/mqtt-*-report-*.json
 deploy/staging/
+deploy/journals/*
+!deploy/journals/.gitkeep
 
 # Marketing site — local / ops only (not product repo)
 marketing/
@@ -100,6 +102,9 @@ deploy/mqtt_loadtest_lib.py
 deploy/events-*
 deploy/cluster-scale-*
 deploy/cluster-smoke-*
+# Keep CI/lab entrypoints tracked (reports / ad-hoc variants stay ignored)
+!deploy/cluster-smoke-test.sh
+!deploy/cluster-scale-load-test.py
 deploy/loadtest*
 deploy/load-test-*
 deploy/check-cbr-*

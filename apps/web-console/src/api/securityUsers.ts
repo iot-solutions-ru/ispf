@@ -1,5 +1,5 @@
 import { getAuthHeaders } from "../auth/session";
-import { parseApiError } from "../utils/parseApiError";
+import { parseApiError } from "../utils/ui/parseApiError";
 
 export interface SecurityUserSummary {
   username: string;

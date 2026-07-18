@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { updateEventFilter, validateExpression } from "../../api";
 import type { EventFilterPayload } from "../../types/automation";
-import { variableBoolean, variableNumber, variableString } from "../../utils/variableFieldValue";
+import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
 import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
-import ObjectFederationBindSection from "../ObjectFederationBindSection";
+import ObjectFederationBindSection from "../federation/ObjectFederationBindSection";
 
 interface EventFilterInspectorProps {
   path: string;

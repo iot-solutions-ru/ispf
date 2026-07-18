@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAuthHeaders } from "../auth/session";
-import { fetchWithIngressFallback } from "../utils/ingressFetch";
+import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
 import type { OperatorManifest } from "../types/operatorManifest";
-import { operatorAppIdCandidates } from "../utils/operatorAppsPath";
+import { operatorAppIdCandidates } from "../utils/operator/operatorAppsPath";
 import {
   cacheOperatorManifest,
   readCachedOperatorManifest,
-} from "../utils/operatorOfflineCache";
+} from "../utils/operator/operatorOfflineCache";
 
 async function loadManifestFromApi(appId: string): Promise<OperatorManifest | null> {
   const response = await fetchWithIngressFallback(

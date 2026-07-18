@@ -46,20 +46,20 @@ import {
   saveAiStudioPrefs,
   upsertChatEntry,
   type AgentChatIndex,
-} from "../utils/agentChatStorage";
+} from "../utils/agent/agentChatStorage";
 import i18n from "../i18n";
 import {
   buildAttachmentApiPayload,
   revokeAttachmentPreviews,
   type AgentChatAttachment,
-} from "../utils/agentChatAttachments";
-import { publishAgentRunStatus } from "../utils/agentRunStatus";
+} from "../utils/agent/agentChatAttachments";
+import { publishAgentRunStatus } from "../utils/agent/agentRunStatus";
 import {
   formatRefinePlanMessage,
   isExecuteIntentSuggestion,
   isPlanApprovalSuggestion,
   type OperatorAgentSuggestion,
-} from "../utils/operatorAgentArtifacts";
+} from "../utils/operator/operatorAgentArtifacts";
 
 export interface ChatMessage {
   id: string;

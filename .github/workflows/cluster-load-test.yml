@@ -122,8 +122,12 @@ jobs:
           docker compose -f deploy/docker-compose.cluster.yml up -d
           sleep 20
 
-      - name: Cluster smoke (round-robin, failover, driver reclaim)
-        run: bash deploy/cluster-smoke-test.sh
+      - name: Cluster smoke (round-robin, failover, reclaim SLO, config-sync, live-var lag)
+        env:
+          ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS: "1"
+          ISPF_CLUSTER_RECLAIM_SLO_SEC: "45"
+          ISPF_CLUSTER_LIVE_VAR_LAG_SLO_MS: "5000"
+        run: bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
 
       - name: Scale-out throughput gate
         run: |

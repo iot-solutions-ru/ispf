@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOptionalUserTimeZone } from "../../context/UserTimeZoneContext";
-import { enrichReportRunParameters } from "../../utils/reportRunParameters";
+import { enrichReportRunParameters } from "../../utils/report/reportRunParameters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteReportTemplate,
@@ -20,7 +20,7 @@ import BffDataTable from "../operator/BffDataTable";
 import ReportExportControls from "./ReportExportControls";
 import PlatformSqlEditorShell from "../platform/PlatformSqlEditorShell";
 import { useDataSourceOptions } from "../platform/useDataSourceOptions";
-import { DATA_SOURCES_ROOT } from "../../utils/systemFolderConfig";
+import { DATA_SOURCES_ROOT } from "../../utils/platform/systemFolderConfig";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import {
   buildDefaultParameters,

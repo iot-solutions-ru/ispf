@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { shouldLockBodyForOperatorSidebar } from "../../utils/operatorShellLayout";
+import { shouldLockBodyForOperatorSidebar } from "../../utils/operator/operatorShellLayout";
 
 interface OperatorShellFrameProps {
   main: ReactNode;

@@ -150,6 +150,7 @@ val prFastBackendTestTasks = listOf(
     ":packages:ispf-plugin-blueprint:test",
     ":packages:ispf-plugin-workflow:test",
     ":packages:ispf-server:test",
+    ":packages:ispf-ai-agent:test",
 )
 
 tasks.register("testPrFast") {
@@ -166,7 +167,7 @@ tasks.register("testNightlyBackend") {
 
 val contextPackScript = layout.projectDirectory.file("tools/ai-pack/build.py")
 val contextPackResource = layout.projectDirectory.file(
-    "packages/ispf-server/src/main/resources/ai/context-pack.json"
+    "packages/ispf-ai-agent/src/main/resources/ai/context-pack.json"
 )
 
 tasks.register<Exec>("buildContextPack") {

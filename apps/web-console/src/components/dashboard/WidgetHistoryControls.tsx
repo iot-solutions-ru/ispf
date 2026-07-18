@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import VariableHistoryModal from "../VariableHistoryModal";
+import VariableHistoryModal from "../objectEditor/VariableHistoryModal";
 
 interface WidgetHistoryControlsProps {
   objectPath: string;

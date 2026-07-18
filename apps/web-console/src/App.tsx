@@ -20,60 +20,60 @@ import {
 import { AuthLoadingCard, AuthLoginGate } from "./shell/AuthBootstrapViews";
 import OperatorShellGate from "./shell/OperatorShellGate";
 import type { EditorTab, ObjectType } from "./types";
-import { resolveEditorObjectType, isSpecializedEditorObject } from "./utils/editorObject";
-import { buildObjectTree } from "./utils/tree";
-import { objectTreeKey, type TreeRowSelection } from "./utils/treeRowKey";
-import { readSelectedPath, writeSelectedPath } from "./utils/treeExpanded";
+import { resolveEditorObjectType, isSpecializedEditorObject } from "./utils/object/editorObject";
+import { buildObjectTree } from "./utils/tree/tree";
+import { objectTreeKey, type TreeRowSelection } from "./utils/tree/treeRowKey";
+import { readSelectedPath, writeSelectedPath } from "./utils/tree/treeExpanded";
 import {
   clearInvalidAdminPathFromUrl,
   resolveInitialAdminPath,
   syncAdminPathToUrl,
-} from "./utils/adminRouting";
+} from "./utils/platform/adminRouting";
 import { useObjectWebSocket, useFederatedPathSubscription } from "./hooks/useObjectWebSocket";
 import { useLazyObjectTree } from "./hooks/useLazyObjectTree";
 import { useMobileLayout } from "./hooks/useMobileLayout";
-import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
-import ObjectTree from "./components/ObjectTree";
-import WorkspaceTabs, { type WorkspaceTabItem } from "./components/WorkspaceTabs";
-import CreateObjectDialog from "./components/CreateObjectDialog";
+import ObjectPropertiesEditor from "./components/objectEditor/ObjectPropertiesEditor";
+import ObjectTree from "./components/objectEditor/ObjectTree";
+import WorkspaceTabs, { type WorkspaceTabItem } from "./components/ui/WorkspaceTabs";
+import CreateObjectDialog from "./components/objectEditor/CreateObjectDialog";
 import {
   emptySession,
   mergeSession,
   type DashboardSession,
   type OpenDashboardOptions,
 } from "./components/dashboard/DashboardContext";
-import AgentChatStatusBar from "./components/AgentChatStatusBar";
-import AgentChatRunBootstrap from "./components/AgentChatRunBootstrap";
-import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
-import ShellPreferences from "./components/ShellPreferences";
+import AgentChatStatusBar from "./components/agent/AgentChatStatusBar";
+import AgentChatRunBootstrap from "./components/agent/AgentChatRunBootstrap";
+import PlatformUpdateBanner from "./components/platform/PlatformUpdateBanner";
+import ShellPreferences from "./components/ui/ShellPreferences";
 import { AgentChatProvider } from "./context/AgentChatContext";
 import { AdminFocusProvider } from "./context/AdminFocusContext";
 import { AdminCopilotChatProvider } from "./context/AdminCopilotChatContext";
 import AdminCopilotFab from "./components/agent/AdminCopilotFab";
 import AdminWorkspaceFocusSync from "./components/agent/AdminWorkspaceFocusSync";
-import CommandPalette from "./components/CommandPalette";
-import { useAgentRunStatus } from "./utils/agentRunStatus";
+import CommandPalette from "./components/ui/CommandPalette";
+import { useAgentRunStatus } from "./utils/agent/agentRunStatus";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
 import {
   isOperatorAppChildPath,
   resolveOperatorAppId as resolveRegistryOperatorAppId,
   resolveOperatorAppIdFromPath,
-} from "./utils/operatorAppsPath";
-import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
+} from "./utils/operator/operatorAppsPath";
+import { APPLICATIONS_ROOT } from "./utils/object/createObjectMode";
 
-const SystemView = lazy(() => import("./components/SystemView"));
-const AiStudioPanel = lazy(() => import("./components/AiStudioPanel"));
+const SystemView = lazy(() => import("./components/platform/SystemView"));
+const AiStudioPanel = lazy(() => import("./components/agent/AiStudioPanel"));
 const ReportBuilder = lazy(() => import("./components/report/ReportBuilder"));
 const WorkflowBuilder = lazy(() => import("./components/workflow/WorkflowBuilder"));
 const DashboardBuilder = lazy(() => import("./components/dashboard/DashboardBuilder"));
-const ExplorerView = lazy(() => import("./components/ExplorerView"));
+const ExplorerView = lazy(() => import("./components/ui/ExplorerView"));
 const DataSourceEditor = lazy(() => import("./components/platform/DataSourceEditor"));
 const MigrationEditor = lazy(() => import("./components/platform/MigrationEditor"));
 const SqlBindingEditor = lazy(() => import("./components/platform/SqlBindingEditor"));
 const ScheduleEditor = lazy(() => import("./components/platform/ScheduleEditor"));
 const MimicEditorPanel = lazy(() => import("./components/scada/MimicEditorPanel"));
-const BlueprintEditorPanel = lazy(() => import("./components/BlueprintEditorPanel"));
+const BlueprintEditorPanel = lazy(() => import("./components/platform/BlueprintEditorPanel"));
 const ApplicationEditorPanel = lazy(() => import("./components/platform/ApplicationEditorPanel"));
 
 function LazyFallback() {

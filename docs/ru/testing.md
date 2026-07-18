@@ -104,7 +104,7 @@ python deploy/events-load-test.py --base-url ${ISPF_BASE_URL:-https://ispf.examp
 python deploy/events-internal-load-test.py --skip-monitor-setup --condition-expr-file deploy/loadtest-sinewave-condition.txt
 ```
 
-## Кассетные испытания (БЛ-137/138)
+## Кластерные испытания (БЛ-137/138 + Wave 6)
 
 Владение драйвером JDBC и аварийное переключение между репликами:
 
@@ -114,15 +114,18 @@ python deploy/events-internal-load-test.py --skip-monitor-setup --condition-expr
   --tests com.ispf.server.driver.ClusterFailoverIntegrationTest
 ```
 
-Составление дыма с несколькими репликами (Docker):
+Compose smoke (Docker, несколько реплик):
 
 ```bash
 bash deploy/cluster-quickstart.sh          # build + up + smoke
-bash deploy/cluster-smoke-test.sh          # round-robin, failover, driver reclaim
+ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS=1 \
+  bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
 python deploy/cluster-scale-load-test.py   # 1 vs 3 replica throughput (floor 1.8×)
 ```
 
-CI: рабочий процесс [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) — владение JDBC (еженедельно) + создание дыма/масштабирования (`workflow_dispatch`).
+CI: [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) — JDBC ownership (еженедельно) + compose smoke/scale (`workflow_dispatch`).
+
+Chaos / soak под нагрузкой (журнал REAL vs PARTIAL): **[cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md)**. CI **не** доказывает multi-hour soak и kill-owner под sustained ingress.
 
 ## CI (рекомендация)
 

@@ -28,6 +28,8 @@
   "instance.title": "实例",
   "ispfReference.hint": "在服务任务上设置 ispf:action 属性及表中的字段（在 XML 或编辑器中）。",
   "ispfReference.title": "ISPF 服务任务操作",
+  "betaBadge": "Beta — BPMN 子集",
+  "betaHint": "ISPF 实现 BPMN 子集（非完整 2.0）。调色板隐藏不支持的图形；不支持的 XML 在保存/解析时会被拒绝。",
   "kicker": "工作流 · BPMN / NATS",
   "lastRun": "上次运行：{{time}}",
   "loadError": "无法加载工作流：{{message}}",

@@ -1,28 +1,30 @@
 package com.ispf.server.platform;
 
-import com.ispf.server.ai.agent.PlatformAgentToolRegistry;
 import com.ispf.server.config.McpProperties;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class PlatformMcpHealthService {
 
     private final McpProperties mcpProperties;
-    private final PlatformAgentToolRegistry toolRegistry;
+    private final Optional<McpToolCatalogPort> toolCatalogPort;
 
-    public PlatformMcpHealthService(McpProperties mcpProperties, PlatformAgentToolRegistry toolRegistry) {
+    public PlatformMcpHealthService(McpProperties mcpProperties, Optional<McpToolCatalogPort> toolCatalogPort) {
         this.mcpProperties = mcpProperties;
-        this.toolRegistry = toolRegistry;
+        this.toolCatalogPort = toolCatalogPort != null ? toolCatalogPort : Optional.empty();
     }
 
     public McpHealth health() {
         boolean enabled = mcpProperties.isEnabled();
+        int toolCount = enabled ? toolCatalogPort.map(McpToolCatalogPort::toolCount).orElse(0) : 0;
         return new McpHealth(
                 enabled,
                 mcpProperties.isStdioEnabled(),
                 mcpProperties.getServerName(),
                 mcpProperties.getProtocolVersion(),
-                enabled ? toolRegistry.toolCatalog().size() : 0,
+                toolCount,
                 enabled ? "/api/v1/ai/mcp" : null
         );
     }

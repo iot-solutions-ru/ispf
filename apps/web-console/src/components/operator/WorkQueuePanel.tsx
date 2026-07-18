@@ -10,7 +10,7 @@ import {
 } from "../../hooks/workQueueCache";
 import type { WorkQueueItem } from "../../types/operator";
 import type { OperatorUi } from "../../types/operatorUi";
-import { filterOperatorSidebarTasks } from "../../utils/operatorSidebarScope";
+import { filterOperatorSidebarTasks } from "../../utils/operator/operatorSidebarScope";
 
 interface WorkQueuePanelProps {
   operatorId?: string;

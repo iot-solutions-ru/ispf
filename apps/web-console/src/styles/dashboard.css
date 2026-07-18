@@ -1,4 +1,4 @@
-/* Split from styles.css lines 2513-5476 — do not reorder imports in index.css */
+/* Split from styles.css lines 2513-5476  do not reorder imports in index.css */
 /* Dashboard builder */
 .dashboard-main {
   padding: 0;
@@ -107,6 +107,13 @@ body.dashboard-editor-fullscreen {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.workflow-toolbar .dashboard-kicker {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .dashboard-title-input {
@@ -1020,7 +1027,7 @@ body.scada-mimic-editor-open {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 }
 
-/* â€”â€” Toolbar â€”â€” */
+/*  Toolbar  */
 .scada-mimic-editor-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1248,7 +1255,7 @@ body.scada-mimic-editor-open {
   margin-top: 0.5rem;
 }
 
-/* â€”â€” Layout â€”â€” */
+/*  Layout  */
 .scada-mimic-editor-body {
   flex: 1;
   min-height: 0;
@@ -1290,7 +1297,7 @@ body.scada-mimic-editor-open {
     var(--bg);
 }
 
-/* â€”â€” Shared panel chrome â€”â€” */
+/*  Shared panel chrome  */
 .scada-panel-header {
   display: flex;
   align-items: center;
@@ -1317,7 +1324,7 @@ body.scada-mimic-editor-open {
   color: var(--accent);
 }
 
-/* â€”â€” Palette â€”â€” */
+/*  Palette  */
 .scada-palette {
   display: flex;
   flex-direction: column;
@@ -1477,7 +1484,7 @@ body.scada-mimic-editor-open {
   font-variant-numeric: tabular-nums;
 }
 
-/* â€”â€” Canvas stage â€”â€” */
+/*  Canvas stage  */
 .scada-canvas-stage {
   display: flex;
   flex-direction: column;
@@ -1572,7 +1579,7 @@ body.scada-mimic-editor-open {
   pointer-events: none;
 }
 
-/* â€”â€” Properties â€”â€” */
+/*  Properties  */
 .scada-props-panel {
   padding: 0 0.85rem 1rem;
 }
@@ -2879,6 +2886,14 @@ body.scada-mimic-editor-open {
 .workflow-pill.status-stopped {
   color: var(--danger);
   border-color: rgba(248, 81, 73, 0.45);
+}
+
+.workflow-pill.workflow-beta {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  font-weight: 600;
 }
 
 .workflow-instance-grid {

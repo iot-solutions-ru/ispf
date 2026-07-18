@@ -1,0 +1,376 @@
+package com.ispf.server.ai.agent;
+
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
+import com.ispf.server.alert.AlertRule;
+import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.server.object.BindingDependencyIndex;
+import com.ispf.server.object.BindingRuleEngine;
+import com.ispf.server.object.BindingRulesService;
+import com.ispf.server.object.ObjectTreePort;
+import com.ispf.server.operator.OperatorAppUiService;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.tenant.TenantScopeService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class AgentAutomationToolsTest {
+
+    @Mock
+    private AutomationTreeService automationTreeService;
+    @Mock
+    private OperatorAppUiService operatorAppUiService;
+    @Mock
+    private ObjectTreePort ObjectTreePort;
+    @Mock
+    private ObjectAccessService objectAccessService;
+    @Mock
+    private TenantScopeService tenantScopeService;
+    @Mock
+    private BindingRulesService bindingRulesService;
+    @Mock
+    private BindingDependencyIndex bindingDependencyIndex;
+    @Mock
+    private BindingRuleEngine bindingRuleEngine;
+    @Mock
+    private AgentRecipeCatalog recipeCatalog;
+
+    private List<PlatformAgentTool> tools;
+    private AgentContext context;
+
+    @BeforeEach
+    void setUp() {
+        tools = AgentAutomationTools.all(
+                automationTreeService,
+                operatorAppUiService,
+                ObjectTreePort,
+                objectAccessService,
+                tenantScopeService,
+                bindingRulesService,
+                bindingDependencyIndex,
+                bindingRuleEngine,
+                recipeCatalog,
+                new ObjectMapper()
+        );
+        context = new AgentContext("admin", null, new AgentRunState());
+    }
+
+    @Test
+    void getAutomationSchemaReturnsDashboardTemplates() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "dashboard"), context);
+        assertEquals("OK", result.get("status"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> dashboard = (Map<String, Object>) result.get("dashboard");
+        @SuppressWarnings("unchecked")
+        List<String> templates = (List<String>) dashboard.get("templates");
+        assertTrue(templates.contains("snmp-host-monitoring"));
+        assertTrue(templates.contains("virtual-cluster-overview"));
+        assertTrue(templates.contains("virtual-cluster-detail"));
+        assertEquals(AgentWidgetCatalog.all().size(), dashboard.get("widgetCount"));
+    }
+
+    @Test
+    void getAutomationSchemaWidgetTopicReturnsFullCatalog() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "widget"), context);
+        assertEquals("OK", result.get("status"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> widgets = (Map<String, Object>) result.get("widgets");
+        assertEquals(AgentWidgetCatalog.all().size(), widgets.get("count"));
+    }
+
+    @Test
+    void getAutomationSchemaRecipesTopicUsesCatalogPagination() throws Exception {
+        when(recipeCatalog.indexSummary(5, 25)).thenReturn(Map.of(
+                "status", "OK",
+                "total", 1,
+                "offset", 5,
+                "limit", 25,
+                "count", 1,
+                "recipes", List.of(Map.of("id", "r-1"))
+        ));
+
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of(
+                "topic", "recipes",
+                "offset", 5,
+                "limit", 25
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> recipes = (Map<String, Object>) result.get("recipes");
+        assertEquals(1, recipes.get("count"));
+        verify(recipeCatalog).indexSummary(5, 25);
+    }
+
+    @Test
+    void searchPlatformRecipesDelegatesToCatalog() throws Exception {
+        when(recipeCatalog.search("pump", "project", "energy", "scada", 20, 3)).thenReturn(Map.of(
+                "status", "OK",
+                "total", 0,
+                "offset", 3,
+                "limit", 20,
+                "count", 0,
+                "recipes", List.of()
+        ));
+
+        PlatformAgentTool tool = requireTool("search_platform_recipes");
+        Map<String, Object> result = tool.execute(Map.of(
+                "query", "pump",
+                "category", "project",
+                "industry", "energy",
+                "archetype", "scada",
+                "limit", 20,
+                "offset", 3
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        verify(recipeCatalog).search("pump", "project", "energy", "scada", 20, 3);
+    }
+
+    @Test
+    void configureAlertUpdatesExistingRule() throws Exception {
+        String path = "root.platform.alert-rules.test-rule";
+        PlatformObject node = new PlatformObject("1", path, ObjectType.ALERT, "Test rule", "", null);
+        when(ObjectTreePort.require(path)).thenReturn(node);
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(automationTreeService.updateAlertRule(
+                eq(path),
+                eq("Test rule"),
+                eq("root.platform.devices.demo-sensor-01"),
+                eq("temperature"),
+                eq("self.temperature[\"value\"] > 85"),
+                eq("highTemp"),
+                eq(""),
+                eq(true),
+                eq(true),
+                eq(0),
+                eq(false),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull()
+        )).thenReturn(new AlertRule(
+                path,
+                "Test rule",
+                "root.platform.devices.demo-sensor-01",
+                "temperature",
+                "self.temperature[\"value\"] > 85",
+                "highTemp",
+                "",
+                true,
+                true,
+                0,
+                false,
+                0,
+                "HIGH",
+                false,
+                "",
+                0,
+                0,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        ));
+
+        PlatformAgentTool tool = requireTool("configure_alert");
+        Map<String, Object> result = tool.execute(Map.of(
+                "path", path,
+                "targetObjectPath", "root.platform.devices.demo-sensor-01",
+                "watchVariable", "temperature",
+                "conditionExpr", "self.temperature[\"value\"] > 85",
+                "eventName", "highTemp"
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        verify(objectAccessService).requireWrite(path, null);
+    }
+
+    @Test
+    void listAutomationReturnsEmptyListsWhenNone() throws Exception {
+        when(automationTreeService.listAlertRules()).thenReturn(List.of());
+        when(automationTreeService.listCorrelators()).thenReturn(List.of());
+
+        PlatformAgentTool tool = requireTool("list_automation");
+        Map<String, Object> result = tool.execute(Map.of(), context);
+
+        assertEquals("OK", result.get("status"));
+        assertEquals(0, result.get("alertCount"));
+        assertEquals(0, result.get("correlatorCount"));
+    }
+
+    @Test
+    void configureOperatorUiSavesDashboardMenu() throws Exception {
+        when(operatorAppUiService.getUi("platform")).thenReturn(Map.of("appId", "platform"));
+        when(operatorAppUiService.saveUi(
+                eq("platform"),
+                eq("Platform HMI"),
+                eq("root.platform.dashboards.virt-cluster-overview"),
+                any()
+        )).thenReturn(Map.of(
+                "appId", "platform",
+                "defaultDashboard", "root.platform.dashboards.virt-cluster-overview"
+        ));
+
+        PlatformAgentTool tool = requireTool("configure_operator_ui");
+        Map<String, Object> result = tool.execute(Map.of(
+                "appId", "platform",
+                "title", "Platform HMI",
+                "defaultDashboard", "root.platform.dashboards.virt-cluster-overview",
+                "dashboards", List.of(Map.of(
+                        "path", "root.platform.dashboards.virt-cluster-overview",
+                        "title", "Overview"
+                ))
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        verify(operatorAppUiService).saveUi(
+                eq("platform"),
+                eq("Platform HMI"),
+                eq("root.platform.dashboards.virt-cluster-overview"),
+                any()
+        );
+    }
+
+    @Test
+    void createBindingRuleHistorianSkipsReactiveCelValidation() throws Exception {
+        String path = "root.platform.devices.virt-cluster.hub";
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(ObjectTreePort.require(path)).thenReturn(
+                new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null)
+        );
+        com.ispf.core.binding.BindingRule saved = new com.ispf.core.binding.BindingRule(
+                "cluster-avg-1m",
+                "1m avg",
+                true,
+                10,
+                com.ispf.core.binding.BindingRuleKind.HISTORIAN,
+                com.ispf.core.binding.BindingActivators.onLocalChange(),
+                "",
+                "avg(root.platform.devices.virt-cluster.dev-01/sineWave, 1m)",
+                new com.ispf.core.binding.BindingTarget("avg1m", "value"),
+                "1m",
+                null
+        );
+        when(bindingRulesService.upsertRule(eq(path), any())).thenReturn(saved);
+
+        PlatformAgentTool tool = requireTool("create_binding_rule");
+        Map<String, Object> result = tool.execute(Map.of(
+                "path", path,
+                "id", "cluster-avg-1m",
+                "ruleKind", "historian",
+                "windowBucket", "1m",
+                "expression", "avg(root.platform.devices.virt-cluster.dev-01/sineWave, 1m)",
+                "targetVariable", "avg1m",
+                "periodicMs", 60000
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        assertEquals("HISTORIAN", result.get("kind"));
+        verify(bindingRulesService).upsertRule(eq(path), any());
+        verify(bindingDependencyIndex).rebuild(path);
+        verify(bindingRuleEngine).runRulesForObject(path);
+    }
+
+    @Test
+    void getAutomationSchemaBindingTopicDocumentsHistorianAvg() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "binding"), context);
+        assertEquals("OK", result.get("status"));
+        assertTrue(String.valueOf(result.get("binding")).contains("avg("));
+        assertTrue(String.valueOf(result.get("binding")).contains("historian"));
+    }
+
+    @Test
+    void configureVariableHistoryEnablesHistorian() throws Exception {
+        String path = "root.platform.devices.virt-cluster.dev-01";
+        Variable sine = new Variable(
+                "sineWave",
+                com.ispf.core.model.DataSchema.builder("v").field("value", com.ispf.core.model.FieldType.DOUBLE).build(),
+                true,
+                true,
+                null,
+                false,
+                null
+        );
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(ObjectTreePort.updateVariableHistory(path, "sineWave", true, null, null, null, null, null)).thenReturn(
+                sine.withHistorySettings(true, null)
+        );
+
+        PlatformAgentTool tool = requireTool("configure_variable_history");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of(
+                "path", path,
+                "name", "sineWave",
+                "historyEnabled", true
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        verify(ObjectTreePort).updateVariableHistory(path, "sineWave", true, null, null, null, null, null);
+    }
+
+    @Test
+    void getAutomationSchemaReturnsGroundTruthGuide() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "groundTruth"), context);
+        assertEquals("OK", result.get("status"));
+        assertTrue(String.valueOf(result.get("groundTruth")).contains("list_objects"));
+    }
+
+    @Test
+    void getAutomationSchemaReturnsProjectBlueprintWithLayerZero() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "projectBlueprint"), context);
+        assertEquals("OK", result.get("status"));
+        assertTrue(String.valueOf(result.get("projectBlueprint")).contains("Ground truth"));
+    }
+
+    private PlatformAgentTool requireTool(String name) {
+        return tools.stream()
+                .filter(tool -> name.equals(tool.name()))
+                .findFirst()
+                .orElseThrow();
+    }
+}

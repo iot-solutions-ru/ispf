@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import type { DataRecord } from "../../types";
-import { cloneRecord, setFieldValue } from "../../utils/record";
-import { defaultForFieldType } from "../../utils/dataSchema";
-import VariableFieldEditor from "../VariableFieldEditor";
+import { cloneRecord, setFieldValue } from "../../utils/ui/record";
+import { defaultForFieldType } from "../../utils/schema/dataSchema";
+import VariableFieldEditor from "../objectEditor/VariableFieldEditor";
 
 interface DataRecordValueEditorProps {
   record: DataRecord;

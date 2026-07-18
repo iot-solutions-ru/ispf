@@ -1,5 +1,5 @@
 import { getAuthHeaders } from "../auth/session";
-import { fetchWithIngressFallback } from "../utils/ingressFetch";
+import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
 import {
   ISPF_OPERATOR_WIRE_PROFILE,
   type BffInvokeRequest,

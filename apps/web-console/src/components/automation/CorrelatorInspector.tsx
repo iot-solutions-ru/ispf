@@ -6,10 +6,10 @@ import {
   CORRELATOR_ACTION_LABEL_KEYS,
   CORRELATOR_ACTION_TYPES,
   correlatorActionTargetLabel,
-} from "../../utils/correlatorAction";
-import { variableBoolean, variableNumber, variableString } from "../../utils/variableFieldValue";
+} from "../../utils/automation/correlatorAction";
+import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
 import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
-import ObjectFederationBindSection from "../ObjectFederationBindSection";
+import ObjectFederationBindSection from "../federation/ObjectFederationBindSection";
 
 interface CorrelatorInspectorProps {
   path: string;

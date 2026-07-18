@@ -6,7 +6,7 @@
 
 Guide to horizontal API scaling: multiple JVM replicas, one object tree in PostgreSQL, live value synchronization via NATS ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
 
-See also: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md), [deployment](deployment.md), [messaging](messaging.md), [bindings](bindings.md).
+See also: [0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md), [deployment](deployment.md), [messaging](messaging.md), [bindings](bindings.md), [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md) (Wave 6 evidence: REAL vs PARTIAL).
 
 ## Cluster ≠ federation
 
@@ -578,17 +578,19 @@ curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8083/api/v1/platform/
 ### Smoke / CI
 
 ```bash
-bash deploy/cluster-smoke-test.sh
-bash deploy/cluster-smoke-test.sh --config-sync
+ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS=1 \
+  bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
 python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8
 ```
+
+Chaos under load and 30–60 min soak (lab journal): [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md).
 
 ### Failover checklist
 
 1. `curl https://ispf.example/api/v1/info` — 200 from any live replica.
 2. Stop one replica — REST through LB without 502.
-3. Driver locks migrate within TTL + failover scan.
-4. HMI on other replicas keeps receiving current values (ADR-0029).
+3. Driver locks migrate within TTL + failover scan (compose smoke SLO default 45s).
+4. HMI on other replicas keeps receiving current values (ADR-0029); smoke `--live-var-lag` covers the API/config path.
 
 ### nginx
 

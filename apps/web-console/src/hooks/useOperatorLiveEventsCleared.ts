@@ -4,7 +4,7 @@ import {
   clearVisibleLiveEvents,
   getLiveEventsClearedAtMs,
   operatorLiveEventsClearedKey,
-} from "../utils/operatorLiveEventsCleared";
+} from "../utils/operator/operatorLiveEventsCleared";
 
 export function useOperatorLiveEventsCleared(appId?: string) {
   const subscribe = useCallback(

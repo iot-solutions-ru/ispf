@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import LoginView from "../components/LoginView";
-import ShellPreferences from "../components/ShellPreferences";
+import LoginView from "../components/ui/LoginView";
+import ShellPreferences from "../components/ui/ShellPreferences";
 import type { AuthSession } from "../auth/session";
 
 export function AuthLoadingCard() {

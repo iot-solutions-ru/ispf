@@ -6,7 +6,7 @@ import type {
 } from "../../types/automation";
 import { ObjectPathField } from "../../ui";
 import { VariableSelect } from "../dashboard/widgetEditorStructured";
-import { formatUserDateTime } from "../../utils/formatDateTime";
+import { formatUserDateTime } from "../../utils/ui/formatDateTime";
 
 function RequiredMark() {
   const { t } = useTranslation("automation");

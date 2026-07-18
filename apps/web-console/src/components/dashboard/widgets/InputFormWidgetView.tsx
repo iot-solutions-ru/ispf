@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchObjects, fetchVariables, setVariable } from "../../../api";
 import type { InputFormField, InputFormWidget } from "../../../types/dashboard";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { cloneRecord, setFieldValue } from "../../../utils/record";
+import { cloneRecord, setFieldValue } from "../../../utils/ui/record";
 import DashWidgetShell from "../DashWidgetShell";
 import { parseJsonArray } from "../dashboardUtils";
 import { useWidgetStyles } from "../widgetStyles";

@@ -105,5 +105,6 @@ Risks:
 - [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven pub/sub (complements cluster; update: horizontal scale = N JVMs + shared DB, not only bigger host)
 - [roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139) — EX-CLUSTER implementation backlog
 - [deployment](../deployment.md) — Multi-instance cluster runbook
+- [cluster-chaos-soak-runbook](../cluster-chaos-soak-runbook.md) — Wave 6 chaos/soak (REAL vs PARTIAL)
 - [MESSAGING](../MESSAGING.md) — NATS replica fan-out
 - [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live variable RAM mirror (closes stale-read gap)

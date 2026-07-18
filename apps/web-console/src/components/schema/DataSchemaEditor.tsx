@@ -6,7 +6,7 @@ import {
   newSchemaField,
   SCHEMA_FIELD_TYPES,
   type SchemaField,
-} from "../../utils/dataSchema";
+} from "../../utils/schema/dataSchema";
 
 interface DataSchemaEditorProps {
   value: DataSchema;

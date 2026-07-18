@@ -9,8 +9,8 @@ import {
   type ObjectVariableInterest,
 } from "./useObjectWebSocket";
 import { variablesRefetchIntervalMs } from "./variablesQueryPolicy";
-import { isOperatorMode } from "../utils/isOperatorMode";
-import { cacheVariables, readCachedVariables } from "../utils/operatorOfflineCache";
+import { isOperatorMode } from "../utils/operator/isOperatorMode";
+import { cacheVariables, readCachedVariables } from "../utils/operator/operatorOfflineCache";
 
 function mayUseOfflineVariablesCache(error: unknown): boolean {
   if (!(error instanceof Error)) {

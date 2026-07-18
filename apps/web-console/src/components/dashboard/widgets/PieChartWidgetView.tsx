@@ -8,7 +8,7 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { useEditorDemoRows } from "../widgetDemoPreview";
-import { CHART_TOOLTIP_STYLE } from "../../../utils/chartTheme";
+import { CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 
 const SLICE_COLORS = ["#2f81f7", "#3fb950", "#d29922", "#f85149", "#a371f7", "#39c5cf"];
 

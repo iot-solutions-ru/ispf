@@ -151,5 +151,6 @@ Risks:
 - [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) — demand-driven publish + global interest extension
 - [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) — structure/config CRUD replica sync
 - [cluster](../cluster.md) — operator guide with SNMP walkthrough and tuning
+- [cluster-chaos-soak-runbook](../cluster-chaos-soak-runbook.md) — live-var lag smoke + классы доказательств
 - [MESSAGING](../MESSAGING.md) — NATS payload fields
 - BL-140…142 — implementation backlog

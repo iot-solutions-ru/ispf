@@ -1,7 +1,7 @@
 import {
   extractHaystackTagsFromMappingValue,
   suggestHaystackTagsForVariable,
-} from "./haystackMappingHints";
+} from "./object/haystackMappingHints";
 
 export type DriverMappingValidationIssue = {
   level: "error" | "warning" | "hint";

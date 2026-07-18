@@ -7,7 +7,7 @@ import { resolveWidgetPath } from "../dashboardUtils";
 import { useDashboardContext } from "../DashboardContext";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { cloneRecord, setFieldValue } from "../../../utils/record";
+import { cloneRecord, setFieldValue } from "../../../utils/ui/record";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { resolveWidgetMediaSrc } from "../widgetMediaUrl";

@@ -28,6 +28,8 @@
   "instance.title": "Instanz",
   "ispfReference.hint": "Setzen Sie am Service Task das Attribut ispf:action und Felder aus der Tabelle (in XML oder über den Editor).",
   "ispfReference.title": "ISPF Service-Task-Aktionen",
+  "betaBadge": "Beta — BPMN-Teilmenge",
+  "betaHint": "ISPF implementiert eine BPMN-Teilmenge (nicht vollständiges 2.0). Die Palette blendet nicht unterstützte Formen aus; nicht unterstütztes XML wird beim Speichern/Parsen abgelehnt.",
   "kicker": "Arbeitsablauf · BPMN / NATS",
   "lastRun": "Letzte Ausführung: {{time}}",
   "loadError": "Workflow konnte nicht geladen werden: {{message}}",

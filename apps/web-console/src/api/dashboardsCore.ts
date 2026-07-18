@@ -7,15 +7,15 @@ export function fetchDashboard(path: string): Promise<DashboardView> {
   return request(`/api/v1/dashboards/by-path?path=${encodeURIComponent(path)}`);
 }
 
-export function fetchDashboardContext(path: string): Promise<import("../utils/dashboardContext").DashboardContextView> {
+export function fetchDashboardContext(path: string): Promise<import("../utils/dashboard/dashboardContext").DashboardContextView> {
   return request(`/api/v1/dashboards/by-path/context?path=${encodeURIComponent(path)}`);
 }
 
 export function saveDashboardContext(
   path: string,
-  context: import("../utils/dashboardContext").DashboardContextPatch,
+  context: import("../utils/dashboard/dashboardContext").DashboardContextPatch,
   updatedBy?: string
-): Promise<import("../utils/dashboardContext").DashboardContextView> {
+): Promise<import("../utils/dashboard/dashboardContext").DashboardContextView> {
   return request(`/api/v1/dashboards/by-path/context?path=${encodeURIComponent(path)}`, {
     method: "PUT",
     body: JSON.stringify({ context, updatedBy: updatedBy ?? null }),

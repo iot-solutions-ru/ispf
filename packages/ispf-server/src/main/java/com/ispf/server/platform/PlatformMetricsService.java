@@ -1,7 +1,6 @@
 package com.ispf.server.platform;
 
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.ai.agent.AgentMetricsRecorder;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.config.VariableHistoryProperties;
@@ -29,6 +28,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class PlatformMetricsService {
@@ -48,7 +48,7 @@ public class PlatformMetricsService {
     private final ApplicationFunctionStore applicationFunctionStore;
     private final PlatformSchedulerService platformSchedulerService;
     private final AutomationMetricsRecorder automationMetricsRecorder;
-    private final AgentMetricsRecorder agentMetricsRecorder;
+    private final Optional<AgentMetricsPort> agentMetricsPort;
     private final AiProperties aiProperties;
 
     public PlatformMetricsService(
@@ -67,7 +67,7 @@ public class PlatformMetricsService {
             ApplicationFunctionStore applicationFunctionStore,
             PlatformSchedulerService platformSchedulerService,
             AutomationMetricsRecorder automationMetricsRecorder,
-            AgentMetricsRecorder agentMetricsRecorder,
+            Optional<AgentMetricsPort> agentMetricsPort,
             AiProperties aiProperties
     ) {
         this.objectNodeRepository = objectNodeRepository;
@@ -85,7 +85,7 @@ public class PlatformMetricsService {
         this.applicationFunctionStore = applicationFunctionStore;
         this.platformSchedulerService = platformSchedulerService;
         this.automationMetricsRecorder = automationMetricsRecorder;
-        this.agentMetricsRecorder = agentMetricsRecorder;
+        this.agentMetricsPort = agentMetricsPort != null ? agentMetricsPort : Optional.empty();
         this.aiProperties = aiProperties;
     }
 
@@ -106,7 +106,7 @@ public class PlatformMetricsService {
         metrics.put("variableHistory", variableHistoryMetrics());
         metrics.put("automation", automationMetrics());
         if (aiProperties.isEnabled()) {
-            metrics.put("agent", agentMetricsRecorder.agentSnapshot());
+            agentMetricsPort.ifPresent(port -> metrics.put("agent", port.agentSnapshot()));
         }
         return metrics;
     }

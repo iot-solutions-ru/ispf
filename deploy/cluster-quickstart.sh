@@ -31,8 +31,9 @@ docker compose -f deploy/docker-compose.cluster.yml up -d
 echo "==> Waiting for replicas"
 sleep 15
 
-echo "==> Round-robin check via nginx"
-bash deploy/cluster-smoke-test.sh
+echo "==> Round-robin / reclaim / config-sync / live-var lag via nginx"
+ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS=1 \
+  bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
 
 echo
 echo "Cluster quick start ready (lab / localhost only):"

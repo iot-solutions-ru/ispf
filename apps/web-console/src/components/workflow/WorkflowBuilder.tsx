@@ -173,7 +173,12 @@ export default function WorkflowBuilder({
     <div className="workflow-shell">
       <header className="dashboard-toolbar workflow-toolbar">
         <div>
-          <div className="dashboard-kicker">{t("workflow:kicker")}</div>
+          <div className="dashboard-kicker">
+            {t("workflow:kicker")}
+            <span className="workflow-pill workflow-beta" title={t("workflow:betaHint")}>
+              {t("workflow:betaBadge")}
+            </span>
+          </div>
           <h2>{workflow.data?.title ?? path}</h2>
           <code className="path-code">{path}</code>
           <div className="workflow-status-row">

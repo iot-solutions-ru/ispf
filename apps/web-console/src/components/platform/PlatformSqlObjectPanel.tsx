@@ -3,7 +3,7 @@ import {
   isDataSourcePath,
   isMigrationPath,
   isSqlBindingPath,
-} from "../../utils/platformSqlPath";
+} from "../../utils/platform/platformSqlPath";
 
 interface PlatformSqlObjectPanelProps {
   path: string;

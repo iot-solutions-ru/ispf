@@ -11,7 +11,7 @@ import { useDashboardContext, triggerDashboardOpen } from "../DashboardContext";
 import { parseJsonObject, parseWidgetJsonArray, matchesNamePattern, objectTableValueField, formatObjectTableCell } from "../dashboardUtils";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import MultiPenTrendModal from "../../MultiPenTrendModal";
+import MultiPenTrendModal from "../../analytics/MultiPenTrendModal";
 import { createTrendPen, type TrendPen } from "../../../types/trendPen";
 
 const VIRTUALIZE_ROW_THRESHOLD = 50;

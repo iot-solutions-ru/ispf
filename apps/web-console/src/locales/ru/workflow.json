@@ -28,6 +28,8 @@
   "instance.title": "Экземпляр",
   "ispfReference.hint": "На service task задайте атрибут ispf:action и поля из таблицы (в XML или через редактор).",
   "ispfReference.title": "Действия задачи службы ISPF",
+  "betaBadge": "Beta — подмножество BPMN",
+  "betaHint": "ISPF реализует подмножество BPMN (не полный 2.0). Палитра скрывает неподдерживаемые фигуры; неподдерживаемый XML отклоняется при сохранении/разборе.",
   "kicker": "Рабочий процесс · BPMN/NATS",
   "lastRun": "Последний запуск: {{time}}",
   "loadError": "Не удалось загрузить workflow: {{message}}",

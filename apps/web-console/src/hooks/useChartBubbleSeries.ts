@@ -8,7 +8,7 @@ import {
   parseBubblePointsJson,
   zipBubbleTrajectoryPoints,
   type ChartBubblePoint,
-} from "../utils/chartRadarBubbleUtils";
+} from "../utils/analytics/chartRadarBubbleUtils";
 
 export function useChartBubbleSeries(
   objectPath: string,

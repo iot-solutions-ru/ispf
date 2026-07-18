@@ -25,7 +25,7 @@ import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { useDashboardContext } from "../DashboardContext";
 import { resolveWidgetPath } from "../dashboardUtils";
 import DashWidgetShell from "../DashWidgetShell";
-import { cloneRecord, setFieldValue } from "../../../utils/record";
+import { cloneRecord, setFieldValue } from "../../../utils/ui/record";
 import { asBool } from "../../../scada/utils";
 import ScadaMimicCanvas from "../../scada/ScadaMimicCanvas";
 import { ensurePackLoaded } from "../../../scada/symbols/registry";

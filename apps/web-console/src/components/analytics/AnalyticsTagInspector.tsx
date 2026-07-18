@@ -13,9 +13,9 @@ import {
   type AnalyticsExpressionEvaluateResult,
 } from "../../api";
 import type { DataRecord } from "../../types";
-import BindingExpressionField from "../BindingExpressionField";
+import BindingExpressionField from "../binding/BindingExpressionField";
 import { useAnalyticsCatalog } from "../../hooks/useAnalyticsCatalog";
-import { analyticsTagObjectPath } from "../../utils/analyticsPath";
+import { analyticsTagObjectPath } from "../../utils/analytics/analyticsPath";
 
 interface AnalyticsTagInspectorProps {
   path: string;

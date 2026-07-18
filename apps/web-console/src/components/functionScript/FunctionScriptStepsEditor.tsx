@@ -22,7 +22,7 @@ import {
   type ScriptStep,
   type ScriptStepCategory,
   type WhenConditionKind,
-} from "../../utils/functionScriptSteps";
+} from "../../utils/functionScript/functionScriptSteps";
 
 interface FunctionScriptStepsEditorProps {
   value: string;

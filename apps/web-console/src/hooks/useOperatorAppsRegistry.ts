@@ -2,8 +2,8 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { fetchOperatorApps, fetchOperatorAppUi, type OperatorAppEntry } from "../api/operatorApps";
 import { getAuthHeaders } from "../auth/session";
-import { fetchWithIngressFallback } from "../utils/ingressFetch";
-import { operatorAppIdCandidates } from "../utils/operatorAppsPath";
+import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
+import { operatorAppIdCandidates } from "../utils/operator/operatorAppsPath";
 import type { OperatorUi } from "../types/operatorUi";
 
 const BUNDLE_API_PATHS = ["operator-ui", "hmi-ui"] as const;

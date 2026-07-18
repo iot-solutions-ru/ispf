@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import type { AuthSession } from "../auth/session";
 import type { OperatorAppEntry } from "../api/operatorApps";
 import { resolveOperatorAppId } from "../auth/routing";
-import { resolveOperatorAppId as resolveRegistryOperatorAppId } from "../utils/operatorAppsPath";
+import { resolveOperatorAppId as resolveRegistryOperatorAppId } from "../utils/operator/operatorAppsPath";
 
 const OperatorView = lazy(() => import("../components/operator/OperatorView"));
 

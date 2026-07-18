@@ -3,9 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchObject, fetchVariables, updateAlertRule, validateExpression } from "../../api";
 import type { AlertRuleFormValues } from "../../types/automation";
-import { variableBoolean, variableNumber, variableString } from "../../utils/variableFieldValue";
+import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
 import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
-import ObjectFederationBindSection from "../ObjectFederationBindSection";
+import ObjectFederationBindSection from "../federation/ObjectFederationBindSection";
 import AlertRuleFormFields, { toCreateAlertRulePayload } from "./AlertRuleFormFields";
 
 interface AlertRuleInspectorProps {

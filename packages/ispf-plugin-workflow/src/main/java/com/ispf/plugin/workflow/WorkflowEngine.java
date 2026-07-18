@@ -157,7 +157,15 @@ public class WorkflowEngine {
         if (instance.status() != InstanceStatus.WAITING) {
             throw new WorkflowException("Instance is not waiting for message");
         }
-        List<ExecutionToken> resumed = instance.resumeMessage(messageName);
+        List<ExecutionToken> resumed;
+        try {
+            resumed = instance.resumeMessage(messageName);
+        } catch (IllegalStateException e) {
+            throw new WorkflowException(
+                    "No waiting token for message: " + messageName
+                            + " (pending: " + instance.pendingMessageNames() + ")",
+                    e);
+        }
         for (ExecutionToken token : resumed) {
             String catchNodeId = token.currentNodeId();
             advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);

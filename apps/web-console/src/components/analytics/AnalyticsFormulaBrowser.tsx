@@ -2,12 +2,12 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAnalyticsCatalog } from "../../api/analyticsCatalog";
-import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
+import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platform/platformBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
 import ApplyAnalyticsFormulaModal, { type FormulaApplyResult } from "./ApplyAnalyticsFormulaModal";
 import type { BindingFormulaLink } from "../../types";
-import { matchesAnalyticsCatalogKindFilter, type AnalyticsFormulaKindFilter } from "../../utils/analyticsCatalogKindFilter";
+import { matchesAnalyticsCatalogKindFilter, type AnalyticsFormulaKindFilter } from "../../utils/analytics/analyticsCatalogKindFilter";
 
 export type { AnalyticsFormulaKindFilter };
 

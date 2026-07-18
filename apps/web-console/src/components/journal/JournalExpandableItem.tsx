@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { formatJournalJson } from "../../utils/journalDetails";
+import { formatJournalJson } from "../../utils/journal/journalDetails";
 
 export interface JournalDetailSection {
   id: string;

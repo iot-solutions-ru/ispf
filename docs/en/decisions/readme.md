@@ -90,6 +90,13 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0045-java-function-sandbox](0045-java-function-sandbox.md) | Java function sandbox (phase 1) |
 | [0046-nats-cluster-package](0046-nats-cluster-package.md) | NATS cluster package + TRANSIENT persist skip |
 
+### Workflow engine & server seams (0047–0048)
+
+| ID | Title |
+|----|-------|
+| [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) | Custom BPMN subset engine (no Camunda) — **Accepted** |
+| [0048-server-modularization-seams](0048-server-modularization-seams.md) | ObjectTreePort → AI module → ObjectManager — **Accepted** |
+
 ## Topic chains (read in order)
 
 | Topic | ADRs | Runbook |
@@ -97,4 +104,6 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | Cluster HA | [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) → [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) → [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) → [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md) → [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) | [cluster](../cluster.md), [deployment](../deployment.md) |
 | Historian / analytics | [0035-historian-dual-write](0035-historian-dual-write.md) → [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) → [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) → [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | [historian-tiers](../historian-tiers.md), [analytics-platform-roadmap](../analytics-platform-roadmap.md) |
 | Automation / alarms | [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) → [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | [automation](../automation.md) |
+| Workflow / BPMN | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) | [workflows](../workflows.md) |
+| Server modularization | [0048-server-modularization-seams](0048-server-modularization-seams.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | — |
 | Haystack | [0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md) → [0023-haystack-query-runtime](0023-haystack-query-runtime.md) | [semantic-demo](../semantic-demo.md) |

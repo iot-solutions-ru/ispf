@@ -9,9 +9,9 @@ import {
 import { useOperatorLiveEventsCleared } from "../../hooks/useOperatorLiveEventsCleared";
 import type { ObjectEvent } from "../../types/event";
 import type { OperatorUi } from "../../types/operatorUi";
-import { filterOperatorSidebarEvents } from "../../utils/operatorSidebarScope";
-import { filterEventsAfterLiveClear } from "../../utils/operatorLiveEventsCleared";
-import { mapEventJournalExportRow } from "../../utils/journalExport";
+import { filterOperatorSidebarEvents } from "../../utils/operator/operatorSidebarScope";
+import { filterEventsAfterLiveClear } from "../../utils/operator/operatorLiveEventsCleared";
+import { mapEventJournalExportRow } from "../../utils/journal/journalExport";
 import JournalViewShell, { JOURNAL_VIEW_MODES, type JournalViewMode } from "../journal/JournalViewShell";
 import JournalVirtualList from "../journal/JournalVirtualList";
 import JournalExpandableItem from "../journal/JournalExpandableItem";

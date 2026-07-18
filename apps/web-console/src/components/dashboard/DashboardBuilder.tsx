@@ -46,12 +46,12 @@ import { getStoredSession } from "../../auth/session";
 import {
   cacheDashboardView,
   readCachedDashboardView,
-} from "../../utils/operatorOfflineCache";
+} from "../../utils/operator/operatorOfflineCache";
 import { applyLayoutPreset, isVideoWallPreset } from "./dashboardLayoutPresets";
 import { widgetDataBinding } from "./widgetEditorBinding";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
 import type { AdminClientFocus } from "../../context/AdminFocusContext";
-import PathBreadcrumb from "../PathBreadcrumb";
+import PathBreadcrumb from "../ui/PathBreadcrumb";
 
 interface DashboardBuilderProps {
   path: string;

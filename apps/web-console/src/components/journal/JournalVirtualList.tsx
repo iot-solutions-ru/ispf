@@ -1,5 +1,5 @@
 import { Fragment, useMemo, type ReactNode } from "react";
-import { sortByNewestFirst } from "../../utils/journalSort";
+import { sortByNewestFirst } from "../../utils/journal/journalSort";
 
 interface JournalVirtualListProps<T> {
   items: T[];

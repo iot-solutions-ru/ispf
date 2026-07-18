@@ -8,12 +8,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { CandlestickPoint } from "../../../utils/chartOhlcUtils";
+import type { CandlestickPoint } from "../../../utils/analytics/chartOhlcUtils";
 import {
   CHART_GRID_STROKE,
   CHART_TOOLTIP_MUTED_COLOR,
   CHART_TOOLTIP_STYLE,
-} from "../../../utils/chartTheme";
+} from "../../../utils/analytics/chartTheme";
 
 const DEFAULT_DOWN_COLOR = "var(--danger)";
 

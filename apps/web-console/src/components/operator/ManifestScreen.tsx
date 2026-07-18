@@ -20,7 +20,7 @@ import {
   cacheManifestScreenSnapshot,
   readCachedManifestScreenSnapshot,
   screenSupportsOfflineCache,
-} from "../../utils/operatorOfflineCache";
+} from "../../utils/operator/operatorOfflineCache";
 
 interface ManifestScreenProps {
   screen: OperatorManifestScreen;

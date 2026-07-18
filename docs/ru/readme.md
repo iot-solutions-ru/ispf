@@ -108,6 +108,7 @@
 | [Уровни historian](historian-tiers.md) | Beta | JDBC, ClickHouse, dual-write |
 | [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Lab | Продакшен rollout |
 | [Кластер](cluster.md) | Beta | Multi-replica HA (capability vs demostand) |
+| [Cluster chaos / soak runbook](cluster-chaos-soak-runbook.md) | Lab | Wave 6: kill-owner SLO, config sync, live-var lag |
 | [Messaging](messaging.md) | Stable | NATS / MQTT |
 
 </details>

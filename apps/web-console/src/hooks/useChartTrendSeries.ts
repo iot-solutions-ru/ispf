@@ -7,14 +7,14 @@ import {
   candlestickStats,
   livePointsToCandlestickPoints,
   type CandlestickPoint,
-} from "../utils/chartOhlcUtils";
+} from "../utils/analytics/chartOhlcUtils";
 import {
   historyRangeFrom,
   isCalendarHistoryRange,
   type HistoryRange,
 } from "./useVariableHistory";
-import { resolveAnalyticsAggregateBucket, type AnalyticsTemplateRef } from "../utils/analyticsChartBinding";
-import { liveAggregateFromIso, resolveChartHistoryBucket } from "../utils/chartSampling";
+import { resolveAnalyticsAggregateBucket, type AnalyticsTemplateRef } from "../utils/analytics/analyticsChartBinding";
+import { liveAggregateFromIso, resolveChartHistoryBucket } from "../utils/analytics/chartSampling";
 import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
 import { useTrendSeries, type TrendPoint } from "./useTrendSeries";
 

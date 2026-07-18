@@ -1,7 +1,7 @@
 import { getAuthHeaders, getStoredSession } from "../auth/session";
-import { parseApiError } from "../utils/parseApiError";
+import { parseApiError } from "../utils/ui/parseApiError";
 import { invalidateStoredSession } from "../auth/validateSession";
-import { fetchWithIngressFallback } from "../utils/ingressFetch";
+import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
 
 let authFailureCheck: Promise<void> | null = null;
 

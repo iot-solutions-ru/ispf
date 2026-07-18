@@ -3,7 +3,7 @@ import { resolveWidgetPath } from "../components/dashboard/dashboardUtils";
 import { readFieldValue } from "../types/dashboard";
 import type { VariableDto } from "../types";
 import type { MimicBinding, MimicConnection, MimicElement } from "../types/scadaMimic";
-import { fieldsFromRef } from "../utils/platformRef";
+import { fieldsFromRef } from "../utils/platform/platformRef";
 import { asBool, asNum } from "./utils";
 
 export interface ResolvedBindingValues {

@@ -108,6 +108,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | [Historian tiers](historian-tiers.md) | Beta | JDBC, ClickHouse, dual-write |
 | [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Lab | Production rollout |
 | [Cluster](cluster.md) | Beta | Multi-replica HA (capability vs demostand) |
+| [Cluster chaos / soak runbook](cluster-chaos-soak-runbook.md) | Lab | Wave 6 evidence: kill-owner SLO, config sync, live-var lag |
 | [Messaging](messaging.md) | Stable | NATS / MQTT notes |
 
 </details>

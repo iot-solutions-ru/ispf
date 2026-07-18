@@ -15,7 +15,7 @@ import BffDataTable from "../../operator/BffDataTable";
 import ReportExportControls from "../../report/ReportExportControls";
 import { filterReportExportOptions } from "../../report/reportExportOptions";
 import { useOptionalUserTimeZone } from "../../../context/UserTimeZoneContext";
-import { enrichReportRunParameters } from "../../../utils/reportRunParameters";
+import { enrichReportRunParameters } from "../../../utils/report/reportRunParameters";
 
 interface ReportWidgetViewProps {
   widget: ReportWidget;
