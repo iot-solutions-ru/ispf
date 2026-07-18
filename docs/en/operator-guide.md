@@ -38,6 +38,8 @@ An administrator can configure **auto-start** for your account: after sign-in, t
 
 ## Operator HMI Layout
 
+![Operator HMI — Mini-CHP station overview with AI assistant](../assets/ispf-operator-hmi.png)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  [App title]                              [Logout]          │

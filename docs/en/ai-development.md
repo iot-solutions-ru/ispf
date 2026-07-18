@@ -374,6 +374,8 @@ API keys are read from env var name in `api-key-env`; never stored in audit log.
 
 Web Console → **AI Studio** tab (admin only). UI in English; sections: **Agent** | **Bundle** | **Settings**.
 
+![AI Studio — tree-first agent chat](../assets/ispf-ai-studio.png)
+
 **Admin Copilot (floating FAB):** configurators get a bottom-right **AI** helper that is **separate from AI Studio** — own sessions (`ispf-agent-chats-copilot`), default mode **ask**, `clientChannel: copilot`. It is a **here-and-now** helper: no deep chat history is fed to the model (fresh session per question), answers come from the live **focus trail** (`clientFocus.detail.trail` / rules / expression). AI Studio keeps multi-turn history (`ispf-agent-chats`, `clientChannel: studio`) for building solutions. Expression editor: **Ask Copilot** opens the FAB; **Debugger** opens in a separate modal.
 
 **Tree-first agent** (Agent tab):

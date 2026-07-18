@@ -25,7 +25,7 @@ fi
 
 echo "=== BL-177 live one-shot (AgentLiveDeploySmokeTest) ==="
 set +e
-./gradlew :packages:ispf-server:test \
+./gradlew :packages:ispf-ai-agent:test \
   --tests com.ispf.server.ai.agent.AgentLiveDeploySmokeTest \
   --no-daemon
 STATUS=$?

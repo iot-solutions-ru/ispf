@@ -126,6 +126,20 @@ class AgentLiveRegressionSuiteTest {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("id", scenario.id());
         try {
+            // Hybrid first when a bundle is declared — even if playbook is the solution generator.
+            // Avoids flaky LLM plant-spec when deploy tools already prove the path (BL-178).
+            String deployAppId = resolveDeployAppId(scenario);
+            if (deployAppId != null && !deployAppId.isBlank()) {
+                ScenarioCase deployCase = scenario.withAppId(deployAppId);
+                Map<String, Object> hybrid = tryDeployPlaybook(deployCase);
+                if ("OK".equals(hybrid.get("status"))) {
+                    hybrid.put("id", scenario.id());
+                    hybrid.put("path", "tool-playbook");
+                    return hybrid;
+                }
+                row.put("hybridError", hybrid.get("error"));
+            }
+
             if ("AgentSolutionGeneratorPlaybook".equals(scenario.playbook())
                     || "platform-generator-primitives".equals(scenario.id())) {
                 Map<String, Object> generated = solutionGeneratorService.generate(scenario.prompt(), true, "admin");
@@ -140,20 +154,13 @@ class AgentLiveRegressionSuiteTest {
                 }
                 row.put("status", ok ? "OK" : "ERROR");
                 if (!ok) {
-                    row.put("error", "generator live apply incomplete: " + generated.get("mode"));
+                    Object err = generated.get("error");
+                    row.put("error", err != null
+                            ? String.valueOf(err)
+                            : "generator live apply incomplete: " + generated.get("mode"));
                 }
+                row.put("path", "generator");
                 return row;
-            }
-
-            // Hybrid: prove platform deploy path via tools first (no LLM flakiness).
-            if (scenario.appId() != null && !scenario.appId().isBlank()) {
-                Map<String, Object> hybrid = tryDeployPlaybook(scenario);
-                if ("OK".equals(hybrid.get("status"))) {
-                    hybrid.put("id", scenario.id());
-                    hybrid.put("path", "tool-playbook");
-                    return hybrid;
-                }
-                row.put("hybridError", hybrid.get("error"));
             }
 
             var auth = new UsernamePasswordAuthenticationToken(
@@ -261,7 +268,12 @@ class AgentLiveRegressionSuiteTest {
 
     private static String buildPrompt(ScenarioCase scenario) {
         if (scenario.appId() == null || scenario.appId().isBlank()) {
+            String tools = scenario.requiredTools().isEmpty()
+                    ? ""
+                    : "\n\nBL-178 suite: you MUST call these tools (by exact name) before type=finish: "
+                    + String.join(", ", scenario.requiredTools()) + ".";
             return scenario.prompt()
+                    + tools
                     + "\n\nWhen finished, type=finish. Prefer platform tools; do not invent Java.";
         }
         return """
@@ -431,6 +443,32 @@ class AgentLiveRegressionSuiteTest {
         return null;
     }
 
+    /** Map named scenario playbooks to catalog appIds when scenario omits bundle. */
+    private static String resolveDeployAppId(ScenarioCase scenario) {
+        if (scenario.appId() != null && !scenario.appId().isBlank()) {
+            return scenario.appId();
+        }
+        String playbook = scenario.playbook() == null ? "" : scenario.playbook().trim();
+        return switch (playbook) {
+            case "buildingHvacApp", "hvacZoneComfort" -> "building-hvac";
+            case "mesReferenceLifecycle" -> "mes-reference";
+            default -> null;
+        };
+    }
+
+    private static String resolveManifestPath(ScenarioCase scenario, String appId) {
+        if (scenario.manifestPath() != null && !scenario.manifestPath().isBlank()) {
+            return scenario.manifestPath();
+        }
+        if ("building-hvac".equals(appId)) {
+            return "examples/building-hvac-app/bundle.json";
+        }
+        if ("mes-reference".equals(appId)) {
+            return "examples/mes-reference/bundle.json";
+        }
+        return null;
+    }
+
     private record ScenarioCase(
             String id,
             String kind,
@@ -441,5 +479,17 @@ class AgentLiveRegressionSuiteTest {
             List<String> requiredTools,
             List<String> requiredObjectPaths
     ) {
+        ScenarioCase withAppId(String newAppId) {
+            return new ScenarioCase(
+                    id,
+                    kind,
+                    playbook,
+                    prompt,
+                    newAppId,
+                    resolveManifestPath(this, newAppId),
+                    requiredTools,
+                    requiredObjectPaths
+            );
+        }
     }
 }

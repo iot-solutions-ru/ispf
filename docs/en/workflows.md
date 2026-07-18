@@ -237,6 +237,8 @@ Definition: `WorkflowDefinitions.DEMO_ALARM_HANDLER`.
 
 ## UI
 
+![BPMN workflow editor — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
+
 - **WorkflowBuilder** — status, run, BPMN editor (bpmn-js); product status **Beta — BPMN subset** (see tables above)
 - **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`; palette filtered to the ISPF subset (`ispfPaletteFilter.ts` — no pool/participant, data objects/stores, generic `task`, or group). Hard gate remains parser reject (ADR-0047).
 

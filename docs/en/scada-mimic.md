@@ -169,6 +169,8 @@ Stored `points` are updated when endpoints move. Runtime display and reroute alw
 
 ## Editor entry points
 
+![SCADA mimic editor — Facility Overview](../assets/ispf-mimic-editor.png)
+
 - **Dashboard Builder:** widget `scada-mimic` → Open mimic editor
 - **Explorer:** `root.platform.mimics` → create mimic → open `MIMIC` object
 

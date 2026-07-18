@@ -37,6 +37,8 @@ ispf:
 
 **System → Solutions → Marketplace**
 
+![Каталог Marketplace — просмотр и установка solution bundles](../assets/ispf-marketplace.png)
+
 - Выбор endpoint маркетплейса
 - Поиск и фильтрация (free / paid)
 - **Free** — установка в один клик (платформа проксирует download + deploy). Unsigned-манифесты допускаются только на этом пути marketplace install при `ispf.license.require-signed-bundles=true`; прямой `POST .../deploy` по-прежнему требует подписанный блок `license`.

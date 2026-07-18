@@ -182,6 +182,8 @@ http://localhost:5173?mode=operator&app=<appId>
 
 ## Режимы Web Console
 
+![Operator HMI — обзор мини-ТЭЦ](../assets/ispf-operator-hmi.png)
+
 ```mermaid
 flowchart TD
     LOGIN[Login] --> ROLE{Role?}

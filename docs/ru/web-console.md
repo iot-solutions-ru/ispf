@@ -20,6 +20,8 @@ URL: `http://localhost:8080` (JAR) или `http://localhost:5173` (Vite dev)
 | Explorer | Список дочерних объектов |
 | Inspector | Свойства, переменные, события; alert rules и correlators |
 
+![Admin Explorer — дерево объектов и свойства устройства](../assets/ispf-object-tree.png)
+
 ### Редакторы по типу объекта
 
 Двойной клик в дереве:
@@ -35,6 +37,8 @@ URL: `http://localhost:8080` (JAR) или `http://localhost:5173` (Vite dev)
 ### Operator HMI
 
 URL: `http://localhost:8080?mode=operator` (JAR) или `http://localhost:5173?mode=operator` (Vite dev)
+
+![Operator HMI — обзор мини-ТЭЦ с AI-ассистентом](../assets/ispf-operator-hmi.png)
 
 - Полноэкранный дашборд (read-only)
 - Sidebar: work queue + журнал событий
@@ -107,6 +111,8 @@ src/
 
 ## Dashboard builder
 
+![Конструктор дашбордов — палитра виджетов и холст](../assets/ispf-dashboard-builder.png)
+
 - Fine grid **84 колонки**, drag-and-drop, resize
 - Панель добавления виджетов (все 14 типов)
 - `WidgetEditorPanel` — свойства выбранного виджета
@@ -116,6 +122,8 @@ src/
 См. [dashboards](dashboards.md).
 
 ## Workflow builder
+
+![BPMN-редактор workflow — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
 - Переключатель DRAFT / ACTIVE / STOPPED
 - Кнопка Run
@@ -195,6 +203,8 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 ## AI Studio
 
 Вкладка **AI Studio** (admin): режимы **Agent** | **Bundle** | **Settings** (`.tabs`).
+
+![AI Studio — чат tree-first агента](../assets/ispf-ai-studio.png)
 
 - **Agent** — chat sidebar; состояние в `AgentChatProvider` (не размонтируется при переключении вкладок или разделов консоли)
 - **Settings** — LLM provider, список моделей (`GET /ai/models`), Context Pack, session root path, список tools, очистка локального chat cache

@@ -42,6 +42,8 @@ http://<host>:5173?mode=operator&app=platform
 
 ## Макет Operator HMI
 
+![Operator HMI — обзор мини-ТЭЦ с AI-ассистентом](../assets/ispf-operator-hmi.png)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  [App title]                              [Logout]          │

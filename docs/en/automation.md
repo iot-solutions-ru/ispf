@@ -72,6 +72,8 @@ UI: **Explorer** → select a node in `alert-rules` or `correlators` → inspect
 
 CEL rule on variable change. When the condition is true — fire events.
 
+![Alert rule inspector — CEL condition and notification settings](../assets/ispf-alert-rule.png)
+
 ### Fields
 
 | Field | Description |

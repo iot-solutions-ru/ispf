@@ -590,6 +590,8 @@ Sources: `widgetStyles.ts`, `DashWidgetShell.tsx`.
 
 ## Dashboard Builder (UI)
 
+![Dashboard builder — charts, network graph, and spreadsheet widgets](../assets/ispf-dashboard-builder.png)
+
 - **View mode** — live data, refresh per `refreshIntervalMs`
 - **Edit mode** — drag, resize, widget property panel
 - Save: `PUT /api/v1/dashboards/by-path/layout`

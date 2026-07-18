@@ -37,6 +37,8 @@ ispf:
 
 **System → Solutions → Marketplace**
 
+![Marketplace catalog — browse and install solution bundles](../assets/ispf-marketplace.png)
+
 - Select marketplace endpoint
 - Search and filter (free / paid)
 - **Free** — one-click install (platform proxies download + deploy). Unsigned manifests are accepted only on this marketplace install path when `ispf.license.require-signed-bundles=true`; direct `POST .../deploy` still requires a signed `license` block.

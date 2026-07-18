@@ -182,6 +182,8 @@ Details: [security](security.md).
 
 ## Web Console Modes
 
+![Operator HMI — Mini-CHP station overview](../assets/ispf-operator-hmi.png)
+
 ```mermaid
 flowchart TD
     LOGIN[Login] --> ROLE{Role?}

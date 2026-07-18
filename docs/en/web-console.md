@@ -18,6 +18,8 @@ URL: `http://localhost:8080` (all-in-one JAR) or `http://localhost:5173` (Vite d
 | Explorer | List of child objects |
 | Inspector | Properties, variables, events; alert rules and correlators |
 
+![Admin Explorer — object tree and device properties](../assets/ispf-object-tree.png)
+
 ### Object-type editors
 
 Double-click in the tree:
@@ -33,6 +35,8 @@ Double-click in the tree:
 ### Operator HMI
 
 URL: `http://localhost:8080?mode=operator` (JAR) or `http://localhost:5173?mode=operator` (Vite)
+
+![Operator HMI — Mini-CHP station overview with AI assistant](../assets/ispf-operator-hmi.png)
 
 - Full-screen dashboard (read-only)
 - Sidebar: work queue + event journal
@@ -105,6 +109,8 @@ src/
 
 ## Dashboard builder
 
+![Dashboard builder — widget palette and live canvas](../assets/ispf-dashboard-builder.png)
+
 - 84-column fine grid, drag-and-drop, resize
 - Widget add panel (all 14 types)
 - `WidgetEditorPanel` — selected widget properties
@@ -114,6 +120,8 @@ src/
 See [dashboards](dashboards.md).
 
 ## Workflow builder
+
+![BPMN workflow editor — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
 - DRAFT / ACTIVE / STOPPED toggle
 - Run button
@@ -193,6 +201,8 @@ Components: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/f
 ## AI Studio
 
 **AI Studio** tab (admin): **Agent** | **Bundle** | **Settings** modes (`.tabs`).
+
+![AI Studio — tree-first agent chat](../assets/ispf-ai-studio.png)
 
 - **Agent** — chat sidebar; state in `AgentChatProvider` (not unmounted when switching tabs or console sections)
 - **Settings** — LLM provider, model list (`GET /ai/models`), Context Pack, session root path, tool list, clear local chat cache

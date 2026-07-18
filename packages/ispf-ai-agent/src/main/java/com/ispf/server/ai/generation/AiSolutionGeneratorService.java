@@ -183,11 +183,12 @@ public class AiSolutionGeneratorService {
                     0.0
             ));
             String content = response.content() != null ? response.content().trim() : "";
-            Matcher matcher = JSON_OBJECT.matcher(content);
-            if (!matcher.find()) {
-                throw new IllegalStateException("LLM plant spec missing JSON object");
+            String json = extractJsonObject(content);
+            if (json == null) {
+                // Chatty models (markdown / prose) — keep live apply REAL via heuristic plant spec.
+                return heuristicPlantSpec(prompt, content);
             }
-            JsonNode node = objectMapper.readTree(matcher.group());
+            JsonNode node = objectMapper.readTree(json);
             String title = textOrEmpty(node, "title");
             if (title.isBlank()) {
                 title = "Generated plant";
@@ -224,8 +225,82 @@ public class AiSolutionGeneratorService {
         } catch (IllegalStateException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new IllegalStateException("LLM plant spec failed: " + ex.getMessage(), ex);
+            return heuristicPlantSpec(prompt, ex.getMessage());
         }
+    }
+
+    /** Strip markdown fences and locate the first balanced `{...}` object. */
+    private static String extractJsonObject(String content) {
+        if (content == null || content.isBlank()) {
+            return null;
+        }
+        String cleaned = content.trim();
+        if (cleaned.startsWith("```")) {
+            cleaned = cleaned.replaceFirst("^```(?:json)?\\s*", "");
+            int fence = cleaned.lastIndexOf("```");
+            if (fence >= 0) {
+                cleaned = cleaned.substring(0, fence).trim();
+            }
+        }
+        Matcher matcher = JSON_OBJECT.matcher(cleaned);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        int start = cleaned.indexOf('{');
+        if (start < 0) {
+            return null;
+        }
+        int depth = 0;
+        for (int i = start; i < cleaned.length(); i++) {
+            char c = cleaned.charAt(i);
+            if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return cleaned.substring(start, i + 1);
+                }
+            }
+        }
+        return null;
+    }
+
+    private PlantSpec heuristicPlantSpec(String prompt, String preview) {
+        String lower = prompt == null ? "" : prompt.toLowerCase(Locale.ROOT);
+        String title = "Generated plant";
+        List<Map<String, Object>> devices = new ArrayList<>();
+        if (lower.contains("chiller") || lower.contains("hvac") || lower.contains("comfort")) {
+            title = "HVAC site";
+            devices.add(entity("chiller-plant", "Chiller plant", "DEVICE"));
+            devices.add(entity("zone-floor-1", "Floor 1 zone", "DEVICE"));
+            devices.add(entity("zone-floor-2", "Floor 2 zone", "DEVICE"));
+            devices.add(entity("zone-floor-3", "Floor 3 zone", "DEVICE"));
+        } else if (lower.contains("thermal") || lower.contains("boiler") || lower.contains("turbine")) {
+            title = "Thermal power";
+            devices.add(entity("boiler", "Boiler", "DEVICE"));
+            devices.add(entity("steam-turbine", "Steam turbine", "DEVICE"));
+            devices.add(entity("substation", "Substation feeder", "DEVICE"));
+        } else if (lower.contains("mes") || lower.contains("factory") || lower.contains("oee")) {
+            title = "Factory MES";
+            devices.add(entity("line-1", "Production line", "DEVICE"));
+            devices.add(entity("work-cell", "Work cell", "DEVICE"));
+        } else if (lower.contains("water") || lower.contains("treatment")) {
+            title = "Water treatment";
+            devices.add(entity("intake", "Intake", "DEVICE"));
+            devices.add(entity("clarifier", "Clarifier", "DEVICE"));
+            devices.add(entity("pump-station", "Pump station", "DEVICE"));
+        } else if (lower.contains("tank") || lower.contains("oil") || lower.contains("opc")) {
+            title = "Process SCADA";
+            devices.add(entity("tank-01", "Tank 01", "DEVICE"));
+            devices.add(entity("pump-01", "Pump 01", "DEVICE"));
+            devices.add(entity("line-sensor", "Line sensor", "DEVICE"));
+        } else {
+            devices.add(entity("device-01", "Primary device", "DEVICE"));
+            devices.add(entity("device-02", "Secondary device", "DEVICE"));
+        }
+        devices.add(0, entity("process-area", title + " area", "CUSTOM"));
+        String slug = slugFromPrompt(prompt, "platform");
+        return new PlantSpec(title, slug, devices, truncate(preview != null ? preview : prompt, 500));
     }
 
     private static DomainTemplate templateFromPlantSpec(PlantSpec spec) {

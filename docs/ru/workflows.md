@@ -221,6 +221,8 @@ POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 
 ## Пользовательский интерфейс
 
+![BPMN-редактор workflow — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
+
 - **WorkflowBuilder** — статус, запуск, редактор BPMN (bpmn-js); статус продукта **Beta — подмножество BPMN** (см. таблицы выше)
 - **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`; палитра отфильтрована под subset ISPF (`ispfPaletteFilter.ts`). Жёсткий gate — reject при parse (ADR-0047).
 

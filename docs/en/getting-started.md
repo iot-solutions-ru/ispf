@@ -77,6 +77,8 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 
 ### 3. First steps in the UI
 
+![Admin Explorer — object tree after first login](../assets/ispf-object-tree.png)
+
 1. Open the object tree — branch `root.platform`.  
 2. Expand `devices` → `demo-sensor-01` — temperature, threshold, alarm variables.  
 3. Double-click `dashboards.demo-sensor` — **Dashboard Builder**.  

@@ -8,6 +8,8 @@ Complete description of all ISPF widget types: purpose, HMI usage, layout fields
 
 **See also:** [dashboards](dashboards.md) (grid, `selectionKey`, navigation), [operator-guide](operator-guide.md) (operator role), [bindings](bindings.md) (platform bindings in variables), [spreadsheet-widget](spreadsheet-widget.md) (formulas and grids).
 
+![Dashboard widgets — charts, network graph, and spreadsheet on one canvas](../assets/ispf-dashboard-builder.png)
+
 ---
 
 ## Common fields (all widgets)

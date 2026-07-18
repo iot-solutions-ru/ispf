@@ -35,8 +35,10 @@ export AGENT_LIVE_SUITE_ENFORCE="${AGENT_LIVE_SUITE_ENFORCE:-true}"
 
 echo "=== BL-178 live suite (mode=$MODE) ==="
 set +e
-./gradlew :packages:ispf-server:test \
+# Always re-run: outputs depend on AGENT_LIVE_SUITE_MODE / secrets (Gradle UP-TO-DATE would skip).
+./gradlew :packages:ispf-ai-agent:test \
   --tests com.ispf.server.ai.agent.AgentLiveRegressionSuiteTest \
+  --rerun-tasks \
   --no-daemon
 STATUS=$?
 set -e

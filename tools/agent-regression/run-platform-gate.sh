@@ -19,7 +19,7 @@ STATUS_LIVE=SKIP
 
 echo "=== Platform gate: AgentPlatformPrimitiveDeployIntegrationTest ==="
 set +e
-./gradlew :packages:ispf-server:test \
+./gradlew :packages:ispf-ai-agent:test \
   --tests com.ispf.server.ai.agent.AgentPlatformPrimitiveDeployIntegrationTest \
   --no-daemon
 DEPLOY_RC=$?
@@ -30,7 +30,7 @@ fi
 
 echo "=== Platform gate: AiSolutionGeneratorServiceTest ==="
 set +e
-./gradlew :packages:ispf-server:test \
+./gradlew :packages:ispf-ai-agent:test \
   --tests com.ispf.server.ai.generation.AiSolutionGeneratorServiceTest \
   --no-daemon
 GEN_RC=$?
@@ -41,7 +41,7 @@ fi
 
 echo "=== Platform gate: AgentBundleDeploySuiteTest (no LLM) ==="
 set +e
-./gradlew :packages:ispf-server:test \
+./gradlew :packages:ispf-ai-agent:test \
   --tests com.ispf.server.ai.agent.AgentBundleDeploySuiteTest \
   --no-daemon
 BUNDLE_RC=$?
@@ -52,7 +52,7 @@ fi
 
 echo "=== Platform gate: OperatorAgentContinuityIntegrationTest (BL-179) ==="
 set +e
-./gradlew :packages:ispf-server:test \
+./gradlew :packages:ispf-ai-agent:test \
   --tests com.ispf.server.ai.agent.OperatorAgentContinuityIntegrationTest \
   --no-daemon
 CONTINUITY_RC=$?

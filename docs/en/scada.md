@@ -104,6 +104,8 @@ Example layout fragment:
 
 ## Mimic editor
 
+![SCADA mimic editor — main oil pipeline P&ID with symbol library](../assets/ispf-scada-snmp.png)
+
 Open from:
 
 - **Explorer** → `MIMIC` object
