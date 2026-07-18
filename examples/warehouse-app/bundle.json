@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Warehouse Reference App",
   "tablePrefix": "",
   "schemaName": "app_warehouse",
@@ -15,20 +15,37 @@
       "functionName": "warehouse_listLocations",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "location_row",
                 "fields": [
-                  { "name": "code", "type": "STRING", "description": "Код ячейки" },
-                  { "name": "state", "type": "STRING", "description": "Статус ячейки" }
+                  {
+                    "name": "code",
+                    "type": "STRING",
+                    "description": "Код ячейки"
+                  },
+                  {
+                    "name": "state",
+                    "type": "STRING",
+                    "description": "Статус ячейки"
+                  }
                 ]
               }
             }
@@ -44,8 +61,24 @@
   "operatorUi": {
     "appId": "warehouse",
     "title": "Warehouse",
-    "defaultDashboard": "",
-    "dashboards": [],
+    "defaultDashboard": "root.platform.dashboards.warehouse-locations",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.warehouse-locations",
+        "title": "Locations"
+      }
+    ],
     "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
-  }
+  },
+  "metadata": {
+    "changelog": "1.0.1 — Operator warehouse locations dashboard"
+  },
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.warehouse-locations",
+      "title": "Warehouse Locations",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Warehouse\",\"x\":0,\"y\":0,\"w\":84,\"h\":10,\"htmlJson\":\"<p>Locations from <code>wh_location</code> via <code>warehouse_listLocations</code>.</p>\"},{\"id\":\"locations\",\"type\":\"function\",\"title\":\"Locations\",\"x\":0,\"y\":10,\"w\":84,\"h\":32,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"warehouse_listLocations\",\"buttonLabel\":\"List locations\"}]}"
+    }
+  ]
 }

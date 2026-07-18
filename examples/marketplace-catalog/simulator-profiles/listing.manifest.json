@@ -12,12 +12,12 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.0.1",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "simulator",
     "drivers"
   ],
-  "changelog": "Marketplace catalog stub listing for simulator-profiles (BL-183)."
+  "changelog": "1.0.1 — Operator-ready dashboards (install opens UI in Operator)"
 }

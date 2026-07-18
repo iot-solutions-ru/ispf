@@ -12,12 +12,12 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.0.1",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "warehouse",
     "logistics"
   ],
-  "changelog": "Warehouse BFF reference (install creates functions; add Operator dashboards in follow-up)"
+  "changelog": "1.0.1 — Operator-ready dashboards (install opens UI in Operator)"
 }

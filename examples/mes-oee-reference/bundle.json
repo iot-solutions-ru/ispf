@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "MES OEE Reference (BL-121)",
   "tablePrefix": "",
   "schemaName": "app_mes_oee",
@@ -24,25 +24,55 @@
       "functionName": "mes_oee_listShifts",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "shift_row",
                 "fields": [
-                  { "name": "shiftId", "type": "STRING" },
-                  { "name": "lineCode", "type": "STRING" },
-                  { "name": "shiftLabel", "type": "STRING" },
-                  { "name": "plannedMinutes", "type": "INTEGER" },
-                  { "name": "downtimeMinutes", "type": "INTEGER" },
-                  { "name": "totalUnits", "type": "INTEGER" },
-                  { "name": "goodUnits", "type": "INTEGER" }
+                  {
+                    "name": "shiftId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "shiftLabel",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "downtimeMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "totalUnits",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "goodUnits",
+                    "type": "INTEGER"
+                  }
                 ]
               }
             }
@@ -61,19 +91,48 @@
       "descriptor": {
         "inputSchema": {
           "name": "in",
-          "fields": [{ "name": "shiftId", "type": "STRING" }]
+          "fields": [
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            }
+          ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "lineCode", "type": "STRING" },
-            { "name": "shiftLabel", "type": "STRING" },
-            { "name": "availabilityPct", "type": "INTEGER" },
-            { "name": "performancePct", "type": "INTEGER" },
-            { "name": "qualityPct", "type": "INTEGER" },
-            { "name": "oeePct", "type": "INTEGER" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lineCode",
+              "type": "STRING"
+            },
+            {
+              "name": "shiftLabel",
+              "type": "STRING"
+            },
+            {
+              "name": "availabilityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "performancePct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "qualityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "oeePct",
+              "type": "INTEGER"
+            }
           ]
         }
       },
@@ -90,16 +149,31 @@
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "shiftId", "type": "STRING" },
-            { "name": "minutes", "type": "INTEGER" }
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            },
+            {
+              "name": "minutes",
+              "type": "INTEGER"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "downtimeMinutes", "type": "INTEGER" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "downtimeMinutes",
+              "type": "INTEGER"
+            }
           ]
         }
       },
@@ -112,8 +186,24 @@
   "operatorUi": {
     "appId": "mes-oee-reference",
     "title": "MES OEE Reference",
-    "defaultDashboard": "",
-    "dashboards": [],
+    "defaultDashboard": "root.platform.dashboards.mes-oee-reference",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-oee-reference",
+        "title": "OEE"
+      }
+    ],
     "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
-  }
+  },
+  "metadata": {
+    "changelog": "1.0.1 — Operator OEE dashboard (shifts / KPI / downtime)"
+  },
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mes-oee-reference",
+      "title": "MES OEE Reference",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":28,\"y\":0,\"w\":56,\"h\":21,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"downtime\",\"type\":\"function\",\"title\":\"Add downtime\",\"x\":0,\"y\":21,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_oee_addDowntime\",\"buttonLabel\":\"Add 5 min\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\",\\\"minutes\\\":5}\"},{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Hint\",\"x\":42,\"y\":21,\"w\":42,\"h\":21,\"htmlJson\":\"<p>Seed shift <code>LINE-A01 / Morning</code>. Use Add downtime then reload KPI.</p>\"}]}"
+    }
+  ]
 }

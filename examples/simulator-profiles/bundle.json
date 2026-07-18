@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Virtual Simulator Profiles",
   "tablePrefix": "",
   "schemaName": "app_simulator",
@@ -22,7 +22,23 @@
   "operatorUi": {
     "appId": "simulator",
     "title": "Simulator Profiles",
-    "defaultDashboard": "",
-    "dashboards": []
-  }
+    "defaultDashboard": "root.platform.dashboards.simulator-overview",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.simulator-overview",
+        "title": "Overview"
+      }
+    ]
+  },
+  "metadata": {
+    "changelog": "1.0.1 — Operator overview for virtual meter / weighbridge"
+  },
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.simulator-overview",
+      "title": "Simulator Overview",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Profiles\",\"x\":0,\"y\":0,\"w\":84,\"h\":12,\"htmlJson\":\"<p>PF-09 virtual devices: <code>sim-meter-01</code> and <code>sim-weighbridge-01</code>. Bindings come from the virtual driver after connect.</p>\"},{\"id\":\"meter\",\"type\":\"value\",\"title\":\"Meter liters\",\"x\":0,\"y\":12,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.devices.sim-meter-01\",\"variableName\":\"meterLiters\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"L\"},{\"id\":\"weigh\",\"type\":\"value\",\"title\":\"Weighbridge liters\",\"x\":42,\"y\":12,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.devices.sim-weighbridge-01\",\"variableName\":\"meterLiters\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"L\"}]}"
+    }
+  ]
 }

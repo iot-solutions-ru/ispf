@@ -1,17 +1,217 @@
 {
-  "version": "1.0.0",
-  "displayName": "MES Reference",
+  "version": "1.0.1",
+  "displayName": "MES Reference (dispatch / tank / rack)",
   "tablePrefix": "",
-  "schemaName": "app_mes_reference",
-  "metadata": {
-    "changelog": "Catalog stub bundle for mes-reference",
-    "domain": "mes-reference"
-  },
+  "schemaName": "app_mes_ref",
+  "migrations": [
+    {
+      "id": "mes_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_tank (id UUID PRIMARY KEY, tank_code VARCHAR(32) NOT NULL, level_pct INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS mes_dispatch_order (id UUID PRIMARY KEY, order_no VARCHAR(32) NOT NULL, tank_code VARCHAR(32) NOT NULL, volume_liters INTEGER NOT NULL, status VARCHAR(32) NOT NULL); INSERT INTO mes_tank (id, tank_code, level_pct) SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'T-01', 72 WHERE NOT EXISTS (SELECT 1 FROM mes_tank WHERE tank_code = 'T-01'); INSERT INTO mes_dispatch_order (id, order_no, tank_code, volume_liters, status) SELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'DO-1001', 'T-01', 12000, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_dispatch_order WHERE order_no = 'DO-1001'); INSERT INTO mes_dispatch_order (id, order_no, tank_code, volume_liters, status) SELECT 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'DO-1002', 'T-01', 8000, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_dispatch_order WHERE order_no = 'DO-1002');"
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-rack-01",
+      "type": "DEVICE",
+      "displayName": "MES Loading Rack",
+      "description": "Simplified loading rack (эстакада) for MES reference"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "mes_listOrders",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "order_row",
+                "fields": [
+                  {
+                    "name": "orderNo",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "tankCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "volumeLiters",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"orders\",\"sql\":\"SELECT order_no, tank_code, volume_liters, status FROM mes_dispatch_order ORDER BY order_no\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${orders}\",\"fields\":{\"orderNo\":\"${item.order_no}\",\"tankCode\":\"${item.tank_code}\",\"volumeLiters\":\"${item.volume_liters}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "mes_startFilling",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"order\",\"sql\":\"SELECT id, status FROM mes_dispatch_order WHERE order_no = ?\",\"params\":[\"${input.orderNo}\"]},{\"type\":\"failIfNull\",\"var\":\"order\",\"message\":\"Order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"order.status\",\"equals\":\"pending\",\"message\":\"Order is not pending\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_dispatch_order SET status = 'filling' WHERE order_no = ?\",\"params\":[\"${input.orderNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"filling\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "mes_completeFilling",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"order\",\"sql\":\"SELECT id, status FROM mes_dispatch_order WHERE order_no = ?\",\"params\":[\"${input.orderNo}\"]},{\"type\":\"failIfNull\",\"var\":\"order\",\"message\":\"Order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"order.status\",\"equals\":\"filling\",\"message\":\"Order is not filling\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_dispatch_order SET status = 'completed' WHERE order_no = ?\",\"params\":[\"${input.orderNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"completed\"}}]}"
+      }
+    }
+  ],
+  "alertRules": [
+    {
+      "name": "MES rack temperature guard",
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "watchVariable": "temperature",
+      "conditionExpr": "self.temperature[\"value\"] > 85",
+      "eventName": "mesRackOverTemp",
+      "payloadVariable": "temperature",
+      "enabled": true,
+      "edgeTrigger": true,
+      "delaySeconds": 0,
+      "sustainWhileTrue": false
+    }
+  ],
+  "events": [
+    {
+      "id": "mesRackOverTemp",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "id": "mesOrderUpdated",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
+  ],
+  "correlators": [
+    {
+      "name": "MES latch alarm on rack over-temp",
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "patternType": "COUNT",
+      "eventName": "mesRackOverTemp",
+      "windowSeconds": 0,
+      "minOccurrences": 1,
+      "cooldownSeconds": 0,
+      "sequenceGapSeconds": 0,
+      "actionType": "SET_VARIABLE",
+      "actionTarget": "alarmActive=true",
+      "enabled": true
+    }
+  ],
   "operatorUi": {
     "appId": "mes-reference",
     "title": "MES Reference",
-    "defaultDashboard": "",
-    "dashboards": [],
-    "eventJournalObjectPath": "root.platform"
-  }
+    "defaultDashboard": "root.platform.dashboards.mes-reference-dispatch",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-reference-dispatch",
+        "title": "Dispatch"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
+  },
+  "metadata": {
+    "changelog": "1.0.1 — Operator dispatch dashboard (list/start/complete filling)"
+  },
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mes-reference-dispatch",
+      "title": "MES Reference Dispatch",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":0,\"y\":0,\"w\":84,\"h\":10,\"htmlJson\":\"<p>Dispatch orders from <code>mes_dispatch_order</code>. List → start filling (DO-1001) → complete.</p>\"},{\"id\":\"list\",\"type\":\"function\",\"title\":\"Orders\",\"x\":0,\"y\":10,\"w\":42,\"h\":28,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_listOrders\",\"buttonLabel\":\"List orders\"},{\"id\":\"start\",\"type\":\"function\",\"title\":\"Start filling\",\"x\":42,\"y\":10,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_startFilling\",\"buttonLabel\":\"Start DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"},{\"id\":\"complete\",\"type\":\"function\",\"title\":\"Complete filling\",\"x\":42,\"y\":24,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_completeFilling\",\"buttonLabel\":\"Complete DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"}]}"
+    }
+  ]
 }

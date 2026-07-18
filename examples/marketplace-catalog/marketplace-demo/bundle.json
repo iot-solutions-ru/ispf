@@ -1,17 +1,59 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Marketplace Demo",
   "tablePrefix": "",
   "schemaName": "app_marketplace_demo",
   "metadata": {
-    "changelog": "Catalog stub bundle for marketplace-demo",
+    "changelog": "1.0.1 — Operator install-smoke dashboard + notes report",
     "domain": "marketplace-demo"
   },
+  "migrations": [
+    {
+      "id": "demo_note",
+      "sql": "CREATE TABLE IF NOT EXISTS demo_note (id UUID PRIMARY KEY, message VARCHAR(256) NOT NULL); INSERT INTO demo_note (id, message) SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Installed from marketplace' WHERE NOT EXISTS (SELECT 1 FROM demo_note);"
+    }
+  ],
   "operatorUi": {
     "appId": "marketplace-demo",
     "title": "Marketplace Demo",
-    "defaultDashboard": "",
-    "dashboards": [],
+    "defaultDashboard": "root.platform.dashboards.marketplace-demo-home",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.marketplace-demo-home",
+        "title": "Home"
+      }
+    ],
+    "reports": [
+      {
+        "path": "root.platform.reports.install-notes",
+        "title": "Install notes"
+      }
+    ],
+    "defaultReport": "root.platform.reports.install-notes",
     "eventJournalObjectPath": "root.platform"
-  }
+  },
+  "reports": [
+    {
+      "reportId": "install-notes",
+      "title": "Install notes",
+      "description": "Rows from demo_note after marketplace install",
+      "query": "SELECT message FROM demo_note ORDER BY message",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "message",
+          "label": "Message"
+        }
+      ],
+      "maxRows": 100
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.marketplace-demo-home",
+      "title": "Marketplace Demo",
+      "refreshIntervalMs": 15000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"welcome\",\"type\":\"html-snippet\",\"title\":\"Installed\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Marketplace demo bundle installed successfully. Open the install-notes report to verify seed data.</p>\"},{\"id\":\"notes-report\",\"type\":\"report\",\"title\":\"Install notes\",\"x\":0,\"y\":14,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.install-notes\"}]}"
+    }
+  ]
 }
