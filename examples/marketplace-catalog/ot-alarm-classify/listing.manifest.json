@@ -1,0 +1,27 @@
+﻿{
+  "slug": "ot-alarm-classify",
+  "title": "OT Alarm Classify",
+  "description": "ADR-0049 reference: ACTIVE workflow-as-tool with LLM classify, journal, webhook, MCP wf_* publish",
+  "pricing": "free",
+  "appId": "ot-alarm-classify",
+  "artifactKind": "workflow-template",
+  "kind": "workflow-template",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.178",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "workflow",
+    "ai",
+    "adr-0049",
+    "ot-automation"
+  ],
+  "changelog": "1.0.0 — reference alarm classify tool (llm_complete + tool contract + webhook)"
+}

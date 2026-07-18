@@ -11,7 +11,7 @@
 
 ## Предварительные требования
 
-- ISPF ≥ **0.9.177**
+- ISPF ≥ **0.9.178**
 - Bearer-токен admin (или эквивалент)
 - Web Console → Automation → Workflows (или дерево → `WORKFLOW`)
 - Опционально: AI (`ISPF_AI_*`) для LLM / Ask AI; MCP (`ispf.mcp.enabled=true`) для публикации `wf_*`
@@ -35,6 +35,11 @@ export TOKEN=$(curl -s -X POST "$BASE/api/v1/auth/login" \
 | 6 | [Analytics AI](tutorial-ot-analytics-ai.md) | ~15 мин | Agent analysis tools + Ask AI |
 
 Порядок: **1 → 2 → 3**; затем 4–6 по необходимости.
+
+## Эталонный example
+
+Демо-пакет: [examples/ot-alarm-classify](../../examples/ot-alarm-classify/) — ACTIVE alarm classify + webhook + MCP `wf_ot_alarm_classify`.  
+Marketplace: [examples/marketplace-catalog/ot-alarm-classify](../../examples/marketplace-catalog/ot-alarm-classify/).
 
 ## Вне scope
 

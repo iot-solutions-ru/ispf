@@ -11,7 +11,7 @@ These tutorials are **step-by-step**. Use them after you can open Web Console an
 
 ## Prerequisites
 
-- ISPF ≥ **0.9.177** (ADR-0049 waves landed)
+- ISPF ≥ **0.9.178** (ADR-0049 waves landed)
 - Admin (or equivalent) Bearer token
 - Web Console → Automation → Workflows (or object tree → `WORKFLOW`)
 - Optional: AI enabled (`ISPF_AI_*`) for LLM / Ask AI labs; MCP enabled (`ispf.mcp.enabled=true`) for MCP publish labs
@@ -35,6 +35,11 @@ export TOKEN=$(curl -s -X POST "$BASE/api/v1/auth/login" \
 | 6 | [Analytics AI](tutorial-ot-analytics-ai.md) | ~15 min | Agent analysis tools + Ask AI on a tag |
 
 Recommended order: **1 → 2 → 3**; then 4–6 as needed. Journal (1) before AI steps (3); tool contracts (2) before MCP publish.
+
+## Reference example
+
+Deployable demo: [examples/ot-alarm-classify](../../examples/ot-alarm-classify/) — ACTIVE alarm classify tool + webhook + MCP `wf_ot_alarm_classify`.  
+Marketplace listing: [examples/marketplace-catalog/ot-alarm-classify](../../examples/marketplace-catalog/ot-alarm-classify/).
 
 ## What is intentionally out of scope
 

@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "displayName": "OT Alarm Classify (ADR-0049)",
+  "tablePrefix": "oac_",
+  "schemaName": "ot_alarm_classify",
+  "metadata": {
+    "taskVariant": "ot-alarm-classify",
+    "adr": "0049"
+  },
+  "migrations": [],
+  "workflows": [
+    {
+      "path": "root.platform.workflows.ot-alarm-classify",
+      "title": "OT Alarm Classify",
+      "status": "ACTIVE",
+      "toolDescription": "Classify an OT alarm (severity + reason). Args: alarmId (required), optional alarmMessage.",
+      "sideEffectClass": "WRITE",
+      "webhookSlug": "ot-alarm-classify",
+      "inputSchemaJson": "{\"type\":\"object\",\"required\":[\"alarmId\"],\"properties\":{\"alarmId\":{\"type\":\"string\",\"description\":\"Alarm identifier\"},\"alarmMessage\":{\"type\":\"string\",\"description\":\"Free-text alarm text\"}}}",
+      "outputSchemaJson": "{\"type\":\"object\",\"properties\":{\"alarmId\":{\"type\":\"string\"},\"llmClassification\":{\"type\":\"string\"}}}",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n             xmlns:ispf=\"http://ispf.io/bpmn\"\n             targetNamespace=\"http://ispf.io/bpmn\">\n  <process id=\"ot-alarm-classify\" name=\"OT Alarm Classify\" isExecutable=\"true\">\n    <startEvent id=\"start\" name=\"Start\"/>\n    <serviceTask id=\"classify\" name=\"LLM classify\"\n                 ispf:action=\"llm_complete\"\n                 ispf:promptTemplate=\"Classify OT alarm severity for id=${alarmId}. Message: ${alarmMessage}. Reply JSON only with keys severity (info|warning|critical) and reason.\"\n                 ispf:outputVariable=\"llmClassification\"\n                 ispf:outputFormat=\"json\"\n                 ispf:modelRef=\"platform-default\"\n                 ispf:timeoutMs=\"30000\"/>\n    <serviceTask id=\"logResult\" name=\"Log classification\"\n                 ispf:action=\"log\"\n                 ispf:message=\"ot-alarm-classify: ${alarmId} -> ${llmClassification}\"/>\n    <endEvent id=\"end\" name=\"End\"/>\n    <sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"classify\"/>\n    <sequenceFlow id=\"f2\" sourceRef=\"classify\" targetRef=\"logResult\"/>\n    <sequenceFlow id=\"f3\" sourceRef=\"logResult\" targetRef=\"end\"/>\n  </process>\n</definitions>"
+    }
+  ]
+}
