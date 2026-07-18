@@ -104,10 +104,33 @@ public class SystemObjectStructureService {
 
     @Transactional
     public void ensureWorkflowStructure(String path) {
-        if (objectManager.require(path).getVariable("bpmnXml").isPresent()) {
+        if (objectManager.require(path).getVariable("bpmnXml").isEmpty()) {
+            applyIntrinsic("workflow-v1", path);
+        }
+        ensureWorkflowExcellenceVariables(path);
+    }
+
+    private void ensureWorkflowExcellenceVariables(String path) {
+        ensureStringVariable(path, "inputSchemaJson", "{}");
+        ensureStringVariable(path, "outputSchemaJson", "{}");
+        ensureStringVariable(path, "toolDescription", "");
+        ensureStringVariable(path, "sideEffectClass", "WRITE");
+        ensureStringVariable(path, "retryMaxAttempts", "0");
+        ensureStringVariable(path, "retryBackoffSeconds", "30");
+        ensureStringVariable(path, "errorWorkflowPath", "");
+        ensureStringVariable(path, "webhookSlug", "");
+        ensureStringVariable(path, "cronExpression", "");
+    }
+
+    private void ensureStringVariable(String path, String name, String defaultValue) {
+        if (objectManager.require(path).getVariable(name).isPresent()) {
             return;
         }
-        applyIntrinsic("workflow-v1", path);
+        DataSchema schema = DataSchema.builder(name).field("value", FieldType.STRING).build();
+        DataRecord record = DataRecord.single(schema, java.util.Map.of("value", defaultValue));
+        PlatformObject node = objectManager.require(path);
+        node.addVariable(new Variable(name, schema, true, true, record));
+        objectManager.persistNodeTree(path);
     }
 
     @Transactional

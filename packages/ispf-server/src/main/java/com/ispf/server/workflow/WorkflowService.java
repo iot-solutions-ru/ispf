@@ -40,9 +40,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class WorkflowService {
@@ -69,6 +72,9 @@ public class WorkflowService {
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final WorkflowTriggerIndexRefresh triggerIndexRefresh;
     private final ObjectProvider<WorkflowService> self;
+    private final WorkflowAiActionService workflowAiActionService;
+    private final WorkflowDeadLetterService deadLetterService;
+    private final WorkflowWebhookIndex webhookIndex;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -86,7 +92,10 @@ public class WorkflowService {
             WorkflowEventTriggerIndex eventTriggerIndex,
             AutomationMetricsRecorder automationMetricsRecorder,
             WorkflowTriggerIndexRefresh triggerIndexRefresh,
-            ObjectProvider<WorkflowService> self
+            ObjectProvider<WorkflowService> self,
+            WorkflowAiActionService workflowAiActionService,
+            WorkflowDeadLetterService deadLetterService,
+            WorkflowWebhookIndex webhookIndex
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
@@ -104,6 +113,9 @@ public class WorkflowService {
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.triggerIndexRefresh = triggerIndexRefresh;
         this.self = self;
+        this.workflowAiActionService = workflowAiActionService;
+        this.deadLetterService = deadLetterService;
+        this.webhookIndex = webhookIndex;
     }
 
     @Transactional
@@ -128,7 +140,13 @@ public class WorkflowService {
                 readString(node, "triggerJson").orElse("{}"),
                 readString(node, "operatorAppId").orElse(null),
                 readString(node, "instanceState").orElse("{}"),
-                readString(node, "lastRunAt").orElse(null)
+                readString(node, "lastRunAt").orElse(null),
+                readString(node, "inputSchemaJson").orElse("{}"),
+                readString(node, "outputSchemaJson").orElse("{}"),
+                readString(node, "toolDescription").orElse(""),
+                readString(node, "sideEffectClass").orElse("WRITE"),
+                readString(node, "webhookSlug").orElse(""),
+                readString(node, "cronExpression").orElse("")
         );
     }
 
@@ -163,6 +181,7 @@ public class WorkflowService {
                 DataRecord.single(STRING_VALUE, Map.of("value", status.name()))
         );
         triggerIndexRefresh.scheduleFullRebuild();
+        webhookIndex.indexPath(path);
         return getWorkflow(path);
     }
 
@@ -193,14 +212,37 @@ public class WorkflowService {
             String triggerObjectPath,
             AutomationMetricsRecorder.WorkflowStartTrigger trigger
     ) throws WorkflowException {
+        return runWorkflow(path, triggerObjectPath, trigger, Map.of());
+    }
+
+    @Transactional
+    public WorkflowView runWorkflow(
+            String path,
+            String triggerObjectPath,
+            AutomationMetricsRecorder.WorkflowStartTrigger trigger,
+            Map<String, String> input
+    ) throws WorkflowException {
         automationMetricsRecorder.recordWorkflowStart(trigger);
+        structureService.ensureWorkflowStructure(path);
         PlatformObject node = objectManager.require(path);
         String bpmnXml = readString(node, "bpmnXml").orElseThrow(() ->
                 new WorkflowException("Workflow BPMN is empty: " + path));
+        try {
+            WorkflowToolContract.validateInput(
+                    objectMapper,
+                    readString(node, "inputSchemaJson").orElse("{}"),
+                    input
+            );
+        } catch (WorkflowToolContract.WorkflowToolContractException e) {
+            throw new WorkflowException(e.getMessage(), e);
+        }
         BpmnProcess process = workflowEngine.parse(bpmnXml);
         WorkflowInstance instance = workflowEngine.start(path, process);
         if (triggerObjectPath != null) {
             instance.setVariable("triggerObjectPath", triggerObjectPath);
+        }
+        if (input != null) {
+            input.forEach(instance::setVariable);
         }
 
         WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(triggerObjectPath);
@@ -214,7 +256,195 @@ public class WorkflowService {
         instanceStore.save(instance, process, triggerObjectPath, pendingTask);
         persistInstanceSnapshot(path, instance);
         publishInstanceEvent(path, instance);
+        if (instance.status() == InstanceStatus.FAILED) {
+            handleFailure(path, instance, input);
+        }
         return getWorkflow(path);
+    }
+
+    @Transactional
+    public Map<String, Object> invokeWorkflowTool(String path, Map<String, String> input) throws WorkflowException {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.WORKFLOW) {
+            throw new WorkflowException("Not a workflow: " + path);
+        }
+        structureService.ensureWorkflowStructure(path);
+        if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
+            throw new WorkflowException("Workflow tool requires ACTIVE status: " + path);
+        }
+        WorkflowView view = runWorkflow(
+                path,
+                null,
+                AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL,
+                input == null ? Map.of() : input
+        );
+        Map<String, String> variables = Map.of();
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> state = objectMapper.readValue(view.instanceState(), Map.class);
+            Object vars = state.get("variables");
+            if (vars instanceof Map<?, ?> map) {
+                Map<String, String> parsed = new HashMap<>();
+                map.forEach((k, v) -> {
+                    if (k != null) {
+                        parsed.put(k.toString(), v == null ? "" : v.toString());
+                    }
+                });
+                variables = parsed;
+            }
+        } catch (Exception ignored) {
+            // keep empty
+        }
+        Map<String, String> output = WorkflowToolContract.extractOutput(
+                objectMapper,
+                view.outputSchemaJson(),
+                variables
+        );
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "OK");
+        result.put("workflow", view);
+        result.put("output", output);
+        result.put("sideEffectClass", view.sideEffectClass());
+        return result;
+    }
+
+    /**
+     * ACTIVE workflows with non-blank {@code toolDescription} are published as MCP tools (ADR-0049).
+     */
+    @Transactional(readOnly = true)
+    public List<PublishedWorkflowTool> listPublishedWorkflowTools() {
+        List<PublishedWorkflowTool> tools = new ArrayList<>();
+        Set<String> usedNames = new HashSet<>();
+        for (PlatformObject node : objectManager.tree().all()) {
+            if (node.type() != ObjectType.WORKFLOW) {
+                continue;
+            }
+            if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
+                continue;
+            }
+            String description = readString(node, "toolDescription").orElse("");
+            if (description.isBlank()) {
+                continue;
+            }
+            String toolName = mcpToolName(node.path(), usedNames);
+            tools.add(new PublishedWorkflowTool(
+                    toolName,
+                    node.path(),
+                    description,
+                    readString(node, "inputSchemaJson").orElse("{}")
+            ));
+        }
+        return List.copyOf(tools);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PublishedWorkflowTool> findPublishedWorkflowTool(String toolName) {
+        if (toolName == null || toolName.isBlank()) {
+            return Optional.empty();
+        }
+        return listPublishedWorkflowTools().stream()
+                .filter(tool -> tool.toolName().equals(toolName))
+                .findFirst();
+    }
+
+    private static String mcpToolName(String path, Set<String> usedNames) {
+        String last = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
+        String base = "wf_" + last.replaceAll("[^a-zA-Z0-9_]", "_").toLowerCase(Locale.ROOT);
+        if (base.length() > 48) {
+            base = base.substring(0, 48);
+        }
+        String candidate = base;
+        if (!usedNames.add(candidate)) {
+            String suffix = "_" + Integer.toHexString(path.hashCode());
+            candidate = base.length() + suffix.length() > 64
+                    ? base.substring(0, Math.max(1, 64 - suffix.length())) + suffix
+                    : base + suffix;
+            usedNames.add(candidate);
+        }
+        return candidate;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listRuns(String path) {
+        return instanceStore.listRuns(path).stream().map(entity -> {
+            Map<String, Object> row = new HashMap<>();
+            row.put("instanceId", entity.getId());
+            row.put("status", entity.getStatus());
+            row.put("currentNodeId", entity.getCurrentNodeId());
+            row.put("startedAt", entity.getStartedAt() == null ? null : entity.getStartedAt().toString());
+            row.put("completedAt", entity.getCompletedAt() == null ? null : entity.getCompletedAt().toString());
+            row.put("assignee", entity.getAssignee());
+            return row;
+        }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listSteps(String instanceId) {
+        return instanceStore.listSteps(instanceId).stream().map(step -> {
+            Map<String, Object> row = new HashMap<>();
+            row.put("id", step.getId());
+            row.put("seq", step.getSeq());
+            row.put("tokenId", step.getTokenId());
+            row.put("nodeId", step.getNodeId());
+            row.put("nodeType", step.getNodeType());
+            row.put("status", step.getStatus());
+            row.put("attempt", step.getAttempt());
+            row.put("startedAt", step.getStartedAt() == null ? null : step.getStartedAt().toString());
+            row.put("endedAt", step.getEndedAt() == null ? null : step.getEndedAt().toString());
+            row.put("inputJson", step.getInputJson());
+            row.put("outputJson", step.getOutputJson());
+            row.put("errorJson", step.getErrorJson());
+            return row;
+        }).toList();
+    }
+
+    private void handleFailure(String path, WorkflowInstance instance, Map<String, String> input) {
+        PlatformObject node = objectManager.require(path);
+        int attempt = parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(Map.of(
+                    "variables", instance.variables(),
+                    "input", input == null ? Map.of() : input,
+                    "error", instance.errorMessage() == null ? "" : instance.errorMessage(),
+                    "retryMaxAttempts", readString(node, "retryMaxAttempts").orElse("0"),
+                    "attempt", String.valueOf(attempt)
+            ));
+        } catch (Exception e) {
+            payload = "{}";
+        }
+        deadLetterService.record(
+                instance.instanceId(),
+                path,
+                attempt,
+                instance.errorMessage(),
+                payload
+        );
+        String errorWorkflow = readString(node, "errorWorkflowPath").orElse("");
+        if (!errorWorkflow.isBlank() && !errorWorkflow.equals(path)) {
+            try {
+                self.getObject().runWorkflow(
+                        errorWorkflow,
+                        path,
+                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
+                        Map.of(
+                                "failedWorkflowPath", path,
+                                "failedInstanceId", instance.instanceId(),
+                                "errorMessage", instance.errorMessage() == null ? "" : instance.errorMessage()
+                        )
+                );
+            } catch (Exception e) {
+                log.warn("errorWorkflowPath {} failed: {}", errorWorkflow, e.getMessage());
+            }
+        }
+    }
+
+    private static int parseInt(String raw, int fallback) {
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 
     @Transactional
@@ -581,6 +811,30 @@ public class WorkflowService {
                         AutomationMetricsRecorder.WorkflowStartTrigger.EVENT
                 );
             }
+            case LLM_COMPLETE -> {
+                String template = params.getOrDefault("promptTemplate", params.getOrDefault("message", ""));
+                String prompt = WorkflowAiActionService.interpolate(template, instance.variables());
+                int timeoutMs = parseInt(params.getOrDefault("timeoutMs", "30000"), 30_000);
+                String content = workflowAiActionService.llmComplete(
+                        prompt,
+                        params.getOrDefault("modelRef", "platform-default"),
+                        timeoutMs
+                );
+                String outputVariable = params.getOrDefault("outputVariable", "llmOutput");
+                instance.setVariable(outputVariable, content);
+            }
+            case INVOKE_AGENT -> {
+                String goalTemplate = params.getOrDefault("goalTemplate", params.getOrDefault("promptTemplate", ""));
+                String goal = WorkflowAiActionService.interpolate(goalTemplate, instance.variables());
+                String brief = workflowAiActionService.invokeAgent(
+                        goal,
+                        params.getOrDefault("agentMode", "ask"),
+                        params.getOrDefault("toolAllowlist", ""),
+                        parseInt(params.getOrDefault("maxSteps", "8"), 8)
+                );
+                String outputVariable = params.getOrDefault("outputVariable", "agentBrief");
+                instance.setVariable(outputVariable, brief);
+            }
         }
     }
 
@@ -689,6 +943,8 @@ public class WorkflowService {
             state.put("assignee", instance.assignee().orElse(null));
             state.put("pendingUserTaskId", instance.pendingUserTaskId().orElse(null));
             state.put("pendingSignalName", instance.pendingSignalName().orElse(null));
+            // ADR-0049: tool output projection and AI outputVariable read this map.
+            state.put("variables", instance.variables() == null ? Map.of() : Map.copyOf(instance.variables()));
 
             String json = objectMapper.writeValueAsString(state);
             objectManager.setVariableValue(path, "instanceState", DataRecord.single(STRING_VALUE, Map.of("value", json)));
@@ -764,7 +1020,21 @@ public class WorkflowService {
             String triggerJson,
             String operatorAppId,
             String instanceState,
-            String lastRunAt
+            String lastRunAt,
+            String inputSchemaJson,
+            String outputSchemaJson,
+            String toolDescription,
+            String sideEffectClass,
+            String webhookSlug,
+            String cronExpression
+    ) {
+    }
+
+    public record PublishedWorkflowTool(
+            String toolName,
+            String path,
+            String description,
+            String inputSchemaJson
     ) {
     }
 }

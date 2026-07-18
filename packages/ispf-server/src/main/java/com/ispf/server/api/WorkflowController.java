@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -56,9 +57,30 @@ public class WorkflowController {
     @PostMapping("/by-path/run")
     public WorkflowService.WorkflowView run(
             @RequestParam String path,
-            @RequestParam(required = false) String triggerObjectPath
+            @RequestParam(required = false) String triggerObjectPath,
+            @RequestBody(required = false) RunWorkflowRequest request
     ) throws WorkflowException {
-        return workflowService.runWorkflow(path, triggerObjectPath);
+        Map<String, String> input = request == null || request.input() == null ? Map.of() : request.input();
+        return workflowService.runWorkflow(
+                path,
+                triggerObjectPath,
+                com.ispf.server.platform.AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL,
+                input
+        );
+    }
+
+    @PostMapping("/by-path/invoke-tool")
+    public Map<String, Object> invokeTool(
+            @RequestParam String path,
+            @RequestBody(required = false) RunWorkflowRequest request
+    ) throws WorkflowException {
+        Map<String, String> input = request == null || request.input() == null ? Map.of() : request.input();
+        return workflowService.invokeWorkflowTool(path, input);
+    }
+
+    @GetMapping("/by-path/runs")
+    public List<Map<String, Object>> runs(@RequestParam String path) {
+        return workflowService.listRuns(path);
     }
 
     @PostMapping("/signal")
@@ -80,5 +102,8 @@ public class WorkflowController {
     }
 
     public record SignalBroadcastRequest(String workflowPath, String signal, String operatorId) {
+    }
+
+    public record RunWorkflowRequest(Map<String, String> input) {
     }
 }

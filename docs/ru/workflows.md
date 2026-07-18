@@ -15,11 +15,13 @@
 | `title` | Название |
 | `status` | `DRAFT` / `ACTIVE` / `STOPPED` |
 | `bpmnXml` | BPMN 2.0 XML |
-| `triggerJson` | Триггер по изменению переменных |
+| `triggerJson` | Триггер по изменению переменных / событию |
 | `operatorAppId` | Operator App для user task в sidebar |
 | `instanceState` | JSON состояния последнего экземпляра |
 | `lastRunAt` | Время последнего запуска |
 | `lastAction` | Последнее действие service task |
+| `inputSchemaJson` / `outputSchemaJson` / `toolDescription` / `sideEffectClass` | Контракт workflow-as-tool (ADR-0049). ACTIVE + непустой `toolDescription` публикуются в MCP как `wf_<name>` |
+| `webhookSlug` / `cronExpression` / `errorWorkflowPath` | Webhook, cron, error workflow |
 
 ## Жизненный цикл
 
@@ -299,16 +301,22 @@ GET  /api/v1/workflows/by-path?path=...
 PUT  /api/v1/workflows/by-path/bpmn?path=...
 PUT  /api/v1/workflows/by-path/status?path=...   body: { "status": "ACTIVE" }
 POST /api/v1/workflows/by-path/run?path=...
+POST /api/v1/workflows/by-path/invoke-tool?path=...
+GET  /api/v1/workflows/by-path/runs?path=...
+GET  /api/v1/workflows/instances/{instanceId}/steps
 POST /api/v1/workflows/instances/{instanceId}/cancel
 POST /api/v1/workflows/instances/{instanceId}/signal
 POST /api/v1/workflows/instances/{instanceId}/message
 POST /api/v1/workflows/instances/{instanceId}/timer
 POST /api/v1/workflows/signal
+POST /api/v1/webhooks/workflows/{slug}
 ```
+
+Практика: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
 
 ## Персистентность
 
-Таблицы: `workflow_instances`, `workflow_user_tasks` (Flyway V2).
+Таблицы: `workflow_instances`, `workflow_user_tasks`, `workflow_execution_steps`, `workflow_dead_letters` (ADR-0049 / Flyway V81).
 
 ## Тесты
 

@@ -52,6 +52,8 @@
   "analyticsTag.builtinHint": "切换到自定义 CEL 以编辑公式。内置 helper 使用此设备上的模板字段。",
   "analyticsTag.enabled": "启用",
   "analyticsTag.evaluate": "立即计算",
+  "analyticsTag.askAi": "询问 AI",
+  "analyticsTag.askAiPending": "正在询问 AI…",
   "analyticsTag.expression": "表达",
   "analyticsTag.expressionHint": "使用 avg(ref, window)、min、max、last、sum、live — 以及 CEL 运算符 (+, *, if, …)。",
   "analyticsTag.expressionPlaceholder": "avg(root.platform.devices.demo/temperature, 5m) + 5",

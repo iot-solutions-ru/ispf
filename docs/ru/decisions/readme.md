@@ -24,5 +24,6 @@
 | [0046-nats-cluster-package](0046-nats-cluster-package.md) | NATS в `cluster` + TRANSIENT persist skip |
 | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) | Собственный subset BPMN (без Camunda) — **Accepted** |
 | [0048-server-modularization-seams](0048-server-modularization-seams.md) | ObjectTreePort → AI-модуль → ObjectManager — **Accepted** |
+| [0049-ot-automation-excellence](0049-ot-automation-excellence.md) | OT Automation Excellence (journal, AI-BPMN, analytics AI) — **Accepted** |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

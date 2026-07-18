@@ -29,7 +29,7 @@
 | **Подключаю OT / драйверы** | [Драйверы](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
 | **Собираю HMI / SCADA** | [Дашборды](dashboards.md) · [SCADA](scada.md) · [Виджеты](widgets.md) |
 | **Пишу выражения / CEL** | [Язык выражений](expression-language.md) · [Привязки](bindings.md) |
-| **Автоматизирую тревоги / BPMN** | [Автоматизация](automation.md) · [Workflows](workflows.md) |
+| **Автоматизирую тревоги / BPMN** | [Автоматизация](automation.md) · [Workflows](workflows.md) · [OT Automation туториалы](ot-automation-excellence-tutorials.md) |
 | **Использую ИИ-студию / агента** | [AI development](ai-development.md) · [AI agent](ai-agent.md) |
 | **Внедряю / эксплуатирую** | [Развёртывание](deployment.md) · [Безопасность](security.md) · [Наблюдаемость](observability.md) |
 | **Контрибьючу в ядро** | [Быстрый старт — Contribute](getting-started.md#контрибут-локальный-dev--qa) · [Тестирование](testing.md) · [ADR](decisions/readme.md) |
@@ -138,6 +138,7 @@
 | [Agent regression](agent-regression.md) | Lab | CI-гейты сценариев |
 | [Автоматизация](automation.md) | Stable | Алерты, корреляторы |
 | [Workflows](workflows.md) | Beta | Подмножество BPMN (не полный 2.0) |
+| [OT Automation туториалы](ot-automation-excellence-tutorials.md) | Beta | ADR-0049 hands-on (journal, AI-BPMN, MCP, analytics AI) |
 | [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ завод |
 | [MES walkthrough](reference-mes-walkthrough.md) | Lab | Сквозной MES-путь |
 

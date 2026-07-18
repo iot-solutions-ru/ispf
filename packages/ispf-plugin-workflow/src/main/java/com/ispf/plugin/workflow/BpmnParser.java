@@ -546,6 +546,16 @@ public class BpmnParser {
         readIspfAttribute(task, parameters, "sourceVariable");
         readIspfAttribute(task, parameters, "valueField");
         readIspfAttribute(task, parameters, "workflowPath");
+        readIspfAttribute(task, parameters, "promptTemplate");
+        readIspfAttribute(task, parameters, "outputVariable");
+        readIspfAttribute(task, parameters, "outputFormat");
+        readIspfAttribute(task, parameters, "modelRef");
+        readIspfAttribute(task, parameters, "timeoutMs");
+        readIspfAttribute(task, parameters, "agentMode");
+        readIspfAttribute(task, parameters, "goalTemplate");
+        readIspfAttribute(task, parameters, "toolAllowlist");
+        readIspfAttribute(task, parameters, "maxSteps");
+        readIspfAttribute(task, parameters, "retryable");
 
         Element extensions = firstChildElement(task, "extensionElements");
         if (extensions != null) {
@@ -639,6 +649,8 @@ public class BpmnParser {
             case "fireevent", "fire_event" -> WorkflowActionType.FIRE_EVENT;
             case "readvariable", "read_variable" -> WorkflowActionType.READ_VARIABLE;
             case "startworkflow", "start_workflow" -> WorkflowActionType.START_WORKFLOW;
+            case "llmcomplete", "llm_complete" -> WorkflowActionType.LLM_COMPLETE;
+            case "invokeagent", "invoke_agent" -> WorkflowActionType.INVOKE_AGENT;
             default -> throw new WorkflowException("Unsupported service task action: " + actionRaw);
         };
     }

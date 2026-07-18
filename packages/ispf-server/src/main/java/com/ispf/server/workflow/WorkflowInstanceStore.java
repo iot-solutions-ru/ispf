@@ -9,10 +9,13 @@ import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.UserTaskDefinition;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
+import com.ispf.server.persistence.WorkflowExecutionStepRepository;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.WorkflowUserTaskRepository;
+import com.ispf.server.persistence.entity.WorkflowExecutionStepEntity;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.persistence.entity.WorkflowUserTaskEntity;
+import com.ispf.plugin.workflow.WorkflowStepRecord;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +32,20 @@ public class WorkflowInstanceStore {
 
     private final WorkflowInstanceRepository instanceRepository;
     private final WorkflowUserTaskRepository userTaskRepository;
+    private final WorkflowExecutionStepRepository stepRepository;
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
 
     public WorkflowInstanceStore(
             WorkflowInstanceRepository instanceRepository,
             WorkflowUserTaskRepository userTaskRepository,
+            WorkflowExecutionStepRepository stepRepository,
             ObjectManager objectManager,
             ObjectMapper objectMapper
     ) {
         this.instanceRepository = instanceRepository;
         this.userTaskRepository = userTaskRepository;
+        this.stepRepository = stepRepository;
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
     }
@@ -64,6 +70,7 @@ public class WorkflowInstanceStore {
         entity.setCompletedAt(instance.completedAt());
         entity.setUpdatedAt(Instant.now());
         instanceRepository.save(entity);
+        flushPendingSteps(instance);
 
         if (instance.status() == InstanceStatus.WAITING && pendingUserTask != null) {
             syncUserTasks(instance, process, pendingUserTask);
@@ -120,6 +127,54 @@ public class WorkflowInstanceStore {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private void flushPendingSteps(WorkflowInstance instance) {
+        List<WorkflowStepRecord> pending = instance.drainPendingSteps();
+        if (pending.isEmpty()) {
+            return;
+        }
+        Instant now = Instant.now();
+        for (WorkflowStepRecord step : pending) {
+            WorkflowExecutionStepEntity entity = new WorkflowExecutionStepEntity();
+            entity.setId(UUID.randomUUID().toString());
+            entity.setInstanceId(instance.instanceId());
+            entity.setWorkflowPath(instance.workflowPath());
+            entity.setTokenId(step.tokenId());
+            entity.setSeq(step.seq());
+            entity.setNodeId(step.nodeId());
+            entity.setNodeType(step.nodeType());
+            entity.setStartedAt(step.startedAt());
+            entity.setEndedAt(step.endedAt());
+            entity.setStatus(step.status());
+            entity.setAttempt(step.attempt());
+            entity.setInputJson(writeJson(step.input()));
+            entity.setOutputJson(writeJson(step.output()));
+            entity.setErrorJson(writeJson(step.error()));
+            entity.setCreatedAt(now);
+            stepRepository.save(entity);
+        }
+    }
+
+    private String writeJson(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<WorkflowExecutionStepEntity> listSteps(String instanceId) {
+        return stepRepository.findByInstanceIdOrderBySeqAsc(instanceId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WorkflowInstanceEntity> listRuns(String workflowPath) {
+        return instanceRepository.findByWorkflowPathOrderByStartedAtDesc(workflowPath);
     }
 
     private static Optional<String> readString(PlatformObject node, String variableName) {

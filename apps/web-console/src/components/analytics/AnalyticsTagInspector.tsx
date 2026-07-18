@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  askAnalyticsTag,
   evaluateAnalyticsExpression,
   evaluateAnalyticsTag,
   fetchAnalyticsTagByPath,
@@ -180,6 +181,21 @@ export default function AnalyticsTagInspector({
     },
   });
 
+  const [askResult, setAskResult] = useState<string | null>(null);
+  const askMutation = useMutation({
+    mutationFn: async () => {
+      const objectPath = analyticsTagObjectPath(path);
+      const variable = tagQuery.data?.outputVariable || "value";
+      return askAnalyticsTag(objectPath, variable, 4);
+    },
+    onSuccess: (result) => {
+      setAskResult(result.narrative || JSON.stringify(result.summary));
+    },
+    onError: (error: Error) => {
+      setAskResult(error.message);
+    },
+  });
+
   if (tagQuery.isLoading) {
     return <p className="hint">{t("automation:analyticsTag.loading")}</p>;
   }
@@ -216,7 +232,18 @@ export default function AnalyticsTagInspector({
           >
             {t("automation:analyticsTag.evaluate")}
           </button>
+          <button
+            type="button"
+            className="btn small"
+            disabled={askMutation.isPending || !tagQuery.data}
+            onClick={() => askMutation.mutate()}
+          >
+            {askMutation.isPending
+              ? t("automation:analyticsTag.askAiPending")
+              : t("automation:analyticsTag.askAi")}
+          </button>
           {evalResult && <p className="hint">{evalResult}</p>}
+          {askResult && <p className="hint analytics-ask-narrative">{askResult}</p>}
         </div>
       )}
 
@@ -272,8 +299,19 @@ export default function AnalyticsTagInspector({
                 >
                   {t("automation:analyticsTag.evaluate")}
                 </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={askMutation.isPending}
+                  onClick={() => askMutation.mutate()}
+                >
+                  {askMutation.isPending
+                    ? t("automation:analyticsTag.askAiPending")
+                    : t("automation:analyticsTag.askAi")}
+                </button>
               </div>
               {evalResult && <p className="hint">{evalResult}</p>}
+              {askResult && <p className="hint analytics-ask-narrative">{askResult}</p>}
               {saveMessage && <p className="hint">{saveMessage}</p>}
             </>
           )}

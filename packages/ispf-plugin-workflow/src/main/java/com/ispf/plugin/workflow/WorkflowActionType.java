@@ -7,5 +7,7 @@ public enum WorkflowActionType {
     INVOKE_FUNCTION,
     FIRE_EVENT,
     READ_VARIABLE,
-    START_WORKFLOW
+    START_WORKFLOW,
+    LLM_COMPLETE,
+    INVOKE_AGENT
 }

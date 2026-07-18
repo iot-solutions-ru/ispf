@@ -690,6 +690,78 @@ public class BlueprintBootstrap {
                                 STRING_VALUE_SCHEMA,
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "inputSchemaJson",
+                                "JSON Schema (draft-ish) for invoke_workflow_tool input",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "outputSchemaJson",
+                                "JSON Schema describing completed instance variables to export",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "toolDescription",
+                                "Agent/MCP tool description when exposed as a workflow tool",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "sideEffectClass",
+                                "READ | WRITE | CONTROL",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "WRITE"))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "retryMaxAttempts",
+                                "Max retries after FAILED (0 = disabled)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "0"))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "retryBackoffSeconds",
+                                "Backoff seconds between retries",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "30"))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "errorWorkflowPath",
+                                "Optional workflow path started on exhausted failure",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "webhookSlug",
+                                "Public webhook slug (ACTIVE workflows only)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "cronExpression",
+                                "Optional cron expression for scheduled starts",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),

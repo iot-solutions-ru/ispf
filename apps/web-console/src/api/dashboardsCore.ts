@@ -104,13 +104,38 @@ export function updateWorkflowOperatorApp(path: string, operatorAppId: string): 
   });
 }
 
-export function runWorkflow(path: string, triggerObjectPath?: string): Promise<WorkflowView> {
+export function runWorkflow(
+  path: string,
+  triggerObjectPath?: string,
+  input?: Record<string, string>
+): Promise<WorkflowView> {
   const params = new URLSearchParams({ path });
   if (triggerObjectPath?.trim()) {
     params.set("triggerObjectPath", triggerObjectPath.trim());
   }
   return request(`/api/v1/workflows/by-path/run?${params}`, {
     method: "POST",
+    body: JSON.stringify({ input: input ?? {} }),
+  });
+}
+
+export function fetchWorkflowRuns(path: string): Promise<import("../types/workflow").WorkflowRunSummary[]> {
+  return request(`/api/v1/workflows/by-path/runs?path=${encodeURIComponent(path)}`);
+}
+
+export function fetchWorkflowSteps(
+  instanceId: string
+): Promise<import("../types/workflow").WorkflowStepSummary[]> {
+  return request(`/api/v1/workflows/instances/${encodeURIComponent(instanceId)}/steps`);
+}
+
+export function invokeWorkflowTool(
+  path: string,
+  input?: Record<string, string>
+): Promise<Record<string, unknown>> {
+  return request(`/api/v1/workflows/by-path/invoke-tool?path=${encodeURIComponent(path)}`, {
+    method: "POST",
+    body: JSON.stringify({ input: input ?? {} }),
   });
 }
 

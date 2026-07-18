@@ -52,6 +52,8 @@
   "analyticsTag.builtinHint": "Переключитесь на Custom CEL для редактирования формулы. Встроенные helpers используют поля шаблона на устройстве.",
   "analyticsTag.enabled": "Включён",
   "analyticsTag.evaluate": "Вычислить сейчас",
+  "analyticsTag.askAi": "Спросить AI",
+  "analyticsTag.askAiPending": "Запрос к AI…",
   "analyticsTag.expression": "Выражение",
   "analyticsTag.expressionHint": "Функции avg(ref, window), min, max, last, sum, live — затем операторы CEL (+, *, if, …).",
   "analyticsTag.expressionPlaceholder": "avg(root.platform.devices.demo/temperature, 5m) + 5",

@@ -42,6 +42,7 @@ export {
   fetchAnalyticsTagByPath,
   validateAnalyticsExpression,
   evaluateAnalyticsTag,
+  askAnalyticsTag,
   evaluateAnalyticsExpression,
   fetchAnalyticsQuery,
   downloadAnalyticsQueryExport,
@@ -86,6 +87,9 @@ export {
   updateWorkflowStatus,
   updateWorkflowOperatorApp,
   runWorkflow,
+  fetchWorkflowRuns,
+  fetchWorkflowSteps,
+  invokeWorkflowTool,
   cancelWorkflowInstance,
   signalWorkflowInstance,
 } from "./api/dashboardsCore";

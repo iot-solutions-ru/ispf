@@ -2,6 +2,7 @@ package com.ispf.plugin.workflow;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class WorkflowEngine {
@@ -267,9 +268,23 @@ public class WorkflowEngine {
                     instance.fail("Service task definition missing: " + nodeId);
                     return;
                 }
+                Map<String, Object> stepInput = new java.util.LinkedHashMap<>();
+                stepInput.put("action", task.action().name());
+                stepInput.put("name", task.name() == null ? "" : task.name());
+                stepInput.put("parameters", redactAiParameters(task));
+                WorkflowStepRecord started = WorkflowStepRecord.started(
+                        token.tokenId(),
+                        instance.nextStepSeq(),
+                        nodeId,
+                        nodeType,
+                        stepInput,
+                        1
+                );
                 try {
                     executor.execute(task, instance);
+                    instance.addPendingStep(started.completed(Map.of("status", "OK")));
                 } catch (WorkflowException e) {
+                    instance.addPendingStep(started.failed(e.getMessage()));
                     instance.fail(e.getMessage());
                     return;
                 }
@@ -281,9 +296,22 @@ public class WorkflowEngine {
                     instance.fail("Message task definition missing: " + nodeId);
                     return;
                 }
+                WorkflowStepRecord started = WorkflowStepRecord.started(
+                        token.tokenId(),
+                        instance.nextStepSeq(),
+                        nodeId,
+                        nodeType,
+                        Map.of(
+                                "subject", task.subject() == null ? "" : task.subject(),
+                                "name", task.name() == null ? "" : task.name()
+                        ),
+                        1
+                );
                 try {
                     messageExecutor.execute(task, instance);
+                    instance.addPendingStep(started.completed(Map.of("status", "OK")));
                 } catch (WorkflowException e) {
+                    instance.addPendingStep(started.failed(e.getMessage()));
                     instance.fail(e.getMessage());
                     return;
                 }
@@ -574,5 +602,21 @@ public class WorkflowEngine {
         return instance.waitingTokens().stream()
                 .filter(token -> userTaskNodeId.equals(token.pendingUserTaskId()))
                 .findFirst();
+    }
+
+    /**
+     * ADR-0049: do not persist full LLM prompts in the execution journal.
+     */
+    private static Map<String, String> redactAiParameters(ServiceTaskDefinition task) {
+        Map<String, String> params = new java.util.LinkedHashMap<>(task.parameters());
+        if (task.action() != WorkflowActionType.LLM_COMPLETE && task.action() != WorkflowActionType.INVOKE_AGENT) {
+            return params;
+        }
+        String prompt = params.getOrDefault("promptTemplate", params.getOrDefault("goalTemplate", ""));
+        params.remove("promptTemplate");
+        params.remove("goalTemplate");
+        params.put("promptHash", Integer.toHexString(prompt.hashCode()));
+        params.put("promptChars", String.valueOf(prompt.length()));
+        return params;
     }
 }

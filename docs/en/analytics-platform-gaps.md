@@ -24,7 +24,7 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 | Expression language | No full PI Analytics syntax; built-in helpers + CEL `hist.*` on derived tags (BL-211) | [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) — unified catalog, user formulas, analytics packs (BL-212–215) |
 | AF database | No duplicate asset tree; tree-first model | By design (ADR-0038) |
 | PI Vision graphics | No PI Vision–class graphics | Phase 26 HMI |
-| ML on tags | No inference on tag streams | BL-175 |
+| ML on tags | Neural inference deferred; rule-based `anomalyScore` / zScore landed (ADR-0049 Wave 2) | BL-175 for ML inference |
 | Event frames | Lightweight windows, not full PI Event Frames | BL-211+ |
 | 50k+ lab proof | Gates **defined**; sign-off requires lab run | BL-210 scripts |
 

@@ -38,6 +38,7 @@ final class AgentWorkflowTools {
                 getWorkflowTool(workflowService, objectAccessService, tenantScopeService),
                 saveWorkflowBpmnTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
                 runWorkflowTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
+                invokeWorkflowToolTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
                 updateWorkflowStatusTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
                 listWorkflowInstancesTool(
                         workflowService,
@@ -47,6 +48,7 @@ final class AgentWorkflowTools {
                         tenantScopeService,
                         objectMapper
                 ),
+                listWorkflowStepsTool(workflowService, objectAccessService, tenantScopeService),
                 cancelWorkflowInstanceTool(cancelService, objectAccessService, tenantScopeService),
                 signalWorkflowInstanceTool(workflowService, objectAccessService, tenantScopeService)
         );
@@ -156,6 +158,84 @@ final class AgentWorkflowTools {
                     response.put("workflow", workflowSummary(result));
                     response.put("instanceState", result.instanceState());
                     return response;
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool invokeWorkflowToolTool(
+            WorkflowService workflowService,
+            ObjectTreePort ObjectTreePort,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "invoke_workflow_tool";
+            }
+
+            @Override
+            public String description() {
+                return "Invoke an ACTIVE WORKFLOW as a typed tool. Validates inputSchemaJson, starts run, "
+                        + "returns outputSchema projection. Args: path, optional input (object of string values).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                var auth = context.authentication();
+                if (!requireWorkflowWrite(path, auth, ObjectTreePort, objectAccessService, tenantScopeService)) {
+                    return Map.of("status", "ERROR", "error", "Not a writable WORKFLOW: " + path);
+                }
+                try {
+                    Map<String, String> input = new LinkedHashMap<>();
+                    Object raw = arguments.get("input");
+                    if (raw instanceof Map<?, ?> map) {
+                        map.forEach((k, v) -> {
+                            if (k != null) {
+                                input.put(k.toString(), v == null ? "" : v.toString());
+                            }
+                        });
+                    }
+                    return workflowService.invokeWorkflowTool(path, input);
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool listWorkflowStepsTool(
+            WorkflowService workflowService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "list_workflow_steps";
+            }
+
+            @Override
+            public String description() {
+                return "List execution journal steps for a workflow instance. Arg: instanceId.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String instanceId = stringArg(arguments, "instanceId");
+                if (instanceId.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "instanceId is required");
+                }
+                try {
+                    List<Map<String, Object>> steps = workflowService.listSteps(instanceId);
+                    return Map.of("status", "OK", "steps", steps);
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
                 }
@@ -395,6 +475,10 @@ final class AgentWorkflowTools {
         row.put("operatorAppId", view.operatorAppId());
         row.put("lastRunAt", view.lastRunAt());
         row.put("triggerJson", view.triggerJson());
+        row.put("toolDescription", view.toolDescription());
+        row.put("sideEffectClass", view.sideEffectClass());
+        row.put("inputSchemaJson", view.inputSchemaJson());
+        row.put("outputSchemaJson", view.outputSchemaJson());
         return row;
     }
 

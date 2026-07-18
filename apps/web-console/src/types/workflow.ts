@@ -9,6 +9,36 @@ export interface WorkflowView {
   operatorAppId: string | null;
   instanceState: string;
   lastRunAt: string | null;
+  inputSchemaJson?: string;
+  outputSchemaJson?: string;
+  toolDescription?: string;
+  sideEffectClass?: string;
+  webhookSlug?: string;
+  cronExpression?: string;
+}
+
+export interface WorkflowRunSummary {
+  instanceId: string;
+  status: string;
+  currentNodeId?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  assignee?: string | null;
+}
+
+export interface WorkflowStepSummary {
+  id: string;
+  seq: number;
+  tokenId?: string | null;
+  nodeId: string;
+  nodeType: string;
+  status: string;
+  attempt: number;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  inputJson?: string | null;
+  outputJson?: string | null;
+  errorJson?: string | null;
 }
 
 export interface WorkflowInstanceState {

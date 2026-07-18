@@ -186,5 +186,7 @@
   "analyticsTag.builtinHint": "Switch to Custom CEL to edit a formula. Built-in helpers use template fields on this device.",
   "analyticsTag.save": "Save & refresh",
   "analyticsTag.saved": "Expression saved and tag refreshed.",
-  "analyticsTag.evaluate": "Evaluate now"
+  "analyticsTag.evaluate": "Evaluate now",
+  "analyticsTag.askAi": "Ask AI",
+  "analyticsTag.askAiPending": "Asking AI…"
 }

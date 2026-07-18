@@ -253,6 +253,30 @@ export function evaluateAnalyticsTag(
   return request(`/api/v1/platform/analytics/tags/evaluate?${params.toString()}`);
 }
 
+export interface AnalyticsAskResult {
+  status: string;
+  objectPath: string;
+  variable: string;
+  hours: number;
+  summary: Record<string, unknown>;
+  narrative: string;
+}
+
+export function askAnalyticsTag(
+  objectPath: string,
+  variable: string,
+  hours = 4
+): Promise<AnalyticsAskResult> {
+  const params = new URLSearchParams({
+    objectPath,
+    variable,
+    hours: String(hours),
+  });
+  return request(`/api/v1/platform/analytics/tags/ask?${params.toString()}`, {
+    method: "POST",
+  });
+}
+
 export function evaluateAnalyticsExpression(
   expression: string,
   objectPath: string,

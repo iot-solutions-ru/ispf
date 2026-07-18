@@ -17,6 +17,8 @@ public class WorkflowInstance {
     private final Instant startedAt;
     private Instant completedAt;
     private final List<String> history = new ArrayList<>();
+    private final List<WorkflowStepRecord> pendingSteps = new ArrayList<>();
+    private int stepSeq;
     private String errorMessage;
     private String assignee;
     private final Map<String, String> variables = new HashMap<>();
@@ -97,6 +99,32 @@ public class WorkflowInstance {
 
     public Instant completedAt() {
         return completedAt;
+    }
+
+    public int nextStepSeq() {
+        return ++stepSeq;
+    }
+
+    public void addPendingStep(WorkflowStepRecord step) {
+        if (step != null) {
+            pendingSteps.add(step);
+        }
+    }
+
+    /**
+     * Drain steps that have not yet been flushed to durable storage.
+     */
+    public List<WorkflowStepRecord> drainPendingSteps() {
+        if (pendingSteps.isEmpty()) {
+            return List.of();
+        }
+        List<WorkflowStepRecord> drained = List.copyOf(pendingSteps);
+        pendingSteps.clear();
+        return drained;
+    }
+
+    public List<WorkflowStepRecord> pendingSteps() {
+        return List.copyOf(pendingSteps);
     }
 
     public List<String> history() {

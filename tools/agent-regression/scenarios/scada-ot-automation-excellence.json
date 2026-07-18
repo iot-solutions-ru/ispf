@@ -1,0 +1,23 @@
+{
+  "id": "scada-ot-automation-excellence",
+  "version": "1",
+  "domain": "scada",
+  "lane": "agent",
+  "title": "OT Automation Excellence workflow tool and journal",
+  "description": "ADR-0049 smoke: typed workflow tool, execution steps journal, analytics catalog tools.",
+  "prompt": "Make sure an ACTIVE alarm-handler workflow can be invoked as a tool with alarmId, then show the execution step journal and list analytics analysis functions including anomalyScore.",
+  "uiJourney": "AI Studio → agent tools → WorkflowBuilder timeline",
+  "acceptance": {
+    "requiredTools": [
+      "invoke_workflow_tool",
+      "list_workflow_steps",
+      "list_analytics_catalog",
+      "detect_anomalies",
+      "summarize_trend"
+    ],
+    "operatorSurfaces": [
+      "ai-studio",
+      "explorer"
+    ]
+  }
+}

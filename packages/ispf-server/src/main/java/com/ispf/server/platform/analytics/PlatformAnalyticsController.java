@@ -61,6 +61,7 @@ public class PlatformAnalyticsController {
     private final AnalyticsExpressionService expressionService;
     private final AnalyticsFormulaService formulaService;
     private final BindingFormulaRebindService bindingFormulaRebindService;
+    private final AnalyticsAskService analyticsAskService;
 
     public PlatformAnalyticsController(
             AnalyticsDerivedTagService derivedTagService,
@@ -77,7 +78,8 @@ public class PlatformAnalyticsController {
             AnalyticsCatalogService analyticsCatalogService,
             AnalyticsExpressionService expressionService,
             AnalyticsFormulaService formulaService,
-            BindingFormulaRebindService bindingFormulaRebindService
+            BindingFormulaRebindService bindingFormulaRebindService,
+            AnalyticsAskService analyticsAskService
     ) {
         this.derivedTagService = derivedTagService;
         this.historianQueryMetricsRecorder = historianQueryMetricsRecorder;
@@ -94,6 +96,7 @@ public class PlatformAnalyticsController {
         this.expressionService = expressionService;
         this.formulaService = formulaService;
         this.bindingFormulaRebindService = bindingFormulaRebindService;
+        this.analyticsAskService = analyticsAskService;
     }
 
     @PostMapping("/derived-tags/refresh")
@@ -129,6 +132,19 @@ public class PlatformAnalyticsController {
             throw new IllegalArgumentException("path is required");
         }
         return analyticsEngineService.probeTag(path, asOf);
+    }
+
+    /** Ask AI: deterministic summary + LLM narrative for a tag series (ADR-0049). */
+    @PostMapping("/tags/ask")
+    public Map<String, Object> askTag(
+            @RequestParam String objectPath,
+            @RequestParam String variable,
+            @RequestParam(required = false, defaultValue = "4") int hours
+    ) throws Exception {
+        if (objectPath == null || objectPath.isBlank() || variable == null || variable.isBlank()) {
+            throw new IllegalArgumentException("objectPath and variable are required");
+        }
+        return analyticsAskService.askTrend(objectPath, variable, hours);
     }
 
     /** Historian query SLA snapshot: p50/p95 latency vs documented SLO (BL-161). */

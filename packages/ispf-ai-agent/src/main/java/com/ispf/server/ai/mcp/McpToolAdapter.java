@@ -7,9 +7,11 @@ import com.ispf.server.ai.agent.AgentSessionStore;
 import com.ispf.server.ai.agent.PlatformAgentToolRegistry;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
+import com.ispf.server.workflow.WorkflowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -19,7 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Delegates MCP tool calls to {@link PlatformAgentToolRegistry} (0006).
+ * Delegates MCP tool calls to {@link PlatformAgentToolRegistry} and publishes ACTIVE workflows
+ * with {@code toolDescription} as dynamic tools (ADR-0049).
  */
 @Service
 @ConditionalOnProperty(prefix = "ispf.mcp", name = "enabled", havingValue = "true")
@@ -34,6 +37,7 @@ public class McpToolAdapter {
     private final AgentSessionStore sessionStore;
     private final AiToolAuditService auditService;
     private final ContextPackService contextPackService;
+    private final WorkflowService workflowService;
     private final ObjectMapper objectMapper;
 
     public McpToolAdapter(
@@ -41,12 +45,14 @@ public class McpToolAdapter {
             AgentSessionStore sessionStore,
             AiToolAuditService auditService,
             ContextPackService contextPackService,
+            WorkflowService workflowService,
             ObjectMapper objectMapper
     ) {
         this.toolRegistry = toolRegistry;
         this.sessionStore = sessionStore;
         this.auditService = auditService;
         this.contextPackService = contextPackService;
+        this.workflowService = workflowService;
         this.objectMapper = objectMapper;
     }
 
@@ -57,6 +63,13 @@ public class McpToolAdapter {
             tool.put("name", entry.get("name"));
             tool.put("description", entry.get("description"));
             tool.put("inputSchema", GENERIC_INPUT_SCHEMA);
+            tools.add(tool);
+        }
+        for (WorkflowService.PublishedWorkflowTool published : workflowService.listPublishedWorkflowTools()) {
+            Map<String, Object> tool = new LinkedHashMap<>();
+            tool.put("name", published.toolName());
+            tool.put("description", published.description() + " [workflow:" + published.path() + "]");
+            tool.put("inputSchema", parseInputSchema(published.inputSchemaJson()));
             tools.add(tool);
         }
         return tools;
@@ -83,7 +96,13 @@ public class McpToolAdapter {
         Map<String, Object> result;
         String status;
         try {
-            result = toolRegistry.execute(toolName, args, context);
+            Optional<WorkflowService.PublishedWorkflowTool> published =
+                    workflowService.findPublishedWorkflowTool(toolName);
+            if (published.isPresent()) {
+                result = invokePublishedWorkflow(published.get(), args);
+            } else {
+                result = toolRegistry.execute(toolName, args, context);
+            }
             status = String.valueOf(result.getOrDefault("status", "OK"));
         } catch (Exception ex) {
             result = Map.of("status", "ERROR", "error", ex.getMessage());
@@ -112,6 +131,47 @@ public class McpToolAdapter {
                 )),
                 "isError", isError
         );
+    }
+
+    private Map<String, Object> invokePublishedWorkflow(
+            WorkflowService.PublishedWorkflowTool published,
+            Map<String, Object> args
+    ) throws Exception {
+        Map<String, String> input = new LinkedHashMap<>();
+        Object nested = args.get("input");
+        if (nested instanceof Map<?, ?> map) {
+            map.forEach((k, v) -> {
+                if (k != null) {
+                    input.put(k.toString(), v == null ? "" : v.toString());
+                }
+            });
+        } else {
+            args.forEach((k, v) -> {
+                if (!"path".equals(k) && !"sessionId".equals(k)) {
+                    input.put(k, v == null ? "" : v.toString());
+                }
+            });
+        }
+        return workflowService.invokeWorkflowTool(published.path(), input);
+    }
+
+    private Object parseInputSchema(String inputSchemaJson) {
+        if (inputSchemaJson == null || inputSchemaJson.isBlank() || "{}".equals(inputSchemaJson.trim())) {
+            return GENERIC_INPUT_SCHEMA;
+        }
+        try {
+            JsonNode node = objectMapper.readTree(inputSchemaJson);
+            if (node != null && node.isObject()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> schema = objectMapper.convertValue(node, Map.class);
+                if (schema != null && !schema.isEmpty()) {
+                    return schema;
+                }
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return GENERIC_INPUT_SCHEMA;
     }
 
     private String extractSessionId(Map<String, Object> args) {

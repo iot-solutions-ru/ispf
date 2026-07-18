@@ -80,7 +80,9 @@ export type WorkflowIspfAction =
   | "read_variable"
   | "start_workflow"
   | "log"
-  | "publishNats";
+  | "publishNats"
+  | "llm_complete"
+  | "invoke_agent";
 
 export const WORKFLOW_ISPF_ACTIONS: {
   action: WorkflowIspfAction;
@@ -94,4 +96,14 @@ export const WORKFLOW_ISPF_ACTIONS: {
   { action: "setVariable", label: "Set variable", attrs: ["ispf:targetObject", "ispf:variable", "ispf:value"] },
   { action: "log", label: "Log message", attrs: ["ispf:message"] },
   { action: "publishNats", label: "Publish NATS", attrs: ["ispf:subject", "ispf:message", "ispf:channel"] },
+  {
+    action: "llm_complete",
+    label: "LLM complete",
+    attrs: ["ispf:promptTemplate", "ispf:outputVariable", "ispf:outputFormat", "ispf:modelRef", "ispf:timeoutMs"],
+  },
+  {
+    action: "invoke_agent",
+    label: "Invoke agent",
+    attrs: ["ispf:goalTemplate", "ispf:agentMode", "ispf:toolAllowlist", "ispf:maxSteps", "ispf:outputVariable"],
+  },
 ];

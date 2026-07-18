@@ -54,6 +54,7 @@ public class AnalyticsCatalogRegistry {
         registerEvaluatorBuiltins(catalog);
         registerReactivePlatformBindings(catalog);
         registerPresets(catalog);
+        registerAnalysisFunctions(catalog);
         return Collections.unmodifiableMap(new LinkedHashMap<>(catalog));
     }
 
@@ -228,6 +229,106 @@ public class AnalyticsCatalogRegistry {
                     "analytics-catalog-reactive-" + binding.id().toLowerCase()
             ));
         }
+    }
+
+    private static void registerAnalysisFunctions(Map<String, AnalyticsCatalogEntry> catalog) {
+        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                "rollingStddev",
+                "Rolling standard deviation",
+                "A",
+                List.of("analysis"),
+                "rollingStddev(series)",
+                List.of(parameter("series", "number[]", true, "Numeric samples", null)),
+                "Sample standard deviation over a window of values.",
+                List.of("rollingStddev([...])"),
+                List.of("analysis", "builtin"),
+                "core",
+                "analytics-catalog-rollingstddev"
+        ));
+        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                "zScore",
+                "Z-score",
+                "A",
+                List.of("analysis"),
+                "zScore(series)",
+                List.of(parameter("series", "number[]", true, "Numeric samples", null)),
+                "Per-point z-score against window mean/σ.",
+                List.of("zScore([...])"),
+                List.of("analysis", "builtin"),
+                "core",
+                "analytics-catalog-zscore"
+        ));
+        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                "percentile",
+                "Percentile",
+                "A",
+                List.of("analysis"),
+                "percentile(series, p)",
+                List.of(
+                        parameter("series", "number[]", true, "Numeric samples", null),
+                        parameter("p", "number", true, "Percentile 0..1", "0.95")
+                ),
+                "p50/p95/p99 style percentile of a series.",
+                List.of("percentile([...], 0.95)"),
+                List.of("analysis", "builtin"),
+                "core",
+                "analytics-catalog-percentile"
+        ));
+        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                "trendSlope",
+                "Trend slope",
+                "A",
+                List.of("analysis"),
+                "trendSlope(series)",
+                List.of(parameter("series", "number[]", true, "Numeric samples", null)),
+                "Linear regression slope over sample index.",
+                List.of("trendSlope([...])"),
+                List.of("analysis", "builtin"),
+                "core",
+                "analytics-catalog-trendslope"
+        ));
+        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                "periodOverPeriod",
+                "Period over period",
+                "A",
+                List.of("analysis"),
+                "periodOverPeriod(current, previous)",
+                List.of(
+                        parameter("current", "number[]", true, "Current window samples", null),
+                        parameter("previous", "number[]", true, "Previous window samples", null)
+                ),
+                "Compares average of current vs previous windows.",
+                List.of("periodOverPeriod([...], [...])"),
+                List.of("analysis", "builtin"),
+                "core",
+                "analytics-catalog-periodoverperiod"
+        ));
+        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                "qualitySummary",
+                "Data quality summary",
+                "A",
+                List.of("analysis"),
+                "qualitySummary(series)",
+                List.of(parameter("series", "number[]", true, "Samples possibly with gaps/NaN", null)),
+                "Good percentage and gap count for a series.",
+                List.of("qualitySummary([...])"),
+                List.of("analysis", "quality", "builtin"),
+                "core",
+                "analytics-catalog-qualitysummary"
+        ));
+        registerIfAbsent(catalog, new AnalyticsCatalogEntry(
+                "anomalyScore",
+                "Rule-based anomaly score",
+                "A",
+                List.of("analysis"),
+                "anomalyScore(series)",
+                List.of(parameter("series", "number[]", true, "Numeric samples", null)),
+                "Max |zScore| with gap penalty (not a neural net).",
+                List.of("anomalyScore([...])"),
+                List.of("analysis", "anomaly", "builtin"),
+                "core",
+                "analytics-catalog-anomalyscore"
+        ));
     }
 
     private static void registerPresets(Map<String, AnalyticsCatalogEntry> catalog) {

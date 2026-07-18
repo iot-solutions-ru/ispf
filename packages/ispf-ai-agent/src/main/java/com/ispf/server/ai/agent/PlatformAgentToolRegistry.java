@@ -48,6 +48,9 @@ import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.mimic.MimicService;
+import com.ispf.server.platform.analytics.AnalyticsAnalysisService;
+import com.ispf.server.platform.analytics.AnalyticsCatalogRegistry;
+import com.ispf.server.workflow.WorkflowAiActionService;
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService;
 import com.ispf.server.application.data.ApplicationDataService;
@@ -79,6 +82,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
     private final Map<String, PlatformAgentTool> toolsByName;
     private final ObjectMapper objectMapper;
     private final OperatorAgentToolPolicy operatorAgentToolPolicy;
+    private final WorkflowService workflowService;
 
     public PlatformAgentToolRegistry(
             ContextPackSearchService contextPackSearchService,
@@ -129,10 +133,17 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
             ApplicationBundlePullFromTreeService applicationBundlePullFromTreeService,
             ScheduleObjectService scheduleObjectService,
             PlatformTimeZoneResolver platformTimeZoneResolver,
-            OperatorAgentToolPolicy operatorAgentToolPolicy
+            OperatorAgentToolPolicy operatorAgentToolPolicy,
+            AnalyticsCatalogRegistry analyticsCatalogRegistry,
+            AnalyticsAnalysisService analyticsAnalysisService,
+            WorkflowAiActionService workflowAiActionService,
+            com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService analyticsTagCatalogService,
+            com.ispf.server.platform.analytics.AnalyticsQueryService analyticsQueryService,
+            com.ispf.server.platform.analytics.AnalyticsExpressionService analyticsExpressionService
     ) {
         this.objectMapper = objectMapper;
         this.operatorAgentToolPolicy = operatorAgentToolPolicy;
+        this.workflowService = workflowService;
         List<PlatformAgentTool> tools = new ArrayList<>();
         tools.addAll(AgentKnowledgeTools.all(
                 contextPackSearchService,
@@ -162,6 +173,17 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 objectAccessService,
                 tenantScopeService,
                 objectMapper
+        ));
+        tools.addAll(AgentAnalyticsTools.all(
+                analyticsCatalogRegistry,
+                analyticsAnalysisService,
+                variableHistoryService,
+                workflowAiActionService,
+                objectAccessService,
+                tenantScopeService,
+                analyticsTagCatalogService,
+                analyticsQueryService,
+                analyticsExpressionService
         ));
         tools.addAll(AgentApplicationTools.all(
                 applicationDataService,
@@ -298,7 +320,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
 
     @Override
     public int toolCount() {
-        return toolCatalog().size();
+        return toolCatalog().size() + workflowService.listPublishedWorkflowTools().size();
     }
 
     public List<Map<String, Object>> toolCatalog() {

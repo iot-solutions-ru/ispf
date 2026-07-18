@@ -44,6 +44,20 @@ All sources use **PlatformRef** slash addresses ([0043-unified-platform-ref](dec
 | `oee` | `oee('root.../line-01', 'avail', 'perf', 'qual', 8h)` | OEE % from four inputs |
 | `totalizer` | `totalizer(root.devices.pump01/energy, 1h)` | Sum over window |
 
+### Analysis functions (ADR-0049)
+
+Deterministic helpers for analytics AI / agent tools (`AnalyticsAnalysisService`). Not historian expression builtins yet — exposed via catalog kinds `analysis` and tools `detect_anomalies`, `compare_periods`, `summarize_trend`. Hands-on: [Analytics AI tutorial](tutorial-ot-analytics-ai.md).
+
+| Function | Notes |
+|----------|-------|
+| `rollingStddev` | Sample σ |
+| `zScore` | Per-point z-score |
+| `percentile` | p50 / p95 / p99 |
+| `trendSlope` | Linear slope |
+| `periodOverPeriod` | Current vs previous window |
+| `qualitySummary` | Good % and gaps |
+| `anomalyScore` | Max \|z\| + gap penalty |
+
 ### CEL + historian (`helper: cel`)
 
 ```text

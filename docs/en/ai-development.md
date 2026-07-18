@@ -26,6 +26,7 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | FW-46 | Agent knowledge base | [agent-knowledge](agent-knowledge.md) — application approaches, docs map |
 | FW-47 | Agent discovery tools | `AgentDiscoveryTools` — functions, events, variable schemas |
 | FW-48 | Agent automation tools | `AgentAutomationTools` — alerts, correlators, operator UI, `create_variable`, cluster playbooks |
+| ADR-0049 | OT Automation Excellence | Workflow journal, `invoke_workflow_tool`, BPMN `LLM_COMPLETE`/`INVOKE_AGENT`, analytics analysis tools — tutorials: [ot-automation-excellence-tutorials](ot-automation-excellence-tutorials.md) |
 
 ---
 

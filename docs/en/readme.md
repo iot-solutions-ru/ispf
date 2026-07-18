@@ -29,7 +29,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | **Wiring OT / drivers** | [Drivers](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
 | **Building HMI / SCADA** | [Dashboards](dashboards.md) · [SCADA](scada.md) · [Widgets](widgets.md) |
 | **Writing expressions / CEL** | [Expression language](expression-language.md) · [Bindings](bindings.md) |
-| **Automating alarms / workflows** | [Automation](automation.md) · [Workflows](workflows.md) |
+| **Automating alarms / workflows** | [Automation](automation.md) · [Workflows](workflows.md) · [OT Automation tutorials](ot-automation-excellence-tutorials.md) |
 | **Using AI Studio / agent** | [AI development](ai-development.md) · [AI agent](ai-agent.md) |
 | **Deploying / operating** | [Deployment](deployment.md) · [Security](security.md) · [Observability](observability.md) |
 | **Contributing to the core** | [Getting started — Contribute](getting-started.md#contribute-local-dev--qa) · [Testing](testing.md) · [ADR index](decisions/readme.md) |
@@ -138,6 +138,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | [Agent regression](agent-regression.md) | Lab | Scenario CI gates |
 | [Automation](automation.md) | Stable | Alerts, correlators |
 | [Workflows](workflows.md) | Beta | BPMN subset (not full 2.0) |
+| [OT Automation tutorials](ot-automation-excellence-tutorials.md) | Beta | ADR-0049 hands-on (journal, AI-BPMN, MCP, analytics AI) |
 | [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ plant |
 | [MES walkthrough](reference-mes-walkthrough.md) | Lab | End-to-end MES path |
 

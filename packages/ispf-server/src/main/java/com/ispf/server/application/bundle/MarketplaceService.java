@@ -187,6 +187,9 @@ public class MarketplaceService {
         if (isSymbolPackListing(detail)) {
             return installSymbolPackListing(endpoint, slug, detail, "free-download");
         }
+        if (isWorkflowTemplateListing(detail)) {
+            return installWorkflowTemplateListing(endpoint, slug, detail, "free-download");
+        }
         String appId = requireAppId(detail);
         String installationId = installationIdService.ensureInstallationId();
         String manifestJson = httpGet(buildFreeDownloadUrl(endpoint, slug, installationId));
@@ -407,6 +410,43 @@ public class MarketplaceService {
         }
         String kind = stringValue(detail.get("kind"));
         return "symbol-pack".equalsIgnoreCase(kind) || "symbol_pack".equalsIgnoreCase(kind);
+    }
+
+    private static boolean isWorkflowTemplateListing(Map<String, Object> detail) {
+        String artifactKind = stringValue(detail.get("artifactKind"));
+        if ("workflow-template".equalsIgnoreCase(artifactKind)) {
+            return true;
+        }
+        String kind = stringValue(detail.get("kind"));
+        return "workflow-template".equalsIgnoreCase(kind)
+                || "workflow_template".equalsIgnoreCase(kind)
+                || (kind != null && kind.toLowerCase(Locale.ROOT).contains("workflow"));
+    }
+
+    private Map<String, Object> installWorkflowTemplateListing(
+            MarketplaceProperties.Endpoint endpoint,
+            String slug,
+            Map<String, Object> detail,
+            String source
+    ) throws Exception {
+        String installationId = installationIdService.ensureInstallationId();
+        String manifestJson = httpGet(buildFreeDownloadUrl(endpoint, slug, installationId));
+        String appId = stringValue(detail.get("appId"));
+        if (appId == null || appId.isBlank()) {
+            appId = "workflow-template-" + slug;
+        }
+        Map<String, Object> deployed = deployManifest(
+                appId,
+                manifestJson,
+                endpoint.getId(),
+                slug,
+                source,
+                stringValue(detail.get("latestVersion")),
+                resolveTrustedFreeInstall(manifestJson)
+        );
+        deployed.put("artifactKind", "workflow-template");
+        deployed.put("installationId", installationId);
+        return deployed;
     }
 
     private Map<String, Object> installSymbolPackListing(

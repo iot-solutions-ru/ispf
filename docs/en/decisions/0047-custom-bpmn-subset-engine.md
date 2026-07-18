@@ -45,3 +45,4 @@ Related backlog: BL-176 (subprocess / message events). Product docs: [workflows]
 - [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) — workflow triggers on the automation bus
 - [0001-app-platform-boundary](0001-app-platform-boundary.md) — engines in platform, solutions declarative
 - [0048-server-modularization-seams](0048-server-modularization-seams.md) — parallel modularization program (does not change BPMN choice)
+- [0049-ot-automation-excellence](0049-ot-automation-excellence.md) — execution journal, AI `serviceTask` actions (`LLM_COMPLETE`, `INVOKE_AGENT`); element-type freeze unchanged

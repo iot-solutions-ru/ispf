@@ -52,6 +52,8 @@
   "analyticsTag.builtinHint": "Wechseln Sie zu Custom CEL, um eine Formel zu bearbeiten. Eingebaute Helfer nutzen Vorlagenfelder auf diesem Gerät.",
   "analyticsTag.enabled": "Aktiviert",
   "analyticsTag.evaluate": "Jetzt auswerten",
+  "analyticsTag.askAi": "KI fragen",
+  "analyticsTag.askAiPending": "KI wird gefragt…",
   "analyticsTag.expression": "Ausdruck",
   "analyticsTag.expressionHint": "avg(ref, window), min, max, last, sum, live — dann CEL-Operatoren (+, *, if, …).",
   "analyticsTag.expressionPlaceholder": "avg(root.platform.devices.demo/temperature, 5m) + 5",

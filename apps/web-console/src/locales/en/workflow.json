@@ -30,6 +30,8 @@
   "instance.signal": "Signal «{{signal}}»",
   "instance.signaling": "Signaling…",
   "instance.actionDone": "Instance updated.",
+  "instance.timeline": "Execution timeline",
+  "instance.stepPayload": "Step payload",
   "bpmn.title": "BPMN 2.0",
   "bpmn.tab.diagram": "Diagram",
   "bpmn.tab.xml": "XML source",

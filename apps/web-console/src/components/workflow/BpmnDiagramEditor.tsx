@@ -5,6 +5,7 @@ import ispfModdle from "../../bpmn/ispf-moddle.json";
 import { EMPTY_BPMN } from "../../bpmn/constants";
 import { ensureBpmnDiagram } from "../../bpmn/ensureDiagram";
 import { createIspfPaletteFilterProvider } from "../../bpmn/ispfPaletteFilter";
+import { createIspfAiPaletteProvider } from "../../bpmn/ispfAiPalette";
 import { WORKFLOW_ISPF_ACTIONS, type WorkflowIspfAction } from "../../types/automation";
 import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-js.css";
@@ -41,6 +42,16 @@ const ISPF_ATTRS = [
   "message",
   "subject",
   "channel",
+  "promptTemplate",
+  "outputVariable",
+  "outputFormat",
+  "modelRef",
+  "timeoutMs",
+  "goalTemplate",
+  "agentMode",
+  "toolAllowlist",
+  "maxSteps",
+  "retryable",
 ] as const;
 
 const ACTION_ATTR_HINTS: Record<WorkflowIspfAction, string[]> = {
@@ -51,6 +62,8 @@ const ACTION_ATTR_HINTS: Record<WorkflowIspfAction, string[]> = {
   setVariable: ["targetObject", "variable", "value"],
   log: ["message"],
   publishNats: ["subject", "message", "channel"],
+  llm_complete: ["promptTemplate", "outputVariable", "outputFormat", "modelRef", "timeoutMs"],
+  invoke_agent: ["goalTemplate", "agentMode", "toolAllowlist", "maxSteps", "outputVariable"],
 };
 
 function isIspfTask(element: BpmnElement | undefined): boolean {
@@ -79,7 +92,7 @@ export default function BpmnDiagramEditor({ xml, onChange }: BpmnDiagramEditorPr
       container,
       keyboard: { bindTo: document },
       moddleExtensions: { ispf: ispfModdle },
-      additionalModules: [createIspfPaletteFilterProvider()],
+      additionalModules: [createIspfPaletteFilterProvider(), createIspfAiPaletteProvider()],
     });
     modelerRef.current = modeler;
 

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   cancelWorkflowInstance,
   fetchWorkflow,
+  fetchWorkflowSteps,
   runWorkflow,
   saveWorkflowBpmn,
   signalWorkflowInstance,
@@ -12,7 +13,7 @@ import {
 } from "../../api";
 import { fetchAuthMe } from "../../api";
 import { fetchOperatorApps } from "../../api/operatorApps";
-import type { WorkflowLifecycleStatus } from "../../types/workflow";
+import type { WorkflowLifecycleStatus, WorkflowStepSummary } from "../../types/workflow";
 import { parseInstanceState } from "../../types/workflow";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 
@@ -68,6 +69,11 @@ export default function WorkflowBuilder({
     () => parseInstanceState(workflow.data?.instanceState),
     [workflow.data?.instanceState]
   );
+  const stepsQuery = useQuery({
+    queryKey: ["workflow-steps", instance.instanceId],
+    queryFn: () => fetchWorkflowSteps(instance.instanceId!),
+    enabled: Boolean(instance.instanceId),
+  });
   const dirty = draftBpmn !== null;
 
   const saveMutation = useMutation({
@@ -397,6 +403,39 @@ export default function WorkflowBuilder({
           )}
           {(cancelMutation.isSuccess || signalMutation.isSuccess) && (
             <p className="hint">{t("workflow:instance.actionDone")}</p>
+          )}
+          {stepsQuery.data && stepsQuery.data.length > 0 && (
+            <div className="workflow-step-timeline">
+              <h4>{t("workflow:instance.timeline")}</h4>
+              <ol className="workflow-step-list">
+                {stepsQuery.data.map((step: WorkflowStepSummary) => (
+                  <li key={step.id} className={`workflow-step status-${step.status.toLowerCase()}`}>
+                    <div className="workflow-step-head">
+                      <span className="mono">
+                        #{step.seq} {step.nodeId}
+                      </span>
+                      <span className="hint">
+                        {step.nodeType} · {step.status}
+                      </span>
+                    </div>
+                    {(step.inputJson || step.outputJson || step.errorJson) && (
+                      <details>
+                        <summary>{t("workflow:instance.stepPayload")}</summary>
+                        <pre className="workflow-code-block">
+                          {[
+                            step.inputJson ? `in: ${step.inputJson}` : null,
+                            step.outputJson ? `out: ${step.outputJson}` : null,
+                            step.errorJson ? `err: ${step.errorJson}` : null,
+                          ]
+                            .filter(Boolean)
+                            .join("\n")}
+                        </pre>
+                      </details>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
           )}
           {instance.history && instance.history.length > 0 && (
             <pre className="workflow-code-block workflow-history">{instance.history.join("\n")}</pre>

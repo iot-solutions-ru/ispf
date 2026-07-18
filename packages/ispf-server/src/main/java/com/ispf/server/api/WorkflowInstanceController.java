@@ -3,12 +3,14 @@ package com.ispf.server.api;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
 import com.ispf.server.workflow.WorkflowService;
 import com.ispf.plugin.workflow.WorkflowException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -61,6 +63,11 @@ public class WorkflowInstanceController {
             @RequestBody MessageWorkflowRequest request
     ) throws WorkflowException {
         return workflowService.deliverMessage(instanceId, request.message(), request.operatorId());
+    }
+
+    @GetMapping("/{instanceId}/steps")
+    public List<Map<String, Object>> steps(@PathVariable String instanceId) {
+        return workflowService.listSteps(instanceId);
     }
 
     public record CancelWorkflowRequest(String reason, String detailJson, String cancelledBy) {

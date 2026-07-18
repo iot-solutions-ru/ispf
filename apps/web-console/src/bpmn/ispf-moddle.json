@@ -31,7 +31,20 @@
         { "name": "payloadJson", "isAttr": true, "type": "String" },
         { "name": "contextKey", "isAttr": true, "type": "String" },
         { "name": "workflowPath", "isAttr": true, "type": "String" },
-        { "name": "inputJson", "isAttr": true, "type": "String" }
+        { "name": "inputJson", "isAttr": true, "type": "String" },
+        { "name": "promptTemplate", "isAttr": true, "type": "String" },
+        { "name": "outputVariable", "isAttr": true, "type": "String" },
+        { "name": "outputFormat", "isAttr": true, "type": "String" },
+        { "name": "modelRef", "isAttr": true, "type": "String" },
+        { "name": "timeoutMs", "isAttr": true, "type": "String" },
+        { "name": "goalTemplate", "isAttr": true, "type": "String" },
+        { "name": "agentMode", "isAttr": true, "type": "String" },
+        { "name": "toolAllowlist", "isAttr": true, "type": "String" },
+        { "name": "maxSteps", "isAttr": true, "type": "String" },
+        { "name": "retryable", "isAttr": true, "type": "String" },
+        { "name": "sourceVariable", "isAttr": true, "type": "String" },
+        { "name": "functionName", "isAttr": true, "type": "String" },
+        { "name": "inputMap", "isAttr": true, "type": "String" }
       ]
     },
     {

@@ -15,11 +15,20 @@ Workflow object variables:
 | `title` | Display name |
 | `status` | `DRAFT` / `ACTIVE` / `STOPPED` |
 | `bpmnXml` | BPMN 2.0 XML |
-| `triggerJson` | Variable-change trigger |
+| `triggerJson` | Variable-change or event trigger |
 | `operatorAppId` | Operator App for user tasks in the sidebar |
 | `instanceState` | JSON state of the last instance |
 | `lastRunAt` | Time of the last run |
 | `lastAction` | Last service task action |
+| `inputSchemaJson` | Tool input schema (ADR-0049) |
+| `outputSchemaJson` | Tool output projection schema |
+| `toolDescription` | Agent/MCP tool description |
+| `sideEffectClass` | `READ` / `WRITE` / `CONTROL` |
+| `retryMaxAttempts` | Max retries after FAILED (metadata for DLQ) |
+| `retryBackoffSeconds` | Backoff hint |
+| `errorWorkflowPath` | Workflow started on failure |
+| `webhookSlug` | Inbound webhook slug |
+| `cronExpression` | e.g. `every:1m` |
 
 ## Lifecycle
 
@@ -88,6 +97,15 @@ Generic BPMN pasted from other tools will often fail or behave incorrectly until
 | `set_variable` | `ispf:targetPath`, `ispf:variable`, `ispf:value` |
 | `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
 | `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
+| `fire_event` | `ispf:objectPath`, `ispf:eventName`, `ispf:payloadVariable` |
+| `read_variable` | `ispf:objectPath`, `ispf:variable` / `sourceVariable`, `ispf:contextKey` |
+| `start_workflow` | `ispf:workflowPath`, `ispf:objectPath` |
+| `llm_complete` | `ispf:promptTemplate`, `ispf:outputVariable`, `ispf:outputFormat`, `ispf:modelRef`, `ispf:timeoutMs` |
+| `invoke_agent` | `ispf:goalTemplate`, `ispf:agentMode`, `ispf:toolAllowlist`, `ispf:maxSteps`, `ispf:outputVariable` |
+
+`modelRef`: `platform-default` (platform AI settings), a model id, or a credentials vault path (`root...`) whose secret is the API key and optional metadata `baseUrl` / `model`.
+
+Tool contracts (ADR-0049): WORKFLOW variables `inputSchemaJson`, `outputSchemaJson`, `toolDescription`, `sideEffectClass`. Agent tool `invoke_workflow_tool` requires `ACTIVE`. ACTIVE workflows with non-blank `toolDescription` are also published on MCP as `wf_<name>` tools. Execution journal: `GET /api/v1/workflows/instances/{id}/steps`, `GET /api/v1/workflows/by-path/runs`. Webhook: `POST /api/v1/webhooks/workflows/{slug}` when `webhookSlug` is set. Cron: `cronExpression=every:1m`. AI palette entries in the BPMN editor create `llm_complete` / `invoke_agent` service tasks with defaults.
 
 Example `invoke_function` (application functions — [applications](applications.md)):
 
@@ -298,17 +316,23 @@ Continues the instance when a deadline boundary timer or intermediate timer catc
 GET  /api/v1/workflows/by-path?path=...
 PUT  /api/v1/workflows/by-path/bpmn?path=...
 PUT  /api/v1/workflows/by-path/status?path=...   body: { "status": "ACTIVE" }
-POST /api/v1/workflows/by-path/run?path=...
+POST /api/v1/workflows/by-path/run?path=...     body: { "input": { ... } }
+POST /api/v1/workflows/by-path/invoke-tool?path=...
+GET  /api/v1/workflows/by-path/runs?path=...
+GET  /api/v1/workflows/instances/{instanceId}/steps
 POST /api/v1/workflows/instances/{instanceId}/cancel
 POST /api/v1/workflows/instances/{instanceId}/signal
 POST /api/v1/workflows/instances/{instanceId}/message
 POST /api/v1/workflows/instances/{instanceId}/timer
 POST /api/v1/workflows/signal
+POST /api/v1/webhooks/workflows/{slug}
 ```
 
 ## Persistence
 
-Tables: `workflow_instances`, `workflow_user_tasks` (Flyway V2).
+Tables: `workflow_instances`, `workflow_user_tasks`, `workflow_execution_steps`, `workflow_dead_letters` (ADR-0049 / Flyway V81).
+
+Related: [0047-custom-bpmn-subset-engine](decisions/0047-custom-bpmn-subset-engine.md), [0049-ot-automation-excellence](decisions/0049-ot-automation-excellence.md), hands-on [OT Automation tutorials](ot-automation-excellence-tutorials.md).
 
 ## Tests
 
