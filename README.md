@@ -13,15 +13,15 @@ Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as sep
 <!-- Hero: when ready, drop docs/assets/ispf-hero.gif and change src below (script: docs/assets/README.md). -->
 
 <p align="center">
-  <img src="docs/assets/ispf-operator-hmi.png" alt="ISPF operator HMI — UI Pump Station with live facility mimic" width="450" />
+  <img src="docs/assets/ispf-operator-hmi.png" alt="ISPF operator HMI — Mini-CHP station overview with AI assistant" width="450" />
   &nbsp;
-  <img src="docs/assets/ispf-object-tree.png" alt="ISPF object tree — Pump 1 device variables in Explorer" width="450" />
+  <img src="docs/assets/ispf-scada-snmp.png" alt="ISPF SCADA mimic editor — main oil pipeline P&ID with symbol library" width="450" />
 </p>
 
 <p align="center">
-  <img src="docs/assets/ispf-bpmn-workflow.png" alt="ISPF BPMN workflow — MES work-order dispatch editor" width="450" />
+  <img src="docs/assets/ispf-dashboard-builder.png" alt="ISPF dashboard builder — charts, network graph, and spreadsheet widgets" width="450" />
   &nbsp;
-  <img src="docs/assets/ispf-alert-rule.png" alt="ISPF CEL alert rule — UI Pump High Pressure" width="450" />
+  <img src="docs/assets/ispf-bpmn-workflow.png" alt="ISPF BPMN workflow — MES work-order dispatch editor" width="450" />
 </p>
 
 

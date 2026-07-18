@@ -59,12 +59,12 @@ Captured **2026-07-19** from demostand [ispf.iot-solutions.ru](https://ispf.iot-
 
 | File | Role | Scene |
 | ---- | ---- | ----- |
-| `ispf-operator-hmi.png` | README hero (until GIF) | Operator · UI Pump Station + facility mimic |
-| `ispf-scada-snmp.png` | README row 1 | Admin View · `ui-pump-station-overview` (filename kept for links) |
-| `ispf-object-tree.png` | README row 1 | Explorer · Pump 1 · Variables |
-| `ispf-bpmn-workflow.png` | README row 2 | BPMN Editor · `mes-work-order-dispatch` |
-| `ispf-alert-rule.png` | README row 2 | Alert · `ui-pump-high-pressure` CEL |
-| `ispf-dashboard-builder.png` | Spare / docs | Dashboard Editor · widget palette |
+| `ispf-operator-hmi.png` | README hero | Operator Mini-CHP + AI assistant (dense HMI) |
+| `ispf-scada-snmp.png` | README row 1 | Mimic editor · main oil pipeline P&ID (filename kept) |
+| `ispf-dashboard-builder.png` | README row 2 | Dashboard editor · chart + network graph + sheet |
+| `ispf-bpmn-workflow.png` | README row 2 | BPMN Editor · `mes-work-order-dispatch` (EN) |
+| `ispf-object-tree.png` | Spare | Explorer · MQTT Meter Bus |
+| `ispf-alert-rule.png` | Spare | CEL alert editor |
 | `ispf-marketplace.png` | Spare / docs | System → Solutions catalog |
 | `ispf-ai-studio.png` | Spare / docs | AI Studio → Agent |
 | `ispf-explorer-en.png` | Spare / docs | Same as object-tree (EN Explorer) |
