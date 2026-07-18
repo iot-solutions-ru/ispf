@@ -2,9 +2,15 @@
   "id": "hvac-lab-mqtt",
   "version": "1",
   "domain": "hvac",
-  "title": "Lab MQTT temperature sensor",
+  "lane": "both",
+  "title": "Lab MQTT temperature demo (UI)",
   "description": "Lightweight HVAC lab bundle.",
-  "prompt": "Deploy lab-mqtt-temperature bundle for a single-zone temperature demo.",
+  "prompt": "Install lab-mqtt-temperature for a single-zone temperature demo and open its operator/dashboard view.",
+  "uiJourney": "Solutions → Deploy → Operator/Dashboard",
+  "humanSteps": [
+    "Deploy mqtt-temperature-lab.",
+    "Open Operator or dashboard and confirm temperature value."
+  ],
   "playbook": "applicationLifecycleGuide",
   "bundle": {
     "appId": "mqtt-temperature-lab",
@@ -12,6 +18,13 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

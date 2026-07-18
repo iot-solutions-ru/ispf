@@ -19,5 +19,5 @@
     "spreadsheet",
     "hmi"
   ],
-  "changelog": "Marketplace catalog stub listing for spreadsheet-demo (BL-183)."
+  "changelog": "1.0.0 — full operator bundle (devices + spreadsheet dashboards)"
 }

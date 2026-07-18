@@ -2,9 +2,23 @@
   "id": "platform-generator-primitives",
   "version": "1",
   "domain": "scada",
+  "lane": "both",
   "kind": "platform-primitive",
-  "title": "Solution generator platform primitives",
+  "title": "Generator primitives (UI)",
   "description": "Live apply must compose hub + devices + dashboard + alert from plant spec, not DOMAIN_CATALOG templates.",
-  "prompt": "Describe a small monitoring plant with two devices and an overview dashboard plus a high-status alert on the hub. Apply as platform primitives.",
-  "playbook": "AgentSolutionGeneratorPlaybook"
+  "prompt": "Describe a small monitoring plant with two devices and an overview dashboard plus one alert; generate it and verify devices in Explorer and the dashboard in Operator.",
+  "uiJourney": "AI Studio generator → Explorer → Operator → Alarms",
+  "humanSteps": [
+    "Paste the plant description into AI Studio solution generator.",
+    "Verify two devices in Explorer and overview in Operator; check Alarms."
+  ],
+  "playbook": "AgentSolutionGeneratorPlaybook",
+  "acceptance": {
+    "operatorSurfaces": [
+      "ai-studio",
+      "explorer",
+      "operator",
+      "alarms"
+    ]
+  }
 }

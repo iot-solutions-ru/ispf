@@ -2,9 +2,15 @@
   "id": "mes-mini-tec-deploy",
   "version": "1",
   "domain": "mes",
-  "title": "Mini-TEC reference deploy",
+  "lane": "both",
+  "title": "Mini-TEC deploy (UI)",
   "description": "Deploy mini-tec energy reference bundle with reports and operator UI.",
-  "prompt": "Deploy mini-tec bundle: validate, dry-run, import, configure operator dashboards for TEC daily journal.",
+  "prompt": "Install mini-tec with validate → dry-run → import, then open configured operator dashboards.",
+  "uiJourney": "Solutions / AI Studio Bundle → Deploy steps → Operator",
+  "humanSteps": [
+    "Deploy mini-tec from Solutions or Bundle tab.",
+    "Open Operator dashboards for mini-tec."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "mini-tec",
@@ -12,6 +18,16 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package", "configure_operator_ui"]
+    "requiredTools": [
+      "validate_bundle",
+      "dry_run_deploy",
+      "import_package",
+      "configure_operator_ui"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator",
+      "ai-studio"
+    ]
   }
 }

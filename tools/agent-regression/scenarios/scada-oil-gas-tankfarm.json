@@ -2,11 +2,26 @@
   "id": "scada-oil-gas-tankfarm",
   "version": "1",
   "domain": "scada",
-  "title": "Oil & gas tank farm overview",
+  "lane": "agent",
+  "title": "Oil & gas tank farm (agent + UI verify)",
   "description": "Storage tanks, transfer pumps, facility mimic and historian trends.",
-  "prompt": "Create oil and gas tank farm SCADA with storage tanks, transfer pumps, facility overview mimic, and high pressure alert.",
+  "prompt": "Create an oil and gas tank farm with storage tanks, transfer pumps, facility mimic, and historian trends. A human should be able to open Mimic and Operator overview afterward.",
+  "uiJourney": "AI Studio → Mimic → Operator",
+  "humanSteps": [
+    "Run via AI Studio chat with the plant ask.",
+    "Open Mimic and Operator to verify tanks, pumps, and trends."
+  ],
   "playbook": "AgentSolutionGeneratorPlaybook",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_variable_history"]
+    "requiredTools": [
+      "create_virtual_device",
+      "save_mimic_diagram",
+      "configure_variable_history"
+    ],
+    "operatorSurfaces": [
+      "ai-studio",
+      "mimic",
+      "operator"
+    ]
   }
 }

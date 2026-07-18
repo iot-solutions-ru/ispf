@@ -335,6 +335,14 @@ public class OperatorAppUiService {
         if (alarmBar != null) {
             ui.put("alarmBar", alarmBar);
         }
+        Object reports = extras.get("reports");
+        if (reports != null) {
+            ui.put("reports", reports);
+        }
+        Object defaultReport = extras.get("defaultReport");
+        if (defaultReport != null) {
+            ui.put("defaultReport", defaultReport);
+        }
         Object agentInstructions = extras.get("agentInstructions");
         if (agentInstructions != null) {
             ui.put("agentInstructions", agentInstructions);

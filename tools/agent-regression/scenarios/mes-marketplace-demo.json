@@ -2,9 +2,15 @@
   "id": "mes-marketplace-demo",
   "version": "1",
   "domain": "mes",
-  "title": "Marketplace demo bundle",
+  "lane": "both",
+  "title": "Marketplace demo install (UI)",
   "description": "Minimal marketplace GA demo bundle for browse → install flow.",
-  "prompt": "Deploy marketplace-demo bundle using e2e deploy playbook steps.",
+  "prompt": "Install marketplace-demo from Marketplace/Solutions and open its operator UI.",
+  "uiJourney": "Marketplace → Deploy → Operator",
+  "humanSteps": [
+    "Open Marketplace; install marketplace-demo.",
+    "Open Operator for marketplace-demo."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "marketplace-demo",
@@ -12,6 +18,15 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["deploy_step_validate", "deploy_step_import", "configure_operator_ui"]
+    "requiredTools": [
+      "deploy_step_validate",
+      "deploy_step_import",
+      "configure_operator_ui"
+    ],
+    "operatorSurfaces": [
+      "marketplace",
+      "solutions",
+      "operator"
+    ]
   }
 }

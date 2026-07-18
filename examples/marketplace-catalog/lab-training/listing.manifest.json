@@ -20,5 +20,5 @@
     "training",
     "acl"
   ],
-  "changelog": "Marketplace catalog stub listing for lab-training (BL-183)."
+  "changelog": "Full lab-training operator bundle (dashboards + reports)"
 }

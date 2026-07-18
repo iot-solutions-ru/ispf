@@ -2,9 +2,16 @@
   "id": "hvac-zone-comfort",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC zone comfort dashboard",
-  "description": "Post-deploy dashboard for zone temperatures.",
-  "prompt": "After building-hvac deploy, add dashboard with zone comfort widgets bound to hvac_listZones.",
+  "lane": "human",
+  "title": "Zone comfort dashboard widgets (UI)",
+  "description": "Golden HVAC dashboard binding journey.",
+  "prompt": "After building-hvac is installed, add or open a zone comfort dashboard with widgets bound to HVAC zone temperatures and open it in Operator mode.",
+  "uiJourney": "Explorer / Dashboard builder → bind zone temps → Operator",
+  "humanSteps": [
+    "Open building-hvac dashboards in admin Dashboard builder.",
+    "Add comfort widgets bound to zone temperature variables; save.",
+    "Open Operator building-hvac and confirm comfort values."
+  ],
   "playbook": "dashboardGuide",
   "bundle": {
     "appId": "building-hvac",
@@ -12,6 +19,13 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["add_dashboard_widget", "invoke_bff"]
+    "requiredTools": [
+      "add_dashboard_widget",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "dashboard",
+      "operator"
+    ]
   }
 }

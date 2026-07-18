@@ -1,0 +1,815 @@
+{
+  "$comment": "Human-reproducible SCADA/MES/HVAC journeys. lane=human = golden click-through; agent = AI Studio/tool playbook with UI verify; both = either.",
+  "scenarios": {
+    "scada-pump-station": {
+      "lane": "human",
+      "title": "Pump station from plant spec (UI)",
+      "description": "Golden SCADA journey: invent a pump station in the console without naming agent tools. Applying scada-facility-overview must auto-create missing mimicPath (no 404).",
+      "prompt": "I need a small oil & gas pump station: two gate valves, two pumps, one flow meter, a mimic overview, an operator dashboard, and a high-pressure alert that an operator can see in Alarms.",
+      "uiJourney": "Login (admin) → Explorer devices → Dashboard + template scada-facility-overview (auto-creates facility-overview mimic) → Mimic editor → Alert → Operator app → Alarms",
+      "humanSteps": [
+        "Sign in as admin at the web console.",
+        "Open Explorer → Devices and create virtual devices for valves, pumps, and a flow meter.",
+        "Create a Dashboard; apply layout template scada-facility-overview — the platform must create root.platform.mimics.facility-overview if missing (no 404).",
+        "Open Mimic editor for facility-overview and place pump/valve symbols; save.",
+        "Create a high-pressure alert rule on a pump variable; confirm it appears under Alarms / Alarm Console.",
+        "Create an Operator app pointing at the dashboard; open Operator and verify devices table + mimic + alarms."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_alert"],
+        "operatorSurfaces": ["explorer", "mimic", "dashboard", "operator", "alarms"]
+      }
+    },
+    "scada-mimic-facility": {
+      "lane": "human",
+      "title": "Tank-farm facility mimic (UI)",
+      "description": "Golden SCADA mimic journey for a facility overview.",
+      "prompt": "Create a tank-farm facility mimic with tank levels and valve positions, plus a facility overview dashboard an operator can open in Operator mode.",
+      "uiJourney": "Explorer → Mimic editor → Dashboard builder → Operator",
+      "humanSteps": [
+        "In Explorer, create or select tank and valve objects with level/position variables.",
+        "Open Mimic; draw tanks and valves; bind fill and position to variables; save.",
+        "Open Dashboard; add overview widgets for the same tags; save.",
+        "Switch to Operator mode and open the facility overview screen."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_object", "save_mimic_diagram", "set_dashboard_layout"],
+        "operatorSurfaces": ["explorer", "mimic", "dashboard", "operator"]
+      }
+    },
+    "scada-tank-farm": {
+      "lane": "human",
+      "title": "Three-tank farm with trends (UI)",
+      "description": "Golden SCADA historian + overview for storage tanks.",
+      "prompt": "Build a tank farm with three storage tanks, fill-level charts from historian, and an overview dashboard for operators.",
+      "uiJourney": "Explorer → enable historian on level vars → Dashboard charts → Operator",
+      "humanSteps": [
+        "Create three tank devices with level variables in Explorer.",
+        "Enable historian/history on each level variable.",
+        "Build an overview dashboard with three chart widgets bound to those histories.",
+        "Open Operator mode and confirm live levels and trends."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "configure_variable_history", "set_dashboard_layout"],
+        "operatorSurfaces": ["explorer", "dashboard", "operator"]
+      }
+    },
+    "scada-alarm-shelf": {
+      "lane": "human",
+      "title": "Alarm shelf with operator approval (UI)",
+      "description": "Golden SCADA alarm / approval surface.",
+      "prompt": "Configure a high-pressure alert and an operator alarm shelf so an operator can see and acknowledge the alarm without using admin editors.",
+      "uiJourney": "Explorer (alert rule) → Operator Alarms / alarm shelf dashboard",
+      "humanSteps": [
+        "Select a pressure variable in Explorer and add a high-pressure alert rule.",
+        "Ensure Operator UI includes an Alarms or alarm-shelf screen.",
+        "Trigger or simulate high pressure; open Operator → Alarms and acknowledge."
+      ],
+      "acceptance": {
+        "requiredTools": ["configure_alert", "configure_operator_ui", "list_automation"],
+        "operatorSurfaces": ["alarms", "operator"]
+      }
+    },
+    "scada-historian-trends": {
+      "lane": "human",
+      "title": "Historian trend on virt-cluster (UI)",
+      "description": "Golden SCADA historian widget path.",
+      "prompt": "Enable historian on a sineWave lab variable and add a chart widget to the virt-cluster overview dashboard so I can see trends in Operator mode.",
+      "uiJourney": "Explorer → variable history → Dashboard chart → Operator",
+      "humanSteps": [
+        "In Explorer, open the sineWave (or virt-cluster) variable and enable history.",
+        "Open the virt-cluster overview dashboard; add a chart widget bound to that history; save.",
+        "Open Operator mode and confirm the trend updates."
+      ],
+      "acceptance": {
+        "requiredTools": ["configure_variable_history", "add_dashboard_widget", "get_variable_history"],
+        "operatorSurfaces": ["explorer", "dashboard", "operator"]
+      }
+    },
+    "scada-solution-generator": {
+      "lane": "human",
+      "title": "Plant spec → SCADA solution (UI)",
+      "description": "Golden generator path via AI Studio or Solutions, verified in Explorer/Operator.",
+      "prompt": "From this plant spec create a monitoring solution: two pumps, one flow meter, an overview dashboard, and a high-pressure alert. I will verify devices in Explorer and the dashboard in Operator mode.",
+      "uiJourney": "AI Studio (Solution generator) or Solutions → Explorer verify → Dashboard → Operator → Alarms",
+      "humanSteps": [
+        "Open AI Studio → Solution / generator (or Solutions catalog) and paste the plant spec.",
+        "Accept generated devices and dashboard.",
+        "In Explorer confirm two pumps and one flow meter exist.",
+        "Open Operator overview; confirm high-pressure alert is configured under Alarms."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "set_dashboard_layout", "configure_alert", "list_variables"],
+        "operatorSurfaces": ["ai-studio", "explorer", "dashboard", "operator", "alarms"]
+      }
+    },
+    "scada-virtual-cluster": {
+      "lane": "human",
+      "title": "Virtual cluster lab monitoring (UI)",
+      "description": "Golden lab SCADA deploy + operator shell.",
+      "prompt": "Set up virtual cluster monitoring with three lab devices, hub bindings, an alert, and an operator shell I can open without the object tree.",
+      "uiJourney": "Solutions / Deploy → Explorer verify devices → Operator",
+      "humanSteps": [
+        "From Solutions (or Deploy panel) install/deploy the virtual cluster monitoring setup.",
+        "In Explorer verify three lab devices and hub bindings.",
+        "Confirm alert rule exists; open Operator UI for the cluster overview."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_object", "configure_alert", "configure_operator_ui"],
+        "operatorSurfaces": ["solutions", "explorer", "operator", "alarms"]
+      }
+    },
+    "scada-water-treatment": {
+      "lane": "human",
+      "title": "Water treatment plant SCADA (UI)",
+      "description": "Golden vertical SCADA walkthrough for water treatment.",
+      "prompt": "Build a water treatment SCADA: intake pump, clarifier basin, effluent flow meter, overview dashboard, and a turbidity/high-flow alert for operators.",
+      "uiJourney": "AI Studio or Explorer create → Dashboard → Alarms → Operator",
+      "humanSteps": [
+        "Create intake pump, clarifier, and effluent flow meter devices (generator or Explorer).",
+        "Build overview dashboard with those tags.",
+        "Add alert; open Operator and Alarms to confirm."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "set_dashboard_layout", "configure_alert", "list_variables"],
+        "operatorSurfaces": ["explorer", "dashboard", "operator", "alarms"]
+      }
+    },
+    "scada-modbus-device": {
+      "lane": "human",
+      "title": "Modbus TCP device + status dashboard (UI)",
+      "description": "Golden driver path: Drivers → device → dashboard.",
+      "prompt": "Add a Modbus TCP device with holding registers and a simple status dashboard so an operator can see register values.",
+      "uiJourney": "Explorer / Drivers → create Modbus device → map registers → Dashboard → Operator",
+      "humanSteps": [
+        "In Explorer create a Modbus TCP device; set host/port and holding register map.",
+        "Confirm variables appear under the device.",
+        "Create a status dashboard with value widgets; open in Operator mode."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_object", "configure_driver", "list_variables"],
+        "operatorSurfaces": ["drivers", "explorer", "dashboard", "operator"]
+      }
+    },
+    "mes-reference-deploy": {
+      "lane": "human",
+      "title": "MES reference deploy (UI)",
+      "description": "Golden MES install from Solutions/Marketplace into Operator. Paid marketplace SKU may block demostand; free mes-platform-production is an accepted substitute for UI walkthrough.",
+      "prompt": "Install the mes-reference application from Solutions/Marketplace, open its operator shell, and confirm BFF-backed order screens load for an operator.",
+      "uiJourney": "Admin → System → Solutions → Install mes-reference (or mes-platform-production) → Operator → Work Queue",
+      "humanSteps": [
+        "Sign in as admin; open System → Solutions (Решения) and locate mes-reference (or free mes-platform-production if paid listing is blocked).",
+        "Deploy/import the full bundle (not a catalog stub); wait until status is ready and operatorUi is configured.",
+        "Open /?mode=operator&app=mes-reference (or mes-platform-production) and confirm order/list screens render.",
+        "Open Work Queue app or sidebar and confirm tasks surface for the MES app."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "invoke_bff"],
+        "operatorSurfaces": ["solutions", "marketplace", "operator", "work-queue"]
+      }
+    },
+    "mes-dispatch-workflow": {
+      "lane": "human",
+      "title": "MES dispatch appears in Work Queue (UI)",
+      "description": "Golden MES operator work-queue journey.",
+      "prompt": "After mes-reference is installed, create or trigger a dispatch order so a user task appears in the operator Work Queue and can be claimed.",
+      "uiJourney": "Operator mes-reference → create/list order → Work Queue claim",
+      "humanSteps": [
+        "Open Operator app mes-reference.",
+        "Use the orders screen to list or create a dispatch order.",
+        "Open Work Queue; claim the pending user task; complete if required."
+      ],
+      "acceptance": {
+        "requiredTools": ["invoke_bff", "list_work_queue"],
+        "operatorSurfaces": ["operator", "work-queue"]
+      }
+    },
+    "mes-defect-demo": {
+      "lane": "human",
+      "title": "Defect capture + Work Queue (UI)",
+      "description": "Golden quality / defect MES journey.",
+      "prompt": "Install mes-defect-demo, capture a defect from the operator screen, and confirm a workflow task lands in Work Queue.",
+      "uiJourney": "Solutions → Deploy mes-defect-demo → Operator → Work Queue",
+      "humanSteps": [
+        "Deploy mes-defect-demo from Solutions.",
+        "Open Operator for mes-defect-demo; submit a defect record.",
+        "Open Work Queue and confirm the defect workflow task."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["import_package", "list_work_queue"],
+        "operatorSurfaces": ["solutions", "operator", "work-queue"]
+      }
+    },
+    "mes-oee-dispatch": {
+      "lane": "human",
+      "title": "OEE screens + dispatch workflow (UI)",
+      "description": "Golden OEE MES journey with workflow.",
+      "prompt": "Install mes-oee-reference, open OEE operator dashboards, and verify dispatch workflow tasks show in Work Queue.",
+      "uiJourney": "Solutions → Deploy → Operator OEE tabs → Work Queue",
+      "humanSteps": [
+        "Deploy mes-oee-reference from Solutions.",
+        "Open Operator app; switch OEE dashboard tabs.",
+        "Trigger or open a dispatch workflow; claim task in Work Queue."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "save_workflow_bpmn", "invoke_bff"],
+        "operatorSurfaces": ["solutions", "operator", "work-queue"]
+      }
+    },
+    "mes-platform-production": {
+      "lane": "human",
+      "title": "MES production walkthrough (UI)",
+      "description": "Golden production MES: OEE + batch screens.",
+      "prompt": "Install mes-platform-production and walk an operator through OEE dashboard and batch-run screens without using admin editors.",
+      "uiJourney": "Solutions → Deploy → Operator OEE + batch tabs",
+      "humanSteps": [
+        "Deploy mes-platform-production.",
+        "Open Operator; open OEE screen; confirm KPIs render.",
+        "Open batch-run screen; confirm phase paths/list load."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "invoke_bff"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "mes-solution-generator-factory": {
+      "lane": "human",
+      "title": "Factory spec → MES solution (UI)",
+      "description": "Golden MES generator journey verified in Operator.",
+      "prompt": "From factory spec: two production lines, a loading rack, an OEE dashboard, and a high-downtime alert. Generate the solution and verify in Explorer and Operator.",
+      "uiJourney": "AI Studio generator → Explorer → Dashboard → Operator → Alarms",
+      "humanSteps": [
+        "Paste factory spec into AI Studio solution generator.",
+        "Accept generated lines, rack, and OEE dashboard.",
+        "Verify objects in Explorer; open Operator OEE; confirm downtime alert under Alarms."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_object", "set_dashboard_layout", "configure_alert", "validate_bundle"],
+        "operatorSurfaces": ["ai-studio", "explorer", "operator", "alarms"]
+      }
+    },
+    "mes-workflow-escalation": {
+      "lane": "human",
+      "title": "Dispatch escalation to supervisor (UI)",
+      "description": "Golden MES escalation visible in Work Queue.",
+      "prompt": "On mes-reference, leave a dispatch order pending until it escalates to the supervisor queue, then claim it from Work Queue as supervisor.",
+      "uiJourney": "Operator mes-reference → wait/escalate → Work Queue (supervisor)",
+      "humanSteps": [
+        "Create a dispatch order in mes-reference Operator UI.",
+        "Leave it pending past escalation (or trigger escalation path).",
+        "Sign in as supervisor (or switch role); open Work Queue and claim the escalated task."
+      ],
+      "acceptance": {
+        "requiredTools": ["invoke_bff", "list_work_queue"],
+        "operatorSurfaces": ["operator", "work-queue"]
+      }
+    },
+    "hvac-building-app": {
+      "lane": "human",
+      "title": "Building HVAC reference deploy (UI)",
+      "description": "Golden HVAC install into Operator shell. Prefer full examples/building-hvac-app bundle (marketplace listing may be a catalog stub without operatorUi).",
+      "prompt": "Install the building-hvac application, open its operator shell, and confirm the zone list screen loads for an operator.",
+      "uiJourney": "Admin → System → Solutions (Решения) → Install building-hvac → Operator (?mode=operator&app=building-hvac)",
+      "humanSteps": [
+        "Sign in as admin; open System → Solutions (Решения / Marketplace).",
+        "Install Building HVAC Reference (appId building-hvac). Prefer a full package with operatorUi — if Operator says UI not found, deploy examples/building-hvac-app/bundle.json via AI Studio Bundle or Application Deploy.",
+        "Open /?mode=operator&app=building-hvac and confirm zone list / comfort screens render."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "configure_operator_ui"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "hvac-zone-comfort": {
+      "lane": "human",
+      "title": "Zone comfort dashboard widgets (UI)",
+      "description": "Golden HVAC dashboard binding journey.",
+      "prompt": "After building-hvac is installed, add or open a zone comfort dashboard with widgets bound to HVAC zone temperatures and open it in Operator mode.",
+      "uiJourney": "Explorer / Dashboard builder → bind zone temps → Operator",
+      "humanSteps": [
+        "Open building-hvac dashboards in admin Dashboard builder.",
+        "Add comfort widgets bound to zone temperature variables; save.",
+        "Open Operator building-hvac and confirm comfort values."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["add_dashboard_widget", "invoke_bff"],
+        "operatorSurfaces": ["dashboard", "operator"]
+      }
+    },
+    "hvac-ahu-comfort": {
+      "lane": "human",
+      "title": "AHU comfort control board (UI)",
+      "description": "Golden AHU comfort UI journey.",
+      "prompt": "Configure the building-hvac AHU comfort dashboard with zone temperature bindings so an operator can monitor AHU and zones together.",
+      "uiJourney": "Dashboard builder → bind AHU/zone vars → Operator",
+      "humanSteps": [
+        "Open AHU / comfort dashboard for building-hvac.",
+        "Bind zone temperature variables to widgets; save.",
+        "Verify in Operator mode."
+      ],
+      "acceptance": {
+        "requiredTools": ["list_variables", "set_dashboard_layout"],
+        "operatorSurfaces": ["dashboard", "operator"]
+      }
+    },
+    "hvac-scheduler-setpoints": {
+      "lane": "human",
+      "title": "Scheduler setpoints update comfort UI (UI)",
+      "description": "Golden HVAC schedules surface.",
+      "prompt": "Change HVAC zone scheduler setpoints and confirm the comfort dashboard reflects the new setpoints for an operator.",
+      "uiJourney": "Schedules → set setpoint → Operator comfort dashboard",
+      "humanSteps": [
+        "Open Schedules for building-hvac zones.",
+        "Change a comfort setpoint; save.",
+        "Open Operator comfort dashboard and confirm setpoint display updates."
+      ],
+      "acceptance": {
+        "requiredTools": ["list_schedules", "set_variable"],
+        "operatorSurfaces": ["schedules", "operator", "dashboard"]
+      }
+    },
+    "hvac-solution-generator-site": {
+      "lane": "human",
+      "title": "HVAC site spec → solution (UI)",
+      "description": "Golden HVAC generator journey.",
+      "prompt": "From HVAC site spec: chiller plant, three floor zones, comfort dashboard, high-temperature alert. Generate and verify in Explorer, Operator, and Alarms.",
+      "uiJourney": "AI Studio generator → Explorer → Operator → Alarms",
+      "humanSteps": [
+        "Paste site spec into AI Studio solution generator.",
+        "Accept chiller, floor zones, comfort dashboard, alert.",
+        "Verify in Explorer; open Operator comfort; confirm Alarms has high-temp rule."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_object", "configure_alert", "set_dashboard_layout", "list_variables"],
+        "operatorSurfaces": ["ai-studio", "explorer", "operator", "alarms"]
+      }
+    },
+    "hvac-chiller-plant": {
+      "lane": "human",
+      "title": "Chiller plant overview + comfort alerts (UI)",
+      "description": "Golden chiller monitoring journey.",
+      "prompt": "Create a chiller plant overview with supply/return temperatures and comfort alerts visible to operators.",
+      "uiJourney": "Explorer → Dashboard → Alarms → Operator",
+      "humanSteps": [
+        "Ensure chiller supply/return variables exist (building-hvac or created).",
+        "Build chiller overview dashboard; add comfort alerts.",
+        "Open Operator and Alarms to confirm."
+      ],
+      "acceptance": {
+        "requiredTools": ["configure_alert", "list_variables"],
+        "operatorSurfaces": ["dashboard", "operator", "alarms"]
+      }
+    },
+    "scada-oil-gas-tankfarm": {
+      "lane": "agent",
+      "title": "Oil & gas tank farm (agent + UI verify)",
+      "prompt": "Create an oil and gas tank farm with storage tanks, transfer pumps, facility mimic, and historian trends. A human should be able to open Mimic and Operator overview afterward.",
+      "uiJourney": "AI Studio → Mimic → Operator",
+      "humanSteps": [
+        "Run via AI Studio chat with the plant ask.",
+        "Open Mimic and Operator to verify tanks, pumps, and trends."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_variable_history"],
+        "operatorSurfaces": ["ai-studio", "mimic", "operator"]
+      }
+    },
+    "scada-energy-thermal": {
+      "lane": "agent",
+      "title": "Thermal power SCADA (agent + UI verify)",
+      "prompt": "Build thermal power plant monitoring (boiler, steam turbine, substation overview) using mini-tec where applicable. Verify operator screens open after deploy.",
+      "uiJourney": "Solutions/Deploy mini-tec → Operator",
+      "humanSteps": [
+        "Deploy mini-tec from Solutions if not present.",
+        "Open Operator and confirm thermal/overview screens."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "invoke_bff"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "scada-pipeline-segment": {
+      "lane": "agent",
+      "title": "Pipeline segment SCADA (agent + UI verify)",
+      "prompt": "Deploy midstream pipeline SCADA with valve station, pressure sensors, linepack mimic, and pressure alert. Verify Mimic and Alarms in the console.",
+      "uiJourney": "AI Studio → Mimic → Alarms → Operator",
+      "humanSteps": [
+        "Generate or create pipeline segment objects.",
+        "Open Mimic and Alarms; confirm operator overview."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_alert"],
+        "operatorSurfaces": ["mimic", "alarms", "operator"]
+      }
+    },
+    "scada-opcua-line": {
+      "lane": "agent",
+      "title": "OPC UA line mimic (agent + UI verify)",
+      "prompt": "Provision an OPC UA production line with throughput mimic and historian trends; verify Mimic and Dashboard in UI.",
+      "uiJourney": "Explorer/Drivers → Mimic → Dashboard → Operator",
+      "humanSteps": [
+        "Create OPC UA line devices.",
+        "Open Mimic and Dashboard trends in Operator."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_variable_history"],
+        "operatorSurfaces": ["drivers", "mimic", "dashboard", "operator"]
+      }
+    },
+    "scada-iec104-substation": {
+      "lane": "agent",
+      "title": "IEC-104 substation (agent + UI verify)",
+      "prompt": "Create IEC-104 substation overview with breaker status and trip alerts; verify Alarms and Operator dashboard.",
+      "uiJourney": "Explorer → Dashboard → Alarms → Operator",
+      "humanSteps": [
+        "Create substation virtual/IEC devices.",
+        "Confirm breaker widgets and trip alerts in Operator/Alarms."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "configure_alert", "list_variables"],
+        "operatorSurfaces": ["explorer", "operator", "alarms"]
+      }
+    },
+    "scada-mimic-pump-overview": {
+      "lane": "both",
+      "title": "Pump station mimic + historian (UI)",
+      "prompt": "Build a pump station with MIMIC diagram, historian trends, and a facility overview dashboard for operators.",
+      "uiJourney": "Explorer → Mimic → Dashboard (historian) → Operator",
+      "humanSteps": [
+        "Create pump station objects.",
+        "Save Mimic; enable historian; build facility dashboard; open Operator."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_object", "save_mimic_diagram", "configure_variable_history", "set_dashboard_layout"],
+        "operatorSurfaces": ["mimic", "dashboard", "operator"]
+      }
+    },
+    "scada-simulator-profiles": {
+      "lane": "agent",
+      "title": "Simulator profiles deploy (UI verify)",
+      "prompt": "Import simulator-profiles and verify virtual devices appear under the platform tree in Explorer.",
+      "uiJourney": "Solutions → Deploy → Explorer",
+      "humanSteps": [
+        "Deploy simulator-profiles from Solutions.",
+        "In Explorer expand virtual devices and confirm profiles loaded."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "list_objects"],
+        "operatorSurfaces": ["solutions", "explorer"]
+      }
+    },
+    "scada-spreadsheet-demo": {
+      "lane": "both",
+      "title": "Spreadsheet widget demo (UI)",
+      "prompt": "Install the spreadsheet demo bundle and open the dashboard so an operator can see spreadsheet widget bindings.",
+      "uiJourney": "Solutions → Deploy sheet-demo → Operator/Dashboard",
+      "humanSteps": [
+        "Deploy spreadsheet-demo (app sheet-demo).",
+        "Open the dashboard with spreadsheet widget in Operator or admin preview."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "set_dashboard_layout"],
+        "operatorSurfaces": ["solutions", "dashboard", "operator"]
+      }
+    },
+    "scada-snmp-dashboard": {
+      "lane": "agent",
+      "title": "SNMP host dashboard (UI verify)",
+      "prompt": "Configure SNMP localhost monitoring with CPU, memory, and network widgets on a dashboard an operator can open.",
+      "uiJourney": "Drivers → Dashboard → Operator",
+      "humanSteps": [
+        "Configure SNMP driver for localhost.",
+        "Build dashboard widgets; open Operator."
+      ],
+      "acceptance": {
+        "requiredTools": ["configure_driver", "set_dashboard_layout", "list_variables"],
+        "operatorSurfaces": ["drivers", "dashboard", "operator"]
+      }
+    },
+    "platform-primitive-deploy": {
+      "lane": "both",
+      "kind": "platform-primitive",
+      "title": "Platform primitive deploy (UI verify)",
+      "prompt": "Deploy the platform-primitive example bundle and open its operator overview. Confirm hub device and overview dashboard exist in Explorer.",
+      "uiJourney": "AI Studio Bundle / Solutions → Deploy → Explorer → Operator",
+      "humanSteps": [
+        "Deploy platform-primitive from Solutions or AI Studio Bundle tab.",
+        "In Explorer confirm platform-primitive-hub and platform-primitive-overview.",
+        "Open Operator overview for the app."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["run_deploy_playbook", "deploy_step_import"],
+        "requiredObjectPaths": [
+          "root.platform.devices.platform-primitive-hub",
+          "root.platform.dashboards.platform-primitive-overview"
+        ],
+        "operatorSurfaces": ["solutions", "explorer", "operator", "ai-studio"]
+      }
+    },
+    "platform-generator-primitives": {
+      "lane": "both",
+      "kind": "platform-primitive",
+      "title": "Generator primitives (UI)",
+      "prompt": "Describe a small monitoring plant with two devices and an overview dashboard plus one alert; generate it and verify devices in Explorer and the dashboard in Operator.",
+      "uiJourney": "AI Studio generator → Explorer → Operator → Alarms",
+      "humanSteps": [
+        "Paste the plant description into AI Studio solution generator.",
+        "Verify two devices in Explorer and overview in Operator; check Alarms."
+      ],
+      "acceptance": {
+        "operatorSurfaces": ["ai-studio", "explorer", "operator", "alarms"]
+      }
+    },
+    "mes-batch-run-tracking": {
+      "lane": "agent",
+      "title": "Batch run phase tracking (UI verify)",
+      "prompt": "Install mes-platform-production and open batch-run screens so an operator can track phase paths.",
+      "uiJourney": "Solutions → Operator batch screens",
+      "humanSteps": [
+        "Deploy mes-platform-production.",
+        "Open Operator batch-run screen and confirm phases list."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "invoke_bff"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "mes-demo-app-deploy": {
+      "lane": "agent",
+      "title": "Demo app deploy (UI verify)",
+      "prompt": "Install the demo application bundle and open its operator screens; run a sample report if available.",
+      "uiJourney": "Solutions → Deploy demo → Operator",
+      "humanSteps": [
+        "Deploy demo from Solutions.",
+        "Open /?mode=operator&app=demo and confirm screens."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "run_report"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "mes-lab-training": {
+      "lane": "agent",
+      "title": "Lab training bundle (UI verify)",
+      "prompt": "Install lab-training and verify virtual meter variables in Explorer.",
+      "uiJourney": "Solutions → Deploy → Explorer",
+      "humanSteps": [
+        "Deploy lab-training.",
+        "In Explorer open virtual meter variables."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "list_variables"],
+        "operatorSurfaces": ["solutions", "explorer"]
+      }
+    },
+    "mes-marketplace-demo": {
+      "lane": "both",
+      "title": "Marketplace demo install (UI)",
+      "prompt": "Install marketplace-demo from Marketplace/Solutions and open its operator UI.",
+      "uiJourney": "Marketplace → Deploy → Operator",
+      "humanSteps": [
+        "Open Marketplace; install marketplace-demo.",
+        "Open Operator for marketplace-demo."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["deploy_step_validate", "deploy_step_import", "configure_operator_ui"],
+        "operatorSurfaces": ["marketplace", "solutions", "operator"]
+      }
+    },
+    "mes-mini-tec-deploy": {
+      "lane": "both",
+      "title": "Mini-TEC deploy (UI)",
+      "prompt": "Install mini-tec with validate → dry-run → import, then open configured operator dashboards.",
+      "uiJourney": "Solutions / AI Studio Bundle → Deploy steps → Operator",
+      "humanSteps": [
+        "Deploy mini-tec from Solutions or Bundle tab.",
+        "Open Operator dashboards for mini-tec."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package", "configure_operator_ui"],
+        "operatorSurfaces": ["solutions", "operator", "ai-studio"]
+      }
+    },
+    "mes-oee-reference": {
+      "lane": "agent",
+      "title": "MES OEE reference deploy (UI verify)",
+      "prompt": "Install mes-oee-reference and open OEE operator screens.",
+      "uiJourney": "Solutions → Deploy → Operator",
+      "humanSteps": [
+        "Deploy mes-oee-reference.",
+        "Open Operator OEE screens."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "mes-ogp-events-deploy": {
+      "lane": "agent",
+      "title": "OGP events deploy (UI verify)",
+      "prompt": "Install mes-ogp-events for shop-floor event registration and open the operator event screens.",
+      "uiJourney": "Solutions → Deploy → Operator",
+      "humanSteps": [
+        "Deploy mes-ogp-events.",
+        "Open Operator and confirm event registration screens."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "mes-platform-cert": {
+      "lane": "agent",
+      "title": "MES platform certification (UI verify)",
+      "prompt": "Install mes-platform and open OEE dashboard paths in Operator.",
+      "uiJourney": "Solutions → Deploy → Operator",
+      "humanSteps": [
+        "Deploy mes-platform.",
+        "Open Operator OEE paths."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "mes-quality-inspection": {
+      "lane": "both",
+      "title": "Quality inspection screens (UI)",
+      "prompt": "With mes-defect-demo installed, open quality inspection / defect capture screens and confirm the quality dashboard for an operator.",
+      "uiJourney": "Operator mes-defect-demo → quality dashboard",
+      "humanSteps": [
+        "Open Operator mes-defect-demo.",
+        "Capture or list defects; open quality dashboard tab."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "invoke_bff"],
+        "operatorSurfaces": ["operator"]
+      }
+    },
+    "mes-spc-dashboard": {
+      "lane": "both",
+      "title": "SPC quality dashboard (UI)",
+      "prompt": "On mes-platform-production, open the SPC quality dashboard with chart and sample list for an operator.",
+      "uiJourney": "Operator mes-platform-production → SPC / quality tab",
+      "humanSteps": [
+        "Deploy mes-platform-production if needed.",
+        "Open Operator SPC/quality dashboard; confirm chart and sample list."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["configure_operator_ui", "invoke_bff"],
+        "operatorSurfaces": ["operator", "dashboard"]
+      }
+    },
+    "mes-warehouse-app": {
+      "lane": "agent",
+      "title": "Warehouse app (UI verify)",
+      "prompt": "Install warehouse-app and open SQL-backed operator screens.",
+      "uiJourney": "Solutions → Deploy → Operator",
+      "humanSteps": [
+        "Deploy warehouse.",
+        "Open Operator warehouse screens."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "hvac-alerts-comfort": {
+      "lane": "both",
+      "title": "Zone comfort high-temp alert (UI)",
+      "prompt": "Configure HVAC zone comfort dashboard with a high-temperature alert and verify it in Operator Alarms.",
+      "uiJourney": "Dashboard → Alerts → Operator Alarms",
+      "humanSteps": [
+        "Open zone comfort dashboard; ensure high-temp alert rule exists.",
+        "Open Operator and Alarms; confirm alert."
+      ],
+      "acceptance": {
+        "requiredTools": ["configure_alert", "set_dashboard_layout", "invoke_bff"],
+        "operatorSurfaces": ["dashboard", "operator", "alarms"]
+      }
+    },
+    "hvac-e2e-deploy": {
+      "lane": "agent",
+      "title": "HVAC e2e deploy playbook (UI verify)",
+      "prompt": "Deploy building-hvac end-to-end (validate, dry-run, import, operator UI) and open the operator shell.",
+      "uiJourney": "AI Studio Bundle → Deploy steps → Operator",
+      "humanSteps": [
+        "Run deploy steps for building-hvac.",
+        "Open Operator building-hvac."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package", "configure_operator_ui"],
+        "operatorSurfaces": ["ai-studio", "operator"]
+      }
+    },
+    "hvac-energy-dashboard": {
+      "lane": "both",
+      "title": "HVAC energy dashboard (UI)",
+      "prompt": "Build an HVAC energy dashboard with zone historian trends and a setpoint-drift alert; open it in Operator mode.",
+      "uiJourney": "Dashboard builder → historian → Alarms → Operator",
+      "humanSteps": [
+        "Enable history on zone energy/temp tags.",
+        "Build energy dashboard; add drift alert; open Operator."
+      ],
+      "acceptance": {
+        "requiredTools": ["configure_variable_history", "set_dashboard_layout"],
+        "operatorSurfaces": ["dashboard", "operator", "alarms"]
+      }
+    },
+    "hvac-lab-mqtt": {
+      "lane": "both",
+      "title": "Lab MQTT temperature demo (UI)",
+      "prompt": "Install lab-mqtt-temperature for a single-zone temperature demo and open its operator/dashboard view.",
+      "uiJourney": "Solutions → Deploy → Operator/Dashboard",
+      "humanSteps": [
+        "Deploy mqtt-temperature-lab.",
+        "Open Operator or dashboard and confirm temperature value."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "hvac-mqtt-alerts": {
+      "lane": "both",
+      "title": "MQTT temperature alerts (UI)",
+      "prompt": "Install lab-mqtt-temperature and add a high zone-temperature alert; verify in Operator Alarms.",
+      "uiJourney": "Solutions → Deploy → Alerts → Operator Alarms",
+      "humanSteps": [
+        "Deploy mqtt-temperature-lab.",
+        "Add high-temp alert; open Operator Alarms."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["import_package", "configure_alert", "configure_operator_ui"],
+        "operatorSurfaces": ["solutions", "operator", "alarms"]
+      }
+    },
+    "hvac-multi-floor-zones": {
+      "lane": "agent",
+      "title": "Multi-floor HVAC zones (UI verify)",
+      "prompt": "Install building-hvac with floor zone hub and multi-zone comfort; verify floors in Operator.",
+      "uiJourney": "Solutions → Deploy → Operator zones",
+      "humanSteps": [
+        "Deploy building-hvac.",
+        "Open Operator and confirm multi-floor zone comfort screens."
+      ],
+      "acceptance": {
+        "validateBundle": true,
+        "requiredTools": ["validate_bundle", "import_package", "invoke_bff"],
+        "operatorSurfaces": ["solutions", "operator"]
+      }
+    },
+    "hvac-smart-building-bms": {
+      "lane": "agent",
+      "title": "Smart building BMS (agent + UI verify)",
+      "prompt": "Build a smart building BMS with lighting panel, access controller, and zone comfort dashboard; verify Operator shell.",
+      "uiJourney": "AI Studio generator → Operator",
+      "humanSteps": [
+        "Generate BMS via AI Studio.",
+        "Open Operator comfort/lighting overview."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_virtual_device", "configure_operator_ui", "set_dashboard_layout"],
+        "operatorSurfaces": ["ai-studio", "operator"]
+      }
+    },
+    "hvac-zone-binding": {
+      "lane": "agent",
+      "title": "Zone comfort CEL binding (UI verify)",
+      "prompt": "Add a CEL binding for zone comfort index and show it on the comfort dashboard for operators.",
+      "uiJourney": "Explorer bindings → Dashboard → Operator",
+      "humanSteps": [
+        "Create comfort-index binding rule.",
+        "Bind widget on comfort dashboard; open Operator."
+      ],
+      "acceptance": {
+        "requiredTools": ["create_binding_rule", "configure_platform_context_rule", "list_binding_rules"],
+        "operatorSurfaces": ["explorer", "dashboard", "operator"]
+      }
+    }
+  }
+}

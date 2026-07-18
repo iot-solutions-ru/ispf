@@ -111,11 +111,17 @@ function MarketplaceListingCard({
     mutationFn: () => installMarketplaceListing(marketplaceId, listing.slug),
     onSuccess: (result) => {
       const functions = Array.isArray(result.functions) ? result.functions.join(", ") : "";
-      onInstalled(
-        functions
-          ? t("solutions.marketplace.installOkWithFunctions", { functions })
-          : t("solutions.installOk")
-      );
+      const appId = typeof result.appId === "string" ? result.appId : listing.appId;
+      const operatorReady = result.operatorReady !== false;
+      let message = functions
+        ? t("solutions.marketplace.installOkWithFunctions", { functions })
+        : t("solutions.installOk");
+      if (isApplication && appId && operatorReady) {
+        message = `${message} ${t("solutions.marketplace.installOkOpenOperator", { appId })}`;
+      } else if (isApplication && !operatorReady) {
+        message = `${message} ${t("solutions.marketplace.installOkNoOperator")}`;
+      }
+      onInstalled(message);
     },
   });
 

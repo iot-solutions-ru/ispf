@@ -2,11 +2,25 @@
   "id": "hvac-smart-building-bms",
   "version": "1",
   "domain": "hvac",
-  "title": "Smart building BMS operator app",
+  "lane": "agent",
+  "title": "Smart building BMS (agent + UI verify)",
   "description": "Lighting, access control, and comfort zones in one operator shell.",
-  "prompt": "Build smart building BMS with lighting panel, access controller, zone comfort dashboard, and operator UI.",
+  "prompt": "Build a smart building BMS with lighting panel, access controller, and zone comfort dashboard; verify Operator shell.",
+  "uiJourney": "AI Studio generator → Operator",
+  "humanSteps": [
+    "Generate BMS via AI Studio.",
+    "Open Operator comfort/lighting overview."
+  ],
   "playbook": "AgentSolutionGeneratorPlaybook",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "configure_operator_ui", "set_dashboard_layout"]
+    "requiredTools": [
+      "create_virtual_device",
+      "configure_operator_ui",
+      "set_dashboard_layout"
+    ],
+    "operatorSurfaces": [
+      "ai-studio",
+      "operator"
+    ]
   }
 }

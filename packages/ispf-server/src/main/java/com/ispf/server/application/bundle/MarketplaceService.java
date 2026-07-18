@@ -305,6 +305,15 @@ public class MarketplaceService {
         result.put("installedFrom", source);
         result.put("installedVersion", manifest.version());
         result.put("listingVersion", listingVersion);
+        result.put("appId", appId);
+        boolean operatorReady = deployService.supportsOperatorUi(appId);
+        result.put("operatorReady", operatorReady);
+        if (!operatorReady) {
+            result.put(
+                    "operatorReadyHint",
+                    "Bundle installed without Operator dashboards/reports. Reinstall a full package or configure root.platform.operator-apps."
+            );
+        }
         if (previousVersion != null) {
             result.put("previousVersion", previousVersion);
             result.put("upgrade", PlatformVersionSupport.isUpdateAvailable(previousVersion, manifest.version()));

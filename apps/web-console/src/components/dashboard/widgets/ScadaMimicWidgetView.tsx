@@ -118,12 +118,26 @@ export default function ScadaMimicWidgetView({
     enabled: Boolean(widget.mimicPath?.trim()),
   });
 
+  const mimicMissing =
+    Boolean(widget.mimicPath?.trim())
+    && (mimicQuery.isError || (mimicQuery.isSuccess && !mimicQuery.data?.diagramJson));
+
   const baseDocument = useMemo(() => {
     if (widget.mimicPath?.trim() && mimicQuery.data?.diagramJson) {
       return parseMimicDocument(mimicQuery.data.diagramJson);
     }
+    // Missing remote mimic must not fall through to a broken parse of undefined bindings.
+    if (widget.mimicPath?.trim() && (mimicQuery.isError || mimicQuery.isLoading)) {
+      return parseMimicDocument(undefined);
+    }
     return parseMimicDocument(widget.diagramJson);
-  }, [widget.diagramJson, widget.mimicPath, mimicQuery.data?.diagramJson]);
+  }, [
+    widget.diagramJson,
+    widget.mimicPath,
+    mimicQuery.data?.diagramJson,
+    mimicQuery.isError,
+    mimicQuery.isLoading,
+  ]);
 
   const document = useMemo(() => {
     const doc = runtimeDoc ?? baseDocument;
@@ -364,71 +378,85 @@ export default function ScadaMimicWidgetView({
       editable={editable}
     >
       <div ref={viewportRef} className="scada-mimic-viewport">
-        <div className="scada-mimic-view-controls">
-          {viewChanged && (
-            <button
-              type="button"
-              className="scada-mimic-reset-zoom btn small"
-              title={t("view.scadaMimic.resetZoom")}
-              onClick={(e) => {
-                e.stopPropagation();
-                resetView();
-              }}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              {t("view.scadaMimic.resetZoom")}
-            </button>
-          )}
-          {!editable && (
-            <button
-              type="button"
-              className="scada-mimic-export-png btn small"
-              title={t("view.scadaMimic.exportPng")}
-              onClick={(e) => {
-                e.stopPropagation();
-                void exportPng();
-              }}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              {t("view.scadaMimic.exportPng")}
-            </button>
-          )}
-        </div>
-        <ScadaMimicCanvas
-          document={document}
-          valuesByElementId={resolved.byElementId}
-          valuesByConnectionId={resolved.byConnectionId}
-          editable={editable}
-          customSymbols={document.customSymbols}
-          onElementClick={hasInteractions ? handleElementClick : undefined}
-          onElementContextMenu={handleElementContextMenu}
-          elementTooltips={elementTooltips}
-          viewTransform={
-            panEnabled
-              ? { panX: view.panX, panY: view.panY, zoom: view.zoom }
-              : baselineView
-          }
-        />
-        {contextMenu && (
-          <ul
-            className="scada-mimic-context-menu"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {contextActions(contextMenu.element).map((action) => (
-              <li key={action.id}>
+        {mimicMissing ? (
+          <div className="scada-mimic-missing" role="status">
+            <p className="widget-message error">
+              {t("view.scadaMimic.missingMimic", { path: widget.mimicPath })}
+            </p>
+            <p className="hint">{t("view.scadaMimic.missingMimicHint")}</p>
+          </div>
+        ) : (
+          <>
+            <div className="scada-mimic-view-controls">
+              {viewChanged && (
                 <button
                   type="button"
-                  onClick={() => {
-                    void executeAction(contextMenu.element, action);
-                    setContextMenu(null);
+                  className="scada-mimic-reset-zoom btn small"
+                  title={t("view.scadaMimic.resetZoom")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    resetView();
                   }}
+                  onMouseDown={(e) => e.stopPropagation()}
                 >
-                  {action.label ?? action.type}
+                  {t("view.scadaMimic.resetZoom")}
                 </button>
-              </li>
-            ))}
-          </ul>
+              )}
+              {!editable && (
+                <button
+                  type="button"
+                  className="scada-mimic-export-png btn small"
+                  title={t("view.scadaMimic.exportPng")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void exportPng();
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {t("view.scadaMimic.exportPng")}
+                </button>
+              )}
+            </div>
+            <ScadaMimicCanvas
+              document={document}
+              valuesByElementId={resolved.byElementId}
+              valuesByConnectionId={resolved.byConnectionId}
+              editable={editable}
+              customSymbols={document.customSymbols}
+              onElementClick={hasInteractions ? handleElementClick : undefined}
+              onElementContextMenu={handleElementContextMenu}
+              elementTooltips={elementTooltips}
+              viewTransform={
+                panEnabled
+                  ? { panX: view.panX, panY: view.panY, zoom: view.zoom }
+                  : baselineView
+              }
+            />
+            {document.elements.length === 0 && !mimicQuery.isLoading && (
+              <p className="hint scada-mimic-empty-hint">{t("view.scadaMimic.emptyCanvasHint")}</p>
+            )}
+            {contextMenu && (
+              <ul
+                className="scada-mimic-context-menu"
+                style={{ left: contextMenu.x, top: contextMenu.y }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {contextActions(contextMenu.element).map((action) => (
+                  <li key={action.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void executeAction(contextMenu.element, action);
+                        setContextMenu(null);
+                      }}
+                    >
+                      {action.label ?? action.type}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
       {message && <p className="widget-message success">{message}</p>}

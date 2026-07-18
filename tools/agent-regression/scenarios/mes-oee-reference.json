@@ -2,9 +2,15 @@
   "id": "mes-oee-reference",
   "version": "1",
   "domain": "mes",
-  "title": "MES OEE reference deploy",
+  "lane": "agent",
+  "title": "MES OEE reference deploy (UI verify)",
   "description": "OEE walkthrough bundle.",
-  "prompt": "Deploy mes-oee-reference and configure operator UI for OEE screens.",
+  "prompt": "Install mes-oee-reference and open OEE operator screens.",
+  "uiJourney": "Solutions → Deploy → Operator",
+  "humanSteps": [
+    "Deploy mes-oee-reference.",
+    "Open Operator OEE screens."
+  ],
   "playbook": "applicationLifecycleGuide",
   "bundle": {
     "appId": "mes-oee-reference",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package"]
+    "requiredTools": [
+      "validate_bundle",
+      "dry_run_deploy",
+      "import_package"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

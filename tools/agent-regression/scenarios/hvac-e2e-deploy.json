@@ -2,9 +2,15 @@
   "id": "hvac-e2e-deploy",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC end-to-end agent deploy",
+  "lane": "agent",
+  "title": "HVAC e2e deploy playbook (UI verify)",
   "description": "Full BL-177 pipeline on HVAC domain.",
-  "prompt": "From spec: deploy building HVAC reference with validate, dry-run, import, operator UI — no manual tree edits.",
+  "prompt": "Deploy building-hvac end-to-end (validate, dry-run, import, operator UI) and open the operator shell.",
+  "uiJourney": "AI Studio Bundle → Deploy steps → Operator",
+  "humanSteps": [
+    "Run deploy steps for building-hvac.",
+    "Open Operator building-hvac."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "building-hvac",
@@ -12,6 +18,15 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package", "configure_operator_ui"]
+    "requiredTools": [
+      "validate_bundle",
+      "dry_run_deploy",
+      "import_package",
+      "configure_operator_ui"
+    ],
+    "operatorSurfaces": [
+      "ai-studio",
+      "operator"
+    ]
   }
 }

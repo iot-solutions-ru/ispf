@@ -39,6 +39,54 @@ public class MimicService {
         ensureMimicStructureInternal(path);
     }
 
+    /**
+     * Create a MIMIC object (empty canvas) when missing — used by dashboard layout templates
+     * that reference a mimicPath so hand-built SCADA journeys do not 404.
+     */
+    @Transactional
+    public MimicView ensureMimicExists(String path, String title) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("mimic path is required");
+        }
+        String trimmed = path.trim();
+        if (objectManager.tree().findByPath(trimmed).isEmpty()) {
+            int dot = trimmed.lastIndexOf('.');
+            if (dot <= 0 || dot >= trimmed.length() - 1) {
+                throw new IllegalArgumentException("Invalid mimic path: " + trimmed);
+            }
+            String parent = trimmed.substring(0, dot);
+            String name = trimmed.substring(dot + 1);
+            String display = (title == null || title.isBlank()) ? name : title.trim();
+            objectManager.create(parent, name, ObjectType.MIMIC, display, "", "mimic-v1");
+            ensureMimicStructureInternal(trimmed);
+            String starter = trimmed.endsWith(".facility-overview")
+                    ? MimicLayouts.FACILITY_OVERVIEW_STARTER
+                    : MimicLayouts.EMPTY_MIMIC;
+            saveDiagram(trimmed, starter);
+            if (title != null && !title.isBlank()) {
+                updateTitle(trimmed, title.trim());
+            }
+        } else {
+            ensureMimicStructureInternal(trimmed);
+            // Hand-applied scada-facility-overview used to leave an empty canvas; seed starter once.
+            if (trimmed.endsWith(".facility-overview")) {
+                MimicView existing = getMimic(trimmed);
+                if (isEmptyDiagram(existing.diagramJson())) {
+                    saveDiagram(trimmed, MimicLayouts.FACILITY_OVERVIEW_STARTER);
+                }
+            }
+        }
+        return getMimic(trimmed);
+    }
+
+    private static boolean isEmptyDiagram(String diagramJson) {
+        if (diagramJson == null || diagramJson.isBlank()) {
+            return true;
+        }
+        String compact = diagramJson.replaceAll("\\s+", "");
+        return compact.contains("\"elements\":[]") || !compact.contains("\"elements\":[");
+    }
+
     private void ensureMimicStructureInternal(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.MIMIC) {

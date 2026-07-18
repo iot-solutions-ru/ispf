@@ -2,11 +2,29 @@
   "id": "mes-solution-generator-factory",
   "version": "1",
   "domain": "mes",
-  "title": "Factory spec to MES solution",
-  "description": "BL-180 natural-language factory spec to tree + dashboards + alerts.",
-  "prompt": "From factory spec: 2 production lines, loading rack, OEE dashboard, high downtime alert.",
+  "lane": "human",
+  "title": "Factory spec → MES solution (UI)",
+  "description": "Golden MES generator journey verified in Operator.",
+  "prompt": "From factory spec: two production lines, a loading rack, an OEE dashboard, and a high-downtime alert. Generate the solution and verify in Explorer and Operator.",
+  "uiJourney": "AI Studio generator → Explorer → Dashboard → Operator → Alarms",
+  "humanSteps": [
+    "Paste factory spec into AI Studio solution generator.",
+    "Accept generated lines, rack, and OEE dashboard.",
+    "Verify objects in Explorer; open Operator OEE; confirm downtime alert under Alarms."
+  ],
   "playbook": "AgentSolutionGeneratorPlaybook",
   "acceptance": {
-    "requiredTools": ["create_object", "set_dashboard_layout", "configure_alert", "validate_bundle"]
+    "requiredTools": [
+      "create_object",
+      "set_dashboard_layout",
+      "configure_alert",
+      "validate_bundle"
+    ],
+    "operatorSurfaces": [
+      "ai-studio",
+      "explorer",
+      "operator",
+      "alarms"
+    ]
   }
 }

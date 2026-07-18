@@ -1,8 +1,12 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Demo Application",
   "tablePrefix": "",
   "schemaName": "app_demo",
+  "metadata": {
+    "changelog": "1.0.1 — operatorUi with report screens (was reports-only / no Operator sync)",
+    "domain": "demo-app"
+  },
   "migrations": [
     {
       "id": "schema_and_seed",
@@ -48,6 +52,40 @@
       "maxRows": 500
     }
   ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.demo-ready-items",
+      "title": "Готовые позиции",
+      "refreshIntervalMs": 15000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"ready-report\",\"type\":\"report\",\"title\":\"Готовые позиции\",\"x\":0,\"y\":0,\"w\":84,\"h\":42,\"reportPath\":\"root.platform.reports.ready-items\",\"reportParamsJson\":\"{\\\"status\\\":\\\"ready\\\"}\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "demo",
+    "title": "Demo Application",
+    "defaultDashboard": "root.platform.dashboards.demo-ready-items",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.demo-ready-items",
+        "title": "Готовые позиции"
+      }
+    ],
+    "reports": [
+      {
+        "path": "root.platform.reports.ready-items",
+        "title": "Готовые позиции"
+      },
+      {
+        "path": "root.platform.reports.items-summary",
+        "title": "Сводка по статусам"
+      },
+      {
+        "path": "root.platform.reports.items-by-category",
+        "title": "По категориям"
+      }
+    ],
+    "defaultReport": "root.platform.reports.ready-items"
+  },
   "operatorManifest": {
     "appId": "demo",
     "title": "Demo Application",

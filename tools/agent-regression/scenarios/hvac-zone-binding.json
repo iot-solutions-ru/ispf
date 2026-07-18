@@ -2,11 +2,26 @@
   "id": "hvac-zone-binding",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC zone CEL bindings",
+  "lane": "agent",
+  "title": "Zone comfort CEL binding (UI verify)",
   "description": "Platform context rules and binding rules for zone comfort.",
-  "prompt": "Add CEL binding for zone comfort index and update dashboard context rule.",
+  "prompt": "Add a CEL binding for zone comfort index and show it on the comfort dashboard for operators.",
+  "uiJourney": "Explorer bindings → Dashboard → Operator",
+  "humanSteps": [
+    "Create comfort-index binding rule.",
+    "Bind widget on comfort dashboard; open Operator."
+  ],
   "playbook": "hvacZoneComfort",
   "acceptance": {
-    "requiredTools": ["create_binding_rule", "configure_platform_context_rule", "list_binding_rules"]
+    "requiredTools": [
+      "create_binding_rule",
+      "configure_platform_context_rule",
+      "list_binding_rules"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "dashboard",
+      "operator"
+    ]
   }
 }

@@ -139,6 +139,8 @@
   "bundle.active": " (active)",
   "bundle.rollback": "Rollback",
   "bundle.manifestJson": "Bundle manifest (JSON)",
+  "bundle.loadFromFileHint": "Load a local examples/*/bundle.json — no need to paste megabytes by hand.",
+  "bundle.signedLicenseHint": "This node requires signed bundles. Use System → Solutions → Install (marketplace free install can sign), or add a license block to the manifest.",
   "bundle.validationResult": "Validation result",
   "settings.llmProvider": "LLM provider",
   "settings.status": "Status",

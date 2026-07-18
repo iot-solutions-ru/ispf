@@ -2,15 +2,29 @@
   "id": "mes-workflow-escalation",
   "version": "1",
   "domain": "mes",
-  "title": "MES workflow escalation",
-  "description": "User task escalation on delayed dispatch orders.",
-  "prompt": "Verify mes-reference workflow escalates pending dispatch order to supervisor queue.",
+  "lane": "human",
+  "title": "Dispatch escalation to supervisor (UI)",
+  "description": "Golden MES escalation visible in Work Queue.",
+  "prompt": "On mes-reference, leave a dispatch order pending until it escalates to the supervisor queue, then claim it from Work Queue as supervisor.",
+  "uiJourney": "Operator mes-reference → wait/escalate → Work Queue (supervisor)",
+  "humanSteps": [
+    "Create a dispatch order in mes-reference Operator UI.",
+    "Leave it pending past escalation (or trigger escalation path).",
+    "Sign in as supervisor (or switch role); open Work Queue and claim the escalated task."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-reference",
     "manifestPath": "examples/mes-reference/bundle.json"
   },
   "acceptance": {
-    "requiredTools": ["invoke_bff", "list_work_queue"]
+    "requiredTools": [
+      "invoke_bff",
+      "list_work_queue"
+    ],
+    "operatorSurfaces": [
+      "operator",
+      "work-queue"
+    ]
   }
 }

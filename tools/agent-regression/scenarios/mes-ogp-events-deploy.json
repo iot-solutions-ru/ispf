@@ -2,9 +2,15 @@
   "id": "mes-ogp-events-deploy",
   "version": "1",
   "domain": "mes",
-  "title": "MES OGP event registration deploy",
+  "lane": "agent",
+  "title": "OGP events deploy (UI verify)",
   "description": "Full OGP MES bundle with event wizard and operator UI.",
-  "prompt": "Deploy mes-ogp-events bundle for shop-floor event registration — validate then import.",
+  "prompt": "Install mes-ogp-events for shop-floor event registration and open the operator event screens.",
+  "uiJourney": "Solutions → Deploy → Operator",
+  "humanSteps": [
+    "Deploy mes-ogp-events.",
+    "Open Operator and confirm event registration screens."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-ogp-events",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package"]
+    "requiredTools": [
+      "validate_bundle",
+      "dry_run_deploy",
+      "import_package"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

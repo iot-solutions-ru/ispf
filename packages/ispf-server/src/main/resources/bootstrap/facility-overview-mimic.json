@@ -1,0 +1,176 @@
+{
+  "version": 2,
+  "width": 1280,
+  "height": 560,
+  "background": "var(--bg)",
+  "grid": { "size": 16, "snap": true, "visible": true },
+  "layers": [{ "id": "layer-default", "name": "Main", "visible": true }],
+  "elements": [
+    {
+      "id": "hdr",
+      "symbolId": "pack.ispf-pid.pressure-indicator",
+      "layerId": "layer-default",
+      "x": 48,
+      "y": 40,
+      "props": { "width": 1, "height": 1 },
+      "bindings": {},
+      "labels": [
+        { "id": "hdr-t", "text": "Pump station · overview", "x": 0, "y": 0, "fontSize": 18 }
+      ]
+    },
+    {
+      "id": "valve-1",
+      "symbolId": "pack.ispf-pid.gate-valve",
+      "layerId": "layer-default",
+      "x": 120,
+      "y": 288,
+      "props": { "width": 64, "height": 64 },
+      "bindings": {
+        "running": {
+          "objectPath": "root.platform.devices.ui-valve-1",
+          "variableName": "status",
+          "valueField": "online",
+          "transform": "bool"
+        }
+      },
+      "labels": [{ "id": "lv1", "text": "Valve 1", "x": 4, "y": 70, "fontSize": 12 }],
+      "tooltip": { "template": "Valve 1" }
+    },
+    {
+      "id": "pump-1",
+      "symbolId": "pack.ispf-pid.centrifugal-pump",
+      "layerId": "layer-default",
+      "x": 320,
+      "y": 288,
+      "props": { "width": 64, "height": 64 },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.ui-pump-1",
+          "variableName": "sineWave",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "labels": [{ "id": "lp1", "text": "Pump 1", "x": 6, "y": 70, "fontSize": 12 }],
+      "tooltip": { "template": "Pump 1 · {value}" }
+    },
+    {
+      "id": "pump-2",
+      "symbolId": "pack.ispf-pid.centrifugal-pump",
+      "layerId": "layer-default",
+      "x": 520,
+      "y": 288,
+      "props": { "width": 64, "height": 64 },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.ui-pump-2",
+          "variableName": "sineWave",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "labels": [{ "id": "lp2", "text": "Pump 2", "x": 6, "y": 70, "fontSize": 12 }],
+      "tooltip": { "template": "Pump 2 · {value}" }
+    },
+    {
+      "id": "valve-2",
+      "symbolId": "pack.ispf-pid.gate-valve",
+      "layerId": "layer-default",
+      "x": 720,
+      "y": 288,
+      "props": { "width": 64, "height": 64 },
+      "bindings": {
+        "running": {
+          "objectPath": "root.platform.devices.ui-valve-2",
+          "variableName": "status",
+          "valueField": "online",
+          "transform": "bool"
+        }
+      },
+      "labels": [{ "id": "lv2", "text": "Valve 2", "x": 4, "y": 70, "fontSize": 12 }],
+      "tooltip": { "template": "Valve 2" }
+    },
+    {
+      "id": "flow",
+      "symbolId": "pack.ispf-pid.flow-indicator",
+      "layerId": "layer-default",
+      "x": 920,
+      "y": 272,
+      "props": { "width": 64, "height": 64 },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.ui-flow-meter",
+          "variableName": "sineWave",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "labels": [{ "id": "lf", "text": "Flow Meter", "x": -4, "y": 70, "fontSize": 12 }],
+      "tooltip": { "template": "Flow · {value}" }
+    },
+    {
+      "id": "pi",
+      "symbolId": "pack.ispf-pid.pressure-indicator",
+      "layerId": "layer-default",
+      "x": 408,
+      "y": 168,
+      "props": { "width": 64, "height": 64 },
+      "bindings": {
+        "value": {
+          "selectionKey": "device",
+          "variableName": "sineWave",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "labels": [{ "id": "lpi", "text": "PI (selected)", "x": -8, "y": 70, "fontSize": 11 }],
+      "tooltip": { "template": "Selected · {value}" }
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "layerId": "layer-default",
+      "from": { "elementId": "valve-1", "port": "e" },
+      "to": { "elementId": "pump-1", "port": "w" },
+      "points": [
+        { "x": 184, "y": 320 },
+        { "x": 320, "y": 320 }
+      ],
+      "style": { "strokeWidth": 3, "stroke": "var(--border)" }
+    },
+    {
+      "id": "c2",
+      "layerId": "layer-default",
+      "from": { "elementId": "pump-1", "port": "e" },
+      "to": { "elementId": "pump-2", "port": "w" },
+      "points": [
+        { "x": 384, "y": 320 },
+        { "x": 520, "y": 320 }
+      ],
+      "style": { "strokeWidth": 3, "stroke": "var(--border)" }
+    },
+    {
+      "id": "c3",
+      "layerId": "layer-default",
+      "from": { "elementId": "pump-2", "port": "e" },
+      "to": { "elementId": "valve-2", "port": "w" },
+      "points": [
+        { "x": 584, "y": 320 },
+        { "x": 720, "y": 320 }
+      ],
+      "style": { "strokeWidth": 3, "stroke": "var(--border)" }
+    },
+    {
+      "id": "c4",
+      "layerId": "layer-default",
+      "from": { "elementId": "valve-2", "port": "e" },
+      "to": { "elementId": "flow", "port": "w" },
+      "points": [
+        { "x": 784, "y": 320 },
+        { "x": 920, "y": 320 }
+      ],
+      "style": { "strokeWidth": 3, "stroke": "var(--border)" }
+    }
+  ]
+}

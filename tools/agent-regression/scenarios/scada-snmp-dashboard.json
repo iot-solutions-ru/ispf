@@ -2,11 +2,26 @@
   "id": "scada-snmp-dashboard",
   "version": "1",
   "domain": "scada",
-  "title": "SNMP host monitoring dashboard",
+  "lane": "agent",
+  "title": "SNMP host dashboard (UI verify)",
   "description": "SNMP device + monitoring dashboard layout.",
-  "prompt": "Configure SNMP localhost monitoring with CPU, memory, and network widgets.",
+  "prompt": "Configure SNMP localhost monitoring with CPU, memory, and network widgets on a dashboard an operator can open.",
+  "uiJourney": "Drivers → Dashboard → Operator",
+  "humanSteps": [
+    "Configure SNMP driver for localhost.",
+    "Build dashboard widgets; open Operator."
+  ],
   "playbook": "snmpLocalhostMonitoring",
   "acceptance": {
-    "requiredTools": ["configure_driver", "set_dashboard_layout", "list_variables"]
+    "requiredTools": [
+      "configure_driver",
+      "set_dashboard_layout",
+      "list_variables"
+    ],
+    "operatorSurfaces": [
+      "drivers",
+      "dashboard",
+      "operator"
+    ]
   }
 }

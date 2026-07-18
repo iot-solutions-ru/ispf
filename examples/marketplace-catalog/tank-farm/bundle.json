@@ -939,7 +939,10 @@
     "title": "Резервуарный парк",
     "defaultDashboard": "root.platform.dashboards.tank-farm-overview",
     "dashboards": [
-      "root.platform.dashboards.tank-farm-overview"
+      {
+        "path": "root.platform.dashboards.tank-farm-overview",
+        "title": "Резервуарный парк"
+      }
     ],
     "eventJournalObjectPath": "root.platform"
   }

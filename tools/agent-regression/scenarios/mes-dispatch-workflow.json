@@ -2,15 +2,29 @@
   "id": "mes-dispatch-workflow",
   "version": "1",
   "domain": "mes",
-  "title": "MES dispatch workflow",
-  "description": "Work order dispatch with BFF and workflow.",
-  "prompt": "Verify mes_listOrders BFF and user task appears in work queue.",
+  "lane": "human",
+  "title": "MES dispatch appears in Work Queue (UI)",
+  "description": "Golden MES operator work-queue journey.",
+  "prompt": "After mes-reference is installed, create or trigger a dispatch order so a user task appears in the operator Work Queue and can be claimed.",
+  "uiJourney": "Operator mes-reference → create/list order → Work Queue claim",
+  "humanSteps": [
+    "Open Operator app mes-reference.",
+    "Use the orders screen to list or create a dispatch order.",
+    "Open Work Queue; claim the pending user task; complete if required."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-reference",
     "manifestPath": "examples/mes-reference/bundle.json"
   },
   "acceptance": {
-    "requiredTools": ["invoke_bff", "list_work_queue"]
+    "requiredTools": [
+      "invoke_bff",
+      "list_work_queue"
+    ],
+    "operatorSurfaces": [
+      "operator",
+      "work-queue"
+    ]
   }
 }

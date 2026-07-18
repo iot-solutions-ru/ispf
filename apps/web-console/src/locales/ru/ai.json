@@ -125,6 +125,8 @@
   "bundle.generating": "Генерация…",
   "bundle.loadingHistory": "Загрузка истории…",
   "bundle.manifestJson": "Манифест bundle (JSON)",
+  "bundle.loadFromFileHint": "Загрузите локальный examples/*/bundle.json — не нужно вставлять JSON руками.",
+  "bundle.signedLicenseHint": "На этом узле нужны подписанные бандлы. Путь: Система → Решения → Установить (free marketplace может подписать), либо добавьте блок license в манифест.",
   "bundle.noDeployHistory": "Для этого appId пока нет истории развёртываний.",
   "bundle.notPublishable": "Сгенерированный пакет нельзя опубликовать — исправьте ошибки валидации или измените промпт.",
   "bundle.operatorPreview": "Предпросмотр оператора",

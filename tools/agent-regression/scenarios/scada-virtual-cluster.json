@@ -2,11 +2,28 @@
   "id": "scada-virtual-cluster",
   "version": "1",
   "domain": "scada",
-  "title": "Virtual cluster monitoring",
-  "description": "Full virt-cluster project with alerts and operator UI.",
-  "prompt": "Deploy virtual cluster monitoring with three lab devices, hub bindings, alert rule, and operator app.",
+  "lane": "human",
+  "title": "Virtual cluster lab monitoring (UI)",
+  "description": "Golden lab SCADA deploy + operator shell.",
+  "prompt": "Set up virtual cluster monitoring with three lab devices, hub bindings, an alert, and an operator shell I can open without the object tree.",
+  "uiJourney": "Solutions / Deploy → Explorer verify devices → Operator",
+  "humanSteps": [
+    "From Solutions (or Deploy panel) install/deploy the virtual cluster monitoring setup.",
+    "In Explorer verify three lab devices and hub bindings.",
+    "Confirm alert rule exists; open Operator UI for the cluster overview."
+  ],
   "playbook": "virtualClusterMonitoring",
   "acceptance": {
-    "requiredTools": ["create_object", "configure_alert", "configure_operator_ui"]
+    "requiredTools": [
+      "create_object",
+      "configure_alert",
+      "configure_operator_ui"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "explorer",
+      "operator",
+      "alarms"
+    ]
   }
 }

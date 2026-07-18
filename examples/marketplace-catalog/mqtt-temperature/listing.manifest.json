@@ -19,5 +19,5 @@
     "mqtt",
     "iot"
   ],
-  "changelog": "Marketplace catalog stub listing for mqtt-temperature (BL-183)."
+  "changelog": "Full MQTT temperature lab with operator dashboards"
 }

@@ -2,11 +2,26 @@
   "id": "hvac-alerts-comfort",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC comfort alerts",
+  "lane": "both",
+  "title": "Zone comfort high-temp alert (UI)",
   "description": "Zone temperature thresholds and alert rules.",
-  "prompt": "Configure HVAC zone comfort dashboard with high temperature alert.",
+  "prompt": "Configure HVAC zone comfort dashboard with a high-temperature alert and verify it in Operator Alarms.",
+  "uiJourney": "Dashboard → Alerts → Operator Alarms",
+  "humanSteps": [
+    "Open zone comfort dashboard; ensure high-temp alert rule exists.",
+    "Open Operator and Alarms; confirm alert."
+  ],
   "playbook": "hvacZoneComfort",
   "acceptance": {
-    "requiredTools": ["configure_alert", "set_dashboard_layout", "invoke_bff"]
+    "requiredTools": [
+      "configure_alert",
+      "set_dashboard_layout",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "dashboard",
+      "operator",
+      "alarms"
+    ]
   }
 }

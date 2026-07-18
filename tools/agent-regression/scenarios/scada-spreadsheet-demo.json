@@ -2,9 +2,15 @@
   "id": "scada-spreadsheet-demo",
   "version": "1",
   "domain": "scada",
-  "title": "Spreadsheet widget demo",
+  "lane": "both",
+  "title": "Spreadsheet widget demo (UI)",
   "description": "Deploy sheet-demo bundle with spreadsheet storage blueprint.",
-  "prompt": "Deploy spreadsheet demo bundle and verify dashboard spreadsheet widget bindings.",
+  "prompt": "Install the spreadsheet demo bundle and open the dashboard so an operator can see spreadsheet widget bindings.",
+  "uiJourney": "Solutions → Deploy sheet-demo → Operator/Dashboard",
+  "humanSteps": [
+    "Deploy spreadsheet-demo (app sheet-demo).",
+    "Open the dashboard with spreadsheet widget in Operator or admin preview."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "sheet-demo",
@@ -12,6 +18,15 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "set_dashboard_layout"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "set_dashboard_layout"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "dashboard",
+      "operator"
+    ]
   }
 }

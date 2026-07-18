@@ -521,6 +521,8 @@
   "solutions.marketplace.haveKey": "Ich habe einen Lizenzschlüssel",
   "solutions.marketplace.installFree": "Installieren",
   "solutions.marketplace.installOkWithFunctions": "Installiert. Funktionen: {{functions}}",
+  "solutions.marketplace.installOkOpenOperator": "Operator öffnen: /?mode=operator&app={{appId}}",
+  "solutions.marketplace.installOkNoOperator": "Warnung: keine Operator-Dashboards registriert — Listing ist möglicherweise noch ein Katalog-Stub.",
   "solutions.marketplace.installationIdCopy": "Kopieren",
   "solutions.marketplace.installationIdHint": "Die Installations-ID dieses Servers (für Anbieterlizenzanfragen):",
   "solutions.marketplace.installed": "installiert",

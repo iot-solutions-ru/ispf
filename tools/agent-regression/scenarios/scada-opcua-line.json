@@ -2,11 +2,27 @@
   "id": "scada-opcua-line",
   "version": "1",
   "domain": "scada",
-  "title": "SCADA OPC UA production line",
+  "lane": "agent",
+  "title": "OPC UA line mimic (agent + UI verify)",
   "description": "OPC UA line devices with overview dashboard.",
-  "prompt": "Provision SCADA OPC UA production line with throughput mimic and historian trends.",
+  "prompt": "Provision an OPC UA production line with throughput mimic and historian trends; verify Mimic and Dashboard in UI.",
+  "uiJourney": "Explorer/Drivers → Mimic → Dashboard → Operator",
+  "humanSteps": [
+    "Create OPC UA line devices.",
+    "Open Mimic and Dashboard trends in Operator."
+  ],
   "playbook": "AgentSolutionGeneratorPlaybook",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_variable_history"]
+    "requiredTools": [
+      "create_virtual_device",
+      "save_mimic_diagram",
+      "configure_variable_history"
+    ],
+    "operatorSurfaces": [
+      "drivers",
+      "mimic",
+      "dashboard",
+      "operator"
+    ]
   }
 }

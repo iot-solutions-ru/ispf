@@ -2,11 +2,32 @@
   "id": "scada-pump-station",
   "version": "1",
   "domain": "scada",
-  "title": "Oil & gas pump station",
-  "description": "Domain adapter industrial_oil_gas full TZ.",
-  "prompt": "Build pump station SCADA from spec: gate valves, pumps, flow meters, mimic, dashboards.",
+  "lane": "human",
+  "title": "Pump station from plant spec (UI)",
+  "description": "Golden SCADA journey: invent a pump station in the console without naming agent tools. Applying scada-facility-overview must auto-create missing mimicPath (no 404).",
+  "prompt": "I need a small oil & gas pump station: two gate valves, two pumps, one flow meter, a mimic overview, an operator dashboard, and a high-pressure alert that an operator can see in Alarms.",
+  "uiJourney": "Login (admin) → Explorer devices → Dashboard + template scada-facility-overview (auto-creates facility-overview mimic) → Mimic editor → Alert → Operator app → Alarms",
+  "humanSteps": [
+    "Sign in as admin at the web console.",
+    "Open Explorer → Devices and create virtual devices for valves, pumps, and a flow meter.",
+    "Create a Dashboard; apply layout template scada-facility-overview — the platform must create root.platform.mimics.facility-overview if missing (no 404).",
+    "Open Mimic editor for facility-overview and place pump/valve symbols; save.",
+    "Create a high-pressure alert rule on a pump variable; confirm it appears under Alarms / Alarm Console.",
+    "Create an Operator app pointing at the dashboard; open Operator and verify devices table + mimic + alarms."
+  ],
   "playbook": "virtualPumpStation",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_alert"]
+    "requiredTools": [
+      "create_virtual_device",
+      "save_mimic_diagram",
+      "configure_alert"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "mimic",
+      "dashboard",
+      "operator",
+      "alarms"
+    ]
   }
 }

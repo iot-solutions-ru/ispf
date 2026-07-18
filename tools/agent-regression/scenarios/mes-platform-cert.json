@@ -2,9 +2,15 @@
   "id": "mes-platform-cert",
   "version": "1",
   "domain": "mes",
-  "title": "MES platform certification bundle",
+  "lane": "agent",
+  "title": "MES platform certification (UI verify)",
   "description": "BL-170 mes-platform bundle deploy scenario.",
-  "prompt": "Deploy mes-platform bundle and verify OEE dashboard paths.",
+  "prompt": "Install mes-platform and open OEE dashboard paths in Operator.",
+  "uiJourney": "Solutions → Deploy → Operator",
+  "humanSteps": [
+    "Deploy mes-platform.",
+    "Open Operator OEE paths."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-platform",
@@ -12,6 +18,13 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

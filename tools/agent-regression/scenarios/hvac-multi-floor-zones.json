@@ -2,9 +2,15 @@
   "id": "hvac-multi-floor-zones",
   "version": "1",
   "domain": "hvac",
-  "title": "Multi-floor HVAC zone app",
+  "lane": "agent",
+  "title": "Multi-floor HVAC zones (UI verify)",
   "description": "Floor zone hub with per-floor comfort dashboards.",
-  "prompt": "Deploy building HVAC with floor zone hub, AHU per floor, and multi-zone comfort dashboards.",
+  "prompt": "Install building-hvac with floor zone hub and multi-zone comfort; verify floors in Operator.",
+  "uiJourney": "Solutions → Deploy → Operator zones",
+  "humanSteps": [
+    "Deploy building-hvac.",
+    "Open Operator and confirm multi-floor zone comfort screens."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "building-hvac",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

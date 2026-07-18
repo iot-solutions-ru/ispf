@@ -1,7 +1,7 @@
 {
-  "contextPackVersion": "ispf-0.9.166",
-  "generatedAt": "2026-07-18T07:07:21.005630+00:00",
-  "platformVersion": "0.9.166",
+  "contextPackVersion": "ispf-0.9.176",
+  "generatedAt": "2026-07-18T20:55:49.275285+00:00",
+  "platformVersion": "0.9.176",
   "bundleManifest": {
     "fields": [
       "version",
@@ -694,18 +694,18 @@
     {
       "appId": "building-hvac-app",
       "purpose": "Building HVAC zones reference (BL-99)",
-      "keySections": "functions, migrations",
-      "version": "1.0.0",
+      "keySections": "blueprints, dashboards, events, functions, migrations, objects",
+      "version": "1.1.0",
       "path": "examples/building-hvac-app/bundle.json",
-      "keywords": "building-hvac-app functions migrations"
+      "keywords": "building-hvac-app blueprints dashboards events functions migrations objects"
     },
     {
       "appId": "demo-app",
       "purpose": "Minimal bundle demo",
-      "keySections": "migrations",
-      "version": "1.0.0",
+      "keySections": "dashboards, migrations",
+      "version": "1.0.1",
       "path": "examples/demo-app/bundle.json",
-      "keywords": "demo-app migrations"
+      "keywords": "demo-app dashboards migrations"
     },
     {
       "appId": "it-infra-monitoring",
@@ -2032,23 +2032,28 @@
       "appId": "building-hvac-app",
       "packageId": "building_hvac",
       "path": "examples/building-hvac-app/bundle.json",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "sections": [
+        "alertRules",
+        "blueprints",
+        "dashboards",
         "displayName",
+        "events",
         "functions",
         "metadata",
         "migrations",
+        "objects",
         "operatorUi",
         "schemaName",
         "version"
       ],
       "manifest": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "displayName": "Building HVAC Reference",
         "tablePrefix": "",
         "schemaName": "app_building_hvac",
         "metadata": {
-          "changelog": "Initial release: floor zones, comfort setpoints, Haystack tag examples",
+          "changelog": "1.1.0 — operator-ready: zone devices, comfort dashboard, high-temp alert (was catalog stub)",
           "domain": "building-hvac",
           "haystackTags": [
             "site",
@@ -2064,9 +2069,163 @@
             "sql": "CREATE TABLE IF NOT EXISTS hvac_zone (id UUID PRIMARY KEY, zone_code VARCHAR(64) NOT NULL, space_temp_c NUMERIC(6,2) NOT NULL, setpoint_c NUMERIC(6,2) NOT NULL, mode VARCHAR(32) NOT NULL); INSERT INTO hvac_zone (id, zone_code, space_temp_c, setpoint_c, mode) SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'L1-OPEN-01', 22.4, 22.0, 'cool' WHERE NOT EXISTS (SELECT 1 FROM hvac_zone WHERE zone_code = 'L1-OPEN-01'); INSERT INTO hvac_zone (id, zone_code, space_temp_c, setpoint_c, mode) SELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'L2-MEET-02', 23.1, 21.5, 'heat' WHERE NOT EXISTS (SELECT 1 FROM hvac_zone WHERE zone_code = 'L2-MEET-02');"
           }
         ],
+        "blueprints": [
+          {
+            "name": "hvac-zone-v1",
+            "description": "HVAC comfort zone with space temperature and setpoint",
+            "type": "RELATIVE",
+            "targetObjectType": "DEVICE",
+            "variables": [
+              {
+                "name": "status",
+                "description": "Device status",
+                "group": "status",
+                "schema": {
+                  "name": "deviceStatus",
+                  "fields": [
+                    {
+                      "name": "online",
+                      "type": "BOOLEAN"
+                    },
+                    {
+                      "name": "lastSeen",
+                      "type": "STRING"
+                    }
+                  ]
+                },
+                "readable": true,
+                "writable": false,
+                "defaultValue": {
+                  "schema": {
+                    "name": "deviceStatus",
+                    "fields": [
+                      {
+                        "name": "online",
+                        "type": "BOOLEAN"
+                      },
+                      {
+                        "name": "lastSeen",
+                        "type": "STRING"
+                      }
+                    ]
+                  },
+                  "rows": [
+                    {
+                      "online": true,
+                      "lastSeen": "init"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "spaceTemp",
+                "description": "Zone space temperature",
+                "group": "telemetry",
+                "schema": {
+                  "name": "measurement",
+                  "fields": [
+                    {
+                      "name": "value",
+                      "type": "DOUBLE"
+                    },
+                    {
+                      "name": "unit",
+                      "type": "STRING"
+                    }
+                  ]
+                },
+                "readable": true,
+                "writable": true,
+                "historyEnabled": true,
+                "defaultValue": {
+                  "schema": {
+                    "name": "measurement",
+                    "fields": [
+                      {
+                        "name": "value",
+                        "type": "DOUBLE"
+                      },
+                      {
+                        "name": "unit",
+                        "type": "STRING"
+                      }
+                    ]
+                  },
+                  "rows": [
+                    {
+                      "value": 22.4,
+                      "unit": "C"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "setpoint",
+                "description": "Comfort setpoint",
+                "group": "config",
+                "schema": {
+                  "name": "measurement",
+                  "fields": [
+                    {
+                      "name": "value",
+                      "type": "DOUBLE"
+                    },
+                    {
+                      "name": "unit",
+                      "type": "STRING"
+                    }
+                  ]
+                },
+                "readable": true,
+                "writable": true,
+                "defaultValue": {
+                  "schema": {
+                    "name": "measurement",
+                    "fields": [
+                      {
+                        "name": "value",
+                        "type": "DOUBLE"
+                      },
+                      {
+                        "name": "unit",
+                        "type": "STRING"
+                      }
+                    ]
+                  },
+                  "rows": [
+                    {
+                      "value": 22.0,
+                      "unit": "C"
+                    }
+                  ]
+                }
+              }
+            ],
+            "events": [],
+            "functions": [],
+            "bindings": [],
+            "parameters": {}
+          }
+        ],
+        "objects": [
+          {
+            "parentPath": "root.platform.devices",
+            "name": "hvac-zone-l1-open",
+            "type": "DEVICE",
+            "displayName": "Zone L1 Open Office",
+            "templateId": "hvac-zone-v1"
+          },
+          {
+            "parentPath": "root.platform.devices",
+            "name": "hvac-zone-l2-meet",
+            "type": "DEVICE",
+            "displayName": "Zone L2 Meeting",
+            "templateId": "hvac-zone-v1"
+          }
+        ],
         "functions": [
           {
-            "objectPath": "root.platform.devices.demo-sensor-01",
+            "objectPath": "root.platform.devices.hvac-zone-l1-open",
             "functionName": "hvac_listZones",
             "version": "1",
             "descriptor": {
@@ -2119,12 +2278,48 @@
             }
           }
         ],
+        "dashboards": [
+          {
+            "path": "root.platform.dashboards.building-hvac-comfort",
+            "title": "Building comfort",
+            "refreshIntervalMs": 3000,
+            "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"z1-temp\",\"type\":\"value\",\"title\":\"L1 Open · temp\",\"x\":0,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.hvac-zone-l1-open\",\"variableName\":\"spaceTemp\",\"valueField\":\"value\",\"decimals\":1,\"unit\":\"°C\"},{\"id\":\"z1-sp\",\"type\":\"value\",\"title\":\"L1 Open · setpoint\",\"x\":21,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.hvac-zone-l1-open\",\"variableName\":\"setpoint\",\"valueField\":\"value\",\"decimals\":1,\"unit\":\"°C\"},{\"id\":\"z2-temp\",\"type\":\"value\",\"title\":\"L2 Meet · temp\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.hvac-zone-l2-meet\",\"variableName\":\"spaceTemp\",\"valueField\":\"value\",\"decimals\":1,\"unit\":\"°C\"},{\"id\":\"z2-sp\",\"type\":\"value\",\"title\":\"L2 Meet · setpoint\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.hvac-zone-l2-meet\",\"variableName\":\"setpoint\",\"valueField\":\"value\",\"decimals\":1,\"unit\":\"°C\"},{\"id\":\"z1-trend\",\"type\":\"chart\",\"title\":\"L1 space temperature\",\"x\":0,\"y\":14,\"w\":42,\"h\":28,\"objectPath\":\"root.platform.devices.hvac-zone-l1-open\",\"variableName\":\"spaceTemp\",\"valueField\":\"value\",\"chartStyle\":\"line\",\"maxPoints\":120,\"historyRange\":\"live\",\"color\":\"#2f81f7\",\"decimals\":1},{\"id\":\"z2-trend\",\"type\":\"chart\",\"title\":\"L2 space temperature\",\"x\":42,\"y\":14,\"w\":42,\"h\":28,\"objectPath\":\"root.platform.devices.hvac-zone-l2-meet\",\"variableName\":\"spaceTemp\",\"valueField\":\"value\",\"chartStyle\":\"line\",\"maxPoints\":120,\"historyRange\":\"live\",\"color\":\"#3fb950\",\"decimals\":1}]}"
+          }
+        ],
+        "alertRules": [
+          {
+            "name": "HVAC L1 high temperature",
+            "objectPath": "root.platform.devices.hvac-zone-l1-open",
+            "watchVariable": "spaceTemp",
+            "conditionExpr": "self.spaceTemp[\"value\"] > 26.0",
+            "eventName": "hvacZoneHighTemp",
+            "payloadVariable": "spaceTemp",
+            "enabled": true,
+            "edgeTrigger": true,
+            "delaySeconds": 0,
+            "sustainWhileTrue": false
+          }
+        ],
+        "events": [
+          {
+            "id": "hvacZoneHighTemp",
+            "roles": [
+              "admin",
+              "operator"
+            ]
+          }
+        ],
         "operatorUi": {
           "appId": "building-hvac",
           "title": "Building HVAC",
-          "defaultDashboard": "",
-          "dashboards": [],
-          "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
+          "defaultDashboard": "root.platform.dashboards.building-hvac-comfort",
+          "dashboards": [
+            {
+              "path": "root.platform.dashboards.building-hvac-comfort",
+              "title": "Comfort overview"
+            }
+          ],
+          "eventJournalObjectPath": "root.platform.devices.hvac-zone-l1-open"
         }
       }
     },
@@ -2132,20 +2327,27 @@
       "appId": "demo-app",
       "packageId": "demo",
       "path": "examples/demo-app/bundle.json",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "sections": [
+        "dashboards",
         "displayName",
+        "metadata",
         "migrations",
         "operatorManifest",
+        "operatorUi",
         "reports",
         "schemaName",
         "version"
       ],
       "manifest": {
-        "version": "1.0.0",
+        "version": "1.0.1",
         "displayName": "Demo Application",
         "tablePrefix": "",
         "schemaName": "app_demo",
+        "metadata": {
+          "changelog": "1.0.1 — operatorUi with report screens (was reports-only / no Operator sync)",
+          "domain": "demo-app"
+        },
         "migrations": [
           {
             "id": "schema_and_seed",
@@ -2214,6 +2416,40 @@
             "maxRows": 500
           }
         ],
+        "dashboards": [
+          {
+            "path": "root.platform.dashboards.demo-ready-items",
+            "title": "Готовые позиции",
+            "refreshIntervalMs": 15000,
+            "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"ready-report\",\"type\":\"report\",\"title\":\"Готовые позиции\",\"x\":0,\"y\":0,\"w\":84,\"h\":42,\"reportPath\":\"root.platform.reports.ready-items\",\"reportParamsJson\":\"{\\\"status\\\":\\\"ready\\\"}\"}]}"
+          }
+        ],
+        "operatorUi": {
+          "appId": "demo",
+          "title": "Demo Application",
+          "defaultDashboard": "root.platform.dashboards.demo-ready-items",
+          "dashboards": [
+            {
+              "path": "root.platform.dashboards.demo-ready-items",
+              "title": "Готовые позиции"
+            }
+          ],
+          "reports": [
+            {
+              "path": "root.platform.reports.ready-items",
+              "title": "Готовые позиции"
+            },
+            {
+              "path": "root.platform.reports.items-summary",
+              "title": "Сводка по статусам"
+            },
+            {
+              "path": "root.platform.reports.items-by-category",
+              "title": "По категориям"
+            }
+          ],
+          "defaultReport": "root.platform.reports.ready-items"
+        },
         "operatorManifest": {
           "appId": "demo",
           "title": "Demo Application",
@@ -14139,7 +14375,10 @@
           "title": "Резервуарный парк",
           "defaultDashboard": "root.platform.dashboards.tank-farm-overview",
           "dashboards": [
-            "root.platform.dashboards.tank-farm-overview"
+            {
+              "path": "root.platform.dashboards.tank-farm-overview",
+              "title": "Резервуарный парк"
+            }
           ],
           "eventJournalObjectPath": "root.platform"
         }
@@ -14247,5 +14486,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "a0b8e3cdcbdac07cd241a3a4bae1f22d7b31881cb8d3cdd772cf7e9374f5cb35"
+  "contentSha256": "d3706c8cf696f1a954341e9ed2f7c59b757d52139975b74224724862cbea362c"
 }

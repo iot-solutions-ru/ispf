@@ -2,11 +2,26 @@
   "id": "scada-alarm-shelf",
   "version": "1",
   "domain": "scada",
-  "title": "SCADA alarm shelf approval",
-  "description": "Operator alarm shelf with approval workflow for high-priority alerts.",
-  "prompt": "Configure SCADA alarm shelf with high pressure alert and operator approval panel.",
+  "lane": "human",
+  "title": "Alarm shelf with operator approval (UI)",
+  "description": "Golden SCADA alarm / approval surface.",
+  "prompt": "Configure a high-pressure alert and an operator alarm shelf so an operator can see and acknowledge the alarm without using admin editors.",
+  "uiJourney": "Explorer (alert rule) → Operator Alarms / alarm shelf dashboard",
+  "humanSteps": [
+    "Select a pressure variable in Explorer and add a high-pressure alert rule.",
+    "Ensure Operator UI includes an Alarms or alarm-shelf screen.",
+    "Trigger or simulate high pressure; open Operator → Alarms and acknowledge."
+  ],
   "playbook": "virtualPumpStation",
   "acceptance": {
-    "requiredTools": ["configure_alert", "configure_operator_ui", "list_automation"]
+    "requiredTools": [
+      "configure_alert",
+      "configure_operator_ui",
+      "list_automation"
+    ],
+    "operatorSurfaces": [
+      "alarms",
+      "operator"
+    ]
   }
 }

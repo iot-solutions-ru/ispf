@@ -2,11 +2,31 @@
   "id": "scada-solution-generator",
   "version": "1",
   "domain": "scada",
-  "title": "Factory spec solution generator",
-  "description": "BL-180 factory spec to tree + dashboards + alerts.",
-  "prompt": "From plant spec: 2 pumps, 1 flow meter, overview dashboard, high pressure alert.",
+  "lane": "human",
+  "title": "Plant spec → SCADA solution (UI)",
+  "description": "Golden generator path via AI Studio or Solutions, verified in Explorer/Operator.",
+  "prompt": "From this plant spec create a monitoring solution: two pumps, one flow meter, an overview dashboard, and a high-pressure alert. I will verify devices in Explorer and the dashboard in Operator mode.",
+  "uiJourney": "AI Studio (Solution generator) or Solutions → Explorer verify → Dashboard → Operator → Alarms",
+  "humanSteps": [
+    "Open AI Studio → Solution / generator (or Solutions catalog) and paste the plant spec.",
+    "Accept generated devices and dashboard.",
+    "In Explorer confirm two pumps and one flow meter exist.",
+    "Open Operator overview; confirm high-pressure alert is configured under Alarms."
+  ],
   "playbook": "AgentSolutionGeneratorPlaybook",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "set_dashboard_layout", "configure_alert", "list_variables"]
+    "requiredTools": [
+      "create_virtual_device",
+      "set_dashboard_layout",
+      "configure_alert",
+      "list_variables"
+    ],
+    "operatorSurfaces": [
+      "ai-studio",
+      "explorer",
+      "dashboard",
+      "operator",
+      "alarms"
+    ]
   }
 }

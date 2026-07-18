@@ -9,10 +9,12 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.server.mimic.MimicService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,15 +43,18 @@ public class DashboardService {
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
     private final ObjectMapper objectMapper;
+    private final MimicService mimicService;
 
     public DashboardService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            MimicService mimicService
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.objectMapper = objectMapper;
+        this.mimicService = mimicService;
     }
 
     @Transactional
@@ -189,7 +194,36 @@ public class DashboardService {
 
     @Transactional
     public DashboardView applyTemplateLayout(String path, String template) {
-        return saveLayout(path, resolveTemplateLayout(template));
+        String layoutJson = resolveTemplateLayout(template);
+        ensureReferencedMimics(layoutJson);
+        return saveLayout(path, layoutJson);
+    }
+
+    /**
+     * Templates such as {@code scada-facility-overview} reference MIMIC paths. Create empty
+     * canvases when missing so a human applying the template is not left with 404 widgets.
+     */
+    private void ensureReferencedMimics(String layoutJson) {
+        try {
+            JsonNode root = objectMapper.readTree(layoutJson);
+            JsonNode widgets = root.path("widgets");
+            if (!widgets.isArray()) {
+                return;
+            }
+            for (JsonNode widget : widgets) {
+                if (!widget.isObject()) {
+                    continue;
+                }
+                String mimicPath = widget.path("mimicPath").asString(null);
+                if (mimicPath == null || mimicPath.isBlank()) {
+                    continue;
+                }
+                String title = widget.path("title").asString("Facility mimic");
+                mimicService.ensureMimicExists(mimicPath.trim(), title);
+            }
+        } catch (JacksonException e) {
+            throw new IllegalArgumentException("Invalid layout JSON", e);
+        }
     }
 
     @Transactional

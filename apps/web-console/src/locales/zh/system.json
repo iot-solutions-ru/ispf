@@ -521,6 +521,8 @@
   "solutions.marketplace.haveKey": "我有许可证密钥",
   "solutions.marketplace.installFree": "安装",
   "solutions.marketplace.installOkWithFunctions": "已安装。函数：{{functions}}",
+  "solutions.marketplace.installOkOpenOperator": "打开 Operator：/?mode=operator&app={{appId}}",
+  "solutions.marketplace.installOkNoOperator": "警告：未注册 Operator 仪表盘 — 目录可能仍是 stub。",
   "solutions.marketplace.installationIdCopy": "复制",
   "solutions.marketplace.installationIdHint": "该服务器的安装 ID（用于供应商许可证请求）：",
   "solutions.marketplace.installed": "已安装",

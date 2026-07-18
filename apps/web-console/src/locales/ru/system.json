@@ -521,6 +521,8 @@
   "solutions.marketplace.haveKey": "У меня есть ключ",
   "solutions.marketplace.installFree": "Установить",
   "solutions.marketplace.installOkWithFunctions": "Установлено. Функции: {{functions}}",
+  "solutions.marketplace.installOkOpenOperator": "Открыть Operator: /?mode=operator&app={{appId}}",
+  "solutions.marketplace.installOkNoOperator": "Внимание: дашборды Operator не зарегистрированы — возможно, в каталоге ещё stub-пакет.",
   "solutions.marketplace.installationIdCopy": "Копировать",
   "solutions.marketplace.installationIdHint": "Installation ID этого сервера (для запроса лицензии у поставщика):",
   "solutions.marketplace.installed": "установлено",

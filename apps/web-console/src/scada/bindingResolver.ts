@@ -44,8 +44,10 @@ export function collectBindingInterests(
   };
 
   for (const el of elements) {
-    for (const binding of Object.values(el.bindings)) {
-      addInterest(binding);
+    for (const binding of Object.values(el.bindings ?? {})) {
+      if (binding) {
+        addInterest(binding);
+      }
     }
   }
   for (const conn of connections) {
@@ -147,7 +149,10 @@ export function resolveDocumentBindings(
   const byElementId: Record<string, Record<string, unknown>> = {};
   for (const el of elements) {
     const values: Record<string, unknown> = {};
-    for (const [key, binding] of Object.entries(el.bindings)) {
+    for (const [key, binding] of Object.entries(el.bindings ?? {})) {
+      if (!binding) {
+        continue;
+      }
       values[key] = resolveBindingValue(binding, session, variablesByPath);
       if (binding.qualityField?.trim()) {
         values[`${key}Quality`] = resolveBindingQuality(binding, session, variablesByPath);

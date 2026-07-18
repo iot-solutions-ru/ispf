@@ -2,11 +2,29 @@
   "id": "hvac-solution-generator-site",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC site spec solution generator",
-  "description": "BL-180 site spec to zone tree + comfort dashboard + alerts.",
-  "prompt": "From HVAC site spec: chiller plant, 3 floor zones, comfort dashboard, high temperature alert.",
+  "lane": "human",
+  "title": "HVAC site spec → solution (UI)",
+  "description": "Golden HVAC generator journey.",
+  "prompt": "From HVAC site spec: chiller plant, three floor zones, comfort dashboard, high-temperature alert. Generate and verify in Explorer, Operator, and Alarms.",
+  "uiJourney": "AI Studio generator → Explorer → Operator → Alarms",
+  "humanSteps": [
+    "Paste site spec into AI Studio solution generator.",
+    "Accept chiller, floor zones, comfort dashboard, alert.",
+    "Verify in Explorer; open Operator comfort; confirm Alarms has high-temp rule."
+  ],
   "playbook": "AgentSolutionGeneratorPlaybook",
   "acceptance": {
-    "requiredTools": ["create_object", "configure_alert", "set_dashboard_layout", "list_variables"]
+    "requiredTools": [
+      "create_object",
+      "configure_alert",
+      "set_dashboard_layout",
+      "list_variables"
+    ],
+    "operatorSurfaces": [
+      "ai-studio",
+      "explorer",
+      "operator",
+      "alarms"
+    ]
   }
 }

@@ -2,11 +2,28 @@
   "id": "scada-modbus-device",
   "version": "1",
   "domain": "scada",
-  "title": "Modbus TCP device",
-  "description": "Modbus device configuration and variable polling.",
-  "prompt": "Add Modbus TCP device with holding registers and status dashboard.",
+  "lane": "human",
+  "title": "Modbus TCP device + status dashboard (UI)",
+  "description": "Golden driver path: Drivers → device → dashboard.",
+  "prompt": "Add a Modbus TCP device with holding registers and a simple status dashboard so an operator can see register values.",
+  "uiJourney": "Explorer / Drivers → create Modbus device → map registers → Dashboard → Operator",
+  "humanSteps": [
+    "In Explorer create a Modbus TCP device; set host/port and holding register map.",
+    "Confirm variables appear under the device.",
+    "Create a status dashboard with value widgets; open in Operator mode."
+  ],
   "playbook": "modbusTcpDevice",
   "acceptance": {
-    "requiredTools": ["create_object", "configure_driver", "list_variables"]
+    "requiredTools": [
+      "create_object",
+      "configure_driver",
+      "list_variables"
+    ],
+    "operatorSurfaces": [
+      "drivers",
+      "explorer",
+      "dashboard",
+      "operator"
+    ]
   }
 }

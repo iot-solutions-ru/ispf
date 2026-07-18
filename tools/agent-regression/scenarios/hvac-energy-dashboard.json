@@ -2,11 +2,25 @@
   "id": "hvac-energy-dashboard",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC energy dashboard",
+  "lane": "both",
+  "title": "HVAC energy dashboard (UI)",
   "description": "Building energy KPI dashboard from zone historian trends.",
-  "prompt": "Build HVAC energy dashboard with zone historian trends and setpoint drift alert.",
+  "prompt": "Build an HVAC energy dashboard with zone historian trends and a setpoint-drift alert; open it in Operator mode.",
+  "uiJourney": "Dashboard builder → historian → Alarms → Operator",
+  "humanSteps": [
+    "Enable history on zone energy/temp tags.",
+    "Build energy dashboard; add drift alert; open Operator."
+  ],
   "playbook": "buildingHvacApp",
   "acceptance": {
-    "requiredTools": ["configure_variable_history", "set_dashboard_layout"]
+    "requiredTools": [
+      "configure_variable_history",
+      "set_dashboard_layout"
+    ],
+    "operatorSurfaces": [
+      "dashboard",
+      "operator",
+      "alarms"
+    ]
   }
 }

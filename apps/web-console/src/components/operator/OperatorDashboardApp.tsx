@@ -339,10 +339,23 @@ export default function OperatorDashboardApp({
 
   if (uiQuery.error || !ui || (!hasDashboards && !hasReports)) {
     return (
-      <div className="operator-shell op-loading" data-testid="operator-shell">
-        {uiQuery.error
-          ? String(uiQuery.error)
-          : t("operator:uiNotFound", { appId })}
+      <div className="operator-shell op-empty-ui" data-testid="operator-shell">
+        <h1 className="op-empty-ui__title">{t("operator:uiNotFoundTitle", { appId })}</h1>
+        <p className="op-muted">
+          {uiQuery.error ? String(uiQuery.error) : t("operator:uiNotFound", { appId })}
+        </p>
+        <p className="op-muted">{t("operator:uiNotFoundHint")}</p>
+        <div className="op-empty-ui__actions">
+          <a className="btn primary" href="/?mode=operator">
+            {t("operator:uiNotFoundPickApp")}
+          </a>
+          <a className="btn" href="/?mode=admin&path=root.platform.operator-apps">
+            {t("operator:uiNotFoundOpenOperatorApps")}
+          </a>
+          <a className="btn" href="/?mode=admin">
+            {t("operator:uiNotFoundOpenSolutions")}
+          </a>
+        </div>
       </div>
     );
   }

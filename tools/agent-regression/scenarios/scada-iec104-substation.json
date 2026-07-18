@@ -2,11 +2,26 @@
   "id": "scada-iec104-substation",
   "version": "1",
   "domain": "scada",
-  "title": "SCADA IEC-104 substation",
+  "lane": "agent",
+  "title": "IEC-104 substation (agent + UI verify)",
   "description": "IEC-104 substation telemetry and alarm shelf.",
-  "prompt": "Create IEC-104 substation SCADA overview with breaker status and trip alerts.",
+  "prompt": "Create IEC-104 substation overview with breaker status and trip alerts; verify Alarms and Operator dashboard.",
+  "uiJourney": "Explorer → Dashboard → Alarms → Operator",
+  "humanSteps": [
+    "Create substation virtual/IEC devices.",
+    "Confirm breaker widgets and trip alerts in Operator/Alarms."
+  ],
   "playbook": "virtualPumpStation",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "configure_alert", "list_variables"]
+    "requiredTools": [
+      "create_virtual_device",
+      "configure_alert",
+      "list_variables"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "operator",
+      "alarms"
+    ]
   }
 }

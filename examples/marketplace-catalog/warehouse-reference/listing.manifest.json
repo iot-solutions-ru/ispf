@@ -19,5 +19,5 @@
     "warehouse",
     "logistics"
   ],
-  "changelog": "Marketplace catalog stub listing for warehouse-reference (BL-183)."
+  "changelog": "Warehouse BFF reference (install creates functions; add Operator dashboards in follow-up)"
 }

@@ -12,12 +12,12 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.0.1",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "demo",
     "training"
   ],
-  "changelog": "Marketplace catalog stub listing for demo-app (BL-183)."
+  "changelog": "1.0.1 — operator dashboard + report screens"
 }

@@ -2,11 +2,28 @@
   "id": "scada-tank-farm",
   "version": "1",
   "domain": "scada",
-  "title": "Tank farm monitoring",
-  "description": "Virtual tank devices, fill level trends, facility overview dashboard.",
-  "prompt": "Build tank farm with 3 tanks, fill level charts, and overview dashboard.",
+  "lane": "human",
+  "title": "Three-tank farm with trends (UI)",
+  "description": "Golden SCADA historian + overview for storage tanks.",
+  "prompt": "Build a tank farm with three storage tanks, fill-level charts from historian, and an overview dashboard for operators.",
+  "uiJourney": "Explorer → enable historian on level vars → Dashboard charts → Operator",
+  "humanSteps": [
+    "Create three tank devices with level variables in Explorer.",
+    "Enable historian/history on each level variable.",
+    "Build an overview dashboard with three chart widgets bound to those histories.",
+    "Open Operator mode and confirm live levels and trends."
+  ],
   "playbook": "virtualPumpStation",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "configure_variable_history", "set_dashboard_layout"]
+    "requiredTools": [
+      "create_virtual_device",
+      "configure_variable_history",
+      "set_dashboard_layout"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "dashboard",
+      "operator"
+    ]
   }
 }

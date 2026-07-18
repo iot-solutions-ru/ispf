@@ -98,6 +98,13 @@ export default function AiStudioBundleTab({
     },
   });
 
+  const publishErrorText = publishMutation.error
+    ? String(publishMutation.error)
+    : null;
+  const publishNeedsSignedLicense = Boolean(
+    publishErrorText && /signed license|require-signed-bundles|403/i.test(publishErrorText)
+  );
+
   const previewUrl = appId.trim()
     ? `/?mode=operator&app=${encodeURIComponent(appId.trim())}`
     : "/?mode=operator";
@@ -174,6 +181,11 @@ export default function AiStudioBundleTab({
               || dryRunMutation.error
               || publishMutation.error
           )}
+          {publishNeedsSignedLicense ? (
+            <p className="op-muted" style={{ marginTop: "0.5rem" }}>
+              {t("bundle.signedLicenseHint")}
+            </p>
+          ) : null}
         </div>
       )}
 
@@ -216,6 +228,35 @@ export default function AiStudioBundleTab({
       <div className="form-grid">
         <label className="full">
           {t("bundle.manifestJson")}
+          <div className="ai-studio-bundle-file-row">
+            <input
+              type="file"
+              accept="application/json,.json"
+              data-testid="bundle-manifest-file"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                try {
+                  const text = await file.text();
+                  const parsed = JSON.parse(text) as Record<string, unknown>;
+                  setManifestText(JSON.stringify(parsed, null, 2));
+                  setValidationText(null);
+                  setDryRunText(null);
+                  const op =
+                    (parsed.operatorUi as { appId?: string } | undefined)?.appId
+                    || (parsed.operatorManifest as { appId?: string } | undefined)?.appId;
+                  if (!appId.trim() && typeof op === "string" && op.trim()) {
+                    setAppId(op.trim());
+                  }
+                } catch (err) {
+                  setValidationText(String(err));
+                } finally {
+                  event.target.value = "";
+                }
+              }}
+            />
+            <span className="op-muted">{t("bundle.loadFromFileHint")}</span>
+          </div>
           <textarea
             className="json-editor"
             rows={16}

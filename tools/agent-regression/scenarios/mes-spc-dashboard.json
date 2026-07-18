@@ -2,9 +2,15 @@
   "id": "mes-spc-dashboard",
   "version": "1",
   "domain": "mes",
-  "title": "MES SPC quality dashboard",
+  "lane": "both",
+  "title": "SPC quality dashboard (UI)",
   "description": "SPC chart widgets and sample list on production bundle.",
-  "prompt": "Configure MES quality SPC dashboard with chart widget and sample list function on mes-platform-production.",
+  "prompt": "On mes-platform-production, open the SPC quality dashboard with chart and sample list for an operator.",
+  "uiJourney": "Operator mes-platform-production → SPC / quality tab",
+  "humanSteps": [
+    "Deploy mes-platform-production if needed.",
+    "Open Operator SPC/quality dashboard; confirm chart and sample list."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-platform-production",
@@ -12,6 +18,13 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["configure_operator_ui", "invoke_bff"]
+    "requiredTools": [
+      "configure_operator_ui",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "operator",
+      "dashboard"
+    ]
   }
 }

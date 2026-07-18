@@ -2,9 +2,15 @@
   "id": "mes-demo-app-deploy",
   "version": "1",
   "domain": "mes",
-  "title": "Demo application bundle deploy",
+  "lane": "agent",
+  "title": "Demo app deploy (UI verify)",
   "description": "Validate and import demo-app with SQL reports and operator shell.",
-  "prompt": "Deploy demo application bundle (appId demo) with validate_bundle and import_package.",
+  "prompt": "Install the demo application bundle and open its operator screens; run a sample report if available.",
+  "uiJourney": "Solutions → Deploy demo → Operator",
+  "humanSteps": [
+    "Deploy demo from Solutions.",
+    "Open /?mode=operator&app=demo and confirm screens."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "demo",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "run_report"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "run_report"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

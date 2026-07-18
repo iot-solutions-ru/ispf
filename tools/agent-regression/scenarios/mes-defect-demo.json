@@ -2,9 +2,16 @@
   "id": "mes-defect-demo",
   "version": "1",
   "domain": "mes",
-  "title": "MES defect distribution workflow",
-  "description": "Defect demo with BPMN workflow.",
-  "prompt": "Deploy mes-defect-demo bundle with defect workflow and operator work queue.",
+  "lane": "human",
+  "title": "Defect capture + Work Queue (UI)",
+  "description": "Golden quality / defect MES journey.",
+  "prompt": "Install mes-defect-demo, capture a defect from the operator screen, and confirm a workflow task lands in Work Queue.",
+  "uiJourney": "Solutions → Deploy mes-defect-demo → Operator → Work Queue",
+  "humanSteps": [
+    "Deploy mes-defect-demo from Solutions.",
+    "Open Operator for mes-defect-demo; submit a defect record.",
+    "Open Work Queue and confirm the defect workflow task."
+  ],
   "playbook": "workflowGuide",
   "bundle": {
     "appId": "mes-defect-demo",
@@ -12,6 +19,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["import_package", "list_work_queue"]
+    "requiredTools": [
+      "import_package",
+      "list_work_queue"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator",
+      "work-queue"
+    ]
   }
 }

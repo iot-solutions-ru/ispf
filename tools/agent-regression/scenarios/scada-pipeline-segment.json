@@ -2,11 +2,26 @@
   "id": "scada-pipeline-segment",
   "version": "1",
   "domain": "scada",
-  "title": "Midstream pipeline segment",
+  "lane": "agent",
+  "title": "Pipeline segment SCADA (agent + UI verify)",
   "description": "Valve station, linepack pressure, segment overview mimic.",
-  "prompt": "Deploy midstream pipeline SCADA with valve station, pressure sensors, and linepack overview dashboard.",
+  "prompt": "Deploy midstream pipeline SCADA with valve station, pressure sensors, linepack mimic, and pressure alert. Verify Mimic and Alarms in the console.",
+  "uiJourney": "AI Studio → Mimic → Alarms → Operator",
+  "humanSteps": [
+    "Generate or create pipeline segment objects.",
+    "Open Mimic and Alarms; confirm operator overview."
+  ],
   "playbook": "virtualPumpStation",
   "acceptance": {
-    "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_alert"]
+    "requiredTools": [
+      "create_virtual_device",
+      "save_mimic_diagram",
+      "configure_alert"
+    ],
+    "operatorSurfaces": [
+      "mimic",
+      "alarms",
+      "operator"
+    ]
   }
 }

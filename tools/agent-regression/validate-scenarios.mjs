@@ -34,6 +34,20 @@ function readJson(filePath) {
   }
 }
 
+const OPERATOR_SURFACES = new Set([
+  "solutions",
+  "marketplace",
+  "explorer",
+  "drivers",
+  "dashboard",
+  "mimic",
+  "operator",
+  "alarms",
+  "work-queue",
+  "schedules",
+  "ai-studio",
+]);
+
 function validateScenarioShape(scenario, file) {
   const errors = [];
   const required = ["id", "version", "domain", "title", "prompt"];
@@ -44,6 +58,34 @@ function validateScenarioShape(scenario, file) {
   }
   if (scenario.domain && !["scada", "mes", "hvac"].includes(scenario.domain)) {
     errors.push(`invalid domain ${scenario.domain}`);
+  }
+  if (scenario.lane && !["human", "agent", "both"].includes(scenario.lane)) {
+    errors.push(`invalid lane ${scenario.lane}`);
+  }
+  if (scenario.lane === "human") {
+    if (!Array.isArray(scenario.humanSteps) || scenario.humanSteps.length < 1) {
+      errors.push("human lane requires humanSteps[]");
+    }
+    if (!scenario.uiJourney || String(scenario.uiJourney).trim() === "") {
+      errors.push("human lane requires uiJourney");
+    }
+  }
+  if (scenario.humanSteps != null) {
+    if (!Array.isArray(scenario.humanSteps) || scenario.humanSteps.some((s) => !s || String(s).trim().length < 3)) {
+      errors.push("humanSteps must be non-empty strings");
+    }
+  }
+  const surfaces = scenario.acceptance?.operatorSurfaces;
+  if (surfaces != null) {
+    if (!Array.isArray(surfaces) || surfaces.length < 1) {
+      errors.push("acceptance.operatorSurfaces must be a non-empty array");
+    } else {
+      for (const surface of surfaces) {
+        if (!OPERATOR_SURFACES.has(surface)) {
+          errors.push(`invalid operatorSurface ${surface}`);
+        }
+      }
+    }
   }
   if (scenario.bundle) {
     if (!scenario.bundle.appId || !scenario.bundle.manifestPath) {

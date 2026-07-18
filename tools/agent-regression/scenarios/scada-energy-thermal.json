@@ -2,9 +2,15 @@
   "id": "scada-energy-thermal",
   "version": "1",
   "domain": "scada",
-  "title": "Thermal power generation SCADA",
+  "lane": "agent",
+  "title": "Thermal power SCADA (agent + UI verify)",
   "description": "Boiler, turbine, substation feeder, kWh reporting.",
-  "prompt": "Build thermal power plant SCADA with boiler aggregate, steam turbine, substation feeder, and generation overview.",
+  "prompt": "Build thermal power plant monitoring (boiler, steam turbine, substation overview) using mini-tec where applicable. Verify operator screens open after deploy.",
+  "uiJourney": "Solutions/Deploy mini-tec → Operator",
+  "humanSteps": [
+    "Deploy mini-tec from Solutions if not present.",
+    "Open Operator and confirm thermal/overview screens."
+  ],
   "playbook": "AgentSolutionGeneratorPlaybook",
   "bundle": {
     "appId": "mini-tec",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

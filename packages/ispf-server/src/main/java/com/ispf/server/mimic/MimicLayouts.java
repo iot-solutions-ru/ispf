@@ -1,7 +1,11 @@
 package com.ispf.server.mimic;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 /**
- * Default SCADA mimic diagram JSON (empty canvas).
+ * Default SCADA mimic diagram JSON (empty canvas + facility starter).
  */
 public final class MimicLayouts {
 
@@ -17,6 +21,20 @@ public final class MimicLayouts {
               "connections": []
             }
             """.trim();
+
+    /** Starter P&ID for {@code root.platform.mimics.facility-overview} (scada-facility-overview template). */
+    public static final String FACILITY_OVERVIEW_STARTER = loadFacilityOverviewStarter();
+
+    private static String loadFacilityOverviewStarter() {
+        try (InputStream in = MimicLayouts.class.getResourceAsStream("/bootstrap/facility-overview-mimic.json")) {
+            if (in == null) {
+                return EMPTY_MIMIC;
+            }
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+        } catch (IOException e) {
+            return EMPTY_MIMIC;
+        }
+    }
 
     private MimicLayouts() {
     }

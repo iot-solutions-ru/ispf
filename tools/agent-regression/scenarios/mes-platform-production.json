@@ -2,9 +2,16 @@
   "id": "mes-platform-production",
   "version": "1",
   "domain": "mes",
-  "title": "MES platform production walkthrough",
-  "description": "BL-170 production bundle with OEE, SPC, and batch phases.",
-  "prompt": "Deploy mes-platform-production and verify OEE dashboard and batch run paths.",
+  "lane": "human",
+  "title": "MES production walkthrough (UI)",
+  "description": "Golden production MES: OEE + batch screens.",
+  "prompt": "Install mes-platform-production and walk an operator through OEE dashboard and batch-run screens without using admin editors.",
+  "uiJourney": "Solutions → Deploy → Operator OEE + batch tabs",
+  "humanSteps": [
+    "Deploy mes-platform-production.",
+    "Open Operator; open OEE screen; confirm KPIs render.",
+    "Open batch-run screen; confirm phase paths/list load."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-platform-production",
@@ -12,6 +19,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

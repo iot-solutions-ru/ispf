@@ -2,9 +2,15 @@
   "id": "mes-batch-run-tracking",
   "version": "1",
   "domain": "mes",
-  "title": "MES batch run phase tracking",
+  "lane": "agent",
+  "title": "Batch run phase tracking (UI verify)",
   "description": "BL-170 batch run paths and phase transitions on mes-platform-production.",
-  "prompt": "Deploy mes-platform-production and verify batch run phase paths via BFF smoke.",
+  "prompt": "Install mes-platform-production and open batch-run screens so an operator can track phase paths.",
+  "uiJourney": "Solutions → Operator batch screens",
+  "humanSteps": [
+    "Deploy mes-platform-production.",
+    "Open Operator batch-run screen and confirm phases list."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "mes-platform-production",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

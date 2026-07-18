@@ -2,10 +2,17 @@
   "id": "platform-primitive-deploy",
   "version": "1",
   "domain": "scada",
+  "lane": "both",
   "kind": "platform-primitive",
-  "title": "Platform primitive deploy playbook",
+  "title": "Platform primitive deploy (UI verify)",
   "description": "Domain-agnostic fixture: tree + dashboard + operator UI via deploy playbook (no vertical BFF).",
-  "prompt": "Deploy the platform-primitive example bundle with run_deploy_playbook. Verify operator UI is live. Do not invent MES or HVAC domain objects.",
+  "prompt": "Deploy the platform-primitive example bundle and open its operator overview. Confirm hub device and overview dashboard exist in Explorer.",
+  "uiJourney": "AI Studio Bundle / Solutions → Deploy → Explorer → Operator",
+  "humanSteps": [
+    "Deploy platform-primitive from Solutions or AI Studio Bundle tab.",
+    "In Explorer confirm platform-primitive-hub and platform-primitive-overview.",
+    "Open Operator overview for the app."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "platform-primitive",
@@ -13,10 +20,19 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["run_deploy_playbook", "deploy_step_import"],
+    "requiredTools": [
+      "run_deploy_playbook",
+      "deploy_step_import"
+    ],
     "requiredObjectPaths": [
       "root.platform.devices.platform-primitive-hub",
       "root.platform.dashboards.platform-primitive-overview"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "explorer",
+      "operator",
+      "ai-studio"
     ]
   }
 }

@@ -2,9 +2,16 @@
   "id": "hvac-building-app",
   "version": "1",
   "domain": "hvac",
-  "title": "Building HVAC reference deploy",
-  "description": "HVAC zones + comfort BFF.",
-  "prompt": "Deploy building-hvac application with zone list function and operator shell.",
+  "lane": "human",
+  "title": "Building HVAC reference deploy (UI)",
+  "description": "Golden HVAC install into Operator shell. Prefer full examples/building-hvac-app bundle (marketplace listing may be a catalog stub without operatorUi).",
+  "prompt": "Install the building-hvac application, open its operator shell, and confirm the zone list screen loads for an operator.",
+  "uiJourney": "Admin → System → Solutions (Решения) → Install building-hvac → Operator (?mode=operator&app=building-hvac)",
+  "humanSteps": [
+    "Sign in as admin; open System → Solutions (Решения / Marketplace).",
+    "Install Building HVAC Reference (appId building-hvac). Prefer a full package with operatorUi — if Operator says UI not found, deploy examples/building-hvac-app/bundle.json via AI Studio Bundle or Application Deploy.",
+    "Open /?mode=operator&app=building-hvac and confirm zone list / comfort screens render."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "building-hvac",
@@ -12,6 +19,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "configure_operator_ui"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "configure_operator_ui"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

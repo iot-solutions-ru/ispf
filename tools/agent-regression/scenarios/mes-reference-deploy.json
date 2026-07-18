@@ -2,9 +2,17 @@
   "id": "mes-reference-deploy",
   "version": "1",
   "domain": "mes",
-  "title": "MES reference bundle deploy",
-  "description": "Validate and import mes-reference bundle.",
-  "prompt": "Deploy mes-reference application bundle and verify BFF functions.",
+  "lane": "human",
+  "title": "MES reference deploy (UI)",
+  "description": "Golden MES install from Solutions/Marketplace into Operator. Paid marketplace SKU may block demostand; free mes-platform-production is an accepted substitute for UI walkthrough.",
+  "prompt": "Install the mes-reference application from Solutions/Marketplace, open its operator shell, and confirm BFF-backed order screens load for an operator.",
+  "uiJourney": "Admin → System → Solutions → Install mes-reference (or mes-platform-production) → Operator → Work Queue",
+  "humanSteps": [
+    "Sign in as admin; open System → Solutions (Решения) and locate mes-reference (or free mes-platform-production if paid listing is blocked).",
+    "Deploy/import the full bundle (not a catalog stub); wait until status is ready and operatorUi is configured.",
+    "Open /?mode=operator&app=mes-reference (or mes-platform-production) and confirm order/list screens render.",
+    "Open Work Queue app or sidebar and confirm tasks surface for the MES app."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-reference",
@@ -12,6 +20,16 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "marketplace",
+      "operator",
+      "work-queue"
+    ]
   }
 }

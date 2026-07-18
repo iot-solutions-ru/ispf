@@ -2,9 +2,15 @@
   "id": "mes-lab-training",
   "version": "1",
   "domain": "mes",
-  "title": "Lab training bundle",
+  "lane": "agent",
+  "title": "Lab training bundle (UI verify)",
   "description": "Deploy lab-training virtual meter exercise.",
-  "prompt": "Deploy lab-training bundle and verify virtual meter variables.",
+  "prompt": "Install lab-training and verify virtual meter variables in Explorer.",
+  "uiJourney": "Solutions → Deploy → Explorer",
+  "humanSteps": [
+    "Deploy lab-training.",
+    "In Explorer open virtual meter variables."
+  ],
   "playbook": "virtualMeterLab",
   "bundle": {
     "appId": "lab-training",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "list_variables"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "list_variables"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "explorer"
+    ]
   }
 }

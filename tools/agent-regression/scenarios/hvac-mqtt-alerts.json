@@ -2,9 +2,15 @@
   "id": "hvac-mqtt-alerts",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC MQTT temperature alerts",
+  "lane": "both",
+  "title": "MQTT temperature alerts (UI)",
   "description": "Lab MQTT temperature bundle with comfort alert rules.",
-  "prompt": "Deploy lab-mqtt-temperature reference and add CEL alert when zone temperature exceeds setpoint.",
+  "prompt": "Install lab-mqtt-temperature and add a high zone-temperature alert; verify in Operator Alarms.",
+  "uiJourney": "Solutions → Deploy → Alerts → Operator Alarms",
+  "humanSteps": [
+    "Deploy mqtt-temperature-lab.",
+    "Add high-temp alert; open Operator Alarms."
+  ],
   "playbook": "AgentDeployPlaybook",
   "bundle": {
     "appId": "mqtt-temperature-lab",
@@ -12,6 +18,15 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["import_package", "configure_alert", "configure_operator_ui"]
+    "requiredTools": [
+      "import_package",
+      "configure_alert",
+      "configure_operator_ui"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator",
+      "alarms"
+    ]
   }
 }

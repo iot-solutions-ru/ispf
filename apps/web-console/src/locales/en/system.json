@@ -65,6 +65,8 @@
   "solutions.marketplace.installFree": "Install",
   "solutions.marketplace.installing": "Installing…",
   "solutions.marketplace.installOkWithFunctions": "Installed. Functions: {{functions}}",
+  "solutions.marketplace.installOkOpenOperator": "Open Operator: /?mode=operator&app={{appId}}",
+  "solutions.marketplace.installOkNoOperator": "Warning: no Operator dashboards were registered — this listing may still be a catalog stub.",
   "solutions.marketplace.haveKey": "I have a license key",
   "solutions.marketplace.contactVendor": "Contact vendor",
   "solutions.marketplace.close": "Close",

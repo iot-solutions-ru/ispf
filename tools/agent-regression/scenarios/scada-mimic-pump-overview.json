@@ -2,11 +2,27 @@
   "id": "scada-mimic-pump-overview",
   "version": "1",
   "domain": "scada",
-  "title": "Pump station mimic overview",
+  "lane": "both",
+  "title": "Pump station mimic + historian (UI)",
   "description": "Create mimic diagram and facility overview dashboard for pump station.",
-  "prompt": "Build pump station SCADA with MIMIC diagram, historian trends, and scada-facility-overview layout.",
+  "prompt": "Build a pump station with MIMIC diagram, historian trends, and a facility overview dashboard for operators.",
+  "uiJourney": "Explorer → Mimic → Dashboard (historian) → Operator",
+  "humanSteps": [
+    "Create pump station objects.",
+    "Save Mimic; enable historian; build facility dashboard; open Operator."
+  ],
   "playbook": "virtualPumpStation",
   "acceptance": {
-    "requiredTools": ["create_object", "save_mimic_diagram", "configure_variable_history", "set_dashboard_layout"]
+    "requiredTools": [
+      "create_object",
+      "save_mimic_diagram",
+      "configure_variable_history",
+      "set_dashboard_layout"
+    ],
+    "operatorSurfaces": [
+      "mimic",
+      "dashboard",
+      "operator"
+    ]
   }
 }

@@ -2,11 +2,29 @@
   "id": "scada-mimic-facility",
   "version": "1",
   "domain": "scada",
-  "title": "SCADA mimic facility overview",
-  "description": "Agent creates MIMIC diagram and embeds in dashboard.",
-  "prompt": "Create a tank-farm SCADA mimic with valve bindings and a facility overview dashboard.",
+  "lane": "human",
+  "title": "Tank-farm facility mimic (UI)",
+  "description": "Golden SCADA mimic journey for a facility overview.",
+  "prompt": "Create a tank-farm facility mimic with tank levels and valve positions, plus a facility overview dashboard an operator can open in Operator mode.",
+  "uiJourney": "Explorer → Mimic editor → Dashboard builder → Operator",
+  "humanSteps": [
+    "In Explorer, create or select tank and valve objects with level/position variables.",
+    "Open Mimic; draw tanks and valves; bind fill and position to variables; save.",
+    "Open Dashboard; add overview widgets for the same tags; save.",
+    "Switch to Operator mode and open the facility overview screen."
+  ],
   "playbook": "scadaMimicGuide",
   "acceptance": {
-    "requiredTools": ["create_object", "save_mimic_diagram", "set_dashboard_layout"]
+    "requiredTools": [
+      "create_object",
+      "save_mimic_diagram",
+      "set_dashboard_layout"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "mimic",
+      "dashboard",
+      "operator"
+    ]
   }
 }

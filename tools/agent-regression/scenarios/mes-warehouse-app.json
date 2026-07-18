@@ -2,9 +2,15 @@
   "id": "mes-warehouse-app",
   "version": "1",
   "domain": "mes",
-  "title": "Warehouse reference app",
+  "lane": "agent",
+  "title": "Warehouse app (UI verify)",
   "description": "Warehouse bundle with SQL bindings.",
-  "prompt": "Deploy warehouse-app bundle and verify SQL-backed operator screens.",
+  "prompt": "Install warehouse-app and open SQL-backed operator screens.",
+  "uiJourney": "Solutions → Deploy → Operator",
+  "humanSteps": [
+    "Deploy warehouse.",
+    "Open Operator warehouse screens."
+  ],
   "playbook": "applicationLifecycleGuide",
   "bundle": {
     "appId": "warehouse",
@@ -12,6 +18,13 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
   }
 }

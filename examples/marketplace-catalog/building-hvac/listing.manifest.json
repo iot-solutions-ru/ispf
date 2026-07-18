@@ -12,12 +12,12 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.1.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "hvac",
     "building"
   ],
-  "changelog": "Marketplace catalog stub listing for building-hvac (BL-183)."
+  "changelog": "1.1.0 — operator-ready zones, comfort dashboard, high-temp alert"
 }

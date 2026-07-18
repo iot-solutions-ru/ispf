@@ -2,9 +2,15 @@
   "id": "scada-simulator-profiles",
   "version": "1",
   "domain": "scada",
-  "title": "Virtual simulator profiles",
+  "lane": "agent",
+  "title": "Simulator profiles deploy (UI verify)",
   "description": "Deploy simulator bundle with meter and weighbridge virtual devices.",
-  "prompt": "Import simulator-profiles bundle and verify virtual devices under root.platform.devices.",
+  "prompt": "Import simulator-profiles and verify virtual devices appear under the platform tree in Explorer.",
+  "uiJourney": "Solutions → Deploy → Explorer",
+  "humanSteps": [
+    "Deploy simulator-profiles from Solutions.",
+    "In Explorer expand virtual devices and confirm profiles loaded."
+  ],
   "playbook": "virtualClusterMonitoring",
   "bundle": {
     "appId": "simulator",
@@ -12,6 +18,14 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "list_objects"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "list_objects"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "explorer"
+    ]
   }
 }

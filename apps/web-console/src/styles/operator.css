@@ -11,6 +11,28 @@
   padding-right: env(safe-area-inset-right, 0);
 }
 
+.operator-shell.op-empty-ui {
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.op-empty-ui__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 650;
+}
+
+.op-empty-ui__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
 @supports (height: 100dvh) {
   .operator-shell {
     height: 100dvh;

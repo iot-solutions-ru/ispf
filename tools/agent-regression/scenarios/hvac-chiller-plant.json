@@ -2,15 +2,30 @@
   "id": "hvac-chiller-plant",
   "version": "1",
   "domain": "hvac",
-  "title": "HVAC chiller plant monitoring",
-  "description": "Chiller plant KPIs and comfort deviation alerts.",
-  "prompt": "Create HVAC chiller plant overview with supply/return temps and comfort alerts.",
+  "lane": "human",
+  "title": "Chiller plant overview + comfort alerts (UI)",
+  "description": "Golden chiller monitoring journey.",
+  "prompt": "Create a chiller plant overview with supply/return temperatures and comfort alerts visible to operators.",
+  "uiJourney": "Explorer → Dashboard → Alarms → Operator",
+  "humanSteps": [
+    "Ensure chiller supply/return variables exist (building-hvac or created).",
+    "Build chiller overview dashboard; add comfort alerts.",
+    "Open Operator and Alarms to confirm."
+  ],
   "playbook": "buildingHvacApp",
   "bundle": {
     "appId": "building-hvac",
     "manifestPath": "examples/building-hvac-app/bundle.json"
   },
   "acceptance": {
-    "requiredTools": ["configure_alert", "list_variables"]
+    "requiredTools": [
+      "configure_alert",
+      "list_variables"
+    ],
+    "operatorSurfaces": [
+      "dashboard",
+      "operator",
+      "alarms"
+    ]
   }
 }

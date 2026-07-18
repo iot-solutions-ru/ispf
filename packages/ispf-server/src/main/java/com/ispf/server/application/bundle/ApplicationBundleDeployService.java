@@ -625,27 +625,33 @@ public class ApplicationBundleDeployService {
         if (!hasOperatorUiManifest(manifest)) {
             return;
         }
-        Map<String, Object> ui = manifest.operatorUi() != null && !manifest.operatorUi().isEmpty()
-                ? manifest.operatorUi()
-                : buildOperatorUiFromBundle(appId, manifest);
+        Map<String, Object> ui = resolveOperatorUiForSync(appId, manifest);
         String title = ui.get("title") != null ? String.valueOf(ui.get("title")) : appId;
         String defaultDashboard = ui.get("defaultDashboard") != null
                 ? String.valueOf(ui.get("defaultDashboard"))
                 : "";
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> dashboardEntries = (List<Map<String, Object>>) ui.get("dashboards");
-        if (dashboardEntries == null || dashboardEntries.isEmpty()) {
+        List<?> dashboardEntries = ui.get("dashboards") instanceof List<?> list ? list : List.of();
+        List<?> reportEntries = ui.get("reports") instanceof List<?> list ? list : List.of();
+        boolean hasDashboards = !dashboardEntries.isEmpty();
+        boolean hasReports = !reportEntries.isEmpty();
+        // Hollow operatorUi { dashboards: [] } used to skip sync and leave Operator on "UI not found".
+        if (!hasDashboards && !hasReports) {
             return;
         }
         List<Map<String, String>> dashboards = new ArrayList<>();
-        for (Map<String, Object> entry : dashboardEntries) {
-            Map<String, String> item = new LinkedHashMap<>();
-            item.put("path", String.valueOf(entry.get("path")));
-            item.put("title", entry.get("title") != null ? String.valueOf(entry.get("title")) : String.valueOf(entry.get("path")));
-            dashboards.add(item);
-        }
-        if (defaultDashboard.isBlank()) {
-            defaultDashboard = dashboards.get(0).get("path");
+        if (hasDashboards) {
+            for (Object rawEntry : dashboardEntries) {
+                Map<String, String> item = normalizeDashboardEntry(rawEntry);
+                if (item != null) {
+                    dashboards.add(item);
+                }
+            }
+            if (dashboards.isEmpty() && !hasReports) {
+                return;
+            }
+            if (!dashboards.isEmpty() && defaultDashboard.isBlank()) {
+                defaultDashboard = dashboards.get(0).get("path");
+            }
         }
         Map<String, Object> alarmBar = null;
         if (ui.get("alarmBar") instanceof Map<?, ?> alarmBarMap) {
@@ -656,6 +662,23 @@ public class ApplicationBundleDeployService {
         Map<String, Object> extras = new LinkedHashMap<>();
         if (alarmBar != null && !alarmBar.isEmpty()) {
             extras.put("alarmBar", alarmBar);
+        }
+        if (hasReports) {
+            List<Map<String, String>> reports = new ArrayList<>();
+            for (Object rawEntry : reportEntries) {
+                Map<String, String> item = normalizeDashboardEntry(rawEntry);
+                if (item != null) {
+                    reports.add(item);
+                }
+            }
+            if (!reports.isEmpty()) {
+                extras.put("reports", reports);
+                if (ui.get("defaultReport") != null) {
+                    extras.put("defaultReport", String.valueOf(ui.get("defaultReport")));
+                } else {
+                    extras.put("defaultReport", reports.get(0).get("path"));
+                }
+            }
         }
         if (Boolean.TRUE.equals(ui.get("hideTasksAndEvents"))) {
             extras.put("hideTasksAndEvents", true);
@@ -673,6 +696,78 @@ public class ApplicationBundleDeployService {
                 Instant.now()
         ));
         operatorAppObjectTreeService.syncAll();
+    }
+
+    /**
+     * Prefer a usable operatorUi / operatorManifest; never keep an empty dashboards[] shell
+     * when the bundle already defines dashboards, reports, or operatorManifest screens.
+     */
+    private Map<String, Object> resolveOperatorUiForSync(String appId, BundleManifest manifest) {
+        if (hasUsableOperatorDashboards(manifest.operatorUi())) {
+            return manifest.operatorUi();
+        }
+        if (hasUsableOperatorDashboards(manifest.operatorManifest())
+                || hasUsableOperatorReports(manifest.operatorManifest())) {
+            return normalizeOperatorManifestUi(appId, manifest);
+        }
+        return buildOperatorUiFromBundle(appId, manifest);
+    }
+
+    private Map<String, Object> normalizeOperatorManifestUi(String appId, BundleManifest manifest) {
+        Map<String, Object> source = manifest.operatorManifest() != null
+                ? new LinkedHashMap<>(manifest.operatorManifest())
+                : new LinkedHashMap<>();
+        if (hasUsableOperatorDashboards(source) || hasUsableOperatorReports(source)) {
+            if (!source.containsKey("appId")) {
+                source.put("appId", appId);
+            }
+            if (!source.containsKey("title")) {
+                source.put("title", manifest.displayName() != null ? manifest.displayName() : appId);
+            }
+            return source;
+        }
+        return buildOperatorUiFromBundle(appId, manifest);
+    }
+
+    private static boolean hasUsableOperatorDashboards(Map<String, Object> ui) {
+        if (ui == null || ui.isEmpty()) {
+            return false;
+        }
+        Object dashboards = ui.get("dashboards");
+        return dashboards instanceof List<?> list && !list.isEmpty();
+    }
+
+    private static boolean hasUsableOperatorReports(Map<String, Object> ui) {
+        if (ui == null || ui.isEmpty()) {
+            return false;
+        }
+        Object reports = ui.get("reports");
+        return reports instanceof List<?> list && !list.isEmpty();
+    }
+
+    /** Accept `{path,title}` maps or bare path strings (legacy tank-farm style). */
+    private static Map<String, String> normalizeDashboardEntry(Object rawEntry) {
+        if (rawEntry == null) {
+            return null;
+        }
+        if (rawEntry instanceof String path && !path.isBlank()) {
+            Map<String, String> item = new LinkedHashMap<>();
+            item.put("path", path.trim());
+            item.put("title", path.trim());
+            return item;
+        }
+        if (rawEntry instanceof Map<?, ?> map) {
+            Object path = map.get("path");
+            if (path == null || String.valueOf(path).isBlank()) {
+                return null;
+            }
+            Map<String, String> item = new LinkedHashMap<>();
+            item.put("path", String.valueOf(path));
+            Object title = map.get("title");
+            item.put("title", title != null ? String.valueOf(title) : String.valueOf(path));
+            return item;
+        }
+        return null;
     }
 
     public static String applicationTreePath(String appId) {
@@ -749,7 +844,11 @@ public class ApplicationBundleDeployService {
     }
 
     public static boolean hasOperatorUiManifest(BundleManifest manifest) {
-        return (manifest.operatorUi() != null && !manifest.operatorUi().isEmpty())
+        // A non-empty operatorUi map with dashboards:[] is NOT operator-ready (catalog stubs).
+        return hasUsableOperatorDashboards(manifest.operatorUi())
+                || hasUsableOperatorReports(manifest.operatorUi())
+                || hasUsableOperatorDashboards(manifest.operatorManifest())
+                || hasUsableOperatorReports(manifest.operatorManifest())
                 || (manifest.dashboards() != null && !manifest.dashboards().isEmpty())
                 || (manifest.reports() != null && !manifest.reports().isEmpty());
     }

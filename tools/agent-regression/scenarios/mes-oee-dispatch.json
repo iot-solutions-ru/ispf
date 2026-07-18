@@ -2,9 +2,16 @@
   "id": "mes-oee-dispatch",
   "version": "1",
   "domain": "mes",
-  "title": "MES OEE with dispatch workflow",
-  "description": "Extend mes-oee-reference with dispatch workflow and operator screens.",
-  "prompt": "Deploy mes-oee-reference bundle and configure dispatch workflow plus operator dashboards.",
+  "lane": "human",
+  "title": "OEE screens + dispatch workflow (UI)",
+  "description": "Golden OEE MES journey with workflow.",
+  "prompt": "Install mes-oee-reference, open OEE operator dashboards, and verify dispatch workflow tasks show in Work Queue.",
+  "uiJourney": "Solutions → Deploy → Operator OEE tabs → Work Queue",
+  "humanSteps": [
+    "Deploy mes-oee-reference from Solutions.",
+    "Open Operator app; switch OEE dashboard tabs.",
+    "Trigger or open a dispatch workflow; claim task in Work Queue."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-oee-reference",
@@ -12,6 +19,16 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "import_package", "save_workflow_bpmn", "invoke_bff"]
+    "requiredTools": [
+      "validate_bundle",
+      "import_package",
+      "save_workflow_bpmn",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator",
+      "work-queue"
+    ]
   }
 }

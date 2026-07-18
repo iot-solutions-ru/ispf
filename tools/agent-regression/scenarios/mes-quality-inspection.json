@@ -2,9 +2,15 @@
   "id": "mes-quality-inspection",
   "version": "1",
   "domain": "mes",
-  "title": "MES quality inspection",
+  "lane": "both",
+  "title": "Quality inspection screens (UI)",
   "description": "Defect demo quality inspection and rework workflow.",
-  "prompt": "Deploy mes-defect-demo and verify defect capture BFF and quality dashboard.",
+  "prompt": "With mes-defect-demo installed, open quality inspection / defect capture screens and confirm the quality dashboard for an operator.",
+  "uiJourney": "Operator mes-defect-demo → quality dashboard",
+  "humanSteps": [
+    "Open Operator mes-defect-demo.",
+    "Capture or list defects; open quality dashboard tab."
+  ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
     "appId": "mes-defect-demo",
@@ -12,6 +18,12 @@
   },
   "acceptance": {
     "validateBundle": true,
-    "requiredTools": ["validate_bundle", "invoke_bff"]
+    "requiredTools": [
+      "validate_bundle",
+      "invoke_bff"
+    ],
+    "operatorSurfaces": [
+      "operator"
+    ]
   }
 }
