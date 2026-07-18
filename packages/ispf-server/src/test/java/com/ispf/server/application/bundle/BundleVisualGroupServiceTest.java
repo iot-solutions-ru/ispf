@@ -67,6 +67,12 @@ class BundleVisualGroupServiceTest {
                         "root.platform.workflows.demo-flow",
                         null,
                         null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
                         null
                 )),
                 null,

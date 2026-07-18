@@ -196,6 +196,40 @@ public class WorkflowService {
         return getWorkflow(path);
     }
 
+    /**
+     * Apply ADR-0049 tool-contract fields from an application bundle (null/blank = leave unchanged).
+     */
+    @Transactional
+    public void applyExcellenceContract(
+            String path,
+            String title,
+            String inputSchemaJson,
+            String outputSchemaJson,
+            String toolDescription,
+            String sideEffectClass,
+            String webhookSlug
+    ) {
+        ensureWorkflowStructure(path);
+        setStringVarIfPresent(path, "title", title);
+        setStringVarIfPresent(path, "inputSchemaJson", inputSchemaJson);
+        setStringVarIfPresent(path, "outputSchemaJson", outputSchemaJson);
+        setStringVarIfPresent(path, "toolDescription", toolDescription);
+        setStringVarIfPresent(path, "sideEffectClass", sideEffectClass);
+        setStringVarIfPresent(path, "webhookSlug", webhookSlug);
+        webhookIndex.indexPath(path);
+    }
+
+    private void setStringVarIfPresent(String path, String variableName, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        objectManager.setVariableValue(
+                path,
+                variableName,
+                DataRecord.single(STRING_VALUE, Map.of("value", value))
+        );
+    }
+
     @Transactional
     public WorkflowView runWorkflow(String path) throws WorkflowException {
         return runWorkflow(path, null, AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL);

@@ -88,16 +88,28 @@ public class ApplicationBundleMetadataService {
 
     @Transactional
     public DeployOutcome deployWorkflow(ApplicationBundleDeployService.BundleWorkflow workflow) throws Exception {
+        String displayName = workflow.title() != null && !workflow.title().isBlank()
+                ? workflow.title()
+                : workflow.path().substring(workflow.path().lastIndexOf('.') + 1);
         ensureLeafObject(
                 workflow.path(),
                 ObjectType.WORKFLOW,
-                workflow.path().substring(workflow.path().lastIndexOf('.') + 1),
+                displayName,
                 "workflow-v1"
         );
         workflowService.ensureWorkflowStructure(workflow.path());
         if (workflow.bpmnXml() != null && !workflow.bpmnXml().isBlank()) {
             workflowService.saveBpmn(workflow.path(), workflow.bpmnXml());
         }
+        workflowService.applyExcellenceContract(
+                workflow.path(),
+                workflow.title(),
+                workflow.inputSchemaJson(),
+                workflow.outputSchemaJson(),
+                workflow.toolDescription(),
+                workflow.sideEffectClass(),
+                workflow.webhookSlug()
+        );
         if (workflow.status() != null && !workflow.status().isBlank()) {
             workflowService.updateStatus(workflow.path(), WorkflowLifecycleStatus.valueOf(workflow.status()));
         }

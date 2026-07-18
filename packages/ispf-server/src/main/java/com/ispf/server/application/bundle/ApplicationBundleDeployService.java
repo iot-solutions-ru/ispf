@@ -1162,7 +1162,13 @@ public class ApplicationBundleDeployService {
             String path,
             String bpmnXml,
             String status,
-            String operatorAppId
+            String operatorAppId,
+            String title,
+            String inputSchemaJson,
+            String outputSchemaJson,
+            String toolDescription,
+            String sideEffectClass,
+            String webhookSlug
     ) {
     }
 

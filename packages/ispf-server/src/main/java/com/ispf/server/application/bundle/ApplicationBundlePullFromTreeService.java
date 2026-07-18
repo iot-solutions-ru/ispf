@@ -222,7 +222,13 @@ public class ApplicationBundlePullFromTreeService {
                                 view.path(),
                                 view.bpmnXml(),
                                 view.status() != null ? view.status().name() : "DRAFT",
-                                view.operatorAppId()
+                                view.operatorAppId(),
+                                view.title(),
+                                view.inputSchemaJson(),
+                                view.outputSchemaJson(),
+                                view.toolDescription(),
+                                view.sideEffectClass(),
+                                view.webhookSlug()
                         ));
                     }
                     case REPORT -> {
