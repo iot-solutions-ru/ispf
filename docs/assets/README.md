@@ -55,19 +55,22 @@ Same length, English UI: Operator Mini-CHP → open **AI assistant** → one sho
 
 ## Static shots (already in this folder)
 
-| File | Role |
-| ---- | ---- |
-| `ispf-operator-hmi.png` | README hero (until GIF) |
-| `ispf-scada-snmp.png` | Admin + SNMP dashboard |
-| `ispf-object-tree.png` | Object tree / MQTT device |
-| `ispf-bpmn-workflow.png` | BPMN / MES |
-| `ispf-alert-rule.png` | Alert rule editor |
-| `ispf-dashboard-builder.png` | Dashboard builder (spare) |
-| `ispf-marketplace.png` | Solution catalog (spare) |
-| `ispf-ai-studio.png` | AI Studio Agent (English) — **re-export at full window resolution** (current file is ~400×197 from chat compress) |
-| `ispf-explorer-en.png` | Explorer + device properties (English) — ~1024×503; better if re-exported at native window size |
+Captured **2026-07-19** from demostand [ispf.iot-solutions.ru](https://ispf.iot-solutions.ru/) · English UI · Dark · 1600×900 · v0.9.177.
 
-**Still worth capturing (English):** mimic / P&ID editor → `ispf-mimic-editor.png`; full-res AI Studio (`ispf-ai-studio.png`); optional sharper Explorer overwrite.
+| File | Role | Scene |
+| ---- | ---- | ----- |
+| `ispf-operator-hmi.png` | README hero (until GIF) | Operator · UI Pump Station + facility mimic |
+| `ispf-scada-snmp.png` | README row 1 | Admin View · `ui-pump-station-overview` (filename kept for links) |
+| `ispf-object-tree.png` | README row 1 | Explorer · Pump 1 · Variables |
+| `ispf-bpmn-workflow.png` | README row 2 | BPMN Editor · `mes-work-order-dispatch` |
+| `ispf-alert-rule.png` | README row 2 | Alert · `ui-pump-high-pressure` CEL |
+| `ispf-dashboard-builder.png` | Spare / docs | Dashboard Editor · widget palette |
+| `ispf-marketplace.png` | Spare / docs | System → Solutions catalog |
+| `ispf-ai-studio.png` | Spare / docs | AI Studio → Agent |
+| `ispf-explorer-en.png` | Spare / docs | Same as object-tree (EN Explorer) |
+| `ispf-mimic-editor.png` | Spare / docs | SCADA Mimic editor · Facility Overview |
+
+**Website [ispf.ai](https://ispf.ai):** marketing images are **embedded base64** in the site build (not this folder). They still show older RU UI (SNMP Host Monitoring, Mini-TEC, MQTT Meter Bus, Demo Alarm Handler). Re-export from these PNGs when updating the website package.
 
 ## Builder EN pack (docs + marketing)
 
@@ -75,11 +78,11 @@ Use the same English UI rule. Prefer **native window resolution** (not chat-comp
 
 | File | Capture | Used by |
 | ---- | ------- | ------- |
-| `ispf-dashboard-builder.png` | Dashboards → edit layout (84×8 grid visible) | [dashboards.md](../en/dashboards.md), README spare |
-| `ispf-mimic-editor.png` | SCADA mimic editor with 2–3 symbols bound | [scada.md](../en/scada.md), [web-console.md](../en/web-console.md) |
-| `ispf-widget-inspector.png` | Inspector open on a chart / KPI widget | [widgets.md](../en/widgets.md) |
-| `ispf-ai-studio.png` | AI Studio Agent (full window) | README, [ai-development.md](../en/ai-development.md) |
-| `ispf-explorer-en.png` | Explorer + device properties | README, [web-console.md](../en/web-console.md) |
+| `ispf-dashboard-builder.png` | Dashboards → Editor (widget palette + facility mimic) | [dashboards.md](../en/dashboards.md), README spare |
+| `ispf-mimic-editor.png` | SCADA mimic editor · Facility Overview + P&ID pack | [scada.md](../en/scada.md), [web-console.md](../en/web-console.md) |
+| `ispf-widget-inspector.png` | Inspector open on a chart / KPI widget | [widgets.md](../en/widgets.md) — still open |
+| `ispf-ai-studio.png` | AI Studio Agent (full window) | README spare, [ai-development.md](../en/ai-development.md) |
+| `ispf-explorer-en.png` | Explorer + device variables | README spare, [web-console.md](../en/web-console.md) |
 
 **Do not** ship RU-only screenshots in the root README hero row. Localize separately under `docs/assets/ru/` if needed later.
 
