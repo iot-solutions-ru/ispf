@@ -150,6 +150,7 @@ Journals land in `deploy/journals/cluster-soak-<UTC>.md` (gitignored content; ke
 | Date | Duration | Topology | Reclaim s | LB errors during kill | Live-var lag note | Evidence class | Operator |
 | ---- | -------- | -------- | --------- | --------------------- | ----------------- | -------------- | -------- |
 | 20260718T124549Z | 5m (requested) / ~7m wall | lab 6 (`lab-cluster-compose.yml` :8000) | skipped (no driver locks; `REQUIRE_DRIVER_LOCKS=0`) | load `ok=1700 fail=0` | 1630ms PASSED | REAL (config-sync + live-var; reclaim n/a) | cursor-lab |
+| 20260718T205339Z | 30m | lab 6 (`lab-cluster-compose.yml` :8000) | skipped (no driver locks; `REQUIRE_DRIVER_LOCKS=0`) | load `ok=8600 fail=0`; REST 200 while replica-2 down | 1640ms PASSED | REAL (config-sync + live-var; reclaim n/a) | cursor-lab |
 | | 30–60m / … | compose 3 / lab 6 | | | | REAL / PARTIAL | |
 
 ## Related commands
