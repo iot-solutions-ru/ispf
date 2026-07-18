@@ -10,13 +10,32 @@
 #   OPERATOR=alice bash deploy/cluster-soak-lab.sh
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-COMPOSE_FILE="${ISPF_CLUSTER_COMPOSE_FILE:-${ROOT}/deploy/docker-compose.cluster.yml}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Repo layout: deploy/cluster-soak-lab.sh → ROOT=repo. Lab host: ~/ispf/cluster-soak-lab.sh → ROOT=that dir.
+if [[ -f "${SCRIPT_DIR}/cluster-smoke-test.sh" ]]; then
+  ROOT="${SCRIPT_DIR}"
+  SMOKE_SCRIPT="${SCRIPT_DIR}/cluster-smoke-test.sh"
+  DEFAULT_COMPOSE="${SCRIPT_DIR}/lab-cluster-compose.yml"
+  if [[ ! -f "${DEFAULT_COMPOSE}" ]]; then
+    DEFAULT_COMPOSE="${SCRIPT_DIR}/docker-compose.cluster.yml"
+  fi
+  DEFAULT_JOURNAL_DIR="${SCRIPT_DIR}/journals"
+elif [[ -f "${SCRIPT_DIR}/../deploy/cluster-smoke-test.sh" ]]; then
+  ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+  SMOKE_SCRIPT="${ROOT}/deploy/cluster-smoke-test.sh"
+  DEFAULT_COMPOSE="${ROOT}/deploy/docker-compose.cluster.yml"
+  DEFAULT_JOURNAL_DIR="${ROOT}/deploy/journals"
+else
+  echo "ERROR: cluster-smoke-test.sh not found next to this script or under deploy/" >&2
+  exit 1
+fi
+
+COMPOSE_FILE="${ISPF_CLUSTER_COMPOSE_FILE:-${DEFAULT_COMPOSE}}"
 PORT="${ISPF_CLUSTER_PORT:-8088}"
 DURATION_MIN="${ISPF_CLUSTER_SOAK_MINUTES:-30}"
 RUN_CHAOS=1
 OPERATOR="${OPERATOR:-$(whoami 2>/dev/null || echo unknown)}"
-JOURNAL_DIR="${ISPF_CLUSTER_SOAK_JOURNAL_DIR:-${ROOT}/deploy/journals}"
+JOURNAL_DIR="${ISPF_CLUSTER_SOAK_JOURNAL_DIR:-${DEFAULT_JOURNAL_DIR}}"
 BASE="http://127.0.0.1:${PORT}"
 CURL=(curl -sf --no-keepalive -H "Connection: close")
 
@@ -114,14 +133,17 @@ sleep "${MID_SEC}"
 
 if [[ "$RUN_CHAOS" -eq 1 ]]; then
   echo "==> Mid-window chaos: cluster-smoke-test (reclaim + config-sync + live-var-lag) under load"
+  echo "    smoke=${SMOKE_SCRIPT} compose=${COMPOSE_FILE}"
   set +e
+  ISPF_CLUSTER_COMPOSE_FILE="${COMPOSE_FILE}" \
+  ISPF_CLUSTER_PORT="${PORT}" \
   ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS="${ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS:-1}" \
-    bash "${ROOT}/deploy/cluster-smoke-test.sh" --config-sync --live-var-lag \
+    bash "${SMOKE_SCRIPT}" --config-sync --live-var-lag \
     | tee "${JOURNAL_DIR}/cluster-soak-${STAMP}-chaos.log"
   CHAOS_RC=${PIPESTATUS[0]}
   set -e
   if [[ "$CHAOS_RC" -eq 0 ]]; then
-    RECLAIM_NOTE=$(grep -E 'reclaim SLO PASSED|lock reclaimed by' "${JOURNAL_DIR}/cluster-soak-${STAMP}-chaos.log" | tail -1 || echo "smoke OK")
+    RECLAIM_NOTE=$(grep -E 'reclaim SLO PASSED|lock reclaimed by|WARN: no active driver locks' "${JOURNAL_DIR}/cluster-soak-${STAMP}-chaos.log" | tail -1 || echo "smoke OK")
     EVIDENCE="REAL"
   else
     RECLAIM_NOTE="chaos FAILED (exit ${CHAOS_RC})"
