@@ -1539,7 +1539,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | **S31** | Один AI-сценарий: live LLM deploy end-to-end без правок человека (БЛ-177 / БЛ-178) |
 | **S32** | Generator не keyword-stub (БЛ-180) |
 | **S33** | Genealogy на demo lot (БЛ-193) — **Готово** |
-| **Post-S33** | Field soak / soft-бюджеты / REAL Partial→Done — не новые волны фич |
+| **Post-S33** | Generator soft evidence + field soak на площадке / REAL Partial→Done — не новые волны фич |
 
 Полный список BL: [Ближайшие 90 дней](#ближайшие-90-дней) ниже.
 
@@ -1566,7 +1566,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | **S31** | июл–авг 2026 | БЛ-177/178 **Готово** (52/52 live suite; multi-app smoke harness; live нужен `ISPF_LLM_SMOKE`) |
 | **S32** | авг 2026 | БЛ-180 **Готово** (multi-domain live apply harness HVAC/MES/SCADA); continuity по необходимости |
 | **S33** | сен 2026 | **БЛ-193** genealogy lite |
-| **Post-S33** | ongoing | Качественный путь: AI field soak / soft &lt;15 min; полевые доказательства MES/HMI; честность scorecard — **не** новые волны фич |
+| **Post-S33** | ongoing | Качественный путь: AI generator oneshot (`run-live-generator-oneshot.sh` / `live-generator-results.json`) + field soak на именованной площадке; полевые доказательства MES/HMI; честность scorecard — **не** новые волны фич |
 
 Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP БЛ-169; расширение BPMN/DMN.
 
@@ -1602,6 +1602,7 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 
 | Дата | Изменение |
 | ---- | --------- |
+| 19.07.2026 | **BL-180 soft evidence path:** `LiveGeneratorEvidence` + `run-live-generator-oneshot.sh` → `live-generator-results.json`; чеклист интегратора в [ai-agent](ai-agent.md); pin `AGENT_LIVE_GENERATOR_DOMAIN` (default hvac). Lab oneshot ≠ field Done |
 | 19.07.2026 | **Политика исполнения — качество вместо фич:** hardening уже отгруженного по умолчанию; без новой поверхности BPMN/фаз/продукта без именованного blocker заказчика + ADR; freeze subset BPMN (ADR-0047) сохраняется; OT/ERP остаются parked — [§ Политика исполнения](#политика-исполнения--качество-вместо-фич) |
 | 19.07.2026 | **Фаза 32 ecosystem partials закрыты:** БЛ-183 Готово (CI `marketplace-catalog` + честные partner multi-endpoint); БЛ-186 Готово (Helm lint/template); БЛ-187 Готово (ARM compose/validate); БЛ-188 Готово usable MoM path (не 10+ peer soak); БЛ-190 Готово curriculum paths |
 | 19.07.2026 | **БЛ-177 / БЛ-180 → Готово:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness в repo; live runs требуют `ISPF_LLM_SMOKE=true` (без выдуманных multi-app/multi-domain live pass counts). БЛ-178 остаётся **Готово** 52/52 @100%. Scorecard AI **8.5 → 9.0** |

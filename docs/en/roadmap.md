@@ -1589,7 +1589,7 @@ Active P0: **harden shipped paths** ([execution policy](#execution-policy--quali
 | **S31** | One AI scenario: live LLM deploy end-to-end without human edit (BL-177 / BL-178) |
 | **S32** | Solution generator multi-domain live apply (BL-180) |
 | **S33** | Genealogy query on demo lot (BL-193) — **Done** |
-| **Post-S33** | Field soak / soft budgets / REAL Partial→Done — not new feature waves |
+| **Post-S33** | Generator soft evidence path + named-site field soak / REAL Partial→Done — not new feature waves |
 
 Full BL list: [Next 90 days](#next-90-days) below.
 
@@ -1616,7 +1616,7 @@ Aligned with [execution policy](#execution-policy--quality-over-features) and [d
 | **S31** | Jul–Aug 2026 | BL-177/178 **Done** (52/52 live suite; multi-app smoke harness; live needs `ISPF_LLM_SMOKE`) |
 | **S32** | Aug 2026 | BL-180 **Done** (multi-domain live apply harness HVAC/MES/SCADA); BL-179 continuity Done |
 | **S33** | Sep 2026 | **BL-193** genealogy lite |
-| **Post-S33** | ongoing | Quality path: AI field soak / soft &lt;15 min; field MES/HMI evidence; scorecard honesty — **not** new feature waves |
+| **Post-S33** | ongoing | Quality path: AI generator oneshot evidence (`run-live-generator-oneshot.sh` / `live-generator-results.json`) + named-site field soak; field MES/HMI evidence; scorecard honesty — **not** new feature waves |
 
 Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPMN/DMN expansion.
 
@@ -1652,6 +1652,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-07-19 | **BL-180 soft evidence path:** `LiveGeneratorEvidence` + `run-live-generator-oneshot.sh` → `live-generator-results.json` (`elapsedMs`, `softBudgetMet`); integrator checklist in [ai-agent](ai-agent.md#bl-180-soft-15-min--integrator-oneshot-field-soak-ready); pin `AGENT_LIVE_GENERATOR_DOMAIN` (default hvac). Lab oneshot ≠ field Done |
 | 2026-07-19 | **Execution policy — quality over features:** harden shipped capabilities by default; no new BPMN/phase/product surface without named customer blocker + ADR; BPMN subset freeze (ADR-0047) stays; OT/ERP remain parked — [§ Execution policy](#execution-policy--quality-over-features) |
 | 2026-07-19 | **Phase 32 ecosystem partials closed:** BL-183 Done (CI `marketplace-catalog` validate + honest partner multi-endpoint; not live partner SaaS); BL-186 Done (Helm lint/template + deploy docs); BL-187 Done (ARM compose/validate); BL-188 Done usable MoM path (not 10+ peer soak); BL-190 Done curriculum paths linked |
 | 2026-07-19 | **BL-177 / BL-180 → Done:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness in repo; live runs require `ISPF_LLM_SMOKE=true` (no invented multi-app/multi-domain live pass counts). BL-178 remains **Done** 52/52 @100%. Scorecard AI **8.5 → 9.0** |

@@ -101,6 +101,7 @@ bash scripts/run-agent-regression.sh --live
 | Platform gate | `run-platform-gate.sh` — primitive fixture + generator + **`AgentBundleDeploySuiteTest`** (≥95% bundles) + **BL-179** `OperatorAgentContinuityIntegrationTest` |
 | Live suite | `run-live-suite.sh` — hybrid: tool playbook first, LLM fallback; modes `platform`/`bundle`/`full` |
 | Manual live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` (`AGENT_LIVE_APP_ID` optional) |
+| Generator oneshot (BL-180 soft) | `run-live-generator-oneshot.sh` → `live-generator-results.json` (`elapsedMs`, `softBudgetMet`); pin `AGENT_LIVE_GENERATOR_DOMAIN`; see [ai-agent](ai-agent.md#bl-180-soft-15-min--integrator-oneshot-field-soak-ready) |
 
 **Current scenario count:** 52 (SCADA, MES, HVAC) including `kind: platform-primitive` velocity fixtures — about 22 `human`, 18 `agent`, 12 `both`.
 
