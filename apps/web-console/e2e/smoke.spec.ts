@@ -152,17 +152,15 @@ test.describe("dashboard builder", () => {
     await expect(page.getByText("42.5 °C")).toBeVisible();
   });
 
-  test("opens dashboard builder via Open in editor", async ({ page }) => {
+  test("opens dashboard builder via single-click on tree", async ({ page }) => {
     await mockAuthenticatedApi(page);
     await seedAuthSession(page);
     await page.goto("/?mode=admin");
 
     await expandTreeTo(page, "Dashboards");
-    await selectTreeObjectByLabel(page, "Ops board");
-    await expect(page.getByRole("button", { name: "Open in editor" })).toBeVisible();
-
+    // Dashboards open the HMI editor on single-click (see App.handleTreeRowSelect).
     const dashboardLoaded = waitForDashboardLoad(page, MOCK_DASHBOARD_PATH);
-    await page.getByRole("button", { name: "Open in editor" }).click();
+    await selectTreeObjectByLabel(page, "Ops board");
     await dashboardLoaded;
 
     await expect(page.locator(".dashboard-shell")).toBeVisible();

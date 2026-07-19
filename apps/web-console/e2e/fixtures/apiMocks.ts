@@ -207,11 +207,17 @@ const MOCK_ANALYTICS_CATALOG = [
   },
 ];
 
-export async function mockAuthConfig(page: Page, mode: "local" | "oidc" = "local") {
+export async function mockAuthConfig(
+  page: Page,
+  mode: "local" | "oidc" = "local",
+  options?: { mfaEnabled?: boolean; mfaRequiredForAdmin?: boolean }
+) {
   const handler = (route: Route) =>
     json(route, {
       mode,
       localLoginEnabled: mode === "local",
+      mfaEnabled: options?.mfaEnabled ?? false,
+      mfaRequiredForAdmin: options?.mfaRequiredForAdmin ?? false,
       oidc: mode === "oidc" ? { issuer: "https://keycloak.example/realms/ispf", clientId: "web-console" } : undefined,
     });
   await page.route("**/api/v1/auth/config", handler);
@@ -589,14 +595,8 @@ export async function mockAuthenticatedApi(
       return json(route, MOCK_E2E_OPERATOR_UI);
     }
 
-    if (apiPath === "/api/v1/operator-apps/demo/ui") {
-      return json(route, {
-        ...MOCK_E2E_OPERATOR_UI,
-        appId: "demo",
-        title: "Demo Application",
-      });
-    }
-
+    // demo has no platform UI — OperatorView falls through to public demo.manifest.json
+    // (multi-screen nav: Temperature trend, Готовые позиции, …).
     if (/^\/api\/v1\/operator-apps\/[^/]+\/ui$/.test(apiPath)) {
       return json(route, { message: "not found" }, 404);
     }

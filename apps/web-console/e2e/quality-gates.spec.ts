@@ -4,7 +4,7 @@ import { mockAuthConfig, mockAuthenticatedApi, seedAuthSession } from "./fixture
 import { buildStressMimicDocument, STRESS_MIMIC_BIND_PATH } from "./fixtures/stressMimic";
 
 const OPERATOR_E2E_URL = "/?mode=operator&app=e2e-operator";
-/** CI floor (see hmi-quality-gates.md). Phase 26 target: MIMIC_MIN_FPS=60. */
+/** CI floor (see hmi-quality-gates.md). Override via MIMIC_MIN_FPS (GHA softens to 45). */
 const MIN_MIMIC_FPS = Number(process.env.MIMIC_MIN_FPS ?? 55);
 /**
  * Soft floor under VARIABLE_UPDATED traffic — proves live path does not collapse.

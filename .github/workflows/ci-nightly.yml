@@ -143,6 +143,9 @@ jobs:
 
       - name: Unit, e2e, preview, build
         working-directory: apps/web-console
+        env:
+          # Shared GHA CPUs often land mid-40s–50s on static mimic stress; keep 55 as local/docs default.
+          MIMIC_MIN_FPS: "45"
         run: |
           npm ci
           npm test
@@ -156,6 +159,8 @@ jobs:
 
       - name: HMI quality gates (S21)
         working-directory: apps/web-console
+        env:
+          MIMIC_MIN_FPS: "45"
         run: |
           npm run bundle:budget
           npm run lighthouse:ci

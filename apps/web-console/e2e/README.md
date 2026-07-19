@@ -22,7 +22,7 @@ npm run test:e2e:install
 | Explorer shell + tree | `admin explorer`, `explorer device variables` |
 | Device selection (`?path=` deep link) | `selects a device in the tree` |
 | Inspector Variables tab | `shows Variables tab after device inspector loads` |
-| Dashboard builder (double-click / Open in editor) | `dashboard builder` |
+| Dashboard builder (single-click / double-click) | `dashboard builder` |
 | Bindings: platform function catalog | `binding expression builder` |
 | Dashboard layout API | `dashboard preview` |
 | Operator `?mode=operator&app=demo` | `operator deep link` |
