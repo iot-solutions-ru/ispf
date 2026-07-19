@@ -8,6 +8,8 @@ Candidate catalog for new drivers (roadmap.md): [roadmap](roadmap.md), full list
 
 ## Driver maturity
 
+![Device inspector — Flow Meter variables](../assets/ispf-device-inspector.png)
+
 | Level | Meaning |
 |-------|---------|
 | **production** | Full poll/read/write, tests, documented config |

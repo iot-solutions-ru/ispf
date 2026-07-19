@@ -10,6 +10,8 @@
 
 ## Обзор
 
+![Каталог Applications в Explorer](../assets/ispf-applications.png)
+
 | РЕК-ПФ | Возможность | API / компонент |
 |--------|------------|-----------------|
 | 01 | Application Function Runtime | `POST /api/v1/applications/{appId}/functions/deploy`, JSON script engine |

@@ -8,6 +8,8 @@ Operator applications are **dashboard-UI** configs (`operator_app_ui`) pointing 
 
 ## URLs
 
+![Operator Apps launcher](../assets/ispf-operator-apps-launcher.png)
+
 | App | URL |
 |-----|-----|
 | Launcher | `/?mode=operator` |

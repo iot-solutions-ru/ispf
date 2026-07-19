@@ -10,6 +10,8 @@ Full concept — [federation](federation.md), roadmap [roadmap.md § Phase 4–8
 
 ## Principle
 
+![Federation peers registry](../assets/ispf-federation.png)
+
 **Object path ≠ service endpoint.** Path `root.platform.devices.x` is a stable catalog identifier. Remote ISPF URL is stored in the peer registry.
 
 ## Components (spike)

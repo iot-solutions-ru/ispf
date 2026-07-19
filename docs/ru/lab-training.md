@@ -8,6 +8,8 @@
 
 ## Быстрый старт
 
+![Operator mimic UI Pump Station](../assets/ispf-operator-pump-station.png)
+
 1. Запустите сервер и веб-консоль (профиль `local`).
 2. Импортируйте пакет в **Приложение** `lab-training` (`packageId` = `appId`):
 

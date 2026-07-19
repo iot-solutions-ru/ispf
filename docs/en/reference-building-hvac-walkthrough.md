@@ -6,6 +6,8 @@ Artifacts: [examples/building-hvac-app/](../../examples/building-hvac-app/), bun
 
 ## Domain
 
+![Building HVAC operator HMI](../assets/ispf-operator-building-hvac.png)
+
 | Entity | Description |
 |--------|-------------|
 | **Zone** (`hvac_zone`) | Floor zone code, space temperature, setpoint, HVAC mode |

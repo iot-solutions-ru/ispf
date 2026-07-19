@@ -40,6 +40,12 @@
 
 ---
 
+## Скриншоты (UI продукта)
+
+Кадры UI — в [`docs/assets/`](../assets/README.md), встроены в соответствующие темы (EN + RU). Начните с [getting-started](getting-started.md), [web-console](web-console.md), [operator-guide](operator-guide.md), [scada](scada.md), [dashboards](dashboards.md), [workflows](workflows.md), [automation](automation.md), [ai-development](ai-development.md).
+
+---
+
 ## Полный каталог
 
 <details>

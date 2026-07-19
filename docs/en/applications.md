@@ -10,6 +10,8 @@ Platform layer for deploying application solutions **without industry Java code 
 
 ## Overview
 
+![Applications catalog in Explorer](../assets/ispf-applications.png)
+
 | REQ-PF | Capability | API / component |
 |--------|------------|-----------------|
 | 01 | Application Function Runtime | `POST /api/v1/applications/{appId}/functions/deploy`, JSON script engine |

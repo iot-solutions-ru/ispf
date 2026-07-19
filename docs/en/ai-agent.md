@@ -10,6 +10,8 @@ See also [ai-development](ai-development.md), [agent-regression](agent-regressio
 
 ## Solution generator (BL-179 / BL-180)
 
+![AI Studio agent chat](../assets/ispf-ai-studio.png)
+
 Natural-language plant description → blueprint draft, optional **live** apply (tree + dashboards + alerts).
 
 | Endpoint | Purpose |

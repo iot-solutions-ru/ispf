@@ -8,7 +8,7 @@
 
 **См. также:** [dashboards](dashboards.md) (сетка, `selectionKey`, навигация), [operator-guide](operator-guide.md) (роль оператора), [bindings](bindings.md) (привязки платформы в переменных), [spreadsheet-widget](spreadsheet-widget.md) (формулы и таблицы).
 
-![Виджеты дашборда — графики, сетевой граф и spreadsheet на одном холсте](../assets/ispf-dashboard-builder.png)
+![Конструктор дашборда — палитра виджетов, холст и панель Widget editor](../assets/ispf-widget-inspector.png)
 
 ---
 

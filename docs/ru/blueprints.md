@@ -8,6 +8,8 @@
 
 ## Три вида моделей (`BlueprintType`)
 
+![Каталог Instance Types (blueprints)](../assets/ispf-blueprints.png)
+
 | Тип | Каталог | Поведение |
 |-----|---------|-----------|
 | `RELATIVE` | `root.platform.relative-blueprints` | Необязательные примеси — переменные/события/функции **вливаются** в существующий объект |

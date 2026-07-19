@@ -8,6 +8,8 @@ ISPF is a **universal platform**: primary observability is **first-party** — S
 
 ## First-party self-diagnostics (preferred)
 
+![System → Metrics overview](../assets/ispf-system-metrics.png)
+
 | Surface | What it shows |
 |---------|----------------|
 | Admin → **System → Metrics** | Hot-path strip (coalesce / binding bypass / historian-only, queues, WebSocket clients) + full section tables |

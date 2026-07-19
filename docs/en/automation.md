@@ -127,6 +127,8 @@ Object: `demo-sensor-01`, watch: `temperature`, activate: `self.temperature["val
 
 ## Event correlators
 
+![Event correlators catalog](../assets/ispf-correlator.png)
+
 Aggregate multiple events → action (start workflow).
 
 ### Patterns (`CorrelatorPatternType`)

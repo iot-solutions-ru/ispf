@@ -8,6 +8,8 @@ ISPF business logic is expressed through **tree node composition**: models (blue
 
 ## Hierarchy
 
+![Object tree in Admin Explorer](../assets/ispf-object-tree.png)
+
 All platform entities are **object tree nodes** with dot-notation paths:
 
 ```

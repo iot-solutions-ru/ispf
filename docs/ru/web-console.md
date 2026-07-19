@@ -177,6 +177,8 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 
 ## System (admin)
 
+![System → Metrics overview](../assets/ispf-system-metrics.png)
+
 Раздел **System** (`SystemView`) — вкладки:
 
 | Вкладка | Содержимое |

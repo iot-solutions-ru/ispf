@@ -26,6 +26,8 @@ Default `sheetMode` is `free`.
 
 ## UI
 
+![Spreadsheet widget in operator HMI](../assets/ispf-spreadsheet-widget.png)
+
 | Element | Description |
 |---------|-------------|
 | Formula bar | Selected cell address on the left; raw definition on the right: text, number, or formula starting with `=` |

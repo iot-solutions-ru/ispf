@@ -8,6 +8,8 @@ The **Lab Training** package demonstrates Ignition-style Virtual Device, automat
 
 ## Quick start
 
+![UI Pump Station operator mimic](../assets/ispf-operator-pump-station.png)
+
 1. Start server and Web Console (profile `local`).
 2. Import bundle into **Application** `lab-training` (`packageId` = `appId`):
 

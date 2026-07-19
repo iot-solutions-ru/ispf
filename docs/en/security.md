@@ -6,6 +6,8 @@
 
 ## Model
 
+![Security branch in the object tree](../assets/ispf-security.png)
+
 ISPF uses **role-based access** at the HTTP API level:
 
 | Role | Spring authority |

@@ -8,6 +8,8 @@
 
 ## URL
 
+![Лаунчер Operator Apps](../assets/ispf-operator-apps-launcher.png)
+
 | App | URL |
 |-----|-----|
 | Launcher | `/?mode=operator` |

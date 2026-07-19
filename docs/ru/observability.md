@@ -8,6 +8,8 @@
 
 ## Прометей (по умолчанию в проде)
 
+![System → Metrics overview](../assets/ispf-system-metrics.png)
+
 | Конечная точка | Авторизация | Формат |
 |----------|------|--------|
 | `/actuator/prometheus` | admin role | Prometheus text |

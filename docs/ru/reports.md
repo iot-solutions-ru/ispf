@@ -10,6 +10,8 @@ Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и деле
 
 ## Дерево объектов
 
+![Каталог Reports в Explorer](../assets/ispf-reports.png)
+
 | Узел | Тип | Модель |
 |------|-----|--------|
 | `root.platform.reports` | `REPORTS` | — |

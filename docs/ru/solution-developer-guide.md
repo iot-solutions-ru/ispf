@@ -12,6 +12,8 @@
 
 ## Основной принцип
 
+![Развёрнутые приложения и marketplace](../assets/ispf-marketplace.png)
+
 **Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и workflows на **дереве объектов**. Ваше решение не добавляет Java на сервер: оно конфигурирует механизмы ISPF декларативно (blueprints, BPMN, script functions, objects, alert rules). Bundle deploy — способ **доставить** эту конфигурацию на платформу. Полные принципы P1–P10 (для людей и агентов): [application-principles](application-principles.md). См. также [architecture](architecture.md).
 
 ## Что такое «решение» на ISPF

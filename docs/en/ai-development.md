@@ -2,7 +2,7 @@
 
 # AI Development Layer (REQ-FW-40…44)
 
-> **Status:** Beta — ContextPack, Studio; BL-178 open. Hub: [doc-status.md](doc-status.md).
+> **Status:** Beta — ContextPack, Studio; BL-178 live ≥95% met (52/52 @100%, 2026-07-19). Hub: [doc-status.md](doc-status.md).
 
 Platform-side development infrastructure for solution developers. AI reads curated context, generates **declarative bundle JSON**, runs validation gates, and publishes through the existing deploy API. The **tree-first agent** (FW-44) operates on the live object tree step-by-step.
 

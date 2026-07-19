@@ -10,6 +10,8 @@ Legacy API `/api/v1/applications/{appId}/reports/*` is retained and delegates to
 
 ## Object tree
 
+![Reports catalog in Explorer](../assets/ispf-reports.png)
+
 | Node | Type | Model |
 |------|------|-------|
 | `root.platform.reports` | `REPORTS` | — |

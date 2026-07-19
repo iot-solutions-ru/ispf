@@ -8,6 +8,8 @@
 
 ## Домен
 
+![Operator HMI Building HVAC](../assets/ispf-operator-building-hvac.png)
+
 | Сущность | Описание |
 |--------|-------------|
 | **Zone** (`hvac_zone`) | Код зоны этажа, температура в помещении, уставка, режим HVAC |

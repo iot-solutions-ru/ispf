@@ -198,6 +198,12 @@ Components: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/f
 
 **Platform backup** (`PlatformBackupPanel`, BL-47): export JSON subtree `root.platform`; import with dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy nodes are skipped on import.
 
+## System metrics
+
+![System → Metrics overview](../assets/ispf-system-metrics.png)
+
+Admin → **System → Metrics** — hot-path counters, automation index, connected backends. See [observability](observability.md).
+
 ## AI Studio
 
 **AI Studio** tab (admin): **Agent** | **Bundle** | **Settings** modes (`.tabs`).

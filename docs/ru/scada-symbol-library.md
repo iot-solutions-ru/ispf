@@ -12,6 +12,8 @@
 
 ## Обзор каталога
 
+![Библиотека символов в редакторе мнемосхем](../assets/ispf-mimic-editor.png)
+
 | Source | Palette category | `symbolId` | Count |
 |--------|------------------|------------|-------|
 | ISA/ISO P&ID pack | `pack-valves`, `pack-pumps`, … | `pack.ispf-pid.*` | **218** (`manifest.json` `totalSymbols`) |

@@ -12,6 +12,8 @@ Product overview: [product](product.md). Full API: [applications](applications.m
 
 ## Core principle
 
+![Deployed applications and marketplace solutions](../assets/ispf-marketplace.png)
+
 **Business logic lives on the platform** — in models, variables, events, functions, and workflows on the **object tree**. Your solution does not add Java to the server: it configures ISPF mechanisms with declarative configuration (blueprints, BPMN, script functions, objects, alert rules). Bundle deploy is how you **deliver** that configuration to the platform. Full P1–P10 principles (for humans and agents): [application-principles](application-principles.md). See also [architecture](architecture.md).
 
 ## What is a "solution" on ISPF

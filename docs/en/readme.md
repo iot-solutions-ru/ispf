@@ -40,6 +40,12 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 
 ---
 
+## Screenshots (product UI)
+
+Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in the matching topic pages (EN + RU). Start with [getting-started](getting-started.md), [web-console](web-console.md), [operator-guide](operator-guide.md), [scada](scada.md), [dashboards](dashboards.md), [workflows](workflows.md), [automation](automation.md), [ai-development](ai-development.md).
+
+---
+
 ## Full catalog
 
 <details>

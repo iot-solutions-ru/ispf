@@ -8,6 +8,8 @@ Module `ispf-plugin-blueprint` — **blueprint** system (object structure templa
 
 ## Three model kinds (`BlueprintType`)
 
+![Instance Types blueprints catalog](../assets/ispf-blueprints.png)
+
 | Type | Catalog | Behavior |
 |-----|---------|-----------|
 | `RELATIVE` | `root.platform.relative-blueprints` | Optional mixins — variables/events/functions **merge into** existing object |
