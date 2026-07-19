@@ -253,6 +253,7 @@ final class PlatformRuntimeSettingsCatalog {
 
             def("tenant", "tenant.isolation-mode", "ISPF_TENANT_ISOLATION_MODE", "ispf.tenant.isolation-mode", PlatformRuntimeSettingType.STRING, "logical", false, false),
             def("tenant", "tenant.schema-prefix", "ISPF_TENANT_SCHEMA_PREFIX", "ispf.tenant.schema-prefix", PlatformRuntimeSettingType.STRING, "tenant_", false, false),
+            def("tenant", "tenant.db-row-isolation", "ISPF_TENANT_DB_ROW_ISOLATION", "ispf.tenant.db-row-isolation", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
 
             def("license", "license.enforce", "ISPF_LICENSE_ENFORCE", "ispf.license.enforce", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
             def("license", "data-dir", "ISPF_DATA_DIR", "ispf.license.data-dir", PlatformRuntimeSettingType.STRING, "./data", false, false)

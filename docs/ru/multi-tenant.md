@@ -89,6 +89,18 @@ Cluster / license / federation / audit — только global admin.
 | `ispf.tenant.isolation-mode` | `logical` | path+API; `hard` — ещё schema provision/drop |
 | `ispf.tenant.schema-prefix` | `tenant_` | префикс схемы |
 | `ispf.tenant.oidc-tenant-claim` | `tenant_id` | JWT claim (OIDC) |
+| `ispf.tenant.db-row-isolation` | `true` | PostgreSQL RLS (`app.tenant_id` / `app.tenant_bypass`) на shared object-таблицах. На H2 — no-op. |
+
+Env: `ISPF_TENANT_ISOLATION_MODE`, `ISPF_TENANT_SCHEMA_PREFIX`, `ISPF_TENANT_OIDC_CLAIM`, `ISPF_TENANT_DB_ROW_ISOLATION`.
+
+### Изоляция строк БД (PostgreSQL RLS)
+
+При `ispf.tenant.db-row-isolation=true` (по умолчанию) на PostgreSQL:
+
+- Миграция `V86__tenant_row_level_security.sql` включает **FORCE ROW LEVEL SECURITY** на path-таблицах (`object_nodes`, `object_variables`, `object_acl_entries`, `event_history`, `variable_samples`, `object_config_audit`, `object_edit_leases`, `alarm_shelves`, `alarm_shelf_requests`).
+- На запрос: global admin / без auth → `app.tenant_bypass=on`; пользователь тенанта → `bypass=off` + `app.tenant_id=<id>`.
+- Незаданные GUC = default-allow (Flyway / bootstrap / ObjectTreeLoad).
+- H2 **не** применяет RLS (Flyway пропускает V86 на H2).
 
 ### Честный статус
 
@@ -97,8 +109,6 @@ Cluster / license / federation / audit — только global admin.
 | Логический SaaS A≠B (path + API + role scope + tenant-admin) | **Готово** |
 | OIDC claim `tenant_id` | **Готово** |
 | Hard schema provision/drop | **Готово** (hooks) |
-| Роутинг platform-таблиц по схемам (DB row A≠B) | **Опционально / открыто** |
-
-Не заявлять row-level A≠B для `object_nodes`, пока нет отдельного table routing. Публикуемый SaaS сегодня — path+API + локальный `tenant-admin`.
+| DB row A≠B на shared platform-таблицах | **RLS готово** при `ispf.tenant.db-row-isolation=true` (PostgreSQL); физический schema split по-прежнему опционален |
 
 См. также [federation](federation.md), [roadmap](roadmap.md), [security](security.md).

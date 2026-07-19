@@ -22,6 +22,7 @@ class TenantIsolationPropertiesTest {
         assertThat(properties.isHardMode()).isFalse();
         assertThat(properties.schemaNameForTenant("acme")).isEqualTo("tenant_acme");
         assertThat(properties.getOidcTenantClaim()).isEqualTo("tenant_id");
+        assertThat(properties.isDbRowIsolation()).isTrue();
     }
 
     @Test

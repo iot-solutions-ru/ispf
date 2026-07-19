@@ -1,6 +1,7 @@
 package com.ispf.server.config;
 
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.tenant.TenantRlsFilter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +22,8 @@ public class LocalSecurityConfig {
     SecurityFilterChain localSecurityFilterChain(
             HttpSecurity http,
             IspfSecurityProperties properties,
-            PlatformUserService userService
+            PlatformUserService userService,
+            TenantRlsFilter tenantRlsFilter
     ) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -38,8 +40,11 @@ public class LocalSecurityConfig {
                     new LocalRoleHeaderFilter(properties),
                     UsernamePasswordAuthenticationFilter.class
             );
+            // After bearer / role-header auth so SecurityContext is populated.
+            http.addFilterAfter(tenantRlsFilter, LocalRoleHeaderFilter.class);
             http.authorizeHttpRequests(IspfAuthorizationRules::apply);
         } else {
+            http.addFilterBefore(tenantRlsFilter, UsernamePasswordAuthenticationFilter.class);
             http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         }
 

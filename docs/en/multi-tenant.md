@@ -97,8 +97,18 @@ Node **`root.tenant`** → **Tenants** panel (global admin): create tenant with 
 | `ispf.tenant.isolation-mode` | `logical` | `logical` — path namespaces + API scope; `hard` — also provision/drop per-tenant PostgreSQL schema |
 | `ispf.tenant.schema-prefix` | `tenant_` | Schema prefix when `hard` (`tenant_acme` for tenant `acme`) |
 | `ispf.tenant.oidc-tenant-claim` | `tenant_id` | JWT claim mapped by `TenantScopeService` (OIDC). Empty claim name disables mapping; local user→tenant assignment still applies. |
+| `ispf.tenant.db-row-isolation` | `true` | PostgreSQL RLS session GUCs (`app.tenant_id` / `app.tenant_bypass`) on shared object tables. No-op on H2. |
 
-Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenant_`, `ISPF_TENANT_OIDC_CLAIM=tenant_id`.
+Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenant_`, `ISPF_TENANT_OIDC_CLAIM=tenant_id`, `ISPF_TENANT_DB_ROW_ISOLATION=true|false`.
+
+### DB row isolation (PostgreSQL RLS)
+
+When `ispf.tenant.db-row-isolation=true` (default) on PostgreSQL:
+
+- Migration `V86__tenant_row_level_security.sql` enables **FORCE ROW LEVEL SECURITY** on path-scoped tables (`object_nodes`, `object_variables`, `object_acl_entries`, `event_history`, `variable_samples`, `object_config_audit`, `object_edit_leases`, `alarm_shelves`, `alarm_shelf_requests`).
+- Per request: global admin / unauthenticated → `app.tenant_bypass=on`; tenant user → `bypass=off` + `app.tenant_id=<id>`.
+- Unset GUCs default-allow (Flyway / bootstrap / ObjectTreeLoad).
+- H2 tests do **not** enforce RLS (Flyway skips V86 on H2).
 
 ### Honesty / status
 
@@ -107,15 +117,13 @@ Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenan
 | Logical SaaS A≠B (path + API + role scope + tenant-admin) | **Done** |
 | OIDC `tenant_id` claim mapping | **Done** |
 | Hard mode schema provision/drop | **Done** (hooks) |
-| Hard schema routing of platform object tables (DB row A≠B) | **Optional / open** — tables remain shared |
-
-**Do not claim** PostgreSQL row-level A≠B isolation for `object_nodes` until dedicated table routing ships. Publishable SaaS today relies on path + API isolation with local `tenant-admin` owners.
+| DB row A≠B on shared platform object tables | **RLS Done** when `ispf.tenant.db-row-isolation=true` (PostgreSQL); physical schema split still optional |
 
 ### Comparison
 
 | | Logical | Hard |
 |---|---------|------|
-| DB schema | Shared | Per tenant (provisioned; platform tables still shared) |
+| DB schema | Shared + RLS | Per-tenant schema provisioned; platform tables still shared + RLS |
 | Path scope | `root.tenant.{id}.*` | Same + schema provision/drop |
 | OIDC tenant claim | `tenant_id` (configurable) | Same |
 | Local admin | `tenant-admin` bootstrap | Same |

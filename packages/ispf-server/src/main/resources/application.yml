@@ -190,6 +190,8 @@ ispf:
     isolation-mode: ${ISPF_TENANT_ISOLATION_MODE:logical}
     schema-prefix: ${ISPF_TENANT_SCHEMA_PREFIX:tenant_}
     oidc-tenant-claim: ${ISPF_TENANT_OIDC_CLAIM:tenant_id}
+    # PostgreSQL RLS GUCs (app.tenant_id / app.tenant_bypass) on shared object tables. No-op on H2.
+    db-row-isolation: ${ISPF_TENANT_DB_ROW_ISOLATION:true}
   audit:
     siem-webhook-url: ${ISPF_AUDIT_SIEM_WEBHOOK_URL:}
     siem-timeout-seconds: ${ISPF_AUDIT_SIEM_TIMEOUT_SECONDS:5}

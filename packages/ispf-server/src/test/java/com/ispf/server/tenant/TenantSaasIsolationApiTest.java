@@ -17,6 +17,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Logical SaaS A≠B via path + API scope (tenant-admin owners).
+ * <p>
+ * Note: H2 does not enforce PostgreSQL RLS ({@code V86}); DB row isolation is proven
+ * on PostgreSQL via {@link TenantRlsJdbcIsolationIT} / manual RLS checks.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

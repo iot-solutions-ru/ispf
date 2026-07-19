@@ -12,7 +12,8 @@ import java.util.regex.Pattern;
 
 /**
  * Hard-mode tenant isolation rules (BL-155): schema naming, reserved names, existence checks.
- * Does not route platform object tables into tenant schemas — that remains a follow-up for A≠B row isolation.
+ * Does not route platform object tables into tenant schemas — shared-table A≠B uses PostgreSQL RLS
+ * ({@code ispf.tenant.db-row-isolation}); physical schema split remains optional.
  */
 @Component
 public class TenantIsolationValidator {

@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Multi-tenant isolation mode — BL-155.
  * {@code logical}: shared DB schema, path-based namespaces (default).
  * {@code hard}: per-tenant PostgreSQL schema ({@link com.ispf.server.tenant.TenantSchemaService}).
+ * {@code dbRowIsolation}: PostgreSQL RLS session GUCs on shared object tables.
  */
 @ConfigurationProperties(prefix = "ispf.tenant")
 public class TenantIsolationProperties {
@@ -30,6 +31,12 @@ public class TenantIsolationProperties {
      */
     private String oidcTenantClaim = "tenant_id";
 
+    /**
+     * When true (default), apply PostgreSQL RLS session GUCs ({@code app.tenant_id} /
+     * {@code app.tenant_bypass}) on connection checkout. No-op on H2 / non-PostgreSQL.
+     */
+    private boolean dbRowIsolation = true;
+
     public IsolationMode getIsolationMode() {
         return isolationMode;
     }
@@ -52,6 +59,14 @@ public class TenantIsolationProperties {
 
     public void setOidcTenantClaim(String oidcTenantClaim) {
         this.oidcTenantClaim = oidcTenantClaim != null ? oidcTenantClaim.trim() : "";
+    }
+
+    public boolean isDbRowIsolation() {
+        return dbRowIsolation;
+    }
+
+    public void setDbRowIsolation(boolean dbRowIsolation) {
+        this.dbRowIsolation = dbRowIsolation;
     }
 
     public boolean isHardMode() {
