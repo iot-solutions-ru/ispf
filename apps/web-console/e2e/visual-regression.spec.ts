@@ -10,6 +10,10 @@ import {
 test.describe("visual regression smoke", () => {
   test("login page", async ({ page }) => {
     await mockAuthConfig(page);
+    // Pin TZ so aria snapshot is stable across runner locales (normalizeTimeZoneList prepends browser zone).
+    await page.addInitScript(() => {
+      localStorage.setItem("ispf.ui.timeZone", "UTC");
+    });
     const authReady = page.waitForResponse(
       (response) => response.url().includes("/api/v1/auth/config") && response.ok()
     );

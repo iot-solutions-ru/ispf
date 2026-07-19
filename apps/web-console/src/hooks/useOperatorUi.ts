@@ -45,8 +45,9 @@ async function loadOperatorUi(appId: string): Promise<OperatorUi | null> {
       }
     }
   }
-  if (lastError) {
-    throw lastError;
+  // Offline / transient API failures must not block the legacy public manifest path.
+  if (lastError && typeof console !== "undefined") {
+    console.debug("[ISPF] operator UI unavailable; trying manifest fallback", lastError);
   }
   return null;
 }

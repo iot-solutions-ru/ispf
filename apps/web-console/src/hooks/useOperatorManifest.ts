@@ -73,6 +73,10 @@ async function loadManifest(appId: string): Promise<OperatorManifest> {
       }
     }
   }
+  const cached = readCachedOperatorManifest(appId);
+  if (cached) {
+    return cached;
+  }
   throw lastError instanceof Error
     ? lastError
     : new Error(`Operator manifest not found for app: ${appId}`);

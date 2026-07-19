@@ -23,7 +23,11 @@ export function invalidateStoredSession(): void {
   window.dispatchEvent(new Event(SESSION_INVALID_EVENT));
 }
 
-/** Returns session when token is present and accepted by /auth/me; clears storage otherwise. */
+/**
+ * Returns session when token is present and accepted by /auth/me.
+ * Clears storage on explicit auth rejection or expiry; keeps the last session
+ * on offline/transient network errors so the operator PWA shell can remount (BL-151).
+ */
 export async function validateStoredSession(): Promise<AuthSession | null> {
   const session = getStoredSession();
   if (!session?.token?.trim()) {
@@ -39,9 +43,12 @@ export async function validateStoredSession(): Promise<AuthSession | null> {
       cache: "no-store",
       headers: { Authorization: `Bearer ${session.token}` },
     });
-    if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
       invalidateStoredSession();
       return null;
+    }
+    if (!response.ok) {
+      return session;
     }
     const me = (await response.json()) as AuthMe;
     if (!me.authenticated) {
@@ -50,7 +57,6 @@ export async function validateStoredSession(): Promise<AuthSession | null> {
     }
     return session;
   } catch {
-    invalidateStoredSession();
-    return null;
+    return session;
   }
 }

@@ -2,7 +2,6 @@ import type { AuthSession } from "../../auth/session";
 import { useTranslation } from "react-i18next";
 import { useOperatorUi } from "../../hooks/useOperatorUi";
 import OperatorAppLauncher from "./OperatorAppLauncher";
-import OperatorAppMissing from "./OperatorAppMissing";
 import OperatorDashboardApp from "./OperatorDashboardApp";
 import OperatorManifestView from "./OperatorManifestView";
 
@@ -78,18 +77,8 @@ function OperatorAppEntry({
     );
   }
 
-  // No dashboard UI — try legacy manifest; if that is also gone, show a clear recovery screen
-  // instead of hanging on "Loading manifest…".
-  if (uiQuery.isError) {
-    return (
-      <OperatorAppMissing
-        appId={appId}
-        onPickApp={onSelectApp ? () => onSelectApp("") : undefined}
-        onSwitchAdmin={onSwitchAdmin}
-      />
-    );
-  }
-
+  // No platform dashboard UI (missing or offline fetch error) — try public/legacy manifest.
+  // OperatorManifestView shows OperatorAppMissing when the manifest is also gone.
   return (
     <OperatorManifestView
       appId={appId}

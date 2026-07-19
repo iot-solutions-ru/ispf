@@ -645,7 +645,9 @@ export async function seedAuthSession(
   options?: { selectedPath?: string },
 ) {
   await page.addInitScript(({ stored, selectedPath }) => {
-    localStorage.setItem("ispf-auth-session", JSON.stringify(stored));
+    // Prefer sessionStorage (canonical); keep localStorage migration path clear.
+    sessionStorage.setItem("ispf-auth-session", JSON.stringify(stored));
+    localStorage.removeItem("ispf-auth-session");
     sessionStorage.removeItem("ispf-tree-expanded-paths");
     sessionStorage.removeItem("ispf:ui:active-tab:system");
     sessionStorage.setItem("ispf-tree-selected-path", selectedPath ?? "root.platform");

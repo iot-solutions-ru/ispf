@@ -78,17 +78,32 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
     await page.goto("/?mode=operator&app=demo");
     await expect(page.getByTestId("operator-shell")).toBeVisible({ timeout: 20_000 });
 
-    await page.evaluate(async () => {
-      await navigator.serviceWorker?.ready;
+    const swReady = await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker?.ready.catch(() => null);
+      await fetch("/operator-apps/demo.manifest.json");
+      const names = await caches.keys();
+      return {
+        controlling: Boolean(navigator.serviceWorker?.controller || reg?.active),
+        hasManifestCache: names.some((n) => n.includes("ispf-operator-manifest")),
+        hasPrecache: names.some((n) => n.includes("workbox-precache")),
+      };
     });
+    expect(swReady.controlling, JSON.stringify(swReady)).toBeTruthy();
+    expect(swReady.hasPrecache || swReady.hasManifestCache, JSON.stringify(swReady)).toBeTruthy();
 
+    // Playwright setOffline also blocks page.route mocks, so a full reload cannot remount
+    // against the API mock. Banner UX is driven by navigator.onLine / offline events.
     await context.setOffline(true);
-    await page.reload({ waitUntil: "domcontentloaded" });
-
+    await page.evaluate(() => {
+      if (navigator.onLine) {
+        window.dispatchEvent(new Event("offline"));
+      }
+    });
     await expect(page.getByTestId("operator-offline-banner")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("operator-shell")).toBeVisible();
 
     await context.setOffline(false);
+    await page.evaluate(() => window.dispatchEvent(new Event("online")));
     await expect(page.getByTestId("operator-offline-banner")).toBeHidden({ timeout: 20_000 });
   });
 
@@ -103,6 +118,7 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
 
     // Warm NetworkFirst caches used by operator HMI offline path
     await page.evaluate(async () => {
+      await fetch("/operator-apps/demo.manifest.json");
       await fetch("/api/v1/dashboards/by-path?path=root.platform.dashboards.ops-board", {
         headers: { Authorization: "Bearer e2e-mock-token" },
       });
@@ -112,7 +128,7 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
     });
 
     // Give Workbox a tick to write Cache Storage
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(800);
 
     const cacheEvidence = await page.evaluate(async () => {
       const names = await caches.keys();
@@ -121,11 +137,15 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
       const manifestCache = names.find((n) => n.includes("ispf-operator-manifest"));
       let dashboardEntries = 0;
       let mimicEntries = 0;
+      let manifestEntries = 0;
       if (dashboardCache) {
         dashboardEntries = (await caches.open(dashboardCache).then((c) => c.keys())).length;
       }
       if (mimicCache) {
         mimicEntries = (await caches.open(mimicCache).then((c) => c.keys())).length;
+      }
+      if (manifestCache) {
+        manifestEntries = (await caches.open(manifestCache).then((c) => c.keys())).length;
       }
       return {
         names,
@@ -134,6 +154,7 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
         hasManifestCache: Boolean(manifestCache),
         dashboardEntries,
         mimicEntries,
+        manifestEntries,
       };
     });
 
@@ -142,8 +163,8 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
       JSON.stringify(cacheEvidence)
     ).toBeTruthy();
     expect(
-      cacheEvidence.dashboardEntries + cacheEvidence.mimicEntries,
+      cacheEvidence.dashboardEntries + cacheEvidence.mimicEntries + cacheEvidence.manifestEntries,
       JSON.stringify(cacheEvidence)
-    ).toBeGreaterThanOrEqual(0);
+    ).toBeGreaterThan(0);
   });
 });

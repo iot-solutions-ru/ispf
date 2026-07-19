@@ -20,8 +20,8 @@
   - option "Europe/Berlin"
   - option "Europe/London"
   - option "Asia/Shanghai"
-  - option "America/New York"
-  - option "America/Los Angeles"
+  - option "America/New_York"
+  - option "America/Los_Angeles"
 - text: Language
 - combobox "Language":
   - option "English" [selected]

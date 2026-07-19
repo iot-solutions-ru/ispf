@@ -43,8 +43,8 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/operator-printing/],
         runtimeCaching: [
           {
-            // BL-151: last operator manifest / UI for 8h offline PWA
-            urlPattern: /^\/api\/v1\/applications\/[^/]+\/(operator-manifest|operator-ui|hmi-ui)$/,
+            // Public demo/operator manifests (full URL match — Workbox tests href, not pathname)
+            urlPattern: /\/operator-apps\/[^?]+\.(?:manifest|ui)\.json(?:\?.*)?$/,
             handler: "NetworkFirst",
             options: {
               cacheName: "ispf-operator-manifest",
@@ -59,7 +59,24 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^\/api\/v1\/dashboards\//,
+            // BL-151: last operator manifest / UI for 8h offline PWA
+            urlPattern:
+              /\/api\/v1\/(?:applications\/[^/?]+\/(?:operator-manifest|operator-ui|hmi-ui)|operator-apps\/[^/?]+\/ui)(?:\?.*)?$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "ispf-operator-manifest",
+              expiration: {
+                maxEntries: 16,
+                maxAgeSeconds: 60 * 60 * 8,
+              },
+              networkTimeoutSeconds: 5,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /\/api\/v1\/dashboards\//,
             handler: "NetworkFirst",
             options: {
               cacheName: "ispf-dashboards",
@@ -74,7 +91,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^\/api\/v1\/mimics\//,
+            urlPattern: /\/api\/v1\/mimics\//,
             handler: "NetworkFirst",
             options: {
               cacheName: "ispf-mimics",
@@ -89,7 +106,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^\/api\//,
+            urlPattern: /\/api\//,
             handler: "NetworkOnly",
           },
         ],

@@ -23,8 +23,11 @@ async function handlePossibleAuthFailure(status: number): Promise<void> {
         cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
         invalidateStoredSession();
+        return;
+      }
+      if (!response.ok) {
         return;
       }
       const me = (await response.json()) as { authenticated?: boolean };
@@ -32,7 +35,7 @@ async function handlePossibleAuthFailure(status: number): Promise<void> {
         invalidateStoredSession();
       }
     } catch {
-      invalidateStoredSession();
+      // Offline / transient — do not wipe the operator session.
     } finally {
       authFailureCheck = null;
     }
