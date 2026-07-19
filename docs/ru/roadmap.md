@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
-| **Обновлено** | 17.07.2026 |
+| **Обновлено** | 19.07.2026 (политика «качество вместо фич») |
 | **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([architecture](architecture.md)) |
 
 ---
@@ -1136,7 +1136,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-173 | **Механизм запросов** | П2 | **Готово** — object-query + joins/patch; ADR-0044; `ObjectQueryFunctionIntegrationTest` |
 | БЛ-174 | **Фильтры событий** | P3 | **Готово** — apply через `GET /events?filterPath=` / `GET /event-filters/by-path/events`; `EventFilterApplyApiTest` |
 | БЛ-175 | **Крючки ML** | P3 | **Готово** — `AnomalyDetectionSpi` + threshold model; `AnomalyAlertRuleIntegrationTest` |
-| БЛ-176 | **Расширение BPMN** | П2 | События сообщений, эскалация, компенсация, DMN lite — [workflows](workflows.md) |
+| БЛ-176 | **BPMN subset freeze** | П2 | Embedded subprocess + message catch/throw; parse reject unsupported; дальнейшая глубина (DMN и т.п.) только с заказчиком + ADR — [workflows](workflows.md), [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) |
 
 **Фаза метрики:** эскалация + CEP + программа процесса в одном проекте без специальных сценариев.
 

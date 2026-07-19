@@ -9,7 +9,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…225. **One file** �
 | | |
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
-| **Updated** | 2026-07-19 |
+| **Updated** | 2026-07-19 (quality-over-features policy) |
 | **Product direction** | Self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([architecture](architecture.md)) |
 
 ---
