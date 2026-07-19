@@ -180,6 +180,7 @@ public class OperatorAgentController {
         if (request == null || request.message() == null || request.message().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is required");
         }
+        session.runState().setUiLocale(request.uiLocale());
         try {
             if (async) {
                 agentService.submitOperatorTurn(
@@ -241,6 +242,9 @@ public class OperatorAgentController {
         return authentication != null ? authentication.getName() : "anonymous";
     }
 
-    public record OperatorAgentMessageRequest(@NotBlank String message) {
+    public record OperatorAgentMessageRequest(
+            @NotBlank String message,
+            String uiLocale
+    ) {
     }
 }

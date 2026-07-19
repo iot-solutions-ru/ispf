@@ -4,6 +4,8 @@ import com.ispf.server.ai.agent.AgentContext;
 import com.ispf.server.ai.agent.AgentRunState;
 import com.ispf.server.ai.agent.AgentSession;
 import com.ispf.server.ai.agent.AgentSessionStore;
+import com.ispf.server.ai.agent.AgentToolInputSchemas;
+import com.ispf.server.ai.agent.AgentToolSchemas;
 import com.ispf.server.ai.agent.PlatformAgentToolRegistry;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
@@ -27,11 +29,6 @@ import java.util.Optional;
 @Service
 @ConditionalOnProperty(prefix = "ispf.mcp", name = "enabled", havingValue = "true")
 public class McpToolAdapter {
-
-    private static final Map<String, Object> GENERIC_INPUT_SCHEMA = Map.of(
-            "type", "object",
-            "additionalProperties", true
-    );
 
     private final PlatformAgentToolRegistry toolRegistry;
     private final AgentSessionStore sessionStore;
@@ -62,7 +59,8 @@ public class McpToolAdapter {
             Map<String, Object> tool = new LinkedHashMap<>();
             tool.put("name", entry.get("name"));
             tool.put("description", entry.get("description"));
-            tool.put("inputSchema", GENERIC_INPUT_SCHEMA);
+            Object schema = entry.get("inputSchema");
+            tool.put("inputSchema", schema != null ? schema : AgentToolInputSchemas.forTool(String.valueOf(entry.get("name"))));
             tools.add(tool);
         }
         for (WorkflowService.PublishedWorkflowTool published : workflowService.listPublishedWorkflowTools()) {
@@ -157,7 +155,7 @@ public class McpToolAdapter {
 
     private Object parseInputSchema(String inputSchemaJson) {
         if (inputSchemaJson == null || inputSchemaJson.isBlank() || "{}".equals(inputSchemaJson.trim())) {
-            return GENERIC_INPUT_SCHEMA;
+            return AgentToolSchemas.openObject("Workflow tool input (no inputSchemaJson on WORKFLOW)");
         }
         try {
             JsonNode node = objectMapper.readTree(inputSchemaJson);
@@ -171,7 +169,7 @@ public class McpToolAdapter {
         } catch (Exception ignored) {
             // fall through
         }
-        return GENERIC_INPUT_SCHEMA;
+        return AgentToolSchemas.openObject("Workflow tool input (invalid inputSchemaJson)");
     }
 
     private String extractSessionId(Map<String, Object> args) {

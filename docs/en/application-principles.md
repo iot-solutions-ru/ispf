@@ -129,36 +129,70 @@ See [platform-logic](platform-logic.md), [0019-platform-rule-unification](decisi
 
 ---
 
-### P7. Choose delivery path by need
+### P7. One creation stack — four layers, one default path
 
-**For humans:** There is no single “right” way — pick an **approach by context**:
+**For humans:** Blueprint, bundle, change set, agent, and Admin UI are **not five alternative ways to build an application**. They answer **four different questions**. Treating them as peers is the main cognitive tax for newcomers and for weak models.
+
+| Layer | Question | Mechanism | Document |
+|-------|----------|-----------|----------|
+| **AUTHOR** | Who is editing right now, and how? | Admin UI **or** Agent (AI Studio / MCP) | [ai-development](ai-development.md) |
+| **SHAPE** | What structure should this typed object have? | **Blueprint** (relative / absolute / intrinsic) | [blueprints](blueprints.md) |
+| **SHIP** | What is the durable, repeatable delivery artifact? | **Bundle** (manifest + migrations + gates) | [solution-developer-guide](solution-developer-guide.md), P4 |
+| **PROMOTE** | How do I preview and apply a batch of already-authored ops? | **Change set** | [collaboration](collaboration.md) § change-sets |
 
 ```text
-Need isolated SQL schema (orders, batches)?
-  ├─ YES → Bundle (C) / step REST (D) / AI generate (E) / reference (F)
-  └─ NO  → Tree-first (A) / Admin Console (B) / Platform HMI only (G)
-
-Need CI/CD and repeatable release?
-  └─ Bundle + validate gates (C/E)
-
-Interactive session in AI Studio?
-  └─ Tree-first tools (A), bundle at the end after validate
+AUTHOR  = UI | Agent      → writes into the tree and/or drafts a bundle
+SHAPE   = Blueprint       → defines typed object structure
+SHIP    = Bundle          → canonical repeatable delivery (+ app SQL / CI)
+PROMOTE = Change set      → preview/apply of existing ops (not greenfield bootstrap)
+DONE    = validate → dry-run/preview → apply  (P10)
 ```
 
-| # | Approach | When |
-|---|----------|------|
-| A | Tree-first (agent tools / Explorer) | POC, SNMP, lab, interactive with user |
-| B | Admin Console | Engineer without bundle, iterative HMI |
-| C | Bundle deploy | Production, CI/CD |
-| D | Step-by-step REST API | Automation without ZIP |
-| E | AI Studio generate → validate → import | Draft manifest from prompt |
-| F | Reference example | Learning, MES/lab template |
-| G | Platform HMI only | Monitoring without app schema |
-| H | Commercial bundle | Licensed solution |
+**Hard rule:** Do not choose a mechanism until you know which layer you are on.
 
-Full table with delivery and Operator UI — [agent-knowledge.md § Approaches](agent-knowledge.md).
+- UI and Agent are two **clients** of the same tree/bundle contracts — not two platforms.
+- Blueprint is **shape**, never “another way to ship an app.”
+- Change set is **promotion/review**, never “another way to create from scratch.”
+- Bundle is **packaging into the one runtime** (P1, P4), not a parallel engine.
 
-**For agents:** `search_context topic=agent-knowledge`; `get_example_bundle` for MES/lab; SNMP/virtual cluster/MES playbooks — in system prompt.
+#### Intent → default path
+
+| Intent | Default | Allowed | Not the same thing |
+|--------|---------|---------|--------------------|
+| Lab / SNMP / monitoring **without** app schema | **AUTHOR** tree-first (UI or Agent) | Platform HMI only | Bundle “because bundles exist” |
+| Production solution with **SQL** and/or **CI** | **SHIP** bundle: `validate → dry_run → import` | AUTHOR only as draft until gates pass | Live-tree-only with no packaging |
+| Draft from a natural-language prompt | Agent / AI Studio → **bundle gates** | Short tree-first POC, then export/import | Import without validate |
+| Start from a known baseline (MES / lab / commercial) | Reference or commercial **bundle** | Adapt after import | Hand-copy dozens of objects |
+| Give a typed object its variables / events / functions | **SHAPE** — blueprint apply / instantiate (or `models[]` in bundle) | — | Re-create the same variables by hand each time |
+| Review or promote a package of existing tree ops | **PROMOTE** — change set `preview → apply` | `force` only when explicit | Change set as greenfield app bootstrap |
+| Iterative HMI without a release train | **AUTHOR** Admin UI on the tree | Agent in ask/plan | Change set as a substitute for Explorer |
+
+#### Decision flow (one pass)
+
+```text
+Need isolated app SQL and/or repeatable release?
+  YES → SHIP = bundle
+        (use reference/commercial bundle when a baseline exists)
+  NO  → AUTHOR = tree-first (UI or Agent)
+        SHAPE  = blueprints for typed objects
+
+Moving or reviewing already-authored ops (people / environments)?
+  → PROMOTE = change set (preview → apply)
+
+Before any shipping mutate: validate → dry-run/preview → apply (P10)
+```
+
+Labels A–H (tree-first, console, bundle, REST, AI Studio, reference, platform HMI, commercial) are **AUTHOR/SHIP variants** under this stack — tool and Operator UI detail only. Canonical selection is this section; the expanded table lives in [agent-knowledge § Approaches](agent-knowledge.md).
+
+Quality doctrine for this stack (prevention over guards): [ADR-0051](decisions/0051-poka-yoke-constraints-over-guards.md).
+
+**For agents:**
+
+1. Resolve **layer** first (AUTHOR / SHAPE / SHIP / PROMOTE), then pick tools.
+2. If `needAppSchema` or `needCi` → **SHIP** bundle path; else **AUTHOR** tree-first.
+3. Creating typed objects → prefer blueprint / model apply for **SHAPE**; do not invent parallel variable sets.
+4. Never offer blueprint or change set as peer alternatives to bundle for greenfield solutions.
+5. Path selection: `search_context topic=application-principles` (this section), then `topic=agent-knowledge` for A–H tool detail; use `get_example_bundle` / playbooks when the default is a baseline bundle.
 
 ---
 
@@ -230,6 +264,9 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | sessionStorage-only context | Not durable, not multi-client | `@dashboardContext` + WS |
 | Bundle without validate | Silent breakage | Gates [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) |
 | Platform Flyway for app tables | Mixes schemas | `migrations[]` in app schema |
+| Blueprint / change set / UI / agent as peer “ways to build an app” | Five doors, no rule of the game (P7) | Layers: AUTHOR → SHAPE → SHIP → PROMOTE |
+| Change set for greenfield bootstrap | Wrong layer; no durable ship artifact | Bundle (SHIP) or tree-first AUTHOR |
+| Hand-duplicating blueprint structure | Breaks SHAPE; drift across instances | Blueprint apply / `models[]` |
 
 ---
 
@@ -237,19 +274,21 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 
 ### “Create application / solution” (with SQL)
 
-1. Clarify appId, whether operator UI is needed.
-2. `search_context topic=application-principles` + `topic=agent-knowledge`; `get_example_bundle` if MES/lab-like.
-3. register (or bundle) → migrations → functions → objects/dashboards.
-4. `validate_bundle` → `dry_run_deploy` → `import_package`.
-5. `configure_operator_ui` if not in manifest.
-6. `finish` with `?mode=operator&app=...` and dashboard paths.
+1. P7: layer = **SHIP** (app schema / release). Prefer reference/commercial bundle when a baseline exists.
+2. Clarify appId, whether operator UI is needed.
+3. `search_context topic=application-principles` + `topic=agent-knowledge`; `get_example_bundle` if MES/lab-like.
+4. register (or bundle) → migrations → functions → objects/dashboards; **SHAPE** via blueprints / `models[]`.
+5. `validate_bundle` → `dry_run_deploy` → `import_package`.
+6. `configure_operator_ui` if not in manifest.
+7. `finish` with `?mode=operator&app=...` and dashboard paths.
 
 ### “Create monitoring / SNMP / dashboard” (no app schema)
 
-1. Tree-first playbook (SNMP / virtual cluster).
-2. Driver + dashboard template.
-3. Platform rules as needed (detail mode, widget visibility).
-4. `configure_operator_ui` for platform app.
+1. P7: layer = **AUTHOR** tree-first (not bundle-for-its-own-sake); **SHAPE** via blueprints for typed devices.
+2. Tree-first playbook (SNMP / virtual cluster).
+3. Driver + dashboard template.
+4. Platform rules as needed (detail mode, widget visibility).
+5. `configure_operator_ui` for platform app.
 
 ### “Do not break platform” (P2, P10)
 
@@ -265,14 +304,17 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | Document | Purpose |
 |----------|---------|
 | [solution-developer-guide](solution-developer-guide.md) | Lifecycle: register → migrate → deploy → operator |
-| [agent-knowledge](agent-knowledge.md) | Approaches A–H, docs map, search_context topics |
+| [agent-knowledge](agent-knowledge.md) | AUTHOR/SHIP variants A–H, docs map, search_context topics |
+| [blueprints](blueprints.md) | SHAPE — object structure templates |
+| [collaboration](collaboration.md) | PROMOTE — change sets, preview/apply |
 | [architecture](architecture.md) | Platform layers, core domain model |
 | [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
 | [ai-development](ai-development.md) | Agent tools, ContextPack, MCP |
 | [manufacturing-patterns](manufacturing-patterns.md) | MES solution patterns and boundary |
 | [mes-capability-mcp](mes-capability-mcp.md) | Agent capability to MES function mapping |
 | [solution-developer-public-api](solution-developer-public-api.md) | Stable manifest contract |
-| [decisions/readme.md](decisions/readme.md) | ADR-0001, 0004, 0005, 0019 |
+| [decisions/readme.md](decisions/readme.md) | ADR-0001, 0004, 0005, 0019, **0051** (poka-yoke) |
+| [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) | Constraints over guards; guard demount inventory |
 
 ---
 

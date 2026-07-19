@@ -56,7 +56,8 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 | [Product overview](product.md) | Stable | Capabilities, scenarios, doc map |
 | [Operator guide](operator-guide.md) | Stable | HMI, work queue, events |
 | [Solution developer guide](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
-| [Application principles](application-principles.md) | Stable | P1–P10 target approach |
+| [Application principles](application-principles.md) | Stable | P1–P10; P7 creation stack (AUTHOR/SHAPE/SHIP/PROMOTE) |
+| [ADR-0051 poka-yoke](decisions/0051-poka-yoke-constraints-over-guards.md) | Accepted | Constraints over guards; tool schemas first |
 | [Public API](solution-developer-public-api.md) | Stable | Stable platform ↔ bundle boundary |
 | [Glossary](glossary.md) | Stable | Terms and definitions |
 | [Web Console](web-console.md) | Stable | Explorer, System, AI Studio |

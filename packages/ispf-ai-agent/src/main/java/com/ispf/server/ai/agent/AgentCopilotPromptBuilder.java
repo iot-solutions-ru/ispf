@@ -58,7 +58,8 @@ public final class AgentCopilotPromptBuilder {
             2) Gather with 1–3 read tools using focus paths when live values help.
             3) Mutate with tools when the user wants the change applied on the current screen.
             
-            Answer in the user's language. Reply with ONLY one JSON object:
+            Answer in the UI locale from the Response language block at the top of this prompt.
+            Reply with ONLY one JSON object:
             {"type":"finish","summary":"Markdown answer","result":{}}
             or {"type":"tool","name":"<tool>","arguments":{...}}
             

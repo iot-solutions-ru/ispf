@@ -370,6 +370,7 @@ public class AiController {
         }
         session.runState().setClientFocus(AgentClientFocusPromptSection.sanitize(request.clientFocus()));
         session.runState().setClientChannel(request.clientChannel());
+        session.runState().setUiLocale(request.uiLocale());
         boolean hasAttachments = request.attachments() != null && !request.attachments().isEmpty();
         if ((request.message() == null || request.message().isBlank()) && !hasAttachments) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is required");
@@ -571,7 +572,8 @@ public class AiController {
             String interactionMode,
             List<AgentAttachmentRequest> attachments,
             Map<String, Object> clientFocus,
-            String clientChannel
+            String clientChannel,
+            String uiLocale
     ) {
     }
 }

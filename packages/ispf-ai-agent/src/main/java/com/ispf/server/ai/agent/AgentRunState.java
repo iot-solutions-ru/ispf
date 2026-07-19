@@ -34,6 +34,8 @@ public final class AgentRunState {
     private volatile Map<String, Object> clientFocus = Map.of();
     /** Optional UI channel: studio (build) or copilot (help with focused screen). */
     private volatile String clientChannel = "";
+    /** Web-console UI locale for this turn (en|ru|de|zh); drives response language. */
+    private volatile String uiLocale = "";
 
     public Map<String, Object> clientFocus() {
         return clientFocus == null ? Map.of() : clientFocus;
@@ -57,6 +59,18 @@ public final class AgentRunState {
 
     public void clearClientChannel() {
         this.clientChannel = "";
+    }
+
+    public String uiLocale() {
+        return uiLocale == null ? "" : uiLocale;
+    }
+
+    public void setUiLocale(String locale) {
+        this.uiLocale = AgentUiLocalePromptSection.normalize(locale);
+    }
+
+    public void clearUiLocale() {
+        this.uiLocale = "";
     }
 
     public AgentPlanDepth planDepth() {

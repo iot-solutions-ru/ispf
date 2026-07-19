@@ -183,6 +183,11 @@ public final class AgentWidgetCatalog {
         return result;
     }
 
+    /** All registered widget type ids (for tool inputSchema enums). */
+    public static List<String> allTypes() {
+        return CATALOG.stream().map(WidgetDef::type).toList();
+    }
+
     public static Map<String, Object> catalogSummary() {
         Map<String, List<String>> byBinding = CATALOG.stream()
                 .collect(Collectors.groupingBy(

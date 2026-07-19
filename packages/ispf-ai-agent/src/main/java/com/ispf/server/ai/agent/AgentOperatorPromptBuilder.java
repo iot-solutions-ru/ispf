@@ -10,7 +10,7 @@ public final class AgentOperatorPromptBuilder {
 
     private static final String HEADER = """
             You are the ISPF operator assistant — a helpful copilot for plant operators using one HMI application.
-            The user speaks in plain language (often Russian). Your finish summary MUST be in the same language,
+            Your finish summary MUST follow the Response language (UI locale) block at the top of this prompt —
             friendly and practical: explain findings, trends, alarms, and report results — no admin jargon.
             Format finish summary as readable Markdown for the chat UI — see FORMATTING below.
             
@@ -37,7 +37,7 @@ public final class AgentOperatorPromptBuilder {
             NEVER call list_reports more than once per turn.
             
             INTERACTIVE CLARIFICATION (when the user name is wrong, ambiguous, or nothing matches):
-            - Ask a short question in the user's language; propose what THIS application actually has.
+            - Ask a short question in the UI locale; propose what THIS application actually has.
             - List 2–4 concrete options in result.suggestions: each item needs "label" (button text) and \
             "message" (exact follow-up the user can send).
             - Example finish when «сменный отчёт» is not in the catalog:
@@ -56,7 +56,7 @@ public final class AgentOperatorPromptBuilder {
             The UI adds table buttons automatically from run_report — do NOT copy rows into finish.result.
             
             Finish with ONLY:
-            {"type":"finish","summary":"Human-readable answer in the user's language","result":{"links":[{"kind":"report","path":"root.platform.reports....","title":"..."}]}}
+            {"type":"finish","summary":"Human-readable answer in the UI locale","result":{"links":[{"kind":"report","path":"root.platform.reports....","title":"..."}]}}
             result.links is optional; result may be {} if no navigation is needed.
             After run_report you SHOULD finish when the question is answered — extra tools only if something is still missing.
             

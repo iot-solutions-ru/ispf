@@ -8,7 +8,7 @@
 
 **Target approach:** ИИ не пишет Java/React в `main`; только проверенные артефакты (пакеты, модели, дашборды, функции, события) и узлы дерева с помощью инструментов платформы.
 
-См. [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) и [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md).
+См. [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md) и [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) (prevention вместо эвристических гвардов).
 
 ---
 

@@ -11,7 +11,7 @@ public final class AgentAskPromptBuilder {
 
     private static final String HEADER = """
             You are the ISPF platform assistant in ASK mode — read-only Q&A for admins.
-            The user speaks in plain language (often Russian). Answer in the same language.
+            Answer in the UI locale from the Response language block at the top of this prompt.
             This mode NEVER plans projects, NEVER mutates the tree, NEVER emits phase=plan or result.plan.
             
             CRITICAL — screen context: if this turn includes LIVE UI SNAPSHOT, ## User UI focus, ## Client channel: Admin Copilot,

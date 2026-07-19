@@ -130,36 +130,70 @@ WHEN (activator)  →  IF (CEL condition)  →  THEN (effect)
 
 ---
 
-### P7. Выбор пути доставки по потребности
+### P7. Один стек творения — четыре слоя, один default path
 
-**Для людей:** Нет единственного «правильного» способа — выбирайте **подход по контексту**:
+**Для людей:** Blueprint, bundle, change set, агент и Admin UI — это **не пять альтернативных способов** собрать приложение. Они отвечают на **четыре разных вопроса**. Считать их ровнями — главный когнитивный налог для новичка и для слабой модели.
+
+| Слой | Вопрос | Механизм | Документ |
+|------|--------|----------|----------|
+| **AUTHOR** | Кто и чем правит прямо сейчас? | Admin UI **или** Agent (AI Studio / MCP) | [ai-development](ai-development.md) |
+| **SHAPE** | Какая структура у типизированного объекта? | **Blueprint** (relative / absolute / intrinsic) | [blueprints](blueprints.md) |
+| **SHIP** | Что является durable-артефактом повторяемой поставки? | **Bundle** (manifest + migrations + gates) | [solution-developer-guide](solution-developer-guide.md), P4 |
+| **PROMOTE** | Как сделать preview/apply пачки уже созданных ops? | **Change set** | [collaboration](collaboration.md) § change-sets |
 
 ```text
-Need isolated SQL schema (orders, batches)?
-  ├─ YES → Bundle (C) / step REST (D) / AI generate (E) / reference (F)
-  └─ NO  → Tree-first (A) / Admin Console (B) / Platform HMI only (G)
-
-Need CI/CD and repeatable release?
-  └─ Bundle + validate gates (C/E)
-
-Interactive session in AI Studio?
-  └─ Tree-first tools (A), bundle at the end after validate
+AUTHOR  = UI | Agent      → пишет в дерево и/или черновик bundle
+SHAPE   = Blueprint       → задаёт структуру типизированного объекта
+SHIP    = Bundle          → канон повторяемой поставки (+ app SQL / CI)
+PROMOTE = Change set      → preview/apply уже существующих ops (не greenfield)
+DONE    = validate → dry-run/preview → apply  (P10)
 ```
 
-| # | Подход | Когда |
-|---|--------|-------|
-| A | Tree-first (agent tools / Explorer) | POC, SNMP, lab, интерактив с пользователем |
-| B | Admin Console | Инженер без bundle, итеративный HMI |
-| C | Bundle deploy | Production, CI/CD |
-| D | Step-by-step REST API | Автоматизация без ZIP |
-| E | AI Studio generate → validate → import | Черновик манифеста из промпта |
-| F | Reference example | Обучение, шаблон MES/lab |
-| G | Platform HMI only | Мониторинг без app schema |
-| H | Commercial bundle | Лицензируемое решение |
+**Жёсткое правило:** не выбирайте механизм, пока не ясно, на каком вы слое.
 
-Полная таблица с delivery и Operator UI — [agent-knowledge.md § Approaches](agent-knowledge.md).
+- UI и Agent — два **клиента** одних и тех же контрактов дерева/bundle, не две платформы.
+- Blueprint — это **форма (SHAPE)**, никогда «ещё один способ поставить приложение».
+- Change set — это **промоут/ревью (PROMOTE)**, никогда «ещё один способ создать с нуля».
+- Bundle — это **упаковка в единственный runtime** (P1, P4), не параллельный движок.
 
-**Для агентов:** `search_context topic=agent-knowledge`; `get_example_bundle` для MES/lab; playbooks SNMP/virtual cluster/MES — в system prompt.
+#### Intent → default path
+
+| Intent | Default | Допустимо | Не то же самое |
+|--------|---------|-----------|----------------|
+| Lab / SNMP / мониторинг **без** app schema | **AUTHOR** tree-first (UI или Agent) | Только Platform HMI | Bundle «потому что bundle есть» |
+| Production-решение с **SQL** и/или **CI** | **SHIP** bundle: `validate → dry_run → import` | AUTHOR только как черновик до gates | Только live-дерево без packaging |
+| Черновик из естественного языка | Agent / AI Studio → **bundle gates** | Короткий tree-first POC, затем export/import | Import без validate |
+| Старт с известного baseline (MES / lab / commercial) | Reference или commercial **bundle** | Адаптация после import | Ручное копирование десятков объектов |
+| Дать типизированному объекту variables / events / functions | **SHAPE** — blueprint apply / instantiate (или `models[]` в bundle) | — | Каждый раз заново руками те же переменные |
+| Ревью или промоут пачки уже существующих tree ops | **PROMOTE** — change set `preview → apply` | `force` только явно | Change set как greenfield bootstrap приложения |
+| Итеративный HMI без релизного конвейера | **AUTHOR** Admin UI на дереве | Agent в ask/plan | Change set вместо Explorer |
+
+#### Decision flow (один проход)
+
+```text
+Нужна изолированная app SQL и/или повторяемый релиз?
+  ДА → SHIP = bundle
+       (reference/commercial bundle — если есть baseline)
+  НЕТ → AUTHOR = tree-first (UI или Agent)
+        SHAPE  = blueprints для типизированных объектов
+
+Перенос или ревью уже созданных ops (люди / среды)?
+  → PROMOTE = change set (preview → apply)
+
+Перед любым shipping-mutate: validate → dry-run/preview → apply (P10)
+```
+
+Метки A–H (tree-first, console, bundle, REST, AI Studio, reference, platform HMI, commercial) — это **варианты AUTHOR/SHIP** внутри этого стека: детали tools и Operator UI. Канон выбора — этот раздел; расширенная таблица — в [agent-knowledge § Approaches](agent-knowledge.md).
+
+Доктрина качества для этого стека (prevention вместо гвардов): [ADR-0051](decisions/0051-poka-yoke-constraints-over-guards.md).
+
+**Для агентов:**
+
+1. Сначала слой (AUTHOR / SHAPE / SHIP / PROMOTE), потом tools.
+2. Если `needAppSchema` или `needCi` → путь **SHIP** bundle; иначе **AUTHOR** tree-first.
+3. Создание типизированных объектов → предпочитайте blueprint / model apply для **SHAPE**; не изобретайте параллельные наборы переменных.
+4. Никогда не предлагайте blueprint или change set как ровню bundle для greenfield-решений.
+5. Выбор пути: `search_context topic=application-principles` (этот раздел), затем `topic=agent-knowledge` для деталей A–H; `get_example_bundle` / playbooks — когда default = baseline bundle.
 
 ---
 
@@ -231,6 +265,9 @@ Interactive session in AI Studio?
 | sessionStorage-only context | Не durable, не multi-client | `@dashboardContext` + WS |
 | Bundle без validate | Тихие поломки | Gates [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) |
 | Platform Flyway для app tables | Смешивает schemas | `migrations[]` в app schema |
+| Blueprint / change set / UI / агент как ровни «способы собрать приложение» | Пять дверей без правил игры (P7) | Слои: AUTHOR → SHAPE → SHIP → PROMOTE |
+| Change set для greenfield bootstrap | Неверный слой; нет durable ship-артефакта | Bundle (SHIP) или tree-first AUTHOR |
+| Ручное дублирование структуры blueprint | Ломает SHAPE; drift между инстансами | Blueprint apply / `models[]` |
 
 ---
 
@@ -238,19 +275,21 @@ Interactive session in AI Studio?
 
 ### «Создай приложение / решение» (с SQL)
 
-1. Уточнить appId, нужен ли operator UI.
-2. `search_context topic=application-principles` + `topic=agent-knowledge`; `get_example_bundle` если похоже на MES/lab.
-3. register (или bundle) → migrations → functions → objects/dashboards.
-4. `validate_bundle` → `dry_run_deploy` → `import_package`.
-5. `configure_operator_ui`, если нет в манифесте.
-6. `finish` с `?mode=operator&app=...` и путями dashboard.
+1. P7: слой = **SHIP** (app schema / релиз). Предпочитайте reference/commercial bundle, если есть baseline.
+2. Уточнить appId, нужен ли operator UI.
+3. `search_context topic=application-principles` + `topic=agent-knowledge`; `get_example_bundle` если похоже на MES/lab.
+4. register (или bundle) → migrations → functions → objects/dashboards; **SHAPE** через blueprints / `models[]`.
+5. `validate_bundle` → `dry_run_deploy` → `import_package`.
+6. `configure_operator_ui`, если нет в манифесте.
+7. `finish` с `?mode=operator&app=...` и путями dashboard.
 
 ### «Создай мониторинг / SNMP / dashboard» (без app schema)
 
-1. Tree-first playbook (SNMP / virtual cluster).
-2. Driver + dashboard template.
-3. Platform rules по необходимости (detail mode, видимость виджетов).
-4. `configure_operator_ui` для platform app.
+1. P7: слой = **AUTHOR** tree-first (не bundle «ради bundle»); **SHAPE** через blueprints для типизированных devices.
+2. Tree-first playbook (SNMP / virtual cluster).
+3. Driver + dashboard template.
+4. Platform rules по необходимости (detail mode, видимость виджетов).
+5. `configure_operator_ui` для platform app.
 
 ### «Не ломай платформу» (P2, P10)
 
@@ -266,12 +305,17 @@ Interactive session in AI Studio?
 | Документ | Назначение |
 |----------|------------|
 | [solution-developer-guide](solution-developer-guide.md) | Жизненный цикл: register → migrate → deploy → operator |
-| [agent-knowledge](agent-knowledge.md) | Подходы A–H, карта docs, topics search_context |
+| [agent-knowledge](agent-knowledge.md) | Варианты AUTHOR/SHIP A–H, карта docs, topics search_context |
+| [blueprints](blueprints.md) | SHAPE — шаблоны структуры объектов |
+| [collaboration](collaboration.md) | PROMOTE — change sets, preview/apply |
 | [architecture](architecture.md) | Слои платформы, доменная модель |
 | [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
 | [ai-development](ai-development.md) | Agent tools, ContextPack, MCP |
+| [manufacturing-patterns](manufacturing-patterns.md) | MES-паттерны решений и граница |
+| [mes-capability-mcp](mes-capability-mcp.md) | Capability агента → MES-функции |
 | [solution-developer-public-api](solution-developer-public-api.md) | Стабильный контракт манифеста |
-| [decisions/readme.md](decisions/readme.md) | ADR-0001, 0004, 0005, 0019 |
+| [decisions/readme.md](decisions/readme.md) | ADR-0001, 0004, 0005, 0019, **0051** (poka-yoke) |
+| [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) | Constraints вместо гвардов; inventory демонтажа |
 
 ---
 

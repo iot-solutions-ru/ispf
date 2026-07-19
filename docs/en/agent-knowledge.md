@@ -8,7 +8,7 @@ Reference document for the **tree-first agent**, AI Studio, and MCP clients. It 
 
 **How to read this:** `search_context(query=..., topic=...)` returns full slices from ContextPack. This file is a **router**: what to choose and where to go next.
 
-See also [application-principles](application-principles.md) (canonical P1-P10 set), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md).
+See also [application-principles](application-principles.md) (canonical P1-P10 set), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md).
 
 ---
 
@@ -26,34 +26,45 @@ Forbidden: platform Flyway for app tables, hardcoded BFF routes, domain Java in 
 
 ---
 
-## Application creation approaches (strategy selection)
+## Application creation approaches (AUTHOR / SHIP variants)
 
-| # | Approach | When to use | Delivery | Operator UI |
-|---|----------|-------------|----------|-------------|
-| **A** | **Tree-first (agent tools / Explorer)** | Demo, SNMP, lab, fast POC, interactive setup with a user | `create_object`, `set_variable`, `configure_driver`, dashboard tools | `configure_operator_ui` |
-| **B** | **Admin Console (manual assembly)** | Engineer-driven setup without a bundle, iterative HMI work | UI: Models, Dashboard Builder, Inspector | Operator Apps panel |
-| **C** | **Bundle deploy (manifest)** | Production solution, CI/CD, repeatable release | `POST .../applications/{id}/deploy` or `import_package` | `operatorUi` in manifest |
-| **D** | **Step-by-step REST API** | Automation without ZIP, staged integration | register -> migrate -> functions -> deploy sections | `PUT operator-apps/.../ui` |
-| **E** | **AI Studio (generate -> validate -> import)** | Draft manifest from prompt | `validate_bundle` -> `dry_run_deploy` -> `import_package` | from generated `operatorUi` |
-| **F** | **Reference example** | Training, MES/lab baseline | `get_example_bundle` -> adapt -> import | from example manifest |
-| **G** | **Platform HMI only** | Monitoring only, no app schema | dashboards + binding rules on tree | built-in `platform` operator app |
-| **H** | **Commercial bundle** | Licensed solution | signed bundle + license gate | same as C |
+**Canonical selection is [application-principles P7](application-principles.md):** four layers — **AUTHOR → SHAPE → SHIP → PROMOTE** — not five peer “ways to build an app.”
 
-### Decision tree (short)
+| Layer | Mechanism | This page |
+|-------|-----------|-----------|
+| AUTHOR | Admin UI or Agent | Rows **A**, **B**, **E** (draft), **G** |
+| SHAPE | Blueprint | [blueprints](blueprints.md); bundle `models[]` |
+| SHIP | Bundle | Rows **C**, **D**, **E** (import), **F**, **H** |
+| PROMOTE | Change set | [collaboration](collaboration.md) § change-sets — not a greenfield bootstrap path |
+
+A–H below are **tooling detail** under AUTHOR/SHIP. Resolve the layer in P7 first, then pick a row.
+
+| # | Approach | Layer | When to use | Delivery | Operator UI |
+|---|----------|-------|-------------|----------|-------------|
+| **A** | **Tree-first (agent tools / Explorer)** | AUTHOR | Demo, SNMP, lab, fast POC, interactive setup with a user | `create_object`, `set_variable`, `configure_driver`, dashboard tools | `configure_operator_ui` |
+| **B** | **Admin Console (manual assembly)** | AUTHOR | Engineer-driven setup without a bundle, iterative HMI work | UI: Models, Dashboard Builder, Inspector | Operator Apps panel |
+| **C** | **Bundle deploy (manifest)** | SHIP | Production solution, CI/CD, repeatable release | `POST .../applications/{id}/deploy` or `import_package` | `operatorUi` in manifest |
+| **D** | **Step-by-step REST API** | SHIP | Automation without ZIP, staged integration | register -> migrate -> functions -> deploy sections | `PUT operator-apps/.../ui` |
+| **E** | **AI Studio (generate -> validate -> import)** | AUTHOR→SHIP | Draft manifest from prompt | `validate_bundle` -> `dry_run_deploy` -> `import_package` | from generated `operatorUi` |
+| **F** | **Reference example** | SHIP | Training, MES/lab baseline | `get_example_bundle` -> adapt -> import | from example manifest |
+| **G** | **Platform HMI only** | AUTHOR | Monitoring only, no app schema | dashboards + binding rules on tree | built-in `platform` operator app |
+| **H** | **Commercial bundle** | SHIP | Licensed solution | signed bundle + license gate | same as C |
+
+### Decision tree (short — mirrors P7)
 
 ```
-Need an isolated application SQL schema (orders, batches, ...)?
-  |- YES -> C/D/E/F/H (bundle or step-by-step API) + migrations[]
-  `- NO  -> A/B/G (tree-only: devices, dashboards, rules, workflows on platform tree)
+Need isolated app SQL and/or repeatable release?
+  |- YES -> SHIP: C/D/E/F/H (+ migrations[] when SQL)
+  `- NO  -> AUTHOR: A/B/G (tree-only; SHAPE via blueprints for typed objects)
 
-Need repeatable release / CI?
-  `- C or E (bundle + validation gates)
+Typed object structure (variables/events/functions)?
+  `- SHAPE -> blueprint apply / models[] — not hand-duplicated each time
 
-Need an interactive user session in AI Studio?
-  `- A (tools) preferred; bundle import only after validate+dry_run
+Promote / review already-authored ops?
+  `- PROMOTE -> change set preview -> apply (not greenfield)
 
-Need full MES/terminal with BFF tables?
-  `- F (mes-reference) or C with functions[] + operatorUi + dashboards[]
+Interactive AI Studio session without SQL/CI?
+  `- AUTHOR A preferred; if later shipping a bundle: gates before import
 ```
 
 ---
@@ -516,8 +527,9 @@ Use `search_context` with `topic` or keywords from this table.
 
 | topic | When |
 |-------|------|
-| `application-principles` | Target approach, P1-P10, "how to build an app correctly" |
-| `agent-knowledge` | Choose approach A-H, docs map |
+| `application-principles` | Target approach, P1-P10, P7 creation stack |
+| `poka-yoke` | ADR-0051: constraints over guards; schemas before native FC |
+| `agent-knowledge` | AUTHOR/SHIP variants A-H under P7, docs map |
 | `applications` | Bundle, BFF, migrations, functions |
 | `public-api` | Manifest contract |
 | `solution` | Solution developer lifecycle |

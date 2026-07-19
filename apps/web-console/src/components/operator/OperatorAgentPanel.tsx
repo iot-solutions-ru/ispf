@@ -42,7 +42,7 @@ export default function OperatorAgentPanel({
   onOpenDashboard,
   onOpenReport,
 }: OperatorAgentPanelProps) {
-  const { t } = useTranslation("operator");
+  const { t, i18n } = useTranslation("operator");
   const statusQuery = useQuery({
     queryKey: ["operator-agent-status", appId],
     queryFn: () => fetchOperatorAgentStatus(appId),
@@ -111,7 +111,7 @@ export default function OperatorAgentPanel({
           setSessionId(activeSessionId);
           sessionIdRef.current = activeSessionId;
         }
-        const data = await sendOperatorAgentMessage(appId, activeSessionId, trimmed);
+        const data = await sendOperatorAgentMessage(appId, activeSessionId, trimmed, i18n.language);
         setLiveSteps([]);
         setMessages((prev) => [
           ...prev,

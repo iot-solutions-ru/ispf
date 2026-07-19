@@ -26,5 +26,6 @@
 | [0048-server-modularization-seams](0048-server-modularization-seams.md) | ObjectTreePort → AI-модуль → ObjectManager — **Accepted** |
 | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) | OT Automation Excellence (journal, AI-BPMN, analytics AI) — **Accepted** |
 | [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | Производственные паттерны как solution / marketplace configuration — **Accepted** |
+| [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) | Poka-yoke: constraints вместо гвардов — **Accepted** |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

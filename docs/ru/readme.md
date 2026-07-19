@@ -56,7 +56,8 @@
 | [Обзор продукта](product.md) | Stable | Возможности, сценарии, карта документации |
 | [Руководство оператора](operator-guide.md) | Stable | HMI, work queue, события |
 | [Руководство разработчика решений](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
-| [Принципы приложений](application-principles.md) | Stable | Target approach P1–P10 |
+| [Принципы приложений](application-principles.md) | Stable | P1–P10; стек творения P7 (AUTHOR/SHAPE/SHIP/PROMOTE) |
+| [ADR-0051 poka-yoke](decisions/0051-poka-yoke-constraints-over-guards.md) | Accepted | Constraints вместо гвардов; сначала схемы tools |
 | [Публичный API](solution-developer-public-api.md) | Stable | Граница platform ↔ bundle |
 | [Глоссарий](glossary.md) | Stable | Термины |
 | [Web Console](web-console.md) | Stable | Explorer, System, AI Studio |

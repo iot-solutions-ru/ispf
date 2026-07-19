@@ -126,15 +126,22 @@ FEATURE_INDEX = [
     {
         "id": "application-principles",
         "title": "Application creation principles",
-        "description": "Canonical P1-P10 north star for solution developers and agents",
-        "keywords": "application principles north star tree-first bundle declarative",
+        "description": "Canonical P1-P10; P7 creation stack AUTHOR/SHAPE/SHIP/PROMOTE",
+        "keywords": "application principles north star tree-first bundle declarative AUTHOR SHAPE SHIP PROMOTE P7",
         "docRef": "APPLICATION_PRINCIPLES.md",
+    },
+    {
+        "id": "poka-yoke",
+        "title": "Poka-yoke constraints over guards",
+        "description": "ADR-0051: prevention schemas before heuristic guards; demount inventory",
+        "keywords": "poka-yoke constraints guards schemas prevention ADR-0051 tool inputSchema",
+        "docRef": "decisions/0051-poka-yoke-constraints-over-guards.md",
     },
     {
         "id": "agent-knowledge",
         "title": "Agent knowledge index",
-        "description": "All application creation approaches and full doc map for internal agent",
-        "keywords": "agent knowledge application create bundle tree-first operator",
+        "description": "AUTHOR/SHIP variants A-H under application-principles P7; full doc map for internal agent",
+        "keywords": "agent knowledge application create bundle tree-first operator AUTHOR SHIP",
         "docRef": "AGENT_KNOWLEDGE.md",
     },
     {
@@ -410,7 +417,8 @@ def parse_competitive_scorecard(path: Path) -> list[dict]:
 
 def build_doc_chunks() -> list[dict]:
     slices = [
-        ("application-principles", "Application creation principles P1-P10", "application-principles", DOCS / "application-principles.md", 8000),
+        ("application-principles", "Application creation principles P1-P10 including P7 creation stack", "application-principles", DOCS / "application-principles.md", 12000),
+        ("poka-yoke", "Poka-yoke ADR-0051 constraints over guards", "poka-yoke", DOCS / "decisions" / "0051-poka-yoke-constraints-over-guards.md", 14000),
         ("agent-knowledge", "Agent application approaches", "agent-knowledge", DOCS / "agent-knowledge.md", 16000),
         ("agent-recipes", "Agent recipe catalog index", "agent-recipes", DOCS / "agent-recipes.md", 24000),
         ("solution-developer", "Solution developer lifecycle", "solution", DOCS / "solution-developer-guide.md", 9000),
@@ -531,7 +539,7 @@ def build_pack() -> dict:
         "docChunks": build_doc_chunks(),
         "docCatalog": build_doc_catalog(),
         "apiSlice": {
-            "applicationPrinciplesDoc": read_text(DOCS / "application-principles.md", 8000),
+            "applicationPrinciplesDoc": read_text(DOCS / "application-principles.md", 12000),
             "agentKnowledgeDoc": read_text(DOCS / "agent-knowledge.md", 12000),
             "solutionDeveloperDoc": read_text(DOCS / "solution-developer-guide.md", 8000),
             "platformLogicDoc": read_text(DOCS / "platform-logic.md", 6000),

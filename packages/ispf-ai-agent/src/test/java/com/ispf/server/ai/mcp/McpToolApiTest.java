@@ -40,7 +40,10 @@ class McpToolApiTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.tools[?(@.name == 'list_objects')]").exists())
-                .andExpect(jsonPath("$.result.tools[?(@.name == 'search_context')]").exists());
+                .andExpect(jsonPath("$.result.tools[?(@.name == 'search_context')]").exists())
+                .andExpect(jsonPath("$.result.tools[?(@.name == 'list_objects')].inputSchema.properties.parent").exists())
+                .andExpect(jsonPath("$.result.tools[?(@.name == 'create_object')].inputSchema.required").isArray())
+                .andExpect(jsonPath("$.result.tools[?(@.name == 'create_object')].inputSchema.properties.type.enum").isArray());
     }
 
     @Test

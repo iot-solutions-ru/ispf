@@ -1298,11 +1298,15 @@ public class TreeFirstAgentService {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
             }
         }
-        // Put UI focus/channel FIRST вЂ” ASK prompts are large and models often miss a trailing block.
+        // Put UI locale + focus/channel FIRST — ASK prompts are large and models often miss a trailing block.
+        String localeLead = AgentUiLocalePromptSection.format(session.runState().uiLocale());
         String focusLead = AgentClientFocusPromptSection.formatChannel(session.runState().clientChannel());
         String focusBody = AgentClientFocusPromptSection.format(session.runState().clientFocus());
-        if (!focusLead.isBlank() || !focusBody.isBlank()) {
+        if (!localeLead.isBlank() || !focusLead.isBlank() || !focusBody.isBlank()) {
             StringBuilder lead = new StringBuilder();
+            if (!localeLead.isBlank()) {
+                lead.append(localeLead.trim()).append("\n\n");
+            }
             if (!focusLead.isBlank()) {
                 lead.append(focusLead.trim()).append("\n\n");
             }

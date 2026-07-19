@@ -8,7 +8,7 @@
 
 **Как читать:** `search_context(query=..., topic=...)` → полный текст срезов в ContextPack. Этот файл — **маршрутизатор**: что выбрать и куда смотреть дальше.
 
-См. также [application-principles](application-principles.md) (канонический свод P1–P10), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md).
+См. также [application-principles](application-principles.md) (канонический свод P1–P10), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md).
 
 ---
 
@@ -26,34 +26,45 @@
 
 ---
 
-## Подходы к созданию приложений (выбор стратегии)
+## Подходы к созданию приложений (варианты AUTHOR / SHIP)
 
-| # | Подход | Когда использовать | Доставка | Пользовательский интерфейс оператора |
-|---|--------|-------------------|----------|-------------|
-| **А** | **Сначала дерево (инструменты агента/Проводник)** | Демо, SNMP, лабораторная работа, быстрый POC, пошаговая настройка пользователем | `create_object`, `set_variable`, `configure_driver`, инструменты для панелей | `configure_operator_ui` |
-| **Б** | **Консоль администратора (ручная сборка)** | Инженер без пакета, итеративный HMI | Пользовательский интерфейс: модели, конструктор дашбордов, инспектор | Панель приложений оператора |
-| **С** | **Развертывание пакета (манифест)** | Производственное решение, CI/CD, повторяющийся релиз | `POST .../applications/{id}/deploy` или `import_package` | `operatorUi` в манифесте |
-| **Д** | **Пошаговый REST API** | Автоматизация без ZIP, поэтапная интеграция | регистрация → миграция → функции → развертывание разделов | `PUT operator-apps/.../ui` |
-| **Е** | **AI Studio (генерация → проверка → импорт)** | Черновик манифест из промпта | `validate_bundle` → `dry_run_deploy` → `import_package` | из сгенерированного `operatorUi` |
-| ** Ч** | **Справочный пример** | Обучение, MES/шаблон лаборатории | `get_example_bundle` → адаптировать → импортировать | из примера манифеста |
-| **Г** | **Только для HMI платформы** | Только мониторинг без схемы приложения | дашборды + правила привязки на дереве | встроенное `platform` приложение для оператора |
-| **Ч** | **Коммерческий пакет** | Лицензируемое решение | подписанный пакет + лицензионные gates | как в C |
+**Канон выбора — [application-principles P7](application-principles.md):** четыре слоя — **AUTHOR → SHAPE → SHIP → PROMOTE**, а не пять ровней «способов собрать приложение».
 
-### Дерево решений (кратко)
+| Слой | Механизм | На этой странице |
+|------|----------|------------------|
+| AUTHOR | Admin UI или Agent | Строки **A**, **B**, **E** (черновик), **G** |
+| SHAPE | Blueprint | [blueprints](blueprints.md); `models[]` в bundle |
+| SHIP | Bundle | Строки **C**, **D**, **E** (import), **F**, **H** |
+| PROMOTE | Change set | [collaboration](collaboration.md) § change-sets — не greenfield bootstrap |
+
+A–H ниже — **детали tooling** под AUTHOR/SHIP. Сначала слой в P7, потом строка таблицы.
+
+| # | Подход | Слой | Когда использовать | Доставка | Operator UI |
+|---|--------|------|-------------------|----------|-------------|
+| **A** | **Tree-first (agent tools / Explorer)** | AUTHOR | Демо, SNMP, lab, быстрый POC, интерактив с пользователем | `create_object`, `set_variable`, `configure_driver`, dashboard tools | `configure_operator_ui` |
+| **B** | **Admin Console (ручная сборка)** | AUTHOR | Инженер без bundle, итеративный HMI | UI: Models, Dashboard Builder, Inspector | Панель Operator Apps |
+| **C** | **Bundle deploy (manifest)** | SHIP | Production, CI/CD, повторяемый релиз | `POST .../applications/{id}/deploy` или `import_package` | `operatorUi` в манифесте |
+| **D** | **Пошаговый REST API** | SHIP | Автоматизация без ZIP, поэтапная интеграция | register → migrate → functions → deploy sections | `PUT operator-apps/.../ui` |
+| **E** | **AI Studio (generate → validate → import)** | AUTHOR→SHIP | Черновик манифеста из промпта | `validate_bundle` → `dry_run_deploy` → `import_package` | из сгенерированного `operatorUi` |
+| **F** | **Reference example** | SHIP | Обучение, baseline MES/lab | `get_example_bundle` → adapt → import | из example-манифеста |
+| **G** | **Platform HMI only** | AUTHOR | Только мониторинг, без app schema | dashboards + binding rules на дереве | встроенное `platform` operator app |
+| **H** | **Commercial bundle** | SHIP | Лицензируемое решение | signed bundle + license gate | как у C |
+
+### Дерево решений (кратко — зеркало P7)
 
 ```
-Нужна изолированная SQL-schema приложения (orders, batches, …)?
-  ├─ ДА → C/D/E/F/H (bundle или пошаговый API) + migrations[]
-  └─ НЕТ → A/B/G (tree-only: devices, dashboards, rules, workflows на platform tree)
+Нужна изолированная app SQL и/или повторяемый релиз?
+  ├─ ДА → SHIP: C/D/E/F/H (+ migrations[], если SQL)
+  └─ НЕТ → AUTHOR: A/B/G (tree-only; SHAPE через blueprints для типизированных объектов)
 
-Нужен повторяемый релиз / CI?
-  └─ C или E (bundle + validate gates)
+Структура типизированного объекта (variables/events/functions)?
+  └─ SHAPE → blueprint apply / models[] — не копировать руками каждый раз
 
-Интерактивная сессия с пользователем в AI Studio?
-  └─ A (tools) — предпочтительно; bundle import только после validate+dry_run
+Промоут / ревью уже созданных ops?
+  └─ PROMOTE → change set preview → apply (не greenfield)
 
-Полноценный MES/terminal с BFF-таблицами?
-  └─ F (mes-reference) или C с functions[] + operatorUi + dashboards[]
+Интерактив AI Studio без SQL/CI?
+  └─ AUTHOR A предпочтителен; если потом ship bundle — gates до import
 ```
 
 ---
@@ -516,8 +527,9 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 
 | тема | Когда |
 |-------|-------|
-| `application-principles` | Target approach, P1–P10, «как создать приложение правильно» |
-| `agent-knowledge` | Выбор подхода A–H, карта docs |
+| `application-principles` | Target approach, P1–P10, стек творения P7 |
+| `poka-yoke` | ADR-0051: constraints вместо гвардов; схемы до native FC |
+| `agent-knowledge` | Варианты AUTHOR/SHIP A–H под P7, карта docs |
 | `applications` | Bundle, BFF, migrations, functions |
 | `public-api` | Контракт manifest |
 | `solution` | Жизненный цикл solution developer |

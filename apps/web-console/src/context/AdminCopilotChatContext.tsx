@@ -295,7 +295,8 @@ export function AdminCopilotChatProvider({
             undefined,
             true,
             clientFocus,
-            "copilot"
+            "copilot",
+            i18n.language
           );
           if (isAgentAcceptedResponse(ack)) {
             return waitForAgentTurnCompletion(sessionId!, onProgress, {

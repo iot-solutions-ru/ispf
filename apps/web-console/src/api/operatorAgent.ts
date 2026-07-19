@@ -38,7 +38,8 @@ export function createOperatorAgentSession(appId: string): Promise<{ sessionId: 
 export function sendOperatorAgentMessage(
   appId: string,
   sessionId: string,
-  message: string
+  message: string,
+  uiLocale?: string | null
 ): Promise<AiAgentChatResponse> {
   return fetch(
     `/api/v1/operator-apps/${encodeURIComponent(appId)}/agent/sessions/${encodeURIComponent(sessionId)}/messages`,
@@ -48,7 +49,10 @@ export function sendOperatorAgentMessage(
         "Content-Type": "application/json",
         ...getAuthHeaders(),
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({
+        message,
+        ...(uiLocale ? { uiLocale } : {}),
+      }),
     }
   ).then(async (response) => {
     if (!response.ok) {

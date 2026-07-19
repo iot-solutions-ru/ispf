@@ -8,7 +8,7 @@ Platform-side development infrastructure for solution developers. AI reads curat
 
 **Target approach:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
 
-See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) and [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md).
+See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), and [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) (prevention over heuristic guards).
 
 ---
 
@@ -27,6 +27,7 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | FW-47 | Agent discovery tools | `AgentDiscoveryTools` — functions, events, variable schemas |
 | FW-48 | Agent automation tools | `AgentAutomationTools` — alerts, correlators, operator UI, `create_variable`, cluster playbooks |
 | ADR-0049 | OT Automation Excellence | Workflow journal, `invoke_workflow_tool`, BPMN `LLM_COMPLETE`/`INVOKE_AGENT`, analytics analysis tools — tutorials: [ot-automation-excellence-tutorials](ot-automation-excellence-tutorials.md) |
+| ADR-0051 | Poka-yoke quality | Constraints over guards; tool schemas before native FC; guard demount inventory |
 
 ---
 
@@ -428,6 +429,8 @@ Commercial bundles: sign **after** AI edits (`contentSha256` covers manifest bod
 ## Related documents
 
 - [agent-knowledge](agent-knowledge.md) — application approaches, full doc index for agent
+- [application-principles](application-principles.md) — P7 creation stack (AUTHOR/SHAPE/SHIP/PROMOTE)
+- [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) — constraints over guards
 - [plugins](plugins.md) — external LLM provider (like drivers)
 - [applications](applications.md) — deploy API
 - [dashboards](dashboards.md) — widget registry for generated dashboards

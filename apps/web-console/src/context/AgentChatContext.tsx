@@ -656,7 +656,8 @@ export function AgentChatProvider({
             apiAttachments,
             true,
             clientFocus,
-            "studio"
+            "studio",
+            i18n.language
           );
           if (isAgentAcceptedResponse(ack)) {
             return waitForAgentTurnCompletion(sessionId!, onProgress, {

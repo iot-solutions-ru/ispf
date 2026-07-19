@@ -665,7 +665,8 @@ export function sendAgentMessage(
   attachments?: AgentMessageAttachment[],
   async = true,
   clientFocus?: AgentClientFocus | null,
-  clientChannel?: AgentClientChannel | null
+  clientChannel?: AgentClientChannel | null,
+  uiLocale?: string | null
 ): Promise<AiAgentChatResponse | AiAgentAcceptedResponse> {
   const url = `/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/messages${
     async ? "?async=true" : ""
@@ -683,6 +684,7 @@ export function sendAgentMessage(
       attachments,
       ...(clientFocus ? { clientFocus } : {}),
       ...(clientChannel ? { clientChannel } : {}),
+      ...(uiLocale ? { uiLocale } : {}),
     }),
   }).then(async (response) => {
     if (!response.ok) {

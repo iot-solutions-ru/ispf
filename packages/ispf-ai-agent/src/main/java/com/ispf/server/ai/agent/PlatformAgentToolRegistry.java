@@ -337,10 +337,13 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 : Set.of();
         return toolsByName.values().stream()
                 .filter(tool -> profile != AgentProfile.OPERATOR || operatorAllowed.contains(tool.name()))
-                .map(tool -> Map.<String, Object>of(
-                        "name", tool.name(),
-                        "description", tool.description()
-                ))
+                .map(tool -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("name", tool.name());
+                    row.put("description", tool.description());
+                    row.put("inputSchema", tool.inputSchema());
+                    return row;
+                })
                 .toList();
     }
 
@@ -380,7 +383,12 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         if (tool == null) {
             throw new IllegalArgumentException("Unknown tool: " + toolName);
         }
-        return tool.execute(arguments != null ? arguments : Map.of(), context);
+        Map<String, Object> args = arguments != null ? arguments : Map.of();
+        var schemaViolation = AgentToolSchemaValidator.validate(tool.inputSchema(), args);
+        if (schemaViolation.isPresent()) {
+            return schemaViolation.get().toErrorResult();
+        }
+        return tool.execute(args, context);
     }
 
     private static PlatformAgentTool listObjectsTool(
