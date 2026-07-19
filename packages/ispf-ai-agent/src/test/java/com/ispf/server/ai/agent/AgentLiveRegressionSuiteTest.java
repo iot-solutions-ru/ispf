@@ -443,15 +443,23 @@ class AgentLiveRegressionSuiteTest {
         return null;
     }
 
-    /** Map named scenario playbooks to catalog appIds when scenario omits bundle. */
+    /** Map named scenario playbooks / ids to catalog appIds when scenario omits bundle. */
     private static String resolveDeployAppId(ScenarioCase scenario) {
         if (scenario.appId() != null && !scenario.appId().isBlank()) {
             return scenario.appId();
+        }
+        String id = scenario.id() == null ? "" : scenario.id();
+        if (id.contains("tank-farm") || id.contains("mimic-facility")) {
+            return "tank-farm-demo";
+        }
+        if (id.contains("pump") || id.contains("pipeline") || id.contains("mimic-pump")) {
+            return "simulator";
         }
         String playbook = scenario.playbook() == null ? "" : scenario.playbook().trim();
         return switch (playbook) {
             case "buildingHvacApp", "hvacZoneComfort" -> "building-hvac";
             case "mesReferenceLifecycle" -> "mes-reference";
+            case "virtualPumpStation", "scadaMimicGuide" -> "simulator";
             default -> null;
         };
     }
@@ -460,13 +468,13 @@ class AgentLiveRegressionSuiteTest {
         if (scenario.manifestPath() != null && !scenario.manifestPath().isBlank()) {
             return scenario.manifestPath();
         }
-        if ("building-hvac".equals(appId)) {
-            return "examples/building-hvac-app/bundle.json";
-        }
-        if ("mes-reference".equals(appId)) {
-            return "examples/mes-reference/bundle.json";
-        }
-        return null;
+        return switch (appId == null ? "" : appId) {
+            case "building-hvac" -> "examples/building-hvac-app/bundle.json";
+            case "mes-reference" -> "examples/mes-reference/bundle.json";
+            case "simulator" -> "examples/simulator-profiles/bundle.json";
+            case "tank-farm-demo" -> "examples/tank-farm/bundle.json";
+            default -> null;
+        };
     }
 
     private record ScenarioCase(
