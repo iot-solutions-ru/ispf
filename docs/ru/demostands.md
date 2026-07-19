@@ -392,7 +392,8 @@ JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
 | [`deploy/vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) | Deploy jar + UI (staging) |
 | [`deploy/vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh) | Rolling restart реплик |
 | [`deploy/docker-compose.edge-arm.yml`](../../deploy/docker-compose.edge-arm.yml) | Edge ARM64 (legacy path) |
-| [`deploy/edge/arm64/docker-compose.yml`](../../deploy/edge/arm64/docker-compose.yml) | Шлюз Edge ARM64 (BL-187, профиль Pi) |
+| [`deploy/edge/arm64/docker-compose.yml`](../../deploy/edge/arm64/docker-compose.yml) | Шлюз Edge ARM64 (**BL-187 Готово**, профиль Pi) — см. [`deploy/edge/arm64/README.md`](../../deploy/edge/arm64/README.md) |
+| [`deploy/helm/ispf/`](../../deploy/helm/ispf/) | K8s Helm chart (**BL-186 Готово**) — `bash deploy/helm/ispf/validate.sh` |
 | [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) | **Только** демо-холостой ход/пограничная базовая линия |
 | [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) | Merge idle env + recreate |
 | [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) | Пропускная способность / Журнал Prod L |

@@ -76,6 +76,7 @@ public class WorkflowService {
     private final WorkflowAiActionService workflowAiActionService;
     private final WorkflowDeadLetterService deadLetterService;
     private final WorkflowWebhookIndex webhookIndex;
+    private final WorkflowRetryService retryService;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -96,7 +97,8 @@ public class WorkflowService {
             ObjectProvider<WorkflowService> self,
             WorkflowAiActionService workflowAiActionService,
             WorkflowDeadLetterService deadLetterService,
-            WorkflowWebhookIndex webhookIndex
+            WorkflowWebhookIndex webhookIndex,
+            WorkflowRetryService retryService
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
@@ -117,6 +119,7 @@ public class WorkflowService {
         this.workflowAiActionService = workflowAiActionService;
         this.deadLetterService = deadLetterService;
         this.webhookIndex = webhookIndex;
+        this.retryService = retryService;
     }
 
     @Transactional
@@ -464,13 +467,30 @@ public class WorkflowService {
     private void handleFailure(String path, WorkflowInstance instance, Map<String, String> input) {
         PlatformObject node = objectManager.require(path);
         int attempt = parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
+        int maxAttempts = parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
+        int backoffSeconds = Math.max(0, parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
+        if (maxAttempts > 0 && attempt < maxAttempts) {
+            Map<String, String> retryInput = new HashMap<>(input == null ? Map.of() : input);
+            retryInput.put("_retryAttempt", String.valueOf(attempt));
+            Instant dueAt = Instant.now().plusSeconds(backoffSeconds);
+            retryService.schedule(
+                    path,
+                    instance.instanceId(),
+                    attempt,
+                    dueAt,
+                    retryInput,
+                    instance.errorMessage()
+            );
+            log.info("Scheduled async retry for {} attempt {}/{} due {}", path, attempt + 1, maxAttempts, dueAt);
+            return;
+        }
         String payload;
         try {
             payload = objectMapper.writeValueAsString(Map.of(
                     "variables", instance.variables(),
                     "input", input == null ? Map.of() : input,
                     "error", instance.errorMessage() == null ? "" : instance.errorMessage(),
-                    "retryMaxAttempts", readString(node, "retryMaxAttempts").orElse("0"),
+                    "retryMaxAttempts", String.valueOf(maxAttempts),
                     "attempt", String.valueOf(attempt)
             ));
         } catch (Exception e) {

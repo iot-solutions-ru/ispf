@@ -83,19 +83,28 @@ Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenan
 
 При `POST /api/v1/tenants`:
 
-1. `tenantId` наконец-то как допустимый суффикс схемы PostgreSQL: `[a-z][a-z0-9_]{0,62}` (итоговое имя ≤ 63 символов с префиксом).
+1. `tenantId` валидируется как суффикс схемы PostgreSQL: `[a-z][a-z0-9_]{0,62}` (имя ≤ 63 символов с префиксом); reserved / existing — отказ.
 2. Ответ включает `schemaName` (`tenant_{id}` по умолчанию).
-3. `TenantSchemaService` создаёт схему `CREATE SCHEMA IF NOT EXISTS` (заглушка — маршрутизация источника данных).
+3. `TenantSchemaService` создаёт схему и проверяет наличие; delete делает `DROP SCHEMA … CASCADE`.
+4. `runInTenantSchema` ставит `search_path` для app-data; **таблицы platform objects остаются общими** до cutover маршрутизации (A≠B row isolation открыт).
 
-**При включении жесткого уровня:** SaaS с жесткой изоляцией на уровне БД, соблюдением требований, резервным копированием и восстановлением для каждого клиента. **Не включать** для одноклиентской локальной среды без ограничения данных.
+**При включении жесткого уровня:** SaaS со schema-hooks и compliance. **Не включать** для одноклиентской локальной среды без миграции данных.
+
+### OIDC tenant claim
+
+| Свойство | Env | По умолчанию |
+|----------|-----|--------------|
+| `ispf.tenant.oidc-tenant-claim` | `ISPF_TENANT_OIDC_CLAIM` | `tenant_id` |
+
+При наличии claim в JWT `TenantScopeService` ограничивает пути `root.tenant.{id}.*` (admin bypass).
 
 ### Сравнение
 
 | | Логический | Жесткий |
 |---|---------|------|
-| Схема БД | Общий | За тенанта |
-| Path scope | `root.tenant.{id}.*` | Same + schema provision |
-| OIDC tenant claim | Планируется (продолжение BL-155) | Планируется |
+| Схема БД | Общий | За тенанта (provision; platform tables ещё shared) |
+| Path scope | `root.tenant.{id}.*` | Same + schema provision/drop |
+| OIDC tenant claim | `tenant_id` (настраивается) | Same |
 | Перезапуск при переключении | Да | Да |
 
 См. также [federation](federation.md), [roadmap](roadmap.md).

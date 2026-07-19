@@ -42,6 +42,14 @@ class MesWorkOrderDispatchIntegrationTest {
     void dispatchWorkflowRunsOperatorConfirmTaskToCompletion() throws Exception {
         deployBundle();
 
+        mockMvc.perform(get("/api/v1/dashboards/by-path")
+                        .param("path", "root.platform.dashboards.mes-platform-dispatch"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("MES Dispatch"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='dispatch-queue')].type").value("work-queue"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='dispatch-queue')].operatorAppId")
+                        .value(OPERATOR_APP));
+
         mockMvc.perform(get("/api/v1/workflows/by-path").param("path", WORKFLOW))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
@@ -66,6 +74,12 @@ class MesWorkOrderDispatchIntegrationTest {
         mockMvc.perform(get("/api/v1/workflows/by-path").param("path", WORKFLOW))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.instanceState").value(containsString("COMPLETED")));
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                        .param("path", "root.platform.mes.work-orders.wo-line-a01-001")
+                        .param("name", "status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value.rows[0].value").value("complete"));
     }
 
     private void deployBundle() throws Exception {

@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.HistorianColdArchiveProperties.class,
         com.ispf.server.config.MlAnomalyProperties.class,
         com.ispf.server.config.TenantIsolationProperties.class,
+        com.ispf.server.config.AuditProperties.class,
         com.ispf.server.config.AlarmShelfProperties.class,
         com.ispf.server.config.PlatformUpdateProperties.class,
         com.ispf.server.config.CommercialLicenseProperties.class,

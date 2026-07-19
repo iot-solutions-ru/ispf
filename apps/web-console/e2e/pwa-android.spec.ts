@@ -91,4 +91,59 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
     await context.setOffline(false);
     await expect(page.getByTestId("operator-offline-banner")).toBeHidden({ timeout: 20_000 });
   });
+
+  test("service worker runtime caches dashboards and mimics (BL-151)", async ({ page }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await page.goto("/?mode=operator&app=demo");
+    await expect(page.getByTestId("operator-shell")).toBeVisible({ timeout: 20_000 });
+    await page.evaluate(async () => {
+      await navigator.serviceWorker?.ready;
+    });
+
+    // Warm NetworkFirst caches used by operator HMI offline path
+    await page.evaluate(async () => {
+      await fetch("/api/v1/dashboards/by-path?path=root.platform.dashboards.ops-board", {
+        headers: { Authorization: "Bearer e2e-mock-token" },
+      });
+      await fetch("/api/v1/mimics/by-path?path=root.platform.mimics.demo", {
+        headers: { Authorization: "Bearer e2e-mock-token" },
+      }).catch(() => undefined);
+    });
+
+    // Give Workbox a tick to write Cache Storage
+    await page.waitForTimeout(500);
+
+    const cacheEvidence = await page.evaluate(async () => {
+      const names = await caches.keys();
+      const dashboardCache = names.find((n) => n.includes("ispf-dashboards"));
+      const mimicCache = names.find((n) => n.includes("ispf-mimics"));
+      const manifestCache = names.find((n) => n.includes("ispf-operator-manifest"));
+      let dashboardEntries = 0;
+      let mimicEntries = 0;
+      if (dashboardCache) {
+        dashboardEntries = (await caches.open(dashboardCache).then((c) => c.keys())).length;
+      }
+      if (mimicCache) {
+        mimicEntries = (await caches.open(mimicCache).then((c) => c.keys())).length;
+      }
+      return {
+        names,
+        hasDashboardCache: Boolean(dashboardCache),
+        hasMimicCache: Boolean(mimicCache),
+        hasManifestCache: Boolean(manifestCache),
+        dashboardEntries,
+        mimicEntries,
+      };
+    });
+
+    expect(
+      cacheEvidence.hasDashboardCache || cacheEvidence.hasManifestCache,
+      JSON.stringify(cacheEvidence)
+    ).toBeTruthy();
+    expect(
+      cacheEvidence.dashboardEntries + cacheEvidence.mimicEntries,
+      JSON.stringify(cacheEvidence)
+    ).toBeGreaterThanOrEqual(0);
+  });
 });

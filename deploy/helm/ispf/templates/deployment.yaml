@@ -42,6 +42,18 @@ spec:
               value: {{ .Values.ispf.driverPacksDir | quote }}
             - name: ISPF_HISTORIAN_STORE
               value: {{ .Values.ispf.historian.store | quote }}
+            - name: ISPF_HISTORIAN_DEPLOY_PROFILE
+              value: {{ .Values.ispf.historian.deployProfile | default "hot-only" | quote }}
+            - name: ISPF_HISTORIAN_TIER_WARM_ENABLED
+              value: {{ .Values.ispf.historian.warmEnabled | default false | quote }}
+            - name: ISPF_HISTORIAN_TIER_HOT_RETENTION_DAYS
+              value: {{ .Values.ispf.historian.hotRetentionDays | default 7 | quote }}
+            - name: ISPF_HISTORIAN_TIER_WARM_RETENTION_DAYS
+              value: {{ .Values.ispf.historian.warmRetentionDays | default 90 | quote }}
+            {{- if .Values.ispf.clickhouse.enabled }}
+            - name: ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL
+              value: {{ .Values.ispf.clickhouse.url | default "http://clickhouse:8123" | quote }}
+            {{- end }}
             {{- if include "ispf.secretsEnabled" . }}
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:

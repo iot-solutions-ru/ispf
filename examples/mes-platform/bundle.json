@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "displayName": "MES Platform (BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170 / BL-193)",
+  "version": "1.3.0",
+  "displayName": "MES Platform (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-170 / BL-193)",
   "tablePrefix": "",
   "schemaName": "app_mes_platform",
   "migrations": [
@@ -74,6 +74,79 @@
       "displayName": "MES Platform Hub",
       "description": "OEE + MES BFF hub for mes-platform certification bundle",
       "templateId": "mes-platform-hub-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.work-orders",
+      "name": "wo-line-a01-001",
+      "type": "WORK_ORDER",
+      "displayName": "WO-LINE-A01-001",
+      "description": "Seed work order for LINE-A01 (BL-164 / BL-166)",
+      "templateId": "work-order-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.operations",
+      "name": "op-assemble-a01",
+      "type": "OPERATION",
+      "displayName": "Assemble A01",
+      "description": "Seed routing operation for LINE-A01 (BL-164)"
+    },
+    {
+      "parentPath": "root.platform.mes.lots",
+      "name": "batch-line-a01-001",
+      "type": "LOT",
+      "displayName": "BATCH-LINE-A01-001",
+      "description": "Seed ISA-88 batch / lot (BL-164 / BL-168)",
+      "templateId": "batch-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.shifts",
+      "name": "shift-morning-a01",
+      "type": "SHIFT",
+      "displayName": "Morning LINE-A01",
+      "description": "Seed production shift (BL-164 / BL-165)"
+    },
+    {
+      "parentPath": "root.platform.mes.quality-records",
+      "name": "qr-line-a01-001",
+      "type": "QUALITY_RECORD",
+      "displayName": "QR-LINE-A01-001",
+      "description": "Seed quality / defect record (BL-164 / BL-167)",
+      "templateId": "quality-record-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances",
+      "name": "plant-a",
+      "type": "DEVICE",
+      "displayName": "Plant A",
+      "description": "ISA-95 site seed (BL-164 / BL-165)"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.plant-a",
+      "name": "areas",
+      "type": "DEVICE",
+      "displayName": "Areas",
+      "description": "ISA-95 areas container"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.plant-a.areas",
+      "name": "assembly",
+      "type": "DEVICE",
+      "displayName": "Assembly",
+      "description": "ISA-95 assembly area"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.plant-a.areas.assembly",
+      "name": "lines",
+      "type": "DEVICE",
+      "displayName": "Lines",
+      "description": "ISA-95 lines container"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.plant-a.areas.assembly.lines",
+      "name": "line-a01",
+      "type": "DEVICE",
+      "displayName": "LINE-A01",
+      "description": "Assembly Line A01 — OEE / dispatch target"
     }
   ],
   "functions": [
@@ -331,7 +404,7 @@
       },
       "source": {
         "type": "script",
-        "body": "{\"steps\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}"
+        "body": "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.mes.work-orders.wo-line-a01-001\",\"variable\":\"status\",\"fields\":{\"value\":\"complete\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}"
       }
     },
     {
@@ -1363,6 +1436,12 @@
       "title": "MES Genealogy",
       "refreshIntervalMs": 10000,
       "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"genealogy-help\",\"type\":\"html-snippet\",\"title\":\"Genealogy lite\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-193: query lot \\u2194 material \\u2194 work-order \\u2194 quality. Seed lot <code>BATCH-LINE-A01-001</code> / WO <code>WO-LINE-A01-001</code> / material <code>MAT-WIDGET-A01</code>.</p>\"},{\"id\":\"genealogy-by-lot\",\"type\":\"function\",\"title\":\"Query by lot\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_queryByLot\",\"buttonLabel\":\"Trace seed lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\"},{\"id\":\"genealogy-graph\",\"type\":\"function\",\"title\":\"Full graph\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_listGraph\",\"buttonLabel\":\"List genealogy links\"},{\"id\":\"genealogy-report\",\"type\":\"report\",\"title\":\"Genealogy report\",\"x\":0,\"y\":35,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.mes-genealogy\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-batch",
+      "title": "MES Batch (ISA-88)",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"batch-help\",\"type\":\"html-snippet\",\"title\":\"ISA-88 batch lite\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-168: seed LOT <code>batch-line-a01-001</code> / recipe <code>recipe-standard-a</code>. Advance phases with <code>mes_batch_runPhase</code> (charge → react → discharge).</p>\"},{\"id\":\"batch-status\",\"type\":\"function\",\"title\":\"Batch status\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_batch_getStatus\",\"buttonLabel\":\"Get seed batch status\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\"}\"},{\"id\":\"batch-run-react\",\"type\":\"function\",\"title\":\"Run phase → react\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_batch_runPhase\",\"buttonLabel\":\"Advance to react\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\",\\\"batchId\\\":\\\"BATCH-LINE-A01-001\\\",\\\"recipe\\\":\\\"recipe-standard-a\\\",\\\"phase\\\":\\\"react\\\"}\"}]}"
     }
   ],
   "schedules": [
@@ -1397,6 +1476,10 @@
       {
         "path": "root.platform.dashboards.mes-platform-genealogy",
         "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-batch",
+        "title": "Batch"
       }
     ],
     "eventJournalObjectPath": "root.platform.devices.mes-platform-hub",
@@ -1416,7 +1499,7 @@
     "product": "mes",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "1.2.0 — BL-193 genealogy lite (BFF + Operator report/dashboard)"
+    "changelog": "1.3.0 — BL-164…168/170 Done evidence: seed typed MES instances + ISA-95 line path, batch Operator dashboard, dispatch confirm writes WO status; BL-169 deferred (ERP stub only)"
   },
   "reports": [
     {

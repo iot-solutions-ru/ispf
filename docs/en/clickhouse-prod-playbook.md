@@ -165,6 +165,23 @@ Retention: CH TTL on `sampled_at` / `occurred_at` from `ISPF_VARIABLE_HISTORY_RE
 | `deploy/vps-variable-history-dual-write.sh` | Dual-write enable |
 | `deploy/vps-clickhouse-verify.sh` | Post-rollout verify |
 | `deploy/docker-compose.clickhouse.yml` | Local / lab CH |
+| `examples/historian-tiers/three-tier.env` | BL-159 turnkey historian tiers |
+| `tools/historian-scale/analytics-scale-gate.sh` | BL-161 / BL-210 JVM (+ optional CH) gates |
+
+---
+
+## BL-162 — Event journal petabyte path (Done)
+
+**Acceptance:** CH cutover playbook executable ≤5 ops steps; lab ingest **≥10M events/min**.
+
+| Evidence | Path / result |
+|----------|----------------|
+| Cutover playbook | This doc Phases 1–4 + dual-write verify (`ISPF_CLICKHOUSE_VERIFY_MODE=dual-write-only`) — S28 executed on VPS |
+| Local CH profile | `deploy/docker-compose.clickhouse.yml` + `ISPF_EVENT_JOURNAL_STORE=clickhouse` |
+| ADR | [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md) — `EventJournalStore` SPI |
+| Lab rate (I-03) | Fan-out **~403k events/s** ≈ **24M/min** (≫ 10M/min) — [ordered-suite-i01-i08.md](../../examples/lab-mqtt-historian-stress/reports/ordered-suite-i01-i08.md), [lab-mqtt-event-journal-ingress](lab-mqtt-event-journal-ingress.md) |
+
+**Honest scope:** I-03 lab proof uses **Scylla** `EVENT_JOURNAL_ONLY` fast path on the same SPI contract as ClickHouse. Petabyte **retention** is operational (CH TTL / cold export), not a single CI row-count. Enterprise L 1B-sample historian gate remains optional via `ISPF_ANALYTICS_BENCH_CH_*` on `tools/historian-scale/analytics-scale-gate.sh`.
 
 ---
 

@@ -62,6 +62,17 @@ class MesQualitySpcDashboardIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.error_code").value("OK"))
                 .andExpect(jsonPath("$.result.rows", hasSize(3)));
+
+        mockMvc.perform(get("/api/v1/objects/by-path")
+                        .param("path", "root.platform.mes.quality-records.qr-line-a01-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.type").value("QUALITY_RECORD"));
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables")
+                        .param("path", "root.platform.mes.quality-records.qr-line-a01-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name=='defectCode')]").exists())
+                .andExpect(jsonPath("$[?(@.name=='lotId')]").exists());
     }
 
     private void deployBundle() throws Exception {

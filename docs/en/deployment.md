@@ -135,6 +135,36 @@ PostgreSQL volumes are preserved (`ispf_prod_pg`). Full cleanup: add `-v`.
 
 **Prod VPS:** for `ispf.example.invalid`, continue to use `deploy/vps-deploy-direct.ps1` (direct SCP + staging), not this quick start.
 
+## Kubernetes Helm chart (BL-186)
+
+Chart: [`deploy/helm/ispf`](../../deploy/helm/ispf/). Installable with Helm 3.14+; lint/template smoke needs no cluster.
+
+```bash
+# Static smoke (local helm or Docker alpine/helm)
+bash deploy/helm/ispf/validate.sh
+
+# Install
+helm upgrade --install ispf deploy/helm/ispf \
+  --namespace ispf --create-namespace \
+  --set secrets.dbPassword='change-me' \
+  --set ispf.bootstrap.fixturesEnabled=false
+
+# Runtime smoke
+kubectl -n ispf rollout status deploy/ispf --timeout=180s
+kubectl -n ispf port-forward svc/ispf 8080:80 &
+curl -sf http://127.0.0.1:8080/actuator/health
+curl -sf http://127.0.0.1:8080/api/v1/info
+```
+
+| Artifact | Purpose |
+|----------|---------|
+| [`deploy/helm/ispf/Chart.yaml`](../../deploy/helm/ispf/Chart.yaml) | Chart metadata |
+| [`deploy/helm/ispf/values.yaml`](../../deploy/helm/ispf/values.yaml) | Defaults (historian tiers, analytics replicas, edge hints) |
+| [`deploy/helm/ispf/validate.sh`](../../deploy/helm/ispf/validate.sh) | `helm lint` + `helm template` gate (CI job `helm-chart`) |
+| [`deploy/helm/ispf/README.md`](../../deploy/helm/ispf/README.md) | Install notes |
+
+ARM edge on K8s: set `edge.enabled=true` / `edge.arm64=true` (see [edge/arm64](../../deploy/edge/arm64/README.md)). Compose profile for Pi/gateways: BL-187.
+
 ## Air-gap deployment (BL-128)
 
 Hosts without outbound internet: offline bundle (JAR, UI zip, driver packs, Docker images) and runbook.

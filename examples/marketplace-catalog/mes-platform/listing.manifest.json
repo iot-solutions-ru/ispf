@@ -12,14 +12,16 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.2.0",
+  "latestVersion": "1.3.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "mes",
     "bpmn",
     "product",
-    "genealogy"
+    "genealogy",
+    "oee",
+    "isa88"
   ],
-  "changelog": "1.2.0 — BL-193 genealogy lite (BFF + Operator report/dashboard)"
+  "changelog": "1.3.0 — BL-164…168/170 Done evidence: seed typed MES instances, batch Operator dashboard, dispatch confirm → WO status; BL-169 deferred"
 }

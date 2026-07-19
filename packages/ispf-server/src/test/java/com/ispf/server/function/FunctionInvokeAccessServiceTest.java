@@ -6,6 +6,7 @@ import com.ispf.server.config.IspfRoles;
 import com.ispf.server.datasource.DataSourceFunctionSupport;
 import com.ispf.server.function.FunctionInvocationScope;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.RoleScopeAccessService;
 import com.ispf.server.security.acl.ObjectAclStore;
 import com.ispf.server.security.acl.ObjectAccessService;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +24,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,14 +40,18 @@ class FunctionInvokeAccessServiceTest {
     private com.ispf.core.object.ObjectTree objectTree;
     @Mock
     private ObjectAclStore aclStore;
+    @Mock
+    private RoleScopeAccessService roleScopeAccessService;
 
     private FunctionInvokeAccessService accessService;
 
     @BeforeEach
     void setUp() {
+        lenient().when(roleScopeAccessService.isPathInRoleScope(anyString(), any())).thenReturn(true);
         accessService = new FunctionInvokeAccessService(
                 new PrivilegedPlatformFunctionPolicy(objectManager),
-                new ObjectAccessService(aclStore)
+                new ObjectAccessService(aclStore, roleScopeAccessService),
+                objectManager
         );
         PlatformObject node = new PlatformObject("1", DATA_SOURCE, ObjectType.DATA_SOURCE, "Demo", "", "");
         when(objectManager.tree()).thenReturn(objectTree);

@@ -72,6 +72,7 @@
   "settings.layoutPresetHint": "Мозаичные пресеты заменяют корневые виджеты равными квадрантами для диспетчерских.",
   "settings.layoutPresetVideoWall2x2": "Видеостена 2×2",
   "settings.layoutPresetVideoWall3x3": "Видеостена 3×3",
+  "settings.layoutPresetVideoWall4x4": "Видеостена 4×4",
   "settings.layoutTemplate": "Именованный шаблон раскладки",
   "settings.layoutTemplatePlaceholder": "Применить шаблон…",
   "settings.layoutTemplateHint": "Серверные шаблоны (например virtual-cluster-overview) заменяют всю раскладку и сохраняются сразу.",

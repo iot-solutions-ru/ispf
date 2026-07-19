@@ -1,4 +1,4 @@
-﻿{
+{
   "slug": "ot-alarm-classify",
   "title": "OT Alarm Classify",
   "description": "ADR-0049 reference: ACTIVE workflow-as-tool with LLM classify, journal, webhook, MCP wf_* publish",

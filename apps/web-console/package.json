@@ -17,6 +17,7 @@
     "bundle:budget": "node scripts/bundle-budget.mjs",
     "lighthouse:ci": "node scripts/lighthouse-ci.mjs",
     "quality:gates": "npm run build && npm run bundle:budget && npm run lighthouse:ci && npm run test:quality",
+    "pwa:offline-evidence": "node scripts/pwa-offline-evidence.mjs",
     "i18n:check": "node scripts/i18n-check-keys.mjs && node scripts/i18n-check-hardcoded.mjs",
     "i18n:translate": "python ../../tools/i18n/generate-locales.py",
     "import:pid-symbols": "npm run build --prefix ../../tools/symbol-pack-isa",

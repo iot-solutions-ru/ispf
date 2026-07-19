@@ -2,9 +2,9 @@
 
 # Контроль качества HMI (S21 / BL-92–95, BL-152)
 
-> **Статус:** Lab — Lighthouse, axe, FPS. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — Lighthouse, axe, FPS. Hub: [doc-status.md](../en/doc-status.md).
 
-Качество HMI оператора: Lighthouse, бюджет бандла, доступность axe, FPS мнемосхемы SCADA.
+Качество операторского HMI: Lighthouse, бюджет бандла, axe a11y, FPS мнемосхем SCADA.
 
 См. [acceleration-program](acceleration-program.md) · [roadmap § S21](roadmap.md).
 
@@ -13,10 +13,11 @@
 | Проверка | Команда | Цель | CI |
 | -------- | ------- | ---- | -- |
 | Бюджет бандла | `npm run bundle:budget` | см. `scripts/bundle-budget.json` | ночной |
-| Lighthouse | `npm run lighthouse:ci` | доступность входа ≥85; оператор ≥90 (`LH_MIN_ACCESSIBILITY_OPERATOR`) | ночной |
+| Lighthouse | `npm run lighthouse:ci` | вход a11y ≥85; оператор ≥90; ≥95 = ops stretch (не блокер BL-152) | ночной |
 | axe: критические | `npm run test:quality` | 0 критических | ночной |
-| FPS мнемосхемы (стресс) | `npm run test:quality` | ≥55 fps при 500 элементах (порог BL-152 для CI) | ночной |
-| FPS мнемосхемы (e2e по умолчанию) | `quality-gates.spec.ts` | `MIMIC_MIN_FPS` по умолчанию **60** @ 500 эл. на **заглушённом** API оператора | ночной, когда проверка запускается |
+| FPS мнемосхемы (стресс) | `npm run test:quality` | ≥55 fps @ 500 el — **BL-152 Готово** | ночной |
+| FPS мнемосхемы (WS update) | `npm run test:quality` | порог WS (`MIMIC_MIN_FPS_WS`, по умолчанию 35) при `VARIABLE_UPDATED` | ночной |
+| FPS unmocked live | `E2E_LIVE_FPS=1` + creds | только evidence; **не** заявлять ≥60 без датированного прогона | по запросу |
 
 ```bash
 cd apps/web-console
@@ -32,8 +33,8 @@ npm run test:quality
 
 | Профиль | Элементы | Порог FPS | Env |
 | ------- | -------- | --------- | --- |
-| CI gate (BL-152) | 500 | ≥55 | по умолчанию `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
-| Цель excellence | 500 | ≥60 | `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=60` |
+| CI gate (BL-152 **Готово**) | 500 | ≥55 | по умолчанию `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
+| Stretch (ops, не acceptance) | 500 | ≥60 | `MIMIC_MIN_FPS=60` + unmocked `E2E_LIVE_FPS=1` при наличии evidence |
 | Legacy S21 proxy | 120 | ≥55 | `MIMIC_STRESS_ELEMENTS=120` |
 | Ручная проверка tank-farm | полная схема | ≥60 | вкладка Performance в Chrome на мнемосхеме оператора |
 
@@ -44,12 +45,12 @@ npm run test:quality
 | Область | Статус | Примечания |
 | ------- | ------ | ---------- |
 | Контраст цветов (axe) | Готово | токены `--text-muted` + отдельные тесты контраста на входе и у оператора |
-| Редактор мнемосхемы с клавиатуры | Готово | Escape — закрыть; стрелки — навигация между элементами; Shift+стрелка — сдвиг; инструменты V/P/C, Del, Ctrl+Z/Y/S; диалог `role` + `aria-pressed` на инструментах |
-| Метки для экранных читалок | Готово | `AlarmBarOverlay` — `role="alert"` + `aria-live="assertive"` на каждую тревогу |
-| Библиотека символов SCADA | Готово | [scada-symbol-library](scada-symbol-library.md), `customSvg.test.ts` |
-| 60 fps мнемосхемы @ tank-farm | Готово | прокси стресса CI: 120 символов @ ≥55 fps (`stressMimic.ts`); полная схема tank-farm — тот же путь рендеринга |
-| FPS мнемосхемы @ 500 эл. (живой WebSocket) | Пробел | e2e использует заглушённый API; в `quality-gates.spec.ts` по умолчанию `MIMIC_MIN_FPS=60` |
-| Панель оператора в Lighthouse | Готово | `lighthouse-ci.mjs` аудирует `/?mode=operator&app=e2e-operator` с заглушками API |
+| Редактор мнемосхемы с клавиатуры | Готово | Escape — закрыть; стрелки — навигация; Shift+стрелка — сдвиг; V/P/C, Del, Ctrl+Z/Y/S |
+| Метки для экранных читалок | Готово | `AlarmBarOverlay` — `role="alert"` + `aria-live="assertive"` |
+| Библиотека символов SCADA | Готово | [scada-symbol-library](scada-symbol-library.md) |
+| FPS @ 500 el (WS update path) | Готово | CI качает `VARIABLE_UPDATED`; порог `MIMIC_MIN_FPS_WS` (по умолчанию 35) |
+| FPS @ 500 el (unmocked live) | Ops note | suite есть; нет датированного ≥60 — не заявлять |
+| Панель оператора в Lighthouse | Готово (CI) | a11y floor 90; ≥95 только ops stretch |
 
 ## Профилирование
 
@@ -59,10 +60,10 @@ npm run test:quality
 
 ## Путь к целевым показателям
 
-| КПИ | Базовый уровень (июль 2026) | Цель S21 | Цель BL-152 |
-| --- | --------------------------- | -------- | ----------- |
-| Производительность Lighthouse (вход) | ~60–75 локально | только KPI; задайте `LH_MIN_PERFORMANCE=75` для принудительной проверки | — |
-| Доступность Lighthouse | ~94 (вход/оператор) | ≥90 | оператор ≥95 (roadmap.md) |
+| КПИ | Базовый уровень (июль 2026) | Цель S21 | Acceptance BL-152 |
+| --- | --------------------------- | -------- | ----------------- |
+| Производительность Lighthouse (вход) | ~60–75 локально | только KPI | — |
+| Доступность Lighthouse | ~94 (вход/оператор) | ≥90 | CI ≥90; ≥95 ops stretch |
 | FPS мнемосхемы (120 эл.) | ≥60 в CI | порог ≥55 | — |
-| FPS мнемосхемы (500 эл.) | e2e с заглушённым API оператора | по умолчанию ≥60 в spec; живой WebSocket не проверяется в CI |
+| FPS мнемосхемы (500 эл.) | e2e mocked operator | ≥55 CI (Готово) | stretch ≥60 unmocked = ops |
 | Входной JS-бандл | бюджет соблюдается | без регрессии | без регрессии |

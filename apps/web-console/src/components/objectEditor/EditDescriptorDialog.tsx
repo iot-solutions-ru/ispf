@@ -1,10 +1,12 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { upsertEvent, upsertFunction } from "../../api";
+import { fetchSecurityRoles } from "../../api/securityRoles";
 import type { BindingFormulaLink, DataSchema, EventDescriptor, FunctionDescriptor, VariableDto } from "../../types";
 import DataSchemaEditor from "../schema/DataSchemaEditor";
 import BindingExpressionField from "../binding/BindingExpressionField";
+import RoleMultiSelect from "../security/RoleMultiSelect";
 import { cloneSchema, emptySchema, normalizeFunctionDescriptor } from "../../utils/schema/dataSchema";
 import { DEFAULT_JAVA_FUNCTION_TEMPLATE } from "../../utils/functionScript/javaFunctionTemplate";
 import { defaultScriptBody } from "../../utils/functionScript/functionScriptSteps";
@@ -48,6 +50,7 @@ function defaultFunction(name = ""): FunctionDescriptor {
     sourceBody: null,
     dataSourcePath: null,
     version: null,
+    invokeRoles: [],
   };
 }
 
@@ -61,6 +64,7 @@ function defaultEvent(name = ""): EventDescriptor {
       fields: [{ name: "message", type: "STRING", description: "Message", nullable: true }],
     },
     level: "INFO",
+    invokeRoles: [],
   };
 }
 
@@ -76,12 +80,14 @@ export default function EditDescriptorDialog({
 }: EditDescriptorDialogProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const expressionCatalog = useFunctionExpressionCatalog();
+  const rolesQuery = useQuery({ queryKey: ["security-roles"], queryFn: fetchSecurityRoles });
   const isFunction = kind === "function";
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [level, setLevel] = useState(
     !isFunction && initial ? (initial as EventDescriptor).level : "INFO"
   );
+  const [invokeRoles, setInvokeRoles] = useState<string[]>(initial?.invokeRoles ?? []);
   const [inputSchema, setInputSchema] = useState<DataSchema>(emptySchema("input"));
   const [outputSchema, setOutputSchema] = useState<DataSchema>(emptySchema("output"));
   const [payloadSchema, setPayloadSchema] = useState<DataSchema>(emptySchema("payload"));
@@ -114,6 +120,7 @@ export default function EditDescriptorDialog({
     setName(initial?.name ?? "");
     setDescription(initial?.description ?? "");
     setLevel(!isFunction && initial ? (initial as EventDescriptor).level : "INFO");
+    setInvokeRoles(initial?.invokeRoles ?? []);
     setShowAdvancedJson(false);
     setParseError(null);
     if (isFunction) {
@@ -144,6 +151,7 @@ export default function EditDescriptorDialog({
             sourceBody: fn.sourceBody,
             dataSourcePath: fn.dataSourcePath,
             version: fn.version,
+            invokeRoles: fn.invokeRoles ?? [],
           },
           null,
           2
@@ -152,12 +160,23 @@ export default function EditDescriptorDialog({
     } else {
       const ev = (initial as EventDescriptor | undefined) ?? defaultEvent();
       setPayloadSchema(cloneSchema(ev.payloadSchema));
-      setSchemaJson(JSON.stringify(ev.payloadSchema, null, 2));
+      setSchemaJson(
+        JSON.stringify(
+          {
+            payloadSchema: ev.payloadSchema,
+            invokeRoles: ev.invokeRoles ?? [],
+          },
+          null,
+          2
+        )
+      );
     }
   }, [initial, isFunction]);
 
   function structuredJson(): string {
-    if (!isFunction) return JSON.stringify(payloadSchema, null, 2);
+    if (!isFunction) {
+      return JSON.stringify({ payloadSchema, invokeRoles }, null, 2);
+    }
     return JSON.stringify({
       inputSchema,
       outputSchema,
@@ -165,6 +184,7 @@ export default function EditDescriptorDialog({
       sourceBody: sourceBody || null,
       dataSourcePath: dataSourcePath || null,
       version: version || null,
+      invokeRoles,
     }, null, 2);
   }
 
@@ -181,8 +201,19 @@ export default function EditDescriptorDialog({
         sourceDrafts.current[nextType || "handler"] = nextBody;
         setDataSourcePath(parsed.dataSourcePath ?? "");
         setVersion(parsed.version ?? "");
+        setInvokeRoles(parsed.invokeRoles ?? []);
       } else {
-        setPayloadSchema(cloneSchema(JSON.parse(schemaJson) as DataSchema));
+        const parsed = JSON.parse(schemaJson) as {
+          payloadSchema?: DataSchema;
+          invokeRoles?: string[];
+        } & DataSchema;
+        // Support legacy advanced JSON that was payload schema only.
+        if (parsed.payloadSchema) {
+          setPayloadSchema(cloneSchema(parsed.payloadSchema));
+          setInvokeRoles(parsed.invokeRoles ?? []);
+        } else {
+          setPayloadSchema(cloneSchema(parsed as DataSchema));
+        }
       }
       setParseError(null);
       return true;
@@ -253,6 +284,7 @@ export default function EditDescriptorDialog({
             sourceBody: parsed.sourceBody,
             dataSourcePath: parsed.dataSourcePath,
             version: parsed.version,
+            invokeRoles: parsed.invokeRoles ?? invokeRoles,
           });
         } else {
           fn = normalizeFunctionDescriptor({
@@ -267,18 +299,31 @@ export default function EditDescriptorDialog({
                 : sourceBody || null,
             dataSourcePath: dataSourcePath || null,
             version: version || null,
+            invokeRoles,
           });
         }
         return upsertFunction(objectPath, fn);
       }
-      const schema = showAdvancedJson
-        ? (JSON.parse(schemaJson) as DataSchema)
-        : payloadSchema;
+      let schema = payloadSchema;
+      let roles = invokeRoles;
+      if (showAdvancedJson) {
+        const parsed = JSON.parse(schemaJson) as {
+          payloadSchema?: DataSchema;
+          invokeRoles?: string[];
+        } & DataSchema;
+        if (parsed.payloadSchema) {
+          schema = parsed.payloadSchema;
+          roles = parsed.invokeRoles ?? [];
+        } else {
+          schema = parsed as DataSchema;
+        }
+      }
       const ev: EventDescriptor = {
         name: name.trim(),
         description: description.trim(),
         payloadSchema: schema,
         level,
+        invokeRoles: roles,
       };
       return upsertEvent(objectPath, ev);
     },
@@ -367,6 +412,18 @@ export default function EditDescriptorDialog({
             {t("common:field.description")}
             <input value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
+          {!showAdvancedJson && (
+            <>
+              <RoleMultiSelect
+                id={`invoke-roles-${kind}-${name || "new"}`}
+                label={t("descriptor.invokeRoles")}
+                roles={rolesQuery.data ?? []}
+                selected={invokeRoles}
+                onChange={setInvokeRoles}
+              />
+              <p className="hint full">{t("descriptor.invokeRolesHint")}</p>
+            </>
+          )}
         </section>
 
         {isFunction && !showAdvancedJson && (

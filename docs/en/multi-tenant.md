@@ -83,19 +83,28 @@ One shared PostgreSQL schema; tenant data under `root.tenant.{id}.platform.*`. W
 
 On `POST /api/v1/tenants`:
 
-1. `tenantId` validated as a valid PostgreSQL schema suffix: `[a-z][a-z0-9_]{0,62}` (final name ≤ 63 characters with prefix).
+1. `tenantId` validated as a valid PostgreSQL schema suffix: `[a-z][a-z0-9_]{0,62}` (final name ≤ 63 characters with prefix); reserved names and existing schemas rejected.
 2. Response includes `schemaName` (`tenant_{id}` by default).
-3. `TenantSchemaService` creates schema `CREATE SCHEMA IF NOT EXISTS` (stub — routing datasource follow-up).
+3. `TenantSchemaService` creates the schema and asserts it exists; delete drops the schema (`CASCADE`).
+4. `runInTenantSchema` sets `search_path` for app-data style work — **platform object tables remain shared** until a dedicated routing cutover (A≠B row isolation still open).
 
-**When to enable hard:** SaaS with strict DB-level isolation, compliance, separate backup/restore per tenant. **Do not enable** for single-tenant on-prem without data migration.
+**When to enable hard:** SaaS with schema-level isolation hooks, compliance, separate backup/restore per tenant. **Do not enable** for single-tenant on-prem without data migration.
+
+### OIDC tenant claim
+
+| Property | Env | Default |
+|----------|-----|---------|
+| `ispf.tenant.oidc-tenant-claim` | `ISPF_TENANT_OIDC_CLAIM` | `tenant_id` |
+
+When the JWT carries this claim, `TenantScopeService` binds path visibility to `root.tenant.{id}.*` (admin bypass). Empty claim name disables mapping; local user→tenant assignment still applies.
 
 ### Comparison
 
 | | Logical | Hard |
 |---|---------|------|
-| DB schema | Shared | Per tenant |
-| Path scope | `root.tenant.{id}.*` | Same + schema provision |
-| OIDC tenant claim | Planned (BL-155 follow-up) | Planned |
+| DB schema | Shared | Per tenant (provisioned; platform tables still shared) |
+| Path scope | `root.tenant.{id}.*` | Same + schema provision/drop |
+| OIDC tenant claim | `tenant_id` (configurable) | Same |
 | Restart on toggle | Yes | Yes |
 
 See also [federation](federation.md), [roadmap](roadmap.md).

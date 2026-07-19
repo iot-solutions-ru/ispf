@@ -23,14 +23,15 @@ Created when the **mes-platform** (or production) marketplace bundle is installe
 | Path | ObjectType | Purpose |
 |------|------------|---------|
 | `root.platform.mes` | `MES` | MES root catalog |
-| `...mes.work-orders` | `WORK_ORDERS` | Work order instances (`WORK_ORDER`) |
-| `...mes.operations` | `OPERATIONS` | Routing steps (`OPERATION`) |
-| `...mes.lots` | `LOTS` | Material lots (`LOT`) — use INSTANCE `batch-v1` (BL-168) |
-| `...mes.shifts` | `SHIFTS` | Production shifts (`SHIFT`) |
-| `...mes.quality-records` | `QUALITY_RECORDS` | Quality records (`QUALITY_RECORD`) + `quality-record-v1` |
-| `...mes.instances` | `MES_INSTANCES` | Site / area / line hierarchy |
+| `...mes.work-orders` | `WORK_ORDERS` | Work order folder |
+| `...mes.work-orders.wo-line-a01-001` | `WORK_ORDER` | Seed WO (`work-order-v1`) |
+| `...mes.operations.op-assemble-a01` | `OPERATION` | Seed routing step |
+| `...mes.lots.batch-line-a01-001` | `LOT` | Seed ISA-88 batch (`batch-v1`) |
+| `...mes.shifts.shift-morning-a01` | `SHIFT` | Seed shift |
+| `...mes.quality-records.qr-line-a01-001` | `QUALITY_RECORD` | Seed defect record (`quality-record-v1`) |
+| `...mes.instances.plant-a…line-a01` | `DEVICE` | ISA-95 site/area/line path |
 
-Instance types `batch-v1` and `work-order-v1` are registered under `root.platform.instance-types` by the same bundle (`blueprints[]`). `ObjectType` enums remain in `ispf-core` so installed nodes stay typed; **content** is marketplace-owned.
+Instance types `batch-v1` and `work-order-v1` are registered under `root.platform.instance-types` by the same bundle (`blueprints[]`). Test: `MesCatalogObjectTypesIntegrationTest`.
 
 ---
 
@@ -65,7 +66,9 @@ Create a `QUALITY_RECORD` under `root.platform.mes.quality-records` and apply `q
 
 | Artifact | Purpose |
 |----------|---------|
-| INSTANCE `batch-v1` | `batchId`, `recipe`, `phase` on `LOT` under `root.platform.mes.lots` |
+| Seed `LOT` | `root.platform.mes.lots.batch-line-a01-001` (`batch-v1`) |
+| INSTANCE `batch-v1` | `batchId`, `recipe`, `phase` |
+| Operator dashboard | `mes-platform-batch` — status + runPhase widgets |
 | Instantiate example | [batch-instantiate.example.json](../../examples/mes-platform/batch-instantiate.example.json) |
 | BFF `mes_batch_runPhase` | Advance phase in `mes_batch_run` registry |
 | BFF `mes_batch_getStatus` | Read batch path → phase |
@@ -136,9 +139,11 @@ Per-module hardening tests (Wave 5): `MesWorkOrderDispatchIntegrationTest`, `Mes
 
 | BL | Hardening | Integration test |
 |----|-----------|------------------|
-| BL-166 | Work-order dispatch BPMN full cycle (run → work-queue → confirm → `COMPLETED`) | `MesWorkOrderDispatchIntegrationTest` |
-| BL-167 | SPC `chart` widget on `mes-platform-quality` dashboard + `mes_quality_listSpcSamples` | `MesQualitySpcDashboardIntegrationTest` |
-| BL-168 | Batch phase runner `charge` → `react` → `discharge` via `mes_batch_runPhase` / `mes_batch_getStatus` | `MesBatchPhaseRunnerIntegrationTest` |
+| BL-164 | Seed typed MES instances + ISA-95 line path after deploy | `MesCatalogObjectTypesIntegrationTest` |
+| BL-165 | OEE Operator dashboard widgets + `mes_oee_getKpi` > 80% | `MesOeeAnalyticsDashboardIntegrationTest` |
+| BL-166 | Dispatch dashboard `work-queue` + BPMN confirm → WO `status=complete` | `MesWorkOrderDispatchIntegrationTest` |
+| BL-167 | SPC `chart` + seed `QUALITY_RECORD` + `mes_quality_listSpcSamples` | `MesQualitySpcDashboardIntegrationTest` |
+| BL-168 | Batch Operator dashboard + phase runner `charge` → `react` → `discharge` | `MesBatchPhaseRunnerIntegrationTest` |
 | BL-193 | Genealogy BFF + Operator dashboard/report with seed lot graph | `MesGenealogyLiteIntegrationTest` |
 
 Operator genealogy walkthrough: [mes.md](mes.md).
@@ -182,18 +187,16 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
 
 ## Certification checklist (≤ 30 min) — complete
 
-- [x] `root.platform.mes.*` visible in Explorer after server start
+- [x] Bundle deploy seeds typed `WORK_ORDER` / `OPERATION` / `LOT` / `SHIFT` / `QUALITY_RECORD` (BL-164)
 - [x] Bundle deploy succeeds (`schemaName` = `app_mes_platform` or `app_mes_platform_production`)
-- [x] `mes_platform_listLines` returns `LINE-A01`
-- [x] `mes_oee_getKpi` returns `oeePct` > 80 for seed shift
+- [x] `mes_platform_listLines` returns `LINE-A01` (ISA-95 path present)
+- [x] `mes_oee_getKpi` returns `oeePct` > 80 for seed shift (BL-165)
 - [x] Operator UI opens with `?mode=operator&app=mes-platform` or `mes-platform-production`
-- [x] Work-queue widget visible on Dispatch dashboard (BL-166)
-- [x] SPC chart widget on Quality dashboard (BL-167)
-- [x] `batch-v1` visible under `root.platform.instance-types` (BL-168)
-- [x] `mes_batch_runPhase` advances seed batch phase
-- [x] `mes_erp_enqueueOutbox` + `mes_erp_pollOutbox` round-trip (BL-169)
-- [x] `mes-erp-outbox-poll` schedule enabled in production bundle (BL-169 harden)
+- [x] Work-queue widget + confirm sets WO `status=complete` (BL-166)
+- [x] SPC chart widget on Quality dashboard + seed QR (BL-167)
+- [x] Batch Operator dashboard + `mes_batch_runPhase` advances seed phase (BL-168)
 - [x] Genealogy dashboard + `mes_genealogy_queryByLot` returns seed lot graph (BL-193)
+- [ ] Live ERP connector (BL-169) — **Deferred** (stub outbox only)
 
 ---
 
@@ -201,7 +204,8 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
 
 ```bash
 ./gradlew :packages:ispf-server:test \
-  --tests "com.ispf.server.application.reference.mes.MesBlueprintBootstrapTest" \
+  --tests "com.ispf.server.application.reference.mes.MesCatalogObjectTypesIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesOeeAnalyticsDashboardIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesWorkOrderDispatchIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesQualitySpcDashboardIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesBatchPhaseRunnerIntegrationTest" \

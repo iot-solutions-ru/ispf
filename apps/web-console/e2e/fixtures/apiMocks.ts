@@ -440,7 +440,18 @@ export async function mockAuthenticatedApi(
           message: "e2e mock",
         });
       case "/api/v1/operator-apps":
-        return json(route, []);
+        return json(route, [
+          {
+            appId: "e2e-operator",
+            title: "E2E Operator",
+            source: "operator-apps",
+          },
+          {
+            appId: "demo",
+            title: "Demo Application",
+            source: "operator-apps",
+          },
+        ]);
       case "/api/v1/events":
         return json(route, []);
       case "/api/v1/alert-rules":
@@ -576,6 +587,14 @@ export async function mockAuthenticatedApi(
 
     if (apiPath === "/api/v1/operator-apps/e2e-operator/ui") {
       return json(route, MOCK_E2E_OPERATOR_UI);
+    }
+
+    if (apiPath === "/api/v1/operator-apps/demo/ui") {
+      return json(route, {
+        ...MOCK_E2E_OPERATOR_UI,
+        appId: "demo",
+        title: "Demo Application",
+      });
     }
 
     if (/^\/api\/v1\/operator-apps\/[^/]+\/ui$/.test(apiPath)) {

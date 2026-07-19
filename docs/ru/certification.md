@@ -2,9 +2,9 @@
 
 # Пути сертификации (BL-190)
 
-> **Статус:** Draft — Учебные треки / exams. Теги: [doc-status](../en/doc-status.md).
+> **Статус: Готово (curriculum paths).** Треки Solution developer + Platform admin, labs и machine-readable question banks — в repo. Теги: [doc-status](../en/doc-status.md). Полный LMS / proctoring — Partner Portal (external).
 
-Черновик учебной программы сертификации ISPF. Полные экзамены и прокторинг — Фаза 32 GA; лаборатории ниже можно запустить сегодня на lab/VPS-хостах.
+Учебная программа и exam stubs сертификации ISPF. Лаборатории ниже можно запустить сегодня на lab/VPS-хостах.
 
 Соответствует коммерческим уровням [partner-program](partner-program.md).
 

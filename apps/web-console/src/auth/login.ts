@@ -13,11 +13,19 @@ export interface LoginResponse {
   tenantId?: string;
 }
 
-export async function login(username: string, password: string): Promise<AuthSession> {
+export async function login(
+  username: string,
+  password: string,
+  totpCode?: string
+): Promise<AuthSession> {
+  const body: { username: string; password: string; totpCode?: string } = { username, password };
+  if (totpCode != null && totpCode.trim() !== "") {
+    body.totpCode = totpCode.trim();
+  }
   const response = await fetchWithIngressFallback("/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) {
     const text = await response.text();

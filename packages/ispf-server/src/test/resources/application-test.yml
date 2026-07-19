@@ -31,6 +31,11 @@ ispf:
     enabled: false
   nats:
     enabled: false
+  historian:
+    deploy-profile: hot-only
+    tiers:
+      warm:
+        enabled: false
   variable-history:
     min-interval-ms: 0
     async-enabled: false

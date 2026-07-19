@@ -1,8 +1,8 @@
 {
   "description": "Instantiate a WORK_ORDER under root.platform.mes.work-orders using the work-order-v1 INSTANCE blueprint (BL-164 / BL-166).",
   "prerequisites": [
-    "Server started (MesPlatformBootstrap seeds root.platform.mes.*)",
-    "work-order-v1 registered under root.platform.instance-types (MesBlueprintBootstrap)"
+    "mes-platform bundle deployed (seeds root.platform.mes.* + work-order-v1 blueprint)",
+    "Optional: use seed WO root.platform.mes.work-orders.wo-line-a01-001 instead of instantiating"
   ],
   "resolveBlueprintId": {
     "method": "GET",

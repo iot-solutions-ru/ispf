@@ -97,7 +97,13 @@ ispf:
 | **Raw trend** | ≤ 10k points (`GET .../history`) | **< 500 ms** |
 | **Export** | ≤ 10k points (`GET .../history/export`) | best-effort; same point cap |
 
-Лабораторные gates (этап 28): сценарии `deploy/run_lab_historian_*.py` должны утверждать совокупную задержку относительно `aggregate-max-latency-ms` при нагрузке `aggregate-max-points`.
+**CI / lab gates (БЛ-161 Done):**
+
+| Gate | Путь | Цель |
+|------|------|------|
+| JVM aggregate | `HistorianAggregateQueryLoadTest` / `tools/historian-scale/historian-scale-benchmark.sh` | ≤1M точек, **p95 &lt; 2 s** |
+| Nightly | `.github/workflows/load-test.yml` | тот же JVM gate |
+| Combined | `tools/historian-scale/analytics-scale-gate.sh` | aggregate + multi-tag; optional CH/catalog |
 
 Ссылка на дашборд: [examples/historian-sla-dashboard](../../examples/historian-sla-dashboard/) (макет виджета BL-161 + BFF sketch).
 

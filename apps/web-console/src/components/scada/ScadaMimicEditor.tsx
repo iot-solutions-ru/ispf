@@ -707,6 +707,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
         aria-modal="true"
         aria-label={t("editor.title")}
         tabIndex={-1}
+        data-testid="scada-mimic-editor"
+        data-selected-count={selectedIds.size}
       >
         <header className="scada-mimic-editor-toolbar">
           <div className="scada-toolbar-brand">

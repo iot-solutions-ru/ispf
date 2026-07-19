@@ -41,12 +41,9 @@ body.dashboard-editor-fullscreen {
   background: var(--bg);
 }
 
-.dashboard-shell--video-wall-2x2 {
-  height: 100vh;
-  height: 100dvh;
-}
-
-.dashboard-shell--video-wall-3x3 {
+.dashboard-shell--video-wall-2x2,
+.dashboard-shell--video-wall-3x3,
+.dashboard-shell--video-wall-4x4 {
   height: 100vh;
   height: 100dvh;
 }
@@ -56,23 +53,29 @@ body.dashboard-editor-fullscreen {
 .dashboard-shell--video-wall-2x2 .dashboard-grid-host,
 .dashboard-shell--video-wall-3x3 .dashboard-body,
 .dashboard-shell--video-wall-3x3 .dashboard-canvas,
-.dashboard-shell--video-wall-3x3 .dashboard-grid-host {
+.dashboard-shell--video-wall-3x3 .dashboard-grid-host,
+.dashboard-shell--video-wall-4x4 .dashboard-body,
+.dashboard-shell--video-wall-4x4 .dashboard-canvas,
+.dashboard-shell--video-wall-4x4 .dashboard-grid-host {
   height: 100%;
   min-height: 0;
 }
 
 .dashboard-shell--video-wall-2x2 .dashboard-grid-host,
-.dashboard-shell--video-wall-3x3 .dashboard-grid-host {
+.dashboard-shell--video-wall-3x3 .dashboard-grid-host,
+.dashboard-shell--video-wall-4x4 .dashboard-grid-host {
   padding: 0;
 }
 
 .dashboard-shell--video-wall-2x2 .dashboard-grid-item,
-.dashboard-shell--video-wall-3x3 .dashboard-grid-item {
+.dashboard-shell--video-wall-3x3 .dashboard-grid-item,
+.dashboard-shell--video-wall-4x4 .dashboard-grid-item {
   border-radius: 0;
 }
 
 .operator-dashboard-shell.dashboard-shell--video-wall-2x2 .dash-widget-shell,
-.operator-dashboard-shell.dashboard-shell--video-wall-3x3 .dash-widget-shell {
+.operator-dashboard-shell.dashboard-shell--video-wall-3x3 .dash-widget-shell,
+.operator-dashboard-shell.dashboard-shell--video-wall-4x4 .dash-widget-shell {
   border-radius: 0;
 }
 
@@ -2908,23 +2911,29 @@ body.scada-mimic-editor-open {
 .operator-shell--video-wall-2x2 .operator-agent-fab,
 .operator-shell--video-wall-3x3 .operator-topbar,
 .operator-shell--video-wall-3x3 .op-nav,
-.operator-shell--video-wall-3x3 .operator-agent-fab {
+.operator-shell--video-wall-3x3 .operator-agent-fab,
+.operator-shell--video-wall-4x4 .operator-topbar,
+.operator-shell--video-wall-4x4 .op-nav,
+.operator-shell--video-wall-4x4 .operator-agent-fab {
   display: none;
 }
 
 .operator-shell--video-wall-2x2 .operator-layout,
-.operator-shell--video-wall-3x3 .operator-layout {
+.operator-shell--video-wall-3x3 .operator-layout,
+.operator-shell--video-wall-4x4 .operator-layout {
   flex: 1;
   min-height: 0;
 }
 
 .operator-shell--video-wall-2x2 .operator-dashboard-shell-host,
-.operator-shell--video-wall-3x3 .operator-dashboard-shell-host {
+.operator-shell--video-wall-3x3 .operator-dashboard-shell-host,
+.operator-shell--video-wall-4x4 .operator-dashboard-shell-host {
   overflow: hidden;
 }
 
 .operator-shell--video-wall-2x2 .operator-dashboard-shell-host .dashboard-shell,
-.operator-shell--video-wall-3x3 .operator-dashboard-shell-host .dashboard-shell {
+.operator-shell--video-wall-3x3 .operator-dashboard-shell-host .dashboard-shell,
+.operator-shell--video-wall-4x4 .operator-dashboard-shell-host .dashboard-shell {
   height: 100%;
   min-height: 0;
   flex: 1;
@@ -2933,7 +2942,9 @@ body.scada-mimic-editor-open {
 .operator-shell--video-wall-2x2 .operator-dashboard-shell-host .dashboard-body,
 .operator-shell--video-wall-2x2 .operator-dashboard-shell-host .dashboard-canvas,
 .operator-shell--video-wall-3x3 .operator-dashboard-shell-host .dashboard-body,
-.operator-shell--video-wall-3x3 .operator-dashboard-shell-host .dashboard-canvas {
+.operator-shell--video-wall-3x3 .operator-dashboard-shell-host .dashboard-canvas,
+.operator-shell--video-wall-4x4 .operator-dashboard-shell-host .dashboard-body,
+.operator-shell--video-wall-4x4 .operator-dashboard-shell-host .dashboard-canvas {
   height: 100%;
   min-height: 0;
   flex: 1;
@@ -2956,6 +2967,11 @@ body.scada-mimic-editor-open {
 .operator-video-wall-grid--video-wall-3x3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
+.operator-video-wall-grid--video-wall-4x4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
 }
 
 .operator-video-wall-cell {
@@ -2987,6 +3003,20 @@ body.scada-mimic-editor-open {
   flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.operator-video-wall-autoscale {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.operator-video-wall-autoscale-content {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .operator-video-wall-cell-body .dashboard-shell {

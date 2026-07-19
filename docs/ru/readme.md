@@ -174,10 +174,10 @@
 
 | Документ | Статус | Описание |
 |----------|--------|----------|
-| [Marketplace](marketplace.md) | Draft | Partial BL-183 (п. 11–12 открыты); BL-184/185 Done |
-| [Symbol marketplace](symbol-marketplace.md) | Draft | Listing API stub |
-| [Партнёрская программа](partner-program.md) | Draft | Design; in-server API stub |
-| [Сертификация](certification.md) | Draft | Учебные треки / exams |
+| [Marketplace](marketplace.md) | Stable | BL-183 Готово (CI catalog gate + честные partner endpoints) |
+| [Symbol marketplace](symbol-marketplace.md) | Stable | Local install + scada API (BL-185) |
+| [Партнёрская программа](partner-program.md) | Draft | In-server directory Готово (BL-184); Partner Portal external |
+| [Сертификация](certification.md) | Stable | BL-190 curriculum paths + question banks |
 | [Лицензия](license.md) | Stable | **AGPL v3** + dual-license |
 | [Commercial licensing](commercial-licensing.md) | Stable | Enterprise |
 | [License compliance](license-compliance.md) | Stable | Чеклист обязательств |

@@ -97,7 +97,13 @@ Documented service-level objectives for historian REST queries. Defaults bind vi
 | **Raw trend** | ≤ 10k points (`GET .../history`) | **< 500 ms** |
 | **Export** | ≤ 10k points (`GET .../history/export`) | best-effort; same point cap |
 
-Lab gate (Phase 28): `deploy/run_lab_historian_*.py` scripts should assert aggregate latency against `aggregate-max-latency-ms` at `aggregate-max-points` load.
+**CI / lab gates (BL-161 Done):**
+
+| Gate | Path | Target |
+|------|------|--------|
+| JVM aggregate | `HistorianAggregateQueryLoadTest` via `tools/historian-scale/historian-scale-benchmark.sh` | ≤1M points, **p95 &lt; 2 s** |
+| Nightly workflow | `.github/workflows/load-test.yml` | same JVM gate |
+| Combined analytics | `tools/historian-scale/analytics-scale-gate.sh` | aggregate + multi-tag; optional live CH/catalog |
 
 ## Analytics SLO (BL-210)
 
@@ -111,11 +117,11 @@ Documented service-level objectives for the **analytics platform** plane (multi-
 | **Materializer lag** | Rollup head vs historian ingest | **< 5 min** behind wall clock |
 | **Single-tag aggregate** | ≤ 1M points (BL-161) | **p95 < 2 s** (unchanged) |
 
-Lab scripts:
+Tracked scripts (prefer these over gitignored `deploy/local/tools/` copies):
 
-- `deploy/local/tools/analytics-scale-gate.sh` — multi-tag p95, optional catalog/CH gates
-- `deploy/local/tools/seed-analytics-scale-catalog.py` — synthetic 50k-tag catalog
-- JVM CI gate: `AnalyticsMultiTagQueryLoadTest` (`@Tag("load")`, nightly workflow)
+- `tools/historian-scale/analytics-scale-gate.sh` — multi-tag + aggregate JVM gates; optional catalog/CH
+- `tools/historian-scale/historian-scale-benchmark.sh` — BL-161 aggregate only
+- JVM CI: `AnalyticsMultiTagQueryLoadTest`, `HistorianAggregateQueryLoadTest` (`@Tag("load")`, `load-test.yml`)
 
 SLO targets API: `GET /api/v1/platform/analytics/analytics-slo`. Historian + analytics targets also appear under `analyticsSlo` in `GET .../historian-sla`.
 

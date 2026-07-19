@@ -74,13 +74,13 @@ Resolve after triage:
 curl -s -X POST "$BASE/api/v1/workflows/dead-letters/{id}/resolve" | jq .
 ```
 
-Use the execution journal of the failed instance first for MTTR. Async retry scheduling from `retryMaxAttempts` / `retryBackoffSeconds` is not yet wired (metadata + DLQ only; no sync retries).
+Use the execution journal of the failed instance first for MTTR. When `retryMaxAttempts` &gt; 1, failures enqueue a durable row in `workflow_retry_schedule` (backoff = `retryBackoffSeconds`); the leader-locked `WorkflowRetryScheduler` re-runs the workflow with `_retryAttempt` until attempts are exhausted, then records a dead letter and may start `errorWorkflowPath`.
 
 ## Verify
 
 - [ ] Webhook creates a run with payload fields
 - [ ] Cron creates periodic runs while ACTIVE
-- [ ] Forced failure (bad action / missing param) surfaces in journal; error path / DLQ behaves as configured
+- [ ] Forced failure (bad action / missing param) surfaces in journal; with `retryMaxAttempts=2` a retry is scheduled before DLQ / error path
 
 ## Next
 

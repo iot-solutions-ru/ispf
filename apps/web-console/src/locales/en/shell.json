@@ -3,6 +3,8 @@
   "login.subtitle": "Sign in to the platform",
   "login.username": "Username",
   "login.password": "Password",
+  "login.totp": "Authenticator code (if MFA enrolled)",
+  "login.totpHint": "Required when admin MFA is enforced (ISPF_MFA_REQUIRED_FOR_ADMIN).",
   "login.submit": "Sign in",
   "login.submitting": "Signing in…",
   "login.defaultHint": "Default: admin/admin or operator/operator",

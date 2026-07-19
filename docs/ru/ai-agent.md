@@ -120,7 +120,7 @@ node tools/agent-regression/validate-scenarios.mjs --results build/agent-regress
 }
 ```
 
-**БЛ-178 (выполнен):** полный live suite ≥95% — **52/52 @100%** через `AGENT_LIVE_SUITE_MODE=full` / `run-live-suite.sh` (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI по-прежнему **platform**. По [competitive-scorecard](competitive-scorecard.md) AI **~8.5 REAL**; БЛ-177/180 остаются Partial→Done one-shot / hardening. **S31 one-shot** по-прежнему доказывает BL-177 через `--oneshot`. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
+**БЛ-178 (выполнен):** полный live suite ≥95% — **52/52 @100%** через `AGENT_LIVE_SUITE_MODE=full` / `run-live-suite.sh` (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI по-прежнему **platform**. **БЛ-177 / БЛ-180 Готово** — multi-app / multi-domain live smoke harness в repo; live runs требуют `ISPF_LLM_SMOKE=true`. По [competitive-scorecard](competitive-scorecard.md) AI **~9.0 REAL**. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
 
 ---
 

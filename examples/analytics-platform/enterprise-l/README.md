@@ -44,7 +44,7 @@ For dry-run on laptop use `--tags 1000` first.
 export ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://localhost:8123
 export ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false
 export ISPF_ANALYTICS_BENCH_CH_MIN_SAMPLES=1000000000
-bash deploy/local/tools/analytics-scale-gate.sh
+bash tools/historian-scale/analytics-scale-gate.sh
 ```
 
 Bulk ingest playbook: [clickhouse-prod-playbook.md](../../docs/en/clickhouse-prod-playbook.md) — dual-write validation, then replay lab MQTT at scale.
@@ -56,7 +56,7 @@ export ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false
 export ISPF_ANALYTICS_BENCH_CATALOG_MIN_TAGS=50000
 export ISPF_ANALYTICS_BENCH_MULTI_TAG_P95_MS=3000
 export ISPF_ANALYTICS_BENCH_TAG_COUNT=10
-bash deploy/local/tools/analytics-scale-gate.sh
+bash tools/historian-scale/analytics-scale-gate.sh
 ```
 
 Or run the full orchestrator (scale + materializer lag; historian optional):

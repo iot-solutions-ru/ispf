@@ -21,19 +21,19 @@
 
 ## Каталог MES (BL-164) — через marketplace-бандл
 
-Создаётся при установке бандла **mes-platform** (или production) — **не** при старте «голого» сервера:
+Создаётся при установке бандла **mes-platform** (или production) — **не** при старте «голого» сервера. v1.3.0 сеет typed instances:
 
 | Path | ObjectType | Purpose |
 |------|------------|---------|
 | `root.platform.mes` | `MES` | Корневой каталог MES |
-| `...mes.work-orders` | `WORK_ORDERS` | Экземпляры work order (`WORK_ORDER`) |
-| `...mes.operations` | `OPERATIONS` | Шаги маршрута (`OPERATION`) |
-| `...mes.lots` | `LOTS` | Material lots (`LOT`) — используйте INSTANCE `batch-v1` (BL-168) |
-| `...mes.shifts` | `SHIFTS` | Производственные смены (`SHIFT`) |
-| `...mes.quality-records` | `QUALITY_RECORDS` | Quality records (`QUALITY_RECORD`) + `quality-record-v1` |
-| `...mes.instances` | `MES_INSTANCES` | Иерархия site / area / line |
+| `...mes.work-orders.wo-line-a01-001` | `WORK_ORDER` | Seed WO (`work-order-v1`) |
+| `...mes.operations.op-assemble-a01` | `OPERATION` | Seed routing step |
+| `...mes.lots.batch-line-a01-001` | `LOT` | Seed ISA-88 batch (`batch-v1`) |
+| `...mes.shifts.shift-morning-a01` | `SHIFT` | Seed shift |
+| `...mes.quality-records.qr-line-a01-001` | `QUALITY_RECORD` | Seed defect record |
+| `...mes.instances.plant-a…line-a01` | `DEVICE` | ISA-95 site/area/line |
 
-Типы экземпляров `batch-v1` и `work-order-v1` регистрируются под `root.platform.instance-types` тем же бандлом (`blueprints[]`). Enum `ObjectType` остаётся в `ispf-core` для типизации узлов; **контент** — marketplace.
+Тест: `MesCatalogObjectTypesIntegrationTest`. БЛ-169 (live ERP) остаётся **Отложено**.
 
 ---
 

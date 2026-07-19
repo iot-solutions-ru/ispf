@@ -14,6 +14,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
   const { t } = useTranslation(["shell", "common"]);
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin");
+  const [totpCode, setTotpCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -31,7 +32,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
     setPending(true);
     setError(null);
     try {
-      const session = await login(username, password);
+      const session = await login(username, password, totpCode);
       onLoggedIn(session);
     } catch (err) {
       setError(String(err));
@@ -83,10 +84,22 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
                 autoComplete="current-password"
               />
             </label>
+            <label>
+              {t("shell:login.totp")}
+              <input
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="000000"
+              />
+            </label>
             <button type="submit" className="btn primary" disabled={pending}>
               {pending ? t("shell:login.submitting") : t("shell:login.submit")}
             </button>
             <p className="login-hint">{t("shell:login.defaultHint")}</p>
+            <p className="login-hint">{t("shell:login.totpHint")}</p>
           </>
         )}
 

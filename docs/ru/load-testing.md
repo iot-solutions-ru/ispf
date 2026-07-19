@@ -360,7 +360,8 @@ JUnit-аналог: `EventFireLoadTest` (150 concurrent HTTP).
 | Gate | Script / test | Default ceiling |
 |------|---------------|-----------------|
 | Multi-tag query (10×7d×1h) | `AnalyticsMultiTagQueryLoadTest` | p95 **3000 ms** |
-| Lab multi-tag + catalog + CH | `deploy/local/tools/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows |
+| Historian aggregate (≤1M pts) | `HistorianAggregateQueryLoadTest` | p95 **2000 ms** (БЛ-161) |
+| Lab multi-tag + catalog + CH | `tools/historian-scale/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows (optional live) |
 | 50k-tag catalog seed | `deploy/local/tools/seed-analytics-scale-catalog.py` | `--tags 50000` |
 
 Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../../examples/analytics-platform/enterprise-l/README.md). SLO: [variable-history](variable-history.md) § Analytics SLO.

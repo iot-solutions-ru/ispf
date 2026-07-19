@@ -141,6 +141,8 @@
   "editor.selectionKey": "选择键（selectionKey）",
   "editor.selectionKeyOnClick": "点击时的选择键 (selectionKey)",
   "editor.spreadsheet.bindingHistoryHint": "绑定单元格：historyMinutes（如 15）读取窗口内最新 historian 样本；否则为实时值。",
+  "editor.spreadsheet.liveRefresh": "实时刷新（WebSocket + 轮询）",
+  "editor.spreadsheet.liveRefreshIntervalMs": "实时轮询间隔（毫秒）",
   "editor.spreadsheet.dataSourceHint": "表格单元格持久化请在下方「表格」区配置 valuesVariable，而非此处的 variableName。",
   "editor.spreadsheet.gridSize": "网格大小（行×列）",
   "editor.spreadsheet.insertCalculatorTemplate": "模板：计算器",

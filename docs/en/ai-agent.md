@@ -128,7 +128,7 @@ Results file shape:
 }
 ```
 
-**BL-178 (met):** full live suite ≥95% — **52/52 @100%** via `AGENT_LIVE_SUITE_MODE=full` / `run-live-suite.sh` (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI still runs **platform** mode. [competitive-scorecard](competitive-scorecard.md) AI dimension **~8.5 REAL** on that evidence; BL-177/180 remain Partial→Done one-shot / hardening. **S31 one-shot** still proves BL-177 with `--oneshot`. `nightly-stub-results.json` is **deprecated** — not evidence of live ≥95%.
+**BL-178 (met):** full live suite ≥95% — **52/52 @100%** via `AGENT_LIVE_SUITE_MODE=full` / `run-live-suite.sh` (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI still runs **platform** mode. **BL-177 / BL-180 Done** — multi-app / multi-domain live smoke harness in repo; live runs require `ISPF_LLM_SMOKE=true`. [competitive-scorecard](competitive-scorecard.md) AI dimension **~9.0 REAL**. `nightly-stub-results.json` is **deprecated** — not evidence of live ≥95%.
 
 ---
 

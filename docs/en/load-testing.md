@@ -434,14 +434,15 @@ python deploy/events-load-test.py `
 
 JUnit equivalent: `EventFireLoadTest` (150 concurrent HTTP).
 
-**CI gate (BL-113):** workflow `.github/workflows/load-test.yml` — nightly + `workflow_dispatch`, runs `EventFireLoadTest`, `ListDevicesLoadTest`, and `AnalyticsMultiTagQueryLoadTest` (BL-210), threshold `ISPF_LOAD_P99_CEILING_MS` / `ISPF_ANALYTICS_LOAD_P95_CEILING_MS` (default 3000 ms), Gradle log artifacts. Gradle steps use `set -o pipefail` so test failure is not masked by `tee`.
+**CI gate (BL-113 / BL-161):** workflow `.github/workflows/load-test.yml` — nightly + `workflow_dispatch`, runs `EventFireLoadTest`, `ListDevicesLoadTest`, `AnalyticsMultiTagQueryLoadTest` (BL-210), and `HistorianAggregateQueryLoadTest` (BL-161, 1M pts p95 &lt; 2 s). Thresholds: `ISPF_LOAD_P99_CEILING_MS` / `ISPF_ANALYTICS_LOAD_P95_CEILING_MS` (default 3000 ms) / `ISPF_HISTORIAN_AGGREGATE_P95_CEILING_MS` (default 2000 ms). Tracked wrapper: `tools/historian-scale/analytics-scale-gate.sh`. Gradle steps use `set -o pipefail` so test failure is not masked by `tee`.
 
 ## Analytics platform scale gates (BL-210)
 
 | Gate | Script / test | Default ceiling |
 |------|---------------|-----------------|
 | Multi-tag query (10×7d×1h) | `AnalyticsMultiTagQueryLoadTest` | p95 **3000 ms** |
-| Lab multi-tag + catalog + CH | `deploy/local/tools/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows |
+| Historian aggregate (≤1M pts) | `HistorianAggregateQueryLoadTest` | p95 **2000 ms** (BL-161) |
+| Lab multi-tag + catalog + CH | `tools/historian-scale/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows (optional live) |
 | 50k-tag catalog seed | `deploy/local/tools/seed-analytics-scale-catalog.py` | `--tags 50000` |
 
 Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../../examples/analytics-platform/enterprise-l/README.md). SLO table: [variable-history](variable-history.md) § Analytics SLO.

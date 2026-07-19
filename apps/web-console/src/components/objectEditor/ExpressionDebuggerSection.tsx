@@ -14,6 +14,19 @@ export interface ExpressionDebuggerSectionProps {
   embedded?: boolean;
 }
 
+/** Phases operators can set breakpoints on (BL-149). */
+export const EXPRESSION_DEBUG_BREAKPOINT_PHASES = [
+  "validate",
+  "load-object",
+  "variable-context",
+  "compile-cel",
+  "cel-bindings",
+  "compile",
+  "platform-binding",
+  "evaluate",
+  "map-result",
+] as const;
+
 function isBindingsStep(phase: string): boolean {
   return phase === "cel-bindings" || phase === "variable-context";
 }
@@ -111,10 +124,18 @@ export default function ExpressionDebuggerSection({
   const [targetVariable, setTargetVariable] = useState("");
   const [revealedSteps, setRevealedSteps] = useState(0);
   const [pinnedWatch, setPinnedWatch] = useState<string[]>([]);
+  const [breakpoints, setBreakpoints] = useState<string[]>(["evaluate"]);
+  const [pausedAt, setPausedAt] = useState<string | null>(null);
 
   const toggleWatchPin = useCallback((name: string) => {
     setPinnedWatch((prev) =>
       prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+    );
+  }, []);
+
+  const toggleBreakpoint = useCallback((phase: string) => {
+    setBreakpoints((prev) =>
+      prev.includes(phase) ? prev.filter((item) => item !== phase) : [...prev, phase]
     );
   }, []);
 
@@ -129,20 +150,24 @@ export default function ExpressionDebuggerSection({
   );
 
   const evaluateMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (resumeFrom?: string) =>
       evaluateExpression({
         objectPath,
         expression: expression.trim(),
         targetVariable: targetVariable.trim() || undefined,
+        breakpoints,
+        resumeFrom,
       }),
     onSuccess: (data) => {
-      setRevealedSteps(data.steps.length > 0 ? 1 : 0);
+      setRevealedSteps(data.steps.length > 0 ? data.steps.length : 0);
+      setPausedAt(data.paused ? data.pausedAt ?? null : null);
     },
   });
 
   const steps = evaluateMutation.data?.steps ?? [];
   const visibleSteps = steps.slice(0, revealedSteps);
   const canRevealMore = revealedSteps < steps.length;
+  const isPaused = Boolean(evaluateMutation.data?.paused && pausedAt);
 
   return (
     <div
@@ -175,22 +200,63 @@ export default function ExpressionDebuggerSection({
           </label>
         )}
 
+        <fieldset className="expression-debugger-breakpoints" data-testid="expression-debugger-breakpoints">
+          <legend>{t("expressionDebugger.breakpoints")}</legend>
+          <p className="hint">{t("expressionDebugger.breakpointsHint")}</p>
+          <div className="expression-debugger-breakpoint-list">
+            {EXPRESSION_DEBUG_BREAKPOINT_PHASES.map((phase) => (
+              <label key={phase} className="expression-debugger-breakpoint-item">
+                <input
+                  type="checkbox"
+                  checked={breakpoints.includes(phase)}
+                  disabled={disabled}
+                  data-testid={`expression-debugger-bp-${phase}`}
+                  onChange={() => toggleBreakpoint(phase)}
+                />
+                <code>{t(`expressionDebugger.phase.${phase}`, { defaultValue: phase })}</code>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <div className="expression-debugger-actions">
           <button
             type="button"
             className="btn primary small"
             disabled={disabled || !expression.trim() || evaluateMutation.isPending}
-            onClick={() => evaluateMutation.mutate()}
+            onClick={() => {
+              setPausedAt(null);
+              evaluateMutation.mutate(undefined);
+            }}
           >
             {evaluateMutation.isPending
               ? t("expressionDebugger.evaluating")
               : t("expressionDebugger.evaluate")}
           </button>
+          {isPaused && pausedAt && (
+            <button
+              type="button"
+              className="btn small"
+              data-testid="expression-debugger-continue"
+              disabled={disabled || evaluateMutation.isPending}
+              onClick={() => evaluateMutation.mutate(pausedAt)}
+            >
+              {t("expressionDebugger.continue")}
+            </button>
+          )}
         </div>
       </div>
 
       {evaluateMutation.error && (
         <p className="hint error">{(evaluateMutation.error as Error).message}</p>
+      )}
+
+      {isPaused && pausedAt && (
+        <p className="hint" data-testid="expression-debugger-paused">
+          {t("expressionDebugger.pausedAt", {
+            phase: t(`expressionDebugger.phase.${pausedAt}`, { defaultValue: pausedAt }),
+          })}
+        </p>
       )}
 
       <ExpressionDebuggerWatchList
@@ -201,7 +267,7 @@ export default function ExpressionDebuggerSection({
         revealedSteps={revealedSteps}
       />
 
-      {evaluateMutation.data && (
+      {evaluateMutation.data && !evaluateMutation.data.paused && (
         <section className="expression-debugger-result">
           {evaluateMutation.data.valid ? (
             <p className="hint success">{t("expressionDebugger.success")}</p>
@@ -253,13 +319,24 @@ export default function ExpressionDebuggerSection({
               <li
                 key={`${step.phase}-${index}`}
                 className={`expression-debugger-step${
-                  step.status === "error" ? " error" : step.status === "ok" ? " ok" : ""
+                  step.status === "error"
+                    ? " error"
+                    : step.status === "paused"
+                      ? " paused"
+                      : step.status === "ok"
+                        ? " ok"
+                        : ""
                 }${index === visibleSteps.length - 1 ? " active" : ""}`}
               >
                 <div className="expression-debugger-step-head">
                   <span className="expression-debugger-step-index">{index + 1}</span>
                   <code>{t(`expressionDebugger.phase.${step.phase}`, { defaultValue: step.phase })}</code>
                   <span className="inline-badge">{step.status}</span>
+                  {breakpoints.includes(step.phase) && (
+                    <span className="inline-badge" title={t("expressionDebugger.breakpointActive")}>
+                      BP
+                    </span>
+                  )}
                 </div>
                 {step.detail !== undefined && step.detail !== null && (
                   isBindingsStep(step.phase) ? (

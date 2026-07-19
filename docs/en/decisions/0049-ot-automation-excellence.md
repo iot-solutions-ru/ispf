@@ -10,7 +10,7 @@
 |------|--------|
 | **1** | Landed — `workflow_execution_steps`, REST/UI timeline, tool contracts, `invoke_workflow_tool` |
 | **2** | Landed — `LLM_COMPLETE` / `INVOKE_AGENT`, analytics analysis functions + AI summarize path |
-| **3** | **Partial** — webhook (`POST /api/v1/webhooks/workflows/{slug}` + `WorkflowWebhookIndex`), cron poller (`cronExpression=every:1m`), failure → `workflow_dead_letters` + `errorWorkflowPath`; DLQ list/resolve REST (`GET …/by-path/dead-letters`, `POST …/dead-letters/{id}/resolve`). Async retry scheduler still deferred (no sync retries). |
+| **3** | **Landed** — webhook (`POST /api/v1/webhooks/workflows/{slug}` + `WorkflowWebhookIndex`), cron poller (`cronExpression=every:1m`), async retry schedule (`workflow_retry_schedule` + `WorkflowRetryScheduler`, driven by `retryMaxAttempts` / `retryBackoffSeconds`), then DLQ (`workflow_dead_letters`) + `errorWorkflowPath` after exhaustion; DLQ list/resolve REST. |
 | **4–5** | Not started |
 
 ## Context

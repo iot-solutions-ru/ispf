@@ -189,6 +189,11 @@ ispf:
   tenant:
     isolation-mode: ${ISPF_TENANT_ISOLATION_MODE:logical}
     schema-prefix: ${ISPF_TENANT_SCHEMA_PREFIX:tenant_}
+    oidc-tenant-claim: ${ISPF_TENANT_OIDC_CLAIM:tenant_id}
+  audit:
+    siem-webhook-url: ${ISPF_AUDIT_SIEM_WEBHOOK_URL:}
+    siem-timeout-seconds: ${ISPF_AUDIT_SIEM_TIMEOUT_SECONDS:5}
+    siem-async: ${ISPF_AUDIT_SIEM_ASYNC:true}
   alarm-shelf:
     approval-required: ${ISPF_ALARM_SHELF_APPROVAL_REQUIRED:false}
   websocket:

@@ -44,15 +44,15 @@ curl -s -X POST "$BASE/api/v1/webhooks/workflows/lab-alarm-hook" \
 | `retryMaxAttempts` | `2` |
 | `retryBackoffSeconds` | `30` |
 
-При FAILED — journal failed instance; записи DLQ в `workflow_dead_letters`.
-Список: `GET /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true`.
-Resolve: `POST /api/v1/workflows/dead-letters/{id}/resolve`. Async retry scheduler ещё не подключён.
+При FAILED: если `retryMaxAttempts` &gt; 1 — durable строка в `workflow_retry_schedule` (backoff = `retryBackoffSeconds`), `WorkflowRetryScheduler` перезапускает с `_retryAttempt`; после исчерпания — DLQ `workflow_dead_letters` и опционально `errorWorkflowPath`.
+Список DLQ: `GET /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true`.
+Resolve: `POST /api/v1/workflows/dead-letters/{id}/resolve`.
 
 ## Проверка
 
 - [ ] Webhook создаёт run с полями payload
 - [ ] Cron даёт периодические runs при ACTIVE
-- [ ] Ошибка видна в journal; error path / DLQ по конфигу
+- [ ] Ошибка видна в journal; при `retryMaxAttempts=2` сначала retry, затем DLQ / error path
 
 ## Дальше
 

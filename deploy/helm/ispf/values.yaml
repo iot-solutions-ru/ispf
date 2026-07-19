@@ -47,6 +47,11 @@ ispf:
     enabled: false
   historian:
     store: postgres
+    # BL-159 turnkey tiers — see examples/historian-tiers/
+    deployProfile: hot-only
+    warmEnabled: false
+    hotRetentionDays: 7
+    warmRetentionDays: 90
 
 postgresql:
   enabled: true

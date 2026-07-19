@@ -139,26 +139,33 @@ Web Console: **Access** tab in object inspector (admin).
 | `ispf.security.local-default-role` | Default role without token (local, dev only) |
 | `ispf.security.mfa.enabled` | Enable TOTP enrollment API (`/api/v1/security/mfa/**`) |
 
-## MFA (TOTP foundation)
+## MFA (TOTP)
 
-Configuration: `ispf.security.mfa.enabled` (default `false`, env `ISPF_MFA_ENABLED`).
+| Property | Env | Default |
+|----------|-----|---------|
+| `ispf.security.mfa.enabled` | `ISPF_MFA_ENABLED` | `false` |
+| `ispf.security.mfa.required-for-admin` | `ISPF_MFA_REQUIRED_FOR_ADMIN` | `false` |
+| `ispf.security.mfa.time-window-steps` | — | `1` (±30s drift) |
 
-When MFA is enabled, authenticated users (any role with read API access) can:
+When MFA is enabled, authenticated users can:
 
 | Endpoint | Description |
 |----------|----------|
-| `GET /api/v1/security/mfa/status` | MFA status and pending enrollment |
+| `GET /api/v1/security/mfa/status` | Status; pending enrollments also return `pendingSecret` / `pendingOtpauthUri` for console resume |
 | `POST /api/v1/security/mfa/enroll` | Start TOTP enrollment (secret + `otpauth://` URI) |
-| `POST /api/v1/security/mfa/verify` | Confirm 6-digit code (stub — full TOTP verification in next sprint) |
+| `POST /api/v1/security/mfa/verify` | Confirm 6-digit TOTP code (`TotpUtil`) |
 | `DELETE /api/v1/security/mfa/enroll` | Cancel pending enrollment |
 
-Implementation — `MfaService` skeleton (in-memory pending state). Production: Keycloak OTP/WebAuthn (BL-153) or persistent storage in ISPF.
+Local login accepts optional `totpCode` on `POST /api/v1/auth/login`. When `required-for-admin=true`, admin-role logins require an enrolled secret and a valid code.
+
+**REAL today (BL-153 Done — TOTP GA):** persisted enrollments (`mfa_enrollments`), TOTP verify, admin enforcement, Security console enrollment UI + login TOTP field.  
+**Follow-up (BL-194 Planned):** WebAuthn / passkeys; Keycloak OTP as the primary IdP MFA path.
 
 ## Per-variable ACL
 
 Variables can define `readRoles` / `writeRoles` (JSON array of role names). Empty list = inherit object ACL.
 
-Checked in `ObjectAccessService.requireVariableRead/Write` on read/write/history. Web Console: badges and ACL editor in variable dialog.
+Checked in `ObjectAccessService.requireVariableRead/Write` on read/write/**history**/export. Events and functions may set optional `invokeRoles` (empty = object INVOKE only). Web Console: variable ACL editor + event/function `invokeRoles` in the descriptor dialog (**BL-154 Done**). Analytics/federation alternate paths may still bypass member ACL (trusted-channel follow-up).
 
 ## Production recommendations
 

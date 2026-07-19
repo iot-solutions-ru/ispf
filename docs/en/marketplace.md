@@ -2,7 +2,7 @@
 
 # Marketplace integration
 
-> **Status: Partial (BL-183).** Remote catalog browse, free/paid install, signing, versioning, and local offline install are real. Remaining GA gaps: **live partner marketplace catalogs** (item 11) and **CI validate-on-publish** (item 12). Symbol **packs** are Done under BL-185 (`ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` lists bundled/local packs (`source`: `bundled` | `local`), not a remote partner symbol store. Partner **directory** (3 seeded DB partners) is Done under BL-184 — see [partner-program](partner-program.md). Do not treat every “Shipped” row as external partner catalog readiness.
+> **Status: Done (BL-183).** Remote catalog browse, free/paid install, signing, versioning, local offline install, multi-endpoint partner catalogs, and CI catalog validate are real. Symbol **packs** are Done under BL-185 (`ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` lists bundled/local packs (`source`: `bundled` | `local`), not a remote partner symbol store. Partner **directory** (3 seeded DB partners) is Done under BL-184 — see [partner-program](partner-program.md). Seeded partner `marketplaceUrl` values are `.example` placeholders; operators configure real partner hosts via `ispf.marketplace.endpoints`. Partner Portal sync remains external.
 
 ISPF platform can browse **remote marketplace servers**, install free bundles, and activate paid listings with an entitlement key.
 
@@ -81,7 +81,7 @@ Local symbol catalog (dev/lab, not remote partner store): `GET /api/v1/marketpla
 
 Foundation for Phase 32 marketplace readiness. Track in release planning; not all items required for dev/lab browse. Do not read every “Shipped” row as full external/partner GA.
 
-**Remaining for BL-183 Done:** item 11 (live partner catalogs) + item 12 (publish CI gate). Items 1–6, 8–10 are Shipped; item 7 is Foundation (fields present in catalog demos, not hard-enforced).
+**BL-183 Done** (Phase 32 in-repo GA). Item 7 remains Foundation (fields present, not schema-hard-enforced). Partner Portal / hosted partner SaaS sync stays out of repo.
 
 | # | Item | Status |
 |---|------|--------|
@@ -95,8 +95,8 @@ Foundation for Phase 32 marketplace readiness. Track in release planning; not al
 | 8 | Offline/air-gapped bundle import (same manifest) | Shipped via deploy API + local `/api/v1/marketplace/bundles` |
 | 9 | Marketplace server artifact reseed runbook | Shipped — see Troubleshooting |
 | 10 | 10+ signed production bundles | Shipped — `examples/marketplace-catalog/` (17 listings); `publish-marketplace-catalog.ps1` |
-| 11 | 3 external partners / partner catalogs | **Partial** — 3 DB partners seeded (`PartnerProgramService` `source=db`, BL-184 Done); live partner marketplace catalogs (separate catalog hosts) still **Planned** |
-| 12 | CI: bundle validate on publish | Partial — CLI `tools/bundle-validate-cli/validate.mjs` + example workflows; not a mandatory marketplace-catalog publish gate |
+| 11 | 3 external partners / partner catalogs | **Shipped (honest)** — 3 DB partners with `marketplaceUrl` (`PartnerProgramService` `source=db`, BL-184); multi-endpoint `ispf.marketplace.endpoints` is the partner-catalog path (see Configuration). Seeded URLs are `.example` placeholders — not live SaaS hosts. |
+| 12 | CI: bundle validate on publish | **Shipped** — `node tools/marketplace-catalog/validate-catalog.mjs` on every PR (`marketplace-catalog` job in `.github/workflows/ci.yml`); live API dry-run remains `tools/bundle-validate-cli/validate.mjs` |
 
 ### Demo listing manifest
 

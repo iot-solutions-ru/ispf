@@ -809,7 +809,7 @@ export const DASHBOARD_FINE_GRID_SCALE = 7;
 export const DASHBOARD_COLUMNS = 12 * DASHBOARD_FINE_GRID_SCALE;
 
 /** Full-screen mosaic layouts for control-room video walls (BL-148). */
-export type DashboardLayoutPreset = "video-wall-2x2" | "video-wall-3x3";
+export type DashboardLayoutPreset = "video-wall-2x2" | "video-wall-3x3" | "video-wall-4x4";
 
 export interface DashboardLayout {
   columns: number;

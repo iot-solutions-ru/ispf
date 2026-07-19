@@ -12,6 +12,9 @@ import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
+import com.ispf.server.eventfilter.EventFilterMatcher;
+import com.ispf.server.eventfilter.EventFilterObjectService;
+import com.ispf.server.eventfilter.EventFilterObjectService.EventFilterDefinition;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,8 @@ public class EventService {
     private final EventJournalProperties eventJournalProperties;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final EventTimestampValidator eventTimestampValidator;
+    private final EventFilterObjectService eventFilterObjectService;
+    private final EventFilterMatcher eventFilterMatcher;
 
     public EventService(
             ObjectManager objectManager,
@@ -49,7 +54,9 @@ public class EventService {
             RecentEventCache recentEventCache,
             EventJournalProperties eventJournalProperties,
             AutomationMetricsRecorder automationMetricsRecorder,
-            EventTimestampValidator eventTimestampValidator
+            EventTimestampValidator eventTimestampValidator,
+            EventFilterObjectService eventFilterObjectService,
+            EventFilterMatcher eventFilterMatcher
     ) {
         this.objectManager = objectManager;
         this.eventJournalStore = eventJournalStore;
@@ -61,6 +68,8 @@ public class EventService {
         this.eventJournalProperties = eventJournalProperties;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.eventTimestampValidator = eventTimestampValidator;
+        this.eventFilterObjectService = eventFilterObjectService;
+        this.eventFilterMatcher = eventFilterMatcher;
     }
 
     /**
@@ -155,43 +164,84 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<ObjectEvent> list(String objectPath, int limit) {
+        return list(objectPath, limit, null);
+    }
+
+    /**
+     * Lists recent events, optionally applying a saved event filter (BL-174).
+     *
+     * @param filterPath path under {@code root.platform.event-filters.*}, or null/blank for unfiltered
+     */
+    @Transactional(readOnly = true)
+    public List<ObjectEvent> list(String objectPath, int limit, String filterPath) {
         int capped = Math.max(1, Math.min(limit, 200));
+        EventFilterDefinition filter = resolveFilter(filterPath);
+        // Over-fetch when filtering so pattern/severity cuts still return a full page.
+        int fetchLimit = filter != null ? Math.min(1000, capped * 10) : capped;
         boolean globalQuery = objectPath == null || objectPath.isBlank();
         List<ObjectEvent> fromCache = recentEventCache.isEnabled()
-                ? recentEventCache.query(objectPath, capped)
+                ? recentEventCache.query(objectPath, fetchLimit)
                 : List.of();
         if (!eventJournalProperties.isEnabled()) {
-            return fromCache;
+            return applyFilter(fromCache, filter, capped);
         }
         if (!globalQuery && !objectManager.isEventJournalEnabled(objectPath.trim())) {
-            return fromCache;
+            return applyFilter(fromCache, filter, capped);
         }
-        if (fromCache.size() >= capped) {
-            return fromCache;
+        if (filter == null && fromCache.size() >= capped) {
+            return fromCache.subList(0, capped);
         }
         boolean skipGlobalStore = globalQuery
                 && eventJournalProperties.isCassandraStore()
                 && !eventJournalProperties.isCassandraGlobalTableEnabled();
         if (skipGlobalStore) {
-            return fromCache;
+            return applyFilter(fromCache, filter, capped);
         }
         Set<String> seen = new HashSet<>();
         for (ObjectEvent event : fromCache) {
             seen.add(event.id());
         }
-        int remaining = capped - fromCache.size();
-        List<EventJournalRecord> records = eventJournalStore.queryRecent(objectPath, remaining);
+        int remaining = Math.max(0, fetchLimit - fromCache.size());
+        List<EventJournalRecord> records = remaining > 0
+                ? eventJournalStore.queryRecent(objectPath, remaining)
+                : List.of();
         List<ObjectEvent> merged = new ArrayList<>(fromCache);
         for (EventJournalRecord record : records) {
             if (seen.add(record.id())) {
                 merged.add(toObjectEvent(record));
-                if (merged.size() >= capped) {
+                if (merged.size() >= fetchLimit) {
                     break;
                 }
             }
         }
         merged.sort((left, right) -> right.timestamp().compareTo(left.timestamp()));
-        return merged;
+        return applyFilter(merged, filter, capped);
+    }
+
+    private EventFilterDefinition resolveFilter(String filterPath) {
+        if (filterPath == null || filterPath.isBlank()) {
+            return null;
+        }
+        return eventFilterObjectService.getByPath(filterPath.trim());
+    }
+
+    private List<ObjectEvent> applyFilter(List<ObjectEvent> events, EventFilterDefinition filter, int limit) {
+        if (events == null || events.isEmpty()) {
+            return List.of();
+        }
+        if (filter == null) {
+            return events.size() <= limit ? events : events.subList(0, limit);
+        }
+        List<ObjectEvent> matched = new ArrayList<>(Math.min(events.size(), limit));
+        for (ObjectEvent event : events) {
+            if (eventFilterMatcher.matches(filter, event)) {
+                matched.add(event);
+                if (matched.size() >= limit) {
+                    break;
+                }
+            }
+        }
+        return matched;
     }
 
     public Map<String, Object> journalStatus(String objectPath) {

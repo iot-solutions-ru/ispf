@@ -377,6 +377,8 @@ Web Console: health column badge on **Federation peers** panel (green/yellow/red
 
 ## Manager-of-managers — federation hub operator shell (BL-188)
 
+> **Status: Done (usable path).** Hub checklist + operator peer picker (`OperatorFederationPeerSelector`) + ARM edge pairing are real. **Not claimed:** load-proven scale to 10+ concurrent peers (no CI soak gate).
+
 **Manager-of-managers (MoM)** is a central **hub** ISPF instance that federates many edge sites so operators need not log into each site separately. Edge nodes run behind NAT; hub runs operator HMI over federated proxy paths.
 
 ### Topology

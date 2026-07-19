@@ -37,6 +37,8 @@
   "login.oidcRedirecting": "正在重定向...",
   "login.oidcSubmit": "使用 Keycloak 登录",
   "login.password": "密码",
+  "login.totp": "验证器代码（如已启用 MFA）",
+  "login.totpHint": "在强制管理员 MFA 时必填（ISPF_MFA_REQUIRED_FOR_ADMIN）。",
   "login.submit": "登录",
   "login.submitting": "正在登录...",
   "login.subtitle": "登录平台",

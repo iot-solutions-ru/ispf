@@ -141,6 +141,8 @@
   "editor.selectionKey": "Auswahlschlüssel (selectionKey)",
   "editor.selectionKeyOnClick": "Auswahl-Schlüssel bei Klick (selectionKey)",
   "editor.spreadsheet.bindingHistoryHint": "Binding-Zellen: historyMinutes (z. B. 15) für letzten Historian-Sample im Fenster; sonst Live-Wert.",
+  "editor.spreadsheet.liveRefresh": "Live-Aktualisierung (WebSocket + Poll)",
+  "editor.spreadsheet.liveRefreshIntervalMs": "Live-Poll-Intervall (ms)",
   "editor.spreadsheet.dataSourceHint": "Bei Tabellen wird die Zellspeicherung über valuesVariable im Abschnitt „Tabelle“ gesetzt — nicht variableName hier.",
   "editor.spreadsheet.gridSize": "Rastergröße (Zeilen × Spalten)",
   "editor.spreadsheet.insertCalculatorTemplate": "Vorlage: Rechner",

@@ -13,12 +13,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.charset.StandardCharsets;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * BL-168 hardening: ISA-88 batch phase runner full cycle (getStatus → runPhase → verify).
+ * BL-168 hardening: ISA-88 batch phase runner + Operator batch dashboard on {@code mes-platform}.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,6 +30,7 @@ class MesBatchPhaseRunnerIntegrationTest {
 
     private static final String HUB = "root.platform.devices.mes-platform-hub";
     private static final String BATCH_PATH = "root.platform.mes.lots.batch-line-a01-001";
+    private static final String BATCH_DASHBOARD = "root.platform.dashboards.mes-platform-batch";
     private static final String BATCH_ID = "BATCH-LINE-A01-001";
     private static final String RECIPE = "recipe-standard-a";
 
@@ -38,6 +40,18 @@ class MesBatchPhaseRunnerIntegrationTest {
     @Test
     void batchPhaseRunnerAdvancesThroughChargeReactDischargeCycle() throws Exception {
         deployBundle();
+
+        mockMvc.perform(get("/api/v1/objects/by-path").param("path", BATCH_PATH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.type").value("LOT"));
+
+        mockMvc.perform(get("/api/v1/dashboards/by-path").param("path", BATCH_DASHBOARD))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("MES Batch (ISA-88)"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='batch-status')].functionName")
+                        .value("mes_batch_getStatus"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='batch-run-react')].functionName")
+                        .value("mes_batch_runPhase"));
 
         mockMvc.perform(post("/api/v1/bff/invoke")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -1,8 +1,8 @@
 # Certification paths (BL-190)
 
-> **Status:** Draft — Training paths / exams. Hub: [doc-status.md](doc-status.md).
+> **Status: Done (curriculum paths).** Solution developer + platform admin tracks, labs, and machine-readable question banks ship in-repo. Hub: [doc-status.md](doc-status.md). Full LMS / proctoring remains Partner Portal (external).
 
-Stub curriculum for ISPF certification. Full exams and proctoring ship with Phase 32 GA; labs below are runnable today on lab/VPS hosts.
+Curriculum and exam stubs for ISPF certification. Labs below are runnable today on lab/VPS hosts.
 
 Aligns with [partner-program](partner-program.md) commercial tiers.
 

@@ -1,6 +1,8 @@
 package com.ispf.server.security.acl;
 
 import com.ispf.server.config.IspfRoles;
+import com.ispf.server.security.RoleScopeAccessService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -14,6 +16,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,9 +29,19 @@ class ObjectAccessServiceVariableAclTest {
     @Mock
     private ObjectAclStore aclStore;
 
+    @Mock
+    private RoleScopeAccessService roleScopeAccessService;
+
+    private ObjectAccessService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new ObjectAccessService(aclStore, roleScopeAccessService);
+        lenient().when(roleScopeAccessService.isPathInRoleScope(eq(PATH), any())).thenReturn(true);
+    }
+
     @Test
     void variableReadAllowedWhenRoleMatches() {
-        ObjectAccessService service = new ObjectAccessService(aclStore);
         when(aclStore.findEffectiveEntries(PATH)).thenReturn(List.of());
 
         var auth = new UsernamePasswordAuthenticationToken(
@@ -40,7 +55,6 @@ class ObjectAccessServiceVariableAclTest {
 
     @Test
     void variableReadDeniedWhenRoleMissing() {
-        ObjectAccessService service = new ObjectAccessService(aclStore);
         when(aclStore.findEffectiveEntries(PATH)).thenReturn(List.of());
 
         var auth = new UsernamePasswordAuthenticationToken(
@@ -54,8 +68,6 @@ class ObjectAccessServiceVariableAclTest {
 
     @Test
     void adminBypassesVariableRoleRestriction() {
-        ObjectAccessService service = new ObjectAccessService(aclStore);
-
         var auth = new UsernamePasswordAuthenticationToken(
                 "admin",
                 "n/a",
@@ -72,7 +84,6 @@ class ObjectAccessServiceVariableAclTest {
 
     @Test
     void requireVariableWriteThrowsWhenDenied() {
-        ObjectAccessService service = new ObjectAccessService(aclStore);
         when(aclStore.findEffectiveEntries(PATH)).thenReturn(List.of());
 
         var auth = new UsernamePasswordAuthenticationToken(
@@ -89,5 +100,20 @@ class ObjectAccessServiceVariableAclTest {
         ))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Write access denied");
+    }
+
+    @Test
+    void memberInvokeDeniedWhenInvokeRolesMissing() {
+        when(aclStore.findEffectiveEntries(PATH)).thenReturn(List.of());
+        var auth = new UsernamePasswordAuthenticationToken(
+                "operator",
+                "n/a",
+                List.of(new SimpleGrantedAuthority("ROLE_operator"))
+        );
+        assertThatThrownBy(() -> service.requireMemberInvoke(
+                PATH, "event", "trip", List.of("developer"), auth
+        ))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Invoke access denied");
     }
 }

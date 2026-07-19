@@ -2,9 +2,11 @@
 
 # Уровни историка (BL-159, BL-202)
 
-> **Статус:** Beta — JDBC, ClickHouse, dual-write. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Done (БЛ-159) — turnkey env-профили + routing. Хаб: [doc-status.md](doc-status.md).
 
-Готовый профиль **hot → warm → cold**. Конфиг: `ispf.historian.tiers` в `application.yml`; маршрутизация уровней при `deploy-profile=three-tier` (BL-202).
+Готовый профиль **hot → warm → cold**. Конфиг: `ispf.historian.tiers` в `application.yml`; маршрутизация при включённом warm (BL-202).
+
+**Профили в git:** [examples/historian-tiers/](../../examples/historian-tiers/) — `three-tier.env` / `hot-only.env`. Helm: `ispf.historian.deployProfile` + `warmEnabled`.
 
 **См. также:** [variable-history](variable-history.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap](analytics-platform-roadmap.md) (charter / roadmap), [analytics-historian-cookbook](analytics-historian-cookbook.md), [deployment](deployment.md).
 

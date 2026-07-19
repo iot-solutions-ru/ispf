@@ -1,8 +1,10 @@
 # Historian tiers (BL-159, BL-202)
 
-> **Status:** Beta — JDBC, ClickHouse, dual-write. Hub: [doc-status.md](doc-status.md).
+> **Status:** Done (BL-159) — turnkey env profiles + routing. Hub: [doc-status.md](doc-status.md).
 
-Turnkey **hot → warm → cold** profile. Config: `ispf.historian.tiers` in `application.yml`; tier routing when `deploy-profile=three-tier` (BL-202).
+Turnkey **hot → warm → cold** profile. Config: `ispf.historian.tiers` in `application.yml`; tier routing when warm is enabled (BL-202).
+
+**One-click profiles (git):** [examples/historian-tiers/](../../examples/historian-tiers/) — `three-tier.env` / `hot-only.env`. Helm: `ispf.historian.deployProfile` + `warmEnabled` in `deploy/helm/ispf/values.yaml`.
 
 **See also:** [variable-history](variable-history.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap](analytics-platform-roadmap.md), [analytics-historian-cookbook](analytics-historian-cookbook.md), [deployment](deployment.md).
 
@@ -72,9 +74,14 @@ Java binding: `HistorianTierProperties` + `HistorianTierProfile` (`com.ispf.serv
 One-click **three-tier** profile for production historian at scale. Apply after ClickHouse is verified (`vps-clickhouse-verify.sh`).
 
 ```bash
+# Prefer the tracked profile (source into systemd/compose env):
+#   source examples/historian-tiers/three-tier.env
+#
 # /opt/ispf/config/runtime-settings.properties (or env on systemd unit)
 ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier
+ISPF_HISTORIAN_TIER_WARM_ENABLED=true
 ISPF_VARIABLE_HISTORY_STORE=jdbc
+ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true
 ISPF_HISTORIAN_TIER_HOT_RETENTION_DAYS=7
 ISPF_HISTORIAN_TIER_WARM_RETENTION_DAYS=90
 ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://127.0.0.1:8123
@@ -86,7 +93,7 @@ ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true
 ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 ```
 
-`three-tier` sets `ispf.historian.tiers.warm.enabled=true` automatically. Override with `ISPF_HISTORIAN_TIER_WARM_ENABLED=false` if needed.
+Set `ISPF_HISTORIAN_TIER_WARM_ENABLED=true` with a reachable ClickHouse URL (included in `three-tier.env`). Without warm enabled, `deploy-profile=three-tier` alone keeps JDBC-only routing (safe default for laptops).
 
 **Lab-only (single tier):** set `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only` — JDBC-only, no warm routing.
 
@@ -108,8 +115,8 @@ ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 
 | BL | Topic |
 |----|-------|
-| BL-159 | Tier config model |
+| BL-159 | **Done** — turnkey profiles + Helm + tier routing |
 | BL-202 | Tier routing enforcement + cold Parquet export (this doc) |
-| BL-161 | Query SLO — [variable-history](variable-history.md) |
+| BL-161 | Query SLO CI — [variable-history](variable-history.md), `tools/historian-scale/` |
 | BL-201 | AF-lite templates — [reference-asset-analytics](reference-asset-analytics.md) |
 | BL-163 | On-demand trend export CSV/Parquet |

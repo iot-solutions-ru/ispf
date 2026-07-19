@@ -174,10 +174,10 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [Marketplace](marketplace.md) | Draft | Partial BL-183 (items 11–12 open); BL-184/185 Done |
+| [Marketplace](marketplace.md) | Stable | BL-183 Done (CI catalog gate + honest partner endpoints) |
 | [Symbol marketplace](symbol-marketplace.md) | Stable | Local install + scada API (BL-185) |
-| [Partner program](partner-program.md) | Draft | Design; in-server API stub |
-| [Certification](certification.md) | Draft | Training paths / exams |
+| [Partner program](partner-program.md) | Draft | In-server directory Done (BL-184); Partner Portal external |
+| [Certification](certification.md) | Stable | BL-190 curriculum paths + question banks |
 | [License](license.md) | Stable | **AGPL v3** + dual-license |
 | [Commercial licensing](commercial-licensing.md) | Stable | Enterprise terms |
 | [License compliance](license-compliance.md) | Stable | Obligations checklist |

@@ -137,8 +137,9 @@ Variables referenced in `ISPREF` / `ISPHIST` / `ISPSUM` are **fetched automatica
 | Channel | Behavior |
 |---------|----------|
 | WebSocket | `VARIABLE_UPDATED` / `EVENT_FIRED` on watched path → refetch bindings → `refreshComputed()` |
-| Polling | Widget `refreshIntervalMs` when WS is unavailable |
+| Polling | Widget `refreshIntervalMs` when WS is unavailable; with **`live: true`** (BL-150) use `liveRefreshIntervalMs` (widget editor toggles) |
 | Binding cells | Update both displayed value and formula cache |
+| Export | Free mode: XLSX / CSV; multi-sheet workbook export preserves cross-sheet formulas |
 
 For `ISPHIST`, historian is queried on the same interval (or on invalidation events).
 

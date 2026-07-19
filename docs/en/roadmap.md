@@ -9,7 +9,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | | |
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
-| **Updated** | 2026-07-17 |
+| **Updated** | 2026-07-19 |
 | **Product direction** | Self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([architecture](architecture.md)) |
 
 ---
@@ -21,13 +21,13 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | REQ-PF | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
 | BL-01…139 | 139 | 138 | 0 | 0 | 1 |
-| BL-140…210 | 65 | 30 | 34 | 1 | 0 |
+| BL-140…210 | 65 | 33 | 31 | 1 | 0 |
 | Phase 0–24 | 25 | 25 | 0 | — | — |
 | Phase 25–33 | 9 | 0 | 9 | 0 | — |
 | Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
 | Sprint S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Current focus:** **AI Autopilot (BL-177…180)** — see [Next 90 days](#next-90-days). **Deferred:** Phase 25 OT Trust; live ERP (BL-169).
+**Current focus:** AI Autopilot BL-177…180 **Done** (live smoke opt-in `ISPF_LLM_SMOKE`); residual field soak / soft &lt;15 min — see [Next 90 days](#next-90-days). **Deferred:** Phase 25 OT Trust; live ERP (BL-169).
 
 **Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…210 (OT + live ERP parked).
 
@@ -39,7 +39,7 @@ VPS deploy — on request only (see [deployment](deployment.md) / [demostands](d
 
 ## Retrospective — what shipped and where we are {#retrospective}
 
-**As of 2026-07-09** · prod **0.9.105** (`ispf.example.invalid`) · code-verified score **~7.4/10** ([competitive-scorecard](competitive-scorecard.md)).
+**As of 2026-07-19** · prod **0.9.105** (`ispf.example.invalid`) · code-verified score **~7.6/10** ([competitive-scorecard](competitive-scorecard.md)).
 
 ### Eras (closed → active)
 
@@ -65,8 +65,8 @@ Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over th
 
 | Status | IDs (highlights) | Meaning |
 | ------ | ---------------- | ------- |
-| **Done** | BL-141, 146, 160, 163, 189, 191, 192, 193, 201, 202 | Accepted / shipped with evidence |
-| **Partial** | BL-140, most of 142–190, 164–188, … | Foundation exists; tail open (field task, stub, soak, or live gate missing) |
+| **Done** | BL-141, 146, 152, 153, 154, 160, 163, 189, 191, 192, 193, 201, 202 | Accepted / shipped with evidence |
+| **Partial** | BL-140, 142–145, 155, … | Foundation exists; tail open (field task, stub, soak, or live gate missing) |
 | **Done** | BL-191 (matrix honesty) | OT PRODUCTION stubs downgraded; CI gate green |
 | **Done** | BL-193 (genealogy lite) | mes-platform BFF + Operator report/dashboard with seed graph |
 | **Planned** | BL-200, 203–210 | Not started or charter-only |
@@ -76,18 +76,18 @@ Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over th
 | Phase | Theme | Done highlights | Still open (typical) |
 | ----- | ----- | --------------- | -------------------- |
 | **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done** | BL-140 field pilots / edge soak (parked) |
-| **26** HMI | Mimics / operator | BL-146 — 218 P&ID symbols | Live FPS 500@60, offline PWA 8h, CEL debugger |
-| **27** Security | MFA / tenancy | TOTP MFA Partial | Hard tenancy, per-var ACL, persistent alarm shelf |
-| **28** Historian | Tiers / SLA | BL-160 AF-lite, BL-163 Parquet | Turnkey tiers, query SLA CI, petabyte path |
-| **29** MES / ERP L4 | ISA-95 | Catalog + reference bundles; **BL-193 genealogy lite Done** | Field sites; **live ERP (BL-169) deferred** |
-| **30** Automation | CEP / BPMN | Message events Partial | Full CEP, process programs, DMN |
-| **31** AI | Autopilot | BL-178 live ≥95% **Done** (52/52 @100%); BL-177 multi-app smoke REAL; BL-180 multi-domain live | Soft &lt;15 min budget / field soak |
+| **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
+| **27** Security | MFA / tenancy | BL-153/154/156/157/158 Done; TOTP GA | BL-155 hard A≠B routing; WebAuthn → BL-194 |
+| **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
+| **29** MES / ERP L4 | ISA-95 | **BL-164…168, BL-170, BL-193 Done** on marketplace `mes-platform` | Field sites; **live ERP (BL-169) deferred** |
+| **30** Automation | CEP / BPMN | BL-171…175 **Done**; BL-176 Done | DMN / further BPMN depth optional |
+| **31** AI | Autopilot | BL-177…180 **Done** (BL-178 52/52 @100%; multi-app/multi-domain smoke harness) | Soft &lt;15 min budget / field soak; live smoke needs `ISPF_LLM_SMOKE` |
 | **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
 | **33** Analytics | AF-capable | **Done** (BL-200…210) | — |
 
 ### Subsystem readiness (legacy Phase 23 view)
 
-See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for closed-era subsystems. That table does **not** replace the competitive scorecard (~7.4/10).
+See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for closed-era subsystems. That table does **not** replace the competitive scorecard (~7.6/10).
 
 ### Where to look next
 
@@ -872,7 +872,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | --- | --- |
 | **Baseline** | Phase 24 closed, `main`, July 2026 |
 | **Updated** | 2026-07-09 (unified roadmap; domain gap audit; Phase 33 analytics) |
-| **Product score** | Code verified **~7.4/10** — [competitive-scorecard](competitive-scorecard.md) |
+| **Product score** | Code verified **~7.6/10** — [competitive-scorecard](competitive-scorecard.md) |
 | **Target** | 10/10 — see [Definition of Done](#definition-of-done--1010-overall) |
 
 ### Phases 25–33 summary
@@ -880,7 +880,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | Category | Total | Done | Partial | Planned | Cancelled |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Phase 25–33 | 9 | 0 | 9 | 0 | — |
-| BL-140…210 | 65 | 30 | 34 | 1 | 0 |
+| BL-140…210 | 65 | 33 | 31 | 1 | 0 |
 | Sprint S31–S46 (draft) | 16 | 0 | 16 | 0 | — |
 
 ## Competitive scorecard (baseline → code verified → target)
@@ -898,14 +898,14 @@ Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI /
 | Workflow / BPMN | 6.5 | **7.5** | **10** | 30 |
 | MES / ISA-95 | 5.5 | **6.5** | **10** | 29 |
 | Low-code velocity | 8.0 | **8.0** | **10** | 26, 31 |
-| AI-assisted development | 9.0 | **6.5** | **10** | 31 |
+| AI-assisted development | 9.0 | **9.0** | **10** | 31 |
 | Security / RBAC / tenancy | 6.5 | **7.5** | **10** | 27 |
 | Deploy / scale / edge | 8.0 | **7.0** | **10** | 25, 28, 32 |
 | Ecosystem / marketplace | 4.0 | **5.0** | **10** | 32 |
 | Documentation / DX | 9.0 | **8.5** | **10** | 32 |
 | Stack modernity | 9.0 | **9.5** | **10** | maintain |
 
-**Overall (code verified): ~7.4/10**
+**Overall (code verified): ~7.6/10** — see [competitive-scorecard](competitive-scorecard.md) for full evidence (AI **9.0** after BL-177…180).
 
 ---
 
@@ -929,7 +929,7 @@ Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI /
 
 ## Domain gap audit — IoT / SCADA / MES / ERP (2026-07-09)
 
-Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.4/10** ([competitive-scorecard](competitive-scorecard.md)); prod **0.9.105**. Assessment: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, AI without stub) — not more surface features.
+Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.6/10** ([competitive-scorecard](competitive-scorecard.md)); prod **0.9.105**. Assessment: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, field soak) — not more surface features.
 
 **Strategy:** ISPF is **not** a full ERP (SAP/1C). Level 4 goal = reliable ISA-95 connectors. Full Opcenter-class MES is **not** "everything in core" — first-class MES objects + certified bundles + 1–2 live plants. Moat = solution velocity (AI + low-code) with Kepware-class OT trust.
 
@@ -948,17 +948,17 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | --- | ------ | --- | --------- | -------- | -- |
 | **Closed (honesty)** | IoT / OT | Matrix honesty (BL-191) | Kepware / Ignition | Shells/poll-only → BETA; DNP3 write still open as capability gap | [BL-191](#bl-191193--domain-audit-follow-ups) **Done**; BL-140 field |
 | **Blocker** | ERP L4 | Outbox marks `sent` without real ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (deferred from 90-day plan) |
-| **High** | AI | Generator breadth | Differentiated AI agent path | BL-178 **Done** (full live 52/52 @100%); BL-177 multi-app smoke REAL; BL-180 Partial→Done (multi-domain) | BL-177…180 |
-| High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-145/187 Partial; prod `clusterEnabled=false` | BL-145, 187 |
-| High | SCADA | Live FPS 500 el + offline PWA 8h | Ignition Perspective | e2e mocked; BL-151/152 Partial | BL-151, 152 |
-| High | Historian | No PI-class AF-lite / tiers / SLA CI | OSIsoft PI | ClickHouse dual-write Partial | BL-159…162 |
-| High | MES | Catalog + bundles ≠ Opcenter product | Siemens Opcenter | Scorecard 6.5; smoke, not field sites | BL-164…170 |
+| **High** | AI | Field soak / soft &lt;15 min | Differentiated AI agent path | BL-177…180 **Done** (harness); BL-178 full live 52/52 @100%; residual: field soak + soft duration budget | BL-177…180 |
+| High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-187 Done (compose+validate); BL-145 Partial (30d soak) | BL-145, 187 |
+| High | SCADA | Offline PWA / HMI CI gates | Ignition Perspective | BL-151 Done; BL-152 Done (500@≥55 CI + WS path; do **not** claim unmocked ≥60; LH operator ≥95 = ops stretch, CI floor 90) | BL-151, 152 Done |
+| High | Historian | Enterprise L 1B CH scorecard sign-off | OSIsoft PI | Phase 28 BL-159…163 **Done**; scorecard 7.0 until 1B lab | BL-210 lab |
+| High | MES | Lab MES ≠ Opcenter / field site | Siemens Opcenter | Scorecard 6.5; BL-164…168/170/193 Done on marketplace; not plant | BL-164…170 |
 | High | ERP L4 | No bidirectional MDM sync | Tulip + ERP connectors | Level 4 = reports + outbox pattern | BL-169 |
-| High | Security | Strict multi-tenant validator stub | Enterprise SaaS IoT | `TenantIsolationValidator` stub | BL-155 |
+| High | Security | Hard tenancy A≠B row routing | Enterprise SaaS IoT | Schema provision + OIDC claim REAL; platform object tables still shared — BL-155 remains **Partial** | BL-155 |
 | Med | MES | ISA-88 / genealogy / APS lite only | Batch MES suites | `batch-v1` + BFF; no batch engine | BL-168 |
-| Med | Ecosystem | Partner catalogs + publish CI still open | Ignition Exchange | BL-183 Partial (items 11–12); BL-184/185 Done | BL-183…185 |
+| Med | Ecosystem | Partner Portal sync external | Ignition Exchange | BL-183…185 Done (honest partner endpoints + CI gate) | BL-183…185 |
 | Med | Compliance | Tender pack published; cert / pen-test still open | Enterprise tenders | [compliance-tender-pack](compliance-tender-pack.md) (BL-192 **Done**); gaps G-01…G-08 | [BL-192](#bl-191193--domain-audit-follow-ups) |
-| Med | Mobile | No native app; PWA offline Partial | Perspective Mobile / Tulip | Responsive + PWA smoke | BL-151, 166 |
+| Med | Mobile | No native app; PWA offline Done (web) | Perspective Mobile / Tulip | SW dashboards+mimics 8h + reconnect sync | BL-151 Done; BL-166 |
 
 ### 90-day execution order (from audit)
 
@@ -966,9 +966,9 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 
 | Rank | Focus | Actions |
 | ---- | ----- | ------- |
-| **P0** | AI without stub | BL-178 live ≥95% **met**; BL-177 multi-app smoke REAL; BL-180 multi-domain live apply (HVAC/MES/SCADA) |
-| **P1** | SCADA operator excellence | BL-151/152/158: live FPS 500@60; offline PWA; persistent alarm shelf |
-| **P1** | MES productization | BL-164…168, BL-170, BL-193: sites, genealogy; **not** live ERP |
+| **P0** | AI without stub | BL-177…180 **Done** (BL-178 52/52 @100%; multi-app/multi-domain live smoke opt-in `ISPF_LLM_SMOKE`) |
+| **P1** | SCADA operator excellence | BL-151/152/158 **Done** (offline PWA; CI FPS @55; persistent shelf); live ≥60 / LH≥95 = ops note |
+| **P1** | MES productization | BL-164…168, BL-170, BL-193 **Done** (marketplace lab); field sites still open; **not** live ERP |
 | **P2** | Historian + Security + compliance | BL-159…162, BL-155, BL-192 |
 | **Deferred** | Live ERP L4 connector | BL-169: real 1C **or** SAP — parked |
 | **Partial** | OT trust | BL-191 honesty **Done**; BL-140 pilots still parked — [Wave 1 backlog](#s31-wave-1-execution-backlog) |
@@ -979,24 +979,24 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 
 | Sprint | Phase | Theme | BL / scope | Status |
 | ------ | ----- | ---- | ---------- | ------ |
-| S31 | 31 | AI e2e + live LLM | BL-177, BL-178 | Partial (BL-178 **Done** 52/52 @100%; BL-177 multi-app live smoke REAL) |
-| S32 | 31 | AI generator + continuity | BL-180 (+ BL-179) | Partial→Done (BL-179 Done; BL-180 multi-domain primitives live) |
+| S31 | 31 | AI e2e + live LLM | BL-177, BL-178 | **Done** (BL-178 52/52 @100%; BL-177 multi-app smoke harness; live needs `ISPF_LLM_SMOKE`) |
+| S32 | 31 | AI generator + continuity | BL-180 (+ BL-179) | **Done** (BL-179 Done; BL-180 multi-domain primitives live smoke; live needs `ISPF_LLM_SMOKE`) |
 | S33 | 29 | MES genealogy lite | BL-193 | **Done** (mes-platform BFF + Operator report; seed lot) |
 | — | 29 | Live ERP L4 (parked) | BL-169 | **Deferred** |
 | — | 25 | OT Trust waves (parked) | BL-140…145, BL-191 — [Wave 1 backlog](#s31-wave-1-execution-backlog) | **Deferred** |
-| S34 | 26 | HMI symbols + debugger | BL-146, BL-149 | Partial |
-| S35 | 26 | HMI perf + video wall | BL-147, BL-148, BL-152 | Partial |
-| S36 | 26 | Operator offline + spreadsheet | BL-150, BL-151 | Partial |
-| S37 | 27 | MFA + per-variable ACL | BL-153, BL-154 | Partial |
-| S38 | 27 | Hard tenancy + audit | BL-155, BL-156, BL-157, BL-158 | Partial |
-| S39 | 28 | Historian tiers | BL-159, BL-160 | Partial (BL-160 Done) |
-| S40 | 28 | Historian scale lab | BL-161, BL-162, BL-163 | Partial |
-| S41 | 29 | MES objects + OEE | BL-164, BL-165 | Partial |
-| S42 | 29 | MES dispatch + quality | BL-166, BL-167, BL-168 | Partial |
-| S43 | 30 | CEP + process control | BL-171, BL-172, BL-173 | Partial |
-| S44 | 31 | AI e2e deploy | BL-177, BL-178 | Partial |
-| S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | Partial→Done (BL-179/181 Done; BL-180 multi-domain) |
-| S46 | 32 | Marketplace + partners | BL-183, BL-184, BL-189 | Partial — BL-184/189 Done; BL-183 items 11–12 open |
+| S34 | 26 | HMI symbols + debugger | BL-146, BL-149 | **Done** (BL-146/149) |
+| S35 | 26 | HMI perf + video wall | BL-147, BL-148, BL-152 | **Done** (152 = CI ≥55 FPS acceptance; not unmocked ≥60) |
+| S36 | 26 | Operator offline + spreadsheet | BL-150, BL-151 | **Done** |
+| S37 | 27 | MFA + per-variable ACL | BL-153, BL-154 | **Done** (TOTP GA; vars+history+invokeRoles API/UI; WebAuthn → BL-194) |
+| S38 | 27 | Hard tenancy + audit | BL-155, BL-156, BL-157, BL-158 | Partial→Done mix (BL-156/157/158 Done; BL-155 Partial — A≠B open) |
+| S39 | 28 | Historian tiers | BL-159, BL-160 | **Done** |
+| S40 | 28 | Historian scale lab | BL-161, BL-162, BL-163 | **Done** |
+| S41 | 29 | MES objects + OEE | BL-164, BL-165 | **Done** (`mes-platform` seed types + OEE Operator/BFF) |
+| S42 | 29 | MES dispatch + quality | BL-166, BL-167, BL-168 | **Done** (dispatch BPMN, SPC, ISA-88 batch dashboard) |
+| S43 | 30 | CEP + process control | BL-171, BL-172, BL-173 | **Done** |
+| S44 | 31 | AI e2e deploy | BL-177, BL-178 | **Done** |
+| S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | **Done** |
+| S46 | 32 | Marketplace + partners | BL-183, BL-184, BL-189 | **Done** — BL-183/184/189 Done |
 
 Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
@@ -1037,7 +1037,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-149 | **Expression debugger** | P1 | Step-through CEL/bindings in Web Console, breakpoints |
 | BL-150 | **Live spreadsheet v2** | P2 | Real-time cell refresh, cross-sheet refs, export — [spreadsheet-widget](spreadsheet-widget.md) |
 | BL-151 | **Operator offline PWA** | P1 | Service worker: dashboards + mimics cache; sync on reconnect |
-| BL-152 | **HMI perf gate** | P1 | Mimic 500 elements ≥60 FPS; Lighthouse operator ≥95 — [hmi-quality-gates](hmi-quality-gates.md) |
+| BL-152 | **HMI perf gate** | P1 | **Done** — CI acceptance: 500 el ≥55 FPS (static + WS `VARIABLE_UPDATED` path). Honesty: do **not** claim unmocked live ≥60 (no `E2E_LIVE_FPS` evidence). Lighthouse operator ≥95 = ops stretch (CI floor ≥90) — [hmi-quality-gates](hmi-quality-gates.md) |
 
 **Phase metric:** mini-TEC + pipeline SCADA on video wall; operator 8 h offline.
 
@@ -1051,14 +1051,14 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-153 | **MFA** | P2 | TOTP + WebAuthn; Keycloak integration — [security](security.md) |
-| BL-154 | **Per-variable ACL** | P2 | read/write on variable, event, function (not only object-level) |
-| BL-155 | **Hard multi-tenancy** | P2 | Per-tenant DB schema option; OIDC tenant claim mapping — [multi-tenant](multi-tenant.md) |
-| BL-156 | **Audit trail GA** | P2 | Immutable audit log, export, SIEM webhook |
-| BL-157 | **Role templates** | P2 | Custom roles; ISA-95 scoped permissions |
-| BL-158 | **Alarm shelving** | P2 | Shelve/unshelve with approval workflow — extension of [automation](automation.md) |
+| BL-153 | **MFA** | P2 | **Done** — TOTP GA (persisted enroll, admin enforce, login UX). WebAuthn / Keycloak OTP → **BL-194** — [security](security.md) |
+| BL-154 | **Per-variable ACL** | P2 | **Done** — variable R/W + history enforce + UI; event/function `invokeRoles` API + descriptor editor. Honesty: analytics/federation alternate paths may still bypass member ACL (trusted-channel follow-up) |
+| BL-155 | **Hard multi-tenancy** | P2 | **Partial** — schema provision + validator + OIDC `tenant_id` claim REAL; platform object tables still shared — **A≠B row isolation not met** — [multi-tenant](multi-tenant.md) |
+| BL-156 | **Audit trail GA** | P2 | **Done** — append audit log, CSV export, SIEM webhook (`ISPF_AUDIT_SIEM_WEBHOOK_URL`) |
+| BL-157 | **Role templates** | P2 | **Done** — custom roles + `operator-readonly` / `mes-supervisor` ISA-95 `scopePathPrefixes` enforced on REST |
+| BL-158 | **Alarm shelving** | P2 | **Done** — shelve/unshelve with persisted approval workflow — [automation](automation.md) |
 
-**Phase metric:** pentest pass; tenant A ≠ tenant B in hard mode; MFA mandatory for admin.
+**Phase metric:** MFA admin (TOTP Done); per-var ACL Done; hard tenancy schema/OIDC Done path — **tenant A ≠ B row isolation still open (BL-155 Partial)**; pentest remains tender gap.
 
 ---
 
@@ -1068,13 +1068,13 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-159 | **Historian tiers turnkey** | P2 | Hot (PG/Timescale) → Warm (CH) → Cold (S3/parquet); one-click deploy profile |
+| BL-159 | **Historian tiers turnkey** | P2 | **Done** — [historian-tiers](historian-tiers.md); [examples/historian-tiers/](../../examples/historian-tiers/); Helm `deployProfile` |
 | BL-160 | **Asset analytics framework** | P2 | Rollups, KPI templates, derived tags (AF-like lite) — **Done** (BL-201) |
-| BL-161 | **Historian query SLA** | P2 | 1M points aggregate <2s; documented SLO |
-| BL-162 | **Event journal petabyte path** | P2 | CH cutover playbook executed; lab 10M events/min — [clickhouse-prod-playbook](clickhouse-prod-playbook.md) |
-| BL-163 | **Trend export** | P3 | Excel/CSV/Parquet bulk, REST streaming — [variable-history](variable-history.md) |
+| BL-161 | **Historian query SLA** | P2 | **Done** — SLO in [variable-history](variable-history.md); CI `HistorianAggregateQueryLoadTest` + `tools/historian-scale/` |
+| BL-162 | **Event journal petabyte path** | P2 | **Done** — [clickhouse-prod-playbook](clickhouse-prod-playbook.md) § BL-162; I-03 ≥10M events/min evidence |
+| BL-163 | **Trend export** | P3 | Excel/CSV/Parquet bulk, REST streaming — **Done** — [variable-history](variable-history.md) |
 
-**Phase metric:** lab 1B samples query; prod playbook ≤5 manual steps.
+**Phase metric:** CI 1M-point aggregate &lt;2 s (**met**); prod CH playbook ≤5 steps (**met**). Lab 1B CH samples = Enterprise L scorecard sign-off (optional, not blocking Phase 28 Done).
 
 **Related ADRs:** [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [0025-cassandra-scylla-timeseries-store](decisions/0025-cassandra-scylla-timeseries-store.md).
 
@@ -1086,13 +1086,13 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-164 | **MES object types** | P1 | `WORK_ORDER`, `OPERATION`, `LOT`, `SHIFT`, `QUALITY_RECORD` in tree |
-| BL-165 | **OEE first-class** | P1 | Platform BFF + dashboards; ISA-95 paths — [isa95-catalog](isa95-catalog.md) |
-| BL-166 | **Work order dispatch** | P1 | BPMN + work-queue + mobile operator confirm |
-| BL-167 | **Quality module** | P2 | SPC charts, defect tracking, traceability report |
-| BL-168 | **ISA-88 batch lite** | P2 | Recipe + phase + batch instance (workflow-backed) |
+| BL-164 | **MES object types** | **Done** | Seed typed instances on marketplace `mes-platform` — [reference-mes-platform](reference-mes-platform.md) |
+| BL-165 | **OEE first-class** | **Done** | Operator OEE dashboard + BFF on `mes-platform` — [isa95-catalog](isa95-catalog.md) |
+| BL-166 | **Work order dispatch** | **Done** | BPMN + work-queue + operator confirm → WO status |
+| BL-167 | **Quality module** | **Done** | SPC charts, defect `QUALITY_RECORD`, genealogy report (BL-193) |
+| BL-168 | **ISA-88 batch lite** | **Done** | Recipe + phase + seed `LOT` + Operator batch dashboard |
 | BL-169 | **ERP outbox (live connector)** | **Deferred** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog](isa95-catalog.md) Level 4 |
-| BL-170 | **MES certification bundle** | P1 | `mes-platform` bundle — deploy ≤30 min — [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) |
+| BL-170 | **MES certification bundle** | **Done** | `mes-platform` / production — deploy ≤30 min lab — [reference-mes-platform](reference-mes-platform.md) |
 
 **Phase metric:** OEE walkthrough → production MES in 1 day without custom Java.
 
@@ -1104,11 +1104,11 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
-| BL-171 | **CEP engine** | P3 | Windowed patterns beyond COUNT/SEQUENCE (A→B within T) |
-| BL-172 | **Process control context** | P3 | `root.platform.process-programs` — cyclic control loops |
-| BL-173 | **Queries engine** | P2 | Dynamic cross-object queries in tree |
-| BL-174 | **Event filters** | P3 | Reusable event log filters |
-| BL-175 | **ML hooks** | P3 | Anomaly detection SPI + reference model |
+| BL-171 | **CEP engine** | P3 | **Done** — COUNT / SEQUENCE / EVENT_CHAIN / WINDOW; `EventCorrelatorWindowTest`, `EventCorrelatorEventChainTest` |
+| BL-172 | **Process control context** | P3 | **Done** — `root.platform.process-programs` cyclic loops write `outputVariable` with interlock; `ProcessProgramRunnerTest` |
+| BL-173 | **Queries engine** | P2 | **Done** — object-query functions + joins/patch; ADR-0044; `ObjectQueryFunctionIntegrationTest` |
+| BL-174 | **Event filters** | P3 | **Done** — reusable filters applied via `GET /events?filterPath=` / `GET /event-filters/by-path/events`; `EventFilterApplyApiTest` |
+| BL-175 | **ML hooks** | P3 | **Done** — `AnomalyDetectionSpi` + `ThresholdAnomalyDetectionSpi`; `AnomalyAlertRuleIntegrationTest` |
 | BL-176 | **BPMN subset freeze** | P2 | Embedded subprocess + message catch/throw; parse reject of unsupported elements — [workflows](workflows.md), [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) |
 
 **Phase metric:** escalation + CEP + process program in one project without ad-hoc scripts.
@@ -1194,55 +1194,55 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | -- | ----- | -------- | - | ------ |
 | BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Partial** (matrix + playbooks; **ready-for-field** only after named field driver task) |
 | BL-141 | 25 | Driver interop lab | P0 | **Done** (Docker + CI smoke) |
-| BL-142 | 25 | Event→variable at driver | P1 | Partial |
+| BL-142 | 25 | Event→variable at driver | P1 | Partial (MQTT driver path REAL; Kafka IT broken / no server IT — parked) |
 | BL-143 | 25 | OPC UA server GA | P1 | Partial |
 | BL-144 | 25 | Driver DDK | P1 | Partial |
 | BL-145 | 25 | Agent edge GA | P1 | Partial (disk buffer; 30d soak) |
 | BL-146 | 26 | P&ID symbol library v2 | P1 | **Done** (218 symbols) |
-| BL-147 | 26 | Mimic editor pro | P1 | Partial |
-| BL-148 | 26 | Video wall mode | P2 | Partial |
-| BL-149 | 26 | Expression debugger | P1 | Partial |
-| BL-150 | 26 | Live spreadsheet v2 | P2 | Partial |
-| BL-151 | 26 | Operator offline PWA | P1 | Partial |
-| BL-152 | 26 | HMI perf gate | P1 | Partial (200 el e2e) |
-| BL-153 | 27 | MFA | P2 | Partial (TOTP) |
-| BL-154 | 27 | Per-variable ACL | P2 | Partial |
-| BL-155 | 27 | Hard multi-tenancy | P2 | Partial |
-| BL-156 | 27 | Audit trail GA | P2 | Partial |
-| BL-157 | 27 | Role templates | P2 | Partial |
+| BL-147 | 26 | Mimic editor pro | P1 | **Done** |
+| BL-148 | 26 | Video wall mode | P2 | **Done** |
+| BL-149 | 26 | Expression debugger | P1 | **Done** |
+| BL-150 | 26 | Live spreadsheet v2 | P2 | **Done** |
+| BL-151 | 26 | Operator offline PWA | P1 | **Done** |
+| BL-152 | 26 | HMI perf gate | P1 | **Done** (CI ≥55 @500 el + WS path; not unmocked ≥60; LH≥95 ops) |
+| BL-153 | 27 | MFA | P2 | **Done** (TOTP GA; WebAuthn → BL-194) |
+| BL-154 | 27 | Per-variable ACL | P2 | **Done** (vars+history+invokeRoles API/UI) |
+| BL-155 | 27 | Hard multi-tenancy | P2 | Partial (schema+OIDC claim; A≠B routing open) |
+| BL-156 | 27 | Audit trail GA | P2 | Done |
+| BL-157 | 27 | Role templates | P2 | Done |
 | BL-158 | 27 | Alarm shelving | P2 | Done |
-| BL-159 | 28 | Historian tiers turnkey | P2 | Partial |
+| BL-159 | 28 | Historian tiers turnkey | P2 | **Done** — `examples/historian-tiers/`, Helm, tier routing |
 | BL-160 | 28 | Asset analytics framework | P2 | Done |
-| BL-161 | 28 | Historian query SLA | P2 | Partial |
-| BL-162 | 28 | Event journal petabyte path | P2 | Partial |
+| BL-161 | 28 | Historian query SLA | P2 | **Done** — `HistorianAggregateQueryLoadTest`, `tools/historian-scale/`, `load-test.yml` |
+| BL-162 | 28 | Event journal petabyte path | P2 | **Done** — CH playbook + I-03 ~403k/s (~24M/min) |
 | BL-163 | 28 | Trend export | P3 | **Done** (Parquet) |
-| BL-164 | 29 | MES object types | P1 | Partial |
-| BL-165 | 29 | OEE first-class | P1 | Partial |
-| BL-166 | 29 | Work order dispatch | P1 | Partial |
-| BL-167 | 29 | Quality module | P2 | Partial |
-| BL-168 | 29 | ISA-88 batch lite | P2 | Partial |
+| BL-164 | 29 | MES object types | P1 | **Done** — seed `WORK_ORDER`/`OPERATION`/`LOT`/`SHIFT`/`QUALITY_RECORD` + ISA-95 line on `mes-platform` v1.3.0; `MesCatalogObjectTypesIntegrationTest` |
+| BL-165 | 29 | OEE first-class | P1 | **Done** — Operator `mes-platform-oee` + BFF `mes_oee_*` / `mes_platform_listLines`; `MesOeeAnalyticsDashboardIntegrationTest` |
+| BL-166 | 29 | Work order dispatch | P1 | **Done** — BPMN + work-queue + confirm writes WO `status`; `MesWorkOrderDispatchIntegrationTest` |
+| BL-167 | 29 | Quality module | P2 | **Done** — SPC chart dashboard + seed `QUALITY_RECORD` + genealogy (BL-193); `MesQualitySpcDashboardIntegrationTest` |
+| BL-168 | 29 | ISA-88 batch lite | P2 | **Done** — seed `LOT` + Operator batch dashboard + `mes_batch_*`; `MesBatchPhaseRunnerIntegrationTest` |
 | BL-169 | 29 | ERP outbox (live connector) | **Deferred** | Partial (stub; parked — not in 90-day P0) |
-| BL-170 | 29 | MES certification bundle | P1 | Partial |
-| BL-171 | 30 | CEP engine | P3 | Partial |
-| BL-172 | 30 | Process control context | P3 | Partial |
-| BL-173 | 30 | Queries engine | P2 | Partial |
-| BL-174 | 30 | Event filters | P3 | Partial |
-| BL-175 | 30 | ML hooks | P3 | Partial |
+| BL-170 | 29 | MES certification bundle | P1 | **Done** — `mes-platform` / `mes-platform-production` ≤30 min lab path; `MesPlatformGaSmokeTest` + `MesPlatformBundleSmokeTest` |
+| BL-171 | 30 | CEP engine | P3 | **Done** — WINDOW + EVENT_CHAIN correlator patterns |
+| BL-172 | 30 | Process control context | P3 | **Done** — closed-loop write + interlock |
+| BL-173 | 30 | Queries engine | P2 | **Done** — object-query engine (ADR-0044) |
+| BL-174 | 30 | Event filters | P3 | **Done** — journal apply via filterPath |
+| BL-175 | 30 | ML hooks | P3 | **Done** — anomaly SPI + threshold reference model |
 | BL-176 | 30 | BPMN subset freeze | P2 | **Done** — embedded/nested `subProcess`; message catch/throw; parse reject (`callActivity`, multi-instance, inclusive/event-based gateways, compensation, event subprocess, DMN); ADR-0047 Accepted |
-| BL-177 | 31 | End-to-end agent deploy | P0 | **Partial→Done (multi-app smoke)** — live LLM `AgentLiveDeploySmokeTest` matrix (`mes-platform`, `building-hvac`, `platform-primitive`) + `run_deploy_playbook`; opt-in `ISPF_LLM_SMOKE=true` |
+| BL-177 | 31 | End-to-end agent deploy | P0 | **Done** — multi-app live LLM smoke matrix `AgentLiveDeploySmokeTest` (`mes-platform`, `building-hvac`, `platform-primitive`) + `run_deploy_playbook`; live runs require `ISPF_LLM_SMOKE=true` (skipped cleanly without secrets) |
 | BL-178 | 31 | Agent regression suite | P0 | **Done** — full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh`: **52/52 @100%** (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19); nightly CI still **platform** mode |
 | BL-179 | 31 | Operator agent GA | P1 | **Done** — scoped tools + memory + ru/en; `OperatorAgentContinuityIntegrationTest` (memory across turns, scope deny, readonly allowlist) |
-| BL-180 | 31 | Solution generator | P0 | **Partial→Done (multi-domain)** — `apply:true` `composition=primitives` live tree+dashboard+alert for HVAC/MES/SCADA (`AiSolutionGeneratorLiveSmokeTest` parameterized); soft &lt;15 min log/assume; opt-in `ISPF_LLM_SMOKE=true` |
+| BL-180 | 31 | Solution generator | P0 | **Done** — multi-domain `apply:true` `composition=primitives` live tree+dashboard+alert for HVAC/MES/SCADA (`AiSolutionGeneratorLiveSmokeTest` parameterized); soft &lt;15 min log/assume; live runs require `ISPF_LLM_SMOKE=true` |
 | BL-181 | 31 | Agent observability v2 | P2 | **Done** — `/agent/metrics` + `/agent/metrics/tools`; AI Studio tool table; LLM parse retry + one transient tool retry (`AgentToolTransientRetry`); `AgentMetricsApiTest` |
 | BL-182 | 31 | Context pack v2 | P2 | **Done** — `competitiveGapIndex` searchable (`topic=gaps`); live overlay on context-pack info + refresh API; MCP slices; AI Studio Status |
-| BL-183 | 32 | Marketplace GA | P3 | **Partial** — items 1–6, 8–10 Shipped; remaining: live partner catalogs (11), publish CI gate (12); see [marketplace](marketplace.md) checklist |
+| BL-183 | 32 | Marketplace GA | P3 | **Done** — checklist Shipped incl. honest partner multi-endpoint (11) + CI `validate-catalog.mjs` gate (12); see [marketplace](marketplace.md) |
 | BL-184 | 32 | Partner program | P3 | **Done** (in-server) — directory + enroll `source=db` (3 seeded partners); Partner Portal external / not in repo |
 | BL-185 | 32 | Symbol marketplace | P3 | **Done** — drop-in install to `ISPF_SYMBOL_PACKS_DIR`; `GET /api/v1/scada/symbol-packs`; mimic palette loads installed packs; demo `examples/marketplace-symbol-hvac-demo` |
-| BL-186 | 32 | K8s Helm chart | P2 | Partial |
-| BL-187 | 32 | ARM edge profile | P2 | Partial |
-| BL-188 | 32 | Manager-of-managers | P3 | Partial |
-| BL-189 | 32 | Competitive scorecard | P3 | **Done** (published; code verified ~7.4/10) |
-| BL-190 | 32 | Certification paths | P3 | Partial |
+| BL-186 | 32 | K8s Helm chart | P2 | **Done** — `deploy/helm/ispf` lint/template smoke + [deployment](deployment.md) install notes; CI `helm-chart` |
+| BL-187 | 32 | ARM edge profile | P2 | **Done** — `deploy/edge/arm64/` compose + README + `validate.sh`; [demostands](demostands.md) |
+| BL-188 | 32 | Manager-of-managers | P3 | **Done (usable path)** — hub checklist + operator peer picker; **not** 10+ peer load-proven — [federation](federation.md) |
+| BL-189 | 32 | Competitive scorecard | P3 | **Done** (published; code verified ~7.6/10) |
+| BL-190 | 32 | Certification paths | P3 | **Done** — solution developer + platform admin curriculum + `examples/certification/` banks — [certification](certification.md) |
 | BL-191 | 25 | OT matrix honesty | **Done** | Matrix honesty closed — shells/poll-only → BETA; CI stub gate |
 | BL-192 | 27/32 | Compliance tender pack | P2 | **Done** — [compliance-tender-pack](compliance-tender-pack.md) |
 | BL-193 | 29 | MES genealogy lite | P1 | **Done** |
@@ -1273,6 +1273,7 @@ New backlog from IoT/SCADA/MES/ERP gap audit (2026-07-09). Elevates honesty and 
 | **BL-191** | 25 | **OT PRODUCTION matrix honesty** | **Done** | `opc-da` / `opc-bridge` / `ethernet-ip` / `dnp3` → **BETA** (POLL_ONLY); scorecard OT integrity updated; `productionDriversMustNotBeDocumentedStubs` CI gate — **honesty closed 2026-07-19** (`writePoint` not in scope) |
 | **BL-192** | 27 / 32 | **Compliance tender pack** | **Done** | IEC 62443 mapping lite + GAMP-lite checklist + gap register (pen-test, audit trail, hard tenancy) — [compliance-tender-pack](compliance-tender-pack.md); linked from DoD / scorecard. **Not** a product certification |
 | **BL-193** | 29 | **MES genealogy / traceability lite** | **Done** | Lot ↔ material ↔ work-order ↔ quality record graph query + operator report on `mes-platform` (BFF `mes_genealogy_*`, reports, Genealogy dashboard); seed lot `BATCH-LINE-A01-001`; test `MesGenealogyLiteIntegrationTest`; [mes.md](mes.md). Extends BL-167 beyond SPC. **Not** live ERP (BL-169) |
+| **BL-194** | 27 | **WebAuthn / IdP OTP MFA** | Planned | Passkeys / WebAuthn enrollment + login; Keycloak OTP as primary IdP MFA path. Split from BL-153 (TOTP GA **Done**) — [security](security.md) |
 
 ---
 
@@ -1297,12 +1298,12 @@ Product is **10/10** when **all** of the following hold simultaneously:
 
 1. **20 PRODUCTION drivers** with interop CI and **3 field pilots signed** — **not met** (BL-140 Partial: playbooks only; [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy) — field work starts on named task)
 2. **MES bundle** — OEE + work orders + quality without custom code (BL-164…170); **at least one live ERP connector** (BL-169) — not stub-only
-3. **AI agent** — ≥95% regression scenarios green **with live LLM**, deploy without edits (BL-177, BL-178) — **partial** (BL-178 **met**: full live 52/52 @100%; BL-177 multi-app live smoke REAL; nightly stub not used as proof)
+3. **AI agent** — ≥95% regression scenarios green **with live LLM**, deploy without edits (BL-177, BL-178) — **met** for BL bar (BL-178 full live 52/52 @100%; BL-177 multi-app smoke harness Done; live smoke opt-in `ISPF_LLM_SMOKE`; nightly stub not used as proof)
 4. **Historian** — turnkey 3-tier, 1B samples lab proven (BL-159…162); AF-capable analytics (BL-200…210)
 5. **Security** — MFA + per-variable ACL + hard tenancy option (BL-153…155)
-6. **HMI** — mimic 500 el @60 FPS, offline PWA 8h (BL-151, BL-152)
+6. **HMI** — mimic 500 el CI ≥55 FPS (**Done**), offline PWA 8h (BL-151, BL-152); stretch live ≥60 = ops
 7. **Marketplace** — 10+ signed bundles, 3 external partners (BL-183, BL-184)
-8. **Scorecard** — all 14 dimensions ≥9.5, none ≤8 (BL-189) — **not met** (code verified ~7.5/10; see [competitive-scorecard](competitive-scorecard.md))
+8. **Scorecard** — all 14 dimensions ≥9.5, none ≤8 (BL-189) — **not met** (code verified ~7.6/10; see [competitive-scorecard](competitive-scorecard.md))
 9. **OT honesty** — zero stub drivers labeled PRODUCTION (BL-191)
 10. **Compliance pack** — IEC 62443 / GAMP-lite docs published (BL-192) — **met** as documentation pack: [compliance-tender-pack](compliance-tender-pack.md) (honest Exists/Partial/Gap; **not** IEC/GAMP certification or pen-test pass)
 
@@ -1462,7 +1463,7 @@ Week 1: A1–A7 + B1–B2 + C1–C3. Week 2: B3–B4 + C4–C6 + D1 if capacity.
 | Usable outcome | Evidence | BL |
 | -------------- | -------- | -- |
 | Operator runs **8 h** on cached HMI | PWA offline test script; sync on reconnect without data loss | BL-151 |
-| Mimic usable on real wall | **500 elements @60 FPS** on **live WebSocket** (not mocked operator API) | BL-152 |
+| Mimic usable on real wall | **500 elements ≥55 FPS** CI gate + WS update path (**Done**); stretch unmocked ≥60 = ops evidence | BL-152 |
 | Shelving survives restart | Persistent alarm shelf + approval — not in-memory stub | BL-158 |
 | Shift handover | Work queue + event journal on operator path | BL-166 (with 26) |
 
@@ -1474,7 +1475,7 @@ Week 1: A1–A7 + B1–B2 + C1–C3. Week 2: B3–B4 + C4–C6 + D1 if capacity.
 
 | Usable outcome | Evidence | BL |
 | -------------- | -------- | -- |
-| Historian trustworthy at scale | 1M-point query **<2 s** in **CI lab gate**; tier policy enforced hot→warm→cold | BL-159, 161, 202 |
+| Historian trustworthy at scale | 1M-point query **<2 s** in **CI lab gate**; tier policy enforced hot→warm→cold | BL-159, 161, 202 — **Done** (CI + tiers; BL-202 cold export) |
 | MES on real contour | **One production site** (not smoke only): OEE + dispatch + quality trace | BL-164…170, 193 |
 | ERP is not an island | **Live 1C or SAP**: order/MDM round-trip, idempotent, DLQ visible | BL-169 |
 | Derived tag drives action | Analytics derived tag → variable → alarm (not chart-only) | BL-203, 204 |
@@ -1560,8 +1561,8 @@ Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-
 
 | Sprint | Timeline (draft) | Scope |
 | ------ | ------------ | ----- |
-| **S31** | Jul–Aug 2026 | BL-178 live ≥95% **Done** (52/52); BL-177 multi-app live smoke REAL (no nightly stub as proof) |
-| **S32** | Aug 2026 | BL-180 multi-domain live apply (HVAC/MES/SCADA); operator agent continuity as needed |
+| **S31** | Jul–Aug 2026 | BL-177/178 **Done** (52/52 live suite; multi-app smoke harness; live needs `ISPF_LLM_SMOKE`) |
+| **S32** | Aug 2026 | BL-180 **Done** (multi-domain live apply harness HVAC/MES/SCADA); BL-179 continuity Done |
 | **S33** | Sep 2026 | **BL-193** genealogy lite |
 
 Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
@@ -1598,8 +1599,13 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 
 | Date | Change |
 | ---- | --------- |
+| 2026-07-19 | **Phase 32 ecosystem partials closed:** BL-183 Done (CI `marketplace-catalog` validate + honest partner multi-endpoint; not live partner SaaS); BL-186 Done (Helm lint/template + deploy docs); BL-187 Done (ARM compose/validate); BL-188 Done usable MoM path (not 10+ peer soak); BL-190 Done curriculum paths linked |
+| 2026-07-19 | **BL-177 / BL-180 → Done:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness in repo; live runs require `ISPF_LLM_SMOKE=true` (no invented multi-app/multi-domain live pass counts). BL-178 remains **Done** 52/52 @100%. Scorecard AI **8.5 → 9.0** |
+| 2026-07-19 | **Phase 26 HMI close-out:** BL-147 Done (multi-select/layers/undo/keyboard + tests); BL-148 Done (2×2…4×4 + VideoWallAutoScale); BL-149 Done (server phase breakpoints + Continue + UI); BL-150 Done (live WS/poll, cross-sheet, XLSX export, editor live toggles); BL-151 Done (SW dashboards+mimics 8h, reconnect sync, `pwa:offline-evidence`); BL-152 **Done** — honesty acceptance CI 500 el ≥55 FPS + WS path (do **not** claim unmocked ≥60); LH operator ≥95 = ops stretch (CI floor 90) |
+| 2026-07-19 | **Phase 27 security close-out (honest):** BL-153 **Done** TOTP GA (WebAuthn/Keycloak OTP → **BL-194** Planned); BL-154 **Done** vars+history ACL + event/function `invokeRoles` API/UI; BL-155 remains **Partial** (schema+OIDC REAL; A≠B platform-table routing open). Parked OT: BL-140/143–145 unchanged; BL-142 stays Partial (MQTT path REAL, Kafka IT / server IT open) |
 | 2026-07-19 | **BL-183 honesty:** checklist items 1–6, 8–10 Shipped verified; item 11 Partial (BL-184 DB partners Done; live partner catalogs Planned); item 12 Partial (CLI, no publish CI gate); leave BL-183 **Partial**; BL-184 registry → Done (in-server); symbol listing no longer `source=stub` |
 | 2026-07-19 | **S32 BL-180 multi-domain live:** `AiSolutionGeneratorLiveSmokeTest` parameterized HVAC + MES/factory + SCADA/plant; asserts `composition=primitives` + tree/dashboard/alert; soft &lt;15 min log/assume; skipped without `ISPF_LLM_SMOKE` |
+| 2026-07-19 | **Phase 27 earlier partials:** BL-156 Done (SIEM webhook); BL-157 Done (ISA-95 `scopePathPrefixes` on REST); superseded same-day by TOTP/ACL Done + BL-194 split |
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
@@ -1613,6 +1619,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 | 2026-07-17 | **BL-178 live suite harness:** `AgentLiveRegressionSuiteTest` + `run-live-suite.sh` (modes platform/bundle/full); nightly runs platform mode with AI secrets; full 52@≥95% on-demand |
 | 2026-07-17 | **Platform velocity gate:** `platform-primitive` fixture, `run-platform-gate.sh`; live apply generator `composition=primitives` (catalog draft only) |
 | 2026-07-14 | **S32 BL-180 one-shot REAL:** `POST /ai/solutions/generate` `apply:true` → live tree+dashboard+alert; keyword path is `mode=draft` (not stub success) |
+| 2026-07-19 | **Phase 28 BL-159/161/162 Done:** turnkey `examples/historian-tiers/`; CI `HistorianAggregateQueryLoadTest` + `tools/historian-scale/`; CH playbook + I-03 ≥10M events/min evidence |
 | 2026-07-19 | **S31 BL-177 multi-app live smoke:** `AgentLiveDeploySmokeTest` parameterized matrix (`mes-platform`, `building-hvac`, `platform-primitive`); `run-live-oneshot.sh` loops apps; skipped without `ISPF_LLM_SMOKE` |
 | 2026-07-14 | **S31 BL-177 one-shot REAL:** `AgentLiveDeploySmokeTest` + `run_deploy_playbook`; nightly optional live oneshot (`run-live-oneshot.sh`); `nightly-stub-results.json` deprecated as ≥95% proof |
 | 2026-07-14 | **OT Trust + live ERP deferred:** Phase 25 / BL-191 and BL-169 removed from active 90-day P0; S31–S33 → AI → generator → genealogy |

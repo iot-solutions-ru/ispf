@@ -64,6 +64,7 @@ export default function DashboardSettingsPanel({
             <option value="">{t("settings.layoutPresetDefault")}</option>
             <option value="video-wall-2x2">{t("settings.layoutPresetVideoWall2x2")}</option>
             <option value="video-wall-3x3">{t("settings.layoutPresetVideoWall3x3")}</option>
+            <option value="video-wall-4x4">{t("settings.layoutPresetVideoWall4x4")}</option>
           </select>
           <span className="hint">{t("settings.layoutPresetHint")}</span>
         </label>

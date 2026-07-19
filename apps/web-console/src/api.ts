@@ -127,6 +127,10 @@ export interface EvaluateExpressionPayload {
   objectPath: string;
   expression: string;
   targetVariable?: string;
+  /** Phase names to pause before (BL-149 breakpoints). */
+  breakpoints?: string[];
+  /** Resume past a paused phase without re-pausing on that phase. */
+  resumeFrom?: string;
 }
 
 export interface EvaluateExpressionStep {
@@ -144,6 +148,8 @@ export function evaluateExpression(
   resultType: string | null;
   error: string | null;
   steps: EvaluateExpressionStep[];
+  paused?: boolean;
+  pausedAt?: string | null;
 }> {
   return request("/api/v1/expressions/evaluate", {
     method: "POST",

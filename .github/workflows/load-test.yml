@@ -57,6 +57,19 @@ jobs:
             -Dorg.gradle.workers.max=1 \
             2>&1 | tee load-test-analytics-query.log
 
+      - name: Scale gate — historian aggregate 1M p95 (BL-161)
+        env:
+          ISPF_HISTORIAN_AGGREGATE_SAMPLE_COUNT: "1000000"
+          ISPF_HISTORIAN_AGGREGATE_P95_CEILING_MS: "2000"
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.history.HistorianAggregateQueryLoadTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            2>&1 | tee load-test-historian-aggregate.log
+
       - name: Upload load test logs
         if: always()
         uses: actions/upload-artifact@v7
@@ -66,4 +79,5 @@ jobs:
             load-test-list-devices.log
             load-test-event-fire.log
             load-test-analytics-query.log
+            load-test-historian-aggregate.log
           retention-days: 14

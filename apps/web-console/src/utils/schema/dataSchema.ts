@@ -124,6 +124,7 @@ export function normalizeFunctionDescriptor(fn: {
   sourceBody?: string | null;
   dataSourcePath?: string | null;
   version?: string | null;
+  invokeRoles?: string[];
 }) {
   return {
     name: fn.name,
@@ -134,5 +135,6 @@ export function normalizeFunctionDescriptor(fn: {
     sourceBody: fn.sourceBody?.trim() || null,
     dataSourcePath: fn.dataSourcePath?.trim() || null,
     version: fn.version?.trim() || null,
+    invokeRoles: fn.invokeRoles ?? [],
   };
 }

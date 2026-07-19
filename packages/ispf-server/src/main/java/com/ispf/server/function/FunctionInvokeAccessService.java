@@ -1,11 +1,16 @@
 package com.ispf.server.function;
 
+import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.security.acl.ObjectAccessService;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
@@ -14,20 +19,34 @@ public class FunctionInvokeAccessService {
 
     private final PrivilegedPlatformFunctionPolicy privilegedPolicy;
     private final ObjectAccessService objectAccessService;
+    private final ObjectManager objectManager;
 
     public FunctionInvokeAccessService(
             PrivilegedPlatformFunctionPolicy privilegedPolicy,
-            ObjectAccessService objectAccessService
+            ObjectAccessService objectAccessService,
+            ObjectManager objectManager
     ) {
         this.privilegedPolicy = privilegedPolicy;
         this.objectAccessService = objectAccessService;
+        this.objectManager = objectManager;
     }
 
     /**
-     * Enforces object ACL (INVOKE) and blocks direct operator invoke of script-only platform functions.
+     * Enforces object ACL (INVOKE), optional per-function invokeRoles (BL-154),
+     * and blocks direct operator invoke of script-only platform functions.
      */
     public void requireDirectInvoke(String objectPath, String functionName, Authentication authentication) {
-        objectAccessService.requireInvoke(objectPath, authentication);
+        List<String> invokeRoles = List.of();
+        try {
+            PlatformObject node = objectManager.require(objectPath);
+            FunctionDescriptor descriptor = node.functions().get(functionName);
+            if (descriptor != null) {
+                invokeRoles = descriptor.invokeRoles();
+            }
+        } catch (RuntimeException ignored) {
+            // Object missing — let function runtime return its own not-found.
+        }
+        objectAccessService.requireMemberInvoke(objectPath, "function", functionName, invokeRoles, authentication);
         guardScriptOnlyFunction(objectPath, functionName, authentication);
     }
 

@@ -32,9 +32,9 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 
 [competitive-scorecard](competitive-scorecard.md) Historian row remains **7.0 (code verified)** until Enterprise L lab gates pass on documented hardware. Target **≥9.5** after:
 
-1. `analytics-scale-gate.sh` — catalog + multi-tag + optional 1B CH **PASS**
-2. `historian-scale-benchmark.sh` — BL-161 aggregate **PASS**
-3. Dated sign-off in release notes
+1. `tools/historian-scale/analytics-scale-gate.sh` — multi-tag JVM + optional catalog/1B CH **PASS**
+2. `tools/historian-scale/historian-scale-benchmark.sh` — BL-161 aggregate **PASS** (also in `load-test.yml`)
+3. Dated Enterprise L sign-off in release notes (scorecard ≥9.5; Phase 28 BL-159/161/162 **Done** on JVM + I-03 evidence without waiting for 1B CH)
 
 ## Related
 

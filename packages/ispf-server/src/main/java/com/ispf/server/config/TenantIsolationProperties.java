@@ -24,6 +24,12 @@ public class TenantIsolationProperties {
     /** Prefix for per-tenant schema names when {@link #isolationMode} is {@code hard}. */
     private String schemaPrefix = "tenant_";
 
+    /**
+     * JWT / OIDC claim carrying the ISPF tenant id (BL-155). Empty disables claim mapping.
+     * Common values: {@code tenant_id}, {@code ispf_tenant}, {@code tid}.
+     */
+    private String oidcTenantClaim = "tenant_id";
+
     public IsolationMode getIsolationMode() {
         return isolationMode;
     }
@@ -38,6 +44,14 @@ public class TenantIsolationProperties {
 
     public void setSchemaPrefix(String schemaPrefix) {
         this.schemaPrefix = schemaPrefix != null && !schemaPrefix.isBlank() ? schemaPrefix : "tenant_";
+    }
+
+    public String getOidcTenantClaim() {
+        return oidcTenantClaim;
+    }
+
+    public void setOidcTenantClaim(String oidcTenantClaim) {
+        this.oidcTenantClaim = oidcTenantClaim != null ? oidcTenantClaim.trim() : "";
     }
 
     public boolean isHardMode() {

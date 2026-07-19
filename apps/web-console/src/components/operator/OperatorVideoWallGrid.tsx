@@ -4,6 +4,7 @@ import type { OperatorUiDashboard } from "../../types/operatorUi";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import { emptySession, mergeSession, type DashboardSession } from "../dashboard/DashboardContext";
 import { videoWallSlotCount } from "../dashboard/dashboardLayoutPresets";
+import VideoWallAutoScale from "./VideoWallAutoScale";
 
 interface OperatorVideoWallGridProps {
   dashboards: OperatorUiDashboard[];
@@ -59,14 +60,16 @@ export default function OperatorVideoWallGrid({
             <>
               <header className="operator-video-wall-cell-title">{dashboard.title}</header>
               <div className="operator-video-wall-cell-body">
-                <DashboardBuilder
-                  key={dashboard.path}
-                  path={dashboard.path}
-                  operatorMode
-                  session={sessionForPath(dashboard.path)}
-                  onSessionChange={(next) => onSessionChange(dashboard.path, next)}
-                  onNavigateDashboard={onNavigateDashboard}
-                />
+                <VideoWallAutoScale>
+                  <DashboardBuilder
+                    key={dashboard.path}
+                    path={dashboard.path}
+                    operatorMode
+                    session={sessionForPath(dashboard.path)}
+                    onSessionChange={(next) => onSessionChange(dashboard.path, next)}
+                    onNavigateDashboard={onNavigateDashboard}
+                  />
+                </VideoWallAutoScale>
               </div>
             </>
           ) : (

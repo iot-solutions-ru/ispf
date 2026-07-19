@@ -95,9 +95,13 @@ public class Phase30BlueprintBootstrap {
                 List.of(
                         varDef("programId", "Stable program id", "info", ""),
                         intDef("cycleIntervalMs", "Control loop interval ms", 1000),
-                        varDef("controlExpression", "CEL expression evaluated each cycle", "config", ""),
+                        varDef("controlExpression", "CEL expression evaluated each cycle (context = targetObjectPath)", "config", ""),
+                        varDef("targetObjectPath", "Plant object path for evaluation + actuator write", "config", ""),
+                        varDef("outputVariable", "Variable on target written with control result", "config", ""),
+                        varDef("interlockExpression", "Optional CEL; write only when true", "config", ""),
                         boolDef("enabled", "Program enabled", false),
                         varDef("lastCycleAt", "Last cycle ISO instant", "runtime", ""),
+                        varDef("lastOutput", "Last written control output (stringified)", "runtime", ""),
                         varDef("lastError", "Last cycle error message", "runtime", "")
                 ),
                 List.of(),

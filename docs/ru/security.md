@@ -139,26 +139,33 @@ Docker Compose поднимает Keycloak на порт **8180**.
 | `ispf.security.local-default-role` | Роль по умолчанию без токена (local, dev only) |
 | `ispf.security.mfa.enabled` | Включить TOTP enrollment API (`/api/v1/security/mfa/**`) |
 
-## MFA (TOTP foundation)
+## MFA (TOTP)
 
-Конфигурация: `ispf.security.mfa.enabled` (по умолчанию `false`, env `ISPF_MFA_ENABLED`).
+| Свойство | Env | По умолчанию |
+|----------|-----|--------------|
+| `ispf.security.mfa.enabled` | `ISPF_MFA_ENABLED` | `false` |
+| `ispf.security.mfa.required-for-admin` | `ISPF_MFA_REQUIRED_FOR_ADMIN` | `false` |
+| `ispf.security.mfa.time-window-steps` | — | `1` (±30 с) |
 
-Когда MFA включен, аутентифицированные пользователи (любимая роль с доступом к API чтения) могут:
+Когда MFA включён, аутентифицированные пользователи могут:
 
 | Конечная точка | Описание |
-|----------|----------|
-| `GET /api/v1/security/mfa/status` | Статус MFA и pending enrollment |
+|----------------|----------|
+| `GET /api/v1/security/mfa/status` | Статус; для pending также `pendingSecret` / `pendingOtpauthUri` (возобновление QR) |
 | `POST /api/v1/security/mfa/enroll` | Начать TOTP enrollment (secret + `otpauth://` URI) |
-| `POST /api/v1/security/mfa/verify` | Подтвердить 6-значный код (заглушка — полная TOTP-проверка в следующем спринте) |
+| `POST /api/v1/security/mfa/verify` | Подтвердить 6-значный TOTP (`TotpUtil`) |
 | `DELETE /api/v1/security/mfa/enroll` | Отменить pending enrollment |
 
-Реализация — скелет `MfaService` (в памяти в состоянии ожидания). Производство: Keycloak OTP/WebAuthn (BL-153) или персистентное хранение данных в ISPF.
+Локальный логин принимает опциональный `totpCode` в `POST /api/v1/auth/login`. При `required-for-admin=true` для роли admin нужен enrolled secret и валидный код.
+
+**REAL сейчас (BL-153 Готово — TOTP GA):** персистентные enrollments (`mfa_enrollments`), проверка TOTP, enforcement для admin, UI enrollment + поле TOTP на логине.  
+**Follow-up (BL-194 Планируется):** WebAuthn / passkeys; Keycloak OTP как основной IdP MFA.
 
 ## ACL для каждой переменной
 
 На переменных можно задать `readRoles` / `writeRoles` (JSON-массив имён ролей). Пустой список = наследование объекта ACL.
 
-Проверка в `ObjectAccessService.requireVariableRead/Write` при чтении/записи историй. Веб-консоль: бейджи и редактор ACL в диалоговом окне переменных.
+Проверка в `ObjectAccessService.requireVariableRead/Write` при чтении/записи/**истории**/export. У событий и функций опционально `invokeRoles` (пусто = только object INVOKE). Веб-консоль: редактор ACL переменной + `invokeRoles` в диалоге descriptor (**BL-154 Готово**). Альтернативные пути analytics/federation могут обходить member ACL (trusted-channel follow-up).
 
 ## Рекомендации для производства
 

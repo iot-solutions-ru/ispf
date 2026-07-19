@@ -18,7 +18,7 @@ Every hub-listed page should carry an honest **Status** so newcomers know what i
 1. Column **Status** in [readme.md](readme.md) full catalog.  
 2. Optional one-liner under the H1 on the page itself:  
    `> **Status:** Stable — …`  
-3. Stronger banners already used for Draft/Partial (marketplace, partner) take precedence.
+3. Stronger banners already used for Draft/Partial (partner program) take precedence; marketplace is Stable (BL-183 Done).
 
 ## Maintenance
 

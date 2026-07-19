@@ -35,19 +35,29 @@ public class MfaService {
 
     public MfaStatus status(String username) {
         if (username == null || username.isBlank()) {
-            return new MfaStatus(securityProperties.getMfa().isEnabled(), false, false, null);
+            return new MfaStatus(securityProperties.getMfa().isEnabled(), false, false, null, null, null);
         }
         return enrollmentStore.findByUsername(username)
-                .map(enrollment -> new MfaStatus(
-                        securityProperties.getMfa().isEnabled(),
-                        enrollment.isEnrolled(),
-                        enrollment.isPending(),
-                        enrollment.isPending() ? enrollment.createdAt().toString() : null
-                ))
+                .map(enrollment -> {
+                    boolean pending = enrollment.isPending();
+                    String otpauth = pending
+                            ? TotpUtil.buildOtpauthUri("ISPF", username, enrollment.secret())
+                            : null;
+                    return new MfaStatus(
+                            securityProperties.getMfa().isEnabled(),
+                            enrollment.isEnrolled(),
+                            pending,
+                            pending ? enrollment.createdAt().toString() : null,
+                            pending ? enrollment.secret() : null,
+                            otpauth
+                    );
+                })
                 .orElseGet(() -> new MfaStatus(
                         securityProperties.getMfa().isEnabled(),
                         false,
                         false,
+                        null,
+                        null,
                         null
                 ));
     }
@@ -118,7 +128,10 @@ public class MfaService {
             boolean enabled,
             boolean enrolled,
             boolean enrollmentPending,
-            String enrollmentStartedAt
+            String enrollmentStartedAt,
+            /** Present only while enrollment is pending — lets the console resume QR after reload. */
+            String pendingSecret,
+            String pendingOtpauthUri
     ) {
     }
 

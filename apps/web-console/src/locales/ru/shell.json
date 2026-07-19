@@ -37,6 +37,8 @@
   "login.oidcRedirecting": "Перенаправление…",
   "login.oidcSubmit": "Войти с помощью Keycloak",
   "login.password": "Пароль",
+  "login.totp": "Код аутентификатора (если MFA подключен)",
+  "login.totpHint": "Обязателен, когда для admin включён MFA (ISPF_MFA_REQUIRED_FOR_ADMIN).",
   "login.submit": "Войти",
   "login.submitting": "Вход в систему…",
   "login.subtitle": "Войдите на платформу",

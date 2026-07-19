@@ -1,6 +1,7 @@
 package com.ispf.server.security.acl;
 
 import com.ispf.server.config.IspfRoles;
+import com.ispf.server.security.RoleScopeAccessService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,9 +25,11 @@ public class ObjectAccessService {
     );
 
     private final ObjectAclStore aclStore;
+    private final RoleScopeAccessService roleScopeAccessService;
 
-    public ObjectAccessService(ObjectAclStore aclStore) {
+    public ObjectAccessService(ObjectAclStore aclStore, RoleScopeAccessService roleScopeAccessService) {
         this.aclStore = aclStore;
+        this.roleScopeAccessService = roleScopeAccessService;
     }
 
     public List<ObjectAclStore.ObjectAclEntry> listEntries(String objectPath) {
@@ -109,6 +112,27 @@ public class ObjectAccessService {
         }
     }
 
+    /**
+     * Per-event / per-function invoke roles (BL-154). Empty list = object INVOKE ACL only.
+     */
+    public void requireMemberInvoke(
+            String objectPath,
+            String memberKind,
+            String memberName,
+            List<String> invokeRoles,
+            Authentication authentication
+    ) {
+        if (!canInvoke(objectPath, authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invoke access denied for " + objectPath);
+        }
+        if (!hasVariableRole(invokeRoles, authentication)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Invoke access denied for " + memberKind + " " + memberName + " on " + objectPath
+            );
+        }
+    }
+
     public boolean canVariableRead(
             String objectPath,
             String variableName,
@@ -168,6 +192,9 @@ public class ObjectAccessService {
     private boolean hasPermission(String objectPath, String permission, Authentication authentication) {
         if (isAdmin(authentication)) {
             return true;
+        }
+        if (!roleScopeAccessService.isPathInRoleScope(objectPath, authentication)) {
+            return false;
         }
         List<ObjectAclStore.ObjectAclEntry> entries = aclStore.findEffectiveEntries(objectPath);
         if (entries.isEmpty()) {

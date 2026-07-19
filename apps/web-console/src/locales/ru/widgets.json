@@ -141,6 +141,8 @@
   "editor.selectionKey": "Клавиша выбора (selectionKey)",
   "editor.selectionKeyOnClick": "Ключ выбора при клике (selectionKey)",
   "editor.spreadsheet.bindingHistoryHint": "Binding-ячейки: historyMinutes (напр. 15) — последний сэмпл historian в окне; иначе live.",
+  "editor.spreadsheet.liveRefresh": "Живое обновление (WebSocket + опрос)",
+  "editor.spreadsheet.liveRefreshIntervalMs": "Интервал опроса (мс)",
   "editor.spreadsheet.dataSourceHint": "Для таблицы сохранение ячеек задаётся полем valuesVariable в секции «Таблица» ниже, а не «Переменная» здесь.",
   "editor.spreadsheet.gridSize": "Размер сетки (строки × столбцы)",
   "editor.spreadsheet.insertCalculatorTemplate": "Шаблон: калькулятор",

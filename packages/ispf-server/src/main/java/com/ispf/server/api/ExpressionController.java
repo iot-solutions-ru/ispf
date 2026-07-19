@@ -3,7 +3,6 @@ package com.ispf.server.api;
 import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.server.expression.ExpressionEvaluationService;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,7 +35,9 @@ public class ExpressionController {
         ExpressionEvaluationService.EvaluateResult result = evaluationService.evaluate(
                 request.objectPath(),
                 request.expression(),
-                request.targetVariable()
+                request.targetVariable(),
+                request.breakpoints() != null ? request.breakpoints() : List.of(),
+                request.resumeFrom()
         );
         return new EvaluateResponse(
                 result.valid(),
@@ -46,7 +47,9 @@ public class ExpressionController {
                 result.error(),
                 result.steps().stream()
                         .map(step -> new EvaluateStepResponse(step.phase(), step.status(), step.detail()))
-                        .toList()
+                        .toList(),
+                result.paused(),
+                result.pausedAt()
         );
     }
 
@@ -59,7 +62,9 @@ public class ExpressionController {
     public record EvaluateRequest(
             @NotBlank String objectPath,
             @NotBlank String expression,
-            String targetVariable
+            String targetVariable,
+            List<String> breakpoints,
+            String resumeFrom
     ) {
     }
 
@@ -72,7 +77,9 @@ public class ExpressionController {
             Object result,
             String resultType,
             String error,
-            java.util.List<EvaluateStepResponse> steps
+            java.util.List<EvaluateStepResponse> steps,
+            boolean paused,
+            String pausedAt
     ) {
     }
 }

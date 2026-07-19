@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * BL-160 hardening: OEE analytics template wired on {@code mes-platform-oee} dashboard.
+ * BL-165 (+ BL-160): OEE Operator dashboard + BFF KPI on {@code mes-platform}.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -26,6 +26,7 @@ class MesOeeAnalyticsDashboardIntegrationTest {
 
     private static final String HUB = "root.platform.devices.mes-platform-hub";
     private static final String OEE_DASHBOARD = "root.platform.dashboards.mes-platform-oee";
+    private static final String SEED_SHIFT_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 
     @Autowired
     private MockMvc mockMvc;
@@ -37,6 +38,9 @@ class MesOeeAnalyticsDashboardIntegrationTest {
         mockMvc.perform(get("/api/v1/dashboards/by-path").param("path", OEE_DASHBOARD))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("MES OEE"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='oee-kpi')].functionName").value("mes_oee_getKpi"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='oee-shifts')].functionName").value("mes_oee_listShifts"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='oee-lines')].functionName").value("mes_platform_listLines"))
                 .andExpect(jsonPath("$.layout.widgets[?(@.id=='oee-analytics-chart')]").exists())
                 .andExpect(jsonPath("$.layout.widgets[?(@.id=='oee-analytics-chart')].type").value("chart"))
                 .andExpect(jsonPath("$.layout.widgets[?(@.id=='oee-analytics-chart')].variableName").value("oeePct"))
@@ -48,6 +52,26 @@ class MesOeeAnalyticsDashboardIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name=='oeePct')]").exists())
                 .andExpect(jsonPath("$[?(@.name=='oeePct')].historyEnabled").value(true));
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "mes_oee_getKpi",
+                                  "input": {
+                                    "schema": {
+                                      "name": "in",
+                                      "fields": [{ "name": "shiftId", "type": "STRING" }]
+                                    },
+                                    "rows": [{ "shiftId": "%s" }]
+                                  }
+                                }
+                                """.formatted(HUB, SEED_SHIFT_ID)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error_code").value("OK"))
+                .andExpect(jsonPath("$.result.lineCode").value("LINE-A01"))
+                .andExpect(jsonPath("$.result.oeePct").value(org.hamcrest.Matchers.greaterThan(80)));
     }
 
     private void deployBundle() throws Exception {

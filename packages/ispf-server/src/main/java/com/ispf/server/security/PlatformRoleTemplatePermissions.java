@@ -8,7 +8,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * BL-179: default operator-agent tool allowlists and ISA-95 scope prefixes for role templates.
+ * BL-157 / BL-179: default operator-agent tool allowlists and ISA-95 scope prefixes for role templates.
+ * Scope prefixes are enforced on REST object access via {@link RoleScopeAccessService}.
  */
 public final class PlatformRoleTemplatePermissions {
 

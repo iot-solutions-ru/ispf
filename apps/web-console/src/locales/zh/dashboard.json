@@ -72,6 +72,7 @@
   "settings.layoutPresetHint": "马赛克预设用相等的象限替换了根小部件，用于控制室显示。",
   "settings.layoutPresetVideoWall2x2": "视频墙2×2",
   "settings.layoutPresetVideoWall3x3": "视频墙3×3",
+  "settings.layoutPresetVideoWall4x4": "视频墙4×4",
   "settings.layoutTemplate": "命名布局模板",
   "settings.layoutTemplatePlaceholder": "应用模板…",
   "settings.layoutTemplateHint": "服务器模板（如 virtual-cluster-overview）会替换整个布局并立即保存。",

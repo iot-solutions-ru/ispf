@@ -1,21 +1,25 @@
-# MES Platform bundle (BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170 / BL-193)
+# MES Platform bundle (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-170 / BL-193)
 
-Certification skeleton for first-class MES on ISPF: platform catalog folders (`root.platform.mes.*`) + OEE BFF + work-order dispatch workflow + genealogy lite.
+Marketplace MES product (IoT Solutions): catalog folders + seed typed instances + OEE BFF + work-order dispatch + quality SPC + ISA-88 batch + genealogy lite.
+
+> **BL-169** (live ERP connector) remains **Deferred** — outbox stub only.
 
 | File | Purpose |
 |------|---------|
-| `bundle.json` | Deploy via `POST /api/v1/applications/mes-platform/deploy` |
-| `work-order-instantiate.example.json` | Instantiate `WORK_ORDER` from `work-order-v1` INSTANCE blueprint |
-| `batch-instantiate.example.json` | Instantiate `LOT` from `batch-v1` + `mes_batch_runPhase` |
+| `bundle.json` | Deploy via `POST /api/v1/applications/mes-platform/deploy` (v1.3.0) |
+| `work-order-instantiate.example.json` | Instantiate additional `WORK_ORDER` from `work-order-v1` |
+| `batch-instantiate.example.json` | Instantiate additional `LOT` from `batch-v1` |
 | `bpmn/work-order-dispatch.bpmn.xml` | Source BPMN for BL-166 dispatch workflow |
-| `erp-outbox.json` | ERP outbox idempotent sync pattern stub (BL-169) |
+| `erp-outbox.json` | ERP outbox pattern stub (BL-169 deferred) |
 
-Production walkthrough: [mes-platform-production](../mes-platform-production/).
+Production walkthrough: [mes-platform-production](../mes-platform-production/).  
+Operator guide: [docs/en/mes.md](../../docs/en/mes.md).  
+Walkthrough: [docs/en/reference-mes-platform.md](../../docs/en/reference-mes-platform.md).
 
 ## Prerequisites
 
-- Server started with `MesPlatformBootstrap` (default on every boot) — MES catalog folders under `root.platform.mes.*`
-- See [REFERENCE_MES_PLATFORM.md](../../docs/en/reference-mes-platform.md)
+- Clean ISPF server (MES is **not** base-seeded)
+- Marketplace install or direct deploy of this bundle
 
 ## Deploy
 
@@ -25,54 +29,42 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform/deploy \
   --data-binary @examples/mes-platform/bundle.json
 ```
 
-## OEE functions (from mes-oee-reference pattern)
+Operator UI: `?mode=operator&app=mes-platform`
 
-| Function | Description |
-|----------|-------------|
-| `mes_oee_listShifts` | List shift rows for OEE |
-| `mes_oee_getKpi` | Availability × Performance × Quality |
-| `mes_oee_addDowntime` | Register downtime minutes |
-| `mes_platform_listLines` | ISA-95 line registry (maps to `root.platform.mes.instances.*`) |
+## Seed typed catalog (BL-164)
 
-## OEE analytics chart (BL-160)
+| Path | Type |
+|------|------|
+| `root.platform.mes.work-orders.wo-line-a01-001` | `WORK_ORDER` |
+| `root.platform.mes.operations.op-assemble-a01` | `OPERATION` |
+| `root.platform.mes.lots.batch-line-a01-001` | `LOT` |
+| `root.platform.mes.shifts.shift-morning-a01` | `SHIFT` |
+| `root.platform.mes.quality-records.qr-line-a01-001` | `QUALITY_RECORD` |
+| `...mes.instances.plant-a.areas.assembly.lines.line-a01` | ISA-95 line |
 
-- Hub variable `oeePct` (history-enabled) on `mes-platform-hub-v1`
-- Dashboard `mes-platform-oee` includes `chart` widget with `analyticsTemplateId: oee` (8h historian rollup)
-- Platform catalog: `GET /api/v1/platform/analytics/templates`
+## Operator dashboards
 
-## Work order dispatch (BL-166)
+| Dashboard | BL |
+|-----------|----|
+| Dispatch (`work-queue`) | BL-166 |
+| OEE (KPI + analytics chart) | BL-165 |
+| Quality / SPC | BL-167 |
+| Genealogy | BL-193 |
+| Batch (ISA-88) | BL-168 |
 
-- INSTANCE blueprint `work-order-v1` → create `WORK_ORDER` under `root.platform.mes.work-orders`
-- Example: [work-order-instantiate.example.json](./work-order-instantiate.example.json)
-- BPMN: `root.platform.workflows.mes-work-order-dispatch` (user task → work queue)
-- Correlator on `workOrderDispatched` → `RUN_WORKFLOW` (disabled by default)
-- Operator dashboard widget: `work-queue` on `mes-platform-dispatch`
+## Integration tests
 
-## Quality module skeleton (BL-167)
-
-- RELATIVE model `quality-record-v1` with `defectCode`, `severity`, `lotId`
-- Hub blueprint `mes-platform-hub-v1`: `spcMeasurement` (history chart), `spcUcl`, `spcLcl`, `spcTarget`
-- Dashboard `mes-platform-quality` with SPC `chart` widget + BFF `mes_quality_listSpcSamples`
-- Apply `quality-record-v1` to `QUALITY_RECORD` nodes under `root.platform.mes.quality-records`
-
-## Genealogy lite (BL-193)
-
-- Tables `mes_genealogy_material` / `mes_genealogy_lot` / `mes_genealogy_quality` + seed lot `BATCH-LINE-A01-001`
-- BFF: `mes_genealogy_listGraph`, `mes_genealogy_queryByLot` on hub
-- SQL reports: `mes-genealogy`, `mes-genealogy-by-lot`
-- Operator dashboard `mes-platform-genealogy` (function widgets + report)
-- Operator steps: [docs/en/mes.md](../../docs/en/mes.md)
-
-## ISA-88 batch lite (BL-168)
-
-- INSTANCE `batch-v1` (`batchId`, `recipe`, `phase`) — bootstrap via `MesBlueprintBootstrap`
-- Example: [batch-instantiate.example.json](./batch-instantiate.example.json)
-- BFF: `mes_batch_runPhase`, `mes_batch_getStatus` on hub
-
-## ERP outbox (BL-169)
-
-- Table `mes_erp_outbox` + BFF `mes_erp_enqueueOutbox`, `mes_erp_pollOutbox`
-- Schedule `mes-erp-outbox-poll` (disabled by default) — see [erp-outbox.json](./erp-outbox.json)
+```bash
+./gradlew :packages:ispf-server:test \
+  --tests "com.ispf.server.application.reference.mes.MesCatalogObjectTypesIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesOeeAnalyticsDashboardIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesWorkOrderDispatchIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesQualitySpcDashboardIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesBatchPhaseRunnerIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesGenealogyLiteIntegrationTest" \
+  --tests "com.ispf.server.application.MesPlatformBundleSmokeTest" \
+  --tests "com.ispf.server.application.MesPlatformGaSmokeTest"
+```
 
 ## Related
 

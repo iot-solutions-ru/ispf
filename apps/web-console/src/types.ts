@@ -212,6 +212,8 @@ export interface FunctionDescriptor {
   sourceBody?: string | null;
   dataSourcePath?: string | null;
   version?: string | null;
+  /** Empty = object INVOKE ACL only. */
+  invokeRoles?: string[];
 }
 
 export interface EventDescriptor {
@@ -219,6 +221,8 @@ export interface EventDescriptor {
   description: string;
   payloadSchema: DataSchema;
   level: string;
+  /** Empty = object INVOKE ACL only. */
+  invokeRoles?: string[];
 }
 
 export interface ObjectEditorDto {

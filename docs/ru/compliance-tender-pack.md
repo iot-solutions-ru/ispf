@@ -19,9 +19,9 @@
 | Тема | Поза | Класс |
 | ---- | ---- | ----- |
 | RBAC + object/variable ACL | HTTP-роли, ACL, `readRoles`/`writeRoles` | **Exists** / ACL-шаблоны **Partial** |
-| MFA (TOTP) | Enrollment + опция `required-for-admin` | **Exists**; WebAuthn — **Partial** |
-| Multi-tenant | Логические path-namespaces | **Exists**; hard schema — **Partial** (`TenantIsolationValidator` stub) |
-| Audit | Security audit + CSV; config audit; AI audit | **Partial** (нет SIEM webhook / полного GxP) |
+| MFA (TOTP) | Enrollment + опция `required-for-admin` | **Exists** (BL-153 Готово); WebAuthn → **BL-194** |
+| Multi-tenant | Логические path-namespaces | **Exists**; hard schema+OIDC claim REAL; A≠B routing — **Partial** |
+| Audit | Security audit + CSV + SIEM webhook; config audit; AI audit | **Exists** (BL-156 Done); WORM/GxP — ops |
 | Pen-test / 62443 cert / GAMP IQ-OQ | — | **Gap** — не заявлять |
 
 Полные таблицы IEC 62443-lite, GAMP-lite и реестр пробелов (G-01…G-08) — только в [английской канонической странице](../en/compliance-tender-pack.md).

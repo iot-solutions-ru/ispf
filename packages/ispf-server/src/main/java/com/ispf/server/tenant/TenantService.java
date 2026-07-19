@@ -61,6 +61,7 @@ public class TenantService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
         objectManager.delete(tenant.objectPath());
         tenantStore.delete(tenantId);
+        tenantSchemaService.dropTenantSchema(tenantId);
     }
 
     @Transactional

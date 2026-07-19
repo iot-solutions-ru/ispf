@@ -21,8 +21,12 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
     programId: variableString(variables, "programId"),
     cycleIntervalMs: variableNumber(variables, "cycleIntervalMs", 1000),
     controlExpression: variableString(variables, "controlExpression"),
+    targetObjectPath: variableString(variables, "targetObjectPath"),
+    outputVariable: variableString(variables, "outputVariable"),
+    interlockExpression: variableString(variables, "interlockExpression"),
     enabled: variableBoolean(variables, "enabled", false),
     lastCycleAt: variableString(variables, "lastCycleAt"),
+    lastOutput: variableString(variables, "lastOutput"),
     lastError: variableString(variables, "lastError"),
   };
 
@@ -31,6 +35,9 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
       programId: string;
       cycleIntervalMs: number;
       controlExpression: string;
+      targetObjectPath: string;
+      outputVariable: string;
+      interlockExpression: string;
       enabled: boolean;
     }) => {
       const byName = new Map(variables.map((variable) => [variable.name, variable]));
@@ -44,6 +51,9 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
       await writeField("programId", "value", payload.programId);
       await writeField("cycleIntervalMs", "value", payload.cycleIntervalMs);
       await writeField("controlExpression", "value", payload.controlExpression);
+      await writeField("targetObjectPath", "value", payload.targetObjectPath);
+      await writeField("outputVariable", "value", payload.outputVariable);
+      await writeField("interlockExpression", "value", payload.interlockExpression);
       await writeField("enabled", "value", payload.enabled);
     },
     onSuccess: () => {
@@ -84,6 +94,9 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
             programId: String(data.get("programId") ?? ""),
             cycleIntervalMs: Number(data.get("cycleIntervalMs") ?? 1000),
             controlExpression: String(data.get("controlExpression") ?? ""),
+            targetObjectPath: String(data.get("targetObjectPath") ?? ""),
+            outputVariable: String(data.get("outputVariable") ?? ""),
+            interlockExpression: String(data.get("interlockExpression") ?? ""),
             enabled: data.get("enabled") === "on",
           });
         }}
@@ -104,6 +117,24 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
           />
         </label>
         <label className="full">
+          {t("automation:processProgram.targetObjectPath")}
+          <input
+            name="targetObjectPath"
+            defaultValue={form.targetObjectPath}
+            readOnly={!canManage}
+            placeholder={t("automation:processProgram.targetObjectPathPlaceholder")}
+          />
+        </label>
+        <label>
+          {t("automation:processProgram.outputVariable")}
+          <input
+            name="outputVariable"
+            defaultValue={form.outputVariable}
+            readOnly={!canManage}
+            placeholder={t("automation:processProgram.outputVariablePlaceholder")}
+          />
+        </label>
+        <label className="full">
           {t("automation:processProgram.controlExpression")}
           <textarea
             name="controlExpression"
@@ -113,15 +144,30 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
             placeholder={t("automation:processProgram.controlExpressionPlaceholder")}
           />
         </label>
+        <label className="full">
+          {t("automation:processProgram.interlockExpression")}
+          <textarea
+            name="interlockExpression"
+            defaultValue={form.interlockExpression}
+            rows={2}
+            readOnly={!canManage}
+            placeholder={t("automation:processProgram.interlockExpressionPlaceholder")}
+          />
+        </label>
         <label className="checkbox">
           <input type="checkbox" name="enabled" defaultChecked={form.enabled} disabled={!canManage} />
           {t("automation:processProgram.enabled")}
         </label>
-        {(form.lastCycleAt || form.lastError) && (
+        {(form.lastCycleAt || form.lastOutput || form.lastError) && (
           <div className="full runtime-meta">
             {form.lastCycleAt && (
               <p className="hint">
                 {t("automation:processProgram.lastCycleAt")}: <code>{form.lastCycleAt}</code>
+              </p>
+            )}
+            {form.lastOutput && (
+              <p className="hint">
+                {t("automation:processProgram.lastOutput")}: <code>{form.lastOutput}</code>
               </p>
             )}
             {form.lastError && (

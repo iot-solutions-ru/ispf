@@ -37,6 +37,8 @@
   "login.oidcRedirecting": "Weiterleitung…",
   "login.oidcSubmit": "Melden Sie sich mit Keycloak an",
   "login.password": "Passwort",
+  "login.totp": "Authenticator-Code (falls MFA aktiv)",
+  "login.totpHint": "Erforderlich, wenn Admin-MFA erzwungen wird (ISPF_MFA_REQUIRED_FOR_ADMIN).",
   "login.submit": "Melden Sie sich an",
   "login.submitting": "Anmelden…",
   "login.subtitle": "Melden Sie sich auf der Plattform an",

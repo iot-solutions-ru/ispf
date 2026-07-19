@@ -125,6 +125,8 @@
   "editor.spreadsheet.sheetConfigJson": "Sheet config (sheetConfigJson)",
   "editor.spreadsheet.sheetConfigPlaceholder": "{\"rows\":10,\"cols\":4,\"cells\":{...}}",
   "editor.spreadsheet.bindingHistoryHint": "Binding cells: add historyMinutes (e.g. 15) to read the latest historian sample in that window; falls back to live value.",
+  "editor.spreadsheet.liveRefresh": "Live refresh (WebSocket + poll)",
+  "editor.spreadsheet.liveRefreshIntervalMs": "Live poll interval (ms)",
   "editor.spreadsheet.insertFreeTemplate": "Template: free grid",
   "editor.spreadsheet.insertDefaultTemplate": "Template: basic grid",
   "editor.spreadsheet.insertCalculatorTemplate": "Template: calculator",

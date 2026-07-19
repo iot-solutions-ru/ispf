@@ -167,10 +167,13 @@ public class SystemObjectStructureService {
 
     @Transactional
     public void ensureProcessProgramStructure(String path) {
-        if (objectManager.require(path).getVariable("programId").isPresent()) {
-            return;
+        if (objectManager.require(path).getVariable("programId").isEmpty()) {
+            applyIntrinsic("process-program-v1", path);
         }
-        applyIntrinsic("process-program-v1", path);
+        ensureStringVariable(path, "targetObjectPath", "");
+        ensureStringVariable(path, "outputVariable", "");
+        ensureStringVariable(path, "interlockExpression", "");
+        ensureStringVariable(path, "lastOutput", "");
     }
 
     @Transactional

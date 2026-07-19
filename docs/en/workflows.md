@@ -24,7 +24,8 @@ Workflow object variables:
 | `outputSchemaJson` | Tool output projection schema |
 | `toolDescription` | Agent/MCP tool description |
 | `sideEffectClass` | `READ` / `WRITE` / `CONTROL` |
-| `retryMaxAttempts` | Max retries after FAILED (metadata for DLQ) |
+| `retryMaxAttempts` | Max total attempts (incl. first). On FAILED, async `workflow_retry_schedule` until exhausted, then DLQ |
+| `retryBackoffSeconds` | Delay before each async retry (default 30) |
 | `retryBackoffSeconds` | Backoff hint |
 | `errorWorkflowPath` | Workflow started on failure |
 | `webhookSlug` | Inbound webhook slug |

@@ -1,5 +1,7 @@
 package com.ispf.server.api;
 
+import com.ispf.core.object.ObjectEvent;
+import com.ispf.server.event.EventService;
 import com.ispf.server.eventfilter.EventFilterObjectService;
 import com.ispf.server.eventfilter.EventFilterObjectService.EventFilterDefinition;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,9 +20,22 @@ import java.util.List;
 public class EventFilterController {
 
     private final EventFilterObjectService eventFilterObjectService;
+    private final EventService eventService;
 
-    public EventFilterController(EventFilterObjectService eventFilterObjectService) {
+    public EventFilterController(EventFilterObjectService eventFilterObjectService, EventService eventService) {
         this.eventFilterObjectService = eventFilterObjectService;
+        this.eventService = eventService;
+    }
+
+    /** Apply a saved filter to the event journal (BL-174). */
+    @GetMapping("/by-path/events")
+    public List<ObjectEvent> apply(
+            @RequestParam String path,
+            @RequestParam(required = false) String objectPath,
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        eventFilterObjectService.getByPath(path);
+        return eventService.list(objectPath, limit, path);
     }
 
     @GetMapping

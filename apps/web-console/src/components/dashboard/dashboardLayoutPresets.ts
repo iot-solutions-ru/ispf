@@ -30,22 +30,29 @@ function videoWallGrid(_preset: DashboardLayoutPreset, columns: number, rows: nu
   });
 }
 
+function videoWallDimensions(preset: DashboardLayoutPreset): { columns: number; rows: number } | null {
+  if (preset === "video-wall-2x2") {
+    return { columns: 2, rows: 2 };
+  }
+  if (preset === "video-wall-3x3") {
+    return { columns: 3, rows: 3 };
+  }
+  if (preset === "video-wall-4x4") {
+    return { columns: 4, rows: 4 };
+  }
+  return null;
+}
+
 export function applyLayoutPreset(
   preset: DashboardLayoutPreset,
   layout: DashboardLayout
 ): DashboardLayout {
-  if (preset === "video-wall-2x2") {
+  const dims = videoWallDimensions(preset);
+  if (dims) {
     return {
       ...layout,
       layoutPreset: preset,
-      widgets: videoWallGrid(preset, 2, 2),
-    };
-  }
-  if (preset === "video-wall-3x3") {
-    return {
-      ...layout,
-      layoutPreset: preset,
-      widgets: videoWallGrid(preset, 3, 3),
+      widgets: videoWallGrid(preset, dims.columns, dims.rows),
     };
   }
   return { ...layout, layoutPreset: preset };
@@ -57,12 +64,10 @@ export function clearLayoutPreset(layout: DashboardLayout): DashboardLayout {
 }
 
 export function videoWallSlotCount(preset: DashboardLayoutPreset): number {
-  if (preset === "video-wall-3x3") {
-    return 9;
-  }
-  return 4;
+  const dims = videoWallDimensions(preset);
+  return dims ? dims.columns * dims.rows : 4;
 }
 
 export function isVideoWallPreset(preset: DashboardLayoutPreset | undefined): preset is DashboardLayoutPreset {
-  return preset === "video-wall-2x2" || preset === "video-wall-3x3";
+  return preset === "video-wall-2x2" || preset === "video-wall-3x3" || preset === "video-wall-4x4";
 }

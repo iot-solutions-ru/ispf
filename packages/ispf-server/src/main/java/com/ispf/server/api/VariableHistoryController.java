@@ -1,14 +1,19 @@
 package com.ispf.server.api;
 
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
 import com.ispf.server.federation.FederationProxyService;
 import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarRangeService;
+import com.ispf.server.security.acl.ObjectAccessService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,17 +33,23 @@ public class VariableHistoryController {
     private final FederationProxyService federationProxyService;
     private final PlatformCalendarRangeService calendarRangeService;
     private final ObjectMapper objectMapper;
+    private final ObjectManager objectManager;
+    private final ObjectAccessService objectAccessService;
 
     public VariableHistoryController(
             VariableHistoryService variableHistoryService,
             FederationProxyService federationProxyService,
             PlatformCalendarRangeService calendarRangeService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ObjectManager objectManager,
+            ObjectAccessService objectAccessService
     ) {
         this.variableHistoryService = variableHistoryService;
         this.federationProxyService = federationProxyService;
         this.calendarRangeService = calendarRangeService;
         this.objectMapper = objectMapper;
+        this.objectManager = objectManager;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/history")
@@ -50,8 +61,10 @@ public class VariableHistoryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(required = false) String calendarRange,
             @RequestParam(required = false) String timeZone,
-            @RequestParam(required = false, defaultValue = "500") int limit
+            @RequestParam(required = false, defaultValue = "500") int limit,
+            Authentication authentication
     ) {
+        requireVariableHistoryRead(path, name, authentication);
         try {
             InstantRange range = resolveRange(from, to, calendarRange, timeZone);
             return federationProxyService.resolve(path)
@@ -79,8 +92,10 @@ public class VariableHistoryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(required = false) String calendarRange,
             @RequestParam(required = false) String timeZone,
-            @RequestParam(required = false, defaultValue = "500") int limit
+            @RequestParam(required = false, defaultValue = "500") int limit,
+            Authentication authentication
     ) {
+        requireVariableHistoryRead(path, name, authentication);
         try {
             InstantRange range = resolveRange(from, to, calendarRange, timeZone);
             return federationProxyService.resolve(path)
@@ -108,8 +123,10 @@ public class VariableHistoryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(required = false) String calendarRange,
             @RequestParam(required = false) String timeZone,
-            @RequestParam(required = false, defaultValue = "10000") int limit
+            @RequestParam(required = false, defaultValue = "10000") int limit,
+            Authentication authentication
     ) throws IOException {
+        requireVariableHistoryRead(path, name, authentication);
         String normalizedFormat = format == null ? "" : format.trim().toLowerCase(Locale.ROOT);
         try {
             InstantRange range = resolveRange(from, to, calendarRange, timeZone);
@@ -142,6 +159,13 @@ public class VariableHistoryController {
         } catch (IllegalArgumentException e) {
             throw mapIllegalArgument(e);
         }
+    }
+
+    private void requireVariableHistoryRead(String path, String name, Authentication authentication) {
+        PlatformObject node = objectManager.require(path);
+        Variable variable = node.getVariable(name)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));
+        objectAccessService.requireVariableRead(path, name, variable.readRoles(), authentication);
     }
 
     private InstantRange resolveRange(

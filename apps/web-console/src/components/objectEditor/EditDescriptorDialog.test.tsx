@@ -12,6 +12,13 @@ vi.mock("../../api", async (importOriginal) => {
   return { ...actual, upsertFunction: vi.fn(), upsertEvent: vi.fn() };
 });
 
+vi.mock("../../api/securityRoles", () => ({
+  fetchSecurityRoles: vi.fn().mockResolvedValue([
+    { name: "operator", displayName: "Operator" },
+    { name: "admin", displayName: "Admin" },
+  ]),
+}));
+
 vi.mock("../schema/DataSchemaEditor", () => ({
   default: () => <div data-testid="schema-editor" />,
 }));
@@ -106,7 +113,10 @@ describe("EditDescriptorDialog", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(api.upsertFunction).toHaveBeenCalledTimes(1));
-    expect(api.upsertFunction).toHaveBeenCalledWith("root.platform.functions", initial);
+    expect(api.upsertFunction).toHaveBeenCalledWith("root.platform.functions", {
+      ...initial,
+      invokeRoles: [],
+    });
   });
 
   it("does not leave advanced mode while its JSON is invalid", async () => {

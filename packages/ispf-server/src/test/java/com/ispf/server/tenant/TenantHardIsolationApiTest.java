@@ -35,24 +35,25 @@ class TenantHardIsolationApiTest {
     @Test
     void hardModeCreatesTenantSchemaOnCreate() throws Exception {
         String adminToken = login("admin", "admin");
+        String tenantId = "hardco" + Long.toHexString(System.nanoTime()).substring(0, 6);
 
         mockMvc.perform(post("/api/v1/tenants")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "tenantId": "hardco",
+                                  "tenantId": "%s",
                                   "displayName": "Hard Co",
                                   "enabled": true
                                 }
-                                """))
+                                """.formatted(tenantId)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.schemaName").value("tenant_hardco"));
+                .andExpect(jsonPath("$.schemaName").value("tenant_" + tenantId));
 
         Integer schemaCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?",
                 Integer.class,
-                "tenant_hardco"
+                "tenant_" + tenantId
         );
         assertThat(schemaCount).isEqualTo(1);
     }

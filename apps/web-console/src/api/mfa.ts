@@ -5,6 +5,8 @@ export interface MfaStatus {
   enrolled: boolean;
   enrollmentPending: boolean;
   enrollmentStartedAt: string | null;
+  pendingSecret?: string | null;
+  pendingOtpauthUri?: string | null;
 }
 
 export interface MfaEnrollmentStart {

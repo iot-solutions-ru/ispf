@@ -27,14 +27,17 @@ Manual acceptance for installed operator mode on Android. **Automated coverage (
 
 ## Regression notes
 
-- Service worker caches shell only; API uses network (offline uses localStorage cache)
+- Service worker caches shell **and** NetworkFirst `/api/v1/dashboards/`, `/api/v1/mimics/`, operator manifest/UI for **8h** (BL-151; see `vite.config.ts` Workbox `runtimeCaching`)
+- Operator localStorage offline TTL is also 8h (`OFFLINE_CACHE_MAX_AGE_MS`); reconnect sync via `syncOperatorCachesOnReconnect`
+- Evidence script (no literal 8h soak): `node scripts/pwa-offline-evidence.mjs`
 - If install prompt missing: check `manifest.webmanifest`, `display: standalone`, icons 192/512
 - Record device model, Chrome version, and screenshot of offline banner for release notes
 
 ## Sign-off
 
-- [x] Automated: Pixel 5 + preview build (`npm run test:e2e:preview`) — Sprint S16
+- [x] Automated: Pixel 5 + preview build (`npm run test:e2e:preview`) — Sprint S16; dashboard/mimic SW cache probe
 - [ ] Optional: tested on physical Android device (release notes)
 - [x] Standalone manifest + SW registration OK
 - [x] Offline stale banner OK (preview + dev navigator.onLine)
-- Tester / date: CI / 2026-07-03
+- [x] BL-151 evidence script + 8h TTL unit tests
+- Tester / date: CI / 2026-07-19

@@ -39,8 +39,8 @@ See [analytics-rolling-avg](../analytics-rolling-avg/) for a full REST example.
 ### 4. Run historian + analytics gates
 
 ```bash
-bash deploy/local/tools/historian-scale-benchmark.sh
-bash deploy/local/tools/analytics-scale-gate.sh
+bash tools/historian-scale/historian-scale-benchmark.sh
+bash tools/historian-scale/analytics-scale-gate.sh
 ```
 
 Reports: `build/historian-scale/scale-benchmark.md`, `build/analytics-scale/analytics-scale-gate.md`.

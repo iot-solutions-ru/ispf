@@ -235,25 +235,25 @@
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1877,
+    "line": 1904,
     "kind": "ui-attr",
     "text": "SVG"
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1883,
+    "line": 1910,
     "kind": "ui-attr",
     "text": "/lab-assets/button.svg"
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 2117,
+    "line": 2144,
     "kind": "ui-attr",
     "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 2176,
+    "line": 2203,
     "kind": "ui-attr",
     "text": "HTML"
   },

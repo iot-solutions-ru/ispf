@@ -75,9 +75,17 @@ public class ProcessProgramObjectService {
 
     @Transactional
     public void recordCycle(String path, Instant at, String error) {
+        recordCycle(path, at, error, null);
+    }
+
+    @Transactional
+    public void recordCycle(String path, Instant at, String error, String lastOutput) {
         ensureStructure(path);
         setString(path, "lastCycleAt", at != null ? at.toString() : "");
         setString(path, "lastError", error != null ? error : "");
+        if (lastOutput != null) {
+            setString(path, "lastOutput", lastOutput);
+        }
     }
 
     private void ensureStructure(String path) {
@@ -90,9 +98,13 @@ public class ProcessProgramObjectService {
                 readString(node, "programId").orElse(path.substring(path.lastIndexOf('.') + 1)),
                 readInteger(node, "cycleIntervalMs").orElse(1000L),
                 readString(node, "controlExpression").orElse(""),
+                readString(node, "targetObjectPath").orElse(""),
+                readString(node, "outputVariable").orElse(""),
+                readString(node, "interlockExpression").orElse(""),
                 readBoolean(node, "enabled").orElse(false),
                 readInstant(node, "lastCycleAt").orElse(null),
-                readString(node, "lastError").orElse("")
+                readString(node, "lastError").orElse(""),
+                readString(node, "lastOutput").orElse("")
         ));
     }
 
@@ -132,9 +144,13 @@ public class ProcessProgramObjectService {
             String programId,
             long cycleIntervalMs,
             String controlExpression,
+            String targetObjectPath,
+            String outputVariable,
+            String interlockExpression,
             boolean enabled,
             Instant lastCycleAt,
-            String lastError
+            String lastError,
+            String lastOutput
     ) {
     }
 }

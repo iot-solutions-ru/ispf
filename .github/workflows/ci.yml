@@ -128,6 +128,31 @@ jobs:
           test -f dist/legal/LICENSE
           test -f dist/legal/THIRD_PARTY_NOTICES.md
 
+  marketplace-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Validate marketplace-catalog bundles (BL-183)
+        run: node tools/marketplace-catalog/validate-catalog.mjs
+
+  helm-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Helm lint + template smoke (BL-186)
+        run: bash deploy/helm/ispf/validate.sh
+
   agent-regression:
     runs-on: ubuntu-latest
     steps:
@@ -179,7 +204,7 @@ jobs:
           key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
 
   pr-fast-ok:
-    needs: [changes, backend, web-console, agent-regression]
+    needs: [changes, backend, web-console, agent-regression, marketplace-catalog, helm-chart]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -188,15 +213,21 @@ jobs:
           echo "backend=${{ needs.backend.result }}"
           echo "web-console=${{ needs.web-console.result }}"
           echo "agent-regression=${{ needs.agent-regression.result }}"
+          echo "marketplace-catalog=${{ needs.marketplace-catalog.result }}"
+          echo "helm-chart=${{ needs.helm-chart.result }}"
           if [[ "${{ needs.backend.result }}" == "failure"
              || "${{ needs.web-console.result }}" == "failure"
-             || "${{ needs.agent-regression.result }}" == "failure" ]]; then
+             || "${{ needs.agent-regression.result }}" == "failure"
+             || "${{ needs.marketplace-catalog.result }}" == "failure"
+             || "${{ needs.helm-chart.result }}" == "failure" ]]; then
             echo "pr-fast failed"
             exit 1
           fi
           if [[ "${{ needs.backend.result }}" == "cancelled"
              || "${{ needs.web-console.result }}" == "cancelled"
-             || "${{ needs.agent-regression.result }}" == "cancelled" ]]; then
+             || "${{ needs.agent-regression.result }}" == "cancelled"
+             || "${{ needs.marketplace-catalog.result }}" == "cancelled"
+             || "${{ needs.helm-chart.result }}" == "cancelled" ]]; then
             exit 1
           fi
           echo "pr-fast passed (skipped jobs are OK for path-only changes)"

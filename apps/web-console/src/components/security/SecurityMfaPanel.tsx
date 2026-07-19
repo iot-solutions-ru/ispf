@@ -59,18 +59,34 @@ export default function SecurityMfaPanel() {
   });
 
   useEffect(() => {
-    const canvas = qrCanvasRef.current;
-    if (!canvas || !enrollment?.otpauthUri) {
+    const status = statusQuery.data;
+    if (!status?.enrollmentPending || enrollment != null) {
       return;
     }
-    QRCode.toCanvas(canvas, enrollment.otpauthUri, {
+    if (status.pendingSecret && status.pendingOtpauthUri) {
+      setEnrollment({
+        secret: status.pendingSecret,
+        otpauthUri: status.pendingOtpauthUri,
+        hint: t("mfa.pendingHint"),
+      });
+    }
+  }, [statusQuery.data, enrollment, t]);
+
+  const activeOtpauthUri = enrollment?.otpauthUri;
+
+  useEffect(() => {
+    const canvas = qrCanvasRef.current;
+    if (!canvas || !activeOtpauthUri) {
+      return;
+    }
+    QRCode.toCanvas(canvas, activeOtpauthUri, {
       width: 200,
       margin: 1,
       color: { dark: "#e6edf3", light: "#0d1117" },
     }).catch(() => {
       // canvas may be unavailable in tests
     });
-  }, [enrollment?.otpauthUri]);
+  }, [activeOtpauthUri]);
 
   const status = statusQuery.data;
   const showEnrollFlow = Boolean(enrollment) || status?.enrollmentPending;

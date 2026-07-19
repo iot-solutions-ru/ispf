@@ -137,29 +137,33 @@ Aggregate multiple events → action (start workflow).
 |-----|----------|
 | `COUNT` | N events of `eventName` within `windowSeconds` |
 | `SEQUENCE` | Event A, then B on the same object |
+| `EVENT_CHAIN` | Ordered chain of 3+ events (`eventName` + comma-separated `secondEventName`) within `windowSeconds` |
 | `WINDOW` | Set of events (A + list in `secondEventName`) — each at least once within `windowSeconds` |
 
-### WINDOW (BL-171)
+### WINDOW / EVENT_CHAIN (BL-171)
 
-**Unordered window** pattern: all listed events must occur on one object within `windowSeconds`; order does not matter.
+**WINDOW (unordered):** all listed events must occur on one object within `windowSeconds`; order does not matter.
 
-| Field | Role for WINDOW |
+**EVENT_CHAIN (ordered):** events must appear in order (gaps allowed for unrelated events) within `windowSeconds`.
+
+| Field | Role for WINDOW / EVENT_CHAIN |
 |------|-----------------|
 | `eventName` | First required event |
 | `secondEventName` | Additional events comma-separated (e.g. `workOrderReleased,workOrderStarted`) |
 | `windowSeconds` | Sliding window width (> 0) |
 | `minOccurrences` | Not used (leave 1) |
+| `sequenceGapSeconds` | Optional max gap between consecutive chain steps (`EVENT_CHAIN`) |
 
 Example: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` within 120 s on `mes-platform-hub` → `RUN_WORKFLOW`.
 
-`EventCorrelatorService.processWindowPattern` records each hit in the window store and fires when the set of unique events matches the required set.
+`EventCorrelatorService.processWindowPattern` / `processEventChainPattern` record hits in the window store and fire when the pattern matches.
 
 ### Fields
 
 | Field | Description |
 |------|----------|
 | `name` | Name |
-| `patternType` | COUNT / SEQUENCE / WINDOW |
+| `patternType` | COUNT / SEQUENCE / EVENT_CHAIN / WINDOW |
 | `eventName` | First event (A) |
 | `secondEventName` | Second (for SEQUENCE) or additional (for WINDOW) |
 | `windowSeconds` | Observation window |
@@ -236,12 +240,55 @@ Alert rules API accepts the same fields in `POST/PUT` body (`CreateAlertRuleRequ
 
 ---
 
+## Process programs (BL-172)
+
+Cyclic control loops under `root.platform.process-programs` (`PROCESS_PROGRAM` / `process-program-v1`).
+
+| Field | Role |
+|------|------|
+| `cycleIntervalMs` | Tick interval |
+| `targetObjectPath` | Plant object for CEL context + actuator write |
+| `outputVariable` | Variable on target written each cycle |
+| `controlExpression` | CEL result written to `outputVariable` |
+| `interlockExpression` | Optional CEL; write skipped when false (`lastError=interlock blocked`) |
+| `enabled` | On/off |
+| `lastCycleAt` / `lastOutput` / `lastError` | Runtime |
+
+Scheduler: leader-locked `ProcessProgramRunner` (`ispf.process-program.tick-ms`).
+
+## Event filters (BL-174)
+
+Reusable journal filters under `root.platform.event-filters` (`EVENT_FILTER` / `event-filter-v1`).
+
+| Field | Role |
+|------|------|
+| `eventNamePattern` | Glob (`*`, `?`) |
+| `sourceObjectPathPattern` | Object path glob (`*`, `**`) |
+| `minSeverity` / `maxSeverity` | 0–100 scale (DEBUG=10 … CRITICAL=90) |
+| `timeWindowMs` | Keep only events newer than now−window (0 = all) |
+| `filterExpression` | Optional CEL on `payload.*` (includes `eventName`, `severity`, …) |
+
+Apply:
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/events?filterPath=root.platform.event-filters.*` |
+| GET | `/api/v1/event-filters/by-path/events?path=…` |
+
+CRUD: `/api/v1/event-filters`.
+
+## ML hooks (BL-175)
+
+`com.ispf.core.ml.AnomalyDetectionSpi` with reference `ThresholdAnomalyDetectionSpi` (`ispf.ml.anomaly.enabled=true`). Alert rules may set `anomalyModelId` for SPI scoring via `AnomalyAlertRuleEvaluator`.
+
 ## CEL in automation
 
 | Place | Context |
 |-------|----------|
 | Variable binding | `self.var.field` |
 | Alert rule | watched variable fields |
+| Process program | target object `self.*` |
+| Event filter | `payload.*` |
 | Workflow gateway | process instance variables |
 | Expression validate API | arbitrary schema |
 

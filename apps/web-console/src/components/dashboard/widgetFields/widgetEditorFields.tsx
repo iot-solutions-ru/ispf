@@ -1822,6 +1822,33 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
             />
             {t("editor.editableAllowWrite")}
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={widget.live === true}
+              data-testid="spreadsheet-live-toggle"
+              onChange={(e) => update({ live: e.target.checked })}
+            />
+            {t("editor.spreadsheet.liveRefresh")}
+          </label>
+          {widget.live === true && (
+            <label>
+              {t("editor.spreadsheet.liveRefreshIntervalMs")}
+              <input
+                type="number"
+                min={250}
+                step={250}
+                value={widget.liveRefreshIntervalMs ?? 2000}
+                data-testid="spreadsheet-live-interval"
+                onChange={(e) => {
+                  const parsed = Number(e.target.value);
+                  update({
+                    liveRefreshIntervalMs: Number.isFinite(parsed) ? parsed : 2000,
+                  });
+                }}
+              />
+            </label>
+          )}
           <SheetGridSizeEditor
             sheetConfigJson={widget.sheetConfigJson}
             onChange={(v) => update({ sheetConfigJson: v })}

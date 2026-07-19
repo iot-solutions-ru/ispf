@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Immutable security audit log — BL-156.
+ * Append-oriented security audit log with CSV export and optional SIEM webhook — BL-156.
  */
 @Service
 public class AuditEventService {
@@ -30,10 +30,16 @@ public class AuditEventService {
 
     private final AuditEventRepository repository;
     private final ObjectMapper objectMapper;
+    private final AuditSiemWebhookDispatcher siemWebhookDispatcher;
 
-    public AuditEventService(AuditEventRepository repository, ObjectMapper objectMapper) {
+    public AuditEventService(
+            AuditEventRepository repository,
+            ObjectMapper objectMapper,
+            AuditSiemWebhookDispatcher siemWebhookDispatcher
+    ) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.siemWebhookDispatcher = siemWebhookDispatcher;
     }
 
     @Transactional
@@ -48,6 +54,7 @@ public class AuditEventService {
         entity.setDetailsJson(details == null || details.isEmpty() ? null : writeJson(details));
         entity.setOccurredAt(Instant.now());
         repository.save(entity);
+        siemWebhookDispatcher.dispatch(toRecord(entity));
     }
 
     @Transactional(readOnly = true)
