@@ -27,13 +27,34 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…225. **One file** �
 | Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
 | Sprint S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Current focus:** AI Autopilot BL-177…180 **Done** (live smoke opt-in `ISPF_LLM_SMOKE`); residual field soak / soft &lt;15 min — see [Next 90 days](#next-90-days). **Deferred:** Phase 25 OT Trust; live ERP (BL-169).
+**Current focus:** **Quality over features** — harden what shipped; no new capability surface by default — [Execution policy](#execution-policy--quality-over-features). Residual AI field soak / soft &lt;15 min (BL-177…180 Done; live smoke opt-in `ISPF_LLM_SMOKE`) — see [Next 90 days](#next-90-days). **Deferred:** Phase 25 OT Trust; live ERP (BL-169); BPMN/DMN depth beyond [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) freeze.
 
-**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…225 (OT + live ERP parked; manufacturing pattern wave planned).
+**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…225 (OT + live ERP parked; new BL rows only for named customer blockers or honesty/hardening).
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
 VPS deploy — on request only (see [deployment](deployment.md) / [demostands](demostands.md); script `deploy/vps-deploy-direct.ps1`).
+
+---
+
+## Execution policy — quality over features {#execution-policy--quality-over-features}
+
+**Decision (2026-07-19):** concentrate on the **quality and honesty** of capabilities already in the product. Do **not** expand the feature surface (new BPMN elements, new phases, new product lines) unless a **named customer blocker** requires it.
+
+| Default work | Not default |
+| ------------ | ----------- |
+| Field soak, live gates, runbooks, CI honesty | New element types / engines “for completeness” |
+| Partial → Done with **REAL** evidence ([Quality path](#quality-path-to-done)) | Silent parser growth, Camunda/Flowable embed, full BPMN 2.0 |
+| Scorecard / docs / UX truthfulness | Parallel greenfield waves that widen scope |
+
+**Rules:**
+
+1. **Harden first** — bugs, flaky gates, stub honesty, operator/integrator runbooks, residual soaks (AI soft &lt;15 min, field MES/HMI) beat new BL IDs.
+2. **No silent scope growth** — new BPMN element types, DMN, or engine swap require a **new ADR** (see [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)); subset freeze stays until then.
+3. **Parked stays parked** — Phase 25 OT Trust and live ERP (BL-169) resume only with a named field/integration task (same bar as [ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy)).
+4. **New BL / phase rows** — only for customer blocker, compliance gate, or closing an honesty gap — not for competitive checklist width.
+
+This policy does **not** cancel the 10/10 Definition of Done; it changes **order of attack**: usable depth on what exists before more surface.
 
 ---
 
@@ -80,7 +101,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 | **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
 | **29** MES / ERP L4 | ISA-95 | **BL-164…168, BL-170, BL-193, BL-220…225 Done** on marketplace `mes-platform` / `mes-cto` / pattern packs | Field sites; **live ERP (BL-169) deferred** |
-| **30** Automation | CEP / BPMN | BL-171…175 **Done**; BL-176 Done | DMN / further BPMN depth optional |
+| **30** Automation | CEP / BPMN | BL-171…175 **Done**; BL-176 Done | DMN / further BPMN depth **blocked** without named customer + ADR (subset freeze) |
 | **31** AI | Autopilot | BL-177…180 **Done** (BL-178 52/52 @100%; multi-app/multi-domain smoke harness) | Soft &lt;15 min budget / field soak; live smoke needs `ISPF_LLM_SMOKE` |
 | **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
 | **33** Analytics | AF-capable | **Done** (BL-200…210) | — |
@@ -93,6 +114,7 @@ See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for clos
 
 | Need | Section |
 | ---- | ------- |
+| **Execution policy (harden first)** | [Quality over features](#execution-policy--quality-over-features) |
 | P0 execution order (90 days) | [Next 90 days](#next-90-days) · [Domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09) |
 | **Quality path (usable Done)** | [Quality path to Done](#quality-path-to-done) |
 | **S31 Wave 1 backlog (parked)** | [S31 execution backlog](#s31-wave-1-execution-backlog) — OT Trust deferred |
@@ -911,18 +933,21 @@ Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI /
 
 ## Priorities (when resources are limited)
 
+Default: [quality over features](#execution-policy--quality-over-features) — harden shipped capabilities before opening new surface.
+
 | Priority | Phase | Why |
 | --------- | ----- | ------ |
-| **P0** | [31 — AI Autopilot](#phase-31--ai-autopilot) | Live LLM agent deploy without manual edits |
-| **P1** | [26 — HMI phase](#phase-26--hmi-excellence) | SCADA is the operator-facing face of the product |
-| **P1** | [29 — MES Platform](#phase-29--mes-platform) | Differentiates from "just SCADA"; needs field sites, not only smoke |
-| **P2** | [27 — Enterprise Security](#phase-27--enterprise-security) | Enterprise tender requirement |
-| **P2** | [28 — Historian at Scale](#phase-28--historian-at-scale) | Large sites, petabyte-class |
-| **P2** | [33 — Analytics Platform](#phase-33--analytics-platform-af-capable) | AF-capable derived tags + OLAP (BL-200…210) |
+| **P0** | Hardening / honesty on shipped paths | Field soak, live gates, runbooks, stub honesty — see [Quality path](#quality-path-to-done) |
+| **P0** | [31 — AI Autopilot](#phase-31--ai-autopilot) | Residual: soft &lt;15 min / field soak (BL-177…180 Done for harness bar) |
+| **P1** | [26 — HMI phase](#phase-26--hmi-excellence) | Operator-facing face; field offline/FPS evidence over new widgets |
+| **P1** | [29 — MES Platform](#phase-29--mes-platform) | Field sites on existing `mes-platform`, not new MES modules |
+| **P2** | [27 — Enterprise Security](#phase-27--enterprise-security) | Enterprise tender requirement (WebAuthn → BL-194 only if needed) |
+| **P2** | [28 — Historian at Scale](#phase-28--historian-at-scale) | Large sites; enforce tiers / SLO honesty over new stores |
+| **P2** | [33 — Analytics Platform](#phase-33--analytics-platform-af-capable) | Close Partial analytics paths; no new analytics product line |
 | **P2** | [BL-192 compliance](#bl-191193--domain-audit-follow-ups) | [compliance-tender-pack](compliance-tender-pack.md) published (**Done**); cert/pen-test still open |
-| **P3** | [30 — Automation Depth](#phase-30--automation-depth) | Power users, CEP, process control |
-| **P3** | [32 — Ecosystem & Market](#phase-32--ecosystem--market) | Scale through partners |
-| **Deferred** | [25 — OT Trust](#phase-25--ot-trust) + [BL-191](#bl-191193--domain-audit-follow-ups) | Parked 2026-07-14 — resume only with a named field driver task |
+| **P3** | [30 — Automation Depth](#phase-30--automation-depth) | CEP/process Done; **BPMN subset frozen** — no DMN/full 2.0 without customer + ADR |
+| **P3** | [32 — Ecosystem & Market](#phase-32--ecosystem--market) | External partners on existing marketplace path |
+| **Deferred** | [25 — OT Trust](#phase-25--ot-trust) field pilots | Parked — resume only with a named field driver task |
 | **Deferred** | [29 — MES / ERP L4](#phase-29--mes-platform) (BL-169) | Parked 2026-07-14 — live 1C/SAP connector not in active plan |
 
 ---
@@ -1557,13 +1582,14 @@ CEP, process programs, BPMN subprocess (BL-171…176) ship **after** operator + 
 
 ### Next 90 days — quality-focused
 
-Active P0: **AI Autopilot**. OT Trust and live ERP (BL-169) deferred:
+Active P0: **harden shipped paths** ([execution policy](#execution-policy--quality-over-features)). AI Autopilot harness Done — residual soak only. OT Trust, live ERP (BL-169), and BPMN depth deferred:
 
 | Sprint | Usable milestone (not just BL id) |
 | ------ | --------------------------------- |
 | **S31** | One AI scenario: live LLM deploy end-to-end without human edit (BL-177 / BL-178) |
 | **S32** | Solution generator multi-domain live apply (BL-180) |
 | **S33** | Genealogy query on demo lot (BL-193) — **Done** |
+| **Post-S33** | Field soak / soft budgets / REAL Partial→Done — not new feature waves |
 
 Full BL list: [Next 90 days](#next-90-days) below.
 
@@ -1583,15 +1609,16 @@ Full BL list: [Next 90 days](#next-90-days) below.
 
 ## Next 90 days
 
-Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09); **OT Trust (Phase 25) and live ERP (BL-169) deferred**.
+Aligned with [execution policy](#execution-policy--quality-over-features) and [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09). **Default work = hardening.** **OT Trust (Phase 25) field pilots, live ERP (BL-169), and BPMN depth beyond ADR-0047 are deferred.**
 
 | Sprint | Timeline (draft) | Scope |
 | ------ | ------------ | ----- |
 | **S31** | Jul–Aug 2026 | BL-177/178 **Done** (52/52 live suite; multi-app smoke harness; live needs `ISPF_LLM_SMOKE`) |
 | **S32** | Aug 2026 | BL-180 **Done** (multi-domain live apply harness HVAC/MES/SCADA); BL-179 continuity Done |
 | **S33** | Sep 2026 | **BL-193** genealogy lite |
+| **Post-S33** | ongoing | Quality path: AI field soak / soft &lt;15 min; field MES/HMI evidence; scorecard honesty — **not** new feature waves |
 
-Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
+Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPMN/DMN expansion.
 
 ---
 
@@ -1625,6 +1652,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 
 | Date | Change |
 | ---- | --------- |
+| 2026-07-19 | **Execution policy — quality over features:** harden shipped capabilities by default; no new BPMN/phase/product surface without named customer blocker + ADR; BPMN subset freeze (ADR-0047) stays; OT/ERP remain parked — [§ Execution policy](#execution-policy--quality-over-features) |
 | 2026-07-19 | **Phase 32 ecosystem partials closed:** BL-183 Done (CI `marketplace-catalog` validate + honest partner multi-endpoint; not live partner SaaS); BL-186 Done (Helm lint/template + deploy docs); BL-187 Done (ARM compose/validate); BL-188 Done usable MoM path (not 10+ peer soak); BL-190 Done curriculum paths linked |
 | 2026-07-19 | **BL-177 / BL-180 → Done:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness in repo; live runs require `ISPF_LLM_SMOKE=true` (no invented multi-app/multi-domain live pass counts). BL-178 remains **Done** 52/52 @100%. Scorecard AI **8.5 → 9.0** |
 | 2026-07-19 | **Phase 26 HMI close-out:** BL-147 Done (multi-select/layers/undo/keyboard + tests); BL-148 Done (2×2…4×4 + VideoWallAutoScale); BL-149 Done (server phase breakpoints + Continue + UI); BL-150 Done (live WS/poll, cross-sheet, XLSX export, editor live toggles); BL-151 Done (SW dashboards+mimics 8h, reconnect sync, `pwa:offline-evidence`); BL-152 **Done** — honesty acceptance CI 500 el ≥55 FPS + WS path (do **not** claim unmocked ≥60); LH operator ≥95 = ops stretch (CI floor 90) |
