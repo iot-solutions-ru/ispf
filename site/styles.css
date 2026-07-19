@@ -74,7 +74,9 @@ a {
 
 img {
   max-width: 100%;
+  height: auto;
   display: block;
+  object-fit: contain;
 }
 
 .wrap {
@@ -222,6 +224,8 @@ html[data-theme="dark"] .btn-primary {
 
 .hero-visual img {
   width: 100%;
+  height: auto;
+  aspect-ratio: auto;
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
   background: #0d1117;
@@ -277,6 +281,9 @@ html[data-theme="dark"] .btn-primary {
 }
 
 .shot-grid img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: auto;
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
   background: #0d1117;
