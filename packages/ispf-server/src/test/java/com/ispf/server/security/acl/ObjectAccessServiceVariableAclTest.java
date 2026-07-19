@@ -2,6 +2,7 @@ package com.ispf.server.security.acl;
 
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.security.RoleScopeAccessService;
+import com.ispf.server.tenant.TenantScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,12 +33,16 @@ class ObjectAccessServiceVariableAclTest {
     @Mock
     private RoleScopeAccessService roleScopeAccessService;
 
+    @Mock
+    private TenantScopeService tenantScopeService;
+
     private ObjectAccessService service;
 
     @BeforeEach
     void setUp() {
-        service = new ObjectAccessService(aclStore, roleScopeAccessService);
+        service = new ObjectAccessService(aclStore, roleScopeAccessService, tenantScopeService);
         lenient().when(roleScopeAccessService.isPathInRoleScope(eq(PATH), any())).thenReturn(true);
+        lenient().when(tenantScopeService.tenantRootPrefix(any())).thenReturn(java.util.Optional.empty());
     }
 
     @Test

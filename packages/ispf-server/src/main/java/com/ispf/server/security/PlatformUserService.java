@@ -11,10 +11,15 @@ import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformTimeZones;
 import com.ispf.server.security.mfa.MfaService;
+import com.ispf.server.tenant.TenantPaths;
+import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantStore;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -41,6 +46,7 @@ public class PlatformUserService {
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
     private final TenantStore tenantStore;
+    private final TenantScopeService tenantScopeService;
     private final IspfSecurityProperties securityProperties;
     private final MfaService mfaService;
 
@@ -53,6 +59,7 @@ public class PlatformUserService {
             PasswordEncoder passwordEncoder,
             ObjectMapper objectMapper,
             TenantStore tenantStore,
+            TenantScopeService tenantScopeService,
             IspfSecurityProperties securityProperties,
             MfaService mfaService
     ) {
@@ -64,6 +71,7 @@ public class PlatformUserService {
         this.passwordEncoder = passwordEncoder;
         this.objectMapper = objectMapper;
         this.tenantStore = tenantStore;
+        this.tenantScopeService = tenantScopeService;
         this.securityProperties = securityProperties;
         this.mfaService = mfaService;
     }
@@ -127,12 +135,22 @@ public class PlatformUserService {
 
     @Transactional
     public Map<String, Object> issueFederationToken(String username, Integer ttlHours) {
+        return issueFederationToken(username, ttlHours, null);
+    }
+
+    @Transactional
+    public Map<String, Object> issueFederationToken(
+            String username,
+            Integer ttlHours,
+            Authentication authentication
+    ) {
         if (!securityProperties.isTokenAuthEnabled()) {
             throw new IllegalArgumentException(
                     "Platform token auth is disabled; federation tokens require profile local or ispf.security.token-auth-enabled"
             );
         }
         String normalized = normalizeUsername(username);
+        requireSameTenantOrGlobalAdmin(normalized, authentication);
         PlatformUserStore.PlatformUser user = userStore.findByUsername(normalized)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + normalized));
         if (!user.enabled()) {
@@ -176,17 +194,54 @@ public class PlatformUserService {
             String password,
             List<String> roles
     ) {
+        return createUser(username, displayName, password, roles, null, null);
+    }
+
+    @Transactional
+    public Map<String, Object> createUser(
+            String username,
+            String displayName,
+            String password,
+            List<String> roles,
+            Authentication authentication
+    ) {
+        String forcedTenant = null;
+        if (authentication != null
+                && IspfRoles.isTenantAdmin(authentication)
+                && !IspfRoles.isGlobalAdmin(authentication)) {
+            forcedTenant = requireCallerTenantId(authentication);
+        }
+        return createUser(username, displayName, password, roles, forcedTenant, authentication);
+    }
+
+    @Transactional
+    public Map<String, Object> createUser(
+            String username,
+            String displayName,
+            String password,
+            List<String> roles,
+            String tenantId,
+            Authentication authentication
+    ) {
         String normalized = normalizeUsername(username);
-        validateRoles(roles);
+        List<String> resolvedRoles = roles != null ? roles : List.of(IspfRoles.OPERATOR);
+        if (authentication != null) {
+            roleService.validateAssignableRoles(resolvedRoles, authentication);
+        } else {
+            validateRoles(resolvedRoles);
+        }
+        forbidGlobalAdminWithTenant(resolvedRoles, tenantId);
         if (userStore.findByUsername(normalized).isPresent()) {
             throw new IllegalArgumentException("User already exists: " + normalized);
         }
-        String objectPath = USERS_PATH_PREFIX + normalized;
+        String objectPath = (tenantId != null && !tenantId.isBlank())
+                ? TenantPaths.tenantUserPath(tenantId, normalized)
+                : USERS_PATH_PREFIX + normalized;
         PlatformUserStore.PlatformUser user = new PlatformUserStore.PlatformUser(
                 normalized,
                 passwordEncoder.encode(password),
                 displayName != null && !displayName.isBlank() ? displayName : normalized,
-                serializeRoles(roles),
+                serializeRoles(resolvedRoles),
                 objectPath,
                 true,
                 false,
@@ -196,8 +251,12 @@ public class PlatformUserService {
                 Instant.now()
         );
         userStore.upsert(user);
-        objectTreeService.syncUser(user);
-        return toSummary(user);
+        if (tenantId != null && !tenantId.isBlank()) {
+            tenantStore.assignUserTenant(normalized, tenantId);
+            tenantScopeService.invalidateUserCache(normalized);
+        }
+        objectTreeService.syncUser(userStore.findByUsername(normalized).orElse(user));
+        return toSummary(userStore.findByUsername(normalized).orElse(user));
     }
 
     @Transactional
@@ -210,10 +269,33 @@ public class PlatformUserService {
             String autoStartApp,
             String timeZone
     ) {
+        return updateUser(
+                username, displayName, roles, enabled, autoStartEnabled, autoStartApp, timeZone, null
+        );
+    }
+
+    @Transactional
+    public Map<String, Object> updateUser(
+            String username,
+            String displayName,
+            List<String> roles,
+            Boolean enabled,
+            Boolean autoStartEnabled,
+            String autoStartApp,
+            String timeZone,
+            Authentication authentication
+    ) {
         PlatformUserStore.PlatformUser existing = userStore.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        requireSameTenantOrGlobalAdmin(existing.username(), authentication);
         List<String> resolvedRoles = roles != null ? roles : deserializeRoles(existing.rolesJson());
-        validateRoles(resolvedRoles);
+        if (authentication != null) {
+            roleService.validateAssignableRoles(resolvedRoles, authentication);
+        } else {
+            validateRoles(resolvedRoles);
+        }
+        Optional<String> targetTenant = tenantStore.findTenantIdForUser(existing.username());
+        forbidGlobalAdminWithTenant(resolvedRoles, targetTenant.orElse(null));
         boolean resolvedEnabled = enabled != null ? enabled : existing.enabled();
         String resolvedDisplayName = displayName != null && !displayName.isBlank()
                 ? displayName
@@ -257,11 +339,17 @@ public class PlatformUserService {
 
     @Transactional
     public void setPassword(String username, String password) {
+        setPassword(username, password, null);
+    }
+
+    @Transactional
+    public void setPassword(String username, String password, Authentication authentication) {
         if (password == null || password.length() < 4) {
             throw new IllegalArgumentException("Password must be at least 4 characters");
         }
         userStore.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        requireSameTenantOrGlobalAdmin(username, authentication);
         userStore.updatePassword(username, passwordEncoder.encode(password));
     }
 
@@ -275,8 +363,20 @@ public class PlatformUserService {
 
     @Transactional
     public void deleteUser(String username) {
+        deleteUser(username, null);
+    }
+
+    @Transactional
+    public void deleteUser(String username, Authentication authentication) {
         PlatformUserStore.PlatformUser user = userStore.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        requireSameTenantOrGlobalAdmin(user.username(), authentication);
+        if (deserializeRoles(user.rolesJson()).contains(IspfRoles.ADMIN)
+                && authentication != null
+                && IspfRoles.isTenantAdmin(authentication)
+                && !IspfRoles.isGlobalAdmin(authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot delete global admin users");
+        }
         if (IspfRoles.ADMIN.equals(username)) {
             long adminCount = userStore.listAll().stream()
                     .filter(PlatformUserStore.PlatformUser::enabled)
@@ -287,6 +387,7 @@ public class PlatformUserService {
             }
         }
         userStore.delete(username);
+        tenantScopeService.invalidateUserCache(username);
         if (objectManager.tree().findByPath(user.objectPath()).isPresent()) {
             objectManager.delete(user.objectPath());
         }
@@ -341,15 +442,66 @@ public class PlatformUserService {
     }
 
     public List<Map<String, Object>> listUsers() {
+        return listUsers(null);
+    }
+
+    public List<Map<String, Object>> listUsers(Authentication authentication) {
+        if (authentication != null
+                && IspfRoles.isTenantAdmin(authentication)
+                && !IspfRoles.isGlobalAdmin(authentication)) {
+            String tenantId = requireCallerTenantId(authentication);
+            return userStore.listAll().stream()
+                    .filter(user -> tenantId.equals(
+                            tenantStore.findTenantIdForUser(user.username()).orElse(null)
+                    ))
+                    .map(this::toSummary)
+                    .toList();
+        }
         return userStore.listAll().stream().map(this::toSummary).toList();
     }
 
     public boolean isSecurityUserPath(String path) {
-        return path != null && path.startsWith(USERS_PATH_PREFIX);
+        return path != null && (
+                path.startsWith(USERS_PATH_PREFIX)
+                        || path.contains(".platform.security.users.")
+        );
     }
 
     public String usernameFromPath(String path) {
-        return path.substring(USERS_PATH_PREFIX.length());
+        if (path.startsWith(USERS_PATH_PREFIX)) {
+            return path.substring(USERS_PATH_PREFIX.length());
+        }
+        return path.substring(path.lastIndexOf('.') + 1);
+    }
+
+    private String requireCallerTenantId(Authentication authentication) {
+        return tenantScopeService.resolveTenantId(authentication)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Tenant admin requires tenant_id assignment"
+                ));
+    }
+
+    private void requireSameTenantOrGlobalAdmin(String username, Authentication authentication) {
+        if (authentication == null || IspfRoles.isGlobalAdmin(authentication)) {
+            return;
+        }
+        if (!IspfRoles.isTenantAdmin(authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User admin access required");
+        }
+        String callerTenant = requireCallerTenantId(authentication);
+        String targetTenant = tenantStore.findTenantIdForUser(username).orElse(null);
+        if (!callerTenant.equals(targetTenant)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cross-tenant user access denied");
+        }
+    }
+
+    private static void forbidGlobalAdminWithTenant(List<String> roles, String tenantId) {
+        if (tenantId != null && !tenantId.isBlank() && roles != null && roles.contains(IspfRoles.ADMIN)) {
+            throw new IllegalArgumentException(
+                    "admin role with non-null tenant_id is forbidden; global admin must have tenant_id NULL"
+            );
+        }
     }
 
     private Map<String, Object> toSummary(PlatformUserStore.PlatformUser user) {

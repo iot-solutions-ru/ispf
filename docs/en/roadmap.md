@@ -77,7 +77,7 @@ Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over th
 | ----- | ----- | --------------- | -------------------- |
 | **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done** | BL-140 field pilots / edge soak (parked) |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
-| **27** Security | MFA / tenancy | BL-153/154/156/157/158 Done; TOTP GA | BL-155 hard A≠B routing; WebAuthn → BL-194 |
+| **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
 | **29** MES / ERP L4 | ISA-95 | **BL-164…168, BL-170, BL-193 Done** on marketplace `mes-platform` | Field sites; **live ERP (BL-169) deferred** |
 | **30** Automation | CEP / BPMN | BL-171…175 **Done**; BL-176 Done | DMN / further BPMN depth optional |
@@ -954,7 +954,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | High | Historian | Enterprise L 1B CH scorecard sign-off | OSIsoft PI | Phase 28 BL-159…163 **Done**; scorecard 7.0 until 1B lab | BL-210 lab |
 | High | MES | Lab MES ≠ Opcenter / field site | Siemens Opcenter | Scorecard 6.5; BL-164…168/170/193 Done on marketplace; not plant | BL-164…170 |
 | High | ERP L4 | No bidirectional MDM sync | Tulip + ERP connectors | Level 4 = reports + outbox pattern | BL-169 |
-| High | Security | Hard tenancy A≠B row routing | Enterprise SaaS IoT | Schema provision + OIDC claim REAL; platform object tables still shared — BL-155 remains **Partial** | BL-155 |
+| High | Security | Hard tenancy A≠B row routing | Enterprise SaaS IoT | BL-155 **Done** for logical SaaS + tenant-admin; platform object table routing still optional | BL-155 |
 | Med | MES | ISA-88 / genealogy / APS lite only | Batch MES suites | `batch-v1` + BFF; no batch engine | BL-168 |
 | Med | Ecosystem | Partner Portal sync external | Ignition Exchange | BL-183…185 Done (honest partner endpoints + CI gate) | BL-183…185 |
 | Med | Compliance | Tender pack published; cert / pen-test still open | Enterprise tenders | [compliance-tender-pack](compliance-tender-pack.md) (BL-192 **Done**); gaps G-01…G-08 | [BL-192](#bl-191193--domain-audit-follow-ups) |
@@ -988,7 +988,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | S35 | 26 | HMI perf + video wall | BL-147, BL-148, BL-152 | **Done** (152 = CI ≥55 FPS acceptance; not unmocked ≥60) |
 | S36 | 26 | Operator offline + spreadsheet | BL-150, BL-151 | **Done** |
 | S37 | 27 | MFA + per-variable ACL | BL-153, BL-154 | **Done** (TOTP GA; vars+history+invokeRoles API/UI; WebAuthn → BL-194) |
-| S38 | 27 | Hard tenancy + audit | BL-155, BL-156, BL-157, BL-158 | Partial→Done mix (BL-156/157/158 Done; BL-155 Partial — A≠B open) |
+| S38 | 27 | Hard tenancy + audit | BL-155, BL-156, BL-157, BL-158 | Done (BL-155 logical SaaS + tenant-admin; schema table routing optional) |
 | S39 | 28 | Historian tiers | BL-159, BL-160 | **Done** |
 | S40 | 28 | Historian scale lab | BL-161, BL-162, BL-163 | **Done** |
 | S41 | 29 | MES objects + OEE | BL-164, BL-165 | **Done** (`mes-platform` seed types + OEE Operator/BFF) |
@@ -1053,12 +1053,12 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | -- | ------ | --------- | ---------- |
 | BL-153 | **MFA** | P2 | **Done** — TOTP GA (persisted enroll, admin enforce, login UX). WebAuthn / Keycloak OTP → **BL-194** — [security](security.md) |
 | BL-154 | **Per-variable ACL** | P2 | **Done** — variable R/W + history enforce + UI; event/function `invokeRoles` API + descriptor editor. Honesty: analytics/federation alternate paths may still bypass member ACL (trusted-channel follow-up) |
-| BL-155 | **Hard multi-tenancy** | P2 | **Partial** — schema provision + validator + OIDC `tenant_id` claim REAL; platform object tables still shared — **A≠B row isolation not met** — [multi-tenant](multi-tenant.md) |
+| BL-155 | **Hard multi-tenancy** | P2 | **Done** (honest) — SaaS `tenant-admin` local owners + logical A≠B via path/API/role scope; OIDC `tenant_id` claim; hard schema provision/drop REAL; **platform object table routing still optional** — [multi-tenant](multi-tenant.md) |
 | BL-156 | **Audit trail GA** | P2 | **Done** — append audit log, CSV export, SIEM webhook (`ISPF_AUDIT_SIEM_WEBHOOK_URL`) |
 | BL-157 | **Role templates** | P2 | **Done** — custom roles + `operator-readonly` / `mes-supervisor` ISA-95 `scopePathPrefixes` enforced on REST |
 | BL-158 | **Alarm shelving** | P2 | **Done** — shelve/unshelve with persisted approval workflow — [automation](automation.md) |
 
-**Phase metric:** MFA admin (TOTP Done); per-var ACL Done; hard tenancy schema/OIDC Done path — **tenant A ≠ B row isolation still open (BL-155 Partial)**; pentest remains tender gap.
+**Phase metric:** MFA admin (TOTP Done); per-var ACL Done; BL-155 **Done** for publishable SaaS (tenant-admin + logical A≠B); hard schema table routing remains optional follow-up; pentest remains tender gap.
 
 ---
 
@@ -1207,7 +1207,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-152 | 26 | HMI perf gate | P1 | **Done** (CI ≥55 @500 el + WS path; not unmocked ≥60; LH≥95 ops) |
 | BL-153 | 27 | MFA | P2 | **Done** (TOTP GA; WebAuthn → BL-194) |
 | BL-154 | 27 | Per-variable ACL | P2 | **Done** (vars+history+invokeRoles API/UI) |
-| BL-155 | 27 | Hard multi-tenancy | P2 | Partial (schema+OIDC claim; A≠B routing open) |
+| BL-155 | 27 | Hard multi-tenancy | P2 | Done (SaaS tenant-admin + logical A≠B; schema table routing optional) |
 | BL-156 | 27 | Audit trail GA | P2 | Done |
 | BL-157 | 27 | Role templates | P2 | Done |
 | BL-158 | 27 | Alarm shelving | P2 | Done |
@@ -1602,7 +1602,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 | 2026-07-19 | **Phase 32 ecosystem partials closed:** BL-183 Done (CI `marketplace-catalog` validate + honest partner multi-endpoint; not live partner SaaS); BL-186 Done (Helm lint/template + deploy docs); BL-187 Done (ARM compose/validate); BL-188 Done usable MoM path (not 10+ peer soak); BL-190 Done curriculum paths linked |
 | 2026-07-19 | **BL-177 / BL-180 → Done:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness in repo; live runs require `ISPF_LLM_SMOKE=true` (no invented multi-app/multi-domain live pass counts). BL-178 remains **Done** 52/52 @100%. Scorecard AI **8.5 → 9.0** |
 | 2026-07-19 | **Phase 26 HMI close-out:** BL-147 Done (multi-select/layers/undo/keyboard + tests); BL-148 Done (2×2…4×4 + VideoWallAutoScale); BL-149 Done (server phase breakpoints + Continue + UI); BL-150 Done (live WS/poll, cross-sheet, XLSX export, editor live toggles); BL-151 Done (SW dashboards+mimics 8h, reconnect sync, `pwa:offline-evidence`); BL-152 **Done** — honesty acceptance CI 500 el ≥55 FPS + WS path (do **not** claim unmocked ≥60); LH operator ≥95 = ops stretch (CI floor 90) |
-| 2026-07-19 | **Phase 27 security close-out (honest):** BL-153 **Done** TOTP GA (WebAuthn/Keycloak OTP → **BL-194** Planned); BL-154 **Done** vars+history ACL + event/function `invokeRoles` API/UI; BL-155 remains **Partial** (schema+OIDC REAL; A≠B platform-table routing open). Parked OT: BL-140/143–145 unchanged; BL-142 stays Partial (MQTT path REAL, Kafka IT / server IT open) |
+| 2026-07-19 | **Phase 27 security close-out (honest):** BL-153 **Done** TOTP GA (WebAuthn/Keycloak OTP → **BL-194** Planned); BL-154 **Done** vars+history ACL + event/function `invokeRoles` API/UI; BL-155 **Done** — SaaS `tenant-admin` + logical A≠B path/API (hard schema table routing still optional). Parked OT: BL-140/143–145 unchanged; BL-142 stays Partial (MQTT path REAL, Kafka IT / server IT open) |
 | 2026-07-19 | **BL-183 honesty:** checklist items 1–6, 8–10 Shipped verified; item 11 Partial (BL-184 DB partners Done; live partner catalogs Planned); item 12 Partial (CLI, no publish CI gate); leave BL-183 **Partial**; BL-184 registry → Done (in-server); symbol listing no longer `source=stub` |
 | 2026-07-19 | **S32 BL-180 multi-domain live:** `AiSolutionGeneratorLiveSmokeTest` parameterized HVAC + MES/factory + SCADA/plant; asserts `composition=primitives` + tree/dashboard/alert; soft &lt;15 min log/assume; skipped without `ISPF_LLM_SMOKE` |
 | 2026-07-19 | **Phase 27 earlier partials:** BL-156 Done (SIEM webhook); BL-157 Done (ISA-95 `scopePathPrefixes` on REST); superseded same-day by TOTP/ACL Done + BL-194 split |

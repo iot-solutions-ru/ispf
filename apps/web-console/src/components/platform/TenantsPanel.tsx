@@ -13,6 +13,8 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
   const queryClient = useQueryClient();
   const [tenantId, setTenantId] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [createdAdminHint, setCreatedAdminHint] = useState<string | null>(null);
   const [assignUsername, setAssignUsername] = useState("operator");
   const [assignTenantId, setAssignTenantId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -26,6 +28,7 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
   const createMutation = useMutation({
     mutationFn: () => {
       setFormError(null);
+      setCreatedAdminHint(null);
       if (!tenantId.trim() || !displayName.trim()) {
         throw new Error(t("tenants.error.required"));
       }
@@ -33,6 +36,7 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
         tenantId: tenantId.trim().toLowerCase(),
         displayName: displayName.trim(),
         enabled: true,
+        adminPassword: adminPassword.trim() || undefined,
       });
     },
     onSuccess: (tenant) => {
@@ -40,6 +44,16 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       setTenantId("");
       setDisplayName("");
+      setAdminPassword("");
+      if (tenant.adminUsername) {
+        const pwd = tenant.adminPassword
+          ? t("tenants.createdAdminWithPassword", {
+              username: tenant.adminUsername,
+              password: tenant.adminPassword,
+            })
+          : t("tenants.createdAdmin", { username: tenant.adminUsername });
+        setCreatedAdminHint(pwd);
+      }
       onSelectPath(tenant.platformPath);
     },
     onError: (error: Error) => setFormError(error.message),
@@ -110,7 +124,18 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
             displayName *
             <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Acme Corp" />
           </label>
+          <label>
+            {t("tenants.field.adminPassword")}
+            <input
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder={t("tenants.field.adminPasswordHint")}
+              autoComplete="new-password"
+            />
+          </label>
         </div>
+        <p className="op-muted">{t("tenants.localAdminHint")}</p>
         <button type="submit" className="btn primary" disabled={createMutation.isPending}>
           {t("tenants.createTenant")}
         </button>
@@ -143,6 +168,7 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
         </button>
       </section>
 
+      {createdAdminHint && <p className="hint">{createdAdminHint}</p>}
       {formError && <p className="hint error">{formError}</p>}
     </section>
   );

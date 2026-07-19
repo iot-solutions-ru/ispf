@@ -1,110 +1,104 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/multi-tenant.md](../en/multi-tenant.md).
 
-# Многопользовательские пространства имен (BL-125, BL-126).
+# Мультитенантный SaaS (BL-125, BL-126, BL-155)
 
-Логическое разделение деревьев объектов по тенантам в одном экземпляре ISPF.
+Логическое разделение деревьев объектов по тенантам в одном экземпляре ISPF с локальным владельцем **tenant-admin** на ветку клиента.
+
+## Акторы
+
+| Актор | Роль | `tenant_id` | Возможности |
+|-------|------|-------------|-------------|
+| Platform ops | `admin` | **NULL** (обязательно) | Создание/удаление тенантов, глобальная безопасность, видит всё. Только global admin обходит `TenantScopeService`. |
+| Локальный админ тенанта | `tenant-admin` | обязателен | Полный владелец `root.tenant.{id}.*`: CRUD в ветке, пользователи/роли тенанта, квоты/usage. **Нельзя** создавать тенанты, видеть чужие, ходить в `root.platform.*`, выдавать глобальный `admin`. |
+| Пользователь тенанта | `operator` / `developer` / custom | обязателен | Ветка тенанта + ACL |
+
+**Критическое правило:** роль `admin` при ненулевом `tenant_id` **запрещена**. Global admin всегда с `tenant_id` NULL. `tenant-admin` никогда не обходит tenant scope.
 
 ## Структура путей
 
 ```text
 root
-├── root.platform          ← shared / default (legacy demo)
+├── root.platform                    ← shared / default (legacy; global admin)
 └── root.tenant
     └── root.tenant.acme
         └── root.tenant.acme.platform
             ├── .devices
-            └── .dashboards
+            ├── .dashboards
+            └── .security
+                ├── .users
+                └── .roles
 ```
 
-**Принцип:** путь к объекту — пространство имен стабильного идентификатора; тенант не учитывает HTTP-хост.
+**Принцип:** путь объекта — стабильный идентификатор namespace; тенант не привязан к HTTP-хосту.
 
-## API (администратор)
+## Создание тенанта + локальный админ
 
-| Метод | Путь | Описание |
-|--------|------|----------|
-| GET | `/api/v1/tenants` | Список tenants |
-| POST | `/api/v1/tenants` | Создать tenant + bootstrap поддерева |
-| DELETE | `/api/v1/tenants/{tenantId}` | Удалить tenant и subtree |
-| PUT | `/api/v1/tenants/{tenantId}/users/{username}` | Назначить tenant пользователю |
-| PUT | `/api/v1/tenants/{tenantId}/quotas` | Квоты: `maxDevices`, `maxObjects` (null = без лимита) |
-| GET | `/api/v1/tenants/{tenantId}/usage` | Текущее использование (devices / objects) |
+```http
+POST /api/v1/tenants
+Authorization: Bearer <global-admin-token>
+Content-Type: application/json
 
-Login response включает `tenantId`, если назначен.
+{
+  "tenantId": "acme",
+  "displayName": "Acme Corp",
+  "enabled": true,
+  "adminUsername": "acme-admin",
+  "adminPassword": "change-me",
+  "adminDisplayName": "Acme Admin"
+}
+```
 
-## Прицел для оператора (БЛ-125)
+По умолчанию: `adminUsername` = `{tenantId}-admin`, пароль генерируется. В ответе — **одноразовые** `adminUsername` и `adminPassword`. Bootstrap: дерево platform, `security/users/roles`, пользователь `tenant-admin` с `tenant_id`, OWNER ACL на `root.tenant.{id}` (+ EDITOR для operator/developer).
 
-Пользователь с `tenant_id` в `platform_users` и **без** роли admin:
+## API
 
-- **Read:** `GET /api/v1/objects` — только `root`, `root.tenant`, `root.tenant.{id}.*`
-- **Запись:** создание/обновление/удаление блокируется с `403` для путей вне тенанта (в т.ч. `root.platform.*`)
+| Метод | Путь | Кто | Описание |
+|--------|------|-----|----------|
+| GET | `/api/v1/tenants` | global `admin` | Список |
+| POST | `/api/v1/tenants` | global `admin` | Создать + bootstrap + local admin |
+| GET | `/api/v1/tenants/{tenantId}` | global `admin` или свой `tenant-admin` | Карточка |
+| DELETE | `/api/v1/tenants/{tenantId}` | global `admin` | Удалить |
+| PUT | `/api/v1/tenants/{tenantId}/users/{username}` | global `admin` | Назначить tenant |
+| PUT | `/api/v1/tenants/{tenantId}/quotas` | global `admin` или свой `tenant-admin` | Квоты |
+| GET | `/api/v1/tenants/{tenantId}/usage` | global `admin` или свой `tenant-admin` | Usage |
+| `/**` | `/api/v1/security/users/**`, `/roles/**` | `admin` или `tenant-admin` | Скоуп в сервисах |
 
-Админ видит и пишет всё.
+Cluster / license / federation / audit — только global admin.
+
+## Изоляция
+
+Пользователь с `tenant_id` без global `admin`:
+
+- Чтение/запись только `root.tenant.{id}.*` (+ `root` / `root.tenant` для навигации)
+- Шаблоны ролей: префиксы `root.platform.*` → `root.tenant.{id}.platform.*`
+- History/events: `requirePathInScope`
 
 ## Квоты (BL-126)
 
-| Квота | Правоприменение |
-|-------|-------------|
-| `maxObjects` | Объекты под `root.tenant.{id}.platform.*` |
-| `maxDevices` | Объекты типа `DEVICE` в том же subtree |
+| Квота | Где |
+|-------|-----|
+| `maxObjects` | под `root.tenant.{id}.platform.*` |
+| `maxDevices` | `DEVICE` в том же subtree |
 
-Превышение → `409 Conflict` при `POST /api/v1/objects`.
-
-```http
-PUT /api/v1/tenants/acme/quotas
-{"maxDevices": 50, "maxObjects": 500}
-```
-
-## Веб-консоль
-
-Узел **`root.tenant`** → панель **Tenants**: создание tenant, назначение пользователю.
-
-## Ограничения
-
-- Нет выставления счетов/сопоставления тенантов OIDC
-- Shared `root.platform` остаётся для legacy demo (admin-only для tenant users)
-- Федерация и тенант — ортогональные механизмы.
+Превышение → `409` на `POST /api/v1/objects`.
 
 ## Режим изоляции (BL-155)
 
-| Недвижимость | По умолчанию | Описание |
-|----------|---------|----------|
-| `ispf.tenant.isolation-mode` | `logical` | `logical` — path namespaces; `hard` — per-tenant PostgreSQL schema |
-| `ispf.tenant.schema-prefix` | `tenant_` | Schema prefix when `hard` (`tenant_acme` for tenant `acme`) |
+| Свойство | По умолчанию | Описание |
+|----------|--------------|----------|
+| `ispf.tenant.isolation-mode` | `logical` | path+API; `hard` — ещё schema provision/drop |
+| `ispf.tenant.schema-prefix` | `tenant_` | префикс схемы |
+| `ispf.tenant.oidc-tenant-claim` | `tenant_id` | JWT claim (OIDC) |
 
-Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenant_`.
+### Честный статус
 
-**Веб-консоль:** Система → Настройки среды выполнения → вкладка **Multi-tenant** (или быстрое переключение **Режим изоляции тенанта** на вкладке «Интеграции»). Изменение требует **перезапуска** `ispf-server`.
+| Слой | Статус |
+|------|--------|
+| Логический SaaS A≠B (path + API + role scope + tenant-admin) | **Готово** |
+| OIDC claim `tenant_id` | **Готово** |
+| Hard schema provision/drop | **Готово** (hooks) |
+| Роутинг platform-таблиц по схемам (DB row A≠B) | **Опционально / открыто** |
 
-### Логический (по умолчанию)
+Не заявлять row-level A≠B для `object_nodes`, пока нет отдельного table routing. Публикуемый SaaS сегодня — path+API + локальный `tenant-admin`.
 
-Одна общая схема PostgreSQL; данные тенанта под `root.tenant.{id}.platform.*`. Изоляция записи реализована в API (`requirePathInScope`).
-
-### Сложный режим
-
-При `POST /api/v1/tenants`:
-
-1. `tenantId` валидируется как суффикс схемы PostgreSQL: `[a-z][a-z0-9_]{0,62}` (имя ≤ 63 символов с префиксом); reserved / existing — отказ.
-2. Ответ включает `schemaName` (`tenant_{id}` по умолчанию).
-3. `TenantSchemaService` создаёт схему и проверяет наличие; delete делает `DROP SCHEMA … CASCADE`.
-4. `runInTenantSchema` ставит `search_path` для app-data; **таблицы platform objects остаются общими** до cutover маршрутизации (A≠B row isolation открыт).
-
-**При включении жесткого уровня:** SaaS со schema-hooks и compliance. **Не включать** для одноклиентской локальной среды без миграции данных.
-
-### OIDC tenant claim
-
-| Свойство | Env | По умолчанию |
-|----------|-----|--------------|
-| `ispf.tenant.oidc-tenant-claim` | `ISPF_TENANT_OIDC_CLAIM` | `tenant_id` |
-
-При наличии claim в JWT `TenantScopeService` ограничивает пути `root.tenant.{id}.*` (admin bypass).
-
-### Сравнение
-
-| | Логический | Жесткий |
-|---|---------|------|
-| Схема БД | Общий | За тенанта (provision; platform tables ещё shared) |
-| Path scope | `root.tenant.{id}.*` | Same + schema provision/drop |
-| OIDC tenant claim | `tenant_id` (настраивается) | Same |
-| Перезапуск при переключении | Да | Да |
-
-См. также [federation](federation.md), [roadmap](roadmap.md).
+См. также [federation](federation.md), [roadmap](roadmap.md), [security](security.md).

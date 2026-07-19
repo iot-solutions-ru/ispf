@@ -6,12 +6,17 @@ export interface TenantSummary {
   enabled: boolean;
   objectPath: string;
   platformPath: string;
+  adminUsername?: string;
+  adminPassword?: string;
 }
 
 export interface CreateTenantPayload {
   tenantId: string;
   displayName: string;
   enabled?: boolean;
+  adminUsername?: string;
+  adminPassword?: string;
+  adminDisplayName?: string;
 }
 
 export function fetchTenants(): Promise<TenantSummary[]> {

@@ -1,6 +1,7 @@
 package com.ispf.server.security;
 
 import com.ispf.server.application.data.PlatformSqlCatalog;
+import com.ispf.server.tenant.TenantPaths;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -21,6 +22,7 @@ public class PlatformRoleStore {
             rs.getString("display_name"),
             rs.getString("description"),
             rs.getBoolean("built_in"),
+            rs.getString("tenant_id"),
             rs.getTimestamp("created_at").toInstant(),
             rs.getTimestamp("updated_at").toInstant()
     );
@@ -45,6 +47,17 @@ public class PlatformRoleStore {
         );
     }
 
+    public List<PlatformRole> listBuiltInsAndTenant(String tenantId) {
+        return jdbcTemplate.query("""
+                SELECT * FROM %s
+                WHERE tenant_id IS NULL OR tenant_id = ?
+                ORDER BY name
+                """.formatted(rolesTable),
+                ROW_MAPPER,
+                tenantId
+        );
+    }
+
     public Optional<PlatformRole> findByName(String name) {
         List<PlatformRole> rows = jdbcTemplate.query(
                 "SELECT * FROM %s WHERE name = ?".formatted(rolesTable),
@@ -64,25 +77,27 @@ public class PlatformRoleStore {
         if (count != null && count > 0) {
             jdbcTemplate.update("""
                     UPDATE %s
-                    SET display_name = ?, description = ?, built_in = ?, updated_at = ?
+                    SET display_name = ?, description = ?, built_in = ?, tenant_id = ?, updated_at = ?
                     WHERE name = ?
                     """.formatted(rolesTable),
                     role.displayName(),
                     role.description(),
                     role.builtIn(),
+                    role.tenantId(),
                     Timestamp.from(now),
                     role.name()
             );
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO %s (name, display_name, description, built_in, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO %s (name, display_name, description, built_in, tenant_id, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """.formatted(rolesTable),
                 role.name(),
                 role.displayName(),
                 role.description(),
                 role.builtIn(),
+                role.tenantId(),
                 Timestamp.from(role.createdAt()),
                 Timestamp.from(now)
         );
@@ -108,10 +123,14 @@ public class PlatformRoleStore {
             String displayName,
             String description,
             boolean builtIn,
+            String tenantId,
             Instant createdAt,
             Instant updatedAt
     ) {
         public String objectPath() {
+            if (tenantId != null && !tenantId.isBlank()) {
+                return TenantPaths.tenantRolePath(tenantId, name);
+            }
             return PlatformUserService.ROLES_FOLDER + "." + name;
         }
     }

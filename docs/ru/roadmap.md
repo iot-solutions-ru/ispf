@@ -76,7 +76,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | ---- | ---- | ---------------- | --------------------- |
 | **25** OT Trust | Драйверы / edge | БЛ-141 interop lab | **Отложено** — БЛ-140 поле / БЛ-191 честность / edge soak (parked) |
 | **26** HMI | Mimics / operator | БЛ-146…152 Готово (CI FPS @55; LH≥95 ops stretch) | — |
-| **27** Security | MFA / tenancy | БЛ-153/154/156/157/158 Готово; TOTP GA | БЛ-155 hard A≠B; WebAuthn → БЛ-194 |
+| **27** Security | MFA / tenancy | БЛ-153/154/155/156/157/158 Готово; TOTP GA; SaaS tenant-admin | Опциональный hard schema table routing; WebAuthn → БЛ-194 |
 | **28** Historian | Tiers / SLA | БЛ-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
 | **29** MES / ERP L4 | ISA-95 | **БЛ-164…168, БЛ-170, БЛ-193 Готово** на marketplace `mes-platform` | Field sites; **живой ERP (БЛ-169) отложен** |
 | **30** Automation | CEP / BPMN | БЛ-171…175 **Готово**; БЛ-176 Готово | DMN / дальнейшая глубина BPMN — опционально |
@@ -954,7 +954,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | High | Historian | Нет PI-класса: AF-lite / tiers / SLA CI | OSIsoft PI | ClickHouse dual-write Partial | БЛ-159…162 |
 | High | MES | Lab MES ≠ Opcenter / field site | Siemens Opcenter | Scorecard 6.5; БЛ-164…168/170/193 Готово на marketplace; не plant | БЛ-164…170 |
 | High | ERP L4 | Нет двусторонней синхронизации НСИ | Tulip + ERP connectors | Level 4 = reports + outbox pattern | БЛ-169 |
-| High | Security | Hard tenancy A≠B routing | Enterprise SaaS IoT | Schema + OIDC claim REAL; shared platform tables until routing | БЛ-155 |
+| High | Security | Hard tenancy A≠B routing | Enterprise SaaS IoT | БЛ-155 **Готово** для logical SaaS + tenant-admin; table routing опционален | БЛ-155 |
 | Med | MES | ISA-88 / genealogy / APS — только lite | Batch MES suites | `batch-v1` + BFF; нет batch engine | БЛ-168 |
 | Med | Экосистема | Partner Portal sync external | Ignition Exchange | BL-183…185 Готово (честные partner endpoints + CI gate) | БЛ-183…185 |
 | Med | Compliance | Tender pack опубликован; cert / pen-test ещё открыты | Enterprise tenders | [compliance-tender-pack](compliance-tender-pack.md) (БЛ-192 **Готово**); gaps в EN-каноне | [БЛ-192](#бл-191193--аудит-доменов-follow-up) |
@@ -988,7 +988,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | С35 | 26 | HMI-перформанс + видеостена | БЛ-147, БЛ-148, БЛ-152 | **Готово** (152 = CI ≥55 FPS; не unmocked ≥60) |
 | С36 | 26 | Оператор офлайн + таблица | БЛ-150, БЛ-151 | **Готово** |
 | С37 | 27 | MFA + ACL для каждой переменной | БЛ-153, БЛ-154 | **Готово** (TOTP GA; invokeRoles API/UI; WebAuthn → БЛ-194) |
-| С38 | 27 | Строгая изоляция тенантов + аудит | БЛ-155, БЛ-156, БЛ-157, БЛ-158 | Частичный |
+| С38 | 27 | Строгая изоляция тенантов + аудит | БЛ-155, БЛ-156, БЛ-157, БЛ-158 | Готово (logical SaaS + tenant-admin; schema table routing опционален) |
 | С39 | 28 | Уровни историка | БЛ-159, БЛ-160 | **Done** |
 | С40 | 28 | Историческая масштабная лаборатория | БЛ-161, БЛ-162, БЛ-163 | **Done** |
 | С41 | 29 | MES-объекты + OEE | БЛ-164, БЛ-165 | **Готово** (`mes-platform` seed types + OEE Operator/BFF) |
@@ -1053,7 +1053,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | -- | ------ | --------- | ---------- |
 | БЛ-153 | **MFA** | П2 | **Готово** — TOTP GA. WebAuthn / Keycloak OTP → **БЛ-194** — [security](security.md) |
 | БЛ-154 | **ACL для каждой переменной** | П2 | **Готово** — R/W + history + `invokeRoles` API/UI. Honesty: analytics/federation могут обходить member ACL |
-| БЛ-155 | **Строгая мультитенантность** | П2 | Вариант схемы БД для каждого тенанта; Сопоставление заявок тенантов OIDC — [multi-tenant](multi-tenant.md) |
+| БЛ-155 | **Строгая мультитенантность** | П2 | **Готово** (честно) — SaaS `tenant-admin` + logical A≠B path/API; OIDC claim; hard schema provision/drop; **роутинг platform-таблиц опционален** — [multi-tenant](multi-tenant.md) |
 | БЛ-156 | **Аудиторский след GA** | П2 | Неизменяемый журнал аудита, экспорт, веб-перехватчик SIEM |
 | БЛ-157 | **Шаблоны ролей** | П2 | Пользовательские роли; Разрешения области действия ISA-95 |
 | БЛ-158 | **Стеллаж для сигнализации** | П2 | Отложить/отложить рабочий процесс утверждения — расширение [automation](automation.md) |
@@ -1207,7 +1207,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-152 | 26 | HMI perf gates | Р1 | **Готово** (CI ≥55 @500 el + WS; не unmocked ≥60; LH≥95 ops) |
 | БЛ-153 | 27 | MFA | П2 | **Готово** (TOTP GA; WebAuthn → БЛ-194) |
 | БЛ-154 | 27 | ACL для каждой переменной | П2 | **Готово** (vars+history+invokeRoles API/UI) |
-| БЛ-155 | 27 | Строгая мультитенантность | П2 | Частичный (schema+OIDC claim; A≠B routing открыт) |
+| БЛ-155 | 27 | Строгая мультитенантность | П2 | Готово (SaaS tenant-admin + logical A≠B; schema table routing опционален) |
 | БЛ-156 | 27 | Аудиторский след GA | П2 | **Готово** |
 | БЛ-157 | 27 | Шаблоны ролей | П2 | **Готово** |
 | БЛ-158 | 27 | Стеллажи для сигнализации | П2 | **Готово** |
@@ -1576,7 +1576,7 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 | 19.07.2026 | **Фаза 32 ecosystem partials закрыты:** БЛ-183 Готово (CI `marketplace-catalog` + честные partner multi-endpoint); БЛ-186 Готово (Helm lint/template); БЛ-187 Готово (ARM compose/validate); БЛ-188 Готово usable MoM path (не 10+ peer soak); БЛ-190 Готово curriculum paths |
 | 19.07.2026 | **БЛ-177 / БЛ-180 → Готово:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness в repo; live runs требуют `ISPF_LLM_SMOKE=true` (без выдуманных multi-app/multi-domain live pass counts). БЛ-178 остаётся **Готово** 52/52 @100%. Scorecard AI **8.5 → 9.0** |
 | 19.07.2026 | **Фаза 26 HMI:** БЛ-147/148/149/150/151 **Готово**; БЛ-152 **Готово** — честный acceptance CI 500 el ≥55 FPS + WS path (**не** unmocked ≥60); LH≥95 = ops stretch |
-| 19.07.2026 | **Фаза 27 security (честно):** БЛ-153 **Готово** TOTP GA (WebAuthn → **БЛ-194**); БЛ-154 **Готово** vars+history+invokeRoles API/UI; БЛ-155 остаётся **Частичный** (A≠B открыт). OT parked: БЛ-140/143–145; БЛ-142 Partial (MQTT REAL, Kafka IT открыт) |
+| 19.07.2026 | **Фаза 27 security (честно):** БЛ-153 **Готово** TOTP GA (WebAuthn → **БЛ-194**); БЛ-154 **Готово** vars+history+invokeRoles API/UI; БЛ-155 **Готово** — SaaS `tenant-admin` + logical A≠B (hard schema table routing опционален). OT parked: БЛ-140/143–145; БЛ-142 Partial (MQTT REAL, Kafka IT открыт) |
 | 19.07.2026 | **БЛ-183 honesty (superseded):** ранее п. 11–12 Частично; закрыто записью Phase 32 ecosystem выше |
 | 19.07.2026 | **БЛ-178 Готово:** полный live suite `AGENT_LIVE_SUITE_MODE=full` через `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI остаётся в режиме platform |
 | 19.07.2026 | **БЛ-206 Готово (реестр):** Multi-tag Analytics Query API уже в коде — `POST .../analytics/query`, export, chart multi-series (мастер-таблица Планируется → Готово) |

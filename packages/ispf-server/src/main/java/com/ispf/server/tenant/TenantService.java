@@ -1,12 +1,16 @@
 package com.ispf.server.tenant;
 
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.config.IspfRoles;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.security.acl.ObjectAclStore;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -14,33 +18,45 @@ import java.util.regex.Pattern;
 public class TenantService {
 
     private static final Pattern TENANT_ID_PATTERN = Pattern.compile("^[a-z][a-z0-9-]{1,62}$");
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final TenantStore tenantStore;
     private final ObjectManager objectManager;
     private final TenantQuotaService tenantQuotaService;
     private final TenantScopeService tenantScopeService;
     private final TenantSchemaService tenantSchemaService;
+    private final PlatformUserService platformUserService;
+    private final ObjectAclStore objectAclStore;
 
     public TenantService(
             TenantStore tenantStore,
             ObjectManager objectManager,
             TenantQuotaService tenantQuotaService,
             TenantScopeService tenantScopeService,
-            TenantSchemaService tenantSchemaService
+            TenantSchemaService tenantSchemaService,
+            PlatformUserService platformUserService,
+            ObjectAclStore objectAclStore
     ) {
         this.tenantStore = tenantStore;
         this.objectManager = objectManager;
         this.tenantQuotaService = tenantQuotaService;
         this.tenantScopeService = tenantScopeService;
         this.tenantSchemaService = tenantSchemaService;
+        this.platformUserService = platformUserService;
+        this.objectAclStore = objectAclStore;
     }
 
     public List<Tenant> listTenants() {
         return tenantStore.listAll();
     }
 
+    public Tenant getTenant(String tenantId) {
+        return tenantStore.findById(tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+    }
+
     @Transactional
-    public Tenant createTenant(TenantDraft draft) {
+    public TenantCreateResult createTenant(TenantDraft draft) {
         validateTenantId(draft.tenantId());
         if (tenantStore.findById(draft.tenantId()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Tenant exists: " + draft.tenantId());
@@ -52,7 +68,31 @@ public class TenantService {
         Tenant tenant = tenantStore.insert(draft);
         tenantSchemaService.provisionTenantSchema(tenant.tenantId());
         bootstrapTenantTree(tenant);
-        return tenant;
+        String adminUsername = resolveAdminUsername(draft);
+        String adminPassword = resolveAdminPassword(draft);
+        String adminDisplayName = draft.adminDisplayName() != null && !draft.adminDisplayName().isBlank()
+                ? draft.adminDisplayName().trim()
+                : tenant.displayName() + " Admin";
+        platformUserService.createUser(
+                adminUsername,
+                adminDisplayName,
+                adminPassword,
+                List.of(IspfRoles.TENANT_ADMIN),
+                tenant.tenantId(),
+                null
+        );
+        // Parent ACL is inherited by the whole branch. Include built-in tenant roles so
+        // operators/developers keep access; tenant-admin also has OWNER-level bypass in ObjectAccessService.
+        objectAclStore.replaceEntries(
+                TenantPaths.tenantRoot(tenant.tenantId()),
+                List.of(
+                        new ObjectAclStore.ObjectAclEntryDraft("USER", adminUsername, "OWNER"),
+                        new ObjectAclStore.ObjectAclEntryDraft("ROLE", IspfRoles.TENANT_ADMIN, "OWNER"),
+                        new ObjectAclStore.ObjectAclEntryDraft("ROLE", IspfRoles.DEVELOPER, "EDITOR"),
+                        new ObjectAclStore.ObjectAclEntryDraft("ROLE", IspfRoles.OPERATOR, "EDITOR")
+                )
+        );
+        return new TenantCreateResult(tenant, adminUsername, adminPassword);
     }
 
     @Transactional
@@ -143,6 +183,53 @@ public class TenantService {
                 "Tenant dashboards",
                 null
         );
+        objectManager.create(
+                TenantPaths.tenantPlatform(tenant.tenantId()),
+                "security",
+                ObjectType.SECURITY,
+                "Security",
+                "Tenant-local users and roles",
+                null
+        );
+        objectManager.create(
+                TenantPaths.tenantSecurity(tenant.tenantId()),
+                "users",
+                ObjectType.USERS,
+                "Users",
+                "Tenant users",
+                null
+        );
+        objectManager.create(
+                TenantPaths.tenantSecurity(tenant.tenantId()),
+                "roles",
+                ObjectType.ROLES,
+                "Roles",
+                "Tenant custom roles",
+                null
+        );
+    }
+
+    private static String resolveAdminUsername(TenantDraft draft) {
+        if (draft.adminUsername() != null && !draft.adminUsername().isBlank()) {
+            return draft.adminUsername().trim().toLowerCase();
+        }
+        return draft.tenantId() + "-admin";
+    }
+
+    private static String resolveAdminPassword(TenantDraft draft) {
+        if (draft.adminPassword() != null && !draft.adminPassword().isBlank()) {
+            return draft.adminPassword();
+        }
+        return generatePassword();
+    }
+
+    private static String generatePassword() {
+        String alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        StringBuilder sb = new StringBuilder(16);
+        for (int i = 0; i < 16; i++) {
+            sb.append(alphabet.charAt(SECURE_RANDOM.nextInt(alphabet.length())));
+        }
+        return sb.toString();
     }
 
     static void validateTenantId(String tenantId) {

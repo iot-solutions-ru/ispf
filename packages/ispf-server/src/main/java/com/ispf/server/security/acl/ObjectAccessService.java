@@ -2,14 +2,14 @@ package com.ispf.server.security.acl;
 
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.security.RoleScopeAccessService;
+import com.ispf.server.tenant.TenantScopeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -17,7 +17,7 @@ public class ObjectAccessService {
 
     /**
      * Empty ACL is fail-open for solution trees, but fail-closed for sensitive platform
-     * branches (admin always bypasses earlier). Operators/developers need an explicit grant.
+     * branches (global admin always bypasses earlier). Operators/developers need an explicit grant.
      */
     private static final List<String> FAIL_CLOSED_EMPTY_ACL_PREFIXES = List.of(
             "root.platform.security",
@@ -26,10 +26,16 @@ public class ObjectAccessService {
 
     private final ObjectAclStore aclStore;
     private final RoleScopeAccessService roleScopeAccessService;
+    private final TenantScopeService tenantScopeService;
 
-    public ObjectAccessService(ObjectAclStore aclStore, RoleScopeAccessService roleScopeAccessService) {
+    public ObjectAccessService(
+            ObjectAclStore aclStore,
+            RoleScopeAccessService roleScopeAccessService,
+            TenantScopeService tenantScopeService
+    ) {
         this.aclStore = aclStore;
         this.roleScopeAccessService = roleScopeAccessService;
+        this.tenantScopeService = tenantScopeService;
     }
 
     public List<ObjectAclStore.ObjectAclEntry> listEntries(String objectPath) {
@@ -56,7 +62,7 @@ public class ObjectAccessService {
     }
 
     public void requireAdmin(Authentication authentication) {
-        if (!isAdmin(authentication)) {
+        if (!IspfRoles.isGlobalAdmin(authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
     }
@@ -72,7 +78,7 @@ public class ObjectAccessService {
     }
 
     public void requireGrantAcl(String objectPath, Authentication authentication) {
-        if (isAdmin(authentication) || canGrant(objectPath, authentication)) {
+        if (IspfRoles.isGlobalAdmin(authentication) || canGrant(objectPath, authentication)) {
             return;
         }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ACL grant denied for " + objectPath);
@@ -125,7 +131,7 @@ public class ObjectAccessService {
         if (!canInvoke(objectPath, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invoke access denied for " + objectPath);
         }
-        if (!hasVariableRole(invokeRoles, authentication)) {
+        if (!hasVariableRole(objectPath, invokeRoles, authentication)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Invoke access denied for " + memberKind + " " + memberName + " on " + objectPath
@@ -142,7 +148,7 @@ public class ObjectAccessService {
         if (!canRead(objectPath, authentication)) {
             return false;
         }
-        return hasVariableRole(readRoles, authentication);
+        return hasVariableRole(objectPath, readRoles, authentication);
     }
 
     public boolean canVariableWrite(
@@ -154,17 +160,21 @@ public class ObjectAccessService {
         if (!canWrite(objectPath, authentication)) {
             return false;
         }
-        return hasVariableRole(writeRoles, authentication);
+        return hasVariableRole(objectPath, writeRoles, authentication);
     }
 
-    private boolean hasVariableRole(List<String> requiredRoles, Authentication authentication) {
+    private boolean hasVariableRole(
+            String objectPath,
+            List<String> requiredRoles,
+            Authentication authentication
+    ) {
         if (requiredRoles == null || requiredRoles.isEmpty()) {
             return true;
         }
-        if (isAdmin(authentication)) {
+        if (IspfRoles.isGlobalAdmin(authentication) || isTenantOwnerOf(objectPath, authentication)) {
             return true;
         }
-        Set<String> roles = extractRoles(authentication);
+        Set<String> roles = IspfRoles.extractRoles(authentication);
         for (String required : requiredRoles) {
             if (required != null && roles.contains(required)) {
                 return true;
@@ -186,11 +196,17 @@ public class ObjectAccessService {
     }
 
     public boolean canGrant(String objectPath, Authentication authentication) {
-        return isAdmin(authentication) || hasPermission(objectPath, "OWNER", authentication);
+        return IspfRoles.isGlobalAdmin(authentication)
+                || isTenantOwnerOf(objectPath, authentication)
+                || hasPermission(objectPath, "OWNER", authentication);
     }
 
     private boolean hasPermission(String objectPath, String permission, Authentication authentication) {
-        if (isAdmin(authentication)) {
+        if (IspfRoles.isGlobalAdmin(authentication)) {
+            return true;
+        }
+        // tenant-admin: OWNER-level within their tenant branch only (never global admin).
+        if (isTenantOwnerOf(objectPath, authentication)) {
             return true;
         }
         if (!roleScopeAccessService.isPathInRoleScope(objectPath, authentication)) {
@@ -201,7 +217,7 @@ public class ObjectAccessService {
             // Fail-open for normal solution paths; fail-closed for sensitive platform trees.
             return !isFailClosedEmptyAclPath(objectPath);
         }
-        Set<String> roles = extractRoles(authentication);
+        Set<String> roles = IspfRoles.extractRoles(authentication);
         String username = authentication != null ? authentication.getName() : null;
         for (ObjectAclStore.ObjectAclEntry entry : entries) {
             if (!matchesPermission(entry.permission(), permission)) {
@@ -217,6 +233,18 @@ public class ObjectAccessService {
             }
         }
         return false;
+    }
+
+    private boolean isTenantOwnerOf(String objectPath, Authentication authentication) {
+        if (!IspfRoles.isTenantAdmin(authentication) || objectPath == null || objectPath.isBlank()) {
+            return false;
+        }
+        Optional<String> tenantRoot = tenantScopeService.tenantRootPrefix(authentication);
+        if (tenantRoot.isEmpty()) {
+            return false;
+        }
+        String prefix = tenantRoot.get();
+        return objectPath.equals(prefix) || objectPath.startsWith(prefix + ".");
     }
 
     private static boolean matchesPermission(String granted, String required) {
@@ -246,26 +274,6 @@ public class ObjectAccessService {
             }
         }
         return false;
-    }
-
-    private static boolean isAdmin(Authentication authentication) {
-        return IspfRoles.isAdmin(authentication);
-    }
-
-    private static Set<String> extractRoles(Authentication authentication) {
-        Set<String> roles = new HashSet<>();
-        if (authentication == null) {
-            return roles;
-        }
-        for (GrantedAuthority authority : authentication.getAuthorities()) {
-            String value = authority.getAuthority();
-            if (value.startsWith("ROLE_")) {
-                roles.add(value.substring("ROLE_".length()));
-            } else {
-                roles.add(value);
-            }
-        }
-        return roles;
     }
 
     private static void validateDraft(ObjectAclStore.ObjectAclEntryDraft draft) {

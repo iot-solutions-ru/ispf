@@ -7,6 +7,7 @@ import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.event.EventService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.tenant.TenantScopeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,30 +29,46 @@ public class EventController {
     private final EventService eventService;
     private final ObjectAccessService objectAccessService;
     private final ObjectManager objectManager;
+    private final TenantScopeService tenantScopeService;
 
     public EventController(
             EventService eventService,
             ObjectAccessService objectAccessService,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            TenantScopeService tenantScopeService
     ) {
         this.eventService = eventService;
         this.objectAccessService = objectAccessService;
         this.objectManager = objectManager;
+        this.tenantScopeService = tenantScopeService;
     }
 
     @GetMapping
     public List<ObjectEvent> list(
             @RequestParam(required = false) String objectPath,
             @RequestParam(defaultValue = "50") int limit,
-            @RequestParam(required = false) String filterPath
+            @RequestParam(required = false) String filterPath,
+            Authentication authentication
     ) {
-        return eventService.list(objectPath, limit, filterPath);
+        if (objectPath != null && !objectPath.isBlank()) {
+            tenantScopeService.requirePathInScope(objectPath, authentication);
+        }
+        if (filterPath != null && !filterPath.isBlank()) {
+            tenantScopeService.requirePathInScope(filterPath, authentication);
+        }
+        return eventService.list(objectPath, limit, filterPath).stream()
+                .filter(event -> tenantScopeService.isPathVisible(event.objectPath(), authentication))
+                .toList();
     }
 
     @GetMapping("/journal-status")
     public Map<String, Object> journalStatus(
-            @RequestParam(required = false) String objectPath
+            @RequestParam(required = false) String objectPath,
+            Authentication authentication
     ) {
+        if (objectPath != null && !objectPath.isBlank()) {
+            tenantScopeService.requirePathInScope(objectPath, authentication);
+        }
         return eventService.journalStatus(objectPath);
     }
 
@@ -64,6 +81,7 @@ public class EventController {
             @RequestBody(required = false) DataRecordPayloadRequest payload,
             Authentication authentication
     ) {
+        tenantScopeService.requirePathInScope(objectPath, authentication);
         PlatformObject node = objectManager.require(objectPath);
         EventDescriptor descriptor = node.events().get(eventName);
         if (descriptor == null) {

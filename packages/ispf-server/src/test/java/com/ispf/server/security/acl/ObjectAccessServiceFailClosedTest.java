@@ -1,6 +1,7 @@
 package com.ispf.server.security.acl;
 
 import com.ispf.server.security.RoleScopeAccessService;
+import com.ispf.server.tenant.TenantScopeService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -24,10 +25,13 @@ class ObjectAccessServiceFailClosedTest {
     @Mock
     private RoleScopeAccessService roleScopeAccessService;
 
+    @Mock
+    private TenantScopeService tenantScopeService;
+
     @Test
     void emptyAclOnSecurityTreeDeniesOperator() {
         when(roleScopeAccessService.isPathInRoleScope(anyString(), any())).thenReturn(true);
-        ObjectAccessService service = new ObjectAccessService(aclStore, roleScopeAccessService);
+        ObjectAccessService service = new ObjectAccessService(aclStore, roleScopeAccessService, tenantScopeService);
         when(aclStore.findEffectiveEntries("root.platform.security.users")).thenReturn(List.of());
 
         var auth = new UsernamePasswordAuthenticationToken(
@@ -42,7 +46,7 @@ class ObjectAccessServiceFailClosedTest {
     @Test
     void emptyAclOnDeviceTreeStillFailOpen() {
         when(roleScopeAccessService.isPathInRoleScope(anyString(), any())).thenReturn(true);
-        ObjectAccessService service = new ObjectAccessService(aclStore, roleScopeAccessService);
+        ObjectAccessService service = new ObjectAccessService(aclStore, roleScopeAccessService, tenantScopeService);
         when(aclStore.findEffectiveEntries("root.platform.devices.pump1")).thenReturn(List.of());
 
         var auth = new UsernamePasswordAuthenticationToken(
@@ -57,7 +61,7 @@ class ObjectAccessServiceFailClosedTest {
     @Test
     void templateRoleScopeDeniesOutOfScopePath() {
         when(roleScopeAccessService.isPathInRoleScope(anyString(), any())).thenReturn(false);
-        ObjectAccessService service = new ObjectAccessService(aclStore, roleScopeAccessService);
+        ObjectAccessService service = new ObjectAccessService(aclStore, roleScopeAccessService, tenantScopeService);
 
         var auth = new UsernamePasswordAuthenticationToken(
                 "mes",

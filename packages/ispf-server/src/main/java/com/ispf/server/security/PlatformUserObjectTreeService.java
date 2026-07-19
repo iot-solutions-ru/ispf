@@ -67,20 +67,23 @@ public class PlatformUserObjectTreeService {
 
     @Transactional
     public void syncRole(PlatformRoleStore.PlatformRole role) {
-        ensureSecurityRoot();
-        ensureNode(
-                PlatformUserService.ROLES_FOLDER,
-                ObjectType.ROLES,
-                "security-folder-v1"
-        );
+        String path = role.objectPath();
+        if (path.startsWith(PlatformUserService.ROLES_PATH_PREFIX)) {
+            ensureSecurityRoot();
+            ensureNode(
+                    PlatformUserService.ROLES_FOLDER,
+                    ObjectType.ROLES,
+                    "security-folder-v1"
+            );
+        }
         ensureEntityNode(
-                role.objectPath(),
+                path,
                 ObjectType.ROLE,
                 role.displayName(),
                 role.description(),
                 "platform-role-v1"
         );
-        setStringVariable(role.objectPath(), "description", role.description(), true);
+        setStringVariable(path, "description", role.description(), true);
         seedRoleTemplatePermissions(role);
     }
 
@@ -120,13 +123,15 @@ public class PlatformUserObjectTreeService {
 
     @Transactional
     public void syncUser(PlatformUserStore.PlatformUser user) {
-        ensureSecurityRoot();
-        ensureNode(
-                PlatformUserService.USERS_FOLDER,
-                ObjectType.USERS,
-                "security-folder-v1"
-        );
         String path = user.objectPath();
+        if (path.startsWith(PlatformUserService.USERS_PATH_PREFIX)) {
+            ensureSecurityRoot();
+            ensureNode(
+                    PlatformUserService.USERS_FOLDER,
+                    ObjectType.USERS,
+                    "security-folder-v1"
+            );
+        }
         ensureEntityNode(
                 path,
                 ObjectType.USER,
@@ -185,11 +190,14 @@ public class PlatformUserObjectTreeService {
         if (lastDot > 0) {
             String parentPath = path.substring(0, lastDot);
             if (objectManager.tree().findByPath(parentPath).isEmpty()) {
-                ensureSecurityRoot();
                 if (parentPath.equals(PlatformUserService.USERS_FOLDER)) {
+                    ensureSecurityRoot();
                     ensureNode(PlatformUserService.USERS_FOLDER, ObjectType.USERS, "security-folder-v1");
                 } else if (parentPath.equals(PlatformUserService.ROLES_FOLDER)) {
+                    ensureSecurityRoot();
                     ensureNode(PlatformUserService.ROLES_FOLDER, ObjectType.ROLES, "platform-role-v1");
+                } else {
+                    throw new IllegalStateException("Missing parent folder for security entity: " + parentPath);
                 }
             }
         }

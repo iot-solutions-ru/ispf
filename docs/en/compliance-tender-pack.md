@@ -46,7 +46,7 @@ Lite mapping to common **IEC 62443-3-3 / 4-2** style themes (FR / SR families). 
 | Timely response to events | Alert rules, correlators, work queue; security audit categories (`auth`, `mfa`, `acl`, `object`) | [automation](automation.md), `GET /api/v1/audit/events` | **Partial** |
 | Resource availability | Cluster / historian tiers / observability — separate maturity | [cluster](cluster.md), [historian-tiers](historian-tiers.md), [observability](observability.md) | **Partial** (see scorecard) |
 | Component authenticity / SBOM | Third-party notices + SBOM guidance for releases | [license-compliance](license-compliance.md), [third-party-notices](third-party-notices.md) | **Exists** (process); continuous attestation **Gap** |
-| Multi-tenancy isolation | **Logical** path scope **Exists**; **hard** mode provisions/drops PG schema + OIDC `tenant_id` claim; platform table A≠B routing still open | [multi-tenant](multi-tenant.md) | **Partial** (hard tenancy) |
+| Multi-tenancy isolation | **Logical** SaaS A≠B (path+API+`tenant-admin`) **Exists**; OIDC `tenant_id` claim; **hard** mode schema provision/drop; platform table routing still optional | [multi-tenant](multi-tenant.md) | **Exists** (logical SaaS); hard table routing **Partial** |
 
 ### Zone / conduit note
 
@@ -83,7 +83,7 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 | -- | ----- | ----- | --- | -------------- |
 | G-01 | **Independent pen-test** | Hardening guidance + unit/API tests | No published third-party pen-test report; Phase 27 metric “pentest pass” **not met** | Phase 27 metric; customer or hired assessment |
 | G-02 | **Audit trail GA** | Append audit + CSV export + SIEM webhook (`ISPF_AUDIT_SIEM_WEBHOOK_URL`) | Retention/WORM not productized; not a full GxP audit package | [BL-156](roadmap.md#phase-27--enterprise-security) **Done**; [collaboration](collaboration.md); [ai-development](ai-development.md) |
-| G-03 | **Hard multi-tenancy** | Logical path isolation **Exists**; hard mode schema provision/drop + OIDC claim | Platform object tables still shared — **do not claim A≠B DB row isolation** | [BL-155](roadmap.md#phase-27--enterprise-security); [multi-tenant](multi-tenant.md) |
+| G-03 | **Hard multi-tenancy** | Logical SaaS A≠B + `tenant-admin` **Done**; hard mode schema provision/drop + OIDC claim | Platform object tables still shared — **do not claim A≠B DB row isolation** | [BL-155](roadmap.md#phase-27--enterprise-security); [multi-tenant](multi-tenant.md) |
 | G-04 | **MFA completeness** | Persisted TOTP + `required-for-admin` + login UX **Exists** (BL-153 Done) | WebAuthn / Keycloak OTP → BL-194; default MFA off | [BL-153](roadmap.md#phase-27--enterprise-security); [security](security.md) |
 | G-05 | **Per-variable / custom roles** | Variable roles + history ACL + event/function `invokeRoles` API/UI + ISA-95 template scopes on REST | Analytics/federation alternate paths may bypass member ACL | [BL-154](roadmap.md#phase-27--enterprise-security) **Done**, [BL-157](roadmap.md#phase-27--enterprise-security) **Done** |
 | G-06 | **IEC 62443 certification** | This lite mapping | No accredited 62443 product certificate | Out of scope for BL-192 docs; future if sponsored |

@@ -4,6 +4,7 @@ import com.ispf.server.security.PlatformRoleService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,17 +29,21 @@ public class SecurityRoleController {
     }
 
     @GetMapping
-    public List<Map<String, Object>> list() {
-        return roleService.listRoles();
+    public List<Map<String, Object>> list(Authentication authentication) {
+        return roleService.listRoles(authentication);
     }
 
     @PostMapping
-    public Map<String, Object> create(@Valid @RequestBody CreateRoleRequest request) {
+    public Map<String, Object> create(
+            @Valid @RequestBody CreateRoleRequest request,
+            Authentication authentication
+    ) {
         try {
             return roleService.createRole(
                     request.name(),
                     request.displayName(),
-                    request.description()
+                    request.description(),
+                    authentication
             );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
@@ -48,19 +53,20 @@ public class SecurityRoleController {
     @PutMapping("/{name}")
     public Map<String, Object> update(
             @PathVariable String name,
-            @Valid @RequestBody UpdateRoleRequest request
+            @Valid @RequestBody UpdateRoleRequest request,
+            Authentication authentication
     ) {
         try {
-            return roleService.updateRole(name, request.displayName(), request.description());
+            return roleService.updateRole(name, request.displayName(), request.description(), authentication);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
     }
 
     @DeleteMapping("/{name}")
-    public Map<String, Object> delete(@PathVariable String name) {
+    public Map<String, Object> delete(@PathVariable String name, Authentication authentication) {
         try {
-            roleService.deleteRole(name);
+            roleService.deleteRole(name, authentication);
             return Map.of("name", name, "status", "deleted");
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);

@@ -4,7 +4,6 @@ import com.ispf.server.config.IspfRoles;
 import com.ispf.server.config.TenantIsolationProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -35,7 +34,8 @@ public class TenantScopeService {
         if (authentication == null || !authentication.isAuthenticated()) {
             return Optional.empty();
         }
-        if (isAdmin(authentication)) {
+        // Only global admin bypasses tenant scope. tenant-admin never bypasses.
+        if (IspfRoles.isGlobalAdmin(authentication)) {
             return Optional.empty();
         }
         Optional<String> fromClaim = resolveOidcTenantClaim(authentication);
@@ -64,6 +64,28 @@ public class TenantScopeService {
         }
         String normalized = isolationValidator.normalizeOidcTenantClaim(String.valueOf(raw));
         return Optional.ofNullable(normalized);
+    }
+
+    public Optional<String> tenantRootPrefix(Authentication authentication) {
+        return resolveTenantId(authentication).map(TenantPaths::tenantRoot);
+    }
+
+    public void requireTenantAdminOf(String tenantId, Authentication authentication) {
+        if (IspfRoles.isGlobalAdmin(authentication)) {
+            return;
+        }
+        if (!IspfRoles.isTenantAdmin(authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant admin access required");
+        }
+        String normalized = tenantId == null ? "" : tenantId.trim().toLowerCase();
+        String callerTenant = resolveTenantId(authentication)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Tenant admin requires tenant_id assignment"
+                ));
+        if (!callerTenant.equals(normalized)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + normalized);
+        }
     }
 
     public boolean isPathVisible(String path, Authentication authentication) {
@@ -101,14 +123,5 @@ public class TenantScopeService {
             return jwt;
         }
         return null;
-    }
-
-    private static boolean isAdmin(Authentication authentication) {
-        for (GrantedAuthority authority : authentication.getAuthorities()) {
-            if (("ROLE_" + IspfRoles.ADMIN).equals(authority.getAuthority())) {
-                return true;
-            }
-        }
-        return false;
     }
 }

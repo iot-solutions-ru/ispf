@@ -1,70 +1,102 @@
 package com.ispf.server.security;
 
 import com.ispf.server.config.IspfRoles;
+import com.ispf.server.tenant.TenantPaths;
+import com.ispf.server.tenant.TenantScopeService;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
  * Enforces ISA-95 / role-template {@code scopePathPrefixes} on REST object access (BL-157).
  * When the principal has one or more template roles with scopes, object paths must match the union.
- * Admin and users without template scopes are unrestricted by this layer (object ACL still applies).
+ * Global admin is unrestricted. Tenant-admin is unrestricted within their tenant root only.
+ * Tenant-scoped users get {@code root.platform.*} template prefixes remapped under their tenant platform.
  */
 @Service
 public class RoleScopeAccessService {
+
+    private final TenantScopeService tenantScopeService;
+
+    public RoleScopeAccessService(TenantScopeService tenantScopeService) {
+        this.tenantScopeService = tenantScopeService;
+    }
 
     public boolean isPathInRoleScope(String objectPath, Authentication authentication) {
         if (objectPath == null || objectPath.isBlank()) {
             return false;
         }
-        if (IspfRoles.isAdmin(authentication) || IspfRoles.isDeveloper(authentication)) {
+        if (IspfRoles.isGlobalAdmin(authentication)) {
+            return true;
+        }
+        Optional<String> tenantRoot = tenantScopeService.tenantRootPrefix(authentication);
+        if (IspfRoles.isTenantAdmin(authentication)) {
+            return tenantRoot
+                    .map(prefix -> pathMatchesPrefix(objectPath, prefix)
+                            || "root".equals(objectPath)
+                            || TenantPaths.TENANTS_ROOT.equals(objectPath))
+                    .orElse(false);
+        }
+        if (IspfRoles.isDeveloper(authentication) && tenantRoot.isEmpty()) {
             return true;
         }
         Set<String> prefixes = resolveScopePrefixes(authentication);
         if (prefixes.isEmpty()) {
-            return true;
+            // Non-template roles: still constrain developers/operators with tenant_id to their branch.
+            return tenantRoot
+                    .map(prefix -> pathMatchesPrefix(objectPath, prefix)
+                            || "root".equals(objectPath)
+                            || TenantPaths.TENANTS_ROOT.equals(objectPath))
+                    .orElse(true);
         }
         for (String prefix : prefixes) {
             if (prefix == null || prefix.isBlank()) {
                 continue;
             }
-            if (objectPath.equals(prefix)
-                    || objectPath.startsWith(prefix + ".")
+            if (pathMatchesPrefix(objectPath, prefix)
                     || prefix.startsWith(objectPath + ".")
                     || "root".equals(objectPath)
-                    || "root.platform".equals(objectPath)) {
+                    || "root.platform".equals(objectPath)
+                    || TenantPaths.TENANTS_ROOT.equals(objectPath)) {
                 return true;
+            }
+            if (tenantRoot.isPresent()) {
+                String tenantPlatform = TenantPaths.tenantPlatform(
+                        tenantRoot.get().substring(TenantPaths.TENANTS_ROOT.length() + 1)
+                );
+                if (objectPath.equals(tenantPlatform) || objectPath.startsWith(tenantPlatform + ".")) {
+                    // Allow walking the tenant platform root even when templates list leaf folders only.
+                    if (prefix.startsWith(tenantPlatform + ".") || prefix.equals(tenantPlatform)) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
     }
 
     public Set<String> resolveScopePrefixes(Authentication authentication) {
-        Set<String> roles = extractRoles(authentication);
+        Set<String> roles = IspfRoles.extractRoles(authentication);
         Set<String> prefixes = new LinkedHashSet<>();
+        Optional<String> tenantId = tenantScopeService.resolveTenantId(authentication);
         for (String role : roles) {
-            PlatformRoleTemplatePermissions.scopePathPrefixes(role).ifPresent(prefixes::addAll);
+            PlatformRoleTemplatePermissions.scopePathPrefixes(role).ifPresent(list -> {
+                for (String prefix : list) {
+                    if (tenantId.isPresent()) {
+                        prefixes.add(TenantPaths.remapPlatformPrefix(prefix, tenantId.get()));
+                    } else {
+                        prefixes.add(prefix);
+                    }
+                }
+            });
         }
         return prefixes;
     }
 
-    private static Set<String> extractRoles(Authentication authentication) {
-        Set<String> roles = new HashSet<>();
-        if (authentication == null) {
-            return roles;
-        }
-        for (GrantedAuthority authority : authentication.getAuthorities()) {
-            String value = authority.getAuthority();
-            if (value.startsWith("ROLE_")) {
-                roles.add(value.substring("ROLE_".length()));
-            } else {
-                roles.add(value);
-            }
-        }
-        return roles;
+    private static boolean pathMatchesPrefix(String objectPath, String prefix) {
+        return objectPath.equals(prefix) || objectPath.startsWith(prefix + ".");
     }
 }

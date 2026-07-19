@@ -9,6 +9,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.security.RoleScopeAccessService;
 import com.ispf.server.security.acl.ObjectAclStore;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.tenant.TenantScopeService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ class FunctionInvokeAccessServiceTest {
     @Mock
     private RoleScopeAccessService roleScopeAccessService;
 
+    @Mock
+    private TenantScopeService tenantScopeService;
+
     private FunctionInvokeAccessService accessService;
 
     @BeforeEach
@@ -50,7 +54,7 @@ class FunctionInvokeAccessServiceTest {
         lenient().when(roleScopeAccessService.isPathInRoleScope(anyString(), any())).thenReturn(true);
         accessService = new FunctionInvokeAccessService(
                 new PrivilegedPlatformFunctionPolicy(objectManager),
-                new ObjectAccessService(aclStore, roleScopeAccessService),
+                new ObjectAccessService(aclStore, roleScopeAccessService, tenantScopeService),
                 objectManager
         );
         PlatformObject node = new PlatformObject("1", DATA_SOURCE, ObjectType.DATA_SOURCE, "Demo", "", "");

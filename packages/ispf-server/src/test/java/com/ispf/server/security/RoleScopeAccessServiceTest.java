@@ -1,16 +1,36 @@
 package com.ispf.server.security;
 
+import com.ispf.server.tenant.TenantScopeService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class RoleScopeAccessServiceTest {
 
-    private final RoleScopeAccessService service = new RoleScopeAccessService();
+    @Mock
+    private TenantScopeService tenantScopeService;
+
+    private RoleScopeAccessService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new RoleScopeAccessService(tenantScopeService);
+        lenient().when(tenantScopeService.resolveTenantId(any())).thenReturn(Optional.empty());
+        lenient().when(tenantScopeService.tenantRootPrefix(any())).thenReturn(Optional.empty());
+    }
 
     @Test
     void mesSupervisorAllowedOnMesPath() {

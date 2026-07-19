@@ -8,6 +8,7 @@ import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarRangeService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.tenant.TenantScopeService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,7 @@ public class VariableHistoryController {
     private final ObjectMapper objectMapper;
     private final ObjectManager objectManager;
     private final ObjectAccessService objectAccessService;
+    private final TenantScopeService tenantScopeService;
 
     public VariableHistoryController(
             VariableHistoryService variableHistoryService,
@@ -42,7 +44,8 @@ public class VariableHistoryController {
             PlatformCalendarRangeService calendarRangeService,
             ObjectMapper objectMapper,
             ObjectManager objectManager,
-            ObjectAccessService objectAccessService
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
     ) {
         this.variableHistoryService = variableHistoryService;
         this.federationProxyService = federationProxyService;
@@ -50,6 +53,7 @@ public class VariableHistoryController {
         this.objectMapper = objectMapper;
         this.objectManager = objectManager;
         this.objectAccessService = objectAccessService;
+        this.tenantScopeService = tenantScopeService;
     }
 
     @GetMapping("/history")
@@ -162,6 +166,7 @@ public class VariableHistoryController {
     }
 
     private void requireVariableHistoryRead(String path, String name, Authentication authentication) {
+        tenantScopeService.requirePathInScope(path, authentication);
         PlatformObject node = objectManager.require(path);
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));

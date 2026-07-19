@@ -70,7 +70,7 @@ Evidence classes: **REAL** (runtime + tests), **PARTIAL** (core works, known gap
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES is marketplace product (`mes-platform`, vendor IoT Solutions); base platform does not seed `root.platform.mes`. Bundle JSON/SQL/script BFF; no standalone MES engine module |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
 | 9 | AI-assisted dev | 9.0 | **REAL** | BL-178 full live suite **52/52 @100%** (`build/agent-regression/live-suite-results.json`, `mode=full`, ~2026-07-18/19); BL-177 multi-app `AgentLiveDeploySmokeTest` matrix (`mes-platform`, `building-hvac`, `platform-primitive`); BL-180 multi-domain `AiSolutionGeneratorLiveSmokeTest` (HVAC/MES/SCADA, `composition=primitives`); draft fallback `mode=draft` (not stub); live smoke runs require `ISPF_LLM_SMOKE=true` |
-| 10 | Security / RBAC | 8.0 | **PARTIAL** | TOTP MFA GA **Done** (BL-153); per-var/event/function ACL **Done** (BL-154); audit SIEM + role-template scopes **Done** (BL-156/157); hard tenancy schema+OIDC REAL, A≠B routing still open (BL-155); WebAuthn → BL-194 |
+| 10 | Security / RBAC | 8.5 | **PARTIAL** | TOTP MFA GA **Done** (BL-153); per-var/event/function ACL **Done** (BL-154); audit SIEM + role-template scopes **Done** (BL-156/157); SaaS tenant-admin + logical A≠B path/API **Done** (BL-155); hard schema table routing still optional; WebAuthn → BL-194 |
 | 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | Federation MoM usable path **REAL** (BL-188); Helm lint/template + ARM edge compose **Done** (BL-186/187); no CI load proof for cluster / 10+ peer scale |
 | 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA **Done** (BL-183 — multi-endpoint + CI catalog gate); partner directory + enroll `"source": "db"` (BL-184); symbol packs BL-185 Done; Partner Portal sync still external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADRs; code comments mark stubs honestly |
@@ -95,7 +95,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + live partner-hosted catalogs (out of repo); raise after first external partner catalog onboarding.
 5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
 6. **HMI (7.5 → 9+):** FPS gate on live WebSocket mimic path (alarm shelving persistence closed — BL-158).
-7. **Compliance:** IEC 62443 / GAMP-lite tender pack (**BL-192**) — **docs Done:** [compliance-tender-pack](compliance-tender-pack.md). Remaining gaps: pen-test report, hard tenancy A≠B routing (BL-155), WebAuthn (BL-194), no product certification claim. SIEM audit webhook shipped (BL-156).
+7. **Compliance:** IEC 62443 / GAMP-lite tender pack (**BL-192**) — **docs Done:** [compliance-tender-pack](compliance-tender-pack.md). Remaining gaps: pen-test report, optional hard schema table routing (BL-155 logical SaaS Done), WebAuthn (BL-194), no product certification claim. SIEM audit webhook shipped (BL-156).
 
 ---
 

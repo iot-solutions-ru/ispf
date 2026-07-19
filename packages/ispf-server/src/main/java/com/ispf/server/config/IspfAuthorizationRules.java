@@ -91,12 +91,34 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers("/api/v1/security/mfa/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
+        // Tenant-admin may manage users/roles within their tenant (scope enforced in services).
+        auth.requestMatchers("/api/v1/security/users/**", "/api/v1/security/roles/**")
+                .hasAnyRole(IspfRoles.ROLES_TENANT_SECURITY);
+
         auth.requestMatchers("/api/v1/security/**")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers("/api/v1/federation/**")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
+        // Global-admin only: list/create/delete tenants and user assignment.
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/tenants")
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/tenants")
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
+        auth.requestMatchers(HttpMethod.DELETE, "/api/v1/tenants/**")
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
+        auth.requestMatchers(HttpMethod.PUT, "/api/v1/tenants/*/users/**")
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
+        auth.requestMatchers(HttpMethod.DELETE, "/api/v1/tenants/*/users/**")
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
+        // Tenant-admin may read own tenant, usage, and update own quotas (enforced in controller).
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/tenants/*")
+                .hasAnyRole(IspfRoles.ROLES_TENANT_SECURITY);
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/tenants/*/usage")
+                .hasAnyRole(IspfRoles.ROLES_TENANT_SECURITY);
+        auth.requestMatchers(HttpMethod.PUT, "/api/v1/tenants/*/quotas")
+                .hasAnyRole(IspfRoles.ROLES_TENANT_SECURITY);
         auth.requestMatchers("/api/v1/tenants/**")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 

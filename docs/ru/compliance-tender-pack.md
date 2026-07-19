@@ -20,7 +20,7 @@
 | ---- | ---- | ----- |
 | RBAC + object/variable ACL | HTTP-роли, ACL, `readRoles`/`writeRoles` | **Exists** / ACL-шаблоны **Partial** |
 | MFA (TOTP) | Enrollment + опция `required-for-admin` | **Exists** (BL-153 Готово); WebAuthn → **BL-194** |
-| Multi-tenant | Логические path-namespaces | **Exists**; hard schema+OIDC claim REAL; A≠B routing — **Partial** |
+| Multi-tenant | Logical SaaS A≠B + `tenant-admin`; OIDC claim; hard schema hooks | **Exists** (logical SaaS); hard table routing — **Partial** |
 | Audit | Security audit + CSV + SIEM webhook; config audit; AI audit | **Exists** (BL-156 Done); WORM/GxP — ops |
 | Pen-test / 62443 cert / GAMP IQ-OQ | — | **Gap** — не заявлять |
 
