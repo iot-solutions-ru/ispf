@@ -188,7 +188,7 @@ jobs:
           ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
         run: >
           ./gradlew
-          :packages:ispf-server:test
+          :packages:ispf-ai-agent:test
           --tests com.ispf.server.ai.agent.AgentRegressionCiTest
           --no-daemon
           -Dorg.gradle.workers.max=1

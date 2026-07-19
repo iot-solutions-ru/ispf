@@ -606,14 +606,15 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("list_app_documents", objectSchema(
                 props(
-                        "query", stringProp("Search query")
+                        "limit", integerProp("Max documents (default 30)")
                 ),
                 List.of(),
                 true
         ));
         catalog.put("list_app_memory", objectSchema(
                 props(
-                        "limit", integerProp("Max entries")
+                        "query", stringProp("Optional search query"),
+                        "limit", integerProp("Max entries (default 20)")
                 ),
                 List.of(),
                 true
@@ -758,10 +759,14 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("remember_app_memory", objectSchema(
                 props(
-                        "key", stringProp("Memory key"),
-                        "value", stringProp("Memory value")
+                        "content", stringProp("Durable knowledge to store"),
+                        "kind", enumProp(
+                                "Memory kind",
+                                List.of("fact", "glossary", "preference", "playbook", "correction")
+                        ),
+                        "topic", stringProp("Short topic / title (defaults from content)")
                 ),
-                req("key", "value"),
+                req("content"),
                 true
         ));
         catalog.put("resolve_timezone", objectSchema(
