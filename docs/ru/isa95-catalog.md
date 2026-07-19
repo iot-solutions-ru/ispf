@@ -4,7 +4,9 @@
 
 Как объекты платформы ISPF сопоставляются с иерархией оборудования **ANSI/ISA-95** (IEC 62264) и действиями MES. Используйте это при разработке приложений, пакетов и документации для клиентов-производителей.
 
-**См. также:** [object-model](object-model.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [mes-oee-reference](../../examples/mes-oee-reference/).
+**См. также:** [object-model](object-model.md), [manufacturing-patterns](manufacturing-patterns.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [mes-oee-reference](../../examples/mes-oee-reference/).
+
+Эта страница сопоставляет уровни и иерархию ISA-95. [Manufacturing patterns](manufacturing-patterns.md) описывает процессные паттерны ISPF: traceability DAG, BoM, operations graph, CTO, QMS lite и Level 4 outbox как конфигурацию решений.
 
 ---
 

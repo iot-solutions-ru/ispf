@@ -439,7 +439,6 @@ public class ObjectManager {
         ensureBootstrapNode("root.platform.correlators", ObjectType.CORRELATORS, null);
         ensureBootstrapNode("root.platform.queries", ObjectType.QUERIES, null);
         ensureBootstrapNode("root.platform.event-filters", ObjectType.EVENT_FILTERS, null);
-        ensureBootstrapNode("root.platform.event-frames", ObjectType.EVENT_FRAMES, null);
         if (bootstrapProperties.isMesCatalogEnabled()) {
             ensureBootstrapNode("root.platform.mes", ObjectType.MES, null);
         }

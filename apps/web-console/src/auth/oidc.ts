@@ -1,6 +1,10 @@
 export interface AuthConfig {
   mode: "local" | "oidc";
   localLoginEnabled?: boolean;
+  /** Server MFA feature flag (`ispf.security.mfa.enabled`). */
+  mfaEnabled?: boolean;
+  /** Admin logins require TOTP when MFA is enabled (`ispf.security.mfa.required-for-admin`). */
+  mfaRequiredForAdmin?: boolean;
   oidc?: {
     issuer: string;
     clientId: string;

@@ -145,6 +145,8 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 | [Automation](automation.md) | Stable | Alerts, correlators |
 | [Workflows](workflows.md) | Beta | BPMN subset (not full 2.0) |
 | [OT Automation tutorials](ot-automation-excellence-tutorials.md) | Beta | ADR-0049 hands-on (journal, AI-BPMN, MCP, analytics AI) |
+| [Manufacturing patterns](manufacturing-patterns.md) | Charter | ISPF solution patterns for traceability, BoM, CTO, QMS, integration |
+| [MES capability MCP map](mes-capability-mcp.md) | Stable | Agent capability names mapped to MES hub functions |
 | [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ plant |
 | [MES operator (genealogy)](mes.md) | Stable | Operator path for BL-193 genealogy lite |
 | [MES walkthrough](reference-mes-walkthrough.md) | Lab | End-to-end MES path |

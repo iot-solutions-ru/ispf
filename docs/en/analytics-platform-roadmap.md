@@ -292,10 +292,9 @@ nginx → hmi-read replicas (REST/WS)
 
 **Scope**
 
-1. `EVENT_FRAME` object type or blueprint `event-frame-v1`
-2. Active frame registry (in-memory + PG) for `shift`, `batch`, `downtime`
+1. Active frame registry (in-memory + PG `platform_event_frames`) for `shift`, `batch`, `downtime` — not an Explorer tree catalog
+2. Analytics REST open/close; query API optional `frameId` filter; OEE template uses shift frame boundary
 3. Integration: MES `SHIFT`, ISA-88 `batch-v1` auto-open/close frames
-4. Query API: optional `frameId` filter; OEE template uses shift frame boundary
 
 **Acceptance**
 

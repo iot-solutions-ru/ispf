@@ -10,6 +10,9 @@ import com.ispf.core.object.Variable;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.tenant.TenantPaths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +22,8 @@ import java.util.Set;
 
 @Service
 public class PlatformUserObjectTreeService {
+
+    private static final Logger log = LoggerFactory.getLogger(PlatformUserObjectTreeService.class);
 
     private final ObjectManager objectManager;
     private final PlatformUserStore userStore;
@@ -43,8 +48,12 @@ public class PlatformUserObjectTreeService {
         syncRoles();
         Set<String> expected = new HashSet<>();
         for (PlatformUserStore.PlatformUser user : userStore.listAll()) {
-            syncUser(user);
-            expected.add(user.username());
+            try {
+                syncUser(user);
+                expected.add(user.username());
+            } catch (RuntimeException ex) {
+                log.error("Skipping user tree sync for {}: {}", user.username(), ex.getMessage());
+            }
         }
         pruneUsers(expected);
     }
@@ -196,6 +205,8 @@ public class PlatformUserObjectTreeService {
                 } else if (parentPath.equals(PlatformUserService.ROLES_FOLDER)) {
                     ensureSecurityRoot();
                     ensureNode(PlatformUserService.ROLES_FOLDER, ObjectType.ROLES, "platform-role-v1");
+                } else if (isTenantSecurityUsersOrRolesFolder(parentPath)) {
+                    ensureTenantSecurityFolderChain(parentPath);
                 } else {
                     throw new IllegalStateException("Missing parent folder for security entity: " + parentPath);
                 }
@@ -209,6 +220,51 @@ public class PlatformUserObjectTreeService {
                 description,
                 templateId
         );
+    }
+
+    private static boolean isTenantSecurityUsersOrRolesFolder(String path) {
+        if (path == null || !path.startsWith(TenantPaths.TENANTS_ROOT + ".")) {
+            return false;
+        }
+        return path.endsWith(".platform.security.users") || path.endsWith(".platform.security.roles");
+    }
+
+    /**
+     * Recreate {@code root.tenant.{id}.platform.security.(users|roles)} when the tenant tree was
+     * deleted or never bootstrapped but login rows still point into it.
+     */
+    private void ensureTenantSecurityFolderChain(String usersOrRolesFolderPath) {
+        String relative = usersOrRolesFolderPath.substring((TenantPaths.TENANTS_ROOT + ".").length());
+        int firstDot = relative.indexOf('.');
+        if (firstDot <= 0) {
+            throw new IllegalStateException("Invalid tenant security path: " + usersOrRolesFolderPath);
+        }
+        String tenantId = relative.substring(0, firstDot);
+        ensureFolder(TenantPaths.TENANTS_ROOT, ObjectType.TENANT, "Tenants", "Multi-tenant namespaces");
+        ensureFolder(TenantPaths.tenantRoot(tenantId), ObjectType.TENANT, tenantId, "Tenant namespace");
+        ensureFolder(TenantPaths.tenantPlatform(tenantId), ObjectType.PLATFORM, tenantId + " Platform", "Tenant platform");
+        ensureFolder(TenantPaths.tenantSecurity(tenantId), ObjectType.SECURITY, "Security", "Tenant-local users and roles");
+        if (usersOrRolesFolderPath.endsWith(".users")) {
+            ensureFolder(TenantPaths.tenantUsers(tenantId), ObjectType.USERS, "Users", "Tenant users");
+        } else {
+            ensureFolder(TenantPaths.tenantRoles(tenantId), ObjectType.ROLES, "Roles", "Tenant custom roles");
+        }
+    }
+
+    private void ensureFolder(String path, ObjectType type, String displayName, String description) {
+        if (objectManager.tree().findByPath(path).isPresent()) {
+            return;
+        }
+        int lastDot = path.lastIndexOf('.');
+        if (lastDot <= 0) {
+            throw new IllegalStateException("Cannot create folder without parent: " + path);
+        }
+        String parent = path.substring(0, lastDot);
+        String name = path.substring(lastDot + 1);
+        if (objectManager.tree().findByPath(parent).isEmpty()) {
+            throw new IllegalStateException("Missing parent while creating " + path);
+        }
+        objectManager.create(parent, name, type, displayName, description, null);
     }
 
     private void ensureNode(

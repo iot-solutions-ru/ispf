@@ -2,7 +2,9 @@
 
 How ISPF platform objects map to **ANSI/ISA-95** (IEC 62264) equipment hierarchy and MES activities. Use this when designing apps, bundles, and documentation for manufacturing customers.
 
-**See also:** [object-model](object-model.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [mes-oee-reference](../../examples/mes-oee-reference/).
+**See also:** [object-model](object-model.md), [manufacturing-patterns](manufacturing-patterns.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [mes-oee-reference](../../examples/mes-oee-reference/).
+
+This page maps ISA-95 levels and hierarchy. [Manufacturing patterns](manufacturing-patterns.md) maps process patterns such as traceability DAG, BoM, operations graph, CTO, QMS lite, and Level 4 outbox as ISPF solution configuration.
 
 ---
 

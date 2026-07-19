@@ -2,9 +2,11 @@
 
 **Статус:** Stable (marketplace product)  
 **Аудитория:** Операторы, инженеры производства  
-**Связано:** [Reference MES platform](reference-mes-platform.md) · [ISA-95 catalog](isa95-catalog.md) · Roadmap **БЛ-164…168, БЛ-170, БЛ-193** (БЛ-169 отложен)
+**Связано:** [Reference MES platform](reference-mes-platform.md) · [ISA-95 catalog](isa95-catalog.md) · [Производственные паттерны](manufacturing-patterns.md) · Roadmap **БЛ-164…168, БЛ-170, БЛ-193, БЛ-220…225** (БЛ-169 отложен)
 
 MES — **marketplace-продукт IoT Solutions** (`mes-platform` v1.3.0). Чистая установка ISPF **не** создаёт `root.platform.mes`, пока не задеплоен bundle.
+
+Глубина manufacturing за пределами текущего MES bundle описана в [manufacturing-patterns](manufacturing-patterns.md): traceability DAG, BoM, operations graph, CTO, QMS lite, integration и portal access — конфигурация решения, не доменные сущности базовой платформы.
 
 ## Deploy
 

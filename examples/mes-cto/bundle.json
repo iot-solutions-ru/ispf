@@ -1,0 +1,220 @@
+{
+  "version": "1.0.1",
+  "displayName": "MES CTO Configurator (BL-223)",
+  "tablePrefix": "mes_cto_",
+  "schemaName": "app_mes_cto",
+  "requires": [
+    {
+      "appId": "mes-platform",
+      "minVersion": "1.4.0"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "mes_cto_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_cto_option_family (family_code VARCHAR(32) PRIMARY KEY, display_name VARCHAR(128) NOT NULL); CREATE TABLE IF NOT EXISTS mes_cto_option (option_code VARCHAR(32) PRIMARY KEY, family_code VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL); CREATE TABLE IF NOT EXISTS mes_cto_rule (rule_code VARCHAR(64) PRIMARY KEY, rule_type VARCHAR(32) NOT NULL, finish_code VARCHAR(32), sensor_code VARCHAR(32), message VARCHAR(256) NOT NULL); CREATE TABLE IF NOT EXISTS mes_cto_configuration (id UUID PRIMARY KEY, options_json TEXT NOT NULL, status VARCHAR(32) NOT NULL); INSERT INTO mes_cto_option_family (family_code, display_name) SELECT 'finish', 'Finish' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option_family WHERE family_code = 'finish'); INSERT INTO mes_cto_option_family (family_code, display_name) SELECT 'sensor', 'Sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option_family WHERE family_code = 'sensor'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'FINISH-MATTE', 'finish', 'Matte finish' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'FINISH-MATTE'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'FINISH-GLOSS', 'finish', 'Gloss finish' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'FINISH-GLOSS'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'SENSOR-BASIC', 'sensor', 'Basic sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'SENSOR-BASIC'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'SENSOR-VISION', 'sensor', 'Vision sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'SENSOR-VISION'); INSERT INTO mes_cto_rule (rule_code, rule_type, finish_code, sensor_code, message) SELECT 'RULE-MATTE-VISION-INCOMPATIBLE', 'incompatible', 'FINISH-MATTE', 'SENSOR-VISION', 'Matte finish is not compatible with the vision sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_rule WHERE rule_code = 'RULE-MATTE-VISION-INCOMPATIBLE');"
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-cto-hub",
+      "type": "DEVICE",
+      "displayName": "MES CTO Hub",
+      "description": "Configure-to-order validation and build draft hub"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.mes-cto-hub",
+      "functionName": "mes_cto_listOptions",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "option_row",
+                "fields": [
+                  {
+                    "name": "familyCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "familyName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "optionCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "optionName",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT f.family_code AS family_code, f.display_name AS family_name, o.option_code AS option_code, o.display_name AS option_name FROM mes_cto_option_family f JOIN mes_cto_option o ON o.family_code = f.family_code ORDER BY f.family_code, o.option_code\"},{\"type\":\"map\",\"var\":\"options\",\"source\":\"${rows}\",\"fields\":{\"familyCode\":\"${item.family_code}\",\"familyName\":\"${item.family_name}\",\"optionCode\":\"${item.option_code}\",\"optionName\":\"${item.option_name}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${options}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-cto-hub",
+      "functionName": "mes_cto_validateConfig",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "optionsJson",
+              "type": "STRING"
+            },
+            {
+              "name": "finishCode",
+              "type": "STRING"
+            },
+            {
+              "name": "sensorCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "messages",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "message_row",
+                "fields": [
+                  {
+                    "name": "message",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"setVar\",\"var\":\"finishCode\",\"value\":\"${input.finishCode}\"},{\"type\":\"setVar\",\"var\":\"sensorCode\",\"value\":\"${input.sensorCode}\"},{\"type\":\"selectOne\",\"var\":\"invalid\",\"sql\":\"SELECT rule_code, message FROM mes_cto_rule WHERE rule_type = 'incompatible' AND finish_code = ? AND sensor_code = ?\",\"params\":[\"${finishCode}\",\"${sensorCode}\"]},{\"type\":\"if\",\"var\":\"invalid\",\"notNull\":true,\"then\":[{\"type\":\"selectMany\",\"var\":\"messages\",\"sql\":\"SELECT message FROM mes_cto_rule WHERE rule_code = ?\",\"params\":[\"${invalid.rule_code}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"VALIDATION_FAILED\",\"error_message\":\"${invalid.message}\",\"messages\":\"${messages}\"}}]},{\"type\":\"selectMany\",\"var\":\"messages\",\"sql\":\"SELECT message FROM mes_cto_rule WHERE 1 = 0\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"messages\":\"${messages}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-cto-hub",
+      "functionName": "mes_cto_generateBuild",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "optionsJson",
+              "type": "STRING"
+            },
+            {
+              "name": "finishCode",
+              "type": "STRING"
+            },
+            {
+              "name": "sensorCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "configurationId",
+              "type": "STRING"
+            },
+            {
+              "name": "materialCode",
+              "type": "STRING"
+            },
+            {
+              "name": "workOrderDraftId",
+              "type": "STRING"
+            },
+            {
+              "name": "bomHint",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"setVar\",\"var\":\"finishCode\",\"value\":\"${input.finishCode}\"},{\"type\":\"setVar\",\"var\":\"sensorCode\",\"value\":\"${input.sensorCode}\"},{\"type\":\"selectOne\",\"var\":\"invalid\",\"sql\":\"SELECT rule_code, message FROM mes_cto_rule WHERE rule_type = 'incompatible' AND finish_code = ? AND sensor_code = ?\",\"params\":[\"${finishCode}\",\"${sensorCode}\"]},{\"type\":\"if\",\"var\":\"invalid\",\"notNull\":true,\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"VALIDATION_FAILED\",\"error_message\":\"${invalid.message}\",\"configurationId\":\"\",\"materialCode\":\"\",\"workOrderDraftId\":\"\",\"bomHint\":\"\",\"status\":\"rejected\"}}]},{\"type\":\"selectOne\",\"var\":\"payload\",\"sql\":\"SELECT CONCAT('{\\\"finishCode\\\":\\\"', ?, '\\\",\\\"sensorCode\\\":\\\"', ?, '\\\"}') AS options_json\",\"params\":[\"${finishCode}\",\"${sensorCode}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_cto_configuration (id, options_json, status) SELECT '22300000-0000-0000-0000-000000000001', ?, 'draft' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_configuration WHERE id = '22300000-0000-0000-0000-000000000001')\",\"params\":[\"${payload.options_json}\"]},{\"type\":\"selectOne\",\"var\":\"configuration\",\"sql\":\"SELECT id, options_json, status FROM mes_cto_configuration WHERE id = '22300000-0000-0000-0000-000000000001'\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"configurationId\":\"${configuration.id}\",\"materialCode\":\"MAT-WIDGET-A01\",\"workOrderDraftId\":\"WO-DRAFT-CTO-A01\",\"bomHint\":\"Use MAT-WIDGET-A01 base BoM with selected finish and sensor options\",\"status\":\"${configuration.status}\"}}]}"
+      }
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-cto",
+    "title": "MES CTO Configurator",
+    "defaultDashboard": "root.platform.dashboards.mes-cto",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-cto",
+        "title": "CTO Configurator"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.mes-cto-hub"
+  },
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mes-cto",
+      "title": "MES CTO Configurator",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"options\",\"type\":\"function\",\"title\":\"Options\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.devices.mes-cto-hub\",\"functionName\":\"mes_cto_listOptions\",\"buttonLabel\":\"List options\"},{\"id\":\"validate\",\"type\":\"function-form\",\"title\":\"Validate configuration\",\"x\":28,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.devices.mes-cto-hub\",\"functionName\":\"mes_cto_validateConfig\",\"buttonLabel\":\"Validate\",\"fieldsJson\":\"[{\\\"name\\\":\\\"finishCode\\\",\\\"label\\\":\\\"Finish\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"FINISH-GLOSS\\\"},{\\\"name\\\":\\\"sensorCode\\\",\\\"label\\\":\\\"Sensor\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"SENSOR-VISION\\\"}]\"},{\"id\":\"generate\",\"type\":\"function-form\",\"title\":\"Generate build\",\"x\":56,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.devices.mes-cto-hub\",\"functionName\":\"mes_cto_generateBuild\",\"buttonLabel\":\"Generate\",\"fieldsJson\":\"[{\\\"name\\\":\\\"finishCode\\\",\\\"label\\\":\\\"Finish\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"FINISH-GLOSS\\\"},{\\\"name\\\":\\\"sensorCode\\\",\\\"label\\\":\\\"Sensor\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"SENSOR-VISION\\\"}]\"},{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Hint\",\"x\":0,\"y\":28,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Seed options: <code>FINISH-GLOSS</code>, <code>FINISH-MATTE</code>, <code>SENSOR-BASIC</code>, <code>SENSOR-VISION</code>. Incompatibility rule: matte finish with vision sensor.</p>\"}]}"
+    }
+  ],
+  "metadata": {
+    "changelog": "1.0.0 — BL-223 CTO configurator pattern: options, compatibility validation, and build draft generation"
+  }
+}

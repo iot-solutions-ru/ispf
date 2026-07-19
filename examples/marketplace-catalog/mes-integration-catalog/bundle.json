@@ -1,0 +1,106 @@
+{
+  "version": "0.1.0",
+  "displayName": "MES Integration Catalog (BL-225 skeleton)",
+  "tablePrefix": "",
+  "schemaName": "app_mes_integration_catalog",
+  "migrations": [
+    {
+      "id": "mes_integration_catalog_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_integration_connector (connector_id VARCHAR(64) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, target_system VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL, notes VARCHAR(512) NOT NULL); INSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, notes) SELECT 'sap-stub', 'SAP connector placeholder', 'SAP', 'deferred', 'Skeleton row only. Live SAP adapter is BL-169 and not included.' WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = 'sap-stub'); INSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, notes) SELECT '1c-stub', '1C connector placeholder', '1C', 'deferred', 'Skeleton row only. Live 1C adapter is BL-169 and not included.' WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = '1c-stub');"
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-integration-catalog-hub",
+      "type": "DEVICE",
+      "displayName": "MES Integration Catalog Hub",
+      "description": "BL-225 skeleton hub for connector catalog and Level 4 outbox guidance"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.mes-integration-catalog-hub",
+      "functionName": "mes_integration_listConnectors",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "connector_row",
+                "fields": [
+                  {
+                    "name": "connectorId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "displayName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "targetSystem",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "notes",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"connectors\",\"sql\":\"SELECT connector_id, display_name, target_system, status, notes FROM mes_integration_connector ORDER BY connector_id\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${connectors}\",\"fields\":{\"connectorId\":\"${item.connector_id}\",\"displayName\":\"${item.display_name}\",\"targetSystem\":\"${item.target_system}\",\"status\":\"${item.status}\",\"notes\":\"${item.notes}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mes-integration-catalog",
+      "title": "MES Integration Catalog",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"catalog-help\",\"type\":\"html-snippet\",\"title\":\"Integration catalog\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-225 skeleton: connector readiness catalog plus outbox contract. Live SAP/1C adapters remain BL-169 Deferred.</p>\"},{\"id\":\"connectors\",\"type\":\"function\",\"title\":\"Connectors\",\"x\":0,\"y\":14,\"w\":84,\"h\":28,\"objectPath\":\"root.platform.devices.mes-integration-catalog-hub\",\"functionName\":\"mes_integration_listConnectors\",\"buttonLabel\":\"List connectors\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-integration-catalog",
+    "title": "MES Integration Catalog",
+    "defaultDashboard": "root.platform.dashboards.mes-integration-catalog",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-integration-catalog",
+        "title": "Connectors"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.mes-integration-catalog-hub"
+  },
+  "metadata": {
+    "product": "mes-integration-catalog",
+    "publisher": "IoT Solutions",
+    "delivery": "marketplace",
+    "changelog": "0.1.0 - BL-225 skeleton: connector catalog rows and read-only listing function; live ERP deferred to BL-169"
+  }
+}

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BlueprintPersistenceService {
@@ -30,6 +31,19 @@ public class BlueprintPersistenceService {
         this.objectMapper = objectMapper;
         this.blueprintRegistry = blueprintRegistry;
         this.blueprintEngine = blueprintEngine;
+    }
+
+    /** Stable id for an existing row (e.g. former builtin after mes-catalog disabled). */
+    public Optional<String> findIdByName(String name) {
+        if (name == null || name.isBlank()) {
+            return Optional.empty();
+        }
+        List<String> ids = jdbcTemplate.query(
+                "SELECT id FROM blueprint_definitions WHERE name = ?",
+                (rs, rowNum) -> rs.getString(1),
+                name
+        );
+        return ids.stream().findFirst();
     }
 
     public void persist(BlueprintDefinition model, boolean builtin) {
@@ -54,6 +68,37 @@ public class BlueprintPersistenceService {
                 );
                 return;
             }
+            // Name is UNIQUE — adopt an orphaned row (same name, different id) instead of failing INSERT.
+            Optional<String> existingId = findIdByName(model.name());
+            if (existingId.isPresent()) {
+                BlueprintDefinition aligned = new BlueprintDefinition(
+                        existingId.get(),
+                        model.name(),
+                        model.description(),
+                        model.type(),
+                        model.targetObjectType(),
+                        model.suitabilityExpression(),
+                        model.variables(),
+                        model.events(),
+                        model.functions(),
+                        model.bindingRules(),
+                        model.parameters(),
+                        model.createdAt(),
+                        model.updatedAt()
+                );
+                String alignedJson = objectMapper.writeValueAsString(BlueprintDto.from(aligned));
+                jdbcTemplate.update("""
+                        UPDATE blueprint_definitions
+                        SET definition_json = ?, builtin = ?, updated_at = ?
+                        WHERE name = ?
+                        """,
+                        alignedJson,
+                        builtin,
+                        Timestamp.from(Instant.now()),
+                        model.name()
+                );
+                return;
+            }
             jdbcTemplate.update("""
                     INSERT INTO blueprint_definitions (id, name, definition_json, builtin, updated_at)
                     VALUES (?, ?, ?, ?, ?)
@@ -65,7 +110,7 @@ public class BlueprintPersistenceService {
                     Timestamp.from(Instant.now())
             );
         } catch (Exception ex) {
-            throw new IllegalStateException("Failed to persist model " + model.name(), ex);
+            throw new IllegalStateException("Failed to persist model " + model.name() + ": " + ex.getMessage(), ex);
         }
     }
 

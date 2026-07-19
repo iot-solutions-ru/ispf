@@ -26,6 +26,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
   const authConfig = authConfigQuery.data;
   const showLocalLogin = authConfig?.mode !== "oidc" && authConfig?.localLoginEnabled !== false;
   const showOidcLogin = authConfig?.mode === "oidc";
+  const showTotpField = authConfig?.mfaEnabled === true;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -84,22 +85,24 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
                 autoComplete="current-password"
               />
             </label>
-            <label>
-              {t("shell:login.totp")}
-              <input
-                value={totpCode}
-                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="000000"
-              />
-            </label>
+            {showTotpField && (
+              <label>
+                {t("shell:login.totp")}
+                <input
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="000000"
+                />
+              </label>
+            )}
             <button type="submit" className="btn primary" disabled={pending}>
               {pending ? t("shell:login.submitting") : t("shell:login.submit")}
             </button>
             <p className="login-hint">{t("shell:login.defaultHint")}</p>
-            <p className="login-hint">{t("shell:login.totpHint")}</p>
+            {showTotpField && <p className="login-hint">{t("shell:login.totpHint")}</p>}
           </>
         )}
 

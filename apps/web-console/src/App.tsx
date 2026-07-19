@@ -5,7 +5,15 @@ import { useTranslation } from "react-i18next";
 import { fetchPlatformInfo, reorderObjectChildren } from "./api";
 import { fetchOperatorApps } from "./api/operatorApps";
 import { logout } from "./auth/login";
-import { getPrimaryRole, getStoredSession, isAdminSession, isConfiguratorSession, setStoredSession, type AuthSession } from "./auth/session";
+import {
+  canManageTenantSecurity,
+  getPrimaryRole,
+  getStoredSession,
+  isAdminSession,
+  isConfiguratorSession,
+  setStoredSession,
+  type AuthSession,
+} from "./auth/session";
 import { SESSION_INVALID_EVENT, validateStoredSession } from "./auth/validateSession";
 import {
   clearOidcCallbackParams,
@@ -532,6 +540,7 @@ function AppShell() {
   );
   const isAdmin = isAdminSession(session);
   const canConfigure = isConfiguratorSession(session);
+  const canManageSecurity = canManageTenantSecurity(session);
   const primaryRole = getPrimaryRole(session);
   const showAiStudio = canConfigure && workspaceTab === "ai-studio";
   // Keep provider mounted for FAB even when Studio tab is hidden.
@@ -854,6 +863,7 @@ function AppShell() {
                 allObjects={objectList}
                 canConfigure={canConfigure}
                 isPlatformAdmin={isAdmin}
+                canManageTenantSecurity={canManageSecurity}
                 onCreateApplication={openCreateApplication}
                 onCreateInFolder={(parentPath) => setCreateParentPath(parentPath)}
                 showBackToTree={isMobileLayout}
@@ -967,7 +977,7 @@ function AppShell() {
               key={activeEditor.path}
               path={activeEditor.path}
               canManage={canConfigure}
-              canManageAcl={isAdmin}
+              canManageAcl={canManageSecurity}
               onSelectPath={selectPathInExplorer}
               onClose={() => {
                 setPropertiesTabPath(null);

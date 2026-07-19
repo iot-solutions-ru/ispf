@@ -93,12 +93,17 @@ export function getAuthHeaders(): Record<string, string> {
   return {};
 }
 
-export function getPrimaryRole(session: AuthSession | null): "admin" | "developer" | "operator" | null {
+export function getPrimaryRole(
+  session: AuthSession | null
+): "admin" | "tenant-admin" | "developer" | "operator" | null {
   if (!session) {
     return null;
   }
   if (session.roles.includes("admin")) {
     return "admin";
+  }
+  if (session.roles.includes("tenant-admin")) {
+    return "tenant-admin";
   }
   if (session.roles.includes("developer")) {
     return "developer";
@@ -109,13 +114,28 @@ export function getPrimaryRole(session: AuthSession | null): "admin" | "develope
   return null;
 }
 
+/** Mirrors backend IspfRoles.isConfigurator — can open admin shell / configure objects. */
 export function isConfiguratorSession(session: AuthSession | null): boolean {
   if (!session) {
     return false;
   }
-  return session.roles.includes("admin") || session.roles.includes("developer");
+  return (
+    session.roles.includes("admin")
+    || session.roles.includes("developer")
+    || session.roles.includes("tenant-admin")
+  );
 }
 
+/** Global platform admin only (create tenants, federation, system). */
 export function isAdminSession(session: AuthSession | null): boolean {
   return session?.roles.includes("admin") ?? false;
+}
+
+export function isTenantAdminSession(session: AuthSession | null): boolean {
+  return session?.roles.includes("tenant-admin") ?? false;
+}
+
+/** Global admin or tenant-admin — Security users/roles for own scope. */
+export function canManageTenantSecurity(session: AuthSession | null): boolean {
+  return isAdminSession(session) || isTenantAdminSession(session);
 }

@@ -1,0 +1,26 @@
+{
+  "slug": "mes-integration-catalog",
+  "title": "MES Integration Catalog",
+  "description": "BL-225 skeleton for MES Level 4 outbox contract, connector readiness catalog, and agent-facing capability mapping. Contains stub connector rows only; live ERP adapters remain BL-169.",
+  "pricing": "free",
+  "appId": "mes-integration-catalog",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "IoT Solutions LLC",
+  "vendorInn": "0000000000",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "0.1.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "integration",
+    "erp",
+    "mcp",
+    "outbox"
+  ],
+  "changelog": "0.1.0 - BL-225 skeleton: connector catalog rows and read-only listing function; live ERP deferred to BL-169"
+}

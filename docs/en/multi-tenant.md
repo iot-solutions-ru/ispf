@@ -21,12 +21,14 @@ root
 ├── root.platform                    ← shared / default (legacy demo; global admin)
 └── root.tenant
     └── root.tenant.acme
-        └── root.tenant.acme.platform
-            ├── .devices
-            ├── .dashboards
-            └── .security
-                ├── .users
-                └── .roles
+        └── root.tenant.acme.platform   ← core catalog (same base folders as global platform)
+            ├── .security / .users / .roles
+            ├── .devices, .alert-rules, .operator-apps
+            ├── .dashboards, .mimics, blueprints, .reports
+            ├── .correlators, .workflows, .queries, .event-filters, .process-programs
+            ├── .schedules, .data-sources, .bindings, .migrations
+            └── .applications, .instances
+            (MES / marketplace packs are not pre-seeded — tenant installs solutions itself)
 ```
 
 **Principle:** object path is the stable namespace identifier; tenant is not tied to HTTP host.

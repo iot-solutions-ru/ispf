@@ -104,9 +104,5 @@ public enum ObjectType {
     ANALYTICS,
     /** Derived tag / KPI template instance. */
     ANALYTICS_TEMPLATE,
-    /** Analytics event frame catalog folder (BL-208). */
-    EVENT_FRAMES,
-    /** Time-scoped analytics window instance (shift, batch, downtime). */
-    EVENT_FRAME,
     CUSTOM
 }

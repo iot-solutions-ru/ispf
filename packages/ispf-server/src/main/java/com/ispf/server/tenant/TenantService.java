@@ -3,6 +3,7 @@ package com.ispf.server.tenant;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.operator.OperatorAppUiStore;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAclStore;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,8 @@ public class TenantService {
     private final TenantSchemaService tenantSchemaService;
     private final PlatformUserService platformUserService;
     private final ObjectAclStore objectAclStore;
+    private final OperatorAppUiStore operatorAppUiStore;
+    private final TenantPlatformCatalogBootstrap tenantPlatformCatalogBootstrap;
 
     public TenantService(
             TenantStore tenantStore,
@@ -35,7 +38,9 @@ public class TenantService {
             TenantScopeService tenantScopeService,
             TenantSchemaService tenantSchemaService,
             PlatformUserService platformUserService,
-            ObjectAclStore objectAclStore
+            ObjectAclStore objectAclStore,
+            OperatorAppUiStore operatorAppUiStore,
+            TenantPlatformCatalogBootstrap tenantPlatformCatalogBootstrap
     ) {
         this.tenantStore = tenantStore;
         this.objectManager = objectManager;
@@ -44,6 +49,8 @@ public class TenantService {
         this.tenantSchemaService = tenantSchemaService;
         this.platformUserService = platformUserService;
         this.objectAclStore = objectAclStore;
+        this.operatorAppUiStore = operatorAppUiStore;
+        this.tenantPlatformCatalogBootstrap = tenantPlatformCatalogBootstrap;
     }
 
     public List<Tenant> listTenants() {
@@ -67,7 +74,7 @@ public class TenantService {
         ensureTenantsRoot();
         Tenant tenant = tenantStore.insert(draft);
         tenantSchemaService.provisionTenantSchema(tenant.tenantId());
-        bootstrapTenantTree(tenant);
+        tenantPlatformCatalogBootstrap.ensureTenantPlatformCatalog(tenant.tenantId(), tenant.displayName());
         String adminUsername = resolveAdminUsername(draft);
         String adminPassword = resolveAdminPassword(draft);
         String adminDisplayName = draft.adminDisplayName() != null && !draft.adminDisplayName().isBlank()
@@ -99,9 +106,27 @@ public class TenantService {
     public void deleteTenant(String tenantId) {
         Tenant tenant = tenantStore.findById(tenantId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        String normalized = tenant.tenantId();
+        for (String username : tenantStore.listUsernamesForTenant(normalized)) {
+            platformUserService.deleteUserIfPresent(username);
+            tenantScopeService.invalidateUserCache(username);
+        }
+        String appPrefix = normalized + "__";
+        String platformPrefix = TenantPaths.tenantPlatform(normalized);
+        for (OperatorAppUiStore.OperatorAppUiRecord record : operatorAppUiStore.listAll()) {
+            boolean owned = record.appId() != null && record.appId().startsWith(appPrefix);
+            if (!owned && record.defaultDashboard() != null
+                    && (record.defaultDashboard().equals(platformPrefix)
+                    || record.defaultDashboard().startsWith(platformPrefix + "."))) {
+                owned = true;
+            }
+            if (owned) {
+                operatorAppUiStore.deleteByAppId(record.appId());
+            }
+        }
         objectManager.delete(tenant.objectPath());
-        tenantStore.delete(tenantId);
-        tenantSchemaService.dropTenantSchema(tenantId);
+        tenantStore.delete(normalized);
+        tenantSchemaService.dropTenantSchema(normalized);
     }
 
     @Transactional
@@ -146,73 +171,6 @@ public class TenantService {
                 ObjectType.TENANT,
                 "Tenants",
                 "Multi-tenant namespaces (root.tenant.{id}.platform.*)",
-                null
-        );
-    }
-
-    private void bootstrapTenantTree(Tenant tenant) {
-        objectManager.create(
-                TenantPaths.TENANTS_ROOT,
-                tenant.tenantId(),
-                ObjectType.TENANT,
-                tenant.displayName(),
-                "Tenant namespace for " + tenant.tenantId(),
-                null
-        );
-        objectManager.create(
-                TenantPaths.tenantRoot(tenant.tenantId()),
-                "platform",
-                ObjectType.PLATFORM,
-                tenant.displayName() + " Platform",
-                "Tenant-scoped platform tree",
-                null
-        );
-        objectManager.create(
-                TenantPaths.tenantPlatform(tenant.tenantId()),
-                "devices",
-                ObjectType.DEVICES,
-                "Devices",
-                "Tenant devices",
-                null
-        );
-        objectManager.create(
-                TenantPaths.tenantPlatform(tenant.tenantId()),
-                "dashboards",
-                ObjectType.DASHBOARDS,
-                "Dashboards",
-                "Tenant dashboards",
-                null
-        );
-        objectManager.create(
-                TenantPaths.tenantPlatform(tenant.tenantId()),
-                "data-sources",
-                ObjectType.DATA_SOURCES,
-                "Data Sources",
-                "Tenant external JDBC data sources",
-                null
-        );
-        objectManager.create(
-                TenantPaths.tenantPlatform(tenant.tenantId()),
-                "security",
-                ObjectType.SECURITY,
-                "Security",
-                "Tenant-local users and roles",
-                null
-        );
-        objectManager.create(
-                TenantPaths.tenantSecurity(tenant.tenantId()),
-                "users",
-                ObjectType.USERS,
-                "Users",
-                "Tenant users",
-                null
-        );
-        objectManager.create(
-                TenantPaths.tenantSecurity(tenant.tenantId()),
-                "roles",
-                ObjectType.ROLES,
-                "Roles",
-                "Tenant custom roles",
                 null
         );
     }

@@ -1074,9 +1074,16 @@ public class ApplicationBundleDeployService {
 
     private void deployBlueprint(BundleBlueprint blueprint) throws BlueprintException {
         Instant now = Instant.now();
-        BlueprintDefinition definition = blueprintRegistry.findByName(blueprint.name())
+        var existingReg = blueprintRegistry.findByName(blueprint.name());
+        // Reuse DB id when a stale builtin row remains after mes-catalog was disabled
+        // (UNIQUE name would otherwise fail INSERT with a fresh UUID).
+        String id = existingReg.map(BlueprintDefinition::id)
+                .or(() -> blueprintPersistence.findIdByName(blueprint.name()))
+                .orElseGet(() -> UUID.randomUUID().toString());
+        Instant createdAt = existingReg.map(BlueprintDefinition::createdAt).orElse(now);
+        BlueprintDefinition definition = existingReg
                 .map(existing -> new BlueprintDefinition(
-                        existing.id(),
+                        id,
                         blueprint.name(),
                         blueprint.description(),
                         blueprint.type() != null ? blueprint.type() : existing.type(),
@@ -1089,11 +1096,11 @@ public class ApplicationBundleDeployService {
                         blueprint.functions() != null ? blueprint.functions() : existing.functions(),
                         blueprint.bindings() != null ? blueprint.bindings() : existing.bindings(),
                         blueprint.parameters() != null ? blueprint.parameters() : existing.parameters(),
-                        existing.createdAt(),
+                        createdAt,
                         now
                 ))
                 .orElseGet(() -> new BlueprintDefinition(
-                        UUID.randomUUID().toString(),
+                        id,
                         blueprint.name(),
                         blueprint.description(),
                         blueprint.type(),
@@ -1104,11 +1111,11 @@ public class ApplicationBundleDeployService {
                         blueprint.functions() != null ? blueprint.functions() : List.of(),
                         blueprint.bindings() != null ? blueprint.bindings() : List.of(),
                         blueprint.parameters() != null ? blueprint.parameters() : Map.of(),
-                        now,
+                        createdAt,
                         now
                 ));
 
-        BlueprintDefinition saved = blueprintRegistry.findByName(blueprint.name()).isPresent()
+        BlueprintDefinition saved = existingReg.isPresent()
                 ? blueprintEngine.updateBlueprint(definition)
                 : blueprintEngine.createBlueprint(definition);
         blueprintPersistence.persist(saved, false);

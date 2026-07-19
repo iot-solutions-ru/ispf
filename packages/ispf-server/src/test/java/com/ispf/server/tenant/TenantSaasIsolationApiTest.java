@@ -77,6 +77,17 @@ class TenantSaasIsolationApiTest {
 
         String acmeAdminToken = login(acmeAdmin, "acme-secret");
 
+        mockMvc.perform(get("/api/v1/objects")
+                        .header("Authorization", "Bearer " + acmeAdminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.devices")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.operator-apps")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.workflows")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.schedules")))
+                .andExpect(jsonPath("$[*].path", not(hasItem("root.platform.mes"))))
+                .andExpect(jsonPath("$[*].path", not(hasItem("root.platform.federation"))));
+
         mockMvc.perform(post("/api/v1/objects")
                         .header("Authorization", "Bearer " + acmeAdminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -172,6 +183,32 @@ class TenantSaasIsolationApiTest {
                 .andExpect(jsonPath("$[*].username", hasItem(acmeAdmin)))
                 .andExpect(jsonPath("$[*].username", hasItem(acmeOp)))
                 .andExpect(jsonPath("$[*].username", not(hasItem("admin"))));
+
+        // Tenant callers must not see global operator apps / bundle demos.
+        mockMvc.perform(get("/api/v1/operator-apps")
+                        .header("Authorization", "Bearer " + acmeAdminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].appId", not(hasItem("platform"))))
+                .andExpect(jsonPath("$[*].appId", not(hasItem("spreadsheet-demo"))));
+
+        mockMvc.perform(post("/api/v1/operator-apps/acme-hmi")
+                        .header("Authorization", "Bearer " + acmeAdminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "title": "Acme HMI" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.appId").value(acme + "__acme-hmi"));
+
+        mockMvc.perform(get("/api/v1/operator-apps")
+                        .header("Authorization", "Bearer " + acmeAdminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].appId", hasItem(acme + "__acme-hmi")));
+
+        mockMvc.perform(get("/api/v1/operator-apps")
+                        .header("Authorization", "Bearer " + betaAdminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].appId", not(hasItem(acme + "__acme-hmi"))));
     }
 
     private String login(String username, String password) throws Exception {

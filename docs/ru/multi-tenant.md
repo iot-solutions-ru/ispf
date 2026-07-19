@@ -21,12 +21,14 @@ root
 ├── root.platform                    ← shared / default (legacy; global admin)
 └── root.tenant
     └── root.tenant.acme
-        └── root.tenant.acme.platform
-            ├── .devices
-            ├── .dashboards
-            └── .security
-                ├── .users
-                └── .roles
+        └── root.tenant.acme.platform   ← базовый каталог (как у global platform)
+            ├── .security / .users / .roles
+            ├── .devices, .alert-rules, .operator-apps
+            ├── .dashboards, .mimics, blueprints, .reports
+            ├── .correlators, .workflows, .queries, .event-filters, .process-programs
+            ├── .schedules, .data-sources, .bindings, .migrations
+            └── .applications, .instances
+            (MES / marketplace не пресидятся — тенант ставит решения сам)
 ```
 
 **Принцип:** путь объекта — стабильный идентификатор namespace; тенант не привязан к HTTP-хосту.

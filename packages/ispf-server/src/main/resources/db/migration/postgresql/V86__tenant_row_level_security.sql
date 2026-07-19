@@ -3,6 +3,9 @@
 --   app.tenant_bypass = 'on'|'off'  (default unset → COALESCE to 'on' = allow)
 --   app.tenant_id     = tenant id string or ''
 -- H2: Flyway placeholders wrap the body in a block comment (see FlywayDialectConfiguration).
+--
+-- TimescaleDB columnstore/compressed hypertables reject ENABLE ROW LEVEL SECURITY
+-- (SQLSTATE 0A000). Historian tables may skip RLS; path isolation remains in the app layer.
 
 ${rls_block_start}
 CREATE OR REPLACE FUNCTION ispf_tenant_path_visible(p text)
@@ -22,84 +25,38 @@ AS $ispf_rls$
       );
 $ispf_rls$;
 
--- object_nodes (path)
-ALTER TABLE object_nodes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE object_nodes FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON object_nodes;
-CREATE POLICY tenant_isolation_all ON object_nodes
-    FOR ALL
-    USING (ispf_tenant_path_visible(path))
-    WITH CHECK (ispf_tenant_path_visible(path));
+CREATE OR REPLACE FUNCTION ispf_enable_tenant_rls(p_table regclass, p_path_column text)
+RETURNS void
+LANGUAGE plpgsql
+AS $ispf_rls_enable$
+BEGIN
+  EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY', p_table);
+  EXECUTE format('ALTER TABLE %s FORCE ROW LEVEL SECURITY', p_table);
+  EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_all ON %s', p_table);
+  EXECUTE format(
+    'CREATE POLICY tenant_isolation_all ON %s FOR ALL USING (ispf_tenant_path_visible(%I)) WITH CHECK (ispf_tenant_path_visible(%I))',
+    p_table, p_path_column, p_path_column
+  );
+EXCEPTION
+  WHEN feature_not_supported THEN
+    RAISE NOTICE 'Skipping RLS on % (feature not supported, e.g. Timescale columnstore): %',
+      p_table, SQLERRM;
+  WHEN OTHERS THEN
+    IF SQLSTATE = '0A000' THEN
+      RAISE NOTICE 'Skipping RLS on % (SQLSTATE 0A000): %', p_table, SQLERRM;
+    ELSE
+      RAISE;
+    END IF;
+END;
+$ispf_rls_enable$;
 
--- object_variables (object_path)
-ALTER TABLE object_variables ENABLE ROW LEVEL SECURITY;
-ALTER TABLE object_variables FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON object_variables;
-CREATE POLICY tenant_isolation_all ON object_variables
-    FOR ALL
-    USING (ispf_tenant_path_visible(object_path))
-    WITH CHECK (ispf_tenant_path_visible(object_path));
-
--- object_acl_entries (object_path)
-ALTER TABLE object_acl_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE object_acl_entries FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON object_acl_entries;
-CREATE POLICY tenant_isolation_all ON object_acl_entries
-    FOR ALL
-    USING (ispf_tenant_path_visible(object_path))
-    WITH CHECK (ispf_tenant_path_visible(object_path));
-
--- event_history (object_path)
-ALTER TABLE event_history ENABLE ROW LEVEL SECURITY;
-ALTER TABLE event_history FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON event_history;
-CREATE POLICY tenant_isolation_all ON event_history
-    FOR ALL
-    USING (ispf_tenant_path_visible(object_path))
-    WITH CHECK (ispf_tenant_path_visible(object_path));
-
--- variable_samples (object_path)
-ALTER TABLE variable_samples ENABLE ROW LEVEL SECURITY;
-ALTER TABLE variable_samples FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON variable_samples;
-CREATE POLICY tenant_isolation_all ON variable_samples
-    FOR ALL
-    USING (ispf_tenant_path_visible(object_path))
-    WITH CHECK (ispf_tenant_path_visible(object_path));
-
--- object_config_audit (object_path)
-ALTER TABLE object_config_audit ENABLE ROW LEVEL SECURITY;
-ALTER TABLE object_config_audit FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON object_config_audit;
-CREATE POLICY tenant_isolation_all ON object_config_audit
-    FOR ALL
-    USING (ispf_tenant_path_visible(object_path))
-    WITH CHECK (ispf_tenant_path_visible(object_path));
-
--- object_edit_leases uses path_prefix (not object_path)
-ALTER TABLE object_edit_leases ENABLE ROW LEVEL SECURITY;
-ALTER TABLE object_edit_leases FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON object_edit_leases;
-CREATE POLICY tenant_isolation_all ON object_edit_leases
-    FOR ALL
-    USING (ispf_tenant_path_visible(path_prefix))
-    WITH CHECK (ispf_tenant_path_visible(path_prefix));
-
--- alarm_shelves (object_path)
-ALTER TABLE alarm_shelves ENABLE ROW LEVEL SECURITY;
-ALTER TABLE alarm_shelves FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON alarm_shelves;
-CREATE POLICY tenant_isolation_all ON alarm_shelves
-    FOR ALL
-    USING (ispf_tenant_path_visible(object_path))
-    WITH CHECK (ispf_tenant_path_visible(object_path));
-
--- alarm_shelf_requests (object_path)
-ALTER TABLE alarm_shelf_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE alarm_shelf_requests FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation_all ON alarm_shelf_requests;
-CREATE POLICY tenant_isolation_all ON alarm_shelf_requests
-    FOR ALL
-    USING (ispf_tenant_path_visible(object_path))
-    WITH CHECK (ispf_tenant_path_visible(object_path));
+SELECT ispf_enable_tenant_rls('object_nodes'::regclass, 'path');
+SELECT ispf_enable_tenant_rls('object_variables'::regclass, 'object_path');
+SELECT ispf_enable_tenant_rls('object_acl_entries'::regclass, 'object_path');
+SELECT ispf_enable_tenant_rls('event_history'::regclass, 'object_path');
+SELECT ispf_enable_tenant_rls('variable_samples'::regclass, 'object_path');
+SELECT ispf_enable_tenant_rls('object_config_audit'::regclass, 'object_path');
+SELECT ispf_enable_tenant_rls('object_edit_leases'::regclass, 'path_prefix');
+SELECT ispf_enable_tenant_rls('alarm_shelves'::regclass, 'object_path');
+SELECT ispf_enable_tenant_rls('alarm_shelf_requests'::regclass, 'object_path');
 ${rls_block_end}

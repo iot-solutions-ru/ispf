@@ -1,6 +1,7 @@
 package com.ispf.server.operator;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,19 +30,27 @@ public class OperatorAppController {
     }
 
     @GetMapping
-    public List<Map<String, Object>> listApps() {
-        return service.listApps();
+    public List<Map<String, Object>> listApps(Authentication authentication) {
+        return service.listApps(authentication);
     }
 
     @GetMapping("/starters")
-    public List<Map<String, Object>> listStarters() {
+    public List<Map<String, Object>> listStarters(Authentication authentication) {
+        if (service.isTenantScoped(authentication)) {
+            return List.of();
+        }
         return starterTemplatesService.listStarters();
     }
 
     @PostMapping("/starters/install")
-    public Map<String, Object> installStarters() {
+    public Map<String, Object> installStarters(Authentication authentication) {
         try {
+            if (service.isTenantScoped(authentication)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Global operator starters are not available to tenants");
+            }
             return starterTemplatesService.installStarters(false);
+        } catch (ResponseStatusException ex) {
+            throw ex;
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (Exception ex) {
@@ -50,9 +59,9 @@ public class OperatorAppController {
     }
 
     @GetMapping("/{appId}/ui")
-    public Map<String, Object> getUi(@PathVariable String appId) {
+    public Map<String, Object> getUi(@PathVariable String appId, Authentication authentication) {
         try {
-            return service.getUi(appId);
+            return service.getUi(appId, authentication);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         } catch (Exception ex) {

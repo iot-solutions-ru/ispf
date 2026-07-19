@@ -40,7 +40,7 @@ public class EventFrameVariableChangeListener {
         if (!isBatchLot(node)) {
             return;
         }
-        String phase = EventFrameBlueprintBootstrap.readString(node, "phase");
+        String phase = readString(node, "phase");
         eventFrameService.onBatchPhaseChanged(event.path(), phase, event.observedAt());
     }
 
@@ -51,5 +51,13 @@ public class EventFrameVariableChangeListener {
             }
         }
         return node.getVariable("batchId").isPresent() && node.getVariable("phase").isPresent();
+    }
+
+    private static String readString(PlatformObject node, String variable) {
+        return node.getVariable(variable)
+                .flatMap(v -> v.value())
+                .map(record -> record.firstRow().get("value"))
+                .map(Object::toString)
+                .orElse("");
     }
 }

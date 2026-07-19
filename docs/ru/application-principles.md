@@ -61,6 +61,8 @@ flowchart TB
 
 См. [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [plugins](plugins.md).
 
+Manufacturing depth следует той же границе: traceability DAG, BoM, CTO, QMS lite, operations DAG и Level 4 outbox — [паттерны решений](manufacturing-patterns.md), а не Java-домены платформы. См. [ADR-0050](decisions/0050-manufacturing-patterns-as-solutions.md).
+
 ---
 
 ### P3. Декларативное вместо кастомного кода

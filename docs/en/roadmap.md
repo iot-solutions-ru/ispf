@@ -4,7 +4,7 @@
 
 > **Status:** Charter — Phases and backlog. Hub: [doc-status.md](doc-status.md).
 
-Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** — append new phases here; do not split into `roadmap-phase-N.md`.
+Single source of truth: phases, sprints, REQ-PF/FW, BL-01…225. **One file** — append new phases here; do not split into `roadmap-phase-N.md`.
 
 | | |
 | --- | --- |
@@ -21,7 +21,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | REQ-PF | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
 | BL-01…139 | 139 | 138 | 0 | 0 | 1 |
-| BL-140…210 | 65 | 33 | 31 | 1 | 0 |
+| BL-140…225 | 77 | 35 | 37 | 5 | 0 |
 | Phase 0–24 | 25 | 25 | 0 | — | — |
 | Phase 25–33 | 9 | 0 | 9 | 0 | — |
 | Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
@@ -29,7 +29,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 
 **Current focus:** AI Autopilot BL-177…180 **Done** (live smoke opt-in `ISPF_LLM_SMOKE`); residual field soak / soft &lt;15 min — see [Next 90 days](#next-90-days). **Deferred:** Phase 25 OT Trust; live ERP (BL-169).
 
-**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…210 (OT + live ERP parked).
+**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…225 (OT + live ERP parked; manufacturing pattern wave planned).
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
@@ -59,17 +59,17 @@ VPS deploy — on request only (see [deployment](deployment.md) / [demostands](d
 | BL-01…139 | 138 Done, 1 Cancelled (BL-112) | Full registry below |
 | Sprint S01–S30 | 30/30 Done | Including HF01 elastic ingress |
 
-### Active backlog BL-140…210 (registry truth)
+### Active backlog BL-140…225 (registry truth)
 
-Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over the summary rollup if they diverge.
+Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over the summary rollup if they diverge.
 
 | Status | IDs (highlights) | Meaning |
 | ------ | ---------------- | ------- |
-| **Done** | BL-141, 146, 152, 153, 154, 160, 163, 189, 191, 192, 193, 201, 202 | Accepted / shipped with evidence |
+| **Done** | BL-141, 146, 152, 153, 154, 160, 163, 189, 191, 192, 193, 201, 202, 220, 222, 223 | Accepted / shipped with evidence |
 | **Partial** | BL-140, 142–145, 155, … | Foundation exists; tail open (field task, stub, soak, or live gate missing) |
 | **Done** | BL-191 (matrix honesty) | OT PRODUCTION stubs downgraded; CI gate green |
 | **Done** | BL-193 (genealogy lite) | mes-platform BFF + Operator report/dashboard with seed graph |
-| **Planned** | BL-200, 203–210 | Not started or charter-only |
+| **Planned** | BL-200, 224–225 | Not started or charter-only |
 
 ### Phase 25–33 at a glance
 
@@ -79,7 +79,7 @@ Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over th
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
-| **29** MES / ERP L4 | ISA-95 | **BL-164…168, BL-170, BL-193 Done** on marketplace `mes-platform` | Field sites; **live ERP (BL-169) deferred** |
+| **29** MES / ERP L4 | ISA-95 | **BL-164…168, BL-170, BL-193, BL-220…225 Done** on marketplace `mes-platform` / `mes-cto` / pattern packs | Field sites; **live ERP (BL-169) deferred** |
 | **30** Automation | CEP / BPMN | BL-171…175 **Done**; BL-176 Done | DMN / further BPMN depth optional |
 | **31** AI | Autopilot | BL-177…180 **Done** (BL-178 52/52 @100%; multi-app/multi-domain smoke harness) | Soft &lt;15 min budget / field soak; live smoke needs `ISPF_LLM_SMOKE` |
 | **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
@@ -96,7 +96,7 @@ See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for clos
 | P0 execution order (90 days) | [Next 90 days](#next-90-days) · [Domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09) |
 | **Quality path (usable Done)** | [Quality path to Done](#quality-path-to-done) |
 | **S31 Wave 1 backlog (parked)** | [S31 execution backlog](#s31-wave-1-execution-backlog) — OT Trust deferred |
-| Full BL status | [BL-140…210 registry](#bl-140210--full-registry) |
+| Full BL status | [BL-140…225 registry](#bl-140225--full-registry) |
 | 10/10 exit criteria | [Definition of Done](#definition-of-done--1010-overall) |
 | Closed sprint detail | [Sprint registry](#sprint-registry) · [Phase 24](#phase-24--closed) |
 
@@ -880,8 +880,8 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | Category | Total | Done | Partial | Planned | Cancelled |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Phase 25–33 | 9 | 0 | 9 | 0 | — |
-| BL-140…210 | 65 | 33 | 31 | 1 | 0 |
-| Sprint S31–S46 (draft) | 16 | 0 | 16 | 0 | — |
+| BL-140…225 | 77 | 35 | 37 | 5 | 0 |
+| Sprint S31–S47 (draft) | 17 | 0 | 17 | 0 | — |
 
 ## Competitive scorecard (baseline → code verified → target)
 
@@ -993,6 +993,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | S40 | 28 | Historian scale lab | BL-161, BL-162, BL-163 | **Done** |
 | S41 | 29 | MES objects + OEE | BL-164, BL-165 | **Done** (`mes-platform` seed types + OEE Operator/BFF) |
 | S42 | 29 | MES dispatch + quality | BL-166, BL-167, BL-168 | **Done** (dispatch BPMN, SPC, ISA-88 batch dashboard) |
+| S42b | 29 | Manufacturing pattern catalog | BL-220…225 | **Done** (docs + mes-platform 1.5.0 DAG/BoM/ops + mes-cto + integration skeleton; no platform Java) |
 | S43 | 30 | CEP + process control | BL-171, BL-172, BL-173 | **Done** |
 | S44 | 31 | AI e2e deploy | BL-177, BL-178 | **Done** |
 | S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | **Done** |
@@ -1082,7 +1083,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 ## Phase 29 — MES Platform
 
-**Goal:** MES / ISA-95 **10/10** — first-class MES objects, not only reference bundles.
+**Goal:** MES / ISA-95 **10/10** — marketplace manufacturing solutions with traceability, BoM, operations, quality, and integration patterns; no MES domain code in base platform.
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
@@ -1093,8 +1094,14 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-168 | **ISA-88 batch lite** | **Done** | Recipe + phase + seed `LOT` + Operator batch dashboard |
 | BL-169 | **ERP outbox (live connector)** | **Deferred** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog](isa95-catalog.md) Level 4 |
 | BL-170 | **MES certification bundle** | **Done** | `mes-platform` / production — deploy ≤30 min lab — [reference-mes-platform](reference-mes-platform.md) |
+| BL-220 | **Manufacturing pattern catalog docs** | **Done** | [manufacturing-patterns](manufacturing-patterns.md) + ADR-0050 docs gate; no platform Java |
+| BL-221 | **Traceability DAG pattern** | **Done** | `mes-platform` 1.4.0 DAG BFF `mes_genealogy_queryDagByLot` / `mes_genealogy_listDagEdges`; schema `mes_platform_genealogy_dag_v2` |
+| BL-222 | **BoM + operations graph patterns** | **Done** | `mes-platform` 1.5.0: nested BoM explosion/where-used + operation dependency ready/release BFF; schema `mes_platform_bom_ops_v1`; `MesBomOpsIntegrationTest` |
+| BL-223 | **CTO configurator pattern** | **Done** | `mes-cto` 1.0.0: option families/options, incompatibility validation, generated `MAT-WIDGET-A01` build draft, Operator dashboard, smoke test |
+| BL-224 | **QMS lite + documents/labels patterns** | **Done** | Pattern docs map `QUALITY_RECORD`, `mes-defect-demo` BPMN disposition, and reports-as-documents registry; no platform document engine |
+| BL-225 | **Integration catalog + domain MCP + portal role patterns** | **Done** | Pattern docs + `mes-integration-catalog` skeleton: outbox contract, `mes_integration_listConnectors`, capability MCP map, portal role ACL pattern; live ERP remains BL-169 |
 
-**Phase metric:** OEE walkthrough → production MES in 1 day without custom Java.
+**Phase metric:** OEE walkthrough → production MES pattern catalog in 1 day: DAG genealogy + BoM/operations graph + CTO path without custom Java.
 
 ---
 
@@ -1188,7 +1195,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 ---
 
-## BL-140…210 — full registry
+## BL-140…225 — full registry
 
 | ID | Phase | Name | P | Status |
 | -- | ----- | -------- | - | ------ |
@@ -1261,6 +1268,12 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-212a | 33 | Analytics function catalog API | P2 | Done |
 | BL-212b | 33 | Analytics formula browser UI | P2 | Done |
 | BL-213 | 33 | Analytics extension packs (SPI) | P2 | Done |
+| BL-220 | 29 | Manufacturing pattern catalog docs | P2 | **Done** |
+| BL-221 | 29 | Traceability DAG pattern | P2 | **Done** |
+| BL-222 | 29 | BoM + operations graph patterns | P2 | **Done** |
+| BL-223 | 29 | CTO configurator pattern | P2 | **Done** |
+| BL-224 | 29 | QMS lite + documents/labels patterns | P2 | **Done** |
+| BL-225 | 29 | Integration catalog + domain MCP + portal role patterns | P2 | **Done** |
 
 ---
 
@@ -1274,6 +1287,19 @@ New backlog from IoT/SCADA/MES/ERP gap audit (2026-07-09). Elevates honesty and 
 | **BL-192** | 27 / 32 | **Compliance tender pack** | **Done** | IEC 62443 mapping lite + GAMP-lite checklist + gap register (pen-test, audit trail, hard tenancy) — [compliance-tender-pack](compliance-tender-pack.md); linked from DoD / scorecard. **Not** a product certification |
 | **BL-193** | 29 | **MES genealogy / traceability lite** | **Done** | Lot ↔ material ↔ work-order ↔ quality record graph query + operator report on `mes-platform` (BFF `mes_genealogy_*`, reports, Genealogy dashboard); seed lot `BATCH-LINE-A01-001`; test `MesGenealogyLiteIntegrationTest`; [mes.md](mes.md). Extends BL-167 beyond SPC. **Not** live ERP (BL-169) |
 | **BL-194** | 27 | **WebAuthn / IdP OTP MFA** | Planned | Passkeys / WebAuthn enrollment + login; Keycloak OTP as primary IdP MFA path. Split from BL-153 (TOTP GA **Done**) — [security](security.md) |
+
+## BL-220…225 — Manufacturing pattern catalog
+
+Docs/marketplace wave for ISPF manufacturing solution patterns. Boundary: [ADR-0050](decisions/0050-manufacturing-patterns-as-solutions.md). Canonical catalog: [manufacturing-patterns](manufacturing-patterns.md). No platform Java and no MES entities in `main`.
+
+| ID | Phase | Task | Priority | Acceptance |
+| -- | ----- | ---- | -------- | ---------- |
+| **BL-220** | 29 | **Manufacturing pattern catalog docs** | **Done** | Catalog and ADR define traceability DAG, BoM, CTO, QMS lite, ops DAG, L4 outbox as solution configuration |
+| **BL-221** | 29 | **Traceability DAG pattern** | **Done** | `mes-platform` 1.4.0: schema `mes_platform_genealogy_dag_v2`; seed ENT-RAW→WIP→FG; BFF `mes_genealogy_queryDagByLot` / `mes_genealogy_listDagEdges`; `MesGenealogyLiteIntegrationTest` |
+| **BL-222** | 29 | **BoM + operations graph patterns** | **Done** | `mes-platform` 1.5.0: schema `mes_platform_bom_ops_v1`; BFF `mes_bom_explode` / `mes_bom_whereUsed` / `mes_ops_listReady` / `mes_ops_complete`; Operator dashboard `mes-platform-bom-ops`; `MesBomOpsIntegrationTest` |
+| **BL-223** | 29 | **CTO configurator pattern** | **Done** | `mes-cto` 1.0.0: option compatibility validation, generated build package/work-order draft, Operator dashboard, smoke test |
+| **BL-224** | 29 | **QMS lite + documents/labels patterns** | **Done** | [manufacturing-patterns](manufacturing-patterns.md) + [mes](mes.md): QMS-lite maps to `QUALITY_RECORD`, `mes-defect-demo` BPMN disposition, genealogy/quality reports, and reports-as-documents registry; platform document engine not included |
+| **BL-225** | 29 | **Integration catalog + domain MCP + portal role patterns** | **Done** | [manufacturing-patterns](manufacturing-patterns.md) + [mes-capability-mcp](mes-capability-mcp.md) + `examples/mes-integration-catalog`: outbox enqueue/poll/idempotency contract, stub connector catalog, capability mapping, portal ACL pattern; live ERP remains BL-169 |
 
 ---
 
@@ -1332,7 +1358,7 @@ Evidence classes (same as scorecard): **REAL** / **PARTIAL** / **STUB**. Only **
 
 All must hold:
 
-1. Acceptance criteria in [§ BL-140…210](#bl-140210--full-registry) met on **prod-like** profile (not `local` H2 only, unless BL explicitly lab-only).
+1. Acceptance criteria in [§ BL-140…225](#bl-140225--full-registry) met on **prod-like** profile (not `local` H2 only, unless BL explicitly lab-only).
 2. Integration or e2e test in CI — **no stub** on the path under test.
 3. Integrator runbook (or extension of existing walkthrough) — steps, rollback, known limits.
 4. Scorecard dimension updated with **file paths + test names** (BL-189 process).
@@ -1623,7 +1649,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169.
 | 2026-07-19 | **S31 BL-177 multi-app live smoke:** `AgentLiveDeploySmokeTest` parameterized matrix (`mes-platform`, `building-hvac`, `platform-primitive`); `run-live-oneshot.sh` loops apps; skipped without `ISPF_LLM_SMOKE` |
 | 2026-07-14 | **S31 BL-177 one-shot REAL:** `AgentLiveDeploySmokeTest` + `run_deploy_playbook`; nightly optional live oneshot (`run-live-oneshot.sh`); `nightly-stub-results.json` deprecated as ≥95% proof |
 | 2026-07-14 | **OT Trust + live ERP deferred:** Phase 25 / BL-191 and BL-169 removed from active 90-day P0; S31–S33 → AI → generator → genealogy |
-| 2026-07-09 | **Unified roadmap:** merged `roadmap-phase-25.md` into this file; Phase 25–33 + BL-140…210 live here; phase-25 file is redirect stub |
+| 2026-07-09 | **Unified roadmap:** merged `roadmap-phase-25.md` into this file; Phase 25–33 + BL-140…225 live here; phase-25 file is redirect stub |
 | 2026-07-09 | Added [§ Retrospective](#retrospective) — eras, closed vs active backlog, Phase 25–33 glance |
 | 2026-07-09 | Domain gap audit IoT/SCADA/MES/ERP: BL-169 → P0; BL-191…193; Phase 33 analytics BL-200…210 |
 | 2026-07-09 | **Driver field policy:** `ready-for-field` only after named field implementation task; BL-140 → Partial (playbook-ready, not field Done) |

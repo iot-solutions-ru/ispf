@@ -90,13 +90,14 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0045-java-function-sandbox](0045-java-function-sandbox.md) | Java function sandbox (phase 1) |
 | [0046-nats-cluster-package](0046-nats-cluster-package.md) | NATS cluster package + TRANSIENT persist skip |
 
-### Workflow engine & server seams (0047–0049)
+### Workflow engine, server seams, solution boundary (0047–0050)
 
 | ID | Title |
 |----|-------|
 | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) | Custom BPMN subset engine (no Camunda) — **Accepted** |
 | [0048-server-modularization-seams](0048-server-modularization-seams.md) | ObjectTreePort → AI module → ObjectManager — **Accepted** |
 | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) | OT Automation Excellence (journal, AI-BPMN, analytics AI) — **Accepted** |
+| [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | Manufacturing patterns as solution / marketplace configuration — **Accepted** |
 
 ## Topic chains (read in order)
 
@@ -107,4 +108,5 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | Automation / alarms | [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) → [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | [automation](../automation.md) |
 | Workflow / BPMN | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) → [0049-ot-automation-excellence](0049-ot-automation-excellence.md) | [workflows](../workflows.md) |
 | Server modularization | [0048-server-modularization-seams](0048-server-modularization-seams.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | — |
+| Manufacturing solutions | [0001-app-platform-boundary](0001-app-platform-boundary.md) → [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | [manufacturing-patterns](../manufacturing-patterns.md), [mes](../mes.md) |
 | Haystack | [0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md) → [0023-haystack-query-runtime](0023-haystack-query-runtime.md) | [semantic-demo](../semantic-demo.md) |

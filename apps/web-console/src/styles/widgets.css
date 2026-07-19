@@ -1693,6 +1693,53 @@
   margin: 0 0 0.35rem;
 }
 
+.tenants-credentials-banner {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent, #3b82f6);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent, #3b82f6) 12%, transparent);
+}
+
+.tenants-credentials-banner h4 {
+  margin: 0 0 0.35rem;
+}
+
+.tenants-credentials-fields {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.tenants-credentials-fields > div {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.tenants-credentials-fields dt {
+  margin: 0;
+  color: var(--muted, #8b949e);
+  font-size: 0.85rem;
+}
+
+.tenants-credentials-fields dd {
+  margin: 0;
+}
+
+.tenants-credentials-fields code {
+  user-select: all;
+  word-break: break-all;
+}
+
+.tenants-credentials-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .security-mfa-panel {
   margin-top: 1.25rem;
 }

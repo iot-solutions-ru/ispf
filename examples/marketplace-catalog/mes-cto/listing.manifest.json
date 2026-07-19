@@ -1,0 +1,31 @@
+{
+  "slug": "mes-cto",
+  "title": "MES CTO Configurator",
+  "description": "Configure-to-order manufacturing pattern: option families, compatibility validation, generated build draft, and Operator dashboard.",
+  "pricing": "free",
+  "appId": "mes-cto",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.0.1",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "cto"
+  ],
+  "changelog": "1.0.0 — BL-223 CTO configurator pattern: option compatibility and generated build draft",
+  "metadata": {
+    "changelog": [
+      {
+        "version": "1.0.1",
+        "notes": "Validate/Generate use finishCode/sensorCode only (skip empty optionsJson jsonParse)"
+      }
+    ]
+  }
+}

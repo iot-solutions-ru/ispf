@@ -55,7 +55,10 @@ interface ExplorerViewProps {
   onMembersChanged?: () => void;
   allObjects?: ObjectSummary[];
   canConfigure: boolean;
+  /** Global admin — tenants, federation, system. */
   isPlatformAdmin: boolean;
+  /** Global admin or tenant-admin — Security users/roles / ACL. */
+  canManageTenantSecurity: boolean;
   onCreateApplication?: () => void;
   onCreateInFolder?: (parentPath: string) => void;
   showBackToTree?: boolean;
@@ -73,6 +76,7 @@ export default function ExplorerView({
   allObjects = [],
   canConfigure,
   isPlatformAdmin,
+  canManageTenantSecurity,
   onCreateApplication,
   onCreateInFolder,
   showBackToTree = false,
@@ -165,15 +169,15 @@ export default function ExplorerView({
       {isOperatorAppChild ? (
         <OperatorAppsPanel canManage={canConfigure} selectedPath={selectedPath} />
       ) : isUsersRoot ? (
-        <SecurityUsersPanel canManage={isPlatformAdmin} onSelectUser={onSelectPath} />
+        <SecurityUsersPanel canManage={canManageTenantSecurity} onSelectUser={onSelectPath} />
       ) : isSecurityFolder ? (
-        <SecurityRootPanel canManage={isPlatformAdmin} onSelectPath={onSelectPath} />
+        <SecurityRootPanel canManage={canManageTenantSecurity} onSelectPath={onSelectPath} />
       ) : isUserObject ? (
-        <SecurityUserInspector key={selectedPath} path={selectedPath} canManage={isPlatformAdmin} onDeleted={onDeleted} />
+        <SecurityUserInspector key={selectedPath} path={selectedPath} canManage={canManageTenantSecurity} onDeleted={onDeleted} />
       ) : isRolesRoot ? (
-        <SecurityRolesPanel canManage={isPlatformAdmin} onSelectRole={onSelectPath} />
+        <SecurityRolesPanel canManage={canManageTenantSecurity} onSelectRole={onSelectPath} />
       ) : isRoleObject ? (
-        <SecurityRoleInspector key={selectedPath} path={selectedPath} canManage={isPlatformAdmin} onDeleted={onDeleted} />
+        <SecurityRoleInspector key={selectedPath} path={selectedPath} canManage={canManageTenantSecurity} onDeleted={onDeleted} />
       ) : isAlertRulesFolder ? (
         <AutomationRulesListPanel kind="alert-rules" canManage={canConfigure} onSelectPath={onSelectPath} />
       ) : isCorrelatorsFolder ? (
@@ -237,7 +241,7 @@ export default function ExplorerView({
           path={selectedPath}
           embedded
           canManage={canConfigure}
-          canManageAcl={isPlatformAdmin}
+          canManageAcl={canManageTenantSecurity}
           onDeleted={onDeleted}
           onSelectPath={onSelectPath}
         />

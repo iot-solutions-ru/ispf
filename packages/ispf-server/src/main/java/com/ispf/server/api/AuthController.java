@@ -60,14 +60,16 @@ public class AuthController {
         if (localProfile) {
             response.put("mode", "local");
             response.put("localLoginEnabled", securityProperties.isTokenAuthEnabled());
-            return response;
+        } else {
+            response.put("mode", "oidc");
+            response.put("localLoginEnabled", false);
+            Map<String, Object> oidc = new LinkedHashMap<>();
+            oidc.put("issuer", oauthIssuerUri);
+            oidc.put("clientId", securityProperties.getOidcClientId());
+            response.put("oidc", oidc);
         }
-        response.put("mode", "oidc");
-        response.put("localLoginEnabled", false);
-        Map<String, Object> oidc = new LinkedHashMap<>();
-        oidc.put("issuer", oauthIssuerUri);
-        oidc.put("clientId", securityProperties.getOidcClientId());
-        response.put("oidc", oidc);
+        response.put("mfaEnabled", securityProperties.getMfa().isEnabled());
+        response.put("mfaRequiredForAdmin", securityProperties.getMfa().isRequiredForAdmin());
         return response;
     }
 

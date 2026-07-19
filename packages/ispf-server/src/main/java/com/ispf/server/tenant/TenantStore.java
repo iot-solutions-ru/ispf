@@ -96,6 +96,14 @@ public class TenantStore {
         );
     }
 
+    public List<String> listUsernamesForTenant(String tenantId) {
+        return jdbcTemplate.query(
+                "SELECT username FROM %s WHERE tenant_id = ? ORDER BY username".formatted(usersTable),
+                (rs, rowNum) -> rs.getString("username"),
+                tenantId
+        );
+    }
+
     public void updateQuotas(String tenantId, TenantQuotas quotas) {
         jdbcTemplate.update("""
                 UPDATE %s

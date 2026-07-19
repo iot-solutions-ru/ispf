@@ -57,9 +57,11 @@ flowchart TB
 **For agents:**
 
 - **Forbidden:** Java in `ispf-server`, React in `apps/web-console`, platform Flyway for app tables, hardcoded BFF routes.
-- New platform capability — REQ-PF only, not a bundle workaround.
+- New platform capability requires explicit platform approval, not a bundle workaround.
 
 See [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [plugins](plugins.md).
+
+Manufacturing depth follows the same boundary: traceability DAG, BoM, CTO, QMS lite, reports-as-documents, operations DAG, Level 4 outbox, and agent-facing capability maps are [solution patterns](manufacturing-patterns.md), not platform Java domains. See [ADR-0050](decisions/0050-manufacturing-patterns-as-solutions.md) and [MES capability MCP map](mes-capability-mcp.md).
 
 ---
 
@@ -267,9 +269,11 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | [architecture](architecture.md) | Platform layers, core domain model |
 | [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
 | [ai-development](ai-development.md) | Agent tools, ContextPack, MCP |
+| [manufacturing-patterns](manufacturing-patterns.md) | MES solution patterns and boundary |
+| [mes-capability-mcp](mes-capability-mcp.md) | Agent capability to MES function mapping |
 | [solution-developer-public-api](solution-developer-public-api.md) | Stable manifest contract |
 | [decisions/readme.md](decisions/readme.md) | ADR-0001, 0004, 0005, 0019 |
 
 ---
 
-*Update when the target approach changes (ADR, REQ-PF) and agent tools expand.*
+*Update when the target approach changes (ADR, platform approval process) and agent tools expand.*

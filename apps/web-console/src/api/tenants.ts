@@ -51,3 +51,14 @@ export function assignTenantUser(tenantId: string, username: string): Promise<vo
     }
   });
 }
+
+export function deleteTenant(tenantId: string): Promise<void> {
+  return fetch(`/api/v1/tenants/${encodeURIComponent(tenantId)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error(`Delete tenant failed: ${response.status}`);
+    }
+  });
+}
