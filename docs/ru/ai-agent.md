@@ -93,6 +93,9 @@ bash tools/agent-regression/run-live-generator-oneshot.sh
 
 Не заявлять pass-rate по трём доменам, пока нет трёх датированных реальных прогонов. Soft miss остаётся в JSON (`softBudgetMet: false`).
 
+**Remote demostand (VPS):** `tools/agent-regression/vps-generator-oneshot.ps1 -BaseUrl https://ispf.iot-solutions.ru -Domain hvac`.  
+**Известный гейт (19.07.2026):** при `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true` `apply:true` отклоняется (unsigned AI manifest). Для soft-budget proof на стенде: временно `false` → прогон → вернуть `true`. Пример после unlock: `elapsedMs≈8s`, `softBudgetMet=true`, operator UI 200 (HVAC).
+
 Ключевые слова для обнаружения домена:
 
 | Домен | Ключевые слова (примеры) |
