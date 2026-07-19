@@ -117,12 +117,20 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
         <h4>{t("tenants.newTenant")}</h4>
         <div className="form-grid">
           <label>
-            tenantId *
-            <input value={tenantId} onChange={(e) => setTenantId(e.target.value)} placeholder="acme" />
+            {t("tenants.field.tenantId")}
+            <input
+              value={tenantId}
+              onChange={(e) => setTenantId(e.target.value)}
+              placeholder={t("tenants.field.tenantIdHint")}
+            />
           </label>
           <label>
-            displayName *
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Acme Corp" />
+            {t("tenants.field.displayName")}
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder={t("tenants.field.displayNameHint")}
+            />
           </label>
           <label>
             {t("tenants.field.adminPassword")}
