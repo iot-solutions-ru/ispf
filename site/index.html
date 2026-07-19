@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISPF — Open-source industrial IoT / SCADA</title>
+  <meta name="description" content="Self-hosted industrial IoT and SCADA platform: object tree for devices, HMI, alarms, historian, and BPMN workflows. One API, one UI. AGPL." />
+  <link rel="canonical" href="https://michaael.github.io/IoT-Solutions-Platform/" />
+  <link rel="alternate" hreflang="en" href="https://michaael.github.io/IoT-Solutions-Platform/" />
+  <link rel="alternate" hreflang="ru" href="https://michaael.github.io/IoT-Solutions-Platform/ru/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-family='system-ui,sans-serif' font-size='10' font-weight='800'%3EIS%3C/text%3E%3C/svg%3E" />
+  <script>
+    (function () {
+      var t = localStorage.getItem("ispf-site-theme");
+      document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="./">ISP<span>F</span></a>
+      <div class="nav-actions">
+        <nav class="lang" aria-label="Language">
+          <a href="./" aria-current="page">EN</a>
+          <a href="ru/">RU</a>
+        </nav>
+        <button type="button" class="theme-btn" id="theme-toggle" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <h1>ISP<em>F</em></h1>
+        <p class="lead">Self-hosted industrial IoT / SCADA — devices, HMI, alarms, historian, and BPMN on one object tree.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/Michaael/IoT-Solutions-Platform#quick-start">Quick start</a>
+          <a class="btn btn-ghost" href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/en/readme.md">Documentation</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img src="assets/ispf-operator-hmi.png" width="1600" height="900" alt="ISPF operator HMI — Mini-CHP station overview with live data and AI assistant" />
+      </div>
+    </section>
+
+    <section class="section" id="platform">
+      <div class="wrap">
+        <h2>One model for the plant</h2>
+        <p>Most stacks glue OPC, historian, HMI, alarms, and workflow as separate products. ISPF keeps them as nodes on the same hierarchical tree — same API, same permissions, same UI.</p>
+        <ul class="feature-list">
+          <li>
+            <strong>Object tree</strong>
+            <span>Typed variables, events, and functions with REST and WebSocket access.</span>
+          </li>
+          <li>
+            <strong>HMI &amp; SCADA</strong>
+            <span>Dashboard builder, charts with history, and mimic diagrams for operators.</span>
+          </li>
+          <li>
+            <strong>Automation</strong>
+            <span>CEL alert rules, correlators, and BPMN workflows as first-class tree nodes.</span>
+          </li>
+          <li>
+            <strong>Drivers &amp; apps</strong>
+            <span>~58 protocol drivers and declarative application bundles — solutions without forking the core.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="product">
+      <div class="wrap">
+        <h2>Built for operators and builders</h2>
+        <p>Admin Explorer for the model. Operator mode for the floor. Screenshots from the live demostand.</p>
+        <div class="shot-grid">
+          <img src="assets/ispf-scada-snmp.png" width="1600" height="900" loading="lazy" alt="ISPF SCADA mimic editor — main oil pipeline P&ID with symbol library" />
+          <img src="assets/ispf-dashboard-builder.png" width="1600" height="900" loading="lazy" alt="ISPF dashboard builder — charts, network graph, and spreadsheet widgets" />
+          <img src="assets/ispf-bpmn-workflow.png" width="1600" height="900" loading="lazy" alt="ISPF BPMN workflow editor — MES work-order dispatch" />
+          <img src="assets/ispf-marketplace.png" width="1600" height="900" loading="lazy" alt="ISPF marketplace — solution bundles catalog" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="start">
+      <div class="wrap">
+        <h2>Run it locally</h2>
+        <p>Portable zip with embedded H2, or pull the container. Default login is <code>admin</code> / <code>admin</code>.</p>
+        <div class="start-box">
+          <pre><code>docker pull ghcr.io/michaael/ispf-server:latest
+docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/michaael/ispf-server:latest
+# open http://localhost:8080</code></pre>
+        </div>
+        <div class="cta-row" style="margin-top: 1.25rem">
+          <a class="btn btn-primary" href="https://github.com/Michaael/IoT-Solutions-Platform/releases">Releases</a>
+          <a class="btn btn-ghost" href="https://ispf.ai">ispf.ai</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>© ISPF · GNU AGPL v3 · <a href="https://github.com/Michaael/IoT-Solutions-Platform">GitHub</a></div>
+      <div>
+        <a href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/en/getting-started.md">Getting started</a>
+        ·
+        <a href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/LICENSE">License</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="site.js"></script>
+</body>
+</html>

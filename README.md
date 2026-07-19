@@ -2,7 +2,7 @@
 
 **Self-hosted platform for devices, HMI, alarms, historian, and workflows — one object tree, one API, one UI.**
 
-Website: [ispf.ai](https://ispf.ai) · Repo: [github.com/Michaael/IoT-Solutions-Platform](https://github.com/Michaael/IoT-Solutions-Platform)
+Website: [ispf.ai](https://ispf.ai) · GitHub Pages: [michaael.github.io/IoT-Solutions-Platform](https://michaael.github.io/IoT-Solutions-Platform/) · Repo: [github.com/Michaael/IoT-Solutions-Platform](https://github.com/Michaael/IoT-Solutions-Platform)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-English%20%7C%20Русский-0A7EA4)](docs/README.md)
@@ -132,6 +132,7 @@ iot-solutions-platform-framework/
 ├── apps/web-console/   # React admin + operator UI
 ├── examples/           # demo-app, MES/HVAC references, labs
 ├── docs/en · docs/ru   # Canonical EN + Russian docs
+├── site/               # Project GitHub Pages (EN + RU)
 ├── deploy/             # Compose, VPS, Grafana, edge
 └── docker-compose.yml
 ```

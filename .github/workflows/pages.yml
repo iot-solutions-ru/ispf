@@ -1,0 +1,55 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/assets/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble site
+        run: |
+          set -euo pipefail
+          mkdir -p _site/assets _site/ru
+          cp site/index.html site/styles.css site/site.js _site/
+          cp site/ru/index.html _site/ru/
+          cp docs/assets/ispf-operator-hmi.png \
+             docs/assets/ispf-scada-snmp.png \
+             docs/assets/ispf-dashboard-builder.png \
+             docs/assets/ispf-bpmn-workflow.png \
+             docs/assets/ispf-marketplace.png \
+             _site/assets/
+          # Project Pages live under /IoT-Solutions-Platform/; keep relative links as-is.
+          test -f _site/index.html
+          test -f _site/assets/ispf-operator-hmi.png
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

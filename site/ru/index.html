@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISPF — открытая промышленная IoT / SCADA платформа</title>
+  <meta name="description" content="Self-hosted промышленная IoT и SCADA: дерево объектов для устройств, HMI, аварий, историка и BPMN. Один API, один UI. AGPL." />
+  <link rel="canonical" href="https://michaael.github.io/IoT-Solutions-Platform/ru/" />
+  <link rel="alternate" hreflang="en" href="https://michaael.github.io/IoT-Solutions-Platform/" />
+  <link rel="alternate" hreflang="ru" href="https://michaael.github.io/IoT-Solutions-Platform/ru/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-family='system-ui,sans-serif' font-size='10' font-weight='800'%3EIS%3C/text%3E%3C/svg%3E" />
+  <script>
+    (function () {
+      var t = localStorage.getItem("ispf-site-theme");
+      document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="../">ISP<span>F</span></a>
+      <div class="nav-actions">
+        <nav class="lang" aria-label="Язык">
+          <a href="../">EN</a>
+          <a href="./" aria-current="page">RU</a>
+        </nav>
+        <button type="button" class="theme-btn" id="theme-toggle" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <h1>ISP<em>F</em></h1>
+        <p class="lead">Self-hosted промышленная IoT / SCADA — устройства, HMI, аварии, историк и BPMN на одном дереве объектов.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/Michaael/IoT-Solutions-Platform#quick-start">Быстрый старт</a>
+          <a class="btn btn-ghost" href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/ru/readme.md">Документация</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img src="../assets/ispf-operator-hmi.png" width="1600" height="900" alt="ISPF operator HMI — обзор мини-ТЭЦ с live-данными и ИИ-помощником" />
+      </div>
+    </section>
+
+    <section class="section" id="platform">
+      <div class="wrap">
+        <h2>Одна модель завода</h2>
+        <p>Обычные стеки склеивают OPC, историк, HMI, аварии и workflow как отдельные продукты. В ISPF это узлы одного иерархического дерева — один API, одни права, один UI.</p>
+        <ul class="feature-list">
+          <li>
+            <strong>Дерево объектов</strong>
+            <span>Типизированные переменные, события и функции через REST и WebSocket.</span>
+          </li>
+          <li>
+            <strong>HMI и SCADA</strong>
+            <span>Конструктор дашбордов, графики с историей и мнемосхемы для операторов.</span>
+          </li>
+          <li>
+            <strong>Автоматизация</strong>
+            <span>Правила аварий на CEL, корреляторы и BPMN-процессы как узлы дерева.</span>
+          </li>
+          <li>
+            <strong>Драйверы и приложения</strong>
+            <span>~58 протокольных драйверов и декларативные бандлы — решения без форка ядра.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="product">
+      <div class="wrap">
+        <h2>Для операторов и разработчиков</h2>
+        <p>Admin Explorer для модели. Operator mode для цеха. Кадры с живого демостенда.</p>
+        <div class="shot-grid">
+          <img src="../assets/ispf-scada-snmp.png" width="1600" height="900" loading="lazy" alt="Редактор SCADA-мнемосхемы — магистральный нефтепровод и библиотека символов" />
+          <img src="../assets/ispf-dashboard-builder.png" width="1600" height="900" loading="lazy" alt="Конструктор дашбордов — графики, network graph и spreadsheet" />
+          <img src="../assets/ispf-bpmn-workflow.png" width="1600" height="900" loading="lazy" alt="Редактор BPMN — диспетчеризация MES work-order" />
+          <img src="../assets/ispf-marketplace.png" width="1600" height="900" loading="lazy" alt="Marketplace ISPF — каталог solution-бандлов" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="start">
+      <div class="wrap">
+        <h2>Запуск локально</h2>
+        <p>Portable zip со встроенным H2 или контейнер. Логин по умолчанию: <code>admin</code> / <code>admin</code>.</p>
+        <div class="start-box">
+          <pre><code>docker pull ghcr.io/michaael/ispf-server:latest
+docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/michaael/ispf-server:latest
+# открыть http://localhost:8080</code></pre>
+        </div>
+        <div class="cta-row" style="margin-top: 1.25rem">
+          <a class="btn btn-primary" href="https://github.com/Michaael/IoT-Solutions-Platform/releases">Релизы</a>
+          <a class="btn btn-ghost" href="https://ispf.ai">ispf.ai</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>© ISPF · GNU AGPL v3 · <a href="https://github.com/Michaael/IoT-Solutions-Platform">GitHub</a></div>
+      <div>
+        <a href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/ru/getting-started.md">Начать работу</a>
+        ·
+        <a href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/LICENSE">Лицензия</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../site.js"></script>
+</body>
+</html>
