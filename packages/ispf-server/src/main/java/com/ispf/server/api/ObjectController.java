@@ -44,6 +44,8 @@ import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantQuotaService;
 import com.ispf.server.tenant.TenantScopeService;
+import com.ispf.server.tenant.TenantPaths;
+import com.ispf.server.tenant.TenantVirtualRootService;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -70,6 +72,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/objects")
@@ -87,6 +90,7 @@ public class ObjectController {
     private final AutomationTreeService automationTreeService;
     private final ObjectAccessService objectAccessService;
     private final TenantScopeService tenantScopeService;
+    private final TenantVirtualRootService tenantVirtualRootService;
     private final TenantQuotaService tenantQuotaService;
     private final FederationProxyService federationProxyService;
     private final FederationBindService federationBindService;
@@ -113,6 +117,7 @@ public class ObjectController {
             AutomationTreeService automationTreeService,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
+            TenantVirtualRootService tenantVirtualRootService,
             TenantQuotaService tenantQuotaService,
             FederationProxyService federationProxyService,
             FederationBindService federationBindService,
@@ -138,6 +143,7 @@ public class ObjectController {
         this.automationTreeService = automationTreeService;
         this.objectAccessService = objectAccessService;
         this.tenantScopeService = tenantScopeService;
+        this.tenantVirtualRootService = tenantVirtualRootService;
         this.tenantQuotaService = tenantQuotaService;
         this.federationProxyService = federationProxyService;
         this.federationBindService = federationBindService;
@@ -186,17 +192,30 @@ public class ObjectController {
         ObjectCollaborationSupport.clearContext();
     }
 
+    private String canonicalPath(String path, Authentication authentication) {
+        return tenantVirtualRootService.toCanonical(path, authentication);
+    }
+
+    private ObjectDto virtualizeDto(ObjectDto dto, Authentication authentication) {
+        return tenantVirtualRootService.virtualize(dto, authentication);
+    }
+
+
     @GetMapping("/by-path/audit")
     public List<Map<String, Object>> audit(
             @RequestParam String path,
             @RequestParam(defaultValue = "50") int limit,
             Authentication authentication
     ) {
+        path = canonicalPath(path, authentication);
+        tenantScopeService.requirePathInScope(path, authentication);
         objectAccessService.requireRead(path, authentication);
         return objectManager.configAudit(path, limit).stream()
                 .map(entry -> Map.<String, Object>of(
                         "id", entry.id(),
-                        "objectPath", entry.objectPath(),
+                        "objectPath", Objects.requireNonNullElse(
+                                tenantVirtualRootService.toVirtual(entry.objectPath(), authentication),
+                                entry.objectPath()),
                         "changeType", entry.changeType(),
                         "field", entry.field() != null ? entry.field() : "",
                         "actor", entry.actor() != null ? entry.actor() : "",
@@ -258,26 +277,49 @@ public class ObjectController {
                 ? this::toLiteDto
                 : this::toDto;
         if (parent == null || parent.isBlank()) {
-            return tree.all().stream()
-                    .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
-                    .filter(node -> objectAccessService.canRead(node.path(), authentication))
-                    .map(mapper)
-                    .toList();
+            return tenantVirtualRootService.virtualize(
+                    tree.all().stream()
+                            .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
+                            .filter(node -> objectAccessService.canRead(node.path(), authentication))
+                            .map(mapper)
+                            .toList(),
+                    authentication
+            );
         }
         if (!tenantScopeService.isPathVisible(parent, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + parent);
         }
-        objectAccessService.requireRead(parent, authentication);
-        PlatformObject parentNode = objectManager.require(parent);
-        if (parentNode.type() == ObjectType.VISUAL_GROUP) {
-            return resolveVisualGroupMembers(parent, authentication, lite);
+        String canonicalParent = canonicalPath(parent, authentication);
+        // Sole-tenant: children of root are only the virtual platform node.
+        if ("root".equals(canonicalParent) && tenantVirtualRootService.isActive(authentication)) {
+            String platformPath = TenantPaths.tenantPlatform(
+                    tenantVirtualRootService.activeTenantId(authentication).orElseThrow()
+            );
+            if (!objectAccessService.canRead(platformPath, authentication)) {
+                return List.of();
+            }
+            return tenantVirtualRootService.virtualize(
+                    List.of(mapper.apply(objectManager.require(platformPath))),
+                    authentication
+            );
         }
-        return tree.childrenOf(parent).stream()
-                .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
-                .filter(node -> objectAccessService.canRead(node.path(), authentication))
-                .filter(node -> !visualGroupService.isHiddenFromStructuralTree(node.path()))
-                .map(mapper)
-                .toList();
+        objectAccessService.requireRead(canonicalParent, authentication);
+        PlatformObject parentNode = objectManager.require(canonicalParent);
+        if (parentNode.type() == ObjectType.VISUAL_GROUP) {
+            return tenantVirtualRootService.virtualize(
+                    resolveVisualGroupMembers(canonicalParent, authentication, lite),
+                    authentication
+            );
+        }
+        return tenantVirtualRootService.virtualize(
+                tree.childrenOf(canonicalParent).stream()
+                        .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
+                        .filter(node -> objectAccessService.canRead(node.path(), authentication))
+                        .filter(node -> !visualGroupService.isHiddenFromStructuralTree(node.path()))
+                        .map(mapper)
+                        .toList(),
+                authentication
+        );
     }
 
     @GetMapping("/by-path/editor")
@@ -286,8 +328,12 @@ public class ObjectController {
         if (!tenantScopeService.isPathVisible(path, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
         }
+        path = canonicalPath(path, authentication);
         objectAccessService.requireRead(path, authentication);
-        return ObjectEditorDto.from(objectManager.require(path), objectUiIconService);
+        return tenantVirtualRootService.virtualize(
+                ObjectEditorDto.from(objectManager.require(path), objectUiIconService),
+                authentication
+        );
     }
 
     @GetMapping("/by-path")
@@ -296,24 +342,27 @@ public class ObjectController {
         if (!tenantScopeService.isPathVisible(path, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
         }
-        objectAccessService.requireRead(path, authentication);
-        return federationProxyService.resolve(path)
-                .map(target -> mapProxyObject(path, target))
-                .orElseGet(() -> toDto(objectManager.require(path)));
+        final String canonical = canonicalPath(path, authentication);
+        objectAccessService.requireRead(canonical, authentication);
+        ObjectDto dto = federationProxyService.resolve(canonical)
+                .map(target -> mapProxyObject(canonical, target))
+                .orElseGet(() -> toDto(objectManager.require(canonical)));
+        return virtualizeDto(dto, authentication);
     }
 
     @PostMapping
     public ObjectDto create(@Valid @RequestBody CreateObjectRequest request, Authentication authentication) {
-        tenantScopeService.requirePathInScope(request.parentPath(), authentication);
-        tenantQuotaService.assertCanCreate(request.parentPath(), request.type());
-        objectAccessService.requireWrite(request.parentPath(), authentication);
-        federationBindService.assertParentAllowsChildren(request.parentPath());
-        String fullPath = objectManager.tree().resolveChildPath(request.parentPath(), request.name());
+        String parentPath = canonicalPath(request.parentPath(), authentication);
+        tenantScopeService.requirePathInScope(parentPath, authentication);
+        tenantQuotaService.assertCanCreate(parentPath, request.type());
+        objectAccessService.requireWrite(parentPath, authentication);
+        federationBindService.assertParentAllowsChildren(parentPath);
+        String fullPath = objectManager.tree().resolveChildPath(parentPath, request.name());
         if (objectManager.tree().findByPath(fullPath).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Object exists: " + fullPath);
         }
         PlatformObject node = objectManager.create(
-                request.parentPath(),
+                parentPath,
                 request.name(),
                 request.type(),
                 request.displayName(),
@@ -352,7 +401,7 @@ public class ObjectController {
             );
             objectManager.persistNodeTree(node.path());
         }
-        return toDto(node);
+        return virtualizeDto(toDto(node), authentication);
     }
 
     @PatchMapping("/by-path")
@@ -362,6 +411,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             if (request.iconId() != null) {
@@ -384,7 +434,7 @@ public class ObjectController {
             if (request.eventJournalEnabled() != null) {
                 node = objectManager.updateEventJournalEnabled(path, request.eventJournalEnabled());
             }
-            return toDto(node);
+            return virtualizeDto(toDto(node), authentication);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } finally {
@@ -400,13 +450,16 @@ public class ObjectController {
         if (request.paths() == null || request.paths().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "paths is required");
         }
+        List<String> canonicalPaths = new ArrayList<>();
         for (String path : request.paths()) {
             if (path != null && !path.isBlank()) {
-                tenantScopeService.requirePathInScope(path.trim(), authentication);
-                objectAccessService.requireWrite(path.trim(), authentication);
+                String canonical = canonicalPath(path.trim(), authentication);
+                tenantScopeService.requirePathInScope(canonical, authentication);
+                objectAccessService.requireWrite(canonical, authentication);
+                canonicalPaths.add(canonical);
             }
         }
-        return objectBulkDeleteService.deleteAll(request.paths());
+        return objectBulkDeleteService.deleteAll(canonicalPaths);
     }
 
     public record BulkDeleteRequest(@NotEmpty List<@NotBlank String> paths) {
@@ -437,6 +490,8 @@ public class ObjectController {
 
     @DeleteMapping("/by-path")
     public void delete(@RequestParam String path, Authentication authentication) {
+        path = canonicalPath(path, authentication);
+        tenantScopeService.requirePathInScope(path, authentication);
         objectAccessService.requireWrite(path, authentication);
         String actor = authentication != null ? authentication.getName() : "system";
         try {
@@ -469,9 +524,14 @@ public class ObjectController {
     @PutMapping("/reorder")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reorder(@Valid @RequestBody ReorderObjectsRequest request, Authentication authentication) {
-        objectAccessService.requireWrite(request.parentPath(), authentication);
+        String parentPath = canonicalPath(request.parentPath(), authentication);
+        List<String> ordered = request.orderedPaths().stream()
+                .map(path -> canonicalPath(path, authentication))
+                .toList();
+        tenantScopeService.requirePathInScope(parentPath, authentication);
+        objectAccessService.requireWrite(parentPath, authentication);
         try {
-            objectManager.reorderChildren(request.parentPath(), request.orderedPaths());
+            objectManager.reorderChildren(parentPath, ordered);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (ObjectNotFoundException e) {
@@ -484,16 +544,17 @@ public class ObjectController {
         if (!tenantScopeService.isPathVisible(path, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
         }
-        objectAccessService.requireRead(path, authentication);
-        var proxy = federationProxyService.resolve(path);
+        final String canonical = canonicalPath(path, authentication);
+        objectAccessService.requireRead(canonical, authentication);
+        var proxy = federationProxyService.resolve(canonical);
         if (proxy.isPresent()) {
             JsonNode json = federationProxyService.proxyVariables(proxy.get());
             return objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { });
         }
-        PlatformObject node = objectManager.require(path);
+        PlatformObject node = objectManager.require(canonical);
         return node.variables().values().stream()
                 .filter(variable -> objectAccessService.canVariableRead(
-                        path, variable.name(), variable.readRoles(), authentication))
+                        canonical, variable.name(), variable.readRoles(), authentication))
                 .map(VariableDto::from)
                 .toList();
     }
@@ -509,12 +570,17 @@ public class ObjectController {
         }
         Map<String, List<VariableDto>> result = new LinkedHashMap<>();
         for (String rawPath : pathArray) {
-            String path = rawPath.trim();
-            if (path.isBlank()) {
+            String requested = rawPath.trim();
+            if (requested.isBlank()) {
                 continue;
             }
-            if (!tenantScopeService.isPathVisible(path, authentication)) {
+            if (!tenantScopeService.isPathVisible(requested, authentication)) {
                 continue;
+            }
+            String path = canonicalPath(requested, authentication);
+            String responseKey = tenantVirtualRootService.toVirtual(path, authentication);
+            if (responseKey == null) {
+                responseKey = requested;
             }
             if (!objectAccessService.canRead(path, authentication)) {
                 continue;
@@ -523,10 +589,10 @@ public class ObjectController {
                 var proxy = federationProxyService.resolve(path);
                 if (proxy.isPresent()) {
                     JsonNode json = federationProxyService.proxyVariables(proxy.get());
-                    result.put(path, objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { }));
+                    result.put(responseKey, objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { }));
                 } else {
                     PlatformObject node = objectManager.require(path);
-                    result.put(path, node.variables().values().stream()
+                    result.put(responseKey, node.variables().values().stream()
                             .filter(variable -> objectAccessService.canVariableRead(
                                     path, variable.name(), variable.readRoles(), authentication))
                             .map(VariableDto::from)
@@ -545,6 +611,8 @@ public class ObjectController {
             @RequestParam String name,
             Authentication authentication
     ) {
+        path = canonicalPath(path, authentication);
+        tenantScopeService.requirePathInScope(path, authentication);
         objectAccessService.requireRead(path, authentication);
         PlatformObject node = objectManager.require(path);
         Variable variable = node.getVariable(name)
@@ -561,6 +629,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             var proxy = federationProxyService.resolve(path);
@@ -600,6 +669,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             Variable variable = objectManager.updateVariableHistory(
@@ -631,6 +701,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             assertNotFederationBound(path);
@@ -662,6 +733,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             Variable variable = objectManager.updateVariableDefinition(
@@ -697,6 +769,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             objectManager.deleteVariable(path, name);
@@ -714,6 +787,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             return objectManager.upsertFunction(path, function);
@@ -732,6 +806,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             objectManager.deleteFunction(path, name);
@@ -747,6 +822,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             return objectManager.upsertEvent(path, event);
@@ -765,6 +841,7 @@ public class ObjectController {
             Authentication authentication,
             @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
     ) {
+        path = canonicalPath(path, authentication);
         beginWrite(path, authentication, headers);
         try {
             objectManager.deleteEvent(path, name);

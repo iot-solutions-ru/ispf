@@ -26,34 +26,47 @@ class TenantIsolationWriteTest {
     private MockMvc mockMvc;
 
     @Test
-    void tenantOperatorCannotCreateUnderSharedPlatform() throws Exception {
+    void tenantOperatorUsesVirtualPlatformAndCannotWriteOtherTenant() throws Exception {
         String adminToken = login("admin", "admin");
+        String suffix = Long.toHexString(System.nanoTime()).substring(0, 6);
+        String tenantId = "write-gate-" + suffix;
 
+        String tenantAdmin = tenantId + "-admin";
         mockMvc.perform(post("/api/v1/tenants")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "tenantId": "write-gate",
+                                  "tenantId": "%s",
                                   "displayName": "Write Gate",
-                                  "enabled": true
+                                  "enabled": true,
+                                  "adminPassword": "write-secret"
                                 }
-                                """))
+                                """.formatted(tenantId)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .put("/api/v1/tenants/write-gate/users/operator")
-                        .header("Authorization", "Bearer " + adminToken))
-                .andExpect(status().isOk());
+        String tenantToken = login(tenantAdmin, "write-secret");
 
-        String operatorToken = login("operator", "operator");
-
+        // Sole-tenant virtual root: root.platform.* is the caller's world.
         mockMvc.perform(post("/api/v1/objects")
-                        .header("Authorization", "Bearer " + operatorToken)
+                        .header("Authorization", "Bearer " + tenantToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "parentPath": "root.platform.devices",
+                                  "name": "allowed-device",
+                                  "type": "DEVICE",
+                                  "displayName": "Allowed"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/objects")
+                        .header("Authorization", "Bearer " + tenantToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "parentPath": "root.tenant.other.platform.devices",
                                   "name": "blocked-device",
                                   "type": "DEVICE",
                                   "displayName": "Blocked"

@@ -20,6 +20,7 @@ import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarParameterEnricher;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,6 +77,7 @@ public class ReportService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final PlatformCalendarParameterEnricher calendarParameterEnricher;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public ReportService(
             ObjectManager objectManager,
@@ -90,7 +92,8 @@ public class ReportService {
             DataSourceObjectService dataSourceObjectService,
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
-            PlatformCalendarParameterEnricher calendarParameterEnricher
+            PlatformCalendarParameterEnricher calendarParameterEnricher,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.objectManager = objectManager;
         this.BlueprintRegistry = BlueprintRegistry;
@@ -105,6 +108,7 @@ public class ReportService {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.calendarParameterEnricher = calendarParameterEnricher;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
     public static String reportPath(String reportId) {
@@ -473,12 +477,14 @@ public class ReportService {
         List<Object> paramValues = bindQueryParameters(report.query(), report.parameters(), effective);
 
         validateSelectQuery(report.query());
+        validateDataSourcePath(report.dataSourcePath());
         List<Map<String, Object>>[] result = new List[1];
         if (report.dataSourcePath() != null && !report.dataSourcePath().isBlank()
                 && dataSourcePathResolver.isExternal(report.dataSourcePath())) {
             dataSourceSqlSession.runWithDataSource(report.dataSourcePath(), jdbc ->
                     result[0] = jdbc.queryForList(report.query(), paramValues.toArray()));
         } else {
+            tenantLocalDataAccessGuard.requireExternalDataAccess();
             String schemaName = dataSourcePathResolver.resolveSchemaForReport(
                     report.dataSourcePath(),
                     report.legacyAppId()
@@ -505,6 +511,7 @@ public class ReportService {
     }
 
     private Map<String, Object> runLegacy(String appId, String reportId, Map<String, Object> parameters) {
+        tenantLocalDataAccessGuard.requireExternalDataAccess();
         ApplicationReportStore.DeployedReport report = reportStore.find(appId, reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
         List<String> paramNames = deserializeStringList(report.parametersJson());
@@ -724,12 +731,13 @@ public class ReportService {
         throw new IllegalArgumentException("Report dataSourcePath is required");
     }
 
-    private static void validateDataSourcePath(String dataSourcePath) {
+    private void validateDataSourcePath(String dataSourcePath) {
         if (dataSourcePath == null || dataSourcePath.isBlank()) {
             throw new IllegalArgumentException(
                     "Report dataSourcePath is required — e.g. root.platform.data-sources.demo"
             );
         }
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(dataSourcePath);
     }
 
     private String inferSchemaForApp(String appId) {

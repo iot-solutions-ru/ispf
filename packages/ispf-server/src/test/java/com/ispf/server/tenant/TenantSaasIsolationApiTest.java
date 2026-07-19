@@ -82,26 +82,14 @@ class TenantSaasIsolationApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "parentPath": "root.tenant.%s.platform.devices",
+                                  "parentPath": "root.platform.devices",
                                   "name": "pump-a",
                                   "type": "DEVICE",
                                   "displayName": "Pump A"
                                 }
-                                """.formatted(acme)))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/v1/objects")
-                        .header("Authorization", "Bearer " + acmeAdminToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "parentPath": "root.platform.devices",
-                                  "name": "blocked-global",
-                                  "type": "DEVICE",
-                                  "displayName": "Blocked"
-                                }
                                 """))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.path").value("root.platform.devices.pump-a"));
 
         mockMvc.perform(post("/api/v1/objects")
                         .header("Authorization", "Bearer " + acmeAdminToken)
@@ -136,7 +124,8 @@ class TenantSaasIsolationApiTest {
         mockMvc.perform(get("/api/v1/objects")
                         .header("Authorization", "Bearer " + acmeOpToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].path", hasItem("root.tenant." + acme + ".platform.devices.pump-a")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.devices.pump-a")))
+                .andExpect(jsonPath("$[*].path", not(hasItem("root.tenant." + acme + ".platform.devices.pump-a"))))
                 .andExpect(jsonPath("$[*].path", not(hasItem("root.tenant." + beta + ".platform.devices"))));
 
         String betaAdminToken = login(betaAdmin, "beta-secret");
@@ -146,25 +135,25 @@ class TenantSaasIsolationApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "parentPath": "root.tenant.%s.platform.devices",
+                                  "parentPath": "root.platform.devices",
                                   "name": "pump-b",
                                   "type": "DEVICE",
                                   "displayName": "Pump B"
                                 }
-                                """.formatted(beta)))
+                                """))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/objects")
                         .header("Authorization", "Bearer " + acmeAdminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].path", hasItem("root.tenant." + acme + ".platform.devices.pump-a")))
-                .andExpect(jsonPath("$[*].path", not(hasItem("root.tenant." + beta + ".platform.devices.pump-b"))));
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.devices.pump-a")))
+                .andExpect(jsonPath("$[*].path", not(hasItem("root.platform.devices.pump-b"))));
 
         mockMvc.perform(get("/api/v1/objects")
                         .header("Authorization", "Bearer " + betaAdminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].path", hasItem("root.tenant." + beta + ".platform.devices.pump-b")))
-                .andExpect(jsonPath("$[*].path", not(hasItem("root.tenant." + acme + ".platform.devices.pump-a"))));
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.devices.pump-b")))
+                .andExpect(jsonPath("$[*].path", not(hasItem("root.platform.devices.pump-a"))));
 
         mockMvc.perform(post("/api/v1/tenants")
                         .header("Authorization", "Bearer " + acmeAdminToken)

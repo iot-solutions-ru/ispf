@@ -68,10 +68,10 @@ public class VariableHistoryController {
             @RequestParam(required = false, defaultValue = "500") int limit,
             Authentication authentication
     ) {
-        requireVariableHistoryRead(path, name, authentication);
+        final String canonical = requireVariableHistoryRead(path, name, authentication);
         try {
             InstantRange range = resolveRange(from, to, calendarRange, timeZone);
-            return federationProxyService.resolve(path)
+            return federationProxyService.resolve(canonical)
                     .map(target -> objectMapper.convertValue(
                             federationProxyService.proxyVariableHistory(
                                     target, name, field, range.from(), range.to(), limit
@@ -79,7 +79,7 @@ public class VariableHistoryController {
                             VariableHistoryService.VariableHistoryResponse.class
                     ))
                     .orElseGet(() -> variableHistoryService.query(
-                            path, name, field, range.from(), range.to(), limit
+                            canonical, name, field, range.from(), range.to(), limit
                     ));
         } catch (IllegalArgumentException e) {
             throw mapIllegalArgument(e);
@@ -99,10 +99,10 @@ public class VariableHistoryController {
             @RequestParam(required = false, defaultValue = "500") int limit,
             Authentication authentication
     ) {
-        requireVariableHistoryRead(path, name, authentication);
+        final String canonical = requireVariableHistoryRead(path, name, authentication);
         try {
             InstantRange range = resolveRange(from, to, calendarRange, timeZone);
-            return federationProxyService.resolve(path)
+            return federationProxyService.resolve(canonical)
                     .map(target -> objectMapper.convertValue(
                             federationProxyService.proxyVariableHistoryAggregate(
                                     target, name, field, bucket, range.from(), range.to(), limit
@@ -110,7 +110,7 @@ public class VariableHistoryController {
                             VariableHistoryService.VariableHistoryAggregateResponse.class
                     ))
                     .orElseGet(() -> variableHistoryService.aggregate(
-                            path, name, field, range.from(), range.to(), bucket, limit
+                            canonical, name, field, range.from(), range.to(), bucket, limit
                     ));
         } catch (IllegalArgumentException e) {
             throw mapIllegalArgument(e);
@@ -130,7 +130,7 @@ public class VariableHistoryController {
             @RequestParam(required = false, defaultValue = "10000") int limit,
             Authentication authentication
     ) throws IOException {
-        requireVariableHistoryRead(path, name, authentication);
+        final String canonical = requireVariableHistoryRead(path, name, authentication);
         String normalizedFormat = format == null ? "" : format.trim().toLowerCase(Locale.ROOT);
         try {
             InstantRange range = resolveRange(from, to, calendarRange, timeZone);
@@ -138,7 +138,7 @@ public class VariableHistoryController {
                 case "csv" -> {
                     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                     variableHistoryService.streamCsv(
-                            path, name, field, range.from(), range.to(), limit, buffer
+                            canonical, name, field, range.from(), range.to(), limit, buffer
                     );
                     yield ResponseEntity.ok()
                             .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "csv"))
@@ -149,14 +149,14 @@ public class VariableHistoryController {
                         .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "json"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(variableHistoryService.exportJson(
-                                path, name, field, range.from(), range.to(), limit
+                                canonical, name, field, range.from(), range.to(), limit
                         ));
                 case "parquet" -> ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "parquet"))
                         .header("X-ISPF-Export-Format", "parquet")
                         .contentType(new MediaType("application", "vnd.apache.parquet"))
                         .body(variableHistoryService.exportParquet(
-                                path, name, field, range.from(), range.to(), limit
+                                canonical, name, field, range.from(), range.to(), limit
                         ));
                 default -> throw new IllegalArgumentException("Unsupported export format: " + format);
             };
@@ -165,12 +165,14 @@ public class VariableHistoryController {
         }
     }
 
-    private void requireVariableHistoryRead(String path, String name, Authentication authentication) {
-        tenantScopeService.requirePathInScope(path, authentication);
-        PlatformObject node = objectManager.require(path);
+    private String requireVariableHistoryRead(String path, String name, Authentication authentication) {
+        String canonical = tenantScopeService.toCanonicalPath(path, authentication);
+        tenantScopeService.requirePathInScope(canonical, authentication);
+        PlatformObject node = objectManager.require(canonical);
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));
-        objectAccessService.requireVariableRead(path, name, variable.readRoles(), authentication);
+        objectAccessService.requireVariableRead(canonical, name, variable.readRoles(), authentication);
+        return canonical;
     }
 
     private InstantRange resolveRange(

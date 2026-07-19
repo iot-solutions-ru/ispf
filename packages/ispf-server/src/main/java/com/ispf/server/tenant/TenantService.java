@@ -185,6 +185,14 @@ public class TenantService {
         );
         objectManager.create(
                 TenantPaths.tenantPlatform(tenant.tenantId()),
+                "data-sources",
+                ObjectType.DATA_SOURCES,
+                "Data Sources",
+                "Tenant external JDBC data sources",
+                null
+        );
+        objectManager.create(
+                TenantPaths.tenantPlatform(tenant.tenantId()),
                 "security",
                 ObjectType.SECURITY,
                 "Security",

@@ -11,6 +11,7 @@ import com.ispf.server.application.script.FunctionScriptEngine;
 import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class ApplicationFunctionRuntime {
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
     private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public ApplicationFunctionRuntime(
             ApplicationFunctionStore store,
@@ -36,7 +38,8 @@ public class ApplicationFunctionRuntime {
             ApplicationSchemaSession schemaSession,
             ObjectManager objectManager,
             ObjectMapper objectMapper,
-            BindingRefreshAfterCommit bindingRefreshAfterCommit
+            BindingRefreshAfterCommit bindingRefreshAfterCommit,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.store = store;
         this.scriptEngine = scriptEngine;
@@ -45,6 +48,7 @@ public class ApplicationFunctionRuntime {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
         this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -57,6 +61,9 @@ public class ApplicationFunctionRuntime {
             throw new IllegalStateException("Application function call depth exceeded limit of "
                     + ScriptExecutionContext.MAX_CALL_DEPTH);
         }
+
+        // selectMany/exec always run against an internal app schema on the platform DB.
+        tenantLocalDataAccessGuard.requireExternalDataAccess();
 
         ApplicationFunctionHandler.DeployedFunction deployed = store.findLatest(objectPath, functionName)
                 .orElseThrow(() -> new IllegalStateException("Deployed function missing: " + functionName));

@@ -9,6 +9,10 @@ import com.ispf.core.object.Variable;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
+import com.ispf.server.tenant.TenantVirtualRootService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,26 +35,37 @@ public class DataSourceObjectService {
     private final DataSourceSqlSession dataSourceSqlSession;
     private final ExternalDataSourceRegistry externalRegistry;
     private final DataSourceQueryExecutor queryExecutor;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final TenantVirtualRootService tenantVirtualRootService;
 
     public DataSourceObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
             DataSourceSqlSession dataSourceSqlSession,
             ExternalDataSourceRegistry externalRegistry,
-            DataSourceQueryExecutor queryExecutor
+            DataSourceQueryExecutor queryExecutor,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            TenantVirtualRootService tenantVirtualRootService
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.dataSourceSqlSession = dataSourceSqlSession;
         this.externalRegistry = externalRegistry;
         this.queryExecutor = queryExecutor;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.tenantVirtualRootService = tenantVirtualRootService;
     }
 
     @Transactional
     public void ensureCatalog() {
+        ensureCatalogAt(DataSourcePathResolver.DATA_SOURCES_ROOT);
+    }
+
+    @Transactional
+    public void ensureCatalogAt(String dataSourcesRoot) {
         SystemObjectCatalogSupport.ensureFolder(
                 objectManager,
-                DataSourcePathResolver.DATA_SOURCES_ROOT,
+                dataSourcesRoot,
                 ObjectType.DATA_SOURCES,
                 null
         );
@@ -75,11 +90,12 @@ public class DataSourceObjectService {
             Integer poolSize,
             String description
     ) {
-        ensureCatalog();
-        String path = DataSourcePathResolver.DATA_SOURCES_ROOT + "." + DataSourcePathResolver.sanitizeNodeName(nodeName);
+        String root = resolveDataSourcesRootForCaller();
+        ensureCatalogAt(root);
+        String path = root + "." + DataSourcePathResolver.sanitizeNodeName(nodeName);
         if (objectManager.tree().findByPath(path).isEmpty()) {
             objectManager.create(
-                    DataSourcePathResolver.DATA_SOURCES_ROOT,
+                    root,
                     DataSourcePathResolver.sanitizeNodeName(nodeName),
                     ObjectType.DATA_SOURCE,
                     displayName != null ? displayName : nodeName,
@@ -105,7 +121,12 @@ public class DataSourceObjectService {
     }
 
     public String pathForNodeName(String nodeName) {
-        return DataSourcePathResolver.DATA_SOURCES_ROOT + "." + DataSourcePathResolver.sanitizeNodeName(nodeName);
+        return resolveDataSourcesRootForCaller() + "." + DataSourcePathResolver.sanitizeNodeName(nodeName);
+    }
+
+    private String resolveDataSourcesRootForCaller() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return tenantVirtualRootService.dataSourcesRoot(auth);
     }
 
     @Transactional(readOnly = true)
@@ -121,6 +142,8 @@ public class DataSourceObjectService {
     @Transactional
     public DataSourceView create(DataSourceWriteRequest request) {
         validateCreate(request);
+        String path = pathForNodeName(request.name());
+        enforceTenantDataSourceWrite(path, request);
         ensureDataSource(
                 request.name(),
                 request.displayName(),
@@ -133,7 +156,7 @@ public class DataSourceObjectService {
                 request.poolSize(),
                 request.description()
         );
-        return getByPath(pathForNodeName(request.name()));
+        return getByPath(path);
     }
 
     @Transactional
@@ -142,6 +165,7 @@ public class DataSourceObjectService {
         if (node.type() != ObjectType.DATA_SOURCE) {
             throw new IllegalArgumentException("Not a data source object: " + path);
         }
+        enforceTenantDataSourceWrite(path, request);
         externalRegistry.evict(path);
         String nextDisplayName = request.displayName() != null && !request.displayName().isBlank()
                 ? request.displayName() : node.displayName();
@@ -166,6 +190,10 @@ public class DataSourceObjectService {
     }
 
     public ConnectionTestResult testConnection(String path, DataSourceConnectionResolver.ExternalConfigProbe probe) {
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(path);
+        if (probe != null && probe.jdbcUrl() != null && !probe.jdbcUrl().isBlank()) {
+            tenantLocalDataAccessGuard.requireAllowedJdbcUrl(probe.jdbcUrl());
+        }
         return dataSourceSqlSession.testConnection(path, probe);
     }
 
@@ -175,7 +203,26 @@ public class DataSourceObjectService {
             throw new IllegalArgumentException("Not a data source object: " + path);
         }
         ensureStructure(path);
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(path);
         return queryExecutor.execute(path, query, params, maxRows);
+    }
+
+    private void enforceTenantDataSourceWrite(String path, DataSourceWriteRequest request) {
+        if (!tenantLocalDataAccessGuard.isTenantCaller()) {
+            return;
+        }
+        if (request.connectionMode() != null) {
+            tenantLocalDataAccessGuard.requireExternalConnectionMode(request.connectionMode());
+            if (DataSourceConnectionResolver.MODE_EXTERNAL.equalsIgnoreCase(request.connectionMode())) {
+                tenantLocalDataAccessGuard.requireAllowedJdbcUrl(request.jdbcUrl());
+            }
+            return;
+        }
+        // Mode omitted on update — existing object must already be an allowed external DS.
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(path);
+        if (request.jdbcUrl() != null && !request.jdbcUrl().isBlank()) {
+            tenantLocalDataAccessGuard.requireAllowedJdbcUrl(request.jdbcUrl());
+        }
     }
 
     private void applyFields(
@@ -227,8 +274,10 @@ public class DataSourceObjectService {
     }
 
     private DataSourceView toView(String path, PlatformObject node) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String responsePath = Optional.ofNullable(tenantVirtualRootService.toVirtual(path, auth)).orElse(path);
         return new DataSourceView(
-                path,
+                responsePath,
                 node.displayName(),
                 node.description(),
                 readString(node, "displayName").orElse(node.displayName()),

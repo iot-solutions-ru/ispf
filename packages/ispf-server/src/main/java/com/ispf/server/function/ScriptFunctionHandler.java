@@ -9,6 +9,7 @@ import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
     private final DataSourceSqlSession dataSourceSqlSession;
     private final FunctionService functionService;
     private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public ScriptFunctionHandler(
             ObjectManager objectManager,
@@ -34,7 +36,8 @@ public class ScriptFunctionHandler implements FunctionHandler {
             ApplicationSchemaSession schemaSession,
             DataSourceSqlSession dataSourceSqlSession,
             @Lazy FunctionService functionService,
-            BindingRefreshAfterCommit bindingRefreshAfterCommit
+            BindingRefreshAfterCommit bindingRefreshAfterCommit,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.objectManager = objectManager;
         this.scriptEngine = scriptEngine;
@@ -42,6 +45,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
         this.dataSourceSqlSession = dataSourceSqlSession;
         this.functionService = functionService;
         this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
     @Override
@@ -74,8 +78,12 @@ public class ScriptFunctionHandler implements FunctionHandler {
                 nestedContext(objectPath, functionName, 0)
         );
         if (dataSourcePath != null && !dataSourcePath.isBlank()) {
+            tenantLocalDataAccessGuard.requireAllowedDataSourcePath(dataSourcePath);
             dataSourceSqlSession.runWithDataSource(dataSourcePath, ignored -> execute.run());
         } else {
+            // Blank dataSourcePath falls through to the platform catalog — forbid for tenants.
+            // Descriptor/object-tree loads above via callWithPlatformCatalog remain allowed.
+            tenantLocalDataAccessGuard.requireExternalDataAccess();
             schemaSession.runWithPlatformCatalog(execute);
         }
         bindingRefreshAfterCommit.scheduleRefreshAfterFunction(objectPath, functionName);

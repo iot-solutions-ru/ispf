@@ -69,9 +69,26 @@ Cluster / license / federation / audit — только global admin.
 
 Пользователь с `tenant_id` без global `admin`:
 
-- Чтение/запись только `root.tenant.{id}.*` (+ `root` / `root.tenant` для навигации)
+- **Storage** остаётся `root.tenant.{id}.platform.*`
+- **Sole-tenant / white-label API:** запросы и ответы используют `root` / `root.platform.*` как единственный мир (`TenantVirtualRoot`). Узлы `root.tenant` / `root.tenant.{id}` скрыты.
+- Запись вне своей platform-ветки (включая чужие canonical-пути) → `403`
 - Шаблоны ролей: префиксы `root.platform.*` → `root.tenant.{id}.platform.*`
-- History/events: `requirePathInScope`
+- History/events/WebSocket — тот же expand/collapse
+
+Global `admin` видит **canonical** пути без rewrite. `tenant-admin` — OWNER в своей ветке.
+
+## Локальная platform DB запрещена для тенантов
+
+Любой пользователь с ненулевым `tenant_id` (включая **tenant-admin**) **не может** использовать локальную/platform БД. Разрешены только **внешние** JDBC data sources (удалённые БД). Global `admin` без изменений.
+
+| Правило | Для tenant-вызывающих |
+|---------|------------------------|
+| `connectionMode=internal` | Запрещено (create / update / test / execute) |
+| External JDBC URL | Отклонять localhost, `127.0.0.0/8`, `::1`, link-local и хост из `spring.datasource.url`. Allowlist драйверов без изменений. |
+| Script / BFF SQL с пустым `dataSourcePath` | Запрещено (fallback на platform catalog) |
+| Migrations / SQL bindings / reports | `dataSourcePath` — только разрешённый external DS |
+
+Внешние DS тенанта: sole-tenant путь `root.platform.data-sources` (storage: `root.tenant.{id}.platform.data-sources`). Guard: `TenantLocalDataAccessGuard`.
 
 ## Квоты (BL-126)
 
@@ -107,6 +124,7 @@ Env: `ISPF_TENANT_ISOLATION_MODE`, `ISPF_TENANT_SCHEMA_PREFIX`, `ISPF_TENANT_OID
 | Слой | Статус |
 |------|--------|
 | Логический SaaS A≠B (path + API + role scope + tenant-admin) | **Готово** |
+| Sole-tenant / white-label virtual root (`root.platform.*`) | **Готово** (`TenantVirtualRoot`) |
 | OIDC claim `tenant_id` | **Готово** |
 | Hard schema provision/drop | **Готово** (hooks) |
 | DB row A≠B на shared platform-таблицах | **RLS готово** при `ispf.tenant.db-row-isolation=true` (PostgreSQL); физический schema split по-прежнему опционален |

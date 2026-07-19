@@ -11,6 +11,7 @@ import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,19 +36,23 @@ public class MigrationObjectService {
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
     private final DataSourceSqlSession dataSourceSqlSession;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public MigrationObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
-            DataSourceSqlSession dataSourceSqlSession
+            DataSourceSqlSession dataSourceSqlSession,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.dataSourceSqlSession = dataSourceSqlSession;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
     @Transactional
     public void upsert(MigrationDefinition definition) {
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(definition.dataSourcePath());
         ensureCatalogInternal();
         String nodeName = sanitizeNodeName(definition.scriptId());
         String path = MIGRATIONS_ROOT + "." + nodeName;
@@ -128,6 +133,7 @@ public class MigrationObjectService {
 
     @Transactional
     public void applyOne(MigrationDefinition migration) {
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(migration.dataSourcePath());
         String checksum = checksum(migration.sql());
         ApplicationSchemaSupport.validateMigrationSql(migration.sql(), "");
         dataSourceSqlSession.ensureWritable(migration.dataSourcePath());

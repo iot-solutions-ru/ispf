@@ -11,6 +11,7 @@ import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,15 +45,18 @@ public class SqlBindingObjectService {
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
     private final DataSourceSqlSession dataSourceSqlSession;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public SqlBindingObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
-            DataSourceSqlSession dataSourceSqlSession
+            DataSourceSqlSession dataSourceSqlSession,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.dataSourceSqlSession = dataSourceSqlSession;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
     @Transactional
@@ -66,6 +70,7 @@ public class SqlBindingObjectService {
 
     @Transactional
     public void upsert(BindingDefinition definition) {
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(definition.dataSourcePath());
         ensureCatalogInternal();
         ApplicationSchemaSupport.validateSelectQuery(definition.query(), "Binding query");
         String nodeName = sanitizeNodeName(definition.bindingId());
@@ -214,6 +219,7 @@ public class SqlBindingObjectService {
     }
 
     private void executeRefresh(BindingDefinition binding) {
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(binding.dataSourcePath());
         Object[] extracted = new Object[1];
         dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
             ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");

@@ -136,6 +136,38 @@ public record ObjectDto(
         );
     }
 
+    /** Remap path fields for sole-tenant / white-label API responses. */
+    public ObjectDto withPaths(String newPath, String newGroupContextPath) {
+        return new ObjectDto(
+                id,
+                newPath,
+                type,
+                displayName,
+                description,
+                templateId,
+                iconId,
+                createdAt,
+                sortOrder,
+                revision,
+                lastChangedBy,
+                lastChangedAt,
+                variableNames,
+                eventNames,
+                federated,
+                federationPeerId,
+                federationRemotePath,
+                appliedBlueprints,
+                groupRef,
+                newGroupContextPath,
+                groupMemberMissing,
+                driverStatus,
+                driverConnected,
+                bindingAuditEnabled,
+                functionAuditEnabled,
+                eventJournalEnabled
+        );
+    }
+
     private static String sanitizeTemplateId(String templateId) {
         if (templateId == null || templateId.isBlank()) {
             return null;

@@ -70,12 +70,26 @@ Login response includes `tenantId` when assigned. Cluster, license, federation, 
 
 User with `tenant_id` and **without** global `admin`:
 
-- **Read:** `GET /api/v1/objects` — only `root`, `root.tenant`, `root.tenant.{id}.*`
-- **Write:** create/update/delete blocked with `403` outside the tenant branch (including `root.platform.*` and other tenants)
+- **Storage** remains `root.tenant.{id}.platform.*`
+- **Sole-tenant / white-label API surface:** request and response paths use `root` / `root.platform.*` as if that were the only world (`TenantVirtualRoot`). Navigation stubs `root.tenant` / `root.tenant.{id}` are hidden.
+- **Write:** create/update/delete blocked with `403` outside the caller’s platform subtree (including other tenants’ canonical paths)
 - **Role templates:** `root.platform.*` scope prefixes remap to `root.tenant.{id}.platform.*`
-- History/events enforce `requirePathInScope`
+- History/events/WebSocket enforce the same expand-on-request / collapse-on-response rules
 
-Global `admin` sees and writes everything. `tenant-admin` has OWNER-level object access within their branch only.
+Global `admin` sees and writes everything with **canonical** paths (no virtual rewrite). `tenant-admin` has OWNER-level object access within their branch only.
+
+## Local platform DB forbidden for tenants
+
+Anyone with a non-null `tenant_id` (including **tenant-admin**) must **not** use the local/platform database. They may only use **external** JDBC data sources (remote DBs). Global `admin` is unchanged.
+
+| Rule | Tenant callers |
+|------|----------------|
+| `connectionMode=internal` | Forbidden (create / update / test / execute) |
+| External JDBC URL | Reject localhost, `127.0.0.0/8`, `::1`, link-local, and the host from `spring.datasource.url`. Driver allowlist unchanged. |
+| Script / BFF SQL with blank `dataSourcePath` | Forbidden (falls through to platform catalog) |
+| Migrations / SQL bindings / reports | `dataSourcePath` must be an allowed external DS |
+
+Tenant external data sources live under the sole-tenant path `root.platform.data-sources` (storage: `root.tenant.{id}.platform.data-sources`). Enforcement is centralized in `TenantLocalDataAccessGuard`. Object-tree persistence via `ApplicationSchemaSession.callWithPlatformCatalog` (without arbitrary SQL) remains allowed.
 
 ## Quotas (BL-126)
 
@@ -88,7 +102,8 @@ Exceeded → `409 Conflict` on `POST /api/v1/objects`.
 
 ## Web Console
 
-Node **`root.tenant`** → **Tenants** panel (global admin): create tenant with optional local-admin password; assign users.
+- **Global admin:** node **`root.tenant`** → **Tenants** panel — create tenant with optional local-admin password; assign users. Paths remain canonical.
+- **Tenant users:** sole-tenant tree — explorer speaks `root` / `root.platform.*` only (server virtual root). Existing console helpers that hardcode `root.platform.*` work without a client remapper.
 
 ## Isolation mode (BL-155)
 
@@ -115,6 +130,7 @@ When `ispf.tenant.db-row-isolation=true` (default) on PostgreSQL:
 | Layer | Status |
 |-------|--------|
 | Logical SaaS A≠B (path + API + role scope + tenant-admin) | **Done** |
+| Sole-tenant / white-label virtual root (`root.platform.*` API surface) | **Done** (`TenantVirtualRoot`) |
 | OIDC `tenant_id` claim mapping | **Done** |
 | Hard mode schema provision/drop | **Done** (hooks) |
 | DB row A≠B on shared platform object tables | **RLS Done** when `ispf.tenant.db-row-isolation=true` (PostgreSQL); physical schema split still optional |

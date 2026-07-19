@@ -4,6 +4,7 @@ import com.ispf.server.config.IspfRoles;
 import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.config.KeycloakJwtRoleConverter;
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.tenant.TenantStore;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.server.ServerHttpRequest;
@@ -26,16 +27,19 @@ import java.util.Map;
 public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
 
     private final PlatformUserService userService;
+    private final TenantStore tenantStore;
     private final IspfSecurityProperties securityProperties;
     private final ObjectProvider<JwtDecoder> jwtDecoder;
     private final KeycloakJwtRoleConverter roleConverter = new KeycloakJwtRoleConverter();
 
     public WebSocketAuthHandshakeInterceptor(
             PlatformUserService userService,
+            TenantStore tenantStore,
             IspfSecurityProperties securityProperties,
             ObjectProvider<JwtDecoder> jwtDecoder
     ) {
         this.userService = userService;
+        this.tenantStore = tenantStore;
         this.securityProperties = securityProperties;
         this.jwtDecoder = jwtDecoder;
     }
@@ -63,6 +67,7 @@ public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
                 .map(user -> {
                     attributes.put("username", user.username());
                     attributes.put("roles", user.roles());
+                    putTenantId(attributes, user.username(), user.roles());
                     return true;
                 })
                 .orElseGet(() -> authenticateJwt(token, attributes));
@@ -104,10 +109,18 @@ public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
             }
             attributes.put("username", username);
             attributes.put("roles", roles);
+            putTenantId(attributes, username, roles);
             return true;
         } catch (JwtException ex) {
             return false;
         }
+    }
+
+    private void putTenantId(Map<String, Object> attributes, String username, List<String> roles) {
+        if (roles != null && roles.stream().anyMatch(IspfRoles.ADMIN::equalsIgnoreCase)) {
+            return;
+        }
+        tenantStore.findTenantIdForUser(username).ifPresent(tenantId -> attributes.put("tenantId", tenantId));
     }
 
     @Override

@@ -45,7 +45,10 @@ class TenantScopeServiceGlobalAdminTest {
         assertThat(scope.resolveTenantId(tenantAdmin)).contains("acme");
         assertThat(scope.tenantRootPrefix(tenantAdmin)).contains("root.tenant.acme");
         assertThat(scope.isPathVisible("root.tenant.acme.platform.devices", tenantAdmin)).isTrue();
-        assertThat(scope.isPathVisible("root.platform.devices", tenantAdmin)).isFalse();
+        // Sole-tenant virtual root: root.platform.* maps into the caller's platform subtree.
+        assertThat(scope.isPathVisible("root.platform.devices", tenantAdmin)).isTrue();
+        assertThat(scope.isPathVisible("root.tenant", tenantAdmin)).isFalse();
+        assertThat(scope.isPathVisible("root.tenant.acme", tenantAdmin)).isFalse();
         assertThat(scope.isPathVisible("root.tenant.beta.platform.devices", tenantAdmin)).isFalse();
 
         scope.requireTenantAdminOf("acme", tenantAdmin);

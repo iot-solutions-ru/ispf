@@ -8,6 +8,7 @@ import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourceQueryExecutor;
 import com.ispf.server.datasource.DataSourceQueryResult;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
@@ -29,17 +30,20 @@ public class DataSourceFunctionHandler implements FunctionHandler {
     private final DataSourceObjectService dataSourceObjectService;
     private final DataSourceQueryExecutor queryExecutor;
     private final ObjectMapper objectMapper;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public DataSourceFunctionHandler(
             ObjectManager objectManager,
             DataSourceObjectService dataSourceObjectService,
             DataSourceQueryExecutor queryExecutor,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.objectManager = objectManager;
         this.dataSourceObjectService = dataSourceObjectService;
         this.queryExecutor = queryExecutor;
         this.objectMapper = objectMapper;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
     @Override
@@ -54,6 +58,7 @@ public class DataSourceFunctionHandler implements FunctionHandler {
     @Override
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
         dataSourceObjectService.ensureStructure(objectPath);
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(objectPath);
         Map<String, Object> row = input != null && input.rowCount() > 0
                 ? input.firstRow()
                 : Map.of();

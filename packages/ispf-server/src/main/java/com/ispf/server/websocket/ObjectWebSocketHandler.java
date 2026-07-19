@@ -11,6 +11,7 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
+import com.ispf.server.tenant.TenantVirtualRoot;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -196,7 +197,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleSubscribe(WebSocketSession session, JsonNode node) throws IOException {
-        SessionInterest next = SessionInterest.parse(node);
+        SessionInterest next = canonicalizeInterest(SessionInterest.parse(node), sessionTenantId(session));
         @SuppressWarnings("unchecked")
         SessionInterest previous = (SessionInterest) session.getAttributes().get(SUBSCRIBE_ATTR);
         session.getAttributes().put(SUBSCRIBE_ATTR, next);
@@ -211,13 +212,15 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         if (path == null || username == null) {
             return;
         }
+        String canonical = TenantVirtualRoot.toCanonical(path, sessionTenantId(session));
         session.getAttributes().put("username", username);
-        session.getAttributes().put("presencePath", path);
-        presenceService.heartbeat(path, username, mode);
+        session.getAttributes().put("presencePath", canonical);
+        presenceService.heartbeat(canonical, username, mode);
+        String responsePath = virtualizeForSession(canonical, session);
         Map<String, Object> response = Map.of(
                 "type", "presence",
-                "path", path,
-                "entries", presenceService.listForPath(path).stream()
+                "path", responsePath != null ? responsePath : path,
+                "entries", presenceService.listForPath(canonical).stream()
                         .map(entry -> Map.of(
                                 "username", entry.username(),
                                 "mode", entry.mode(),
@@ -226,6 +229,34 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                         .toList()
         );
         session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+    }
+
+    private static String sessionTenantId(WebSocketSession session) {
+        Object raw = session.getAttributes().get("tenantId");
+        return raw instanceof String value && !value.isBlank() ? value : null;
+    }
+
+    private static SessionInterest canonicalizeInterest(SessionInterest interest, String tenantId) {
+        if (interest == null || tenantId == null || tenantId.isBlank()) {
+            return interest;
+        }
+        Set<String> pathWide = new HashSet<>();
+        for (String path : interest.pathWide) {
+            pathWide.add(TenantVirtualRoot.toCanonical(path, tenantId));
+        }
+        Map<String, Set<String>> variablesByPath = new java.util.HashMap<>();
+        for (Map.Entry<String, Set<String>> entry : interest.variablesByPath.entrySet()) {
+            variablesByPath.put(TenantVirtualRoot.toCanonical(entry.getKey(), tenantId), entry.getValue());
+        }
+        return new SessionInterest(pathWide, variablesByPath);
+    }
+
+    private static String virtualizeForSession(String canonicalPath, WebSocketSession session) {
+        String tenantId = sessionTenantId(session);
+        if (tenantId == null) {
+            return canonicalPath;
+        }
+        return TenantVirtualRoot.toVirtual(canonicalPath, tenantId);
     }
 
     public int activeSessionCount() {
@@ -242,35 +273,36 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                 revision = null;
             }
         }
-        Map<String, Object> message = new java.util.LinkedHashMap<>();
-        message.put("type", event.type().name());
-        message.put("path", event.path());
-        message.put("variableName", event.variableName() != null ? event.variableName() : "");
-        message.put("timestamp", event.timestamp().toString());
-        if (revision != null) {
-            message.put("revision", revision);
-        }
-        if (event.changedBy() != null) {
-            message.put("changedBy", event.changedBy());
-        }
-        if (event.value() != null) {
-            message.put("value", event.value());
-        }
-        if (event.previousValue() != null) {
-            message.put("previousValue", event.previousValue());
-        }
-        TextMessage payload;
-        try {
-            payload = new TextMessage(objectMapper.writeValueAsString(message));
-        } catch (tools.jackson.core.JacksonException e) {
-            log.warn("Failed to serialize object-change message for {}: {}", event.path(), e.getMessage());
-            return;
-        }
         for (WebSocketSession session : sessionsForEvent(event.path(), event.variableName())) {
             if (!session.isOpen()) {
                 continue;
             }
-            sendAsync(session, payload);
+            String pathForClient = virtualizeForSession(event.path(), session);
+            if (pathForClient == null) {
+                continue;
+            }
+            Map<String, Object> message = new java.util.LinkedHashMap<>();
+            message.put("type", event.type().name());
+            message.put("path", pathForClient);
+            message.put("variableName", event.variableName() != null ? event.variableName() : "");
+            message.put("timestamp", event.timestamp().toString());
+            if (revision != null) {
+                message.put("revision", revision);
+            }
+            if (event.changedBy() != null) {
+                message.put("changedBy", event.changedBy());
+            }
+            if (event.value() != null) {
+                message.put("value", event.value());
+            }
+            if (event.previousValue() != null) {
+                message.put("previousValue", event.previousValue());
+            }
+            try {
+                sendAsync(session, new TextMessage(objectMapper.writeValueAsString(message)));
+            } catch (tools.jackson.core.JacksonException e) {
+                log.warn("Failed to serialize object-change message for {}: {}", event.path(), e.getMessage());
+            }
         }
     }
 

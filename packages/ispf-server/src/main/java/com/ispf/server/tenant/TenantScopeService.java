@@ -96,17 +96,29 @@ public class TenantScopeService {
         if (tenantId.isEmpty()) {
             return true;
         }
-        String scopedPrefix = TenantPaths.tenantRoot(tenantId.get());
-        return path.equals("root")
-                || path.equals(TenantPaths.TENANTS_ROOT)
-                || path.equals(scopedPrefix)
-                || path.startsWith(scopedPrefix + ".");
+        // Sole-tenant / white-label: clients speak root.platform.*; expand before scope check.
+        String canonical = TenantVirtualRoot.toCanonical(path.trim(), tenantId.get());
+        String platform = TenantPaths.tenantPlatform(tenantId.get());
+        // Navigation stubs (root.tenant / root.tenant.{id}) are hidden — only root + platform subtree.
+        return "root".equals(canonical)
+                || platform.equals(canonical)
+                || canonical.startsWith(platform + ".");
     }
 
     public void requirePathInScope(String path, Authentication authentication) {
         if (!isPathVisible(path, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
         }
+    }
+
+    /**
+     * Expand virtual sole-tenant paths ({@code root.platform.*}) to storage paths for the caller.
+     * No-op for global admin / unscoped callers.
+     */
+    public String toCanonicalPath(String path, Authentication authentication) {
+        return resolveTenantId(authentication)
+                .map(tenantId -> TenantVirtualRoot.toCanonical(path, tenantId))
+                .orElse(path);
     }
 
     public void invalidateUserCache(String username) {

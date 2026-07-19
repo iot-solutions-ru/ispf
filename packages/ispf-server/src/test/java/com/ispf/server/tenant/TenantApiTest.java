@@ -54,8 +54,8 @@ class TenantApiTest {
         mockMvc.perform(get("/api/v1/objects")
                         .header("Authorization", "Bearer " + operatorToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].path", hasItem("root.tenant.acme.platform.devices")))
-                .andExpect(jsonPath("$[*].path", not(hasItem("root.platform.devices"))));
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.devices")))
+                .andExpect(jsonPath("$[*].path", not(hasItem("root.tenant.acme.platform.devices"))));
 
         mockMvc.perform(get("/api/v1/objects")
                         .header("Authorization", "Bearer " + adminToken))
