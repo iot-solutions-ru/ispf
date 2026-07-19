@@ -138,14 +138,15 @@
 
 | Документ | Статус | Описание |
 |----------|--------|----------|
-| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 open |
-| [AI agent](ai-agent.md) | Beta | Agent API; gate ≥95% не закрыт |
+| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 live ≥95% выполнен |
+| [AI agent](ai-agent.md) | Beta | Agent API; BL-178 ≥95% выполнен (52/52) |
 | [Agent knowledge](agent-knowledge.md) | Internal | Карта маршрутизации агента |
-| [Agent regression](agent-regression.md) | Lab | CI-гейты сценариев |
+| [Agent regression](agent-regression.md) | Lab | Полный suite доказан; nightly — platform |
 | [Автоматизация](automation.md) | Stable | Алерты, корреляторы |
 | [Workflows](workflows.md) | Beta | Подмножество BPMN (не полный 2.0) |
 | [OT Automation туториалы](ot-automation-excellence-tutorials.md) | Beta | ADR-0049 hands-on (journal, AI-BPMN, MCP, analytics AI) |
 | [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ завод |
+| [MES оператор (genealogy)](mes.md) | Stable | Операторский путь BL-193 genealogy lite |
 | [MES walkthrough](reference-mes-walkthrough.md) | Lab | Сквозной MES-путь |
 
 </details>
@@ -173,13 +174,14 @@
 
 | Документ | Статус | Описание |
 |----------|--------|----------|
-| [Marketplace](marketplace.md) | Draft | Partial BL-183; не полный GA |
+| [Marketplace](marketplace.md) | Draft | Partial BL-183 (п. 11–12 открыты); BL-184/185 Done |
 | [Symbol marketplace](symbol-marketplace.md) | Draft | Listing API stub |
 | [Партнёрская программа](partner-program.md) | Draft | Design; in-server API stub |
 | [Сертификация](certification.md) | Draft | Учебные треки / exams |
 | [Лицензия](license.md) | Stable | **AGPL v3** + dual-license |
 | [Commercial licensing](commercial-licensing.md) | Stable | Enterprise |
 | [License compliance](license-compliance.md) | Stable | Чеклист обязательств |
+| [Compliance tender pack](compliance-tender-pack.md) | Stable | БЛ-192 тендерный annex (не сертификация) |
 | [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
 | [Аудит документации](documentation-audit.md) | Internal | Структура, ссылки |
 | [Полный аудит docs 2026-07-16](../en/documentation-full-audit-2026-07-16.md) | Internal | Content honesty pass |

@@ -1,6 +1,6 @@
 # AI Agent operations (BL-177…181)
 
-> **Status:** Beta — Agent API; ≥95% gate not met. Hub: [doc-status.md](doc-status.md).
+> **Status:** Beta — Agent API; BL-178 live ≥95% **met** (52/52 @100%). Hub: [doc-status.md](doc-status.md).
 
 Operator and integrator reference for the ISPF tree-first agent, regression suite, solution generator, and observability widgets.
 
@@ -128,7 +128,7 @@ Results file shape:
 }
 ```
 
-**Target (not met):** ≥95% live pass rate across all scenarios (full BL-178). As of the code-verified [competitive-scorecard](competitive-scorecard.md), AI-assisted development is **~7.0 PARTIAL** — one-shot / live smoke paths are **REAL**; the full 50-scenario ≥95% gate is **open**. **S31 one-shot** proves BL-177 with `--oneshot`. `nightly-stub-results.json` is **deprecated** — not evidence of live ≥95%.
+**BL-178 (met):** full live suite ≥95% — **52/52 @100%** via `AGENT_LIVE_SUITE_MODE=full` / `run-live-suite.sh` (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI still runs **platform** mode. [competitive-scorecard](competitive-scorecard.md) AI dimension **~8.5 REAL** on that evidence; BL-177/180 remain Partial→Done one-shot / hardening. **S31 one-shot** still proves BL-177 with `--oneshot`. `nightly-stub-results.json` is **deprecated** — not evidence of live ≥95%.
 
 ---
 

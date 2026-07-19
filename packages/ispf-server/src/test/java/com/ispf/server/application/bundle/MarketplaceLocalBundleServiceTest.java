@@ -53,9 +53,11 @@ class MarketplaceLocalBundleServiceTest {
 
         when(bundleDeployService.deploy(eq("marketplace-demo"), any()))
                 .thenReturn(Map.of("deployed", true));
+        when(bundleDeployService.supportsOperatorUi(eq("marketplace-demo"))).thenReturn(true);
 
         Map<String, Object> installed = service.installLocalBundle("marketplace-demo");
         assertEquals("OK", installed.get("status"));
         assertEquals("marketplace-demo", installed.get("appId"));
+        assertEquals(true, installed.get("operatorReady"));
     }
 }

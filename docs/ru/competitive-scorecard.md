@@ -27,14 +27,16 @@
 | 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-176 |
 | 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [roadmap](roadmap.md#этап-29--платформа-mes) — BL-164…170 |
 | 8 | Скорость low-code | 8.0 | **8.0** | **10** | [roadmap](roadmap.md#этап-26--совершенство-hmi), [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-146…152, BL-177…180 |
-| 9 | AI-assisted разработка | 9.0 | **7.0** | **10** | [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-177…182 |
+| 9 | AI-assisted разработка | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-177…182 |
 | 10 | Security / RBAC / мультитенантность | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-27--безопасность-предприятия) — BL-153…157 |
 | 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [roadmap](roadmap.md#этап-25--ot-trust), [roadmap](roadmap.md#фаза-28--историк-в-масштабе), [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-144…145, BL-186…187 |
 | 12 | Экосистема / маркетплейс | 4.0 | **5.0** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-183…185 |
 | 13 | Documentation / DX | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-189, BL-190 |
 | 14 | Stack modernity | 9.0 | **9.5** | **10** | maintain — Spring Boot 4, React 19, NATS, опция ClickHouse |
 
-**Итого (проверено по коду): ~7.4/10** — простое среднее по 14 измерениям.
+**Итого (проверено по коду): ~7.5/10** — простое среднее по 14 измерениям.
+
+**Post-audit delta (19.07.2026):** AI-assisted разработка **7.0 → 8.5** после полного live suite (БЛ-178: 52/52 @100%). Остальные измерения — baseline аудита **0.9.102**.
 
 **Program wave 8 (июль 2026)** ранее заявляла ~9.8/10 по отгруженным BL-артефактам; **аудит кода (0.9.102)** заменяет эту цифру. См. [§ Доказательства аудита кода](#code-audit-evidence-0102) и [§ Разрыв до цели](#gaps-to-target).
 
@@ -46,9 +48,9 @@
 
 | Критерий | Статус |
 |----------|--------|
-| Все **14 измерений ≥9.5**, ни одно ≤8 (BL-189) | **Не выполнено** — среднее ~7.4; максимум 9.5 (stack modernity) |
-| Agent regression **≥95% green** с live LLM (BL-178) | **Не выполнено** — schema CI + опциональный **REAL** one-shot (`run-live-oneshot.sh` / `AgentLiveDeploySmokeTest`); полный 50@≥95% открыт. `nightly-stub-results.json` **устарел** (не proof) |
-| Marketplace GA checklist complete (BL-183) | **Частично** — локальная установка bundle реальна; partner/symbol/cert — stub |
+| Все **14 измерений ≥9.5**, ни одно ≤8 (BL-189) | **Не выполнено** — среднее ~7.5; максимум 9.5 (stack modernity) |
+| Agent regression **≥95% green** с live LLM (BL-178) | **Выполнено** — полный live suite `AGENT_LIVE_SUITE_MODE=full` через `run-live-suite.sh`: **52/52 @100%** (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI по-прежнему режим **platform**. `nightly-stub-results.json` **устарел** (не proof) |
+| Marketplace GA checklist complete (BL-183) | **Частично** — browse/install/sign/version Реализовано; остаются п. 11 (живые partner catalogs) + п. 12 (publish CI); BL-184/185 Done |
 | Competitive scorecard published per release (BL-189) | **Выполнено** — этот документ |
 
 ---
@@ -61,16 +63,16 @@
 |---|-----------|:-----:|---------|-------------------------|
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators в `EventCorrelatorService` |
 | 2 | SCADA / HMI | 7.5 | **REAL** | `ispf-pid-v1` manifest `totalSymbols: 218`; `ScadaMimicEditor.tsx`; video wall в `dashboardLayoutPresets.ts`; e2e FPS в `quality-gates.spec.ts` (mocked operator API) |
-| 3 | OT/IT drivers | 6.5 | **PARTIAL** | 20 `PRODUCTION` в `DriverProductionMatrix`; Milo OPC UA, j2mod, S7, BACnet4J — реальные; `opc-da` в коде **stub**, но в матрице PRODUCTION; DNP3 `writePoint` throws |
+| 3 | OT/IT drivers | 7.0 | **PARTIAL** | 16 `PRODUCTION` в `DriverProductionMatrix` (честность BL-191); Milo OPC UA, j2mod, S7, BACnet4J — реальные; `opc-da` / `opc-bridge` / `ethernet-ip` / `dnp3` честно **BETA** (оболочки / poll-only); DNP3 `writePoint` по-прежнему throws |
 | 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC по умолчанию; lab gates BL-210 + JVM multi-tag gate **определены** (`analytics-scale-gate.sh`); оценка **≥9.5** после Enterprise L lab sign-off |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; `AlarmShelfApprovalService` in-memory **STUB** |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; не полная BPMN 2.0 |
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES — marketplace product (`mes-platform`, vendor IoT Solutions); база не сидит `root.platform.mes`. Bundle JSON/SQL/script BFF; нет отдельного MES-модуля |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
-| 9 | AI-assisted dev | 7.0 | **PARTIAL** | **REAL** one-shot live LLM deploy (`AgentLiveDeploySmokeTest`) + **REAL** solution apply (`AiSolutionGeneratorLiveSmokeTest`, `mode=live`); draft fallback `mode=draft` (не stub); полный BL-178 ≥95% **не выполнен** |
+| 9 | AI-assisted dev | 8.5 | **REAL** | БЛ-178 полный live suite **52/52 @100%** (`build/agent-regression/live-suite-results.json`, `mode=full`, ~2026-07-18/19); one-shot deploy (`AgentLiveDeploySmokeTest`) + solution apply (`AiSolutionGeneratorLiveSmokeTest`, `mode=live`); draft fallback `mode=draft` (не stub); БЛ-177/180 multi-app / GA ещё hardening |
 | 10 | Security / RBAC | 7.5 | **PARTIAL** | TOTP MFA + `required-for-admin` **REAL**; `TenantIsolationValidator` **STUB** |
 | 11 | Deploy / scale / edge | 7.0 | **PARTIAL** | Federation в `com.ispf.server.federation.*`; Helm skeleton; нет CI load proof для cluster scale |
-| 12 | Ecosystem / marketplace | 5.0 | **PARTIAL** | Локальная установка каталога **REAL**; `PartnerProgramService` / `MarketplaceSymbolListingService` → `"source": "stub"` |
+| 12 | Ecosystem / marketplace | 5.5 | **PARTIAL** | Local/remote catalog install **REAL**; partner directory + enroll `"source": "db"` (BL-184 Done, 3 seeded); symbol packs BL-185 Done (`MarketplaceSymbolListingService` `"source": "bundled"` \| `"local"`); живые partner catalogs + publish CI открыты (BL-183); Partner Portal external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADR; в коде заглушки помечены честно |
 | 14 | Stack modernity | 9.5 | **REAL** | Spring Boot 4, React 19, опция ClickHouse в `gradle.properties` / `application.yml` |
 
@@ -78,10 +80,8 @@
 
 | Проблема | Где |
 |----------|-----|
-| `opc-da` в PRODUCTION, но driver — stub | `DriverProductionMatrix.java`, `OpcDaDeviceDriver.java` |
-| DNP3 PRODUCTION без write | `Dnp3DeviceDriver.writePoint()` |
-| Полный agent ≥95% live не измеряется | Опциональный one-shot REAL; stub-файл устарел — для БЛ-178 нужен полный live suite |
-| Partner enroll синтетический | `PartnerProgramService.java` — hardcoded demo partners |
+| DNP3 poll-only (BETA) — `writePoint` не реализован | `Dnp3DeviceDriver.writePoint()` — maturity честный; write открыт |
+| Partner Portal external | `PartnerProgramService` persists directory/enroll (`source=db`); portal sync вне repo |
 
 ---
 
@@ -89,13 +89,13 @@
 
 Приоритетные исправления для движения **проверено по коду** к 10/10 (не маркетинг). Полный аудит доменов: [roadmap.md § Аудит доменов](roadmap.md#аудит-доменов--iot--scada--mes--erp-09072026).
 
-1. **OT drivers (6.5 → 9+):** честность матрицы — `opc-da` stub / DNP3 write (**БЛ-191**); field pilot sign-offs после **именованной полевой задачи** (БЛ-140 Частичный).
-2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites; genealogy lite (**БЛ-193**).
-3. **AI (7.0 → 9+):** расширить S31/S32 one-shot до полного live 50@≥95% (`--enforce-rate`); расширить generator beyond catalog templates.
-4. **Ecosystem (5.0 → 9+):** persist partner enrollments; установка symbol pack beyond in-memory stub; внешние signed bundles.
+1. **OT drivers (7.0 → 9+):** честность матрицы **закрыта (БЛ-191)**; остаётся field pilot sign-off + DNP3 write / полный DA после **именованной полевой задачи** (БЛ-140 Частичный).
+2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites. Genealogy lite (**БЛ-193**) отгружен в `mes-platform` (seed-граф + Operator report).
+3. **AI (8.5 → 9+):** БЛ-178 полный live ≥95% выполнен; harden БЛ-177 multi-app + расширить generator beyond catalog/one-shot (БЛ-180); полный suite — on-demand (`AGENT_LIVE_SUITE_MODE=full`).
+4. **Ecosystem (5.5 → 9+):** живые partner marketplace catalogs + publish CI gate (BL-183 п. 11–12); sync Partner Portal (вне repo).
 5. **Historian (7.0 → 9+):** прогнать Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, catalog 50k, CH 1B) — BL-210; затем обновить scorecard до **≥9.5** с датированным sign-off.
 6. **HMI (7.5 → 9+):** FPS gate на live WebSocket mimic; persistence alarm shelving.
-7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**).
+7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**) — **docs Готово:** [compliance-tender-pack](compliance-tender-pack.md) (канон EN). Остаются: pen-test, audit-trail GA (SIEM), hard tenancy A≠B; без заявления о сертификации продукта.
 
 ---
 

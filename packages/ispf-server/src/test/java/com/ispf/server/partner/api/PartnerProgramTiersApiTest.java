@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * BL-184: partner program tier listing stub.
+ * BL-184: partner program tier listing.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

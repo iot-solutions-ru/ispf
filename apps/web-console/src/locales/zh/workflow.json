@@ -24,6 +24,8 @@
   "instance.pendingSignal": "待处理信号",
   "instance.signal": "信号 «{{signal}}»",
   "instance.signaling": "正在发送信号…",
+  "instance.stepPayload": "步骤负载",
+  "instance.timeline": "执行时间线",
   "instance.status": "状态",
   "instance.title": "实例",
   "ispfReference.hint": "在服务任务上设置 ispf:action 属性及表中的字段（在 XML 或编辑器中）。",

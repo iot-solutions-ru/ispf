@@ -23,17 +23,19 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **20** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **8** **BETA**. Top-20 industrial: **19** **PRODUCTION** + `iec104-server` (BETA, loopback partner). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+В `DriverProductionMatrix` — **16** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **12** **BETA**. Top-20 industrial: **15** **PRODUCTION** + **5** **BETA** (`iec104-server`, `dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Честность (аудит кода / scorecard):** метка **PRODUCTION** в реестре ≠ готовность к полевой эксплуатации (ready-for-field). Известные пробелы, исторически помеченные как PRODUCTION в матрице и документации: `opc-da` / `opc-bridge` (оболочка подключения + тесты парсера), `dnp3` (**только read/poll**; `writePoint` не реализован). Для полевых пилотов считайте их **BETA**, пока не пройдут ready-for-field через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
+> **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `ethernet-ip` (только CIP session), `dnp3` (**poll/read**; `writePoint` не реализован). Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
 | `driverId` | Зрелость (реестр) | Примечания / interop |
 | ---------- | ------------------- | --------------- |
 | `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | см. interop lab |
 | `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab; OPC UA в lab часто SecurityPolicy None |
-| `iec104`, `dlms`, `ethernet-ip`, `gps-tracker` | PRODUCTION | см. interop lab |
-| `dnp3` | PRODUCTION (реестр) | **Только poll/read** — write не реализован; в поле = BETA |
-| `opc-da`, `opc-bridge` | PRODUCTION (реестр) | **Оболочка / тесты маппинга** — не полный DA-стек; в поле = BETA |
+| `iec104`, `dlms`, `gps-tracker` | PRODUCTION | см. interop lab |
+| `cwmp` | PRODUCTION | вне top-20; Inform + Get/SetParameterValues |
+| `dnp3` | BETA | **Только poll/read** — `writePoint` не реализован |
+| `ethernet-ip` | BETA | регистрация CIP session; tag path — placeholder |
+| `opc-da`, `opc-bridge` | BETA | **Оболочка / тесты маппинга** — не полный DA-стек |
 | `iec104-server` | BETA | interop partner для `iec104` |
 
 ### observedAt (source timestamps, BL-79)

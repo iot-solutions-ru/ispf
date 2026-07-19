@@ -1,6 +1,6 @@
 {
-  "version": "1.1.1",
-  "displayName": "MES Platform (BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)",
+  "version": "1.2.0",
+  "displayName": "MES Platform (BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170 / BL-193)",
   "tablePrefix": "",
   "schemaName": "app_mes_platform",
   "migrations": [
@@ -11,6 +11,10 @@
     {
       "id": "mes_platform_phase29",
       "sql": "CREATE TABLE IF NOT EXISTS mes_spc_sample (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, measurement_mm NUMERIC(8,3) NOT NULL, sample_ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'LINE-A01', 10.02 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef', 'LINE-A01', 9.98 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0', 'LINE-A01', 10.05 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0'); CREATE TABLE IF NOT EXISTS mes_erp_outbox (id UUID PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, entity_id VARCHAR(64) NOT NULL, payload_json TEXT NOT NULL, idempotency_key VARCHAR(128) NOT NULL UNIQUE, status VARCHAR(16) NOT NULL DEFAULT 'pending', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, processed_at TIMESTAMP NULL); CREATE TABLE IF NOT EXISTS mes_batch_run (batch_path VARCHAR(256) PRIMARY KEY, batch_id VARCHAR(64) NOT NULL, recipe VARCHAR(64) NOT NULL, phase VARCHAR(32) NOT NULL DEFAULT 'idle', updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) SELECT 'root.platform.mes.lots.batch-line-a01-001', 'BATCH-LINE-A01-001', 'recipe-standard-a', 'charge' WHERE NOT EXISTS (SELECT 1 FROM mes_batch_run WHERE batch_path = 'root.platform.mes.lots.batch-line-a01-001');"
+    },
+    {
+      "id": "mes_platform_genealogy",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_genealogy_material (material_code VARCHAR(64) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, uom VARCHAR(16) NOT NULL DEFAULT 'EA'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIDGET-A01'); CREATE TABLE IF NOT EXISTS mes_genealogy_lot (lot_id VARCHAR(64) PRIMARY KEY, lot_path VARCHAR(256) NOT NULL, material_code VARCHAR(64) NOT NULL, work_order_number VARCHAR(64) NOT NULL, line_code VARCHAR(32) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, status VARCHAR(32) NOT NULL DEFAULT 'active'); INSERT INTO mes_genealogy_lot (lot_id, lot_path, material_code, work_order_number, line_code, quantity, status) SELECT 'BATCH-LINE-A01-001', 'root.platform.mes.lots.batch-line-a01-001', 'MAT-WIDGET-A01', 'WO-LINE-A01-001', 'LINE-A01', 2050, 'active' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_lot WHERE lot_id = 'BATCH-LINE-A01-001'); CREATE TABLE IF NOT EXISTS mes_genealogy_quality (quality_id VARCHAR(64) PRIMARY KEY, lot_id VARCHAR(64) NOT NULL, defect_code VARCHAR(64), severity VARCHAR(32) NOT NULL DEFAULT 'ok', result VARCHAR(32) NOT NULL DEFAULT 'pass', recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-001', 'BATCH-LINE-A01-001', NULL, 'ok', 'pass' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-001'); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-002', 'BATCH-LINE-A01-001', 'SCRATCH', 'minor', 'ncr' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-002');"
     }
   ],
   "objects": [
@@ -381,6 +385,193 @@
       "source": {
         "type": "script",
         "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"samples\",\"sql\":\"SELECT id::text AS sample_id, line_code, measurement_mm, sample_ts::text AS sample_ts FROM mes_spc_sample ORDER BY sample_ts DESC LIMIT 20\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${samples}\",\"fields\":{\"sampleId\":\"${item.sample_id}\",\"lineCode\":\"${item.line_code}\",\"measurementMm\":\"${item.measurement_mm}\",\"sampleTs\":\"${item.sample_ts}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "functionName": "mes_genealogy_listGraph",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "genealogy_row",
+                "fields": [
+                  {
+                    "name": "lotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lotPath",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "lotStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "defectCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "severity",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityResult",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "recordedAt",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"links\",\"sql\":\"SELECT l.lot_id, l.lot_path, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, l.quantity, l.status AS lot_status, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.severity, '') AS severity, COALESCE(q.result, '') AS quality_result, COALESCE(q.recorded_at::text, '') AS recorded_at FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id ORDER BY l.lot_id, q.recorded_at\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${links}\",\"fields\":{\"lotId\":\"${item.lot_id}\",\"lotPath\":\"${item.lot_path}\",\"materialCode\":\"${item.material_code}\",\"materialName\":\"${item.material_name}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"quantity\":\"${item.quantity}\",\"lotStatus\":\"${item.lot_status}\",\"qualityId\":\"${item.quality_id}\",\"defectCode\":\"${item.defect_code}\",\"severity\":\"${item.severity}\",\"qualityResult\":\"${item.quality_result}\",\"recordedAt\":\"${item.recorded_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "functionName": "mes_genealogy_queryByLot",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "lotId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "genealogy_row",
+                "fields": [
+                  {
+                    "name": "lotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lotPath",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "lotStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "defectCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "severity",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityResult",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "recordedAt",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"links\",\"sql\":\"SELECT l.lot_id, l.lot_path, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, l.quantity, l.status AS lot_status, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.severity, '') AS severity, COALESCE(q.result, '') AS quality_result, COALESCE(q.recorded_at::text, '') AS recorded_at FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id WHERE l.lot_id = ? ORDER BY q.recorded_at\",\"params\":[\"${input.lotId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${links}\",\"fields\":{\"lotId\":\"${item.lot_id}\",\"lotPath\":\"${item.lot_path}\",\"materialCode\":\"${item.material_code}\",\"materialName\":\"${item.material_name}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"quantity\":\"${item.quantity}\",\"lotStatus\":\"${item.lot_status}\",\"qualityId\":\"${item.quality_id}\",\"defectCode\":\"${item.defect_code}\",\"severity\":\"${item.severity}\",\"qualityResult\":\"${item.quality_result}\",\"recordedAt\":\"${item.recorded_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"rows\":\"${rows}\"}}]}"
       }
     },
     {
@@ -1166,6 +1357,12 @@
       "title": "MES Quality / SPC",
       "refreshIntervalMs": 5000,
       "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"spc-chart\",\"type\":\"chart\",\"title\":\"SPC — critical dimension\",\"x\":0,\"y\":0,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcMeasurement\",\"historyRange\":\"24h\",\"chartStyle\":\"line\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-ucl\",\"type\":\"value\",\"title\":\"UCL\",\"x\":56,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcUcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-target\",\"type\":\"value\",\"title\":\"Target\",\"x\":70,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcTarget\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-lcl\",\"type\":\"value\",\"title\":\"LCL\",\"x\":56,\"y\":14,\"w\":28,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcLcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-samples\",\"type\":\"function\",\"title\":\"SPC samples\",\"x\":0,\"y\":28,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_quality_listSpcSamples\",\"buttonLabel\":\"List SPC samples\"},{\"id\":\"spc-help\",\"type\":\"html-snippet\",\"title\":\"Quality module\",\"x\":42,\"y\":28,\"w\":42,\"h\":14,\"htmlJson\":\"<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-genealogy",
+      "title": "MES Genealogy",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"genealogy-help\",\"type\":\"html-snippet\",\"title\":\"Genealogy lite\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-193: query lot \\u2194 material \\u2194 work-order \\u2194 quality. Seed lot <code>BATCH-LINE-A01-001</code> / WO <code>WO-LINE-A01-001</code> / material <code>MAT-WIDGET-A01</code>.</p>\"},{\"id\":\"genealogy-by-lot\",\"type\":\"function\",\"title\":\"Query by lot\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_queryByLot\",\"buttonLabel\":\"Trace seed lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\"},{\"id\":\"genealogy-graph\",\"type\":\"function\",\"title\":\"Full graph\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_listGraph\",\"buttonLabel\":\"List genealogy links\"},{\"id\":\"genealogy-report\",\"type\":\"report\",\"title\":\"Genealogy report\",\"x\":0,\"y\":35,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.mes-genealogy\"}]}"
     }
   ],
   "schedules": [
@@ -1196,14 +1393,129 @@
       {
         "path": "root.platform.dashboards.mes-platform-quality",
         "title": "Quality"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-genealogy",
+        "title": "Genealogy"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.mes-platform-hub"
+    "eventJournalObjectPath": "root.platform.devices.mes-platform-hub",
+    "reports": [
+      {
+        "path": "root.platform.reports.mes-genealogy",
+        "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.reports.mes-genealogy-by-lot",
+        "title": "Genealogy by lot"
+      }
+    ],
+    "defaultReport": "root.platform.reports.mes-genealogy"
   },
   "metadata": {
     "product": "mes",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "1.1.1 — full Operator UI (Dispatch / OEE / Quality) from mes-platform product bundle"
-  }
+    "changelog": "1.2.0 — BL-193 genealogy lite (BFF + Operator report/dashboard)"
+  },
+  "reports": [
+    {
+      "reportId": "mes-genealogy",
+      "title": "MES Genealogy",
+      "description": "Lot ↔ material ↔ work-order ↔ quality record (BL-193)",
+      "query": "SELECT l.lot_id, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, l.quantity, l.status AS lot_status, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.severity, '') AS severity, COALESCE(q.result, '') AS quality_result FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id ORDER BY l.lot_id, q.quality_id",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "lot_id",
+          "label": "Lot"
+        },
+        {
+          "field": "material_code",
+          "label": "Material"
+        },
+        {
+          "field": "material_name",
+          "label": "Material name"
+        },
+        {
+          "field": "work_order_number",
+          "label": "Work order"
+        },
+        {
+          "field": "line_code",
+          "label": "Line"
+        },
+        {
+          "field": "quantity",
+          "label": "Qty"
+        },
+        {
+          "field": "lot_status",
+          "label": "Lot status"
+        },
+        {
+          "field": "quality_id",
+          "label": "Quality record"
+        },
+        {
+          "field": "defect_code",
+          "label": "Defect"
+        },
+        {
+          "field": "severity",
+          "label": "Severity"
+        },
+        {
+          "field": "quality_result",
+          "label": "Result"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "mes-genealogy-by-lot",
+      "title": "MES Genealogy by lot",
+      "description": "Filter genealogy graph by lot id (seed: BATCH-LINE-A01-001)",
+      "query": "SELECT l.lot_id, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.result, '') AS quality_result FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id WHERE l.lot_id = ? ORDER BY q.quality_id",
+      "parameters": [
+        "lotId"
+      ],
+      "columns": [
+        {
+          "field": "lot_id",
+          "label": "Lot"
+        },
+        {
+          "field": "material_code",
+          "label": "Material"
+        },
+        {
+          "field": "material_name",
+          "label": "Material name"
+        },
+        {
+          "field": "work_order_number",
+          "label": "Work order"
+        },
+        {
+          "field": "line_code",
+          "label": "Line"
+        },
+        {
+          "field": "quality_id",
+          "label": "Quality record"
+        },
+        {
+          "field": "defect_code",
+          "label": "Defect"
+        },
+        {
+          "field": "quality_result",
+          "label": "Result"
+        }
+      ],
+      "maxRows": 200
+    }
+  ]
 }

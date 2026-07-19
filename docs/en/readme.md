@@ -138,14 +138,15 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 open |
-| [AI agent](ai-agent.md) | Beta | Agent API; ≥95% gate not met |
+| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 live ≥95% met |
+| [AI agent](ai-agent.md) | Beta | Agent API; BL-178 ≥95% met (52/52) |
 | [Agent knowledge](agent-knowledge.md) | Internal | Agent routing map |
-| [Agent regression](agent-regression.md) | Lab | Scenario CI gates |
+| [Agent regression](agent-regression.md) | Lab | Full suite proven; nightly platform mode |
 | [Automation](automation.md) | Stable | Alerts, correlators |
 | [Workflows](workflows.md) | Beta | BPMN subset (not full 2.0) |
 | [OT Automation tutorials](ot-automation-excellence-tutorials.md) | Beta | ADR-0049 hands-on (journal, AI-BPMN, MCP, analytics AI) |
 | [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ plant |
+| [MES operator (genealogy)](mes.md) | Stable | Operator path for BL-193 genealogy lite |
 | [MES walkthrough](reference-mes-walkthrough.md) | Lab | End-to-end MES path |
 
 </details>
@@ -173,13 +174,14 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| [Marketplace](marketplace.md) | Draft | Partial BL-183; not full GA |
+| [Marketplace](marketplace.md) | Draft | Partial BL-183 (items 11–12 open); BL-184/185 Done |
 | [Symbol marketplace](symbol-marketplace.md) | Stable | Local install + scada API (BL-185) |
 | [Partner program](partner-program.md) | Draft | Design; in-server API stub |
 | [Certification](certification.md) | Draft | Training paths / exams |
 | [License](license.md) | Stable | **AGPL v3** + dual-license |
 | [Commercial licensing](commercial-licensing.md) | Stable | Enterprise terms |
 | [License compliance](license-compliance.md) | Stable | Obligations checklist |
+| [Compliance tender pack](compliance-tender-pack.md) | Stable | BL-192 tender annex (not certification) |
 | [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
 | [Documentation audit](documentation-audit.md) | Internal | Structure, naming, link audit |
 | [Full docs audit 2026-07-16](documentation-full-audit-2026-07-16.md) | Internal | Content honesty pass |

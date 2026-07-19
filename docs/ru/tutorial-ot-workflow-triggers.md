@@ -45,6 +45,8 @@ curl -s -X POST "$BASE/api/v1/webhooks/workflows/lab-alarm-hook" \
 | `retryBackoffSeconds` | `30` |
 
 При FAILED — journal failed instance; записи DLQ в `workflow_dead_letters`.
+Список: `GET /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true`.
+Resolve: `POST /api/v1/workflows/dead-letters/{id}/resolve`. Async retry scheduler ещё не подключён.
 
 ## Проверка
 

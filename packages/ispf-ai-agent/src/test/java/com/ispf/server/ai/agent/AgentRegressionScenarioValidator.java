@@ -22,13 +22,39 @@ final class AgentRegressionScenarioValidator {
     static final int MIN_SCENARIO_COUNT = 50;
 
     private static final Set<String> DOMAINS = Set.of("scada", "mes", "hvac");
+    private static final Set<String> LANES = Set.of("human", "agent", "both");
     private static final Set<String> SCENARIO_PROPERTIES = Set.of(
-            "id", "version", "domain", "kind", "title", "description", "prompt", "playbook", "bundle", "acceptance"
+            "id",
+            "version",
+            "domain",
+            "lane",
+            "kind",
+            "title",
+            "description",
+            "prompt",
+            "uiJourney",
+            "humanSteps",
+            "playbook",
+            "bundle",
+            "acceptance"
     );
     private static final Set<String> KINDS = Set.of("platform-primitive");
     private static final Set<String> BUNDLE_PROPERTIES = Set.of("appId", "manifestPath");
     private static final Set<String> ACCEPTANCE_PROPERTIES = Set.of(
-            "validateBundle", "requiredTools", "requiredObjectPaths"
+            "validateBundle", "requiredTools", "requiredObjectPaths", "operatorSurfaces"
+    );
+    private static final Set<String> OPERATOR_SURFACES = Set.of(
+            "solutions",
+            "marketplace",
+            "explorer",
+            "drivers",
+            "dashboard",
+            "mimic",
+            "operator",
+            "alarms",
+            "work-queue",
+            "schedules",
+            "ai-studio"
     );
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9][a-z0-9-]*$");
     private static final Pattern APP_ID_PATTERN = Pattern.compile("^[a-z][a-z0-9-]*$");
@@ -117,6 +143,11 @@ final class AgentRegressionScenarioValidator {
             result.errors.add("invalid kind: " + kind);
         }
 
+        String lane = scenario.path("lane").asText("");
+        if (!lane.isBlank() && !LANES.contains(lane)) {
+            result.errors.add("invalid lane: " + lane);
+        }
+
         String id = scenario.path("id").asText("");
         if (!id.isBlank() && !ID_PATTERN.matcher(id).matches()) {
             result.errors.add("invalid id pattern: " + id);
@@ -127,6 +158,28 @@ final class AgentRegressionScenarioValidator {
         }
         if (scenario.path("prompt").asText("").length() < 10) {
             result.errors.add("prompt too short");
+        }
+
+        JsonNode humanSteps = scenario.get("humanSteps");
+        if (humanSteps != null && !humanSteps.isNull()) {
+            if (!humanSteps.isArray() || humanSteps.isEmpty()) {
+                result.errors.add("humanSteps must be a non-empty array");
+            } else {
+                for (JsonNode step : humanSteps) {
+                    if (!step.isTextual() || step.asText("").trim().length() < 3) {
+                        result.errors.add("humanSteps must be non-empty strings");
+                        break;
+                    }
+                }
+            }
+        }
+        if ("human".equals(lane)) {
+            if (humanSteps == null || !humanSteps.isArray() || humanSteps.isEmpty()) {
+                result.errors.add("human lane requires humanSteps[]");
+            }
+            if (scenario.path("uiJourney").asText("").isBlank()) {
+                result.errors.add("human lane requires uiJourney");
+            }
         }
 
         JsonNode bundle = scenario.get("bundle");
@@ -141,6 +194,19 @@ final class AgentRegressionScenarioValidator {
                     result.errors.add("acceptance unexpected property: " + field);
                 }
             });
+            JsonNode surfaces = acceptance.get("operatorSurfaces");
+            if (surfaces != null && !surfaces.isNull()) {
+                if (!surfaces.isArray() || surfaces.isEmpty()) {
+                    result.errors.add("acceptance.operatorSurfaces must be a non-empty array");
+                } else {
+                    for (JsonNode surface : surfaces) {
+                        String value = surface.asText("");
+                        if (!OPERATOR_SURFACES.contains(value)) {
+                            result.errors.add("invalid operatorSurface: " + value);
+                        }
+                    }
+                }
+            }
         }
 
         return result;

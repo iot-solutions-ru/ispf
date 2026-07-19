@@ -1,5 +1,7 @@
 package com.ispf.server.alert;
 
+import com.ispf.server.persistence.AlarmShelfRequestRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +12,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,6 +39,15 @@ class AlarmShelfApprovalApiTest {
 
     @Autowired
     private AlarmShelfApprovalService approvalService;
+
+    @Autowired
+    private AlarmShelfRequestRepository requestRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @AfterEach
     void cleanup() {
@@ -112,6 +124,38 @@ class AlarmShelfApprovalApiTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.objectPath=='" + DEMO_DEVICE + "' && @.eventName=='" + EVENT_NAME + "')]").doesNotExist());
+    }
+
+    @Test
+    void pendingRequestSurvivesPersistenceContextClear() {
+        AlarmShelfApprovalService.PendingShelfRequest pending = approvalService.submit(
+                new AlarmShelfService.ShelveAlarmRequest(
+                        DEMO_DEVICE,
+                        EVENT_NAME,
+                        null,
+                        20,
+                        "persist me"
+                ),
+                "admin"
+        );
+
+        assertThat(requestRepository.findById(pending.id())).isPresent();
+
+        transactionTemplate.executeWithoutResult(status -> entityManager.clear());
+
+        assertThat(approvalService.findPending(pending.id()))
+                .isPresent()
+                .get()
+                .satisfies(reloaded -> {
+                    assertThat(reloaded.objectPath()).isEqualTo(DEMO_DEVICE);
+                    assertThat(reloaded.eventName()).isEqualTo(EVENT_NAME);
+                    assertThat(reloaded.durationMinutes()).isEqualTo(20);
+                    assertThat(reloaded.comment()).isEqualTo("persist me");
+                    assertThat(reloaded.requestedBy()).isEqualTo("admin");
+                });
+        assertThat(approvalService.listPending())
+                .extracting(AlarmShelfApprovalService.PendingShelfRequest::id)
+                .contains(pending.id());
     }
 
     private String login(String username, String password) throws Exception {

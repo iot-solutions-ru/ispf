@@ -1,8 +1,10 @@
 # Agent regression suite (BL-178)
 
-> **Status:** Lab — Scenario CI gates. Hub: [doc-status.md](doc-status.md).
+> **Status:** Lab — Full live suite proven (52/52 @100%, `mode=full`); nightly CI still **platform** mode. Hub: [doc-status.md](doc-status.md).
 
 Foundation for CI agent scenario validation: curated prompts, human UI journeys, bundle references, and schema checks before live agent runs against a platform instance.
+
+**BL-178 evidence (2026-07-18/19):** `AGENT_LIVE_SUITE_MODE=full bash tools/agent-regression/run-live-suite.sh` → `build/agent-regression/live-suite-results.json` — **52/52 OK @100%**. Nightly with AI secrets still runs **platform** mode (not full).
 
 ## Layout
 
@@ -109,7 +111,7 @@ Pass-rate reporter:
 - One-shot: `validate-scenarios.mjs --results build/agent-regression/live-oneshot-results.json --enforce-rate --oneshot` — S31 BL-177 proof
 - Platform gate (no LLM required): `bash tools/agent-regression/run-platform-gate.sh`
 
-Nightly CI runs **platform** live suite when AI secrets are set. Full 52-scenario live gate is manual / on-demand:
+Nightly CI runs **platform** live suite when AI secrets are set. Full 52-scenario live gate is **proven on-demand** (BL-178 met); re-run manually when needed:
 
 ```bash
 export ISPF_LLM_SMOKE=true ISPF_AI_BASE_URL=... ISPF_AI_API_KEY=...

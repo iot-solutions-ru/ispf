@@ -19,7 +19,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * TR-069/CWMP ACS client stub — POSTs Inform SOAP envelopes to an ACS URL.
+ * TR-069/CWMP ACS client — POSTs Inform SOAP envelopes to an ACS URL;
+ * supports GetParameterValues read and SetParameterValues write.
  */
 public class CwmpDeviceDriver implements DeviceDriver {
 

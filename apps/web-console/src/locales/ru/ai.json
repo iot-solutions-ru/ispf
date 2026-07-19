@@ -176,8 +176,6 @@
   "status.referenceScenarios": "Эталонные сценарии",
   "status.referenceScenariosIntro": "Пути spec→validate→deploy, покрытые автотестами",
   "status.scenarioSteps_one": "{{count}} шаг плана",
-  "status.scenarioSteps_few": "{{count}} шага плана",
-  "status.scenarioSteps_many": "{{count}} шагов плана",
   "status.scenarioSteps_other": "{{count}} шагов плана",
   "status.searchTools": "Поиск инструментов…",
   "status.subtitle": "Провайдер LLM, контекстный пакет и каталог инструментов агента",

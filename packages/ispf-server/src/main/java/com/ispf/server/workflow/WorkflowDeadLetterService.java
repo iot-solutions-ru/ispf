@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -19,7 +20,13 @@ public class WorkflowDeadLetterService {
     }
 
     @Transactional
-    public void record(String instanceId, String workflowPath, int attemptCount, String lastError, String payloadJson) {
+    public WorkflowDeadLetterEntity record(
+            String instanceId,
+            String workflowPath,
+            int attemptCount,
+            String lastError,
+            String payloadJson
+    ) {
         WorkflowDeadLetterEntity entity = new WorkflowDeadLetterEntity();
         entity.setId(UUID.randomUUID().toString());
         entity.setInstanceId(instanceId);
@@ -28,11 +35,35 @@ public class WorkflowDeadLetterService {
         entity.setLastError(lastError);
         entity.setPayloadJson(payloadJson);
         entity.setCreatedAt(Instant.now());
-        repository.save(entity);
+        return repository.save(entity);
     }
 
     @Transactional(readOnly = true)
     public List<WorkflowDeadLetterEntity> listByPath(String workflowPath) {
         return repository.findByWorkflowPathOrderByCreatedAtDesc(workflowPath);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WorkflowDeadLetterEntity> listUnresolvedByPath(String workflowPath) {
+        return repository.findByWorkflowPathAndResolvedAtIsNullOrderByCreatedAtDesc(workflowPath);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<WorkflowDeadLetterEntity> findById(String id) {
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        return repository.findById(id);
+    }
+
+    @Transactional
+    public WorkflowDeadLetterEntity resolve(String id) {
+        WorkflowDeadLetterEntity entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Dead letter not found: " + id));
+        if (entity.getResolvedAt() == null) {
+            entity.setResolvedAt(Instant.now());
+            repository.save(entity);
+        }
+        return entity;
     }
 }

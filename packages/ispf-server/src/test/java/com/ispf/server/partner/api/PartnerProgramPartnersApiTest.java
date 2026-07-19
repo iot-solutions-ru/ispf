@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * BL-184: external certified partner directory stub.
+ * BL-184: external certified partner directory (DB-backed).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -23,10 +23,11 @@ class PartnerProgramPartnersApiTest {
     private MockMvc mockMvc;
 
     @Test
-    void listsThreeExternalPartners() throws Exception {
+    void listsThreeExternalPartnersFromDb() throws Exception {
         mockMvc.perform(get("/api/v1/partners"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.source").value("db"))
                 .andExpect(jsonPath("$.count").value(3))
                 .andExpect(jsonPath("$.partners[0].id").value("acme-integrators"))
                 .andExpect(jsonPath("$.partners[1].id").value("nordic-automation"))

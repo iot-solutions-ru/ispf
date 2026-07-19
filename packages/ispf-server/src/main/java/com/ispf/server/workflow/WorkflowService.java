@@ -24,6 +24,7 @@ import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
+import com.ispf.server.persistence.entity.WorkflowDeadLetterEntity;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.function.FunctionInvocationScope;
@@ -430,6 +431,34 @@ public class WorkflowService {
             row.put("errorJson", step.getErrorJson());
             return row;
         }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listDeadLetters(String path, boolean unresolvedOnly) {
+        var rows = unresolvedOnly
+                ? deadLetterService.listUnresolvedByPath(path)
+                : deadLetterService.listByPath(path);
+        return rows.stream().map(this::toDeadLetterRow).toList();
+    }
+
+    @Transactional
+    public Map<String, Object> resolveDeadLetter(String id) {
+        return toDeadLetterRow(deadLetterService.resolve(id));
+    }
+
+    private Map<String, Object> toDeadLetterRow(WorkflowDeadLetterEntity entity) {
+        Map<String, Object> row = new HashMap<>();
+        row.put("id", entity.getId());
+        row.put("instanceId", entity.getInstanceId());
+        row.put("workflowPath", entity.getWorkflowPath());
+        row.put("attemptCount", entity.getAttemptCount());
+        row.put("lastError", entity.getLastError());
+        row.put("payloadJson", entity.getPayloadJson());
+        row.put("createdAt", entity.getCreatedAt() == null ? null : entity.getCreatedAt().toString());
+        if (entity.getResolvedAt() != null) {
+            row.put("resolvedAt", entity.getResolvedAt().toString());
+        }
+        return row;
     }
 
     private void handleFailure(String path, WorkflowInstance instance, Map<String, String> input) {

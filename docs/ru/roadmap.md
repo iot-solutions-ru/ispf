@@ -21,7 +21,7 @@
 | РЕК-ПФ | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
 | БЛ-01…139 | 139 | 138 | 0 | 0 | 1 |
-| БЛ-140…210 | 65 | 29 | 34 | 1 | 0 |
+| БЛ-140…210 | 65 | 30 | 34 | 1 | 0 |
 | Фаза 0–24 | 25 | 25 | 0 | — | — |
 | Фаза 25–33 | 9 | 0 | 9 | 0 | — |
 | Спринт S01–S30 | 30 | 30 | 0 | 0 | — |
@@ -65,9 +65,10 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 
 | Статус | ID (акценты) | Смысл |
 | ------ | ------------ | ----- |
-| **Готово** | БЛ-141, 146, 160, 163, 189, 201, 202 | Принято / отгружено с доказательствами |
+| **Готово** | БЛ-141, 146, 160, 163, 189, 191, 192, 193, 201, 202 | Принято / отгружено с доказательствами |
 | **Частичный** | БЛ-140, большинство 142–190, 164–188, … | Основа есть; хвост открыт (полевая задача, stub, soak, live-gate) |
-| **Планируется** | БЛ-185, 191–193, 200, 203–210 | Не начато или только charter |
+| **Готово** | БЛ-193 (genealogy lite) | mes-platform BFF + Operator report/dashboard на seed-графе |
+| **Планируется** | БЛ-200, 203–210 | Не начато или только charter |
 
 ### Фаза 25–33 одним взглядом
 
@@ -77,15 +78,15 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | **26** HMI | Mimics / operator | БЛ-146 — 218 P&ID символов | Live FPS 500@60, offline PWA 8ч, CEL debugger |
 | **27** Security | MFA / tenancy | TOTP MFA Partial | Hard tenancy, per-var ACL, persistent alarm shelf |
 | **28** Historian | Tiers / SLA | БЛ-160 AF-lite, БЛ-163 Parquet | Turnkey tiers, query SLA CI, petabyte path |
-| **29** MES / ERP L4 | ISA-95 | Каталог + reference bundles (smoke) | Field sites, genealogy; **живой ERP (БЛ-169) отложен** |
+| **29** MES / ERP L4 | ISA-95 | Каталог + reference bundles; **БЛ-193 genealogy lite Готово** | Field sites; **живой ERP (БЛ-169) отложен** |
 | **30** Automation | CEP / BPMN | Message events Partial | Полный CEP, process programs, DMN |
-| **31** AI | Autopilot | Tools + schema CI | Live LLM ≥95%, generator не stub |
+| **31** AI | Autopilot | БЛ-178 live ≥95% **Готово** (52/52 @100%) | Generator breadth / БЛ-177 multi-app ещё hardening |
 | **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
 | **33** Analytics | AF-capable | **Готово** (БЛ-200…210) | — |
 
 ### Готовность подсистем (наследие Фазы 23)
 
-См. [§ Готовность подсистемы](#готовность-подсистемы) — в основном 90–100% для закрытых подсистем. Эта таблица **не** заменяет competitive scorecard (~7,4/10).
+См. [§ Готовность подсистемы](#готовность-подсистемы) — в основном 90–100% для закрытых подсистем. Эта таблица **не** заменяет competitive scorecard (~7,5/10).
 
 ### Куда смотреть дальше
 
@@ -878,7 +879,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | Категория | Всего | Готово | Частичный | Планируется | Отменено |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Этап 25–33 | 9 | 0 | 9 | 0 | — |
-| БЛ-140…210 | 65 | 29 | 34 | 1 | 0 |
+| БЛ-140…210 | 65 | 30 | 34 | 1 | 0 |
 | Спринт S31–S46 (черновик) | 16 | 0 | 16 | 0 | — |
 
 ## Конкурентный показатель (базовый уровень → проверенный код → целевой показатель)
@@ -917,7 +918,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | **П2** | [27 — Корпоративная безопасность](#этап-27--безопасность-предприятия) | Требование предприятий-тендеров |
 | **П2** | [28 — Историк в масштабе](#фаза-28--историк-в-масштабе) | Крупные объекты петабайтного класса |
 | **П2** | [33 — Аналитическая платформа](#фаза-33--аналитическая-платформа-af-capable) | AF-capable derived tags + OLAP (БЛ-200…210) |
-| **П2** | [БЛ-192 compliance](#бл-191193--аудит-доменов-follow-up) | Пакет IEC 62443 / GAMP для тендеров |
+| **П2** | [БЛ-192 compliance](#бл-191193--аудит-доменов-follow-up) | [compliance-tender-pack](compliance-tender-pack.md) опубликован (**Готово**); cert/pen-test ещё открыты |
 | **P3** | [30 — Глубина автоматизации](#этап-30--глубина-автоматизации) | Опытные пользователи, CEP, управление процессами |
 | **P3** | [32 — Экосистема и рынок](#этап-32--экосистема-и-рынок) | Масштабирование через партнёров |
 | **Отложено** | [25 — OT Trust](#phase-25--ot-trust) + [БЛ-191](#бл-191193--аудит-доменов-follow-up) | Пауза 14.07.2026 — возобновлять только при именованной полевой задаче на драйвер |
@@ -946,7 +947,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | --- | ----- | ------ | -------- | -------------- | -- |
 | **Blocker** | IoT / OT | PRODUCTION-матрица: `opc-da` stub, DNP3 без write | Kepware / Ignition | `OpcDaDeviceDriver` stub помечен PRODUCTION | [БЛ-191](#бл-191193--аудит-доменов-follow-up), БЛ-140 |
 | **Blocker** | ERP L4 | Outbox помечает `sent` без реального ERP | B2MML / 1C / SAP IDoc | Только stub-коннектор | **БЛ-169** (снят с 90-дневного плана) |
-| **Blocker** | AI | Live LLM ≥95% + generator breadth | Собственный AI-ров | Полный БЛ-178 ≥95% открыт; generator one-shot REAL | БЛ-177…180 |
+| **High** | AI | Generator breadth + multi-app deploy | Собственный AI-ров | БЛ-178 **Готово** (полный live 52/52 @100%); БЛ-177/180 всё ещё Partial→Done one-shot | БЛ-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30д | Ignition Edge | БЛ-145/187 Partial; prod `clusterEnabled=false` | БЛ-145, 187 |
 | High | SCADA | Live FPS 500 el + offline PWA 8ч | Ignition Perspective | e2e mocked; БЛ-151/152 Partial | БЛ-151, 152 |
 | High | SCADA | Alarm shelving approval in-memory | WinCC / Ignition Alarming | `AlarmShelfApprovalService` STUB | БЛ-158 |
@@ -955,8 +956,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | High | ERP L4 | Нет двусторонней синхронизации НСИ | Tulip + ERP connectors | Level 4 = reports + outbox pattern | БЛ-169 |
 | High | Security | Strict multi-tenant — validator stub | Enterprise SaaS IoT | `TenantIsolationValidator` stub | БЛ-155 |
 | Med | MES | ISA-88 / genealogy / APS — только lite | Batch MES suites | `batch-v1` + BFF; нет batch engine | БЛ-168 |
-| Med | Экосистема | Marketplace / partners / symbols — stub | Ignition Exchange | `PartnerProgramService` `source=stub` | БЛ-183…185 |
-| Med | Compliance | Нет IEC 62443 / GAMP в DoD | Enterprise tenders | Отсутствует в DoD Phase 25 | [БЛ-192](#бл-191193--аудит-доменов-follow-up) |
+| Med | Экосистема | Partner catalogs + publish CI ещё открыты | Ignition Exchange | BL-183 Partial (п. 11–12); BL-184/185 Done | БЛ-183…185 |
+| Med | Compliance | Tender pack опубликован; cert / pen-test ещё открыты | Enterprise tenders | [compliance-tender-pack](compliance-tender-pack.md) (БЛ-192 **Готово**); gaps в EN-каноне | [БЛ-192](#бл-191193--аудит-доменов-follow-up) |
 | Med | Mobile | Нет native app; PWA offline Partial | Perspective Mobile / Tulip | Responsive + PWA smoke | БЛ-151, 166 |
 
 ### Порядок исполнения на 90 дней (из аудита)
@@ -965,7 +966,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | Ранг | Фокус | Действия |
 | ---- | ----- | -------- |
-| **P0** | AI без stub | БЛ-177…180: live LLM CI ≥95%; generator не keyword-stub |
+| **P0** | AI без stub | БЛ-178 live ≥95% **выполнен**; harden БЛ-177 multi-app + БЛ-180 generator beyond one-shot |
 | **P1** | SCADA operator excellence | БЛ-151/152/158: live FPS 500@60; offline PWA; persistent alarm shelf |
 | **P1** | MES productization | БЛ-164…168, БЛ-170, БЛ-193: sites, genealogy; **не** живой ERP |
 | **P2** | Historian + Security + compliance | БЛ-159…162, БЛ-155, БЛ-192 |
@@ -978,9 +979,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | Спринт | Фаза | Тема | БЛ/область | Статус |
 | ------ | ----- | ---- | ---------- | ------ |
-| С31 | 31 | AI e2e + live LLM | БЛ-177, БЛ-178 | Частичный (БЛ-177 one-shot REAL; БЛ-178 live ≥95% открыт) |
+| С31 | 31 | AI e2e + live LLM | БЛ-177, БЛ-178 | Частичный (БЛ-178 **Готово** 52/52 @100%; БЛ-177 всё ещё one-shot Partial→Done) |
 | С32 | 31 | AI generator + continuity | БЛ-180 (+ БЛ-179 по необходимости) | Частичный (live apply REAL; metrics/continuity открыты) |
-| С33 | 29 | MES genealogy lite | БЛ-193 | Частичный |
+| С33 | 29 | MES genealogy lite | БЛ-193 | **Готово** (mes-platform BFF + Operator report; seed lot) |
 | — | 29 | Живой ERP L4 (parked) | БЛ-169 | **Отложено** |
 | — | 25 | OT Trust waves (parked) | БЛ-140…145, БЛ-191 — [Backlog Волна 1](#s31-wave-1-execution-backlog) | **Отложено** |
 | С34 | 26 | Символы HMI + отладчик | БЛ-146, БЛ-149 | Частичный |
@@ -995,7 +996,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | С43 | 30 | КЭП + управление процессом | БЛ-171, БЛ-172, БЛ-173 | Частичный |
 | С44 | 31 | AI e2e развертывание | БЛ-177, БЛ-178 | Частичный |
 | С45 | 31 | Генератор решений искусственного интеллекта | БЛ-179, БЛ-180, БЛ-181 | Частичный (БЛ-181 Готово) |
-| С46 | 32 | Marketplace + partners | БЛ-183, БЛ-184, БЛ-189 | Частичный |
+| С46 | 32 | Marketplace + partners | БЛ-183, БЛ-184, БЛ-189 | Частичный — БЛ-184/189 Done; БЛ-183 п. 11–12 открыты |
 
 Ориентир: **~2 недели на спринт**, Фаза 25–32 ≈ **18–24 месяца**.
 
@@ -1229,13 +1230,13 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-175 | 30 | крючки ML | P3 | Частичный |
 | БЛ-176 | 30 | Расширение BPMN | П2 | Частичный (заглушка подпроцесса; события сообщения) |
 | БЛ-177 | 31 | Комплексное развертывание агента | P0 | **Частичный→Done (one-shot)** — live LLM `AgentLiveDeploySmokeTest` + `run_deploy_playbook` для `mes-platform` |
-| БЛ-178 | 31 | Набор регрессии агента | P0 | Частичный (50 сценариев schema CI; live one-shot через `run-live-oneshot.sh`; полный ≥95% не выполнен) |
+| БЛ-178 | 31 | Набор регрессии агента | P0 | **Готово** — полный live suite `AGENT_LIVE_SUITE_MODE=full` через `run-live-suite.sh`: **52/52 @100%** (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19); nightly CI по-прежнему режим **platform** |
 | БЛ-179 | 31 | Оператор-агент GA | Р1 | Частичный |
 | БЛ-180 | 31 | Генератор решений | P0 | **Частичный→Done (one-shot)** — `apply:true` live дерево+dashboard+alert (`AiSolutionGeneratorLiveSmokeTest`); полный GA/metrics ещё hardening |
 | БЛ-181 | 31 | Наблюдаемость агентов v2 | П2 | **Готово** — `/agent/metrics` + `/agent/metrics/tools`; таблица tools в AI Studio; retry разбора LLM + один transient tool retry (`AgentToolTransientRetry`); `AgentMetricsApiTest` |
 | БЛ-182 | 31 | Контекстный пакет v2 | П2 | **Готово** — `competitiveGapIndex` searchable (`topic=gaps`); live overlay на context-pack info + refresh API; MCP slices; AI Studio Status |
-| БЛ-183 | 32 | Marketplace GA | P3 | Частичная (установка/удаление) |
-| БЛ-184 | 32 | Партнерская программа | P3 | Частичный |
+| БЛ-183 | 32 | Marketplace GA | P3 | **Частично** — п. 1–6, 8–10 Реализовано; остаются: живые partner catalogs (11), publish CI gate (12); см. [marketplace](marketplace.md) |
+| БЛ-184 | 32 | Партнерская программа | P3 | **Готово** (in-server) — directory + enroll `source=db` (3 seeded partners); Partner Portal external / не в repo |
 | БЛ-185 | 32 | Symbol marketplace | P3 | **Готово** — drop-in install в `ISPF_SYMBOL_PACKS_DIR`; `GET /api/v1/scada/symbol-packs`; mimic palette; demo `examples/marketplace-symbol-hvac-demo` |
 | БЛ-186 | 32 | Карта руля K8s | П2 | Частичный |
 | БЛ-187 | 32 | Краевой профиль ARM | П2 | Частичный |
@@ -1243,15 +1244,15 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-189 | 32 | Конкурентная система показателей | P3 | **Готово** (опубликовано; проверено по коду ~7.4/10) |
 | БЛ-190 | 32 | Пути сертификации | P3 | Частичный |
 | БЛ-191 | 25 | Честность OT-матрицы | **Отложено** | Планируется (parked — не в 90-дневном P0) |
-| БЛ-192 | 27/32 | Compliance tender pack | П2 | Планируется |
-| БЛ-193 | 29 | MES genealogy lite | Р1 | Планируется |
+| БЛ-192 | 27/32 | Compliance tender pack | П2 | **Готово** — [compliance-tender-pack](compliance-tender-pack.md) |
+| БЛ-193 | 29 | MES genealogy lite | Р1 | **Готово** |
 | БЛ-200 | 33 | Charter аналитической платформы | P2 | Планируется |
 | БЛ-201 | 33 | Завершение AF-lite (БЛ-160 full) | P1 | **Готово** |
 | БЛ-202 | 33 | Historian tier enforcement | P1 | Планируется |
 | БЛ-203 | 33 | Calculation engine core | P1 | Планируется |
 | БЛ-204 | 33 | Write-back derived tags | P1 | Планируется |
 | БЛ-205 | 33 | Materialized rollups (OLAP) | P2 | Планируется |
-| БЛ-206 | 33 | Multi-tag Analytics Query API | P2 | Планируется |
+| БЛ-206 | 33 | Multi-tag Analytics Query API | P2 | **Готово** — `POST .../analytics/query`, export, chart multi-series |
 | БЛ-207 | 33 | Replica profile `analytics` | P2 | Планируется |
 | БЛ-208 | 33 | Event frames & shift context | P2 | Планируется |
 | БЛ-209 | 33 | Каталог тегов & lineage UI | P2 | Планируется |
@@ -1270,8 +1271,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | ID | Фаза | Задача | Приоритет | Принятие |
 | -- | ----- | ------ | --------- | ---------- |
 | **БЛ-191** | 25 | **Честность PRODUCTION-матрицы OT** | **Отложено** | `opc-da` снят с PRODUCTION или реализован; DNP3 `writePoint` работает **или** maturity → BETA; обновлено измерение OT в scorecard; ноль stub с меткой PRODUCTION | — **снято с 90-дневного P0 (14.07.2026)**
-| **БЛ-192** | 27 / 32 | **Compliance tender pack** | П2 | Маппинг IEC 62443 + чеклист GAMP-lite в docs; ссылка из DoD / scorecard; реестр пробелов для pen-test / audit trail |
-| **БЛ-193** | 29 | **MES genealogy / прослеживаемость lite** | Р1 | Граф lot ↔ material ↔ work-order ↔ quality record + отчёт оператора; расширение БЛ-167 за пределы SPC samples |
+| **БЛ-192** | 27 / 32 | **Compliance tender pack** | **Готово** | Маппинг IEC 62443-lite + GAMP-lite + gap register — [compliance-tender-pack](compliance-tender-pack.md) (канон EN). **Не** сертификация продукта |
+| **БЛ-193** | 29 | **MES genealogy / прослеживаемость lite** | **Готово** | Граф lot ↔ material ↔ work-order ↔ quality record + отчёт оператора на `mes-platform` (BFF `mes_genealogy_*`, reports, дашборд Genealogy); seed lot `BATCH-LINE-A01-001`; тест `MesGenealogyLiteIntegrationTest`; [mes.md](mes.md). Расширяет БЛ-167 за пределы SPC. **Не** живой ERP (БЛ-169) |
 
 ---
 
@@ -1296,14 +1297,14 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 1. **20 ПРОИЗВОДСТВЕННЫХ драйверов** с interop CI и **3 подписанных полевых пилота** — **не выполнено** (БЛ-140 Частичный: только playbooks; [gate ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy) — поле по именованной задаче)
 2. **Пакет MES** — OEE + заказы + качество без индивидуального кода (BL-164…170); **хотя бы один живой ERP-коннектор** (БЛ-169) — не только stub
-3. **Агент ИИ** — ≥95 % сценариев регрессии, зелёный **с действующим LLM**, развертывание без правок (BL-177, BL-178) — **частично** (BL-177 one-shot live REAL; полный BL-178 ≥95% открыт; nightly stub не используется как proof)
+3. **Агент ИИ** — ≥95 % сценариев регрессии, зелёный **с действующим LLM**, развертывание без правок (BL-177, BL-178) — **частично** (БЛ-178 **выполнен**: полный live 52/52 @100%; БЛ-177 всё ещё one-shot Partial→Done; nightly stub не используется как proof)
 4. **Историк** — 3-х уровневый, 1Б проверенных образцов (БЛ-159…162); AF-capable analytics (БЛ-200…210)
 5. **Безопасность** — MFA + список управления доступом для каждой переменной + опция strict tenant isolation (BL-153…155)
 6. **HMI** — mimic на 500 эл при 60 кадрах в секунду, автономное PWA 8 часов (BL-151, BL-152)
 7. **Маркетплейс** — более 10 подписанных пакетов, 3 внешних партнера (BL-183, BL-184)
-8. **Оценочная карта** — все 14 измерений ≥9,5, ни одного ≤8 (BL-189) — **не выполнено** (проверено по коду ~7,4/10; см. [competitive-scorecard](competitive-scorecard.md))
+8. **Оценочная карта** — все 14 измерений ≥9,5, ни одного ≤8 (BL-189) — **не выполнено** (проверено по коду ~7,5/10; см. [competitive-scorecard](competitive-scorecard.md))
 9. **Честность OT** — ноль stub-драйверов с меткой PRODUCTION (БЛ-191)
-10. **Compliance pack** — опубликованы docs IEC 62443 / GAMP-lite (БЛ-192) — для enterprise-тендеров
+10. **Compliance pack** — опубликованы docs IEC 62443 / GAMP-lite (БЛ-192) — **выполнено** как documentation pack: [compliance-tender-pack](compliance-tender-pack.md) (честный Exists/Partial/Gap; **не** IEC/GAMP-сертификация и не pen-test)
 
 **Преждевременная отметка Done:** program-wave ~9.8 и закрытые BL без code-verified gates **отозваны** (см. [competitive-scorecard](competitive-scorecard.md)). **Пригодный Done** — ниже, строже, чем просто закрыть строки BL.
 
@@ -1487,7 +1488,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | 7 Marketplace | Волна 4 внешние партнёры |
 | 8 Scorecard | 14 измерений REAL ≥9.5 |
 | 9 OT honesty | Волна 1 |
-| 10 Compliance | Волна 4 БЛ-192 |
+| 10 Compliance | Волна 4 БЛ-192 — [compliance-tender-pack](compliance-tender-pack.md) **Готово** (docs) |
 
 ### Антипаттерны (не ставить Done)
 
@@ -1496,7 +1497,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | Stub = PRODUCTION | `OpcDaDeviceDriver`, матрица |
 | Фейковый ERP | Outbox `sent` без коннектора |
 | Фейковая AI regression | Использование устаревшего `nightly-stub-results.json` как proof ≥95% |
-| Фейковые партнёры | `PartnerProgramService` stub |
+| Фейковые партнёры | Claim Partner Portal GA при только DB directory; или claim `source: stub` после BL-184 `source=db` |
 | Фейковый alarm shelf | in-memory |
 | Mocked perf | e2e с mocked WebSocket |
 | Smoke = production | MES только GA smoke |
@@ -1509,7 +1510,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | ------ | -------------------------------- |
 | **S31** | Один AI-сценарий: live LLM deploy end-to-end без правок человека (БЛ-177 / БЛ-178) |
 | **S32** | Generator не keyword-stub (БЛ-180) |
-| **S33** | Genealogy на demo lot (БЛ-193) |
+| **S33** | Genealogy на demo lot (БЛ-193) — **Готово** |
 
 Полный список BL: [Ближайшие 90 дней](#ближайшие-90-дней) ниже.
 
@@ -1533,7 +1534,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 
 | Спринт | Срок (проект) | Область применения |
 | ------ | ------------ | ----- |
-| **S31** | июл–авг 2026 | e2e агент БЛ-177; БЛ-178 live LLM ≥95% (без nightly stub) |
+| **S31** | июл–авг 2026 | БЛ-178 live ≥95% **Готово** (52/52); harden БЛ-177 multi-app e2e (без nightly stub как proof) |
 | **S32** | авг 2026 | БЛ-180 generator не keyword-stub; operator agent по необходимости |
 | **S33** | сен 2026 | **БЛ-193** genealogy lite |
 
@@ -1571,6 +1572,9 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 
 | Дата | Изменение |
 | ---- | --------- |
+| 19.07.2026 | **БЛ-183 honesty:** п. 1–6, 8–10 Реализовано; п. 11 Частично (DB partners BL-184 Done; живые partner catalogs Planned); п. 12 Частично (CLI, нет publish CI); BL-183 остаётся **Частично**; BL-184 → Готово (in-server); symbol listing больше не `source=stub` |
+| 19.07.2026 | **БЛ-178 Готово:** полный live suite `AGENT_LIVE_SUITE_MODE=full` через `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI остаётся в режиме platform |
+| 19.07.2026 | **БЛ-206 Готово (реестр):** Multi-tag Analytics Query API уже в коде — `POST .../analytics/query`, export, chart multi-series (мастер-таблица Планируется → Готово) |
 | 17.07.2026 | **БЛ-185 Symbol marketplace Готово:** filesystem symbol packs + scada API + mimic palette; local HVAC demo; remote free zip через MarketplaceService |
 | 17.07.2026 | **БЛ-182 Контекстный пакет v2 Готово:** readiness gap index searchable + live platform overlay на `/tools/context-pack`; admin refresh; MCP `competitive-gap-index` / `live-platform` |
 | 17.07.2026 | **БЛ-181 Наблюдаемость агентов v2 Готово:** таблица cost/latency по tool в AI Studio; admin `/agent/metrics/tools`; auto-retry transient tool + LLM action parse retry |

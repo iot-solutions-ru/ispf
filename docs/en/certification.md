@@ -117,7 +117,7 @@ Maps to internal ops onboarding and Partner **Expert** infrastructure modules.
 
 ## Agent regression alignment
 
-Certification labs feed the [agent regression suite](agent-regression.md). Target: ≥95% scenario pass rate (BL-178) before live agent grading on Expert exams.
+Certification labs feed the [agent regression suite](agent-regression.md). Target: ≥95% scenario pass rate (BL-178) before live agent grading on Expert exams — **met** on full live suite 52/52 @100% (see [competitive-scorecard](competitive-scorecard.md); nightly still platform mode).
 
 ---
 
@@ -132,6 +132,7 @@ Certification labs feed the [agent regression suite](agent-regression.md). Targe
 
 ## Related
 
+- [Compliance tender pack](compliance-tender-pack.md) (BL-192) — IEC 62443 / GAMP-lite tender annex; **not** a product certification
 - [partner-program](partner-program.md) — commercial partner tiers
 - [competitive-scorecard](competitive-scorecard.md) — dimension 13 Documentation/DX
 - [roadmap](roadmap.md) — BL-190

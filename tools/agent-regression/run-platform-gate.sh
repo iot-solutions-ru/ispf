@@ -67,7 +67,8 @@ if [[ "${ISPF_LLM_SMOKE:-}" == "true" ]] \
   && [[ -n "${ISPF_AI_BASE_URL:-}" ]]; then
   echo "=== Platform gate: optional live LLM oneshot ==="
   set +e
-  AGENT_LIVE_ONESHOT_SCENARIO_ID="${AGENT_LIVE_ONESHOT_SCENARIO_ID:-platform-primitive-deploy}" \
+  AGENT_LIVE_APP_ID="${AGENT_LIVE_APP_ID:-platform-primitive}" \
+    AGENT_LIVE_ONESHOT_SCENARIO_ID="${AGENT_LIVE_ONESHOT_SCENARIO_ID:-platform-primitive-deploy}" \
     AGENT_LIVE_ONESHOT_ENFORCE=false \
     bash tools/agent-regression/run-live-oneshot.sh
   LIVE_RC=$?

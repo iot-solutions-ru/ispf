@@ -2,7 +2,7 @@
 
 # Операции AI-агента (BL-177…181)
 
-> **Статус:** Beta — Agent API; gate ≥95% не закрыт. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Beta — Agent API; БЛ-178 live ≥95% **выполнен** (52/52 @100%). Теги: [doc-status](../en/doc-status.md).
 
 Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, генератору решений и виджетам наблюдения.
 
@@ -120,7 +120,7 @@ node tools/agent-regression/validate-scenarios.mjs --results build/agent-regress
 }
 ```
 
-**Цель (не достигнута):** ≥95 % live на всех сценариях (полный BL-178). По [competitive-scorecard](competitive-scorecard.md) AI **~7.0 PARTIAL** — one-shot/smoke **REAL**, полный gate ≥95% **открыт**. **S31 one-shot** доказывает BL-177 через `--oneshot`. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
+**БЛ-178 (выполнен):** полный live suite ≥95% — **52/52 @100%** через `AGENT_LIVE_SUITE_MODE=full` / `run-live-suite.sh` (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI по-прежнему **platform**. По [competitive-scorecard](competitive-scorecard.md) AI **~8.5 REAL**; БЛ-177/180 остаются Partial→Done one-shot / hardening. **S31 one-shot** по-прежнему доказывает BL-177 через `--oneshot`. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
 
 ---
 

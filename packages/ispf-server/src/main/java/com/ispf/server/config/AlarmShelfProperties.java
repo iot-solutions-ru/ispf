@@ -3,7 +3,7 @@ package com.ispf.server.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Alarm shelving approval workflow stub — BL-158.
+ * Alarm shelving approval workflow — BL-158.
  */
 @ConfigurationProperties(prefix = "ispf.alarm-shelf")
 public class AlarmShelfProperties {

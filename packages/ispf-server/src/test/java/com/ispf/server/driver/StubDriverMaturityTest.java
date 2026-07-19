@@ -9,16 +9,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class StubDriverMaturityTest {
 
-    /** BL-140: promoted to PRODUCTION (Phase 25 OT Trust). */
+    /** BL-191: shells / incomplete stacks stay BETA; cwmp remains PRODUCTION. */
+    @Test
+    void cwmpRemainsProduction() {
+        assertEquals(DriverMaturity.PRODUCTION, DriverMaturityRegistry.resolve("cwmp"));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {
             "ethernet-ip",
             "opc-da",
-            "opc-bridge",
-            "cwmp"
+            "opc-bridge"
     })
-    void promotedIndustrialDriversAreProduction(String driverId) {
-        assertEquals(DriverMaturity.PRODUCTION, DriverMaturityRegistry.resolve(driverId), driverId);
+    void shellIndustrialDriversAreBeta(String driverId) {
+        assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve(driverId), driverId);
     }
 
     @ParameterizedTest

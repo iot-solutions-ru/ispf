@@ -35,6 +35,10 @@ public class WorkflowWebhookIndex {
     }
 
     public void indexPath(String path) {
+        if (path == null || path.isBlank()) {
+            return;
+        }
+        slugToPath.entrySet().removeIf(entry -> path.equals(entry.getValue()));
         try {
             indexNode(objectManager.require(path));
         } catch (Exception ignored) {

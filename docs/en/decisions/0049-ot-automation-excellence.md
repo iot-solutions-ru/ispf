@@ -4,6 +4,15 @@
 
 **Accepted** (2026-07-19) — Program ADR. Waves land incrementally; Wave 1 (execution journal + workflow tool contracts) is the foundation.
 
+### Wave progress (2026-07-19)
+
+| Wave | Notes |
+|------|--------|
+| **1** | Landed — `workflow_execution_steps`, REST/UI timeline, tool contracts, `invoke_workflow_tool` |
+| **2** | Landed — `LLM_COMPLETE` / `INVOKE_AGENT`, analytics analysis functions + AI summarize path |
+| **3** | **Partial** — webhook (`POST /api/v1/webhooks/workflows/{slug}` + `WorkflowWebhookIndex`), cron poller (`cronExpression=every:1m`), failure → `workflow_dead_letters` + `errorWorkflowPath`; DLQ list/resolve REST (`GET …/by-path/dead-letters`, `POST …/dead-letters/{id}/resolve`). Async retry scheduler still deferred (no sync retries). |
+| **4–5** | Not started |
+
 ## Context
 
 ISPF already has a custom BPMN subset ([0047](0047-custom-bpmn-subset-engine.md)), correlators/alerts ([0014](0014-automation-pipeline-evolution.md), [0039](0039-unified-alarm-architecture.md)), tree-first AI ([0005](0005-tree-first-ai-agent.md)), and an analytics function catalog ([0042](0042-analytics-function-catalog.md)). Gaps vs industrial “best of class” OT automation:

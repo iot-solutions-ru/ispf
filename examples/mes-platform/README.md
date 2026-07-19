@@ -1,6 +1,6 @@
-# MES Platform bundle (BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)
+# MES Platform bundle (BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170 / BL-193)
 
-Certification skeleton for first-class MES on ISPF: platform catalog folders (`root.platform.mes.*`) + OEE BFF + work-order dispatch workflow.
+Certification skeleton for first-class MES on ISPF: platform catalog folders (`root.platform.mes.*`) + OEE BFF + work-order dispatch workflow + genealogy lite.
 
 | File | Purpose |
 |------|---------|
@@ -54,6 +54,14 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform/deploy \
 - Hub blueprint `mes-platform-hub-v1`: `spcMeasurement` (history chart), `spcUcl`, `spcLcl`, `spcTarget`
 - Dashboard `mes-platform-quality` with SPC `chart` widget + BFF `mes_quality_listSpcSamples`
 - Apply `quality-record-v1` to `QUALITY_RECORD` nodes under `root.platform.mes.quality-records`
+
+## Genealogy lite (BL-193)
+
+- Tables `mes_genealogy_material` / `mes_genealogy_lot` / `mes_genealogy_quality` + seed lot `BATCH-LINE-A01-001`
+- BFF: `mes_genealogy_listGraph`, `mes_genealogy_queryByLot` on hub
+- SQL reports: `mes-genealogy`, `mes-genealogy-by-lot`
+- Operator dashboard `mes-platform-genealogy` (function widgets + report)
+- Operator steps: [docs/en/mes.md](../../docs/en/mes.md)
 
 ## ISA-88 batch lite (BL-168)
 

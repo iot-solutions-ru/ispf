@@ -24,6 +24,8 @@
   "instance.pendingSignal": "Ожидаемый signal",
   "instance.signal": "Сигнал «{{signal}}»",
   "instance.signaling": "Signal…",
+  "instance.stepPayload": "Полезная нагрузка шага",
+  "instance.timeline": "Хронология выполнения",
   "instance.status": "Статус",
   "instance.title": "Экземпляр",
   "ispfReference.hint": "На service task задайте атрибут ispf:action и поля из таблицы (в XML или через редактор).",

@@ -121,6 +121,14 @@ public class MarketplaceLocalBundleService {
         result.put("version", listing.get("latestVersion"));
         result.put("listingPath", resolved.listingPath().toString());
         result.put("bundlePath", resolved.bundlePath().toString());
+        boolean operatorReady = bundleDeployService.supportsOperatorUi(appId);
+        result.put("operatorReady", operatorReady);
+        if (!operatorReady) {
+            result.put(
+                    "operatorReadyHint",
+                    "Bundle installed without Operator dashboards/reports. Reinstall a full package or configure root.platform.operator-apps."
+            );
+        }
         return result;
     }
 

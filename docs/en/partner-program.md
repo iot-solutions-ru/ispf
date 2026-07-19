@@ -2,13 +2,13 @@
 
 # Partner program (BL-184)
 
-> **Status: Draft / not GA.** Curriculum and tiers below are the design target. In-server `GET /api/v1/partners/*` is a **stub** (`PartnerProgramService`, `"source": "stub"`). There is no shipping Partner Portal in this repository yet. See [competitive-scorecard](competitive-scorecard.md) dimension 12.
+> **Status: In-server persistence Done (BL-184); Partner Portal external / not GA.** Curriculum and tiers below remain the design target. Platform APIs persist directory + enrollments (`PartnerProgramService`, `"source": "db"`, Flyway `V83__partner_program.sql`). There is no shipping Partner Portal in this repository yet. See [competitive-scorecard](competitive-scorecard.md) dimension 12.
 
-ISPF certified integrator and solution partner program (planned). Design notes:
+ISPF certified integrator and solution partner program. Design notes:
 
 - External Partner Portal — **not in this repo** (configure separately when available)
 - Planned API surface: `GET /api/v1/tiers`, applications, directory, training progress
-- Today: demo partners hardcoded; enroll is synthetic until a real portal syncs
+- Today: demo partners seeded into DB on first list; enrollments persisted pending portal sync
 
 Related: [marketplace](marketplace.md), [certification](certification.md), [solution-developer-guide](solution-developer-guide.md).
 

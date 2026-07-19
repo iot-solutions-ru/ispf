@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class Dnp3DeviceDriverTest {
@@ -79,6 +81,19 @@ class Dnp3DeviceDriverTest {
         assertEquals(true, driverObject.variables.get("flag").firstRow().get("value"));
         assertEquals(999L, driverObject.variables.get("count").firstRow().get("value"));
         driver.disconnect();
+    }
+
+    @Test
+    void writePointNotImplemented() {
+        Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
+        DriverException ex = assertThrows(
+                DriverException.class,
+                () -> driver.writePoint("0:ANALOG_OUTPUT", DataRecord.single(
+                        DataSchema.builder("dnp3Value").field("value", FieldType.DOUBLE).build(),
+                        Map.of("value", 1.0)
+                ))
+        );
+        assertTrue(ex.getMessage().toLowerCase().contains("not implemented"));
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {

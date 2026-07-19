@@ -125,6 +125,8 @@
   "bundle.generating": "Generierung…",
   "bundle.loadingHistory": "Verlauf wird geladen…",
   "bundle.manifestJson": "Bundle-Manifest (JSON)",
+  "bundle.loadFromFileHint": "Lokale examples/*/bundle.json laden — kein manuelles Einfügen von Megabytes nötig.",
+  "bundle.signedLicenseHint": "Dieser Knoten erfordert signierte Bundles. Pfad: System → Lösungen → Installieren (kostenlose Marketplace-Installation kann signieren), oder license-Block im Manifest hinzufügen.",
   "bundle.noDeployHistory": "Für diese appId gibt es noch keinen Bereitstellungsverlauf.",
   "bundle.notPublishable": "Generiertes Paket kann nicht veröffentlicht werden — Validierungsfehler beheben oder Prompt ändern.",
   "bundle.operatorPreview": "Operator-Vorschau",

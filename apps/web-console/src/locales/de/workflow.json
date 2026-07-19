@@ -24,6 +24,8 @@
   "instance.pendingSignal": "Ausstehendes Signal",
   "instance.signal": "Signal «{{signal}}»",
   "instance.signaling": "Signal wird gesendet…",
+  "instance.stepPayload": "Schritt-Payload",
+  "instance.timeline": "Ausführungszeitlinie",
   "instance.status": "Status",
   "instance.title": "Instanz",
   "ispfReference.hint": "Setzen Sie am Service Task das Attribut ispf:action und Felder aus der Tabelle (in XML oder über den Editor).",

@@ -328,6 +328,8 @@ POST /api/v1/workflows/instances/{instanceId}/message
 POST /api/v1/workflows/instances/{instanceId}/timer
 POST /api/v1/workflows/signal
 POST /api/v1/webhooks/workflows/{slug}
+GET  /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true
+POST /api/v1/workflows/dead-letters/{id}/resolve
 ```
 
 ## Persistence
@@ -338,4 +340,4 @@ Related: [0047-custom-bpmn-subset-engine](decisions/0047-custom-bpmn-subset-engi
 
 ## Tests
 
-`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (includes unsupported-element reject list), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`.
+`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (includes unsupported-element reject list), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`, `WorkflowWebhookApiTest`, `WorkflowDeadLetterApiTest`, `WorkflowDeadLetterServiceTest`.

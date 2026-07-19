@@ -5,6 +5,7 @@ import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -81,6 +82,19 @@ public class WorkflowController {
     @GetMapping("/by-path/runs")
     public List<Map<String, Object>> runs(@RequestParam String path) {
         return workflowService.listRuns(path);
+    }
+
+    @GetMapping("/by-path/dead-letters")
+    public List<Map<String, Object>> deadLetters(
+            @RequestParam String path,
+            @RequestParam(defaultValue = "true") boolean unresolvedOnly
+    ) {
+        return workflowService.listDeadLetters(path, unresolvedOnly);
+    }
+
+    @PostMapping("/dead-letters/{id}/resolve")
+    public Map<String, Object> resolveDeadLetter(@PathVariable String id) {
+        return workflowService.resolveDeadLetter(id);
     }
 
     @PostMapping("/signal")

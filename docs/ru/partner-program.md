@@ -2,13 +2,13 @@
 
 # Партнерская программа (BL-184)
 
-> **Статус: Draft / не GA.** Трек ниже — целевой дизайн. Внутрисерверный `GET /api/v1/partners/*` — **заглушка** (`PartnerProgramService`, `"source": "stub"`). Partner Portal в этом репозитории **не поставляется**. См. [competitive-scorecard](competitive-scorecard.md), измерение 12.
+> **Статус: In-server persistence Done (BL-184); Partner Portal external / не GA.** Curriculum и tiers ниже — целевой дизайн. Platform APIs хранят directory + enrollments (`PartnerProgramService`, `"source": "db"`, Flyway `V83__partner_program.sql`). Shipping Partner Portal в этом репозитории пока нет. См. [competitive-scorecard](competitive-scorecard.md), измерение 12.
 
-Сертифицированный интегратор / partner program (план):
+Сертифицированный интегратор / partner program:
 
-- Внешний Partner Portal — **не в этом repo**
-- Планируемый API: `GET /api/v1/tiers`, applications, directory, training progress
-- Сейчас: демо-партнёры hardcoded; enroll синтетический
+- Внешний Partner Portal — **не в этом repo** (настраивается отдельно)
+- Планируемый API surface: `GET /api/v1/tiers`, applications, directory, training progress
+- Сейчас: демо-партнёры (3) сидятся в DB при первом list; enrollments persist pending portal sync
 
 Связано: [marketplace](marketplace.md), [certification](certification.md), [solution-developer-guide](solution-developer-guide.md).
 

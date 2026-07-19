@@ -12,13 +12,14 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.1.1",
+  "latestVersion": "1.2.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
     "mes",
     "bpmn",
-    "product"
+    "product",
+    "genealogy"
   ],
-  "changelog": "1.1.1 — full Operator UI (Dispatch / OEE / Quality) from mes-platform product bundle"
+  "changelog": "1.2.0 — BL-193 genealogy lite (BFF + Operator report/dashboard)"
 }

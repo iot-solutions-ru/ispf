@@ -2,9 +2,11 @@
 
 # Пакет регрессии агентов (BL-178)
 
-> **Статус:** Lab — CI-гейты сценариев. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Lab — Полный live suite доказан (52/52 @100%, `mode=full`); nightly CI по-прежнему режим **platform**. Теги: [doc-status](../en/doc-status.md).
 
 Основа CI-валидации сценариев агента: курируемые промпты, **человеческие UI-маршруты**, ссылки на bundle и проверки схемы **до** живого прогона агента на экземпляре платформы.
+
+**Доказательство БЛ-178 (2026-07-18/19):** `AGENT_LIVE_SUITE_MODE=full bash tools/agent-regression/run-live-suite.sh` → `build/agent-regression/live-suite-results.json` — **52/52 OK @100%**. Nightly с AI secrets по-прежнему **platform** (не full).
 
 ## Структура
 
@@ -110,6 +112,14 @@ bash scripts/run-agent-regression.sh --live
 - Subset: `AGENT_LIVE_SUITE_MODE=platform|bundle` → `--enforce-rate --oneshot`
 - One-shot: `--results …/live-oneshot-results.json --enforce-rate --oneshot` — proof BL-177 (S31)
 - Platform gate (без LLM): `bash tools/agent-regression/run-platform-gate.sh`
+
+Nightly CI при AI secrets гоняет live suite в режиме **platform**. Полный gate 52 сценариев **доказан on-demand** (БЛ-178 выполнен); перезапуск вручную при необходимости:
+
+```bash
+export ISPF_LLM_SMOKE=true ISPF_AI_BASE_URL=... ISPF_AI_API_KEY=...
+export AGENT_LIVE_SUITE_MODE=full AGENT_LIVE_SUITE_ENFORCE=true
+bash tools/agent-regression/run-live-suite.sh
+```
 
 См. [competitive-scorecard](competitive-scorecard.md).
 

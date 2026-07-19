@@ -23,17 +23,19 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **20** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **8** at **BETA**. Top-20 industrial: **19** **PRODUCTION** + `iec104-server` (BETA, loopback partner). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **16** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **12** at **BETA**. Top-20 industrial: **15** **PRODUCTION** + **5** **BETA** (`iec104-server`, `dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Honesty (code audit / scorecard):** registry **PRODUCTION** ≠ ready-for-field. Known gaps still labeled PRODUCTION in matrix/docs historically: `opc-da` / `opc-bridge` (connectivity shell + parser tests), `dnp3` (**read/poll**; `writePoint` not implemented). Treat those as **BETA for field pilots** until promoted through [driver-promotion](driver-promotion.md) ready-for-field. See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `ethernet-ip` (CIP session only), `dnp3` (**poll/read**; `writePoint` not implemented). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
 | `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | see interop lab |
 | `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab; OPC UA often SecurityPolicy None in lab |
-| `iec104`, `dlms`, `ethernet-ip`, `gps-tracker` | PRODUCTION | see interop lab |
-| `dnp3` | PRODUCTION (registry) | **Poll/read only** — write not implemented; field = BETA |
-| `opc-da`, `opc-bridge` | PRODUCTION (registry) | **Shell / mapping tests** — not full DA stack; field = BETA |
+| `iec104`, `dlms`, `gps-tracker` | PRODUCTION | see interop lab |
+| `cwmp` | PRODUCTION | outside top-20; Inform + Get/SetParameterValues |
+| `dnp3` | BETA | **Poll/read only** — `writePoint` not implemented |
+| `ethernet-ip` | BETA | CIP session registration; tag path placeholder |
+| `opc-da`, `opc-bridge` | BETA | **Shell / mapping tests** — not full DA stack |
 | `iec104-server` | BETA | interop partner for `iec104` |
 
 ### observedAt (source timestamps, BL-79)

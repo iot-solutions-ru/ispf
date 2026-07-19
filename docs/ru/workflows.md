@@ -312,6 +312,8 @@ POST /api/v1/workflows/instances/{instanceId}/message
 POST /api/v1/workflows/instances/{instanceId}/timer
 POST /api/v1/workflows/signal
 POST /api/v1/webhooks/workflows/{slug}
+GET  /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true
+POST /api/v1/workflows/dead-letters/{id}/resolve
 ```
 
 Практика: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
@@ -322,4 +324,4 @@ POST /api/v1/webhooks/workflows/{slug}
 
 ## Тесты
 
-`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (включая reject-list неподдерживаемых элементов), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`.
+`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (включая reject-list неподдерживаемых элементов), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`, `WorkflowWebhookApiTest`, `WorkflowDeadLetterApiTest`, `WorkflowDeadLetterServiceTest`.

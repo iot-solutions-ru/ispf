@@ -1,58 +1,84 @@
 package com.ispf.server.alert;
 
+import com.ispf.server.persistence.AlarmShelfRequestRepository;
+import com.ispf.server.persistence.entity.AlarmShelfRequestEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * In-memory shelving approval queue — BL-158 stub (persistence is follow-up work).
+ * Persisted shelving approval queue — BL-158.
  */
 @Service
 public class AlarmShelfApprovalService {
 
-    private final Map<String, PendingShelfRequest> pendingById = new ConcurrentHashMap<>();
+    private final AlarmShelfRequestRepository repository;
 
-    public PendingShelfRequest submit(AlarmShelfService.ShelveAlarmRequest request, String requestedBy) {
-        String id = UUID.randomUUID().toString();
-        PendingShelfRequest pending = new PendingShelfRequest(
-                id,
-                request.objectPath(),
-                request.eventName(),
-                request.alertRulePath(),
-                request.durationMinutes(),
-                request.comment(),
-                requestedBy,
-                Instant.now()
-        );
-        pendingById.put(id, pending);
-        return pending;
+    public AlarmShelfApprovalService(AlarmShelfRequestRepository repository) {
+        this.repository = repository;
     }
 
+    @Transactional
+    public PendingShelfRequest submit(AlarmShelfService.ShelveAlarmRequest request, String requestedBy) {
+        AlarmShelfRequestEntity entity = new AlarmShelfRequestEntity();
+        entity.setId(UUID.randomUUID().toString());
+        entity.setObjectPath(request.objectPath());
+        entity.setEventName(request.eventName());
+        entity.setAlertRulePath(blankToNull(request.alertRulePath()));
+        entity.setDurationMinutes(request.durationMinutes());
+        entity.setComment(blankToNull(request.comment()));
+        entity.setRequestedBy(requestedBy == null || requestedBy.isBlank() ? "system" : requestedBy.trim());
+        entity.setRequestedAt(Instant.now());
+        return toRecord(repository.save(entity));
+    }
+
+    @Transactional(readOnly = true)
     public List<PendingShelfRequest> listPending() {
-        return pendingById.values().stream()
-                .sorted((a, b) -> b.requestedAt().compareTo(a.requestedAt()))
+        return repository.findAllByOrderByRequestedAtDesc().stream()
+                .map(this::toRecord)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public Optional<PendingShelfRequest> findPending(String id) {
-        return Optional.ofNullable(pendingById.get(id));
+        return repository.findById(id).map(this::toRecord);
     }
 
+    @Transactional
     public Optional<PendingShelfRequest> removePending(String id) {
-        return Optional.ofNullable(pendingById.remove(id));
+        Optional<AlarmShelfRequestEntity> existing = repository.findById(id);
+        existing.ifPresent(repository::delete);
+        return existing.map(this::toRecord);
     }
 
+    @Transactional
     public void reject(String id) {
         if (removePending(id).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown shelf request: " + id);
         }
+    }
+
+    private PendingShelfRequest toRecord(AlarmShelfRequestEntity entity) {
+        return new PendingShelfRequest(
+                entity.getId(),
+                entity.getObjectPath(),
+                entity.getEventName(),
+                entity.getAlertRulePath(),
+                entity.getDurationMinutes(),
+                entity.getComment(),
+                entity.getRequestedBy(),
+                entity.getRequestedAt()
+        );
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     public record PendingShelfRequest(

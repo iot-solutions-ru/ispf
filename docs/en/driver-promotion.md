@@ -24,18 +24,22 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 4. Change entry in `DriverMaturityRegistry`.
 5. If needed — demo device / model in bootstrap.
 
-## Status (July 2026, Phase 25 BL-140)
+## Rule: stub / placeholder never PRODUCTION
+
+A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
+
+## Status (July 2026, Phase 25 BL-140 / BL-191 honesty)
 
 | driverId | Was | Now | Note |
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
-| `dnp3` | BETA | **PRODUCTION** (poll only) | Class 0/1/2/3 poll; **write not implemented** — field write = not ready |
 | `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
-| `ethernet-ip` | BETA | **PRODUCTION** | CIP session registration + tag path loopback |
-| `opc-da` | BETA | **PRODUCTION** (shell) | Connectivity shell + parser tests — **not** ready-for-field DA |
-| `opc-bridge` | BETA | **PRODUCTION** (shell) | Bridge point mapping + parser tests — full OPC via external bridge |
+| `dnp3` | PRODUCTION (poll only) | **BETA** (BL-191) | Class 0/1/2/3 poll; **write not implemented** |
+| `ethernet-ip` | PRODUCTION | **BETA** (BL-191) | CIP session registration + tag path placeholder |
+| `opc-da` | PRODUCTION (shell) | **BETA** (BL-191) | Connectivity shell + parser tests — not full DA |
+| `opc-bridge` | PRODUCTION (shell) | **BETA** (BL-191) | Bridge point mapping + parser tests |
 
-**Policy:** connectivity shells and read-only masters must not be sold as field-ready PRODUCTION. Use [Ready-for-field](#ready-for-field-field-pilots) below; scorecard OT dimension tracks these gaps.
+**Policy:** connectivity shells and incomplete stacks stay **BETA** until the protocol is real. Registry PRODUCTION still ≠ ready-for-field — use [Ready-for-field](#ready-for-field-field-pilots) below.
 
 ## Status (June 2026)
 

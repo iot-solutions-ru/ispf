@@ -78,22 +78,16 @@
     "text": "typeof detail.fieldsJson === \"string\" ? `fieldsJson (фрагмент): ${detail.fieldsJson}` : \"\","
   },
   {
-    "file": "components/AiStudioStatusTab.tsx",
-    "line": 157,
+    "file": "components/agent/AiStudioStatusTab.tsx",
+    "line": 165,
     "kind": "jsx-text",
     "text": "scripts/run-local-with-ai.ps1"
   },
   {
-    "file": "components/ApplicationBundlePanel.tsx",
-    "line": 403,
-    "kind": "ui-attr",
-    "text": "root.platform.dashboards.my-dashboard"
-  },
-  {
-    "file": "components/ApplicationLifecyclePanel.tsx",
-    "line": 127,
+    "file": "components/analytics/MultiPenTrendModal.tsx",
+    "line": 158,
     "kind": "jsx-text",
-    "text": "deployApplicationFunction(appId, parseJson(functionText) as Record"
+    "text": "0 && pens.length"
   },
   {
     "file": "components/automation/AlertRuleFormFields.tsx",
@@ -150,58 +144,16 @@
     "text": "EVENT_CHAIN"
   },
   {
-    "file": "components/BindingExpressionEditorModal.tsx",
+    "file": "components/binding/BindingExpressionEditorModal.tsx",
     "line": 302,
     "kind": "cyrillic",
     "text": "? `Объясни текущее CEL-выражение правила «${rule}»:\\n\\`\\`\\`\\n${expr}\\n\\`\\`\\`\\nЧто оно вычисляет и как связано с self / t"
   },
   {
-    "file": "components/BindingExpressionEditorModal.tsx",
+    "file": "components/binding/BindingExpressionEditorModal.tsx",
     "line": 303,
     "kind": "cyrillic",
     "text": ": `Объясни текущее CEL-выражение в редакторе:\\n\\`\\`\\`\\n${expr}\\n\\`\\`\\`\\nЧто оно вычисляет?`"
-  },
-  {
-    "file": "components/BrickMetadataPanel.tsx",
-    "line": 143,
-    "kind": "ui-attr",
-    "text": "https://brickschema.org/schema/Brick#Sensor"
-  },
-  {
-    "file": "components/CreateObjectDialog.tsx",
-    "line": 507,
-    "kind": "ui-attr",
-    "text": "root.platform.data-sources.myapp"
-  },
-  {
-    "file": "components/CreateObjectDialog.tsx",
-    "line": 531,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
-  },
-  {
-    "file": "components/CreateObjectDialog.tsx",
-    "line": 545,
-    "kind": "ui-attr",
-    "text": "root.platform.data-sources.myapp"
-  },
-  {
-    "file": "components/CreateObjectDialog.tsx",
-    "line": 578,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
-  },
-  {
-    "file": "components/CreateSecurityRoleDialog.tsx",
-    "line": 70,
-    "kind": "ui-attr",
-    "text": "Supervisor"
-  },
-  {
-    "file": "components/CreateSecurityUserDialog.tsx",
-    "line": 80,
-    "kind": "ui-attr",
-    "text": "Operator 2"
   },
   {
     "file": "components/dashboard/ScadaMimicWidgetEditorFields.tsx",
@@ -480,55 +432,67 @@
     "text": "Required value missing"
   },
   {
-    "file": "components/HaystackMetadataPanel.tsx",
-    "line": 194,
-    "kind": "ui-attr",
-    "text": "@site.equip"
-  },
-  {
     "file": "components/journal/ObjectChangeHistoryPanel.tsx",
     "line": 158,
     "kind": "jsx-text",
     "text": "Rev"
   },
   {
-    "file": "components/LocaleSwitcher.tsx",
-    "line": 22,
+    "file": "components/objectEditor/CreateObjectDialog.tsx",
+    "line": 564,
     "kind": "ui-attr",
-    "text": "Language"
+    "text": "root.platform.data-sources.myapp"
   },
   {
-    "file": "components/MultiPenTrendModal.tsx",
-    "line": 158,
-    "kind": "jsx-text",
-    "text": "0 && pens.length"
+    "file": "components/objectEditor/CreateObjectDialog.tsx",
+    "line": 588,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
   },
   {
-    "file": "components/ObjectAclPanel.tsx",
+    "file": "components/objectEditor/CreateObjectDialog.tsx",
+    "line": 602,
+    "kind": "ui-attr",
+    "text": "root.platform.data-sources.myapp"
+  },
+  {
+    "file": "components/objectEditor/CreateObjectDialog.tsx",
+    "line": 635,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
+    "file": "components/objectEditor/HaystackMetadataPanel.tsx",
+    "line": 194,
+    "kind": "ui-attr",
+    "text": "@site.equip"
+  },
+  {
+    "file": "components/objectEditor/ObjectAclPanel.tsx",
     "line": 101,
     "kind": "jsx-text",
     "text": "ROLE"
   },
   {
-    "file": "components/ObjectAclPanel.tsx",
+    "file": "components/objectEditor/ObjectAclPanel.tsx",
     "line": 102,
     "kind": "jsx-text",
     "text": "USER"
   },
   {
-    "file": "components/ObjectAclPanel.tsx",
+    "file": "components/objectEditor/ObjectAclPanel.tsx",
     "line": 122,
     "kind": "jsx-text",
     "text": "READ"
   },
   {
-    "file": "components/ObjectAclPanel.tsx",
+    "file": "components/objectEditor/ObjectAclPanel.tsx",
     "line": 123,
     "kind": "jsx-text",
     "text": "WRITE"
   },
   {
-    "file": "components/ObjectAclPanel.tsx",
+    "file": "components/objectEditor/ObjectAclPanel.tsx",
     "line": 124,
     "kind": "jsx-text",
     "text": "INVOKE"
@@ -550,6 +514,24 @@
     "line": 161,
     "kind": "ui-attr",
     "text": "fireAlarm, gasLeak"
+  },
+  {
+    "file": "components/platform/ApplicationBundlePanel.tsx",
+    "line": 403,
+    "kind": "ui-attr",
+    "text": "root.platform.dashboards.my-dashboard"
+  },
+  {
+    "file": "components/platform/ApplicationLifecyclePanel.tsx",
+    "line": 127,
+    "kind": "jsx-text",
+    "text": "deployApplicationFunction(appId, parseJson(functionText) as Record"
+  },
+  {
+    "file": "components/platform/BrickMetadataPanel.tsx",
+    "line": 143,
+    "kind": "ui-attr",
+    "text": "https://brickschema.org/schema/Brick#Sensor"
   },
   {
     "file": "components/platform/DataSourceEditor.tsx",
@@ -588,6 +570,24 @@
     "text": "root.platform.devices.demo-sensor-01"
   },
   {
+    "file": "components/platform/SystemSettingsView.tsx",
+    "line": 256,
+    "kind": "cyrillic",
+    "text": "screenTitle: \"System › Settings (Система › Настройки)\","
+  },
+  {
+    "file": "components/platform/SystemView.tsx",
+    "line": 77,
+    "kind": "cyrillic",
+    "text": "screenTitle: \"System (Система)\","
+  },
+  {
+    "file": "components/platform/TenantsPanel.tsx",
+    "line": 111,
+    "kind": "ui-attr",
+    "text": "Acme Corp"
+  },
+  {
     "file": "components/report/ReportExportControls.tsx",
     "line": 12,
     "kind": "jsx-text",
@@ -624,32 +624,20 @@
     "text": "#ispf-label"
   },
   {
-    "file": "components/SystemSettingsView.tsx",
-    "line": 256,
-    "kind": "cyrillic",
-    "text": "screenTitle: \"System › Settings (Система › Настройки)\","
-  },
-  {
-    "file": "components/SystemView.tsx",
-    "line": 77,
-    "kind": "cyrillic",
-    "text": "screenTitle: \"System (Система)\","
-  },
-  {
-    "file": "components/TenantsPanel.tsx",
-    "line": 111,
+    "file": "components/security/CreateSecurityRoleDialog.tsx",
+    "line": 70,
     "kind": "ui-attr",
-    "text": "Acme Corp"
+    "text": "Supervisor"
   },
   {
-    "file": "components/TimezoneSwitcher.tsx",
-    "line": 17,
+    "file": "components/security/CreateSecurityUserDialog.tsx",
+    "line": 81,
     "kind": "ui-attr",
-    "text": "Timezone"
+    "text": "Operator 2"
   },
   {
     "file": "components/workflow/BpmnDiagramEditor.tsx",
-    "line": 193,
+    "line": 208,
     "kind": "jsx-text",
     "text": "ISPF task properties"
   },
@@ -708,7 +696,7 @@
     "text": "Promise"
   },
   {
-    "file": "utils/agentChatMarkdown.tsx",
+    "file": "utils/agent/agentChatMarkdown.tsx",
     "line": 19,
     "kind": "cyrillic",
     "text": "normalized = normalized.replace(/(?<=[^\\n])\\s+(?=\\*\\*Пример)/gi, \"\\n\\n\");"

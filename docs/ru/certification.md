@@ -119,7 +119,7 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 
 ## Выравнивание регрессии агента
 
-Сертификационные labs питают [agent regression suite](agent-regression.md). Цель: ≥95% scenario pass rate (BL-178) **до** live agent grading на Expert exams — **не достигнуто** на полном live suite (см. [competitive-scorecard](competitive-scorecard.md)).
+Сертификационные labs питают [agent regression suite](agent-regression.md). Цель: ≥95% scenario pass rate (BL-178) **до** live agent grading на Expert exams — **выполнено** на полном live suite 52/52 @100% (см. [competitive-scorecard](competitive-scorecard.md); nightly — platform mode).
 
 ---
 

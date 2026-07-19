@@ -62,7 +62,19 @@ Ensure `error-handler` exists and is ACTIVE. On FAILED, the platform records a d
 
 ### 2. Inspect DLQ
 
-Failed runs that exhaust retry policy land in `workflow_dead_letters` (ops/SQL or platform diagnostics depending on build). Use the execution journal of the failed instance first for MTTR.
+Failed runs land in `workflow_dead_letters`. List unresolved entries:
+
+```bash
+curl -s "$BASE/api/v1/workflows/by-path/dead-letters?path=root.platform.workflows.YOUR_WF&unresolvedOnly=true" | jq .
+```
+
+Resolve after triage:
+
+```bash
+curl -s -X POST "$BASE/api/v1/workflows/dead-letters/{id}/resolve" | jq .
+```
+
+Use the execution journal of the failed instance first for MTTR. Async retry scheduling from `retryMaxAttempts` / `retryBackoffSeconds` is not yet wired (metadata + DLQ only; no sync retries).
 
 ## Verify
 

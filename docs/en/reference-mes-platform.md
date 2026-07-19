@@ -124,6 +124,7 @@ Single integration test deploys the production bundle and verifies every MES mod
 | BL-168 | ISA-88 batch | `mes_batch_runPhase` → `react` |
 | BL-169 | ERP outbox | enqueue + poll round-trip; schedule `mes-erp-outbox-poll` enabled |
 | BL-170 | Production bundle | full `mes-platform-production` deploy |
+| BL-193 | Genealogy lite | `mes_genealogy_queryByLot` + report `mes-genealogy` (seed lot) |
 
 Test class: `com.ispf.server.application.MesPlatformGaSmokeTest`
 
@@ -138,6 +139,9 @@ Per-module hardening tests (Wave 5): `MesWorkOrderDispatchIntegrationTest`, `Mes
 | BL-166 | Work-order dispatch BPMN full cycle (run → work-queue → confirm → `COMPLETED`) | `MesWorkOrderDispatchIntegrationTest` |
 | BL-167 | SPC `chart` widget on `mes-platform-quality` dashboard + `mes_quality_listSpcSamples` | `MesQualitySpcDashboardIntegrationTest` |
 | BL-168 | Batch phase runner `charge` → `react` → `discharge` via `mes_batch_runPhase` / `mes_batch_getStatus` | `MesBatchPhaseRunnerIntegrationTest` |
+| BL-193 | Genealogy BFF + Operator dashboard/report with seed lot graph | `MesGenealogyLiteIntegrationTest` |
+
+Operator genealogy walkthrough: [mes.md](mes.md).
 
 ---
 
@@ -157,6 +161,7 @@ Per-module hardening tests (Wave 5): `MesWorkOrderDispatchIntegrationTest`, `Mes
 | 10 | Instantiate batch | Blueprint `batch-v1` → `root.platform.mes.lots` | ISA-88 LOT | Planner |
 | 11 | Run batch phase | BFF `mes_batch_runPhase` | Phase advance | Operator |
 | 12 | ERP sync | BFF `mes_erp_enqueueOutbox` + `mes_erp_pollOutbox` | Outbox stub | Integration |
+| 13 | Genealogy | Dashboard **Genealogy** / BFF `mes_genealogy_queryByLot` | Lot–material–WO–quality | Operator |
 
 ---
 
@@ -188,6 +193,7 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
 - [x] `mes_batch_runPhase` advances seed batch phase
 - [x] `mes_erp_enqueueOutbox` + `mes_erp_pollOutbox` round-trip (BL-169)
 - [x] `mes-erp-outbox-poll` schedule enabled in production bundle (BL-169 harden)
+- [x] Genealogy dashboard + `mes_genealogy_queryByLot` returns seed lot graph (BL-193)
 
 ---
 
@@ -199,6 +205,7 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
   --tests "com.ispf.server.application.reference.mes.MesWorkOrderDispatchIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesQualitySpcDashboardIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesBatchPhaseRunnerIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesGenealogyLiteIntegrationTest" \
   --tests "com.ispf.server.application.MesPlatformBundleSmokeTest" \
   --tests "com.ispf.server.application.MesPlatformProductionBundleSmokeTest" \
   --tests "com.ispf.server.application.MesPlatformGaSmokeTest"
@@ -210,6 +217,7 @@ bash deploy/tools/mes-platform-production-deploy.sh
 
 ## Related documents
 
+- [mes.md](mes.md) — Operator genealogy path (BL-193)
 - [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) — BL-121 minimal OEE
 - [reference-mes-walkthrough](reference-mes-walkthrough.md) — dispatch / tank reference
 - [historian-tiers](historian-tiers.md) — historian at scale (Phase 28)

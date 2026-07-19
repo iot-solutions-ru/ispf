@@ -8,4 +8,6 @@ import java.util.List;
 public interface WorkflowDeadLetterRepository extends JpaRepository<WorkflowDeadLetterEntity, String> {
 
     List<WorkflowDeadLetterEntity> findByWorkflowPathOrderByCreatedAtDesc(String workflowPath);
+
+    List<WorkflowDeadLetterEntity> findByWorkflowPathAndResolvedAtIsNullOrderByCreatedAtDesc(String workflowPath);
 }

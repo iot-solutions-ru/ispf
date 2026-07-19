@@ -2,7 +2,7 @@
 
 # Marketplace integration
 
-> **Status: Partial (BL-183).** Local / configured remote catalog browse + free install paths are real. Partner catalogs, symbol listing API, and full “marketplace GA” are **not** complete — see [competitive-scorecard](competitive-scorecard.md) dimension 12 and the checklist below. Do not treat every “Shipped” row as external partner readiness.
+> **Status: Partial (BL-183).** Remote catalog browse, free/paid install, signing, versioning, and local offline install are real. Remaining GA gaps: **live partner marketplace catalogs** (item 11) and **CI validate-on-publish** (item 12). Symbol **packs** are Done under BL-185 (`ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` lists bundled/local packs (`source`: `bundled` | `local`), not a remote partner symbol store. Partner **directory** (3 seeded DB partners) is Done under BL-184 — see [partner-program](partner-program.md). Do not treat every “Shipped” row as external partner catalog readiness.
 
 ISPF platform can browse **remote marketplace servers**, install free bundles, and activate paid listings with an entitlement key.
 
@@ -75,9 +75,13 @@ Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `
 
 Paid **analytics extension packs** (Tier C historian functions) use the same install/activate API as apps. After install, helpers appear in `GET /api/v1/platform/analytics/catalog` with `pack: <packId>`.
 
+Local symbol catalog (dev/lab, not remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — see [symbol-marketplace](symbol-marketplace.md).
+
 ## Marketplace readiness checklist (BL-183)
 
 Foundation for Phase 32 marketplace readiness. Track in release planning; not all items required for dev/lab browse. Do not read every “Shipped” row as full external/partner GA.
+
+**Remaining for BL-183 Done:** item 11 (live partner catalogs) + item 12 (publish CI gate). Items 1–6, 8–10 are Shipped; item 7 is Foundation (fields present in catalog demos, not hard-enforced).
 
 | # | Item | Status |
 |---|------|--------|
@@ -87,12 +91,12 @@ Foundation for Phase 32 marketplace readiness. Track in release planning; not al
 | 4 | Bundle signature verification on install | Shipped — paid activate signs; free `/download?installationId=` signs on marketplace; ISPF trusted path fallback when unsigned |
 | 5 | Version pinning + upgrade path (`latestVersion`, semver) | Shipped — `updateAvailable` in catalog, `installedVersion` / `upgrade` on install |
 | 6 | `minIspfVersion` enforcement before install | Shipped |
-| 7 | Vendor legal fields in listing manifest | Foundation — see demo |
-| 8 | Offline/air-gapped bundle import (same manifest) | Shipped via deploy API |
+| 7 | Vendor legal fields in listing manifest | Foundation — present in `examples/marketplace-catalog/` + demo; not schema-enforced |
+| 8 | Offline/air-gapped bundle import (same manifest) | Shipped via deploy API + local `/api/v1/marketplace/bundles` |
 | 9 | Marketplace server artifact reseed runbook | Shipped — see Troubleshooting |
-| 10 | 10+ signed production bundles | Shipped — `examples/marketplace-catalog/` (14 listings); `publish-marketplace-catalog.ps1` |
-| 11 | 3 external partner catalogs | Planned (BL-184) |
-| 12 | CI: bundle validate on publish | Use `tools/bundle-validate-cli/validate.mjs` |
+| 10 | 10+ signed production bundles | Shipped — `examples/marketplace-catalog/` (17 listings); `publish-marketplace-catalog.ps1` |
+| 11 | 3 external partners / partner catalogs | **Partial** — 3 DB partners seeded (`PartnerProgramService` `source=db`, BL-184 Done); live partner marketplace catalogs (separate catalog hosts) still **Planned** |
+| 12 | CI: bundle validate on publish | Partial — CLI `tools/bundle-validate-cli/validate.mjs` + example workflows; not a mandatory marketplace-catalog publish gate |
 
 ### Demo listing manifest
 
@@ -113,7 +117,7 @@ Publish flow (marketplace server):
 Bulk publish all catalog listings:
 
 ```powershell
-.\deploy\tools\        publish-marketplace-catalog.ps1
+.\deploy\tools\publish-marketplace-catalog.ps1
 ```
 
 Paid analytics packs: marketplace `activate` signs `analytics-pack.json` inside zip (`patch-marketplace-analytics-pack-signing.sh`).

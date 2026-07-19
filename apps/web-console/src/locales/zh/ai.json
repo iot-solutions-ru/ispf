@@ -125,6 +125,8 @@
   "bundle.generating": "生成中…",
   "bundle.loadingHistory": "正在加载历史…",
   "bundle.manifestJson": "Bundle 清单 (JSON)",
+  "bundle.loadFromFileHint": "加载本地 examples/*/bundle.json — 无需手动粘贴大段 JSON。",
+  "bundle.signedLicenseHint": "此节点需要已签名的 bundle。路径：系统 → 解决方案 → 安装（免费 marketplace 安装可签名），或在清单中添加 license 块。",
   "bundle.noDeployHistory": "此 appId 尚无部署历史。",
   "bundle.notPublishable": "生成的包无法发布 — 请修复验证错误或更改提示词。",
   "bundle.operatorPreview": "操作员预览",
