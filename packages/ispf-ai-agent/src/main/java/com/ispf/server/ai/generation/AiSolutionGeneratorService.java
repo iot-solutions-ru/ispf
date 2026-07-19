@@ -11,6 +11,7 @@ import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.BundleManifestJsonSupport;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.license.CommercialBundleLicenseSigner;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.operator.OperatorAppUiService;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,7 @@ public class AiSolutionGeneratorService {
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
     private final ApplicationBundleDeployService bundleDeployService;
+    private final CommercialBundleLicenseSigner bundleLicenseSigner;
     private final OperatorAppUiService operatorAppUiService;
     private final ObjectTreePort ObjectTreePort;
     private final AutomationTreeService automationTreeService;
@@ -65,6 +67,7 @@ public class AiSolutionGeneratorService {
             AiProperties aiProperties,
             ObjectMapper objectMapper,
             ApplicationBundleDeployService bundleDeployService,
+            CommercialBundleLicenseSigner bundleLicenseSigner,
             OperatorAppUiService operatorAppUiService,
             ObjectTreePort ObjectTreePort,
             AutomationTreeService automationTreeService
@@ -73,6 +76,7 @@ public class AiSolutionGeneratorService {
         this.aiProperties = aiProperties;
         this.objectMapper = objectMapper;
         this.bundleDeployService = bundleDeployService;
+        this.bundleLicenseSigner = bundleLicenseSigner;
         this.operatorAppUiService = operatorAppUiService;
         this.ObjectTreePort = ObjectTreePort;
         this.automationTreeService = automationTreeService;
@@ -326,7 +330,22 @@ public class AiSolutionGeneratorService {
     ) {
         String hubPath = "root.platform.devices." + slug + "-hub";
         var parsed = BundleManifestJsonSupport.parse(objectMapper, bundleDraft);
-        Map<String, Object> deployResult = bundleDeployService.deploy(slug, parsed);
+        // Same pattern as MarketplaceService free install: sign when private key is configured;
+        // otherwise trust platform-generated unsigned apply on this installation (require-signed prod).
+        boolean trustPlatformGeneratedUnsigned = true;
+        String bundleTrust = "platform-generated-unsigned";
+        if (bundleLicenseSigner != null && bundleLicenseSigner.isConfigured()) {
+            try {
+                Map<String, Object> signed = bundleLicenseSigner.signManifestIfNeeded(slug, parsed);
+                parsed = BundleManifestJsonSupport.parse(objectMapper, objectMapper.writeValueAsString(signed));
+                trustPlatformGeneratedUnsigned = false;
+                bundleTrust = "signed";
+            } catch (Exception ex) {
+                throw new IllegalStateException("AI solution bundle signing failed: " + ex.getMessage(), ex);
+            }
+        }
+        Map<String, Object> deployResult =
+                bundleDeployService.deploy(slug, parsed, trustPlatformGeneratedUnsigned);
 
         ensureMonitorVariable(hubPath);
         String alertName = slug + "-monitor";
@@ -375,6 +394,7 @@ public class AiSolutionGeneratorService {
         applied.put("dashboardPath", defaultDashboard);
         applied.put("operatorUrlHint", "?mode=operator&app=" + slug);
         applied.put("deploy", deployResult);
+        applied.put("bundleTrust", bundleTrust);
         applied.put("actor", actor != null ? actor : "system");
         applied.put("domain", domain);
         return applied;

@@ -103,7 +103,7 @@ bash tools/agent-regression/run-live-generator-oneshot.sh
 Do **not** claim three-domain live pass rates until three dated result files exist from real runs. Soft miss stays in JSON (`softBudgetMet: false`) — soft signal, not silent pass.
 
 **Remote demostand (VPS) oneshot:** `tools/agent-regression/vps-generator-oneshot.ps1 -BaseUrl https://ispf.iot-solutions.ru -Domain hvac`.  
-**Known gate (2026-07-19):** prod profile with `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true` rejects AI `apply:true` (`Bundle manifest must include a signed license block`). Lab/Spring tests use unsigned allowed. For a demostand soft-budget proof, temporarily set the flag to `false`, restart, run the script, then restore `true` — or sign generated manifests (follow-up). Example evidence after unlock: `elapsedMs≈8s`, `softBudgetMet=true`, operator UI 200 (HVAC).
+**Bundle trust (prod signed gate):** live apply signs the generated manifest when `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` is configured; otherwise deploys as **platform-generated trusted unsigned** (same pattern as marketplace free install). Response includes `bundleTrust`: `signed` | `platform-generated-unsigned`. Manual unsigned package import remains forbidden when `REQUIRE_SIGNED_BUNDLES=true`.
 
 Domain detection keywords:
 

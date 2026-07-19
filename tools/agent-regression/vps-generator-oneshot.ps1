@@ -90,6 +90,7 @@ $evidence = [ordered]@{
             alertPath      = "$($gen.alertPath)"
             mode           = "$($gen.mode)"
             composition    = "$($gen.composition)"
+            bundleTrust    = "$($gen.bundleTrust)"
             operatorUiHttp = "$uiCode"
         }
     )
