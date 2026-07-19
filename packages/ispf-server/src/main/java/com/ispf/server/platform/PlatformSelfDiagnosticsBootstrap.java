@@ -125,7 +125,7 @@ public class PlatformSelfDiagnosticsBootstrap {
                 continue;
             }
             DataSchema schema = var.floating() ? DOUBLE_VALUE : INTEGER_VALUE;
-            DataRecord zero = DataRecord.single(schema, Map.of("value", var.floating() ? 0.0 : 0L));
+            DataRecord zero = DataRecord.single(schema, Map.of("value", var.floating() ? 0.0 : 0));
             try {
                 objectManager.createVariable(
                         path,

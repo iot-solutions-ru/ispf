@@ -1,0 +1,9 @@
+${AnsiColor.BRIGHT_CYAN}
+  ___ ____  ____  _____
+ |_ _/ ___||  _ \|  ___|
+  | |\___ \| |_) | |_
+  | | ___) |  __/|  _|
+ |___|____/|_|   |_|
+${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_WHITE}  IoT Solutions Platform Framework${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_BLACK}  :: ISPF ::${AnsiColor.DEFAULT}                                ${AnsiColor.BRIGHT_BLACK}(Spring Boot ${spring-boot.version})${AnsiColor.DEFAULT}

@@ -165,10 +165,14 @@ public class PlatformMetricsProbeService {
     private record RateSnapshot(double eventsPerSecond, double alertFiresPerSecond) {}
 
     private void writeInteger(String name, long value) {
+        // DataRecord INTEGER fields require Integer (not Long).
+        int intValue = value > Integer.MAX_VALUE ? Integer.MAX_VALUE
+                : value < Integer.MIN_VALUE ? Integer.MIN_VALUE
+                : (int) value;
         objectManager.setSystemVariableValue(
                 DEVICE_PATH,
                 name,
-                DataRecord.single(INTEGER_VALUE, Map.of("value", value))
+                DataRecord.single(INTEGER_VALUE, Map.of("value", intValue))
         );
     }
 
