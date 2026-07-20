@@ -117,14 +117,10 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
             int read;
             while ((read = reader.read(buffer)) > 0) {
                 String chunk = new String(buffer, 0, read);
-                String[] lines = chunk.split("\\R");
-                for (String line : lines) {
+                for (String line : chunk.split("\\R")) {
                     if (!line.isBlank()) {
                         lastFeed.set(line.trim());
                     }
-                }
-                if (lines.length == 0 || chunk.endsWith("\n") || chunk.endsWith("\r")) {
-                    lastFeed.set(chunk.trim());
                 }
             }
         } catch (IOException e) {

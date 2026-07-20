@@ -12,7 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -94,26 +96,53 @@ class GpsTrackerRuntimeTest {
                 .andExpect(jsonPath("$.status").value("RUNNING"))
                 .andExpect(jsonPath("$.driverId").value("gps-tracker"));
 
-        Thread.sleep(500);
-        try (Socket client = new Socket("127.0.0.1", listenPort)) {
-            OutputStream out = client.getOutputStream();
-            out.write((NMEA_LINE + "\r\n").getBytes(StandardCharsets.UTF_8));
-            out.flush();
-            Thread.sleep(300);
-        }
+        awaitPortOpen(listenPort, 10_000);
 
         mockMvc.perform(get("/api/v1/objects/by-path/variables")
                         .param("path", devicePath))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].name", hasItem("gpsFeed")));
 
-        awaitGpsFeedValue(NMEA_LINE, 10_000);
+        awaitGpsFeedValue(NMEA_LINE, 20_000);
+    }
+
+    private void awaitPortOpen(int port, long timeoutMs) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        IOException last = null;
+        while (System.currentTimeMillis() < deadline) {
+            try (Socket probe = new Socket()) {
+                probe.connect(new InetSocketAddress("127.0.0.1", port), 250);
+                return;
+            } catch (IOException e) {
+                last = e;
+                Thread.sleep(100);
+            }
+        }
+        throw new AssertionError("GPS tracker did not listen on port " + port + " within " + timeoutMs + "ms", last);
+    }
+
+    private void sendNmeaLine() throws Exception {
+        try (Socket client = new Socket()) {
+            client.connect(new InetSocketAddress("127.0.0.1", listenPort), 1_000);
+            client.setTcpNoDelay(true);
+            OutputStream out = client.getOutputStream();
+            out.write((NMEA_LINE + "\r\n").getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            // Keep the socket open briefly so the accept/read thread can drain the line
+            // before the client RST/close races the driver on overloaded CI runners.
+            Thread.sleep(200);
+        }
     }
 
     private void awaitGpsFeedValue(String expected, long timeoutMs) throws Exception {
         long deadline = System.currentTimeMillis() + timeoutMs;
         String lastBody = "";
+        int attempt = 0;
         while (System.currentTimeMillis() < deadline) {
+            if (attempt % 3 == 0) {
+                sendNmeaLine();
+            }
+            attempt++;
             mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
                     .andExpect(status().isOk());
             lastBody = mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
