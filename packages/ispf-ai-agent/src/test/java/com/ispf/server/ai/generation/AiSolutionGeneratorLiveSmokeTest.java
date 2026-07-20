@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -34,6 +35,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * BL-180: multi-domain plant description → tree + dashboard + alert when {@code ISPF_LLM_SMOKE=true}.
  * <p>
  * Default matrix: HVAC building, MES/factory, SCADA/plant.
+ * Pin one domain with {@code AGENT_LIVE_GENERATOR_DOMAIN=hvac|mes|scada} (field-soak oneshot).
+ * Soft &lt;15 min is recorded to {@code build/agent-regression/live-generator-results.json}
+ * (or {@code AGENT_LIVE_GENERATOR_RESULTS}), then assumed — not a hard GA fail.
  * Skipped cleanly when {@code ISPF_LLM_SMOKE} is unset (no AI secrets required for compile/CI unit path).
  */
 @SpringBootTest
@@ -42,9 +46,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class AiSolutionGeneratorLiveSmokeTest {
 
     private static final Logger log = LoggerFactory.getLogger(AiSolutionGeneratorLiveSmokeTest.class);
-
-    /** Soft GA budget from BL-180 acceptance ("&lt;15 min"); logged + assumed, not a hard fail. */
-    private static final Duration SOFT_DURATION_BUDGET = Duration.ofMinutes(15);
 
     /** Default multi-domain live apply matrix (BL-180). */
     static final List<String> DEFAULT_LIVE_DOMAINS = List.of("hvac", "mes", "scada");
@@ -72,7 +73,7 @@ class AiSolutionGeneratorLiveSmokeTest {
     }
 
     static Stream<Arguments> liveDomainPrompts() {
-        return Stream.of(
+        Stream<Arguments> all = Stream.of(
                 Arguments.of(
                         "hvac",
                         """
@@ -95,6 +96,12 @@ class AiSolutionGeneratorLiveSmokeTest {
                         """
                 )
         );
+        String pin = System.getenv("AGENT_LIVE_GENERATOR_DOMAIN");
+        if (pin == null || pin.isBlank()) {
+            return all;
+        }
+        String wanted = pin.trim().toLowerCase(Locale.ROOT);
+        return all.filter(args -> wanted.equals(String.valueOf(args.get()[0]).toLowerCase(Locale.ROOT)));
     }
 
     /**
@@ -115,46 +122,72 @@ class AiSolutionGeneratorLiveSmokeTest {
     @Timeout(value = 16, unit = TimeUnit.MINUTES)
     void plantDescriptionAppliesTreeDashboardAndAlert(String domain, String prompt) throws Exception {
         long startedMs = System.currentTimeMillis();
-        Map<String, Object> result = solutionGeneratorService.generate(prompt, true, "admin");
-        Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - startedMs);
+        boolean functionalOk = false;
+        String appId = "";
+        String hubPath = "";
+        String alertPath = "";
+        String dashboardPath = "";
+        Duration elapsed = Duration.ZERO;
+        try {
+            Map<String, Object> result = solutionGeneratorService.generate(prompt, true, "admin");
+            elapsed = Duration.ofMillis(System.currentTimeMillis() - startedMs);
 
-        assertEquals("live", result.get("mode"), () -> domain + " unexpected result: " + result);
-        assertEquals("primitives", result.get("composition"), () -> domain + " unexpected result: " + result);
-        assertNotNull(result.get("appId"), () -> domain + " missing appId: " + result);
-        assertNotNull(result.get("hubPath"), () -> domain + " missing hubPath: " + result);
-        assertNotNull(result.get("alertPath"), () -> domain + " missing alertPath: " + result);
-        assertNotNull(result.get("dashboardPath"), () -> domain + " missing dashboardPath: " + result);
+            assertEquals("live", result.get("mode"), () -> domain + " unexpected result: " + result);
+            assertEquals("primitives", result.get("composition"), () -> domain + " unexpected result: " + result);
+            assertNotNull(result.get("appId"), () -> domain + " missing appId: " + result);
+            assertNotNull(result.get("hubPath"), () -> domain + " missing hubPath: " + result);
+            assertNotNull(result.get("alertPath"), () -> domain + " missing alertPath: " + result);
+            assertNotNull(result.get("dashboardPath"), () -> domain + " missing dashboardPath: " + result);
 
-        String appId = String.valueOf(result.get("appId"));
-        String hubPath = String.valueOf(result.get("hubPath"));
-        String alertPath = String.valueOf(result.get("alertPath"));
-        String dashboardPath = String.valueOf(result.get("dashboardPath"));
+            appId = String.valueOf(result.get("appId"));
+            hubPath = String.valueOf(result.get("hubPath"));
+            alertPath = String.valueOf(result.get("alertPath"));
+            dashboardPath = String.valueOf(result.get("dashboardPath"));
 
-        assertTrue(objectManager.tree().findByPath(hubPath).isPresent(), domain + " hub missing: " + hubPath);
-        assertTrue(
-                objectManager.require(hubPath).getVariable("status").isPresent(),
-                domain + " status variable missing on hub"
-        );
-        assertTrue(objectManager.tree().findByPath(alertPath).isPresent(), domain + " alert missing: " + alertPath);
-        assertTrue(
-                objectManager.tree().findByPath(dashboardPath).isPresent(),
-                domain + " dashboard missing: " + dashboardPath
-        );
+            assertTrue(objectManager.tree().findByPath(hubPath).isPresent(), domain + " hub missing: " + hubPath);
+            assertTrue(
+                    objectManager.require(hubPath).getVariable("status").isPresent(),
+                    domain + " status variable missing on hub"
+            );
+            assertTrue(objectManager.tree().findByPath(alertPath).isPresent(), domain + " alert missing: " + alertPath);
+            assertTrue(
+                    objectManager.tree().findByPath(dashboardPath).isPresent(),
+                    domain + " dashboard missing: " + dashboardPath
+            );
 
-        var ui = mockMvc.perform(get("/api/v1/operator-apps/" + appId + "/ui")).andReturn();
-        assertEquals(200, ui.getResponse().getStatus(), ui.getResponse().getContentAsString());
-        assertTrue(alertPath.startsWith(AutomationTreeService.ALERT_RULES_ROOT));
+            var ui = mockMvc.perform(get("/api/v1/operator-apps/" + appId + "/ui")).andReturn();
+            assertEquals(200, ui.getResponse().getStatus(), ui.getResponse().getContentAsString());
+            assertTrue(alertPath.startsWith(AutomationTreeService.ALERT_RULES_ROOT));
+            functionalOk = true;
+        } finally {
+            if (elapsed.isZero()) {
+                elapsed = Duration.ofMillis(System.currentTimeMillis() - startedMs);
+            }
+            LiveGeneratorEvidence.record(
+                    domain,
+                    elapsed,
+                    functionalOk,
+                    appId,
+                    hubPath,
+                    dashboardPath,
+                    alertPath
+            );
+        }
 
+        final Duration recordedElapsed = elapsed;
         log.info(
-                "BL-180 live apply domain={} elapsed={} softBudget={}",
+                "BL-180 live apply domain={} elapsed={} softBudget={} evidence={}",
                 domain,
-                elapsed,
-                SOFT_DURATION_BUDGET
+                recordedElapsed,
+                LiveGeneratorEvidence.SOFT_DURATION_BUDGET,
+                LiveGeneratorEvidence.resultsPath()
         );
         Assumptions.assumeTrue(
-                elapsed.compareTo(SOFT_DURATION_BUDGET) <= 0,
-                () -> "soft duration budget exceeded for " + domain + ": " + elapsed
-                        + " (budget " + SOFT_DURATION_BUDGET + "); treat as soft signal, not GA fail"
+                recordedElapsed.compareTo(LiveGeneratorEvidence.SOFT_DURATION_BUDGET) <= 0,
+                () -> "soft duration budget exceeded for " + domain + ": " + recordedElapsed
+                        + " (budget " + LiveGeneratorEvidence.SOFT_DURATION_BUDGET
+                        + "); recorded in " + LiveGeneratorEvidence.resultsPath()
+                        + " — soft signal, not GA fail"
         );
     }
 

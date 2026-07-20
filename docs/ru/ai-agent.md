@@ -57,6 +57,45 @@ Live apply (BL-180):
 
 Нужен LLM (`ISPF_AI_*`). Возвращает `mode: live` с `hubPath`, `dashboardPath`, `alertPath`. Proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
 
+### BL-180 soft &lt;15 min + oneshot интегратора (field-soak ready)
+
+**Качественный путь:** долговечное доказательство длительности для **одного** домена — без выдуманных multi-domain pass counts. Lab oneshot ≠ многодневный field soak; та же честность, что [field-pilot-playbook](../en/field-pilot-playbook.md) (именованная задача до claim field Done). Канон EN: [ai-agent § BL-180 soft](../en/ai-agent.md#bl-180-soft-15-min--integrator-oneshot-field-soak-ready).
+
+| Путь | Назначение |
+|------|------------|
+| `AiSolutionGeneratorLiveSmokeTest` | Live apply matrix; pin через `AGENT_LIVE_GENERATOR_DOMAIN` |
+| `tools/agent-regression/run-live-generator-oneshot.sh` | Oneshot по умолчанию **hvac** → results JSON |
+| `tools/agent-regression/validate-generator-evidence.mjs` | Schema + опционально `--enforce-soft` |
+| `build/agent-regression/live-generator-results.json` | Evidence: `elapsedMs`, `softBudgetMet`, paths |
+
+```bash
+export ISPF_LLM_SMOKE=true
+export ISPF_AI_PROVIDER=openai-compatible
+export ISPF_AI_BASE_URL=https://api.deepseek.com/v1   # пример
+export ISPF_AI_MODEL=deepseek-v4-flash
+export ISPF_AI_API_KEY=…                              # не коммитить
+
+export AGENT_LIVE_GENERATOR_DOMAIN=hvac
+# export AGENT_LIVE_GENERATOR_ENFORCE_SOFT=true
+
+bash tools/agent-regression/run-live-generator-oneshot.sh
+```
+
+**Чеклист подписи интегратора** (приложить датированный JSON + заметки):
+
+| Проверка | Доказательство |
+|----------|----------------|
+| Prompt / domain | `AGENT_LIVE_GENERATOR_DOMAIN` + prompt в матрице теста |
+| Model | `ISPF_AI_MODEL` / base URL (без secrets в тикете) |
+| Functional | `functionalOk: true`, operator UI 200, пути hub/dashboard/alert |
+| Soft &lt;15 min | `softBudgetMet: true` и `elapsedMs` ≤ 900000 |
+| Spot-check оператора | Открыть operator app по `appId` из JSON |
+
+Не заявлять pass-rate по трём доменам, пока нет трёх датированных реальных прогонов. Soft miss остаётся в JSON (`softBudgetMet: false`).
+
+**Remote demostand (VPS):** `tools/agent-regression/vps-generator-oneshot.ps1 -BaseUrl https://ispf.iot-solutions.ru -Domain hvac`.  
+**Bundle trust (prod):** live apply подписывает манифест при `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM`; иначе деплой как **platform-generated trusted unsigned** (как marketplace free install). В ответе `bundleTrust`: `signed` | `platform-generated-unsigned`. Ручной import unsigned по-прежнему запрещён при `REQUIRE_SIGNED_BUNDLES=true`.
+
 Ключевые слова для обнаружения домена:
 
 | Домен | Ключевые слова (примеры) |

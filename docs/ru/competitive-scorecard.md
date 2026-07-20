@@ -91,7 +91,7 @@
 
 1. **OT drivers (7.0 → 9+):** честность матрицы **закрыта (БЛ-191)**; остаётся field pilot sign-off + DNP3 write / полный DA после **именованной полевой задачи** (БЛ-140 Частичный).
 2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites. Genealogy lite (**БЛ-193**) отгружен в `mes-platform` (seed-граф + Operator report).
-3. **AI (9.0 → 10):** БЛ-177…180 Готово (harness + БЛ-178 52/52); остаётся: field soak, soft &lt;15 min budget evidence, полный suite on-demand (`AGENT_LIVE_SUITE_MODE=full`).
+3. **AI (9.0 → 10):** БЛ-177…180 Готово (harness + БЛ-178 52/52); soft-budget **evidence path** отгружен (`run-live-generator-oneshot.sh` → `live-generator-results.json`, чеклист в [ai-agent](ai-agent.md)). Остаётся: датированный реальный oneshot с `softBudgetMet: true` + journal field soak на именованной площадке (lab oneshot ≠ field Done). Полный suite on-demand (`AGENT_LIVE_SUITE_MODE=full`).
 4. **Ecosystem (6.5 → 9+):** sync Partner Portal + live partner-hosted catalogs (вне repo); повышение после первого внешнего partner catalog onboarding.
 5. **Historian (7.0 → 9+):** прогнать Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, catalog 50k, CH 1B) — BL-210; затем обновить scorecard до **≥9.5** с датированным sign-off.
 6. **HMI (7.5 → 9+):** FPS gate на live WebSocket mimic; persistence alarm shelving.

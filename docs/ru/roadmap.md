@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
-| **Обновлено** | 17.07.2026 |
+| **Обновлено** | 19.07.2026 (политика «качество вместо фич») |
 | **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([architecture](architecture.md)) |
 
 ---
@@ -27,13 +27,36 @@
 | Спринт S01–S30 | 30 | 30 | 0 | 0 | — |
 | Спринт S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Текущий фокус:** автопилот ИИ БЛ-177…180 **Готово** (live smoke opt-in `ISPF_LLM_SMOKE`); остаток field soak / soft &lt;15 min — см. [Ближайшие 90 дней](#ближайшие-90-дней). **Отложено:** фаза 25 OT Trust; живой ERP (БЛ-169).
+**Текущий фокус:** **качество вместо новых фич** — hardening уже отгруженного; новая поверхность возможностей по умолчанию не открывается — [Политика исполнения](#политика-исполнения--качество-вместо-фич). Остаток AI field soak / soft &lt;15 min (БЛ-177…180 Готово; live smoke opt-in `ISPF_LLM_SMOKE`) — см. [Ближайшие 90 дней](#ближайшие-90-дней). **Отложено:** фаза 25 OT Trust; живой ERP (БЛ-169); глубина BPMN/DMN сверх freeze [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md).
 
-**Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210 (OT + живой ERP на паузе).
+**Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210 (OT + живой ERP на паузе; новые строки БЛ — только именованный blocker заказчика или honesty/hardening).
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
 Развертывание на VPS — только по запросу (см. [deployment](deployment.md) / [demostands](demostands.md); скрипт `deploy/vps-deploy-direct.ps1`).
+
+---
+
+## Политика исполнения — качество вместо фич {#политика-исполнения--качество-вместо-фич}
+
+**Решение (19.07.2026):** сконцентрироваться на **качестве и честности** уже существующих возможностей. **Не** расширять поверхность фич (новые элементы BPMN, новые фазы, новые продуктовые линии), пока нет **именованного blocker от заказчика**.
+
+| Работа по умолчанию | Не по умолчанию |
+| ------------------- | --------------- |
+| Field soak, live gates, runbook’и, честность CI | Новые типы элементов / движки «для полноты» |
+| Partial → Done с доказательством **REAL** ([Качественный путь](#quality-path-to-done)) | Тихий рост парсера, встраивание Camunda/Flowable, полный BPMN 2.0 |
+| Scorecard / docs / UX без завышения | Параллельные волны, которые только расширяют scope |
+
+**Правила:**
+
+1. **Сначала hardening** — баги, flaky gates, честность stub, runbook’и оператора/интегратора, остаточные soak (AI soft &lt;15 min, полевой MES/HMI) важнее новых ID БЛ.
+2. **Без тихого роста scope** — новые типы элементов BPMN, DMN или смена движка требуют **нового ADR** (см. [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)); freeze subset действует до этого.
+3. **Отложенное остаётся отложенным** — фаза 25 OT Trust и живой ERP (БЛ-169) возобновляются только при именованной полевой/интеграционной задаче (та же планка, что [ready-for-field](../en/field-pilot-playbook.md#ready-for-field-gate-policy)).
+4. **Новые строки БЛ / фазы** — только blocker заказчика, compliance-гейт или закрытие пробела честности — не ширина конкурентного чеклиста.
+
+Политика **не** отменяет Definition of Done 10/10; меняет **порядок атаки**: пригодная глубина уже существующего раньше новой поверхности.
+
+Канон EN: [Execution policy — quality over features](../en/roadmap.md#execution-policy--quality-over-features).
 
 ---
 
@@ -79,7 +102,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | **27** Security | MFA / tenancy | БЛ-153/154/155/156/157/158 Готово; TOTP GA; SaaS tenant-admin | Опциональный hard schema table routing; WebAuthn → БЛ-194 |
 | **28** Historian | Tiers / SLA | БЛ-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
 | **29** MES / ERP L4 | ISA-95 | **БЛ-164…168, БЛ-170, БЛ-193 Готово** на marketplace `mes-platform` | Field sites; **живой ERP (БЛ-169) отложен** |
-| **30** Automation | CEP / BPMN | БЛ-171…175 **Готово**; БЛ-176 Готово | DMN / дальнейшая глубина BPMN — опционально |
+| **30** Automation | CEP / BPMN | БЛ-171…175 **Готово**; БЛ-176 Готово | DMN / дальнейшая глубина BPMN **заблокированы** без именованного заказчика + ADR (freeze subset) |
 | **31** AI | Autopilot | БЛ-177…180 **Готово** (БЛ-178 52/52 @100%; multi-app/multi-domain smoke harness) | Soft &lt;15 min / field soak; live smoke нужен `ISPF_LLM_SMOKE` |
 | **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
 | **33** Analytics | AF-capable | **Готово** (БЛ-200…210) | — |
@@ -92,6 +115,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 
 | Нужно | Раздел |
 | ----- | ------ |
+| **Политика исполнения (сначала hardening)** | [Качество вместо фич](#политика-исполнения--качество-вместо-фич) |
 | Порядок P0 на 90 дней | [Ближайшие 90 дней](#ближайшие-90-дней) · [Аудит доменов](#аудит-доменов--iot--scada--mes--erp-09072026) |
 | **Качественный путь к Done** | [Качественный путь к Done](#quality-path-to-done) |
 | **Backlog S31 — Волна 1 (parked)** | [Backlog S31](#s31-wave-1-execution-backlog) — OT Trust отложен |
@@ -910,18 +934,21 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ## Приоритеты (если ресурсов мало)
 
+По умолчанию: [качество вместо фич](#политика-исполнения--качество-вместо-фич) — hardening отгруженного раньше новой поверхности.
+
 | Приоритет | Фаза | Почему |
 | --------- | ----- | ------ |
-| **P0** | [31 — Автопилот ИИ](#фаза-31--автопилот-ии) | Единственный ров, который действующие лица не скопируют за год |
-| **P1** | [26 — HMI phase](#этап-26--совершенство-hmi) | SCADA — лицевой продукт для операторов |
-| **P1** | [29 — Платформа MES](#этап-29--платформа-mes) | Отличается от «просто SCADA»; нужны полевые объекты, не только smoke |
-| **П2** | [27 — Корпоративная безопасность](#этап-27--безопасность-предприятия) | Требование предприятий-тендеров |
-| **П2** | [28 — Историк в масштабе](#фаза-28--историк-в-масштабе) | Крупные объекты петабайтного класса |
-| **П2** | [33 — Аналитическая платформа](#фаза-33--аналитическая-платформа-af-capable) | AF-capable derived tags + OLAP (БЛ-200…210) |
+| **P0** | Hardening / честность уже отгруженных путей | Field soak, live gates, runbook’и, честность stub — см. [Качественный путь](#quality-path-to-done) |
+| **P0** | [31 — Автопилот ИИ](#фаза-31--автопилот-ии) | Остаток: soft &lt;15 min / field soak (БЛ-177…180 Готово по планке harness) |
+| **P1** | [26 — HMI phase](#этап-26--совершенство-hmi) | Лицо продукта для оператора; полевой offline/FPS важнее новых виджетов |
+| **P1** | [29 — Платформа MES](#этап-29--платформа-mes) | Полевые площадки на существующем `mes-platform`, не новые модули MES |
+| **П2** | [27 — Корпоративная безопасность](#этап-27--безопасность-предприятия) | Тендеры предприятий (WebAuthn → БЛ-194 только при необходимости) |
+| **П2** | [28 — Историк в масштабе](#фаза-28--историк-в-масштабе) | Крупные объекты; честность tiers/SLO важнее новых хранилищ |
+| **П2** | [33 — Аналитическая платформа](#фаза-33--аналитическая-платформа-af-capable) | Закрывать Partial analytics; не новая продуктовая линия |
 | **П2** | [БЛ-192 compliance](#бл-191193--аудит-доменов-follow-up) | [compliance-tender-pack](compliance-tender-pack.md) опубликован (**Готово**); cert/pen-test ещё открыты |
-| **P3** | [30 — Глубина автоматизации](#этап-30--глубина-автоматизации) | Опытные пользователи, CEP, управление процессами |
-| **P3** | [32 — Экосистема и рынок](#этап-32--экосистема-и-рынок) | Масштабирование через партнёров |
-| **Отложено** | [25 — OT Trust](#phase-25--ot-trust) + [БЛ-191](#бл-191193--аудит-доменов-follow-up) | Пауза 14.07.2026 — возобновлять только при именованной полевой задаче на драйвер |
+| **P3** | [30 — Глубина автоматизации](#этап-30--глубина-автоматизации) | CEP/process Готово; **BPMN subset заморожен** — без DMN/полного 2.0 без заказчика + ADR |
+| **P3** | [32 — Экосистема и рынок](#этап-32--экосистема-и-рынок) | Внешние партнёры на существующем marketplace |
+| **Отложено** | [25 — OT Trust](#phase-25--ot-trust) полевые пилоты | Пауза — возобновлять только при именованной полевой задаче на драйвер |
 | **Отложено** | [29 — MES / ERP L4](#этап-29--платформа-mes) (БЛ-169) | Пауза 14.07.2026 — живой коннектор 1C/SAP не в активном плане |
 
 ---
@@ -1109,7 +1136,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-173 | **Механизм запросов** | П2 | **Готово** — object-query + joins/patch; ADR-0044; `ObjectQueryFunctionIntegrationTest` |
 | БЛ-174 | **Фильтры событий** | P3 | **Готово** — apply через `GET /events?filterPath=` / `GET /event-filters/by-path/events`; `EventFilterApplyApiTest` |
 | БЛ-175 | **Крючки ML** | P3 | **Готово** — `AnomalyDetectionSpi` + threshold model; `AnomalyAlertRuleIntegrationTest` |
-| БЛ-176 | **Расширение BPMN** | П2 | События сообщений, эскалация, компенсация, DMN lite — [workflows](workflows.md) |
+| БЛ-176 | **BPMN subset freeze** | П2 | Embedded subprocess + message catch/throw; parse reject unsupported; дальнейшая глубина (DMN и т.п.) только с заказчиком + ADR — [workflows](workflows.md), [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) |
 
 **Фаза метрики:** эскалация + CEP + программа процесса в одном проекте без специальных сценариев.
 
@@ -1228,7 +1255,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-173 | 30 | Механизм запросов | П2 | **Готово** — object-query (ADR-0044) |
 | БЛ-174 | 30 | Фильтры событий | P3 | **Готово** — apply filterPath к journal |
 | БЛ-175 | 30 | крючки ML | P3 | **Готово** — anomaly SPI + threshold model |
-| БЛ-176 | 30 | Расширение BPMN | П2 | Частичный (заглушка подпроцесса; события сообщения) |
+| БЛ-176 | 30 | Расширение BPMN (subset freeze) | П2 | **Готово** — embedded/nested `subProcess`; message catch/throw; reject unsupported при parse; ADR-0047 Accepted; дальнейшая глубина только с заказчиком + ADR |
 | БЛ-177 | 31 | Комплексное развертывание агента | P0 | **Готово** — multi-app live LLM smoke matrix `AgentLiveDeploySmokeTest` (`mes-platform`, `building-hvac`, `platform-primitive`) + `run_deploy_playbook`; live runs требуют `ISPF_LLM_SMOKE=true` (без secrets — skip) |
 | БЛ-178 | 31 | Набор регрессии агента | P0 | **Готово** — полный live suite `AGENT_LIVE_SUITE_MODE=full` через `run-live-suite.sh`: **52/52 @100%** (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19); nightly CI по-прежнему режим **platform** |
 | БЛ-179 | 31 | Оператор-агент GA | Р1 | Частичный |
@@ -1505,13 +1532,14 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 
 ### Ближайшие 90 дней — через призму качества
 
-Активный P0: **автопилот ИИ**. OT Trust и живой ERP (БЛ-169) отложены:
+Активный P0: **hardening отгруженных путей** ([политика исполнения](#политика-исполнения--качество-вместо-фич)). Harness автопилота ИИ Готово — остаток только soak. OT Trust, живой ERP (БЛ-169) и глубина BPMN отложены:
 
 | Спринт | Пригодная веха (не только id BL) |
 | ------ | -------------------------------- |
 | **S31** | Один AI-сценарий: live LLM deploy end-to-end без правок человека (БЛ-177 / БЛ-178) |
 | **S32** | Generator не keyword-stub (БЛ-180) |
 | **S33** | Genealogy на demo lot (БЛ-193) — **Готово** |
+| **Post-S33** | Generator soft evidence + field soak на площадке / REAL Partial→Done — не новые волны фич |
 
 Полный список BL: [Ближайшие 90 дней](#ближайшие-90-дней) ниже.
 
@@ -1531,15 +1559,16 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 
 ## Ближайшие 90 дней
 
-Согласовано с [аудитом доменов](#аудит-доменов--iot--scada--mes--erp-09072026); **OT Trust (фаза 25) и живой ERP (БЛ-169) отложены**.
+Согласовано с [политикой исполнения](#политика-исполнения--качество-вместо-фич) и [аудитом доменов](#аудит-доменов--iot--scada--mes--erp-09072026). **Работа по умолчанию = hardening.** **Полевые пилоты OT Trust (фаза 25), живой ERP (БЛ-169) и глубина BPMN сверх ADR-0047 отложены.**
 
 | Спринт | Срок (проект) | Область применения |
 | ------ | ------------ | ----- |
 | **S31** | июл–авг 2026 | БЛ-177/178 **Готово** (52/52 live suite; multi-app smoke harness; live нужен `ISPF_LLM_SMOKE`) |
 | **S32** | авг 2026 | БЛ-180 **Готово** (multi-domain live apply harness HVAC/MES/SCADA); continuity по необходимости |
 | **S33** | сен 2026 | **БЛ-193** genealogy lite |
+| **Post-S33** | ongoing | Качественный путь: AI generator oneshot (`run-live-generator-oneshot.sh` / `live-generator-results.json`) + field soak на именованной площадке; полевые доказательства MES/HMI; честность scorecard — **не** новые волны фич |
 
-Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP БЛ-169.
+Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP БЛ-169; расширение BPMN/DMN.
 
 ---
 
@@ -1573,6 +1602,8 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 
 | Дата | Изменение |
 | ---- | --------- |
+| 19.07.2026 | **BL-180 soft evidence path:** `LiveGeneratorEvidence` + `run-live-generator-oneshot.sh` → `live-generator-results.json`; чеклист интегратора в [ai-agent](ai-agent.md); pin `AGENT_LIVE_GENERATOR_DOMAIN` (default hvac). Lab oneshot ≠ field Done |
+| 19.07.2026 | **Политика исполнения — качество вместо фич:** hardening уже отгруженного по умолчанию; без новой поверхности BPMN/фаз/продукта без именованного blocker заказчика + ADR; freeze subset BPMN (ADR-0047) сохраняется; OT/ERP остаются parked — [§ Политика исполнения](#политика-исполнения--качество-вместо-фич) |
 | 19.07.2026 | **Фаза 32 ecosystem partials закрыты:** БЛ-183 Готово (CI `marketplace-catalog` + честные partner multi-endpoint); БЛ-186 Готово (Helm lint/template); БЛ-187 Готово (ARM compose/validate); БЛ-188 Готово usable MoM path (не 10+ peer soak); БЛ-190 Готово curriculum paths |
 | 19.07.2026 | **БЛ-177 / БЛ-180 → Готово:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness в repo; live runs требуют `ISPF_LLM_SMOKE=true` (без выдуманных multi-app/multi-domain live pass counts). БЛ-178 остаётся **Готово** 52/52 @100%. Scorecard AI **8.5 → 9.0** |
 | 19.07.2026 | **Фаза 26 HMI:** БЛ-147/148/149/150/151 **Готово**; БЛ-152 **Готово** — честный acceptance CI 500 el ≥55 FPS + WS path (**не** unmocked ≥60); LH≥95 = ops stretch |

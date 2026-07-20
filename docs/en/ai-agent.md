@@ -64,6 +64,47 @@ Live apply (BL-180):
 
 Requires configured LLM (`ISPF_AI_*`). Returns `mode: live` with `hubPath`, `dashboardPath`, `alertPath`, operator UI. Opt-in proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
 
+### BL-180 soft &lt;15 min + integrator oneshot (field-soak ready)
+
+**Quality path:** durable duration evidence for **one** domain — not invented multi-domain pass counts. Lab oneshot ≠ multi-day site soak; same honesty bar as [field-pilot-playbook](field-pilot-playbook.md) (named task before claiming field Done).
+
+| Path | Purpose |
+|------|---------|
+| `AiSolutionGeneratorLiveSmokeTest` | Live apply matrix; pin with `AGENT_LIVE_GENERATOR_DOMAIN` |
+| `tools/agent-regression/run-live-generator-oneshot.sh` | Default **hvac** oneshot → results JSON |
+| `tools/agent-regression/validate-generator-evidence.mjs` | Schema + optional `--enforce-soft` |
+| `build/agent-regression/live-generator-results.json` | Evidence: `elapsedMs`, `softBudgetMet`, paths |
+
+```bash
+export ISPF_LLM_SMOKE=true
+export ISPF_AI_PROVIDER=openai-compatible
+export ISPF_AI_BASE_URL=https://api.deepseek.com/v1   # example
+export ISPF_AI_MODEL=deepseek-v4-flash
+export ISPF_AI_API_KEY=…                              # never commit
+
+# One domain (default hvac). Optional: mes | scada
+export AGENT_LIVE_GENERATOR_DOMAIN=hvac
+# Optional hard soft-budget gate (default: warn only):
+# export AGENT_LIVE_GENERATOR_ENFORCE_SOFT=true
+
+bash tools/agent-regression/run-live-generator-oneshot.sh
+```
+
+**Integrator sign-off checklist** (attach dated JSON + notes):
+
+| Check | Evidence |
+|-------|----------|
+| Prompt / domain | `AGENT_LIVE_GENERATOR_DOMAIN` + prompt in test matrix |
+| Model | `ISPF_AI_MODEL` / provider base URL (no secrets in ticket) |
+| Functional | `functionalOk: true`, operator UI 200, hub/dashboard/alert paths present |
+| Soft &lt;15 min | `softBudgetMet: true` and domain `elapsedMs` ≤ 900000 |
+| Operator spot-check | Open operator app from `appId` in results JSON |
+
+Do **not** claim three-domain live pass rates until three dated result files exist from real runs. Soft miss stays in JSON (`softBudgetMet: false`) — soft signal, not silent pass.
+
+**Remote demostand (VPS) oneshot:** `tools/agent-regression/vps-generator-oneshot.ps1 -BaseUrl https://ispf.iot-solutions.ru -Domain hvac`.  
+**Bundle trust (prod signed gate):** live apply signs the generated manifest when `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` is configured; otherwise deploys as **platform-generated trusted unsigned** (same pattern as marketplace free install). Response includes `bundleTrust`: `signed` | `platform-generated-unsigned`. Manual unsigned package import remains forbidden when `REQUIRE_SIGNED_BUNDLES=true`.
+
 Domain detection keywords:
 
 | Domain | Keywords (examples) |

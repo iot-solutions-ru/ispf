@@ -91,7 +91,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 
 1. **OT drivers (7.0 → 9+):** matrix honesty **closed (BL-191)**; remaining gap is field pilot sign-offs + DNP3 write / full DA stacks after **named field driver task** (BL-140 Partial).
 2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** deferred); production MES sites. Marketplace lab Done: BL-164…168, BL-170, BL-193 on `mes-platform` v1.3.0 (typed seeds + Operator/BFF dashboards). Score stays **6.5** until field site + live ERP.
-3. **AI (9.0 → 10):** BL-177…180 Done (harness + BL-178 52/52); remaining: field soak, soft &lt;15 min budget evidence, keep full-suite re-runs on demand (`AGENT_LIVE_SUITE_MODE=full`).
+3. **AI (9.0 → 10):** BL-177…180 Done (harness + BL-178 52/52); soft-budget **evidence path** shipped (`run-live-generator-oneshot.sh` → `live-generator-results.json`, integrator checklist in [ai-agent](ai-agent.md#bl-180-soft-15-min--integrator-oneshot-field-soak-ready)). Remaining: dated real oneshot JSON with `softBudgetMet: true` + named-site field soak journal (lab oneshot ≠ field Done). Keep full-suite re-runs on demand (`AGENT_LIVE_SUITE_MODE=full`).
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + live partner-hosted catalogs (out of repo); raise after first external partner catalog onboarding.
 5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
 6. **HMI (7.5 → 9+):** FPS gate on live WebSocket mimic path (alarm shelving persistence closed — BL-158).
