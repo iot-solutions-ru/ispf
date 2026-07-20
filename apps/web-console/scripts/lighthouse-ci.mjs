@@ -104,8 +104,9 @@ async function prepareOperatorPage(chromePort) {
   });
   const page = await browser.newPage();
   await installLighthouseApiMocks(page, ORIGIN);
-  await page.goto(OPERATOR_URL, { waitUntil: "networkidle0", timeout: 30_000 });
-  await page.waitForSelector('[data-testid="operator-shell"]', { timeout: 15_000 });
+  // Operator shell keeps polling / WS even under mocks — networkidle0 never settles on CI.
+  await page.goto(OPERATOR_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.waitForSelector('[data-testid="operator-shell"]', { timeout: 30_000 });
   return { browser, page };
 }
 
