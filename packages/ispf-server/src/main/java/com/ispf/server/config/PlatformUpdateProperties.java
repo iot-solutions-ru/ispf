@@ -11,7 +11,7 @@ public class PlatformUpdateProperties {
     /** Allow downloading release assets and restarting via apply script (Linux VPS). */
     private boolean applyEnabled = false;
 
-    private String githubOwner = "your-org";
+    private String githubOwner = "Michaael";
 
     private String githubRepo = "IoT-Solutions-Platform";
 

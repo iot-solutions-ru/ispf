@@ -80,6 +80,8 @@ public class PlatformUpdateService {
                     properties.getWebConsoleAssetName()
             );
             if (release.isEmpty()) {
+                String releasesUrl = "https://github.com/"
+                        + properties.getGithubOwner() + "/" + properties.getGithubRepo() + "/releases";
                 PlatformUpdateStatus noRelease = new PlatformUpdateStatus(
                         true,
                         properties.isApplyEnabled(),
@@ -87,11 +89,13 @@ public class PlatformUpdateService {
                         null,
                         false,
                         null,
-                        "https://github.com/" + properties.getGithubOwner() + "/" + properties.getGithubRepo() + "/releases",
+                        releasesUrl,
                         null,
                         null,
                         Instant.now(),
-                        "На GitHub пока нет опубликованных релизов",
+                        "На GitHub нет опубликованных релизов для "
+                                + properties.getGithubOwner() + "/" + properties.getGithubRepo()
+                                + " (проверьте ISPF_UPDATE_GITHUB_OWNER / ISPF_UPDATE_GITHUB_REPO)",
                         previous.applyState(),
                         previous.applyMessage(),
                         previous.applyStartedAt()
