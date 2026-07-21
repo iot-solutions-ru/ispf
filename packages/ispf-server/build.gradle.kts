@@ -58,11 +58,11 @@ dependencies {
     implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
     implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.11")
 
-    implementation("org.apache.parquet:parquet-avro:1.14.3") {
+    implementation("org.apache.parquet:parquet-avro:1.17.1") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
     }
-    implementation("org.apache.parquet:parquet-hadoop:1.14.3") {
+    implementation("org.apache.parquet:parquet-hadoop:1.17.1") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
     }
