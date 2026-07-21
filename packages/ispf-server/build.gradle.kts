@@ -55,7 +55,7 @@ dependencies {
     }
     // YARG XlsxFormatter uses docx4j; JDK 11+ removed internal JAXB — required for .xlsx templates
     implementation("javax.xml.bind:jaxb-api:2.3.1")
-    implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
+    implementation("org.glassfish.jaxb:jaxb-runtime:4.0.9")
     implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.11")
 
     implementation("org.apache.parquet:parquet-avro:1.14.3") {
