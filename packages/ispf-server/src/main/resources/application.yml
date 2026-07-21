@@ -99,8 +99,8 @@ ispf:
     update:
       check-enabled: ${ISPF_UPDATE_CHECK_ENABLED:true}
       apply-enabled: ${ISPF_UPDATE_APPLY_ENABLED:false}
-      github-owner: ${ISPF_UPDATE_GITHUB_OWNER:Michaael}
-      github-repo: ${ISPF_UPDATE_GITHUB_REPO:IoT-Solutions-Platform}
+      github-owner: ${ISPF_UPDATE_GITHUB_OWNER:iot-solutions-ru}
+      github-repo: ${ISPF_UPDATE_GITHUB_REPO:ispf}
       check-interval-ms: ${ISPF_UPDATE_CHECK_INTERVAL_MS:3600000}
       staging-dir: ${ISPF_UPDATE_STAGING_DIR:/opt/ispf/staging}
       apply-script: ${ISPF_UPDATE_APPLY_SCRIPT:/opt/ispf/bin/apply-platform-update.sh}

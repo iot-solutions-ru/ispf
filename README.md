@@ -2,7 +2,7 @@
 
 **Self-hosted platform for devices, HMI, alarms, historian, and workflows — one object tree, one API, one UI.**
 
-Website: [ispf.ai](https://ispf.ai) · GitHub Pages: [michaael.github.io/IoT-Solutions-Platform](https://michaael.github.io/IoT-Solutions-Platform/) · Repo: [github.com/Michaael/IoT-Solutions-Platform](https://github.com/Michaael/IoT-Solutions-Platform)
+Website: [ispf.ai](https://ispf.ai) · Repo: [github.com/iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-English%20%7C%20Русский-0A7EA4)](docs/README.md)
@@ -57,15 +57,15 @@ Honest positioning: closer to an **open Ignition-class application platform** th
 
 ### All-in-one release (Windows / Linux / macOS)
 
-**Portable zip** (JDK **25**): download `ispf-*-portable.zip` from [GitHub Releases](https://github.com/Michaael/IoT-Solutions-Platform/releases), unzip, then `start.bat` (Windows) or `./start.sh` (Linux/macOS).
+**Portable zip** (JDK **25**): download `ispf-*-portable.zip` from [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases), unzip, then `start.bat` (Windows) or `./start.sh` (Linux/macOS).
 
 Uses an **embedded H2** file DB (no PostgreSQL to install). After first start: `data/ispf-local.mv.db` next to the JAR.
 
-**Container** ([GitHub Packages](https://github.com/Michaael?tab=packages&repo_name=IoT-Solutions-Platform)):
+**Container** ([GitHub Packages](https://github.com/iot-solutions-ru/ispf/pkgs/container/ispf-server)):
 
 ```bash
-docker pull ghcr.io/michaael/ispf-server:latest
-docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/michaael/ispf-server:latest
+docker pull ghcr.io/iot-solutions-ru/ispf-server:latest
+docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-ru/ispf-server:latest
 ```
 
 Open http://localhost:8080 — login `admin` / `admin`. Operator HMI: http://localhost:8080?mode=operator

@@ -36,7 +36,7 @@ jobs:
              docs/assets/ispf-bpmn-workflow.png \
              docs/assets/ispf-marketplace.png \
              _site/assets/
-          # Project Pages live under /IoT-Solutions-Platform/; keep relative links as-is.
+          # Project Pages live under /ispf/; keep relative links as-is.
           test -f _site/index.html
           test -f _site/assets/ispf-operator-hmi.png
 

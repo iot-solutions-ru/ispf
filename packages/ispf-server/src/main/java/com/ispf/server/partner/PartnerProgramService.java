@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 public class PartnerProgramService {
 
-    private static final String PORTAL_URL = "https://github.com/your-org/Partner-portal";
+    private static final String PORTAL_URL = "https://partner.ispf.ai";
     private static final AtomicLong APPLICATION_SEQ = new AtomicLong(1);
 
     private static final List<Map<String, Object>> TIERS = List.of(

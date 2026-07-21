@@ -3,7 +3,7 @@
 **IoT Solutions Platform Framework** — self-hosted middleware для IoT, SCADA и промышленной автоматизации.
 
 > Канонический язык: **английский** ([../en/readme.md](../en/readme.md)). Ниже — русское оглавление; тела страниц в `docs/ru/` со ссылкой на EN.  
-> Сайт: [ispf.ai](https://ispf.ai) · Репозиторий: [Michaael/IoT-Solutions-Platform](https://github.com/Michaael/IoT-Solutions-Platform)
+> Сайт: [ispf.ai](https://ispf.ai) · Репозиторий: [iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
 
 **Лицензия:** платформа — [GNU AGPL v3](license.md) (опционально commercial dual-license). Ядро **не** Apache 2.0.
 

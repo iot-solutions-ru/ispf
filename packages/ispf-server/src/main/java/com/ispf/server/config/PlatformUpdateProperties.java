@@ -11,9 +11,9 @@ public class PlatformUpdateProperties {
     /** Allow downloading release assets and restarting via apply script (Linux VPS). */
     private boolean applyEnabled = false;
 
-    private String githubOwner = "Michaael";
+    private String githubOwner = "iot-solutions-ru";
 
-    private String githubRepo = "IoT-Solutions-Platform";
+    private String githubRepo = "ispf";
 
     /** Minimum interval between GitHub API checks. */
     private long checkIntervalMs = 3_600_000L;

@@ -15,7 +15,7 @@ Two tracks:
 
 ### Option A — all-in-one JAR (fastest)
 
-Download **`ispf-*-portable.zip`** from [GitHub Releases](https://github.com/Michaael/IoT-Solutions-Platform/releases) (JDK **25**). Unzip, then:
+Download **`ispf-*-portable.zip`** from [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases) (JDK **25**). Unzip, then:
 
 ```bash
 # Windows: double-click start.bat
@@ -147,7 +147,7 @@ Details: [licensed-driver-packs](licensed-driver-packs.md).
 
 ## Contribute: local dev & QA
 
-**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all ~58 driver packs** and can run **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/Michaael/IoT-Solutions-Platform/issues/65)).
+**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all ~58 driver packs** and can run **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)).
 
 ### Pre-push check (matches CI pr-fast)
 

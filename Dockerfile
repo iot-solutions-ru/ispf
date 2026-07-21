@@ -4,8 +4,8 @@ FROM eclipse-temurin:25-jre-jammy
 
 LABEL org.opencontainers.image.title="ISPF"
 LABEL org.opencontainers.image.description="Open-source industrial IoT / SCADA — all-in-one server + web console"
-LABEL org.opencontainers.image.source="https://github.com/Michaael/IoT-Solutions-Platform"
-LABEL org.opencontainers.image.url="https://github.com/Michaael/IoT-Solutions-Platform"
+LABEL org.opencontainers.image.source="https://github.com/iot-solutions-ru/ispf"
+LABEL org.opencontainers.image.url="https://github.com/iot-solutions-ru/ispf"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
 LABEL org.opencontainers.image.vendor="ISPF"
 
