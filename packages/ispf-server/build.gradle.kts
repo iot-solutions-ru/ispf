@@ -66,7 +66,7 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
     }
-    implementation("org.apache.avro:avro:1.11.4")
+    implementation("org.apache.avro:avro:1.12.1")
     implementation("org.apache.hadoop:hadoop-common:3.4.1") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
