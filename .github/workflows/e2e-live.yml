@@ -12,9 +12,28 @@ on:
     - cron: "0 6 * * 1"
 
 jobs:
-  live-smoke:
+  # secrets.* is not allowed in job-level `if`; probe via env instead
+  check-secrets:
     runs-on: ubuntu-latest
-    if: ${{ secrets.E2E_USERNAME != '' && secrets.E2E_PASSWORD != '' }}
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: |
+          if [ -n "$E2E_USERNAME" ] && [ -n "$E2E_PASSWORD" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "E2E secrets not configured; live smoke will be skipped."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  live-smoke:
+    needs: check-secrets
+    if: needs.check-secrets.outputs.ready == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
