@@ -35,7 +35,13 @@ export default defineConfig({
     : [
         {
           name: "mocked-chromium",
-          testIgnore: [/^.*\/live\.spec\.ts$/, /pwa-android\.spec\.ts$/, /visual-regression\.spec\.ts$/],
+          // quality-gates.spec.ts is owned by playwright.quality.config.ts (`npm run test:quality`).
+          testIgnore: [
+            /^.*\/live\.spec\.ts$/,
+            /pwa-android\.spec\.ts$/,
+            /visual-regression\.spec\.ts$/,
+            /quality-gates\.spec\.ts$/,
+          ],
           use: { ...devices["Desktop Chrome"] },
         },
       ],
