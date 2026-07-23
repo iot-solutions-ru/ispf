@@ -24,6 +24,19 @@
 4. Изменить запись в `DriverMaturityRegistry`.
 5. При необходимости — демо-устройство / модель в bootstrap.
 
+## Статус (июль 2026, продвижение партии B1)
+
+| driverId | Было | Стало | Примечание |
+|----------|------|-------|------------|
+| `imap` | BETA | **PRODUCTION** | `ImapDeviceDriverTest` (GreenMail IMAP); read-only |
+| `pop3` | BETA | **PRODUCTION** | `Pop3DeviceDriverTest` (GreenMail POP3); read-only |
+| `soap` | BETA | **PRODUCTION** | `SoapDeviceDriverTest` (встроенный HttpServer); маппинг = полный envelope |
+| `web-transaction` | BETA | **PRODUCTION** | `WebTransactionDeviceDriverTest` (2 шага против встроенного HttpServer); без сессии/assertions между шагами |
+| `http-server` | BETA | **PRODUCTION** | `HttpServerDeviceDriverTest`; legacy-capability `write` убрана (заявлялась, но не была реализована) |
+| `jdbc` | BETA | **PRODUCTION** | `JdbcDeviceDriverTest` (H2 in-memory); маппинг = полный SELECT на точку |
+| `graph-db` | BETA | **PRODUCTION** | `GraphDbDeviceDriverTest` (Gremlin-HTTP loopback); Bolt-ветка требует живой Neo4j |
+| `jms` | BETA | **PRODUCTION** | `JmsDeviceDriverTest` (встроенный ActiveMQ `vm://` broker); исправлен баг пересчёта `browseDepth` |
+
 ## Статус (июль 2026, продвижение партии A)
 
 | driverId | Было | Стало | Примечание |

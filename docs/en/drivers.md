@@ -23,7 +23,7 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **28** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **10** at **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **36** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **9** at **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
 > **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `ethernet-ip` (CIP session only). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
@@ -37,6 +37,9 @@ In `DriverProductionMatrix` — **28** drivers at **PRODUCTION** (including `cwm
 | `haystack`, `kafka`, `coap` | PRODUCTION | poll-only clients; loopback tests |
 | `icmp`, `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote checks; read-only |
 | `file`, `folder`, `application` | PRODUCTION | local host monitoring; read-only |
+| `imap`, `pop3`, `jms` | PRODUCTION | mail/messaging clients; read-only |
+| `soap`, `web-transaction`, `http-server` | PRODUCTION | HTTP-based; read-only |
+| `jdbc`, `graph-db` | PRODUCTION | SELECT-only / query read; read-only |
 | `ethernet-ip` | BETA | CIP session registration; tag path placeholder |
 | `opc-da`, `opc-bridge` | BETA | **Shell / mapping tests** — not full DA stack |
 | `iec104-server` | BETA | interop partner for `iec104` |
@@ -627,9 +630,21 @@ Point mapping: `ObjectName:attribute` (for example `java.lang:type=Memory:HeapMe
 
 ### jdbc (`ispf-driver-jdbc`)
 
-SQL scalar. Config: `jdbcUrl`, `username`, `password`, `query`, `timeoutMs`.
+SQL scalar/row read over any JDBC driver. Config: `jdbcUrl`, `username`, `password`, `timeoutMs`.
 
-Point mapping: column name or `value` for a single cell.
+Point mapping: a **full SELECT statement per point** (case-insensitive `SELECT` guard; connection is opened `setReadOnly(true)`). There is no `query` config key.
+
+Variable: single-column result → `value` (first row); multi-column first row → one string field per column label (sanitized `[^a-zA-Z0-9_]` → `_`).
+
+Maturity: **production**. Loopback test: `JdbcDeviceDriverTest` (H2 in-memory). Read-only (`writePoint` throws).
+
+### graph-db (`ispf-driver-graph-db`)
+
+Graph query client: Neo4j Bolt (`bolt://` URI, official neo4j-java-driver) or Gremlin-over-HTTP (`http(s)://` URI), selected by URI scheme. Config: `uri`, `username`, `password`, `timeoutMs`.
+
+Point mapping: query script (Cypher or Gremlin depending on branch). Variable: `value` — Bolt branch: first column of the first record; Gremlin-HTTP branch: the raw response body (parse Gremlin JSON on the caller side).
+
+Maturity: **production** for the Gremlin-HTTP branch (loopback `GraphDbDeviceDriverTest` vs embedded HttpServer); the Bolt branch requires a live Neo4j and is not covered by loopback tests. Read-only.
 
 ### file / folder
 
@@ -663,7 +678,25 @@ Point mapping: sentence type (`GGA`, `RMC`) or `raw`.
 ### telnet / soap
 
 `telnet` (`ispf-driver-telnet`): config `host`, `port`, `username`, `password`, `timeoutMs`; point mapping — shell command per variable. Variable: `value` (output), `exitCode`, `stderr`. Maturity: **production** — loopback `TelnetDeviceDriverTest`. Limitation: exit code is reported as `0` on completed sessions (Telnet has no exit-status channel).  
-`soap`: `endpointUrl`, `soapAction`; mapping — request body or XPath-like path to value.
+`soap` (`ispf-driver-soap`): config `endpointUrl`, `soapAction`, `timeoutMs`; point mapping — the **full SOAP envelope XML**, POSTed as-is (`Content-Type: text/xml`; `SOAPAction` header only when configured). Variable: `value` (whole response body), `statusCode`. HTTP 500 is mapped as `statusCode` + fault body, not thrown. Maturity: **production** — loopback `SoapDeviceDriverTest` (embedded HttpServer). Read-only.
+
+### web-transaction (`ispf-driver-web-transaction`)
+
+Multi-step HTTP scenario. Config: `stepsJson` (default steps), `timeoutMs`.
+
+Point mapping: pipe-delimited `name:METHOD:url[:body]` steps or a JSON array `[{"name","method","url","body"}]`; a blank mapping falls back to the `stepsJson` config.
+
+Variable: `statusCode`, `latencyMs`, `value` (final step body). Limitations: no cookies/session between steps, no per-step assertions or extraction, no auth, no per-step headers.
+
+Maturity: **production**. Loopback test: `WebTransactionDeviceDriverTest` (2-step scenario vs embedded HttpServer). Read-only.
+
+### http-server (`ispf-driver-http-server`)
+
+Embedded HTTP server — external systems POST into the platform. Config: `listenPort`, `contextPath`.
+
+Point mapping: `requests` (total count), `lastPath`, `lastBody`. Variable: `value`, `count`. Requests outside `contextPath` get 404 and are not counted.
+
+Maturity: **production**. Loopback test: `HttpServerDeviceDriverTest`. Read-only — the `write` capability previously advertised via the legacy registry was removed (matrix `POLL` only).
 
 ### modem-at (`ispf-driver-modem-at`)
 
@@ -697,6 +730,32 @@ Config: `bootstrapServers`, `topic`, `groupId`, `timeoutMs`, `eventToVariable`.
 Point mapping: `consume` (last message) or `produce:payload`.
 
 Maturity: **production** (poll/read; `writePoint` is read-only — producing is done via `produce:` point mappings). Loopback test: `KafkaDeviceDriverTest`.
+
+### jms (`ispf-driver-jms`)
+
+JMS queue/topic client (ActiveMQ Classic client). Config: `brokerUrl`, `destination`, `destinationType` (`queue`/`topic`), `timeoutMs`.
+
+Point mapping: `consume` (receive with timeout, destructive — AUTO_ACK) or `browse[:depth]` (queue depth, capped scan; queues only — topic browse is rejected).
+
+Variable: `value` (payload / depth-as-string), `depth`.
+
+Maturity: **production**. Loopback test: `JmsDeviceDriverTest` (embedded ActiveMQ `vm://` broker). Read-only (`writePoint` throws).
+
+### imap (`ispf-driver-imap`)
+
+IMAP mailbox monitoring (Jakarta Mail / angus-mail). Config: `host`, `port` (993), `username`, `password`, `folder` (`INBOX`), `useSsl` (`true`).
+
+Point mapping: `messageCount`, `unseen`, `subject:N` (1-based message number). Variable: `value`, `count`.
+
+Maturity: **production**. Loopback test: `ImapDeviceDriverTest` (GreenMail IMAP server). Read-only. Note: the store is re-opened on each poll.
+
+### pop3 (`ispf-driver-pop3`)
+
+POP3 mailbox monitoring (Jakarta Mail / angus-mail). Config: `host`, `port` (110), `username`, `password`.
+
+Point mapping: `stat` (count + total size) or `retr:N` (1-based message number). Variable: `value`, `count`, `sizeBytes`. Note: `retr:N` returns the decoded message content (body), headers are not included.
+
+Maturity: **production**. Loopback test: `Pop3DeviceDriverTest` (GreenMail POP3 server). Read-only.
 
 ### cwmp (`ispf-driver-cwmp`) — PRODUCTION
 

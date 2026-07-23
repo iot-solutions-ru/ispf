@@ -63,7 +63,7 @@
 |---|-----------|:-----:|---------|-------------------------|
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators в `EventCorrelatorService` |
 | 2 | SCADA / HMI | 7.5 | **REAL** | `ispf-pid-v1` manifest `totalSymbols: 218`; `ScadaMimicEditor.tsx`; video wall в `dashboardLayoutPresets.ts`; e2e FPS в `quality-gates.spec.ts` (mocked operator API) |
-| 3 | OT/IT drivers | 7.0 | **PARTIAL** | 28 `PRODUCTION` в `DriverProductionMatrix` (честность BL-191; партия A: dnp3, haystack, kafka, coap, icmp, ip-host, telnet, modem-at, ssh, file, folder, application); Milo OPC UA, j2mod, S7, BACnet4J — реальные; `opc-da` / `opc-bridge` / `ethernet-ip` честно **BETA** (оболочки / poll-only); DNP3 `writePoint` по-прежнему throws |
+| 3 | OT/IT drivers | 7.0 | **PARTIAL** | 36 `PRODUCTION` в `DriverProductionMatrix` (честность BL-191; партии A+B1: dnp3, haystack, kafka, coap, icmp, ip-host, telnet, modem-at, ssh, file, folder, application, imap, pop3, soap, web-transaction, http-server, jdbc, graph-db, jms); Milo OPC UA, j2mod, S7, BACnet4J — реальные; `opc-da` / `opc-bridge` / `ethernet-ip` честно **BETA** (оболочки / poll-only); DNP3 `writePoint` по-прежнему throws |
 | 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC по умолчанию; lab gates BL-210 + JVM multi-tag gate **определены** (`analytics-scale-gate.sh`); оценка **≥9.5** после Enterprise L lab sign-off |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; alarm shelving approval **persisted** (BL-158) |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; не полная BPMN 2.0 |
