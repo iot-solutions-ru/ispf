@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * Windows WMI driver — PowerShell {@code Get-CimInstance} when running on Windows.
@@ -38,6 +39,8 @@ public class WmiDeviceDriver implements DeviceDriver {
                     "pollIntervalMs", "60000"
             )
     );
+
+    private static final Pattern WMI_PROPERTY = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     private DriverObject driverObject;
     private String namespace = "root\\cimv2";
@@ -110,6 +113,11 @@ public class WmiDeviceDriver implements DeviceDriver {
     }
 
     private DataRecord query(WmiPoint point) throws DriverException {
+        // The property goes into the PowerShell command unquoted — keep it a strict WMI identifier.
+        String property = point.property() == null ? guessScalarProperty(point.query()) : point.property();
+        if (!WMI_PROPERTY.matcher(property).matches()) {
+            throw new DriverException("Invalid WMI property name: " + property);
+        }
         if (!windowsHost) {
             return DataRecord.single(WMI_SCHEMA, Map.of(
                     "value", "",
@@ -118,7 +126,6 @@ public class WmiDeviceDriver implements DeviceDriver {
             ));
         }
         try {
-            String property = point.property() == null ? guessScalarProperty(point.query()) : point.property();
             String command = "Get-CimInstance -Namespace '" + escapePowerShell(namespace)
                     + "' -Query '" + escapePowerShell(point.query()) + "'"
                     + " | Select-Object -First 1 -ExpandProperty " + property;

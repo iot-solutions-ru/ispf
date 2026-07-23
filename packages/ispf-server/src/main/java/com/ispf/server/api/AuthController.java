@@ -145,13 +145,30 @@ public class AuthController {
         return null;
     }
 
-    private static String clientIp(HttpServletRequest request) {
+    /**
+     * XFF is honored only when the direct peer is a configured trusted proxy; otherwise the
+     * peer address is used so attackers cannot rotate XFF to evade {@link LoginAttemptLimiter}.
+     */
+    private String clientIp(HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+        if (remoteAddr == null || !isTrustedProxy(remoteAddr)) {
+            return remoteAddr;
+        }
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
             int comma = forwarded.indexOf(',');
             return (comma >= 0 ? forwarded.substring(0, comma) : forwarded).trim();
         }
-        return request.getRemoteAddr();
+        return remoteAddr;
+    }
+
+    private boolean isTrustedProxy(String remoteAddr) {
+        for (String trusted : securityProperties.getTrustedProxyIps()) {
+            if (trusted != null && trusted.trim().equals(remoteAddr)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public record LoginRequest(@NotBlank String username, @NotBlank String password, String totpCode) {

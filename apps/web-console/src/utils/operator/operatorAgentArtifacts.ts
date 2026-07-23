@@ -1,3 +1,5 @@
+import { isSafeNavigationUrl } from "../url/navigationUrl";
+
 /** True when suggestion approves the plan (hide duplicates while gaps remain). */
 export function isPlanApprovalSuggestion(item: OperatorAgentSuggestion | undefined): boolean {
   if (!item) {
@@ -206,7 +208,9 @@ export function parseOperatorAgentArtifacts(result: Record<string, unknown> | un
     return {};
   }
   const links = Array.isArray(result.links)
-    ? (result.links as OperatorAgentLink[]).filter((item) => item?.path)
+    ? (result.links as OperatorAgentLink[]).filter(
+        (item) => item?.path && (!item.url || isSafeNavigationUrl(item.url))
+      )
     : [];
   let tables: OperatorAgentTablePreview[] = [];
   if (Array.isArray(result.tables)) {

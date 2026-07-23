@@ -518,6 +518,8 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 
 `sourceBody` — один общественный класс, реализующий `com.ispf.core.function.ObjectJavaFunction`. **Компиляция при сохранении**; ошибка компиляции → `400`, объект не обновляется.
 
+По умолчанию включены в local/test/dev; в prod выключены (`ispf.function.java.enabled` / `ISPF_FUNCTION_JAVA_ENABLED`). Исходник пишут только админы; остальные роли вызывают уже развёрнутые функции. Код выполняется в процессе сервера — denylist ниже не является изоляцией процесса (ADR-0045).
+
 Контекст: `JavaFunctionContext(objectPath, functionName)` — путь вызывающего объекта и имя функции.
 
 Ограничения (`JavaFunctionSecurity`): запрещены `Runtime`, `ProcessBuilder`, `System.exit`, отражение, `java.net.*` (кроме `InetAddress`), `java.io.File`, `java.nio.file`, Пружинные пакеты и др.

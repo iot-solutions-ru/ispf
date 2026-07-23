@@ -192,6 +192,9 @@ ispf:
     oidc-tenant-claim: ${ISPF_TENANT_OIDC_CLAIM:tenant_id}
     # PostgreSQL RLS GUCs (app.tenant_id / app.tenant_bypass) on shared object tables. No-op on H2.
     db-row-isolation: ${ISPF_TENANT_DB_ROW_ISOLATION:true}
+    datasources:
+      # Tenant JDBC URLs must not target RFC-1918 / IPv6 ULA hosts. Allow only in trusted deployments.
+      allow-private-addresses: ${ISPF_TENANT_DS_ALLOW_PRIVATE_ADDRESSES:false}
   audit:
     siem-webhook-url: ${ISPF_AUDIT_SIEM_WEBHOOK_URL:}
     siem-timeout-seconds: ${ISPF_AUDIT_SIEM_TIMEOUT_SECONDS:5}
@@ -371,6 +374,7 @@ ispf:
   function:
     java:
       # In-process Java functions (javax.tools). Keep true for local/test; prod profile defaults false.
+      # Admin-authored trusted code only — regex denylist is not a process sandbox (ADR-0045).
       enabled: ${ISPF_FUNCTION_JAVA_ENABLED:true}
     audit:
       enabled: ${ISPF_FUNCTION_AUDIT_ENABLED:false}

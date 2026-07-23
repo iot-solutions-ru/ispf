@@ -8,6 +8,8 @@
 
 Object Java functions compile with `javax.tools` and run **in-process** via `ObjectJavaFunction`. Security was a source-string regex denylist only — enough to block obvious RCE primitives, not a JVM sandbox. Multi-tenant / production hosts need a kill-switch and a clearer hardening roadmap.
 
+Authorship model: only admins create/edit Java function source; other roles invoke already-deployed functions. Treat authors as trusted; the kill-switch is for production / shared hosts, not for day-to-day local dogfooding.
+
 ## Decision
 
 ### 1. Kill-switch
@@ -16,6 +18,7 @@ Object Java functions compile with `javax.tools` and run **in-process** via `Obj
 - Default: `true` (local/test/dev)
 - `application-prod.yml`: default `false`
 - When disabled: no compile-on-save, no startup warm-up, `JavaFunctionHandler.supports` returns false, invoke/compile throw a clear error
+- When enabled under the `prod` profile: startup logs a WARN (explicit opt-in on a production host)
 
 ### 2. Stronger denylist (phase 1)
 

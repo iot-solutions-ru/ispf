@@ -10,6 +10,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.notification.NotificationDispatchService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.ml.AnomalyAlertRuleEvaluator;
+import com.ispf.server.security.OutboundUrlSafety;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -74,6 +75,7 @@ public class AlertRuleService {
                 request.anomalyModelId(),
                 request.deactivateExpr()
         );
+        validateNotificationWebhookUrl(request.notificationWebhookUrl());
         AlertRule created = automationTreeService.createAlertRule(
                 request.name(),
                 request.objectPath(),
@@ -116,6 +118,7 @@ public class AlertRuleService {
                     request.deactivateExpr() != null ? request.deactivateExpr() : current.deactivateExpr()
             );
         }
+        validateNotificationWebhookUrl(request.notificationWebhookUrl());
         AlertRule updated = automationTreeService.updateAlertRule(
                 id,
                 request.name(),
@@ -457,6 +460,14 @@ public class AlertRuleService {
         if (deactivateExpr != null && !deactivateExpr.isBlank()) {
             expressionEngine.compile(deactivateExpr);
         }
+    }
+
+    /** Webhook targets are checked against SSRF at config time and again at dispatch. */
+    private static void validateNotificationWebhookUrl(String webhookUrl) {
+        if (webhookUrl == null || webhookUrl.isBlank()) {
+            return;
+        }
+        OutboundUrlSafety.requireSafeHttpUrl(webhookUrl, "", false);
     }
 
     public record CreateAlertRuleRequest(

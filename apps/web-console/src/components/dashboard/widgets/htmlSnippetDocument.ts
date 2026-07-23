@@ -1,3 +1,5 @@
+import DOMPurify from "dompurify";
+
 /** Decode common HTML entities when snippet was stored escaped. */
 export function decodeHtmlSnippetEntities(html: string): string {
   if (!/&lt;|&gt;|&amp;|&#\d+;|&#x/i.test(html)) {
@@ -11,30 +13,16 @@ export function decodeHtmlSnippetEntities(html: string): string {
     .replace(/&amp;/gi, "&");
 }
 
-const BLOCKED_HTML_TAGS = /<\/?(script|iframe|object|embed|link|meta|style|foreignObject|base|form)\b[^>]*>/gi;
-const EVENT_ATTRS = /\s(on[a-z]+|formaction|xlink:href|href)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
-
 /** Strip executable markup from dashboard HTML fragments before innerHTML. */
 export function sanitizeHtmlSnippet(html: string): string {
-  let sanitized = normalizeHtmlSnippet(html);
-  if (!sanitized) {
+  const normalized = normalizeHtmlSnippet(html);
+  if (!normalized) {
     return "";
   }
-  sanitized = sanitized.replace(BLOCKED_HTML_TAGS, "");
-  sanitized = sanitized.replace(EVENT_ATTRS, (match, attr: string, val: string) => {
-    const lower = attr.toLowerCase();
-    if (lower.startsWith("on")) {
-      return "";
-    }
-    const value = val.replace(/^['"]|['"]$/g, "").trim().toLowerCase();
-    if (lower === "href" || lower === "xlink:href") {
-      if (value.startsWith("javascript:") || value.startsWith("data:text/html")) {
-        return "";
-      }
-    }
-    return match;
+  return DOMPurify.sanitize(normalized, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["style", "form"],
   });
-  return sanitized;
 }
 
 export function normalizeHtmlSnippet(html: string): string {
@@ -89,18 +77,4 @@ export function buildHtmlSnippetSrcDoc(html: string): string {
     return trimmed;
   }
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;width:100%;height:100%;box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}</style></head><body>${trimmed}</body></html>`;
-}
-
-/** For HTML fragments with script (not a full document). */
-export function mountHtmlWithScripts(container: HTMLElement, html: string): void {
-  const normalized = normalizeHtmlSnippet(html);
-  container.innerHTML = normalized;
-  container.querySelectorAll("script").forEach((oldScript) => {
-    const script = document.createElement("script");
-    for (const attr of oldScript.attributes) {
-      script.setAttribute(attr.name, attr.value);
-    }
-    script.text = oldScript.text;
-    oldScript.replaceWith(script);
-  });
 }

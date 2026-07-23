@@ -9,6 +9,9 @@ import com.ispf.server.driver.DriverBinding;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.tenant.TenantScopeService;
+import com.ispf.server.tenant.TenantVirtualRootService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -25,66 +28,88 @@ public class DriverRuntimeController {
 
     private final DriverRuntimeService driverRuntimeService;
     private final SystemObjectStructureService structureService;
+    private final TenantScopeService tenantScopeService;
+    private final TenantVirtualRootService tenantVirtualRootService;
 
     public DriverRuntimeController(
             DriverRuntimeService driverRuntimeService,
-            SystemObjectStructureService structureService
+            SystemObjectStructureService structureService,
+            TenantScopeService tenantScopeService,
+            TenantVirtualRootService tenantVirtualRootService
     ) {
         this.driverRuntimeService = driverRuntimeService;
         this.structureService = structureService;
+        this.tenantScopeService = tenantScopeService;
+        this.tenantVirtualRootService = tenantVirtualRootService;
     }
 
     @GetMapping("/status")
-    public DriverRuntimeService.DriverRuntimeStatus status(@RequestParam String devicePath) {
-        return driverRuntimeService.status(devicePath)
+    public DriverRuntimeService.DriverRuntimeStatus status(
+            @RequestParam String devicePath,
+            Authentication authentication
+    ) {
+        String canonical = requirePathAccess(devicePath, authentication);
+        return driverRuntimeService.status(canonical)
                 .orElseThrow(() -> new IllegalArgumentException("No driver binding for: " + devicePath));
     }
 
     @PostMapping("/start")
-    public DriverRuntimeService.DriverRuntimeStatus start(@RequestParam String devicePath) {
-        return driverRuntimeService.start(devicePath);
+    public DriverRuntimeService.DriverRuntimeStatus start(
+            @RequestParam String devicePath,
+            Authentication authentication
+    ) {
+        return driverRuntimeService.start(requirePathAccess(devicePath, authentication));
     }
 
     @PostMapping("/stop")
-    public DriverRuntimeService.DriverRuntimeStatus stop(@RequestParam String devicePath) {
-        return driverRuntimeService.stop(devicePath);
+    public DriverRuntimeService.DriverRuntimeStatus stop(
+            @RequestParam String devicePath,
+            Authentication authentication
+    ) {
+        return driverRuntimeService.stop(requirePathAccess(devicePath, authentication));
     }
 
     @PostMapping("/poll")
     public DriverRuntimeService.DriverRuntimeStatus poll(
             @RequestParam String devicePath,
-            @RequestParam(required = false) String pointId
+            @RequestParam(required = false) String pointId,
+            Authentication authentication
     ) {
-        return driverRuntimeService.pollNow(devicePath, pointId);
+        return driverRuntimeService.pollNow(requirePathAccess(devicePath, authentication), pointId);
     }
 
     @GetMapping("/browse")
     public java.util.List<com.ispf.driver.DriverDiscovery.Node> browse(
             @RequestParam String devicePath,
-            @RequestParam(required = false) String nodeId
+            @RequestParam(required = false) String nodeId,
+            Authentication authentication
     ) {
-        return driverRuntimeService.browseDriverChildren(devicePath, nodeId);
+        return driverRuntimeService.browseDriverChildren(requirePathAccess(devicePath, authentication), nodeId);
     }
 
     @PostMapping("/write")
     public DriverRuntimeService.DriverRuntimeStatus write(
             @RequestParam String devicePath,
             @RequestParam String pointId,
-            @RequestBody(required = false) DataRecordPayloadRequest value
+            @RequestBody(required = false) DataRecordPayloadRequest value,
+            Authentication authentication
     ) {
+        String canonical = requirePathAccess(devicePath, authentication);
         DataSchema schema = DataSchema.builder("driverWrite")
                 .field("value", FieldType.STRING)
                 .build();
         DataRecord record = DataRecordPayloadResolver.resolve(schema, value);
-        return driverRuntimeService.writePoint(devicePath, pointId, record);
+        return driverRuntimeService.writePoint(canonical, pointId, record);
     }
 
     @PutMapping("/configure")
     public DriverRuntimeService.DriverRuntimeStatus configure(
             @RequestParam String devicePath,
-            @RequestBody ConfigureDriverRequest request
+            @RequestBody ConfigureDriverRequest request,
+            Authentication authentication
     ) {
-        structureService.ensureDeviceDriverStructure(devicePath);
+        String canonical = requirePathAccess(devicePath, authentication);
+        structureService.ensureDeviceDriverStructure(canonical);
         Map<String, String> configuration = mergeConfiguration(request);
         TelemetryPublishMode publishMode = TelemetryPublishMode.parse(configuration.get("telemetryPublishMode"));
         int coalesceMs = parsePositiveInt(configuration.get("telemetryCoalesceMs"));
@@ -96,12 +121,18 @@ public class DriverRuntimeController {
                 publishMode,
                 coalesceMs
         );
-        driverRuntimeService.configure(devicePath, binding);
+        driverRuntimeService.configure(canonical, binding);
         if (Boolean.TRUE.equals(request.autoStart())) {
-            driverRuntimeService.setDriverAutoStart(devicePath, true);
-            return driverRuntimeService.start(devicePath);
+            driverRuntimeService.setDriverAutoStart(canonical, true);
+            return driverRuntimeService.start(canonical);
         }
-        return driverRuntimeService.status(devicePath).orElseThrow();
+        return driverRuntimeService.status(canonical).orElseThrow();
+    }
+
+    private String requirePathAccess(String path, Authentication authentication) {
+        String canonical = tenantVirtualRootService.toCanonical(path, authentication);
+        tenantScopeService.requirePathInScope(canonical, authentication);
+        return canonical;
     }
 
     public record ConfigureDriverRequest(

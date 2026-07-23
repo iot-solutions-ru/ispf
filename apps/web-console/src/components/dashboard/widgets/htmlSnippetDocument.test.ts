@@ -1,3 +1,4 @@
+/** @vitest-environment jsdom */
 import { describe, expect, it } from "vitest";
 import {
   buildHtmlSnippetSrcDoc,
@@ -36,9 +37,22 @@ describe("htmlSnippetDocument", () => {
   });
 
   it("sanitizes event handlers and javascript hrefs", () => {
-    expect(sanitizeHtmlSnippet('<img src=x onerror="alert(1)">')).toBe('<img src=x>');
+    expect(sanitizeHtmlSnippet('<img src=x onerror="alert(1)">')).toBe('<img src="x">');
     expect(sanitizeHtmlSnippet('<a href="javascript:alert(1)">x</a>')).toBe("<a>x</a>");
     expect(sanitizeHtmlSnippet("<p>safe</p>")).toBe("<p>safe</p>");
+  });
+
+  it("blocks sanitizer bypass vectors", () => {
+    const mangled = sanitizeHtmlSnippet("<scri<script>pt>alert(1)</scri</script>pt>");
+    expect(mangled.toLowerCase()).not.toContain("<script");
+    expect(sanitizeHtmlSnippet('<a href="&#106;avascript:alert(1)">x</a>')).toBe("<a>x</a>");
+    expect(sanitizeHtmlSnippet('<a href="data:text/html,<b>1</b>">y</a>')).toBe("<a>y</a>");
+    expect(sanitizeHtmlSnippet("<foreignObject><img src=x onerror=alert(1)></foreignObject>")).toBe("");
+  });
+
+  it("keeps style and form tags forbidden", () => {
+    expect(sanitizeHtmlSnippet("<style>body{display:none}</style><p>x</p>")).toBe("<p>x</p>");
+    expect(sanitizeHtmlSnippet('<form action="/x"><button>go</button></form>')).toBe("<button>go</button>");
   });
 
   it("parses single external iframe embeds before sanitization strips them", () => {

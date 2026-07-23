@@ -87,7 +87,7 @@ Anyone with a non-null `tenant_id` (including **tenant-admin**) must **not** use
 | Rule | Tenant callers |
 |------|----------------|
 | `connectionMode=internal` | Forbidden (create / update / test / execute) |
-| External JDBC URL | Reject localhost, `127.0.0.0/8`, `::1`, link-local, and the host from `spring.datasource.url`. Driver allowlist unchanged. |
+| External JDBC URL | Reject localhost, `127.0.0.0/8`, `::1`, link-local, private ranges (`10/8`, `172.16/12`, `192.168/16`, IPv6 ULA), and the host from `spring.datasource.url`. Driver allowlist unchanged. Private ranges can be re-allowed via `ispf.tenant.datasources.allow-private-addresses=true` (`ISPF_TENANT_DS_ALLOW_PRIVATE_ADDRESSES`) for OT/LAN deployments. |
 | Script / BFF SQL with blank `dataSourcePath` | Forbidden (falls through to platform catalog) |
 | Migrations / SQL bindings / reports | `dataSourcePath` must be an allowed external DS |
 

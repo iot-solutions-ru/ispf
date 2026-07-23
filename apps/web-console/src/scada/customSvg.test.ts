@@ -14,6 +14,49 @@ describe("customSvg upload pipeline (BL-94)", () => {
     expect(clean).toContain('fill="green"');
   });
 
+  it("blocks svg/onload and mangled script vectors", () => {
+    const onload = sanitizeSvgMarkup("<svg/onload=alert(1)>");
+    expect(onload).not.toMatch(/onload|alert/i);
+    const mangled = sanitizeSvgMarkup("<scri<script>pt>alert(1)</scri</script>pt>");
+    expect(mangled.toLowerCase()).not.toContain("<script");
+  });
+
+  it("strips javascript: and data:text/html hrefs", () => {
+    const entity = sanitizeSvgMarkup('<a href="&#106;avascript:alert(1)"><rect width="5"/></a>');
+    expect(entity).toContain("<rect");
+    expect(entity).not.toContain("href");
+    const xlink = sanitizeSvgMarkup('<a xlink:href="javascript:alert(1)"><circle r="2"/></a>');
+    expect(xlink).toContain("<circle");
+    expect(xlink).not.toContain("xlink:href");
+    const dataHtml = sanitizeSvgMarkup('<a href="data:text/html,<b>1</b>"><circle r="3"/></a>');
+    expect(dataHtml).not.toContain("data:text/html");
+    const useJs = sanitizeSvgMarkup('<use href="javascript:alert(1)"/>');
+    expect(useJs).not.toContain("javascript");
+  });
+
+  it("removes foreignObject together with nested HTML", () => {
+    const clean = sanitizeSvgMarkup(
+      '<foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><img src=x onerror=alert(1)></body></foreignObject>' +
+        '<rect fill="green"/>'
+    );
+    expect(clean).not.toContain("foreignObject");
+    expect(clean).not.toContain("<img");
+    expect(clean).toContain('fill="green"');
+  });
+
+  it("keeps safe references: use, external image, url(#) fill", () => {
+    const clean = sanitizeSvgMarkup(
+      '<defs><path id="p" d="M0 0h10"/></defs>' +
+        '<use href="#p"/><use xlink:href="#p"/>' +
+        '<image href="https://example.com/x.png"/>' +
+        '<rect fill="url(#grad)"/>'
+    );
+    expect(clean).toContain("<use");
+    expect(clean).toContain('href="#p"');
+    expect(clean).toContain('href="https://example.com/x.png"');
+    expect(clean).toContain('fill="url(#grad)"');
+  });
+
   it("parses uploaded svg root element", () => {
     const raw = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 40" width="80" height="40">
       <circle cx="40" cy="20" r="18" fill="#2f81f7"/>

@@ -7,9 +7,12 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.NoOpClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
+import com.ispf.server.security.acl.ObjectAccessService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import tools.jackson.databind.ObjectMapper;
@@ -20,12 +23,16 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ObjectWebSocketHandlerInterestTest {
 
     private ObjectWebSocketHandler handler;
     private ObjectWebSocketPathInterestRegistry pathInterestRegistry;
+    private ObjectAccessService objectAccessService;
 
     @BeforeEach
     void setUp() {
@@ -33,6 +40,7 @@ class ObjectWebSocketHandlerInterestTest {
         properties.setSendElasticEnabled(false);
         properties.setSendThreads(1);
         pathInterestRegistry = new ObjectWebSocketPathInterestRegistry();
+        objectAccessService = mock(ObjectAccessService.class);
         handler = new ObjectWebSocketHandler(
                 properties,
                 new ObjectMapper(),
@@ -41,7 +49,8 @@ class ObjectWebSocketHandlerInterestTest {
                 mock(ObjectManager.class),
                 mock(ApplicationEventCatalogService.class),
                 pathInterestRegistry,
-                new NoOpClusterPathInterestStore()
+                new NoOpClusterPathInterestStore(),
+                objectAccessService
         );
         handler.startSendWorkers();
     }
@@ -91,6 +100,56 @@ class ObjectWebSocketHandlerInterestTest {
 
         assertThat(awaitMessages(session, 1, 2000)).hasSize(1);
         assertThat(session.messages.getFirst()).contains("VARIABLE_UPDATED");
+    }
+
+    @Test
+    void subscribeDropsPathsWithoutReadPermission() throws Exception {
+        RecordingSession session = openSession("s-acl");
+        session.attributes.put(
+                WebSocketAuthHandshakeInterceptor.AUTHENTICATION_ATTRIBUTE,
+                authentication("operator")
+        );
+        when(objectAccessService.canRead(eq("root.devices.pump"), any())).thenReturn(true);
+        when(objectAccessService.canRead(eq("root.platform.security"), any())).thenReturn(false);
+
+        session.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump","root.platform.security"]}
+                """);
+
+        assertThat(pathInterestRegistry.hasPathInterest("root.devices.pump")).isTrue();
+        assertThat(pathInterestRegistry.hasPathInterest("root.platform.security")).isFalse();
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.platform.security", "users"));
+        assertThat(awaitMessages(session, 0, 200)).isEmpty();
+    }
+
+    @Test
+    void ancestorSubscriptionDoesNotLeakUnreadableDescendantEvents() throws Exception {
+        RecordingSession session = openSession("s-ancestor");
+        session.attributes.put(
+                WebSocketAuthHandshakeInterceptor.AUTHENTICATION_ATTRIBUTE,
+                authentication("operator")
+        );
+        when(objectAccessService.canRead(any(), any())).thenReturn(true);
+        when(objectAccessService.canRead(eq("root.platform.security.users.admin"), any())).thenReturn(false);
+
+        session.sendSubscribe("""
+                {"type":"subscribe","paths":["root.platform"]}
+                """);
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.platform.security.users.admin", "displayName"));
+        assertThat(awaitMessages(session, 0, 200)).isEmpty();
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.platform.devices.pump", "speed"));
+        assertThat(awaitMessages(session, 1, 2000)).hasSize(1);
+    }
+
+    private static UsernamePasswordAuthenticationToken authentication(String role) {
+        return new UsernamePasswordAuthenticationToken(
+                "ws-user",
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_" + role))
+        );
     }
 
     private RecordingSession openSession(String id) throws Exception {

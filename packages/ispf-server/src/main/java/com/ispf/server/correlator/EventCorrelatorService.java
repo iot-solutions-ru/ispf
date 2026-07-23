@@ -16,6 +16,7 @@ import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
 import com.ispf.server.notification.NotificationDispatchService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.security.OutboundUrlSafety;
 import com.ispf.server.workflow.WorkflowService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -614,6 +615,10 @@ public class EventCorrelatorService {
         }
         if (actionType == CorrelatorActionType.OPEN_OPERATOR_REPORT && (actionTarget == null || actionTarget.isBlank())) {
             throw new IllegalArgumentException("actionTarget report path is required for OPEN_OPERATOR_REPORT");
+        }
+        if (actionType == CorrelatorActionType.SEND_WEBHOOK) {
+            // SSRF guard: webhook targets must be safe outbound http(s) URLs (checked at dispatch too).
+            OutboundUrlSafety.requireSafeHttpUrl(actionTarget, "", false);
         }
         if (patternType == CorrelatorPatternType.SEQUENCE) {
             if (secondEventName == null || secondEventName.isBlank()) {

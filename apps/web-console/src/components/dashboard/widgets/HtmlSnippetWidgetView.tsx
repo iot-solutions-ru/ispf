@@ -35,7 +35,7 @@ export default function HtmlSnippetWidgetView({ widget, editable }: HtmlSnippetW
           style={styles.body}
           title={externalEmbed.title || widget.title || "HTML snippet"}
           src={externalEmbed.src}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+          sandbox="allow-scripts allow-forms allow-popups"
         />
       ) : useIframe ? (
         <iframe
@@ -44,7 +44,7 @@ export default function HtmlSnippetWidgetView({ widget, editable }: HtmlSnippetW
           style={styles.body}
           title={widget.title || "HTML snippet"}
           srcDoc={srcDoc}
-          sandbox="allow-scripts"
+          sandbox=""
         />
       ) : (
         <div

@@ -33,3 +33,9 @@ Copy `deploy/local/README.example.md` → `deploy/local/README.md` on first clon
 ## Environment
 
 Secrets: `.env` (see [`.env.example`](../.env.example)). Never commit passwords or `deploy/lab_ssh.py`.
+
+`docker-compose.vps-cluster.yml` additionally requires `NATS_USER` and `NATS_PASSWORD` (exported or in `.env` next to the compose file): the host-network NATS container binds loopback only and refuses to start without credentials, and the replicas connect with the same pair via `ISPF_NATS_URL`. Keep the credentials URL-safe — they are embedded in `nats://user:pass@127.0.0.1:4222`.
+
+Both `docker-compose.vps-*.yml` run the JVM containers as uid/gid `10001` (same as the all-in-one Dockerfile image); the host data dir must be writable by it: `sudo chown -R 10001:10001 /opt/ispf/data`.
+
+`apply-platform-update.sh` requires `CHECKSUMS.sha256` next to the staged artifacts (generated on the build side with `sha256sum ispf-server.jar web-console.zip driver-packs.tar.gz > CHECKSUMS.sha256`); the update aborts before install when checksums are missing or mismatched.

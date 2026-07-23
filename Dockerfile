@@ -1,6 +1,6 @@
 # All-in-one ISPF server (embedded web console).
 # Build context must include a prebuilt bootJar (see .github/workflows/release.yml).
-FROM eclipse-temurin:25-jre-jammy
+FROM eclipse-temurin:25-jre-jammy@sha256:b8ba5fca9d88b6ecc3a46c8e75b744f84aca9a9d08587901b5ab480baf641ab5
 
 LABEL org.opencontainers.image.title="ISPF"
 LABEL org.opencontainers.image.description="Open-source industrial IoT / SCADA — all-in-one server + web console"

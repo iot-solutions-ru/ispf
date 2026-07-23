@@ -63,6 +63,26 @@ class AlertRuleApiTest {
     }
 
     @Test
+    void rejectsWebhookUrlPointingToCloudMetadata() throws Exception {
+        mockMvc.perform(post("/api/v1/alert-rules")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "SSRF webhook test rule",
+                                  "objectPath": "%s",
+                                  "watchVariable": "temperature",
+                                  "conditionExpr": "self.temperature[\\"value\\"] > 80.0",
+                                  "eventName": "thresholdExceeded",
+                                  "notificationWebhookUrl": "http://169.254.169.254/latest/meta-data",
+                                  "enabled": false,
+                                  "edgeTrigger": false
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail", org.hamcrest.Matchers.containsString("169.254.169.254")));
+    }
+
+    @Test
     void firesEventViaAlertRuleOnThresholdBreach() throws Exception {
         mockMvc.perform(post("/api/v1/drivers/runtime/stop").param("devicePath", DEMO_DEVICE))
                 .andExpect(status().isOk());

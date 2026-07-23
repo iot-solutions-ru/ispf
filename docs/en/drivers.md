@@ -293,15 +293,15 @@ Config v2c:
 }
 ```
 
-Config v3 (additional fields):
+Config v3 (additional fields; defaults `authProtocol: SHA`, `privProtocol: AES` — legacy `MD5`/`DES` remain selectable explicitly):
 
 ```json
 {
   "version": "3",
   "securityName": "snmpuser",
-  "authProtocol": "MD5",
+  "authProtocol": "SHA",
   "authPassphrase": "authpass",
-  "privProtocol": "DES",
+  "privProtocol": "AES",
   "privPassphrase": "privpass"
 }
 ```

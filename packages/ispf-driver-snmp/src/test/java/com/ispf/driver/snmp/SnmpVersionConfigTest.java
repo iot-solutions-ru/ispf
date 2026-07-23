@@ -20,4 +20,12 @@ class SnmpVersionConfigTest {
     void metadataVersionIs020() {
         assertEquals("0.2.0", new SnmpDeviceDriver().metadata().version());
     }
+
+    @Test
+    void v3DefaultsPreferShaAndAes() {
+        assertEquals("SHA", new SnmpDeviceDriver().metadata().configurationSchema()
+                .get("authProtocol"));
+        assertEquals("AES", new SnmpDeviceDriver().metadata().configurationSchema()
+                .get("privProtocol"));
+    }
 }

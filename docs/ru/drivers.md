@@ -293,15 +293,15 @@ Loopback-тест: `SnmpDeviceDriverTest` + in-process `SnmpLoopbackAgent` (GET/
 }
 ```
 
-Конфиг v3 (дополнительно):
+Конфиг v3 (дополнительно; по умолчанию `authProtocol: SHA`, `privProtocol: AES` — устаревшие `MD5`/`DES` доступны явной настройкой):
 
 ```json
 {
   "version": "3",
   "securityName": "snmpuser",
-  "authProtocol": "MD5",
+  "authProtocol": "SHA",
   "authPassphrase": "authpass",
-  "privProtocol": "DES",
+  "privProtocol": "AES",
   "privPassphrase": "privpass"
 }
 ```
