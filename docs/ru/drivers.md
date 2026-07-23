@@ -23,9 +23,9 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **55** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **6** **BETA**. Top-20 industrial: **17** **PRODUCTION** + **3** **BETA** (`ethernet-ip`, `opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+В `DriverProductionMatrix` — **58** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **3** **BETA**. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `ethernet-ip` (только CIP session). Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
+> **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера). Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
 | `driverId` | Зрелость (реестр) | Примечания / interop |
 | ---------- | ------------------- | --------------- |
@@ -48,7 +48,8 @@
 | `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` submit через маппинг; loopback-тесты |
 | `ipmi`, `wmi` | PRODUCTION | hardware/OS-пробы; `wmi` — только Windows |
 | `odbc` | PRODUCTION | SQL read; нужен внешний ODBC-JDBC bridge JAR |
-| `ethernet-ip` | BETA | регистрация CIP session; tag path — placeholder |
+| `ethernet-ip` | PRODUCTION | UCMM CIP Read/Write Tag (атомарные типы); loopback CIP-эмулятор |
+| `smi-s`, `vmware` | PRODUCTION | парсинг CIM-XML / vSphere SOAP (Login + RetrieveProperties); loopback-тесты |
 | `opc-da`, `opc-bridge` | BETA | **Оболочка / тесты маппинга** — не полный DA-стек |
 
 ### observedAt (source timestamps, BL-79)
@@ -436,13 +437,13 @@ Loopback-тест: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 2. PR платформы добавляет протокольную логику в существующий модуль `ispf-driver-*`.
 3. Обновляется `DriverMaturityRegistry`; документация в этом файле.
 
-Текущие кандидаты STUB/BETA (июнь 2026):
+Текущие кандидаты STUB/BETA (июль 2026):
 
 | `driverId` | Зрелость | Примечание |
 |------------|----------|---------|
-| `corba` | BETA | CORBA IIOP TCP shell |
-| `vmware` | BETA | vSphere SOAP stub |
-| `smi-s` | BETA | SMI-S CIM-XML stub |
+| `corba` | BETA | CORBA IIOP TCP shell — нужна сторонняя ORB |
+| `vmware` | PRODUCTION | vSphere SOAP: Login + RetrieveProperties |
+| `smi-s` | PRODUCTION | парсинг SMI-S CIM-XML |
 
 Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTest`, `OpcBridgeDeviceDriverTest`, `CorbaDeviceDriverTest`, `VmwareDeviceDriverTest` (`useHttp`), `SmisDeviceDriverTest` (`useHttp`).
 
@@ -475,7 +476,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `iec104-server` | `ispf-driver-iec104-server` | IEC 104 server/slave |
 | `bacnet` | `ispf-driver-bacnet` | BACnet/IP |
 | `dnp3` | `ispf-driver-dnp3` | DNP3 TCP master (Class 0/1/2/3 poll) |
-| `ethernet-ip` | `ispf-driver-ethernet-ip` | EtherNet/IP CIP session + tag path |
+| `ethernet-ip` | `ispf-driver-ethernet-ip` | EtherNet/IP CIP UCMM Read/Write Tag |
 | `dlms` | `ispf-driver-dlms` | DLMS/COSEM master (Gurux read/write) |
 | `jmx` | `ispf-driver-jmx` | JMX local/remote |
 | `jdbc` | `ispf-driver-jdbc` | SQL JDBC |
@@ -500,8 +501,8 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `cwmp` | `ispf-driver-cwmp` | TR-069 Inform client |
 | `web-transaction` | `ispf-driver-web-transaction` | Многошаговый HTTP |
 | `graph-db` | `ispf-driver-graph-db` | Neo4j / Gremlin |
-| `vmware` | `ispf-driver-vmware` | vSphere SOAP stub |
-| `smi-s` | `ispf-driver-smis` | SMI-S CIM-XML stub |
+| `vmware` | `ispf-driver-vmware` | vSphere SOAP (Login + RetrieveProperties) |
+| `smi-s` | `ispf-driver-smis` | SMI-S CIM-XML |
 | `gps-tracker` | `ispf-driver-gps-tracker` | GPS/M2M TCP-сервер |
 | `flexible` | `ispf-driver-flexible` | Универсальный TCP/UDP |
 | `mbus` | `ispf-driver-mbus` | M-Bus |
@@ -523,7 +524,6 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 
 | `driverId` | Что есть сейчас | Для production |
 |------------|-----------------|----------------|
-| `ethernet-ip` | Register Session | CIP tag read/write library |
 | `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
 | `corba` | IIOP TCP | JDK CORBA удалён; используйте bridge |
@@ -982,6 +982,30 @@ Generic ODBC read через JDBC-мост. **Нужен внешний ODBC-JDB
 Маппинг точек: имя колонки первой строки результата. Переменная: `value`, `status`.
 
 Зрелость: **production**. Loopback-тест: `OdbcDeviceDriverTest` (против H2 в режиме совместимости с мостом — проверяет путь query/mapping, **не** реальный ODBC bridge). Только чтение.
+
+### ethernet-ip (`ispf-driver-ethernet-ip`)
+
+EtherNet/IP CIP-клиент поверх encapsulation-протокола (по умолчанию TCP/44818): `RegisterSession`, затем UCMM (unconnected) обмены `SendRRData`. Конфиг: `host`, `port`, `timeoutMs`.
+
+Маппинг точек: путь CIP-тега (символьные сегменты через точку, например `Program:MainProgram.Counter`). CIP Read Tag (0x4C) декодирует атомарные типы BOOL/SINT/INT/DINT/REAL (little-endian); `writePoint` выполняет CIP Write Tag (0x4D) с типом, запомненным при последнем чтении тега (fallback: вывод типа из Java-значения). Переменная: `value`, `quality` (`GOOD` / `BAD:0x..` / `NOT_AVAILABLE`), `connected`, `sessionHandle`, `tagPath`.
+
+Зрелость: **production**. Loopback-тест: `EthernetIpDeviceDriverTest` (CIP-эмулятор в тесте: чтение / запись / статус ошибки / отказ соединения). Ограничения: только UCMM (без connected Class-3), element count 1 (без массивов/структур/UDT, без фрагментации), один обмен на точку за poll, без ListIdentity discovery.
+
+### vmware (`ispf-driver-vmware`)
+
+VMware vSphere SOAP (vim25) клиент по HTTP(S): `RetrieveServiceContent` при connect, `SessionManager.Login` с cookie `vmware_soap_session`, `PropertyCollector.RetrieveProperties` на каждый poll; один re-login + retry при фолте `NotAuthenticated`; `Logout` при disconnect. Конфиг: `host`, `username`, `password`, `timeoutMs`, `useHttp`.
+
+Маппинг точек: путь свойства — `about.X` раскрывается в `content.about.X` (например `about.version`) или `connected`. Переменная: `value`, `statusCode`.
+
+Зрелость: **production**. Loopback-тест: `VmwareDeviceDriverTest` (фейковый vSphere-эндпоинт, проверяющий сессионный флоу). Только чтение. Ограничения: XML собирается вручную (без WSDL codegen); object set — только ServiceInstance; сложные/массивные значения сводятся к тексту.
+
+### smi-s (`ispf-driver-smis`)
+
+SMI-S клиент: CIM-XML по HTTP(S) — `EnumerateInstances` для `CIM_RegisteredProfile` против `/cimom`; свойства `INSTANCE` раскладываются в ключи `Class:Property`, CIM-ответ `ERROR` завершает чтение ошибкой. Конфиг: `host`, `port` (5989), `username`, `password`, `namespace` (`root/pg`), `timeoutMs`, `useHttp`.
+
+Маппинг точек: `ClassName:PropertyName` (например `CIM_RegisteredProfile:RegisteredName`). Переменная: `value`, `statusCode`; значения `PROPERTY.ARRAY` склеиваются запятыми; отсутствующие свойства читаются как `NOT_AVAILABLE`.
+
+Зрелость: **production**. Loopback-тест: `SmisDeviceDriverTest` (CIM-XML сервер в тесте: значения, массивы, CIM ERROR, отказ соединения). Только чтение.
 
 ## Добавление своего драйвера
 

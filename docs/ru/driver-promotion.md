@@ -24,6 +24,15 @@
 4. Изменить запись в `DriverMaturityRegistry`.
 5. При необходимости — демо-устройство / модель в bootstrap.
 
+## Статус (июль 2026, продвижение партии C)
+
+| driverId | Было | Стало | Примечание |
+|----------|------|-------|------------|
+| `ethernet-ip` | BETA | **PRODUCTION** | Реальный UCMM CIP-клиент: Read/Write Tag (0x4C/0x4D) для BOOL/SINT/INT/DINT/REAL поверх `SendRRData`; `EthernetIpDeviceDriverTest` (CIP-эмулятор в тесте); `POLL` + `WRITE` + `QUALITY` |
+| `vmware` | BETA | **PRODUCTION** | Реальный vSphere SOAP-флоу: RetrieveServiceContent + SessionManager Login (session cookie) + PropertyCollector RetrieveProperties, re-login при NotAuthenticated, Logout при disconnect; `VmwareDeviceDriverTest` переписан вокруг фейкового эндпоинта с проверкой сессии |
+| `smi-s` | BETA | **PRODUCTION** | Реальный парсер CIM-XML (JDK DOM/XPath, secure processing) вместо захардкоженных свойств; обработка CIM `ERROR`; `SmisDeviceDriverTest` расширен (значения, массивы, ошибка, отказ соединения) |
+| `opc-da`, `opc-bridge`, `corba` | BETA | **BETA** (остаётся) | Объективные блокеры: протокол proxy для opc-da/opc-bridge не определён (Windows DCOM bridge вне скоупа); corba требует стороннюю ORB (JDK CORBA удалён) |
+
 ## Статус (июль 2026, продвижение партии B3)
 
 | driverId | Было | Стало | Примечание |
