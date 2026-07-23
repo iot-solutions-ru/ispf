@@ -144,6 +144,13 @@ tasks.register("ensureAllDriverPacks") {
     dependsOn("syncAllDriverPacks")
 }
 
+tasks.register("testDevDriverPacks") {
+    group = "verification"
+    description =
+        "Unit-test the minimal/dev driver pack set (PR-fast driver-packs job); full protocol matrix is driver-interop"
+    dependsOn(devDriverPackProjects.map { it.path + ":test" })
+}
+
 val prFastBackendTestTasks = listOf(
     ":packages:ispf-core:test",
     ":packages:ispf-expression:test",
