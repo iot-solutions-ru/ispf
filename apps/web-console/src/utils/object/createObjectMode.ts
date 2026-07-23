@@ -291,9 +291,9 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
     return "QUALITY_RECORD";
   }
   if (
-    parentPath.endsWith(".relative-blueprints")
+    parentPath.endsWith(".mixin-blueprints")
     || parentPath.endsWith(".instance-types")
-    || parentPath.endsWith(".absolute-blueprints")
+    || parentPath.endsWith(".singleton-blueprints")
   ) {
     return "BLUEPRINT";
   }

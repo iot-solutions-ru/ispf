@@ -137,8 +137,8 @@ A complete tree-first project has **8 layers** (see `get_automation_schema topic
 
 | # | Layer | Path | Tools |
 |---|------|------|-------|
-| 1 | Hub (ABSOLUTE) | `root.platform.instances.{project}` | `ensure_absolute_instance`, binding rules, PlatformRef |
-| 2 | Devices | `root.platform.devices.{project}/*` | `instantiate_instance_type`, `apply_relative_model`, `create_virtual_device` |
+| 1 | Hub (SINGLETON) | `root.platform.singleton-blueprints.{project}` | `ensure_singleton_instance`, binding rules, PlatformRef |
+| 2 | Devices | `root.platform.devices.{project}/*` | `instantiate_instance_type`, `apply_mixin_blueprint`, `create_virtual_device` |
 | 3 | Dashboard | `root.platform.dashboards.{project}-*` | `set_dashboard_layout`, `add_dashboard_widget` |
 | 4 | SCADA | `root.platform.mimics.{project}-*` | `save_mimic_diagram`, `get_mimic_diagram` |
 | 5 | Alerts | `root.platform.alert-rules.{project}-*` | `configure_alert` |
@@ -146,7 +146,7 @@ A complete tree-first project has **8 layers** (see `get_automation_schema topic
 | 7 | Workflows | `root.platform.workflows.{project}-*` | `save_workflow_bpmn` |
 | 8 | Reports | `root.platform.reports.{project}-*` | `configure_report` |
 
-**Three model kinds:** `get_automation_schema topic=instanceTypes` -> RELATIVE (mixin on existing object), INSTANCE (new object), ABSOLUTE (singleton hub).
+**Three blueprint kinds:** `get_automation_schema topic=instanceTypes` -> MIXIN (mixin on existing object), INSTANCE (new object), SINGLETON (live hub under `singleton-blueprints.*` with application logic).
 
 **Recipes catalog (1410):** `search_platform_recipes`, `get_automation_schema topic=recipes|projects|recipe/{id}`. Includes **500** ready industry projects (`project-{industry}-{archetype}`). Full index: [agent-recipes](agent-recipes.md).
 

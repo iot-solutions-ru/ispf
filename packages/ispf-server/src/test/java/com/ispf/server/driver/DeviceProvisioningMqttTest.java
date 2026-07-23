@@ -54,7 +54,7 @@ class DeviceProvisioningMqttTest {
                 null,
                 null
         );
-        blueprintApplicationService.applyRelativeBlueprintsWithRules(DEVICE_PATH);
+        blueprintApplicationService.applyMixinBlueprintsWithRules(DEVICE_PATH);
 
         assertThat(driverRuntimeService.debugReadDriverId(DEVICE_PATH)).isEmpty();
 

@@ -100,7 +100,7 @@ A concise dictionary of platform terms. Product overview: [product](product.md).
 
 ## M
 
-**Model (BlueprintDefinition)** — an object template: variables, events, functions, bindings. Types: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. RELATIVE mixins auto-apply on create only when CEL is non-empty (*Applicability condition* / `suitabilityExpression`). Explicit apply — via `templateId` or API.
+**Blueprint (BlueprintDefinition)** — object structure template: variables, events, functions, bindings. Kinds: `MIXIN`, `SINGLETON`, `INSTANCE`. MIXIN blueprints auto-apply on create only when CEL is non-empty (*Applicability condition* / `suitabilityExpression`). Explicit apply — via `templateId` or API.
 
 **Fixture model** — demo/lab model (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), registered when `ispf.bootstrap.fixtures-enabled=true`. Not part of the core built-in registry. See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 

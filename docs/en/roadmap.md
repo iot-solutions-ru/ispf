@@ -1597,7 +1597,7 @@ Full BL list: [Next 90 days](#next-90-days) below.
 
 ## What we preserve (no regression)
 
-- Object tree + blueprints (RELATIVE / INSTANCE / ABSOLUTE)
+- Object tree + blueprints (MIXIN / INSTANCE / SINGLETON)
 - Tree-first AI agent + MCP native
 - BPMN workflow + bundle deploy
 - Federation + horizontal cluster

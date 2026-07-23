@@ -3,8 +3,8 @@ import { normalizeIconId, resolveTreeIconKind } from "./ObjectTreeIcon";
 
 describe("resolveTreeIconKind", () => {
   it("uses blueprint icon for blueprint catalog folders", () => {
-    expect(resolveTreeIconKind("root.platform.relative-blueprints", "BLUEPRINT")).toBe("blueprint");
-    expect(resolveTreeIconKind("root.platform.absolute-blueprints", "BLUEPRINT")).toBe("blueprint");
+    expect(resolveTreeIconKind("root.platform.mixin-blueprints", "BLUEPRINT")).toBe("blueprint");
+    expect(resolveTreeIconKind("root.platform.singleton-blueprints", "BLUEPRINT")).toBe("blueprint");
     expect(resolveTreeIconKind("root.platform.instance-types", "BLUEPRINT")).toBe("blueprint");
   });
 

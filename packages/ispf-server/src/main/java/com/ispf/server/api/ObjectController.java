@@ -370,10 +370,10 @@ public class ObjectController {
                 request.templateId()
         );
         objectTemplateService.applyTemplate(node.path(), request.templateId());
-        boolean autoApplyRelative = request.autoApplyRelativeBlueprints() == null
-                || Boolean.TRUE.equals(request.autoApplyRelativeBlueprints());
-        if (autoApplyRelative) {
-            blueprintApplicationService.applyRelativeBlueprintsWithRules(node.path());
+        boolean autoApplyMixin = request.autoApplyMixinBlueprints() == null
+                || Boolean.TRUE.equals(request.autoApplyMixinBlueprints());
+        if (autoApplyMixin) {
+            blueprintApplicationService.applyMixinBlueprintsWithRules(node.path());
         }
         if (request.type() == ObjectType.DASHBOARD) {
             dashboardService.ensureDashboardStructure(node.path());
@@ -895,7 +895,7 @@ public class ObjectController {
             String displayName,
             String description,
             String templateId,
-            Boolean autoApplyRelativeBlueprints,
+            Boolean autoApplyMixinBlueprints,
             String driverId,
             Integer driverPollIntervalMs,
             Boolean autoStartDriver

@@ -248,7 +248,7 @@ final class AgentLitePlanBootstrap {
     private static List<String> pumpStationScadaSteps() {
         return List.of(
                 "1. list_objects parentPath=root.platform.devices",
-                "2. list_virtual_profiles — OOTB virtual; list_relative_blueprints for domain models",
+                "2. list_virtual_profiles — OOTB virtual; list_mixin_blueprints for domain models",
                 "3. create_virtual_device — устройства насосной станции",
                 "4. save_mimic_diagram — мнемосхема с bindings",
                 "5. create_object type=DASHBOARD + set_dashboard_layout template=scada-facility-overview",

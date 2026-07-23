@@ -67,12 +67,12 @@ class AgentBlueprintToolsTest {
 
     @Test
     void listRelativeModelsFiltersByType() throws Exception {
-        BlueprintDefinition relative = sampleModel("virtual-lab-v1", BlueprintType.RELATIVE);
+        BlueprintDefinition relative = sampleModel("virtual-lab-v1", BlueprintType.MIXIN);
         BlueprintDefinition instance = sampleModel("base-sensor-v1", BlueprintType.INSTANCE);
         when(BlueprintRegistry.all()).thenReturn(List.of(relative, instance));
 
         PlatformAgentTool tool = tools.stream()
-                .filter(t -> "list_relative_blueprints".equals(t.name()))
+                .filter(t -> "list_mixin_blueprints".equals(t.name()))
                 .findFirst()
                 .orElseThrow();
         @SuppressWarnings("unchecked")
@@ -84,7 +84,7 @@ class AgentBlueprintToolsTest {
 
     @Test
     void listInstanceTypesFiltersByType() throws Exception {
-        BlueprintDefinition relative = sampleModel("virtual-lab-v1", BlueprintType.RELATIVE);
+        BlueprintDefinition relative = sampleModel("virtual-lab-v1", BlueprintType.MIXIN);
         BlueprintDefinition instance = sampleModel("base-sensor-v1", BlueprintType.INSTANCE);
         when(BlueprintRegistry.all()).thenReturn(List.of(relative, instance));
 
@@ -133,9 +133,9 @@ class AgentBlueprintToolsTest {
     }
 
     @Test
-    void applyRelativeModelMergesStructure() throws Exception {
+    void applyMixinBlueprintMergesStructure() throws Exception {
         String path = "root.platform.devices.pump-01";
-        BlueprintDefinition model = sampleModel("virtual-lab-v1", BlueprintType.RELATIVE);
+        BlueprintDefinition model = sampleModel("virtual-lab-v1", BlueprintType.MIXIN);
         PlatformObject before = new PlatformObject("1", path, ObjectType.DEVICE, "Pump", "", null);
         PlatformObject after = new PlatformObject("1", path, ObjectType.DEVICE, "Pump", "", "virtual-lab-v1");
         after.addVariable(new com.ispf.core.object.Variable(
@@ -151,12 +151,12 @@ class AgentBlueprintToolsTest {
         when(ObjectTreePort.require(path)).thenReturn(before, after);
         when(BlueprintApplicationService.applyBlueprintWithRules(eq(model.id()), eq(path)))
                 .thenReturn(new BlueprintApplyResult(
-                        new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.RELATIVE, path, Instant.now()),
+                        new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.MIXIN, path, Instant.now()),
                         List.of()
                 ));
 
         PlatformAgentTool tool = tools.stream()
-                .filter(t -> "apply_relative_blueprint".equals(t.name()))
+                .filter(t -> "apply_mixin_blueprint".equals(t.name()))
                 .findFirst()
                 .orElseThrow();
         @SuppressWarnings("unchecked")
@@ -169,9 +169,9 @@ class AgentBlueprintToolsTest {
     }
 
     @Test
-    void applyRelativeModelAcceptsModelAlias() throws Exception {
+    void applyMixinBlueprintAcceptsModelAlias() throws Exception {
         String path = "root.platform.devices.pump-01";
-        BlueprintDefinition model = sampleModel("virtual-lab-v1", BlueprintType.RELATIVE);
+        BlueprintDefinition model = sampleModel("virtual-lab-v1", BlueprintType.MIXIN);
         PlatformObject before = new PlatformObject("1", path, ObjectType.DEVICE, "Pump", "", null);
         PlatformObject after = new PlatformObject("1", path, ObjectType.DEVICE, "Pump", "", "virtual-lab-v1");
 
@@ -180,12 +180,12 @@ class AgentBlueprintToolsTest {
         when(ObjectTreePort.require(path)).thenReturn(before, after);
         when(BlueprintApplicationService.applyBlueprintWithRules(eq(model.id()), eq(path)))
                 .thenReturn(new BlueprintApplyResult(
-                        new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.RELATIVE, path, Instant.now()),
+                        new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.MIXIN, path, Instant.now()),
                         List.of()
                 ));
 
         PlatformAgentTool tool = tools.stream()
-                .filter(t -> "apply_relative_blueprint".equals(t.name()))
+                .filter(t -> "apply_mixin_blueprint".equals(t.name()))
                 .findFirst()
                 .orElseThrow();
         @SuppressWarnings("unchecked")

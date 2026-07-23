@@ -59,7 +59,7 @@ graph LR
 
 ### Главный принцип
 
-**Бизнес-логика живёт на платформе** — в моделях, переменных, событиях, функциях и workflow **дерева объектов**. Платформа даёт generic-движки (CEL, bindings, BPMN, script runtime, драйверы); решение конфигурирует их декларативно. Bundle deploy — это упаковка конфигурации, а не отдельный runtime. Кратко: [application-principles](application-principles.md). Детали: [architecture](architecture.md). Бэклог: [roadmap](roadmap.md).
+**Бизнес-логика живёт на платформе** — в blueprints, переменных, событиях, функциях и workflow **дерева объектов**. Платформа даёт generic-движки (CEL, bindings, BPMN, script runtime, драйверы); решение конфигурирует их декларативно. Bundle deploy — это упаковка конфигурации, а не отдельный runtime. Кратко: [application-principles](application-principles.md). Детали: [architecture](architecture.md). Бэклог: [roadmap](roadmap.md).
 
 ### Ключевые возможности
 
@@ -93,7 +93,7 @@ graph LR
 
 ### 2. Модели (шаблоны)
 
-`BlueprintDefinition` описывает набор переменных, событий, функций и CEL-привязок. RELATIVE mixin’ы auto-apply только при непустом *Applicability condition* (CEL). Демо-модель `mqtt-sensor-v1` — fixture через `templateId`.
+`BlueprintDefinition` описывает набор переменных, событий, функций и CEL-привязок. MIXIN’ы auto-apply только при непустом *Applicability condition* (CEL). Демо-blueprint `mqtt-sensor-v1` — fixture через `templateId`.
 
 Подробнее: [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 

@@ -1,8 +1,8 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0018-fixture-models-and-cel-applicability.md](../../en/decisions/0018-fixture-models-and-cel-applicability.md).
 
-# ADR-0018: Fixture-модели и CEL applicability для RELATIVE
+# ADR-0018: Fixture-модели и CEL applicability для MIXIN
 
-> **Примечание (2026):** fixture-модели и API переименованы в blueprint (`FixtureBlueprint*`, `/api/v1/relative-blueprints`). См. [BLUEPRINTS](../BLUEPRINTS.md).
+> **Примечание (2026):** fixture-модели и API переименованы в blueprint (`FixtureBlueprint*`, `/api/v1/mixin-blueprints`). См. [BLUEPRINTS](../BLUEPRINTS.md).
 
 Статус: **Принято**  
 Дата: 2026-06-25
@@ -12,16 +12,16 @@
 Три пересекающиеся проблемы:
 
 1. **Demo/lab модели в core** — `mqtt-sensor-v1`, `mqtt-gateway-v1`, `device-driver-v1`, `snmp-agent-v1` и семейство `base-sensor-v1` регистрировались как встроенные модели платформы и попадали в auto-apply при создании любого `DEVICE`.
-2. **`device-driver-v1` как relative mixin** — при `autoApplyRelativeBlueprints=true` схема драйвера вливалась до `provisionDriver(mqtt)` с дефолтом `driverId=virtual`, после чего смена драйвера отклонялась runtime.
+2. **`device-driver-v1` как MIXIN** — при `autoApplyMixinBlueprints=true` схема драйвера вливалась до `provisionDriver(mqtt)` с дефолтом `driverId=virtual`, после чего смена драйвера отклонялась runtime.
 3. **Пустой CEL = «подходит всем»** — `suitabilityExpression` (в UI: *Applicability condition*) при пустом значении трактовался как unconditional match по `targetObjectType`, что делало auto-apply непредсказуемым.
 
-Стандартные вещи платформы (dashboard, workflow, data-source schema) не должны быть optional relative mixin'ами. Demo- и lab-шаблоны не должны жить в core registry без явного включения.
+Стандартные вещи платформы (dashboard, workflow, data-source schema) не должны быть optional MIXIN-blueprint'ами. Demo- и lab-шаблоны не должны жить в core registry без явного включения.
 
 ## Решение
 
 ### 1. Три уровня моделей
 
-| Уровень | Регистрация | Каталог relative-blueprints | Auto-apply RELATIVE |
+| Уровень | Регистрация | Каталог mixin-blueprints | Auto-apply MIXIN |
 |---------|-------------|----------------------------|---------------------|
 | **System-intrinsic** | `ModelBootstrap` + `parameters.systemIntrinsic=true` | Нет | Нет — структура вшивается через `SystemObjectStructureService` |
 | **Platform built-in** | `ModelBootstrap.ensureBuiltInModels()` | Да (если не intrinsic) | Только при непустом CEL (см. §2) |
@@ -33,11 +33,11 @@
 
 | Модель | Назначение |
 |--------|------------|
-| `device-driver-v1` | RELATIVE mixin: переменные группы `driver` (demo/lab) |
+| `device-driver-v1` | MIXIN: переменные группы `driver` (demo/lab) |
 | `mqtt-gateway-v1` | MQTT ingress gateway + `dispatchTelemetry` |
 | `mqtt-sensor-v1` | Demo MQTT temperature sensor |
 | `base-sensor-v1` | Blueprint семейства датчиков (INSTANCE) |
-| `vendor-sensor-ext-v1` | Расширение base-sensor (RELATIVE) |
+| `vendor-sensor-ext-v1` | Расширение base-sensor (MIXIN) |
 | `snmp-agent-v1` | SNMP demo device |
 
 Solution bundles поставляют свои модели через `models[]` в `bundle.json` (см. `examples/lab-mqtt-temperature/`).
@@ -48,8 +48,8 @@ Solution bundles поставляют свои модели через `models[]
 
 | Путь применения | Пустой CEL | Непустой CEL |
 |-----------------|------------|--------------|
-| **Auto-apply** (`applyRelativeModels` при `POST /objects`, `autoApplyRelativeBlueprints=true`) | **Не применяется** | Применяется, если CEL → `true` и `targetObjectType` совпадает |
-| **Явный apply** (`templateId`, `POST /relative-blueprints/{id}/apply`, companion-blueprints) | Разрешён (проверяется только `targetObjectType`) | CEL должен вычислиться в `true` |
+| **Auto-apply** (`applyMixinBlueprints` при `POST /objects`, `autoApplyMixinBlueprints=true`) | **Не применяется** | Применяется, если CEL → `true` и `targetObjectType` совпадает |
+| **Явный apply** (`templateId`, `POST /mixin-blueprints/{id}/apply`, companion-blueprints) | Разрешён (проверяется только `targetObjectType`) | CEL должен вычислиться в `true` |
 
 Реализация: `BlueprintEngine.isSuitableForAutoApply()` — пустой CEL → `false`; `assertSuitable()` для ручного apply — CEL опционален.
 
@@ -61,17 +61,17 @@ self.templateId == "mqtt-sensor-v1"
 self.driverId.value == "mqtt"
 ```
 
-### 3. Схема драйвера на DEVICE (не relative auto-apply)
+### 3. Схема драйвера на DEVICE (не MIXIN auto-apply)
 
 Переменные `driverId`, `driverStatus`, `driverConfigJson`, … на **любом** `DEVICE` при provisioning встраиваются через `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` из blueprint `FixtureBlueprintDefinitions.buildDeviceDriverModel()` (**без** записи в каталог и **без** `appliedBlueprintIds`).
 
-Это отдельно от RELATIVE mixin `device-driver-v1` (fixture для demo/lab и явного apply).
+Это отдельно от MIXIN `device-driver-v1` (fixture для demo/lab и явного apply).
 
 Порядок при `POST /objects` (DEVICE + `driverId`):
 
 1. Создание узла
 2. `applyTemplate(templateId)` — если задан
-3. `applyRelativeModelsWithRules` — только модели с непустым CEL
+3. `applyMixinBlueprintsWithRules` — только модели с непустым CEL
 4. `provisionDriver(driverId)` — встраивание driver schema + configure runtime
 
 ### 4. Конфигурация fixtures
@@ -88,7 +88,7 @@ ispf:
 
 - `device-driver-v1`, `mqtt-gateway-v1` удалены из `ModelBootstrap` и `SystemIntrinsicModels`.
 - Код: `FixtureModelBootstrap`, `FixtureBlueprintDefinitions`, обновлённый `BlueprintEngine`.
-- Существующие RELATIVE-модели без CEL перестают auto-apply'иться — для auto-apply нужно задать выражение в редакторе.
+- Существующие MIXIN-модели без CEL перестают auto-apply'иться — для auto-apply нужно задать выражение в редакторе.
 - Документация: [BLUEPRINTS](../BLUEPRINTS.md), [drivers](../drivers.md).
 
 ## Связанные материалы

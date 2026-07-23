@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Agent tools for RELATIVE mixins, INSTANCE types, and ABSOLUTE singleton hubs.
+ * Agent tools for MIXINs, INSTANCE types, and SINGLETON semantics hubs.
  */
 final class AgentBlueprintTools {
 
@@ -36,11 +36,11 @@ final class AgentBlueprintTools {
             TenantScopeService tenantScopeService
     ) {
         return List.of(
-                listRelativeBlueprintsTool(blueprintRegistry),
+                listMixinBlueprintsTool(blueprintRegistry),
                 listInstanceTypesTool(blueprintRegistry),
-                listAbsoluteBlueprintsTool(blueprintRegistry),
+                listSingletonBlueprintsTool(blueprintRegistry),
                 getObjectBlueprintTool(blueprintRegistry),
-                applyRelativeBlueprintTool(
+                applyMixinBlueprintTool(
                         blueprintRegistry,
                         blueprintApplicationService,
                         ObjectTreePort,
@@ -54,7 +54,7 @@ final class AgentBlueprintTools {
                         objectAccessService,
                         tenantScopeService
                 ),
-                ensureAbsoluteInstanceTool(
+                ensureSingletonInstanceTool(
                         blueprintRegistry,
                         blueprintApplicationService,
                         objectAccessService,
@@ -63,23 +63,23 @@ final class AgentBlueprintTools {
         );
     }
 
-    private static PlatformAgentTool listRelativeBlueprintsTool(BlueprintRegistry blueprintRegistry) {
+    private static PlatformAgentTool listMixinBlueprintsTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "list_relative_blueprints";
+                return "list_mixin_blueprints";
             }
 
             @Override
             public String description() {
-                return "List RELATIVE model blueprints (mixins) under root.platform.relative-blueprints. "
-                        + "They add variables, events, functions to existing objects via apply_relative_blueprint. "
-                        + "Optional query filter and targetObjectType (DEVICE, CUSTOM, вЂ¦).";
+                return "List MIXIN model blueprints (mixins) under root.platform.mixin-blueprints. "
+                        + "They add variables, events, functions to existing objects via apply_mixin_blueprint. "
+                        + "Optional query filter and targetObjectType (DEVICE, CUSTOM, …).";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                return listBlueprintsByType(blueprintRegistry, BlueprintType.RELATIVE, arguments, true);
+                return listBlueprintsByType(blueprintRegistry, BlueprintType.MIXIN, arguments, true);
             }
         };
     }
@@ -95,7 +95,7 @@ final class AgentBlueprintTools {
             public String description() {
                 return "List INSTANCE model blueprints (object templates) under root.platform.instance-types. "
                         + "Use instantiate_instance_type or create_object with templateId. "
-                        + "Optional platformType (DEVICE, CUSTOM, вЂ¦), parentPath, query.";
+                        + "Optional platformType (DEVICE, CUSTOM, …), parentPath, query.";
             }
 
             @Override
@@ -110,25 +110,26 @@ final class AgentBlueprintTools {
         };
     }
 
-    private static PlatformAgentTool listAbsoluteBlueprintsTool(BlueprintRegistry blueprintRegistry) {
+    private static PlatformAgentTool listSingletonBlueprintsTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "list_absolute_blueprints";
+                return "list_singleton_blueprints";
             }
 
             @Override
             public String description() {
-                return "List ABSOLUTE model blueprints (singleton hubs) under root.platform.absolute-blueprints. "
-                        + "Each has one live instance under root.platform.instances.* вЂ” use ensure_absolute_instance.";
+                return "List SINGLETON blueprints under root.platform.singleton-blueprints. "
+                        + "Each child is the live runtime object with application logic "
+                        + "(variables/events/functions/binding rules) — use ensure_singleton_instance.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                Map<String, Object> result = listBlueprintsByType(blueprintRegistry, BlueprintType.ABSOLUTE, arguments, false);
+                Map<String, Object> result = listBlueprintsByType(blueprintRegistry, BlueprintType.SINGLETON, arguments, false);
                 result.put(
                         "hint",
-                        "Use ensure_absolute_instance blueprintName=<name> вЂ” never instantiate twice (409 if exists)"
+                        "Use ensure_singleton_instance blueprintName=<name> — never instantiate twice (409 if exists)"
                 );
                 return result;
             }
@@ -191,7 +192,7 @@ final class AgentBlueprintTools {
                 if (model.isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
-                            "error", "blueprintName or blueprintId required; use list_relative_blueprints or list_object_blueprints"
+                            "error", "blueprintName or blueprintId required; use list_mixin_blueprints or list_object_blueprints"
                     );
                 }
                 return Map.of("status", "OK", "model", blueprintDetail(model.get()));
@@ -199,7 +200,7 @@ final class AgentBlueprintTools {
         };
     }
 
-    private static PlatformAgentTool applyRelativeBlueprintTool(
+    private static PlatformAgentTool applyMixinBlueprintTool(
             BlueprintRegistry blueprintRegistry,
             BlueprintApplicationService blueprintApplicationService,
             ObjectTreePort ObjectTreePort,
@@ -209,12 +210,12 @@ final class AgentBlueprintTools {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "apply_relative_blueprint";
+                return "apply_mixin_blueprint";
             }
 
             @Override
             public String description() {
-                return "Attach a RELATIVE model mixin to an existing object вЂ” merges variables, events, functions, "
+                return "Attach a MIXIN model mixin to an existing object — merges variables, events, functions, "
                         + "binding rules without changing object path. "
                         + "Args: objectPath (required), blueprintName or blueprintId (e.g. virtual-lab-v1). "
                         + "Prefer over manual create_variable when a catalog model fits. "
@@ -235,11 +236,11 @@ final class AgentBlueprintTools {
                     return Map.of("status", "ERROR", "error", "blueprintName or blueprintId is required");
                 }
                 BlueprintDefinition model = modelOpt.get();
-                if (model.type() != BlueprintType.RELATIVE) {
+                if (model.type() != BlueprintType.MIXIN) {
                     return Map.of(
                             "status", "ERROR",
-                            "error", model.name() + " is " + model.type() + ", not RELATIVE. "
-                                    + "Use instantiate_instance_type for INSTANCE or ensure_absolute_instance for ABSOLUTE."
+                            "error", model.name() + " is " + model.type() + ", not MIXIN. "
+                                    + "Use instantiate_instance_type for INSTANCE or ensure_singleton_instance for SINGLETON."
                     );
                 }
                 if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
@@ -333,7 +334,7 @@ final class AgentBlueprintTools {
                     return Map.of(
                             "status", "ERROR",
                             "error", model.name() + " is " + model.type()
-                                    + ". Use apply_relative_blueprint for RELATIVE or ensure_absolute_instance for ABSOLUTE."
+                                    + ". Use apply_mixin_blueprint for MIXIN or ensure_singleton_instance for SINGLETON."
                     );
                 }
                 var auth = context.authentication();
@@ -376,7 +377,7 @@ final class AgentBlueprintTools {
         };
     }
 
-    private static PlatformAgentTool ensureAbsoluteInstanceTool(
+    private static PlatformAgentTool ensureSingletonInstanceTool(
             BlueprintRegistry blueprintRegistry,
             BlueprintApplicationService blueprintApplicationService,
             ObjectAccessService objectAccessService,
@@ -385,13 +386,13 @@ final class AgentBlueprintTools {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "ensure_absolute_instance";
+                return "ensure_singleton_instance";
             }
 
             @Override
             public String description() {
-                return "Ensure the singleton instance for an ABSOLUTE model exists under root.platform.instances.*. "
-                        + "Args: blueprintName or blueprintId. Idempotent вЂ” returns existing path if already present.";
+                return "Ensure the SINGLETON live node exists (default: root.platform.singleton-blueprints.{name}). "
+                        + "That node holds application logic. Args: blueprintName or blueprintId. Idempotent.";
             }
 
             @Override
@@ -401,14 +402,14 @@ final class AgentBlueprintTools {
                     return Map.of("status", "ERROR", "error", "blueprintName or blueprintId is required");
                 }
                 BlueprintDefinition model = modelOpt.get();
-                if (model.type() != BlueprintType.ABSOLUTE) {
+                if (model.type() != BlueprintType.SINGLETON) {
                     return Map.of(
                             "status", "ERROR",
                             "error", model.name() + " is " + model.type()
-                                    + ". ensure_absolute_instance requires ABSOLUTE model."
+                                    + ". ensure_singleton_instance requires SINGLETON model."
                     );
                 }
-                String instancePath = BlueprintEngine.absoluteInstancePath(model);
+                String instancePath = BlueprintEngine.singletonInstancePath(model);
                 var auth = context.authentication();
                 int lastDot = instancePath.lastIndexOf('.');
                 String parentPath = lastDot > 0 ? instancePath.substring(0, lastDot) : instancePath;
@@ -417,7 +418,7 @@ final class AgentBlueprintTools {
                 }
                 objectAccessService.requireWrite(parentPath, auth);
                 try {
-                    PlatformObject instance = blueprintApplicationService.ensureAbsoluteInstanceWithRules(model.id());
+                    PlatformObject instance = blueprintApplicationService.ensureSingletonInstanceWithRules(model.id());
                     Map<String, Object> response = new LinkedHashMap<>();
                     response.put("status", "OK");
                     response.put("path", instance.path());
@@ -468,12 +469,12 @@ final class AgentBlueprintTools {
         row.put("variableCount", model.variables().size());
         row.put("eventCount", model.events().size());
         row.put("functionCount", model.functions().size());
-        if (model.type() == BlueprintType.ABSOLUTE) {
-            row.put("absoluteInstancePath", BlueprintEngine.absoluteInstancePath(model));
+        if (model.type() == BlueprintType.SINGLETON) {
+            row.put("singletonInstancePath", BlueprintEngine.singletonInstancePath(model));
         }
         String cel = model.suitabilityExpression();
         if (cel != null && !cel.isBlank()) {
-            row.put("suitabilityExpression", cel.length() > 120 ? cel.substring(0, 119) + "вЂ¦" : cel);
+            row.put("suitabilityExpression", cel.length() > 120 ? cel.substring(0, 119) + "…" : cel);
         }
         return row;
     }

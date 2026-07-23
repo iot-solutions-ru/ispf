@@ -88,7 +88,7 @@ Build packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. 
 
 ## Device variables (driver group)
 
-On a `DEVICE` object, variables in the `driver` group appear when **provisioning the driver** (`POST /objects` with `driverId` or `PUT .../drivers/runtime/configure`), not via auto-apply of RELATIVE models.
+On a `DEVICE` object, variables in the `driver` group appear when **provisioning the driver** (`POST /objects` with `driverId` or `PUT .../drivers/runtime/configure`), not via auto-apply of MIXIN models.
 
 ### Auto-start on server boot
 
@@ -105,7 +105,7 @@ Device create: `autoStartDriver` defaults to `true` (start now + keep preference
 
 `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` embeds the schema (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) from a blueprint without writing to the model catalog and without `appliedBlueprintIds`.
 
-Fixture RELATIVE model `device-driver-v1` (when `fixtures-enabled`) — for demo/lab and explicit apply; see [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+Fixture MIXIN model `device-driver-v1` (when `fixtures-enabled`) — for demo/lab and explicit apply; see [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 | Variable | Description |
 |----------|-------------|
@@ -203,7 +203,7 @@ Each protocol is a separate pack (`ispf-driver-*`). Without installed packs, `GE
 
 Out-of-the-box simulator for stands without hardware. **No profiles** — one poll path writes multi-type telemetry
 (`temperature`+quality, waves, meter/flow, geo, tables, binary, booleans, `status`). Amplitudes/period come from
-`driverConfigJson`. Domain plants (Mini-TEC, tank-farm, OGP) enrich the object via **relative blueprints**
+`driverConfigJson`. Domain plants (Mini-TEC, tank-farm, OGP) enrich the object via **mixin blueprints**
 (variables + binding rules / functions), not via `driverConfigJson.profile`.
 
 Example config:
@@ -808,7 +808,7 @@ Point mapping: file path in share → `exists`, `size`.
 2. Implement `DeviceDriver`.
 3. Register in `DriverCatalog` (`ispf-server`).
 4. Add `implementation(project(...))` in `ispf-server/build.gradle.kts`.
-5. Define a model with driver variables or apply a `RELATIVE` model to `DEVICE`.
+5. Define a model with driver variables or apply a `MIXIN` model to `DEVICE`.
 
 ## Diagnostics
 

@@ -1,8 +1,8 @@
 import type { TFunction } from "i18next";
 import {
-  ABSOLUTE_BLUEPRINTS_ROOT,
+  SINGLETON_BLUEPRINTS_ROOT,
   INSTANCE_TYPES_ROOT,
-  RELATIVE_BLUEPRINTS_ROOT,
+  MIXIN_BLUEPRINTS_ROOT,
 } from "../../types/blueprints";
 import type { ObjectType } from "../../types";
 import { isOperatorAppChildPath } from "../operator/operatorAppsPath";
@@ -58,9 +58,9 @@ const CATALOG_CONTAINER_TYPES: ReadonlySet<ObjectType> = new Set([
 const EXACT_CATALOG_PATHS: ReadonlySet<string> = new Set([
   "root.platform",
   "root.platform.devices",
-  RELATIVE_BLUEPRINTS_ROOT,
+  MIXIN_BLUEPRINTS_ROOT,
   INSTANCE_TYPES_ROOT,
-  ABSOLUTE_BLUEPRINTS_ROOT,
+  SINGLETON_BLUEPRINTS_ROOT,
   "root.platform.instances",
   "root.platform.dashboards",
   "root.platform.reports",
@@ -102,9 +102,9 @@ function isApplicationSubfolder(path: string): boolean {
 
 function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType | null {
   if (
-    path === RELATIVE_BLUEPRINTS_ROOT
+    path === MIXIN_BLUEPRINTS_ROOT
     || path === INSTANCE_TYPES_ROOT
-    || path === ABSOLUTE_BLUEPRINTS_ROOT
+    || path === SINGLETON_BLUEPRINTS_ROOT
   ) {
     return "BLUEPRINT";
   }

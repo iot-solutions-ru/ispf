@@ -199,7 +199,7 @@
   "metrics.applicationFunctions": "Anwendungsfunktionen",
   "metrics.applications": "Anwendungen",
   "metrics.avgStepsPerTurn": "Durchschnittliche Agentenschritte pro Runde",
-  "metrics.blueprints": "Modelle",
+  "metrics.blueprints": "Blueprints",
   "metrics.connectedDrivers": "Verbundene Treiber",
   "metrics.dashboards": "Dashboards",
   "metrics.defaultRetentionDays": "Standardaufbewahrung (Tage)",

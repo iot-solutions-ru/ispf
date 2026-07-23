@@ -17,7 +17,7 @@
     {
       "name": "ogp-mes-hub-v1",
       "description": "OGP MES hub for event registration",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "DEVICE",
       "variables": [
         {
@@ -249,7 +249,7 @@
     {
       "name": "ogp-line-v1",
       "description": "OGP print line virtual telemetry",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "DEVICE",
       "variables": [
         {

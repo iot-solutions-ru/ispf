@@ -21,7 +21,7 @@ final class DriverIntegrationTestSupport {
         String parent = "root.platform.devices";
         String path = parent + "." + name;
         objectManager.create(parent, name, ObjectType.DEVICE, name, null, null);
-        blueprintApplicationService.applyRelativeBlueprintsWithRules(path);
+        blueprintApplicationService.applyMixinBlueprintsWithRules(path);
         driverRuntimeService.stopIfRunning(path);
         return path;
     }

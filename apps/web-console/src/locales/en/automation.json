@@ -161,7 +161,7 @@
   "analyticsTemplate.previewEmpty": "No historian buckets in the last 24 hours.",
   "analyticsTemplate.previewLastValue": "Last value: {{value}} ({{count}} buckets)",
   "analyticsTemplate.applyTitle": "Apply to device",
-  "analyticsTemplate.applyHint": "Applies the linked RELATIVE blueprint and binds source variables on the target device.",
+  "analyticsTemplate.applyHint": "Applies the linked MIXIN blueprint and binds source variables on the target device.",
   "analyticsTemplate.devicePath": "Target device",
   "analyticsTemplate.selectDevice": "Select device…",
   "analyticsTemplate.availabilityVariable": "Availability variable",

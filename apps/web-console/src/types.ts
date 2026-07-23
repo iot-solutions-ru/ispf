@@ -109,7 +109,7 @@ export interface ObjectSummary {
 export interface appliedBlueprintsummary {
   id: string;
   name: string;
-  type: "RELATIVE" | "INSTANCE" | "ABSOLUTE";
+  type: "MIXIN" | "INSTANCE" | "SINGLETON";
   primary: boolean;
 }
 
@@ -251,7 +251,7 @@ export interface CreateObjectPayload {
   displayName?: string;
   description?: string;
   templateId?: string;
-  autoApplyRelativeBlueprints?: boolean;
+  autoApplyMixinBlueprints?: boolean;
   driverId?: string;
   driverPollIntervalMs?: number;
   autoStartDriver?: boolean;

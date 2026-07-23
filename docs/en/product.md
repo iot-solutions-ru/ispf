@@ -93,7 +93,7 @@ Details: [object-model](object-model.md), [glossary](glossary.md).
 
 ### 2. Models (templates)
 
-`BlueprintDefinition` describes a set of variables, events, functions, and CEL bindings. RELATIVE mixins auto-apply only when a non-empty *Applicability condition* (CEL) is set. The demo model `mqtt-sensor-v1` is a fixture applied via `templateId`.
+`BlueprintDefinition` describes a set of variables, events, functions, and CEL bindings. MIXINs auto-apply only when a non-empty *Applicability condition* (CEL) is set. The demo blueprint `mqtt-sensor-v1` is a fixture applied via `templateId`.
 
 Details: [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
