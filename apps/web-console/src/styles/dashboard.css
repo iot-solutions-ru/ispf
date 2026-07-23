@@ -1,4 +1,4 @@
-/* Split from styles.css lines 2513-5476  do not reorder imports in index.css */
+/* Split from styles.css lines 2513-5476 ï¿½ do not reorder imports in index.css */
 /* Dashboard builder */
 .dashboard-main {
   padding: 0;
@@ -1030,7 +1030,7 @@ body.scada-mimic-editor-open {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 }
 
-/*  Toolbar  */
+/* ï¿½ï¿½ Toolbar ï¿½ï¿½ */
 .scada-mimic-editor-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1258,7 +1258,7 @@ body.scada-mimic-editor-open {
   margin-top: 0.5rem;
 }
 
-/*  Layout  */
+/* ï¿½ï¿½ Layout ï¿½ï¿½ */
 .scada-mimic-editor-body {
   flex: 1;
   min-height: 0;
@@ -1300,7 +1300,7 @@ body.scada-mimic-editor-open {
     var(--bg);
 }
 
-/*  Shared panel chrome  */
+/* ï¿½ï¿½ Shared panel chrome ï¿½ï¿½ */
 .scada-panel-header {
   display: flex;
   align-items: center;
@@ -1327,7 +1327,7 @@ body.scada-mimic-editor-open {
   color: var(--accent);
 }
 
-/*  Palette  */
+/* ï¿½ï¿½ Palette ï¿½ï¿½ */
 .scada-palette {
   display: flex;
   flex-direction: column;
@@ -1487,7 +1487,7 @@ body.scada-mimic-editor-open {
   font-variant-numeric: tabular-nums;
 }
 
-/*  Canvas stage  */
+/* ï¿½ï¿½ Canvas stage ï¿½ï¿½ */
 .scada-canvas-stage {
   display: flex;
   flex-direction: column;
@@ -1582,7 +1582,7 @@ body.scada-mimic-editor-open {
   pointer-events: none;
 }
 
-/*  Properties  */
+/* ï¿½ï¿½ Properties ï¿½ï¿½ */
 .scada-props-panel {
   padding: 0 0.85rem 1rem;
 }

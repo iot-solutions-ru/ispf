@@ -20,6 +20,10 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Vite `base` (e.g. `/console/`) — omit for root deploys. */
+const routerBasename =
+  import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL.replace(/\/$/, "");
+
 void i18nReady
   .catch((error) => {
     console.error("i18n init failed, rendering with defaults", error);
@@ -27,7 +31,7 @@ void i18nReady
   .finally(() => {
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
-        <BrowserRouter>
+        <BrowserRouter basename={routerBasename}>
           <QueryClientProvider client={queryClient}>
             <UserTimeZoneProvider>
               <ObjectWebSocketCacheBridge />

@@ -2,7 +2,21 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+/** Subdirectory deploy (e.g. mes-demo co-host): `VITE_BASE=/console/ npm run build`. */
+const base = normalizeBase(process.env.VITE_BASE ?? "/");
+
+function normalizeBase(value: string): string {
+  if (!value || value === "/") {
+    return "/";
+  }
+  const withLeading = value.startsWith("/") ? value : `/${value}`;
+  return withLeading.endsWith("/") ? withLeading : `${withLeading}/`;
+}
+
+const operatorStartUrl = base === "/" ? "/?mode=operator" : `${base}?mode=operator`;
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -16,8 +30,10 @@ export default defineConfig({
         background_color: "#0d1117",
         display: "standalone",
         orientation: "any",
-        start_url: "/?mode=operator",
-        scope: "/",
+        start_url: operatorStartUrl,
+        // Keep PWA scope under the console base so co-hosted SPAs (MES Anima at "/")
+        // are not captured by navigateFallback on soft reload (F5).
+        scope: base,
         icons: [
           {
             src: "pwa-192.png",
@@ -40,7 +56,19 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "index.html",
-        navigateFallbackDenylist: [/^\/operator-printing/],
+        // Never SPA-fallback foreign apps / APIs on a shared origin.
+        navigateFallbackDenylist: [
+          /^\/api(?:\/|$)/,
+          /^\/ws(?:\/|$)/,
+          /^\/actuator(?:\/|$)/,
+          /^\/operator-printing/,
+          /^\/operator(?:\/|$)/,
+          /^\/tech(?:\/|$)/,
+          /^\/manager(?:\/|$)/,
+          /^\/admin(?:\/|$)/,
+          /^\/auth(?:\/|$)/,
+          /^\/console(?:\/|$)/,
+        ],
         runtimeCaching: [
           {
             // Public demo/operator manifests (full URL match — Workbox tests href, not pathname)

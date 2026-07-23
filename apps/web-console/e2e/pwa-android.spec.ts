@@ -17,6 +17,8 @@ test.describe("PWA manifest (preview build)", () => {
     expect(manifest.name).toContain("ISPF");
     expect(manifest.display).toBe("standalone");
     expect(manifest.start_url).toContain("mode=operator");
+    // Root-scoped SW breaks co-hosted SPAs (MES Anima); default build stays at "/".
+    expect(manifest.scope === "/" || manifest.scope?.endsWith("/")).toBeTruthy();
     expect(manifest.icons?.some((icon: { sizes: string }) => icon.sizes === "512x512")).toBeTruthy();
     expect(manifest.icons?.some((icon: { sizes: string }) => icon.sizes === "192x192")).toBeTruthy();
   });
