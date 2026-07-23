@@ -1,7 +1,7 @@
 import type { EventDescriptor, FunctionDescriptor, ObjectType, DataRecord, DataSchema } from "../types";
 import type { BindingActivators } from "../types";
 
-export type BlueprintType = "RELATIVE" | "ABSOLUTE" | "INSTANCE";
+export type BlueprintType = "MIXIN" | "SINGLETON" | "INSTANCE";
 
 export interface BlueprintVariableDefinition {
   name: string;
@@ -94,14 +94,14 @@ export interface UpdateBlueprintPayload {
   parameters?: Record<string, string>;
 }
 
-export const RELATIVE_BLUEPRINTS_ROOT = "root.platform.relative-blueprints";
+export const MIXIN_BLUEPRINTS_ROOT = "root.platform.mixin-blueprints";
 export const INSTANCE_TYPES_ROOT = "root.platform.instance-types";
-export const ABSOLUTE_BLUEPRINTS_ROOT = "root.platform.absolute-blueprints";
+export const SINGLETON_BLUEPRINTS_ROOT = "root.platform.singleton-blueprints";
 
 export const BLUEPRINT_CATALOG_ROOTS = [
-  RELATIVE_BLUEPRINTS_ROOT,
+  MIXIN_BLUEPRINTS_ROOT,
   INSTANCE_TYPES_ROOT,
-  ABSOLUTE_BLUEPRINTS_ROOT,
+  SINGLETON_BLUEPRINTS_ROOT,
 ] as const;
 
 export type BlueprintCatalogRoot = (typeof BLUEPRINT_CATALOG_ROOTS)[number];
@@ -114,10 +114,10 @@ export const BUILTIN_BLUEPRINT_NAMES = new Set([
 
 export function catalogRootForBlueprintType(type: BlueprintType): BlueprintCatalogRoot {
   switch (type) {
-    case "RELATIVE":
-      return RELATIVE_BLUEPRINTS_ROOT;
-    case "ABSOLUTE":
-      return ABSOLUTE_BLUEPRINTS_ROOT;
+    case "MIXIN":
+      return MIXIN_BLUEPRINTS_ROOT;
+    case "SINGLETON":
+      return SINGLETON_BLUEPRINTS_ROOT;
     default:
       return INSTANCE_TYPES_ROOT;
   }

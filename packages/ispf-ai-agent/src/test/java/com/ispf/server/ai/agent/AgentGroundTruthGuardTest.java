@@ -119,14 +119,14 @@ class AgentGroundTruthGuardTest {
     @Test
     void blocksApplyRelativeModelWithoutCatalog() {
         var block = AgentGroundTruthGuard.checkBeforeTool(
-                "apply_relative_blueprint",
+                "apply_mixin_blueprint",
                 Map.of("objectPath", "root.platform.devices.d1", "blueprintName", "virtual-lab-v1"),
                 List.of(
                         listObjectsStep("root.platform.devices", List.of(Map.of("path", "root.platform.devices.d1")))
                 )
         );
         assertThat(block).isPresent();
-        assertThat(block.get().hint()).contains("list_relative_blueprints");
+        assertThat(block.get().hint()).contains("list_mixin_blueprints");
     }
 
     @Test
@@ -136,7 +136,7 @@ class AgentGroundTruthGuardTest {
                 relativeBlueprintsStep(List.of(Map.of("blueprintName", "virtual-lab-v1")))
         );
         var block = AgentGroundTruthGuard.checkBeforeTool(
-                "apply_relative_blueprint",
+                "apply_mixin_blueprint",
                 Map.of("objectPath", "root.platform.devices.d1", "blueprintName", "virtual-lab-v1"),
                 steps
         );
@@ -536,7 +536,7 @@ class AgentGroundTruthGuardTest {
     private static Map<String, Object> relativeBlueprintsStep(List<Map<String, Object>> models) {
         return Map.of(
                 "type", "tool",
-                "tool", "list_relative_blueprints",
+                "tool", "list_mixin_blueprints",
                 "arguments", Map.of(),
                 "result", Map.of("status", "OK", "blueprints", models)
         );

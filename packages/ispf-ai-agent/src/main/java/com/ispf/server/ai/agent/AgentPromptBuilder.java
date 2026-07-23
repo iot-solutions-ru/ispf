@@ -26,7 +26,7 @@ public final class AgentPromptBuilder {
             Before create_object / create_virtual_device: list_objects parent=<exact folder> on the real parent.
             Before save_workflow_bpmn / save_mimic_diagram / set_dashboard_layout / configure_*: create_object must succeed first
             (or get_object/list_objects returned that path in this turn). Never configure a path that was not discovered or created.
-            Before apply_relative_blueprint: list_relative_blueprints or list_virtual_profiles — pick modelName from result.
+            Before apply_mixin_blueprint: list_mixin_blueprints or list_virtual_profiles — pick modelName from result.
             If Object exists — reuse with get_object + list_variables; do not recreate.
             search_context and get_automation_schema describe documentation, not live tree state.
             
@@ -45,7 +45,7 @@ public final class AgentPromptBuilder {
             configure_report to create/update; template upload is UI-only (Report Builder → Шаблон YARG).
             For SCADA mimics: list_mimic_symbols → create_object type=MIMIC → save_mimic_diagram with non-empty elements[];
             never finish with empty mimic; do NOT use set_variable name=diagram; follow SCADA guide in Playbooks.
-            For model choice: list_instance_types + list_relative_blueprints + list_absolute_blueprints before create_object.
+            For model choice: list_instance_types + list_mixin_blueprints + list_singleton_blueprints before create_object.
             For complex tasks: get_automation_schema topic=platformMaster first; then area-specific tools (workflow, lifecycle, dashboard, scada).
             For complex build recipes: search_platform_recipes query="<task>" before inventing steps.
             Complete end-to-end — dashboards, SCADA panels, workflows, apps, alerts — using tools only.
@@ -98,17 +98,17 @@ public final class AgentPromptBuilder {
             - BARE PLATFORM: never assume pre-seeded demo objects exist — list_objects / search_objects first; paths only from tool results
             - SNMP device: search_context topic=drivers query=snmp — templateId, driverConfigJson, point mappings from docs
             - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
-            - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1 (RELATIVE mixins); driverId=virtual with OOTB config (no profiles)
+            - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1 (MIXINs); driverId=virtual with OOTB config (no profiles)
             - Before project implementation: get_automation_schema topic=projectBlueprint
-            - Model selection baseline: list_instance_types + list_relative_blueprints + list_absolute_blueprints
-              (then instantiate_instance_type / apply_relative_blueprint / ensure_absolute_instance)
-            - Relative Blueprints: list_relative_blueprints → apply_relative_blueprint objectPath=... modelName=virtual-lab-v1
+            - Model selection baseline: list_instance_types + list_mixin_blueprints + list_singleton_blueprints
+              (then instantiate_instance_type / apply_mixin_blueprint / ensure_singleton_instance)
+            - Mixin Blueprints: list_mixin_blueprints → apply_mixin_blueprint objectPath=... modelName=virtual-lab-v1
               (adds variables, events, functions to existing DEVICE); or create_object with same templateId
-            - NEVER create_object DEVICE with driverId=virtual and empty/wrong templateId — use apply_relative_blueprint or create_virtual_device
-            - Virtual devices: create_virtual_device (OOTB multi-type). Domain plants: apply_relative_blueprint, not driver profiles
+            - NEVER create_object DEVICE with driverId=virtual and empty/wrong templateId — use apply_mixin_blueprint or create_virtual_device
+            - Virtual devices: create_virtual_device (OOTB multi-type). Domain plants: apply_mixin_blueprint, not driver profiles
             - Never claim devices have variables/drivers unless list_variables or create_virtual_device returned telemetryVariableCount>0
             - Chart/sparkline widgets need historian: configure_variable_history path=... name=sineWave historyEnabled=true
-            - 1-minute average threshold: historian rule avg(path/var, 1m) → avgVar, then reactive CEL on avgVar; never rolling-avg Relative Blueprint for this
+            - 1-minute average threshold: historian rule avg(path/var, 1m) → avgVar, then reactive CEL on avgVar; never rolling-avg Mixin Blueprint for this
             - MQTT many sensors on one broker: model mqtt-gateway-v1, ingressVariable lastIngress, ingressTopicLanes true, dispatchTelemetry to child sensors
             - High-rate telemetry: driver telemetryCoalesceMs + TELEMETRY_ONLY; historian store=jdbc (platform default); see search_context topic=telemetry
             - Automation: get_automation_schema → configure_alert, configure_correlator, configure_variable_history
@@ -119,7 +119,7 @@ public final class AgentPromptBuilder {
                 + String.join(", ", DashboardService.layoutTemplateNames())
                 + """
             - Drill-down: object-table rowTargetDashboard + selectionKey on detail widgets (see virtual-cluster playbook)
-            - Complete end-to-end projects with tools; create objects AND types (instantiate_instance_type, apply_relative_blueprint) autonomously
+            - Complete end-to-end projects with tools; create objects AND types (instantiate_instance_type, apply_mixin_blueprint) autonomously
             - Never tell user to configure dashboards/alerts/operator/models manually in UI when agent tools exist
             - set_variable for driverConfigJson, driverPointMappingsJson, dashboard title
             - Dashboard workflow: create_object DASHBOARD → list_variables on device → set_dashboard_layout template=
@@ -194,7 +194,7 @@ public final class AgentPromptBuilder {
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.virtualPumpStation());
         prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.relativeModelsGuide());
+        prompt.append(AgentPlaybooks.mixinBlueprintsGuide());
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.mesReferenceLifecycle());
         prompt.append("\n\n");

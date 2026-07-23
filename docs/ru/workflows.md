@@ -6,7 +6,7 @@
 
 ## Обзор
 
-Рабочий процесс — объект типа `WORKFLOW` с моделью `workflow-v1`. Движок: чистая Java в `ispf-plugin-workflow` (без Camunda/Flowable).
+Рабочий процесс — объект типа `WORKFLOW` с blueprint `workflow-v1`. Движок: чистая Java в `ispf-plugin-workflow` (без Camunda/Flowable).
 
 Переменные объект рабочего процесса:
 
@@ -185,7 +185,7 @@ User tasks попадают в `GET /api/v1/work-queue`.
 
 ### Привязка к приложению Оператора
 
-На объекте рабочего процесса (модель `workflow-v1`) задаётся переменная **`operatorAppId`** — идентификатор приложения-оператора, в боковой панели «Задачи», который попадает в задачу пользователя в этом процессе.
+На объекте рабочего процесса (blueprint `workflow-v1`) задаётся переменная **`operatorAppId`** — идентификатор приложения-оператора, в боковой панели «Задачи», который попадает в задачу пользователя в этом процессе.
 
 - Настройка: редактор workflow → панель **Operator App** (или `PUT /api/v1/workflows/by-path/operator-app`)
 - При создании user task значение копируется в `workflow_user_tasks.operator_app_id`

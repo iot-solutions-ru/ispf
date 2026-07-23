@@ -55,8 +55,8 @@ Fire `workOrderDispatched` on the hub (or enable correlator) to create an operat
 
 | Artifact | Purpose |
 |----------|---------|
-| RELATIVE `quality-record-v1` | `defectCode`, `severity`, `lotId` on `QUALITY_RECORD` nodes |
-| RELATIVE `mes-platform-hub-v1` | `spcMeasurement` (history-enabled), `spcUcl`, `spcLcl`, `spcTarget` |
+| MIXIN `quality-record-v1` | `defectCode`, `severity`, `lotId` on `QUALITY_RECORD` nodes |
+| MIXIN `mes-platform-hub-v1` | `spcMeasurement` (history-enabled), `spcUcl`, `spcLcl`, `spcTarget` |
 | Dashboard `mes-platform-quality` | `chart` widget on `spcMeasurement` + UCL/LCL value widgets |
 | BFF `mes_quality_listSpcSamples` | Seed rows from `mes_spc_sample` table |
 

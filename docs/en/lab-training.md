@@ -156,9 +156,9 @@ Devices created by bootstrap: `root.platform.devices.lab-userA-01`, `root.platfo
 
 ---
 
-### 8. Relative model: sum Sine + Sawtooth
+### 8. Mixin model: sum Sine + Sawtooth
 
-**Model:** `virtual-lab-waves-sum-v1` (RELATIVE) with binding `sumWaves = sineWave + sawtoothWave`.
+**Model:** `virtual-lab-waves-sum-v1` (MIXIN) with binding `sumWaves = sineWave + sawtoothWave`.
 
 **Verify:** dashboard `lab-virtual-overview` — Sum waves widget.
 
@@ -187,7 +187,7 @@ Devices created by bootstrap: `root.platform.devices.lab-userA-01`, `root.platfo
 
 ---
 
-### 11. Relative report: table of all virtual devices
+### 11. Tree-variables report: table of all virtual devices
 
 **Report:** `root.platform.reports.lab-all-devices-table` (type `tree-variables`, pattern `root.platform.devices.lab-*`, variable `table`).
 

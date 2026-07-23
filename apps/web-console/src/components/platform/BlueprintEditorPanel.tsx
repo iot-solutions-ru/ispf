@@ -8,11 +8,11 @@ import {
   deleteBlueprint,
   fetchBlueprintByName,
   fetchBlueprintInstances,
-  fetchAbsoluteBlueprintInstance,
+  fetchSingletonBlueprintInstance,
   fetchBlueprintDiff,
   fetchBlueprintMergePreview,
-  fetchRelativeBlueprints,
-  fetchAbsoluteBlueprints,
+  fetchMixinBlueprints,
+  fetchSingletonBlueprints,
   fetchInstanceTypes,
   instantiateBlueprint,
   updateBlueprint,
@@ -21,9 +21,9 @@ import {
 } from "../../api/blueprints";
 import type { EventDescriptor, FunctionDescriptor, ObjectType } from "../../types";
 import {
-  ABSOLUTE_BLUEPRINTS_ROOT,
+  SINGLETON_BLUEPRINTS_ROOT,
   BUILTIN_BLUEPRINT_NAMES,
-  RELATIVE_BLUEPRINTS_ROOT,
+  MIXIN_BLUEPRINTS_ROOT,
   catalogRootForBlueprintType,
   isBlueprintCatalogRoot,
   blueprintNameFromPath,
@@ -174,7 +174,7 @@ function ModelDetail({
   });
 
   const absoluteSingletonMutation = useMutation({
-    mutationFn: () => fetchAbsoluteBlueprintInstance(model.id),
+    mutationFn: () => fetchSingletonBlueprintInstance(model.id),
     onSuccess: (instance) => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       onSelectPath?.(instance.path);
@@ -816,13 +816,13 @@ function ModelDetail({
             </div>
           )}
 
-          {model.type === "ABSOLUTE" && (
+          {model.type === "SINGLETON" && (
             <div className="model-action-block">
               <p className="hint">
                 {t("inspector:blueprint.singletonHint")}{" "}
                 <code>
-                  {model.parameters.absoluteInstancePath ||
-                    `root.platform.instances.${model.name}`}
+                  {model.parameters.singletonInstancePath ||
+                    `root.platform.singleton-blueprints.${model.name}`}
                 </code>
               </p>
               <button
@@ -879,21 +879,21 @@ function ModelsCatalog({
   const modelsQuery = useQuery({
     queryKey: ["blueprints", catalogRoot],
     queryFn: () => {
-      if (catalogRoot === RELATIVE_BLUEPRINTS_ROOT) {
-        return fetchRelativeBlueprints();
+      if (catalogRoot === MIXIN_BLUEPRINTS_ROOT) {
+        return fetchMixinBlueprints();
       }
-      if (catalogRoot === ABSOLUTE_BLUEPRINTS_ROOT) {
-        return fetchAbsoluteBlueprints();
+      if (catalogRoot === SINGLETON_BLUEPRINTS_ROOT) {
+        return fetchSingletonBlueprints();
       }
       return fetchInstanceTypes();
     },
   });
 
   const defaultCreateType: BlueprintType =
-    catalogRoot === RELATIVE_BLUEPRINTS_ROOT
-      ? "RELATIVE"
-      : catalogRoot === ABSOLUTE_BLUEPRINTS_ROOT
-        ? "ABSOLUTE"
+    catalogRoot === MIXIN_BLUEPRINTS_ROOT
+      ? "MIXIN"
+      : catalogRoot === SINGLETON_BLUEPRINTS_ROOT
+        ? "SINGLETON"
         : "INSTANCE";
 
   const createMutation = useMutation({
@@ -915,7 +915,7 @@ function ModelsCatalog({
       sourcePath: string;
       modelName: string;
       description: string;
-      type: "RELATIVE" | "INSTANCE";
+      type: "MIXIN" | "INSTANCE";
     }) => createBlueprintFromObject(sourcePath, modelName, description, type),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["blueprints"] });
@@ -984,7 +984,7 @@ function ModelsCatalog({
               createMutation.mutate({
                 name,
                 description: String(data.get("description") ?? ""),
-                type: String(data.get("type") ?? "RELATIVE") as "RELATIVE" | "INSTANCE",
+                type: String(data.get("type") ?? "MIXIN") as "MIXIN" | "INSTANCE",
                 targetObjectType: String(data.get("targetObjectType") ?? "CUSTOM") as ObjectType,
               });
               form.reset();
@@ -1002,9 +1002,9 @@ function ModelsCatalog({
               />
               <input name="description" placeholder={t("inspector:blueprint.descriptionPlaceholder")} />
               <select name="type" defaultValue={defaultCreateType}>
-                <option value="RELATIVE">{t("inspector:blueprint.type.RELATIVE")}</option>
+                <option value="MIXIN">{t("inspector:blueprint.type.MIXIN")}</option>
                 <option value="INSTANCE">{t("inspector:blueprint.type.INSTANCE")}</option>
-                <option value="ABSOLUTE">{t("inspector:blueprint.type.ABSOLUTE")}</option>
+                <option value="SINGLETON">{t("inspector:blueprint.type.SINGLETON")}</option>
               </select>
               <select name="targetObjectType" defaultValue="CUSTOM">
                 {OBJECT_TYPES.map((objectType) => (
@@ -1040,7 +1040,7 @@ function ModelsCatalog({
                 sourcePath: String(data.get("sourcePath") ?? ""),
                 modelName,
                 description: String(data.get("description") ?? ""),
-                type: String(data.get("type") ?? "RELATIVE") as "RELATIVE" | "INSTANCE",
+                type: String(data.get("type") ?? "MIXIN") as "MIXIN" | "INSTANCE",
               });
               form.reset();
             }}
@@ -1072,9 +1072,9 @@ function ModelsCatalog({
               <input name="description" placeholder={t("inspector:blueprint.descriptionPlaceholder")} />
               <select
                 name="type"
-                defaultValue={defaultCreateType === "ABSOLUTE" ? "INSTANCE" : defaultCreateType}
+                defaultValue={defaultCreateType === "SINGLETON" ? "INSTANCE" : defaultCreateType}
               >
-                <option value="RELATIVE">{t("inspector:blueprint.type.RELATIVE")}</option>
+                <option value="MIXIN">{t("inspector:blueprint.type.MIXIN")}</option>
                 <option value="INSTANCE">{t("inspector:blueprint.type.INSTANCE")}</option>
               </select>
               <button type="submit" className="btn" disabled={fromObjectMutation.isPending}>
@@ -1106,10 +1106,10 @@ export default function BlueprintEditorPanel({
   const catalogRoot = isBlueprintCatalogRoot(selectedPath) ? selectedPath : null;
   const isCatalog = catalogRoot != null;
   const headerTitle = isCatalog
-    ? catalogRoot === RELATIVE_BLUEPRINTS_ROOT
-      ? t("inspector:blueprint.relativeTitle")
-      : catalogRoot === ABSOLUTE_BLUEPRINTS_ROOT
-        ? t("inspector:blueprint.absoluteTitle")
+    ? catalogRoot === MIXIN_BLUEPRINTS_ROOT
+      ? t("inspector:blueprint.mixinTitle")
+      : catalogRoot === SINGLETON_BLUEPRINTS_ROOT
+        ? t("inspector:blueprint.singletonTitle")
         : t("inspector:blueprint.objectTypesTitle")
     : modelName
       ? t("inspector:blueprint.titleNamed", { name: modelName })

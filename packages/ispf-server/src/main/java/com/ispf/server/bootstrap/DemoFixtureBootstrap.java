@@ -156,7 +156,7 @@ public class DemoFixtureBootstrap {
                 UUID.randomUUID().toString(),
                 MQTT_SENSOR_MODEL,
                 "MQTT temperature sensor with threshold monitoring (demo fixture)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(

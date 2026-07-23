@@ -62,7 +62,7 @@ public class Phase30BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "event-filter-v1",
                 "Reusable event journal filter",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.EVENT_FILTER,
                 "",
                 List.of(
@@ -89,7 +89,7 @@ public class Phase30BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "process-program-v1",
                 "Cyclic process-control loop program (BL-172)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.PROCESS_PROGRAM,
                 "",
                 List.of(

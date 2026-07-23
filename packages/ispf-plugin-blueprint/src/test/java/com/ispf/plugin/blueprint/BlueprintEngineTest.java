@@ -64,7 +64,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "mqtt-sensor-v1",
                 "MQTT temperature sensor",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(BlueprintVariableDefinition.withHistory(
@@ -107,7 +107,7 @@ class BlueprintEngineTest {
     }
 
     @Test
-    void applyRelativeModelsSkipsBlankApplicabilityExpression() {
+    void applyMixinModelsSkipsBlankApplicabilityExpression() {
         DataSchema temperatureSchema = DataSchema.builder("temperature")
                 .field("value", FieldType.DOUBLE)
                 .build();
@@ -116,7 +116,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "auto-skip-sensor",
                 "Sensor without applicability CEL",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(BlueprintVariableDefinition.of(
@@ -146,14 +146,14 @@ class BlueprintEngineTest {
         );
         objectTree.register(device);
 
-        List<BlueprintApplyResult> applied = engine.applyRelativeBlueprints(device.path());
+        List<BlueprintApplyResult> applied = engine.applyMixinBlueprints(device.path());
 
         assertThat(applied).isEmpty();
         assertThat(device.getVariable("temperature")).isEmpty();
     }
 
     @Test
-    void applyRelativeModelsUsesApplicabilityExpression() {
+    void applyMixinModelsUsesApplicabilityExpression() {
         DataSchema flagSchema = DataSchema.builder("flag")
                 .field("value", FieldType.BOOLEAN)
                 .build();
@@ -162,7 +162,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "cel-match",
                 "Applies when flag is true",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "self.flag.value == true",
                 List.of(BlueprintVariableDefinition.of(
@@ -185,7 +185,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "cel-no-match",
                 "Applies when flag is false",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "self.flag.value == false",
                 List.of(BlueprintVariableDefinition.of(
@@ -224,7 +224,7 @@ class BlueprintEngineTest {
                 DataRecord.single(flagSchema, Map.of("value", true))
         ));
 
-        List<BlueprintApplyResult> applied = engine.applyRelativeBlueprints(device.path());
+        List<BlueprintApplyResult> applied = engine.applyMixinBlueprints(device.path());
 
         assertThat(applied).hasSize(1);
         assertThat(applied.getFirst().attachment().blueprintName()).isEqualTo("cel-match");
@@ -236,9 +236,9 @@ class BlueprintEngineTest {
     void intrinsicModelsSkipCatalogAndappliedBlueprintIds() {
         objectTree.register(new PlatformObject(
                 UUID.randomUUID().toString(),
-                BlueprintCatalogRoots.RELATIVE,
+                BlueprintCatalogRoots.MIXIN,
                 ObjectType.BLUEPRINT,
-                "Relative Blueprints",
+                "Mixin Blueprints",
                 null,
                 null
         ));
@@ -255,7 +255,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "data-source-v1",
                 "Data source schema",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DATA_SOURCE,
                 "",
                 List.of(BlueprintVariableDefinition.of(
@@ -279,7 +279,7 @@ class BlueprintEngineTest {
         );
         engine.createBlueprint(intrinsic);
 
-        assertThat(objectTree.findByPath("root.platform.relative-blueprints.data-source-v1")).isEmpty();
+        assertThat(objectTree.findByPath("root.platform.mixin-blueprints.data-source-v1")).isEmpty();
 
         PlatformObject dataSource = new PlatformObject(
                 UUID.randomUUID().toString(),
@@ -336,7 +336,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "relative-only",
                 "",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(),
@@ -370,7 +370,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "sensor",
                 "",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -417,7 +417,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "sensor-base-v1",
                 "Base sensor",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(BlueprintVariableDefinition.of(
@@ -439,7 +439,7 @@ class BlueprintEngineTest {
                 UUID.randomUUID().toString(),
                 "sensor-vendor-v1",
                 "Vendor extension",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(BlueprintVariableDefinition.of(

@@ -31,8 +31,8 @@ export function fetchBlueprints(): Promise<BlueprintDto[]> {
   return request("/api/v1/blueprints");
 }
 
-export function fetchRelativeBlueprints(): Promise<BlueprintDto[]> {
-  return request("/api/v1/relative-blueprints");
+export function fetchMixinBlueprints(): Promise<BlueprintDto[]> {
+  return request("/api/v1/mixin-blueprints");
 }
 
 export function fetchInstanceTypes(platformType?: string, parentPath?: string): Promise<BlueprintDto[]> {
@@ -43,8 +43,8 @@ export function fetchInstanceTypes(platformType?: string, parentPath?: string): 
   return request(`/api/v1/instance-types${query ? `?${query}` : ""}`);
 }
 
-export function fetchAbsoluteBlueprints(): Promise<BlueprintDto[]> {
-  return request("/api/v1/absolute-blueprints");
+export function fetchSingletonBlueprints(): Promise<BlueprintDto[]> {
+  return request("/api/v1/singleton-blueprints");
 }
 
 export function fetchBlueprintByName(name: string): Promise<BlueprintDto> {
@@ -76,8 +76,8 @@ export function applyBlueprint(blueprintId: string, objectPath: string): Promise
   );
 }
 
-export function fetchAbsoluteBlueprintInstance(blueprintId: string): Promise<ObjectSummary> {
-  return request(`/api/v1/absolute-blueprints/${encodeURIComponent(blueprintId)}/instance`);
+export function fetchSingletonBlueprintInstance(blueprintId: string): Promise<ObjectSummary> {
+  return request(`/api/v1/singleton-blueprints/${encodeURIComponent(blueprintId)}/instance`);
 }
 
 export function instantiateBlueprint(

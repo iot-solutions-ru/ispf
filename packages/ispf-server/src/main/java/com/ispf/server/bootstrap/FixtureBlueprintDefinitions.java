@@ -87,7 +87,7 @@ public final class FixtureBlueprintDefinitions {
                 UUID.randomUUID().toString(),
                 DemoFixtureBootstrap.MQTT_GATEWAY_MODEL,
                 "MQTT ingress gateway — routes lastIngress to child sensors via dispatchTelemetry",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -241,7 +241,7 @@ public final class FixtureBlueprintDefinitions {
                 UUID.randomUUID().toString(),
                 DemoFixtureBootstrap.DEVICE_DRIVER_MODEL,
                 "Generic device with driver binding (driverId, config, mappings)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -429,7 +429,7 @@ public final class FixtureBlueprintDefinitions {
                 UUID.randomUUID().toString(),
                 DemoFixtureBootstrap.MQTT_METER_BUS_MODEL,
                 "MQTT meter bus — ingests JSON meter payloads and upserts Meters instances",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(

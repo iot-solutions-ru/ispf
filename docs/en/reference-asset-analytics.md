@@ -25,7 +25,7 @@ Registered at bootstrap (`AnalyticsBlueprintBootstrap`):
 - **rateOfChange** — delta between first/last bucket avg → `derivedValue`
 - **oee** — A×P×Q composite → `oeePct`, `availabilityPct`, `performancePct`, `qualityPct`
 
-Linked RELATIVE blueprints: `rolling-avg-v1`, `rate-of-change-v1`, `oee-v1`.
+Linked MIXIN blueprints: `rolling-avg-v1`, `rate-of-change-v1`, `oee-v1`.
 
 ## Derived tag runner
 

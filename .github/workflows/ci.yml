@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
+      drivers: ${{ steps.filter.outputs.drivers }}
       web_console: ${{ steps.filter.outputs.web_console }}
       tools: ${{ steps.filter.outputs.tools }}
     steps:
@@ -23,8 +24,11 @@ jobs:
           filters: |
             backend:
               - 'packages/**'
+              - '!packages/ispf-driver-*/**'
+              - 'packages/ispf-driver-api/**'
               - 'buildSrc/**'
               - 'gradle/**'
+              - '!gradle/driver-packs.json'
               - 'gradlew'
               - 'build.gradle.kts'
               - 'settings.gradle.kts'
@@ -32,6 +36,14 @@ jobs:
               - 'tools/license-audit/**'
               - 'tools/agent-regression/**'
               - 'examples/**'
+            drivers:
+              - 'packages/ispf-driver-*/**'
+              - 'packages/ispf-driver-api/**'
+              - 'gradle/driver-packs.json'
+              - 'buildSrc/src/main/kotlin/com/ispf/build/**'
+              - 'buildSrc/src/main/resources/META-INF/gradle-plugins/ispf-driver-pack.properties'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
             web_console:
               - 'apps/web-console/**'
               - 'tools/symbol-pack-isa/**'
@@ -39,6 +51,49 @@ jobs:
               - 'tools/ai-pack/**'
               - 'tools/license-audit/**'
               - 'tools/agent-regression/**'
+
+  driver-packs:
+    needs: changes
+    if: needs.changes.outputs.drivers == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Restore dev driver packs
+        uses: actions/cache/restore@v6
+        id: driver-packs-cache
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
+          restore-keys: |
+            driver-packs-dev-
+
+      - name: Test and sync dev driver packs
+        env:
+          ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
+        run: >
+          ./gradlew
+          testDevDriverPacks
+          syncDevDriverPacks
+          --no-daemon
+          -Dorg.gradle.workers.max=1
+          -Dispf.driver.packs=dev
+
+      - name: Save dev driver packs
+        if: steps.driver-packs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
 
   backend:
     needs: changes
@@ -204,18 +259,20 @@ jobs:
           key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
 
   pr-fast-ok:
-    needs: [changes, backend, web-console, agent-regression, marketplace-catalog, helm-chart]
+    needs: [changes, backend, driver-packs, web-console, agent-regression, marketplace-catalog, helm-chart]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Require successful pr-fast jobs
         run: |
           echo "backend=${{ needs.backend.result }}"
+          echo "driver-packs=${{ needs.driver-packs.result }}"
           echo "web-console=${{ needs.web-console.result }}"
           echo "agent-regression=${{ needs.agent-regression.result }}"
           echo "marketplace-catalog=${{ needs.marketplace-catalog.result }}"
           echo "helm-chart=${{ needs.helm-chart.result }}"
           if [[ "${{ needs.backend.result }}" == "failure"
+             || "${{ needs.driver-packs.result }}" == "failure"
              || "${{ needs.web-console.result }}" == "failure"
              || "${{ needs.agent-regression.result }}" == "failure"
              || "${{ needs.marketplace-catalog.result }}" == "failure"
@@ -224,6 +281,7 @@ jobs:
             exit 1
           fi
           if [[ "${{ needs.backend.result }}" == "cancelled"
+             || "${{ needs.driver-packs.result }}" == "cancelled"
              || "${{ needs.web-console.result }}" == "cancelled"
              || "${{ needs.agent-regression.result }}" == "cancelled"
              || "${{ needs.marketplace-catalog.result }}" == "cancelled"

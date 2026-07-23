@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Defaults for out-of-the-box virtual devices (no driver profiles).
- * Domain plants use relative blueprints + {@code create_object} / {@code apply_relative_blueprint}.
+ * Domain plants use mixin blueprints + {@code create_object} / {@code apply_mixin_blueprint}.
  */
 final class VirtualDeviceDefaults {
 
@@ -32,7 +32,7 @@ final class VirtualDeviceDefaults {
         row.put(
                 "hint",
                 "create_virtual_device provisions OOTB multi-type telemetry. "
-                        + "Domain models (mini-tec, tank-farm, OGP): list_relative_blueprints + apply_relative_blueprint."
+                        + "Domain models (mini-tec, tank-farm, OGP): list_mixin_blueprints + apply_mixin_blueprint."
         );
         return row;
     }

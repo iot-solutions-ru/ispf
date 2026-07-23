@@ -21,7 +21,7 @@ In **Explorer** → device → **Blueprints**, apply:
 Lab shortcut: `root.platform.devices.lab-userA-01` already has both mixins from bootstrap.
 
 ```http
-POST /api/v1/relative-blueprints/{blueprintId}/apply?objectPath=root.platform.devices.my-device
+POST /api/v1/mixin-blueprints/{blueprintId}/apply?objectPath=root.platform.devices.my-device
 ```
 
 ### 2. Set Haystack tags

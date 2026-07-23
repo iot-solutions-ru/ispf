@@ -13,7 +13,7 @@ import java.util.Map;
  * Writes multi-type synthetic telemetry (waves, measurements with quality, nested geo/health,
  * tables, binary, meter, booleans, status). Amplitude/period knobs come from driver configuration.
  * <p>
- * Domain reference plants (Mini-TEC, tank-farm, OGP) must enrich via relative blueprints
+ * Domain reference plants (Mini-TEC, tank-farm, OGP) must enrich via mixin blueprints
  * (variables + binding rules / object functions), not via driver profile switches.
  */
 public class VirtualDeviceDriver implements DeviceDriver {
@@ -22,7 +22,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
             "virtual",
             "Virtual Simulator Driver",
             "0.4.0",
-            "Out-of-the-box multi-type synthetic telemetry. Domain enrichment: relative blueprints.",
+            "Out-of-the-box multi-type synthetic telemetry. Domain enrichment: mixin blueprints.",
             "ISPF",
             Map.ofEntries(
                     Map.entry("baseTemperature", "22.0"),

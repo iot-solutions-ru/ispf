@@ -10,7 +10,7 @@
 
 ## Домен
 
-| Сущность | Object path | Модель |
+| Сущность | Object path | Blueprint |
 |----------|-------------|--------|
 | **ГПУ 1–3** | `root.platform.devices.mini-tec-plant.gpu-0N` | `mini-tec-gpu-v1` |
 | **ГРПБ** | `...grpb` | `mini-tec-grpb-v1` |
