@@ -7,33 +7,60 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * EtherNet/IP placeholder driver — validates TCP/CIP session registration.
- * <p>
- * Full tag read/write requires a native CIP stack (e.g. EIPScanner/Logix SDK); not bundled here.
- * Point mapping: {@code tagPath} (placeholder — returns connection/session status only).
+ * EtherNet/IP driver — CIP client over the EtherNet/IP encapsulation protocol.
+ *
+ * <p>{@link #connect()} opens TCP (default port 44818) and performs
+ * {@code RegisterSession}. Polls issue UCMM (unconnected) messages via
+ * {@code SendRRData}: CIP Read Tag service (0x4C) with the tag path encoded as
+ * ANSI extended symbolic segments (0x91, dot-separated name segments). Atomic
+ * types BOOL, SINT, INT, DINT and REAL are decoded little-endian.
+ * {@link #writePoint} uses CIP Write Tag service (0x4D) with the CIP type
+ * learned from the last read of that tag, falling back to Java value type
+ * inference (Boolean→BOOL, Integer/Long→DINT, Float/Double→REAL).
+ *
+ * <p>A non-zero CIP general status marks the point quality BAD instead of
+ * returning a fabricated value. Limitations: UCMM only (no connected Class-3
+ * messaging), element count 1 (no arrays, structures or UDTs, no
+ * fragmentation), one UCMM exchange per point per poll, no
+ * ListIdentity/ListServices discovery.
  */
 public class EthernetIpDeviceDriver implements DeviceDriver {
 
     private static final int ENCAP_REGISTER_SESSION = 0x0065;
+    private static final int ENCAP_SEND_RR_DATA = 0x006F;
+    private static final int CPF_NULL_ADDRESS = 0x0000;
+    private static final int CPF_UNCONNECTED_DATA = 0x00B2;
+    private static final int CIP_READ_TAG = 0x4C;
+    private static final int CIP_WRITE_TAG = 0x4D;
+
+    private static final int CIP_BOOL = 0xC1;
+    private static final int CIP_SINT = 0xC2;
+    private static final int CIP_INT = 0xC3;
+    private static final int CIP_DINT = 0xC4;
+    private static final int CIP_REAL = 0xCA;
+
     private static final int DEFAULT_PORT = 44818;
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "ethernet-ip",
             "EtherNet/IP Driver",
-            "0.1.0",
-            "Placeholder CIP/EtherNet/IP driver: TCP session registration only. "
-                    + "Tag read/write requires a native CIP library (not included).",
+            "0.2.0",
+            "CIP/EtherNet/IP client: UCMM Read/Write Tag for atomic types"
+                    + " (BOOL/SINT/INT/DINT/REAL) over EtherNet/IP encapsulation",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -58,6 +85,7 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
     private int timeoutMs = 5000;
     private long sessionHandle;
     private final Map<String, EthernetIpPoint> points = new ConcurrentHashMap<>();
+    private final Map<String, Integer> tagTypes = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
     @Override
@@ -92,7 +120,7 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
             socket = new Socket();
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
             socket.setSoTimeout(timeoutMs);
-            sessionHandle = registerSession(socket);
+            sessionHandle = registerSession();
             connected = true;
             driverObject.log(DriverLogLevel.INFO,
                     "EtherNet/IP session registered at " + host + ":" + port + " handle=" + sessionHandle);
@@ -123,61 +151,292 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             EthernetIpPoint point = EthernetIpPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point));
+            driverObject.updateVariable(entry.getKey(), readPoint(entry.getKey(), point));
         }
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("EtherNet/IP tag write requires native CIP library (placeholder driver)");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        EthernetIpPoint point = points.get(pointId);
+        if (point == null) {
+            throw new DriverException("EtherNet/IP point '" + pointId
+                    + "' is not mapped; include it in a poll before writing");
+        }
+        Object raw = value.firstRow().get("value");
+        if (raw == null) {
+            raw = value.firstRow().get("raw");
+        }
+        if (raw == null) {
+            throw new DriverException("EtherNet/IP write requires a value");
+        }
+        int type = resolveWriteType(pointId, raw);
+        try {
+            byte[] request = buildCipRequest(CIP_WRITE_TAG, point.tagPath(), encodeWriteData(type, raw));
+            int status = ucmmExchange(request)[1][0] & 0xFF;
+            if (status != 0) {
+                throw new DriverException("CIP Write Tag failed: generalStatus=0x"
+                        + Integer.toHexString(status));
+            }
+            driverObject.updateVariable(pointId, DataRecord.single(STATUS_SCHEMA, Map.of(
+                    "connected", true,
+                    "sessionHandle", sessionHandle,
+                    "tagPath", point.tagPath(),
+                    "value", raw.toString(),
+                    "quality", "GOOD"
+            )));
+        } catch (IOException e) {
+            markDisconnected();
+            throw new DriverException("EtherNet/IP write failed", e);
+        }
     }
 
-    private DataRecord readPoint(EthernetIpPoint point) {
+    private DataRecord readPoint(String pointId, EthernetIpPoint point) {
+        String value = "";
+        String quality;
+        try {
+            byte[] request = buildCipRequest(CIP_READ_TAG, point.tagPath(), new byte[]{1, 0});
+            byte[][] cip = ucmmExchange(request);
+            int status = cip[1][0] & 0xFF;
+            if (status == 0) {
+                ByteBuffer data = ByteBuffer.wrap(cip[2]).order(ByteOrder.LITTLE_ENDIAN);
+                int type = Short.toUnsignedInt(data.getShort());
+                Object decoded = decodeValue(type, data);
+                tagTypes.put(pointId, type);
+                value = String.valueOf(decoded);
+                quality = "GOOD";
+            } else {
+                quality = "BAD:0x" + Integer.toHexString(status);
+            }
+        } catch (IOException e) {
+            markDisconnected();
+            quality = "NOT_AVAILABLE";
+        } catch (DriverException e) {
+            quality = "NOT_AVAILABLE";
+        }
         return DataRecord.single(STATUS_SCHEMA, Map.of(
                 "connected", isConnected(),
                 "sessionHandle", sessionHandle,
                 "tagPath", point.tagPath(),
-                "value", "SESSION_OK",
-                "quality", "PLACEHOLDER"
+                "value", value,
+                "quality", quality
         ));
     }
 
-    private static long registerSession(Socket socket) throws IOException {
-        byte[] request = buildRegisterSessionRequest();
+    /**
+     * Sends one UCMM request and returns the parsed CIP reply as
+     * {@code {replyServiceByte, generalStatusByte, dataBytes}}.
+     */
+    private byte[][] ucmmExchange(byte[] cipRequest) throws IOException {
+        byte[] payload = buildSendRrDataPayload(cipRequest);
+        byte[] responsePayload = encapExchange(ENCAP_SEND_RR_DATA, payload);
+        byte[] cipData = extractUnconnectedData(responsePayload);
+        if (cipData.length < 4) {
+            throw new IOException("Short CIP response: " + cipData.length + " bytes");
+        }
+        int additionalWords = cipData[3] & 0xFF;
+        int dataOffset = 4 + additionalWords * 2;
+        byte[] data = new byte[Math.max(0, cipData.length - dataOffset)];
+        System.arraycopy(cipData, dataOffset, data, 0, data.length);
+        return new byte[][]{
+                new byte[]{cipData[0]},
+                new byte[]{cipData[2]},
+                data
+        };
+    }
+
+    private long registerSession() throws IOException {
+        ByteBuffer request = ByteBuffer.allocate(28).order(ByteOrder.LITTLE_ENDIAN);
+        request.putShort((short) ENCAP_REGISTER_SESSION);
+        request.putShort((short) 4);
+        request.putInt(0);
+        request.putInt(0);
+        request.putLong(0L);
+        request.putInt(0);
+        request.putShort((short) 1);
+        request.putShort((short) 0);
+
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-        out.write(request);
+        out.write(request.array());
         out.flush();
 
-        DataInputStream in = new DataInputStream(socket.getInputStream());
-        byte[] header = in.readNBytes(24);
-        if (header.length < 24) {
-            throw new IOException("Incomplete EtherNet/IP encapsulation header");
-        }
+        byte[] header = readFully(24);
         ByteBuffer buffer = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
         int command = Short.toUnsignedInt(buffer.getShort(0));
         int status = buffer.getInt(8);
-        long handle = Integer.toUnsignedLong(buffer.getInt(4));
         if (command != ENCAP_REGISTER_SESSION || status != 0) {
             throw new IOException("Register Session failed: command=" + command + " status=" + status);
         }
         int length = Short.toUnsignedInt(buffer.getShort(2));
         if (length > 0) {
-            in.readNBytes(length);
+            readFully(length);
         }
-        return handle;
+        return Integer.toUnsignedLong(buffer.getInt(4));
     }
 
-    private static byte[] buildRegisterSessionRequest() {
-        ByteBuffer buffer = ByteBuffer.allocate(28).order(ByteOrder.LITTLE_ENDIAN);
-        buffer.putShort((short) ENCAP_REGISTER_SESSION);
-        buffer.putShort((short) 4);
-        buffer.putInt(0);
-        buffer.putInt(0);
-        buffer.putLong(0L);
-        buffer.putInt(0);
-        buffer.putShort((short) 1);
+    /** Sends one encapsulation frame and returns the response payload. */
+    private byte[] encapExchange(int command, byte[] payload) throws IOException {
+        ByteBuffer header = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
+        header.putShort((short) command);
+        header.putShort((short) payload.length);
+        header.putInt((int) sessionHandle);
+        header.putInt(0);
+        header.putLong(0L);
+        header.putInt(0);
+
+        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        out.write(header.array());
+        out.write(payload);
+        out.flush();
+
+        byte[] responseHeader = readFully(24);
+        ByteBuffer buffer = ByteBuffer.wrap(responseHeader).order(ByteOrder.LITTLE_ENDIAN);
+        int responseCommand = Short.toUnsignedInt(buffer.getShort(0));
+        int length = Short.toUnsignedInt(buffer.getShort(2));
+        int status = buffer.getInt(8);
+        if (responseCommand != command) {
+            throw new IOException("Unexpected encapsulation command 0x"
+                    + Integer.toHexString(responseCommand) + " (expected 0x" + Integer.toHexString(command) + ")");
+        }
+        if (status != 0) {
+            throw new IOException("Encapsulation error status " + status + " — session is likely dropped");
+        }
+        return length > 0 ? readFully(length) : new byte[0];
+    }
+
+    private byte[] readFully(int length) throws IOException {
+        DataInputStream in = new DataInputStream(socket.getInputStream());
+        byte[] data = in.readNBytes(length);
+        if (data.length < length) {
+            throw new EOFException("Incomplete EtherNet/IP frame: " + data.length + " of " + length + " bytes");
+        }
+        return data;
+    }
+
+    private static byte[] buildSendRrDataPayload(byte[] cipData) {
+        ByteBuffer buffer = ByteBuffer.allocate(16 + cipData.length).order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putInt(0);                 // interface handle: 0 for CIP on TCP
+        buffer.putShort((short) 10);      // timeout
+        buffer.putShort((short) 2);       // item count
+        buffer.putShort((short) CPF_NULL_ADDRESS);
         buffer.putShort((short) 0);
+        buffer.putShort((short) CPF_UNCONNECTED_DATA);
+        buffer.putShort((short) cipData.length);
+        buffer.put(cipData);
         return buffer.array();
+    }
+
+    private static byte[] extractUnconnectedData(byte[] payload) throws IOException {
+        ByteBuffer buffer = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN);
+        if (payload.length < 8) {
+            throw new IOException("Short SendRRData payload: " + payload.length + " bytes");
+        }
+        buffer.getInt();                  // interface handle
+        buffer.getShort();                // timeout
+        int itemCount = Short.toUnsignedInt(buffer.getShort());
+        for (int i = 0; i < itemCount; i++) {
+            int typeId = Short.toUnsignedInt(buffer.getShort());
+            int length = Short.toUnsignedInt(buffer.getShort());
+            if (typeId == CPF_UNCONNECTED_DATA) {
+                byte[] data = new byte[length];
+                buffer.get(data);
+                return data;
+            }
+            buffer.position(buffer.position() + length);
+        }
+        throw new IOException("No Unconnected Data item in SendRRData response");
+    }
+
+    /** Builds a CIP request: service, symbolic tag path, then service-specific data. */
+    private static byte[] buildCipRequest(int service, String tagPath, byte[] serviceData)
+            throws DriverException {
+        byte[] path = encodeSymbolicPath(tagPath);
+        ByteBuffer buffer = ByteBuffer.allocate(2 + path.length + serviceData.length)
+                .order(ByteOrder.LITTLE_ENDIAN);
+        buffer.put((byte) service);
+        buffer.put((byte) (path.length / 2));
+        buffer.put(path);
+        buffer.put(serviceData);
+        return buffer.array();
+    }
+
+    /** ANSI extended symbolic segments (0x91) for each dot-separated name segment. */
+    private static byte[] encodeSymbolicPath(String tagPath) throws DriverException {
+        ByteArrayOutputStream path = new ByteArrayOutputStream();
+        for (String segment : tagPath.split("\\.")) {
+            byte[] name = segment.getBytes(StandardCharsets.US_ASCII);
+            if (name.length == 0 || name.length > 255) {
+                throw new DriverException("Invalid CIP tag path segment: '" + segment + "'");
+            }
+            path.write(0x91);
+            path.write(name.length);
+            path.write(name, 0, name.length);
+            if (name.length % 2 == 1) {
+                path.write(0);
+            }
+        }
+        return path.toByteArray();
+    }
+
+    private static Object decodeValue(int type, ByteBuffer data) throws IOException {
+        return switch (type) {
+            case CIP_BOOL -> data.get() != 0;
+            case CIP_SINT -> (int) data.get();
+            case CIP_INT -> (int) data.getShort();
+            case CIP_DINT -> data.getInt();
+            case CIP_REAL -> data.getFloat();
+            default -> throw new IOException("Unsupported CIP atomic type 0x" + Integer.toHexString(type));
+        };
+    }
+
+    private int resolveWriteType(String pointId, Object raw) {
+        Integer cached = tagTypes.get(pointId);
+        if (cached != null) {
+            return cached;
+        }
+        if (raw instanceof Boolean) {
+            return CIP_BOOL;
+        }
+        if (raw instanceof Float || raw instanceof Double) {
+            return CIP_REAL;
+        }
+        return CIP_DINT;
+    }
+
+    private static byte[] encodeWriteData(int type, Object raw) throws DriverException {
+        String text = raw.toString();
+        ByteBuffer buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putShort((short) type);
+        buffer.putShort((short) 1);       // element count
+        try {
+            switch (type) {
+                case CIP_BOOL -> buffer.put((byte) (Boolean.parseBoolean(text) ? 1 : 0));
+                case CIP_SINT -> buffer.put((byte) Integer.parseInt(text));
+                case CIP_INT -> buffer.putShort((short) Integer.parseInt(text));
+                case CIP_DINT -> buffer.putInt((int) Long.parseLong(text));
+                case CIP_REAL -> buffer.putFloat(Float.parseFloat(text));
+                default -> throw new DriverException(
+                        "Unsupported CIP write type 0x" + Integer.toHexString(type));
+            }
+        } catch (NumberFormatException e) {
+            throw new DriverException("Value '" + text + "' does not fit CIP type 0x"
+                    + Integer.toHexString(type), e);
+        }
+        int length = switch (type) {
+            case CIP_BOOL, CIP_SINT -> 5;
+            case CIP_INT -> 6;
+            default -> 8;
+        };
+        byte[] data = new byte[length];
+        System.arraycopy(buffer.array(), 0, data, 0, length);
+        return data;
+    }
+
+    private void markDisconnected() {
+        connected = false;
+        closeSocket();
     }
 
     private void closeSocket() {

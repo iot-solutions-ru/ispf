@@ -28,6 +28,15 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
 
+## Status (July 2026, driver batch C promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------------|
+| `ethernet-ip` | BETA | **PRODUCTION** | Real UCMM CIP client: Read/Write Tag (0x4C/0x4D) for BOOL/SINT/INT/DINT/REAL over `SendRRData`; `EthernetIpDeviceDriverTest` (in-test CIP emulator); `POLL` + `WRITE` + `QUALITY` |
+| `vmware` | BETA | **PRODUCTION** | Real vSphere SOAP flow: RetrieveServiceContent + SessionManager Login (session cookie) + PropertyCollector RetrieveProperties, re-login on NotAuthenticated, Logout on disconnect; `VmwareDeviceDriverTest` rewritten around a session-enforcing fake endpoint |
+| `smi-s` | BETA | **PRODUCTION** | Real CIM-XML parser (JDK DOM/XPath, secure processing) replaces hardcoded properties; CIM `ERROR` handling; `SmisDeviceDriverTest` extended (values, arrays, error, refused) |
+| `opc-da`, `opc-bridge`, `corba` | BETA | **BETA** (stays) | Objective blockers: opc-da/opc-bridge proxy protocol undefined (Windows DCOM bridge out of scope); corba needs a third-party ORB (JDK CORBA removed) |
+
 ## Status (July 2026, driver batch B3 promotion)
 
 | driverId | Was | Now | Note |

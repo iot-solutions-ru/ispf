@@ -40,7 +40,7 @@ class SmisDeviceDriverTest {
         startCimServer("""
                 <CIM CIMVERSION="2.0">
                   <MESSAGE>
-                    <SIMPLERESP>
+                    <SIMPLERSP>
                       <IMETHODRESPONSE NAME="EnumerateInstances">
                         <IRETURNVALUE>
                           <VALUE.OBJECT>
@@ -50,7 +50,7 @@ class SmisDeviceDriverTest {
                           </VALUE.OBJECT>
                         </IRETURNVALUE>
                       </IMETHODRESPONSE>
-                    </SIMPLERESP>
+                    </SIMPLERSP>
                   </MESSAGE>
                 </CIM>
                 """);
@@ -71,6 +71,108 @@ class SmisDeviceDriverTest {
         DataRecord record = driverObject.variables.get("org");
         assertEquals(200, record.firstRow().get("statusCode"));
         assertEquals("SNIA", record.firstRow().get("value"));
+        driver.disconnect();
+    }
+
+    @Test
+    void cimErrorResponseFailsRead() throws Exception {
+        startCimServer("""
+                <CIM CIMVERSION="2.0">
+                  <MESSAGE>
+                    <SIMPLERSP>
+                      <IMETHODRESPONSE NAME="EnumerateInstances">
+                        <ERROR CODE="5" DESCRIPTION="CIM_ERR_INVALID_NAMESPACE unique-marker-42"/>
+                      </IMETHODRESPONSE>
+                    </SIMPLERSP>
+                  </MESSAGE>
+                </CIM>
+                """);
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "useHttp", "true",
+                "timeoutMs", "5000"
+        ));
+
+        SmisDeviceDriver driver = new SmisDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+
+        DriverException error = assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("org", "CIM_RegisteredProfile:RegisteredOrganization")));
+        assertTrue(error.getMessage().contains("5"));
+        assertTrue(error.getMessage().contains("unique-marker-42"));
+        assertTrue(driverObject.variables.isEmpty());
+        driver.disconnect();
+    }
+
+    @Test
+    void connectionRefusedFailsRead() throws Exception {
+        // Bind and immediately release a port to guarantee nothing listens on it.
+        int freePort;
+        try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
+            freePort = socket.getLocalPort();
+        }
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(freePort),
+                "useHttp", "true",
+                "timeoutMs", "3000"
+        ));
+
+        SmisDeviceDriver driver = new SmisDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+
+        assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("org", "CIM_RegisteredProfile:RegisteredOrganization")));
+        driver.disconnect();
+    }
+
+    @Test
+    void arrayPropertiesAreJoined() throws Exception {
+        startCimServer("""
+                <CIM CIMVERSION="2.0">
+                  <MESSAGE>
+                    <SIMPLERSP>
+                      <IMETHODRESPONSE NAME="EnumerateInstances">
+                        <IRETURNVALUE>
+                          <VALUE.OBJECT>
+                            <INSTANCE CLASSNAME="CIM_RegisteredProfile">
+                              <PROPERTY NAME="RegisteredName"><VALUE>unique-profile-alpha</VALUE></PROPERTY>
+                              <PROPERTY.ARRAY NAME="RegisteredSubprofiles">
+                                <VALUE.ARRAY><VALUE>sub-one</VALUE><VALUE>sub-two</VALUE></VALUE.ARRAY>
+                              </PROPERTY.ARRAY>
+                            </INSTANCE>
+                          </VALUE.OBJECT>
+                        </IRETURNVALUE>
+                      </IMETHODRESPONSE>
+                    </SIMPLERSP>
+                  </MESSAGE>
+                </CIM>
+                """);
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "useHttp", "true",
+                "timeoutMs", "5000"
+        ));
+
+        SmisDeviceDriver driver = new SmisDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of(
+                "name", "CIM_RegisteredProfile:RegisteredName",
+                "subs", "CIM_RegisteredProfile:RegisteredSubprofiles",
+                "missing", "CIM_RegisteredProfile:NoSuchProperty"
+        ));
+
+        assertEquals("unique-profile-alpha", driverObject.variables.get("name").firstRow().get("value"));
+        assertEquals("sub-one,sub-two", driverObject.variables.get("subs").firstRow().get("value"));
+        assertEquals("NOT_AVAILABLE", driverObject.variables.get("missing").firstRow().get("value"));
         driver.disconnect();
     }
 
