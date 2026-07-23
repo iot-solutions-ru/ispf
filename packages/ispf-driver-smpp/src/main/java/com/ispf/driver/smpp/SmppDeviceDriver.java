@@ -123,9 +123,9 @@ public class SmppDeviceDriver implements DeviceDriver {
             org.jsmpp.session.SubmitSmResult result = session.submitShortMessage(
                     "CMT",
                     TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.ISDN,
-                    point.destination(),
-                    TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.ISDN,
                     systemId,
+                    TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.ISDN,
+                    point.destination(),
                     new org.jsmpp.bean.ESMClass(),
                     (byte) 0, (byte) 1, null, null,
                     new org.jsmpp.bean.RegisteredDelivery(),

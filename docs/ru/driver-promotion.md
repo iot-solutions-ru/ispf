@@ -24,6 +24,19 @@
 4. Изменить запись в `DriverMaturityRegistry`.
 5. При необходимости — демо-устройство / модель в bootstrap.
 
+## Статус (июль 2026, продвижение партии B3)
+
+| driverId | Было | Стало | Примечание |
+|----------|------|-------|------------|
+| `iec104-server` | BETA | **PRODUCTION** | `Iec104ServerDeviceDriverTest` (j60870 client end-to-end); `POLL` + `WRITE` + `QUALITY` |
+| `omron-fins` | — (новый) | **PRODUCTION** | `OmronFinsDeviceDriverTest` (фейковый FINS/TCP-сервер: handshake + чтение памяти); read-only |
+| `mbus` | — (новый) | **PRODUCTION** | `MbusDeviceDriverTest` (фейковый M-Bus TCP-счётчик, кадры RSP_UD); read-only |
+| `smpp` | — (новый) | **PRODUCTION** | `SmppDeviceDriverTest` (фейковый SMSC: bind + submit_sm); **fix**: source/destination в submit_sm были перепутаны (source = `systemId`, destination = destination точки) |
+| `xmpp` | — (новый) | **PRODUCTION** | `XmppDeviceDriverTest` (XMPP-сервер в тесте: SCRAM-SHA-1 + ping end-to-end); **fix**: `smack-xmlparser-xpp3` / `smack-java8` переведены в runtime-зависимости (без них `ExceptionInInitializerError`) |
+| `ipmi` | — (новый) | **PRODUCTION** | `IpmiDeviceDriverTest` (RMCP ping + codec seam); **fix**: `readSensor` теперь выполняет реальный `Get Sensor Reading` |
+| `wmi` | BETA | **PRODUCTION** | `WmiDeviceDriverTest` (happy-path только на Windows); read-only, только Windows |
+| `odbc` | BETA | **PRODUCTION** | `OdbcDeviceDriverTest` (H2 в режиме совместимости с мостом — не реальный ODBC bridge); нужен внешний ODBC-JDBC bridge JAR |
+
 ## Статус (июль 2026, продвижение партии B2)
 
 | driverId | Было | Стало | Примечание |

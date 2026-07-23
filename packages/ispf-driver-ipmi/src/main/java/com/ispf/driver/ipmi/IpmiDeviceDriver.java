@@ -13,6 +13,8 @@ import com.veraxsystems.vxipmi.coding.commands.chassis.GetChassisStatus;
 import com.veraxsystems.vxipmi.coding.commands.chassis.GetChassisStatusResponseData;
 import com.veraxsystems.vxipmi.coding.commands.sdr.GetSdr;
 import com.veraxsystems.vxipmi.coding.commands.sdr.GetSdrResponseData;
+import com.veraxsystems.vxipmi.coding.commands.sdr.GetSensorReading;
+import com.veraxsystems.vxipmi.coding.commands.sdr.GetSensorReadingResponseData;
 import com.veraxsystems.vxipmi.coding.commands.sdr.ReserveSdrRepository;
 import com.veraxsystems.vxipmi.coding.commands.sdr.ReserveSdrRepositoryResponseData;
 import com.veraxsystems.vxipmi.coding.commands.sdr.record.CompactSensorRecord;
@@ -38,6 +40,7 @@ public class IpmiDeviceDriver implements DeviceDriver {
             .field("value", FieldType.STRING)
             .field("reachable", FieldType.BOOLEAN)
             .field("powerOn", FieldType.BOOLEAN)
+            .field("sensor", FieldType.STRING)
             .build();
 
     private static final DriverMetadata METADATA = new DriverMetadata(
@@ -166,7 +169,8 @@ public class IpmiDeviceDriver implements DeviceDriver {
             return DataRecord.single(IPMI_SCHEMA, Map.of(
                     "value", reachable ? "reachable" : "unreachable",
                     "reachable", reachable,
-                    "powerOn", false
+                    "powerOn", false,
+                    "sensor", ""
             ));
         }
         return switch (point.kind()) {
@@ -183,7 +187,8 @@ public class IpmiDeviceDriver implements DeviceDriver {
         return DataRecord.single(IPMI_SCHEMA, Map.of(
                 "value", powerOn ? "on" : "off",
                 "reachable", reachable,
-                "powerOn", powerOn
+                "powerOn", powerOn,
+                "sensor", ""
         ));
     }
 
@@ -201,11 +206,16 @@ public class IpmiDeviceDriver implements DeviceDriver {
             if (recordData != null && recordData.length > 0) {
                 SensorRecord record = SensorRecord.populateSensorRecord(recordData);
                 String name = sensorName(record);
-                if (name != null && sensorName.equalsIgnoreCase(name)) {
+                Integer sensorNumber = sensorNumber(record);
+                if (name != null && sensorNumber != null && sensorName.equalsIgnoreCase(name)) {
+                    GetSensorReadingResponseData reading = (GetSensorReadingResponseData) connector.sendMessage(
+                            handle, new GetSensorReading(IpmiVersion.V20, cipherSuite, AuthenticationType.RMCPPlus,
+                                    sensorNumber));
                     return DataRecord.single(IPMI_SCHEMA, Map.of(
-                            "value", name,
+                            "value", String.valueOf(sensorReading(record, reading)),
                             "reachable", reachable,
-                            "powerOn", false
+                            "powerOn", false,
+                            "sensor", name
                     ));
                 }
             }
@@ -214,8 +224,26 @@ public class IpmiDeviceDriver implements DeviceDriver {
         return DataRecord.single(IPMI_SCHEMA, Map.of(
                 "value", "",
                 "reachable", reachable,
-                "powerOn", false
+                "powerOn", false,
+                "sensor", ""
         ));
+    }
+
+    static double sensorReading(SensorRecord record, GetSensorReadingResponseData reading) {
+        if (record instanceof FullSensorRecord full) {
+            return reading.getSensorReading(full);
+        }
+        return reading.getPlainSensorReading();
+    }
+
+    static Integer sensorNumber(SensorRecord record) {
+        if (record instanceof FullSensorRecord full) {
+            return full.getSensorNumber() & 0xFF;
+        }
+        if (record instanceof CompactSensorRecord compact) {
+            return compact.getSensorNumber() & 0xFF;
+        }
+        return null;
     }
 
     private static String sensorName(SensorRecord record) {

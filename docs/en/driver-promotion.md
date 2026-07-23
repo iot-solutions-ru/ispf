@@ -28,6 +28,19 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
 
+## Status (July 2026, driver batch B3 promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------------|
+| `iec104-server` | BETA | **PRODUCTION** | `Iec104ServerDeviceDriverTest` (j60870 client end-to-end); `POLL` + `WRITE` + `QUALITY` |
+| `omron-fins` | — (new) | **PRODUCTION** | `OmronFinsDeviceDriverTest` (fake FINS/TCP server: handshake + memory read); read-only |
+| `mbus` | — (new) | **PRODUCTION** | `MbusDeviceDriverTest` (fake M-Bus TCP meter, RSP_UD frames); read-only |
+| `smpp` | — (new) | **PRODUCTION** | `SmppDeviceDriverTest` (fake SMSC: bind + submit_sm); **fix**: submit_sm source/destination were swapped (source = `systemId`, destination = point destination) |
+| `xmpp` | — (new) | **PRODUCTION** | `XmppDeviceDriverTest` (in-test XMPP server: SCRAM-SHA-1 + ping end-to-end); **fix**: `smack-xmlparser-xpp3` / `smack-java8` promoted to runtime deps (`ExceptionInInitializerError` without them) |
+| `ipmi` | — (new) | **PRODUCTION** | `IpmiDeviceDriverTest` (RMCP ping + codec seam); **fix**: `readSensor` now issues a real `Get Sensor Reading` |
+| `wmi` | BETA | **PRODUCTION** | `WmiDeviceDriverTest` (happy-path gated on Windows); read-only, Windows-only |
+| `odbc` | BETA | **PRODUCTION** | `OdbcDeviceDriverTest` (H2 in bridge-compatibility mode — not a real ODBC bridge); requires an external ODBC-JDBC bridge JAR |
+
 ## Status (July 2026, driver batch B2 promotion)
 
 | driverId | Was | Now | Note |
