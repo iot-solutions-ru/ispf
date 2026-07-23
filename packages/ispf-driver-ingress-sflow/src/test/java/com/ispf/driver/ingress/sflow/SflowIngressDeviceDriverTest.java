@@ -1,4 +1,4 @@
-package com.ispf.driver.ingress.syslog;
+package com.ispf.driver.ingress.sflow;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectType;
@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,12 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SyslogIngressDeviceDriverTest {
+class SflowIngressDeviceDriverTest {
+
+    private static final byte[] DATAGRAM = {0x00, 0x00, 0x00, 0x05, 0x0a, 0x0b, 0x0c, 0x0d};
 
     @Test
     void connectsWithConfiguredPort() throws Exception {
         StubDriverObject driverObject = new StubDriverObject(Map.of("port", "0"));
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SflowIngressDeviceDriver driver = new SflowIngressDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
         assertTrue(driver.isConnected());
@@ -35,11 +37,11 @@ class SyslogIngressDeviceDriverTest {
 
     @Test
     void readPointsRequiresConnection() {
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SflowIngressDeviceDriver driver = new SflowIngressDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of("port", "0")));
         assertThrows(
                 DriverException.class,
-                () -> driver.readPoints(Map.of("stats", "syslog"))
+                () -> driver.readPoints(Map.of("stats", "sflow"))
         );
     }
 
@@ -47,26 +49,24 @@ class SyslogIngressDeviceDriverTest {
     void publishesDatagramAndStats() throws Exception {
         int port = freeUdpPort();
         StubDriverObject driverObject = new StubDriverObject(Map.of("port", String.valueOf(port)));
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SflowIngressDeviceDriver driver = new SflowIngressDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
         try {
-            byte[] payload = "<13>test syslog message".getBytes(StandardCharsets.UTF_8);
             try (DatagramSocket sender = new DatagramSocket()) {
-                sender.send(new DatagramPacket(payload, payload.length,
+                sender.send(new DatagramPacket(DATAGRAM, DATAGRAM.length,
                         InetAddress.getByName("127.0.0.1"), port));
             }
 
             DataRecord record = awaitVariable(driverObject, "lastDatagram");
-            assertEquals("<13>test syslog message", record.firstRow().get("message"));
+            assertEquals(Base64.getEncoder().encodeToString(DATAGRAM), record.firstRow().get("payloadBase64"));
             assertEquals("127.0.0.1", record.firstRow().get("sourceHost"));
-            assertEquals(payload.length, record.firstRow().get("bytes"));
+            assertEquals(DATAGRAM.length, record.firstRow().get("bytes"));
             assertNotNull(driverObject.observedAt.get("lastDatagram"));
 
-            driver.readPoints(Map.of("stats", "syslog"));
+            driver.readPoints(Map.of("stats", "sflow"));
             DataRecord stats = driverObject.variables.get("stats");
-            assertEquals(1L, stats.firstRow().get("messagesReceived"));
-            assertEquals("<13>test syslog message", stats.firstRow().get("lastMessage"));
+            assertEquals(1L, stats.firstRow().get("datagramsReceived"));
             assertEquals(true, stats.firstRow().get("listening"));
         } finally {
             driver.disconnect();
@@ -80,19 +80,18 @@ class SyslogIngressDeviceDriverTest {
                 "port", String.valueOf(port),
                 "bindAddress", "127.0.0.1"
         ));
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SflowIngressDeviceDriver driver = new SflowIngressDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
         try {
             assertTrue(driver.isConnected());
-            byte[] payload = "<13>loopback".getBytes(StandardCharsets.UTF_8);
             try (DatagramSocket sender = new DatagramSocket()) {
-                sender.send(new DatagramPacket(payload, payload.length,
+                sender.send(new DatagramPacket(DATAGRAM, DATAGRAM.length,
                         InetAddress.getByName("127.0.0.1"), port));
             }
 
             DataRecord record = awaitVariable(driverObject, "lastDatagram");
-            assertEquals("<13>loopback", record.firstRow().get("message"));
+            assertEquals(Base64.getEncoder().encodeToString(DATAGRAM), record.firstRow().get("payloadBase64"));
             assertEquals("127.0.0.1", record.firstRow().get("sourceHost"));
             assertNotNull(driverObject.observedAt.get("lastDatagram"));
         } finally {
@@ -102,7 +101,7 @@ class SyslogIngressDeviceDriverTest {
 
     @Test
     void writePointIsReadOnly() throws Exception {
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SflowIngressDeviceDriver driver = new SflowIngressDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of("port", "0")));
         driver.connect();
         try {
@@ -142,10 +141,10 @@ class SyslogIngressDeviceDriverTest {
         @Override
         public PlatformObject deviceObject() {
             return new PlatformObject(
-                    "ingress-syslog-test",
-                    "root.platform.devices.itm.ingress.syslog",
+                    "ingress-sflow-test",
+                    "root.platform.devices.itm.ingress.sflow",
                     ObjectType.DEVICE,
-                    "Syslog",
+                    "Sflow",
                     "",
                     null
             );

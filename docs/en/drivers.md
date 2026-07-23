@@ -23,7 +23,7 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **36** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **9** at **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **47** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **9** at **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
 > **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `ethernet-ip` (CIP session only). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
@@ -40,6 +40,9 @@ In `DriverProductionMatrix` — **36** drivers at **PRODUCTION** (including `cwm
 | `imap`, `pop3`, `jms` | PRODUCTION | mail/messaging clients; read-only |
 | `soap`, `web-transaction`, `http-server` | PRODUCTION | HTTP-based; read-only |
 | `jdbc`, `graph-db` | PRODUCTION | SELECT-only / query read; read-only |
+| `sip`, `asterisk`, `radius` | PRODUCTION | telecom probes; read-only |
+| `ldap`, `jmx`, `nmea`, `message-stream`, `dhcp` | PRODUCTION | IT/network checks; read-only |
+| `ingress-syslog`, `ingress-snmp-trap`, `ingress-sflow` | PRODUCTION | UDP listeners, raw capture; `observed_at` |
 | `ethernet-ip` | BETA | CIP session registration; tag path placeholder |
 | `opc-da`, `opc-bridge` | BETA | **Shell / mapping tests** — not full DA stack |
 | `iec104-server` | BETA | interop partner for `iec104` |
@@ -506,6 +509,9 @@ Full list of `driverId` in `DriverCatalog`:
 | `smpp` | `ispf-driver-smpp` | SMPP |
 | `smb` | `ispf-driver-smb` | SMB/CIFS |
 | `corba` | `ispf-driver-corba` | CORBA IIOP TCP stub |
+| `ingress-syslog` | `ispf-driver-ingress-syslog` | Syslog UDP listener (raw capture) |
+| `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | SNMP trap UDP listener (raw capture) |
+| `ingress-sflow` | `ispf-driver-ingress-sflow` | sFlow v5 UDP listener (raw capture) |
 
 Detailed configs for base drivers — in the sections below. Others follow the same pattern: `driverConfigJson` + `driverPointMappingsJson`, see `DriverMetadata` in the module.
 
@@ -624,9 +630,11 @@ Maturity: **production** (auth NONE; loopback `DlmsDeviceDriverTest`, BL-140).
 
 ### jmx (`ispf-driver-jmx`)
 
-JMX remote or local. Config: `serviceUrl` (`service:jmx:rmi:///jndi/rmi://host:port/jmxrmi`) or empty for local.
+Remote JMX over RMI. Config: `serviceUrl` (`service:jmx:rmi:///jndi/rmi://host:port/jmxrmi`) — or leave empty to build the URL from `host`/`port`. There is no local/platform-MBeanServer mode; `timeoutMs` is declared but currently unused.
 
-Point mapping: `ObjectName:attribute` (for example `java.lang:type=Memory:HeapMemoryUsage`).
+Point mapping: `objectName::attribute[.compositeKey]` — for example `java.lang:type=Memory::HeapMemoryUsage.used`. Prefer the `::` separator; the legacy single-colon form mis-parses objectNames (which always contain `:`).
+
+Maturity: **production**. Loopback test: `JmxDeviceDriverTest` (JDK `JMXConnectorServer` + RMI registry in-JVM). Read-only.
 
 ### jdbc (`ispf-driver-jdbc`)
 
@@ -665,15 +673,19 @@ Maturity: **production**. Loopback test: `ApplicationDeviceDriverTest`. Limitati
 
 ### message-stream (`ispf-driver-message-stream`)
 
-TCP client/server or UDP. Config: `mode`, `host`, `port`, `encoding`.
+Raw TCP client or UDP client/listener. Config: `protocol` (`TCP`/`UDP`), `host`, `port`, `listen` (UDP only — TCP listen is explicitly unsupported), `bufferSize`.
 
-Point mapping: `feed` — last message.
+Point mapping: mapping values are currently **not interpreted** — each poll reads the stream once and pushes the same record to every mapped point; conventionally map a `feed` point. Variable: `stream` (UTF-8 chunk, empty on timeout), `bytesRead`.
+
+Maturity: **production**. Loopback test: `MessageStreamDeviceDriverTest` (UDP listener + TCP client vs local ServerSocket; blocking read bounded by soTimeout). Read-only.
 
 ### nmea (`ispf-driver-nmea`)
 
-NMEA 0183. Config: `mode` (tcp/serial), `host`/`port` or `serialPort`.
+NMEA 0183 over **TCP only** (per-poll reconnect, up to 100 lines per poll). Config: `host`, `port` (10110). There is no serial mode — `mode`/`serialPort` keys are not implemented.
 
-Point mapping: sentence type (`GGA`, `RMC`) or `raw`.
+Point mapping: sentence-type **prefix**, case-insensitive (`startsWith` on the type token — `GP` matches `GPGGA`, bare `GGA` does not); the last matching line in the poll wins. Variable: `value` (JSON `{"type":…,"f1":…,"fN":…}`, `{}` on no match), `raw` (last matching sentence).
+
+Maturity: **production**. Loopback test: `NmeaDeviceDriverTest` (local ServerSocket streaming GGA/RMC). Read-only.
 
 ### telnet / soap
 
@@ -845,9 +857,27 @@ Point mapping: `DM:100:1` (area:address:count).
 
 ### asterisk (`ispf-driver-asterisk`)
 
-AMI. Config: `host`, `port` (5038), `username`, `secret`.
+Asterisk AMI over TCP: banner → `Action: Login` → action block → parsed response. Config: `host`, `port` (5038), `username`, `secret`.
 
-Point mapping: AMI action block (for example `Action: Ping`).
+Point mapping: verbatim AMI action block (for example `Action: Ping`). Variable: `value` (first `Ping:`/`Message:` header or whole response), `response` (raw), `success`.
+
+Maturity: **production**. Loopback test: `AsteriskDeviceDriverTest` (in-test AMI server). Read-only. Limitations: socket timeouts hardcoded 5 s; one TCP connection per point poll; login response is not validated.
+
+### sip (`ispf-driver-sip`)
+
+SIP probe (JAIN-SIP factories, raw UDP exchange). Config: `host`, `port` (5060), `username`, `domain`, `timeoutMs`.
+
+Point mapping: `options` (OPTIONS ping; reachable on 2xx/3xx) or `register` (REGISTER probe; 200 = `registered`, 401/407 = `challenge`). Variable: `reachable`, `statusCode`, `value`.
+
+Maturity: **production**. Loopback test: `SipDeviceDriverTest` (in-test UDP SIP responder). Read-only. Note: requires the log4j-1.2 API at runtime — the module bundles `reload4j` (jain-sip-ri declares log4j as `provided`).
+
+### radius (`ispf-driver-radius`)
+
+RADIUS authentication check (TinyRadius, **PAP only**). Config: `host`, `port` (1812), `secret`, `username`, `password`, `timeoutMs`.
+
+Point mapping: `auth`. Variable: `value` (`success`/`fail`), `success`, `responseCode` (RADIUS packet type; `-1` when no response — errors collapse to failure without exceptions).
+
+Maturity: **production**. Loopback test: `RadiusDeviceDriverTest` (in-process TinyRadius `RadiusServer`: Access-Accept / Access-Reject / unreachable). Read-only. Limitations: no CHAP/MS-CHAP, no accounting.
 
 ### smpp (`ispf-driver-smpp`)
 
@@ -860,6 +890,46 @@ Point mapping: `bind` (status) or `destination:message` (submit).
 SMB/CIFS (smbj). Config: `host`, `share`, `username`, `password`, `domain`.
 
 Point mapping: file path in share → `exists`, `size`.
+
+### ldap (`ispf-driver-ldap`)
+
+LDAP directory checks (UnboundID SDK). Config: `host`, `port` (389), `bindDn`, `password`, `useSsl`.
+
+Point mapping: an LDAP filter `(objectClass=person)` → entry count, or `filter:attribute` (split at the last `:`; filter auto-wrapped in parens) → attribute value, for example `cn=admin:mail`. Variable: `value`, `count`.
+
+Maturity: **production**. Loopback test: `LdapDeviceDriverTest` (UnboundID `InMemoryDirectoryServer`). Read-only. Limitations: search base DN is hardcoded to the root DSE (`""`) — real directories may reject anonymous null-base searches; a fresh connection per poll.
+
+### dhcp (`ispf-driver-dhcp`)
+
+DHCP DISCOVER probe (minimal hand-built client). Config: `interfaceName`, `bindAddress`, `timeoutMs`, plus optional `serverPort` (67), `listenPort` (68), `broadcastAddress` (`255.255.255.255`) — the defaults require privileged ports and broadcast capability.
+
+Point mapping: `serverIp` (option 54, falls back to yiaddr) or `lease` (`obtained`/`none`). Variable: `value`, `leased`, `leaseSeconds` (option 51).
+
+Maturity: **production**. Loopback test: `DhcpDeviceDriverTest` (in-test UDP OFFER responder via the injectable ports). Read-only. Limitation: DISCOVER only — no REQUEST/renew, only options 54/51 parsed.
+
+### ingress-syslog (`ispf-driver-ingress-syslog`)
+
+UDP syslog **raw datagram capture** (default port 514; `bindAddress` honored). No RFC5424/3164 field extraction — message text is forwarded unparsed.
+
+Each datagram → fixed variable `lastDatagram` (`message`, `sourceHost`, `sourcePort`, `bytes`) with `observedAt`. `readPoints` publishes stats (`messagesReceived`, `lastMessage`, `listening`) to every mapped point.
+
+Maturity: **production**. Loopback test: `SyslogIngressDeviceDriverTest` (datagram → record + stats). Read-only.
+
+### ingress-snmp-trap (`ispf-driver-ingress-snmp-trap`)
+
+SNMP trap **raw capture** on UDP/162 (privileged on Linux; `bindAddress` honored). BER payload is stored as opaque bytes — OID/varbind decode is deliberately downstream (correlator/rules).
+
+Each trap → fixed variable `lastTrap` (`payloadBase64`, `payloadHex` preview, `sourceHost`, `bytes`) with `observedAt`. `readPoints` → stats (`trapsReceived`, `listening`).
+
+Maturity: **production**. Loopback test: `SnmpTrapIngressDeviceDriverTest`. Read-only.
+
+### ingress-sflow (`ispf-driver-ingress-sflow`)
+
+sFlow v5 **raw datagram capture** on UDP/6343 (`bindAddress` honored). Flow-record decode is downstream by design.
+
+Each datagram → fixed variable `lastDatagram` (`payloadBase64`, `sourceHost`, `bytes`) with `observedAt`. `readPoints` → stats (`datagramsReceived`, `listening`).
+
+Maturity: **production**. Loopback test: `SflowIngressDeviceDriverTest`. Read-only.
 
 ## Adding your own driver
 

@@ -28,6 +28,22 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
 
+## Status (July 2026, driver batch B2 promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------------|
+| `sip` | BETA | **PRODUCTION** | `SipDeviceDriverTest` (UDP SIP responder); **fix**: OPTIONS was dead code (jain-sip-ri rejects port-0 ListeningPoint — raw socket now supplies the Via port); `reload4j` moved to runtime deps |
+| `asterisk` | BETA | **PRODUCTION** | `AsteriskDeviceDriverTest` (in-test AMI server); read-only |
+| `radius` | BETA | **PRODUCTION** | `RadiusDeviceDriverTest` (in-process TinyRadius server: Accept/Reject/unreachable); PAP only |
+| `ldap` | BETA | **PRODUCTION** | `LdapDeviceDriverTest` (UnboundID InMemoryDirectoryServer); base DN = root DSE |
+| `jmx` | BETA | **PRODUCTION** | `JmxDeviceDriverTest` (in-JVM `JMXConnectorServer`); docs corrected (no local mode, `::` mapping) |
+| `nmea` | BETA | **PRODUCTION** | `NmeaDeviceDriverTest` (TCP ServerSocket GGA/RMC); docs corrected (TCP only, prefix matching) |
+| `message-stream` | BETA | **PRODUCTION** | `MessageStreamDeviceDriverTest`; **fix**: TCP read now blocking with soTimeout (was `InputStream.available()`) |
+| `dhcp` | BETA | **PRODUCTION** | `DhcpDeviceDriverTest` (UDP OFFER responder); **fix**: ports/broadcast address injectable (`serverPort`/`listenPort`/`broadcastAddress`, defaults unchanged) |
+| `ingress-syslog` | BETA | **PRODUCTION** | `SyslogIngressDeviceDriverTest` extended (datagram → record + stats); **fixes**: `bindAddress` honored, ingress buffer re-created on `connect()`, description no longer promises RFC parsing |
+| `ingress-snmp-trap` | BETA | **PRODUCTION** | `SnmpTrapIngressDeviceDriverTest` (new); raw capture scope documented; same bindAddress/buffer fixes |
+| `ingress-sflow` | BETA | **PRODUCTION** | `SflowIngressDeviceDriverTest` (new); raw capture scope documented; same bindAddress/buffer fixes |
+
 ## Status (July 2026, driver batch B1 promotion)
 
 | driverId | Was | Now | Note |

@@ -13,7 +13,7 @@ import com.ispf.driver.ingress.DriverIngressBuffer;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.InetAddress;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
@@ -52,6 +52,7 @@ public class SflowIngressDeviceDriver implements DeviceDriver {
 
     private DriverObject driverObject;
     private int port = 6343;
+    private String bindAddress = "0.0.0.0";
     private int bufferSize = 65535;
     private DatagramSocket socket;
     private Thread listenerThread;
@@ -69,6 +70,10 @@ public class SflowIngressDeviceDriver implements DeviceDriver {
         this.driverObject = driverObject;
         Map<String, String> config = driverObject.configuration();
         config.forEach(this::applyConfig);
+        startIngress(config);
+    }
+
+    private void startIngress(Map<String, String> config) {
         ingressBuffer = new DriverIngressBuffer<>(
                 DriverIngress.resolveThreads(config, 2),
                 DriverIngress.resolveCapacity(config, 8192),
@@ -84,6 +89,7 @@ public class SflowIngressDeviceDriver implements DeviceDriver {
         }
         switch (key) {
             case "port" -> port = Integer.parseInt(value.trim());
+            case "bindAddress" -> bindAddress = value.trim();
             case "bufferSize" -> bufferSize = Integer.parseInt(value.trim());
             default -> { }
         }
@@ -92,15 +98,18 @@ public class SflowIngressDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         disconnect();
+        startIngress(driverObject.configuration());
         try {
-            socket = new DatagramSocket(port);
+            socket = bindAddress.isBlank()
+                    ? new DatagramSocket(port)
+                    : new DatagramSocket(port, InetAddress.getByName(bindAddress.trim()));
             socket.setReuseAddress(true);
             connected = true;
             listenerThread = new Thread(this::listenLoop, "ingress-sflow-" + port);
             listenerThread.setDaemon(true);
             listenerThread.start();
             driverObject.log(DriverLogLevel.INFO, "sFlow ingress listening on UDP " + port);
-        } catch (SocketException e) {
+        } catch (IOException e) {
             connected = false;
             throw new DriverException("sFlow bind failed on port " + port, e);
         }

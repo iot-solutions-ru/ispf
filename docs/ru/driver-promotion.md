@@ -24,6 +24,22 @@
 4. Изменить запись в `DriverMaturityRegistry`.
 5. При необходимости — демо-устройство / модель в bootstrap.
 
+## Статус (июль 2026, продвижение партии B2)
+
+| driverId | Было | Стало | Примечание |
+|----------|------|-------|------------|
+| `sip` | BETA | **PRODUCTION** | `SipDeviceDriverTest` (UDP SIP-ответчик); **fix**: OPTIONS был мёртвым кодом (jain-sip-ri отклоняет ListeningPoint на порту 0 — порт Via теперь даёт сырой сокет); `reload4j` перенесён в runtime-зависимости |
+| `asterisk` | BETA | **PRODUCTION** | `AsteriskDeviceDriverTest` (AMI-сервер в тесте); read-only |
+| `radius` | BETA | **PRODUCTION** | `RadiusDeviceDriverTest` (TinyRadius-сервер в процессе: Accept/Reject/недостижимость); только PAP |
+| `ldap` | BETA | **PRODUCTION** | `LdapDeviceDriverTest` (UnboundID InMemoryDirectoryServer); base DN = root DSE |
+| `jmx` | BETA | **PRODUCTION** | `JmxDeviceDriverTest` (`JMXConnectorServer` в той же JVM); доки исправлены (нет local-режима, маппинг `::`) |
+| `nmea` | BETA | **PRODUCTION** | `NmeaDeviceDriverTest` (TCP ServerSocket GGA/RMC); доки исправлены (только TCP, префиксное совпадение) |
+| `message-stream` | BETA | **PRODUCTION** | `MessageStreamDeviceDriverTest`; **fix**: TCP-чтение теперь блокирующее с soTimeout (было `InputStream.available()`) |
+| `dhcp` | BETA | **PRODUCTION** | `DhcpDeviceDriverTest` (UDP OFFER-ответчик); **fix**: порты/broadcast-адрес инъектируемы (`serverPort`/`listenPort`/`broadcastAddress`, дефолты прежние) |
+| `ingress-syslog` | BETA | **PRODUCTION** | `SyslogIngressDeviceDriverTest` расширен (датаграмма → запись + статистика); **fixes**: `bindAddress` применяется, ingress-буфер пересоздаётся в `connect()`, description больше не обещает парсинг RFC |
+| `ingress-snmp-trap` | BETA | **PRODUCTION** | `SnmpTrapIngressDeviceDriverTest` (новый); raw-capture скоуп задокументирован; те же фиксы bindAddress/буфера |
+| `ingress-sflow` | BETA | **PRODUCTION** | `SflowIngressDeviceDriverTest` (новый); raw-capture скоуп задокументирован; те же фиксы bindAddress/буфера |
+
 ## Статус (июль 2026, продвижение партии B1)
 
 | driverId | Было | Стало | Примечание |

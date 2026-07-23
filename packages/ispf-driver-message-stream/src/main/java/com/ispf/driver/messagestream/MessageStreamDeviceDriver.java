@@ -158,11 +158,12 @@ public class MessageStreamDeviceDriver implements DeviceDriver {
                     read = 0;
                 }
             } else {
-                read = tcpSocket.getInputStream().available();
-                if (read > 0) {
-                    read = Math.min(read, bufferSize);
-                    read = tcpSocket.getInputStream().read(buffer, 0, read);
-                } else {
+                try {
+                    read = tcpSocket.getInputStream().read(buffer, 0, bufferSize);
+                    if (read < 0) {
+                        read = 0;
+                    }
+                } catch (SocketTimeoutException e) {
                     read = 0;
                 }
             }

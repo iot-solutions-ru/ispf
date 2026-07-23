@@ -31,14 +31,25 @@ final class DhcpDiscoverClient {
     }
 
     static DhcpProbeResult probe(String interfaceName, String bindAddress, int timeoutMs) throws Exception {
+        return probe(interfaceName, bindAddress, timeoutMs, DHCP_SERVER_PORT, DHCP_CLIENT_PORT, "255.255.255.255");
+    }
+
+    static DhcpProbeResult probe(
+            String interfaceName,
+            String bindAddress,
+            int timeoutMs,
+            int serverPort,
+            int listenPort,
+            String broadcastAddress
+    ) throws Exception {
         byte[] xid = randomXid();
         byte[] discover = buildDiscoverPacket(xid);
-        try (DatagramSocket socket = createSocket(interfaceName, bindAddress, timeoutMs)) {
+        try (DatagramSocket socket = createSocket(interfaceName, bindAddress, timeoutMs, listenPort)) {
             DatagramPacket request = new DatagramPacket(
                     discover,
                     discover.length,
-                    InetAddress.getByName("255.255.255.255"),
-                    DHCP_SERVER_PORT
+                    InetAddress.getByName(broadcastAddress),
+                    serverPort
             );
             socket.send(request);
 
@@ -53,14 +64,14 @@ final class DhcpDiscoverClient {
         }
     }
 
-    private static DatagramSocket createSocket(String interfaceName, String bindAddress, int timeoutMs)
+    private static DatagramSocket createSocket(String interfaceName, String bindAddress, int timeoutMs, int listenPort)
             throws Exception {
         DatagramSocket socket = new DatagramSocket(null);
         socket.setReuseAddress(true);
         socket.setBroadcast(true);
         socket.setSoTimeout(timeoutMs);
         InetAddress local = resolveBindAddress(interfaceName, bindAddress);
-        socket.bind(new InetSocketAddress(local, DHCP_CLIENT_PORT));
+        socket.bind(new InetSocketAddress(local, listenPort));
         return socket;
     }
 

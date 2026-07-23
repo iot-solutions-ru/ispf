@@ -1,4 +1,4 @@
-package com.ispf.driver.ingress.syslog;
+package com.ispf.driver.ingress.snmptrap;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectType;
@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,12 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SyslogIngressDeviceDriverTest {
+class SnmpTrapIngressDeviceDriverTest {
+
+    private static final byte[] TRAP_PAYLOAD = {0x30, (byte) 0x82, 0x01, 0x02, 0x7f};
 
     @Test
     void connectsWithConfiguredPort() throws Exception {
         StubDriverObject driverObject = new StubDriverObject(Map.of("port", "0"));
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SnmpTrapIngressDeviceDriver driver = new SnmpTrapIngressDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
         assertTrue(driver.isConnected());
@@ -35,38 +37,37 @@ class SyslogIngressDeviceDriverTest {
 
     @Test
     void readPointsRequiresConnection() {
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SnmpTrapIngressDeviceDriver driver = new SnmpTrapIngressDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of("port", "0")));
         assertThrows(
                 DriverException.class,
-                () -> driver.readPoints(Map.of("stats", "syslog"))
+                () -> driver.readPoints(Map.of("stats", "snmpTrap"))
         );
     }
 
     @Test
-    void publishesDatagramAndStats() throws Exception {
+    void publishesTrapPayloadAndStats() throws Exception {
         int port = freeUdpPort();
         StubDriverObject driverObject = new StubDriverObject(Map.of("port", String.valueOf(port)));
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SnmpTrapIngressDeviceDriver driver = new SnmpTrapIngressDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
         try {
-            byte[] payload = "<13>test syslog message".getBytes(StandardCharsets.UTF_8);
             try (DatagramSocket sender = new DatagramSocket()) {
-                sender.send(new DatagramPacket(payload, payload.length,
+                sender.send(new DatagramPacket(TRAP_PAYLOAD, TRAP_PAYLOAD.length,
                         InetAddress.getByName("127.0.0.1"), port));
             }
 
-            DataRecord record = awaitVariable(driverObject, "lastDatagram");
-            assertEquals("<13>test syslog message", record.firstRow().get("message"));
+            DataRecord record = awaitVariable(driverObject, "lastTrap");
+            assertEquals(Base64.getEncoder().encodeToString(TRAP_PAYLOAD), record.firstRow().get("payloadBase64"));
+            assertEquals("308201027f", record.firstRow().get("payloadHex"));
             assertEquals("127.0.0.1", record.firstRow().get("sourceHost"));
-            assertEquals(payload.length, record.firstRow().get("bytes"));
-            assertNotNull(driverObject.observedAt.get("lastDatagram"));
+            assertEquals(TRAP_PAYLOAD.length, record.firstRow().get("bytes"));
+            assertNotNull(driverObject.observedAt.get("lastTrap"));
 
-            driver.readPoints(Map.of("stats", "syslog"));
+            driver.readPoints(Map.of("stats", "snmpTrap"));
             DataRecord stats = driverObject.variables.get("stats");
-            assertEquals(1L, stats.firstRow().get("messagesReceived"));
-            assertEquals("<13>test syslog message", stats.firstRow().get("lastMessage"));
+            assertEquals(1L, stats.firstRow().get("trapsReceived"));
             assertEquals(true, stats.firstRow().get("listening"));
         } finally {
             driver.disconnect();
@@ -80,21 +81,20 @@ class SyslogIngressDeviceDriverTest {
                 "port", String.valueOf(port),
                 "bindAddress", "127.0.0.1"
         ));
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SnmpTrapIngressDeviceDriver driver = new SnmpTrapIngressDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
         try {
             assertTrue(driver.isConnected());
-            byte[] payload = "<13>loopback".getBytes(StandardCharsets.UTF_8);
             try (DatagramSocket sender = new DatagramSocket()) {
-                sender.send(new DatagramPacket(payload, payload.length,
+                sender.send(new DatagramPacket(TRAP_PAYLOAD, TRAP_PAYLOAD.length,
                         InetAddress.getByName("127.0.0.1"), port));
             }
 
-            DataRecord record = awaitVariable(driverObject, "lastDatagram");
-            assertEquals("<13>loopback", record.firstRow().get("message"));
+            DataRecord record = awaitVariable(driverObject, "lastTrap");
+            assertEquals(Base64.getEncoder().encodeToString(TRAP_PAYLOAD), record.firstRow().get("payloadBase64"));
             assertEquals("127.0.0.1", record.firstRow().get("sourceHost"));
-            assertNotNull(driverObject.observedAt.get("lastDatagram"));
+            assertNotNull(driverObject.observedAt.get("lastTrap"));
         } finally {
             driver.disconnect();
         }
@@ -102,7 +102,7 @@ class SyslogIngressDeviceDriverTest {
 
     @Test
     void writePointIsReadOnly() throws Exception {
-        SyslogIngressDeviceDriver driver = new SyslogIngressDeviceDriver();
+        SnmpTrapIngressDeviceDriver driver = new SnmpTrapIngressDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of("port", "0")));
         driver.connect();
         try {
@@ -142,10 +142,10 @@ class SyslogIngressDeviceDriverTest {
         @Override
         public PlatformObject deviceObject() {
             return new PlatformObject(
-                    "ingress-syslog-test",
-                    "root.platform.devices.itm.ingress.syslog",
+                    "ingress-snmp-trap-test",
+                    "root.platform.devices.itm.ingress.snmptrap",
                     ObjectType.DEVICE,
-                    "Syslog",
+                    "SnmpTrap",
                     "",
                     null
             );
