@@ -32,7 +32,9 @@ class AgentObjectTreeGuideTest {
         @SuppressWarnings("unchecked")
         List<String> catalogs = (List<String>) AgentObjectTreeGuide.summary().get("modelCatalogs");
         assertFalse(catalogs.isEmpty());
-        assertTrue(catalogs.stream().anyMatch(path -> path.contains("relative")));
+        assertTrue(catalogs.contains(com.ispf.plugin.blueprint.BlueprintCatalogRoots.MIXIN));
+        assertTrue(catalogs.contains(com.ispf.plugin.blueprint.BlueprintCatalogRoots.INSTANCE));
+        assertTrue(catalogs.contains(com.ispf.plugin.blueprint.BlueprintCatalogRoots.SINGLETON));
     }
 
     @Test
