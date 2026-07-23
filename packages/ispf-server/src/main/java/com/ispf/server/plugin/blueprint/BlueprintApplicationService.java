@@ -77,8 +77,8 @@ public class BlueprintApplicationService {
             objectManager.persistNodeTree(instance.path());
             bindingRulesMerger.mergeBlueprintRules(
                     instance.path(), model, parameters != null ? parameters : Map.of());
-            List<BlueprintApplyResult> relativeResults = blueprintEngine.applyRelativeBlueprints(instance.path());
-            for (BlueprintApplyResult relative : relativeResults) {
+            List<BlueprintApplyResult> mixinResults = blueprintEngine.applyMixinBlueprints(instance.path());
+            for (BlueprintApplyResult relative : mixinResults) {
                 blueprintRegistry.findById(relative.attachment().blueprintId()).ifPresent(relativeModel ->
                         bindingRulesMerger.mergeBlueprintRules(
                                 instance.path(),
@@ -88,15 +88,15 @@ public class BlueprintApplicationService {
                 );
             }
             objectManager.persistNodeTree(instance.path());
-            return aggregateResults(result, relativeResults);
+            return aggregateResults(result, mixinResults);
         } catch (BlueprintException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
     }
 
     @Transactional
-    public List<BlueprintApplyResult> applyRelativeBlueprintsWithRules(String objectPath) {
-        List<BlueprintApplyResult> results = blueprintEngine.applyRelativeBlueprints(objectPath);
+    public List<BlueprintApplyResult> applyMixinBlueprintsWithRules(String objectPath) {
+        List<BlueprintApplyResult> results = blueprintEngine.applyMixinBlueprints(objectPath);
         for (BlueprintApplyResult result : results) {
             blueprintRegistry.findById(result.attachment().blueprintId()).ifPresent(model ->
                     bindingRulesMerger.mergeBlueprintRules(objectPath, model, model.parameters())
@@ -113,10 +113,10 @@ public class BlueprintApplicationService {
     }
 
     @Transactional
-    public PlatformObject ensureAbsoluteInstanceWithRules(String blueprintId) {
+    public PlatformObject ensureSingletonInstanceWithRules(String blueprintId) {
         try {
             BlueprintDefinition model = blueprintRegistry.requireById(blueprintId);
-            PlatformObject instance = blueprintEngine.ensureAbsoluteInstance(model);
+            PlatformObject instance = blueprintEngine.ensureSingletonInstance(model);
             bindingRulesMerger.mergeBlueprintRules(instance.path(), model, model.parameters());
             objectManager.persistNodeTree(instance.path());
             return objectManager.require(instance.path());

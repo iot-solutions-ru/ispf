@@ -21,7 +21,7 @@ Event journal уже использует `JdbcTemplate.batchUpdate` ([0016-clic
 
 ### MQTT gateway orchestrator (`mqtt-gateway-v1`, fixture)
 
-Fixture RELATIVE-модель (регистрируется при `ispf.bootstrap.fixtures-enabled=true`). См. [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
+Fixture MIXIN-модель (регистрируется при `ispf.bootstrap.fixtures-enabled=true`). См. [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
 
 - Одно MQTT-соединение; driver пишет ingress в `lastIngress` (`topic` + `raw`).
 - Driver config: `ingressVariable=lastIngress`, `ingressTopicLanes=true` — per-topic coalesce keys в `RuntimeTelemetryCoalescer`.

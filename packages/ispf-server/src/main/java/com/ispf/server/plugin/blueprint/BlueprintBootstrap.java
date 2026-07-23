@@ -91,7 +91,7 @@ public class BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "mimic-v1",
                 "SCADA mimic diagram with symbol library and live bindings",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.MIMIC,
                 "",
                 List.of(
@@ -134,7 +134,7 @@ public class BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "alert-rule-v1",
                 "CEL alert rule — watches a variable and publishes events",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.ALERT,
                 "",
                 List.of(
@@ -344,7 +344,7 @@ public class BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "correlator-v1",
                 "Event correlator — COUNT or SEQUENCE patterns trigger workflows",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.CORRELATOR,
                 "",
                 List.of(
@@ -473,7 +473,7 @@ public class BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "dashboard-v1",
                 "Low-code HMI dashboard with widget layout stored as JSON",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DASHBOARD,
                 "",
                 List.of(
@@ -524,7 +524,7 @@ public class BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "report-v1",
                 "SQL report definition stored on object tree (REQ-PF-12)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.REPORT,
                 "",
                 List.of(
@@ -623,7 +623,7 @@ public class BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "workflow-v1",
                 "BPMN workflow with NATS event bridge",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.WORKFLOW,
                 "",
                 List.of(

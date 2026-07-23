@@ -58,7 +58,7 @@
   "hint.objectPropertiesPanel": "Edit variables, functions, bindings, and metadata in the properties panel below.",
   "hint.objectPropertiesTabs": "Use the tabs below to edit variables, functions, bindings, and other object settings.",
   "hint.openEditorButton": "Editor — double-click in tree or \"Open in editor\"",
-  "hint.modelFullDefinition": "Full model definition is in the editor (button above or double-click)",
+  "hint.modelFullDefinition": "Full blueprint definition is in the editor (button above or double-click)",
   "error.loadFailed": "Failed to load",
   "error.objectLoadFailed": "Failed to load object",
   "error.invalidJsonLabel": "{{label}}: invalid JSON",

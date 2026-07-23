@@ -107,7 +107,7 @@ avg({{deviceRef}}/{{variable}}, {{window}})
 |---------|-----|-----|
 | Площадка | `root.platform`, переменная `@analyticsFormulas` | Platform admin |
 | Приложение | `analytics-formulas.json` в bundle | Разработчик приложения |
-| Blueprint | `analyticsFormulasJson` в RELATIVE blueprint | Автор шаблона |
+| Blueprint | `analyticsFormulasJson` в MIXIN blueprint | Автор шаблона |
 
 ### REST API
 

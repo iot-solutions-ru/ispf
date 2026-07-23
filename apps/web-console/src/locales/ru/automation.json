@@ -77,7 +77,7 @@
   "analyticsTag.title": "Analytics-тег",
   "analyticsTag.windowBucket": "Бакет historian",
   "analyticsTemplate.applyButton": "Применить шаблон",
-  "analyticsTemplate.applyHint": "Применяет RELATIVE blueprint и привязывает переменные источника на целевом устройстве.",
+  "analyticsTemplate.applyHint": "Применяет связанный MIXIN-blueprint и привязывает переменные источника на целевом устройстве.",
   "analyticsTemplate.applyResult": "Применено к {{device}} — refresh {{status}}: {{message}}",
   "analyticsTemplate.applyTitle": "Применить к устройству",
   "analyticsTemplate.availabilityVariable": "Переменная availability",

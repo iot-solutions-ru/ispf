@@ -57,8 +57,8 @@
 
 | Artifact | Purpose |
 |----------|---------|
-| RELATIVE `quality-record-v1` | `defectCode`, `severity`, `lotId` на узлах `QUALITY_RECORD` |
-| RELATIVE `mes-platform-hub-v1` | `spcMeasurement` (history-enabled), `spcUcl`, `spcLcl`, `spcTarget` |
+| MIXIN `quality-record-v1` | `defectCode`, `severity`, `lotId` на узлах `QUALITY_RECORD` |
+| MIXIN `mes-platform-hub-v1` | `spcMeasurement` (history-enabled), `spcUcl`, `spcLcl`, `spcTarget` |
 | Dashboard `mes-platform-quality` | Виджет `chart` по `spcMeasurement` + value widgets UCL/LCL |
 | BFF `mes_quality_listSpcSamples` | Seed-строки из таблицы `mes_spc_sample` |
 

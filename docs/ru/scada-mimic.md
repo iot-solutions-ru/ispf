@@ -13,7 +13,7 @@
 | Концепция | Описание |
 |---------|-------------|
 | Виджет `scada-mimic` | Виджет дашборда, который рендерит документ мнемосхемы |
-| Объект `MIMIC` | Переиспользуемая схема в `root.platform.mimics.*` (модель `mimic-v1`) |
+| Объект `MIMIC` | Переиспользуемая схема в `root.platform.mimics.*` (blueprint `mimic-v1`) |
 | `diagramJson` | JSON-документ: elements, connections, bindings, customSymbols |
 | `grid.snap` | Когда `true`, размещение и drag привязываются к `grid.size` (по умолчанию **выкл.**; toggle в тулбаре редактора) |
 | `grid.visible` | Показать сетку редактора (по умолчанию **выкл.**; toggle в тулбаре) |

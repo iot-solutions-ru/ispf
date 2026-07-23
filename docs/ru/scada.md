@@ -42,7 +42,7 @@
 
 ## Объекты MIMIC в дереве
 
-| Путь | Тип | Модель |
+| Путь | Тип | Blueprint |
 |------|-----|--------|
 | `root.platform.mimics` | `MIMICS` | каталог |
 | `root.platform.mimics.{name}` | `MIMIC` | `mimic-v1` |

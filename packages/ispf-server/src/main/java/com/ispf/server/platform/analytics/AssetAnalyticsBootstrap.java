@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Registers analytics RELATIVE blueprint models used by historian binding rules (ADR-0041).
+ * Registers analytics MIXIN blueprint models used by historian binding rules (ADR-0041).
  * Tree catalog {@code root.platform.analytics} / {@code ANALYTICS_TEMPLATE} was removed per ADR-0041.
  */
 @Component
