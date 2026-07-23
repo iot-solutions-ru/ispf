@@ -13,8 +13,7 @@ Object Java functions compile with `javax.tools` and run **in-process** via `Obj
 ### 1. Kill-switch
 
 - Property: `ispf.function.java.enabled` (`ISPF_FUNCTION_JAVA_ENABLED`)
-- Default: `true` (local/test/dev)
-- `application-prod.yml`: default `false`
+- Default: `false` in every profile (local/test included) — enable explicitly on trusted nodes
 - When disabled: no compile-on-save, no startup warm-up, `JavaFunctionHandler.supports` returns false, invoke/compile throw a clear error
 
 ### 2. Stronger denylist (phase 1)
@@ -27,7 +26,7 @@ Process / isolate execution, SecurityManager, or AST-based allowlists. Document 
 
 ## Consequences
 
-- Prod profiles refuse new Java function deploy unless operators explicitly set `ISPF_FUNCTION_JAVA_ENABLED=true` on trusted nodes.
+- All profiles refuse new Java function deploy unless operators explicitly set `ISPF_FUNCTION_JAVA_ENABLED=true` on trusted nodes. Startup logs a WARN while in-process Java functions are enabled.
 - Existing CEL / expression / object-query functions are unaffected.
 - Risks: denylist remains bypassable with creative source; treat Java functions as trusted-author-only even when enabled.
 

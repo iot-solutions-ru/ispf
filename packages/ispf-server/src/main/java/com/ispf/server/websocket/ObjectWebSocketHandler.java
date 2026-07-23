@@ -11,12 +11,14 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
+import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantVirtualRoot;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -53,6 +55,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final ApplicationEventCatalogService eventCatalogService;
     private final ObjectWebSocketPathInterestRegistry pathInterestRegistry;
     private final ClusterPathInterestStore clusterPathInterestStore;
+    private final ObjectAccessService objectAccessService;
 
     public ObjectWebSocketHandler(
             WebSocketProperties webSocketProperties,
@@ -62,7 +65,8 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             ObjectManager objectManager,
             ApplicationEventCatalogService eventCatalogService,
             ObjectWebSocketPathInterestRegistry pathInterestRegistry,
-            ClusterPathInterestStore clusterPathInterestStore
+            ClusterPathInterestStore clusterPathInterestStore,
+            ObjectAccessService objectAccessService
     ) {
         this.webSocketProperties = webSocketProperties;
         this.objectMapper = objectMapper;
@@ -72,6 +76,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         this.eventCatalogService = eventCatalogService;
         this.pathInterestRegistry = pathInterestRegistry;
         this.clusterPathInterestStore = clusterPathInterestStore;
+        this.objectAccessService = objectAccessService;
     }
 
     @PostConstruct
@@ -198,11 +203,47 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
 
     private void handleSubscribe(WebSocketSession session, JsonNode node) throws IOException {
         SessionInterest next = canonicalizeInterest(SessionInterest.parse(node), sessionTenantId(session));
+        next = filterReadablePaths(next, sessionAuthentication(session));
         @SuppressWarnings("unchecked")
         SessionInterest previous = (SessionInterest) session.getAttributes().get(SUBSCRIBE_ATTR);
         session.getAttributes().put(SUBSCRIBE_ATTR, next);
         updateSubscriptionIndex(session, previous, next);
         refreshFederationPollSubscriptions();
+    }
+
+    /** Drop subscribed paths the session principal cannot READ, mirroring REST object filtering. */
+    private SessionInterest filterReadablePaths(SessionInterest interest, Authentication authentication) {
+        if (interest == null || authentication == null) {
+            return interest;
+        }
+        Set<String> pathWide = new HashSet<>();
+        for (String path : interest.pathWide) {
+            if (objectAccessService.canRead(path, authentication)) {
+                pathWide.add(path);
+            }
+        }
+        Map<String, Set<String>> variablesByPath = new java.util.HashMap<>();
+        for (Map.Entry<String, Set<String>> entry : interest.variablesByPath.entrySet()) {
+            if (objectAccessService.canRead(entry.getKey(), authentication)) {
+                variablesByPath.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return new SessionInterest(pathWide, variablesByPath);
+    }
+
+    private static Authentication sessionAuthentication(WebSocketSession session) {
+        Object raw = session.getAttributes().get(WebSocketAuthHandshakeInterceptor.AUTHENTICATION_ATTRIBUTE);
+        return raw instanceof Authentication authentication ? authentication : null;
+    }
+
+    /**
+     * Per-object READ check at delivery: subscribing to a readable ancestor must not leak
+     * events from ACL-protected descendants. Sessions without a handshake identity
+     * (RBAC disabled) keep the legacy open behavior.
+     */
+    private boolean canSessionRead(WebSocketSession session, String eventPath) {
+        Authentication authentication = sessionAuthentication(session);
+        return authentication == null || objectAccessService.canRead(eventPath, authentication);
     }
 
     private void handlePresence(WebSocketSession session, JsonNode node) throws IOException {
@@ -344,11 +385,15 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                 candidates.addAll(entry.getValue());
             }
         }
-        if (variableName == null || variableName.isBlank()) {
-            return candidates;
-        }
         Set<WebSocketSession> targets = new HashSet<>();
         for (WebSocketSession session : candidates) {
+            if (!canSessionRead(session, eventPath)) {
+                continue;
+            }
+            if (variableName == null || variableName.isBlank()) {
+                targets.add(session);
+                continue;
+            }
             Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);
             if (raw instanceof SessionInterest interest && interest.allowsVariable(eventPath, variableName)) {
                 targets.add(session);

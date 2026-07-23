@@ -5,6 +5,9 @@ version: "3.8"
 
 x-ispf-server: &ispf-server
   image: eclipse-temurin:25-jre-jammy
+  # Run as the same uid as the all-in-one Dockerfile image; host data dir must be writable:
+  #   sudo chown -R 10001:10001 /opt/ispf/data
+  user: "10001:10001"
   working_dir: /opt/ispf
   network_mode: host
   volumes:
@@ -17,7 +20,8 @@ x-ispf-server: &ispf-server
   environment: &ispf-env
     ISPF_CLUSTER_ENABLED: "true"
     ISPF_NATS_ENABLED: "true"
-    ISPF_NATS_URL: nats://127.0.0.1:4222
+    # Credentials must match the nats service below; keep them URL-safe (embedded in the URL).
+    ISPF_NATS_URL: nats://${NATS_USER:?NATS_USER is required}:${NATS_PASSWORD:?NATS_PASSWORD is required}@127.0.0.1:4222
     ISPF_NATS_REPLICA_EVENTS: "true"
     ISPF_REDIS_ENABLED: "true"
     ISPF_REDIS_HOST: 127.0.0.1
@@ -33,7 +37,8 @@ services:
     image: nats:2.10-alpine
     container_name: ispf-nats
     network_mode: host
-    command: ["-js", "-m", "8222", "-p", "4222"]
+    # Loopback-only (-a covers both client 4222 and monitoring 8222) + mandatory user/pass.
+    command: ["-js", "-a", "127.0.0.1", "-p", "4222", "-m", "8222", "--user", "${NATS_USER:?NATS_USER is required}", "--pass", "${NATS_PASSWORD:?NATS_PASSWORD is required}"]
     restart: unless-stopped
 
   ispf-server-1:

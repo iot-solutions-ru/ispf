@@ -1,7 +1,5 @@
+import DOMPurify from "dompurify";
 import type { MimicCustomSymbol, MimicPort } from "../types/scadaMimic";
-
-const BLOCKED_TAGS = /<\/?(script|iframe|object|embed|link|meta|style|foreignObject)\b[^>]*>/gi;
-const EVENT_ATTRS = /\s(on[a-z]+|formaction|xlink:href|href)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
 
 export const DEFAULT_CUSTOM_SVG_INNER =
   '<rect x="8" y="8" width="48" height="48" rx="6" fill="#161b22" stroke="#30363d" stroke-width="2"/>' +
@@ -42,19 +40,18 @@ export function parseViewBoxString(viewBox: string | undefined, fallbackW: numbe
 }
 
 export function sanitizeSvgMarkup(raw: string): string {
-  let s = raw.trim();
+  const s = raw.trim();
   if (!s) return "";
-  s = s.replace(BLOCKED_TAGS, "");
-  s = s.replace(EVENT_ATTRS, (match, attr: string, val: string) => {
-    const lower = attr.toLowerCase();
-    if (lower.startsWith("on")) return "";
-    const v = val.replace(/^['"]|['"]$/g, "").trim().toLowerCase();
-    if (lower === "href" || lower === "xlink:href") {
-      if (v.startsWith("javascript:") || v.startsWith("data:text/html")) return "";
-    }
-    return match;
+  // DOMPurify honors the SVG profile only inside an <svg> root (HTML parser namespaces),
+  // so wrap the fragment and unwrap it back after sanitizing.
+  const wrapped = DOMPurify.sanitize(`<svg>${s}</svg>`, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    // <use> with local refs is common in uploaded symbol packs and is not in the default profile.
+    ADD_TAGS: ["use"],
+    FORBID_TAGS: ["style"],
   });
-  return s;
+  const match = wrapped.match(/^<svg[^>]*>([\s\S]*)<\/svg>$/);
+  return match ? match[1] : "";
 }
 
 function parseViewBox(viewBox: string | null | undefined): { w: number; h: number; viewBox: string } | null {

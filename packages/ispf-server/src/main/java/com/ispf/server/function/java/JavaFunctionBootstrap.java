@@ -30,6 +30,11 @@ public class JavaFunctionBootstrap {
             log.info("Java function warm-up skipped (ispf.function.java.enabled=false)");
             return;
         }
+        log.warn(
+                "In-process Java functions are ENABLED (ispf.function.java.enabled=true): user-authored "
+                        + "code executes inside the server JVM — the regex denylist is not a process "
+                        + "sandbox (ADR-0045). Enable only on trusted nodes."
+        );
         for (var node : objectManager.tree().all()) {
             for (FunctionDescriptor function : node.functions().values()) {
                 if (!function.hasJavaBody()) {

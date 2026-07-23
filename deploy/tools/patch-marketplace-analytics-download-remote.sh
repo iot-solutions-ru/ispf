@@ -170,20 +170,25 @@ echo "=== Smoke catalog detail ==="
 curl -fsS "http://127.0.0.1:8090/api/v1/catalog/ispf-analytics-kpi-demo"
 echo ""
 echo "=== Smoke download (expect PK zip magic) ==="
-HDR=$(curl -fsS -D - -o /tmp/analytics-kpi.zip "http://127.0.0.1:8090/api/v1/catalog/ispf-analytics-kpi-demo/download" | tr -d '\r')
+KPI_ZIP="$(mktemp)"
+ENERGY_ZIP="$(mktemp)"
+trap 'rm -f "$KPI_ZIP" "$ENERGY_ZIP"' EXIT
+HDR=$(curl -fsS -D - -o "$KPI_ZIP" "http://127.0.0.1:8090/api/v1/catalog/ispf-analytics-kpi-demo/download" | tr -d '\r')
 echo "$HDR" | head -20
-python3 - <<'PY'
+python3 - "$KPI_ZIP" <<'PY'
+import sys
 from pathlib import Path
-b = Path("/tmp/analytics-kpi.zip").read_bytes()
+b = Path(sys.argv[1]).read_bytes()
 print("bytes", len(b), "magic", b[:2])
 assert b[:2] == b"PK", b[:16]
 print("OK zip download")
 PY
 
-curl -fsS -D - -o /tmp/analytics-energy.zip "http://127.0.0.1:8090/api/v1/catalog/ispf-analytics-energy-pack/download" >/dev/null
-python3 - <<'PY'
+curl -fsS -D - -o "$ENERGY_ZIP" "http://127.0.0.1:8090/api/v1/catalog/ispf-analytics-energy-pack/download" >/dev/null
+python3 - "$ENERGY_ZIP" <<'PY'
+import sys
 from pathlib import Path
-b = Path("/tmp/analytics-energy.zip").read_bytes()
+b = Path(sys.argv[1]).read_bytes()
 print("energy bytes", len(b), "magic", b[:2])
 assert b[:2] == b"PK"
 print("OK energy zip download")

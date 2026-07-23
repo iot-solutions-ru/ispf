@@ -86,7 +86,7 @@ Global `admin` видит **canonical** пути без rewrite. `tenant-admin` 
 | Правило | Для tenant-вызывающих |
 |---------|------------------------|
 | `connectionMode=internal` | Запрещено (create / update / test / execute) |
-| External JDBC URL | Отклонять localhost, `127.0.0.0/8`, `::1`, link-local и хост из `spring.datasource.url`. Allowlist драйверов без изменений. |
+| External JDBC URL | Отклонять localhost, `127.0.0.0/8`, `::1`, link-local, private-диапазоны (`10/8`, `172.16/12`, `192.168/16`, IPv6 ULA) и хост из `spring.datasource.url`. Allowlist драйверов без изменений. Private-диапазоны можно разрешить через `ispf.tenant.datasources.allow-private-addresses=true` (`ISPF_TENANT_DS_ALLOW_PRIVATE_ADDRESSES`) для OT/LAN-деплоев. |
 | Script / BFF SQL с пустым `dataSourcePath` | Запрещено (fallback на platform catalog) |
 | Migrations / SQL bindings / reports | `dataSourcePath` — только разрешённый external DS |
 

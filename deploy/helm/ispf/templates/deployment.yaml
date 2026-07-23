@@ -19,10 +19,22 @@ spec:
         app.kubernetes.io/name: {{ include "ispf.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      securityContext:
+        # fsGroup keeps the data/drivers volumes writable for the ispf uid.
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ispf-server
           image: "{{ .Values.image.server.repository }}:{{ .Values.image.server.tag }}"
           imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+          securityContext:
+            # Same uid as the all-in-one Dockerfile image (USER ispf).
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - name: http
               containerPort: {{ .Values.ispf.server.port }}
@@ -82,6 +94,9 @@ spec:
         - name: nginx
           image: "{{ .Values.image.nginx.repository }}:{{ .Values.image.nginx.tag }}"
           imagePullPolicy: {{ .Values.image.nginx.pullPolicy }}
+          securityContext:
+            # The official nginx image still needs root to bind :80; privilege escalation stays off.
+            allowPrivilegeEscalation: false
           ports:
             - name: web
               containerPort: 80

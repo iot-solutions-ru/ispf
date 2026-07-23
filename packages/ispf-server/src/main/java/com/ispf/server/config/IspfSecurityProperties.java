@@ -2,6 +2,9 @@ package com.ispf.server.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @ConfigurationProperties(prefix = "ispf.security")
 public class IspfSecurityProperties {
 
@@ -37,6 +40,16 @@ public class IspfSecurityProperties {
      * When blank, only static Bearer tokens can be stored on peers.
      */
     private String secretsKey = "";
+
+    /**
+     * Reverse-proxy IPs whose {@code X-Forwarded-For} header is trusted when resolving the
+     * client IP for login rate limiting. Empty (default) = never trust XFF; the direct peer
+     * address is used, so clients cannot rotate XFF to bypass {@link Login} lockouts.
+     * Leave empty when {@code server.forward-headers-strategy} is configured: the container
+     * then already rewrites {@code remoteAddr} from forwarded headers before this is consulted
+     * (the stock application*.yml does not set that strategy).
+     */
+    private List<String> trustedProxyIps = new ArrayList<>();
 
     private final Mfa mfa = new Mfa();
     private final Login login = new Login();
@@ -91,6 +104,14 @@ public class IspfSecurityProperties {
 
     public void setSecretsKey(String secretsKey) {
         this.secretsKey = secretsKey;
+    }
+
+    public List<String> getTrustedProxyIps() {
+        return trustedProxyIps;
+    }
+
+    public void setTrustedProxyIps(List<String> trustedProxyIps) {
+        this.trustedProxyIps = trustedProxyIps;
     }
 
     public Mfa getMfa() {

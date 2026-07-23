@@ -51,8 +51,14 @@ def curl_api(client: paramiko.SSHClient, method: str, path: str, body_path: str 
 
 print("1) Connect SSH")
 client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect(HOST, username=USER, password=PASSWORD, timeout=30)
+client.load_system_host_keys()
+client.set_missing_host_key_policy(paramiko.RejectPolicy())
+try:
+    client.connect(HOST, username=USER, password=PASSWORD, timeout=30)
+except paramiko.SSHException as exc:
+    print(f"Host key for {HOST} not trusted: {exc}", file=sys.stderr)
+    print("SSH to the host once manually to add it to known_hosts.", file=sys.stderr)
+    sys.exit(2)
 
 print("2) Upload web-console dist ->", WEB_ROOT)
 run(client, f"mkdir -p '{WEB_ROOT}'")

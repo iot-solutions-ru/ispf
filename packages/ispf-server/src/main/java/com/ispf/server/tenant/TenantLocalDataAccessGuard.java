@@ -29,7 +29,7 @@ public class TenantLocalDataAccessGuard {
                     + "(blank path falls through to the platform catalog)";
     private static final String LOCAL_JDBC_FORBIDDEN =
             "Tenant callers cannot use JDBC URLs targeting localhost, loopback, link-local, "
-                    + "or the platform database host";
+                    + "private/internal networks, or the platform database host";
     private static final String INTERNAL_MODE_FORBIDDEN =
             "Tenant callers cannot use connectionMode=internal; only external JDBC is allowed";
 
@@ -40,15 +40,18 @@ public class TenantLocalDataAccessGuard {
     private final TenantScopeService tenantScopeService;
     private final DataSourceConnectionResolver connectionResolver;
     private final String platformJdbcHost;
+    private final boolean allowPrivateAddresses;
 
     public TenantLocalDataAccessGuard(
             TenantScopeService tenantScopeService,
             DataSourceConnectionResolver connectionResolver,
-            @Value("${spring.datasource.url:}") String platformJdbcUrl
+            @Value("${spring.datasource.url:}") String platformJdbcUrl,
+            @Value("${ispf.tenant.datasources.allow-private-addresses:false}") boolean allowPrivateAddresses
     ) {
         this.tenantScopeService = tenantScopeService;
         this.connectionResolver = connectionResolver;
         this.platformJdbcHost = extractJdbcHost(platformJdbcUrl).orElse("");
+        this.allowPrivateAddresses = allowPrivateAddresses;
     }
 
     public boolean isTenantCaller(Authentication auth) {
@@ -93,9 +96,10 @@ public class TenantLocalDataAccessGuard {
     }
 
     /**
-     * For tenant callers: reject localhost / loopback / link-local / platform datasource host.
-     * No-op when the caller is not a tenant. Driver allowlist remains in
-     * {@link DataSourceConnectionResolver}.
+     * For tenant callers: reject localhost / loopback / link-local / RFC-1918 / IPv6 ULA /
+     * platform datasource host. Private ranges pass only when
+     * {@code ispf.tenant.datasources.allow-private-addresses=true}. No-op when the caller is not
+     * a tenant. Driver allowlist remains in {@link DataSourceConnectionResolver}.
      */
     public void requireAllowedJdbcUrl(String jdbcUrl, Authentication auth) {
         if (!isTenantCaller(auth)) {
@@ -104,7 +108,7 @@ public class TenantLocalDataAccessGuard {
         if (jdbcUrl == null || jdbcUrl.isBlank()) {
             throw forbidden(LOCAL_JDBC_FORBIDDEN);
         }
-        if (isForbiddenJdbcUrlForTenant(jdbcUrl, platformJdbcHost)) {
+        if (isForbiddenJdbcUrlForTenant(jdbcUrl, platformJdbcHost, allowPrivateAddresses)) {
             throw forbidden(LOCAL_JDBC_FORBIDDEN);
         }
     }
@@ -138,6 +142,14 @@ public class TenantLocalDataAccessGuard {
     }
 
     static boolean isForbiddenJdbcUrlForTenant(String jdbcUrl, String platformJdbcHost) {
+        return isForbiddenJdbcUrlForTenant(jdbcUrl, platformJdbcHost, false);
+    }
+
+    static boolean isForbiddenJdbcUrlForTenant(
+            String jdbcUrl,
+            String platformJdbcHost,
+            boolean allowPrivateAddresses
+    ) {
         String trimmed = jdbcUrl.trim();
         String lower = trimmed.toLowerCase(Locale.ROOT);
         if (isLocalH2Url(lower)) {
@@ -148,7 +160,7 @@ public class TenantLocalDataAccessGuard {
             // No parseable host — treat as local / unsafe for tenants.
             return true;
         }
-        return isForbiddenHost(host.get(), platformJdbcHost);
+        return isForbiddenHost(host.get(), platformJdbcHost, allowPrivateAddresses);
     }
 
     static Optional<String> extractJdbcHost(String jdbcUrl) {
@@ -230,6 +242,10 @@ public class TenantLocalDataAccessGuard {
     }
 
     static boolean isForbiddenHost(String host, String platformJdbcHost) {
+        return isForbiddenHost(host, platformJdbcHost, false);
+    }
+
+    static boolean isForbiddenHost(String host, String platformJdbcHost, boolean allowPrivateAddresses) {
         if (host == null || host.isBlank()) {
             return true;
         }
@@ -246,11 +262,49 @@ public class TenantLocalDataAccessGuard {
         if (h.startsWith("fe80:")) {
             return true;
         }
+        if (!allowPrivateAddresses && isPrivateAddress(h)) {
+            return true;
+        }
         if (platformJdbcHost != null && !platformJdbcHost.isBlank()
                 && platformJdbcHost.equalsIgnoreCase(h)) {
             return true;
         }
         return false;
+    }
+
+    /** RFC-1918 IPv4 (10/8, 172.16/12, 192.168/16) and IPv6 ULA (fc00::/7). */
+    private static boolean isPrivateAddress(String host) {
+        String h = host;
+        // Unwrap IPv4-mapped IPv6 literals (::ffff:192.168.0.1).
+        if (h.startsWith("::ffff:")) {
+            h = h.substring("::ffff:".length());
+        }
+        return isIpv4Private(h) || isIpv6Ula(h);
+    }
+
+    private static boolean isIpv4Private(String host) {
+        String[] parts = host.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+        try {
+            int a = Integer.parseInt(parts[0]);
+            int b = Integer.parseInt(parts[1]);
+            for (String part : parts) {
+                int value = Integer.parseInt(part);
+                if (value < 0 || value > 255) {
+                    return false;
+                }
+            }
+            return a == 10 || (a == 172 && b >= 16 && b <= 31) || (a == 192 && b == 168);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private static boolean isIpv6Ula(String host) {
+        // First hextet starts with fc/fd; require a colon so hostnames like "fd-db.example" pass.
+        return host.matches("f[cd][0-9a-f]{0,2}:.*");
     }
 
     private static boolean isIpv4Loopback(String host) {

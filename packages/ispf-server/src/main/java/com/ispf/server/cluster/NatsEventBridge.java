@@ -179,12 +179,20 @@ public class NatsEventBridge {
                     .errorListener(new RateLimitedNatsErrorListener(properties.slowConsumerLogIntervalSeconds()))
                     .build();
             Connection conn = Nats.connect(options);
-            log.info("Connected to NATS at {}", properties.url());
+            log.info("Connected to NATS at {}", redactCredentials(properties.url()));
             return conn;
         } catch (Exception e) {
-            log.warn("NATS connection failed ({}). Event bridge will run in no-op mode.", e.getMessage());
+            log.warn("NATS connection failed ({}). Event bridge will run in no-op mode.", redactCredentials(e.getMessage()));
             return null;
         }
+    }
+
+    /** The configured NATS URL may embed credentials (nats://user:pass@host) — never log userinfo. */
+    private static String redactCredentials(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.replaceAll("(://)[^/\\s@]*@", "$1***@");
     }
 
     private byte[] buildPayload(ObjectChangeEvent event) throws Exception {

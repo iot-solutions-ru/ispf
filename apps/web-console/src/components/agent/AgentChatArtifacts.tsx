@@ -19,6 +19,7 @@ import {
   isExecuteIntentSuggestion,
   localizeCompletenessGaps,
 } from "../../utils/operator/operatorAgentArtifacts";
+import { isSafeNavigationUrl } from "../../utils/url/navigationUrl";
 
 export interface AgentChatArtifactsProps {
   result?: Record<string, unknown>;
@@ -42,7 +43,10 @@ function openLink(link: AgentArtifactLink, handlers: AgentChatArtifactsProps) {
     return;
   }
   if (link.url) {
-    window.location.assign(link.url);
+    // Agent-provided URL — re-check scheme before navigating (defense in depth).
+    if (isSafeNavigationUrl(link.url)) {
+      window.location.assign(link.url);
+    }
   } else if (link.path) {
     window.location.assign(`/?path=${encodeURIComponent(link.path)}`);
   }

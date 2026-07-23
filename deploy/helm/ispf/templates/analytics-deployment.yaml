@@ -28,6 +28,14 @@ spec:
         ispf.io/analytics-index: "{{ add $i 1 }}"
         ispf.io/replica-profile: analytics
     spec:
+      securityContext:
+        # Same uid as the all-in-one Dockerfile image (USER ispf).
+        runAsNonRoot: true
+        runAsUser: 10001
+        # fsGroup keeps the data/drivers volumes writable for the ispf uid.
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       {{- with $.Values.analytics.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -44,6 +52,10 @@ spec:
         - name: ispf-server
           image: "{{ $.Values.image.server.repository }}:{{ $.Values.image.server.tag }}"
           imagePullPolicy: {{ $.Values.image.server.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - name: http
               containerPort: {{ $.Values.ispf.server.port }}

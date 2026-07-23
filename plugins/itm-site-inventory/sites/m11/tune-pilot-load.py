@@ -16,8 +16,14 @@ def main() -> None:
         sys.exit(2)
 
     client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(HOST, username=USER, password=password, timeout=25)
+    client.load_system_host_keys()
+    client.set_missing_host_key_policy(paramiko.RejectPolicy())
+    try:
+        client.connect(HOST, username=USER, password=password, timeout=25)
+    except paramiko.SSHException as exc:
+        print(f"Host key for {HOST} not trusted: {exc}", file=sys.stderr)
+        print("SSH to the host once manually to add it to known_hosts.", file=sys.stderr)
+        sys.exit(2)
 
     script = r"""set -e
 ENV=/opt/ispf/ispf-server.env

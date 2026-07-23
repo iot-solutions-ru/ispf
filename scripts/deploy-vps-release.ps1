@@ -1,4 +1,6 @@
 # Build release, publish to GitHub, deploy to VPS with LLM settings.
+# WARNING: outdated -- the referenced deploy/vps-*.sh helpers no longer exist
+# in this repository; the remote deploy step fails until they are restored.
 param(
     [string]$Version = "0.7.6",
     [string]$VpsHost = "root@92.63.104.121",
@@ -6,6 +8,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Version -notmatch '^[0-9A-Za-z][0-9A-Za-z._-]*$') {
+    throw "Unsafe version string: $Version"
+}
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
@@ -59,6 +64,17 @@ VPS: ispf.example.invalid
 
 Write-Host "=== Deploy to $VpsHost ==="
 scp deploy/vps-configure-ai-env.sh deploy/vps-apply-release.sh deploy/vps-deploy-release-with-ai.sh "${VpsHost}:/tmp/"
-ssh $VpsHost "sed -i 's/\r$//' /tmp/vps-configure-ai-env.sh /tmp/vps-apply-release.sh /tmp/vps-deploy-release-with-ai.sh; ISPF_AI_API_KEY='$AiApiKey' bash /tmp/vps-deploy-release-with-ai.sh $Version"
+
+# Pass the API key via a temp env file (scp + source + rm) instead of the ssh
+# command line, so it stays out of remote ps/history and cannot break quoting.
+$escapedKey = $AiApiKey -replace "'", "'\''"
+$envFile = New-TemporaryFile
+try {
+    [IO.File]::WriteAllText($envFile.FullName, "ISPF_AI_API_KEY='$escapedKey'`n")
+    scp $envFile.FullName "${VpsHost}:.ispf-ai-env"
+    ssh $VpsHost "sed -i 's/\r$//' /tmp/vps-configure-ai-env.sh /tmp/vps-apply-release.sh /tmp/vps-deploy-release-with-ai.sh; chmod 600 ~/.ispf-ai-env; set -a; . ~/.ispf-ai-env; set +a; rm -f ~/.ispf-ai-env; bash /tmp/vps-deploy-release-with-ai.sh '$Version'"
+} finally {
+    Remove-Item $envFile -Force -ErrorAction SilentlyContinue
+}
 
 Write-Host "=== Done. Check https://ispf.example.invalid/api/v1/ai/provider ==="

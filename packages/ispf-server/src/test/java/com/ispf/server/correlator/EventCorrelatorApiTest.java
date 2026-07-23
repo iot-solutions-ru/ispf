@@ -3,6 +3,7 @@ package com.ispf.server.correlator;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.object.BindingStateVariables;
 import com.ispf.server.object.ObjectBindingStatePort;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,7 +25,9 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,6 +87,55 @@ class EventCorrelatorApiTest {
         mockMvc.perform(get("/api/v1/correlators"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].eventName", hasItem("thresholdExceeded")));
+    }
+
+    @Test
+    void rejectsWebhookActionTargetPointingToCloudMetadata() throws Exception {
+        mockMvc.perform(post("/api/v1/correlators")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "SSRF webhook test correlator",
+                                  "patternType": "COUNT",
+                                  "eventName": "ssrfWebhookTestEvent",
+                                  "windowSeconds": 0,
+                                  "minOccurrences": 1,
+                                  "cooldownSeconds": 0,
+                                  "sequenceGapSeconds": 0,
+                                  "actionType": "SEND_WEBHOOK",
+                                  "actionTarget": "http://169.254.169.254/latest/meta-data",
+                                  "enabled": false
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail", org.hamcrest.Matchers.containsString("169.254.169.254")));
+    }
+
+    @Test
+    void acceptsWebhookActionTargetOnInternalHost() throws Exception {
+        String suffix = Long.toHexString(System.nanoTime()).substring(0, 6);
+        String name = "SSRF webhook ok correlator " + suffix;
+        mockMvc.perform(post("/api/v1/correlators")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "%s",
+                                  "patternType": "COUNT",
+                                  "eventName": "ssrfWebhookOkEvent%s",
+                                  "windowSeconds": 0,
+                                  "minOccurrences": 1,
+                                  "cooldownSeconds": 0,
+                                  "sequenceGapSeconds": 0,
+                                  "actionType": "SEND_WEBHOOK",
+                                  "actionTarget": "http://127.0.0.1:9/hook",
+                                  "enabled": false
+                                }
+                                """.formatted(name, suffix)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/v1/correlators/by-path")
+                        .param("path", AutomationTreeService.correlatorPathForName(name)))
+                .andExpect(status().isOk());
     }
 
     @Test

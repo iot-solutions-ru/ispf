@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+# The staging dir must contain CHECKSUMS.sha256 covering all release artifacts.
+# Generate it on the build side, next to the artifacts:
+#   sha256sum ispf-server.jar web-console.zip driver-packs.tar.gz > CHECKSUMS.sha256
+
 STAGING_DIR="${1:-}"
 if [ -z "$STAGING_DIR" ] || [ ! -d "$STAGING_DIR" ]; then
   echo "Usage: $0 /opt/ispf/staging/<version>" >&2
@@ -10,6 +14,7 @@ fi
 JAR_PATH="$STAGING_DIR/ispf-server.jar"
 UI_ZIP="$STAGING_DIR/web-console.zip"
 DRIVER_PACKS_TAR="$STAGING_DIR/driver-packs.tar.gz"
+CHECKSUMS_FILE="$STAGING_DIR/CHECKSUMS.sha256"
 INSTALL_ROOT="${ISPF_INSTALL_ROOT:-/opt/ispf}"
 SERVICE_NAME="${ISPF_SERVICE_NAME:-ispf-server}"
 
@@ -17,6 +22,21 @@ if [ ! -f "$JAR_PATH" ] || [ ! -f "$UI_ZIP" ]; then
   echo "Missing release artifacts in $STAGING_DIR" >&2
   exit 1
 fi
+
+if [ ! -f "$CHECKSUMS_FILE" ]; then
+  echo "Missing CHECKSUMS.sha256 in $STAGING_DIR; refusing to install unverified artifacts" >&2
+  exit 1
+fi
+
+for artifact in ispf-server.jar web-console.zip driver-packs.tar.gz; do
+  if ! grep -q "[ *]${artifact}\$" "$CHECKSUMS_FILE"; then
+    echo "CHECKSUMS.sha256 does not cover $artifact" >&2
+    exit 1
+  fi
+done
+
+echo "Verifying artifact checksums..."
+( cd "$STAGING_DIR" && sha256sum -c CHECKSUMS.sha256 )
 
 exec >>"$STAGING_DIR/apply.log" 2>&1
 

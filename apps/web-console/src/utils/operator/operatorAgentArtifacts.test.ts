@@ -3,7 +3,22 @@ import {
   formatRefinePlanMessage,
   isExecuteIntentSuggestion,
   isPlanApprovalSuggestion,
+  parseOperatorAgentArtifacts,
 } from "./operatorAgentArtifacts";
+
+describe("parseOperatorAgentArtifacts links", () => {
+  it("drops agent links with unsafe url schemes", () => {
+    const parsed = parseOperatorAgentArtifacts({
+      links: [
+        { kind: "dashboard", path: "/d/1", title: "ok", url: "https://example.com/x" },
+        { kind: "dashboard", path: "/d/2", title: "xss", url: "javascript:alert(1)" },
+        { kind: "report", path: "/r/1", title: "data", url: "data:text/html,<b>1</b>" },
+        { kind: "report", path: "/r/2", title: "plain" },
+      ],
+    });
+    expect(parsed.links?.map((link) => link.path)).toEqual(["/d/1", "/r/2"]);
+  });
+});
 
 describe("formatRefinePlanMessage", () => {
   it("joins localized gaps under the completeness header", () => {

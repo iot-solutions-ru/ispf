@@ -113,6 +113,9 @@ public class DropInAnalyticsPackLoader {
             }
 
             Path targetDir = packsRoot().resolve(manifest.packId()).normalize();
+            if (!targetDir.startsWith(packsRoot())) {
+                throw new IllegalArgumentException("Invalid pack id path: " + manifest.packId());
+            }
             Files.createDirectories(targetDir);
             copyTree(tempDir, targetDir);
             return loadPackDirectory(targetDir);
@@ -133,6 +136,9 @@ public class DropInAnalyticsPackLoader {
             throw new IllegalArgumentException("Invalid analytics-pack.json");
         }
         Path targetDir = packsRoot().resolve(manifest.packId()).normalize();
+        if (!targetDir.startsWith(packsRoot())) {
+            throw new IllegalArgumentException("Invalid pack id path: " + manifest.packId());
+        }
         Files.createDirectories(targetDir);
         copyTree(sourceDir, targetDir);
         return loadPackDirectory(targetDir);
@@ -324,13 +330,13 @@ public class DropInAnalyticsPackLoader {
         try (ZipInputStream zip = new ZipInputStream(new java.io.ByteArrayInputStream(zipBytes))) {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
-                if (entry.isDirectory()) {
-                    Files.createDirectories(targetDir.resolve(entry.getName()));
-                    continue;
-                }
                 Path out = targetDir.resolve(entry.getName()).normalize();
                 if (!out.startsWith(targetDir)) {
                     throw new IOException("Zip entry escapes target directory: " + entry.getName());
+                }
+                if (entry.isDirectory()) {
+                    Files.createDirectories(out);
+                    continue;
                 }
                 Files.createDirectories(out.getParent());
                 Files.copy(zip, out, StandardCopyOption.REPLACE_EXISTING);

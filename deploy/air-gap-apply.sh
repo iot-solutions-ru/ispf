@@ -58,10 +58,15 @@ if ! grep -q '"kind"[[:space:]]*:[[:space:]]*"ispf-airgap-bundle"' MANIFEST.json
   exit 1
 fi
 
-if [[ -f CHECKSUMS.sha256 ]]; then
-  echo "==> Verifying checksums"
-  sha256sum -c CHECKSUMS.sha256
+# Checksums are mandatory and verified before anything from the bundle is
+# sourced, loaded into Docker or executed.
+if [[ ! -f CHECKSUMS.sha256 ]]; then
+  echo "Missing CHECKSUMS.sha256; refusing to apply unverified bundle content" >&2
+  exit 1
 fi
+
+echo "==> Verifying checksums"
+sha256sum -c CHECKSUMS.sha256
 
 if [[ ! -f images/prod-stack.tar ]]; then
   echo "Missing images/prod-stack.tar in bundle" >&2

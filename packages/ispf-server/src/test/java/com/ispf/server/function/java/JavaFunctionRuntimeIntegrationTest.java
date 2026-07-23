@@ -16,7 +16,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(properties = "ispf.function.java.enabled=true")
 @ActiveProfiles("test")
 class JavaFunctionRuntimeIntegrationTest {
 

@@ -137,6 +137,7 @@ Docker Compose поднимает Keycloak на порт **8180**.
 | `ispf.security.rbac-enabled` | Вкл/выкл RBAC |
 | `ispf.security.token-auth-enabled` | Bearer-сессии (local) |
 | `ispf.security.local-default-role` | Роль по умолчанию без токена (local, dev only) |
+| `ispf.security.trusted-proxy-ips` | IP reverse-proxy, чей `X-Forwarded-For` доверен для rate-limiting логина; пусто = заголовок игнорируется |
 | `ispf.security.mfa.enabled` | Включить TOTP enrollment API (`/api/v1/security/mfa/**`) |
 
 ## MFA (TOTP)

@@ -1,6 +1,7 @@
 package com.ispf.server.notification;
 
 import com.ispf.server.config.NotificationProperties;
+import com.ispf.server.security.OutboundUrlSafety;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -71,9 +72,12 @@ public class NotificationDispatchService {
     }
 
     private void postJson(String url, Map<String, Object> payload) {
+        // SSRF guard: http(s) only, no cloud-metadata / link-local targets. Loopback and LAN
+        // hosts stay allowed (internal webhook relays are a typical OT deployment).
+        URI uri = OutboundUrlSafety.requireSafeHttpUrl(url, "", false);
         try {
             String body = objectMapper.writeValueAsString(payload);
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+            HttpRequest request = HttpRequest.newBuilder(uri)
                     .timeout(Duration.ofSeconds(Math.max(5, properties.getTimeoutSeconds())))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body))

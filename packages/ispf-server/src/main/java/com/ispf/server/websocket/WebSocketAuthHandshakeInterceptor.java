@@ -3,14 +3,16 @@ package com.ispf.server.websocket;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.config.KeycloakJwtRoleConverter;
-import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.tenant.TenantStore;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -20,25 +22,30 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
 
-    private final PlatformUserService userService;
+    /** Session attribute holding the handshake-authenticated {@link Authentication} (ACL checks). */
+    public static final String AUTHENTICATION_ATTRIBUTE = "ispf.ws.authentication";
+
+    private final ObjectProvider<PlatformTokenAuthenticator> platformTokenAuthenticator;
     private final TenantStore tenantStore;
     private final IspfSecurityProperties securityProperties;
     private final ObjectProvider<JwtDecoder> jwtDecoder;
     private final KeycloakJwtRoleConverter roleConverter = new KeycloakJwtRoleConverter();
 
     public WebSocketAuthHandshakeInterceptor(
-            PlatformUserService userService,
+            ObjectProvider<PlatformTokenAuthenticator> platformTokenAuthenticator,
             TenantStore tenantStore,
             IspfSecurityProperties securityProperties,
             ObjectProvider<JwtDecoder> jwtDecoder
     ) {
-        this.userService = userService;
+        this.platformTokenAuthenticator = platformTokenAuthenticator;
         this.tenantStore = tenantStore;
         this.securityProperties = securityProperties;
         this.jwtDecoder = jwtDecoder;
@@ -63,18 +70,36 @@ public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
             return false;
         }
         boolean viaSubprotocol = WebSocketAuthSupport.usedSubprotocolToken(request);
-        boolean authenticated = userService.authenticateToken(token)
-                .map(user -> {
-                    attributes.put("username", user.username());
-                    attributes.put("roles", user.roles());
-                    putTenantId(attributes, user.username(), user.roles());
-                    return true;
-                })
-                .orElseGet(() -> authenticateJwt(token, attributes));
+        boolean authenticated = authenticatePlatformToken(token, attributes) || authenticateJwt(token, attributes);
         if (authenticated && viaSubprotocol) {
             response.getHeaders().set(WebSocketAuthSupport.SEC_WEBSOCKET_PROTOCOL, WebSocketAuthSupport.BEARER_PROTOCOL);
         }
         return authenticated;
+    }
+
+    /**
+     * Platform session tokens are honored only when the local/test-profile authenticator bean
+     * is present; the prod (keycloak) chain accepts JWTs only, exactly like the HTTP filter chain.
+     */
+    private boolean authenticatePlatformToken(String token, Map<String, Object> attributes) {
+        PlatformTokenAuthenticator authenticator = platformTokenAuthenticator.getIfAvailable();
+        if (authenticator == null) {
+            return false;
+        }
+        return authenticator.authenticate(token)
+                .map(user -> {
+                    attributes.put("username", user.username());
+                    attributes.put("roles", user.roles());
+                    putTenantId(attributes, user.username(), user.roles());
+                    // Mirror LocalBearerTokenFilter: any authenticated local user gets operator baseline.
+                    Set<String> resolvedRoles = new LinkedHashSet<>(user.roles());
+                    if (!user.roles().isEmpty()) {
+                        resolvedRoles.add(IspfRoles.OPERATOR);
+                    }
+                    putAuthentication(attributes, user.username(), resolvedRoles);
+                    return true;
+                })
+                .orElse(false);
     }
 
     private boolean authenticateJwt(String token, Map<String, Object> attributes) {
@@ -110,10 +135,21 @@ public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
             attributes.put("username", username);
             attributes.put("roles", roles);
             putTenantId(attributes, username, roles);
+            putAuthentication(attributes, username, roles);
             return true;
         } catch (JwtException ex) {
             return false;
         }
+    }
+
+    private static void putAuthentication(Map<String, Object> attributes, String username, Collection<String> roles) {
+        List<SimpleGrantedAuthority> authorities = roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .toList();
+        attributes.put(
+                AUTHENTICATION_ATTRIBUTE,
+                new UsernamePasswordAuthenticationToken(username, null, authorities)
+        );
     }
 
     private void putTenantId(Map<String, Object> attributes, String username, List<String> roles) {

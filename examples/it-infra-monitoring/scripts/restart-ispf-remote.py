@@ -3,8 +3,14 @@ import sys
 import time
 
 client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect("185.246.66.158", username="root", password=sys.argv[1], timeout=20)
+client.load_system_host_keys()
+client.set_missing_host_key_policy(paramiko.RejectPolicy())
+try:
+    client.connect("185.246.66.158", username="root", password=sys.argv[1], timeout=20)
+except paramiko.SSHException as exc:
+    print(f"Host key not trusted: {exc}", file=sys.stderr)
+    print("SSH to the host once manually to add it to known_hosts.", file=sys.stderr)
+    sys.exit(2)
 
 
 def run(cmd: str) -> str:

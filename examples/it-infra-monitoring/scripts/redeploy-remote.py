@@ -9,8 +9,14 @@ REPO = Path(__file__).resolve().parents[3]
 BASE = "http://127.0.0.1:8080"
 
 client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect("185.246.66.158", username="root", password=PASSWORD, timeout=20)
+client.load_system_host_keys()
+client.set_missing_host_key_policy(paramiko.RejectPolicy())
+try:
+    client.connect("185.246.66.158", username="root", password=PASSWORD, timeout=20)
+except paramiko.SSHException as exc:
+    print(f"Host key not trusted: {exc}", file=sys.stderr)
+    print("SSH to the host once manually to add it to known_hosts.", file=sys.stderr)
+    sys.exit(2)
 
 
 def run(cmd: str, timeout: int = 60) -> str:

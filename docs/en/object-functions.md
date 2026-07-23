@@ -518,6 +518,8 @@ Standard wire for errors in the output schema:
 
 `sourceBody` — one public class implementing `com.ispf.core.function.ObjectJavaFunction`. **Compiled on save**; compilation error → `400`, object is not updated.
 
+Disabled by default in every profile (`ispf.function.java.enabled=false`): user code runs in-process, so enable via `ISPF_FUNCTION_JAVA_ENABLED=true` only on trusted nodes — the denylist below is not a process sandbox (ADR-0045).
+
 Context: `JavaFunctionContext(objectPath, functionName)` — invoking object path and function name.
 
 Restrictions (`JavaFunctionSecurity`): `Runtime`, `ProcessBuilder`, `System.exit`, reflection, `java.net.*` (except `InetAddress`), `java.io.File`, `java.nio.file`, Spring packages, and others are forbidden.

@@ -21,6 +21,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      // External registerSW.js script — inline injection would violate script-src 'self' CSP.
+      injectRegister: "script",
       includeAssets: ["pwa-192.png", "pwa-512.png"],
       manifest: {
         name: "ISPF Operator Console",

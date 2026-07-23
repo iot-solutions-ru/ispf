@@ -344,8 +344,8 @@ public class PlatformUserService {
 
     @Transactional
     public void setPassword(String username, String password, Authentication authentication) {
-        if (password == null || password.length() < 4) {
-            throw new IllegalArgumentException("Password must be at least 4 characters");
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters");
         }
         userStore.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));

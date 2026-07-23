@@ -19,10 +19,19 @@ if (-not (Test-Path $CatalogDir)) {
 Write-Host "Uploading marketplace catalog ($CatalogDir) -> $Remote ..."
 ssh -o BatchMode=yes $Remote "mkdir -p $RemoteSeed"
 scp -r "$CatalogDir\*" "${Remote}:${RemoteSeed}/"
-scp $PatchScript "${Remote}:/tmp/patch-marketplace-free-download-signing.sh"
-scp $RemoteScript "${Remote}:/tmp/publish-marketplace-catalog.sh"
 
-Write-Host "Patching download signing (noop if already present) + seeding catalog..."
-ssh -o BatchMode=yes $Remote "sed -i 's/\r$//' /tmp/patch-marketplace-free-download-signing.sh /tmp/publish-marketplace-catalog.sh && chmod +x /tmp/patch-marketplace-free-download-signing.sh /tmp/publish-marketplace-catalog.sh && bash /tmp/publish-marketplace-catalog.sh $RemoteSeed"
+# Upload helper scripts into a private mktemp dir (shared /tmp with fixed names is hijackable).
+$RemoteWork = (ssh -o BatchMode=yes $Remote "mktemp -d /tmp/ispf-marketplace-publish.XXXXXXXX").Trim()
+if (-not $RemoteWork) { throw "Failed to create remote work directory on $Remote" }
+try {
+    scp $PatchScript "${Remote}:${RemoteWork}/patch-marketplace-free-download-signing.sh"
+    scp $RemoteScript "${Remote}:${RemoteWork}/publish-marketplace-catalog.sh"
+
+    Write-Host "Patching download signing (noop if already present) + seeding catalog..."
+    ssh -o BatchMode=yes $Remote "sed -i 's/\r$//' $RemoteWork/patch-marketplace-free-download-signing.sh $RemoteWork/publish-marketplace-catalog.sh && chmod +x $RemoteWork/patch-marketplace-free-download-signing.sh $RemoteWork/publish-marketplace-catalog.sh && bash $RemoteWork/publish-marketplace-catalog.sh $RemoteSeed"
+}
+finally {
+    ssh -o BatchMode=yes $Remote "rm -rf '$RemoteWork'" | Out-Null
+}
 
 Write-Host "Done. Verify: https://marketplace.ispf.ai/api/v1/catalog"

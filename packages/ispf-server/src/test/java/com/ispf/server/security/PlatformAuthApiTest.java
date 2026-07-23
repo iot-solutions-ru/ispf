@@ -113,6 +113,36 @@ class PlatformAuthApiTest {
     }
 
     @Test
+    void setPasswordEnforcesMinimumLength() throws Exception {
+        String token = adminToken();
+        String username = "pw-len-" + Long.toHexString(System.nanoTime()).substring(0, 6);
+        mockMvc.perform(post("/api/v1/security/users")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "username": "%s", "password": "initial-pw-9", "roles": ["operator"] }
+                                """.formatted(username)))
+                .andExpect(status().isOk());
+        try {
+            mockMvc.perform(put("/api/v1/security/users/" + username + "/password")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{ \"password\": \"short7\" }"))
+                    .andExpect(status().isBadRequest());
+
+            mockMvc.perform(put("/api/v1/security/users/" + username + "/password")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{ \"password\": \"eight-chars-or-more\" }"))
+                    .andExpect(status().isOk());
+        } finally {
+            mockMvc.perform(delete("/api/v1/security/users/" + username)
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
     void operatorUpdatesOwnTimeZone() throws Exception {
         String token = adminToken();
         mockMvc.perform(put("/api/v1/auth/me/timezone")

@@ -116,6 +116,58 @@ class TenantLocalDataAccessGuardTest {
     }
 
     @Test
+    void requireAllowedJdbcUrlRejectsPrivateRangesByDefault() {
+        TenantLocalDataAccessGuard guard = newGuard(Optional.of("acme"), "jdbc:postgresql://db.internal/ispf");
+
+        assertThatThrownBy(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://10.1.2.3:5432/tenant", tenantAdmin()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        assertThatThrownBy(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://172.16.0.10/tenant", tenantAdmin()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        assertThatThrownBy(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://192.168.1.5/tenant", tenantAdmin()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        assertThatThrownBy(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://[fd00::1]/tenant", tenantAdmin()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        assertThatThrownBy(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://[::ffff:192.168.1.5]/tenant", tenantAdmin()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        // 172.16/12 boundary neighbours are public.
+        assertThatCode(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://172.15.0.10/tenant", tenantAdmin()))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://172.32.0.10/tenant", tenantAdmin()))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void requireAllowedJdbcUrlAllowsPrivateRangesWhenExplicitlyEnabled() {
+        TenantLocalDataAccessGuard guard = newGuard(
+                Optional.of("acme"),
+                mock(DataSourceConnectionResolver.class),
+                "jdbc:postgresql://db.internal/ispf",
+                true
+        );
+
+        assertThatCode(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://192.168.1.5/tenant", tenantAdmin()))
+                .doesNotThrowAnyException();
+
+        // Loopback stays forbidden even when private ranges are allowed.
+        assertThatThrownBy(() -> guard.requireAllowedJdbcUrl(
+                "jdbc:postgresql://127.0.0.1/tenant", tenantAdmin()))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
     void requireExternalConnectionModeDeniesInternalForTenant() {
         TenantLocalDataAccessGuard guard = newGuard(Optional.of("acme"), "jdbc:h2:mem:x");
 
@@ -151,6 +203,15 @@ class TenantLocalDataAccessGuardTest {
             DataSourceConnectionResolver resolver,
             String platformUrl
     ) {
+        return newGuard(tenantId, resolver, platformUrl, false);
+    }
+
+    private static TenantLocalDataAccessGuard newGuard(
+            Optional<String> tenantId,
+            DataSourceConnectionResolver resolver,
+            String platformUrl,
+            boolean allowPrivateAddresses
+    ) {
         TenantIsolationProperties properties = new TenantIsolationProperties();
         TenantStore tenantStore = mock(TenantStore.class);
         when(tenantStore.findTenantIdForUser("ta")).thenReturn(tenantId);
@@ -159,7 +220,7 @@ class TenantLocalDataAccessGuardTest {
                 properties,
                 new TenantIsolationValidator(properties, mock(JdbcTemplate.class))
         );
-        return new TenantLocalDataAccessGuard(scope, resolver, platformUrl);
+        return new TenantLocalDataAccessGuard(scope, resolver, platformUrl, allowPrivateAddresses);
     }
 
     private static Authentication tenantAdmin() {

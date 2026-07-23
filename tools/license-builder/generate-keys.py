@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
@@ -33,6 +34,7 @@ def main() -> None:
     private_path = out / "license-private.pem"
     public_path = out / "license-public.pem"
     private_path.write_bytes(private_pem)
+    os.chmod(private_path, 0o600)
     public_path.write_bytes(public_pem)
     print(f"Wrote {private_path}")
     print(f"Wrote {public_path}")

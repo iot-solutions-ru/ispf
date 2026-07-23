@@ -60,9 +60,9 @@ public class SnmpDeviceDriver implements DeviceDriver {
                     Map.entry("community", "public"),
                     Map.entry("version", "2c"),
                     Map.entry("securityName", ""),
-                    Map.entry("authProtocol", "MD5"),
+                    Map.entry("authProtocol", "SHA"),
                     Map.entry("authPassphrase", ""),
-                    Map.entry("privProtocol", "DES"),
+                    Map.entry("privProtocol", "AES"),
                     Map.entry("privPassphrase", ""),
                     Map.entry("timeoutMs", "3000"),
                     Map.entry("retries", "1"),
@@ -80,9 +80,9 @@ public class SnmpDeviceDriver implements DeviceDriver {
     private String community = "public";
     private int snmpVersion = SnmpConstants.version2c;
     private String securityName = "";
-    private String authProtocol = "MD5";
+    private String authProtocol = "SHA";
     private String authPassphrase = "";
-    private String privProtocol = "DES";
+    private String privProtocol = "AES";
     private String privPassphrase = "";
     private long timeoutMs = 3000;
     private int retries = 1;
@@ -199,16 +199,18 @@ public class SnmpDeviceDriver implements DeviceDriver {
     }
 
     private static OID resolveAuthProtocol(String value) {
+        // MD5 stays selectable via explicit config; anything else falls back to SHA.
         return switch (value.toUpperCase()) {
-            case "SHA", "SHA1" -> AuthSHA.ID;
-            default -> AuthMD5.ID;
+            case "MD5" -> AuthMD5.ID;
+            default -> AuthSHA.ID;
         };
     }
 
     private static OID resolvePrivProtocol(String value) {
+        // DES stays selectable via explicit config; anything else falls back to AES-128.
         return switch (value.toUpperCase()) {
-            case "AES", "AES128" -> PrivAES128.ID;
-            default -> PrivDES.ID;
+            case "DES" -> PrivDES.ID;
+            default -> PrivAES128.ID;
         };
     }
 

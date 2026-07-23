@@ -8,6 +8,9 @@ services:
     image: eclipse-temurin:25-jre-jammy
     container_name: ispf-vps-replica-1
     network_mode: host
+    # Run as the same uid as the all-in-one Dockerfile image; host data dir must be writable:
+    #   sudo chown -R 10001:10001 /opt/ispf/data
+    user: "10001:10001"
     working_dir: /opt/ispf
     volumes:
       - /opt/ispf/ispf-server.jar:/opt/ispf/ispf-server.jar:ro

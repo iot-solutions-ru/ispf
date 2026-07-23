@@ -9,24 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/pwa-192.png" />
     <title>ISPF Admin Console</title>
-    <script>
-      (function () {
-        var key = "ispf-theme";
-        var pref = "system";
-        try {
-          var stored = localStorage.getItem(key);
-          if (stored === "light" || stored === "dark" || stored === "system") pref = stored;
-        } catch (e) {}
-        var theme =
-          pref === "system"
-            ? window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light"
-            : pref;
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.dataset.themePreference = pref;
-      })();
-    </script>
+    <script src="%BASE_URL%theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

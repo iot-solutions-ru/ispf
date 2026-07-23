@@ -15,7 +15,7 @@ jobs:
   docker-fixtures-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Make smoke script executable
         run: chmod +x deploy/tools/driver-interop-smoke.sh
@@ -57,12 +57,12 @@ jobs:
           - ispf-driver-opc-bridge
           - ispf-driver-gps-tracker
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: temurin
           java-version: "25"
@@ -93,12 +93,12 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Make scripts executable
         run: chmod +x gradlew deploy/tools/driver-interop-report.sh
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: temurin
           java-version: "25"
@@ -118,7 +118,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Post driver interop PR comment
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           MATRIX_RESULT: ${{ needs.matrix.result }}
           FIXTURES_RESULT: ${{ needs.docker-fixtures-smoke.result }}
@@ -161,12 +161,12 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: temurin
           java-version: "25"

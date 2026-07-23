@@ -1,5 +1,5 @@
 import type { AuthSession } from "./session";
-import { clearStoredSession, setStoredSession } from "./session";
+import { clearStoredSession, getStoredSession, setStoredSession } from "./session";
 import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingress/ingressFetch";
 
 export interface LoginResponse {
@@ -47,7 +47,7 @@ export async function login(
 }
 
 export async function logout(): Promise<void> {
-  const session = JSON.parse(localStorage.getItem("ispf-auth-session") ?? "null") as AuthSession | null;
+  const session = getStoredSession();
   if (session?.token) {
     await fetchWithIngressFallback("/api/v1/auth/logout", {
       method: "POST",

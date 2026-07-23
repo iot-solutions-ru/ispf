@@ -137,6 +137,7 @@ Web Console: **Access** tab in object inspector (admin).
 | `ispf.security.rbac-enabled` | Enable/disable RBAC |
 | `ispf.security.token-auth-enabled` | Bearer sessions (local) |
 | `ispf.security.local-default-role` | Default role without token (local, dev only) |
+| `ispf.security.trusted-proxy-ips` | Reverse-proxy IPs whose `X-Forwarded-For` is trusted for login rate-limiting; empty = header ignored |
 | `ispf.security.mfa.enabled` | Enable TOTP enrollment API (`/api/v1/security/mfa/**`) |
 
 ## MFA (TOTP)
