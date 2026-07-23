@@ -156,9 +156,9 @@ Content-Type: application/json
 
 ---
 
-### 8. Относительная модель: сумма Синус + Пила
+### 8. Mixin-модель: сумма Синус + Пила
 
-**Модель:** `virtual-lab-waves-sum-v1` (RELATIVE) с binding `sumWaves = sineWave + sawtoothWave`.
+**Модель:** `virtual-lab-waves-sum-v1` (MIXIN) с binding `sumWaves = sineWave + sawtoothWave`.
 
 **Проверка:** дашборд `lab-virtual-overview` — виджет Sum waves.
 
@@ -187,7 +187,7 @@ Content-Type: application/json
 
 ---
 
-### 11. Относительный отчет: таблица всех виртуальных устройств
+### 11. Отчёт tree-variables: таблица всех виртуальных устройств
 
 **Отчёт:** `root.platform.reports.lab-all-devices-table` (тип `tree-variables`, pattern `root.platform.devices.lab-*`, variable `table`).
 

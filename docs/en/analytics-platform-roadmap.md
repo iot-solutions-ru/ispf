@@ -119,7 +119,7 @@ nginx → hmi-read replicas (REST/WS)
 1. `AnalyticsTemplateInspector` + Explorer routing for `ANALYTICS_TEMPLATE`
 2. `GET`/`PUT /api/v1/platform/analytics/templates`
 3. `AnalyticsDerivedTagService` — periodic recompute → `derivedValue` / `oeePct`
-4. UI «Apply template to device» (RELATIVE blueprint patch)
+4. UI «Apply template to device» (MIXIN blueprint patch)
 5. Example `examples/analytics-rolling-avg/`
 
 **Acceptance**

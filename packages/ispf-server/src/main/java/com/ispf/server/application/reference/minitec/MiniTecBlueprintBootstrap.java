@@ -39,7 +39,7 @@ public class MiniTecBlueprintBootstrap {
 
     public static final String GPU_DRIVER_CONFIG_TEMPLATE =
             "{\"ratedPowerKw\":\"%s\",\"unitIndex\":\"%d\"}";
-    /** Domain telemetry must come from relative blueprint logic (bindings/functions), not driver profiles. */
+    /** Domain telemetry must come from mixin blueprint logic (bindings/functions), not driver profiles. */
     public static final String GRPB_DRIVER_CONFIG = "{}";
     public static final String RUMB_DRIVER_CONFIG = "{}";
     public static final String DGU_DRIVER_CONFIG = "{}";

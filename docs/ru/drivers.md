@@ -98,7 +98,7 @@ public interface DeviceDriver {
 
 ## Переменные устройства (driver group)
 
-На объекте `DEVICE` переменные группы `driver` появляются при **провизионировании драйвера** (`POST /objects` с `driverId` или `PUT .../drivers/runtime/configure`), а не через автоприменение RELATIVE-моделей.
+На объекте `DEVICE` переменные группы `driver` появляются при **провизионировании драйвера** (`POST /objects` с `driverId` или `PUT .../drivers/runtime/configure`), а не через автоприменение MIXIN-моделей.
 
 ### Автозапуск при старте сервера
 
@@ -115,7 +115,7 @@ public interface DeviceDriver {
 
 `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedBlueprintIds`.
 
-Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+Fixture MIXIN-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
 | Переменная | Описание |
 |------------|----------|
@@ -214,7 +214,7 @@ GET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>
 Симулятор «из коробки» для стендов без железа. **Без профилей** — один poll записывает многотипную телеметрию
 (`temperature`+quality, волны, meter/flow, geo, таблицы, binary, boolean, `status`). Амплитуды и период задаются в
 `driverConfigJson`. Доменные стенды (Mini-TEC, tank-farm, OGP) обогащают объект через
-**относительные blueprint** (переменные + binding rules / functions), а не через `driverConfigJson.profile`.
+**mixin blueprints** (переменные + binding rules / functions), а не через `driverConfigJson.profile`.
 
 Пример конфига:
 
@@ -989,7 +989,7 @@ Generic ODBC read через JDBC-мост. **Нужен внешний ODBC-JDB
 2. Реализуйте `DeviceDriver`.
 3. Зарегистрируйте в `DriverCatalog` (`ispf-server`).
 4. Добавьте `implementation(project(...))` в `ispf-server/build.gradle.kts`.
-5. Определите model с переменными драйвера или примените RELATIVE-модель к `DEVICE`.
+5. Определите model с переменными драйвера или примените MIXIN-модель к `DEVICE`.
 
 ## Диагностика
 

@@ -77,7 +77,7 @@
   "analyticsTag.title": "分析标签",
   "analyticsTag.windowBucket": "Historian bucket",
   "analyticsTemplate.applyButton": "应用模板",
-  "analyticsTemplate.applyHint": "应用链接的 RELATIVE 蓝图并绑定目标设备上的源变量。",
+  "analyticsTemplate.applyHint": "应用链接的 MIXIN 蓝图并绑定目标设备上的源变量。",
   "analyticsTemplate.applyResult": "应用于 {{device}} — 刷新 {{status}}：{{message}}",
   "analyticsTemplate.applyTitle": "适用于设备",
   "analyticsTemplate.availabilityVariable": "可用性变量",

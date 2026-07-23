@@ -126,7 +126,7 @@ Operators and solution developers can **save reusable formulas** without Java.
 |-------|----------|------|
 | Site-wide | `root.platform` `@analyticsFormulas` | platform admin |
 | Application | app bundle `analytics-formulas.json` on deploy | app developer |
-| Object template | RELATIVE blueprint default `@bindingRules` | blueprint author |
+| Object template | MIXIN blueprint default `@bindingRules` | blueprint author |
 
 **Not UDF bytecode:** Tier B is **parameterized expressions** in the existing languages (helper + CEL). Full procedural UDFs use Tier C or application functions.
 

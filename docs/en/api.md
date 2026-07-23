@@ -83,15 +83,15 @@ Content-Type: application/json
   "description": "",
   "templateId": "mqtt-sensor-v1",
   "driverId": "mqtt",
-  "autoApplyRelativeBlueprints": true
+  "autoApplyMixinBlueprints": true
 }
 ```
 
 | Field | Description |
 |-------|-------------|
-| `templateId` | Explicit blueprint apply (INSTANCE name or RELATIVE mixin) |
+| `templateId` | Explicit blueprint apply (INSTANCE name or MIXIN) |
 | `driverId` | For `DEVICE`: driver provisioning after create |
-| `autoApplyRelativeBlueprints` | Default `true`. RELATIVE mixins with **empty** CEL are not applied; non-empty `suitabilityExpression` required |
+| `autoApplyMixinBlueprints` | Default `true`. MIXINs with **empty** CEL are not applied; non-empty `suitabilityExpression` required |
 
 `mqtt-sensor-v1` is a fixture blueprint (`ispf.bootstrap.fixtures-enabled`). See [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 

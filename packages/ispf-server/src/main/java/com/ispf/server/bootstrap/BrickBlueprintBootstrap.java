@@ -49,7 +49,7 @@ public class BrickBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 BRICK_METADATA_MODEL,
                 "Brick Schema class overlay — optional brickClass URI on devices (object tree remains source of truth)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(

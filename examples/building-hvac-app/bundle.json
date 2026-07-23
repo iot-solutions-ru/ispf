@@ -18,7 +18,7 @@
     {
       "name": "hvac-zone-v1",
       "description": "HVAC comfort zone with space temperature and setpoint",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "DEVICE",
       "variables": [
         {

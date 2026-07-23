@@ -88,7 +88,7 @@ public final class AgentToolInputSchemas {
                 req("appId"),
                 true
         ));
-        catalog.put("apply_relative_blueprint", objectSchema(
+        catalog.put("apply_mixin_blueprint", objectSchema(
                 props(
                         "objectPath", stringProp("Object tree path"),
                         "blueprintId", stringProp("Relative blueprint id")
@@ -369,7 +369,7 @@ public final class AgentToolInputSchemas {
                 List.of(),
                 true
         ));
-        catalog.put("ensure_absolute_instance", objectSchema(
+        catalog.put("ensure_singleton_instance", objectSchema(
                 props(
                         "blueprintId", stringProp("Absolute blueprint id")
                 ),
@@ -595,7 +595,7 @@ public final class AgentToolInputSchemas {
                 req("path"),
                 true
         ));
-        catalog.put("list_absolute_blueprints", emptyObject());
+        catalog.put("list_singleton_blueprints", emptyObject());
         catalog.put("list_analytics_catalog", emptyObject());
         catalog.put("list_app_bindings", objectSchema(
                 props(
@@ -678,7 +678,7 @@ public final class AgentToolInputSchemas {
                 true
         ));
         catalog.put("list_platform_schedules", emptyObject());
-        catalog.put("list_relative_blueprints", objectSchema(
+        catalog.put("list_mixin_blueprints", objectSchema(
                 props(
                         "objectType", stringProp("Filter by ObjectType")
                 ),

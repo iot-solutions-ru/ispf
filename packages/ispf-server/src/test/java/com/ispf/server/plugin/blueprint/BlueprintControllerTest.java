@@ -26,7 +26,7 @@ class BlueprintControllerTest {
         mockMvc.perform(get("/api/v1/blueprints"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name=='mqtt-sensor-v1')]").exists())
-                .andExpect(jsonPath("$[?(@.name=='mqtt-sensor-v1')].type").value("RELATIVE"));
+                .andExpect(jsonPath("$[?(@.name=='mqtt-sensor-v1')].type").value("MIXIN"));
     }
 
     @Test

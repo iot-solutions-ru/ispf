@@ -149,7 +149,7 @@
 
 Активатор **`onContextChange`** — пересчёт при изменении `@dashboardContext`. Полная спецификация: [platform-logic](platform-logic.md).
 
-**Межобъектно:** activator с remote `ref` + `read(remote/ref)` в expression; **target** с remote `ref` пишет результат на другой объект (оркестратор / absolute blueprint). Правила только с side-effect — `target.kind=action` и `write(ref, …)` внутри `expression`. При изменении remote-переменной `BindingPropagationListener` пересчитывает правила на consumer-объектах.
+**Межобъектно:** activator с remote `ref` + `read(remote/ref)` в expression; **target** с remote `ref` пишет результат на другой объект (оркестратор / singleton blueprint). Правила только с side-effect — `target.kind=action` и `write(ref, …)` внутри `expression`. При изменении remote-переменной `BindingPropagationListener` пересчитывает правила на consumer-объектах.
 
 **Активаторы по умолчанию** (если не заданы): remote refs в expression → автоматические remote activators; иначе локальный `self:*`.
 
@@ -195,7 +195,7 @@ Agent tool: `create_binding_rule` — slash refs в expression и опциона
 
 Web Console → Object inspector → вкладка **Computations** (reactive + historian). Редактор выражений включает **PlatformRef picker** и каталог функций.
 
-Для целей **variable** или **event**: выберите **Effect type**, затем либо локальное имя на текущем объекте, либо **путь целевого объекта** + PlatformRef picker (`target.ref`) для записи на другой объект (оркестратор / absolute blueprint).
+Для целей **variable** или **event**: выберите **Effect type**, затем либо локальное имя на текущем объекте, либо **путь целевого объекта** + PlatformRef picker (`target.ref`) для записи на другой объект (оркестратор / singleton blueprint).
 
 ---
 

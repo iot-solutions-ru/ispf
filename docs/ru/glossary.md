@@ -100,7 +100,7 @@
 
 ## M
 
-**Model (BlueprintDefinition)** — шаблон объекта: переменные, события, функции, bindings. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. RELATIVE-миксины auto-apply при создании только при непустом CEL (*Applicability condition* / `suitabilityExpression`). Явное применение — через `templateId` или API.
+**Blueprint (BlueprintDefinition)** — шаблон структуры объекта: переменные, события, функции, bindings. Виды: `MIXIN`, `SINGLETON`, `INSTANCE`. MIXIN auto-apply при создании только при непустом CEL (*Applicability condition* / `suitabilityExpression`). Явное применение — через `templateId` или API.
 
 **Fixture model** — демо/лабораторная модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется при `ispf.bootstrap.fixtures-enabled=true`. Не входит в core built-in registry. См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 

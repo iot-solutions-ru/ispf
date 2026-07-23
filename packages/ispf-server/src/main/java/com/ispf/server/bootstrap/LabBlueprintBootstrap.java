@@ -208,7 +208,7 @@ public class LabBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 VIRTUAL_LAB_MODEL,
                 "Virtual lab device — waves, writable vars, table, events, and functions",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -281,7 +281,7 @@ public class LabBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 VIRTUAL_UNIFIED_MODEL,
                 "Virtual unified device — all field types (scalars, geo, tables, binary, waves, meter, signals)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -393,7 +393,7 @@ public class LabBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 TREE_VARIABLES_REPORT_MODEL,
                 "Tree-variables report — scan devices by path pattern and flatten RECORD_LIST rows",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.REPORT,
                 "",
                 List.of(
@@ -424,7 +424,7 @@ public class LabBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 VIRTUAL_LAB_WAVES_SUM_MODEL,
                 "Virtual lab waves sum — adds sumWaves binding only",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(),

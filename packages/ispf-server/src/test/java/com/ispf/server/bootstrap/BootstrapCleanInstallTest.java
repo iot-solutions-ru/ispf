@@ -62,7 +62,7 @@ class BootstrapCleanInstallTest {
     void doesNotSeedFixtureModels() {
         for (String name : DemoFixtureBootstrap.DEMO_MODEL_NAMES) {
             assertThat(BlueprintRegistry.findByName(name)).isEmpty();
-            assertThat(objectManager.tree().findByPath("root.platform.relative-blueprints." + name)).isEmpty();
+            assertThat(objectManager.tree().findByPath("root.platform.mixin-blueprints." + name)).isEmpty();
             assertThat(objectManager.tree().findByPath("root.platform.instance-types." + name)).isEmpty();
         }
     }

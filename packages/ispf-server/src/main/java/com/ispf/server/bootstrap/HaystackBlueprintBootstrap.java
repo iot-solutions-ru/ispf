@@ -52,7 +52,7 @@ public class HaystackBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 HAYSTACK_METADATA_MODEL,
                 "Haystack tag overlay — optional metadata on devices (object tree remains source of truth)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(

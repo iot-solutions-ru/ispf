@@ -27,7 +27,7 @@ Seed zones: `L1-OPEN-01` (cool), `L2-MEET-02` (heat).
 
 ## Haystack
 
-Bundle `metadata.haystackTags` documents expected tag vocabulary (`site`, `equip`, `ahu`, `zone`, `temp`). Bind real devices via `haystack-metadata-v1` relative model when extending the walkthrough.
+Bundle `metadata.haystackTags` documents expected tag vocabulary (`site`, `equip`, `ahu`, `zone`, `temp`). Bind real devices via `haystack-metadata-v1` mixin model when extending the walkthrough.
 
 ## CI
 

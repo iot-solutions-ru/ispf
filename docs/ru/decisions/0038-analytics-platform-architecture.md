@@ -38,7 +38,7 @@ Binding rules ([0010-binding-rules-only](0010-binding-rules-only.md)) остаю
 > **Поправка (ADR-0041, 2026-07-09):** Historian-вычисления — **`BindingRule` с `kind: historian`** в `@bindingRules`, а не объекты `ANALYTICS_TEMPLATE` в дереве. Путь тега = `objectPath#ruleId`; пресеты — код + [analytics-historian-cookbook](../analytics-historian-cookbook.md). Ниже — исходное предложение BL-209; каталог шаблонов и metadata vars `analytics-tag-v1` **устарели** для новых конфигураций.
 
 - ~~Каталог `ANALYTICS_TEMPLATE` (`root.platform.analytics`)~~ → статические пресеты + binding rules
-- Опционально **`ANALYTICS_TAG`** (или RELATIVE blueprint `analytics-tag-v1` на `DEVICE`):
+- Опционально **`ANALYTICS_TAG`** (или MIXIN blueprint `analytics-tag-v1` на `DEVICE`):
   - `expression` / `helper` + `sourcePaths[]`
   - `schedule` (periodicMs, alignToWallClock)
   - `rollupBuckets[]`

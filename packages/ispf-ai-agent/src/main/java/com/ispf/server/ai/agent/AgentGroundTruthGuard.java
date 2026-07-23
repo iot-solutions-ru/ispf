@@ -41,9 +41,9 @@ final class AgentGroundTruthGuard {
     );
 
     private static final Set<String> MODEL_DISCOVERY_TOOLS = Set.of(
-            "list_relative_blueprints",
+            "list_mixin_blueprints",
             "list_instance_types",
-            "list_absolute_blueprints",
+            "list_singleton_blueprints",
             "list_object_blueprints",
             "get_object_blueprint",
             "list_virtual_profiles"
@@ -115,7 +115,7 @@ final class AgentGroundTruthGuard {
             }
             return checkBlueprintDiscovered(arguments, steps, "instanceType", "blueprintName", "blueprintId");
         }
-        if ("apply_relative_blueprint".equals(tool)) {
+        if ("apply_mixin_blueprint".equals(tool)) {
             String objectPath = resolveObjectPath(arguments);
             if (!objectPath.isBlank()) {
                 Optional<BlockDecision> pathBlock = checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
@@ -132,7 +132,7 @@ final class AgentGroundTruthGuard {
             }
             return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
         }
-        if ("ensure_absolute_instance".equals(tool)) {
+        if ("ensure_singleton_instance".equals(tool)) {
             return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
         }
         return Optional.empty();
@@ -230,8 +230,8 @@ final class AgentGroundTruthGuard {
         }
         return Optional.of(new BlockDecision(
                 "Cannot apply blueprint: \"" + modelRef + "\" was not returned by a catalog tool in this turn",
-                "Call list_relative_blueprints (RELATIVE), list_instance_types (INSTANCE), "
-                        + "list_absolute_blueprints (ABSOLUTE), or list_virtual_profiles — then pick modelName / "
+                "Call list_mixin_blueprints (MIXIN), list_instance_types (INSTANCE), "
+                        + "list_singleton_blueprints (SINGLETON), or list_virtual_profiles — then pick modelName / "
                         + "profile / instanceType only from that tool result."
         ));
     }

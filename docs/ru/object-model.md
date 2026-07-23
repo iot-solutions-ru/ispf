@@ -18,9 +18,9 @@ root
     ├── root.platform.devices
     │   ├── root.platform.devices.demo-sensor-01
     │   └── root.platform.devices.snmp-localhost
-    ├── root.platform.relative-blueprints
+    ├── root.platform.mixin-blueprints
     ├── root.platform.instance-types
-    ├── root.platform.absolute-blueprints
+    ├── root.platform.singleton-blueprints
     ├── root.platform.instances
     ├── root.platform.dashboards
     │   └── root.platform.dashboards.demo-sensor
@@ -200,9 +200,9 @@ Content-Type: application/json
 
 Объекты создаются вручную или из **модели** (`templateId`). Модель задаёт переменные, события, функции и bindings.
 
-**RELATIVE-миксины** при создании применяются автоматически только при **непустом** CEL (*Applicability condition*). Пустой CEL → только явное применение (`templateId`, API). Fixture-модели (`mqtt-sensor-v1`, …) не входят в core registry.
+**MIXIN blueprints** при создании применяются автоматически только при **непустом** CEL (*Applicability condition*). Пустой CEL → только явное применение (`templateId`, API). Fixture blueprints (`mqtt-sensor-v1`, …) не входят в core registry.
 
-**DEVICE + драйвер:** переменные `driver*` встраиваются при `provisionDriver()`, не через relative auto-apply.
+**DEVICE + драйвер:** переменные `driver*` встраиваются при `provisionDriver()`, не через MIXIN auto-apply.
 
 См. [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
