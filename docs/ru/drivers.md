@@ -23,9 +23,9 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **16** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **12** **BETA**. Top-20 industrial: **15** **PRODUCTION** + **5** **BETA** (`iec104-server`, `dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+В `DriverProductionMatrix` — **28** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **10** **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `ethernet-ip` (только CIP session), `dnp3` (**poll/read**; `writePoint` не реализован). Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
+> **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `ethernet-ip` (только CIP session). Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
 | `driverId` | Зрелость (реестр) | Примечания / interop |
 | ---------- | ------------------- | --------------- |
@@ -33,7 +33,10 @@
 | `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab; OPC UA в lab часто SecurityPolicy None |
 | `iec104`, `dlms`, `gps-tracker` | PRODUCTION | см. interop lab |
 | `cwmp` | PRODUCTION | вне top-20; Inform + Get/SetParameterValues |
-| `dnp3` | BETA | **Только poll/read** — `writePoint` не реализован |
+| `dnp3` | PRODUCTION | **Только poll/read** — `writePoint` не реализован |
+| `haystack`, `kafka`, `coap` | PRODUCTION | poll-only клиенты; loopback-тесты |
+| `icmp`, `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote-проверки; read-only |
+| `file`, `folder`, `application` | PRODUCTION | мониторинг локального хоста; read-only |
 | `ethernet-ip` | BETA | регистрация CIP session; tag path — placeholder |
 | `opc-da`, `opc-bridge` | BETA | **Оболочка / тесты маппинга** — не полный DA-стек |
 | `iec104-server` | BETA | interop partner для `iec104` |
@@ -172,7 +175,7 @@ Runtime poll/write использует только адрес протокол
 }
 ```
 
-Demo: `root.platform.devices.lab-userA-01` (`HaystackModelBootstrap.DEMO_POINT_MAPPINGS`).
+Demo: `root.platform.devices.lab-userA-01` (`HaystackBlueprintBootstrap.DEMO_POINT_MAPPINGS`).
 
 Brick export (BL-60): примените mixin `brick-metadata-v1`, задайте URI `brickClass` на устройстве → `GET /api/v1/platform/brick/export?format=jsonld|turtle`. `brick:hasPoint` формируется из тех же маппингов точек.
 
@@ -352,7 +355,7 @@ Project Haystack HTTP JSON client (SkySpark, FIN, Haxall). Только poll v0.
 
 Loopback-тест: `HaystackDeviceDriverTest` (встроенный `HttpServer` + JSON grid).
 
-Зрелость: **beta**. Вне scope v0.1: `watch`/subscribe, `pointWrite`, `hisRead`, Zinc codec.
+Зрелость: **production** (poll/read). Вне scope v0.1: `watch`/subscribe, `pointWrite`, `hisRead`, Zinc codec.
 
 ### icmp (`ispf-driver-icmp`)
 
@@ -368,6 +371,8 @@ Loopback-тест: `HaystackDeviceDriverTest` (встроенный `HttpServer`
 ```
 
 Переменная получает: `reachable`, `latencyMs`, `host`.
+
+Зрелость: **production**. Loopback-тест: `IcmpDeviceDriverTest` (localhost-доступность).
 
 ### ssh (`ispf-driver-ssh`)
 
@@ -387,6 +392,8 @@ Loopback-тест: `HaystackDeviceDriverTest` (встроенный `HttpServer`
 
 Переменная: `value` (stdout), `exitCode`, `stderr`.
 
+Зрелость: **production**. Loopback-тест: `SshDeviceDriverTest` (встроенный Apache MINA SSHD server). Ограничение: `StrictHostKeyChecking=no` — для production-хостов ключи проверяйте вне драйвера (host keys не верифицируются).
+
 ### coap (`ispf-driver-coap`)
 
 CoAP client (Eclipse Californium), GET ресурсов IoT-устройств.
@@ -402,6 +409,8 @@ CoAP client (Eclipse Californium), GET ресурсов IoT-устройств.
 ```
 
 Loopback-тест: `CoapDeviceDriverTest` (in-process Californium CoAP server).
+
+Зрелость: **production** (poll/read; Observe не поддерживается).
 
 ## Каталог зарегистрированных драйверов (58)
 
@@ -501,7 +510,6 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 
 | `driverId` | Что есть сейчас | Для production |
 |------------|-----------------|----------------|
-| `dnp3` | Class 0/1/2/3 poll (read) | `io.stepfunc:dnp3` native |
 | `ethernet-ip` | Register Session | CIP tag read/write library |
 | `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
@@ -625,14 +633,20 @@ SQL scalar. Конфиг: `jdbcUrl`, `username`, `password`, `query`, `timeoutMs
 
 ### file / folder
 
-`file`: путь → `exists`, `size`, `lastModified`, `content` (текст).  
-`folder`: путь → список файлов, счётчики.
+`file`: маппинг точек — путь к файлу (относительно `basePath` из конфига или абсолютный). Переменная: `exists`, `size`, `lastModified`, `value` (текстовый превью, первые 4 КБ).  
+`folder`: маппинг точек — путь к каталогу. Переменная: `exists`, `fileCount`, `totalBytes`.
+
+Зрелость: **production**. Loopback-тесты: `FileDeviceDriverTest`, `FolderDeviceDriverTest` (JUnit temp dirs).
 
 ### application (`ispf-driver-application`)
 
-Запуск процесса. Конфиг: `command`, `workingDir`, `timeoutMs`.
+Запуск локального процесса (ProcessBuilder; `cmd.exe /c` на Windows, `sh -c` на остальных).
 
-Маппинг точек: переменная → аргумент или `stdout`/`exitCode`.
+Конфиг: `workingDir`, `timeoutMs`. **Команда — это маппинг точки**, а не ключ конфига: значение маппинга — полная командная строка на переменную.
+
+Переменная: `value` (stdout), `exitCode`, `stderr`.
+
+Зрелость: **production**. Loopback-тест: `ApplicationDeviceDriverTest`. Ограничение: `timeoutMs` ограничивает ожидание завершения процесса; молча зависший дочерний процесс убивается по таймауту, но выведенное до этого теряется.
 
 ### message-stream (`ispf-driver-message-stream`)
 
@@ -648,12 +662,22 @@ NMEA 0183. Конфиг: `mode` (tcp/serial), `host`/`port` или `serialPort`.
 
 ### telnet / soap
 
-`telnet`: host, port, credentials; маппинг — команда.  
+`telnet` (`ispf-driver-telnet`): конфиг `host`, `port`, `username`, `password`, `timeoutMs`; маппинг точек — shell-команда на переменную. Переменная: `value` (вывод), `exitCode`, `stderr`. Зрелость: **production** — loopback `TelnetDeviceDriverTest`. Ограничение: код завершения всегда `0` для завершённых сессий (у Telnet нет канала exit-status).  
 `soap`: `endpointUrl`, `soapAction`; маппинг — тело запроса или XPath-подобный путь к значению.
+
+### modem-at (`ispf-driver-modem-at`)
+
+AT-команды GSM-модема по serial-порту или TCP (мост в стиле RFC2217).
+
+Конфиг: `mode` (`tcp`/`serial`), `host`, `port` (TCP-режим) или `serialPort`, `baudRate` (serial-режим), `timeoutMs`.
+
+Маппинг точек: AT-команда на переменную (`AT+CSQ`, `AT+COPS?`, …). Переменная: `value` (разобранное значение), `response` (сырой ответ модема), `success`.
+
+Зрелость: **production**. Loopback-тест: `ModemAtDeviceDriverTest` (TCP AT-заглушка).
 
 ### ip-host (`ispf-driver-ip-host`)
 
-Единый IT-мониторинг. Префиксы маппинга точек:
+Единый IT-мониторинг. Конфиг: `defaultHost`, `timeoutMs`. Префиксы маппинга точек:
 
 | Префикс | Пример | Проверка |
 |---------|--------|----------|
@@ -664,11 +688,15 @@ NMEA 0183. Конфиг: `mode` (tcp/serial), `host`/`port` или `serialPort`.
 | `SMTP:` | `SMTP:host:25` | SMTP banner |
 | `FTP:` | `FTP:host:21` | FTP connect |
 
+Зрелость: **production**. Loopback-тест: `IpHostDeviceDriverTest` (локальные listener'ы + DNS/PING loopback).
+
 ### kafka (`ispf-driver-kafka`)
 
-Конфиг: `bootstrapServers`, `topic`, `groupId`, `timeoutMs`.
+Конфиг: `bootstrapServers`, `topic`, `groupId`, `timeoutMs`, `eventToVariable`.
 
 Маппинг точек: `consume` (последнее сообщение) или `produce:payload`.
+
+Зрелость: **production** (poll/read; `writePoint` — read-only, продюсирование через маппинги `produce:`). Loopback-тест: `KafkaDeviceDriverTest`.
 
 ### cwmp (`ispf-driver-cwmp`) — PRODUCTION
 

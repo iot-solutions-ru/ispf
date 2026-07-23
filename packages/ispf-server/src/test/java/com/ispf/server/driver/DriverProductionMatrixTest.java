@@ -24,7 +24,6 @@ class DriverProductionMatrixTest {
             "iec104-server",
             "opc-da",
             "opc-bridge",
-            "dnp3",
             "ethernet-ip"
     );
 

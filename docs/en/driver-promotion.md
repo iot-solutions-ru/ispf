@@ -28,6 +28,23 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
 
+## Status (July 2026, driver batch A promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------------|
+| `dnp3` | BETA (BL-191) | **PRODUCTION** | Class 0/1/2/3 poll loopback `Dnp3DeviceDriverTest`; `writePoint` still not implemented |
+| `haystack` | BETA | **PRODUCTION** | `HaystackDeviceDriverTest` (embedded HttpServer JSON grid); poll/read only |
+| `kafka` | BETA | **PRODUCTION** | `KafkaDeviceDriverTest`; poll/read, `writePoint` read-only |
+| `coap` | BETA | **PRODUCTION** | `CoapDeviceDriverTest` (in-process Californium server) |
+| `icmp` | BETA | **PRODUCTION** | `IcmpDeviceDriverTest` (localhost reachability) |
+| `ip-host` | BETA | **PRODUCTION** | `IpHostDeviceDriverTest` (local listeners + DNS/PING loopback) |
+| `telnet` | BETA | **PRODUCTION** | `TelnetDeviceDriverTest`; exit code always 0 (protocol limitation) |
+| `modem-at` | BETA | **PRODUCTION** | `ModemAtDeviceDriverTest` (TCP AT stub) |
+| `ssh` | BETA | **PRODUCTION** | `SshDeviceDriverTest` (embedded Apache MINA SSHD); `StrictHostKeyChecking=no` |
+| `file` | BETA | **PRODUCTION** | `FileDeviceDriverTest` (JUnit temp dirs) |
+| `folder` | BETA | **PRODUCTION** | `FolderDeviceDriverTest` (JUnit temp dirs) |
+| `application` | BETA | **PRODUCTION** | `ApplicationDeviceDriverTest`; `timeoutMs` bounds wait, hanging child killed |
+
 ## Status (July 2026, Phase 25 BL-140 / BL-191 honesty)
 
 | driverId | Was | Now | Note |
