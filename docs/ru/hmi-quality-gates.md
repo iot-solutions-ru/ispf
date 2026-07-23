@@ -27,16 +27,19 @@ npm run lighthouse:ci
 npm run test:quality
 ```
 
-Переопределение через env: `LH_MIN_PERFORMANCE`, `LH_MIN_ACCESSIBILITY`, `LH_MIN_ACCESSIBILITY_OPERATOR`, `MIMIC_MIN_FPS`, `MIMIC_STRESS_ELEMENTS`.
+Переопределение через env: `LH_MIN_PERFORMANCE`, `LH_MIN_ACCESSIBILITY`, `LH_MIN_ACCESSIBILITY_OPERATOR`, `MIMIC_MIN_FPS`, `MIMIC_MIN_FPS_WS`, `MIMIC_STRESS_ELEMENTS`.
 
 ### Пороги стресс-теста мнемосхемы (BL-152)
 
 | Профиль | Элементы | Порог FPS | Env |
 | ------- | -------- | --------- | --- |
-| CI gate (BL-152 **Готово**) | 500 | ≥55 | по умолчанию `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
+| Локально / acceptance (BL-152 **Готово**) | 500 | ≥55 | по умолчанию `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
+| Nightly GHA soft floor | 300 | ≥20 (static + WS) | `ci-nightly.yml`: `MIMIC_STRESS_ELEMENTS=300`, `MIMIC_MIN_FPS=20`, `MIMIC_MIN_FPS_WS=20` — shared runners; не заявление ≥55 на GHA |
 | Stretch (ops, не acceptance) | 500 | ≥60 | `MIMIC_MIN_FPS=60` + unmocked `E2E_LIVE_FPS=1` при наличии evidence |
 | Legacy S21 proxy | 120 | ≥55 | `MIMIC_STRESS_ELEMENTS=120` |
 | Ручная проверка tank-farm | полная схема | ≥60 | вкладка Performance в Chrome на мнемосхеме оператора |
+
+Стресс FPS только через `npm run test:quality` (`playwright.quality.config.ts`). Обычный `npm run test:e2e` игнорирует `quality-gates.spec.ts`.
 
 Конструктор стресс-документа: `e2e/fixtures/stressMimic.ts`. Playwright измеряет минимальный FPS за два окна по 2 с (`e2e/quality-gates.spec.ts`).
 
