@@ -23,9 +23,9 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **16** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **12** at **BETA**. Top-20 industrial: **15** **PRODUCTION** + **5** **BETA** (`iec104-server`, `dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **28** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **10** at **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `ethernet-ip` (CIP session only), `dnp3` (**poll/read**; `writePoint` not implemented). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `ethernet-ip` (CIP session only). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
@@ -33,7 +33,10 @@ In `DriverProductionMatrix` — **16** drivers at **PRODUCTION** (including `cwm
 | `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab; OPC UA often SecurityPolicy None in lab |
 | `iec104`, `dlms`, `gps-tracker` | PRODUCTION | see interop lab |
 | `cwmp` | PRODUCTION | outside top-20; Inform + Get/SetParameterValues |
-| `dnp3` | BETA | **Poll/read only** — `writePoint` not implemented |
+| `dnp3` | PRODUCTION | **Poll/read only** — `writePoint` not implemented |
+| `haystack`, `kafka`, `coap` | PRODUCTION | poll-only clients; loopback tests |
+| `icmp`, `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote checks; read-only |
+| `file`, `folder`, `application` | PRODUCTION | local host monitoring; read-only |
 | `ethernet-ip` | BETA | CIP session registration; tag path placeholder |
 | `opc-da`, `opc-bridge` | BETA | **Shell / mapping tests** — not full DA stack |
 | `iec104-server` | BETA | interop partner for `iec104` |
@@ -172,7 +175,7 @@ Runtime poll/write uses only the protocol address; Haystack fields are ignored b
 }
 ```
 
-Demo: `root.platform.devices.lab-userA-01` (`HaystackModelBootstrap.DEMO_POINT_MAPPINGS`).
+Demo: `root.platform.devices.lab-userA-01` (`HaystackBlueprintBootstrap.DEMO_POINT_MAPPINGS`).
 
 Brick export (BL-60): apply `brick-metadata-v1` mixin, set `brickClass` URI on device → `GET /api/v1/platform/brick/export?format=jsonld|turtle`. `brick:hasPoint` from the same point mappings.
 
@@ -352,7 +355,7 @@ Variable: `value` (number), `valueText` (bool/string), `ref`, `unit`, `dis`. Rea
 
 Loopback test: `HaystackDeviceDriverTest` (embedded `HttpServer` + JSON grid).
 
-Maturity: **beta**. Out of scope v0.1: `watch`/subscribe, `pointWrite`, `hisRead`, Zinc codec.
+Maturity: **production** (poll/read). Out of scope v0.1: `watch`/subscribe, `pointWrite`, `hisRead`, Zinc codec.
 
 ### icmp (`ispf-driver-icmp`)
 
@@ -368,6 +371,8 @@ Point mapping: hostname or IP per variable; empty value — `host` from config.
 ```
 
 Variable receives: `reachable`, `latencyMs`, `host`.
+
+Maturity: **production**. Loopback test: `IcmpDeviceDriverTest` (localhost reachability).
 
 ### ssh (`ispf-driver-ssh`)
 
@@ -387,6 +392,8 @@ Point mapping: command per variable, for example `uptime`.
 
 Variable: `value` (stdout), `exitCode`, `stderr`.
 
+Maturity: **production**. Loopback test: `SshDeviceDriverTest` (embedded Apache MINA SSHD server). Limitation: `StrictHostKeyChecking=no` — for production hosts pin keys out-of-band (the driver does not verify host keys).
+
 ### coap (`ispf-driver-coap`)
 
 CoAP client (Eclipse Californium), GET resources from IoT devices.
@@ -402,6 +409,8 @@ Point mapping: path `/sensor/temp` or full `coap://host:5683/...`
 ```
 
 Loopback test: `CoapDeviceDriverTest` (in-process Californium CoAP server).
+
+Maturity: **production** (poll/read; Observe not supported).
 
 ## Registered driver catalog (58)
 
@@ -501,7 +510,6 @@ Detailed configs for base drivers — in the sections below. Others follow the s
 
 | `driverId` | What exists now | For production |
 |------------|-----------------|----------------|
-| `dnp3` | Class 0/1/2/3 poll (read) | `io.stepfunc:dnp3` native |
 | `ethernet-ip` | Register Session | CIP tag read/write library |
 | `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
@@ -625,14 +633,20 @@ Point mapping: column name or `value` for a single cell.
 
 ### file / folder
 
-`file`: path → `exists`, `size`, `lastModified`, `content` (text).  
-`folder`: path → file list, counters.
+`file`: point mapping — file path (relative to `basePath` config or absolute). Variable: `exists`, `size`, `lastModified`, `value` (text preview, first 4 KB).  
+`folder`: point mapping — directory path. Variable: `exists`, `fileCount`, `totalBytes`.
+
+Maturity: **production**. Loopback tests: `FileDeviceDriverTest`, `FolderDeviceDriverTest` (JUnit temp dirs).
 
 ### application (`ispf-driver-application`)
 
-Process launch. Config: `command`, `workingDir`, `timeoutMs`.
+Local process launch (ProcessBuilder; `cmd.exe /c` on Windows, `sh -c` elsewhere).
 
-Point mapping: variable → argument or `stdout`/`exitCode`.
+Config: `workingDir`, `timeoutMs`. **Command is the point mapping**, not a config key — mapping value is the full command line per variable.
+
+Variable: `value` (stdout), `exitCode`, `stderr`.
+
+Maturity: **production**. Loopback test: `ApplicationDeviceDriverTest`. Limitation: `timeoutMs` bounds the wait for process exit; a silently hanging child is killed on timeout but output streamed before the kill is lost.
 
 ### message-stream (`ispf-driver-message-stream`)
 
@@ -648,12 +662,22 @@ Point mapping: sentence type (`GGA`, `RMC`) or `raw`.
 
 ### telnet / soap
 
-`telnet`: host, port, credentials; mapping — command.  
+`telnet` (`ispf-driver-telnet`): config `host`, `port`, `username`, `password`, `timeoutMs`; point mapping — shell command per variable. Variable: `value` (output), `exitCode`, `stderr`. Maturity: **production** — loopback `TelnetDeviceDriverTest`. Limitation: exit code is reported as `0` on completed sessions (Telnet has no exit-status channel).  
 `soap`: `endpointUrl`, `soapAction`; mapping — request body or XPath-like path to value.
+
+### modem-at (`ispf-driver-modem-at`)
+
+GSM modem AT commands over serial port or TCP (RFC2217-style bridge).
+
+Config: `mode` (`tcp`/`serial`), `host`, `port` (TCP mode) or `serialPort`, `baudRate` (serial mode), `timeoutMs`.
+
+Point mapping: AT command per variable (`AT+CSQ`, `AT+COPS?`, …). Variable: `value` (parsed payload), `response` (raw modem answer), `success`.
+
+Maturity: **production**. Loopback test: `ModemAtDeviceDriverTest` (TCP AT stub).
 
 ### ip-host (`ispf-driver-ip-host`)
 
-Unified IT monitoring. Point mapping prefixes:
+Unified IT monitoring. Config: `defaultHost`, `timeoutMs`. Point mapping prefixes:
 
 | Prefix | Example | Check |
 |--------|---------|-------|
@@ -664,11 +688,15 @@ Unified IT monitoring. Point mapping prefixes:
 | `SMTP:` | `SMTP:host:25` | SMTP banner |
 | `FTP:` | `FTP:host:21` | FTP connect |
 
+Maturity: **production**. Loopback test: `IpHostDeviceDriverTest` (local listeners + DNS/PING loopback).
+
 ### kafka (`ispf-driver-kafka`)
 
-Config: `bootstrapServers`, `topic`, `groupId`, `timeoutMs`.
+Config: `bootstrapServers`, `topic`, `groupId`, `timeoutMs`, `eventToVariable`.
 
 Point mapping: `consume` (last message) or `produce:payload`.
+
+Maturity: **production** (poll/read; `writePoint` is read-only — producing is done via `produce:` point mappings). Loopback test: `KafkaDeviceDriverTest`.
 
 ### cwmp (`ispf-driver-cwmp`) — PRODUCTION
 

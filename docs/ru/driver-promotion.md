@@ -24,6 +24,23 @@
 4. Изменить запись в `DriverMaturityRegistry`.
 5. При необходимости — демо-устройство / модель в bootstrap.
 
+## Статус (июль 2026, продвижение партии A)
+
+| driverId | Было | Стало | Примечание |
+|----------|------|-------|------------|
+| `dnp3` | BETA (BL-191) | **PRODUCTION** | Class 0/1/2/3 poll loopback `Dnp3DeviceDriverTest`; `writePoint` по-прежнему не реализован |
+| `haystack` | BETA | **PRODUCTION** | `HaystackDeviceDriverTest` (embedded HttpServer JSON grid); только poll/read |
+| `kafka` | BETA | **PRODUCTION** | `KafkaDeviceDriverTest`; poll/read, `writePoint` read-only |
+| `coap` | BETA | **PRODUCTION** | `CoapDeviceDriverTest` (in-process Californium server) |
+| `icmp` | BETA | **PRODUCTION** | `IcmpDeviceDriverTest` (localhost-доступность) |
+| `ip-host` | BETA | **PRODUCTION** | `IpHostDeviceDriverTest` (локальные listener'ы + DNS/PING loopback) |
+| `telnet` | BETA | **PRODUCTION** | `TelnetDeviceDriverTest`; exit code всегда 0 (ограничение протокола) |
+| `modem-at` | BETA | **PRODUCTION** | `ModemAtDeviceDriverTest` (TCP AT-заглушка) |
+| `ssh` | BETA | **PRODUCTION** | `SshDeviceDriverTest` (встроенный Apache MINA SSHD); `StrictHostKeyChecking=no` |
+| `file` | BETA | **PRODUCTION** | `FileDeviceDriverTest` (JUnit temp dirs) |
+| `folder` | BETA | **PRODUCTION** | `FolderDeviceDriverTest` (JUnit temp dirs) |
+| `application` | BETA | **PRODUCTION** | `ApplicationDeviceDriverTest`; `timeoutMs` ограничивает ожидание, зависший child убивается |
+
 ## Статус (июль 2026, Phase 25 BL-140)
 
 | driverId | Было | Стало | Примечание |
