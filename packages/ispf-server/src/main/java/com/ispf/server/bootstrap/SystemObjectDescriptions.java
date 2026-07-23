@@ -45,25 +45,26 @@ public final class SystemObjectDescriptions {
                 Assign a tenantId to operator users in Security → Users to limit their visible tree."""));
         map.put("root.platform.devices", new Entry("Devices", """
                 Device catalog. Each DEVICE child runs a driver plugin (SNMP, Modbus, MQTT, virtual lab, JDBC, etc.) \
-                and exposes variables, events, and functions from its primary and applied models. \
+                and exposes variables, events, and functions from its primary and applied blueprints. \
                 Start/stop drivers from the Driver tab; bind variables on the Bindings tab. \
                 Use Federation bind (inspector) to proxy a remote device at a local path while keeping the operator path stable."""));
-        map.put("root.platform.relative-blueprints", new Entry("Relative Blueprints", """
-                Optional RELATIVE model blueprints (mixins). They enrich existing objects with extra variables, \
+        map.put("root.platform.mixin-blueprints", new Entry("Mixin Blueprints", """
+                Optional mixin blueprints. They enrich existing objects with extra variables, \
                 events, functions, and binding rules without changing the object path. \
                 Platform system types (data source, schedule, dashboard, …) embed their schema in each instance — \
-                they are not listed here. Attach mixins to devices or folders via Applied models in the inspector."""));
+                they are not listed here. Attach mixins to devices or folders via Applied blueprints in the inspector."""));
         map.put("root.platform.instance-types", new Entry("Instance Types", """
-                INSTANCE model blueprints — templates for new object instances (devices, folders, custom nodes). \
-                When you create an object with a templateId, the platform materializes structure from the matching INSTANCE model. \
-                Use Instance Types for repeatable device types; use Relative Blueprints to add capabilities to existing nodes."""));
-        map.put("root.platform.absolute-blueprints", new Entry("Absolute Blueprints", """
-                ABSOLUTE model blueprints for singleton configuration objects. \
-                Each absolute model has exactly one live instance under root.platform.instances. \
-                Typical for platform-wide settings objects that must exist once."""));
+                Instance-type blueprints — templates for new object instances (devices, folders, custom nodes). \
+                When you create an object with a templateId, the platform materializes structure from the matching INSTANCE blueprint. \
+                Use Instance Types for repeatable device types; use Mixin Blueprints to add capabilities to existing nodes."""));
+        map.put("root.platform.singleton-blueprints", new Entry("Singleton Blueprints", """
+                Singleton blueprints — unique live nodes under this catalog (`root.platform.singleton-blueprints.*`). \
+                Each child is both the blueprint and the runtime object with application logic \
+                (variables, events, functions, binding rules). Do not create duplicates for the same name."""));
         map.put("root.platform.instances", new Entry("Instances", """
-                Live ABSOLUTE model instances. Each child is the single runtime object for its absolute model blueprint. \
-                Edit variables and functions here; do not create duplicate instances for the same absolute model."""));
+                User-created object instances — devices, meters, and other runtime objects \
+                (typically from Instance Types). Not for Singleton Blueprints \
+                (those live under singleton-blueprints with application logic)."""));
         map.put("root.platform.dashboards", new Entry("Dashboards", """
                 HMI dashboard catalog. DASHBOARD objects store widget layouts for admin preview and operator mode. \
                 Widgets bind to device variables, sub-dashboards, SQL reports, maps, and workflows. \

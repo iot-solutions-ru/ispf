@@ -14,7 +14,7 @@ class AgentObjectTreeGuideTest {
     void referenceTextDocumentsDiscoveryFirst() {
         String text = AgentObjectTreeGuide.referenceText();
         assertTrue(text.contains("list_objects"));
-        assertTrue(text.contains("apply_relative_blueprint"));
+        assertTrue(text.contains("apply_mixin_blueprint"));
         assertTrue(text.contains("must come from tool results"));
     }
 

@@ -12,32 +12,32 @@
 
 | Тип | Каталог | Поведение |
 |-----|---------|-----------|
-| `RELATIVE` | `root.platform.relative-blueprints` | Необязательные примеси — переменные/события/функции **вливаются** в существующий объект |
-| `INSTANCE` | `root.platform.instance-types` | Шаблон **типа объекта** — создание экземпляров через экземпляр |
-| `ABSOLUTE` | `root.platform.absolute-blueprints` | Singleton blueprint — один живой объект в `root.platform.instances.*` |
+| `MIXIN` | `root.platform.mixin-blueprints` | Необязательные примеси — переменные/события/функции **вливаются** в существующий объект |
+| `INSTANCE` | `root.platform.instance-types` | Шаблон **типа объекта** — создание экземпляров через instantiate |
+| `SINGLETON` | `root.platform.singleton-blueprints` | Уникальный live-узел в каталоге (`root.platform.singleton-blueprints.*`) — blueprint **и** логика приложения на одном объекте |
 
-**Внутренние схемы** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в реестре для начальной загрузки, но **не отображаются** в каталоге относительных чертежей и **не используются** в `appliedBlueprintIds`. Структура вшивается в примере через `*ObjectService.ensureStructure()`.
+**Внутренние схемы** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в реестре для начальной загрузки, но **не отображаются** в каталоге mixin-blueprints и **не используются** в `appliedBlueprintIds`. Структура вшивается в экземпляре через `*ObjectService.ensureStructure()`.
 
 См. [0011-model-type-semantics](decisions/0011-model-type-semantics.md).
 
 ### Связь с объектом
 
-- `templateId` — primary model (INSTANCE/ABSOLUTE)
+- `templateId` — primary model (INSTANCE/SINGLETON)
 - `appliedBlueprintIds` — JSON-массив id всех применённых моделей (persisted)
 - При слиянии коллизий имён: **последние победы + предупреждение** (не ошибка)
 
-### Автоматическое применение ОТНОСИТЕЛЬНОГО
+### Автоматическое применение MIXIN
 
-При `POST /objects` с `autoApplyRelativeBlueprints=true` (default) вызывается `BlueprintEngine.applyRelativeModels()`.
+При `POST /objects` с `autoApplyMixinBlueprints=true` (default) вызывается `BlueprintEngine.applyMixinBlueprints()`.
 
 **Условия автоматически применяются** (все обязательно):
 
-1. `BlueprintType.RELATIVE`, не системный
+1. `BlueprintType.MIXIN`, не системный
 2. `targetObjectType` соответствует типу объекта
 3. **`suitabilityExpression` (Условие применимости, CEL) не пустой** и остается в `true`
 4. Модель ещё не в `appliedBlueprintIds`
 
-**Пустой CEL** → модель **никогда** не применяется автоматически. Для миксина без условий воспользуйтесь явным применением: `templateId` при создании, `POST /api/v1/relative-blueprints/{id}/apply`, модели-компаньоны в комплекте.
+**Пустой CEL** → модель **никогда** не применяется автоматически. Для миксина без условий воспользуйтесь явным применением: `templateId` при создании, `POST /api/v1/mixin-blueprints/{id}/apply`, модели-компаньоны в комплекте.
 
 **Явный применить** (шаблон/API): вчерася `targetObjectType`; CEL optionalen — если задано, должно быть `true`.
 
@@ -59,7 +59,7 @@
 
 | Уровень | Источник | Когда в реестре |
 |---------|----------|------------------|
-| **System-intrinsic** | `ModelBootstrap` | Всегда; не в каталоге relative-blueprints |
+| **System-intrinsic** | `ModelBootstrap` | Всегда; не в каталоге mixin-blueprints |
 | **Platform built-in** | `ModelBootstrap` | Всегда (`dashboard-v1`, `alert-rule-v1`, …) |
 | **Fixtures** | `FixtureModelBootstrap` | Только `ispf.bootstrap.fixtures-enabled=true` |
 | **Solution** | `bundle.json` → `models[]` | При deploy bundle |
@@ -74,9 +74,9 @@
 
 | Метод | Путь | Описание |
 |--------|------|----------|
-| GET/POST/… | `/api/v1/relative-blueprints` | RELATIVE facades |
+| GET/POST/… | `/api/v1/mixin-blueprints` | MIXIN facades |
 | GET/POST/… | `/api/v1/instance-types` | INSTANCE facades (+ `?platformType=` для create dialog) |
-| GET/POST/… | `/api/v1/absolute-blueprints` | ABSOLUTE facades |
+| GET/POST/… | `/api/v1/singleton-blueprints` | SINGLETON facades |
 | GET/POST/… | `/api/v1/blueprints` | Legacy unified API (совместимость) |
 
 ## Состав модели (`BlueprintDefinition`)
@@ -122,12 +122,12 @@
 
 | Модель | Тип | Назначение |
 |--------|-----|------------|
-| `dashboard-v1` | intrinsic RELATIVE | Layout HMI |
-| `workflow-v1` | intrinsic RELATIVE | BPMN workflow |
-| `report-v1` | intrinsic RELATIVE | SQL report |
-| `alert-rule-v1` | intrinsic RELATIVE | CEL alert rule |
-| `correlator-v1` | intrinsic RELATIVE | Event correlator |
-| `data-source-v1`, `schedule-v1`, … | intrinsic RELATIVE | Схемы system object types |
+| `dashboard-v1` | intrinsic MIXIN | Layout HMI |
+| `workflow-v1` | intrinsic MIXIN | BPMN workflow |
+| `report-v1` | intrinsic MIXIN | SQL report |
+| `alert-rule-v1` | intrinsic MIXIN | CEL alert rule |
+| `correlator-v1` | intrinsic MIXIN | Event correlator |
+| `data-source-v1`, `schedule-v1`, … | intrinsic MIXIN | Схемы system object types |
 
 ### Fixtures (`ispf.bootstrap.fixtures-enabled=true`)
 
@@ -152,7 +152,7 @@
 
 #### драйвер-v1 устройства
 
-RELATIVE mixin с переменными группами `driver` — для демо/лаборатории и явного применения. **Не** используется для автоматического применения при создании УСТРОЙСТВА.
+MIXIN mixin с переменными группами `driver` — для демо/лаборатории и явного применения. **Не** используется для автоматического применения при создании УСТРОЙСТВА.
 
 На production path схема драйвера provisioning через `provisionDriver()` без относительного миксина (см. [drivers](drivers.md)).
 
@@ -179,7 +179,7 @@ SNMP-устройство (MIB-II + HOST-RESOURCES). Демо: `root.platform.de
 
 #### базовый-сенсор-v1 / вендор-сенсор-ext-v1
 
-Расширение Семейство INSTANCE + RELATIVE для наследования моделей производителей (см. `ModelUpgradeApiTest`).
+Расширение Семейство INSTANCE + MIXIN для наследования моделей производителей (см. `ModelUpgradeApiTest`).
 
 ## Пример: создать экземпляр
 

@@ -163,7 +163,7 @@ public class PlatformBriefingService {
                     .append(profile.get("use"))
                     .append('\n');
         }
-        sb.append("Domain plants: relative blueprints (list_relative_blueprints), not driver profiles.\n");
+        sb.append("Domain plants: mixin blueprints (list_mixin_blueprints), not driver profiles.\n");
     }
 
     private void appendWidgetCatalog(StringBuilder sb) {

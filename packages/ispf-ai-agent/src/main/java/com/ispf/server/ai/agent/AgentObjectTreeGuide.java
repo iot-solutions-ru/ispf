@@ -38,10 +38,10 @@ public final class AgentObjectTreeGuide {
                 + com.ispf.server.eventfilter.EventFilterObjectService.EVENT_FILTERS_ROOT
                 + " | Event filters | EVENT_FILTER |\n"
                 + """
-                | root.platform.relative-blueprints | Relative model catalog | MODEL definitions; apply via apply_relative_blueprint |
+                | root.platform.mixin-blueprints | Mixin model catalog | MODEL definitions; apply via apply_mixin_blueprint |
                 | root.platform.instance-types | Instance type catalog | (definitions only) |
-                | root.platform.absolute-blueprints | Absolute model catalog | (definitions only) |
-                | root.platform.instances | Model instances | CUSTOM from instance type |
+                | root.platform.singleton-blueprints | Singleton live hubs | blueprint + application logic on same node |
+                | root.platform.instances | User object instances | devices, meters, … from Instance Types (not singleton hubs) |
                 
                 Legacy `root.platform.blueprints` removed — use typed catalogs above.
                 
@@ -59,21 +59,21 @@ public final class AgentObjectTreeGuide {
                 
                 ### Models & templates
                 
-                - list_object_blueprints — templateId / modelName; rows include BlueprintType (RELATIVE|INSTANCE|ABSOLUTE)
-                - list_relative_blueprints — RELATIVE mixins (virtual-lab-v1, …)
+                - list_object_blueprints — templateId / modelName; rows include BlueprintType (MIXIN|INSTANCE|SINGLETON)
+                - list_mixin_blueprints — MIXINs (virtual-lab-v1, …)
                 - list_instance_types — INSTANCE templates (snmp-agent-v1, … — see docs/en/blueprints.md)
                 - list_instance_types — INSTANCE blueprints for instantiate_instance_type
-                - list_absolute_blueprints — ABSOLUTE blueprints for ensure_absolute_instance
+                - list_singleton_blueprints — SINGLETON blueprints for ensure_singleton_instance
                 - get_object_blueprint — variables, events, functions of a blueprint
                 - instantiate_instance_type — create object from INSTANCE catalog entry
-                - apply_relative_blueprint — attach mixin to existing objectPath (preferred over empty DEVICE + manual vars)
-                - ensure_absolute_instance — align/create object by ABSOLUTE model contract
+                - apply_mixin_blueprint — attach mixin to existing objectPath (preferred over empty DEVICE + manual vars)
+                - ensure_singleton_instance — align/create object by SINGLETON model contract
                 - Model catalogs: """
-                + BlueprintCatalogRoots.RELATIVE
+                + BlueprintCatalogRoots.MIXIN
                 + ", "
                 + BlueprintCatalogRoots.INSTANCE
                 + ", "
-                + BlueprintCatalogRoots.ABSOLUTE
+                + BlueprintCatalogRoots.SINGLETON
                 + """
                 
                 - create_variable + create_binding_rule for cross-object data (read, CEL)
@@ -87,7 +87,7 @@ public final class AgentObjectTreeGuide {
                 ### Object-type sweep (complex TZ)
                 
                 Call get_automation_schema topic=objectTypes. For each layer in TZ, list_objects on catalog root, \
-                then create_object / configure_* / instantiate_instance_type / apply_relative_blueprint as needed.
+                then create_object / configure_* / instantiate_instance_type / apply_mixin_blueprint as needed.
                 Include plan.objectTypesCoverage[] — never skip DEVICE, CUSTOM hub, alerts, HMI layers without explicit N/A.
                 
                 ### Canonical order (every object type)
@@ -119,15 +119,15 @@ public final class AgentObjectTreeGuide {
                 "alertRulesRoot", AutomationTreeService.ALERT_RULES_ROOT,
                 "correlatorsRoot", AutomationTreeService.CORRELATORS_ROOT,
                 "modelCatalogs", List.of(
-                        BlueprintCatalogRoots.RELATIVE,
+                        BlueprintCatalogRoots.MIXIN,
                         BlueprintCatalogRoots.INSTANCE,
-                        BlueprintCatalogRoots.ABSOLUTE
+                        BlueprintCatalogRoots.SINGLETON
                 ),
                 "legacyRemoved", BlueprintCatalogRoots.LEGACY,
                 "discoveryTools", List.of(
                         "list_objects", "get_object", "search_objects",
                         "list_variables", "list_object_blueprints", "describe_variables",
-                        "list_instance_types", "instantiate_instance_type", "ensure_absolute_instance"
+                        "list_instance_types", "instantiate_instance_type", "ensure_singleton_instance"
                 )
         );
     }

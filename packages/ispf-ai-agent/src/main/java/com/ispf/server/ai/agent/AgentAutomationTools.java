@@ -386,7 +386,7 @@ final class AgentAutomationTools {
                         + "operator UI, reports, workflows, SCADA, application lifecycle, schedules, platform rules. "
                         + "Optional arg: topic (alert|correlator|dashboard|widget|object|binding|operator|report|"
                         + "workflow|scada|lifecycle|schedule|platform-rule|projectBlueprint|groundTruth|instanceTypes|"
-                        + "objectTypes|relativeModels|recipes|projects|recipe/{id}|all).";
+                        + "objectTypes|mixinBlueprints|recipes|projects|recipe/{id}|all).";
             }
 
             @Override
@@ -442,8 +442,9 @@ final class AgentAutomationTools {
                         schema.put("objectTypeCoverage", AgentPlaybooks.objectTypeCoverageGuide());
                         schema.put("objectTypeTable", objectTypeGuide());
                     }
-                    case "relativemodels", "relative-models", "relative-model" ->
-                            schema.put("relativeModels", AgentPlaybooks.relativeModelsGuide());
+                    case "mixinmodels", "mixin-models", "mixin-model", "mixinblueprints", "mixin-blueprints",
+                         "relativemodels", "relative-models", "relative-model" ->
+                            schema.put("mixinBlueprints", AgentPlaybooks.mixinBlueprintsGuide());
                     case "binding" -> schema.put("binding", bindingSchema());
                     case "operator" -> schema.put("operator", operatorSchema());
                     case "report", "reports" -> schema.put("reports", AgentPlaybooks.reportsGuide());
@@ -483,7 +484,7 @@ final class AgentAutomationTools {
                         schema.put("planSections", AgentPlanSections.guide());
                         schema.put("groundTruth", AgentPlaybooks.groundTruthGuide());
                         schema.put("instanceTypes", AgentPlaybooks.instanceTypesGuide());
-                        schema.put("relativeModels", AgentPlaybooks.relativeModelsGuide());
+                        schema.put("mixinBlueprints", AgentPlaybooks.mixinBlueprintsGuide());
                         schema.put("objectTypes", AgentPlaybooks.objectTypesMatrixGuide());
                         schema.put("objectTypeTable", objectTypeGuide());
                         schema.put("recipes", recipeCatalog.indexSummary(offset, limit));
@@ -602,7 +603,7 @@ final class AgentAutomationTools {
                         + "onContextChange (bool, dashboard rules), onStartup, order. "
                         + "Historian rolling avg example: ruleKind=historian windowBucket=1m "
                         + "expression=avg(root.platform.devices.dev/sineWave, 1m) targetVariable=avg1m. "
-                        + "Do NOT use rolling-avg Relative Blueprints for 1-minute averages вЂ” use historian avg(). "
+                        + "Do NOT use rolling-avg Mixin Blueprints for 1-minute averages вЂ” use historian avg(). "
                         + "For dashboard @dashboardContext rules prefer configure_platform_context_rule.";
             }
 
@@ -1014,7 +1015,7 @@ final class AgentAutomationTools {
                         + "expression=avg(root.platform.devices.virt-cluster.dev-01/sineWave, 1m) "
                         + "targetVariable=avg1m",
                 "prerequisite", "configure_variable_history historyEnabled=true on source",
-                "avoid", "Do not use rolling-avg Relative Blueprint for minute averages"
+                "avoid", "Do not use rolling-avg Mixin Blueprint for minute averages"
         ));
         schema.put("clusterErrorPattern",
                 "1) historian avg в†’ avgVar; 2) reactive cluster-error: self.avgVar[\"value\"] > 0 "
@@ -1044,7 +1045,7 @@ final class AgentAutomationTools {
                 Map.of("type", "CORRELATOR", "use", "Event patterns", "parent", AutomationTreeService.CORRELATORS_ROOT),
                 Map.of("type", "WORKFLOW", "use", "BPMN automation", "parent", "root.platform.workflows"),
                 Map.of("type", "REPORT", "use", "Report definitions", "parent", "root.platform.reports"),
-                Map.of("type", "MODEL_CATALOG", "use", "Blueprint definitions", "paths", "root.platform.relative-blueprints, instance-types, absolute-models")
+                Map.of("type", "MODEL_CATALOG", "use", "Blueprint definitions", "paths", "root.platform.mixin-blueprints, instance-types, singleton-blueprints")
         );
     }
 

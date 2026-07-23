@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Registers analytics template intrinsic schema and derived-tag RELATIVE blueprints (BL-160).
+ * Registers analytics template intrinsic schema and derived-tag MIXIN blueprints (BL-160).
  */
 @Component
 public class AnalyticsBlueprintBootstrap {
@@ -71,7 +71,7 @@ public class AnalyticsBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 TEMPLATE_INTRINSIC,
                 "Asset analytics derived-tag template metadata (BL-160)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.ANALYTICS_TEMPLATE,
                 "",
                 List.of(
@@ -82,7 +82,7 @@ public class AnalyticsBlueprintBootstrap {
                         varDef("sourceField", "Source schema field", "config", "value"),
                         varDef("windowBucket", "Historian bucket/window (1m, 5m, 1h, …)", "config", "5m"),
                         varDef("rollupBuckets", "Materialized rollup windows (comma-separated)", "config", "5m,1h,8h"),
-                        varDef("blueprintName", "Optional linked RELATIVE blueprint", "config", ""),
+                        varDef("blueprintName", "Optional linked MIXIN blueprint", "config", ""),
                         boolDef("enabled", "Template enabled", "config", true)
                 ),
                 List.of(),
@@ -99,7 +99,7 @@ public class AnalyticsBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 ANALYTICS_TAG_MODEL,
                 "Deployed analytics tag metadata — expression, lineage, quality (BL-209)",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -126,7 +126,7 @@ public class AnalyticsBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 ROLLING_AVG_MODEL,
                 "Rolling average derived tag — binds historian aggregate avg over windowBucket",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -151,7 +151,7 @@ public class AnalyticsBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 RATE_OF_CHANGE_MODEL,
                 "Rate-of-change derived tag — delta per window using historian buckets",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -176,7 +176,7 @@ public class AnalyticsBlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 OEE_MODEL,
                 "OEE composite KPI — Availability × Performance × Quality over shift window",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DEVICE,
                 "",
                 List.of(

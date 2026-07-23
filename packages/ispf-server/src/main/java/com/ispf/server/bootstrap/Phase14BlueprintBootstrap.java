@@ -65,7 +65,7 @@ public class Phase14BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "data-source-v1",
                 "SQL schema reference for reports, bindings, and script functions",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.DATA_SOURCE,
                 "",
                 List.of(
@@ -92,7 +92,7 @@ public class Phase14BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "schedule-v1",
                 "Platform schedule — invoke function on interval",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.SCHEDULE,
                 "",
                 List.of(
@@ -118,7 +118,7 @@ public class Phase14BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "sql-binding-v1",
                 "SQL query result synced to object variable",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.BINDING,
                 "",
                 List.of(
@@ -148,7 +148,7 @@ public class Phase14BlueprintBootstrap {
                 UUID.randomUUID().toString(),
                 "migration-v1",
                 "SQL migration script applied on package import",
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 ObjectType.MIGRATION,
                 "",
                 List.of(

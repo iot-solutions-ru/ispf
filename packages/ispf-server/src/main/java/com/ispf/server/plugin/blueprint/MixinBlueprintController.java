@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/relative-blueprints")
-public class RelativeBlueprintController {
+@RequestMapping("/api/v1/mixin-blueprints")
+public class MixinBlueprintController {
 
     private final TypedBlueprintFacade facade;
 
-    public RelativeBlueprintController(TypedBlueprintFacade relativeBlueprintFacade) {
-        this.facade = relativeBlueprintFacade;
+    public MixinBlueprintController(TypedBlueprintFacade mixinBlueprintFacade) {
+        this.facade = mixinBlueprintFacade;
     }
 
     @GetMapping

@@ -20,14 +20,14 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/absolute-blueprints")
-public class AbsoluteBlueprintController {
+@RequestMapping("/api/v1/singleton-blueprints")
+public class SingletonBlueprintController {
 
     private final TypedBlueprintFacade facade;
     private final ObjectManager objectManager;
 
-    public AbsoluteBlueprintController(TypedBlueprintFacade absoluteBlueprintFacade, ObjectManager objectManager) {
-        this.facade = absoluteBlueprintFacade;
+    public SingletonBlueprintController(TypedBlueprintFacade singletonBlueprintFacade, ObjectManager objectManager) {
+        this.facade = singletonBlueprintFacade;
         this.objectManager = objectManager;
     }
 
@@ -71,7 +71,7 @@ public class AbsoluteBlueprintController {
 
     @GetMapping("/{id}/instance")
     public ObjectDto singletonInstance(@PathVariable String id) {
-        var instance = facade.absoluteInstance(id);
+        var instance = facade.singletonInstance(id);
         objectManager.persistNodeTree(instance.path());
         return ObjectDto.from(instance);
     }

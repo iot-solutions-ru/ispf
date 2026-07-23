@@ -374,7 +374,7 @@
     {
       "name": "itm-hub-v1",
       "description": "ITM monitoring hub (KPI aggregates, event journal anchor)",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "DEVICE",
       "variables": [
         {

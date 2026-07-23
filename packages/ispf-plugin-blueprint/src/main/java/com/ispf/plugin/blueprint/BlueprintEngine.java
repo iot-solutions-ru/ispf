@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Core engine for model lifecycle — create, apply, instantiate, template export.
+ * Core engine for blueprint lifecycle — create, apply, instantiate, template export.
  */
 public class BlueprintEngine {
 
@@ -41,8 +41,8 @@ public class BlueprintEngine {
         ensureCatalogContainers();
         BlueprintDefinition stored = registry.register(model);
         registerBlueprintObject(stored);
-        if (stored.type() == BlueprintType.ABSOLUTE) {
-            ensureAbsoluteInstance(stored);
+        if (stored.type() == BlueprintType.SINGLETON) {
+            ensureSingletonInstance(stored);
         }
         return stored;
     }
@@ -52,8 +52,8 @@ public class BlueprintEngine {
         ensureCatalogContainers();
         BlueprintDefinition stored = registry.update(model);
         registerBlueprintObject(stored);
-        if (stored.type() == BlueprintType.ABSOLUTE) {
-            syncAbsoluteInstance(stored);
+        if (stored.type() == BlueprintType.SINGLETON) {
+            syncSingletonInstance(stored);
         }
         return stored;
     }
@@ -67,7 +67,7 @@ public class BlueprintEngine {
     }
 
     /**
-     * Merges model variables, events, functions into an existing object (RELATIVE / manual apply).
+     * Merges blueprint variables, events, functions into an existing object (MIXIN / manual apply).
      * Binding rules are merged separately via {@code BlueprintBindingRulesMerger} in ispf-server.
      */
     public BlueprintApplyResult applyBlueprint(String blueprintId, String targetPath) {
@@ -100,7 +100,7 @@ public class BlueprintEngine {
 
     public void removeIntrinsicCatalogNodes() {
         for (String name : SystemIntrinsicBlueprints.NAMES) {
-            removeCatalogNodeIfPresent(BlueprintCatalogRoots.RELATIVE + "." + name);
+            removeCatalogNodeIfPresent(BlueprintCatalogRoots.MIXIN + "." + name);
         }
     }
 
@@ -111,7 +111,7 @@ public class BlueprintEngine {
     }
 
     /**
-     * Creates a new child object from a model (INSTANCE / ABSOLUTE semantics).
+     * Creates a new child object from a blueprint (INSTANCE / SINGLETON semantics).
      */
     public BlueprintApplyResult instantiateBlueprint(
             String blueprintId,
@@ -120,12 +120,12 @@ public class BlueprintEngine {
             Map<String, String> parameters
     ) {
         BlueprintDefinition model = registry.requireById(blueprintId);
-        if (model.type() == BlueprintType.RELATIVE) {
-            throw new BlueprintException("Relative Blueprints cannot be instantiated as child objects. Use apply instead.");
+        if (model.type() == BlueprintType.MIXIN) {
+            throw new BlueprintException("Mixin Blueprints cannot be instantiated as child objects. Use apply instead.");
         }
-        if (model.type() == BlueprintType.ABSOLUTE) {
+        if (model.type() == BlueprintType.SINGLETON) {
             throw new BlueprintException(
-                    "Absolute Blueprints use a fixed singleton instance. Open the instance path instead of instantiate."
+                    "Singleton Blueprints use a fixed singleton instance. Open the instance path instead of instantiate."
             );
         }
 
@@ -155,23 +155,17 @@ public class BlueprintEngine {
         return new BlueprintApplyResult(attachment, warnings);
     }
 
-    public PlatformObject ensureAbsoluteInstance(BlueprintDefinition model) {
-        if (model.type() != BlueprintType.ABSOLUTE) {
-            throw new BlueprintException("ensureAbsoluteInstance requires ABSOLUTE model");
+    public PlatformObject ensureSingletonInstance(BlueprintDefinition model) {
+        if (model.type() != BlueprintType.SINGLETON) {
+            throw new BlueprintException("ensureSingletonInstance requires SINGLETON blueprint");
         }
-        String instancePath = absoluteInstancePath(model);
-        return objectTree.findByPath(instancePath).orElseGet(() -> {
-            ensureInstancesContainer();
-            int lastDot = instancePath.lastIndexOf('.');
-            String parentPath = instancePath.substring(0, lastDot);
-            String name = instancePath.substring(lastDot + 1);
-            if (objectTree.findByPath(parentPath).isEmpty()) {
-                throw new BlueprintException("Absolute instance parent missing: " + parentPath);
-            }
+        String instancePath = singletonInstancePath(model);
+        PlatformObject instance = objectTree.findByPath(instancePath).orElseGet(() -> {
+            ensureParentForSingletonPath(instancePath);
             ObjectType objectType = model.targetObjectType() != null
                     ? model.targetObjectType()
                     : ObjectType.CUSTOM;
-            PlatformObject instance = new PlatformObject(
+            PlatformObject created = new PlatformObject(
                     UUID.randomUUID().toString(),
                     instancePath,
                     objectType,
@@ -179,38 +173,50 @@ public class BlueprintEngine {
                     model.description(),
                     model.id()
             );
-            objectTree.register(instance);
-            List<BlueprintMergeWarning> warnings = new ArrayList<>();
-            mergeBlueprintChain(model, instance, model.parameters(), warnings);
-            instance.addAppliedBlueprintId(model.id());
-            recordAttachment(model, instancePath);
-            return instance;
+            objectTree.register(created);
+            return created;
         });
-    }
-
-    private void syncAbsoluteInstance(BlueprintDefinition model) {
-        String instancePath = absoluteInstancePath(model);
-        if (objectTree.findByPath(instancePath).isEmpty()) {
-            ensureAbsoluteInstance(model);
-            return;
-        }
-        PlatformObject target = objectTree.require(instancePath);
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
-        mergeBlueprintChain(model, target, model.parameters(), warnings);
-        target.addAppliedBlueprintId(model.id());
+        mergeBlueprintChain(model, instance, model.parameters(), warnings);
+        instance.addAppliedBlueprintId(model.id());
         recordAttachment(model, instancePath);
+        return instance;
     }
 
-    public static String absoluteInstancePath(BlueprintDefinition model) {
-        String configured = model.parameters().get("absoluteInstancePath");
-        if (configured != null && !configured.isBlank()) {
-            return configured.trim();
-        }
-        return BlueprintCatalogRoots.INSTANCES + "." + model.name();
+    private void syncSingletonInstance(BlueprintDefinition model) {
+        ensureSingletonInstance(model);
     }
 
     /**
-     * Creates a model definition by snapshotting an existing object (variables/events/functions only).
+     * Live singleton path: by default the catalog node itself
+     * ({@code root.platform.singleton-blueprints.{name}}), which carries application logic.
+     * Override with {@code parameters.singletonInstancePath} when needed.
+     */
+    public static String singletonInstancePath(BlueprintDefinition model) {
+        String configured = model.parameters().get("singletonInstancePath");
+        if (configured != null && !configured.isBlank()) {
+            return configured.trim();
+        }
+        return model.catalogObjectPath();
+    }
+
+    private void ensureParentForSingletonPath(String instancePath) {
+        int lastDot = instancePath.lastIndexOf('.');
+        if (lastDot <= 0) {
+            throw new BlueprintException("Invalid singleton instance path: " + instancePath);
+        }
+        String parentPath = instancePath.substring(0, lastDot);
+        if (parentPath.equals(BlueprintCatalogRoots.INSTANCES)
+                || parentPath.startsWith(BlueprintCatalogRoots.INSTANCES + ".")) {
+            ensureInstancesContainer();
+        }
+        if (objectTree.findByPath(parentPath).isEmpty()) {
+            throw new BlueprintException("Singleton instance parent missing: " + parentPath);
+        }
+    }
+
+    /**
+     * Creates a blueprint definition by snapshotting an existing object (variables/events/functions only).
      */
     public BlueprintDefinition createFromObject(
             String sourcePath,
@@ -253,13 +259,13 @@ public class BlueprintEngine {
     }
 
     /**
-     * Applies Relative Blueprints with a non-blank applicability (CEL) expression that evaluates to true.
+     * Applies Mixin Blueprints with a non-blank applicability (CEL) expression that evaluates to true.
      */
-    public List<BlueprintApplyResult> applyRelativeBlueprints(String targetPath) {
+    public List<BlueprintApplyResult> applyMixinBlueprints(String targetPath) {
         PlatformObject target = objectTree.require(targetPath);
         List<BlueprintApplyResult> applied = new ArrayList<>();
         for (BlueprintDefinition model : registry.all()) {
-            if (model.type() != BlueprintType.RELATIVE) {
+            if (model.type() != BlueprintType.MIXIN) {
                 continue;
             }
             if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
@@ -329,9 +335,10 @@ public class BlueprintEngine {
     }
 
     public void ensureCatalogContainers() {
-        ensureCatalogContainer(BlueprintCatalogRoots.RELATIVE, "Relative Blueprints", "Mixin blueprints applied to existing objects");
+        ensureCatalogContainer(BlueprintCatalogRoots.MIXIN, "Mixin Blueprints", "Mixin blueprints applied to existing objects");
         ensureCatalogContainer(BlueprintCatalogRoots.INSTANCE, "Instance Types", "Blueprints for new object instances");
-        ensureCatalogContainer(BlueprintCatalogRoots.ABSOLUTE, "Absolute Blueprints", "Singleton object blueprints");
+        ensureCatalogContainer(BlueprintCatalogRoots.SINGLETON, "Singleton Blueprints",
+                "Singleton live hubs with application logic");
         ensureInstancesContainer();
     }
 
@@ -342,7 +349,7 @@ public class BlueprintEngine {
                     BlueprintCatalogRoots.INSTANCES,
                     ObjectType.CUSTOM,
                     "Instances",
-                    "Singleton absolute model instances",
+                    "User-created object instances (devices, meters, …)",
                     null
             ));
         }
@@ -478,21 +485,21 @@ public class BlueprintEngine {
     }
 
     private void validateBlueprintType(BlueprintDefinition model) {
-        if (model.type() == BlueprintType.RELATIVE && model.targetObjectType() == null) {
-            throw new BlueprintException("Relative Blueprints require targetObjectType");
+        if (model.type() == BlueprintType.MIXIN && model.targetObjectType() == null) {
+            throw new BlueprintException("Mixin Blueprints require targetObjectType");
         }
         if (model.type() == BlueprintType.INSTANCE && model.targetObjectType() == null) {
-            throw new BlueprintException("INSTANCE models require targetObjectType");
+            throw new BlueprintException("INSTANCE blueprints require targetObjectType");
         }
     }
 
     private void assertSuitable(BlueprintDefinition model, PlatformObject target) {
         if (!isObjectTypeCompatible(model, target)) {
-            throw new BlueprintException("Model " + model.name() + " is not suitable for object " + target.path());
+            throw new BlueprintException("Blueprint " + model.name() + " is not suitable for object " + target.path());
         }
         if (!model.suitabilityExpression().isBlank() && !evaluateSuitabilityExpression(model, target)) {
             throw new BlueprintException(
-                    "Model " + model.name() + " applicability expression failed for object " + target.path()
+                    "Blueprint " + model.name() + " applicability expression failed for object " + target.path()
             );
         }
     }

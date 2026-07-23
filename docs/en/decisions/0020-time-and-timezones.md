@@ -39,7 +39,7 @@ Industry practice (SCADA historians, observability, financial systems): **store 
 
 ### 4. Device timezone (edge / normalization)
 
-- Optional `timeZone` on `DEVICE` (RELATIVE model mixin or device-driver blueprint extension).
+- Optional `timeZone` on `DEVICE` (MIXIN model mixin or device-driver blueprint extension).
 - **Inheritance:** device → parent folder/site → platform default `UTC`.
 - Drivers that receive **local** device timestamps must normalize to UTC using the resolved device timezone.
 - Devices that send UTC epoch or ISO with offset do not require device TZ.

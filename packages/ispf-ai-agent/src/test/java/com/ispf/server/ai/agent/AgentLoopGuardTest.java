@@ -70,7 +70,7 @@ class AgentLoopGuardTest {
     @Test
     void hintsDiscoveryAfterAutomationSchema() {
         String hint = AgentLoopGuard.continuationHint("get_automation_schema", List.of(step("get_automation_schema")), 96);
-        assertTrue(hint.contains("list_relative_blueprints"));
+        assertTrue(hint.contains("list_mixin_blueprints"));
     }
 
     @Test

@@ -12,32 +12,32 @@ Module `ispf-plugin-blueprint` — **blueprint** system (object structure templa
 
 | Type | Catalog | Behavior |
 |-----|---------|-----------|
-| `RELATIVE` | `root.platform.relative-blueprints` | Optional mixins — variables/events/functions **merge into** existing object |
+| `MIXIN` | `root.platform.mixin-blueprints` | Optional mixins — variables/events/functions **merge into** existing object |
 | `INSTANCE` | `root.platform.instance-types` | **Object type** template — create instances via instantiate |
-| `ABSOLUTE` | `root.platform.absolute-blueprints` | Singleton blueprint — one live object in `root.platform.instances.*` |
+| `SINGLETON` | `root.platform.singleton-blueprints` | Unique live node under the catalog (`root.platform.singleton-blueprints.*`) — blueprint **and** application logic on the same object |
 
-**Intrinsic schemas** (1:1 with `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) live in the registry for bootstrap but **do not appear** in the relative-blueprints catalog and **are not used** in `appliedBlueprintIds`. Structure is embedded in the instance via `*ObjectService.ensureStructure()`.
+**Intrinsic schemas** (1:1 with `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) live in the registry for bootstrap but **do not appear** in the mixin-blueprints catalog and **are not used** in `appliedBlueprintIds`. Structure is embedded in the instance via `*ObjectService.ensureStructure()`.
 
 See [0011-model-type-semantics](decisions/0011-model-type-semantics.md).
 
 ### Object linkage
 
-- `templateId` — primary model (INSTANCE/ABSOLUTE)
+- `templateId` — primary model (INSTANCE/SINGLETON)
 - `appliedBlueprintIds` — JSON array of all applied model ids (persisted)
 - On merge name collision: **last wins + warning** (not error)
 
-### Automatic RELATIVE apply
+### Automatic MIXIN apply
 
-On `POST /objects` with `autoApplyRelativeBlueprints=true` (default) `BlueprintEngine.applyRelativeModels()` runs.
+On `POST /objects` with `autoApplyMixinBlueprints=true` (default) `BlueprintEngine.applyMixinBlueprints()` runs.
 
 **Auto-apply conditions** (all required):
 
-1. `BlueprintType.RELATIVE`, not system
+1. `BlueprintType.MIXIN`, not system
 2. `targetObjectType` matches object type
 3. **`suitabilityExpression` (applicability condition, CEL) is not empty** and evaluates to `true`
 4. Model not already in `appliedBlueprintIds`
 
-**Empty CEL** → model **never** auto-applies. For unconditional mixin use explicit apply: `templateId` on create, `POST /api/v1/relative-blueprints/{id}/apply`, companion models in bundle.
+**Empty CEL** → model **never** auto-applies. For unconditional mixin use explicit apply: `templateId` on create, `POST /api/v1/mixin-blueprints/{id}/apply`, companion models in bundle.
 
 **Explicit apply** (template/API): only `targetObjectType`; CEL optional — if set, must be `true`.
 
@@ -59,7 +59,7 @@ Expression evaluated via `ExpressionEngine` with `self` = target object variable
 
 | Tier | Source | When in registry |
 |---------|----------|------------------|
-| **System-intrinsic** | `ModelBootstrap` | Always; not in relative-blueprints catalog |
+| **System-intrinsic** | `ModelBootstrap` | Always; not in mixin-blueprints catalog |
 | **Platform built-in** | `ModelBootstrap` | Always (`dashboard-v1`, `alert-rule-v1`, …) |
 | **Fixtures** | `FixtureModelBootstrap` | Only `ispf.bootstrap.fixtures-enabled=true` |
 | **Solution** | `bundle.json` → `models[]` | On bundle deploy |
@@ -74,9 +74,9 @@ See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-an
 
 | Method | Path | Description |
 |--------|------|----------|
-| GET/POST/… | `/api/v1/relative-blueprints` | RELATIVE facades |
+| GET/POST/… | `/api/v1/mixin-blueprints` | MIXIN facades |
 | GET/POST/… | `/api/v1/instance-types` | INSTANCE facades (+ `?platformType=` for create dialog) |
-| GET/POST/… | `/api/v1/absolute-blueprints` | ABSOLUTE facades |
+| GET/POST/… | `/api/v1/singleton-blueprints` | SINGLETON facades |
 | GET/POST/… | `/api/v1/blueprints` | Legacy unified API (compatibility) |
 
 ## Model composition (`BlueprintDefinition`)
@@ -122,12 +122,12 @@ Access: **admin**. See [api](api.md).
 
 | Model | Type | Purpose |
 |--------|-----|------------|
-| `dashboard-v1` | intrinsic RELATIVE | Layout HMI |
-| `workflow-v1` | intrinsic RELATIVE | BPMN workflow |
-| `report-v1` | intrinsic RELATIVE | SQL report |
-| `alert-rule-v1` | intrinsic RELATIVE | CEL alert rule |
-| `correlator-v1` | intrinsic RELATIVE | Event correlator |
-| `data-source-v1`, `schedule-v1`, … | intrinsic RELATIVE | System object type schemas |
+| `dashboard-v1` | intrinsic MIXIN | Layout HMI |
+| `workflow-v1` | intrinsic MIXIN | BPMN workflow |
+| `report-v1` | intrinsic MIXIN | SQL report |
+| `alert-rule-v1` | intrinsic MIXIN | CEL alert rule |
+| `correlator-v1` | intrinsic MIXIN | Event correlator |
+| `data-source-v1`, `schedule-v1`, … | intrinsic MIXIN | System object type schemas |
 
 ### Fixtures (`ispf.bootstrap.fixtures-enabled=true`)
 
@@ -152,7 +152,7 @@ MQTT ingress gateway — one broker, routes `lastIngress` to child sensors via `
 
 #### device-driver-v1
 
-RELATIVE mixin with `driver` group variables — for demo/lab and explicit apply. **Not** used for auto-apply on DEVICE create.
+MIXIN mixin with `driver` group variables — for demo/lab and explicit apply. **Not** used for auto-apply on DEVICE create.
 
 On production path driver schema is provisioned via `provisionDriver()` without relative mixin (see [drivers](drivers.md)).
 
@@ -179,7 +179,7 @@ Used by dashboard `root.platform.dashboards.snmp-host-monitoring`.
 
 #### base-sensor-v1 / vendor-sensor-ext-v1
 
-INSTANCE + RELATIVE extension family for vendor model inheritance (see `ModelUpgradeApiTest`).
+INSTANCE + MIXIN extension family for vendor model inheritance (see `ModelUpgradeApiTest`).
 
 ## Example: create instance
 

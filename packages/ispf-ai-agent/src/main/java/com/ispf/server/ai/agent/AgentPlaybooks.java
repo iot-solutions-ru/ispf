@@ -137,13 +137,13 @@ public final class AgentPlaybooks {
                 | gate valve (ЗД) | create_virtual_device (OOTB) | temperature, pressure, flowRate |
                 | pump (НМ, НПВ) | create_virtual_device (OOTB) | sineWave (vibration proxy), sawtoothWave |
                 | flow meter (СИКН) | create_virtual_device (OOTB) | meterLiters, flowRate |
-                | tank / reservoir | relative blueprint tank-farm-tank-v1 | fillLevelMm, rateMmPerHour, valveOpen |
+                | tank / reservoir | mixin blueprint tank-farm-tank-v1 | fillLevelMm, rateMmPerHour, valveOpen |
                 
                 Execution checklist (domainAdapter=industrial_oil_gas):
                 0. get_automation_schema topic=objectTypes + search_platform_recipes query="pump station" + list_objects parent=root.platform.devices
                 0b. objectTypesCoverage: DEVICE, CUSTOM, ALERT, MIMIC, DASHBOARD, REPORT/CORRELATOR/WORKFLOW if TZ requires
                 1. create_object CUSTOM folder — name from specBrief (not hardcoded pump-station)
-                2. For each entity in specBrief (full TZ): create_virtual_device (or apply_relative_blueprint for tanks) → list_variables (mandatory)
+                2. For each entity in specBrief (full TZ): create_virtual_device (or apply_mixin_blueprint for tanks) → list_variables (mandatory)
                 3. configure_variable_history on chart vars (from list_variables only)
                 4. create_object MIMIC → save_mimic_diagram bindings from list_variables → get_mimic_diagram verify elementCount>0
                 5. create_object DASHBOARD → set_dashboard_layout template=scada-facility-overview (replace mimicPath in template)
@@ -161,7 +161,7 @@ public final class AgentPlaybooks {
                 
                 ### Oil & gas abbreviations (adapter industrial_oil_gas only)
                 ЗД — gate valve (OOTB virtual). НМ/НПВ — pump motor (OOTB sineWave). СИКН — metering (OOTB meterLiters).
-                РВС/резервуар — relative blueprint tank-farm-tank-v1. LSTM/ML forecast — out_of_scope in gapMatrix (user gate), not in platform execution.
+                РВС/резервуар — mixin blueprint tank-farm-tank-v1. LSTM/ML forecast — out_of_scope in gapMatrix (user gate), not in platform execution.
                 """;
     }
 
@@ -221,11 +221,11 @@ public final class AgentPlaybooks {
                 
                 Before approval: walk EVERY platform ObjectType relevant to the TZ. Do not skip layers silently.
                 Discovery: get_automation_schema topic=objectTypes + list_objects on each catalog root + \
-                list_instance_types + list_relative_blueprints + list_absolute_blueprints + list_virtual_profiles.
+                list_instance_types + list_mixin_blueprints + list_singleton_blueprints + list_virtual_profiles.
                 
                 | ObjectType | Catalog / parent | Create autonomously when TZ needs it |
                 |------------|------------------|--------------------------------------|
-                | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_relative_blueprint + configure_driver |
+                | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_mixin_blueprint + configure_driver |
                 | CUSTOM | root.platform.devices.* or instances | create_object type=CUSTOM — hub, aggregation, read(...) bindings |
                 | DASHBOARD | root.platform.dashboards | create_object + set_dashboard_layout template= |
                 | MIMIC | root.platform.mimics | create_object + save_mimic_diagram |
@@ -238,11 +238,11 @@ public final class AgentPlaybooks {
                 | APPLICATION | register_application / import_package | bundle deploy when TZ is app-level |
                 | FUNCTION | on DEVICE/CUSTOM/APPLICATION | create_function / deploy_app_function |
                 | MODEL strategy | relative / instance / absolute catalogs | pick catalog entry OR instantiate_instance_type OR \
-                apply_relative_blueprint OR ensure_absolute_instance — do NOT ask user to create types manually in UI |
+                apply_mixin_blueprint OR ensure_singleton_instance — do NOT ask user to create types manually in UI |
                 
                 Plan must include objectTypesCoverage[]: [{type, action, reason, modelName?}] for each type used or N/A with reason.
                 Execution: create missing types yourself via tools — never defer «создайте вручную в UI» if a tool exists.
-                If catalog has no fit: compose CUSTOM + create_variable + create_binding_rule, or stack Relative Blueprints; \
+                If catalog has no fit: compose CUSTOM + create_variable + create_binding_rule, or stack Mixin Blueprints; \
                 only then ask user (with options) which catalog model is closest.
                 
                 ## Questions — maximize dialogue (complex TZ only)
@@ -255,7 +255,7 @@ public final class AgentPlaybooks {
                 - Q_ENTITIES: equipment list, naming prefix, folder structure
                 - Q_DATA_SOURCE: virtual lab vs SNMP/Modbus vs MQTT vs real PLC
                 - Q_PROFILE: virtual device profile per entity kind (lab/meter/unified/tank-farm-tank)
-                - Q_MODEL: INSTANCE vs RELATIVE vs ABSOLUTE for new object types
+                - Q_MODEL: INSTANCE vs MIXIN vs SINGLETON for new object types
                 - Q_HISTORIAN: which variables need configure_variable_history for charts
                 - Q_ALERTS: thresholds, watch variables, event names, severity
                 - Q_CORRELATOR: patterns, chains, workflow triggers
@@ -272,22 +272,22 @@ public final class AgentPlaybooks {
                 """;
     }
 
-    public static String relativeModelsGuide() {
+    public static String mixinBlueprintsGuide() {
         return """
-                ## Relative Blueprints — mixins для variables / events / functions
+                ## Mixin Blueprints — mixins для variables / events / functions
                 
-                Каталог: root.platform.relative-blueprints. Тип BlueprintType.RELATIVE.
+                Каталог: root.platform.mixin-blueprints. Тип BlueprintType.MIXIN.
                 
                 | Инструмент | Назначение |
                 |------------|------------|
-                | list_relative_blueprints | RELATIVE mixin-модели (virtual-lab-v1, …) |
+                | list_mixin_blueprints | MIXIN-модели (virtual-lab-v1, …) |
                 | list_instance_types | INSTANCE шаблоны (snmp-agent-v1, … — см. docs/en/blueprints.md) |
                 | get_object_blueprint | Схема: variables[], events[], functions[] |
-                | apply_relative_blueprint | Прикрепить mixin к существующему objectPath |
+                | apply_mixin_blueprint | Прикрепить mixin к существующему objectPath |
                 
                 Workflow:
                 1. create_object DEVICE (можно без templateId — только driver schema от provisionDriver)
-                2. apply_relative_blueprint modelName=virtual-lab-v1 objectPath=...
+                2. apply_mixin_blueprint modelName=virtual-lab-v1 objectPath=...
                    — добавляет sineWave, driverConfigJson, events, functions на тот же path
                 3. configure_driver + driver_control start
                 4. list_variables — проверка
@@ -458,7 +458,7 @@ public final class AgentPlaybooks {
                 
                 Дополнительно перед create:
                 - search_objects / get_object — если пользователь назвал объект
-                - list_relative_blueprints + list_virtual_profiles — modelName/profile из ответа
+                - list_mixin_blueprints + list_virtual_profiles — modelName/profile из ответа
                 - list_variables path=<существующий DEVICE> — имена переменных для виджетов
                 
                 **Переиспользование:** если list_objects показал папку/устройство — работай с этим path.
@@ -472,10 +472,10 @@ public final class AgentPlaybooks {
     public static String projectBlueprintGuide() {
         return "## Project blueprint (8 layers, end-to-end)\n\n"
                 + "Используй как каркас для новых решений. Не перескакивай через слои.\n\n"
-                + "0. **Ground truth**: list_objects / search_objects / list_relative_blueprints — зафиксируй реальные paths "
+                + "0. **Ground truth**: list_objects / search_objects / list_mixin_blueprints — зафиксируй реальные paths "
                 + "и modelName из ответов tools (см. groundTruthGuide). Playbook-пути — только примеры.\n"
                 + "1. **Intent + scope**: зафиксируй цель, бизнес-события, naming/path policy на основе существующего дерева.\n"
-                + "2. **Model strategy**: выбери INSTANCE vs RELATIVE vs ABSOLUTE "
+                + "2. **Model strategy**: выбери INSTANCE vs MIXIN vs SINGLETON "
                 + "(см. get_automation_schema topic=instanceTypes).\n"
                 + "3. **Source layer**: устройства/драйверы/телеметрия (DEVICE, configure_driver, list_variables).\n"
                 + "4. **Aggregation layer**: CUSTOM hub + create_variable + create_binding_rule (read/CEL).\n"
@@ -492,23 +492,23 @@ public final class AgentPlaybooks {
 
     public static String instanceTypesGuide() {
         return """
-                ## INSTANCE vs RELATIVE vs ABSOLUTE (decision tree)
+                ## INSTANCE vs MIXIN vs SINGLETON (decision tree)
 
                 1) Нужен готовый шаблон "создать экземпляр из каталога"?
                    -> **INSTANCE**
                    tools: list_instance_types -> instantiate_instance_type
 
                 2) Нужно обогатить уже существующий objectPath (добавить variables/events/functions)?
-                   -> **RELATIVE**
-                   tools: list_relative_blueprints -> apply_relative_blueprint
+                   -> **MIXIN**
+                   tools: list_mixin_blueprints -> apply_mixin_blueprint
 
                 3) Нужна строгая каноническая структура по абсолютной модели (без mixin-слоёв)?
-                   -> **ABSOLUTE**
-                   tools: list_absolute_blueprints -> ensure_absolute_instance
+                   -> **SINGLETON**
+                   tools: list_singleton_blueprints -> ensure_singleton_instance
 
                 Quick flow:
-                - Сначала покажи каталоги: list_instance_types, list_relative_blueprints, list_absolute_blueprints.
-                - Затем выбери один путь и НЕ смешивай INSTANCE/ABSOLUTE вслепую на одном объекте.
+                - Сначала покажи каталоги: list_instance_types, list_mixin_blueprints, list_singleton_blueprints.
+                - Затем выбери один путь и НЕ смешивай INSTANCE/SINGLETON вслепую на одном объекте.
                 - После инстанцирования/применения модели: configure_driver + list_variables (verification).
                 """;
     }
@@ -517,9 +517,9 @@ public final class AgentPlaybooks {
         return "## ObjectType creation matrix\n\n"
                 + "| ObjectType | Parent path | Typical template/model | Primary tools |\n"
                 + "|------------|-------------|------------------------|---------------|\n"
-                + "| DEVICE | root.platform.devices | snmp-agent-v1 / virtual-lab-v1 / absolute model | "
+                + "| DEVICE | root.platform.devices | snmp-agent-v1 / virtual-lab-v1 / singleton blueprint | "
                 + "create_object, create_virtual_device, configure_driver |\n"
-                + "| CUSTOM | root.platform.devices.* or root.platform.instances | (custom hub / instance type) | "
+                + "| CUSTOM | root.platform.devices.* or root.platform.singleton-blueprints.* | (hub / app logic) | "
                 + "create_object, create_variable, create_binding_rule |\n"
                 + "| DASHBOARD | root.platform.dashboards | dashboard-v1 | "
                 + "create_object, set_dashboard_layout, add_dashboard_widget |\n"
@@ -665,7 +665,7 @@ public final class AgentPlaybooks {
                 
                 **Discovery:** search_context, list_drivers, get_driver_help, list_examples, get_example_bundle, list_object_blueprints
                 
-                **Models (RELATIVE mixins):** list_relative_blueprints, get_object_blueprint, apply_relative_blueprint
+                **Models (MIXINs):** list_mixin_blueprints, get_object_blueprint, apply_mixin_blueprint
                 — enrich DEVICE/CUSTOM with variables, events, functions (virtual-lab-v1, virtual-unified-v1, …)
                 
                 **Object tree:** list_objects, get_object, create_object, delete_object, search_objects, search_by_haystack_tags
@@ -797,7 +797,7 @@ public final class AgentPlaybooks {
                 - Prerequisite: configure_variable_history on the **source** variable
                 - Then reactive threshold (e.g. cluster-error): `self.avg1m["value"] > 0`
                   (or average of several avg vars). Never put avg() into a reactive CEL rule.
-                - NEVER apply_relative_blueprint rolling-avg-v1 for this; NEVER invent derivedValue + cast hacks.
+                - NEVER apply_mixin_blueprint rolling-avg-v1 for this; NEVER invent derivedValue + cast hacks.
                 
                 ### Event side-effects
                 - create_binding_rule targetKind=event eventName=... expression=...

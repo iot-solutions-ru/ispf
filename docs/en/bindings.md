@@ -149,7 +149,7 @@ Example dashboard rule (planned):
 
 Activator **`onContextChange`** — recalculate when `@dashboardContext` changes. Full spec: [platform-logic](platform-logic.md).
 
-**Cross-object:** activator with remote `ref` + `read(remote/ref)` in expression; **target** with remote `ref` writes the computed result to another object (orchestrator / absolute blueprint pattern). Side-effect-only rules use `target.kind=action` with `write(ref, …)` inside `expression`. On remote variable change `BindingPropagationListener` recalculates rules on consumer objects.
+**Cross-object:** activator with remote `ref` + `read(remote/ref)` in expression; **target** with remote `ref` writes the computed result to another object (orchestrator / singleton blueprint pattern). Side-effect-only rules use `target.kind=action` with `write(ref, …)` inside `expression`. On remote variable change `BindingPropagationListener` recalculates rules on consumer objects.
 
 **Default activators** (if not set): remote refs in expression → automatic remote activators; otherwise local `self:*`.
 
@@ -195,7 +195,7 @@ In models — `ModelBindingRule` (full schema or `ModelBindingRule.of(id, target
 
 Web Console → Object inspector → **Computations** tab (reactive + historian rules). Expression editor includes **PlatformRef picker** and function catalog.
 
-For **variable** or **event** targets: choose **Effect type**, then either a local name on the current object or **target object path** + PlatformRef picker (`target.ref`) to write on another object (orchestrator / absolute blueprint pattern).
+For **variable** or **event** targets: choose **Effect type**, then either a local name on the current object or **target object path** + PlatformRef picker (`target.ref`) to write on another object (orchestrator / singleton blueprint pattern).
 
 ---
 

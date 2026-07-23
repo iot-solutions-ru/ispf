@@ -62,7 +62,7 @@ final class AgentVirtualDeviceTools {
             public String description() {
                 return "Describe out-of-the-box virtual driver (no profiles). "
                         + "Prefer create_virtual_device for simulators. "
-                        + "Domain plants: list_relative_blueprints + apply_relative_blueprint.";
+                        + "Domain plants: list_mixin_blueprints + apply_mixin_blueprint.";
             }
 
             @Override
@@ -73,7 +73,7 @@ final class AgentVirtualDeviceTools {
                         "driverId", "virtual",
                         "profiles", List.of(),
                         "defaults", VirtualDeviceDefaults.catalogRow(registered),
-                        "hint", "No profiles вЂ” one OOTB virtual device. Domain enrichment via relative blueprints."
+                        "hint", "No profiles вЂ” one OOTB virtual device. Domain enrichment via mixin blueprints."
                 );
             }
         };
@@ -101,7 +101,7 @@ final class AgentVirtualDeviceTools {
                         + VirtualDeviceDefaults.TEMPLATE_ID + ", start driver. "
                         + "Args: parentPath, name, displayName, pollIntervalMs?, autoStart? (default true). "
                         + "Ignore legacy profile arg if present. Call list_variables before finish. "
-                        + "Domain plants: apply_relative_blueprint instead of a driver profile.";
+                        + "Domain plants: apply_mixin_blueprint instead of a driver profile.";
             }
 
             @Override

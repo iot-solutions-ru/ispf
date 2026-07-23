@@ -77,7 +77,7 @@
   "analyticsTag.title": "Analytics-Tag",
   "analyticsTag.windowBucket": "Historian-Bucket",
   "analyticsTemplate.applyButton": "Vorlage anwenden",
-  "analyticsTemplate.applyHint": "Wendet den verknüpften RELATIVE-Blueprint an und bindet Quellvariablen auf dem Zielgerät.",
+  "analyticsTemplate.applyHint": "Wendet den verknüpften MIXIN-Blueprint an und bindet Quellvariablen auf dem Zielgerät.",
   "analyticsTemplate.applyResult": "Angewandt auf {{device}} – aktualisieren {{status}}: {{message}}",
   "analyticsTemplate.applyTitle": "Auf Gerät anwenden",
   "analyticsTemplate.availabilityVariable": "Verfügbarkeitsvariable",

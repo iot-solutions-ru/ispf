@@ -1,13 +1,13 @@
 package com.ispf.plugin.blueprint;
 
 /**
- * Tree paths for the three model catalog kinds (blueprint views).
+ * Tree paths for the three blueprint catalog kinds.
  */
 public final class BlueprintCatalogRoots {
 
-    public static final String RELATIVE = "root.platform.relative-blueprints";
+    public static final String MIXIN = "root.platform.mixin-blueprints";
     public static final String INSTANCE = "root.platform.instance-types";
-    public static final String ABSOLUTE = "root.platform.absolute-blueprints";
+    public static final String SINGLETON = "root.platform.singleton-blueprints";
     /** Legacy catalog path — removed at startup migration. */
     public static final String LEGACY = "root.platform.blueprints";
     public static final String INSTANCES = "root.platform.instances";
@@ -17,17 +17,17 @@ public final class BlueprintCatalogRoots {
 
     public static String catalogRoot(BlueprintType type) {
         return switch (type) {
-            case RELATIVE -> RELATIVE;
+            case MIXIN -> MIXIN;
             case INSTANCE -> INSTANCE;
-            case ABSOLUTE -> ABSOLUTE;
+            case SINGLETON -> SINGLETON;
         };
     }
 
     public static String catalogTitle(BlueprintType type) {
         return switch (type) {
-            case RELATIVE -> "Relative Blueprints";
+            case MIXIN -> "Mixin Blueprints";
             case INSTANCE -> "Instance Types";
-            case ABSOLUTE -> "Absolute Blueprints";
+            case SINGLETON -> "Singleton Blueprints";
         };
     }
 
@@ -35,9 +35,9 @@ public final class BlueprintCatalogRoots {
         if (path == null || path.isBlank()) {
             return false;
         }
-        return path.equals(RELATIVE) || path.startsWith(RELATIVE + ".")
+        return path.equals(MIXIN) || path.startsWith(MIXIN + ".")
                 || path.equals(INSTANCE) || path.startsWith(INSTANCE + ".")
-                || path.equals(ABSOLUTE) || path.startsWith(ABSOLUTE + ".");
+                || path.equals(SINGLETON) || path.startsWith(SINGLETON + ".");
     }
 
     public static boolean isLegacyPath(String path) {
@@ -45,8 +45,14 @@ public final class BlueprintCatalogRoots {
                 && (path.equals(LEGACY) || path.startsWith(LEGACY + "."));
     }
 
+    /**
+     * Definition-only catalog children (MIXIN / INSTANCE). SINGLETON children are live
+     * application objects under {@link #SINGLETON}, not definition stubs.
+     */
     public static boolean isDefinitionPath(String path) {
-        return isCatalogPath(path) && !path.equals(RELATIVE) && !path.equals(INSTANCE)
-                && !path.equals(ABSOLUTE);
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        return path.startsWith(MIXIN + ".") || path.startsWith(INSTANCE + ".");
     }
 }

@@ -21,7 +21,7 @@ Operator app: `appId=sheet-demo`, дашборды:
 ## 1. Объект (куда пишется таблица)
 
 **Путь:** `root.platform.devices.sheet-demo-01`  
-**Модель:** `sheet-storage-v1`
+**Blueprint:** `sheet-storage-v1`
 
 Переменная для persist:
 
@@ -29,7 +29,7 @@ Operator app: `appId=sheet-demo`, дашборды:
 |-----|-----|------------|
 | `sheetValues` | RECORD_LIST | `{ cell: "A1", value: "10" }`, `{ cell: "B2", value: "=A1*2" }`, … |
 
-Схема совпадает с lab-моделью (`LabModelBootstrap`) — см. `sheetCellRow` + `rows`.
+Схема совпадает с lab blueprint (`LabModelBootstrap`) — см. `sheetCellRow` + `rows`.
 
 ## 2. Виджет (правильные поля)
 

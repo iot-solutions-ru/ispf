@@ -37,8 +37,8 @@ public class PlatformBootstrap {
         register(tree, "root.platform.dashboards", ObjectType.DASHBOARDS, null);
         register(tree, "root.platform.mimics", ObjectType.MIMICS, null);
 
-        registerCatalogFolder(tree, "root.platform.relative-blueprints");
-        registerCatalogFolder(tree, "root.platform.absolute-blueprints");
+        registerCatalogFolder(tree, "root.platform.mixin-blueprints");
+        registerCatalogFolder(tree, "root.platform.singleton-blueprints");
         registerCatalogFolder(tree, "root.platform.instance-types");
         register(tree, "root.platform.reports", ObjectType.REPORTS, null);
         register(tree, "root.platform.correlators", ObjectType.CORRELATORS, null);

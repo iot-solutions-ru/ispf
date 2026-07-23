@@ -32,7 +32,7 @@ public class BlueprintPluginConfig {
     }
 
     @Bean
-    TypedBlueprintFacade relativeBlueprintFacade(
+    TypedBlueprintFacade mixinBlueprintFacade(
             BlueprintRegistry blueprintRegistry,
             BlueprintEngine blueprintEngine,
             BlueprintPersistenceService blueprintPersistence,
@@ -40,7 +40,7 @@ public class BlueprintPluginConfig {
             ObjectManager objectManager
     ) {
         return new TypedBlueprintFacade(
-                BlueprintType.RELATIVE,
+                BlueprintType.MIXIN,
                 blueprintRegistry,
                 blueprintEngine,
                 blueprintPersistence,
@@ -68,7 +68,7 @@ public class BlueprintPluginConfig {
     }
 
     @Bean
-    TypedBlueprintFacade absoluteBlueprintFacade(
+    TypedBlueprintFacade singletonBlueprintFacade(
             BlueprintRegistry blueprintRegistry,
             BlueprintEngine blueprintEngine,
             BlueprintPersistenceService blueprintPersistence,
@@ -76,7 +76,7 @@ public class BlueprintPluginConfig {
             ObjectManager objectManager
     ) {
         return new TypedBlueprintFacade(
-                BlueprintType.ABSOLUTE,
+                BlueprintType.SINGLETON,
                 blueprintRegistry,
                 blueprintEngine,
                 blueprintPersistence,
