@@ -182,12 +182,13 @@ Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run b
 | Цель | Команда |
 |------|---------|
 | Все driver packs | `./gradlew syncAllDriverPacks` или `-Dispf.driver.packs=all` |
+| PR-fast driver packs | `./gradlew testDevDriverPacks syncDevDriverPacks` (CI job `driver-packs`, отдельно от platform `backend`) |
 | PR-fast backend | `./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev` |
 | Nightly backend | `./tools/ci/nightly.sh` или `./gradlew testNightlyBackend …` |
 | Полные тесты сервера | `./gradlew :packages:ispf-server:test` (без `skipLoad`) |
 | Всё | `./gradlew build` (медленно — не каждый день) |
 
-**Уровни тестов (issue #65):** PR-fast пропускает `@Tag("load")` и `@Tag("federation")`; nightly гоняет их (`tools/ci/nightly.sh`, [ci-nightly.yml](../../.github/workflows/ci-nightly.yml)). Подпроекты локально параллельны; сериализация: `-Dispf.test.serializeSubprojects=true`. CI может кэшировать `build/driver-packs` (`ISPF_DRIVER_PACKS_PREBUILT=true`).
+**Уровни тестов (issue #65):** PR-fast пропускает `@Tag("load")` и `@Tag("federation")`; nightly гоняет их (`tools/ci/nightly.sh`, [ci-nightly.yml](../../.github/workflows/ci-nightly.yml)). Подпроекты локально параллельны; сериализация: `-Dispf.test.serializeSubprojects=true`. CI разделяет **driver packs** (`testDevDriverPacks` / job `driver-packs`) и **platform backend** (`testPrFast` / job `backend`); packs могут кэшироваться (`ISPF_DRIVER_PACKS_PREBUILT=true`). Protocol loopback — в [driver-interop.yml](../../.github/workflows/driver-interop.yml).
 
 Опционально: [gradle.properties.example](../../gradle.properties.example).
 
