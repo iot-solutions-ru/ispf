@@ -168,16 +168,9 @@ public class JmsDeviceDriver implements DeviceDriver {
         try (QueueBrowser browser = session.createBrowser(queue)) {
             Enumeration<?> messages = browser.getEnumeration();
             int depth = 0;
-            while (messages.hasMoreElements()) {
-                depth++;
-                if (depth >= maxDepth) {
-                    break;
-                }
+            while (depth < maxDepth && messages.hasMoreElements()) {
                 messages.nextElement();
-            }
-            while (messages.hasMoreElements()) {
                 depth++;
-                messages.nextElement();
             }
             return DataRecord.single(MESSAGE_SCHEMA, Map.of("value", String.valueOf(depth), "depth", depth));
         }

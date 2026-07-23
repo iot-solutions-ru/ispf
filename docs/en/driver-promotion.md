@@ -28,6 +28,19 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
 
+## Status (July 2026, driver batch B1 promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------------|
+| `imap` | BETA | **PRODUCTION** | `ImapDeviceDriverTest` (GreenMail IMAP); read-only |
+| `pop3` | BETA | **PRODUCTION** | `Pop3DeviceDriverTest` (GreenMail POP3); read-only |
+| `soap` | BETA | **PRODUCTION** | `SoapDeviceDriverTest` (embedded HttpServer); mapping = full envelope |
+| `web-transaction` | BETA | **PRODUCTION** | `WebTransactionDeviceDriverTest` (2-step vs embedded HttpServer); no session/assertions between steps |
+| `http-server` | BETA | **PRODUCTION** | `HttpServerDeviceDriverTest`; legacy `write` capability removed (was advertised, never implemented) |
+| `jdbc` | BETA | **PRODUCTION** | `JdbcDeviceDriverTest` (H2 in-memory); mapping = full SELECT per point |
+| `graph-db` | BETA | **PRODUCTION** | `GraphDbDeviceDriverTest` (Gremlin-HTTP loopback); Bolt branch needs live Neo4j |
+| `jms` | BETA | **PRODUCTION** | `JmsDeviceDriverTest` (embedded ActiveMQ `vm://` broker); `browseDepth` over-count bug fixed |
+
 ## Status (July 2026, driver batch A promotion)
 
 | driverId | Was | Now | Note |
