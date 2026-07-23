@@ -23,7 +23,7 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **47** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **9** at **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **55** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **6** at **BETA**. Top-20 industrial: **17** **PRODUCTION** + **3** **BETA** (`ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
 > **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `ethernet-ip` (CIP session only). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
@@ -43,9 +43,13 @@ In `DriverProductionMatrix` — **47** drivers at **PRODUCTION** (including `cwm
 | `sip`, `asterisk`, `radius` | PRODUCTION | telecom probes; read-only |
 | `ldap`, `jmx`, `nmea`, `message-stream`, `dhcp` | PRODUCTION | IT/network checks; read-only |
 | `ingress-syslog`, `ingress-snmp-trap`, `ingress-sflow` | PRODUCTION | UDP listeners, raw capture; `observed_at` |
+| `iec104-server` | PRODUCTION | slave/server; write + quality; interop partner for `iec104` |
+| `omron-fins`, `mbus` | PRODUCTION | industrial read; loopback tests |
+| `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` submit via mapping; loopback tests |
+| `ipmi`, `wmi` | PRODUCTION | hardware/OS probes; `wmi` Windows-only |
+| `odbc` | PRODUCTION | SQL read; requires external ODBC-JDBC bridge JAR |
 | `ethernet-ip` | BETA | CIP session registration; tag path placeholder |
 | `opc-da`, `opc-bridge` | BETA | **Shell / mapping tests** — not full DA stack |
-| `iec104-server` | BETA | interop partner for `iec104` |
 
 ### observedAt (source timestamps, BL-79)
 
@@ -580,6 +584,16 @@ Loopback test: `Iec104DeviceDriverTest` against `iec104-server`.
 
 Maturity: **production** (BL-140).
 
+### iec104-server (`ispf-driver-iec104-server`)
+
+IEC 60870-5-104 **slave/server** (j60870). Config: `listenPort` (2404), `commonAddress` (1). Devices of this driver accept master connections; decoded ASDUs (single command, short-float/normalized setpoints, measured values) update the IOA state and flow to ingress.
+
+Point mapping: `<ioa>` (integer, for example `2001`). Variable: `value`, `quality` (`GOOD`/`NOT_CONNECTED`), `clientConnected`, `clientOriginatorAddress`.
+
+**Write:** `writePoint` mutates the server-side IOA state (numeric from `raw`/`value`) and updates the variable synchronously; it does not emit ASDUs to connected masters.
+
+Maturity: **production** (`POLL` + `WRITE` + `QUALITY`). Loopback test: `Iec104ServerDeviceDriverTest` (j60870 client end-to-end). Limitations: any accepted TCP connection flips `clientConnected=true` (before the 104 handshake); `clientOriginatorAddress` is not populated from received ASDUs (always 0); `writePoint` has no connected guard.
+
 ### bacnet (`ispf-driver-bacnet`)
 
 BACnet/IP read/write property (`present-value`). Config:
@@ -845,15 +859,19 @@ Response schema: `value`, `raw`, `bytesRead` (STRING/STRING/INTEGER).
 
 ### mbus (`ispf-driver-mbus`)
 
-M-Bus meter read (jmbus 3.x). Config: TCP (`host`, `port`) or serial (`serialPort`).
+M-Bus meter read (jMBus 3.x). Config: `connectionType` (`tcp`/`serial`), `host`, `port` (10001) or `serialPort` (2400 baud).
 
-Point mapping: `primary:secondary:register`.
+Point mapping: `primary:secondary:register` (for example `1:12345678:energy`); a non-zero secondary address switches to broadcast primary `0xFD`. Register matching: DIB/VIB pair, jMBus `Description` or `FunctionField` name; no match → first data record. Variable: `value` (raw `DataRecord` value — scaling factors are **not** applied), `register`, `unit`.
+
+Maturity: **production**. Loopback test: `MbusDeviceDriverTest` (fake M-Bus TCP meter, RSP_UD frames). Read-only. Limitations: serial path untested; one synchronous meter round-trip per point.
 
 ### omron-fins (`ispf-driver-omron-fins`)
 
-FINS/TCP. Config: `host`, `port` (9600), `destNode`, `srcNode`.
+Omron FINS/TCP read. Config: `host`, `port` (9600), `destNode`, `srcNode`.
 
-Point mapping: `DM:100:1` (area:address:count).
+Point mapping: `area:address:count` — areas `CIO`, `WR`, `HR`, `AR`, `DM` (for example `DM:100:1`). Variable: `value` (comma-separated big-endian 16-bit words), `memoryArea`, `address`, `count`.
+
+Maturity: **production**. Loopback test: `OmronFinsDeviceDriverTest` (fake FINS/TCP server: handshake + memory read). Read-only. Limitations: `connect()` is lazy (no handshake); a fresh TCP socket per point per poll.
 
 ### asterisk (`ispf-driver-asterisk`)
 
@@ -883,7 +901,9 @@ Maturity: **production**. Loopback test: `RadiusDeviceDriverTest` (in-process Ti
 
 SMPP 3.x (jsmpp). Config: `host`, `port`, `systemId`, `password`.
 
-Point mapping: `bind` (status) or `destination:message` (submit).
+Point mapping: `bind` (session status) or `destination:message` (send `submit_sm`; result is the SMSC `messageId`). A fresh bind/session is opened per poll. Variable: `value`, `bound`, `messageId`.
+
+Maturity: **production**. Loopback test: `SmppDeviceDriverTest` (fake SMSC: bind + submit_sm). No read semantics — `writePoint` only; submit addressing fixed (source = `systemId`, destination = point destination).
 
 ### smb (`ispf-driver-smb`)
 
@@ -930,6 +950,38 @@ sFlow v5 **raw datagram capture** on UDP/6343 (`bindAddress` honored). Flow-reco
 Each datagram → fixed variable `lastDatagram` (`payloadBase64`, `sourceHost`, `bytes`) with `observedAt`. `readPoints` → stats (`datagramsReceived`, `listening`).
 
 Maturity: **production**. Loopback test: `SflowIngressDeviceDriverTest`. Read-only.
+
+### xmpp (`ispf-driver-xmpp`)
+
+XMPP client probe (Smack 4.4). Config: `host`, `port` (5222), `username`, `password`, `domain`, `securityMode`.
+
+Point mapping: `presence` (connected + authenticated) or `rosterCount` (number of roster entries). Variable: `value`, `connected`, `authenticated`.
+
+Maturity: **production**. Loopback test: `XmppDeviceDriverTest` (in-test XMPP server: stream negotiation + SCRAM-SHA-1 + ping end-to-end). Limitations: `SecurityMode.disabled` — **no TLS**; runtime modules `smack-xmlparser-xpp3` and `smack-java8` are required (promoted to `implementation` — without them Smack fails with `ExceptionInInitializerError`).
+
+### ipmi (`ispf-driver-ipmi`)
+
+IPMI 2.0 over RMCP+ (Verax IPMI client). Config: `host`, `port` (623), `username`, `password`, `timeoutMs`.
+
+Point mapping: `power` (chassis power status) or `sensor:<name>` (`Get Sensor Reading` — real sensor readout; `value` is the raw reading). Variable: `value`, `reachable`, `raw`.
+
+Maturity: **production**. Loopback test: `IpmiDeviceDriverTest` (RMCP ping path + sensor codec seam). Read-only. Limitations: a full authenticated RMCP+ session is not covered end-to-end by the loopback test (codec seam tested instead); RMCP ping is used as the reachability fallback.
+
+### wmi (`ispf-driver-wmi`)
+
+WMI query via local PowerShell/CIM invocation — **Windows-only**. Config: `namespace` (`root\cimv2`), `query`, `timeoutMs`.
+
+Point mapping: `WQL[:property]` — for example `SELECT FreePhysicalMemory FROM Win32_OperatingSystem:FreePhysicalMemory`. Variable: `value`, `supported` (false on non-Windows), `status`.
+
+Maturity: **production**. Loopback test: `WmiDeviceDriverTest` (happy-path tests are gated on Windows; other OSes assert `supported=false`). Read-only. Known issue: console encoding on non-English locales can mangle Cyrillic output (mojibake) — cosmetic, values still parse.
+
+### odbc (`ispf-driver-odbc`)
+
+Generic ODBC read via a JDBC bridge. **Requires an external ODBC-JDBC bridge JAR** — the JDK has not shipped one since Java 8; without it the driver reports `NOT_AVAILABLE`. Config: `url`, `username`, `password`, `query`, `timeoutMs`.
+
+Point mapping: column name of the first result row. Variable: `value`, `status`.
+
+Maturity: **production**. Loopback test: `OdbcDeviceDriverTest` (against H2 in bridge-compatibility mode — validates the query/mapping path, **not** a real ODBC bridge). Read-only.
 
 ## Adding your own driver
 

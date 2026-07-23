@@ -21,7 +21,6 @@ class DriverProductionMatrixTest {
 
     /** Top-20 partners / honesty-downgraded shells (BL-191) — not required PRODUCTION. */
     private static final Set<String> TOP_20_NON_PRODUCTION_EXEMPT = Set.of(
-            "iec104-server",
             "opc-da",
             "opc-bridge",
             "ethernet-ip"
