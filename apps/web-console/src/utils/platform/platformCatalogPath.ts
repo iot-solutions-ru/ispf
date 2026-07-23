@@ -3,9 +3,9 @@ export const QUERIES_ROOT = "root.platform.queries";
 
 const PLATFORM_CATALOG_SUFFIXES = [
   ".devices",
-  ".relative-blueprints",
+  ".mixin-blueprints",
   ".instance-types",
-  ".absolute-blueprints",
+  ".singleton-blueprints",
   ".instances",
   ".dashboards",
   ".mimics",

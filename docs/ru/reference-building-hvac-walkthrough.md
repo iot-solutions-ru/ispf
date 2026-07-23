@@ -29,7 +29,7 @@ Seed-зоны: `L1-OPEN-01` (охлаждение), `L2-MEET-02` (обогрев
 
 ## Haystack
 
-Bundle `metadata.haystackTags` документирует ожидаемый словарь тегов (`site`, `equip`, `ahu`, `zone`, `temp`). При расширении walkthrough привязывайте реальные устройства через relative-модель `haystack-metadata-v1`.
+Bundle `metadata.haystackTags` документирует ожидаемый словарь тегов (`site`, `equip`, `ahu`, `zone`, `temp`). При расширении walkthrough привязывайте реальные устройства через MIXIN blueprint `haystack-metadata-v1`.
 
 ## CI
 

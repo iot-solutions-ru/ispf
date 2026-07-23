@@ -8,7 +8,7 @@
 
 ## Контекст
 
-ISPF моделирует runtime state через **дерево объектов** (dot-paths, `DataSchema`, RELATIVE/INSTANCE models, bindings, historian). Project Haystack и Brick Schema дают industry-standard semantics для BMS, energy и digital-twin интеграций, но в платформе **не было** Haystack/Brick layer в коде (только обсуждение, BL-56…62).
+ISPF моделирует runtime state через **дерево объектов** (dot-paths, `DataSchema`, MIXIN/INSTANCE models, bindings, historian). Project Haystack и Brick Schema дают industry-standard semantics для BMS, energy и digital-twin интеграций, но в платформе **не было** Haystack/Brick layer в коде (только обсуждение, BL-56…62).
 
 Требования от app teams и integrators:
 
@@ -30,12 +30,12 @@ ISPF моделирует runtime state через **дерево объекто
 ### 1. Object tree = source of truth
 
 - Runtime paths (`root.platform.devices.*`), bindings, correlators, historian и ACL продолжают использовать ISPF dot-paths.
-- Haystack tags — **optional metadata overlay**, хранимый как model-managed variables на devices (RELATIVE mixin).
+- Haystack tags — **optional metadata overlay**, хранимый как model-managed variables на devices (MIXIN).
 - Haystack refs (`@site.equip`) **не** заменяют и не перенаправляют ISPF paths, пока явно не привязаны в future integration driver (BL-61).
 
 ### 2. Haystack overlay model (`haystack-metadata-v1`)
 
-RELATIVE mixin на `DEVICE` object'ах с variables в группе `haystack`:
+MIXIN на `DEVICE` object'ах с variables в группе `haystack`:
 
 | Variable | Type | Purpose |
 | -------- | ---- | ------- |
@@ -43,7 +43,7 @@ RELATIVE mixin на `DEVICE` object'ах с variables в группе `haystack`
 | `haystackRef` | STRING | Optional external Haystack id |
 | `haystackKind` | STRING | Primary kind hint: `equip`, `point`, `site`, … |
 
-Apply вручную через `POST /api/v1/relative-blueprints/{id}/apply` или platform bootstrap/demo fixtures.
+Apply вручную через `POST /api/v1/mixin-blueprints/{id}/apply` или platform bootstrap/demo fixtures.
 
 **Demo:** `root.platform.devices.lab-userA-01` (virtual-lab fixture) поставляется с equip tags и sample export.
 
@@ -69,7 +69,7 @@ Apply вручную через `POST /api/v1/relative-blueprints/{id}/apply` и
 
 ### 5. Brick Schema (BL-60)
 
-`brick-metadata-v1` RELATIVE mixin: `brickClass` URI на DEVICE. Export subset через `GET /api/v1/platform/brick/export` (`format=jsonld|turtle`). `brick:hasPoint` из driver point mappings (то же point discovery, что у Haystack export). Demo: `root.platform.devices.lab-userA-01`.
+`brick-metadata-v1` MIXIN: `brickClass` URI на DEVICE. Export subset через `GET /api/v1/platform/brick/export` (`format=jsonld|turtle`). `brick:hasPoint` из driver point mappings (то же point discovery, что у Haystack export). Demo: `root.platform.devices.lab-userA-01`.
 
 Out of scope: full Brick reasoner, runtime replacement object paths.
 
@@ -77,7 +77,7 @@ Out of scope: full Brick reasoner, runtime replacement object paths.
 
 
 - Integrators могут экспортировать tagged subtrees без fork object model.
-- RELATIVE mixin pattern совпадает с existing driver/lab mixin'ами ([0011-model-type-semantics](0011-model-type-semantics.md), [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md)).
+- MIXIN pattern совпадает с existing driver/lab mixin'ами ([0011-model-type-semantics](0011-model-type-semantics.md), [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md)).
 - Чёткая граница: semantics — metadata; mechanisms остаются tree-first.
 
 Risks:
@@ -106,6 +106,6 @@ Risks:
 ## Связанные материалы
 
 - [roadmap.md § Wave G (BL-56…62)](../roadmap.md#часть-e--полный-реестр-bl-01139)
-- [BLUEPRINTS](../BLUEPRINTS.md) — RELATIVE mixins
+- [BLUEPRINTS](../BLUEPRINTS.md) — MIXINs
 - [drivers](../drivers.md) — point mappings (future Haystack tag normalization)
 - [0002 Dogfooding gate](0002-dogfooding-gate.md)

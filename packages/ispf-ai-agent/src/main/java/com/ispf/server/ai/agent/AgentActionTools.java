@@ -311,7 +311,7 @@ final class AgentActionTools {
             @Override
             public String description() {
                 return "List platform object model templates (templateId for create_object). "
-                        + "Includes RELATIVE mixins (apply_relative_blueprint), INSTANCE, ABSOLUTE. "
+                        + "Includes MIXINs (apply_mixin_blueprint), INSTANCE, SINGLETON. "
                         + "Optional query filter; rows include BlueprintType.";
             }
 

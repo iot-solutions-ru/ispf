@@ -18,9 +18,9 @@ root
     ├── root.platform.devices
     │   ├── root.platform.devices.demo-sensor-01
     │   └── root.platform.devices.snmp-localhost
-    ├── root.platform.relative-blueprints
+    ├── root.platform.mixin-blueprints
     ├── root.platform.instance-types
-    ├── root.platform.absolute-blueprints
+    ├── root.platform.singleton-blueprints
     ├── root.platform.instances
     ├── root.platform.dashboards
     │   └── root.platform.dashboards.demo-sensor
@@ -200,9 +200,9 @@ Platform extension: implement `FunctionHandler` in `ispf-server` and register as
 
 Objects are created manually or from a **model** (`templateId`). A model defines variables, events, functions, and bindings.
 
-**RELATIVE mixins** on create auto-apply only with a **non-empty** CEL (*Applicability condition*). Empty CEL → explicit apply only (`templateId`, API). Fixture models (`mqtt-sensor-v1`, …) are not in the core registry.
+**MIXINs** on create auto-apply only with a **non-empty** CEL (*Applicability condition*). Empty CEL → explicit apply only (`templateId`, API). Fixture models (`mqtt-sensor-v1`, …) are not in the core registry.
 
-**DEVICE + driver:** `driver*` variables are embedded at `provisionDriver()`, not via relative auto-apply.
+**DEVICE + driver:** `driver*` variables are embedded at `provisionDriver()`, not via MIXIN auto-apply.
 
 See [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 

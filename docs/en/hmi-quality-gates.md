@@ -25,16 +25,19 @@ npm run lighthouse:ci
 npm run test:quality
 ```
 
-Env overrides: `LH_MIN_PERFORMANCE`, `LH_MIN_ACCESSIBILITY`, `LH_MIN_ACCESSIBILITY_OPERATOR`, `MIMIC_MIN_FPS`, `MIMIC_STRESS_ELEMENTS`.
+Env overrides: `LH_MIN_PERFORMANCE`, `LH_MIN_ACCESSIBILITY`, `LH_MIN_ACCESSIBILITY_OPERATOR`, `MIMIC_MIN_FPS`, `MIMIC_MIN_FPS_WS`, `MIMIC_STRESS_ELEMENTS`.
 
 ### Mimic stress thresholds (BL-152)
 
 | Profile | Elements | FPS floor | Env |
 | ------- | -------- | --------- | --- |
-| CI gate (BL-152 **Done**) | 500 | ≥55 | default `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
+| Local / acceptance (BL-152 **Done**) | 500 | ≥55 | default `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
+| Nightly GHA soft floor | 300 | ≥20 (static + WS) | `ci-nightly.yml`: `MIMIC_STRESS_ELEMENTS=300`, `MIMIC_MIN_FPS=20`, `MIMIC_MIN_FPS_WS=20` — shared runners; not a product claim of ≥55 on GHA |
 | Stretch (ops, not acceptance) | 500 | ≥60 | `MIMIC_MIN_FPS=60` + unmocked `E2E_LIVE_FPS=1` when evidence exists |
 | Legacy S21 proxy | 120 | ≥55 | `MIMIC_STRESS_ELEMENTS=120` |
 | Tank-farm manual | full diagram | ≥60 | Chrome Performance on operator mimic |
+
+FPS stress runs only via `npm run test:quality` (`playwright.quality.config.ts`). Default `npm run test:e2e` ignores `quality-gates.spec.ts`.
 
 Stress document builder: `e2e/fixtures/stressMimic.ts`. Playwright measures min FPS over two 2s windows (`e2e/quality-gates.spec.ts`).
 

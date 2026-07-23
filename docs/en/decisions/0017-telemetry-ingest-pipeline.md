@@ -19,7 +19,7 @@ Event journal already uses `JdbcTemplate.batchUpdate` ([0016-clickhouse-event-jo
 
 ### MQTT gateway orchestrator (`mqtt-gateway-v1`, fixture)
 
-Fixture RELATIVE model (registered when `ispf.bootstrap.fixtures-enabled=true`). See [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
+Fixture MIXIN model (registered when `ispf.bootstrap.fixtures-enabled=true`). See [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md).
 
 - One MQTT connection; driver writes ingress to `lastIngress` (`topic` + `raw`).
 - Driver config: `ingressVariable=lastIngress`, `ingressTopicLanes=true` — per-topic coalesce keys in `RuntimeTelemetryCoalescer`.

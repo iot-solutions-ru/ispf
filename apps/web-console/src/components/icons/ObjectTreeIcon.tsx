@@ -177,11 +177,11 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     return "mimic";
   }
   if (
-    path.endsWith(".relative-blueprints")
-    || path.endsWith(".absolute-blueprints")
+    path.endsWith(".mixin-blueprints")
+    || path.endsWith(".singleton-blueprints")
     || path.endsWith(".instance-types")
-    || path.includes(".relative-blueprints.")
-    || path.includes(".absolute-blueprints.")
+    || path.includes(".mixin-blueprints.")
+    || path.includes(".singleton-blueprints.")
     || path.includes(".instance-types.")
   ) {
     return "blueprint";

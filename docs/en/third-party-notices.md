@@ -26,7 +26,7 @@ Current delivery state:
 | `exceljs` | `apps/web-console` (spreadsheet XLSX import/export) | **MIT** | Lazy-loaded; spreadsheet widget only. |
 | `@uiw/react-codemirror`, `@codemirror/*` | `apps/web-console` (script editor) | **MIT** | Direct runtime deps. |
 | `cytoscape` | `apps/web-console` (topology/graph views) | **MIT** | Direct runtime dep. |
-| `com.infiniteautomation:bacnet4j` | `packages/ispf-driver-bacnet` (driver pack) | **GPL-3.0** | Excluded from default `permissive` deploy profile. |
+| `com.infiniteautomation:bacnet4j` | `packages/ispf-driver-bacnet` (driver pack); jar mirrored in `third-party/maven-repo` for CI when mangoautomation is down | **GPL-3.0** | Excluded from default `permissive` deploy profile. |
 | `org.gurux:gurux.dlms`, `org.gurux:gurux.net` | `packages/ispf-driver-dlms` (driver pack) | **GPL-2.0** | Excluded from default `permissive` deploy profile. |
 | `org.openmuc:j60870` | `packages/ispf-driver-iec104*` (driver packs) | **GPL** | Excluded from default `permissive` deploy profile. |
 | `io.stepfunc:dnp3` | `packages/ispf-driver-dnp3` (driver pack) | **LicenseRef-StepFunc-NonCommercial** | **Not bundled** in pack JAR; excluded from `permissive` deploy; prod requires StepFunc commercial license. |

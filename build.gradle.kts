@@ -10,13 +10,35 @@ allprojects {
 
     repositories {
         mavenCentral()
+        // Offline mirror for BACnet4J (+ lohbihler) and YARG JAI transitives — remote hosts often 503/500 in CI.
+        maven {
+            name = "third-party-local"
+            url = uri(rootProject.layout.projectDirectory.dir("third-party/maven-repo").asFile.toURI())
+            content {
+                includeGroup("com.infiniteautomation")
+                includeGroup("lohbihler")
+                includeGroup("javax.media.jai")
+            }
+        }
         maven {
             name = "ias-releases"
             url = uri("https://maven.mangoautomation.net/repository/ias-release/")
+            content {
+                includeGroup("com.infiniteautomation")
+                includeGroup("lohbihler")
+            }
         }
-        maven {
-            name = "haulmont"
-            url = uri("https://repo.cuba-platform.com/content/groups/work")
+        // YARG lives on Jmix; cuba-platform work repo often 500s and must not be probed via ias-releases.
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "jmix-releases"
+                    url = uri("https://nexus.jmix.io/repository/releases/")
+                }
+            }
+            filter {
+                includeGroupByRegex("com\\.haulmont(\\..*)?")
+            }
         }
     }
 }
@@ -142,6 +164,13 @@ tasks.register("ensureAllDriverPacks") {
     description = "Sync all packs unless ISPF_DRIVER_PACKS_PREBUILT=true and build/driver-packs exists (CI cache)"
     onlyIf { !driverPacksPrebuilt() }
     dependsOn("syncAllDriverPacks")
+}
+
+tasks.register("testDevDriverPacks") {
+    group = "verification"
+    description =
+        "Unit-test the minimal/dev driver pack set (PR-fast driver-packs job); full protocol matrix is driver-interop"
+    dependsOn(devDriverPackProjects.map { it.path + ":test" })
 }
 
 val prFastBackendTestTasks = listOf(

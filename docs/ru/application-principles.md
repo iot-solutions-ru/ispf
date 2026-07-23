@@ -137,7 +137,7 @@ WHEN (activator)  →  IF (CEL condition)  →  THEN (effect)
 | Слой | Вопрос | Механизм | Документ |
 |------|--------|----------|----------|
 | **AUTHOR** | Кто и чем правит прямо сейчас? | Admin UI **или** Agent (AI Studio / MCP) | [ai-development](ai-development.md) |
-| **SHAPE** | Какая структура у типизированного объекта? | **Blueprint** (relative / absolute / intrinsic) | [blueprints](blueprints.md) |
+| **SHAPE** | Какая структура у типизированного объекта? | **Blueprint** (mixin / singleton / intrinsic) | [blueprints](blueprints.md) |
 | **SHIP** | Что является durable-артефактом повторяемой поставки? | **Bundle** (manifest + migrations + gates) | [solution-developer-guide](solution-developer-guide.md), P4 |
 | **PROMOTE** | Как сделать preview/apply пачки уже созданных ops? | **Change set** | [collaboration](collaboration.md) § change-sets |
 

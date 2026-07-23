@@ -38,7 +38,7 @@ Object tree remains **source of truth for metadata and live derived values**. Cl
 > **Amendment (ADR-0041, 2026-07-09):** Historian computations are **`BindingRule` with `kind: historian`** in `@bindingRules`, not `ANALYTICS_TEMPLATE` tree objects. Tag path = `objectPath#ruleId`; presets are static code + [analytics-historian-cookbook](../analytics-historian-cookbook.md). The bullets below describe the original BL-209 proposal; template catalog and `analytics-tag-v1` metadata vars are **deprecated** for new work.
 
 - ~~Keep `ANALYTICS_TEMPLATE` catalog (`root.platform.analytics`) for built-in KPI recipes.~~ → static presets + binding rules
-- Add optional **`ANALYTICS_TAG`** (or RELATIVE blueprint `analytics-tag-v1` on `DEVICE`) for deployed derived tags with:
+- Add optional **`ANALYTICS_TAG`** (or MIXIN blueprint `analytics-tag-v1` on `DEVICE`) for deployed derived tags with:
   - `expression` / `helper` + `sourcePaths[]`
   - `schedule` (periodicMs, alignToWallClock)
   - `rollupBuckets[]` (which materialized windows to maintain)

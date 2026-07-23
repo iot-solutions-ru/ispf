@@ -109,7 +109,7 @@ Legacy без `kind`:
 
 ## `@dashboardContext` (planned, фаза 1)
 
-Reserved JSON-переменная на объекте `DASHBOARD` (модель `dashboard-v1`).
+Reserved JSON-переменная на объекте `DASHBOARD` (blueprint `dashboard-v1`).
 
 | Поле | Тип | Назначение |
 |------|-----|------------|

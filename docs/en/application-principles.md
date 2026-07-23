@@ -136,7 +136,7 @@ See [platform-logic](platform-logic.md), [0019-platform-rule-unification](decisi
 | Layer | Question | Mechanism | Document |
 |-------|----------|-----------|----------|
 | **AUTHOR** | Who is editing right now, and how? | Admin UI **or** Agent (AI Studio / MCP) | [ai-development](ai-development.md) |
-| **SHAPE** | What structure should this typed object have? | **Blueprint** (relative / absolute / intrinsic) | [blueprints](blueprints.md) |
+| **SHAPE** | What structure should this typed object have? | **Blueprint** (mixin / singleton / intrinsic) | [blueprints](blueprints.md) |
 | **SHIP** | What is the durable, repeatable delivery artifact? | **Bundle** (manifest + migrations + gates) | [solution-developer-guide](solution-developer-guide.md), P4 |
 | **PROMOTE** | How do I preview and apply a batch of already-authored ops? | **Change set** | [collaboration](collaboration.md) § change-sets |
 

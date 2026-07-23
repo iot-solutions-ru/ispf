@@ -8,6 +8,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,10 +18,16 @@ public class JavaFunctionBootstrap {
 
     private final ObjectManager objectManager;
     private final JavaFunctionRuntimeService runtimeService;
+    private final Environment environment;
 
-    public JavaFunctionBootstrap(ObjectManager objectManager, JavaFunctionRuntimeService runtimeService) {
+    public JavaFunctionBootstrap(
+            ObjectManager objectManager,
+            JavaFunctionRuntimeService runtimeService,
+            Environment environment
+    ) {
         this.objectManager = objectManager;
         this.runtimeService = runtimeService;
+        this.environment = environment;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -30,11 +37,14 @@ public class JavaFunctionBootstrap {
             log.info("Java function warm-up skipped (ispf.function.java.enabled=false)");
             return;
         }
-        log.warn(
-                "In-process Java functions are ENABLED (ispf.function.java.enabled=true): user-authored "
-                        + "code executes inside the server JVM — the regex denylist is not a process "
-                        + "sandbox (ADR-0045). Enable only on trusted nodes."
-        );
+        // Prod defaults to disabled; WARN when operators explicitly re-enable in-process execution.
+        if (environment.matchesProfiles("prod")) {
+            log.warn(
+                    "In-process Java functions are ENABLED on a prod profile "
+                            + "(ispf.function.java.enabled=true): admin-authored code executes inside "
+                            + "the server JVM — the regex denylist is not a process sandbox (ADR-0045)."
+            );
+        }
         for (var node : objectManager.tree().all()) {
             for (FunctionDescriptor function : node.functions().values()) {
                 if (!function.hasJavaBody()) {

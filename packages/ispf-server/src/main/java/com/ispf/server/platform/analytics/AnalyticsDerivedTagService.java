@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Computes runtime derived-tag variables on devices with analytics RELATIVE blueprints (BL-160).
+ * Computes runtime derived-tag variables on devices with analytics MIXIN blueprints (BL-160).
  */
 @Service
 public class AnalyticsDerivedTagService {

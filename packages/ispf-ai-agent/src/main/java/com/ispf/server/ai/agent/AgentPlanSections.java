@@ -43,8 +43,8 @@ public final class AgentPlanSections {
                 Required sections (include N/A summary if TZ does not need layer):
                 1. ground_truth — discovery, paths, recipes, get_automation_schema
                 2. intent_scope — цель, FR mapping, naming/path policy
-                3. model_strategy — INSTANCE vs RELATIVE vs ABSOLUTE per entity
-                4. source_layer — DEVICE, drivers, OOTB virtual / relative blueprints, list_variables
+                3. model_strategy — INSTANCE vs MIXIN vs SINGLETON per entity
+                4. source_layer — DEVICE, drivers, OOTB virtual / mixin blueprints, list_variables
                 5. aggregation_layer — CUSTOM hub, create_variable, create_binding_rule
                 6. alert_layer — configure_alert, thresholds, events
                 7. correlation_layer — configure_correlator, WORKFLOW triggers (N/A if not in TZ)

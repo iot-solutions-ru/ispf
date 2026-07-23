@@ -10,7 +10,7 @@
     {
       "name": "sheet-storage-v1",
       "description": "Device that stores spreadsheet cell values in sheetValues (RECORD_LIST)",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "DEVICE",
       "variables": [
         {
