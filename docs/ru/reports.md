@@ -4,7 +4,7 @@
 
 > **Статус:** Stable — SQL-отчёты, CSV. Теги: [doc-status](../en/doc-status.md).
 
-Generic-слой SQL-отчётов. **Сначала дерево (этапы 12–14):** определение объекта `REPORT` в `root.platform.reports.*` (модель `report-v1`); Схема SQL — через **`dataSourcePath`** → `root.platform.data-sources.*`.
+Generic-слой SQL-отчётов. **Сначала дерево (этапы 12–14):** определение объекта `REPORT` в `root.platform.reports.*` (blueprint `report-v1`); Схема SQL — через **`dataSourcePath`** → `root.platform.data-sources.*`.
 
 Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и делегирует в дерево. Импорт bundle: `POST /api/v1/platform/packages/import`.
 
@@ -12,7 +12,7 @@ Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и деле
 
 ![Каталог Reports в Explorer](../assets/ispf-reports.png)
 
-| Узел | Тип | Модель |
+| Узел | Тип | Blueprint |
 |------|-----|--------|
 | `root.platform.reports` | `REPORTS` | — |
 | `root.platform.reports.{reportId}` | `REPORT` | `report-v1` |
@@ -35,7 +35,7 @@ Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и деле
 
 Веб-консоль: **Report Builder** — структурированный редактор (параметры/столбцы, без ручного JSON), предварительный просмотр SQL, CSV, вкладка **Шаблон YARG**, экспорт PDF/XLSX/HTML. Переключатель **sql** | **дерево-переменные**.
 
-### tree-variables (модель `tree-variables-report-v1`)
+### tree-variables (blueprint `tree-variables-report-v1`)
 
 | Переменная | Описание |
 |----------|----------|

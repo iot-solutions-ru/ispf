@@ -37,9 +37,9 @@ public final class AgentStepHumanizer {
             case "list_variables" -> "Читаю переменные «" + arg(arguments, "path") + "»";
             case "set_variable" -> "Обновляю «" + arg(arguments, "name") + "» на «" + arg(arguments, "path") + "»";
             case "configure_driver" -> "Настраиваю драйвер на «" + arg(arguments, "devicePath") + "»";
-            case "apply_relative_blueprint" -> "Подключаю модель «" + orDefault(arg(arguments, "blueprintName"), arg(arguments, "blueprintId"))
+            case "apply_mixin_blueprint" -> "Подключаю модель «" + orDefault(arg(arguments, "blueprintName"), arg(arguments, "blueprintId"))
                     + "» к «" + orDefault(arg(arguments, "objectPath"), arg(arguments, "path")) + "»";
-            case "list_relative_blueprints" -> "Смотрю RELATIVE-модели"
+            case "list_mixin_blueprints" -> "Смотрю MIXIN-модели"
                     + (arg(arguments, "query").isBlank() ? "" : ": «" + arg(arguments, "query") + "»");
             case "get_object_blueprint" -> "Схема модели «" + orDefault(arg(arguments, "blueprintName"), arg(arguments, "blueprintId")) + "»";
             case "create_virtual_device" -> "Создаю виртуальное устройство «" + arg(arguments, "name") + "»";

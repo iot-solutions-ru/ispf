@@ -15,7 +15,7 @@
     {
       "name": "itm-network-device-v1",
       "description": "SNMP-monitored IT infrastructure device (MIB-II, IF-MIB, HOST-RESOURCES)",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "DEVICE",
       "variables": [
         {

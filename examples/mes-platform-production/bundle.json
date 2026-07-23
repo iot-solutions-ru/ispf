@@ -836,7 +836,7 @@
     {
       "name": "mes-platform-production-hub-v1",
       "description": "MES platform hub — SPC telemetry and control limits (BL-167)",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "DEVICE",
       "variables": [
         {
@@ -1010,7 +1010,7 @@
     {
       "name": "quality-record-v1",
       "description": "Quality inspection record with defect traceability (BL-167)",
-      "type": "RELATIVE",
+      "type": "MIXIN",
       "targetObjectType": "QUALITY_RECORD",
       "variables": [
         {

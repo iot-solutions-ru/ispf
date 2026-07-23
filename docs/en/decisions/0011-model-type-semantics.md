@@ -16,10 +16,10 @@ Types `RELATIVE`, `INSTANCE`, `ABSOLUTE` are declared in `BlueprintType`, but se
 
 - **Internally:** shared `BlueprintDefinition` + `BlueprintEngine` + table `blueprint_definitions`.
 - **Externally:** three catalogs in the tree:
-  - `root.platform.relative-blueprints` — mixin (RELATIVE)
+  - `root.platform.mixin-blueprints` — mixin (MIXIN)
   - `root.platform.instance-types` — instance templates (INSTANCE)
-  - `root.platform.absolute-blueprints` — singleton (ABSOLUTE)
-- Three API facades: `/api/v1/relative-blueprints`, `/instance-types`, `/absolute-models` (shared registry, different validation and operations).
+  - `root.platform.singleton-blueprints` — singleton live hubs (SINGLETON)
+- Three API facades: `/api/v1/mixin-blueprints`, `/instance-types`, `/singleton-blueprints` (shared registry, different validation and operations).
 - `root.platform.models` removed at startup; nodes migrate to typed catalogs.
 
 ### 2. Object ↔ models link
@@ -45,10 +45,11 @@ Types `RELATIVE`, `INSTANCE`, `ABSOLUTE` are declared in `BlueprintType`, but se
 - UI shows INSTANCE model name as "type"; in DB: `type = targetObjectType`, `templateId = model.id`.
 - Enum `ObjectType` is not extended for user-defined models.
 
-### 5. ABSOLUTE singleton
+### 5. SINGLETON
 
-- On model create — exactly one object at `parameters.absoluteInstancePath` (default `root.platform.instances.{name}`).
-- `PUT` on model syncs structure to singleton (merge, runtime values preserved).
+- On create — exactly one live object at `parameters.singletonInstancePath` (default `root.platform.singleton-blueprints.{name}`).
+- That catalog node **is** the runtime object with application logic (variables, events, functions, binding rules) — not a mirror under `root.platform.instances`.
+- `PUT` on blueprint syncs structure to the singleton (merge, runtime values preserved).
 - Repeat instantiate → 409.
 
 ### 6. Merge conflicts: warn + last-wins

@@ -161,12 +161,12 @@ public class TypedBlueprintFacade {
         }
     }
 
-    public PlatformObject absoluteInstance(String id) {
-        if (blueprintType != BlueprintType.ABSOLUTE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "singleton instance is only for Absolute Blueprints");
+    public PlatformObject singletonInstance(String id) {
+        if (blueprintType != BlueprintType.SINGLETON) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "singleton instance is only for Singleton Blueprints");
         }
         BlueprintDefinition model = requireTyped(id);
-        return blueprintEngine.ensureAbsoluteInstance(model);
+        return blueprintEngine.ensureSingletonInstance(model);
     }
 
     private BlueprintDefinition requireTyped(String id) {
@@ -185,7 +185,7 @@ public class TypedBlueprintFacade {
     }
 
     private void validateCreate(CreatePayload request) {
-        if (blueprintType == BlueprintType.INSTANCE || blueprintType == BlueprintType.RELATIVE) {
+        if (blueprintType == BlueprintType.INSTANCE || blueprintType == BlueprintType.MIXIN) {
             if (request.targetObjectType() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, blueprintType + " blueprints require targetObjectType");
             }

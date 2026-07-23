@@ -41,7 +41,7 @@ ISPF обслуживает операторов, площадки и устро
 
 ### 4. Device timezone (edge / normalization)
 
-- Optional `timeZone` на `DEVICE` (RELATIVE model mixin или device-driver blueprint extension).
+- Optional `timeZone` на `DEVICE` (MIXIN model mixin или device-driver blueprint extension).
 - **Inheritance:** device → parent folder/site → platform default `UTC`.
 - Driver'ы, получающие **локальные** device timestamps, должны нормализовать в UTC с resolved device timezone.
 - Устройства, отправляющие UTC epoch или ISO с offset, не требуют device TZ.

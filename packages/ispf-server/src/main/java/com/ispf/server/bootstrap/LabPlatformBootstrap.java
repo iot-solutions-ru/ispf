@@ -67,7 +67,7 @@ public class LabPlatformBootstrap {
     @Order(Ordered.HIGHEST_PRECEDENCE + 21)
     @Transactional
     public void onReady() {
-        // Virtual driver Relative Blueprints — required for agent create_virtual_device on prod (not demo fixtures).
+        // Virtual driver Mixin Blueprints — required for agent create_virtual_device on prod (not demo fixtures).
         LabBlueprintBootstrap.ensureLabModels();
         if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;

@@ -17,10 +17,10 @@
 
 - **Внутри:** общий `BlueprintDefinition` + `BlueprintEngine` + таблица `blueprint_definitions`.
 - **Снаружи:** три каталога в дереве:
-  - `root.platform.relative-blueprints` — mixin (RELATIVE)
+  - `root.platform.mixin-blueprints` — mixin (MIXIN)
   - `root.platform.instance-types` — шаблоны экземпляров (INSTANCE)
-  - `root.platform.absolute-blueprints` — singleton (ABSOLUTE)
-- Три API-фасада: `/api/v1/relative-blueprints`, `/instance-types`, `/absolute-models` (общий registry, разная валидация и операции).
+  - `root.platform.singleton-blueprints` — singleton live-хабы (SINGLETON)
+- Три API-фасада: `/api/v1/mixin-blueprints`, `/instance-types`, `/singleton-blueprints` (общий registry, разная валидация и операции).
 - `root.platform.models` удалён при старте; узлы мигрируют в типизированные каталоги.
 
 ### 2. Связь объект ↔ модели
@@ -46,10 +46,11 @@
 - UI показывает имя INSTANCE-модели как «тип»; в БД: `type = targetObjectType`, `templateId = model.id`.
 - Enum `ObjectType` не расширяется под пользовательские модели.
 
-### 5. ABSOLUTE singleton
+### 5. SINGLETON
 
-- При создании модели — ровно один объект по `parameters.absoluteInstancePath` (default `root.platform.instances.{name}`).
-- `PUT` модели синхронизирует структуру в singleton (merge, runtime values сохраняются).
+- При создании — ровно один live-объект по `parameters.singletonInstancePath` (default `root.platform.singleton-blueprints.{name}`).
+- Узел в каталоге **и есть** runtime-объект с логикой приложения (переменные, события, функции, binding rules) — не зеркало в `root.platform.instances`.
+- `PUT` blueprint синхронизирует структуру в singleton (merge, runtime values сохраняются).
 - Повторный instantiate → 409.
 
 ### 6. Merge conflicts: warn + last-wins

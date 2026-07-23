@@ -124,7 +124,7 @@ Rules created from a formula store `formulaRef` + `formulaParams` in rule metada
 |-------|----------|-----|
 | Site-wide | `root.platform` variable `@analyticsFormulas` | Platform admin |
 | Application | `analytics-formulas.json` in app bundle | App developer |
-| Blueprint | `analyticsFormulasJson` in RELATIVE blueprint | Blueprint author |
+| Blueprint | `analyticsFormulasJson` in MIXIN blueprint | Blueprint author |
 
 ### REST API
 
