@@ -31,6 +31,9 @@ public class DhcpDeviceDriver implements DeviceDriver {
                     "interfaceName", "",
                     "bindAddress", "0.0.0.0",
                     "timeoutMs", "3000",
+                    "serverPort", "67",
+                    "listenPort", "68",
+                    "broadcastAddress", "255.255.255.255",
                     "pollIntervalMs", "60000"
             )
     );
@@ -39,6 +42,9 @@ public class DhcpDeviceDriver implements DeviceDriver {
     private String interfaceName = "";
     private String bindAddress = "0.0.0.0";
     private int timeoutMs = 3000;
+    private int serverPort = 67;
+    private int listenPort = 68;
+    private String broadcastAddress = "255.255.255.255";
     private final Map<String, DhcpPoint> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -61,6 +67,9 @@ public class DhcpDeviceDriver implements DeviceDriver {
             case "interfaceName" -> interfaceName = value.trim();
             case "bindAddress" -> bindAddress = value.trim();
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "serverPort" -> serverPort = Integer.parseInt(value.trim());
+            case "listenPort" -> listenPort = Integer.parseInt(value.trim());
+            case "broadcastAddress" -> broadcastAddress = value.trim();
             default -> { }
         }
     }
@@ -90,7 +99,7 @@ public class DhcpDeviceDriver implements DeviceDriver {
         points.clear();
         try {
             DhcpDiscoverClient.DhcpProbeResult result =
-                    DhcpDiscoverClient.probe(interfaceName, bindAddress, timeoutMs);
+                    DhcpDiscoverClient.probe(interfaceName, bindAddress, timeoutMs, serverPort, listenPort, broadcastAddress);
             for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
                 DhcpPoint point = DhcpPoint.parse(entry.getValue());
                 points.put(entry.getKey(), point);

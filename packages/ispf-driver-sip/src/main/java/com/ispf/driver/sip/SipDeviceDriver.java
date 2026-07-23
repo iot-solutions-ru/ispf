@@ -8,7 +8,6 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 
 import javax.sip.SipFactory;
-import javax.sip.SipProvider;
 import javax.sip.SipStack;
 import javax.sip.address.AddressFactory;
 import javax.sip.header.HeaderFactory;
@@ -161,37 +160,41 @@ public class SipDeviceDriver implements DeviceDriver {
         HeaderFactory headerFactory = factory.createHeaderFactory();
         AddressFactory addressFactory = factory.createAddressFactory();
 
-        SipProvider provider = sipStack.createSipProvider(sipStack.createListeningPoint("0.0.0.0", 0, "udp"));
         String transport = "udp";
         String branch = "z9hG4bK-" + UUID.randomUUID();
-        ArrayList<ViaHeader> viaHeaders = new ArrayList<>();
-        ViaHeader via = headerFactory.createViaHeader("0.0.0.0", provider.getListeningPoint(transport).getPort(),
-                transport, branch);
-        viaHeaders.add(via);
 
-        CallIdHeader callId = headerFactory.createCallIdHeader(UUID.randomUUID().toString());
-        CSeqHeader cSeq = headerFactory.createCSeqHeader(1L, Request.OPTIONS);
-        FromHeader from = headerFactory.createFromHeader(
-                addressFactory.createAddress(addressFactory.createSipURI(username, domain)),
-                UUID.randomUUID().toString());
-        ToHeader to = headerFactory.createToHeader(
-                addressFactory.createAddress(addressFactory.createSipURI(host, domain)), null);
-        MaxForwardsHeader maxForwards = headerFactory.createMaxForwardsHeader(70);
-
-        Request request = messageFactory.createRequest(
-                addressFactory.createSipURI(host, domain),
-                Request.OPTIONS,
-                callId,
-                cSeq,
-                from,
-                to,
-                viaHeaders,
-                maxForwards
-        );
-
-        byte[] payload = request.toString().getBytes(StandardCharsets.UTF_8);
+        // The UDP exchange below is raw; the socket is bound first so the Via header
+        // carries the real source port (no SipProvider/ListeningPoint needed — jain-sip-ri
+        // rejects port 0 in createListeningPoint).
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.setSoTimeout(timeoutMs);
+
+            ArrayList<ViaHeader> viaHeaders = new ArrayList<>();
+            ViaHeader via = headerFactory.createViaHeader("0.0.0.0", socket.getLocalPort(),
+                    transport, branch);
+            viaHeaders.add(via);
+
+            CallIdHeader callId = headerFactory.createCallIdHeader(UUID.randomUUID().toString());
+            CSeqHeader cSeq = headerFactory.createCSeqHeader(1L, Request.OPTIONS);
+            FromHeader from = headerFactory.createFromHeader(
+                    addressFactory.createAddress(addressFactory.createSipURI(username, domain)),
+                    UUID.randomUUID().toString());
+            ToHeader to = headerFactory.createToHeader(
+                    addressFactory.createAddress(addressFactory.createSipURI(host, domain)), null);
+            MaxForwardsHeader maxForwards = headerFactory.createMaxForwardsHeader(70);
+
+            Request request = messageFactory.createRequest(
+                    addressFactory.createSipURI(host, domain),
+                    Request.OPTIONS,
+                    callId,
+                    cSeq,
+                    from,
+                    to,
+                    viaHeaders,
+                    maxForwards
+            );
+
+            byte[] payload = request.toString().getBytes(StandardCharsets.UTF_8);
             socket.send(new DatagramPacket(payload, payload.length, InetAddress.getByName(host), port));
             byte[] buffer = new byte[4096];
             DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
@@ -205,8 +208,6 @@ public class SipDeviceDriver implements DeviceDriver {
                     "statusCode", statusCode,
                     "value", responseText.trim()
             ));
-        } finally {
-            sipStack.deleteSipProvider(provider);
         }
     }
 

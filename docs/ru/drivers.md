@@ -23,7 +23,7 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **36** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **9** **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+В `DriverProductionMatrix` — **47** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **9** **BETA**. Top-20 industrial: **16** **PRODUCTION** + **4** **BETA** (`iec104-server`, `ethernet-ip`, `opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
 > **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `ethernet-ip` (только CIP session). Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
@@ -40,6 +40,9 @@
 | `imap`, `pop3`, `jms` | PRODUCTION | mail/messaging-клиенты; read-only |
 | `soap`, `web-transaction`, `http-server` | PRODUCTION | на базе HTTP; read-only |
 | `jdbc`, `graph-db` | PRODUCTION | только SELECT / query read; read-only |
+| `sip`, `asterisk`, `radius` | PRODUCTION | телеком-пробы; read-only |
+| `ldap`, `jmx`, `nmea`, `message-stream`, `dhcp` | PRODUCTION | IT/network-проверки; read-only |
+| `ingress-syslog`, `ingress-snmp-trap`, `ingress-sflow` | PRODUCTION | UDP-слушатели, raw capture; `observed_at` |
 | `ethernet-ip` | BETA | регистрация CIP session; tag path — placeholder |
 | `opc-da`, `opc-bridge` | BETA | **Оболочка / тесты маппинга** — не полный DA-стек |
 | `iec104-server` | BETA | interop partner для `iec104` |
@@ -506,6 +509,9 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `smpp` | `ispf-driver-smpp` | SMPP |
 | `smb` | `ispf-driver-smb` | SMB/CIFS |
 | `corba` | `ispf-driver-corba` | CORBA IIOP TCP stub |
+| `ingress-syslog` | `ispf-driver-ingress-syslog` | Syslog UDP listener (raw capture) |
+| `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | SNMP trap UDP listener (raw capture) |
+| `ingress-sflow` | `ispf-driver-ingress-sflow` | sFlow v5 UDP listener (raw capture) |
 
 Подробные конфиги для базовых драйверов — в секциях ниже. Остальные следуют тому же паттерну: `driverConfigJson` + `driverPointMappingsJson`, см. `DriverMetadata` в модуле.
 
@@ -624,9 +630,11 @@ DLMS/COSEM **master** over TCP **WRAPPER** (`gurux.dlms` + `gurux.net`).
 
 ### jmx (`ispf-driver-jmx`)
 
-JMX remote или local. Конфиг: `serviceUrl` (`service:jmx:rmi:///jndi/rmi://host:port/jmxrmi`) или пусто для local.
+Удалённый JMX по RMI. Конфиг: `serviceUrl` (`service:jmx:rmi:///jndi/rmi://host:port/jmxrmi`) — или пусто, тогда URL строится из `host`/`port`. Локального режима (platform MBeanServer) нет; `timeoutMs` заявлен, но сейчас не используется.
 
-Маппинг точек: `ObjectName:attribute` (например `java.lang:type=Memory:HeapMemoryUsage`).
+Маппинг точек: `objectName::attribute[.compositeKey]` — например `java.lang:type=Memory::HeapMemoryUsage.used`. Предпочитайте разделитель `::`; legacy-форма с одиночным двоеточием ломается на objectName (всегда содержит `:`).
+
+Зрелость: **production**. Loopback-тест: `JmxDeviceDriverTest` (JDK `JMXConnectorServer` + RMI-реестр в той же JVM). Только чтение.
 
 ### jdbc (`ispf-driver-jdbc`)
 
@@ -665,15 +673,19 @@ SQL-чтение скаляра/строки через любой JDBC-драй
 
 ### message-stream (`ispf-driver-message-stream`)
 
-TCP client/server или UDP. Конфиг: `mode`, `host`, `port`, `encoding`.
+Сырой TCP client или UDP client/listener. Конфиг: `protocol` (`TCP`/`UDP`), `host`, `port`, `listen` (только UDP — TCP listen явно не поддерживается), `bufferSize`.
 
-Маппинг точек: `feed` — последнее сообщение.
+Маппинг точек: значения маппинга сейчас **не интерпретируются** — на каждый poll поток читается один раз, и одна и та же запись пишется во все точки; условно маппьте точку `feed`. Переменная: `stream` (UTF-8 chunk, пусто по таймауту), `bytesRead`.
+
+Зрелость: **production**. Loopback-тест: `MessageStreamDeviceDriverTest` (UDP listener + TCP client против локального ServerSocket; блокирующее чтение с soTimeout). Только чтение.
 
 ### nmea (`ispf-driver-nmea`)
 
-NMEA 0183. Конфиг: `mode` (tcp/serial), `host`/`port` или `serialPort`.
+NMEA 0183, **только TCP** (переподключение на каждый poll, до 100 строк за poll). Конфиг: `host`, `port` (10110). Serial-режима нет — ключи `mode`/`serialPort` не реализованы.
 
-Маппинг точек: тип предложения (`GGA`, `RMC`) или `raw`.
+Маппинг точек: **префикс** типа предложения, без учёта регистра (`startsWith` по токену типа — `GP` совпадает с `GPGGA`, голое `GGA` — нет); побеждает последняя совпавшая строка poll'а. Переменная: `value` (JSON `{"type":…,"f1":…,"fN":…}`, `{}` при несовпадении), `raw` (последнее совпавшее предложение).
+
+Зрелость: **production**. Loopback-тест: `NmeaDeviceDriverTest` (локальный ServerSocket, поток GGA/RMC). Только чтение.
 
 ### telnet / soap
 
@@ -845,9 +857,27 @@ FINS/TCP. Конфиг: `host`, `port` (9600), `destNode`, `srcNode`.
 
 ### asterisk (`ispf-driver-asterisk`)
 
-AMI. Конфиг: `host`, `port` (5038), `username`, `secret`.
+Asterisk AMI по TCP: баннер → `Action: Login` → блок action → разбор ответа. Конфиг: `host`, `port` (5038), `username`, `secret`.
 
-Маппинг точек: блок AMI action (например `Action: Ping`).
+Маппинг точек: дословный блок AMI action (например `Action: Ping`). Переменная: `value` (первый заголовок `Ping:`/`Message:` или весь ответ), `response` (сырой), `success`.
+
+Зрелость: **production**. Loopback-тест: `AsteriskDeviceDriverTest` (AMI-сервер в тесте). Только чтение. Ограничения: таймауты сокета захардкожены (5 с); одно TCP-соединение на точку за poll; ответ login не валидируется.
+
+### sip (`ispf-driver-sip`)
+
+SIP-проба (фабрики JAIN-SIP, обмен сырым UDP). Конфиг: `host`, `port` (5060), `username`, `domain`, `timeoutMs`.
+
+Маппинг точек: `options` (OPTIONS ping; reachable при 2xx/3xx) или `register` (REGISTER-проба; 200 = `registered`, 401/407 = `challenge`). Переменная: `reachable`, `statusCode`, `value`.
+
+Зрелость: **production**. Loopback-тест: `SipDeviceDriverTest` (UDP SIP-ответчик в тесте). Только чтение. Примечание: в рантайме нужен log4j-1.2 API — модуль несёт `reload4j` (jain-sip-ri объявляет log4j как `provided`).
+
+### radius (`ispf-driver-radius`)
+
+Проверка RADIUS-аутентификации (TinyRadius, **только PAP**). Конфиг: `host`, `port` (1812), `secret`, `username`, `password`, `timeoutMs`.
+
+Маппинг точек: `auth`. Переменная: `value` (`success`/`fail`), `success`, `responseCode` (тип RADIUS-пакета; `-1` при отсутствии ответа — ошибки сворачиваются в failure без исключений).
+
+Зрелость: **production**. Loopback-тест: `RadiusDeviceDriverTest` (TinyRadius `RadiusServer` в процессе: Access-Accept / Access-Reject / недостижимость). Только чтение. Ограничения: нет CHAP/MS-CHAP, нет accounting.
 
 ### smpp (`ispf-driver-smpp`)
 
@@ -860,6 +890,46 @@ SMPP 3.x (jsmpp). Конфиг: `host`, `port`, `systemId`, `password`.
 SMB/CIFS (smbj). Конфиг: `host`, `share`, `username`, `password`, `domain`.
 
 Маппинг точек: путь к файлу в share → `exists`, `size`.
+
+### ldap (`ispf-driver-ldap`)
+
+Проверки LDAP-каталога (UnboundID SDK). Конфиг: `host`, `port` (389), `bindDn`, `password`, `useSsl`.
+
+Маппинг точек: LDAP-фильтр `(objectClass=person)` → количество записей, или `filter:attribute` (разделение по последнему `:`; фильтр автоматически оборачивается в скобки) → значение атрибута, например `cn=admin:mail`. Переменная: `value`, `count`.
+
+Зрелость: **production**. Loopback-тест: `LdapDeviceDriverTest` (UnboundID `InMemoryDirectoryServer`). Только чтение. Ограничения: base DN захардкожен в root DSE (`""`) — реальные каталоги могут отклонять анонимный поиск с пустой базой; новое соединение на каждый poll.
+
+### dhcp (`ispf-driver-dhcp`)
+
+DHCP DISCOVER-проба (минимальный клиент, пакеты собираются вручную). Конфиг: `interfaceName`, `bindAddress`, `timeoutMs`, плюс опциональные `serverPort` (67), `listenPort` (68), `broadcastAddress` (`255.255.255.255`) — значения по умолчанию требуют привилегированных портов и broadcast.
+
+Маппинг точек: `serverIp` (option 54, fallback на yiaddr) или `lease` (`obtained`/`none`). Переменная: `value`, `leased`, `leaseSeconds` (option 51).
+
+Зрелость: **production**. Loopback-тест: `DhcpDeviceDriverTest` (UDP OFFER-ответчик в тесте через инъектируемые порты). Только чтение. Ограничение: только DISCOVER — без REQUEST/renew, парсятся только options 54/51.
+
+### ingress-syslog (`ispf-driver-ingress-syslog`)
+
+**Сырой захват** syslog-датаграмм по UDP (порт по умолчанию 514; `bindAddress` применяется). Извлечения полей RFC5424/3164 нет — текст сообщения пересылается нераспарсенным.
+
+Каждая датаграмма → фиксированная переменная `lastDatagram` (`message`, `sourceHost`, `sourcePort`, `bytes`) с `observedAt`. `readPoints` публикует статистику (`messagesReceived`, `lastMessage`, `listening`) во все маппированные точки.
+
+Зрелость: **production**. Loopback-тест: `SyslogIngressDeviceDriverTest` (датаграмма → запись + статистика). Только чтение.
+
+### ingress-snmp-trap (`ispf-driver-ingress-snmp-trap`)
+
+**Сырой захват** SNMP-трапов на UDP/162 (привилегированный на Linux; `bindAddress` применяется). BER-payload сохраняется как opaque bytes — декод OID/varbind сознательно downstream (correlator/rules).
+
+Каждый трап → фиксированная переменная `lastTrap` (`payloadBase64`, `payloadHex` превью, `sourceHost`, `bytes`) с `observedAt`. `readPoints` → статистика (`trapsReceived`, `listening`).
+
+Зрелость: **production**. Loopback-тест: `SnmpTrapIngressDeviceDriverTest`. Только чтение.
+
+### ingress-sflow (`ispf-driver-ingress-sflow`)
+
+**Сырой захват** sFlow v5 датаграмм на UDP/6343 (`bindAddress` применяется). Декод flow-записей — downstream, by design.
+
+Каждая датаграмма → фиксированная переменная `lastDatagram` (`payloadBase64`, `sourceHost`, `bytes`) с `observedAt`. `readPoints` → статистика (`datagramsReceived`, `listening`).
+
+Зрелость: **production**. Loopback-тест: `SflowIngressDeviceDriverTest`. Только чтение.
 
 ## Добавление своего драйвера
 

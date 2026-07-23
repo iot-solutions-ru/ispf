@@ -13,7 +13,7 @@ import com.ispf.driver.ingress.DriverIngressBuffer;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
@@ -42,7 +42,7 @@ public class SyslogIngressDeviceDriver implements DeviceDriver {
             "ingress-syslog",
             "Syslog UDP Ingress",
             "0.1.0",
-            "Listens for RFC5424/3164 syslog datagrams and forwards to ISPF ingress",
+            "Raw syslog datagram capture over UDP; forwards unparsed message text to ISPF ingress (no RFC5424/3164 field extraction)",
             "ISPF",
             Map.of(
                     "port", "514",
@@ -76,6 +76,10 @@ public class SyslogIngressDeviceDriver implements DeviceDriver {
         this.driverObject = driverObject;
         Map<String, String> config = driverObject.configuration();
         config.forEach(this::applyConfig);
+        startIngress(config);
+    }
+
+    private void startIngress(Map<String, String> config) {
         boolean fifo = DriverIngress.resolveFifoIngress(config, false);
         ingressBuffer = new DriverIngressBuffer<>(
                 DriverIngress.resolveThreads(config, 2),
@@ -101,15 +105,18 @@ public class SyslogIngressDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         disconnect();
+        startIngress(driverObject.configuration());
         try {
-            socket = new DatagramSocket(port);
+            socket = bindAddress.isBlank()
+                    ? new DatagramSocket(port)
+                    : new DatagramSocket(port, InetAddress.getByName(bindAddress.trim()));
             socket.setReuseAddress(true);
             connected = true;
             listenerThread = new Thread(this::listenLoop, "ingress-syslog-" + port);
             listenerThread.setDaemon(true);
             listenerThread.start();
             driverObject.log(DriverLogLevel.INFO, "Syslog ingress listening on UDP " + port);
-        } catch (SocketException e) {
+        } catch (IOException e) {
             connected = false;
             throw new DriverException("Syslog bind failed on port " + port, e);
         }
