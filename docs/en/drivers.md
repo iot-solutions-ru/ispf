@@ -23,9 +23,9 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **55** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **6** at **BETA**. Top-20 industrial: **17** **PRODUCTION** + **3** **BETA** (`ethernet-ip`, `opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **58** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **3** at **BETA**. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `ethernet-ip` (CIP session only). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
@@ -48,7 +48,8 @@ In `DriverProductionMatrix` — **55** drivers at **PRODUCTION** (including `cwm
 | `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` submit via mapping; loopback tests |
 | `ipmi`, `wmi` | PRODUCTION | hardware/OS probes; `wmi` Windows-only |
 | `odbc` | PRODUCTION | SQL read; requires external ODBC-JDBC bridge JAR |
-| `ethernet-ip` | BETA | CIP session registration; tag path placeholder |
+| `ethernet-ip` | PRODUCTION | UCMM CIP Read/Write Tag (atomic types); loopback CIP emulator test |
+| `smi-s`, `vmware` | PRODUCTION | CIM-XML parse / vSphere SOAP (Login + RetrieveProperties); loopback tests |
 | `opc-da`, `opc-bridge` | BETA | **Shell / mapping tests** — not full DA stack |
 
 ### observedAt (source timestamps, BL-79)
@@ -436,13 +437,13 @@ The `capabilities` field — string set from `DriverProductionMatrix` (ADR-0022)
 2. A platform PR adds protocol logic to the existing `ispf-driver-*` module.
 3. `DriverMaturityRegistry` is updated; documentation in this file.
 
-Current STUB/BETA candidates (June 2026):
+Current STUB/BETA candidates (July 2026):
 
 | `driverId` | Maturity | Note |
 |------------|----------|------|
-| `corba` | BETA | CORBA IIOP TCP shell |
-| `vmware` | BETA | vSphere SOAP stub |
-| `smi-s` | BETA | SMI-S CIM-XML stub |
+| `corba` | BETA | CORBA IIOP TCP shell — needs a third-party ORB |
+| `vmware` | PRODUCTION | vSphere SOAP: Login + RetrieveProperties |
+| `smi-s` | PRODUCTION | SMI-S CIM-XML parse |
 
 Loopback tests (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTest`, `OpcBridgeDeviceDriverTest`, `CorbaDeviceDriverTest`, `VmwareDeviceDriverTest` (`useHttp`), `SmisDeviceDriverTest` (`useHttp`).
 
@@ -475,7 +476,7 @@ Full list of `driverId` in `DriverCatalog`:
 | `iec104-server` | `ispf-driver-iec104-server` | IEC 104 server/slave |
 | `bacnet` | `ispf-driver-bacnet` | BACnet/IP |
 | `dnp3` | `ispf-driver-dnp3` | DNP3 TCP master (Class 0/1/2/3 poll) |
-| `ethernet-ip` | `ispf-driver-ethernet-ip` | EtherNet/IP CIP session + tag path |
+| `ethernet-ip` | `ispf-driver-ethernet-ip` | EtherNet/IP CIP UCMM Read/Write Tag |
 | `dlms` | `ispf-driver-dlms` | DLMS/COSEM master (Gurux read/write) |
 | `jmx` | `ispf-driver-jmx` | JMX local/remote |
 | `jdbc` | `ispf-driver-jdbc` | SQL JDBC |
@@ -500,8 +501,8 @@ Full list of `driverId` in `DriverCatalog`:
 | `cwmp` | `ispf-driver-cwmp` | TR-069 Inform client |
 | `web-transaction` | `ispf-driver-web-transaction` | Multi-step HTTP |
 | `graph-db` | `ispf-driver-graph-db` | Neo4j / Gremlin |
-| `vmware` | `ispf-driver-vmware` | vSphere SOAP stub |
-| `smi-s` | `ispf-driver-smis` | SMI-S CIM-XML stub |
+| `vmware` | `ispf-driver-vmware` | vSphere SOAP (Login + RetrieveProperties) |
+| `smi-s` | `ispf-driver-smis` | SMI-S CIM-XML |
 | `gps-tracker` | `ispf-driver-gps-tracker` | GPS/M2M TCP server |
 | `flexible` | `ispf-driver-flexible` | Flexible TCP/UDP |
 | `mbus` | `ispf-driver-mbus` | M-Bus |
@@ -523,7 +524,6 @@ Detailed configs for base drivers — in the sections below. Others follow the s
 
 | `driverId` | What exists now | For production |
 |------------|-----------------|----------------|
-| `ethernet-ip` | Register Session | CIP tag read/write library |
 | `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
 | `corba` | IIOP TCP | JDK CORBA removed; use bridge |
@@ -982,6 +982,30 @@ Generic ODBC read via a JDBC bridge. **Requires an external ODBC-JDBC bridge JAR
 Point mapping: column name of the first result row. Variable: `value`, `status`.
 
 Maturity: **production**. Loopback test: `OdbcDeviceDriverTest` (against H2 in bridge-compatibility mode — validates the query/mapping path, **not** a real ODBC bridge). Read-only.
+
+### ethernet-ip (`ispf-driver-ethernet-ip`)
+
+EtherNet/IP CIP client over the encapsulation protocol (default TCP/44818): `RegisterSession`, then UCMM (unconnected) `SendRRData` exchanges. Config: `host`, `port`, `timeoutMs`.
+
+Point mapping: CIP tag path (dot-separated symbolic segments, for example `Program:MainProgram.Counter`). CIP Read Tag (0x4C) decodes atomic types BOOL/SINT/INT/DINT/REAL little-endian; `writePoint` issues CIP Write Tag (0x4D) with the type learned from the last read of the tag (fallback: Java value type inference). Variable: `value`, `quality` (`GOOD` / `BAD:0x..` / `NOT_AVAILABLE`), `connected`, `sessionHandle`, `tagPath`.
+
+Maturity: **production**. Loopback test: `EthernetIpDeviceDriverTest` (in-test CIP emulator: read / write / error status / refused). Limitations: UCMM only (no connected Class-3 messaging), element count 1 (no arrays/structures/UDTs, no fragmentation), one exchange per point per poll, no ListIdentity discovery.
+
+### vmware (`ispf-driver-vmware`)
+
+VMware vSphere SOAP (vim25) client over HTTP(S): `RetrieveServiceContent` on connect, `SessionManager.Login` with the `vmware_soap_session` cookie, `PropertyCollector.RetrieveProperties` per poll; one re-login + retry on a `NotAuthenticated` fault; `Logout` on disconnect. Config: `host`, `username`, `password`, `timeoutMs`, `useHttp`.
+
+Point mapping: property path — `about.X` expands to `content.about.X` (for example `about.version`), or `connected`. Variable: `value`, `statusCode`.
+
+Maturity: **production**. Loopback test: `VmwareDeviceDriverTest` (fake vSphere endpoint enforcing the session flow). Read-only. Limitations: hand-rolled XML (no WSDL codegen); the object set is the ServiceInstance only; complex/array values are flattened to text.
+
+### smi-s (`ispf-driver-smis`)
+
+SMI-S client: CIM-XML over HTTP(S) — `EnumerateInstances` of `CIM_RegisteredProfile` against `/cimom`; `INSTANCE` properties are flattened to `Class:Property` keys, CIM `ERROR` responses fail the read. Config: `host`, `port` (5989), `username`, `password`, `namespace` (`root/pg`), `timeoutMs`, `useHttp`.
+
+Point mapping: `ClassName:PropertyName` (for example `CIM_RegisteredProfile:RegisteredName`). Variable: `value`, `statusCode`; `PROPERTY.ARRAY` values are comma-joined; missing properties read `NOT_AVAILABLE`.
+
+Maturity: **production**. Loopback test: `SmisDeviceDriverTest` (in-test CIM-XML server: values, arrays, CIM ERROR, refused). Read-only.
 
 ## Adding your own driver
 

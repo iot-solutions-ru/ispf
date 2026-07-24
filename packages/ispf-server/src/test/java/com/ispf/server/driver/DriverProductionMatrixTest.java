@@ -22,8 +22,7 @@ class DriverProductionMatrixTest {
     /** Top-20 partners / honesty-downgraded shells (BL-191) — not required PRODUCTION. */
     private static final Set<String> TOP_20_NON_PRODUCTION_EXEMPT = Set.of(
             "opc-da",
-            "opc-bridge",
-            "ethernet-ip"
+            "opc-bridge"
     );
 
     private static final Pattern CLASS_JAVADOC = Pattern.compile(

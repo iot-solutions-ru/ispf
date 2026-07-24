@@ -26,7 +26,7 @@
 | `exceljs` | `apps/web-console` (импорт/экспорт электронной таблицы XLSX) | **МИТ** | Ленивая загрузка; только виджет электронной таблицы. |
 | `@uiw/react-codemirror`, `@codemirror/*` | `apps/web-console` (script editor) | **MIT** | Direct runtime deps. |
 | `cytoscape` | `apps/web-console` (topology/graph views) | **MIT** | Direct runtime dep. |
-| `com.infiniteautomation:bacnet4j` | `packages/ispf-driver-bacnet` (пакет драйверов) | **GPL-3.0** | Исключено из профиля развертывания `permissive` по умолчанию. |
+| `com.infiniteautomation:bacnet4j` | `packages/ispf-driver-bacnet` (пакет драйверов); JAR зеркалируется в `third-party/maven-repo` для CI при недоступности mangoautomation | **GPL-3.0** | Исключено из профиля развертывания `permissive` по умолчанию. |
 | `org.gurux:gurux.dlms`, `org.gurux:gurux.net` | `packages/ispf-driver-dlms` (пакет драйверов) | **GPL-2.0** | Исключено из профиля развертывания `permissive` по умолчанию. |
 | `org.openmuc:j60870` | `packages/ispf-driver-iec104*` (пакеты драйверов) | **GPL** | Исключено из профиля развертывания `permissive` по умолчанию. |
 | `io.stepfunc:dnp3` | `packages/ispf-driver-dnp3` (пакет драйверов) | **LicenseRef-StepFunc-NonCommercial** | **Не входит в комплект** в упаковке JAR; исключен из `permissive` развертывания; prod требует коммерческой лицензии StepFunc. |
