@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Alert } from "antd";
 import { useTranslation } from "react-i18next";
 import { fetchObjectEditor } from "../../api";
 import ApplicationDeployPanel from "./ApplicationDeployPanel";
@@ -35,7 +36,7 @@ export default function ApplicationEditorPanel({
   }
 
   if (editorQuery.error) {
-    return <div className="op-alert op-alert-error">{String(editorQuery.error)}</div>;
+    return <Alert type="error" showIcon message={String(editorQuery.error)} />;
   }
 
   return (

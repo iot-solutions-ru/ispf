@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Alert, Button, Space, Table } from "antd";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsFormulaDto } from "../../api/analyticsFormulas";
 import {
@@ -73,60 +74,56 @@ export default function AnalyticsFormulasPanel() {
           <h3>{t("formulas.title")}</h3>
           <p className="op-muted">{t("formulas.subtitle")}</p>
         </div>
-        <button type="button" className="btn primary" onClick={openCreate}>
+        <Button type="primary" onClick={openCreate}>
           {t("formulas.create")}
-        </button>
+        </Button>
       </header>
 
       {statusMessage && <p className="hint success">{statusMessage}</p>}
       {formulasQuery.isLoading && <p className="op-muted">{t("formulas.loading")}</p>}
-      {formulasQuery.error && (
-        <div className="op-alert op-alert-error">{String(formulasQuery.error)}</div>
-      )}
+      {formulasQuery.error && <Alert type="error" showIcon message={String(formulasQuery.error)} />}
 
       {formulasQuery.data && (
         <div className="panel-card">
-          <table className="data-table compact">
-            <thead>
-              <tr>
-                <th>{t("formulas.column.id")}</th>
-                <th>{t("formulas.column.name")}</th>
-                <th>{t("formulas.column.kind")}</th>
-                <th>{t("formulas.column.version")}</th>
-                <th>{t("formulas.column.expression")}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {formulasQuery.data.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="op-muted">{t("formulas.empty")}</td>
-                </tr>
-              )}
-              {formulasQuery.data.map((formula) => (
-                <tr key={formula.id}>
-                  <td><code>{formula.id}</code></td>
-                  <td>{formula.displayName}</td>
-                  <td>{formula.kind}</td>
-                  <td>{formula.version}</td>
-                  <td><code className="analytics-formula-expression-cell">{formula.expression}</code></td>
-                  <td className="table-actions">
-                    <button type="button" className="btn small" onClick={() => openEdit(formula)}>
+          <Table
+            size="small"
+            rowKey="id"
+            dataSource={formulasQuery.data}
+            locale={{ emptyText: t("formulas.empty") }}
+            columns={[
+              {
+                title: t("formulas.column.id"),
+                dataIndex: "id",
+                render: (value: string) => <code>{value}</code>,
+              },
+              { title: t("formulas.column.name"), dataIndex: "displayName" },
+              { title: t("formulas.column.kind"), dataIndex: "kind" },
+              { title: t("formulas.column.version"), dataIndex: "version" },
+              {
+                title: t("formulas.column.expression"),
+                dataIndex: "expression",
+                render: (value: string) => <code className="analytics-formula-expression-cell">{value}</code>,
+              },
+              {
+                title: "",
+                render: (_, formula) => (
+                  <Space className="table-actions">
+                    <Button size="small" onClick={() => openEdit(formula)}>
                       {t("common:action.edit")}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn small danger"
+                    </Button>
+                    <Button
+                      size="small"
+                      danger
                       disabled={deleteMutation.isPending}
                       onClick={() => void handleDelete(formula)}
                     >
                       {t("common:action.delete")}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </Button>
+                  </Space>
+                ),
+              },
+            ]}
+          />
         </div>
       )}
 

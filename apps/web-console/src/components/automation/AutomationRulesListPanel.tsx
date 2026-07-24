@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Table } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchAlertRules, fetchCorrelators } from "../../api";
@@ -50,14 +51,14 @@ export default function AutomationRulesListPanel({
           <p className="hint">{t(isAlertRules ? "catalog.alertRulesSubtitle" : "catalog.correlatorsSubtitle")}</p>
         </div>
         {canManage && (
-          <button type="button" className="btn primary small" onClick={() => setShowCreate(true)}>
+          <Button type="primary" size="small" onClick={() => setShowCreate(true)}>
             {t(isAlertRules ? "catalog.createAlertRule" : "catalog.createCorrelator")}
-          </button>
+          </Button>
         )}
       </header>
 
       {listQuery.isLoading && <p className="hint">{t("common:action.loading")}</p>}
-      {listQuery.error && <div className="op-alert op-alert-error">{String(listQuery.error)}</div>}
+      {listQuery.error && <Alert type="error" showIcon message={String(listQuery.error)} />}
 
       {!listQuery.isLoading && !listQuery.error && (listQuery.data?.length ?? 0) === 0 && (
         <p className="hint">{t(isAlertRules ? "catalog.alertRulesEmpty" : "catalog.correlatorsEmpty")}</p>
@@ -111,34 +112,44 @@ function AlertRulesTable({
   }
 
   return (
-    <div className="table-scroll">
-      <table className="data-table automation-rules-table">
-        <thead>
-          <tr>
-            <th>{t("common:table.name")}</th>
-            <th>{t("catalog.column.targetObject")}</th>
-            <th>{t("catalog.column.variable")}</th>
-            <th>{t("catalog.column.event")}</th>
-            <th>{t("common:table.enabled")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rules.map((rule) => (
-            <tr key={rule.id}>
-              <td>
-                <button type="button" className="link-btn" onClick={() => onSelectPath(rule.id)}>
-                  <code>{rule.name}</code>
-                </button>
-              </td>
-              <td className="mono small">{rule.objectPath}</td>
-              <td><code>{rule.watchVariable}</code></td>
-              <td><code>{rule.eventName}</code></td>
-              <td>{rule.enabled ? t("common:action.yes") : t("common:action.no")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      className="automation-rules-table"
+      size="small"
+      rowKey="id"
+      dataSource={rules}
+      pagination={false}
+      columns={[
+        {
+          title: t("common:table.name"),
+          dataIndex: "name",
+          render: (value: string, rule) => (
+            <Button type="link" onClick={() => onSelectPath(rule.id)}>
+              <code>{value}</code>
+            </Button>
+          ),
+        },
+        {
+          title: t("catalog.column.targetObject"),
+          dataIndex: "objectPath",
+          className: "mono small",
+        },
+        {
+          title: t("catalog.column.variable"),
+          dataIndex: "watchVariable",
+          render: (value: string) => <code>{value}</code>,
+        },
+        {
+          title: t("catalog.column.event"),
+          dataIndex: "eventName",
+          render: (value: string) => <code>{value}</code>,
+        },
+        {
+          title: t("common:table.enabled"),
+          dataIndex: "enabled",
+          render: (value: boolean) => (value ? t("common:action.yes") : t("common:action.no")),
+        },
+      ]}
+    />
   );
 }
 
@@ -156,36 +167,44 @@ function CorrelatorsTable({
   }
 
   return (
-    <div className="table-scroll">
-      <table className="data-table automation-rules-table">
-        <thead>
-          <tr>
-            <th>{t("common:table.name")}</th>
-            <th>{t("catalog.column.pattern")}</th>
-            <th>{t("catalog.column.event")}</th>
-            <th>{t("catalog.column.action")}</th>
-            <th>{t("common:table.enabled")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {correlators.map((rule) => (
-            <tr key={rule.id}>
-              <td>
-                <button type="button" className="link-btn" onClick={() => onSelectPath(rule.id)}>
-                  <code>{rule.name}</code>
-                </button>
-              </td>
-              <td>{rule.patternType}</td>
-              <td className="mono small">
-                <code>{rule.eventName}</code>
-                {rule.secondEventName ? ` → ${rule.secondEventName}` : ""}
-              </td>
-              <td className="mono small">{rule.actionType}</td>
-              <td>{rule.enabled ? t("common:action.yes") : t("common:action.no")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      className="automation-rules-table"
+      size="small"
+      rowKey="id"
+      dataSource={correlators}
+      pagination={false}
+      columns={[
+        {
+          title: t("common:table.name"),
+          dataIndex: "name",
+          render: (value: string, rule) => (
+            <Button type="link" onClick={() => onSelectPath(rule.id)}>
+              <code>{value}</code>
+            </Button>
+          ),
+        },
+        { title: t("catalog.column.pattern"), dataIndex: "patternType" },
+        {
+          title: t("catalog.column.event"),
+          className: "mono small",
+          render: (_, rule) => (
+            <>
+              <code>{rule.eventName}</code>
+              {rule.secondEventName ? ` → ${rule.secondEventName}` : ""}
+            </>
+          ),
+        },
+        {
+          title: t("catalog.column.action"),
+          dataIndex: "actionType",
+          className: "mono small",
+        },
+        {
+          title: t("common:table.enabled"),
+          dataIndex: "enabled",
+          render: (value: boolean) => (value ? t("common:action.yes") : t("common:action.no")),
+        },
+      ]}
+    />
   );
 }

@@ -1,3 +1,4 @@
+import { Button } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import BffDataTable from "../operator/BffDataTable";
@@ -81,9 +82,9 @@ function TablePreviewModal({
             <strong>{title}</strong>
             {table.truncated && <p className="hint">{t("agent.tableTruncated")}</p>}
           </div>
-          <button type="button" className="btn small" onClick={onClose} aria-label={t("agent.closeTable")}>
+          <Button size="small" onClick={onClose} aria-label={t("agent.closeTable")}>
             ×
-          </button>
+          </Button>
         </header>
         <div className="operator-agent-modal-body">
           <BffDataTable rows={table.rows} labels={columnLabels(table)} />
@@ -514,13 +515,9 @@ export default function AgentChatArtifacts({
             <ul>
               {suggestions.map((item) => (
                 <li key={`${item.path ?? item.label}:${item.message}`}>
-                  <button
-                    type="button"
-                    className={`btn link${item.primary ? " primary" : ""}`}
-                    onClick={() => onSuggestMessage?.(item.message)}
-                  >
+                  <Button type="link" onClick={() => onSuggestMessage?.(item.message)}>
                     {item.label}
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -529,29 +526,28 @@ export default function AgentChatArtifacts({
         {links.length > 0 && (
           <div className="operator-agent-artifact-links">
             {links.map((link) => (
-              <button
+              <Button
                 key={`${link.kind}:${link.path}`}
-                type="button"
-                className="btn small"
+                size="small"
                 onClick={() => openLink(link, { onOpenDashboard, onOpenReport })}
               >
                 {link.kind === "report" ? t("agent.openReport") : t("agent.openDashboard")}: {link.title}
-              </button>
+              </Button>
             ))}
           </div>
         )}
         {tables.map((table, index) => (
-          <button
+          <Button
             key={`${table.reportPath ?? table.title ?? "table"}-${index}`}
-            type="button"
-            className="btn small primary"
+            type="primary"
+            size="small"
             onClick={() => setActiveTable(table)}
           >
             {t("agent.openTable", {
               title: table.title ?? table.reportPath ?? t("agent.tablePreview"),
               count: table.rowCount ?? table.rows.length,
             })}
-          </button>
+          </Button>
         ))}
       </div>
       {activeTable && (

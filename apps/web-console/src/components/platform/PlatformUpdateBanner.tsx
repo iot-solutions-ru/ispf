@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Modal, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -107,93 +108,86 @@ export default function PlatformUpdateBanner() {
 
   const handleApply = () => {
     const version = status.latestVersion ?? t("platformUpdate.newVersionFallback");
-    const confirmed = window.confirm(
-      t("platformUpdate.applyConfirm", { version }),
-    );
-    if (!confirmed) {
-      return;
-    }
-    applyMutation.mutate();
+    Modal.confirm({
+      title: t("platformUpdate.apply"),
+      content: t("platformUpdate.applyConfirm", { version }),
+      onOk: () => applyMutation.mutate(),
+    });
   };
 
   const canDismiss = !applying;
-
-  return (
-    <div
-      className={`platform-update-banner ${
-        failed ? "platform-update-banner-error" : applying ? "platform-update-banner-busy" : ""
-      }`}
-    >
-      <div className="platform-update-banner-body">
-        {applying && (
-          <>
-            <strong>{t("platformUpdate.updating")}</strong>
-            <span>{status.applyMessage ?? t("platformUpdate.restarting")}</span>
-          </>
-        )}
-        {!applying && failed && (
-          <>
-            <strong>{t("platformUpdate.failed")}</strong>
-            <span>{status.applyMessage ?? t("platformUpdate.failedMessage")}</span>
-          </>
-        )}
-        {!applying && !failed && status.updateAvailable && (
-          <>
-            <strong>{t("platformUpdate.available")}</strong>
-            <span>
+  const bannerType = failed || showCheckError ? "error" : applying ? "info" : "warning";
+  const message = applying
+    ? t("platformUpdate.updating")
+    : failed
+      ? t("platformUpdate.failed")
+      : status.updateAvailable
+        ? t("platformUpdate.available")
+        : t("platformUpdate.checkError");
+  const description = applying
+    ? status.applyMessage ?? t("platformUpdate.restarting")
+    : failed
+      ? status.applyMessage ?? t("platformUpdate.failedMessage")
+      : status.updateAvailable
+        ? (
+            <>
               {t("platformUpdate.versionLine", {
                 current: status.currentVersion,
                 latest: status.latestVersion,
               })}
               {status.releaseName ? ` (${status.releaseName})` : ""}
-            </span>
-          </>
-        )}
-        {showCheckError && (
-          <>
-            <strong>{t("platformUpdate.checkError")}</strong>
-            <span>{status.checkError}</span>
-          </>
-        )}
-      </div>
-      <div className="platform-update-banner-actions">
-        {status.updateAvailable && status.applyEnabled && !applying && (
-          <button
-            type="button"
-            className="btn primary small"
-            disabled={applyMutation.isPending}
-            onClick={handleApply}
-          >
-            {t("platformUpdate.apply")}
-          </button>
-        )}
-        {status.updateAvailable && !status.applyEnabled && !applying && status.releaseUrl && (
-          <a className="btn small" href={status.releaseUrl} target="_blank" rel="noreferrer">
-            {t("platformUpdate.openRelease")}
-          </a>
-        )}
-        {!applying && (
-          <button
-            type="button"
-            className="btn small"
-            disabled={checkMutation.isPending || statusQuery.isFetching}
-            onClick={() => checkMutation.mutate()}
-          >
-            {t("platformUpdate.checkAgain")}
-          </button>
-        )}
-        {canDismiss && (
-          <button
-            type="button"
-            className="btn small platform-update-banner-dismiss"
-            aria-label={t("platformUpdate.dismiss")}
-            title={t("platformUpdate.dismiss")}
-            onClick={() => dismiss(fingerprint)}
-          >
-            ✕
-          </button>
-        )}
-      </div>
-    </div>
+            </>
+          )
+        : status.checkError;
+
+  return (
+    <Alert
+      className={`platform-update-banner ${
+        failed ? "platform-update-banner-error" : applying ? "platform-update-banner-busy" : ""
+      }`}
+      type={bannerType}
+      showIcon
+      message={<Typography.Text strong>{message}</Typography.Text>}
+      description={description}
+      action={(
+        <Space className="platform-update-banner-actions" wrap size="small">
+          {status.updateAvailable && status.applyEnabled && !applying && (
+            <Button
+              type="primary"
+              size="small"
+              loading={applyMutation.isPending}
+              onClick={handleApply}
+            >
+              {t("platformUpdate.apply")}
+            </Button>
+          )}
+          {status.updateAvailable && !status.applyEnabled && !applying && status.releaseUrl && (
+            <Button size="small" href={status.releaseUrl} target="_blank" rel="noreferrer">
+              {t("platformUpdate.openRelease")}
+            </Button>
+          )}
+          {!applying && (
+            <Button
+              size="small"
+              loading={checkMutation.isPending || statusQuery.isFetching}
+              onClick={() => checkMutation.mutate()}
+            >
+              {t("platformUpdate.checkAgain")}
+            </Button>
+          )}
+          {canDismiss && (
+            <Button
+              size="small"
+              className="platform-update-banner-dismiss"
+              aria-label={t("platformUpdate.dismiss")}
+              title={t("platformUpdate.dismiss")}
+              onClick={() => dismiss(fingerprint)}
+            >
+              x
+            </Button>
+          )}
+        </Space>
+      )}
+    />
   );
 }

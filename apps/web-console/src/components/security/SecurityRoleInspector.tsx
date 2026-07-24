@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Space, Tag, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { fetchSecurityRoles, updateSecurityRole } from "../../api/securityRoles";
 import { deleteObject } from "../../api";
@@ -81,27 +82,22 @@ export default function SecurityRoleInspector({
           <ObjectTreeIcon path={path} type="ROLE" size={28} />
           <div className="security-user-heading">
             <div className="security-user-title-line">
-              <h2>{displayName.trim() || role.name}</h2>
-              <span className={`security-user-pill security-user-pill--role-${role.name}`}>
-                {role.name}
-              </span>
-              {role.builtIn && (
-                <span className="security-user-pill security-user-pill--status is-active">
-                  {t("role.builtIn")}
-                </span>
-              )}
+              <Typography.Title level={3} style={{ margin: 0 }}>
+                {displayName.trim() || role.name}
+              </Typography.Title>
+              <Tag>{role.name}</Tag>
+              {role.builtIn && <Tag color="success">{t("role.builtIn")}</Tag>}
             </div>
             <p className="security-user-meta">
-              <code className="path-code">{path}</code>
+              <Typography.Text code className="path-code">{path}</Typography.Text>
             </p>
           </div>
         </div>
         {canManage && !role.builtIn && (
           <div className="inspector-actions">
-            <button
-              type="button"
-              className="btn danger"
-              disabled={deleteMutation.isPending}
+            <Button
+              danger
+              loading={deleteMutation.isPending}
               onClick={() => {
                 if (confirm(t("common:action.confirmDeleteRole", { name: role.name }))) {
                   deleteMutation.mutate();
@@ -109,78 +105,66 @@ export default function SecurityRoleInspector({
               }}
             >
               {t("common:action.delete")}
-            </button>
+            </Button>
           </div>
         )}
       </header>
 
       {!canManage && (
-        <p className="hint security-user-readonly-hint">{t("role.readonlyHint")}</p>
+        <Alert type="info" showIcon message={t("role.readonlyHint")} style={{ marginBottom: 12 }} />
       )}
 
       <div className="security-user-cards">
         <section className="security-user-card">
-          <h3 className="security-user-card-title">{t("role.properties")}</h3>
-          <form
-            className="security-user-form"
-            onSubmit={(event) => {
-              event.preventDefault();
+          <Typography.Title level={5}>{t("role.properties")}</Typography.Title>
+          <Form
+            layout="vertical"
+            onFinish={() => {
               if (canManage && dirty) {
                 saveMutation.mutate();
               }
             }}
           >
-            <div className="security-user-form-grid">
-              <label>
-                <span className="field-label">{t("roles.column.name")}</span>
-                <input value={role.name} readOnly className="readonly" />
-              </label>
-              <label>
-                <span className="field-label">{t("common:field.displayName")}</span>
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  disabled={!canManage}
-                  placeholder={t("role.displayNamePlaceholder")}
-                />
-              </label>
-              <label className="full">
-                <span className="field-label">{t("common:field.description")}</span>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={!canManage}
-                  rows={3}
-                  placeholder={t("role.descriptionPlaceholder")}
-                />
-              </label>
-            </div>
+            <Form.Item label={t("roles.column.name")}>
+              <Input value={role.name} readOnly />
+            </Form.Item>
+            <Form.Item label={t("common:field.displayName")}>
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={!canManage}
+                placeholder={t("role.displayNamePlaceholder")}
+              />
+            </Form.Item>
+            <Form.Item label={t("common:field.description")}>
+              <Input.TextArea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!canManage}
+                rows={3}
+                placeholder={t("role.descriptionPlaceholder")}
+              />
+            </Form.Item>
 
             {canManage && (
-              <footer className="security-user-card-footer">
-                <div className="security-user-card-actions">
-                  <button
-                    type="submit"
-                    className="btn primary"
-                    disabled={!dirty || saveMutation.isPending}
-                  >
-                    {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
-                  </button>
-                </div>
+              <Space wrap>
+                <Button type="primary" htmlType="submit" disabled={!dirty} loading={saveMutation.isPending}>
+                  {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
+                </Button>
                 {saveMutation.isSuccess && !dirty && (
-                  <span className="hint success">{t("user.changesSaved")}</span>
+                  <Typography.Text type="success">{t("user.changesSaved")}</Typography.Text>
                 )}
                 {saveMutation.error && (
-                  <span className="hint error">{String(saveMutation.error)}</span>
+                  <Typography.Text type="danger">{String(saveMutation.error)}</Typography.Text>
                 )}
-              </footer>
+              </Space>
             )}
-          </form>
+          </Form>
         </section>
       </div>
 
       {deleteMutation.error && (
-        <p className="hint error security-user-delete-error">{String(deleteMutation.error)}</p>
+        <Alert type="error" showIcon message={String(deleteMutation.error)} style={{ marginTop: 12 }} />
       )}
     </div>
   );

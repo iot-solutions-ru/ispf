@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Form, Input, Modal, Space, Typography } from "antd";
 import { fireEvent } from "../../api";
 import type { EventDescriptor } from "../../types";
 import type { DataRecord, DataSchema } from "../../types";
@@ -52,43 +53,48 @@ export default function FireEventDialog({ objectPath, event, onClose, onFired }:
   });
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <header className="modal-head">
-          <h3>{t("runtime:fireEvent.title")}</h3>
-          <button type="button" className="btn small" onClick={onClose}>×</button>
-        </header>
-        <div className="modal-body">
-          <p className="hint">
-            {t("runtime:fireEvent.object")} <code>{objectPath}</code>
-          </p>
-          <p className="hint">
-            {t("runtime:fireEvent.event")} <code>{event.name}</code> ({event.level})
-          </p>
-          <label className="full">
-            {t("runtime:fireEvent.payload")}
-            <textarea
+    <Modal
+      title={t("runtime:fireEvent.title")}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      footer={[
+        <Button key="cancel" onClick={onClose}>
+          {t("common:action.cancel")}
+        </Button>,
+        <Button
+          key="publish"
+          type="primary"
+          disabled={mutation.isPending}
+          loading={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? t("runtime:fireEvent.publishing") : t("runtime:fireEvent.publish")}
+        </Button>,
+      ]}
+    >
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          {t("runtime:fireEvent.object")} <Typography.Text code>{objectPath}</Typography.Text>
+        </Typography.Paragraph>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          {t("runtime:fireEvent.event")} <Typography.Text code>{event.name}</Typography.Text> ({event.level})
+        </Typography.Paragraph>
+        <Form layout="vertical">
+          <Form.Item label={t("runtime:fireEvent.payload")} style={{ marginBottom: 0 }}>
+            <Input.TextArea
               rows={8}
               value={payloadJson}
               onChange={(e) => setPayloadJson(e.target.value)}
               spellCheck={false}
             />
-          </label>
-          <p className="hint">{t("runtime:fireEvent.payloadHint")}</p>
-          {error && <p className="hint error">{error}</p>}
-        </div>
-        <footer className="modal-foot">
-          <button type="button" className="btn" onClick={onClose}>{t("common:action.cancel")}</button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? t("runtime:fireEvent.publishing") : t("runtime:fireEvent.publish")}
-          </button>
-        </footer>
-      </div>
-    </div>
+          </Form.Item>
+        </Form>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          {t("runtime:fireEvent.payloadHint")}
+        </Typography.Paragraph>
+        {error && <Alert type="error" showIcon message={error} />}
+      </Space>
+    </Modal>
   );
 }

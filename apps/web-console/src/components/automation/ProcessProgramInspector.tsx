@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Form, Input, InputNumber, Switch, Typography } from "antd";
 import { setVariable, validateExpression } from "../../api";
 import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
 import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
@@ -15,6 +16,7 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
   const { t } = useTranslation(["automation", "common"]);
   const queryClient = useQueryClient();
   const variablesQuery = useInspectorVariables(path);
+  const [antdForm] = Form.useForm();
 
   const variables = variablesQuery.data ?? [];
   const form = {
@@ -81,123 +83,81 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
           </p>
         </div>
       </header>
-      <form
+      <Form
+        form={antdForm}
         key={path}
-        className="form-grid"
-        onSubmit={(e) => {
-          e.preventDefault();
+        layout="vertical"
+        className="antd-control-grid"
+        initialValues={form}
+        disabled={!canManage}
+        onFinish={(values: typeof form) => {
           if (!canManage) {
             return;
           }
-          const data = new FormData(e.currentTarget);
           saveMutation.mutate({
-            programId: String(data.get("programId") ?? ""),
-            cycleIntervalMs: Number(data.get("cycleIntervalMs") ?? 1000),
-            controlExpression: String(data.get("controlExpression") ?? ""),
-            targetObjectPath: String(data.get("targetObjectPath") ?? ""),
-            outputVariable: String(data.get("outputVariable") ?? ""),
-            interlockExpression: String(data.get("interlockExpression") ?? ""),
-            enabled: data.get("enabled") === "on",
+            programId: String(values.programId ?? ""),
+            cycleIntervalMs: Number(values.cycleIntervalMs ?? 1000),
+            controlExpression: String(values.controlExpression ?? ""),
+            targetObjectPath: String(values.targetObjectPath ?? ""),
+            outputVariable: String(values.outputVariable ?? ""),
+            interlockExpression: String(values.interlockExpression ?? ""),
+            enabled: Boolean(values.enabled),
           });
         }}
       >
-        <label>
-          {t("automation:processProgram.programId")}
-          <input name="programId" defaultValue={form.programId} required readOnly={!canManage} />
-        </label>
-        <label>
-          {t("automation:processProgram.cycleIntervalMs")}
-          <input
-            name="cycleIntervalMs"
-            type="number"
-            min={100}
-            step={100}
-            defaultValue={form.cycleIntervalMs}
-            readOnly={!canManage}
-          />
-        </label>
-        <label className="full">
-          {t("automation:processProgram.targetObjectPath")}
-          <input
-            name="targetObjectPath"
-            defaultValue={form.targetObjectPath}
-            readOnly={!canManage}
-            placeholder={t("automation:processProgram.targetObjectPathPlaceholder")}
-          />
-        </label>
-        <label>
-          {t("automation:processProgram.outputVariable")}
-          <input
-            name="outputVariable"
-            defaultValue={form.outputVariable}
-            readOnly={!canManage}
-            placeholder={t("automation:processProgram.outputVariablePlaceholder")}
-          />
-        </label>
-        <label className="full">
-          {t("automation:processProgram.controlExpression")}
-          <textarea
-            name="controlExpression"
-            defaultValue={form.controlExpression}
-            rows={4}
-            readOnly={!canManage}
-            placeholder={t("automation:processProgram.controlExpressionPlaceholder")}
-          />
-        </label>
-        <label className="full">
-          {t("automation:processProgram.interlockExpression")}
-          <textarea
-            name="interlockExpression"
-            defaultValue={form.interlockExpression}
-            rows={2}
-            readOnly={!canManage}
-            placeholder={t("automation:processProgram.interlockExpressionPlaceholder")}
-          />
-        </label>
-        <label className="checkbox">
-          <input type="checkbox" name="enabled" defaultChecked={form.enabled} disabled={!canManage} />
-          {t("automation:processProgram.enabled")}
-        </label>
+        <Form.Item name="programId" label={t("automation:processProgram.programId")} rules={[{ required: true }]} required>
+          <Input />
+        </Form.Item>
+        <Form.Item name="cycleIntervalMs" label={t("automation:processProgram.cycleIntervalMs")}>
+          <InputNumber min={100} step={100} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item className="full" name="targetObjectPath" label={t("automation:processProgram.targetObjectPath")}>
+          <Input placeholder={t("automation:processProgram.targetObjectPathPlaceholder")} />
+        </Form.Item>
+        <Form.Item name="outputVariable" label={t("automation:processProgram.outputVariable")}>
+          <Input placeholder={t("automation:processProgram.outputVariablePlaceholder")} />
+        </Form.Item>
+        <Form.Item className="full" name="controlExpression" label={t("automation:processProgram.controlExpression")}>
+          <Input.TextArea rows={4} placeholder={t("automation:processProgram.controlExpressionPlaceholder")} />
+        </Form.Item>
+        <Form.Item className="full" name="interlockExpression" label={t("automation:processProgram.interlockExpression")}>
+          <Input.TextArea rows={2} placeholder={t("automation:processProgram.interlockExpressionPlaceholder")} />
+        </Form.Item>
+        <Form.Item name="enabled" valuePropName="checked" label={t("automation:processProgram.enabled")}>
+          <Switch />
+        </Form.Item>
         {(form.lastCycleAt || form.lastOutput || form.lastError) && (
           <div className="full runtime-meta">
             {form.lastCycleAt && (
-              <p className="hint">
+              <Typography.Paragraph type="secondary">
                 {t("automation:processProgram.lastCycleAt")}: <code>{form.lastCycleAt}</code>
-              </p>
+              </Typography.Paragraph>
             )}
             {form.lastOutput && (
-              <p className="hint">
+              <Typography.Paragraph type="secondary">
                 {t("automation:processProgram.lastOutput")}: <code>{form.lastOutput}</code>
-              </p>
+              </Typography.Paragraph>
             )}
             {form.lastError && (
-              <p className="hint error">
-                {t("automation:processProgram.lastError")}: {form.lastError}
-              </p>
+              <Alert type="error" showIcon message={`${t("automation:processProgram.lastError")}: ${form.lastError}`} />
             )}
           </div>
         )}
         {canManage && (
           <div className="form-actions full">
-            <button
-              type="button"
-              className="btn"
+            <Button
               onClick={() => {
-                const expression = (
-                  document.querySelector(
-                    'textarea[name="controlExpression"]'
-                  ) as HTMLTextAreaElement | null
-                )?.value;
+                const expression = antdForm.getFieldValue("controlExpression") as string | undefined;
                 if (expression) {
                   validateMutation.mutate(expression);
                 }
               }}
             >
               {t("automation:processProgram.validateCel")}
-            </button>
-            <button type="submit" className="btn primary" disabled={saveMutation.isPending}>
+            </Button>
+            <Button htmlType="submit" type="primary" loading={saveMutation.isPending}>
               {t("common:action.save")}
-            </button>
+            </Button>
           </div>
         )}
         {validateMutation.data && (
@@ -207,8 +167,8 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
               : validateMutation.data.error}
           </p>
         )}
-        {saveMutation.error && <p className="hint error full">{String(saveMutation.error)}</p>}
-      </form>
+        {saveMutation.error && <Alert className="full" type="error" message={String(saveMutation.error)} showIcon />}
+      </Form>
       <ObjectFederationBindSection path={path} canManage={canManage} />
     </section>
   );

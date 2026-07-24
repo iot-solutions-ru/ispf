@@ -1,0 +1,894 @@
+{
+  "version": "1.0.1",
+  "displayName": "ERP-MES Pharma (ISA-95/ISA-88)",
+  "tablePrefix": "pha_",
+  "schemaName": "app_erp_mes_core",
+  "requires": [
+    {
+      "appId": "erp-mes-core",
+      "minVersion": "1.0.0"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "pha_m1_overlay_tables",
+      "sql": "CREATE TABLE IF NOT EXISTS pha_eventdef_ext (\n       code VARCHAR(64) PRIMARY KEY,\n       section VARCHAR(64),\n       operator_hint VARCHAR(512),\n       gmp_critical BOOLEAN NOT NULL DEFAULT false);\nCREATE TABLE IF NOT EXISTS pha_esign_record (\n       id UUID PRIMARY KEY,\n       entity_type VARCHAR(32) NOT NULL,\n       entity_id VARCHAR(128) NOT NULL,\n       signer VARCHAR(64) NOT NULL,\n       meaning VARCHAR(16) NOT NULL,\n       comment_text VARCHAR(512),\n       signed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);\nCREATE TABLE IF NOT EXISTS pha_serial_record (\n       serial_code VARCHAR(128) PRIMARY KEY,\n       job_no VARCHAR(64),\n       lot_id VARCHAR(64),\n       gtin VARCHAR(32),\n       parent_code VARCHAR(128),\n       status VARCHAR(32) NOT NULL DEFAULT 'COMMISSIONED',\n       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    },
+    {
+      "id": "pha_m2_event_catalog",
+      "sql": "INSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-LC', 'SETUP', 'Line clearance: проверка очистки линии', false, true, true, 'AVAILABILITY', 'SETUP_ADJUSTMENT', '10' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-LC');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-LC', 'All', 'Указать предыдущий продукт/серию, кто проверил очистку', true WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-LC');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-CIP', 'SETUP', 'CIP: мойка на месте', false, true, false, 'AVAILABILITY', 'PLANNED_STOP', '20' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-CIP');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-CIP', 'Granulation/Coating', 'Указать цикл мойки, моющий раствор', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-CIP');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-CLEAN', 'SETUP', 'Ручная уборка помещения/оборудования', false, true, true, 'AVAILABILITY', 'PLANNED_STOP', '30' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-CLEAN');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-CLEAN', 'All', 'Указать помещение/оборудование, вид уборки (текущая/генеральная)', true WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-CLEAN');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-CALIB', 'DOWNTIME', 'Поверка/калибровка приборов', false, true, true, 'AVAILABILITY', 'PLANNED_STOP', '40' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-CALIB');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-CALIB', 'All', 'Указать прибор, № свидетельства о поверке', true WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-CALIB');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-ENV', 'DOWNTIME', 'Отклонение микроклимата (температура/влажность/перепад)', false, true, true, 'AVAILABILITY', 'UNPLANNED_STOP', '50' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-ENV');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-ENV', 'All', 'Указать фактические значения, помещение', true WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-ENV');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-QA-HOLD', 'QUALITY', 'Ожидание решения ОКК (карантин)', false, true, true, 'AVAILABILITY', 'UNPLANNED_STOP', '60' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-QA-HOLD');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-QA-HOLD', 'All', 'Указать № протокола/отбора проб', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-QA-HOLD');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-DEVIATION', 'QUALITY', 'Девиация: регистрация и расследование', false, false, true, 'NONE', NULL, '70' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-DEVIATION');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-DEVIATION', 'All', 'Указать № девиации, краткое описание', true WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-DEVIATION');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-IPC-WAIT', 'QUALITY', 'Ожидание результата IPC', false, true, false, 'AVAILABILITY', 'UNPLANNED_STOP', '80' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-IPC-WAIT');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-IPC-WAIT', 'All', 'Указать контролируемый параметр', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-IPC-WAIT');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-IPC-SAMPLE', 'PRODUCTION', 'Отбор проб IPC (в процессе)', false, false, true, 'NONE', NULL, '90' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-IPC-SAMPLE');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-IPC-SAMPLE', 'All', 'Указать точку отбора, параметр', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-IPC-SAMPLE');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-PROD', 'PRODUCTION', 'Производство: чистый процесс (таблетирование/фасовка)', true, true, false, 'PERFORMANCE', 'REDUCED_SPEED', '100' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-PROD');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-PROD', 'All', 'Только чистое время процесса', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-PROD');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-REPROCESS', 'PRODUCTION', 'Переработка/возврат на доработку', false, true, true, 'PERFORMANCE', 'REDUCED_SPEED', '110' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-REPROCESS');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-REPROCESS', 'All', 'Указать основание для переработки, № разрешения ОКК', true WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-REPROCESS');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-UTIL', 'DOWNTIME', 'Авария инженерных систем (HVAC/пар/вода)', false, true, true, 'AVAILABILITY', 'BREAKDOWN', '120' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-UTIL');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-UTIL', 'All', 'Указать систему, характер аварии', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-UTIL');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-WEIGH-ERR', 'QUALITY', 'Ошибка взвешивания / расхождение тары', false, false, true, 'PERFORMANCE', 'REDUCED_SPEED', '130' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-WEIGH-ERR');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-WEIGH-ERR', 'All', 'Указать весы, фактическое/целевое значение', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-WEIGH-ERR');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-NO-OPER', 'DOWNTIME', 'Недоукомплектованная смена', false, false, true, 'AVAILABILITY', 'UNPLANNED_STOP', '140' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-NO-OPER');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-NO-OPER', 'All', 'Указать отсутствующую позицию, причину', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-NO-OPER');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-MICRO', 'DOWNTIME', 'Микроостановы (забивка сита, заедание пуансонов и т.п.)', false, false, true, 'PERFORMANCE', 'REDUCED_SPEED', '150' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-MICRO');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-MICRO', 'All', 'Указать узел, характер остановки', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-MICRO');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-CODE-ERR', 'DOWNTIME', 'Сбой сериализации/верификации кодов', false, true, true, 'PERFORMANCE', 'REDUCED_SPEED', '160' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-CODE-ERR');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-CODE-ERR', 'Packaging', 'Указать код/короб, сообщение системы сериализации', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-CODE-ERR');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-STARTUP', 'SETUP', 'Запуск линии после простоя', false, true, true, 'AVAILABILITY', 'PLANNED_STOP', '170' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-STARTUP');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-STARTUP', 'All', 'Указать причину предыдущей остановки', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-STARTUP');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-NO-MAT', 'DOWNTIME', 'Ожидание сырья или упаковочных материалов', false, true, true, 'AVAILABILITY', 'UNPLANNED_STOP', '180' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-NO-MAT');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-NO-MAT', 'All', 'Указать наименование материала, причину отсутствия', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-NO-MAT');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-DOC-WAIT', 'DOWNTIME', 'Ожидание документации/этикетирования', false, true, true, 'AVAILABILITY', 'UNPLANNED_STOP', '190' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-DOC-WAIT');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-DOC-WAIT', 'Packaging', 'Указать вид документации', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-DOC-WAIT');\nINSERT INTO emc_operations_event_definition (code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, six_big_loss, sort_order) SELECT 'PHA-TRAIN', 'DOWNTIME', 'Плановый простой: обучение GMP', false, true, true, 'NONE', NULL, '200' WHERE NOT EXISTS (SELECT 1 FROM emc_operations_event_definition WHERE code = 'PHA-TRAIN');\nINSERT INTO pha_eventdef_ext (code, section, operator_hint, gmp_critical) SELECT 'PHA-TRAIN', 'All', 'Указать тему обучения', false WHERE NOT EXISTS (SELECT 1 FROM pha_eventdef_ext WHERE code = 'PHA-TRAIN')"
+    },
+    {
+      "id": "pha_m3_equipment_personnel",
+      "sql": "INSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-DISPENSE-BOOTH', 'Weighing/dispensing booth', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-DISPENSE-BOOTH');\nINSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-GRANULATOR', 'High-shear wet granulator', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-GRANULATOR');\nINSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-FLUID-BED-DRYER', 'Fluid bed dryer', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-FLUID-BED-DRYER');\nINSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-BLENDER', 'Bin blender', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-BLENDER');\nINSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-TABLET-PRESS', 'Rotary tablet press', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-TABLET-PRESS');\nINSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-COATER', 'Perforated drum coater', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-COATER');\nINSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-BLISTER-LINE', 'Blister packaging line', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-BLISTER-LINE');\nINSERT INTO emc_equipment_class (class_id, description, equipment_level, parent_class_id) SELECT 'EQC-CARTONER', 'Cartoner with serialization', 'WORK_UNIT', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_class WHERE class_id = 'EQC-CARTONER');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'ENT-PHARMA', NULL, 'ENTERPRISE', NULL, 'ENT-PHARMA', 'Pharma demo enterprise' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'ENT-PHARMA');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'SITE-PH-01', NULL, 'SITE', 'ENT-PHARMA', 'ENT-PHARMA/SITE-PH-01', 'Pharma demo site' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'SITE-PH-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'AREA-SOLID', NULL, 'AREA', 'SITE-PH-01', 'ENT-PHARMA/SITE-PH-01/AREA-SOLID', 'Solid dosage area' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'AREA-SOLID');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'AREA-PACK', NULL, 'AREA', 'SITE-PH-01', 'ENT-PHARMA/SITE-PH-01/AREA-PACK', 'Packaging area' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'AREA-PACK');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'DSP-01', 'EQC-DISPENSE-BOOTH', 'WORK_UNIT', 'AREA-SOLID', 'ENT-PHARMA/SITE-PH-01/AREA-SOLID/DSP-01', 'Dispensing booth DSP-01' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'DSP-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'GRN-01', 'EQC-GRANULATOR', 'WORK_UNIT', 'AREA-SOLID', 'ENT-PHARMA/SITE-PH-01/AREA-SOLID/GRN-01', 'Granulator GRN-01' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'GRN-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'FBD-01', 'EQC-FLUID-BED-DRYER', 'WORK_UNIT', 'AREA-SOLID', 'ENT-PHARMA/SITE-PH-01/AREA-SOLID/FBD-01', 'Fluid bed dryer FBD-01' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'FBD-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'BLN-01', 'EQC-BLENDER', 'WORK_UNIT', 'AREA-SOLID', 'ENT-PHARMA/SITE-PH-01/AREA-SOLID/BLN-01', 'Bin blender BLN-01' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'BLN-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'TPR-01', 'EQC-TABLET-PRESS', 'WORK_UNIT', 'AREA-SOLID', 'ENT-PHARMA/SITE-PH-01/AREA-SOLID/TPR-01', 'Tablet press TPR-01' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'TPR-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'COT-01', 'EQC-COATER', 'WORK_UNIT', 'AREA-SOLID', 'ENT-PHARMA/SITE-PH-01/AREA-SOLID/COT-01', 'Coater COT-01' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'COT-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'BLS-01', 'EQC-BLISTER-LINE', 'WORK_UNIT', 'AREA-PACK', 'ENT-PHARMA/SITE-PH-01/AREA-PACK/BLS-01', 'Blister line BLS-01' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'BLS-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'CRT-01', 'EQC-CARTONER', 'WORK_UNIT', 'AREA-PACK', 'ENT-PHARMA/SITE-PH-01/AREA-PACK/CRT-01', 'Cartoner CRT-01 (serialization)' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'CRT-01');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'WH-QUAR', NULL, 'STORAGE_ZONE', 'SITE-PH-01', 'ENT-PHARMA/SITE-PH-01/WH-QUAR', 'Карантин (quarantine warehouse)' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'WH-QUAR');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'WH-REL', NULL, 'STORAGE_ZONE', 'SITE-PH-01', 'ENT-PHARMA/SITE-PH-01/WH-REL', 'Отпущено (released warehouse)' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'WH-REL');\nINSERT INTO emc_equipment (equipment_id, class_id, equipment_level, parent_id, hierarchy_path, description) SELECT 'WH-REJ', NULL, 'STORAGE_ZONE', 'SITE-PH-01', 'ENT-PHARMA/SITE-PH-01/WH-REJ', 'Забраковано (rejected warehouse)' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment WHERE equipment_id = 'WH-REJ');\nINSERT INTO emc_equipment_property (equipment_id, prop_key, prop_value, uom) SELECT 'TPR-01', 'punches', '33', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_property WHERE equipment_id = 'TPR-01' AND prop_key = 'punches');\nINSERT INTO emc_equipment_property (equipment_id, prop_key, prop_value, uom) SELECT 'TPR-01', 'max_tab_per_h', '200000', 'tab/h' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_property WHERE equipment_id = 'TPR-01' AND prop_key = 'max_tab_per_h');\nINSERT INTO emc_equipment_property (equipment_id, prop_key, prop_value, uom) SELECT 'COT-01', 'drum_kg', '120', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_property WHERE equipment_id = 'COT-01' AND prop_key = 'drum_kg');\nINSERT INTO emc_equipment_property (equipment_id, prop_key, prop_value, uom) SELECT 'AREA-SOLID', 'cleanroom_class', 'ISO 8', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_property WHERE equipment_id = 'AREA-SOLID' AND prop_key = 'cleanroom_class');\nINSERT INTO emc_equipment_property (equipment_id, prop_key, prop_value, uom) SELECT 'AREA-PACK', 'cleanroom_class', 'ISO 8', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_property WHERE equipment_id = 'AREA-PACK' AND prop_key = 'cleanroom_class');\nINSERT INTO emc_personnel_class (class_id, description) SELECT 'PCL-PHARMACIST', 'Pharmacist / technologist' WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_class WHERE class_id = 'PCL-PHARMACIST');\nINSERT INTO emc_personnel_class (class_id, description) SELECT 'PCL-OPERATOR-PH', 'Production operator (pharma)' WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_class WHERE class_id = 'PCL-OPERATOR-PH');\nINSERT INTO emc_personnel_class (class_id, description) SELECT 'PCL-QA', 'QA specialist' WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_class WHERE class_id = 'PCL-QA');\nINSERT INTO emc_person (person_id, person_name, personnel_class_id) SELECT 'EMP-H01', 'Olga Technologist', 'PCL-PHARMACIST' WHERE NOT EXISTS (SELECT 1 FROM emc_person WHERE person_id = 'EMP-H01');\nINSERT INTO emc_person (person_id, person_name, personnel_class_id) SELECT 'EMP-H02', 'Sergey Operator', 'PCL-OPERATOR-PH' WHERE NOT EXISTS (SELECT 1 FROM emc_person WHERE person_id = 'EMP-H02');\nINSERT INTO emc_person (person_id, person_name, personnel_class_id) SELECT 'EMP-H03', 'Maria QA', 'PCL-QA' WHERE NOT EXISTS (SELECT 1 FROM emc_person WHERE person_id = 'EMP-H03');\nINSERT INTO emc_person_qualification (person_id, equipment_id, equipment_class_id, qualification) SELECT 'EMP-H02', NULL, 'EQC-TABLET-PRESS', 'OPERATE' WHERE NOT EXISTS (SELECT 1 FROM emc_person_qualification WHERE person_id = 'EMP-H02' AND equipment_class_id = 'EQC-TABLET-PRESS');\nINSERT INTO emc_person_qualification (person_id, equipment_id, equipment_class_id, qualification) SELECT 'EMP-H03', 'SITE-PH-01', NULL, 'OPERATE' WHERE NOT EXISTS (SELECT 1 FROM emc_person_qualification WHERE person_id = 'EMP-H03' AND equipment_id = 'SITE-PH-01')"
+    },
+    {
+      "id": "pha_m4_materials",
+      "sql": "INSERT INTO emc_material_class (class_id, description, parent_class_id) SELECT 'MCL-API', 'Active pharmaceutical ingredients', 'MCL-RAW' WHERE NOT EXISTS (SELECT 1 FROM emc_material_class WHERE class_id = 'MCL-API');\nINSERT INTO emc_material_class (class_id, description, parent_class_id) SELECT 'MCL-EXCIPIENT', 'Excipients', 'MCL-RAW' WHERE NOT EXISTS (SELECT 1 FROM emc_material_class WHERE class_id = 'MCL-EXCIPIENT');\nINSERT INTO emc_material_class (class_id, description, parent_class_id) SELECT 'MCL-PACK', 'Packaging materials', 'MCL-RAW' WHERE NOT EXISTS (SELECT 1 FROM emc_material_class WHERE class_id = 'MCL-PACK');\nINSERT INTO emc_material_class (class_id, description, parent_class_id) SELECT 'MCL-WIP-PH', 'WIP pharma (granulate/blend/tablets)', 'MCL-WIP' WHERE NOT EXISTS (SELECT 1 FROM emc_material_class WHERE class_id = 'MCL-WIP-PH');\nINSERT INTO emc_material_class (class_id, description, parent_class_id) SELECT 'MCL-FG-PH', 'Finished goods pharma', 'MCL-FG' WHERE NOT EXISTS (SELECT 1 FROM emc_material_class WHERE class_id = 'MCL-FG-PH');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'API-PARACETAMOL', 'MCL-API', 'RAW', 'kg', 'Paracetamol API' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'API-PARACETAMOL');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'EXC-LACTOSE-MONO', 'MCL-EXCIPIENT', 'RAW', 'kg', 'Lactose monohydrate' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'EXC-LACTOSE-MONO');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'EXC-MCC', 'MCL-EXCIPIENT', 'RAW', 'kg', 'Microcrystalline cellulose' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'EXC-MCC');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'EXC-PVP-K30', 'MCL-EXCIPIENT', 'RAW', 'kg', 'Povidone K30 (binder)' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'EXC-PVP-K30');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'EXC-MG-STEARATE', 'MCL-EXCIPIENT', 'RAW', 'kg', 'Magnesium stearate (lubricant)' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'EXC-MG-STEARATE');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'EXC-OPADRY', 'MCL-EXCIPIENT', 'RAW', 'kg', 'Opadry film coating' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'EXC-OPADRY');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'SOLV-WFI', 'MCL-EXCIPIENT', 'RAW', 'kg', 'Вода очищенная' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'SOLV-WFI');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'PACK-PVC-FOIL', 'MCL-PACK', 'RAW', 'm', 'PVC forming foil' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'PACK-PVC-FOIL');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'PACK-ALU-FOIL', 'MCL-PACK', 'RAW', 'm', 'Aluminium lidding foil' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'PACK-ALU-FOIL');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'PACK-CARTON', 'MCL-PACK', 'RAW', 'pcs', 'Folding carton' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'PACK-CARTON');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'PACK-LEAFLET', 'MCL-PACK', 'RAW', 'pcs', 'Patient information leaflet' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'PACK-LEAFLET');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'WIP-PREMIX', 'MCL-WIP-PH', 'WIP', 'kg', 'Premix after dispensing' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'WIP-PREMIX');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'WIP-GRANULATE', 'MCL-WIP-PH', 'WIP', 'kg', 'Wet granulate' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'WIP-GRANULATE');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'WIP-FINAL-BLEND', 'MCL-WIP-PH', 'WIP', 'kg', 'Final blend for compression' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'WIP-FINAL-BLEND');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'WIP-TABLET-CORE', 'MCL-WIP-PH', 'WIP', 'kg', 'Tablet cores' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'WIP-TABLET-CORE');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'WIP-TABLET-COATED', 'MCL-WIP-PH', 'WIP', 'kg', 'Coated tablets' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'WIP-TABLET-COATED');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'FG-TAB-BLISTER', 'MCL-FG-PH', 'FG', 'pcs', 'Парацетамол 500 мг №10 блистер' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'FG-TAB-BLISTER');\nINSERT INTO emc_material_definition (definition_id, class_id, kind, base_uom, description) SELECT 'FG-TAB-CARTON', 'MCL-FG-PH', 'FG', 'pcs', 'Парацетамол 500 мг №10 в коробе (сериализован)' WHERE NOT EXISTS (SELECT 1 FROM emc_material_definition WHERE definition_id = 'FG-TAB-CARTON');\nINSERT INTO emc_material_lot (lot_id, barcode, definition_id, status, disposition, storage_location, quantity, base_uom, weight_kg) SELECT 'LOT-API-0001', 'BC-API-0001', 'API-PARACETAMOL', 'STOCK', 'QUARANTINE', 'WH-QUAR', '25', 'kg', '25' WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot WHERE lot_id = 'LOT-API-0001');\nINSERT INTO emc_material_lot (lot_id, barcode, definition_id, status, disposition, storage_location, quantity, base_uom, weight_kg) SELECT 'LOT-API-0002', 'BC-API-0002', 'API-PARACETAMOL', 'STOCK', 'RELEASED', 'WH-REL', '30', 'kg', '30' WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot WHERE lot_id = 'LOT-API-0002');\nINSERT INTO emc_material_lot (lot_id, barcode, definition_id, status, disposition, storage_location, quantity, base_uom, weight_kg) SELECT 'LOT-EXC-0001', 'BC-EXC-0001', 'EXC-LACTOSE-MONO', 'STOCK', 'RELEASED', 'WH-REL', '50', 'kg', '50' WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot WHERE lot_id = 'LOT-EXC-0001');\nINSERT INTO emc_material_lot (lot_id, barcode, definition_id, status, disposition, storage_location, quantity, base_uom, weight_kg) SELECT 'LOT-EXC-0002', 'BC-EXC-0002', 'EXC-MG-STEARATE', 'STOCK', 'RELEASED', 'WH-REL', '10', 'kg', '10' WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot WHERE lot_id = 'LOT-EXC-0002');\nINSERT INTO emc_material_lot (lot_id, barcode, definition_id, status, disposition, storage_location, quantity, base_uom, weight_kg) SELECT 'LOT-WIP-PH-0001', 'BC-WIP-PH-0001', 'WIP-FINAL-BLEND', 'STOCK', 'RELEASED', 'WH-REL', '80', 'kg', '80' WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot WHERE lot_id = 'LOT-WIP-PH-0001');\nINSERT INTO emc_material_lot (lot_id, barcode, definition_id, status, disposition, storage_location, quantity, base_uom, weight_kg) SELECT 'LOT-FG-PH-0001', 'BC-FG-PH-0001', 'FG-TAB-BLISTER', 'STOCK', 'QUARANTINE', 'WH-QUAR', '5000', 'pcs', '420' WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot WHERE lot_id = 'LOT-FG-PH-0001');\nINSERT INTO emc_material_lot_property (lot_id, prop_key, prop_value, uom) SELECT 'LOT-API-0001', 'gtin', '04607012340001', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot_property WHERE lot_id = 'LOT-API-0001' AND prop_key = 'gtin');\nINSERT INTO emc_material_lot_property (lot_id, prop_key, prop_value, uom) SELECT 'LOT-API-0001', 'batch_no', 'B2026-041', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot_property WHERE lot_id = 'LOT-API-0001' AND prop_key = 'batch_no');\nINSERT INTO emc_material_lot_property (lot_id, prop_key, prop_value, uom) SELECT 'LOT-API-0001', 'expiry_date', '2028-06-30', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot_property WHERE lot_id = 'LOT-API-0001' AND prop_key = 'expiry_date');\nINSERT INTO emc_material_lot_property (lot_id, prop_key, prop_value, uom) SELECT 'LOT-API-0001', 'retest_date', '2027-06-30', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot_property WHERE lot_id = 'LOT-API-0001' AND prop_key = 'retest_date');\nINSERT INTO emc_material_lot_property (lot_id, prop_key, prop_value, uom) SELECT 'LOT-FG-PH-0001', 'gtin', '04607012340018', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot_property WHERE lot_id = 'LOT-FG-PH-0001' AND prop_key = 'gtin');\nINSERT INTO emc_material_lot_property (lot_id, prop_key, prop_value, uom) SELECT 'LOT-FG-PH-0001', 'batch_no', 'B2026-118', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot_property WHERE lot_id = 'LOT-FG-PH-0001' AND prop_key = 'batch_no');\nINSERT INTO emc_material_lot_property (lot_id, prop_key, prop_value, uom) SELECT 'LOT-FG-PH-0001', 'expiry_date', '2029-01-31', NULL WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot_property WHERE lot_id = 'LOT-FG-PH-0001' AND prop_key = 'expiry_date')"
+    },
+    {
+      "id": "pha_m5_segments_quality_demo",
+      "sql": "INSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-DISPENSE', NULL, 'PRODUCTION', 'Взвешивание и дозирование', 'Weighing and dispensing with second-person verification' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-DISPENSE');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-DISPENSE:EQ', 'SEG-DISPENSE', 'EQC-DISPENSE-BOOTH', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-DISPENSE:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-DISPENSE:PERS', 'SEG-DISPENSE', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-DISPENSE:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-DISPENSE', '1', 'SEG-DISPENSE', '120', 'Взвешивание и дозирование (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-DISPENSE' AND version = '1');\nINSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-GRANULATE', NULL, 'PRODUCTION', 'Влажная грануляция', 'High-shear wet granulation' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-GRANULATE');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-GRANULATE:EQ', 'SEG-GRANULATE', 'EQC-GRANULATOR', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-GRANULATE:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-GRANULATE:PERS', 'SEG-GRANULATE', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-GRANULATE:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-GRANULATE', '1', 'SEG-GRANULATE', '90', 'Влажная грануляция (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-GRANULATE' AND version = '1');\nINSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-DRY', NULL, 'PRODUCTION', 'Сушка в кипящем слое', 'Fluid bed drying with LOD control' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-DRY');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-DRY:EQ', 'SEG-DRY', 'EQC-FLUID-BED-DRYER', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-DRY:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-DRY:PERS', 'SEG-DRY', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-DRY:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-DRY', '1', 'SEG-DRY', '60', 'Сушка в кипящем слое (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-DRY' AND version = '1');\nINSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-BLEND-FINAL', NULL, 'PRODUCTION', 'Финальное смешение/опудривание', 'Final blending and lubrication' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-BLEND-FINAL');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-BLEND-FINAL:EQ', 'SEG-BLEND-FINAL', 'EQC-BLENDER', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-BLEND-FINAL:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-BLEND-FINAL:PERS', 'SEG-BLEND-FINAL', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-BLEND-FINAL:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-BLEND-FINAL', '1', 'SEG-BLEND-FINAL', '30', 'Финальное смешение/опудривание (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-BLEND-FINAL' AND version = '1');\nINSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-COMPRESS', NULL, 'PRODUCTION', 'Таблетирование', 'Tablet compression on rotary press' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-COMPRESS');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-COMPRESS:EQ', 'SEG-COMPRESS', 'EQC-TABLET-PRESS', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-COMPRESS:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-COMPRESS:PERS', 'SEG-COMPRESS', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-COMPRESS:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-COMPRESS', '1', 'SEG-COMPRESS', '240', 'Таблетирование (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-COMPRESS' AND version = '1');\nINSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-COAT', NULL, 'PRODUCTION', 'Оболочка', 'Film coating in perforated drum' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-COAT');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-COAT:EQ', 'SEG-COAT', 'EQC-COATER', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-COAT:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-COAT:PERS', 'SEG-COAT', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-COAT:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-COAT', '1', 'SEG-COAT', '180', 'Оболочка (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-COAT' AND version = '1');\nINSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-BLISTER', NULL, 'PRODUCTION', 'Блистерование', 'Blister packaging (PVC/Alu)' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-BLISTER');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-BLISTER:EQ', 'SEG-BLISTER', 'EQC-BLISTER-LINE', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-BLISTER:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-BLISTER:PERS', 'SEG-BLISTER', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-BLISTER:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-BLISTER', '1', 'SEG-BLISTER', '300', 'Блистерование (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-BLISTER' AND version = '1');\nINSERT INTO emc_process_segment (segment_id, parent_id, operations_type, name, description) SELECT 'SEG-CARTON', NULL, 'PRODUCTION', 'Картонаж и сериализация', 'Cartoning with serialization and aggregation' WHERE NOT EXISTS (SELECT 1 FROM emc_process_segment WHERE segment_id = 'SEG-CARTON');\nINSERT INTO emc_segment_equipment_spec (spec_id, segment_id, equipment_class_id, equipment_id, equipment_use, quantity) SELECT 'SEG-CARTON:EQ', 'SEG-CARTON', 'EQC-CARTONER', NULL, 'PRIMARY', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_equipment_spec WHERE spec_id = 'SEG-CARTON:EQ');\nINSERT INTO emc_segment_personnel_spec (spec_id, segment_id, personnel_class_id, person_id, personnel_use, quantity) SELECT 'SEG-CARTON:PERS', 'SEG-CARTON', 'PCL-OPERATOR-PH', NULL, 'OPERATOR', '1' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_personnel_spec WHERE spec_id = 'SEG-CARTON:PERS');\nINSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT 'WM-CARTON', '1', 'SEG-CARTON', '200', 'Картонаж и сериализация (master)' WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = 'WM-CARTON' AND version = '1');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-DISPENSE:IN-API', 'SEG-DISPENSE', NULL, 'API-PARACETAMOL', 'CONSUMED', '20', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-DISPENSE:IN-API');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-DISPENSE:IN-LACTOSE', 'SEG-DISPENSE', NULL, 'EXC-LACTOSE-MONO', 'CONSUMED', '55', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-DISPENSE:IN-LACTOSE');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-DISPENSE:IN-MCC', 'SEG-DISPENSE', NULL, 'EXC-MCC', 'CONSUMED', '23', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-DISPENSE:IN-MCC');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-DISPENSE:OUT-PREMIX', 'SEG-DISPENSE', NULL, 'WIP-PREMIX', 'PRODUCED', '98', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-DISPENSE:OUT-PREMIX');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-GRANULATE:IN-PREMIX', 'SEG-GRANULATE', NULL, 'WIP-PREMIX', 'CONSUMED', '98', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-GRANULATE:IN-PREMIX');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-GRANULATE:IN-PVP', 'SEG-GRANULATE', NULL, 'EXC-PVP-K30', 'CONSUMED', '2', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-GRANULATE:IN-PVP');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-GRANULATE:IN-WFI', 'SEG-GRANULATE', NULL, 'SOLV-WFI', 'CONSUMED', '15', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-GRANULATE:IN-WFI');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-GRANULATE:OUT-GRAN', 'SEG-GRANULATE', NULL, 'WIP-GRANULATE', 'PRODUCED', '115', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-GRANULATE:OUT-GRAN');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-DRY:IN-GRAN', 'SEG-DRY', NULL, 'WIP-GRANULATE', 'CONSUMED', '115', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-DRY:IN-GRAN');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-DRY:OUT-GRAN', 'SEG-DRY', NULL, 'WIP-GRANULATE', 'PRODUCED', '100', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-DRY:OUT-GRAN');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-BLEND-FINAL:IN-GRAN', 'SEG-BLEND-FINAL', NULL, 'WIP-GRANULATE', 'CONSUMED', '100', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-BLEND-FINAL:IN-GRAN');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-BLEND-FINAL:IN-MGST', 'SEG-BLEND-FINAL', NULL, 'EXC-MG-STEARATE', 'CONSUMED', '1', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-BLEND-FINAL:IN-MGST');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-BLEND-FINAL:OUT-BLEND', 'SEG-BLEND-FINAL', NULL, 'WIP-FINAL-BLEND', 'PRODUCED', '101', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-BLEND-FINAL:OUT-BLEND');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-COMPRESS:IN-BLEND', 'SEG-COMPRESS', NULL, 'WIP-FINAL-BLEND', 'CONSUMED', '101', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-COMPRESS:IN-BLEND');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-COMPRESS:OUT-CORE', 'SEG-COMPRESS', NULL, 'WIP-TABLET-CORE', 'PRODUCED', '100', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-COMPRESS:OUT-CORE');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-COAT:IN-CORE', 'SEG-COAT', NULL, 'WIP-TABLET-CORE', 'CONSUMED', '100', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-COAT:IN-CORE');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-COAT:IN-OPADRY', 'SEG-COAT', NULL, 'EXC-OPADRY', 'CONSUMED', '3', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-COAT:IN-OPADRY');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-COAT:OUT-COATED', 'SEG-COAT', NULL, 'WIP-TABLET-COATED', 'PRODUCED', '103', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-COAT:OUT-COATED');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-BLISTER:IN-COATED', 'SEG-BLISTER', NULL, 'WIP-TABLET-COATED', 'CONSUMED', '103', 'kg' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-BLISTER:IN-COATED');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-BLISTER:IN-PVC', 'SEG-BLISTER', NULL, 'PACK-PVC-FOIL', 'CONSUMED', '500', 'm' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-BLISTER:IN-PVC');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-BLISTER:IN-ALU', 'SEG-BLISTER', NULL, 'PACK-ALU-FOIL', 'CONSUMED', '500', 'm' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-BLISTER:IN-ALU');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-BLISTER:OUT-FG', 'SEG-BLISTER', NULL, 'FG-TAB-BLISTER', 'PRODUCED', '50000', 'pcs' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-BLISTER:OUT-FG');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-CARTON:IN-BLISTER', 'SEG-CARTON', NULL, 'FG-TAB-BLISTER', 'CONSUMED', '50000', 'pcs' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-CARTON:IN-BLISTER');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-CARTON:IN-CARTON', 'SEG-CARTON', NULL, 'PACK-CARTON', 'CONSUMED', '5000', 'pcs' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-CARTON:IN-CARTON');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-CARTON:IN-LEAFLET', 'SEG-CARTON', NULL, 'PACK-LEAFLET', 'CONSUMED', '5000', 'pcs' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-CARTON:IN-LEAFLET');\nINSERT INTO emc_segment_material_spec (spec_id, segment_id, material_class_id, definition_id, material_use, quantity, uom) SELECT 'SEG-CARTON:OUT-FG', 'SEG-CARTON', NULL, 'FG-TAB-CARTON', 'PRODUCED', '5000', 'pcs' WHERE NOT EXISTS (SELECT 1 FROM emc_segment_material_spec WHERE spec_id = 'SEG-CARTON:OUT-FG');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-WEIGHT-VAR', 'Отклонение массы таблетки', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-WEIGHT-VAR');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-HARDNESS', 'Твёрдость вне спецификации', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-HARDNESS');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-FRIABILITY', 'Истираемость', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-FRIABILITY');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-DISSOLUTION', 'Растворение/распадаемость', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-DISSOLUTION');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-CAPPING', 'Расслоение (capping)', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-CAPPING');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-STICKING', 'Прилипание к пуансонам', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-STICKING');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-CONTAM', 'Загрязнение/посторонние включения', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-CONTAM');\nINSERT INTO emc_defect_type (defect_type_id, description, category) SELECT 'DFT-CODE-LEG', 'Нечитаемый код DataMatrix', 'QC' WHERE NOT EXISTS (SELECT 1 FROM emc_defect_type WHERE defect_type_id = 'DFT-CODE-LEG');\nINSERT INTO emc_reason_code (reason_code, parent_code, description, default_defect_type_id) SELECT 'RC-MOISTURE', NULL, 'LOD вне нормы', 'DFT-CAPPING' WHERE NOT EXISTS (SELECT 1 FROM emc_reason_code WHERE reason_code = 'RC-MOISTURE');\nINSERT INTO emc_reason_code (reason_code, parent_code, description, default_defect_type_id) SELECT 'RC-GRAN-SIZE', NULL, 'Гранулометрия', 'DFT-WEIGHT-VAR' WHERE NOT EXISTS (SELECT 1 FROM emc_reason_code WHERE reason_code = 'RC-GRAN-SIZE');\nINSERT INTO emc_reason_code (reason_code, parent_code, description, default_defect_type_id) SELECT 'RC-PUNCH-WEAR', NULL, 'Износ пуансонов', 'DFT-STICKING' WHERE NOT EXISTS (SELECT 1 FROM emc_reason_code WHERE reason_code = 'RC-PUNCH-WEAR');\nINSERT INTO emc_reason_code (reason_code, parent_code, description, default_defect_type_id) SELECT 'RC-RAW-SPEC', NULL, 'Сырьё вне спецификации', 'DFT-CONTAM' WHERE NOT EXISTS (SELECT 1 FROM emc_reason_code WHERE reason_code = 'RC-RAW-SPEC');\nINSERT INTO emc_work_schedule (schedule_id, external_ref, schedule_state, start_time, end_time) SELECT 'SCH-PH-001', 'PO-2026-118', 'RELEASED', TIMESTAMP '2026-07-24 00:00:00', TIMESTAMP '2026-07-25 00:00:00' WHERE NOT EXISTS (SELECT 1 FROM emc_work_schedule WHERE schedule_id = 'SCH-PH-001');\nINSERT INTO emc_work_request (request_id, schedule_id, request_state, priority, product_definition_id, quantity, uom, start_time, end_time) SELECT 'REQ-PH-001', 'SCH-PH-001', 'ACCEPTED', '1', 'FG-TAB-CARTON', '50000', 'pcs', TIMESTAMP '2026-07-24 06:00:00', TIMESTAMP '2026-07-24 18:00:00' WHERE NOT EXISTS (SELECT 1 FROM emc_work_request WHERE request_id = 'REQ-PH-001');\nINSERT INTO emc_job_order (job_order_id, job_no, request_id, work_master_id, work_master_version, segment_id, equipment_id, dispatch_status, command, priority, planned_start, planned_end, actual_start)\n       SELECT 'a2000001-0000-0000-0000-000000000001', 'JO-PH-001', 'REQ-PH-001', 'WM-COMPRESS', '1', 'SEG-COMPRESS', 'TPR-01', 'RUNNING', 'START', '1',\n              TIMESTAMP '2026-07-24 06:00:00', TIMESTAMP '2026-07-24 10:00:00', CURRENT_TIMESTAMP\n       WHERE NOT EXISTS (SELECT 1 FROM emc_job_order WHERE job_no = 'JO-PH-001');\nINSERT INTO emc_job_order (job_order_id, job_no, request_id, work_master_id, work_master_version, segment_id, equipment_id, dispatch_status, command, priority, planned_start, planned_end)\n       SELECT 'a2000002-0000-0000-0000-000000000002', 'JO-PH-002', 'REQ-PH-001', 'WM-COAT', '1', 'SEG-COAT', 'COT-01', 'ALLOWED', 'STORE', '2',\n              TIMESTAMP '2026-07-24 10:00:00', TIMESTAMP '2026-07-24 13:00:00'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_job_order WHERE job_no = 'JO-PH-002');\nINSERT INTO emc_job_order (job_order_id, job_no, request_id, work_master_id, work_master_version, segment_id, equipment_id, dispatch_status, command, priority, planned_start, planned_end)\n       SELECT 'a2000003-0000-0000-0000-000000000003', 'JO-PH-003', 'REQ-PH-001', 'WM-BLISTER', '1', 'SEG-BLISTER', 'BLS-01', 'NOT_ALLOWED', 'STORE', '3',\n              TIMESTAMP '2026-07-24 13:00:00', TIMESTAMP '2026-07-24 18:00:00'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_job_order WHERE job_no = 'JO-PH-003');\nINSERT INTO emc_job_order_material_req (job_no, definition_id, material_class_id, material_use, quantity, uom)\n       SELECT 'JO-PH-001', definition_id, material_class_id, material_use, quantity, uom FROM emc_segment_material_spec\n       WHERE segment_id = 'SEG-COMPRESS' AND NOT EXISTS (SELECT 1 FROM emc_job_order_material_req WHERE job_no = 'JO-PH-001');\nINSERT INTO emc_job_order_equipment_req (job_no, equipment_class_id, equipment_id, equipment_use, quantity)\n       SELECT 'JO-PH-001', equipment_class_id, equipment_id, equipment_use, quantity FROM emc_segment_equipment_spec\n       WHERE segment_id = 'SEG-COMPRESS' AND NOT EXISTS (SELECT 1 FROM emc_job_order_equipment_req WHERE job_no = 'JO-PH-001');\nINSERT INTO emc_job_order_personnel_req (job_no, personnel_class_id, person_id, personnel_use, quantity)\n       SELECT 'JO-PH-001', personnel_class_id, person_id, personnel_use, quantity FROM emc_segment_personnel_spec\n       WHERE segment_id = 'SEG-COMPRESS' AND NOT EXISTS (SELECT 1 FROM emc_job_order_personnel_req WHERE job_no = 'JO-PH-001');\nINSERT INTO emc_job_response (response_id, job_no, job_state, actual_start)\n       SELECT 'b2000001-0000-0000-0000-000000000001', 'JO-PH-001', 'RUNNING', CURRENT_TIMESTAMP\n       WHERE NOT EXISTS (SELECT 1 FROM emc_job_response WHERE job_no = 'JO-PH-001' AND job_state = 'RUNNING');\nINSERT INTO emc_job_response_data (id, response_id, data_kind, started_at)\n       SELECT RANDOM_UUID(), 'b2000001-0000-0000-0000-000000000001', 'RUN_INTERVAL', CURRENT_TIMESTAMP\n       WHERE NOT EXISTS (SELECT 1 FROM emc_job_response_data WHERE response_id = 'b2000001-0000-0000-0000-000000000001' AND data_kind = 'RUN_INTERVAL' AND ended_at IS NULL);\nINSERT INTO emc_equipment_actual (id, response_id, equipment_id, equipment_use)\n       SELECT RANDOM_UUID(), 'b2000001-0000-0000-0000-000000000001', 'TPR-01', 'PRIMARY'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_actual WHERE response_id = 'b2000001-0000-0000-0000-000000000001');\nINSERT INTO emc_personnel_actual (id, response_id, person_id, personnel_use)\n       SELECT RANDOM_UUID(), 'b2000001-0000-0000-0000-000000000001', 'EMP-H02', 'OPERATOR'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_actual WHERE response_id = 'b2000001-0000-0000-0000-000000000001' AND person_id = 'EMP-H02');\nINSERT INTO emc_work_calendar (shift_id, equipment_id, shift_label, planned_minutes, state, planned_start, actual_start) SELECT 'SHIFT-PH-1', 'TPR-01', 'MORNING', '480', 'OPEN', TIMESTAMP '2026-07-24 06:00:00', CURRENT_TIMESTAMP WHERE NOT EXISTS (SELECT 1 FROM emc_work_calendar WHERE shift_id = 'SHIFT-PH-1');\nINSERT INTO emc_shift_assignment (id, shift_id, person_id)\n       SELECT RANDOM_UUID(), 'SHIFT-PH-1', 'EMP-H02'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_shift_assignment WHERE shift_id = 'SHIFT-PH-1' AND person_id = 'EMP-H02');\nINSERT INTO emc_work_record (record_id, job_no, record_no) SELECT 'WR-JO-PH-001', 'JO-PH-001', 'WREC-JO-PH-001' WHERE NOT EXISTS (SELECT 1 FROM emc_work_record WHERE record_id = 'WR-JO-PH-001');\nINSERT INTO emc_work_record_section (record_id, section_key, title, content_json)\n       SELECT 'WR-JO-PH-001', 'dispensingProtocol', 'Dispensing protocol (second-person)', '{\"premixLot\":\"LOT-WIP-PH-0001\",\"weighedBy\":\"EMP-H02\",\"verifiedBy\":\"EMP-H01\",\"principle\":\"second-person\"}'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_work_record_section WHERE record_id = 'WR-JO-PH-001' AND section_key = 'dispensingProtocol');\nINSERT INTO emc_work_record_section (record_id, section_key, title, content_json)\n       SELECT 'WR-JO-PH-001', 'ipcResults', 'IPC results', '{\"avgWeightMg\":\"602\",\"targetWeightMg\":\"600\",\"hardnessN\":\"85\",\"friabilityPct\":\"0.4\",\"disintegrationMin\":\"4\"}'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_work_record_section WHERE record_id = 'WR-JO-PH-001' AND section_key = 'ipcResults');\nINSERT INTO emc_work_record_section (record_id, section_key, title, content_json)\n       SELECT 'WR-JO-PH-001', 'lineClearance', 'Line clearance', '{\"previousProduct\":\"API-PARACETAMOL B2026-038\",\"cleanedBy\":\"EMP-H02\",\"verifiedBy\":\"EMP-H03\",\"status\":\"CLEARED\"}'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_work_record_section WHERE record_id = 'WR-JO-PH-001' AND section_key = 'lineClearance');\nINSERT INTO emc_work_record_section (record_id, section_key, title, content_json)\n       SELECT 'WR-JO-PH-001', 'deviations', 'Deviations', '{\"count\":\"1\",\"items\":[{\"id\":\"DEV-2026-07\",\"desc\":\"Кратковременное превышение влажности в коридоре, влияния на серию нет\",\"status\":\"CLOSED\"}]}'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_work_record_section WHERE record_id = 'WR-JO-PH-001' AND section_key = 'deviations');\nINSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text)\n       SELECT 'c2000001-0000-0000-0000-000000000001', 'LOT', 'LOT-API-0002', 'EMP-H03', 'APPROVED', 'Выпуск сырья по протоколу QC-2026-041'\n       WHERE NOT EXISTS (SELECT 1 FROM pha_esign_record WHERE entity_type = 'LOT' AND entity_id = 'LOT-API-0002' AND signer = 'EMP-H03' AND meaning = 'APPROVED');\nINSERT INTO pha_serial_record (serial_code, job_no, lot_id, gtin, parent_code, status) SELECT 'DM-BOX-0000000001', 'JO-PH-003', 'LOT-FG-PH-0001', '04607012340018', NULL, 'COMMISSIONED' WHERE NOT EXISTS (SELECT 1 FROM pha_serial_record WHERE serial_code = 'DM-BOX-0000000001');\nINSERT INTO pha_serial_record (serial_code, job_no, lot_id, gtin, parent_code, status) SELECT 'DM-PACK-0000000001', 'JO-PH-003', 'LOT-FG-PH-0001', '04607012340018', 'DM-BOX-0000000001', 'COMMISSIONED' WHERE NOT EXISTS (SELECT 1 FROM pha_serial_record WHERE serial_code = 'DM-PACK-0000000001');\nINSERT INTO pha_serial_record (serial_code, job_no, lot_id, gtin, parent_code, status) SELECT 'DM-PACK-0000000002', 'JO-PH-003', 'LOT-FG-PH-0001', '04607012340018', 'DM-BOX-0000000001', 'COMMISSIONED' WHERE NOT EXISTS (SELECT 1 FROM pha_serial_record WHERE serial_code = 'DM-PACK-0000000002')"
+    }
+  ],
+  "objects": [],
+  "functions": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_eventdef_list",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "section",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "eventClass",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "section",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "operatorHint",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "gmpCritical",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requiresLength",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requiresTime",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requiresComment",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "oeeBucket",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "sixBigLoss",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "sortOrder",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"defs\", \"sql\": \"SELECT d.code, d.name, d.event_class, COALESCE(x.section, '') AS section, COALESCE(x.operator_hint, '') AS operator_hint, CASE WHEN x.gmp_critical THEN 'true' ELSE 'false' END AS gmp_critical, d.requires_length, d.requires_time, d.requires_comment, d.oee_bucket, COALESCE(d.six_big_loss, '') AS six_big_loss, d.sort_order FROM emc_operations_event_definition d LEFT JOIN pha_eventdef_ext x ON x.code = d.code WHERE (? = '' OR x.section = ?) ORDER BY d.sort_order, d.code\", \"params\": [\"${input.section}\", \"${input.section}\"]}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${defs}\", \"fields\": {\"code\": \"${item.code}\", \"name\": \"${item.name}\", \"eventClass\": \"${item.event_class}\", \"section\": \"${item.section}\", \"operatorHint\": \"${item.operator_hint}\", \"gmpCritical\": \"${item.gmp_critical}\", \"requiresLength\": \"${item.requires_length}\", \"requiresTime\": \"${item.requires_time}\", \"requiresComment\": \"${item.requires_comment}\", \"oeeBucket\": \"${item.oee_bucket}\", \"sixBigLoss\": \"${item.six_big_loss}\", \"sortOrder\": \"${item.sort_order}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_lot_release",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "by",
+              "type": "STRING"
+            },
+            {
+              "name": "comment",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "disposition",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"lot\", \"sql\": \"SELECT lot_id, status, COALESCE(disposition, '') AS disposition FROM emc_material_lot WHERE lot_id = ?\", \"params\": [\"${input.lotId}\"]}, {\"type\": \"failIfNull\", \"var\": \"lot\", \"error_code\": \"LOT_NOT_FOUND\", \"error_message\": \"Lot not found\"}, {\"type\": \"failIfNotEquals\", \"var\": \"lot.disposition\", \"equals\": \"QUARANTINE\", \"error_code\": \"INVALID_STATE\", \"error_message\": \"Release allowed only from QUARANTINE\"}, {\"type\": \"exec\", \"sql\": \"UPDATE emc_material_lot SET disposition = 'RELEASED', status = 'STOCK', version_no = version_no + 1 WHERE lot_id = ?\", \"params\": [\"${input.lotId}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) VALUES (RANDOM_UUID(), 'LOT', ?, ?, 'APPROVED', NULLIF(?, ''))\", \"params\": [\"${input.lotId}\", \"${input.by}\", \"${input.comment}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"lotId\": \"${input.lotId}\", \"disposition\": \"RELEASED\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_lot_reject",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "by",
+              "type": "STRING"
+            },
+            {
+              "name": "reason",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "disposition",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"lot\", \"sql\": \"SELECT lot_id, COALESCE(disposition, '') AS disposition FROM emc_material_lot WHERE lot_id = ?\", \"params\": [\"${input.lotId}\"]}, {\"type\": \"failIfNull\", \"var\": \"lot\", \"error_code\": \"LOT_NOT_FOUND\", \"error_message\": \"Lot not found\"}, {\"type\": \"selectOne\", \"var\": \"guard\", \"sql\": \"SELECT COUNT(*) AS cnt FROM (VALUES ('QUARANTINE'), ('RELEASED')) v(d) WHERE d = ?\", \"params\": [\"${lot.disposition}\"]}, {\"type\": \"failIfNotEquals\", \"var\": \"guard.cnt\", \"equals\": \"1\", \"error_code\": \"INVALID_STATE\", \"error_message\": \"Reject allowed from QUARANTINE or RELEASED\"}, {\"type\": \"exec\", \"sql\": \"UPDATE emc_material_lot SET disposition = 'REJECTED', status = 'BLOCKED_QC', version_no = version_no + 1 WHERE lot_id = ?\", \"params\": [\"${input.lotId}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) VALUES (RANDOM_UUID(), 'LOT', ?, ?, 'REVIEWED', NULLIF(?, ''))\", \"params\": [\"${input.lotId}\", \"${input.by}\", \"${input.reason}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"lotId\": \"${input.lotId}\", \"disposition\": \"REJECTED\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_esign_list",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "entityId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "entityType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "signer",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "meaning",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "comment",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "signedAt",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"sigs\", \"sql\": \"SELECT entity_type, entity_id, signer, meaning, COALESCE(comment_text, '') AS comment_text, signed_at FROM pha_esign_record WHERE (? = '' OR entity_id = ?) ORDER BY signed_at DESC\", \"params\": [\"${input.entityId}\", \"${input.entityId}\"]}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${sigs}\", \"fields\": {\"entityType\": \"${item.entity_type}\", \"entityId\": \"${item.entity_id}\", \"signer\": \"${item.signer}\", \"meaning\": \"${item.meaning}\", \"comment\": \"${item.comment_text}\", \"signedAt\": \"${item.signed_at}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_serial_register",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "serialCode",
+              "type": "STRING"
+            },
+            {
+              "name": "jobNo",
+              "type": "STRING"
+            },
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "gtin",
+              "type": "STRING"
+            },
+            {
+              "name": "parentCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "serialCode",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"failIfNull\", \"var\": \"input.serialCode\", \"error_code\": \"VALIDATION\", \"error_message\": \"serialCode required\"}, {\"type\": \"selectOne\", \"var\": \"dup\", \"sql\": \"SELECT serial_code FROM pha_serial_record WHERE serial_code = ?\", \"params\": [\"${input.serialCode}\"]}, {\"type\": \"when\", \"then\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"DUPLICATE_SERIAL\", \"error_message\": \"Serial code already registered\", \"serialCode\": \"${input.serialCode}\", \"status\": \"\"}}], \"var\": \"dup\", \"notNull\": true}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_serial_record (serial_code, job_no, lot_id, gtin, parent_code, status) VALUES (?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), 'COMMISSIONED')\", \"params\": [\"${input.serialCode}\", \"${input.jobNo}\", \"${input.lotId}\", \"${input.gtin}\", \"${input.parentCode}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"serialCode\": \"${input.serialCode}\", \"status\": \"COMMISSIONED\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_serial_list",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "jobNo",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "serialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "gtin",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "jobNo",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "parentCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "createdAt",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"serials\", \"sql\": \"SELECT serial_code, COALESCE(gtin, '') AS gtin, COALESCE(lot_id, '') AS lot_id, COALESCE(job_no, '') AS job_no, COALESCE(parent_code, '') AS parent_code, status, created_at FROM pha_serial_record WHERE (? = '' OR job_no = ?) ORDER BY created_at, serial_code\", \"params\": [\"${input.jobNo}\", \"${input.jobNo}\"]}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${serials}\", \"fields\": {\"serialCode\": \"${item.serial_code}\", \"gtin\": \"${item.gtin}\", \"lotId\": \"${item.lot_id}\", \"jobNo\": \"${item.job_no}\", \"parentCode\": \"${item.parent_code}\", \"status\": \"${item.status}\", \"createdAt\": \"${item.created_at}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_dispense_weigh",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "barcode",
+              "type": "STRING"
+            },
+            {
+              "name": "targetQty",
+              "type": "STRING"
+            },
+            {
+              "name": "actualQty",
+              "type": "STRING"
+            },
+            {
+              "name": "tolerancePct",
+              "type": "STRING"
+            },
+            {
+              "name": "weighedBy",
+              "type": "STRING"
+            },
+            {
+              "name": "verifiedBy",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "actualQty",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"lot\", \"sql\": \"SELECT lot_id FROM emc_material_lot WHERE barcode = ?\", \"params\": [\"${input.barcode}\"]}, {\"type\": \"failIfNull\", \"var\": \"lot\", \"error_code\": \"LOT_NOT_FOUND\", \"error_message\": \"Lot not found\"}, {\"type\": \"failIfNull\", \"var\": \"input.targetQty\", \"error_code\": \"VALIDATION\", \"error_message\": \"targetQty required\"}, {\"type\": \"failIfNull\", \"var\": \"input.actualQty\", \"error_code\": \"VALIDATION\", \"error_message\": \"actualQty required\"}, {\"type\": \"selectOne\", \"var\": \"same\", \"sql\": \"SELECT CASE WHEN ? = ? THEN '1' ELSE '0' END AS v\", \"params\": [\"${input.weighedBy}\", \"${input.verifiedBy}\"]}, {\"type\": \"when\", \"then\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"SECOND_PERSON_REQUIRED\", \"error_message\": \"Second person verification required\", \"lotId\": \"\", \"actualQty\": \"\"}}], \"var\": \"same.v\", \"equals\": \"1\"}, {\"type\": \"selectOne\", \"var\": \"tol\", \"sql\": \"SELECT CASE WHEN ABS(CAST(NULLIF(?, '') AS NUMERIC) - CAST(NULLIF(?, '') AS NUMERIC)) <= CAST(NULLIF(?, '') AS NUMERIC) * CAST(NULLIF(?, '') AS NUMERIC) / 100 THEN '1' ELSE '0' END AS v\", \"params\": [\"${input.actualQty}\", \"${input.targetQty}\", \"${input.targetQty}\", \"${input.tolerancePct}\"]}, {\"type\": \"when\", \"then\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"TOLERANCE_EXCEEDED\", \"error_message\": \"Weight deviation exceeds tolerance\", \"lotId\": \"\", \"actualQty\": \"\"}}], \"var\": \"tol.v\", \"equals\": \"0\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) VALUES (RANDOM_UUID(), 'DISPENSE', ?, ?, 'AUTHORED', CONCAT('target=', ?, ' actual=', ?))\", \"params\": [\"${lot.lot_id}\", \"${input.weighedBy}\", \"${input.targetQty}\", \"${input.actualQty}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) VALUES (RANDOM_UUID(), 'DISPENSE', ?, ?, 'REVIEWED', CONCAT('target=', ?, ' actual=', ?))\", \"params\": [\"${lot.lot_id}\", \"${input.verifiedBy}\", \"${input.targetQty}\", \"${input.actualQty}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"lotId\": \"${lot.lot_id}\", \"actualQty\": \"${input.actualQty}\"}}]}"
+      }
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "erp-mes-pharma-hub-v1",
+      "description": "ERP-MES Pharma Hub (ISA-95/ISA-88 overlay): GMP quality counters, alert rules and BFF functions.",
+      "type": "SINGLETON",
+      "variables": [
+        {
+          "name": "quarantineLotCount",
+          "description": "Material lots in QUARANTINE disposition",
+          "group": "quality",
+          "schema": {
+            "name": "longValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "LONG"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "longValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "LONG"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "openDeviationCount",
+          "description": "Defect records in REGISTERED/CONFIRMED state",
+          "group": "quality",
+          "schema": {
+            "name": "longValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "LONG"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "longValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "LONG"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "activePharmaJobCount",
+          "description": "RUNNING job orders on pharma equipment",
+          "group": "production",
+          "schema": {
+            "name": "longValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "LONG"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "longValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "LONG"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.pha-production",
+      "title": "Производство (фарма, ISA-88)",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"jobs\", \"type\": \"report\", \"title\": \"Pharma Job Orders\", \"x\": 0, \"y\": 0, \"w\": 54, \"h\": 50, \"id\": \"jobs\", \"reportPath\": \"root.platform.reports.pha-job-board\", \"pageSize\": 25}, {\"key\": \"start\", \"type\": \"function-form\", \"title\": \"Start Job\", \"x\": 54, \"y\": 0, \"w\": 30, \"h\": 10, \"id\": \"start\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_start\", \"buttonLabel\": \"Start\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job #\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"personId\\\", \\\"label\\\": \\\"Operator\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"EMP-H02\\\"}]\"}, {\"key\": \"pause\", \"type\": \"function-form\", \"title\": \"Pause Job\", \"x\": 54, \"y\": 10, \"w\": 30, \"h\": 8, \"id\": \"pause\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_pause\", \"buttonLabel\": \"Pause\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job #\\\", \\\"type\\\": \\\"text\\\"}]\"}, {\"key\": \"resume\", \"type\": \"function-form\", \"title\": \"Resume Job\", \"x\": 54, \"y\": 18, \"w\": 30, \"h\": 8, \"id\": \"resume\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_resume\", \"buttonLabel\": \"Resume\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job #\\\", \\\"type\\\": \\\"text\\\"}]\"}, {\"key\": \"complete\", \"type\": \"function-form\", \"title\": \"Complete Job\", \"x\": 54, \"y\": 26, \"w\": 30, \"h\": 8, \"id\": \"complete\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_complete\", \"buttonLabel\": \"Complete\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job #\\\", \\\"type\\\": \\\"text\\\"}]\"}, {\"key\": \"dispense\", \"type\": \"function-form\", \"title\": \"Dispensing (double verification)\", \"x\": 54, \"y\": 34, \"w\": 30, \"h\": 16, \"id\": \"dispense\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-pharma-hub-v1\", \"functionName\": \"pha_dispense_weigh\", \"buttonLabel\": \"Verify & Sign\", \"fieldsJson\": \"[{\\\"name\\\": \\\"barcode\\\", \\\"label\\\": \\\"Lot barcode\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"BC-EXC-0001\\\"}, {\\\"name\\\": \\\"targetQty\\\", \\\"label\\\": \\\"Target qty\\\", \\\"type\\\": \\\"number\\\", \\\"default\\\": \\\"100\\\"}, {\\\"name\\\": \\\"actualQty\\\", \\\"label\\\": \\\"Actual qty\\\", \\\"type\\\": \\\"number\\\", \\\"default\\\": \\\"\\\"}, {\\\"name\\\": \\\"tolerancePct\\\", \\\"label\\\": \\\"Tolerance %\\\", \\\"type\\\": \\\"number\\\", \\\"default\\\": \\\"2\\\"}, {\\\"name\\\": \\\"weighedBy\\\", \\\"label\\\": \\\"Weighed by\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"EMP-H02\\\"}, {\\\"name\\\": \\\"verifiedBy\\\", \\\"label\\\": \\\"Verified by\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"EMP-H01\\\"}]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.pha-quality",
+      "title": "Качество и выпуск серии (GMP)",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"quarantine\", \"type\": \"report\", \"title\": \"Quarantine & Batch Release\", \"x\": 0, \"y\": 0, \"w\": 54, \"h\": 50, \"id\": \"quarantine\", \"reportPath\": \"root.platform.reports.pha-quarantine-lots\", \"pageSize\": 25}, {\"key\": \"release\", \"type\": \"function-form\", \"title\": \"Release Lot (QA, e-sign)\", \"x\": 54, \"y\": 0, \"w\": 30, \"h\": 10, \"id\": \"release\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-pharma-hub-v1\", \"functionName\": \"pha_lot_release\", \"buttonLabel\": \"Release\", \"fieldsJson\": \"[{\\\"name\\\": \\\"lotId\\\", \\\"label\\\": \\\"Lot ID\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"by\\\", \\\"label\\\": \\\"QA signer\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"EMP-H03\\\"}, {\\\"name\\\": \\\"comment\\\", \\\"label\\\": \\\"Comment\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"\\\"}]\"}, {\"key\": \"reject\", \"type\": \"function-form\", \"title\": \"Reject Lot\", \"x\": 54, \"y\": 10, \"w\": 30, \"h\": 10, \"id\": \"reject\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-pharma-hub-v1\", \"functionName\": \"pha_lot_reject\", \"buttonLabel\": \"Reject\", \"fieldsJson\": \"[{\\\"name\\\": \\\"lotId\\\", \\\"label\\\": \\\"Lot ID\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"by\\\", \\\"label\\\": \\\"Signer\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"EMP-H03\\\"}, {\\\"name\\\": \\\"reason\\\", \\\"label\\\": \\\"Reason\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"\\\"}]\"}, {\"key\": \"defect\", \"type\": \"function-form\", \"title\": \"Register Deviation\", \"x\": 54, \"y\": 20, \"w\": 30, \"h\": 15, \"id\": \"defect\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_qa_registerDefect\", \"buttonLabel\": \"Register\", \"fieldsJson\": \"[{\\\"name\\\": \\\"defectNo\\\", \\\"label\\\": \\\"Deviation #\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job #\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"JO-PH-001\\\"}, {\\\"name\\\": \\\"defectTypeId\\\", \\\"label\\\": \\\"Defect type\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"DFT-WEIGHT-VAR\\\"}, {\\\"name\\\": \\\"reasonCode\\\", \\\"label\\\": \\\"Reason code\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"\\\"}, {\\\"name\\\": \\\"lotId\\\", \\\"label\\\": \\\"Lot ID\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"\\\"}, {\\\"name\\\": \\\"qtyDeclared\\\", \\\"label\\\": \\\"Qty\\\", \\\"type\\\": \\\"number\\\", \\\"default\\\": \\\"1\\\"}, {\\\"name\\\": \\\"severity\\\", \\\"label\\\": \\\"Severity\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"MINOR\\\"}, {\\\"name\\\": \\\"createdBy\\\", \\\"label\\\": \\\"Created by\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"EMP-H03\\\"}]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.pha-serialization",
+      "title": "Сериализация и аудит",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"serials\", \"type\": \"report\", \"title\": \"Serial Code Registry\", \"x\": 0, \"y\": 0, \"w\": 54, \"h\": 25, \"id\": \"serials\", \"reportPath\": \"root.platform.reports.pha-serial-report\", \"pageSize\": 25}, {\"key\": \"audit\", \"type\": \"report\", \"title\": \"E-Signature Audit\", \"x\": 0, \"y\": 25, \"w\": 54, \"h\": 25, \"id\": \"audit\", \"reportPath\": \"root.platform.reports.pha-esign-audit\", \"pageSize\": 25}, {\"key\": \"register\", \"type\": \"function-form\", \"title\": \"Register Serial Code\", \"x\": 54, \"y\": 0, \"w\": 30, \"h\": 18, \"id\": \"register\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-pharma-hub-v1\", \"functionName\": \"pha_serial_register\", \"buttonLabel\": \"Commission\", \"fieldsJson\": \"[{\\\"name\\\": \\\"serialCode\\\", \\\"label\\\": \\\"Serial code\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"gtin\\\", \\\"label\\\": \\\"GTIN\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"04607012340018\\\"}, {\\\"name\\\": \\\"lotId\\\", \\\"label\\\": \\\"Lot ID\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"LOT-FG-PH-0001\\\"}, {\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job #\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"JO-PH-003\\\"}, {\\\"name\\\": \\\"parentCode\\\", \\\"label\\\": \\\"Aggregate (box/pallet)\\\", \\\"type\\\": \\\"text\\\", \\\"default\\\": \\\"\\\"}]\"}, {\"key\": \"note\", \"type\": \"html-snippet\", \"title\": \"Агрегация\", \"x\": 54, \"y\": 18, \"w\": 30, \"h\": 14, \"id\": \"note\", \"htmlJson\": \"{\\\"html\\\": \\\"<h3>Aggregation</h3><p>Hierarchy: unit &rarr; box (<i>DM-BOX-*</i>) &rarr; pallet. The <b>Aggregate</b> field links a unit code to the upper-level package. Decommissioning is a status change (<i>DECOMMISSIONED</i>).</p>\\\"}\", \"html\": \"<h3>Aggregation</h3><p>Hierarchy: unit &rarr; box (<i>DM-BOX-*</i>) &rarr; pallet. The <b>Aggregate</b> field links a unit code to the upper-level package. Decommissioning is a status change (<i>DECOMMISSIONED</i>).</p>\"}]}"
+    }
+  ],
+  "bindings": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "variable": "quarantineLotCount",
+      "query": "SELECT COUNT(*) AS v FROM emc_material_lot WHERE disposition = 'QUARANTINE'",
+      "refresh": "interval",
+      "refreshIntervalMs": 30000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "variable": "openDeviationCount",
+      "query": "SELECT COUNT(*) AS v FROM emc_defect_record WHERE status IN ('REGISTERED', 'CONFIRMED')",
+      "refresh": "interval",
+      "refreshIntervalMs": 30000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "variable": "activePharmaJobCount",
+      "query": "SELECT COUNT(*) AS v FROM emc_job_order WHERE dispatch_status = 'RUNNING' AND equipment_id IN ('DSP-01', 'GRN-01', 'FBD-01', 'BLN-01', 'TPR-01', 'COT-01', 'BLS-01', 'CRT-01')",
+      "refresh": "interval",
+      "refreshIntervalMs": 30000,
+      "valueField": "v",
+      "enabled": true
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "pha-job-board",
+      "title": "Pharma Job Board (ISA-95/ISA-88)",
+      "description": "Active job orders on solid dosage and packaging lines with dispatch status.",
+      "query": "\nSELECT o.job_order_id AS id, o.job_no, COALESCE(s.external_ref, '') AS external_ref,\n       COALESCE(o.command, '') AS command, o.dispatch_status, o.equipment_id,\n       COALESCE(r.product_definition_id, '') AS product_definition_id, r.quantity, COALESCE(r.uom, '') AS uom,\n       o.planned_start, o.planned_end, o.created_at\nFROM emc_job_order o\nJOIN emc_work_request r ON r.request_id = o.request_id\nJOIN emc_work_schedule s ON s.schedule_id = r.schedule_id\nWHERE o.dispatch_status NOT IN ('ENDED', 'ABORTED', 'CANCELLED')\n  AND o.equipment_id IN ('DSP-01', 'GRN-01', 'FBD-01', 'BLN-01', 'TPR-01', 'COT-01', 'BLS-01', 'CRT-01')\nORDER BY o.planned_start ASC, o.job_no\n",
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "job_no",
+          "label": "Job #"
+        },
+        {
+          "field": "external_ref",
+          "label": "ERP Ref"
+        },
+        {
+          "field": "command",
+          "label": "Cmd"
+        },
+        {
+          "field": "dispatch_status",
+          "label": "Status"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Line"
+        },
+        {
+          "field": "product_definition_id",
+          "label": "Product"
+        },
+        {
+          "field": "quantity",
+          "label": "Qty"
+        },
+        {
+          "field": "uom",
+          "label": "UOM"
+        },
+        {
+          "field": "planned_start",
+          "label": "Planned Start"
+        },
+        {
+          "field": "planned_end",
+          "label": "Planned End"
+        },
+        {
+          "field": "created_at",
+          "label": "Created"
+        }
+      ]
+    },
+    {
+      "reportId": "pha-quarantine-lots",
+      "title": "Quarantine & Batch Release",
+      "description": "Lots in QUARANTINE disposition with GTIN, batch number and expiry date.",
+      "query": "\nSELECT l.lot_id, l.barcode, l.definition_id AS material_id, l.status,\n       COALESCE(l.disposition, '') AS disposition, l.quantity, l.base_uom AS uom,\n       COALESCE(l.storage_location, '') AS storage_location,\n       COALESCE(pb.prop_value, '') AS batch_no, COALESCE(pg.prop_value, '') AS gtin,\n       COALESCE(pe.prop_value, '') AS expiry_date\nFROM emc_material_lot l\nLEFT JOIN emc_material_lot_property pb ON pb.lot_id = l.lot_id AND pb.prop_key = 'batch_no'\nLEFT JOIN emc_material_lot_property pg ON pg.lot_id = l.lot_id AND pg.prop_key = 'gtin'\nLEFT JOIN emc_material_lot_property pe ON pe.lot_id = l.lot_id AND pe.prop_key = 'expiry_date'\nWHERE l.disposition = 'QUARANTINE'\nORDER BY l.lot_id\n",
+      "columns": [
+        {
+          "field": "lot_id",
+          "label": "Lot ID"
+        },
+        {
+          "field": "barcode",
+          "label": "Barcode"
+        },
+        {
+          "field": "material_id",
+          "label": "Material"
+        },
+        {
+          "field": "batch_no",
+          "label": "Batch #"
+        },
+        {
+          "field": "gtin",
+          "label": "GTIN"
+        },
+        {
+          "field": "expiry_date",
+          "label": "Expiry"
+        },
+        {
+          "field": "quantity",
+          "label": "Qty"
+        },
+        {
+          "field": "uom",
+          "label": "UOM"
+        },
+        {
+          "field": "storage_location",
+          "label": "Warehouse"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        },
+        {
+          "field": "disposition",
+          "label": "Disposition"
+        }
+      ]
+    },
+    {
+      "reportId": "pha-serial-report",
+      "title": "Serial Code Registry",
+      "description": "DataMatrix serial codes with GTIN and aggregation (parent code).",
+      "query": "\nSELECT serial_code, COALESCE(gtin, '') AS gtin, COALESCE(lot_id, '') AS lot_id,\n       COALESCE(job_no, '') AS job_no, COALESCE(parent_code, '') AS parent_code,\n       status, created_at\nFROM pha_serial_record\nORDER BY created_at DESC, serial_code\n",
+      "columns": [
+        {
+          "field": "serial_code",
+          "label": "Serial Code"
+        },
+        {
+          "field": "gtin",
+          "label": "GTIN"
+        },
+        {
+          "field": "lot_id",
+          "label": "Lot ID"
+        },
+        {
+          "field": "job_no",
+          "label": "Job #"
+        },
+        {
+          "field": "parent_code",
+          "label": "Aggregate"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        },
+        {
+          "field": "created_at",
+          "label": "Created"
+        }
+      ]
+    },
+    {
+      "reportId": "pha-esign-audit",
+      "title": "E-Signature Audit (21 CFR Part 11)",
+      "description": "Electronic signature journal: who signed what, meaning and time.",
+      "query": "\nSELECT entity_type, entity_id, signer, meaning,\n       COALESCE(comment_text, '') AS comment_text, signed_at\nFROM pha_esign_record\nORDER BY signed_at DESC\n",
+      "columns": [
+        {
+          "field": "entity_type",
+          "label": "Entity"
+        },
+        {
+          "field": "entity_id",
+          "label": "ID"
+        },
+        {
+          "field": "signer",
+          "label": "Signer"
+        },
+        {
+          "field": "meaning",
+          "label": "Meaning"
+        },
+        {
+          "field": "comment_text",
+          "label": "Comment"
+        },
+        {
+          "field": "signed_at",
+          "label": "Signed At"
+        }
+      ]
+    }
+  ],
+  "alertRules": [
+    {
+      "name": "pha-quarantine-aging",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "watchVariable": "quarantineLotCount",
+      "conditionExpr": "self.quarantineLotCount[\"value\"] >= 2",
+      "eventName": "quarantineAgingAlert",
+      "enabled": true,
+      "edgeTrigger": true,
+      "delaySeconds": 0,
+      "sustainWhileTrue": false
+    },
+    {
+      "name": "pha-deviation-open",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "watchVariable": "openDeviationCount",
+      "conditionExpr": "self.openDeviationCount[\"value\"] >= 1",
+      "eventName": "deviationOpenAlert",
+      "enabled": true,
+      "edgeTrigger": true,
+      "delaySeconds": 0,
+      "sustainWhileTrue": false
+    }
+  ],
+  "events": [
+    {
+      "id": "quarantineAgingAlert",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "deviationOpenAlert",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
+  ],
+  "operatorUi": {
+    "appId": "erp-mes-pharma",
+    "title": "MES Фарма (ISA-95/ISA-88)",
+    "defaultDashboard": "root.platform.dashboards.pha-production",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.pha-production",
+        "title": "Производство"
+      },
+      {
+        "path": "root.platform.dashboards.pha-quality",
+        "title": "Качество и выпуск серии"
+      },
+      {
+        "path": "root.platform.dashboards.pha-serialization",
+        "title": "Сериализация и аудит"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.pha-job-board",
+        "title": "Pharma Job Board"
+      },
+      {
+        "path": "root.platform.reports.pha-quarantine-lots",
+        "title": "Quarantine & Release"
+      },
+      {
+        "path": "root.platform.reports.pha-serial-report",
+        "title": "Serial Registry"
+      },
+      {
+        "path": "root.platform.reports.pha-esign-audit",
+        "title": "E-Signature Audit"
+      }
+    ],
+    "defaultReport": "root.platform.reports.pha-job-board"
+  },
+  "metadata": {
+    "product": "erp-mes-pharma",
+    "publisher": "IoT Solutions",
+    "delivery": "marketplace",
+    "changelog": "1.0.1 - Flatten dashboard widget settingsJson to top-level fields (reportPath, objectPath, functionName) so operator UI works without web-console settingsJson expansion.",
+    "bundleFix": "flatten-settingsJson-1.0.1"
+  }
+}

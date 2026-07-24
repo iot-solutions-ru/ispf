@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import type { DataRecord } from "../../types";
 import { cloneRecord, setFieldValue } from "../../utils/ui/record";
 import { defaultForFieldType } from "../../utils/schema/dataSchema";
@@ -66,13 +67,9 @@ export default function DataRecordValueEditor({
                 {t("schemaEditor.rowLabel", { index: rowIndex + 1 })}
               </span>
               {!disabled && record.rows.length > 1 && (
-                <button
-                  type="button"
-                  className="btn tiny danger"
-                  onClick={() => removeRow(rowIndex)}
-                >
+                <Button size="small" danger onClick={() => removeRow(rowIndex)}>
                   {t("schemaEditor.removeRow")}
-                </button>
+                </Button>
               )}
             </header>
           )}
@@ -91,9 +88,9 @@ export default function DataRecordValueEditor({
       ))}
 
       {!disabled && multiRow && (
-        <button type="button" className="btn small" onClick={addRow}>
+        <Button size="small" onClick={addRow}>
           {t("schemaEditor.addRow")}
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -1533,6 +1533,8 @@
   color: var(--text);
   text-align: left;
   cursor: pointer;
+  height: auto;
+  white-space: normal;
   box-shadow: var(--ui-shadow-surface);
   transition:
     transform 0.15s cubic-bezier(0.2, 0, 0, 1),
@@ -1597,11 +1599,14 @@
 }
 
 .op-launcher-alarm-badge {
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
+  line-height: 1;
+}
+
+.op-launcher-alarm-badge .ant-badge-count {
   background: color-mix(in srgb, #f85149 18%, transparent);
   color: #f85149;
   font-weight: 600;
+  box-shadow: none;
 }
 
 .op-launcher-card--ready {
@@ -2929,6 +2934,27 @@
   margin-bottom: 0.75rem;
 }
 
+.binding-audit-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 42rem;
+  cursor: pointer;
+}
+
+.binding-audit-toggle .ant-switch {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+}
+
+.binding-audit-toggle > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.35;
+  color: var(--text);
+}
+
 .editable-list li {
   display: flex;
   flex-wrap: wrap;
@@ -3283,6 +3309,7 @@
 
   .bpmn-ispf-panel {
     width: 100%;
+    max-height: min(40vh, 20rem);
   }
 
   .workflow-instance-grid {

@@ -519,7 +519,7 @@ final class AgentAutomationTools {
             @Override
             public String description() {
                 return "Create a new variable on an object (prefer SINGLETON orchestrator or INSTANCE twin for "
-                        + "app/twin logic; DEVICE is telemetry only). ";
+                        + "app/twin logic; DEVICE is telemetry only). "
                         + "Args: path, name, valueType (DOUBLE|BOOLEAN|STRING|INTEGER), "
                         + "initialValue? (map or scalar), "
                         + "writable? (default false), historyEnabled? (default false). "

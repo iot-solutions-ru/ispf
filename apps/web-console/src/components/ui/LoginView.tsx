@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Typography } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { login } from "../../auth/login";
@@ -28,8 +29,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
   const showOidcLogin = authConfig?.mode === "oidc";
   const showTotpField = authConfig?.mfaEnabled === true;
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const submit = async () => {
     setPending(true);
     setError(null);
     try {
@@ -58,37 +58,41 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
 
   return (
     <div className="login-shell">
-      <form className="login-card" onSubmit={(event) => void submit(event)}>
+      <div className="login-card">
         <div className="login-card-head">
           <ShellPreferences />
         </div>
-        <h1>{t("shell:login.title")}</h1>
-        <p className="login-sub">{t("shell:login.subtitle")}</p>
+        <Typography.Title level={2} style={{ marginTop: 0 }}>
+          {t("shell:login.title")}
+        </Typography.Title>
+        <Typography.Paragraph type="secondary">{t("shell:login.subtitle")}</Typography.Paragraph>
 
-        {authConfigQuery.isLoading && <p className="login-hint">{t("shell:login.loadingAuthConfig")}</p>}
+        {authConfigQuery.isLoading && (
+          <Typography.Paragraph type="secondary">{t("shell:login.loadingAuthConfig")}</Typography.Paragraph>
+        )}
         {authConfigQuery.error && (
-          <div className="op-alert op-alert-error">{String(authConfigQuery.error)}</div>
+          <Alert type="error" showIcon message={String(authConfigQuery.error)} style={{ marginBottom: 12 }} />
         )}
 
         {showLocalLogin && (
-          <>
-            <label>
-              {t("shell:login.username")}
-              <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-            </label>
-            <label>
-              {t("shell:login.password")}
-              <input
-                type="password"
+          <Form layout="vertical" onFinish={() => void submit()}>
+            <Form.Item label={t("shell:login.username")}>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+              />
+            </Form.Item>
+            <Form.Item label={t("shell:login.password")}>
+              <Input.Password
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
-            </label>
+            </Form.Item>
             {showTotpField && (
-              <label>
-                {t("shell:login.totp")}
-                <input
+              <Form.Item label={t("shell:login.totp")}>
+                <Input
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
@@ -96,29 +100,34 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
                   maxLength={6}
                   placeholder="000000"
                 />
-              </label>
+              </Form.Item>
             )}
-            <button type="submit" className="btn primary" disabled={pending}>
+            <Button type="primary" htmlType="submit" block loading={pending}>
               {pending ? t("shell:login.submitting") : t("shell:login.submit")}
-            </button>
-            <p className="login-hint">{t("shell:login.defaultHint")}</p>
-            {showTotpField && <p className="login-hint">{t("shell:login.totpHint")}</p>}
-          </>
+            </Button>
+            <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
+              {t("shell:login.defaultHint")}
+            </Typography.Paragraph>
+            {showTotpField && (
+              <Typography.Paragraph type="secondary">{t("shell:login.totpHint")}</Typography.Paragraph>
+            )}
+          </Form>
         )}
 
         {showOidcLogin && (
           <>
-            <button type="button" className="btn primary" disabled={pending} onClick={() => void loginWithKeycloak()}>
+            <Button type="primary" block loading={pending} onClick={() => void loginWithKeycloak()}>
               {pending ? t("shell:login.oidcRedirecting") : t("shell:login.oidcSubmit")}
-            </button>
-            <p className="login-hint">
-              {t("shell:login.oidcRealm")} <code>{authConfig?.oidc?.issuer ?? t("common:empty.dash")}</code>
-            </p>
+            </Button>
+            <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
+              {t("shell:login.oidcRealm")}{" "}
+              <Typography.Text code>{authConfig?.oidc?.issuer ?? t("common:empty.dash")}</Typography.Text>
+            </Typography.Paragraph>
           </>
         )}
 
-        {error && <div className="op-alert op-alert-error">{error}</div>}
-      </form>
+        {error && <Alert type="error" showIcon message={error} style={{ marginTop: 12 }} />}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Space, Table, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchPlatformLicense } from "../../api/platformLicense";
 import { parseManifestLicense } from "../../utils/platform/bundleLicenseUi";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
@@ -39,11 +41,11 @@ export default function BundleLicenseInfoPanel({
   };
 
   if (licenseQuery.isLoading) {
-    return <p className="hint">{t("platform:bundle.license.loading")}</p>;
+    return <Typography.Text type="secondary">{t("platform:bundle.license.loading")}</Typography.Text>;
   }
 
   if (licenseQuery.error) {
-    return <div className="op-alert op-alert-error">{t("platform:bundle.license.loadError")}</div>;
+    return <Alert type="error" showIcon message={t("platform:bundle.license.loadError")} />;
   }
 
   const serverInstallationId = licenseQuery.data?.installationId ?? "";
@@ -58,70 +60,89 @@ export default function BundleLicenseInfoPanel({
     && manifestLicense.bundleId
     && manifestLicense.bundleId !== appId,
   );
+  const rows = [
+    {
+      key: "installationId",
+      label: t("platform:bundle.license.installationId"),
+      value: (
+        <Space>
+          <Typography.Text code>{serverInstallationId}</Typography.Text>
+          <Button size="small" onClick={() => void copyInstallationId()}>
+            {t("platform:bundle.license.copyInstallationId")}
+          </Button>
+        </Space>
+      ),
+    },
+    {
+      key: "enforce",
+      label: t("platform:bundle.license.enforce"),
+      value: licenseQuery.data?.enforce ? t("common:action.yes") : t("common:action.no"),
+    },
+    {
+      key: "manifestBlock",
+      label: t("platform:bundle.license.manifestBlock"),
+      value: manifestLicense.present
+        ? t("platform:bundle.license.manifestPresent")
+        : t("platform:bundle.license.manifestAbsent"),
+    },
+    ...(manifestLicense.present && manifestLicense.bundleId
+      ? [{
+          key: "bundleId",
+          label: t("platform:bundle.license.bundleId"),
+          value: (
+            <Space>
+              <Typography.Text code>{manifestLicense.bundleId}</Typography.Text>
+              {appIdMismatch && (
+                <Typography.Text type="warning" className="bundle-license-warn">
+                  {t("platform:bundle.license.mismatchAppId", { appId })}
+                </Typography.Text>
+              )}
+            </Space>
+          ),
+        }]
+      : []),
+    ...(manifestLicense.present && manifestLicense.expiresAt
+      ? [{
+          key: "expiresAt",
+          label: t("platform:bundle.license.expiresAt"),
+          value: (
+            <time dateTime={manifestLicense.expiresAt}>
+              {formatDate(manifestLicense.expiresAt)}
+            </time>
+          ),
+        }]
+      : []),
+  ];
+  const columns: TableColumnsType<(typeof rows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    { title: "", dataIndex: "value", key: "value" },
+  ];
 
   return (
     <section className={`bundle-license-info${compact ? " bundle-license-info-compact" : ""}`}>
-      <h4>{t("platform:bundle.license.title")}</h4>
-      <p className="op-muted">{t("platform:bundle.license.hint")}</p>
+      <Space orientation="vertical" style={{ width: "100%" }}>
+        <Typography.Title level={4}>{t("platform:bundle.license.title")}</Typography.Title>
+        <Typography.Paragraph type="secondary">{t("platform:bundle.license.hint")}</Typography.Paragraph>
+        <Table
+          className="bundle-license-kv"
+          size="small"
+          pagination={false}
+          showHeader={false}
+          columns={columns}
+          dataSource={rows}
+        />
 
-      <dl className="solution-catalog-kv bundle-license-kv">
-        <div>
-          <dt>{t("platform:bundle.license.installationId")}</dt>
-          <dd className="mono">
-            <span>{serverInstallationId}</span>
-            <button type="button" className="btn btn-sm" onClick={() => void copyInstallationId()}>
-              {t("platform:bundle.license.copyInstallationId")}
-            </button>
-          </dd>
-        </div>
-        <div>
-          <dt>{t("platform:bundle.license.enforce")}</dt>
-          <dd>
-            {licenseQuery.data?.enforce ? t("common:action.yes") : t("common:action.no")}
-          </dd>
-        </div>
-        <div>
-          <dt>{t("platform:bundle.license.manifestBlock")}</dt>
-          <dd>
-            {manifestLicense.present
-              ? t("platform:bundle.license.manifestPresent")
-              : t("platform:bundle.license.manifestAbsent")}
-          </dd>
-        </div>
-        {manifestLicense.present && manifestLicense.bundleId && (
-          <div>
-            <dt>{t("platform:bundle.license.bundleId")}</dt>
-            <dd>
-              <code>{manifestLicense.bundleId}</code>
-              {appIdMismatch && (
-                <span className="bundle-license-warn">
-                  {" "}
-                  {t("platform:bundle.license.mismatchAppId", { appId })}
-                </span>
-              )}
-            </dd>
-          </div>
+        {installationMismatch && (
+          <Alert
+            type="info"
+            showIcon
+            message={t("platform:bundle.license.mismatchInstallation", {
+              licensed: manifestLicense.installationId,
+              server: serverInstallationId,
+            })}
+          />
         )}
-        {manifestLicense.present && manifestLicense.expiresAt && (
-          <div>
-            <dt>{t("platform:bundle.license.expiresAt")}</dt>
-            <dd>
-              <time dateTime={manifestLicense.expiresAt}>
-                {formatDate(manifestLicense.expiresAt)}
-              </time>
-            </dd>
-          </div>
-        )}
-      </dl>
-
-      {installationMismatch && (
-        <div className="op-alert op-alert-info">
-          {t("platform:bundle.license.mismatchInstallation", {
-            licensed: manifestLicense.installationId,
-            server: serverInstallationId,
-          })}
-        </div>
-      )}
+      </Space>
     </section>
   );
 }

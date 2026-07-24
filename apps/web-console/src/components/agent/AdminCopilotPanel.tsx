@@ -1,3 +1,4 @@
+import { Alert, Button, Space } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminCopilotChat } from "../../context/AdminCopilotChatContext";
@@ -267,23 +268,22 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
           </p>
         </div>
         <div className="admin-copilot-head-actions">
-          <button
-            type="button"
-            className="btn small"
+          <Button
+            size="small"
             disabled={isPending || messages.length === 0}
             onClick={() => startNewChat()}
             title={t("ai:copilot.newChat")}
           >
             {t("ai:copilot.newChatShort")}
-          </button>
-          <button type="button" className="btn small" onClick={onClose} aria-label={t("ai:copilot.close")}>
+          </Button>
+          <Button size="small" onClick={onClose} aria-label={t("ai:copilot.close")}>
             ×
-          </button>
+          </Button>
         </div>
       </div>
 
       {!providerReady && !providerLoading && (
-        <div className="op-alert op-alert-error">{t("ai:copilot.llmUnavailable")}</div>
+        <Alert type="error" showIcon message={t("ai:copilot.llmUnavailable")} />
       )}
 
       <div className="admin-copilot-mode-row">
@@ -357,18 +357,20 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
           disabled={isPending || !providerReady || !agentApiReady}
         />
         <div className="operator-agent-drawer-actions">
-          {isPending && (
-            <button type="button" className="btn danger" onClick={() => void cancelRun()}>
-              {t("ai:copilot.cancel")}
-            </button>
-          )}
-          <button
-            type="submit"
-            className="btn primary"
-            disabled={isPending || !providerReady || !agentApiReady || !input.trim()}
-          >
-            {t("ai:copilot.send")}
-          </button>
+          <Space>
+            {isPending && (
+              <Button danger onClick={() => void cancelRun()}>
+                {t("ai:copilot.cancel")}
+              </Button>
+            )}
+            <Button
+              type="primary"
+              htmlType="submit"
+              disabled={isPending || !providerReady || !agentApiReady || !input.trim()}
+            >
+              {t("ai:copilot.send")}
+            </Button>
+          </Space>
         </div>
       </form>
     </div>

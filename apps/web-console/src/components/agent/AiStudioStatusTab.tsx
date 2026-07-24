@@ -1,3 +1,4 @@
+import { Button } from "antd";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -237,16 +238,14 @@ export default function AiStudioStatusTab() {
               ))}
             </ul>
           )}
-          <button
-            type="button"
-            className="btn"
-            disabled={refreshPackMutation.isPending}
+          <Button
+            loading={refreshPackMutation.isPending}
             onClick={() => refreshPackMutation.mutate()}
           >
             {refreshPackMutation.isPending
               ? t("settings.refreshingContextPack")
               : t("settings.refreshContextPack")}
-          </button>
+          </Button>
         </section>
       </div>
 

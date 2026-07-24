@@ -1,3 +1,4 @@
+import { Alert, Button, Space } from "antd";
 import { useTranslation } from "react-i18next";
 import type { ActiveOperatorAlarm } from "../../types/operatorAlarmBar";
 
@@ -74,52 +75,51 @@ function AlarmBarItem({
           ))}
         </dl>
       </div>
-      <div className="operator-alarm-bar-actions">
+      <Space className="operator-alarm-bar-actions" wrap>
         {showPrimaryAction && (
-          <button type="button" className="btn primary operator-alarm-bar-btn" onClick={onPrimaryAction}>
+          <Button type="primary" className="operator-alarm-bar-btn primary" onClick={onPrimaryAction}>
             {alarm.primaryActionLabel}
-          </button>
+          </Button>
         )}
         {showSecondary && alarm.dashboardPath && (
-          <button type="button" className="btn operator-alarm-bar-btn" onClick={onOpenDashboard}>
+          <Button className="operator-alarm-bar-btn" onClick={onOpenDashboard}>
             {t("alarmBar.dashboard")}
-          </button>
+          </Button>
         )}
         {showSecondary && alarm.reportPath && (
-          <button type="button" className="btn operator-alarm-bar-btn" onClick={onOpenReport}>
+          <Button className="operator-alarm-bar-btn" onClick={onOpenReport}>
             {t("alarmBar.report")}
-          </button>
+          </Button>
         )}
         {showSecondary && (
-          <button type="button" className="btn operator-alarm-bar-btn" onClick={onOpenObject}>
+          <Button className="operator-alarm-bar-btn" onClick={onOpenObject}>
             {t("alarmBar.toObject")}
-          </button>
+          </Button>
         )}
         {showMute && (
-          <button
-            type="button"
+          <Button
             className={`btn operator-alarm-bar-btn${muted ? " operator-alarm-bar-btn-muted" : ""}`}
             onClick={toggleMute}
             title={muted ? t("alarmBar.unmute") : t("alarmBar.mute")}
           >
             {muted ? "🔇" : "🔊"}
-          </button>
+          </Button>
         )}
         {!alarm.hideAcknowledge && (
-          <button
-            type="button"
+          <Button
+            type="primary"
             className="btn primary operator-alarm-bar-btn"
             onClick={onDismiss}
             disabled={ackBlocked}
             title={ackBlocked ? t("alarmBar.ackRequiredMissingFunction") : undefined}
           >
             {t("alarmBar.acknowledge")}
-          </button>
+          </Button>
         )}
-        <button type="button" className="btn operator-alarm-bar-btn" onClick={onShelve}>
+        <Button className="operator-alarm-bar-btn" onClick={onShelve}>
           {t("alarmBar.shelve")}
-        </button>
-      </div>
+        </Button>
+      </Space>
     </div>
   );
 }
@@ -149,14 +149,14 @@ export default function AlarmBarOverlay({
       data-testid="operator-alarm-bar"
     >
       {actionError && (
-        <div className="banner error operator-alarm-bar-error" role="status">
-          <span>{actionError}</span>
-          {clearActionError && (
-            <button type="button" className="btn btn-sm" onClick={clearActionError}>
-              ×
-            </button>
-          )}
-        </div>
+        <Alert
+          className="operator-alarm-bar-error"
+          type="error"
+          message={actionError}
+          role="status"
+          closable={Boolean(clearActionError)}
+          onClose={clearActionError}
+        />
       )}
       {alarms.map((alarm, index) => (
         <AlarmBarItem

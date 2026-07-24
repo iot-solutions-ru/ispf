@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { Button, Drawer, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { shouldLockBodyForOperatorSidebar } from "../../utils/operator/operatorShellLayout";
 
@@ -35,29 +36,39 @@ export default function OperatorShellFrame({
 
   return (
     <>
-      {showBackdrop ? (
-        <button
-          type="button"
-          className="operator-sidebar-backdrop"
-          aria-label={t("sidebar.close")}
-          onClick={onSidebarClose}
-        />
-      ) : null}
       <div
         className={`operator-layout${sidebarOpen ? " operator-layout--sidebar-open" : ""}${
           layoutClassName ? ` ${layoutClassName}` : ""
         }`}
       >
         <main className={mainClassName}>{main}</main>
-        <aside id="operator-sidebar-panel" className="operator-sidebar" aria-label={t("sidebar.panel")}>
-          <div className="operator-sidebar-mobile-head">
-            <strong>{t("sidebar.panel")}</strong>
-            <button type="button" className="btn small" onClick={onSidebarClose}>
-              {t("sidebar.close")}
-            </button>
-          </div>
-          {sidebar}
-        </aside>
+        {compact ? (
+          <Drawer
+            title={t("sidebar.panel")}
+            placement="right"
+            open={sidebarOpen}
+            onClose={onSidebarClose}
+            width="min(100vw - 2.5rem, 360px)"
+            className="operator-sidebar-drawer"
+            rootClassName="operator-sidebar-drawer-root"
+            mask={showBackdrop}
+            destroyOnHidden={false}
+          >
+            <div id="operator-sidebar-panel" className="operator-sidebar-drawer-body">
+              {sidebar}
+            </div>
+          </Drawer>
+        ) : (
+          <aside id="operator-sidebar-panel" className="operator-sidebar" aria-label={t("sidebar.panel")}>
+            <div className="operator-sidebar-mobile-head">
+              <Typography.Text strong>{t("sidebar.panel")}</Typography.Text>
+              <Button size="small" onClick={onSidebarClose}>
+                {t("sidebar.close")}
+              </Button>
+            </div>
+            {sidebar}
+          </aside>
+        )}
       </div>
     </>
   );

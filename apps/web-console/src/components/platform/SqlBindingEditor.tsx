@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Checkbox, Form, Input, Select } from "antd";
 import { fetchVariables } from "../../api";
 import { fetchSqlBinding, refreshSqlBinding, updateSqlBinding } from "../../api/platformSql";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
 import { useDataSourceOptions } from "./useDataSourceOptions";
 
 const REFRESH_MODES = ["manual", "on_schedule", "on_function_success"] as const;
+const { TextArea } = Input;
 
 interface SqlBindingEditorProps {
   path: string;
@@ -102,7 +104,7 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
   }
 
   if (bindingQuery.error) {
-    return <div className="op-alert op-alert-error">{String(bindingQuery.error)}</div>;
+    return <Alert type="error" showIcon message={String(bindingQuery.error)} />;
   }
 
   return (
@@ -114,35 +116,32 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
       onOpenProperties={onOpenProperties}
       toolbar={
         <>
-          <button
-            type="button"
-            className="btn primary"
+          <Button
+            type="primary"
             disabled={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
             {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
-          </button>
-          <button
-            type="button"
-            className="btn"
+          </Button>
+          <Button
             disabled={refreshMutation.isPending || !query.trim() || !dataSourcePath.trim()}
             onClick={() => refreshMutation.mutate()}
           >
             {refreshMutation.isPending ? t("platform:sqlBinding.refreshing") : t("platform:sqlBinding.refreshNow")}
-          </button>
+          </Button>
         </>
       }
     >
-      <form
-        className="form-grid report-builder-form"
-        onSubmit={(e) => {
-          e.preventDefault();
+      <Form
+        className="report-builder-form"
+        layout="vertical"
+        onFinish={() => {
           saveMutation.mutate();
         }}
       >
         <label className="full">
           Target object path *
-          <input
+          <Input
             value={targetObjectPath}
             onChange={(e) => setTargetObjectPath(e.target.value)}
             placeholder="root.platform.devices.demo-sensor-01"
@@ -151,26 +150,29 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
         </label>
         <label>
           Variable *
-          <input value={variable} onChange={(e) => setVariable(e.target.value)} required />
+          <Input value={variable} onChange={(e) => setVariable(e.target.value)} required />
         </label>
         <label>
           Value field
-          <input value={valueField} onChange={(e) => setValueField(e.target.value)} />
+          <Input value={valueField} onChange={(e) => setValueField(e.target.value)} />
         </label>
         <label className="full">
           Data source *
-          <select value={dataSourcePath} onChange={(e) => setDataSourcePath(e.target.value)} required>
-            <option value="">{t("platform:sqlBinding.selectPlaceholder")}</option>
-            {(dataSourcesQuery.data ?? []).map((ds) => (
-              <option key={ds.path} value={ds.path}>
-                {ds.displayName} ({ds.path})
-              </option>
-            ))}
-          </select>
+          <Select
+            value={dataSourcePath}
+            onChange={setDataSourcePath}
+            options={[
+              { value: "", label: t("platform:sqlBinding.selectPlaceholder") },
+              ...(dataSourcesQuery.data ?? []).map((ds) => ({
+                value: ds.path,
+                label: `${ds.displayName} (${ds.path})`,
+              })),
+            ]}
+          />
         </label>
         <label className="full">
           SQL query (SELECT) *
-          <textarea
+          <TextArea
             className="mono"
             rows={8}
             value={query}
@@ -181,17 +183,15 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
         </label>
         <label>
           Refresh mode
-          <select value={refresh} onChange={(e) => setRefresh(e.target.value)}>
-            {REFRESH_MODES.map((mode) => (
-              <option key={mode} value={mode}>
-                {mode}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={refresh}
+            onChange={setRefresh}
+            options={REFRESH_MODES.map((mode) => ({ value: mode, label: mode }))}
+          />
         </label>
         <label>
           Refresh interval (ms)
-          <input
+          <Input
             type="number"
             min={1000}
             step={1000}
@@ -201,7 +201,7 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
         </label>
         <label className="full">
           Trigger object path
-          <input
+          <Input
             value={triggerObjectPath}
             onChange={(e) => setTriggerObjectPath(e.target.value)}
             placeholder={t("platform:sqlBinding.triggerPlaceholder")}
@@ -209,15 +209,16 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
         </label>
         <label className="full">
           Trigger function name
-          <input
+          <Input
             value={triggerFunctionName}
             onChange={(e) => setTriggerFunctionName(e.target.value)}
             placeholder={t("platform:sqlBinding.triggerPlaceholder")}
           />
         </label>
         <label className="full">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-          {" "}Enabled
+          <Checkbox checked={enabled} onChange={(e) => setEnabled(e.target.checked)}>
+            Enabled
+          </Checkbox>
         </label>
         {bindingQuery.data?.lastRefreshedAt && (
           <p className="hint full">{t("platform:sqlBinding.lastRefreshed", { time: bindingQuery.data.lastRefreshedAt })}</p>
@@ -230,11 +231,13 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
             })}
           </p>
         )}
-        {saveError && <p className="hint error full">{saveError}</p>}
-        {refreshError && <p className="hint error full">{refreshError}</p>}
-        {saveMutation.isSuccess && <p className="hint full">{t("common:action.saved")}</p>}
-        {refreshMutation.isSuccess && <p className="hint full">{t("platform:sqlBinding.valueUpdated")}</p>}
-      </form>
+        {saveError && <Alert className="full" type="error" showIcon message={saveError} />}
+        {refreshError && <Alert className="full" type="error" showIcon message={refreshError} />}
+        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon message={t("common:action.saved")} />}
+        {refreshMutation.isSuccess && (
+          <Alert className="full" type="success" showIcon message={t("platform:sqlBinding.valueUpdated")} />
+        )}
+      </Form>
     </PlatformSqlEditorShell>
   );
 }

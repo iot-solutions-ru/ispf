@@ -132,10 +132,6 @@
 }
 
 .operator-preferences-panel {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.35rem);
-  z-index: 200;
   min-width: 16rem;
   padding: 0.75rem;
   border: 1px solid var(--border);
@@ -257,6 +253,7 @@
   border-color: rgba(255, 255, 255, 0.35);
   color: inherit;
   background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
 .operator-alarm-bar-btn:hover {
@@ -444,6 +441,10 @@
   position: relative;
 }
 
+.operator-sidebar-toggle.ant-btn {
+  height: auto;
+}
+
 .operator-sidebar-toggle-label {
   white-space: nowrap;
 }
@@ -460,6 +461,10 @@
 }
 
 .operator-sidebar-toggle-badge {
+  line-height: 1;
+}
+
+.operator-sidebar-toggle-badge .ant-badge-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -474,11 +479,11 @@
   box-shadow: 0 0 0 2px var(--surface, #1a1d24);
 }
 
-.operator-sidebar-toggle-badge--tasks {
+.operator-sidebar-toggle-badge--tasks .ant-badge-count {
   background: color-mix(in srgb, var(--accent, #2f81f7) 88%, #000);
 }
 
-.operator-sidebar-toggle-badge--events {
+.operator-sidebar-toggle-badge--events .ant-badge-count {
   background: color-mix(in srgb, var(--danger, #dc2626) 90%, #000);
 }
 

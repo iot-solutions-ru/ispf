@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchYargHealth } from "../../api/yargHealth";
 
 export default function YargHealthCard() {
@@ -9,51 +11,67 @@ export default function YargHealthCard() {
     queryFn: fetchYargHealth,
     refetchInterval: 30_000,
   });
+  const rows = healthQuery.data
+    ? [
+        {
+          key: "libreOffice",
+          label: t("yargHealth.libreOffice"),
+          value: (
+            <Tag color={healthQuery.data.libreOfficeAvailable ? "success" : "error"}>
+              {healthQuery.data.libreOfficeAvailable
+                ? t("yargHealth.available")
+                : t("yargHealth.unavailable")}
+            </Tag>
+          ),
+        },
+        ...(healthQuery.data.configuredPath
+          ? [{
+              key: "configuredPath",
+              label: t("yargHealth.configuredPath"),
+              value: <Typography.Text code>{healthQuery.data.configuredPath}</Typography.Text>,
+            }]
+          : []),
+        ...(healthQuery.data.resolvedPath
+          ? [{
+              key: "resolvedPath",
+              label: t("yargHealth.resolvedPath"),
+              value: <Typography.Text code>{healthQuery.data.resolvedPath}</Typography.Text>,
+            }]
+          : []),
+        {
+          key: "timeoutSeconds",
+          label: t("yargHealth.timeoutSeconds"),
+          value: healthQuery.data.timeoutSeconds,
+        },
+      ]
+    : [];
+  const columns: TableColumnsType<(typeof rows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    { title: "", dataIndex: "value", key: "value" },
+  ];
 
   return (
     <section className="system-metrics-card yarg-health-card">
-      <h3>{t("yargHealth.title")}</h3>
-      {healthQuery.isLoading && <p className="hint">{t("yargHealth.loading")}</p>}
+      <Typography.Title level={3}>{t("yargHealth.title")}</Typography.Title>
+      {healthQuery.isLoading && <Typography.Text type="secondary">{t("yargHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <div className="op-alert op-alert-error">{t("yargHealth.loadError")}</div>
+        <Alert type="error" showIcon message={t("yargHealth.loadError")} />
       )}
       {healthQuery.data && (
-        <>
-          <table className="op-table system-metrics-table">
-            <tbody>
-              <tr>
-                <th>{t("yargHealth.libreOffice")}</th>
-                <td>
-                  <span className={healthQuery.data.libreOfficeAvailable ? "system-health-ok" : "system-health-bad"}>
-                    {healthQuery.data.libreOfficeAvailable
-                      ? t("yargHealth.available")
-                      : t("yargHealth.unavailable")}
-                  </span>
-                </td>
-              </tr>
-              {healthQuery.data.configuredPath && (
-                <tr>
-                  <th>{t("yargHealth.configuredPath")}</th>
-                  <td className="mono">{healthQuery.data.configuredPath}</td>
-                </tr>
-              )}
-              {healthQuery.data.resolvedPath && (
-                <tr>
-                  <th>{t("yargHealth.resolvedPath")}</th>
-                  <td className="mono">{healthQuery.data.resolvedPath}</td>
-                </tr>
-              )}
-              <tr>
-                <th>{t("yargHealth.timeoutSeconds")}</th>
-                <td>{healthQuery.data.timeoutSeconds}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="hint">{t("yargHealth.hint")}</p>
+        <Space orientation="vertical" style={{ width: "100%" }}>
+          <Table
+            className="system-metrics-table"
+            size="small"
+            pagination={false}
+            showHeader={false}
+            columns={columns}
+            dataSource={rows}
+          />
+          <Typography.Paragraph type="secondary">{t("yargHealth.hint")}</Typography.Paragraph>
           {!healthQuery.data.libreOfficeAvailable && (
-            <p className="hint warning">{healthQuery.data.pdfHint}</p>
+            <Alert type="warning" showIcon message={healthQuery.data.pdfHint} />
           )}
-        </>
+        </Space>
       )}
     </section>
   );

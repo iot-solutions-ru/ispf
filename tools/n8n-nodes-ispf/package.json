@@ -1,0 +1,58 @@
+{
+  "name": "n8n-nodes-ispf",
+  "version": "0.1.1",
+  "description": "n8n community nodes for IoT Solutions Platform (ISPF)",
+  "license": "MIT",
+  "homepage": "https://www.npmjs.com/package/n8n-nodes-ispf",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IoT-Solutions-Platform/IoT-Solutions-Platform.git",
+    "directory": "tools/n8n-nodes-ispf"
+  },
+  "bugs": {
+    "url": "https://github.com/IoT-Solutions-Platform/IoT-Solutions-Platform/issues"
+  },
+  "keywords": [
+    "n8n-community-node-package",
+    "ispf",
+    "iot",
+    "scada",
+    "n8n"
+  ],
+  "author": {
+    "name": "michaael1",
+    "url": "https://www.npmjs.com/~michaael1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.cjs",
+    "prepublishOnly": "npm run build",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/IspfApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Ispf/Ispf.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "n8n-workflow": "^1.82.0",
+    "typescript": "^5.8.2"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Space, Table } from "antd";
 import {
   deployApplicationBinding,
   deployApplicationFunction,
@@ -13,6 +14,8 @@ import {
   seedApplicationData,
 } from "../../api/applications";
 import { ObjectPathField } from "../../ui/index";
+
+const { TextArea } = Input;
 
 interface ApplicationLifecyclePanelProps {
   appId: string;
@@ -144,9 +147,7 @@ export default function ApplicationLifecyclePanel({
       <section className="lifecycle-section panel-card">
         <h4>{t("lifecycle.dataTitle")}</h4>
         {dataStatusQuery.isLoading && <p className="op-muted">{t("lifecycle.loading")}</p>}
-        {dataStatusQuery.error && (
-          <div className="op-alert op-alert-error">{String(dataStatusQuery.error)}</div>
-        )}
+        {dataStatusQuery.error && <Alert type="error" showIcon message={String(dataStatusQuery.error)} />}
         {dataStatusQuery.data && (
           <dl className="lifecycle-dl">
             {dataStatusQuery.data.schemaName && (
@@ -173,48 +174,45 @@ export default function ApplicationLifecyclePanel({
           <>
             <label className="full">
               {t("lifecycle.migratePayload")}
-              <textarea
+              <TextArea
                 className="textarea mono"
                 rows={8}
                 value={migrateText}
                 onChange={(e) => setMigrateText(e.target.value)}
               />
             </label>
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn primary"
+            <Space wrap className="form-actions">
+              <Button
+                type="primary"
                 disabled={migrateMutation.isPending}
                 onClick={() => migrateMutation.mutate()}
               >
                 {migrateMutation.isPending ? t("lifecycle.migrating") : t("lifecycle.migrate")}
-              </button>
+              </Button>
               <label className="inline-field">
                 {t("lifecycle.seedProfile")}
-                <input value={seedProfile} onChange={(e) => setSeedProfile(e.target.value)} />
+                <Input value={seedProfile} onChange={(e) => setSeedProfile(e.target.value)} />
               </label>
-              <button
-                type="button"
-                className="btn"
+              <Button
                 disabled={seedMutation.isPending || !seedProfile.trim()}
                 onClick={() => seedMutation.mutate()}
               >
                 {seedMutation.isPending ? t("lifecycle.seeding") : t("lifecycle.seed")}
-              </button>
-            </div>
+              </Button>
+            </Space>
           </>
         )}
         {migrateMutation.error && (
-          <div className="op-alert op-alert-error">{String(migrateMutation.error)}</div>
+          <Alert type="error" showIcon message={String(migrateMutation.error)} />
         )}
         {seedMutation.error && (
-          <div className="op-alert op-alert-error">{String(seedMutation.error)}</div>
+          <Alert type="error" showIcon message={String(seedMutation.error)} />
         )}
         {migrateMutation.isSuccess && (
-          <div className="op-alert op-alert-success">{t("lifecycle.migrateSuccess")}</div>
+          <Alert type="success" showIcon message={t("lifecycle.migrateSuccess")} />
         )}
         {seedMutation.isSuccess && (
-          <div className="op-alert op-alert-success">{t("lifecycle.seedSuccess")}</div>
+          <Alert type="success" showIcon message={t("lifecycle.seedSuccess")} />
         )}
       </section>
 
@@ -225,52 +223,59 @@ export default function ApplicationLifecyclePanel({
           <p className="op-muted">{t("lifecycle.bindingsEmpty")}</p>
         )}
         {bindingsQuery.data && bindingsQuery.data.length > 0 && (
-          <table className="data-table compact">
-            <thead>
-              <tr>
-                <th>{t("lifecycle.bindingPath")}</th>
-                <th>{t("lifecycle.bindingVariable")}</th>
-                <th>{t("lifecycle.bindingRefresh")}</th>
-                {canManage && <th />}
-              </tr>
-            </thead>
-            <tbody>
-              {bindingsQuery.data.map((row) => {
-                const key = `${row.objectPath ?? ""}:${row.variable ?? ""}`;
-                const refreshing =
-                  refreshBindingMutation.isPending
-                  && refreshBindingMutation.variables?.objectPath === row.objectPath
-                  && refreshBindingMutation.variables?.variable === row.variable;
-                return (
-                  <tr key={key}>
-                    <td><code>{row.objectPath}</code></td>
-                    <td><code>{row.variable}</code></td>
-                    <td>{row.refresh ?? "—"}</td>
-                    {canManage && (
-                      <td>
-                        <button
-                          type="button"
-                          className="btn small"
-                          disabled={refreshBindingMutation.isPending}
-                          onClick={() =>
-                            refreshBindingMutation.mutate({
-                              objectPath: row.objectPath ?? "",
-                              variable: row.variable ?? "",
-                            })
-                          }
-                        >
-                          {refreshing ? t("lifecycle.refreshing") : t("lifecycle.refresh")}
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <Table
+            size="small"
+            pagination={false}
+            rowKey={(row) => `${row.objectPath ?? ""}:${row.variable ?? ""}`}
+            dataSource={bindingsQuery.data}
+            columns={[
+              {
+                title: t("lifecycle.bindingPath"),
+                dataIndex: "objectPath",
+                render: (value: string) => <code>{value}</code>,
+              },
+              {
+                title: t("lifecycle.bindingVariable"),
+                dataIndex: "variable",
+                render: (value: string) => <code>{value}</code>,
+              },
+              {
+                title: t("lifecycle.bindingRefresh"),
+                dataIndex: "refresh",
+                render: (value: string | undefined) => value ?? "—",
+              },
+              ...(canManage
+                ? [
+                    {
+                      title: "",
+                      render: (_: unknown, row: NonNullable<typeof bindingsQuery.data>[number]) => {
+                        const refreshing =
+                          refreshBindingMutation.isPending
+                          && refreshBindingMutation.variables?.objectPath === row.objectPath
+                          && refreshBindingMutation.variables?.variable === row.variable;
+                        return (
+                          <Button
+                            size="small"
+                            disabled={refreshBindingMutation.isPending}
+                            onClick={() =>
+                              refreshBindingMutation.mutate({
+                                objectPath: row.objectPath ?? "",
+                                variable: row.variable ?? "",
+                              })
+                            }
+                          >
+                            {refreshing ? t("lifecycle.refreshing") : t("lifecycle.refresh")}
+                          </Button>
+                        );
+                      },
+                    },
+                  ]
+                : []),
+            ]}
+          />
         )}
         {canManage && (
-          <div className="form-grid lifecycle-binding-form">
+          <Form component="div" layout="vertical" className="lifecycle-binding-form">
             <ObjectPathField
               className="full"
               label={t("lifecycle.field.objectPath")}
@@ -280,23 +285,22 @@ export default function ApplicationLifecyclePanel({
             />
             <label>
               {t("lifecycle.field.variable")}
-              <input
+              <Input
                 value={bindingVariable}
                 onChange={(e) => setBindingVariable(e.target.value)}
               />
             </label>
             <label className="full">
               {t("lifecycle.field.query")}
-              <textarea
+              <TextArea
                 rows={3}
                 className="mono"
                 value={bindingQuery}
                 onChange={(e) => setBindingQuery(e.target.value)}
               />
             </label>
-            <button
-              type="button"
-              className="btn primary"
+            <Button
+              type="primary"
               disabled={
                 deployBindingMutation.isPending
                 || !bindingObjectPath.trim()
@@ -305,11 +309,11 @@ export default function ApplicationLifecyclePanel({
               onClick={() => deployBindingMutation.mutate()}
             >
               {deployBindingMutation.isPending ? t("lifecycle.deploying") : t("lifecycle.deployBinding")}
-            </button>
-          </div>
+            </Button>
+          </Form>
         )}
         {deployBindingMutation.error && (
-          <div className="op-alert op-alert-error">{String(deployBindingMutation.error)}</div>
+          <Alert type="error" showIcon message={String(deployBindingMutation.error)} />
         )}
       </section>
 
@@ -332,25 +336,24 @@ export default function ApplicationLifecyclePanel({
           <>
             <label className="full">
               {t("lifecycle.reportPayload")}
-              <textarea
+              <TextArea
                 className="textarea mono"
                 rows={8}
                 value={reportText}
                 onChange={(e) => setReportText(e.target.value)}
               />
             </label>
-            <button
-              type="button"
-              className="btn primary"
+            <Button
+              type="primary"
               disabled={deployReportMutation.isPending}
               onClick={() => deployReportMutation.mutate()}
             >
               {deployReportMutation.isPending ? t("lifecycle.deploying") : t("lifecycle.deployReport")}
-            </button>
+            </Button>
           </>
         )}
         {deployReportMutation.error && (
-          <div className="op-alert op-alert-error">{String(deployReportMutation.error)}</div>
+          <Alert type="error" showIcon message={String(deployReportMutation.error)} />
         )}
       </section>
 
@@ -359,26 +362,25 @@ export default function ApplicationLifecyclePanel({
           <h4>{t("lifecycle.functionTitle")}</h4>
           <label className="full">
             {t("lifecycle.functionPayload")}
-            <textarea
+            <TextArea
               className="textarea mono"
               rows={10}
               value={functionText}
               onChange={(e) => setFunctionText(e.target.value)}
             />
           </label>
-          <button
-            type="button"
-            className="btn primary"
+          <Button
+            type="primary"
             disabled={deployFunctionMutation.isPending}
             onClick={() => deployFunctionMutation.mutate()}
           >
             {deployFunctionMutation.isPending ? t("lifecycle.deploying") : t("lifecycle.deployFunction")}
-          </button>
+          </Button>
           {deployFunctionMutation.error && (
-            <div className="op-alert op-alert-error">{String(deployFunctionMutation.error)}</div>
+            <Alert type="error" showIcon message={String(deployFunctionMutation.error)} />
           )}
           {deployFunctionMutation.isSuccess && (
-            <div className="op-alert op-alert-success">{t("lifecycle.functionSuccess")}</div>
+            <Alert type="success" showIcon message={t("lifecycle.functionSuccess")} />
           )}
         </section>
       )}

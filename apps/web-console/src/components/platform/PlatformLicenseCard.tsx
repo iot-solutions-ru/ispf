@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchPlatformLicense } from "../../api/platformLicense";
 import { useOptionalUserTimeZone } from "../../context/UserTimeZoneContext";
 import { formatUserDateTime } from "../../utils/ui/formatDateTime";
@@ -26,71 +28,81 @@ export default function PlatformLicenseCard() {
     }
   };
 
+  const rows = licenseQuery.data
+    ? [
+        { key: "mode", label: t("licenseHealth.mode"), value: licenseQuery.data.mode },
+        ...(licenseQuery.data.tier
+          ? [{ key: "tier", label: t("licenseHealth.tier"), value: licenseQuery.data.tier }]
+          : []),
+        {
+          key: "valid",
+          label: t("licenseHealth.valid"),
+          value: (
+            <Tag color={licenseQuery.data.valid ? "success" : "error"}>
+              {licenseQuery.data.valid ? t("licenseHealth.validYes") : t("licenseHealth.validNo")}
+            </Tag>
+          ),
+        },
+        {
+          key: "enforce",
+          label: t("licenseHealth.enforce"),
+          value: licenseQuery.data.enforce ? t("common:action.yes") : t("common:action.no"),
+        },
+        ...(licenseQuery.data.expiresAt
+          ? [{
+              key: "expiresAt",
+              label: t("licenseHealth.expiresAt"),
+              value: (
+                <time dateTime={licenseQuery.data.expiresAt}>
+                  {formatDate(licenseQuery.data.expiresAt)}
+                </time>
+              ),
+            }]
+          : []),
+        {
+          key: "installationId",
+          label: t("licenseHealth.installationId"),
+          value: (
+            <Space>
+              <Typography.Text code className="platform-license-id">
+                {licenseQuery.data.installationId}
+              </Typography.Text>
+              <Button size="small" onClick={() => void copyInstallationId()}>
+                {t("licenseHealth.copyInstallationId")}
+              </Button>
+            </Space>
+          ),
+        },
+        { key: "message", label: t("licenseHealth.message"), value: licenseQuery.data.message },
+      ]
+    : [];
+  const columns: TableColumnsType<(typeof rows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    { title: "", dataIndex: "value", key: "value" },
+  ];
+
   return (
     <section className="system-metrics-card platform-license-card">
-      <h3>{t("licenseHealth.title")}</h3>
-      {licenseQuery.isLoading && <p className="hint">{t("licenseHealth.loading")}</p>}
+      <Typography.Title level={3}>{t("licenseHealth.title")}</Typography.Title>
+      {licenseQuery.isLoading && <Typography.Text type="secondary">{t("licenseHealth.loading")}</Typography.Text>}
       {licenseQuery.error && (
-        <div className="op-alert op-alert-error">{t("licenseHealth.loadError")}</div>
+        <Alert type="error" showIcon message={t("licenseHealth.loadError")} />
       )}
       {licenseQuery.data && (
-        <>
-          <table className="op-table system-metrics-table">
-            <tbody>
-              <tr>
-                <th>{t("licenseHealth.mode")}</th>
-                <td>{licenseQuery.data.mode}</td>
-              </tr>
-              {licenseQuery.data.tier && (
-                <tr>
-                  <th>{t("licenseHealth.tier")}</th>
-                  <td>{licenseQuery.data.tier}</td>
-                </tr>
-              )}
-              <tr>
-                <th>{t("licenseHealth.valid")}</th>
-                <td>
-                  <span className={licenseQuery.data.valid ? "system-health-ok" : "system-health-bad"}>
-                    {licenseQuery.data.valid ? t("licenseHealth.validYes") : t("licenseHealth.validNo")}
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <th>{t("licenseHealth.enforce")}</th>
-                <td>
-                  {licenseQuery.data.enforce ? t("common:action.yes") : t("common:action.no")}
-                </td>
-              </tr>
-              {licenseQuery.data.expiresAt && (
-                <tr>
-                  <th>{t("licenseHealth.expiresAt")}</th>
-                  <td>
-                    <time dateTime={licenseQuery.data.expiresAt}>
-                      {formatDate(licenseQuery.data.expiresAt)}
-                    </time>
-                  </td>
-                </tr>
-              )}
-              <tr>
-                <th>{t("licenseHealth.installationId")}</th>
-                <td className="mono platform-license-id">
-                  <span>{licenseQuery.data.installationId}</span>
-                  <button type="button" className="btn btn-sm" onClick={() => void copyInstallationId()}>
-                    {t("licenseHealth.copyInstallationId")}
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <th>{t("licenseHealth.message")}</th>
-                <td>{licenseQuery.data.message}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="hint">{t("licenseHealth.hint")}</p>
+        <Space orientation="vertical" style={{ width: "100%" }}>
+          <Table
+            className="system-metrics-table"
+            size="small"
+            pagination={false}
+            showHeader={false}
+            columns={columns}
+            dataSource={rows}
+          />
+          <Typography.Paragraph type="secondary">{t("licenseHealth.hint")}</Typography.Paragraph>
           {licenseQuery.data.enforce && !licenseQuery.data.valid && (
-            <p className="hint warning">{t("licenseHealth.enforceInvalidWarning")}</p>
+            <Alert type="warning" showIcon message={t("licenseHealth.enforceInvalidWarning")} />
           )}
-        </>
+        </Space>
       )}
     </section>
   );

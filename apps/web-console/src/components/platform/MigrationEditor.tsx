@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select } from "antd";
 import { applyMigration, fetchMigration, updateMigration } from "../../api/platformSql";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
 import { useDataSourceOptions } from "./useDataSourceOptions";
+
+const { TextArea } = Input;
 
 interface MigrationEditorProps {
   path: string;
@@ -68,7 +71,7 @@ export default function MigrationEditor({ path, onClose, onOpenProperties }: Mig
   }
 
   if (migrationQuery.error) {
-    return <div className="op-alert op-alert-error">{String(migrationQuery.error)}</div>;
+    return <Alert type="error" showIcon message={String(migrationQuery.error)} />;
   }
 
   return (
@@ -86,17 +89,14 @@ export default function MigrationEditor({ path, onClose, onOpenProperties }: Mig
       onOpenProperties={onOpenProperties}
       toolbar={
         <>
-          <button
-            type="button"
-            className="btn primary"
+          <Button
+            type="primary"
             disabled={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
             {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
-          </button>
-          <button
-            type="button"
-            className="btn"
+          </Button>
+          <Button
             disabled={applyMutation.isPending || !dataSourcePath.trim() || !sql.trim()}
             onClick={() => {
               if (confirm(t("platform:migration.applyConfirm"))) {
@@ -105,39 +105,42 @@ export default function MigrationEditor({ path, onClose, onOpenProperties }: Mig
             }}
           >
             {applyMutation.isPending ? t("platform:migration.applying") : t("platform:migration.apply")}
-          </button>
+          </Button>
         </>
       }
     >
-      <form
-        className="form-grid report-builder-form"
-        onSubmit={(e) => {
-          e.preventDefault();
+      <Form
+        className="report-builder-form"
+        layout="vertical"
+        onFinish={() => {
           saveMutation.mutate();
         }}
       >
         <label>
           Script ID
-          <input value={scriptId} onChange={(e) => setScriptId(e.target.value)} />
+          <Input value={scriptId} onChange={(e) => setScriptId(e.target.value)} />
         </label>
         <label>
           Version
-          <input value={version} onChange={(e) => setVersion(e.target.value)} />
+          <Input value={version} onChange={(e) => setVersion(e.target.value)} />
         </label>
         <label className="full">
           Data source *
-          <select value={dataSourcePath} onChange={(e) => setDataSourcePath(e.target.value)} required>
-            <option value="">{t("platform:sqlBinding.selectPlaceholder")}</option>
-            {(dataSourcesQuery.data ?? []).map((ds) => (
-              <option key={ds.path} value={ds.path}>
-                {ds.displayName} ({ds.path})
-              </option>
-            ))}
-          </select>
+          <Select
+            value={dataSourcePath}
+            onChange={setDataSourcePath}
+            options={[
+              { value: "", label: t("platform:sqlBinding.selectPlaceholder") },
+              ...(dataSourcesQuery.data ?? []).map((ds) => ({
+                value: ds.path,
+                label: `${ds.displayName} (${ds.path})`,
+              })),
+            ]}
+          />
         </label>
         <label className="full">
           SQL (DDL/DML)
-          <textarea
+          <TextArea
             className="mono"
             rows={14}
             value={sql}
@@ -148,11 +151,13 @@ export default function MigrationEditor({ path, onClose, onOpenProperties }: Mig
         {migrationQuery.data?.checksum && (
           <p className="hint full mono small">Checksum: {migrationQuery.data.checksum}</p>
         )}
-        {saveError && <p className="hint error full">{saveError}</p>}
-        {applyError && <p className="hint error full">{applyError}</p>}
-        {saveMutation.isSuccess && <p className="hint full">{t("common:action.saved")}</p>}
-        {applyMutation.isSuccess && <p className="hint full">{t("platform:migration.appliedSuccess")}</p>}
-      </form>
+        {saveError && <Alert className="full" type="error" showIcon message={saveError} />}
+        {applyError && <Alert className="full" type="error" showIcon message={applyError} />}
+        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon message={t("common:action.saved")} />}
+        {applyMutation.isSuccess && (
+          <Alert className="full" type="success" showIcon message={t("platform:migration.appliedSuccess")} />
+        )}
+      </Form>
     </PlatformSqlEditorShell>
   );
 }

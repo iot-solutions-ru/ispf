@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Alert, Typography } from "antd";
 import { isLicenseRelatedError, licenseErrorHintKey } from "../../utils/platform/bundleLicenseUi";
 
 interface BundleLicenseErrorAlertProps {
@@ -16,15 +17,20 @@ export default function BundleLicenseErrorAlert({ error }: BundleLicenseErrorAle
   const showHint = isLicenseRelatedError(message);
   const hintKey = licenseErrorHintKey(message);
 
+  const description = showHint ? (
+    <Typography.Paragraph className="bundle-license-error-hint">
+      <Typography.Text strong>{t("bundle.license.errorHint.title")}</Typography.Text>{" "}
+      {t(`bundle.license.errorHint.${hintKey}`)}
+    </Typography.Paragraph>
+  ) : undefined;
+
   return (
-    <div className="op-alert op-alert-error bundle-license-error">
-      <p>{message}</p>
-      {showHint && (
-        <p className="op-muted bundle-license-error-hint">
-          <strong>{t("bundle.license.errorHint.title")}</strong>{" "}
-          {t(`bundle.license.errorHint.${hintKey}`)}
-        </p>
-      )}
-    </div>
+    <Alert
+      className="bundle-license-error"
+      type="error"
+      showIcon
+      message={message}
+      description={description}
+    />
   );
 }

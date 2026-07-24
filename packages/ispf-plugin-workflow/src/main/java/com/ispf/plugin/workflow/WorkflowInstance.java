@@ -276,6 +276,36 @@ public class WorkflowInstance {
         recomputeStatus();
     }
 
+    public void waitTokenAtCallActivity(ExecutionToken token, String callNodeId, String childInstanceId) {
+        token.waitAtCallActivity(callNodeId, childInstanceId);
+        history.add("CALL_WAIT@" + callNodeId + "->" + childInstanceId + "#" + token.tokenId());
+        recomputeStatus();
+    }
+
+    /** Resume tokens waiting on the given child callActivity instance. Returns true if any resumed. */
+    public boolean resumeCallActivityChild(String childInstanceId) {
+        boolean resumed = false;
+        for (ExecutionToken token : tokens) {
+            if (token.state() == TokenState.WAITING
+                    && childInstanceId.equals(token.pendingCallChildInstanceId())) {
+                token.resumeAfterCallActivity();
+                history.add("CALL_RESUME@" + childInstanceId + "#" + token.tokenId());
+                resumed = true;
+            }
+        }
+        if (resumed) {
+            recomputeStatus();
+        }
+        return resumed;
+    }
+
+    public Optional<String> pendingCallChildInstanceId() {
+        return tokens.stream()
+                .map(ExecutionToken::pendingCallChildInstanceId)
+                .filter(id -> id != null && !id.isBlank())
+                .findFirst();
+    }
+
     public void scheduleBoundaryTimer(ExecutionToken token, String boundaryNodeId, long deadlineEpochMs) {
         token.scheduleBoundaryTimer(boundaryNodeId, deadlineEpochMs);
         history.add("BOUNDARY_TIMER@" + boundaryNodeId + "#" + token.tokenId());
@@ -460,6 +490,12 @@ public class WorkflowInstance {
                     if (token.arrivedJoinNodeId() != null) {
                         map.put("arrivedJoinNodeId", token.arrivedJoinNodeId());
                     }
+                    if (token.pendingCallActivityNodeId() != null) {
+                        map.put("pendingCallActivityNodeId", token.pendingCallActivityNodeId());
+                    }
+                    if (token.pendingCallChildInstanceId() != null) {
+                        map.put("pendingCallChildInstanceId", token.pendingCallChildInstanceId());
+                    }
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -500,7 +536,9 @@ public class WorkflowInstance {
                     stringValue(map.get("pendingTimerCatchNodeId")),
                     stringValue(map.get("pendingBoundaryTimerNodeId")),
                     timerDeadline,
-                    stringValue(map.get("arrivedJoinNodeId"))
+                    stringValue(map.get("arrivedJoinNodeId")),
+                    stringValue(map.get("pendingCallActivityNodeId")),
+                    stringValue(map.get("pendingCallChildInstanceId"))
             ));
         }
         return restored;

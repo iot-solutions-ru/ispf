@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Form, Input, Modal, Space, Typography } from "antd";
 import { invokeFunction } from "../../api";
 import { proxyFederationFunctionInvoke } from "../../api/federation";
 import type { DataRecord, FunctionDescriptor } from "../../types";
@@ -90,67 +91,79 @@ export default function InvokeFunctionDialog({
   });
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
-        <header className="modal-head">
-          <h3>{t("runtime:invokeFunction.title")}</h3>
-          <button type="button" className="btn small" onClick={onClose}>×</button>
-        </header>
-        <div className="modal-body">
-          <p className="hint">
-            <code>{objectPath}</code> → <code>{fn.name}</code>
-          </p>
-          {federated && (
-            <p className="hint">{t("runtime:invokeFunction.federatedHint")}</p>
-          )}
-          {fn.description && <p className="hint">{fn.description}</p>}
-          {hasInputFields ? (
-            <>
-              <div className="section-inline-tools">
-                <span className="field-label">{t("runtime:invokeFunction.input")}</span>
-                <button type="button" className="btn tiny" onClick={() => setShowJson((v) => !v)}>
-                  JSON
-                </button>
-              </div>
-              {showJson ? (
-                <textarea
-                  rows={8}
-                  className="json-editor"
-                  value={inputJson}
-                  onChange={(e) => setInputJson(e.target.value)}
-                  spellCheck={false}
-                />
-              ) : (
-                <DataRecordValueEditor record={record} onChange={setRecord} />
-              )}
-              <p className="hint">{t("runtime:invokeFunction.inputHint")}</p>
-            </>
-          ) : (
-            <p className="hint">{t("descriptor.emptyInputSchema")}</p>
-          )}
-          {!hasImplementation && (
-            <p className="hint error">{t("descriptor.notInvocable")}</p>
-          )}
-          {error && <p className="hint error">{error}</p>}
-          {resultJson && (
-            <label className="full">
-              {t("runtime:invokeFunction.result")}
-              <textarea rows={8} readOnly value={resultJson} spellCheck={false} className="json-editor" />
-            </label>
-          )}
-        </div>
-        <footer className="modal-foot">
-          <button type="button" className="btn" onClick={onClose}>{t("common:action.close")}</button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={mutation.isPending || !hasImplementation}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? t("runtime:invokeFunction.invoking") : t("runtime:invokeFunction.invoke")}
-          </button>
-        </footer>
-      </div>
-    </div>
+    <Modal
+      title={t("runtime:invokeFunction.title")}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={760}
+      footer={[
+        <Button key="close" onClick={onClose}>
+          {t("common:action.close")}
+        </Button>,
+        <Button
+          key="invoke"
+          type="primary"
+          disabled={mutation.isPending || !hasImplementation}
+          loading={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? t("runtime:invokeFunction.invoking") : t("runtime:invokeFunction.invoke")}
+        </Button>,
+      ]}
+    >
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          <Typography.Text code>{objectPath}</Typography.Text> → <Typography.Text code>{fn.name}</Typography.Text>
+        </Typography.Paragraph>
+        {federated && (
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t("runtime:invokeFunction.federatedHint")}
+          </Typography.Paragraph>
+        )}
+        {fn.description && (
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {fn.description}
+          </Typography.Paragraph>
+        )}
+        {hasInputFields ? (
+          <Space orientation="vertical" size="small" style={{ width: "100%" }}>
+            <Space style={{ justifyContent: "space-between", width: "100%" }}>
+              <Typography.Text strong>{t("runtime:invokeFunction.input")}</Typography.Text>
+              <Button size="small" onClick={() => setShowJson((v) => !v)}>
+                JSON
+              </Button>
+            </Space>
+            {showJson ? (
+              <Input.TextArea
+                rows={8}
+                className="json-editor"
+                value={inputJson}
+                onChange={(e) => setInputJson(e.target.value)}
+                spellCheck={false}
+              />
+            ) : (
+              <DataRecordValueEditor record={record} onChange={setRecord} />
+            )}
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              {t("runtime:invokeFunction.inputHint")}
+            </Typography.Paragraph>
+          </Space>
+        ) : (
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t("descriptor.emptyInputSchema")}
+          </Typography.Paragraph>
+        )}
+        {!hasImplementation && <Alert type="error" showIcon message={t("descriptor.notInvocable")} />}
+        {error && <Alert type="error" showIcon message={error} />}
+        {resultJson && (
+          <Form layout="vertical">
+            <Form.Item label={t("runtime:invokeFunction.result")} style={{ marginBottom: 0 }}>
+              <Input.TextArea rows={8} readOnly value={resultJson} spellCheck={false} className="json-editor" />
+            </Form.Item>
+          </Form>
+        )}
+      </Space>
+    </Modal>
   );
 }

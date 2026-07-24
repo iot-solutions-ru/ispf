@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchStorageHealth, type StorageBackendInfo } from "../../api/storageHealth";
 
-function statusBadgeClass(backend: StorageBackendInfo): string {
+function statusBadgeColor(backend: StorageBackendInfo): "default" | "success" | "error" {
   if (backend.store === "disabled") {
-    return "storage-health-badge is-muted";
+    return "default";
   }
-  return backend.connected
-    ? "storage-health-badge is-ok"
-    : "storage-health-badge is-bad";
+  return backend.connected ? "success" : "error";
 }
 
 function formatCount(value: number | null, t: (key: string) => string): string {
@@ -48,45 +48,62 @@ function StorageBackendPanel({
   statusLabel: string;
 }) {
   const { t } = useTranslation(["system", "common"]);
+  const rows = [
+    {
+      key: "backend",
+      label: t("storageHealth.field.backend"),
+      value: backendSummary(backend, storeLabel, engineLabel),
+    },
+    ...(backend.endpoint
+      ? [{
+          key: "endpoint",
+          label: t("storageHealth.field.endpoint"),
+          value: <Typography.Text code className="storage-health-endpoint">{backend.endpoint}</Typography.Text>,
+        }]
+      : []),
+    ...(backend.recordCount != null
+      ? [{
+          key: "records",
+          label: t("storageHealth.field.records"),
+          value: formatCount(backend.recordCount, t),
+        }]
+      : []),
+    ...(backend.retentionDays != null
+      ? [{
+          key: "retention",
+          label: t("storageHealth.field.retention"),
+          value: t("storageHealth.retentionDays", { count: backend.retentionDays }),
+        }]
+      : []),
+  ];
+  const columns: TableColumnsType<(typeof rows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    { title: "", dataIndex: "value", key: "value" },
+  ];
 
   return (
     <article className="storage-health-panel">
       <header className="storage-health-panel-header">
-        <h4 className="storage-health-panel-title">{roleLabel}</h4>
-        <span className={statusBadgeClass(backend)}>{statusLabel}</span>
+        <Typography.Title level={4} className="storage-health-panel-title">
+          {roleLabel}
+        </Typography.Title>
+        <Tag color={statusBadgeColor(backend)}>{statusLabel}</Tag>
       </header>
-      <table className="op-table system-metrics-table storage-health-panel-table">
-        <tbody>
-          <tr>
-            <th>{t("storageHealth.field.backend")}</th>
-            <td>{backendSummary(backend, storeLabel, engineLabel)}</td>
-          </tr>
-          {backend.endpoint && (
-            <tr>
-              <th>{t("storageHealth.field.endpoint")}</th>
-              <td>
-                <code className="storage-health-endpoint">{backend.endpoint}</code>
-              </td>
-            </tr>
-          )}
-          {backend.recordCount != null && (
-            <tr>
-              <th>{t("storageHealth.field.records")}</th>
-              <td>{formatCount(backend.recordCount, t)}</td>
-            </tr>
-          )}
-          {backend.retentionDays != null && (
-            <tr>
-              <th>{t("storageHealth.field.retention")}</th>
-              <td>{t("storageHealth.retentionDays", { count: backend.retentionDays })}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Table
+        className="system-metrics-table storage-health-panel-table"
+        size="small"
+        pagination={false}
+        showHeader={false}
+        columns={columns}
+        dataSource={rows}
+      />
       {backend.connectionError && (
-        <p className="hint system-health-error storage-health-panel-error">
-          {backend.connectionError}
-        </p>
+        <Alert
+          className="storage-health-panel-error"
+          type="error"
+          showIcon
+          message={backend.connectionError}
+        />
       )}
     </article>
   );
@@ -115,13 +132,13 @@ export default function StorageHealthCard() {
 
   return (
     <section className="system-metrics-card storage-health-card">
-      <h3>{t("storageHealth.title")}</h3>
-      {healthQuery.isLoading && <p className="hint">{t("storageHealth.loading")}</p>}
+      <Typography.Title level={3}>{t("storageHealth.title")}</Typography.Title>
+      {healthQuery.isLoading && <Typography.Text type="secondary">{t("storageHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <div className="op-alert op-alert-error">{t("storageHealth.loadError")}</div>
+        <Alert type="error" showIcon message={t("storageHealth.loadError")} />
       )}
       {healthQuery.data && (
-        <>
+        <Space orientation="vertical" style={{ width: "100%" }}>
           <div className="storage-health-grid">
             {healthQuery.data.backends.map((backend) => (
               <StorageBackendPanel
@@ -134,8 +151,10 @@ export default function StorageHealthCard() {
               />
             ))}
           </div>
-          <p className="hint storage-health-hint">{t("storageHealth.hint")}</p>
-        </>
+          <Typography.Paragraph type="secondary" className="storage-health-hint">
+            {t("storageHealth.hint")}
+          </Typography.Paragraph>
+        </Space>
       )}
     </section>
   );

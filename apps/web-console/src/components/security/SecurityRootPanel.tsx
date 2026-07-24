@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { Alert, Card, Col, Row, Table, Typography } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchSecurityRoles } from "../../api/securityRoles";
+import { fetchSecurityRoles, type SecurityRoleSummary } from "../../api/securityRoles";
 import { localizedRoleDescription } from "../../utils/security/localizedRoleDescription";
 import SecurityMfaPanel from "./SecurityMfaPanel";
 import { SECURITY_ROLES_ROOT } from "../../utils/security/securityRolePath";
@@ -21,73 +24,81 @@ export default function SecurityRootPanel({ canManage, onSelectPath }: SecurityR
 
   const templates = (rolesQuery.data ?? []).filter((role) => role.template);
 
+  const columns: ColumnsType<SecurityRoleSummary> = useMemo(
+    () => [
+      {
+        title: t("roles.column.name"),
+        dataIndex: "name",
+        key: "name",
+        render: (name: string, role) => (
+          <Typography.Link onClick={() => onSelectPath(role.objectPath)}>
+            <Typography.Text code>{name}</Typography.Text>
+          </Typography.Link>
+        ),
+      },
+      {
+        title: t("roles.column.displayName"),
+        dataIndex: "displayName",
+        key: "displayName",
+      },
+      {
+        title: t("roles.column.description"),
+        key: "description",
+        render: (_, role) =>
+          localizedRoleDescription(t, role.name, role.description) || t("common:empty.dash"),
+      },
+    ],
+    [onSelectPath, t]
+  );
+
   return (
     <section className="security-users-panel">
-      <header className="security-users-header">
-        <div>
-          <h3>{t("securityRoot.title")}</h3>
-          <p className="op-muted">{t("securityRoot.subtitle")}</p>
-        </div>
-      </header>
+      <Typography.Title level={4} style={{ marginTop: 0 }}>
+        {t("securityRoot.title")}
+      </Typography.Title>
+      <Typography.Paragraph type="secondary">{t("securityRoot.subtitle")}</Typography.Paragraph>
 
-      <div className="security-user-cards">
-        <button
-          type="button"
-          className="security-user-card security-user-card--link"
-          onClick={() => onSelectPath(SECURITY_USERS_ROOT)}
-        >
-          <h3 className="security-user-card-title">{t("users.title")}</h3>
-          <p className="security-user-card-desc">{t("securityRoot.usersHint")}</p>
-        </button>
-        <button
-          type="button"
-          className="security-user-card security-user-card--link"
-          onClick={() => onSelectPath(SECURITY_ROLES_ROOT)}
-        >
-          <h3 className="security-user-card-title">{t("roles.title")}</h3>
-          <p className="security-user-card-desc">{t("securityRoot.rolesHint")}</p>
-        </button>
-      </div>
+      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+        <Col xs={24} md={12}>
+          <Card hoverable onClick={() => onSelectPath(SECURITY_USERS_ROOT)}>
+            <Typography.Title level={5} style={{ marginTop: 0 }}>
+              {t("users.title")}
+            </Typography.Title>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              {t("securityRoot.usersHint")}
+            </Typography.Paragraph>
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card hoverable onClick={() => onSelectPath(SECURITY_ROLES_ROOT)}>
+            <Typography.Title level={5} style={{ marginTop: 0 }}>
+              {t("roles.title")}
+            </Typography.Title>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              {t("securityRoot.rolesHint")}
+            </Typography.Paragraph>
+          </Card>
+        </Col>
+      </Row>
 
       <SecurityMfaPanel />
 
-      <section className="modal-section">
-        <h4>{t("roleTemplates.title")}</h4>
-        <p className="op-muted">{t("roleTemplates.subtitle")}</p>
-        {!canManage && <p className="op-muted">{t("roles.adminOnly")}</p>}
-        {canManage && rolesQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}
-        {canManage && rolesQuery.error && (
-          <div className="op-alert op-alert-error">{String(rolesQuery.error)}</div>
-        )}
-        {canManage && !rolesQuery.isLoading && !rolesQuery.error && (
-          <table className="op-table security-users-table security-users-table-compact">
-            <thead>
-              <tr>
-                <th>{t("roles.column.name")}</th>
-                <th>{t("roles.column.displayName")}</th>
-                <th>{t("roles.column.description")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {templates.map((role) => (
-                <tr key={role.name}>
-                  <td>
-                    <button
-                      type="button"
-                      className="link-btn"
-                      onClick={() => onSelectPath(role.objectPath)}
-                    >
-                      <code>{role.name}</code>
-                    </button>
-                  </td>
-                  <td>{role.displayName}</td>
-                  <td>{localizedRoleDescription(t, role.name, role.description) || t("common:empty.dash")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      <Typography.Title level={5}>{t("roleTemplates.title")}</Typography.Title>
+      <Typography.Paragraph type="secondary">{t("roleTemplates.subtitle")}</Typography.Paragraph>
+      {!canManage && <Typography.Paragraph type="secondary">{t("roles.adminOnly")}</Typography.Paragraph>}
+      {canManage && rolesQuery.error && (
+        <Alert type="error" showIcon message={String(rolesQuery.error)} style={{ marginBottom: 12 }} />
+      )}
+      {canManage && (
+        <Table<SecurityRoleSummary>
+          size="small"
+          rowKey="name"
+          loading={rolesQuery.isLoading}
+          columns={columns}
+          dataSource={templates}
+          pagination={false}
+        />
+      )}
     </section>
   );
 }

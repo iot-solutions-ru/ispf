@@ -1,3 +1,4 @@
+import { Alert, Button } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { downloadAgentAuditCsv } from "../../api/ai";
@@ -144,21 +145,17 @@ export default function AiAgentChat() {
   return (
     <div className="ai-agent-chat">
       {agentApiBanner && (
-        <div className="op-alert op-alert-error" role="alert">
-          {agentApiBanner}
-        </div>
+        <Alert type="error" showIcon message={agentApiBanner} />
       )}
 
       {!providerReady && !agentApiBanner && (
-        <div className="op-alert op-alert-error">
-          {t("agent.llmNotConfigured")}
-        </div>
+        <Alert type="error" showIcon message={t("agent.llmNotConfigured")} />
       )}
 
       <div className="ai-agent-toolbar" role="toolbar" aria-label={t("agent.toolbarAria")}>
-        <button
-          type="button"
-          className="btn primary ai-agent-new-chat"
+        <Button
+          type="primary"
+          className="ai-agent-new-chat"
           disabled={sending || !chatEnabled}
           onClick={() => {
             setInput("");
@@ -168,12 +165,11 @@ export default function AiAgentChat() {
           title={t("agent.newChatTitle")}
         >
           <span className="ai-agent-new-chat-label">{t("agent.newChat")}</span>
-        </button>
+        </Button>
         {activeSessionId && (
-          <button
-            type="button"
-            className="btn"
-            disabled={auditExportBusy || !chatEnabled}
+          <Button
+            disabled={!chatEnabled}
+            loading={auditExportBusy}
             onClick={() => {
               setAuditExportBusy(true);
               void downloadAgentAuditCsv(activeSessionId)
@@ -183,7 +179,7 @@ export default function AiAgentChat() {
             title={t("agent.exportAuditTitle")}
           >
             {auditExportBusy ? t("agent.exportAuditBusy") : t("agent.exportAudit")}
-          </button>
+          </Button>
         )}
         <div className="ai-agent-chat-strip" role="tablist" aria-label={t("agent.toolbarAria")}>
           {chatIndex.chats.length === 0 && (
@@ -226,15 +222,15 @@ export default function AiAgentChat() {
         </div>
         {activeSessionId && <AgentSessionKnowledgePanel sessionId={activeSessionId} />}
         {isPending && (
-          <button
-            type="button"
-            className="btn danger ai-agent-cancel-run"
+          <Button
+            danger
+            className="ai-agent-cancel-run"
             disabled={!chatEnabled}
             onClick={() => void cancelRun()}
             title={t("agent.cancelTitle")}
           >
             {t("agent.cancel")}
-          </button>
+          </Button>
         )}
         {isPending && (
           <span className="ai-agent-toolbar-busy op-muted">
@@ -248,14 +244,14 @@ export default function AiAgentChat() {
       {livePlanPhase === "awaiting_approval" && (
         <div className="ai-agent-approve-banner" role="status">
           <p>{t("agent.approveBanner")}</p>
-          <button
-            type="button"
-            className="btn primary small"
+          <Button
+            type="primary"
+            size="small"
             disabled={isPending}
             onClick={() => void submitMessage(t("agent.approveMessage"))}
           >
             {t("agent.approveAction")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -366,12 +362,17 @@ export default function AiAgentChat() {
             </select>
           </label>
           {attachmentRejectHint && (
-            <div className="op-alert op-alert-warn ai-agent-attach-reject" role="status">
-              {attachmentRejectHint}
-              <button type="button" className="btn link small" onClick={clearAttachmentRejectHint}>
-                {t("agent.attachments.dismiss")}
-              </button>
-            </div>
+            <Alert
+              type="warning"
+              showIcon
+              className="ai-agent-attach-reject"
+              message={attachmentRejectHint}
+              action={
+                <Button type="link" size="small" onClick={clearAttachmentRejectHint}>
+                  {t("agent.attachments.dismiss")}
+                </Button>
+              }
+            />
           )}
           <AgentChatComposeAttachments
             provider={provider}
@@ -398,13 +399,13 @@ export default function AiAgentChat() {
               }}
               disabled={sending || !chatEnabled}
             />
-            <button
-              type="submit"
-              className="btn primary"
+            <Button
+              type="primary"
+              htmlType="submit"
               disabled={sending || !chatEnabled || (!input.trim() && pendingAttachments.length === 0)}
             >
               {t("agent.send")}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

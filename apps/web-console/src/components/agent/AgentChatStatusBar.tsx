@@ -1,3 +1,4 @@
+import { Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { useAgentRunStatus } from "../../utils/agent/agentRunStatus";
 
@@ -29,9 +30,9 @@ export default function AgentChatStatusBar({ workspaceTab, onOpenAiStudio }: Age
     <div className="ai-agent-status-bar" role="status">
       <span className="ai-agent-status-bar-pulse" aria-hidden />
       <span className="ai-agent-status-bar-text">{label}</span>
-      <button type="button" className="btn small primary" onClick={onOpenAiStudio}>
+      <Button type="primary" size="small" onClick={onOpenAiStudio}>
         {t("agentStatusBar.openStudio")}
-      </button>
+      </Button>
     </div>
   );
 }

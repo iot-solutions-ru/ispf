@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Input, Select, Space, Table, Typography } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchObjectAcl, saveObjectAcl, type ObjectAclEntry } from "../../api/objectAcl";
@@ -54,103 +56,119 @@ export default function ObjectAclPanel({ objectPath, canManage }: ObjectAclPanel
     setEntries((current) => current.filter((_, entryIndex) => entryIndex !== index));
   };
 
+  const columns: ColumnsType<ObjectAclEntry> = [
+    {
+      title: t("acl.column.type"),
+      dataIndex: "principalType",
+      key: "principalType",
+      render: (principalType: ObjectAclEntry["principalType"], _entry, index) => (
+        <Select
+          value={principalType}
+          disabled={!canManage}
+          onChange={(value) => updateEntry(index, { principalType: value })}
+          options={[
+            { value: "ROLE", label: "ROLE" },
+            { value: "USER", label: "USER" },
+          ]}
+          style={{ minWidth: 120 }}
+        />
+      ),
+    },
+    {
+      title: t("acl.column.principal"),
+      dataIndex: "principalId",
+      key: "principalId",
+      render: (principalId: string, _entry, index) => (
+        <Input
+          value={principalId}
+          disabled={!canManage}
+          onChange={(event) => updateEntry(index, { principalId: event.target.value })}
+        />
+      ),
+    },
+    {
+      title: t("acl.column.permission"),
+      dataIndex: "permission",
+      key: "permission",
+      render: (permission: ObjectAclEntry["permission"], _entry, index) => (
+        <Select
+          value={permission}
+          disabled={!canManage}
+          onChange={(value) => updateEntry(index, { permission: value })}
+          options={[
+            { value: "READ", label: "READ" },
+            { value: "WRITE", label: "WRITE" },
+            { value: "INVOKE", label: "INVOKE" },
+          ]}
+          style={{ minWidth: 120 }}
+        />
+      ),
+    },
+    ...(canManage
+      ? [
+          {
+            title: "",
+            key: "actions",
+            render: (_value: unknown, _entry: ObjectAclEntry, index: number) => (
+              <Button danger onClick={() => removeEntry(index)}>
+                {t("common:action.delete")}
+              </Button>
+            ),
+          },
+        ]
+      : []),
+  ];
+
   return (
     <section className="security-users-panel">
-      <header className="security-users-header">
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+      <header className="security-users-header" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h3>{t("acl.title")}</h3>
-          <p className="op-muted">{t("acl.subtitle", { path: objectPath })}</p>
+          <Typography.Title level={3} style={{ margin: 0 }}>
+            {t("acl.title")}
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t("acl.subtitle", { path: objectPath })}
+          </Typography.Paragraph>
         </div>
         {canManage && (
-          <button type="button" className="btn" onClick={() => { dirtyRef.current = true; setEntries((current) => [...current, { ...EMPTY_ENTRY }]); }}>
+          <Button onClick={() => { dirtyRef.current = true; setEntries((current) => [...current, { ...EMPTY_ENTRY }]); }}>
             {t("acl.addRule")}
-          </button>
+          </Button>
         )}
       </header>
 
-      {aclQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}
-      {aclQuery.error && <div className="op-alert op-alert-error">{String(aclQuery.error)}</div>}
+      {aclQuery.isLoading && <Typography.Text type="secondary">{t("common:action.loading")}</Typography.Text>}
+      {aclQuery.error && <Alert type="error" showIcon message={String(aclQuery.error)} />}
 
       {entries.length === 0 && !aclQuery.isLoading && (
-        <p className="op-muted">{t("acl.empty")}</p>
+        <Typography.Text type="secondary">{t("acl.empty")}</Typography.Text>
       )}
 
       {entries.length > 0 && (
-        <div className="op-table-wrap">
-          <table className="op-table security-users-table security-users-table-compact acl-editor-table">
-            <thead>
-              <tr>
-                <th>{t("acl.column.type")}</th>
-                <th>{t("acl.column.principal")}</th>
-                <th>{t("acl.column.permission")}</th>
-                {canManage && <th />}
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry, index) => (
-                <tr key={`${entry.principalType}-${entry.principalId}-${entry.permission}-${index}`}>
-                  <td>
-                    <select
-                      className="table-control"
-                      value={entry.principalType}
-                      disabled={!canManage}
-                      onChange={(event) =>
-                        updateEntry(index, { principalType: event.target.value as ObjectAclEntry["principalType"] })
-                      }
-                    >
-                      <option value="ROLE">ROLE</option>
-                      <option value="USER">USER</option>
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      className="table-control"
-                      value={entry.principalId}
-                      disabled={!canManage}
-                      onChange={(event) => updateEntry(index, { principalId: event.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <select
-                      className="table-control"
-                      value={entry.permission}
-                      disabled={!canManage}
-                      onChange={(event) =>
-                        updateEntry(index, { permission: event.target.value as ObjectAclEntry["permission"] })
-                      }
-                    >
-                      <option value="READ">READ</option>
-                      <option value="WRITE">WRITE</option>
-                      <option value="INVOKE">INVOKE</option>
-                    </select>
-                  </td>
-                  {canManage && (
-                    <td>
-                      <button type="button" className="btn danger" onClick={() => removeEntry(index)}>
-                        {t("common:action.delete")}
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table<ObjectAclEntry>
+          size="small"
+          rowKey={(entry, index) => `${entry.principalType}-${entry.principalId}-${entry.permission}-${index}`}
+          columns={columns}
+          dataSource={entries}
+          pagination={false}
+        />
       )}
 
       {canManage && (
-        <div className="operator-apps-actions">
-          <button
-            type="button"
-            className="btn primary"
+        <Space className="operator-apps-actions" wrap>
+          <Button
+            type="primary"
             disabled={saveMutation.isPending}
+            loading={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
             {saveMutation.isPending ? t("common:action.saving") : t("acl.save")}
-          </button>
-          {saveMutation.error && <div className="op-alert op-alert-error">{String(saveMutation.error)}</div>}
-        </div>
+          </Button>
+          {saveMutation.error && <Alert type="error" showIcon message={String(saveMutation.error)} />}
+        </Space>
       )}
+      </Space>
     </section>
   );
 }

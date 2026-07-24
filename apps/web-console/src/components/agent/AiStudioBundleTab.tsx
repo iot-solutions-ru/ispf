@@ -1,3 +1,4 @@
+import { Alert, Button, Space } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -129,64 +130,58 @@ export default function AiStudioBundleTab({
         </label>
       </div>
 
-      <div className="form-actions">
-        <button
-          type="button"
-          className="btn primary"
-          disabled={generateMutation.isPending || !provider?.available}
+      <Space className="form-actions" wrap>
+        <Button
+          type="primary"
+          disabled={!provider?.available}
+          loading={generateMutation.isPending}
           onClick={() => generateMutation.mutate()}
         >
           {generateMutation.isPending ? t("bundle.generating") : t("bundle.generate")}
-        </button>
-        <button
-          type="button"
-          className="btn"
-          disabled={validateMutation.isPending}
+        </Button>
+        <Button
+          loading={validateMutation.isPending}
           onClick={() => validateMutation.mutate()}
         >
           {t("bundle.validate")}
-        </button>
-        <button
-          type="button"
-          className="btn"
-          disabled={dryRunMutation.isPending}
+        </Button>
+        <Button
+          loading={dryRunMutation.isPending}
           onClick={() => dryRunMutation.mutate()}
         >
           {t("bundle.dryRun")}
-        </button>
-        <button
-          type="button"
-          className="btn primary"
-          disabled={publishMutation.isPending || !appId.trim()}
+        </Button>
+        <Button
+          type="primary"
+          disabled={!appId.trim()}
+          loading={publishMutation.isPending}
           onClick={() => publishMutation.mutate()}
         >
           {t("bundle.publish")}
-        </button>
-        <a className="btn" href={previewUrl} target="_blank" rel="noreferrer">
+        </Button>
+        <Button href={previewUrl} target="_blank" rel="noreferrer">
           {t("bundle.operatorPreview")}
-        </a>
-      </div>
+        </Button>
+      </Space>
 
       {generateMutation.data && !generateMutation.data.publishable && (
-        <div className="op-alert op-alert-error">
-          {t("bundle.notPublishable")}
-        </div>
+        <Alert type="error" showIcon message={t("bundle.notPublishable")} />
       )}
 
       {(generateMutation.error || validateMutation.error || dryRunMutation.error || publishMutation.error) && (
-        <div className="op-alert op-alert-error">
-          {String(
+        <Alert
+          type="error"
+          showIcon
+          message={String(
             generateMutation.error
               || validateMutation.error
               || dryRunMutation.error
               || publishMutation.error
           )}
-          {publishNeedsSignedLicense ? (
-            <p className="op-muted" style={{ marginTop: "0.5rem" }}>
-              {t("bundle.signedLicenseHint")}
-            </p>
-          ) : null}
-        </div>
+          description={
+            publishNeedsSignedLicense ? t("bundle.signedLicenseHint") : undefined
+          }
+        />
       )}
 
       {publishMutation.data && (
@@ -208,20 +203,20 @@ export default function AiStudioBundleTab({
                   {entry.active ? t("bundle.active") : ""}
                   {entry.deployedAt ? ` — ${entry.deployedAt}` : ""}
                 </span>
-                <button
-                  type="button"
-                  className="btn small"
-                  disabled={rollbackMutation.isPending || entry.active}
+                <Button
+                  size="small"
+                  disabled={entry.active}
+                  loading={rollbackMutation.isPending}
                   onClick={() => rollbackMutation.mutate(entry.version)}
                 >
                   {t("bundle.rollback")}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
         )}
         {rollbackMutation.error && (
-          <div className="op-alert op-alert-error">{String(rollbackMutation.error)}</div>
+          <Alert type="error" showIcon message={String(rollbackMutation.error)} />
         )}
       </section>
 

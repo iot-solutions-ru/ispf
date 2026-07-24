@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Input, Select } from "antd";
+import type { TextAreaRef } from "antd/es/input/TextArea";
 import Modal from "../../ui/Modal";
 import {
   detectFormulaParameters,
@@ -37,7 +39,7 @@ export default function SaveAnalyticsFormulaModal({
   const { t } = useTranslation(["inspector", "common", "system"]);
   const createMutation = useCreateAnalyticsFormula();
   const updateMutation = useUpdateAnalyticsFormula();
-  const expressionRef = useRef<HTMLTextAreaElement>(null);
+  const expressionRef = useRef<TextAreaRef>(null);
   const isEdit = formula != null;
   const [id, setId] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -127,24 +129,24 @@ export default function SaveAnalyticsFormulaModal({
       className="analytics-formula-editor-modal"
       footer={
         <>
-          <button type="button" className="btn" onClick={onClose}>
+          <Button onClick={onClose}>
             {t("common:action.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!expression.trim() || pending}
+          </Button>
+          <Button
+            type="primary"
+            loading={pending}
+            disabled={!expression.trim()}
             onClick={() => void handleSave()}
           >
             {isEdit ? t("common:action.save") : t("formula.save")}
-          </button>
+          </Button>
         </>
       }
     >
       <div className="analytics-formula-save-form form-grid">
         <label className="full">
           <span>{t("formula.displayName")}</span>
-          <input
+          <Input
             type="text"
             value={displayName}
             placeholder={t("formula.displayNamePlaceholder")}
@@ -159,7 +161,7 @@ export default function SaveAnalyticsFormulaModal({
 
         <label>
           <span>{t("formula.id")}</span>
-          <input
+          <Input
             type="text"
             className="mono"
             value={id}
@@ -171,10 +173,14 @@ export default function SaveAnalyticsFormulaModal({
 
         <label>
           <span>{t("formula.kind")}</span>
-          <select value={kind} onChange={(event) => setKind(event.target.value as "historian" | "reactive")}>
-            <option value="historian">{t("catalog.kind.historian")}</option>
-            <option value="reactive">{t("catalog.kind.reactive")}</option>
-          </select>
+          <Select
+            value={kind}
+            onChange={(value) => setKind(value as "historian" | "reactive")}
+            options={[
+              { value: "historian", label: t("catalog.kind.historian") },
+              { value: "reactive", label: t("catalog.kind.reactive") },
+            ]}
+          />
         </label>
 
         <div className="full analytics-formula-expression-field">
@@ -183,7 +189,7 @@ export default function SaveAnalyticsFormulaModal({
             <span className="hint">{t("formula.expressionHint")}</span>
           </div>
           <div className="analytics-formula-expression-shell">
-            <textarea
+            <Input.TextArea
               ref={expressionRef}
               className="binding-expression-textarea mono analytics-formula-expression-input"
               value={expression}
@@ -209,8 +215,8 @@ export default function SaveAnalyticsFormulaModal({
           )}
         </div>
 
-        {saveMessage && <p className="hint success full">{saveMessage}</p>}
-        {error && <p className="hint error full">{(error as Error).message}</p>}
+        {saveMessage && <Alert className="full" type="success" message={saveMessage} showIcon />}
+        {error && <Alert className="full" type="error" message={(error as Error).message} showIcon />}
       </div>
     </Modal>
   );

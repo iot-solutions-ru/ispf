@@ -19,6 +19,8 @@ public final class ExecutionToken {
     private String pendingBoundaryTimerNodeId;
     private long timerDeadlineEpochMs;
     private String arrivedJoinNodeId;
+    private String pendingCallActivityNodeId;
+    private String pendingCallChildInstanceId;
 
     public ExecutionToken(String tokenId, String startNodeId) {
         this.tokenId = tokenId;
@@ -78,6 +80,14 @@ public final class ExecutionToken {
         return arrivedJoinNodeId;
     }
 
+    public String pendingCallActivityNodeId() {
+        return pendingCallActivityNodeId;
+    }
+
+    public String pendingCallChildInstanceId() {
+        return pendingCallChildInstanceId;
+    }
+
     public void moveTo(String nodeId) {
         currentNodeId = nodeId;
     }
@@ -90,6 +100,8 @@ public final class ExecutionToken {
         pendingMessageCatchNodeId = null;
         pendingMessageName = null;
         pendingTimerCatchNodeId = null;
+        pendingCallActivityNodeId = null;
+        pendingCallChildInstanceId = null;
         currentNodeId = userTaskNodeId;
     }
 
@@ -103,6 +115,8 @@ public final class ExecutionToken {
         pendingTimerCatchNodeId = null;
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = 0L;
+        pendingCallActivityNodeId = null;
+        pendingCallChildInstanceId = null;
         currentNodeId = catchNodeId;
     }
 
@@ -116,6 +130,8 @@ public final class ExecutionToken {
         pendingTimerCatchNodeId = null;
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = 0L;
+        pendingCallActivityNodeId = null;
+        pendingCallChildInstanceId = null;
         currentNodeId = catchNodeId;
     }
 
@@ -129,6 +145,8 @@ public final class ExecutionToken {
         pendingTimerCatchNodeId = catchNodeId;
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = deadlineEpochMs;
+        pendingCallActivityNodeId = null;
+        pendingCallChildInstanceId = null;
         currentNodeId = catchNodeId;
     }
 
@@ -174,6 +192,27 @@ public final class ExecutionToken {
         currentNodeId = boundaryNodeId;
     }
 
+    public void waitAtCallActivity(String callNodeId, String childInstanceId) {
+        state = TokenState.WAITING;
+        pendingUserTaskId = null;
+        pendingSignalCatchNodeId = null;
+        pendingSignalName = null;
+        pendingMessageCatchNodeId = null;
+        pendingMessageName = null;
+        pendingTimerCatchNodeId = null;
+        pendingBoundaryTimerNodeId = null;
+        timerDeadlineEpochMs = 0L;
+        pendingCallActivityNodeId = callNodeId;
+        pendingCallChildInstanceId = childInstanceId;
+        currentNodeId = callNodeId;
+    }
+
+    public void resumeAfterCallActivity() {
+        state = TokenState.ACTIVE;
+        pendingCallActivityNodeId = null;
+        pendingCallChildInstanceId = null;
+    }
+
     public void arriveAtJoin(String joinNodeId) {
         state = TokenState.AT_JOIN;
         arrivedJoinNodeId = joinNodeId;
@@ -191,6 +230,8 @@ public final class ExecutionToken {
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = 0L;
         arrivedJoinNodeId = null;
+        pendingCallActivityNodeId = null;
+        pendingCallChildInstanceId = null;
     }
 
     public void activateAt(String nodeId) {
@@ -205,6 +246,8 @@ public final class ExecutionToken {
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = 0L;
         arrivedJoinNodeId = null;
+        pendingCallActivityNodeId = null;
+        pendingCallChildInstanceId = null;
     }
 
     public static ExecutionToken restore(
@@ -219,7 +262,9 @@ public final class ExecutionToken {
             String pendingTimerCatchNodeId,
             String pendingBoundaryTimerNodeId,
             long timerDeadlineEpochMs,
-            String arrivedJoinNodeId
+            String arrivedJoinNodeId,
+            String pendingCallActivityNodeId,
+            String pendingCallChildInstanceId
     ) {
         ExecutionToken token = new ExecutionToken(tokenId, currentNodeId);
         token.state = state;
@@ -232,6 +277,8 @@ public final class ExecutionToken {
         token.pendingBoundaryTimerNodeId = pendingBoundaryTimerNodeId;
         token.timerDeadlineEpochMs = timerDeadlineEpochMs;
         token.arrivedJoinNodeId = arrivedJoinNodeId;
+        token.pendingCallActivityNodeId = pendingCallActivityNodeId;
+        token.pendingCallChildInstanceId = pendingCallChildInstanceId;
         return token;
     }
 }

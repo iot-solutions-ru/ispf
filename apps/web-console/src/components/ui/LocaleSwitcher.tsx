@@ -1,3 +1,4 @@
+import { Select } from "antd";
 import { useTranslation } from "react-i18next";
 import { loadLocale } from "../../i18n/index";
 import { LOCALE_LABELS, SUPPORTED_LOCALES, type AppLocale } from "../../i18n/locales";
@@ -13,21 +14,20 @@ export default function LocaleSwitcher() {
   return (
     <label className="locale-switcher">
       <span className="sr-only">{label}</span>
-      <select
+      <Select
         className="locale-switcher-select"
+        size="small"
         value={current}
-        onChange={(event) => {
-          const locale = event.target.value as AppLocale;
+        aria-label={label}
+        onChange={(locale) => {
           void loadLocale(locale).then(() => i18n.changeLanguage(locale));
         }}
-        aria-label={label}
-      >
-        {SUPPORTED_LOCALES.map((locale) => (
-          <option key={locale} value={locale}>
-            {LOCALE_LABELS[locale]}
-          </option>
-        ))}
-      </select>
+        options={SUPPORTED_LOCALES.map((locale) => ({
+          value: locale,
+          label: LOCALE_LABELS[locale],
+        }))}
+        popupMatchSelectWidth={false}
+      />
     </label>
   );
 }

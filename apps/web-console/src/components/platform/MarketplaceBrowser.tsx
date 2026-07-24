@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Alert, Button, Input, Select, Space } from "antd";
 import { useTranslation } from "react-i18next";
 import {
   filterMarketplaceListingsByKind,
@@ -76,9 +77,9 @@ function MarketplaceInstallationIdHint() {
         {t("solutions.marketplace.installationIdHint")}
       </span>
       <code className="mono marketplace-installation-id-value">{licenseQuery.data.installationId}</code>
-      <button type="button" className="btn-link marketplace-installation-id-copy" onClick={() => void copy()}>
+      <Button type="link" className="marketplace-installation-id-copy" onClick={() => void copy()}>
         {t("solutions.marketplace.installationIdCopy")}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -188,9 +189,9 @@ function MarketplaceListingCard({
 
         <footer className="solution-catalog-card-actions">
           {!isPaid && (
-            <button
-              type="button"
-              className="btn primary small"
+            <Button
+              type="primary"
+              size="small"
               disabled={busy}
               onClick={() => installMutation.mutate()}
             >
@@ -199,76 +200,74 @@ function MarketplaceListingCard({
                 : listing.installed
                   ? t("solutions.reinstall")
                   : t("solutions.marketplace.installFree")}
-            </button>
+            </Button>
           )}
           {isPaid && !showActivate && (
             <>
-              <button
-                type="button"
-                className="btn primary small"
+              <Button
+                type="primary"
+                size="small"
                 onClick={() => setShowActivate(true)}
               >
                 {t("solutions.marketplace.haveKey")}
-              </button>
+              </Button>
               {canContactVendor && (
-                <button
-                  type="button"
-                  className="btn small"
+                <Button
+                  size="small"
                   onClick={() => setShowContact(true)}
                 >
                   {t("solutions.marketplace.contactVendor")}
-                </button>
+                </Button>
               )}
             </>
           )}
           {isPaid && showActivate && (
             <div className="marketplace-activate-inline">
               <MarketplaceInstallationIdHint />
-              <input
+              <Input
                 type="text"
                 value={activationCode}
                 placeholder={t("solutions.marketplace.activationPlaceholder")}
                 onChange={(e) => setActivationCode(e.target.value)}
               />
-              <button
-                type="button"
-                className="btn primary small"
+              <Button
+                type="primary"
+                size="small"
                 disabled={busy || !activationCode.trim()}
                 onClick={() => activateMutation.mutate()}
               >
                 {t("solutions.marketplace.activateInstall")}
-              </button>
-              <button type="button" className="btn small" onClick={() => setShowActivate(false)}>
+              </Button>
+              <Button size="small" onClick={() => setShowActivate(false)}>
                 {t("solutions.marketplace.cancel")}
-              </button>
+              </Button>
             </div>
           )}
           {!isPaid && canContactVendor && (
-            <button
-              type="button"
-              className="btn small"
+            <Button
+              size="small"
               onClick={() => setShowContact(true)}
             >
               {t("solutions.marketplace.contactVendor")}
-            </button>
+            </Button>
           )}
           {listing.installed && isAnalyticsPack && (
-            <button
-              type="button"
-              className="btn small danger"
+            <Button
+              size="small"
+              danger
               disabled={busy}
               onClick={() => uninstallMutation.mutate()}
             >
               {uninstallMutation.isPending ? t("solutions.uninstalling") : t("solutions.uninstall")}
-            </button>
+            </Button>
           )}
           {listing.installed && isApplication && listing.appId && (
-            <a
-              className="btn small"
+            <Button
+              size="small"
               href={`/?mode=operator&app=${encodeURIComponent(listing.appId)}`}
             >
               {t("solutions.openOperator")}
-            </a>
+            </Button>
           )}
         </footer>
 
@@ -276,17 +275,17 @@ function MarketplaceListingCard({
           <BundleLicenseErrorAlert error={installMutation.error} />
         )}
         {uninstallMutation.error && (
-          <div className="op-alert op-alert-error compact">{String(uninstallMutation.error)}</div>
+          <Alert type="error" showIcon message={String(uninstallMutation.error)} />
         )}
         {activateMutation.error && (
-          <div className="op-alert op-alert-error compact">
+          <Space direction="vertical" size="small">
             <BundleLicenseErrorAlert error={activateMutation.error} />
             {canContactVendor && (
-              <button type="button" className="btn-link" onClick={() => setShowContact(true)}>
+              <Button type="link" onClick={() => setShowContact(true)}>
                 {t("solutions.marketplace.contactVendor")}
-              </button>
+              </Button>
             )}
-          </div>
+          </Space>
         )}
       </article>
 
@@ -374,20 +373,15 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
       <div className="marketplace-toolbar">
         <label className="marketplace-field">
           <span>{t("solutions.marketplace.selectMarketplace")}</span>
-          <select
+          <Select
             value={activeId}
-            onChange={(e) => setMarketplaceId(e.target.value)}
-          >
-            {endpoints.map((ep) => (
-              <option key={ep.id} value={ep.id}>
-                {ep.name}
-              </option>
-            ))}
-          </select>
+            onChange={setMarketplaceId}
+            options={endpoints.map((ep) => ({ value: ep.id, label: ep.name }))}
+          />
         </label>
         <label className="marketplace-field grow">
           <span>{t("solutions.marketplace.search")}</span>
-          <input
+          <Input
             type="search"
             value={query}
             placeholder={t("solutions.marketplace.searchPlaceholder")}
@@ -397,23 +391,31 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
         </label>
         <label className="marketplace-field">
           <span>{t("solutions.marketplace.pricingFilter")}</span>
-          <select value={pricing} onChange={(e) => setPricing(e.target.value)}>
-            <option value="all">{t("solutions.marketplace.pricingAll")}</option>
-            <option value="free">{t("solutions.marketplace.pricingFree")}</option>
-            <option value="paid">{t("solutions.marketplace.pricingPaid")}</option>
-          </select>
+          <Select
+            value={pricing}
+            onChange={setPricing}
+            options={[
+              { value: "all", label: t("solutions.marketplace.pricingAll") },
+              { value: "free", label: t("solutions.marketplace.pricingFree") },
+              { value: "paid", label: t("solutions.marketplace.pricingPaid") },
+            ]}
+          />
         </label>
         <label className="marketplace-field">
           <span>{t("solutions.marketplace.statusFilter")}</span>
-          <select value={installedFilter} onChange={(e) => setInstalledFilter(e.target.value as InstalledFilter)}>
-            <option value="all">{t("solutions.marketplace.statusAll")}</option>
-            <option value="installed">{t("solutions.marketplace.statusInstalled")}</option>
-            <option value="not-installed">{t("solutions.marketplace.statusNotInstalled")}</option>
-          </select>
+          <Select
+            value={installedFilter}
+            onChange={(value) => setInstalledFilter(value)}
+            options={[
+              { value: "all", label: t("solutions.marketplace.statusAll") },
+              { value: "installed", label: t("solutions.marketplace.statusInstalled") },
+              { value: "not-installed", label: t("solutions.marketplace.statusNotInstalled") },
+            ]}
+          />
         </label>
-        <button type="button" className="btn" onClick={applySearch}>
+        <Button onClick={applySearch}>
           {t("solutions.marketplace.searchBtn")}
-        </button>
+        </Button>
       </div>
 
       {visibleListings.length > 0 && (
@@ -428,23 +430,23 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
             }
             const active = kindFilter === filter;
             return (
-              <button
+              <Button
                 key={filter}
-                type="button"
                 className={`marketplace-kind-filter${active ? " active" : ""}${filter !== "all" ? ` marketplace-kind-filter--${filter}` : ""}`}
+                type={active ? "primary" : "default"}
                 aria-pressed={active}
                 onClick={() => setKindFilter(filter)}
               >
                 <span>{t(`solutions.marketplace.kindFilter.${filter}`)}</span>
                 <span className="marketplace-kind-filter-count">{count}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
       )}
 
       {catalogQuery.error && (
-        <div className="op-alert op-alert-error">{String(catalogQuery.error)}</div>
+        <Alert type="error" showIcon message={String(catalogQuery.error)} />
       )}
       {catalogQuery.isLoading && <p className="hint">{t("solutions.loading")}</p>}
 

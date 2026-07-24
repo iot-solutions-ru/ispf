@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Button, Input, Segmented, Space, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, MimicLayer, ScadaMimicDocument } from "../../types/scadaMimic";
 import { useMimicHistory } from "../../hooks/useMimicHistory";
@@ -721,132 +722,124 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
             </div>
           </div>
 
-          <div className="scada-toolbar-segment" role="toolbar" aria-label={t("editor.tools")}>
-            <button
-              type="button"
-              className={`scada-tool-btn${tool === "select" ? " active" : ""}`}
-              onClick={() => setTool("select")}
-              title={`${t("tools.select")} (V)`}
-              aria-pressed={tool === "select"}
-            >
-              <IconSelect className="scada-tool-icon" />
-              <span>{t("tools.select")}</span>
-            </button>
-            <button
-              type="button"
-              className={`scada-tool-btn${tool === "place" ? " active" : ""}`}
-              onClick={() => setTool("place")}
-              title={`${t("tools.place")} (P)`}
-              aria-pressed={tool === "place"}
-            >
-              <IconPlace className="scada-tool-icon" />
-              <span>{t("tools.place")}</span>
-            </button>
-            <button
-              type="button"
-              className={`scada-tool-btn${tool === "connect" ? " active" : ""}`}
-              onClick={() => setTool("connect")}
-              title={`${t("tools.connect")} (C)`}
-              aria-pressed={tool === "connect"}
-            >
-              <IconConnect className="scada-tool-icon" />
-              <span>{t("tools.connect")}</span>
-            </button>
-          </div>
+          <Segmented<ScadaEditorTool>
+            className="scada-toolbar-tools"
+            size="small"
+            aria-label={t("editor.tools")}
+            value={tool}
+            onChange={(value) => setTool(value)}
+            options={[
+              {
+                value: "select",
+                icon: <IconSelect className="scada-tool-icon" />,
+                label: t("tools.select"),
+              },
+              {
+                value: "place",
+                icon: <IconPlace className="scada-tool-icon" />,
+                label: t("tools.place"),
+              },
+              {
+                value: "connect",
+                icon: <IconConnect className="scada-tool-icon" />,
+                label: t("tools.connect"),
+              },
+            ]}
+          />
 
           <span className="scada-toolbar-divider" aria-hidden />
 
-          <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.transform")}>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("h")} title={t("tools.flipH")} aria-label={t("tools.flipH")}>
-              <IconFlipH className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("v")} title={t("tools.flipV")} aria-label={t("tools.flipV")}>
-              <IconFlipV className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(90)} title={t("tools.rotateCw")} aria-label={t("tools.rotateCw")}>
-              <IconRotateCw className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(-90)} title={t("tools.rotateCcw")} aria-label={t("tools.rotateCcw")}>
-              <IconRotateCcw className="scada-tool-icon" />
-            </button>
-          </div>
+          <Space className="scada-toolbar-segment scada-toolbar-group" size={2} role="toolbar" aria-label={t("tools.transform")}>
+            <Tooltip title={t("tools.flipH")}>
+              <Button type="text" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("h")} aria-label={t("tools.flipH")} icon={<IconFlipH className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.flipV")}>
+              <Button type="text" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("v")} aria-label={t("tools.flipV")} icon={<IconFlipV className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.rotateCw")}>
+              <Button type="text" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(90)} aria-label={t("tools.rotateCw")} icon={<IconRotateCw className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.rotateCcw")}>
+              <Button type="text" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(-90)} aria-label={t("tools.rotateCcw")} icon={<IconRotateCcw className="scada-tool-icon" />} />
+            </Tooltip>
+          </Space>
 
           <span className="scada-toolbar-divider" aria-hidden />
 
-          <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.align")}>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("left")} title={t("tools.alignLeft")} aria-label={t("tools.alignLeft")}>
-              <IconAlignLeft className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerX")} title={t("tools.alignCenterH")} aria-label={t("tools.alignCenterH")}>
-              <IconAlignCenterH className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("right")} title={t("tools.alignRight")} aria-label={t("tools.alignRight")}>
-              <IconAlignRight className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("top")} title={t("tools.alignTop")} aria-label={t("tools.alignTop")}>
-              <IconAlignTop className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerY")} title={t("tools.alignMiddleV")} aria-label={t("tools.alignMiddleV")}>
-              <IconAlignMiddleV className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("bottom")} title={t("tools.alignBottom")} aria-label={t("tools.alignBottom")}>
-              <IconAlignBottom className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("horizontal")} title={t("tools.distributeH")} aria-label={t("tools.distributeH")}>
-              <IconDistributeH className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("vertical")} title={t("tools.distributeV")} aria-label={t("tools.distributeV")}>
-              <IconDistributeV className="scada-tool-icon" />
-            </button>
-          </div>
+          <Space className="scada-toolbar-segment scada-toolbar-group" size={2} role="toolbar" aria-label={t("tools.align")}>
+            <Tooltip title={t("tools.alignLeft")}>
+              <Button type="text" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("left")} aria-label={t("tools.alignLeft")} icon={<IconAlignLeft className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.alignCenterH")}>
+              <Button type="text" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerX")} aria-label={t("tools.alignCenterH")} icon={<IconAlignCenterH className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.alignRight")}>
+              <Button type="text" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("right")} aria-label={t("tools.alignRight")} icon={<IconAlignRight className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.alignTop")}>
+              <Button type="text" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("top")} aria-label={t("tools.alignTop")} icon={<IconAlignTop className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.alignMiddleV")}>
+              <Button type="text" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerY")} aria-label={t("tools.alignMiddleV")} icon={<IconAlignMiddleV className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.alignBottom")}>
+              <Button type="text" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("bottom")} aria-label={t("tools.alignBottom")} icon={<IconAlignBottom className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.distributeH")}>
+              <Button type="text" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("horizontal")} aria-label={t("tools.distributeH")} icon={<IconDistributeH className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={t("tools.distributeV")}>
+              <Button type="text" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("vertical")} aria-label={t("tools.distributeV")} icon={<IconDistributeV className="scada-tool-icon" />} />
+            </Tooltip>
+          </Space>
 
           <span className="scada-toolbar-divider" aria-hidden />
 
-          <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.grid")}>
-            <button
-              type="button"
-              className={`scada-icon-btn${document.grid?.visible ? " active" : ""}`}
-              onClick={toggleGridVisible}
-              title={t("tools.gridVisible")}
-              aria-label={t("tools.gridVisible")}
-              aria-pressed={document.grid?.visible === true}
-            >
-              <IconGrid className="scada-tool-icon" />
-            </button>
-            <button
-              type="button"
-              className={`scada-icon-btn${document.grid?.snap ? " active" : ""}`}
-              onClick={toggleGridSnap}
-              title={t("tools.gridSnap")}
-              aria-label={t("tools.gridSnap")}
-              aria-pressed={document.grid?.snap === true}
-            >
-              <IconSnapGrid className="scada-tool-icon" />
-            </button>
-          </div>
+          <Space className="scada-toolbar-segment scada-toolbar-group" size={2} role="toolbar" aria-label={t("tools.grid")}>
+            <Tooltip title={t("tools.gridVisible")}>
+              <Button
+                type={document.grid?.visible ? "primary" : "text"}
+                className={`scada-icon-btn${document.grid?.visible ? " active" : ""}`}
+                onClick={toggleGridVisible}
+                aria-label={t("tools.gridVisible")}
+                aria-pressed={document.grid?.visible === true}
+                icon={<IconGrid className="scada-tool-icon" />}
+              />
+            </Tooltip>
+            <Tooltip title={t("tools.gridSnap")}>
+              <Button
+                type={document.grid?.snap ? "primary" : "text"}
+                className={`scada-icon-btn${document.grid?.snap ? " active" : ""}`}
+                onClick={toggleGridSnap}
+                aria-label={t("tools.gridSnap")}
+                aria-pressed={document.grid?.snap === true}
+                icon={<IconSnapGrid className="scada-tool-icon" />}
+              />
+            </Tooltip>
+          </Space>
 
-          <div className="scada-toolbar-actions">
-            <button type="button" className="scada-icon-btn" onClick={undo} disabled={!canUndo} title={`${t("tools.undo")} (Ctrl+Z)`} aria-label={t("tools.undo")}>
-              <IconUndo className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn" onClick={redo} disabled={!canRedo} title={`${t("tools.redo")} (Ctrl+Y)`} aria-label={t("tools.redo")}>
-              <IconRedo className="scada-tool-icon" />
-            </button>
-            <button type="button" className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} title={`${t("tools.delete")} (Del)`} aria-label={t("tools.delete")}>
-              <IconTrash className="scada-tool-icon" />
-            </button>
-          </div>
+          <Space className="scada-toolbar-actions" size={2}>
+            <Tooltip title={`${t("tools.undo")} (Ctrl+Z)`}>
+              <Button type="text" className="scada-icon-btn" onClick={undo} disabled={!canUndo} aria-label={t("tools.undo")} icon={<IconUndo className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={`${t("tools.redo")} (Ctrl+Y)`}>
+              <Button type="text" className="scada-icon-btn" onClick={redo} disabled={!canRedo} aria-label={t("tools.redo")} icon={<IconRedo className="scada-tool-icon" />} />
+            </Tooltip>
+            <Tooltip title={`${t("tools.delete")} (Del)`}>
+              <Button type="text" danger className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} aria-label={t("tools.delete")} icon={<IconTrash className="scada-tool-icon" />} />
+            </Tooltip>
+          </Space>
 
           <div className="scada-toolbar-spacer" />
 
           <span className="scada-toolbar-tool-hint">{toolLabel}</span>
 
-          <div className="scada-toolbar-primary-actions">
-            <button type="button" className="scada-btn-ghost" onClick={onClose}>{t("tools.close")}</button>
-            <button type="button" className="scada-btn-primary" onClick={() => onSave(mimicDocumentToJson(document))}>
+          <Space className="scada-toolbar-primary-actions" size="small">
+            <Button className="scada-btn-ghost" onClick={onClose}>{t("tools.close")}</Button>
+            <Button type="primary" className="scada-btn-primary" onClick={() => onSave(mimicDocumentToJson(document))}>
               {t("tools.save")}
-            </button>
-          </div>
+            </Button>
+          </Space>
         </header>
         <div className="scada-mimic-editor-body">
           <aside className="scada-mimic-editor-sidebar scada-editor-panel">
@@ -970,27 +963,27 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
             <details className="scada-import-export">
               <summary>{t("importExport.title")}</summary>
               {hasBuiltinSymbols && (
-                <button
-                  type="button"
+                <Button
+                  type="text"
+                  block
                   className="scada-btn-ghost scada-btn-block scada-import-export-convert"
                   onClick={handleConvertDocumentToLibrary}
                 >
                   {t("importExport.convertToLibrary")}
-                </button>
+                </Button>
               )}
-              <textarea rows={6} value={importText} onChange={(e) => setImportText(e.target.value)} placeholder={t("importExport.placeholder")} />
-              <div className="scada-import-export-actions">
-                <button type="button" onClick={() => setImportText(mimicDocumentToJson(document))}>{t("importExport.export")}</button>
-                <button
-                  type="button"
+              <Input.TextArea rows={6} value={importText} onChange={(e) => setImportText(e.target.value)} placeholder={t("importExport.placeholder")} />
+              <Space className="scada-import-export-actions" size="small">
+                <Button onClick={() => setImportText(mimicDocumentToJson(document))}>{t("importExport.export")}</Button>
+                <Button
                   onClick={() => {
                     const imported = parseMimicDocument(importText);
                     resetDocumentHistory(imported);
                   }}
                 >
                   {t("importExport.import")}
-                </button>
-              </div>
+                </Button>
+              </Space>
             </details>
           </aside>
         </div>

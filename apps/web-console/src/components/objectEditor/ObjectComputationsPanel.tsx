@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, Switch, Tag } from "antd";
 import type { AnalyticsTagCatalogEntryDto } from "../../types/analytics";
 import type { BindingRule, VariableDto } from "../../types";
 import AnalyticsTagInspectorModal from "../analytics/AnalyticsTagInspectorModal";
@@ -117,14 +118,10 @@ export default function ObjectComputationsPanel({
               <li key={tag.path} className="computations-historian-item">
                 <strong>{tag.outputVariable}</strong>
                 <span className="hint mono">{tag.expression}</span>
-                <span className={`status-badge quality-${tag.qualityStatus}`}>{tag.qualityStatus}</span>
-                <button
-                  type="button"
-                  className="btn tiny"
-                  onClick={() => setInspectTagPath(tag.path)}
-                >
+                <Tag className={`quality-${tag.qualityStatus}`}>{tag.qualityStatus}</Tag>
+                <Button size="small" onClick={() => setInspectTagPath(tag.path)}>
                   {t("inspector:computations.inspect")}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -133,14 +130,13 @@ export default function ObjectComputationsPanel({
 
       {canManage && !federated && (
         <label className="binding-audit-toggle panel-toolbar">
-          <input
-            type="checkbox"
+          <Switch
             checked={bindingAuditEnabled}
-            onChange={async (e) => {
-              await onBindingAuditChange(e.target.checked);
+            onChange={async (checked) => {
+              await onBindingAuditChange(checked);
             }}
           />
-          {t("inspector:bindings.auditEnabled")}
+          <span>{t("inspector:bindings.auditEnabled")}</span>
         </label>
       )}
       <BindingInvokeJournalPanel objectPath={path} compact scrollMaxHeight={360} />

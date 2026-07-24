@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Typography } from "antd";
 import type { WidgetType } from "../../types/dashboard";
 import { translateWidgetType } from "./widgetI18n";
 
@@ -368,45 +369,33 @@ export default function WidgetPalette({ onAdd, layout }: WidgetPaletteProps) {
     >
       {layout === "sidebar" && (
         <div className="dashboard-palette-sidebar-head">
-          <h4>{t("palette.title")}</h4>
+          <Typography.Title level={4}>{t("palette.title")}</Typography.Title>
         </div>
       )}
-      <div className="dashboard-widget-palette-hint" role="note">
-        <svg
-          className="dashboard-widget-palette-hint-icon"
-          viewBox="0 0 16 16"
-          width="14"
-          height="14"
-          aria-hidden
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="8" cy="8" r="5.5" />
-          <path d="M8 7v4" />
-          <circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none" />
-        </svg>
-        <span>{t("palette.dragHint")}</span>
-      </div>
+      <Alert
+        className="dashboard-widget-palette-hint"
+        type="info"
+        showIcon
+        message={t("palette.dragHint")}
+      />
 
       <div className="dashboard-widget-palette-groups">
         {PALETTE_GROUPS.map((group) => (
           <section key={group.id} className="dashboard-widget-palette-group">
-            <h4 className="dashboard-widget-palette-group-title">{t(group.titleKey)}</h4>
+            <Typography.Title level={5} className="dashboard-widget-palette-group-title">
+              {t(group.titleKey)}
+            </Typography.Title>
             <div className="dashboard-widget-palette-items">
               {group.types.map((type) => (
-                <button
+                <Button
                   key={type}
-                  type="button"
                   className="dashboard-widget-palette-item"
                   title={translateWidgetType(t, type)}
+                  icon={<WidgetTypeIcon type={type} />}
                   onClick={() => onAdd(type)}
                 >
-                  <WidgetTypeIcon type={type} />
                   <span className="dashboard-widget-palette-item-label">{translateWidgetType(t, type)}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </section>

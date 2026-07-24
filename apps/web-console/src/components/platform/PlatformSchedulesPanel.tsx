@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select, Space, Table, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import {
   fetchPlatformAppSchedules,
   upsertPlatformAppSchedule,
@@ -95,84 +97,98 @@ export default function PlatformSchedulesPanel() {
   const invokeAction = parseInvokeAction(actionJson);
   const showObjectPathField =
     actionType.trim() === "invoke_function" || invokeAction.hasObjectPath;
+  const columns: TableColumnsType<PlatformAppSchedule> = [
+    {
+      title: t("appSchedules.column.id"),
+      dataIndex: "scheduleId",
+      key: "scheduleId",
+      render: (value: string) => <Typography.Text code>{value}</Typography.Text>,
+    },
+    {
+      title: t("appSchedules.column.app"),
+      dataIndex: "appId",
+      key: "appId",
+      render: (value: string) => <Typography.Text code>{value}</Typography.Text>,
+    },
+    {
+      title: t("appSchedules.column.interval"),
+      dataIndex: "intervalMs",
+      key: "intervalMs",
+      render: (value: number) => `${value.toLocaleString()} ms`,
+    },
+    {
+      title: t("appSchedules.column.enabled"),
+      dataIndex: "enabled",
+      key: "enabled",
+      render: (value: boolean) => value ? t("appSchedules.yes") : t("appSchedules.no"),
+    },
+    {
+      title: t("appSchedules.column.action"),
+      dataIndex: "actionType",
+      key: "actionType",
+      render: (value: string | null | undefined) => <Typography.Text code>{value ?? "—"}</Typography.Text>,
+    },
+    {
+      title: "",
+      key: "actions",
+      render: (_, row) => (
+        <Button size="small" onClick={() => loadIntoForm(row)}>
+          {t("appSchedules.edit")}
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <section className="system-panel platform-schedules-panel">
       <header>
-        <h3>{t("appSchedules.title")}</h3>
-        <p className="op-muted">{t("appSchedules.subtitle")}</p>
+        <Typography.Title level={3}>{t("appSchedules.title")}</Typography.Title>
+        <Typography.Paragraph type="secondary">{t("appSchedules.subtitle")}</Typography.Paragraph>
       </header>
 
-      {schedulesQuery.isLoading && <p className="op-muted">{t("appSchedules.loading")}</p>}
+      {schedulesQuery.isLoading && <Typography.Text type="secondary">{t("appSchedules.loading")}</Typography.Text>}
       {schedulesQuery.error && (
-        <div className="op-alert op-alert-error">{String(schedulesQuery.error)}</div>
+        <Alert type="error" showIcon message={String(schedulesQuery.error)} />
       )}
 
       {schedulesQuery.data && (
         <div className="panel-card">
-          <table className="data-table compact">
-            <thead>
-              <tr>
-                <th>{t("appSchedules.column.id")}</th>
-                <th>{t("appSchedules.column.app")}</th>
-                <th>{t("appSchedules.column.interval")}</th>
-                <th>{t("appSchedules.column.enabled")}</th>
-                <th>{t("appSchedules.column.action")}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {schedulesQuery.data.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="op-muted">{t("appSchedules.empty")}</td>
-                </tr>
-              )}
-              {schedulesQuery.data.map((row) => (
-                <tr key={row.scheduleId}>
-                  <td><code>{row.scheduleId}</code></td>
-                  <td><code>{row.appId}</code></td>
-                  <td>{row.intervalMs.toLocaleString()} ms</td>
-                  <td>{row.enabled ? t("appSchedules.yes") : t("appSchedules.no")}</td>
-                  <td><code>{row.actionType ?? "—"}</code></td>
-                  <td>
-                    <button type="button" className="btn small" onClick={() => loadIntoForm(row)}>
-                      {t("appSchedules.edit")}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table
+            size="small"
+            pagination={false}
+            rowKey="scheduleId"
+            columns={columns}
+            dataSource={schedulesQuery.data}
+            locale={{ emptyText: t("appSchedules.empty") }}
+          />
         </div>
       )}
 
       <div className="platform-schedules-form panel-card">
-        <h4>{editing ? t("appSchedules.editTitle") : t("appSchedules.createTitle")}</h4>
-        <div className="form-grid">
-          <label>
-            {t("appSchedules.column.id")} *
-            <input value={scheduleId} onChange={(e) => setScheduleId(e.target.value)} required />
-          </label>
-          <label>
-            {t("appSchedules.column.app")} *
-            <input value={appId} onChange={(e) => setAppId(e.target.value)} required />
-          </label>
-          <label>
-            {tp("schedule.intervalMs")} *
-            <input value={intervalMs} onChange={(e) => setIntervalMs(e.target.value)} />
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
+        <Typography.Title level={4}>{editing ? t("appSchedules.editTitle") : t("appSchedules.createTitle")}</Typography.Title>
+        <Form layout="vertical">
+          <Form.Item label={`${t("appSchedules.column.id")} *`}>
+            <Input value={scheduleId} onChange={(e) => setScheduleId(e.target.value)} required />
+          </Form.Item>
+          <Form.Item label={`${t("appSchedules.column.app")} *`}>
+            <Input value={appId} onChange={(e) => setAppId(e.target.value)} required />
+          </Form.Item>
+          <Form.Item label={`${tp("schedule.intervalMs")} *`}>
+            <Input value={intervalMs} onChange={(e) => setIntervalMs(e.target.value)} />
+          </Form.Item>
+          <Form.Item label={tp("schedule.enabled")}>
+            <Select
+              value={enabled ? "true" : "false"}
+              onChange={(value) => setEnabled(value === "true")}
+              options={[
+                { value: "true", label: t("appSchedules.yes") },
+                { value: "false", label: t("appSchedules.no") },
+              ]}
             />
-            {tp("schedule.enabled")}
-          </label>
-          <label>
-            {t("appSchedules.column.action")}
-            <input value={actionType} onChange={(e) => setActionType(e.target.value)} />
-          </label>
+          </Form.Item>
+          <Form.Item label={t("appSchedules.column.action")}>
+            <Input value={actionType} onChange={(e) => setActionType(e.target.value)} />
+          </Form.Item>
           {showObjectPathField && (
             <>
               <ObjectPathField
@@ -183,48 +199,45 @@ export default function PlatformSchedulesPanel() {
                   setActionJson(patchActionJson(actionJson, { objectPath }))
                 }
               />
-              <label className="full">
-                {tp("schedule.functionName")}
-                <input
+              <Form.Item label={tp("schedule.functionName")} className="full">
+                <Input
                   value={invokeAction.functionName}
                   onChange={(e) =>
                     setActionJson(patchActionJson(actionJson, { functionName: e.target.value }))
                   }
                   placeholder="poll"
                 />
-              </label>
+              </Form.Item>
             </>
           )}
-          <label className="full">
-            {t("appSchedules.column.action")} JSON
-            <textarea
+          <Form.Item label={`${t("appSchedules.column.action")} JSON`} className="full">
+            <Input.TextArea
               className="mono"
               rows={4}
               value={actionJson}
               onChange={(e) => setActionJson(e.target.value)}
             />
-          </label>
-        </div>
-        <div className="form-actions">
-          <button
-            type="button"
-            className="btn primary"
+          </Form.Item>
+        </Form>
+        <Space className="form-actions">
+          <Button
+            type="primary"
             disabled={saveMutation.isPending || !scheduleId.trim() || !appId.trim()}
             onClick={() => saveMutation.mutate()}
           >
             {saveMutation.isPending ? t("appSchedules.saving") : t("appSchedules.save")}
-          </button>
+          </Button>
           {editing && (
-            <button type="button" className="btn" onClick={resetForm}>
+            <Button onClick={resetForm}>
               {t("appSchedules.cancel")}
-            </button>
+            </Button>
           )}
-        </div>
+        </Space>
         {saveMutation.error && (
-          <div className="op-alert op-alert-error">{String(saveMutation.error)}</div>
+          <Alert type="error" showIcon message={String(saveMutation.error)} />
         )}
         {saveMutation.isSuccess && (
-          <div className="op-alert op-alert-success">{t("appSchedules.saved")}</div>
+          <Alert type="success" showIcon message={t("appSchedules.saved")} />
         )}
       </div>
     </section>

@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-ispf.Ispf",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Development", "Transformation"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://github.com/IoT-Solutions-Platform/IoT-Solutions-Platform/blob/main/docs/en/security.md"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/IoT-Solutions-Platform/IoT-Solutions-Platform/blob/main/docs/en/api.md"
+			}
+		]
+	}
+}

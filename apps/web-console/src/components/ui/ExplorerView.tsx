@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import ObjectPropertiesEditor from "../objectEditor/ObjectPropertiesEditor";
 import OperatorAppsPanel from "../operator/OperatorAppsPanel";
 import SecurityUsersPanel from "../security/SecurityUsersPanel";
@@ -143,16 +144,16 @@ export default function ExplorerView({
     >
       {showBackToTree && onBackToTree && (
         <div className="explorer-mobile-nav">
-          <button type="button" className="btn explorer-back-btn" onClick={onBackToTree}>
+          <Button className="explorer-back-btn" onClick={onBackToTree}>
             {t("explorer:mobile.backToTree")}
-          </button>
+          </Button>
         </div>
       )}
       {!hideToolbar && opensInEditor && (
         <div className="explorer-toolbar">
-          <button type="button" className="btn" onClick={() => onOpenEditor(selectedPath)}>
+          <Button onClick={() => onOpenEditor(selectedPath)}>
             {t("common:action.openInEditor")}
-          </button>
+          </Button>
           <span className="hint">
             {isBlueprintsPath(selectedPath)
               ? t("common:hint.modelFullDefinition")

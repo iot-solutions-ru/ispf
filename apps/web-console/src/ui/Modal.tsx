@@ -1,7 +1,5 @@
-import { useId, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
-import ModalPortal from "./ModalPortal";
+import { Modal as AntdModal, type ModalProps as AntdModalProps } from "antd";
+import type { ReactNode } from "react";
 
 export interface ModalProps {
   open: boolean;
@@ -13,6 +11,7 @@ export interface ModalProps {
   className?: string;
   /** Raised above elevated modals (e.g. expression editor backdrop at 20010). */
   stackLevel?: number;
+  width?: AntdModalProps["width"];
 }
 
 export default function Modal({
@@ -24,47 +23,22 @@ export default function Modal({
   wide = false,
   className = "",
   stackLevel = 0,
+  width,
 }: ModalProps) {
-  const { t } = useTranslation("common");
-  const titleId = useId();
-  const backdropStyle = stackLevel > 0 ? { zIndex: 20010 + stackLevel * 10 } : undefined;
+  const zIndex = stackLevel > 0 ? 20010 + stackLevel * 10 : undefined;
 
   return (
-    <ModalPortal>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            className="modal-backdrop"
-            role="presentation"
-            style={backdropStyle}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={titleId}
-              className={`modal ${wide ? "modal-wide" : ""} ${className}`.trim()}
-              initial={{ opacity: 0, y: 8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.98 }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <header>
-                <h3 id={titleId}>{title}</h3>
-                <button type="button" className="btn small" onClick={onClose} aria-label={t("action.close")}>
-                  ×
-                </button>
-              </header>
-              <div className="modal-body">{children}</div>
-              {footer && <footer>{footer}</footer>}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </ModalPortal>
+    <AntdModal
+      title={title}
+      open={open}
+      onCancel={onClose}
+      footer={footer ?? null}
+      destroyOnHidden
+      width={width ?? (wide ? 960 : undefined)}
+      className={className}
+      zIndex={zIndex}
+    >
+      {children}
+    </AntdModal>
   );
 }

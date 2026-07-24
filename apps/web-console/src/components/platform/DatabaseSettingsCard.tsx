@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { Button, Input, Select, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchPlatformInfo } from "../../api";
 import type { PlatformRuntimeSetting, PlatformRuntimeSettingsSection } from "../../api/platformRuntimeSettings";
-import { SettingRow } from "./SystemSettingsSettingRow";
 
 const PRIMARY_DB_PREFIX = "database.";
 const METADATA_KIND_ID = "metadata.db.kind";
@@ -112,6 +113,62 @@ function pickSettings(
     .filter((setting): setting is PlatformRuntimeSetting => setting != null);
 }
 
+function SettingValueInput({
+  setting,
+  draftValue,
+  selectOptions,
+  onChange,
+}: {
+  setting: PlatformRuntimeSetting;
+  draftValue: string;
+  selectOptions?: readonly string[];
+  onChange: (value: string) => void;
+}) {
+  const { t } = useTranslation(["system", "common"]);
+
+  if (setting.type === "boolean") {
+    return (
+      <Select
+        className="system-settings-input"
+        value={draftValue}
+        disabled={!setting.editable}
+        onChange={onChange}
+        options={[
+          { value: "true", label: t("common:action.yes") },
+          { value: "false", label: t("common:action.no") },
+        ]}
+      />
+    );
+  }
+
+  if (selectOptions) {
+    return (
+      <Select
+        className="system-settings-input"
+        value={draftValue}
+        disabled={!setting.editable}
+        onChange={onChange}
+        options={selectOptions.map((option) => ({
+          value: option,
+          label: option === ""
+            ? t(`settings.options.${setting.id}.auto`, "Auto")
+            : t(`settings.options.${setting.id}.${option}`, option),
+        }))}
+      />
+    );
+  }
+
+  return (
+    <Input
+      className="system-settings-input"
+      type={setting.type === "integer" ? "number" : setting.sensitive ? "password" : "text"}
+      value={draftValue}
+      disabled={!setting.editable}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
+}
+
 function StorageSubsection({
   title,
   hint,
@@ -130,6 +187,56 @@ function StorageSubsection({
   selectOptionsById?: Record<string, readonly string[]>;
 }) {
   const { t } = useTranslation(["system", "common"]);
+  const columns: TableColumnsType<PlatformRuntimeSetting> = [
+    {
+      title: t("settings.column.setting"),
+      key: "setting",
+      render: (_, setting) => (
+        <>
+          <div className="system-settings-label">{t(`settings.keys.${setting.id}`, setting.id)}</div>
+          <Typography.Text code className="system-settings-env">{setting.envVar}</Typography.Text>
+        </>
+      ),
+    },
+    {
+      title: t("settings.column.value"),
+      key: "value",
+      render: (_, setting) => (
+        <SettingValueInput
+          setting={setting}
+          draftValue={drafts[setting.id] ?? setting.value}
+          selectOptions={selectOptionsById[setting.id]}
+          onChange={(value) => onDraftChange(setting.id, value)}
+        />
+      ),
+    },
+    {
+      title: t("settings.column.source"),
+      key: "source",
+      render: (_, setting) => (
+        <Space orientation="vertical">
+          <Tag className={`system-settings-source system-settings-source-${setting.source}`}>
+            {t(`settings.source.${setting.source}`)}
+          </Tag>
+          {setting.hotReloadable && <Tag>{t("settings.hotReload")}</Tag>}
+          {setting.restartRequired && <Tag>{t("settings.quickToggles.restartRequired")}</Tag>}
+          {setting.overridesEnvironment && setting.environmentValue != null && (
+            <Typography.Text type="secondary">
+              {t("settings.envOverrideHint", { value: setting.environmentValue })}
+            </Typography.Text>
+          )}
+        </Space>
+      ),
+    },
+    {
+      title: t("settings.column.default"),
+      dataIndex: "defaultValue",
+      key: "defaultValue",
+      render: (value: string | null | undefined) => (
+        <Typography.Text code>{value || t("common:empty.dash")}</Typography.Text>
+      ),
+    },
+  ];
 
   if (settings.length === 0) {
     return null;
@@ -137,30 +244,18 @@ function StorageSubsection({
 
   return (
     <div className="system-settings-database-subsection">
-      <h4 className="system-settings-database-subtitle">{title}</h4>
-      {hint && <p className="hint system-settings-section-hint">{hint}</p>}
-      {notice && <p className="hint system-settings-database-notice">{notice}</p>}
-      <table className="op-table system-settings-table">
-        <thead>
-          <tr>
-            <th>{t("settings.column.setting")}</th>
-            <th>{t("settings.column.value")}</th>
-            <th>{t("settings.column.source")}</th>
-            <th>{t("settings.column.default")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {settings.map((setting) => (
-            <SettingRow
-              key={setting.id}
-              setting={setting}
-              draftValue={drafts[setting.id] ?? setting.value}
-              selectOptions={selectOptionsById[setting.id]}
-              onChange={(value) => onDraftChange(setting.id, value)}
-            />
-          ))}
-        </tbody>
-      </table>
+      <Typography.Title level={4} className="system-settings-database-subtitle">{title}</Typography.Title>
+      {hint && <Typography.Paragraph type="secondary" className="system-settings-section-hint">{hint}</Typography.Paragraph>}
+      {notice && <Typography.Paragraph type="secondary" className="system-settings-database-notice">{notice}</Typography.Paragraph>}
+      <Table
+        className="system-settings-table"
+        size="small"
+        pagination={false}
+        rowKey="id"
+        rowClassName={(setting) => setting.editable ? "" : "system-settings-row-locked"}
+        columns={columns}
+        dataSource={settings}
+      />
     </div>
   );
 }
@@ -263,18 +358,19 @@ export function DatabaseSettingsCard({
 
   return (
     <section className="system-metrics-card system-settings-card system-settings-database-card">
-      <h3>{t(`settings.sections.${section.id}`, section.title)}</h3>
-      <p className="hint system-settings-section-hint">{t("settings.sections.databaseHint")}</p>
-      <div className="system-settings-database-actions">
-        <button
-          type="button"
-          className={`btn${singleDbActive ? " primary" : ""}`}
+      <Typography.Title level={3}>{t(`settings.sections.${section.id}`, section.title)}</Typography.Title>
+      <Typography.Paragraph type="secondary" className="system-settings-section-hint">
+        {t("settings.sections.databaseHint")}
+      </Typography.Paragraph>
+      <Space className="system-settings-database-actions">
+        <Button
+          type={singleDbActive ? "primary" : "default"}
           onClick={applySingleDbPreset}
         >
           {t("settings.database.singleDbPreset")}
-        </button>
-        <span className="hint">{t("settings.database.singleDbPresetHint")}</span>
-      </div>
+        </Button>
+        <Typography.Text type="secondary">{t("settings.database.singleDbPresetHint")}</Typography.Text>
+      </Space>
 
       <StorageSubsection
         title={t("settings.database.subsections.primary")}
@@ -285,7 +381,9 @@ export function DatabaseSettingsCard({
         onDraftChange={onDraftChange}
         selectOptionsById={selectOptionsById}
       />
-      <p className="hint system-settings-database-notice">{t("settings.database.externalDataSourcesHint")}</p>
+      <Typography.Paragraph type="secondary" className="system-settings-database-notice">
+        {t("settings.database.externalDataSourcesHint")}
+      </Typography.Paragraph>
 
       <StorageSubsection
         title={t("settings.database.subsections.eventJournal")}

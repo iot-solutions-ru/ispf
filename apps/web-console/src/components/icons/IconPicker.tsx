@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import ObjectTreeIcon, {
   TREE_ICON_CATALOG,
   normalizeIconId,
@@ -49,41 +50,41 @@ export default function IconPicker({
   return (
     <div className="icon-picker">
       <div className="icon-picker-current">
-        <button
-          type="button"
+        <Button
+          type="text"
           className={`icon-picker-preview ${disabled ? "disabled" : ""}`}
           title={disabled ? label : t("icons.clickToSelect")}
           disabled={disabled}
           onClick={() => !disabled && setOpen((v) => !v)}
         >
           <ObjectTreeIcon path={path} type={type} iconId={effective} size={20} />
-        </button>
+        </Button>
         <span className="hint">{label}</span>
         {!disabled && open && effective && (
-          <button type="button" className="btn small" onClick={() => selectIcon(null)}>
+          <Button size="small" onClick={() => selectIcon(null)}>
             {t("icons.reset")}
-          </button>
+          </Button>
         )}
       </div>
       {!disabled && open && (
         <div className="icon-picker-grid-wrap">
-          <button
-            type="button"
+          <Button
+            type="text"
             className={`icon-picker-item ${effective === null ? "selected" : ""}`}
             title={t("icons.auto")}
             onClick={() => selectIcon(null)}
           >
             <ObjectTreeIcon path={path} type={type} size={18} />
             <span>{t("icons.auto")}</span>
-          </button>
+          </Button>
           {categories.map(([category, items]) => (
             <div key={category} className="icon-picker-group">
               <span className="icon-picker-group-title">{category}</span>
               <div className="icon-picker-grid">
                 {items.map((item) => (
-                  <button
+                  <Button
                     key={item.id}
-                    type="button"
+                    type="text"
                     className={`icon-picker-item ${effective === item.id ? "selected" : ""}`}
                     title={t(`icons.${item.id}`)}
                     onClick={() => selectIcon(item.id)}
@@ -95,7 +96,7 @@ export default function IconPicker({
                       size={18}
                     />
                     <span>{t(`icons.${item.id}`)}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

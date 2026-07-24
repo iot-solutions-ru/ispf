@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button, Form, Input, Space, Typography } from "antd";
 import { importPackage } from "../../api/packages";
 import BundleLicenseInfoPanel from "./BundleLicenseInfoPanel";
 import BundleLicenseErrorAlert from "./BundleLicenseErrorAlert";
@@ -40,40 +41,46 @@ export default function PackageImportPanel({ defaultPackageId = "demo" }: Packag
 
   return (
     <div className="package-import-panel">
-      <h3>{t("packageImport.title")}</h3>
-      <p className="op-muted">{t("packageImport.subtitle")}</p>
-      <BundleLicenseInfoPanel
-        appId={packageId.trim() || undefined}
-        manifest={parsedManifest ?? undefined}
-        compact
-      />
-      <label>
-        packageId
-        <input value={packageId} onChange={(e) => setPackageId(e.target.value)} />
-      </label>
-      <label className="full">
-        manifest JSON
-        <textarea
-          className="mono"
-          rows={12}
-          value={manifestText}
-          onChange={(e) => setManifestText(e.target.value)}
-          spellCheck={false}
+      <Space orientation="vertical" style={{ width: "100%" }}>
+        <Typography.Title level={3}>{t("packageImport.title")}</Typography.Title>
+        <Typography.Paragraph type="secondary">{t("packageImport.subtitle")}</Typography.Paragraph>
+        <BundleLicenseInfoPanel
+          appId={packageId.trim() || undefined}
+          manifest={parsedManifest ?? undefined}
+          compact
         />
-      </label>
-      <div className="form-actions">
-        <button
-          type="button"
-          className="btn primary"
-          disabled={importMutation.isPending || !packageId.trim()}
-          onClick={() => importMutation.mutate()}
-        >
-          {t("packageImport.import")}
-        </button>
-      </div>
+        <Form layout="vertical">
+          <Form.Item label="packageId">
+            <Input value={packageId} onChange={(e) => setPackageId(e.target.value)} />
+          </Form.Item>
+          <Form.Item label="manifest JSON" className="full">
+            <Input.TextArea
+              className="mono"
+              rows={12}
+              value={manifestText}
+              onChange={(e) => setManifestText(e.target.value)}
+              spellCheck={false}
+            />
+          </Form.Item>
+        </Form>
+        <Space className="form-actions">
+          <Button
+            type="primary"
+            disabled={importMutation.isPending || !packageId.trim()}
+            onClick={() => importMutation.mutate()}
+          >
+            {t("packageImport.import")}
+          </Button>
+        </Space>
+      </Space>
       {importMutation.error && <BundleLicenseErrorAlert error={importMutation.error} />}
       {importMutation.data && (
-        <pre className="mono small">{JSON.stringify(importMutation.data, null, 2)}</pre>
+        <Input.TextArea
+          className="mono small"
+          value={JSON.stringify(importMutation.data, null, 2)}
+          readOnly
+          autoSize={{ minRows: 4 }}
+        />
       )}
     </div>
   );

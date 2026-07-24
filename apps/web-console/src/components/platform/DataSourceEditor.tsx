@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Input } from "antd";
 import {
   executeDataSourceQuery,
   fetchDataSource,
@@ -15,6 +16,8 @@ import DataSourceConnectionFields, {
   type DataSourceConnectionMode,
 } from "./DataSourceConnectionFields";
 
+const { TextArea } = Input;
+
 interface DataSourceEditorProps {
   path: string;
   onClose?: () => void;
@@ -22,7 +25,14 @@ interface DataSourceEditorProps {
 }
 
 function StatusBanner({ tone, children }: { tone: "ok" | "error" | "neutral"; children: string }) {
-  return <p className={`ds-status-banner ds-status-banner--${tone}`}>{children}</p>;
+  return (
+    <Alert
+      className={`ds-status-banner ds-status-banner--${tone}`}
+      type={tone === "ok" ? "success" : tone === "error" ? "error" : "info"}
+      showIcon
+      message={children}
+    />
+  );
 }
 
 export default function DataSourceEditor({ path, onClose, onOpenProperties }: DataSourceEditorProps) {
@@ -133,7 +143,7 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
   }
 
   if (dataQuery.error) {
-    return <div className="op-alert op-alert-error">{String(dataQuery.error)}</div>;
+    return <Alert type="error" showIcon message={String(dataQuery.error)} />;
   }
 
   return (
@@ -147,22 +157,19 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
       onOpenProperties={onOpenProperties}
       toolbar={
         <>
-          <button
-            type="button"
-            className="btn"
+          <Button
             disabled={testMutation.isPending || saveMutation.isPending}
             onClick={() => testMutation.mutate()}
           >
             {t("platform:dataSource.testConnection")}
-          </button>
-          <button
-            type="button"
-            className="btn primary"
+          </Button>
+          <Button
+            type="primary"
             disabled={saveMutation.isPending || !canSave}
             onClick={() => saveMutation.mutate()}
           >
             {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
-          </button>
+          </Button>
         </>
       }
     >
@@ -178,7 +185,7 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
           >
             <label className="ds-field ds-field--span-2">
               <span className="ds-field-label">{t("platform:dataSource.displayName")}</span>
-              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </label>
 
             <h3 className="data-source-section-title data-source-section-title--connection">
@@ -205,7 +212,7 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
 
             <label className="ds-field ds-field--span-2">
               <span className="ds-field-label">{t("common:field.description")}</span>
-              <textarea
+              <TextArea
                 className="data-source-description"
                 rows={2}
                 value={description}
@@ -229,19 +236,18 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
               <h3 className="data-source-section-title">{t("platform:dataSource.sqlConsole")}</h3>
               <p className="data-source-sql-hint">{t("platform:dataSource.sqlHint")}</p>
             </div>
-            <button
-              type="button"
-              className="btn primary"
+            <Button
+              type="primary"
               disabled={executeMutation.isPending || !sqlQuery.trim()}
               onClick={() => executeMutation.mutate()}
             >
               {executeMutation.isPending
                 ? t("platform:dataSource.executing")
                 : t("platform:dataSource.executeQuery")}
-            </button>
+            </Button>
           </header>
 
-          <textarea
+          <TextArea
             className="data-source-sql-input mono"
             value={sqlQuery}
             onChange={(e) => setSqlQuery(e.target.value)}

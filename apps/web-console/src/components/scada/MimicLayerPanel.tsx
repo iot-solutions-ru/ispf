@@ -1,3 +1,4 @@
+import { Button, Input, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
 import type { MimicLayer } from "../../types/scadaMimic";
 import { createMimicId, DEFAULT_LAYER_ID } from "../../scada/document";
@@ -42,49 +43,55 @@ export default function MimicLayerPanel({
     <div className="scada-layer-panel">
       <div className="scada-panel-header scada-panel-header-compact">
         <h2 className="scada-panel-title">{t("layers.title")}</h2>
-        <button type="button" className="scada-btn-ghost scada-btn-sm" onClick={addLayer}>
+        <Button type="text" size="small" className="scada-btn-ghost scada-btn-sm" onClick={addLayer}>
           {t("layers.add")}
-        </button>
+        </Button>
       </div>
       <ul className="scada-layer-panel-list">
         {layers.map((layer) => (
           <li key={layer.id} className="scada-layer-panel-item">
-            <input
-              type="radio"
-              name="scada-active-layer"
-              checked={activeLayerId === layer.id}
-              onChange={() => onActiveLayerChange(layer.id)}
-              title={t("layers.activeHint")}
-            />
-            <input
-              type="checkbox"
-              checked={layer.visible}
-              onChange={(e) => patchLayer(layer.id, { visible: e.target.checked })}
-              title={t("layers.visibleHint")}
-            />
-            <input
-              type="text"
+            <span className="scada-layer-controls">
+              <Tooltip title={t("layers.activeHint")}>
+                <input
+                  type="radio"
+                  name="scada-active-layer"
+                  checked={activeLayerId === layer.id}
+                  onChange={() => onActiveLayerChange(layer.id)}
+                />
+              </Tooltip>
+              <Tooltip title={t("layers.visibleHint")}>
+                <input
+                  type="checkbox"
+                  checked={layer.visible}
+                  onChange={(e) => patchLayer(layer.id, { visible: e.target.checked })}
+                />
+              </Tooltip>
+            </span>
+            <Input
               className="scada-form-input scada-layer-name-input"
               value={layer.name}
               onChange={(e) => patchLayer(layer.id, { name: e.target.value })}
             />
-            <label className="scada-layer-lock" title={t("layers.lockHint")}>
-              <input
-                type="checkbox"
-                checked={Boolean(layer.locked)}
-                onChange={(e) => patchLayer(layer.id, { locked: e.target.checked })}
-              />
-              🔒
-            </label>
+            <Tooltip title={t("layers.lockHint")}>
+              <label className="scada-layer-lock">
+                <input
+                  type="checkbox"
+                  checked={Boolean(layer.locked)}
+                  onChange={(e) => patchLayer(layer.id, { locked: e.target.checked })}
+                />
+                🔒
+              </label>
+            </Tooltip>
             {layer.id !== DEFAULT_LAYER_ID && (
-              <button
-                type="button"
+              <Button
+                type="text"
+                size="small"
                 className="scada-btn-ghost scada-btn-sm"
                 onClick={() => removeLayer(layer.id)}
                 title={t("layers.remove")}
               >
                 ×
-              </button>
+              </Button>
             )}
           </li>
         ))}

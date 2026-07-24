@@ -1,3 +1,4 @@
+import { Button, Select, Space } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReportExportFormat } from "../../api/reports";
@@ -34,40 +35,39 @@ export default function ReportExportControls({
   }
 
   const selected = options.find((option) => option.value === format) ?? options[0];
+  const controlSize = size === "sm" ? "small" : "middle";
 
   return (
-    <div
-      className={[
-        "report-export-controls",
-        size === "sm" ? "report-export-controls-sm" : "",
-        className ?? "",
-      ]
+    <Space
+      className={["report-export-controls", size === "sm" ? "report-export-controls-sm" : "", className ?? ""]
         .filter(Boolean)
         .join(" ")}
+      wrap
     >
-      <select
+      <Select
         className="report-export-format"
+        size={controlSize}
         value={format}
         disabled={disabled || busy}
         aria-label={t("export.formatLabel")}
         title={selected.title}
-        onChange={(event) => setFormat(event.target.value as ReportExportFormat)}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value} title={option.title}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        className={size === "sm" ? "btn btn-sm" : "btn"}
+        onChange={(value) => setFormat(value)}
+        options={options.map((option) => ({
+          value: option.value,
+          label: option.label,
+          title: option.title,
+        }))}
+        popupMatchSelectWidth={false}
+      />
+      <Button
+        size={controlSize}
         disabled={disabled || busy}
+        loading={busy}
         title={selected.title}
         onClick={() => void onExport(format)}
       >
         {busy ? t("export.exporting") : t("export.export")}
-      </button>
-    </div>
+      </Button>
+    </Space>
   );
 }

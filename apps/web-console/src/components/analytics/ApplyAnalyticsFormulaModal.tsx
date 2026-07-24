@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Input } from "antd";
 import Modal from "../../ui/Modal";
 import type { AnalyticsCatalogEntryDto } from "../../api/analyticsCatalog";
 import type { BindingFormulaLink } from "../../types";
@@ -87,17 +88,17 @@ export default function ApplyAnalyticsFormulaModal({
       onClose={onClose}
       footer={
         <>
-          <button type="button" className="btn" onClick={onClose}>
+          <Button onClick={onClose}>
             {t("common:action.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={missingRequired.length > 0 || expandMutation.isPending}
+          </Button>
+          <Button
+            type="primary"
+            loading={expandMutation.isPending}
+            disabled={missingRequired.length > 0}
             onClick={() => void handleApply()}
           >
             {t("formula.apply")}
-          </button>
+          </Button>
         </>
       }
     >
@@ -109,7 +110,7 @@ export default function ApplyAnalyticsFormulaModal({
               {parameter.name}
               {parameter.required ? " *" : ""}
             </span>
-            <input
+            <Input
               type="text"
               value={values[parameter.name] ?? ""}
               placeholder={parameter.defaultValue ?? `<${parameter.name}>`}
@@ -124,7 +125,7 @@ export default function ApplyAnalyticsFormulaModal({
           </label>
         ))}
         {expandMutation.isError && (
-          <p className="hint error">{(expandMutation.error as Error).message}</p>
+          <Alert type="error" message={(expandMutation.error as Error).message} showIcon />
         )}
       </div>
     </Modal>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Input, Space } from "antd";
 import { exportPlatformBackup, importPlatformBackup } from "../../api/platformBackup";
 
 interface TreeSubtreeExportPanelProps {
@@ -95,32 +96,29 @@ export default function TreeSubtreeExportPanel({ rootPath, canManage }: TreeSubt
       <h3>{t("treeExport.title")}</h3>
       <p className="op-muted">{t("treeExport.subtitle", { rootPath })}</p>
 
-      <div className="form-actions">
-        <button
-          type="button"
-          className="btn"
-          disabled={exportMutation.isPending}
+      <Space wrap className="form-actions">
+        <Button
+          loading={exportMutation.isPending}
           onClick={startExport}
         >
           {exportMutation.isPending ? t("treeExport.exporting") : t("treeExport.export")}
-        </button>
-        <button type="button" className="btn" disabled={!jsonText.trim() || downloadLocked} onClick={downloadJson}>
+        </Button>
+        <Button disabled={!jsonText.trim() || downloadLocked} onClick={downloadJson}>
           {t("treeExport.download")}
-        </button>
+        </Button>
         {canManage && (
           <>
-            <button
-              type="button"
-              className="btn"
-              disabled={previewMutation.isPending || !jsonText.trim()}
+            <Button
+              loading={previewMutation.isPending}
+              disabled={!jsonText.trim()}
               onClick={() => previewMutation.mutate()}
             >
               {previewMutation.isPending ? t("treeExport.previewing") : t("treeExport.preview")}
-            </button>
-            <button
-              type="button"
-              className="btn primary"
-              disabled={importMutation.isPending || !jsonText.trim()}
+            </Button>
+            <Button
+              type="primary"
+              loading={importMutation.isPending}
+              disabled={!jsonText.trim()}
               onClick={() => {
                 if (!window.confirm(t("treeExport.importConfirm", { rootPath }))) {
                   return;
@@ -129,18 +127,18 @@ export default function TreeSubtreeExportPanel({ rootPath, canManage }: TreeSubt
               }}
             >
               {importMutation.isPending ? t("treeExport.importing") : t("treeExport.import")}
-            </button>
+            </Button>
           </>
         )}
-      </div>
+      </Space>
 
       {exportMutation.error && (
-        <div className="op-alert op-alert-error">{String(exportMutation.error)}</div>
+        <Alert type="error" message={String(exportMutation.error)} showIcon />
       )}
 
       <label className="full">
         JSON
-        <textarea
+        <Input.TextArea
           className="mono"
           rows={12}
           value={jsonText}

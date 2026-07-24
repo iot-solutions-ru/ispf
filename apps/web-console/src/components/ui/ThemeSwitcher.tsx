@@ -1,3 +1,4 @@
+import { Select } from "antd";
 import { useTranslation } from "react-i18next";
 import { useTheme, type ThemePreference } from "../../theme";
 
@@ -10,18 +11,18 @@ export default function ThemeSwitcher() {
   return (
     <label className="theme-switcher" title={t("admin.theme.label")}>
       <span className="sr-only">{t("admin.theme.label")}</span>
-      <select
+      <Select
         className="theme-switcher-select"
+        size="small"
         value={preference}
         aria-label={t("admin.theme.label")}
-        onChange={(event) => setPreference(event.target.value as ThemePreference)}
-      >
-        {OPTIONS.map((option) => (
-          <option key={option} value={option}>
-            {t(`admin.theme.${option}`)}
-          </option>
-        ))}
-      </select>
+        onChange={(value) => setPreference(value)}
+        options={OPTIONS.map((option) => ({
+          value: option,
+          label: t(`admin.theme.${option}`),
+        }))}
+        popupMatchSelectWidth={false}
+      />
     </label>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import VariableHistoryModal from "../objectEditor/VariableHistoryModal";
 
 interface WidgetHistoryControlsProps {
@@ -33,13 +34,13 @@ export default function WidgetHistoryControls({
       {historyRangeLabel && (
         <span className="dash-widget-history-meta">{historyRangeLabel}</span>
       )}
-      <button
-        type="button"
+      <Button
+        size="small"
         className="btn tiny dash-widget-history-btn"
         onClick={() => setShowHistory(true)}
       >
         {t("history.label")}
-      </button>
+      </Button>
       {showHistory && (
         <VariableHistoryModal
           objectPath={objectPath}

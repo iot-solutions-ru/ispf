@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchRedisHealth } from "../../api/redisHealth";
 
 function formatTtl(seconds: number, t: (key: string, opts?: { count: number }) => string): string {
@@ -30,89 +32,101 @@ export default function RedisHealthCard() {
     if (store === "jdbc") return t("redisHealth.backendJdbc");
     return t("redisHealth.backendLocal");
   };
+  const rows = healthQuery.data
+    ? [
+        {
+          key: "enabled",
+          label: t("redisHealth.enabled"),
+          value: healthQuery.data.enabled ? t("common:action.yes") : t("common:action.no"),
+        },
+        {
+          key: "connection",
+          label: t("redisHealth.connection"),
+          value: (
+            <Tag color={!healthQuery.data.enabled ? "default" : healthQuery.data.connected ? "success" : "error"}>
+              {statusLabel(healthQuery.data.connected, healthQuery.data.enabled)}
+            </Tag>
+          ),
+        },
+        ...(healthQuery.data.enabled && healthQuery.data.host
+          ? [{
+              key: "endpoint",
+              label: t("redisHealth.endpoint"),
+              value: `${healthQuery.data.host}:${healthQuery.data.port}`,
+            }]
+          : []),
+        {
+          key: "correlatorWindows",
+          label: t("redisHealth.correlatorWindows"),
+          value: healthQuery.data.correlatorWindowsEnabled
+            ? t("common:action.yes")
+            : t("common:action.no"),
+        },
+        {
+          key: "correlatorStore",
+          label: t("redisHealth.correlatorStore"),
+          value: storeLabel(healthQuery.data.correlatorWindowStore),
+        },
+        {
+          key: "aclCacheBackend",
+          label: t("redisHealth.aclCacheBackend"),
+          value: storeLabel(healthQuery.data.aclCacheBackend),
+        },
+        ...(healthQuery.data.aclCacheBackend === "redis"
+          ? [
+              {
+                key: "objectAclTtl",
+                label: t("redisHealth.objectAclTtl"),
+                value: formatTtl(healthQuery.data.objectAclTtlSeconds, t),
+              },
+              {
+                key: "contextPackTtl",
+                label: t("redisHealth.contextPackTtl"),
+                value: formatTtl(healthQuery.data.contextPackTtlSeconds, t),
+              },
+              {
+                key: "platformBriefingTtl",
+                label: t("redisHealth.platformBriefingTtl"),
+                value: formatTtl(healthQuery.data.platformBriefingTtlSeconds, t),
+              },
+            ]
+          : []),
+        ...(healthQuery.data.correlatorWindowKeys != null
+          ? [{
+              key: "correlatorWindowKeys",
+              label: t("redisHealth.correlatorWindowKeys"),
+              value: healthQuery.data.correlatorWindowKeys,
+            }]
+          : []),
+      ]
+    : [];
+  const columns: TableColumnsType<(typeof rows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    { title: "", dataIndex: "value", key: "value" },
+  ];
 
   return (
     <section className="system-metrics-card redis-health-card">
-      <h3>{t("redisHealth.title")}</h3>
-      {healthQuery.isLoading && <p className="hint">{t("redisHealth.loading")}</p>}
+      <Typography.Title level={3}>{t("redisHealth.title")}</Typography.Title>
+      {healthQuery.isLoading && <Typography.Text type="secondary">{t("redisHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <div className="op-alert op-alert-error">{t("redisHealth.loadError")}</div>
+        <Alert type="error" showIcon message={t("redisHealth.loadError")} />
       )}
       {healthQuery.data && (
-        <>
-          <table className="op-table system-metrics-table">
-            <tbody>
-              <tr>
-                <th>{t("redisHealth.enabled")}</th>
-                <td>{healthQuery.data.enabled ? t("common:action.yes") : t("common:action.no")}</td>
-              </tr>
-              <tr>
-                <th>{t("redisHealth.connection")}</th>
-                <td>
-                  <span
-                    className={
-                      healthQuery.data.enabled && healthQuery.data.connected
-                        ? "system-health-ok"
-                        : healthQuery.data.enabled
-                          ? "system-health-bad"
-                          : undefined
-                    }
-                  >
-                    {statusLabel(healthQuery.data.connected, healthQuery.data.enabled)}
-                  </span>
-                </td>
-              </tr>
-              {healthQuery.data.enabled && healthQuery.data.host && (
-                <tr>
-                  <th>{t("redisHealth.endpoint")}</th>
-                  <td>{healthQuery.data.host}:{healthQuery.data.port}</td>
-                </tr>
-              )}
-              <tr>
-                <th>{t("redisHealth.correlatorWindows")}</th>
-                <td>
-                  {healthQuery.data.correlatorWindowsEnabled
-                    ? t("common:action.yes")
-                    : t("common:action.no")}
-                </td>
-              </tr>
-              <tr>
-                <th>{t("redisHealth.correlatorStore")}</th>
-                <td>{storeLabel(healthQuery.data.correlatorWindowStore)}</td>
-              </tr>
-              <tr>
-                <th>{t("redisHealth.aclCacheBackend")}</th>
-                <td>{storeLabel(healthQuery.data.aclCacheBackend)}</td>
-              </tr>
-              {healthQuery.data.aclCacheBackend === "redis" && (
-                <>
-                  <tr>
-                    <th>{t("redisHealth.objectAclTtl")}</th>
-                    <td>{formatTtl(healthQuery.data.objectAclTtlSeconds, t)}</td>
-                  </tr>
-                  <tr>
-                    <th>{t("redisHealth.contextPackTtl")}</th>
-                    <td>{formatTtl(healthQuery.data.contextPackTtlSeconds, t)}</td>
-                  </tr>
-                  <tr>
-                    <th>{t("redisHealth.platformBriefingTtl")}</th>
-                    <td>{formatTtl(healthQuery.data.platformBriefingTtlSeconds, t)}</td>
-                  </tr>
-                </>
-              )}
-              {healthQuery.data.correlatorWindowKeys != null && (
-                <tr>
-                  <th>{t("redisHealth.correlatorWindowKeys")}</th>
-                  <td>{healthQuery.data.correlatorWindowKeys}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <Space orientation="vertical" style={{ width: "100%" }}>
+          <Table
+            className="system-metrics-table"
+            size="small"
+            pagination={false}
+            showHeader={false}
+            columns={columns}
+            dataSource={rows}
+          />
           {healthQuery.data.connectionError && (
-            <p className="hint system-health-error">{healthQuery.data.connectionError}</p>
+            <Alert type="error" showIcon message={healthQuery.data.connectionError} />
           )}
-          <p className="hint">{t("redisHealth.hint")}</p>
-        </>
+          <Typography.Paragraph type="secondary">{t("redisHealth.hint")}</Typography.Paragraph>
+        </Space>
       )}
     </section>
   );

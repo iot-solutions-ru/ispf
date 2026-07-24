@@ -1,3 +1,4 @@
+import { Select, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import type { SecurityRoleSummary } from "../../api/securityRoles";
 
@@ -20,40 +21,25 @@ export default function RoleMultiSelect({
 }: RoleMultiSelectProps) {
   const { t } = useTranslation("inspector");
 
-  function toggle(roleName: string) {
-    if (disabled) {
-      return;
-    }
-    if (selected.includes(roleName)) {
-      onChange(selected.filter((name) => name !== roleName));
-      return;
-    }
-    onChange([...selected, roleName]);
-  }
-
   return (
-    <fieldset className="function-form-multiselect variable-role-picker full" disabled={disabled}>
-      <legend>{label}</legend>
-      {roles.length === 0 ? (
-        <p className="hint">{t("variables.rolesEmpty")}</p>
-      ) : (
-        <div className="function-form-multiselect-options">
-          {roles.map((role) => (
-            <label key={role.name} className="function-form-multiselect-option">
-              <input
-                type="checkbox"
-                id={`${id}-${role.name}`}
-                checked={selected.includes(role.name)}
-                onChange={() => toggle(role.name)}
-              />
-              <span>
-                <code>{role.name}</code>
-                {role.displayName !== role.name ? ` — ${role.displayName}` : ""}
-              </span>
-            </label>
-          ))}
-        </div>
-      )}
-    </fieldset>
+    <div className="full" style={{ marginBottom: 12 }}>
+      <Typography.Text strong style={{ display: "block", marginBottom: 6 }}>
+        {label}
+      </Typography.Text>
+      <Select
+        id={id}
+        mode="multiple"
+        style={{ width: "100%" }}
+        disabled={disabled}
+        value={selected}
+        onChange={onChange}
+        placeholder={roles.length === 0 ? t("variables.rolesEmpty") : undefined}
+        options={roles.map((role) => ({
+          value: role.name,
+          label: role.displayName !== role.name ? `${role.name} — ${role.displayName}` : role.name,
+        }))}
+        optionFilterProp="label"
+      />
+    </div>
   );
 }

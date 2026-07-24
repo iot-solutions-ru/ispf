@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Typography } from "antd";
 import BindingRulesPanel from "../binding/BindingRulesPanel";
 import { dashboardRuleTemplates } from "./dashboardRuleTemplates";
 import type { DashboardWidget } from "../../types/dashboard";
@@ -22,8 +23,8 @@ export default function DashboardRulesPanel({
   return (
     <aside className="dashboard-rules-sidebar panel">
       <header className="dashboard-rules-sidebar__header">
-        <h3>{t("rules.title")}</h3>
-        <p className="hint">{t("rules.hint")}</p>
+        <Typography.Title level={4}>{t("rules.title")}</Typography.Title>
+        <Typography.Paragraph type="secondary">{t("rules.hint")}</Typography.Paragraph>
       </header>
       <BindingRulesPanel
         path={path}

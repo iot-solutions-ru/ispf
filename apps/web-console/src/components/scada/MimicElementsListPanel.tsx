@@ -1,3 +1,4 @@
+import { Button, Tooltip } from "antd";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { MimicElement, MimicLayer } from "../../types/scadaMimic";
@@ -62,12 +63,12 @@ export default function MimicElementsListPanel({
     <div className="scada-elements-list-panel">
       <div className="scada-panel-header scada-panel-header-compact">
         <h2 className="scada-panel-title">{t("elementsList.title")}</h2>
-        <span className="scada-elements-list-count" title={t("elementsList.countHint")}>
-          {totalCount}
-        </span>
+        <Tooltip title={t("elementsList.countHint")}>
+          <span className="scada-elements-list-count">{totalCount}</span>
+        </Tooltip>
       </div>
       {totalCount === 0 ? (
-        <p className="scada-elements-list-empty">{t("elementsList.empty")}</p>
+        <p className="scada-elements-list-empty hint">{t("elementsList.empty")}</p>
       ) : (
         <div className="scada-elements-list-groups">
           {grouped.map(({ layer, items }) => (
@@ -85,8 +86,8 @@ export default function MimicElementsListPanel({
                   const selected = selectedIds.has(element.id);
                   return (
                     <li key={element.id}>
-                      <button
-                        type="button"
+                      <Button
+                        type="text"
                         className={`scada-elements-list-item${selected ? " selected" : ""}`}
                         onClick={(event) => onSelectElement(element.id, event.shiftKey || event.ctrlKey || event.metaKey)}
                         title={t("elementsList.selectHint", { z: zIndex + 1 })}
@@ -97,7 +98,7 @@ export default function MimicElementsListPanel({
                         <span className="scada-elements-list-label">
                           {elementLabel(element, locale, customSymbolNames)}
                         </span>
-                      </button>
+                      </Button>
                     </li>
                   );
                 })}

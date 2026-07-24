@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button } from "antd";
 import { fetchObject, fetchVariables, updateAlertRule, validateExpression } from "../../api";
 import type { AlertRuleFormValues } from "../../types/automation";
 import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
@@ -158,13 +159,13 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
         )}
         {canManage && (
           <div className="form-actions">
-            <button type="submit" className="btn primary" disabled={saveMutation.isPending || !!exprError}>
+            <Button htmlType="submit" type="primary" loading={saveMutation.isPending} disabled={!!exprError}>
               {t("common:action.save")}
-            </button>
+            </Button>
           </div>
         )}
         {saveMutation.error && (
-          <p className="hint error">{String(saveMutation.error)}</p>
+          <Alert type="error" message={String(saveMutation.error)} showIcon />
         )}
       </form>
       <ObjectFederationBindSection path={path} canManage={canManage} />

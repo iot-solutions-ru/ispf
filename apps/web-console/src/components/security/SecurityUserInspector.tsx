@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Modal, Select, Space, Switch, Tag, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import {
   fetchSecurityUsers,
@@ -121,31 +122,26 @@ export default function SecurityUserInspector({
           <ObjectTreeIcon path={path} type="USER" size={28} />
           <div className="security-user-heading">
             <div className="security-user-title-line">
-              <h2>{displayName.trim() || user.username}</h2>
-              <span className={`security-user-pill security-user-pill--role-${role}`}>
-                {role}
-              </span>
-              <span
-                className={`security-user-pill security-user-pill--status ${
-                  enabled ? "is-active" : "is-inactive"
-                }`}
-              >
+              <Typography.Title level={3} style={{ margin: 0 }}>
+                {displayName.trim() || user.username}
+              </Typography.Title>
+              <Tag>{role}</Tag>
+              <Tag color={enabled ? "success" : "default"}>
                 {enabled ? t("user.statusActive") : t("user.statusDisabled")}
-              </span>
+              </Tag>
             </div>
             <p className="security-user-meta">
-              <code>@{user.username}</code>
+              <Typography.Text code>@{user.username}</Typography.Text>
               <span className="security-user-meta-sep">·</span>
-              <code className="path-code">{path}</code>
+              <Typography.Text code className="path-code">{path}</Typography.Text>
             </p>
           </div>
         </div>
         {canManage && (
           <div className="inspector-actions">
-            <button
-              type="button"
-              className="btn danger"
-              disabled={deleteMutation.isPending}
+            <Button
+              danger
+              loading={deleteMutation.isPending}
               onClick={() => {
                 if (confirm(t("common:action.confirmDeleteUser", { name: user.username }))) {
                   deleteMutation.mutate();
@@ -153,109 +149,80 @@ export default function SecurityUserInspector({
               }}
             >
               {t("common:action.delete")}
-            </button>
+            </Button>
           </div>
         )}
       </header>
 
       {!canManage && (
-        <p className="hint security-user-readonly-hint">{t("role.readonlyHint")}</p>
+        <Alert type="info" showIcon message={t("role.readonlyHint")} style={{ marginBottom: 12 }} />
       )}
 
       <div className="security-user-cards">
         <section className="security-user-card">
-          <h3 className="security-user-card-title">{t("user.account")}</h3>
-          <form
-            className="security-user-form"
-            onSubmit={(event) => {
-              event.preventDefault();
+          <Typography.Title level={5}>{t("user.account")}</Typography.Title>
+          <Form
+            layout="vertical"
+            onFinish={() => {
               if (canManage && dirty) {
                 saveMutation.mutate();
               }
             }}
           >
-            <div className="security-user-form-grid">
-              <label>
-                <span className="field-label">{t("users.column.login")}</span>
-                <input value={user.username} readOnly className="readonly" />
-              </label>
-              <label>
-                <span className="field-label">{t("common:field.displayName")}</span>
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  disabled={!canManage}
-                  placeholder={t("user.displayNamePlaceholder")}
-                />
-              </label>
-              <label>
-                <span className="field-label">{t("user.role")}</span>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  disabled={!canManage || (rolesQuery.data ?? []).length === 0}
-                >
-                  {(rolesQuery.data ?? []).map((item) => {
-                    const desc = localizedRoleDescription(t, item.name, item.description);
-                    return (
-                      <option key={item.name} value={item.name}>
-                        {item.name}{desc ? ` — ${desc}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </label>
-              <div className="security-user-switch-field">
-                <div>
-                  <span className="field-label">{t("user.status")}</span>
-                  <p className="security-user-switch-hint">
-                    {enabled ? t("user.statusActiveHint") : t("user.statusInactiveHint")}
-                  </p>
-                </div>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={enabled}
-                    disabled={!canManage}
-                    onChange={(e) => setEnabled(e.target.checked)}
-                  />
-                  <span className="switch-slider" aria-hidden />
-                </label>
-              </div>
-            </div>
+            <Form.Item label={t("users.column.login")}>
+              <Input value={user.username} readOnly />
+            </Form.Item>
+            <Form.Item label={t("common:field.displayName")}>
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={!canManage}
+                placeholder={t("user.displayNamePlaceholder")}
+              />
+            </Form.Item>
+            <Form.Item label={t("user.role")}>
+              <Select
+                value={role}
+                onChange={setRole}
+                disabled={!canManage || (rolesQuery.data ?? []).length === 0}
+                options={(rolesQuery.data ?? []).map((item) => {
+                  const desc = localizedRoleDescription(t, item.name, item.description);
+                  return {
+                    value: item.name,
+                    label: desc ? `${item.name} — ${desc}` : item.name,
+                  };
+                })}
+              />
+            </Form.Item>
+            <Form.Item label={t("user.status")}>
+              <Space>
+                <Switch checked={enabled} disabled={!canManage} onChange={setEnabled} />
+                <Typography.Text type="secondary">
+                  {enabled ? t("user.statusActiveHint") : t("user.statusInactiveHint")}
+                </Typography.Text>
+              </Space>
+            </Form.Item>
 
             {canManage && (
-              <footer className="security-user-card-footer">
-                <div className="security-user-card-actions">
-                  <button
-                    type="submit"
-                    className="btn primary"
-                    disabled={!dirty || saveMutation.isPending}
-                  >
-                    {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => setShowPasswordDialog(true)}
-                  >
-                    {t("user.changePassword")}
-                  </button>
-                </div>
+              <Space wrap style={{ marginTop: 8 }}>
+                <Button type="primary" htmlType="submit" disabled={!dirty} loading={saveMutation.isPending}>
+                  {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
+                </Button>
+                <Button onClick={() => setShowPasswordDialog(true)}>{t("user.changePassword")}</Button>
                 {saveMutation.isSuccess && !dirty && (
-                  <span className="hint success">{t("user.changesSaved")}</span>
+                  <Typography.Text type="success">{t("user.changesSaved")}</Typography.Text>
                 )}
                 {saveMutation.error && (
-                  <span className="hint error">{String(saveMutation.error)}</span>
+                  <Typography.Text type="danger">{String(saveMutation.error)}</Typography.Text>
                 )}
-              </footer>
+              </Space>
             )}
-          </form>
+          </Form>
         </section>
 
         <section className="security-user-card">
-          <h3 className="security-user-card-title">{t("user.autoStart")}</h3>
-          <p className="security-user-card-desc">{t("user.autoStartDesc")}</p>
+          <Typography.Title level={5}>{t("user.autoStart")}</Typography.Title>
+          <Typography.Paragraph type="secondary">{t("user.autoStartDesc")}</Typography.Paragraph>
           <SecurityUserAutoStartFields
             user={user}
             apps={appsQuery.data ?? []}
@@ -265,52 +232,38 @@ export default function SecurityUserInspector({
         </section>
       </div>
 
-      {showPasswordDialog && (
-        <div className="modal-backdrop" role="presentation">
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <header>
-              <h3>{t("user.passwordDialogTitle")}</h3>
-              <button type="button" className="icon-btn" onClick={() => setShowPasswordDialog(false)}>
-                ✕
-              </button>
-            </header>
-            <p className="hint">{t("user.passwordDialogHint")} <code>{user.username}</code></p>
-            <form
-              className="form-grid"
-              onSubmit={(event) => {
-                event.preventDefault();
-                passwordMutation.mutate();
-              }}
-            >
-              <label className="full">
-                {t("user.newPassword")}
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={4}
-                  autoFocus
-                />
-              </label>
-              {passwordMutation.error && (
-                <p className="hint error full">{String(passwordMutation.error)}</p>
-              )}
-              <footer className="full form-actions">
-                <button type="button" className="btn" onClick={() => setShowPasswordDialog(false)}>
-                  {t("common:action.cancel")}
-                </button>
-                <button type="submit" className="btn primary" disabled={passwordMutation.isPending}>
-                  {t("common:action.save")}
-                </button>
-              </footer>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal
+        title={t("user.passwordDialogTitle")}
+        open={showPasswordDialog}
+        onCancel={() => setShowPasswordDialog(false)}
+        okText={t("common:action.save")}
+        cancelText={t("common:action.cancel")}
+        confirmLoading={passwordMutation.isPending}
+        destroyOnHidden
+        onOk={() => {
+          if (newPassword.length < 4) return;
+          passwordMutation.mutate();
+        }}
+      >
+        <Typography.Paragraph type="secondary">
+          {t("user.passwordDialogHint")} <Typography.Text code>{user.username}</Typography.Text>
+        </Typography.Paragraph>
+        <Form layout="vertical">
+          <Form.Item label={t("user.newPassword")} required>
+            <Input.Password
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoFocus
+            />
+          </Form.Item>
+          {passwordMutation.error && (
+            <Alert type="error" showIcon message={String(passwordMutation.error)} />
+          )}
+        </Form>
+      </Modal>
 
       {deleteMutation.error && (
-        <p className="hint error security-user-delete-error">{String(deleteMutation.error)}</p>
+        <Alert type="error" showIcon message={String(deleteMutation.error)} style={{ marginTop: 12 }} />
       )}
     </div>
   );

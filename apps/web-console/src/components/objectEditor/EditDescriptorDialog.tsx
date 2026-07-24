@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Modal, Select, Space, Switch, Typography } from "antd";
 import { upsertEvent, upsertFunction } from "../../api";
 import { fetchSecurityRoles } from "../../api/securityRoles";
 import type { BindingFormulaLink, DataSchema, EventDescriptor, FunctionDescriptor, VariableDto } from "../../types";
@@ -374,17 +375,35 @@ export default function EditDescriptorDialog({
       : t("descriptor.newEvent");
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal wide descriptor-editor-modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h3>{title}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>✕</button>
-        </header>
-
-        <section className="modal-section form-grid">
-          <label>
-            {t("common:table.name")}
-            <input
+    <Modal
+      title={title}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={960}
+      className="descriptor-editor-modal"
+      footer={[
+        <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
+        <Button
+          key="save"
+          type="primary"
+          disabled={!nameValid || mutation.isPending}
+          loading={mutation.isPending}
+          onClick={handleSave}
+        >
+          {t("common:action.save")}
+        </Button>,
+      ]}
+    >
+      <Space orientation="vertical" size="large" style={{ width: "100%" }}>
+        <Form layout="vertical" className="modal-section antd-control-grid">
+          <Form.Item
+            label={t("common:table.name")}
+            validateStatus={name && !nameValid ? "error" : undefined}
+            help={name && !nameValid ? t("common:error.invalidCodeIdentifier") : undefined}
+            required
+          >
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               readOnly={Boolean(initial)}
@@ -392,26 +411,25 @@ export default function EditDescriptorDialog({
               required
               aria-invalid={Boolean(name) && !nameValid}
             />
-            {name && !nameValid && (
-              <span className="hint error">{t("common:error.invalidCodeIdentifier")}</span>
-            )}
-          </label>
+          </Form.Item>
           {!isFunction && (
-            <label>
-              {t("common:field.level")}
-              <select value={level} onChange={(e) => setLevel(e.target.value)}>
-                <option value="DEBUG">{t("common:logLevel.debug")}</option>
-                <option value="INFO">{t("common:logLevel.info")}</option>
-                <option value="WARNING">{t("common:logLevel.warning")}</option>
-                <option value="ERROR">{t("common:logLevel.error")}</option>
-                <option value="CRITICAL">{t("common:logLevel.critical")}</option>
-              </select>
-            </label>
+            <Form.Item label={t("common:field.level")}>
+              <Select
+                value={level}
+                onChange={setLevel}
+                options={[
+                  { value: "DEBUG", label: t("common:logLevel.debug") },
+                  { value: "INFO", label: t("common:logLevel.info") },
+                  { value: "WARNING", label: t("common:logLevel.warning") },
+                  { value: "ERROR", label: t("common:logLevel.error") },
+                  { value: "CRITICAL", label: t("common:logLevel.critical") },
+                ]}
+              />
+            </Form.Item>
           )}
-          <label className="full">
-            {t("common:field.description")}
-            <input value={description} onChange={(e) => setDescription(e.target.value)} />
-          </label>
+          <Form.Item label={t("common:field.description")} className="full">
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+          </Form.Item>
           {!showAdvancedJson && (
             <>
               <RoleMultiSelect
@@ -421,15 +439,17 @@ export default function EditDescriptorDialog({
                 selected={invokeRoles}
                 onChange={setInvokeRoles}
               />
-              <p className="hint full">{t("descriptor.invokeRolesHint")}</p>
+              <Typography.Paragraph type="secondary" className="full">
+                {t("descriptor.invokeRolesHint")}
+              </Typography.Paragraph>
             </>
           )}
-        </section>
+        </Form>
 
         {isFunction && !showAdvancedJson && (
           <>
             <section className="modal-section">
-              <h4>{t("descriptor.inputSchema")}</h4>
+              <Typography.Title level={4}>{t("descriptor.inputSchema")}</Typography.Title>
               <DataSchemaEditor
                 value={inputSchema}
                 onChange={setInputSchema}
@@ -437,49 +457,47 @@ export default function EditDescriptorDialog({
               />
             </section>
             <section className="modal-section">
-              <h4>{t("descriptor.outputSchema")}</h4>
+              <Typography.Title level={4}>{t("descriptor.outputSchema")}</Typography.Title>
               <DataSchemaEditor
                 value={outputSchema}
                 onChange={setOutputSchema}
                 idPrefix="fn-output"
               />
             </section>
-            <section className="modal-section form-grid">
-              <h4 className="full">{t("descriptor.scriptSection")}</h4>
-              <label>
-                {t("descriptor.sourceType")}
-                <select
+            <Form layout="vertical" className="modal-section antd-control-grid">
+              <Typography.Title level={4} className="full">{t("descriptor.scriptSection")}</Typography.Title>
+              <Form.Item label={t("descriptor.sourceType")}>
+                <Select
                   value={sourceType}
-                  onChange={(e) => changeSourceType(e.target.value)}
-                >
-                  <option value="">{t("descriptor.sourceTypeHandler")}</option>
-                  <option value="script">{t("descriptor.sourceTypeScript")}</option>
-                  <option value="java">{t("descriptor.sourceTypeJava")}</option>
-                  <option value="expression">{t("descriptor.sourceTypeExpression")}</option>
-                  <option value="object-query">{t("descriptor.sourceTypeObjectQuery")}</option>
-                </select>
-              </label>
-              <label>
-                {t("descriptor.version")}
-                <input
+                  onChange={changeSourceType}
+                  options={[
+                    { value: "", label: t("descriptor.sourceTypeHandler") },
+                    { value: "script", label: t("descriptor.sourceTypeScript") },
+                    { value: "java", label: t("descriptor.sourceTypeJava") },
+                    { value: "expression", label: t("descriptor.sourceTypeExpression") },
+                    { value: "object-query", label: t("descriptor.sourceTypeObjectQuery") },
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label={t("descriptor.version")}>
+                <Input
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                   placeholder="1.0.0"
                 />
-              </label>
+              </Form.Item>
               {sourceType !== "expression" && (
-                <label className="full">
-                  {t("descriptor.dataSourcePath")}
-                  <input
+                <Form.Item label={t("descriptor.dataSourcePath")} className="full">
+                  <Input
                     value={dataSourcePath}
                     onChange={(e) => setDataSourcePath(e.target.value)}
                     placeholder={t("descriptor.dataSourcePathPlaceholder")}
                   />
-                </label>
+                </Form.Item>
               )}
               {sourceType === "expression" && (
                 <div className="full">
-                  <span className="field-label">{t("descriptor.expressionEditor")}</span>
+                  <Typography.Text strong>{t("descriptor.expressionEditor")}</Typography.Text>
                   <BindingExpressionField
                     value={expressionText}
                     formulaLink={expressionFormulaLink}
@@ -498,7 +516,7 @@ export default function EditDescriptorDialog({
               )}
               {sourceType === "object-query" && (
                 <div className="full">
-                  <span className="field-label">{t("descriptor.objectQueryEditor")}</span>
+                  <Typography.Text strong>{t("descriptor.objectQueryEditor")}</Typography.Text>
                   <ObjectQuerySpecField
                     value={sourceBody}
                     onChange={setSourceBody}
@@ -518,10 +536,10 @@ export default function EditDescriptorDialog({
               )}
               {sourceType === "java" && (
                 <div className="full">
-                  <span className="field-label">{t("descriptor.sourceBodyJava")}</span>
+                  <Typography.Text strong>{t("descriptor.sourceBodyJava")}</Typography.Text>
                   <Suspense
                     fallback={
-                      <textarea
+                      <Input.TextArea
                         className="json-editor"
                         rows={16}
                         value={sourceBody}
@@ -542,9 +560,8 @@ export default function EditDescriptorDialog({
                 sourceType !== "expression" &&
                 sourceType !== "object-query" &&
                 sourceBody.trim() && (
-                <label className="full">
-                  {t("descriptor.sourceBody")}
-                  <textarea
+                <Form.Item label={t("descriptor.sourceBody")} className="full">
+                  <Input.TextArea
                     className="json-editor"
                     rows={10}
                     value={sourceBody}
@@ -552,24 +569,24 @@ export default function EditDescriptorDialog({
                     placeholder='{"steps":[{"type":"return","value":{}}]}'
                     spellCheck={false}
                   />
-                </label>
+                </Form.Item>
               )}
-              <p className="hint full">
+              <Typography.Paragraph type="secondary" className="full">
                 {sourceType === "java"
                   ? t("descriptor.javaHint")
                   : sourceType === "expression"
                     ? t("descriptor.expressionHint")
                     : sourceType === "object-query"
                       ? t("descriptor.objectQueryHint")
-                      : t("descriptor.scriptHint")}
-              </p>
-            </section>
+                    : t("descriptor.scriptHint")}
+              </Typography.Paragraph>
+            </Form>
           </>
         )}
 
         {!isFunction && !showAdvancedJson && (
           <section className="modal-section">
-            <h4>{t("descriptor.payloadSchema")}</h4>
+            <Typography.Title level={4}>{t("descriptor.payloadSchema")}</Typography.Title>
             <DataSchemaEditor
               value={payloadSchema}
               onChange={setPayloadSchema}
@@ -579,16 +596,15 @@ export default function EditDescriptorDialog({
         )}
 
         <section className="modal-section">
-          <label className="checkbox-label inline">
-            <input
-              type="checkbox"
+          <Space>
+            <Switch
               checked={showAdvancedJson}
-              onChange={(e) => setAdvancedMode(e.target.checked)}
+              onChange={setAdvancedMode}
             />
-            {t("descriptor.advancedJson")}
-          </label>
+            <Typography.Text>{t("descriptor.advancedJson")}</Typography.Text>
+          </Space>
           {showAdvancedJson && (
-            <textarea
+            <Input.TextArea
               className="json-editor"
               rows={14}
               value={schemaJson}
@@ -598,21 +614,9 @@ export default function EditDescriptorDialog({
           )}
         </section>
 
-        {parseError && <p className="hint error">{parseError}</p>}
-        {mutation.error && <p className="hint error">{(mutation.error as Error).message}</p>}
-
-        <footer>
-          <button type="button" className="btn" onClick={onClose}>{t("common:action.cancel")}</button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!nameValid || mutation.isPending}
-            onClick={handleSave}
-          >
-            {t("common:action.save")}
-          </button>
-        </footer>
-      </div>
-    </div>
+        {parseError && <Alert type="error" showIcon message={parseError} />}
+        {mutation.error && <Alert type="error" showIcon message={(mutation.error as Error).message} />}
+      </Space>
+    </Modal>
   );
 }

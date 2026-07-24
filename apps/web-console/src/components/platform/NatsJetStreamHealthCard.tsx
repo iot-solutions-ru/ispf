@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchNatsHealth } from "../../api/natsHealth";
 
 function formatBytes(bytes: number): string {
@@ -20,144 +22,134 @@ export default function NatsJetStreamHealthCard() {
     if (!enabled) return t("natsHealth.statusDisabled");
     return connected ? t("natsHealth.statusConnected") : t("natsHealth.statusDisconnected");
   };
+  const rows = healthQuery.data
+    ? [
+        {
+          key: "enabled",
+          label: t("natsHealth.enabled"),
+          value: healthQuery.data.enabled ? t("common:action.yes") : t("common:action.no"),
+        },
+        {
+          key: "connection",
+          label: t("natsHealth.connection"),
+          value: (
+            <Tag color={!healthQuery.data.enabled ? "default" : healthQuery.data.connected ? "success" : "error"}>
+              {connectionStatus(healthQuery.data.connected, healthQuery.data.enabled)}
+            </Tag>
+          ),
+        },
+        ...(healthQuery.data.url
+          ? [{ key: "url", label: t("natsHealth.url"), value: healthQuery.data.url }]
+          : []),
+        {
+          key: "replicaId",
+          label: t("natsHealth.replicaId"),
+          value: <Typography.Text code>{healthQuery.data.replicaId}</Typography.Text>,
+        },
+        {
+          key: "replicaEvents",
+          label: t("natsHealth.replicaEvents"),
+          value: healthQuery.data.replicaEventsEnabled ? t("common:action.yes") : t("common:action.no"),
+        },
+        {
+          key: "jetStreamEnabled",
+          label: t("natsHealth.jetStreamEnabled"),
+          value: healthQuery.data.jetStreamEnabled ? t("common:action.yes") : t("common:action.no"),
+        },
+        ...(healthQuery.data.jetStreamEnabled
+          ? [
+              {
+                key: "jetStreamActive",
+                label: t("natsHealth.jetStreamActive"),
+                value: healthQuery.data.jetStreamActive ? t("common:action.yes") : t("common:action.no"),
+              },
+              ...(healthQuery.data.streamName
+                ? [{
+                    key: "streamName",
+                    label: t("natsHealth.streamName"),
+                    value: <Typography.Text code>{healthQuery.data.streamName}</Typography.Text>,
+                  }]
+                : []),
+              {
+                key: "streamReady",
+                label: t("natsHealth.streamReady"),
+                value: (
+                  <Tag color={healthQuery.data.streamReady ? "success" : "error"}>
+                    {healthQuery.data.streamReady ? t("common:action.yes") : t("common:action.no")}
+                  </Tag>
+                ),
+              },
+              ...(healthQuery.data.streamMessages != null
+                ? [{
+                    key: "streamMessages",
+                    label: t("natsHealth.streamMessages"),
+                    value: healthQuery.data.streamMessages.toLocaleString(),
+                  }]
+                : []),
+              ...(healthQuery.data.streamBytes != null
+                ? [{
+                    key: "streamBytes",
+                    label: t("natsHealth.streamBytes"),
+                    value: formatBytes(healthQuery.data.streamBytes),
+                  }]
+                : []),
+              ...(healthQuery.data.consumerDurable
+                ? [{
+                    key: "consumerDurable",
+                    label: t("natsHealth.consumerDurable"),
+                    value: <Typography.Text code>{healthQuery.data.consumerDurable}</Typography.Text>,
+                  }]
+                : []),
+              ...(healthQuery.data.consumerPending != null
+                ? [{
+                    key: "consumerPending",
+                    label: t("natsHealth.consumerPending"),
+                    value: healthQuery.data.consumerPending.toLocaleString(),
+                  }]
+                : []),
+            ]
+          : []),
+        {
+          key: "publishNats",
+          label: t("natsHealth.publishNats"),
+          value: (
+            <Tag color={healthQuery.data.publishNatsAvailable ? "success" : "default"}>
+              {healthQuery.data.publishNatsAvailable
+                ? t("natsHealth.publishNatsReady")
+                : t("natsHealth.publishNatsUnavailable")}
+            </Tag>
+          ),
+        },
+      ]
+    : [];
+  const columns: TableColumnsType<(typeof rows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    { title: "", dataIndex: "value", key: "value" },
+  ];
 
   return (
     <section className="system-metrics-card nats-health-card">
-      <h3>{t("natsHealth.title")}</h3>
-      {healthQuery.isLoading && <p className="hint">{t("natsHealth.loading")}</p>}
+      <Typography.Title level={3}>{t("natsHealth.title")}</Typography.Title>
+      {healthQuery.isLoading && <Typography.Text type="secondary">{t("natsHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <div className="op-alert op-alert-error">{t("natsHealth.loadError")}</div>
+        <Alert type="error" showIcon message={t("natsHealth.loadError")} />
       )}
       {healthQuery.data && (
-        <>
-          <table className="op-table system-metrics-table">
-            <tbody>
-              <tr>
-                <th>{t("natsHealth.enabled")}</th>
-                <td>
-                  {healthQuery.data.enabled ? t("common:action.yes") : t("common:action.no")}
-                </td>
-              </tr>
-              <tr>
-                <th>{t("natsHealth.connection")}</th>
-                <td>
-                  <span
-                    className={
-                      healthQuery.data.enabled && healthQuery.data.connected
-                        ? "system-health-ok"
-                        : healthQuery.data.enabled
-                          ? "system-health-bad"
-                          : undefined
-                    }
-                  >
-                    {connectionStatus(healthQuery.data.connected, healthQuery.data.enabled)}
-                  </span>
-                </td>
-              </tr>
-              {healthQuery.data.url && (
-                <tr>
-                  <th>{t("natsHealth.url")}</th>
-                  <td>{healthQuery.data.url}</td>
-                </tr>
-              )}
-              <tr>
-                <th>{t("natsHealth.replicaId")}</th>
-                <td className="mono">{healthQuery.data.replicaId}</td>
-              </tr>
-              <tr>
-                <th>{t("natsHealth.replicaEvents")}</th>
-                <td>
-                  {healthQuery.data.replicaEventsEnabled
-                    ? t("common:action.yes")
-                    : t("common:action.no")}
-                </td>
-              </tr>
-              <tr>
-                <th>{t("natsHealth.jetStreamEnabled")}</th>
-                <td>
-                  {healthQuery.data.jetStreamEnabled
-                    ? t("common:action.yes")
-                    : t("common:action.no")}
-                </td>
-              </tr>
-              {healthQuery.data.jetStreamEnabled && (
-                <>
-                  <tr>
-                    <th>{t("natsHealth.jetStreamActive")}</th>
-                    <td>
-                      {healthQuery.data.jetStreamActive
-                        ? t("common:action.yes")
-                        : t("common:action.no")}
-                    </td>
-                  </tr>
-                  {healthQuery.data.streamName && (
-                    <tr>
-                      <th>{t("natsHealth.streamName")}</th>
-                      <td className="mono">{healthQuery.data.streamName}</td>
-                    </tr>
-                  )}
-                  <tr>
-                    <th>{t("natsHealth.streamReady")}</th>
-                    <td>
-                      <span
-                        className={
-                          healthQuery.data.streamReady ? "system-health-ok" : "system-health-bad"
-                        }
-                      >
-                        {healthQuery.data.streamReady
-                          ? t("common:action.yes")
-                          : t("common:action.no")}
-                      </span>
-                    </td>
-                  </tr>
-                  {healthQuery.data.streamMessages != null && (
-                    <tr>
-                      <th>{t("natsHealth.streamMessages")}</th>
-                      <td>{healthQuery.data.streamMessages.toLocaleString()}</td>
-                    </tr>
-                  )}
-                  {healthQuery.data.streamBytes != null && (
-                    <tr>
-                      <th>{t("natsHealth.streamBytes")}</th>
-                      <td>{formatBytes(healthQuery.data.streamBytes)}</td>
-                    </tr>
-                  )}
-                  {healthQuery.data.consumerDurable && (
-                    <tr>
-                      <th>{t("natsHealth.consumerDurable")}</th>
-                      <td className="mono">{healthQuery.data.consumerDurable}</td>
-                    </tr>
-                  )}
-                  {healthQuery.data.consumerPending != null && (
-                    <tr>
-                      <th>{t("natsHealth.consumerPending")}</th>
-                      <td>{healthQuery.data.consumerPending.toLocaleString()}</td>
-                    </tr>
-                  )}
-                </>
-              )}
-              <tr>
-                <th>{t("natsHealth.publishNats")}</th>
-                <td>
-                  <span
-                    className={
-                      healthQuery.data.publishNatsAvailable ? "system-health-ok" : undefined
-                    }
-                  >
-                    {healthQuery.data.publishNatsAvailable
-                      ? t("natsHealth.publishNatsReady")
-                      : t("natsHealth.publishNatsUnavailable")}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <Space orientation="vertical" style={{ width: "100%" }}>
+          <Table
+            className="system-metrics-table"
+            size="small"
+            pagination={false}
+            showHeader={false}
+            columns={columns}
+            dataSource={rows}
+          />
           {healthQuery.data.connectionError && (
-            <p className="hint system-health-error">{healthQuery.data.connectionError}</p>
+            <Alert type="error" showIcon message={healthQuery.data.connectionError} />
           )}
-          <p className="hint">{t("natsHealth.hint")}</p>
-          <p className="hint">{t("natsHealth.publishNatsSmokeHint")}</p>
-        </>
+          <Typography.Paragraph type="secondary">{t("natsHealth.hint")}</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">{t("natsHealth.publishNatsSmokeHint")}</Typography.Paragraph>
+        </Space>
       )}
     </section>
   );

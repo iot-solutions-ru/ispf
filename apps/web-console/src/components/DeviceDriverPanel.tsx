@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Checkbox, Form, Input, Select, Space, Tag } from "antd";
 import { fetchVariables, setVariable } from "../api";
 import {
   configureDriver,
@@ -20,6 +21,8 @@ import {
   COMMON_HAYSTACK_MARKER_TAGS,
 } from "../utils/object/haystackMappingHints";
 import { pollDriver, browseDriverNodes } from "../api/drivers";
+
+const { TextArea } = Input;
 
 interface DeviceDriverPanelProps {
   devicePath: string;
@@ -92,6 +95,17 @@ function statusClass(status: string): string {
       return "driver-status-badge error";
     default:
       return "driver-status-badge stopped";
+  }
+}
+
+function statusColor(status: string): string {
+  switch (status) {
+    case "RUNNING":
+      return "success";
+    case "ERROR":
+      return "error";
+    default:
+      return "default";
   }
 }
 
@@ -320,7 +334,9 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
             {t("inspector:driver.subtitle")}
           </p>
         </div>
-        <span className={statusClass(runtimeStatus)}>{runtimeStatus}</span>
+        <Tag className={statusClass(runtimeStatus)} color={statusColor(runtimeStatus)}>
+          {runtimeStatus}
+        </Tag>
       </header>
 
       <div className="driver-runtime-grid">
@@ -343,55 +359,55 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
       </div>
 
       {lastError && (
-        <p className="hint error driver-last-error">
-          {t("inspector:driver.lastError", { message: lastError })}
-        </p>
+        <Alert
+          className="driver-last-error"
+          type="error"
+          showIcon
+          message={t("inspector:driver.lastError", { message: lastError })}
+        />
       )}
 
       {!hasBinding && (
-        <p className="hint warning driver-hint-box">
-          {t("inspector:driver.noDriverId")}
-        </p>
+        <Alert
+          className="driver-hint-box"
+          type="warning"
+          showIcon
+          message={t("inspector:driver.noDriverId")}
+        />
       )}
 
       {canManage ? (
         <>
-          <div className="driver-actions">
-            <button
-              type="button"
-              className="btn primary"
+          <Space wrap className="driver-actions">
+            <Button
+              type="primary"
               disabled={isBusy || !hasBinding}
               onClick={() => startMutation.mutate()}
             >
               {t("inspector:driver.start")}
-            </button>
-            <button
-              type="button"
-              className="btn"
+            </Button>
+            <Button
               disabled={isBusy}
               onClick={() => stopMutation.mutate()}
             >
               {t("inspector:driver.stop")}
-            </button>
-            <button
-              type="button"
-              className="btn"
+            </Button>
+            <Button
               disabled={isBusy || !hasBinding}
               onClick={() => restartMutation.mutate()}
             >
               {t("inspector:driver.restart")}
-            </button>
-          </div>
+            </Button>
+          </Space>
 
-          <label className="driver-autostart-toggle">
-            <input
-              type="checkbox"
-              checked={autoStartBoot}
-              disabled={!canManage || autoStartBootMutation.isPending}
-              onChange={(e) => autoStartBootMutation.mutate(e.target.checked)}
-            />
+          <Checkbox
+            className="driver-autostart-toggle"
+            checked={autoStartBoot}
+            disabled={!canManage || autoStartBootMutation.isPending}
+            onChange={(e) => autoStartBootMutation.mutate(e.target.checked)}
+          >
             {t("inspector:driver.autoStartOnBoot")}
-          </label>
+          </Checkbox>
           <p className="hint">{t("inspector:driver.autoStartOnBootHint")}</p>
 
           <form
@@ -402,31 +418,30 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
             }}
           >
             <h4>{t("inspector:driver.configuration")}</h4>
-            <div className="form-grid">
+            <Form component="div" layout="vertical" className="driver-config-fields">
               <label>
                 {t("inspector:driver.driverLabel")}
-                <select
+                <Select
                   value={driverId}
-                  onChange={(e) => {
-                    const nextId = e.target.value;
+                  onChange={(nextId) => {
                     setDriverId(nextId);
                     const driver = driversQuery.data?.find((item) => item.id === nextId);
                     setConfigJson(formatDriverConfigJson(driver));
                   }}
-                >
-                  {(driversQuery.data ?? []).map((driver) => (
-                    <option key={driver.id} value={driver.id}>
-                      {formatDriverOptionLabel(driver.id, driver.name, driver.maturity)}
-                    </option>
-                  ))}
-                  {driversQuery.data && !driversQuery.data.some((d) => d.id === driverId) && driverId && (
-                    <option value={driverId}>{driverId}</option>
-                  )}
-                </select>
+                  options={[
+                    ...(driversQuery.data ?? []).map((driver) => ({
+                      value: driver.id,
+                      label: formatDriverOptionLabel(driver.id, driver.name, driver.maturity),
+                    })),
+                    ...(driversQuery.data && !driversQuery.data.some((d) => d.id === driverId) && driverId
+                      ? [{ value: driverId, label: driverId }]
+                      : []),
+                  ]}
+                />
               </label>
               <label>
                 {t("inspector:driver.pollIntervalMs")}
-                <input
+                <Input
                   type="number"
                   min={500}
                   step={500}
@@ -439,7 +454,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
               )}
               <label className="full">
                 driverConfigJson
-                <textarea
+                <TextArea
                   className="mono"
                   rows={8}
                   value={configJson}
@@ -449,7 +464,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
               </label>
               <label className="full">
                 driverPointMappingsJson
-                <textarea
+                <TextArea
                   className="mono"
                   rows={6}
                   value={mappingsJson}
@@ -475,13 +490,13 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                     >
                       <span>{issue.message}</span>
                       {issue.level === "hint" && issue.key && issue.suggestedTags && (
-                        <button
-                          type="button"
-                          className="btn small driver-haystack-apply"
+                        <Button
+                          size="small"
+                          className="driver-haystack-apply"
                           onClick={() => applyHaystackTemplate(issue.key!, issue.suggestedTags!)}
                         >
                           {t("inspector:driver.haystackApplyTemplate")}
-                        </button>
+                        </Button>
                       )}
                     </li>
                   ))}
@@ -490,10 +505,9 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
               <div className="driver-haystack-tag-chips full">
                 <span className="driver-runtime-label">{t("inspector:driver.haystackCommonTags")}</span>
                 {COMMON_HAYSTACK_MARKER_TAGS.slice(0, 10).map((tag) => (
-                  <button
+                  <Button
                     key={tag}
-                    type="button"
-                    className="btn small"
+                    size="small"
                     title={t("inspector:driver.haystackTagChipHint")}
                     onClick={() => {
                       navigator.clipboard.writeText(`"${tag}"`).catch(() => {});
@@ -501,66 +515,58 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                     }}
                   >
                     {tag}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <div className="form-actions full">
                 {mappingKeys.length > 0 && (
                   <label>
                     {t("inspector:driver.mappingsTestReadPoint")}
-                    <select
+                    <Select
                       value={testReadPointId}
-                      onChange={(e) => {
-                        setTestReadPointId(e.target.value);
+                      onChange={(value) => {
+                        setTestReadPointId(value);
                         setMappingTestMessage(null);
                       }}
-                    >
-                      <option value="">{t("inspector:driver.mappingsTestReadAll")}</option>
-                      {mappingKeys.map((key) => (
-                        <option key={key} value={key}>
-                          {key}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: t("inspector:driver.mappingsTestReadAll") },
+                        ...mappingKeys.map((key) => ({ value: key, label: key })),
+                      ]}
+                    />
                   </label>
                 )}
-                <button
-                  type="button"
-                  className="btn"
+                <Button
                   disabled={isBusy || pollMutation.isPending || !hasBinding}
                   onClick={() => pollMutation.mutate()}
                 >
                   {t("inspector:driver.mappingsTestRead")}
-                </button>
+                </Button>
                 {driverId === "opcua" && (
-                  <button
-                    type="button"
-                    className="btn"
+                  <Button
                     disabled={isBusy || browseMutation.isPending || !hasBinding}
                     onClick={() => browseMutation.mutate()}
                   >
                     {t("inspector:driver.browseOpcUa")}
-                  </button>
+                  </Button>
                 )}
               </div>
               {mappingTestMessage && (
                 <p className="hint full">{mappingTestMessage}</p>
               )}
-            </div>
+            </Form>
             <div className="form-actions">
-              <button type="submit" className="btn" disabled={isBusy}>
+              <Button htmlType="submit" disabled={isBusy}>
                 {t("common:action.save")}
-              </button>
-              <button
-                type="button"
-                className="btn primary"
+              </Button>
+              <Button
+                type="primary"
                 disabled={isBusy}
                 onClick={() => saveMutation.mutate(true)}
               >
                 {t("inspector:driver.saveAndStart")}
-              </button>
+              </Button>
             </div>
-            {formError && <p className="hint error">{formError}</p>}
+            {formError && <Alert type="error" showIcon message={formError} />}
           </form>
         </>
       ) : (
@@ -568,7 +574,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
       )}
 
       {actionError && (
-        <p className="hint error">{(actionError as Error).message}</p>
+        <Alert type="error" showIcon message={(actionError as Error).message} />
       )}
 
       <DriverWriteForm

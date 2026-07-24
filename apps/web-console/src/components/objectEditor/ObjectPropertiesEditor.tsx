@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Input, Switch, Tag } from "antd";
 import {
   deleteEvent,
   deleteFunction,
@@ -165,37 +166,37 @@ function VariableEditorRow({
         <div>
           <code className="property-name">{variable.name}</code>
           <span className="property-badges">
-            {variable.readable && <span className="badge">R</span>}
-            {variable.writable && <span className="badge w">W</span>}
+            {variable.readable && <Tag>R</Tag>}
+            {variable.writable && <Tag color="processing">W</Tag>}
             {(variable.readRoles?.length ?? 0) > 0 && (
-              <span className="badge acl" title={variable.readRoles?.join(", ")}>
+              <Tag title={variable.readRoles?.join(", ")}>
                 ACL-R
-              </span>
+              </Tag>
             )}
             {(variable.writeRoles?.length ?? 0) > 0 && (
-              <span className="badge acl" title={variable.writeRoles?.join(", ")}>
+              <Tag title={variable.writeRoles?.join(", ")}>
                 ACL-W
-              </span>
+              </Tag>
             )}
             {safeHistory.historyEnabled && (
-              <span className="badge hist" title={formatHistoryRetention(safeHistory.historyRetentionDays)}>
+              <Tag color="success" title={formatHistoryRetention(safeHistory.historyRetentionDays)}>
                 H
-              </span>
+              </Tag>
             )}
           </span>
         </div>
         <div className="property-card-tools">
           {onOpenSettings && (
-            <button type="button" className="btn tiny" onClick={onOpenSettings}>
+            <Button size="small" onClick={onOpenSettings}>
               {t("variables.settings")}
-            </button>
+            </Button>
           )}
-          <button type="button" className="btn tiny" onClick={() => setShowHistory((v) => !v)}>
+          <Button size="small" onClick={() => setShowHistory((v) => !v)}>
             {t("objectEditor.historyBtn")}
-          </button>
-          <button type="button" className="btn tiny" onClick={() => setShowJson((v) => !v)}>
+          </Button>
+          <Button size="small" onClick={() => setShowJson((v) => !v)}>
             JSON
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -210,7 +211,7 @@ function VariableEditorRow({
       )}
 
       {showJson ? (
-        <textarea
+        <Input.TextArea
           className="json-editor compact"
           rows={6}
           disabled={disabled}
@@ -635,36 +636,31 @@ export default function ObjectPropertiesEditor({
           </div>
         )}
         <div className={`toolbar-actions${embedded ? " toolbar-actions-full" : ""}`}>
-          <button
-            type="button"
-            className="btn"
+          <Button
             aria-label={t("common:action.refresh")}
             onClick={() => void reloadFromEditor()}
           >
             {t("common:action.refresh")}
-          </button>
-          <button
-            type="button"
-            className="btn"
+          </Button>
+          <Button
             disabled={!isDirty}
             aria-label={t("common:action.revert")}
             onClick={revert}
           >
             {t("common:action.revert")}
-          </button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!isDirty || saveMutation.isPending || (staleRemote && !forceNextSave)}
+          </Button>
+          <Button
+            type="primary"
+            loading={saveMutation.isPending}
+            disabled={!isDirty || (staleRemote && !forceNextSave)}
             aria-label={t("common:action.save")}
             onClick={() => saveMutation.mutate()}
           >
             {t("common:action.save")}
-          </button>
+          </Button>
           {canDelete && (
-            <button
-              type="button"
-              className="btn danger"
+            <Button
+              danger
               aria-label={t("common:action.delete")}
               onClick={() => {
                 if (confirm(t("common:action.confirmDeleteNamed", { name: ctx.displayName }))) {
@@ -673,7 +669,7 @@ export default function ObjectPropertiesEditor({
               }}
             >
               {t("common:action.delete")}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -713,30 +709,35 @@ export default function ObjectPropertiesEditor({
         isEditing={isDirty}
       />
 
-      {saveMutation.isSuccess && <div className="banner success">{t("common:changes.saved")}</div>}
+      {saveMutation.isSuccess && <Alert type="success" message={t("common:changes.saved")} showIcon />}
       {staleRemote && (
-        <div className="banner warning">
-          {t("objectEditor.staleRemote", { revision: remoteRevision })}
-          <button type="button" className="btn small" onClick={() => void reloadFromEditor()}>
+        <Alert
+          type="warning"
+          showIcon
+          message={t("objectEditor.staleRemote", { revision: remoteRevision })}
+          action={
+            <>
+          <Button size="small" onClick={() => void reloadFromEditor()}>
             {t("common:action.reload")}
-          </button>
+          </Button>
           {canManage && (
-            <button
-              type="button"
-              className="btn small"
+            <Button
+              size="small"
               onClick={() => {
                 setForceNextSave(true);
                 saveMutation.mutate();
               }}
             >
               {t("common:action.overwrite")}
-            </button>
+            </Button>
           )}
-        </div>
+            </>
+          }
+        />
       )}
-      {conflictMessage && <div className="banner error">{conflictMessage}</div>}
+      {conflictMessage && <Alert type="error" message={conflictMessage} showIcon />}
       {saveMutation.error && !conflictMessage && (
-        <div className="banner error">{(saveMutation.error as Error).message}</div>
+        <Alert type="error" message={(saveMutation.error as Error).message} showIcon />
       )}
 
       <div className="tabs-scroll">
@@ -745,7 +746,8 @@ export default function ObjectPropertiesEditor({
             <button
               key={tabId}
               type="button"
-              className={tab === tabId ? "active" : ""}
+              className={tab === tabId ? "active" : undefined}
+              aria-current={tab === tabId ? "page" : undefined}
               onClick={() => setTab(tabId)}
             >
               {tabLabel(tabId)}
@@ -758,7 +760,7 @@ export default function ObjectPropertiesEditor({
         <section className="panel">
           <div className="form-section">
             <div className="form-section-title">{t("tab.general")}</div>
-            <div className="form-grid">
+            <div className="antd-control-grid">
               {isPlatformRoot && canManage && (
                 <div className="full">
                   <PackageImportPanel />
@@ -766,14 +768,14 @@ export default function ObjectPropertiesEditor({
               )}
               <label>
                 {t("common:field.displayName")}
-                <input
+                <Input
                   value={state.displayName}
                   onChange={(e) => setState((s) => s && { ...s, displayName: e.target.value })}
                 />
               </label>
               <label className="full">
                 {t("common:field.description")}
-                <textarea
+                <Input.TextArea
                   rows={3}
                   value={state.description}
                   onChange={(e) => setState((s) => s && { ...s, description: e.target.value })}
@@ -797,18 +799,18 @@ export default function ObjectPropertiesEditor({
               {t("common:section.info")}
               <span className="hint">{t("common:hint.adminOnly")}</span>
             </div>
-            <div className="form-grid">
+            <div className="antd-control-grid">
               <label>
                 {t("common:table.type")}
-                <input value={ctx.type} readOnly className="readonly" />
+                <Input value={ctx.type} readOnly className="readonly" />
               </label>
               <label>
                 {t("common:field.path")}
-                <input value={ctx.path} readOnly className="readonly" />
+                <Input value={ctx.path} readOnly className="readonly" />
               </label>
               <label>
                 {t("common:field.primaryBlueprint")}
-                <input
+                <Input
                   value={
                     ctx.appliedBlueprints?.find((m) => m.primary)?.name ?? ctx.templateId ?? "—"
                   }
@@ -831,7 +833,7 @@ export default function ObjectPropertiesEditor({
               )}
               <label>
                 Revision
-                <input value={String(revision)} readOnly className="readonly" />
+                <Input value={String(revision)} readOnly className="readonly" />
               </label>
             </div>
           </div>
@@ -916,13 +918,9 @@ export default function ObjectPropertiesEditor({
           )}
           {canManage && !ctx.federated && (
             <div className="panel-toolbar">
-              <button
-                type="button"
-                className="btn primary small"
-                onClick={() => setShowCreateVariable(true)}
-              >
+              <Button type="primary" size="small" onClick={() => setShowCreateVariable(true)}>
                 {t("variables.add")}
-              </button>
+              </Button>
             </div>
           )}
           {editorData.variables.length === 0 && (
@@ -962,9 +960,9 @@ export default function ObjectPropertiesEditor({
                 />
                 {variable.historyEnabled && (
                   <div className="property-card-tools property-history-chart-row">
-                    <button
-                      type="button"
-                      className={`btn tiny${historyVariable === variable.name ? " primary" : ""}`}
+                    <Button
+                      size="small"
+                      type={historyVariable === variable.name ? "primary" : "default"}
                       onClick={() =>
                         setHistoryVariable((current) =>
                           current === variable.name ? null : variable.name
@@ -972,7 +970,7 @@ export default function ObjectPropertiesEditor({
                       }
                     >
                       {t("variables.chart")}
-                    </button>
+                    </Button>
                   </div>
                 )}
                 {historyVariable === variable.name && variable.historyEnabled && (
@@ -993,13 +991,9 @@ export default function ObjectPropertiesEditor({
         <section className="panel">
           {canManage && !ctx.federated && (
             <div className="panel-toolbar">
-              <button
-                type="button"
-                className="btn primary small"
-                onClick={() => setDescriptorDialog({ kind: "event" })}
-              >
+              <Button type="primary" size="small" onClick={() => setDescriptorDialog({ kind: "event" })}>
                 {t("events.add")}
-              </button>
+              </Button>
             </div>
           )}
           {editorData.events.length === 0 ? (
@@ -1008,13 +1002,9 @@ export default function ObjectPropertiesEditor({
               <p className="empty-state-hint op-muted">{t("events.emptyHint")}</p>
               {canManage && !ctx.federated && (
                 <div className="empty-state-actions">
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={() => setDescriptorDialog({ kind: "event" })}
-                  >
+                  <Button type="primary" onClick={() => setDescriptorDialog({ kind: "event" })}>
                     {t("events.add")}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -1025,25 +1015,17 @@ export default function ObjectPropertiesEditor({
                   <code>{ev.name}</code>
                   <span className="model-var-desc">{ev.description || ev.level}</span>
                   <span className="list-actions">
-                    <button
-                      type="button"
-                      className="btn small primary"
-                      onClick={() => setFireEventTarget(ev)}
-                    >
+                    <Button type="primary" size="small" onClick={() => setFireEventTarget(ev)}>
                       {t("events.publish")}
-                    </button>
+                    </Button>
                     {canManage && !ctx.federated && (
                       <>
-                        <button
-                          type="button"
-                          className="btn small"
-                          onClick={() => setDescriptorDialog({ kind: "event", initial: ev })}
-                        >
+                        <Button size="small" onClick={() => setDescriptorDialog({ kind: "event", initial: ev })}>
                           {t("common:action.edit")}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn small danger"
+                        </Button>
+                        <Button
+                          size="small"
+                          danger
                           disabled={deleteEventMutation.isPending}
                           onClick={() => {
                             if (confirm(t("common:action.confirmDeleteEvent", { name: ev.name }))) {
@@ -1052,7 +1034,7 @@ export default function ObjectPropertiesEditor({
                           }}
                         >
                           {t("common:action.delete")}
-                        </button>
+                        </Button>
                       </>
                     )}
                   </span>
@@ -1062,11 +1044,9 @@ export default function ObjectPropertiesEditor({
           )}
           {canManage && !ctx.federated && (
             <label className="binding-audit-toggle panel-toolbar">
-              <input
-                type="checkbox"
+              <Switch
                 checked={editorData.object.eventJournalEnabled ?? false}
-                onChange={async (e) => {
-                  const enabled = e.target.checked;
+                onChange={async (enabled) => {
                   await updateObject(path, { eventJournalEnabled: enabled }, { revision });
                   const fresh = await fetchObjectEditor(path);
                   setRevision(fresh.object.revision ?? revision);
@@ -1074,7 +1054,7 @@ export default function ObjectPropertiesEditor({
                   await queryClient.invalidateQueries({ queryKey: ["event-journal-status", path] });
                 }}
               />
-              {t("events.auditEnabled")}
+              <span>{t("events.auditEnabled")}</span>
             </label>
           )}
           <Suspense fallback={<p className="hint">{t("common:action.loading")}</p>}>
@@ -1092,13 +1072,9 @@ export default function ObjectPropertiesEditor({
         <section className="panel">
           {canManage && !ctx.federated && (
             <div className="panel-toolbar">
-              <button
-                type="button"
-                className="btn primary small"
-                onClick={() => setDescriptorDialog({ kind: "function" })}
-              >
+              <Button type="primary" size="small" onClick={() => setDescriptorDialog({ kind: "function" })}>
                 {t("functions.add")}
-              </button>
+              </Button>
             </div>
           )}
           {editorData.functions.length === 0 ? (
@@ -1119,25 +1095,17 @@ export default function ObjectPropertiesEditor({
                     <span className="inline-badge muted">{t("descriptor.sourceTypeHandler")}</span>
                   )}
                   <span className="list-actions">
-                    <button
-                      type="button"
-                      className="btn small primary"
-                      onClick={() => setInvokeFunctionTarget(fn)}
-                    >
+                    <Button type="primary" size="small" onClick={() => setInvokeFunctionTarget(fn)}>
                       {t("functions.invoke")}
-                    </button>
+                    </Button>
                     {canManage && !ctx.federated && (
                       <>
-                        <button
-                          type="button"
-                          className="btn small"
-                          onClick={() => setDescriptorDialog({ kind: "function", initial: fn })}
-                        >
+                        <Button size="small" onClick={() => setDescriptorDialog({ kind: "function", initial: fn })}>
                           {t("common:action.edit")}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn small danger"
+                        </Button>
+                        <Button
+                          size="small"
+                          danger
                           onClick={() => {
                             if (confirm(t("common:action.confirmDeleteFunction", { name: fn.name }))) {
                               deleteFunction(path, fn.name).then(() => reloadFromEditor());
@@ -1145,7 +1113,7 @@ export default function ObjectPropertiesEditor({
                           }}
                         >
                           {t("common:action.delete")}
-                        </button>
+                        </Button>
                       </>
                     )}
                   </span>
@@ -1155,11 +1123,9 @@ export default function ObjectPropertiesEditor({
           )}
           {canManage && !ctx.federated && (
             <label className="binding-audit-toggle panel-toolbar">
-              <input
-                type="checkbox"
+              <Switch
                 checked={editorData.object.functionAuditEnabled ?? false}
-                onChange={async (e) => {
-                  const enabled = e.target.checked;
+                onChange={async (enabled) => {
                   await updateObject(path, { functionAuditEnabled: enabled }, { revision });
                   const fresh = await fetchObjectEditor(path);
                   setRevision(fresh.object.revision ?? revision);
@@ -1167,7 +1133,7 @@ export default function ObjectPropertiesEditor({
                   await queryClient.invalidateQueries({ queryKey: ["function-audit-status", path] });
                 }}
               />
-              {t("functions.auditEnabled")}
+              <span>{t("functions.auditEnabled")}</span>
             </label>
           )}
           <FunctionInvokeJournalPanel objectPath={path} compact scrollMaxHeight={360} />

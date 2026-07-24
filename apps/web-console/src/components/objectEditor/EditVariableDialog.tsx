@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Alert, Button, Input, Modal, Space, Switch, Tag, Typography } from "antd";
 import {
   setVariable,
   updateVariableDefinition,
@@ -180,54 +181,67 @@ export default function EditVariableDialog({
     record.schema.fields.some((f) => f.type === "RECORD_LIST") || record.rows.length > 1;
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal wide variable-editor-modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h3>{title}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>✕</button>
-        </header>
-
+    <Modal
+      title={title}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={900}
+      className="variable-editor-modal"
+      footer={[
+        <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
+        <Button
+          key="save"
+          type="primary"
+          onClick={handleSave}
+          disabled={
+            mutation.isPending ||
+            (!definitionDirty && !historyDirty && !valueDirty)
+          }
+          loading={mutation.isPending}
+        >
+          {t("common:action.save")}
+        </Button>,
+      ]}
+    >
+      <Space orientation="vertical" size="large" style={{ width: "100%" }}>
         <section className="modal-section variable-meta-badges">
-          <span className="property-badges">
-            {variable.readable && <span className="badge">R</span>}
-            {variable.writable && <span className="badge w">W</span>}
+          <Space size={[4, 4]} wrap>
+            {variable.readable && <Tag>R</Tag>}
+            {variable.writable && <Tag color="processing">W</Tag>}
             {(variable.readRoles?.length ?? 0) > 0 && (
-              <span className="badge acl" title={variable.readRoles?.join(", ")}>
+              <Tag title={variable.readRoles?.join(", ")}>
                 ACL-R
-              </span>
+              </Tag>
             )}
             {(variable.writeRoles?.length ?? 0) > 0 && (
-              <span className="badge acl" title={variable.writeRoles?.join(", ")}>
+              <Tag title={variable.writeRoles?.join(", ")}>
                 ACL-W
-              </span>
+              </Tag>
             )}
-            {variable.historyEnabled && <span className="badge hist">H</span>}
-          </span>
+            {variable.historyEnabled && <Tag color="success">H</Tag>}
+          </Space>
           {!variable.writable && (
-            <p className="hint">{t("variables.computedSettingsHint")}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              {t("variables.computedSettingsHint")}
+            </Typography.Paragraph>
           )}
         </section>
 
         {canEditDefinition && (
-          <section className="modal-section form-grid">
-            <h4 className="full">{t("variables.definitionSection")}</h4>
-            <label className="checkbox-label inline">
-              <input
-                type="checkbox"
-                checked={readable}
-                onChange={(e) => setReadable(e.target.checked)}
-              />
-              {t("variables.readable")}
-            </label>
-            <label className="checkbox-label inline">
-              <input
-                type="checkbox"
-                checked={writable}
-                onChange={(e) => setWritable(e.target.checked)}
-              />
-              {t("variables.writable")}
-            </label>
-            <p className="hint full">{t("variables.schemaReadOnlyHint")}</p>
+          <section className="modal-section antd-control-grid">
+            <Typography.Title level={4} className="full">{t("variables.definitionSection")}</Typography.Title>
+            <Space>
+              <Switch checked={readable} onChange={setReadable} />
+              <Typography.Text>{t("variables.readable")}</Typography.Text>
+            </Space>
+            <Space>
+              <Switch checked={writable} onChange={setWritable} />
+              <Typography.Text>{t("variables.writable")}</Typography.Text>
+            </Space>
+            <Typography.Paragraph type="secondary" className="full">
+              {t("variables.schemaReadOnlyHint")}
+            </Typography.Paragraph>
             <RoleMultiSelect
               id={`read-roles-${variable.name}`}
               label={t("variables.readRoles")}
@@ -242,13 +256,15 @@ export default function EditVariableDialog({
               selected={writeRoles}
               onChange={setWriteRoles}
             />
-            <p className="hint full">{t("variables.rolesHint")}</p>
+            <Typography.Paragraph type="secondary" className="full">
+              {t("variables.rolesHint")}
+            </Typography.Paragraph>
           </section>
         )}
 
         {canManageHistory && (
           <section className="modal-section">
-            <h4>{t("objectEditor.historyBtn")}</h4>
+            <Typography.Title level={4}>{t("objectEditor.historyBtn")}</Typography.Title>
             <VariableHistoryFields
               idPrefix={`edit-${variable.name}`}
               value={history}
@@ -259,18 +275,14 @@ export default function EditVariableDialog({
 
         {canEditValue && (
           <section className="modal-section">
-            <div className="section-inline-tools">
-              <h4>{t("variables.valuesSection")}</h4>
-              <button
-                type="button"
-                className="btn tiny"
-                onClick={toggleJsonMode}
-              >
+            <Space style={{ justifyContent: "space-between", width: "100%" }}>
+              <Typography.Title level={4} style={{ margin: 0 }}>{t("variables.valuesSection")}</Typography.Title>
+              <Button size="small" onClick={toggleJsonMode}>
                 JSON
-              </button>
-            </div>
+              </Button>
+            </Space>
             {showJson ? (
-              <textarea
+              <Input.TextArea
                 className="json-editor"
                 rows={14}
                 value={jsonText}
@@ -288,26 +300,12 @@ export default function EditVariableDialog({
         )}
 
         {!canEditValue && !canManageHistory && !canEditDefinition && (
-          <p className="hint">{t("variables.noActions")}</p>
+          <Typography.Paragraph type="secondary">{t("variables.noActions")}</Typography.Paragraph>
         )}
 
-        {parseError && <p className="hint error">{parseError}</p>}
-        {mutation.error && <p className="hint error">{(mutation.error as Error).message}</p>}
-        <footer>
-          <button type="button" className="btn" onClick={onClose}>{t("common:action.cancel")}</button>
-          <button
-            type="button"
-            className="btn primary"
-            onClick={handleSave}
-            disabled={
-              mutation.isPending ||
-              (!definitionDirty && !historyDirty && !valueDirty)
-            }
-          >
-            {t("common:action.save")}
-          </button>
-        </footer>
-      </div>
-    </div>
+        {parseError && <Alert type="error" showIcon message={parseError} />}
+        {mutation.error && <Alert type="error" showIcon message={(mutation.error as Error).message} />}
+      </Space>
+    </Modal>
   );
 }

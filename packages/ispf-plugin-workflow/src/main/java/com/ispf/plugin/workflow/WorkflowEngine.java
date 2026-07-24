@@ -8,6 +8,17 @@ import java.util.UUID;
 public class WorkflowEngine {
 
     private final BpmnParser parser = new BpmnParser();
+    private CallActivityExecutor callActivityExecutor = (call, parent) -> {
+        throw new WorkflowException("callActivity executor is not configured");
+    };
+
+    public void setCallActivityExecutor(CallActivityExecutor callActivityExecutor) {
+        this.callActivityExecutor = callActivityExecutor != null
+                ? callActivityExecutor
+                : (call, parent) -> {
+                    throw new WorkflowException("callActivity executor is not configured");
+                };
+    }
 
     public BpmnProcess parse(String bpmnXml) throws WorkflowException {
         return parser.parse(bpmnXml);
@@ -121,6 +132,52 @@ public class WorkflowEngine {
         instance.resumeUserTask(userTaskNodeId);
         advanceToken(instance, process, token, userTaskNodeId, executor, messageExecutor, evaluator);
 
+        while (instance.status() == InstanceStatus.RUNNING) {
+            step(instance, process, executor, messageExecutor, evaluator);
+        }
+    }
+
+    /**
+     * Resume parent tokens waiting on a child callActivity instance.
+     * When {@code childFailedMessage} is non-null, the parent fails instead of advancing.
+     */
+    public void resumeAfterCallActivityChild(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            String childInstanceId,
+            Map<String, String> childVariables,
+            String childFailedMessage,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        if (childFailedMessage != null) {
+            instance.fail("callActivity child failed: " + childFailedMessage);
+            return;
+        }
+        List<ExecutionToken> waiting = instance.waitingTokens().stream()
+                .filter(token -> childInstanceId.equals(token.pendingCallChildInstanceId()))
+                .toList();
+        if (waiting.isEmpty()) {
+            throw new WorkflowException("No token waiting for callActivity child: " + childInstanceId);
+        }
+        if (!instance.resumeCallActivityChild(childInstanceId)) {
+            throw new WorkflowException("Failed to resume callActivity child: " + childInstanceId);
+        }
+        for (ExecutionToken token : waiting) {
+            String callNodeId = token.currentNodeId();
+            if (childVariables != null) {
+                childVariables.forEach((key, value) -> {
+                    if (key != null && !key.startsWith("__")) {
+                        instance.setVariable(
+                                "call." + callNodeId + "." + key,
+                                value == null ? "" : value
+                        );
+                    }
+                });
+            }
+            advanceToken(instance, process, token, callNodeId, executor, messageExecutor, evaluator);
+        }
         while (instance.status() == InstanceStatus.RUNNING) {
             step(instance, process, executor, messageExecutor, evaluator);
         }
@@ -347,6 +404,57 @@ public class WorkflowEngine {
                             instance
                     );
                 } catch (WorkflowException e) {
+                    instance.fail(e.getMessage());
+                    return;
+                }
+                advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+            }
+            case "callActivity" -> {
+                CallActivityDefinition call = process.callActivities().get(nodeId);
+                if (call == null) {
+                    instance.fail("callActivity definition missing: " + nodeId);
+                    return;
+                }
+                WorkflowStepRecord started = WorkflowStepRecord.started(
+                        token.tokenId(),
+                        instance.nextStepSeq(),
+                        nodeId,
+                        nodeType,
+                        Map.of(
+                                "workflowPath", call.workflowPath() == null ? "" : call.workflowPath(),
+                                "name", call.name() == null ? "" : call.name()
+                        ),
+                        1
+                );
+                try {
+                    CallActivityExecutor.Result result = callActivityExecutor.execute(call, instance);
+                    if (result.status() == InstanceStatus.FAILED) {
+                        String err = result.errorMessage() == null ? "child workflow failed" : result.errorMessage();
+                        instance.addPendingStep(started.failed(err));
+                        instance.fail("callActivity failed: " + err);
+                        return;
+                    }
+                    if (result.status() == InstanceStatus.WAITING) {
+                        instance.addPendingStep(started.completed(Map.of(
+                                "status", "WAITING",
+                                "childInstanceId", result.childInstanceId() == null ? "" : result.childInstanceId()
+                        )));
+                        instance.waitTokenAtCallActivity(token, nodeId, result.childInstanceId());
+                        return;
+                    }
+                    if (result.variables() != null) {
+                        result.variables().forEach((key, value) -> {
+                            if (key != null && !key.startsWith("__")) {
+                                instance.setVariable("call." + call.id() + "." + key, value == null ? "" : value);
+                            }
+                        });
+                    }
+                    instance.addPendingStep(started.completed(Map.of(
+                            "status", "COMPLETED",
+                            "childInstanceId", result.childInstanceId() == null ? "" : result.childInstanceId()
+                    )));
+                } catch (WorkflowException e) {
+                    instance.addPendingStep(started.failed(e.getMessage()));
                     instance.fail(e.getMessage());
                     return;
                 }

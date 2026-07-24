@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button } from "antd";
 import {
   applyBlueprint,
   createBlueprint,
@@ -354,16 +355,14 @@ function ModelDetail({
             />
           </label>
           {!isBuiltin && (
-            <button type="submit" className="btn primary" disabled={saveMutation.isPending}>
+            <Button htmlType="submit" type="primary" disabled={saveMutation.isPending}>
               {t("inspector:blueprint.saveMetadata")}
-            </button>
+            </Button>
           )}
           {!isBuiltin && definitionDirty && (
             <p className="hint">{t("inspector:blueprint.definitionChanged")}</p>
           )}
-          {saveMutation.error && (
-            <p className="hint error">{String(saveMutation.error)}</p>
-          )}
+          {saveMutation.error && <Alert type="error" showIcon message={String(saveMutation.error)} />}
         </form>
       )}
 
@@ -371,9 +370,9 @@ function ModelDetail({
         <div className="model-section-header">
           <h4>{t("inspector:blueprint.variablesTitle", { count: variables.length })}</h4>
           {canManage && !isBuiltin && (
-            <button type="button" className="btn small" onClick={addVariable}>
+            <Button size="small" onClick={addVariable}>
               {t("inspector:variables.add")}
-            </button>
+            </Button>
           )}
         </div>
         {variables.length === 0 ? (
@@ -464,13 +463,9 @@ function ModelDetail({
                   </td>
                   {canManage && !isBuiltin && (
                     <td>
-                      <button
-                        type="button"
-                        className="btn small danger"
-                        onClick={() => removeVariable(v.name)}
-                      >
+                      <Button size="small" danger onClick={() => removeVariable(v.name)}>
                         ✕
-                      </button>
+                      </Button>
                     </td>
                   )}
                 </tr>
@@ -480,14 +475,12 @@ function ModelDetail({
         )}
         {canManage && !isBuiltin && variables.length > 0 && (
           <div className="model-var-history-actions">
-            <button
-              type="button"
-              className="btn"
+            <Button
               disabled={!definitionDirty || saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
             >
               {t("inspector:blueprint.saveDefinition")}
-            </button>
+            </Button>
           </div>
         )}
       </section>
@@ -496,9 +489,9 @@ function ModelDetail({
         <div className="model-section-header">
           <h4>{t("inspector:blueprint.bindingsTitle", { count: bindings.length })}</h4>
           {canManage && !isBuiltin && (
-            <button type="button" className="btn small" onClick={addBinding}>
+            <Button size="small" onClick={addBinding}>
               + Binding
-            </button>
+            </Button>
           )}
         </div>
         {bindings.length === 0 ? (
@@ -551,13 +544,9 @@ function ModelDetail({
                   </td>
                   {canManage && !isBuiltin && (
                     <td>
-                      <button
-                        type="button"
-                        className="btn small danger"
-                        onClick={() => removeBinding(index)}
-                      >
+                      <Button size="small" danger onClick={() => removeBinding(index)}>
                         ✕
-                      </button>
+                      </Button>
                     </td>
                   )}
                 </tr>
@@ -572,9 +561,9 @@ function ModelDetail({
           <div className="model-section-header">
             <h4>{t("inspector:blueprint.eventsTitle", { count: events.length })}</h4>
             {canManage && !isBuiltin && (
-              <button type="button" className="btn small" onClick={addEvent}>
+              <Button size="small" onClick={addEvent}>
                 {t("inspector:events.add")}
-              </button>
+              </Button>
             )}
           </div>
           {events.length === 0 ? (
@@ -596,13 +585,9 @@ function ModelDetail({
                         placeholder={t("inspector:blueprint.descriptionPlaceholder")}
                         onChange={(ev) => patchEvent(index, { description: ev.target.value })}
                       />
-                      <button
-                        type="button"
-                        className="btn small danger"
-                        onClick={() => removeEvent(index)}
-                      >
+                      <Button size="small" danger onClick={() => removeEvent(index)}>
                         ✕
-                      </button>
+                      </Button>
                     </>
                   ) : (
                     <>
@@ -619,9 +604,9 @@ function ModelDetail({
           <div className="model-section-header">
             <h4>{t("inspector:blueprint.functionsTitle", { count: functions.length })}</h4>
             {canManage && !isBuiltin && (
-              <button type="button" className="btn small" onClick={addFunction}>
+              <Button size="small" onClick={addFunction}>
                 {t("inspector:functions.add")}
-              </button>
+              </Button>
             )}
           </div>
           {functions.length === 0 ? (
@@ -643,13 +628,9 @@ function ModelDetail({
                         placeholder={t("inspector:blueprint.descriptionPlaceholder")}
                         onChange={(ev) => patchFunction(index, { description: ev.target.value })}
                       />
-                      <button
-                        type="button"
-                        className="btn small danger"
-                        onClick={() => removeFunction(index)}
-                      >
+                      <Button size="small" danger onClick={() => removeFunction(index)}>
                         ✕
-                      </button>
+                      </Button>
                     </>
                   ) : (
                     <>
@@ -677,17 +658,16 @@ function ModelDetail({
                 onChange={(e) => setApplyPath(e.target.value)}
                 placeholder={t("inspector:blueprint.applyPathPlaceholder")}
               />
-              <button
-                type="button"
-                className="btn primary"
+              <Button
+                type="primary"
                 disabled={!applyPath.trim() || applyMutation.isPending}
                 onClick={() => applyMutation.mutate()}
               >
                 {t("inspector:blueprint.apply")}
-              </button>
+              </Button>
             </div>
             {applyMutation.error && (
-              <p className="hint error">{String(applyMutation.error)}</p>
+              <Alert type="error" showIcon message={String(applyMutation.error)} />
             )}
           </div>
 
@@ -756,27 +736,22 @@ function ModelDetail({
               </div>
             )}
             <div className="model-action-row">
-              <button
-                type="button"
-                className="btn"
+              <Button
                 disabled={!applyPath.trim() || upgradeOneMutation.isPending}
                 onClick={() => upgradeOneMutation.mutate()}
               >
                 Upgrade path
-              </button>
-              <button
-                type="button"
-                className="btn primary"
+              </Button>
+              <Button
+                type="primary"
                 disabled={upgradeAllMutation.isPending || (instancesQuery.data?.length ?? 0) === 0}
                 onClick={() => upgradeAllMutation.mutate()}
               >
                 Upgrade all ({instancesQuery.data?.length ?? 0})
-              </button>
+              </Button>
             </div>
             {(upgradeOneMutation.error || upgradeAllMutation.error) && (
-              <p className="hint error">
-                {String(upgradeOneMutation.error ?? upgradeAllMutation.error)}
-              </p>
+              <Alert type="error" showIcon message={String(upgradeOneMutation.error ?? upgradeAllMutation.error)} />
             )}
             {upgradeAllMutation.data && (
               <p className="hint">
@@ -801,17 +776,16 @@ function ModelDetail({
                   onChange={(e) => setInstanceName(e.target.value)}
                   placeholder={t("inspector:blueprint.instanceNamePlaceholder")}
                 />
-                <button
-                  type="button"
-                  className="btn primary"
+                <Button
+                  type="primary"
                   disabled={!parentPath.trim() || !instanceName.trim() || instantiateMutation.isPending}
                   onClick={() => instantiateMutation.mutate()}
                 >
                   {t("inspector:blueprint.createInstance")}
-                </button>
+                </Button>
               </div>
               {instantiateMutation.error && (
-                <p className="hint error">{String(instantiateMutation.error)}</p>
+                <Alert type="error" showIcon message={String(instantiateMutation.error)} />
               )}
             </div>
           )}
@@ -825,25 +799,23 @@ function ModelDetail({
                     `root.platform.singleton-blueprints.${model.name}`}
                 </code>
               </p>
-              <button
-                type="button"
-                className="btn primary"
+              <Button
+                type="primary"
                 disabled={absoluteSingletonMutation.isPending}
                 onClick={() => absoluteSingletonMutation.mutate()}
               >
                 {t("inspector:blueprint.openSingleton")}
-              </button>
+              </Button>
               {absoluteSingletonMutation.error && (
-                <p className="hint error">{String(absoluteSingletonMutation.error)}</p>
+                <Alert type="error" showIcon message={String(absoluteSingletonMutation.error)} />
               )}
             </div>
           )}
 
           {!isBuiltin && (
             <div className="model-action-block">
-              <button
-                type="button"
-                className="btn danger"
+              <Button
+                danger
                 disabled={deleteMutation.isPending}
                 onClick={() => {
                   if (confirm(t("inspector:blueprint.confirmDelete", { name: model.name }))) {
@@ -852,7 +824,7 @@ function ModelDetail({
                 }}
               >
                 {t("inspector:blueprint.delete")}
-              </button>
+              </Button>
             </div>
           )}
         </section>
@@ -935,7 +907,7 @@ function ModelsCatalog({
         {t("inspector:blueprint.listHint")}
       </p>
       {modelsQuery.error && (
-        <p className="hint error">{String(modelsQuery.error)}</p>
+        <Alert type="error" showIcon message={String(modelsQuery.error)} />
       )}
       <table className="data-table">
         <thead>
@@ -951,13 +923,9 @@ function ModelsCatalog({
           {sorted.map((m) => (
             <tr key={m.id}>
               <td>
-                <button
-                  type="button"
-                  className="link-btn"
-                  onClick={() => onSelectPath?.(m.objectPath)}
-                >
+                <Button type="link" onClick={() => onSelectPath?.(m.objectPath)}>
                   <code>{m.name}</code>
-                </button>
+                </Button>
               </td>
               <td>{m.type}</td>
               <td>{m.targetObjectType}</td>
@@ -1013,15 +981,15 @@ function ModelsCatalog({
                   </option>
                 ))}
               </select>
-              <button type="submit" className="btn primary" disabled={createMutation.isPending}>
+              <Button htmlType="submit" type="primary" disabled={createMutation.isPending}>
                 {t("common:action.create")}
-              </button>
+              </Button>
             </div>
             {invalidEmptyModelName && (
-              <p className="hint error">{t("common:error.invalidNamedIdentifier")}</p>
+              <Alert type="error" showIcon message={t("common:error.invalidNamedIdentifier")} />
             )}
             {createMutation.error && (
-              <p className="hint error">{String(createMutation.error)}</p>
+              <Alert type="error" showIcon message={String(createMutation.error)} />
             )}
           </form>
 
@@ -1077,15 +1045,15 @@ function ModelsCatalog({
                 <option value="MIXIN">{t("inspector:blueprint.type.MIXIN")}</option>
                 <option value="INSTANCE">{t("inspector:blueprint.type.INSTANCE")}</option>
               </select>
-              <button type="submit" className="btn" disabled={fromObjectMutation.isPending}>
+              <Button htmlType="submit" disabled={fromObjectMutation.isPending}>
                 {t("inspector:blueprint.export")}
-              </button>
+              </Button>
             </div>
             {invalidExportModelName && (
-              <p className="hint error">{t("common:error.invalidNamedIdentifier")}</p>
+              <Alert type="error" showIcon message={t("common:error.invalidNamedIdentifier")} />
             )}
             {fromObjectMutation.error && (
-              <p className="hint error">{String(fromObjectMutation.error)}</p>
+              <Alert type="error" showIcon message={String(fromObjectMutation.error)} />
             )}
           </form>
         </>
@@ -1129,9 +1097,9 @@ export default function BlueprintEditorPanel({
           <code className="path-code">{selectedPath}</code>
         </div>
         {onClose && (
-          <button type="button" className="btn" onClick={onClose}>
+          <Button onClick={onClose}>
             {t("common:action.close")}
-          </button>
+          </Button>
         )}
       </header>
 
@@ -1152,11 +1120,12 @@ export default function BlueprintEditorPanel({
             )}
             {modelQuery.isLoading && <p className="hint">{t("inspector:blueprint.loading")}</p>}
             {modelQuery.error && (
-              <p className="hint error">
-                {t("inspector:blueprint.notFound")}
-                <br />
-                {String(modelQuery.error)}
-              </p>
+              <Alert
+                type="error"
+                showIcon
+                message={t("inspector:blueprint.notFound")}
+                description={String(modelQuery.error)}
+              />
             )}
             {modelQuery.data && (
               <ModelDetail

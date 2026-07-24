@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Modal, Segmented, Space, Switch, Typography } from "antd";
 import { createVariable, type CreateVariablePayload } from "../../api";
 import type { DataRecord, DataSchema } from "../../types";
 import DataSchemaEditor from "../schema/DataSchemaEditor";
@@ -92,17 +93,35 @@ export default function CreateVariableDialog({
   });
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal wide variable-editor-modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h3>{t("variables.newTitle")}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>✕</button>
-        </header>
-
-        <section className="modal-section form-grid">
-          <label className="full">
-            {t("common:table.name")}
-            <input
+    <Modal
+      title={t("variables.newTitle")}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={900}
+      className="variable-editor-modal"
+      footer={[
+        <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
+        <Button
+          key="create"
+          type="primary"
+          disabled={!nameValid || schema.fields.length === 0 || mutation.isPending}
+          loading={mutation.isPending}
+          onClick={() => { if (nameValid) mutation.mutate(); }}
+        >
+          {t("common:action.create")}
+        </Button>,
+      ]}
+    >
+      <Space orientation="vertical" size="large" style={{ width: "100%" }}>
+        <Form layout="vertical">
+          <Form.Item
+            label={t("common:table.name")}
+            validateStatus={name && !nameValid ? "error" : undefined}
+            help={name && !nameValid ? t("common:error.invalidCodeIdentifier") : undefined}
+            required
+          >
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               pattern="[A-Za-z_][A-Za-z0-9_]*"
@@ -110,44 +129,35 @@ export default function CreateVariableDialog({
               required
               aria-invalid={Boolean(name) && !nameValid}
             />
-            {name && !nameValid && (
-              <span className="hint error">{t("common:error.invalidCodeIdentifier")}</span>
-            )}
-          </label>
-          <label className="checkbox-label inline">
-            <input
-              type="checkbox"
-              checked={readable}
-              onChange={(e) => setReadable(e.target.checked)}
-            />
-            {t("variables.readable")}
-          </label>
-          <label className="checkbox-label inline">
-            <input
-              type="checkbox"
-              checked={writable}
-              onChange={(e) => setWritable(e.target.checked)}
-            />
-            {t("variables.writable")}
-          </label>
-          <p className="hint full">{t("variables.computedHint")}</p>
-        </section>
+          </Form.Item>
+          <Space size="large" wrap>
+            <Space>
+              <Switch checked={readable} onChange={setReadable} />
+              <Typography.Text>{t("variables.readable")}</Typography.Text>
+            </Space>
+            <Space>
+              <Switch checked={writable} onChange={setWritable} />
+              <Typography.Text>{t("variables.writable")}</Typography.Text>
+            </Space>
+          </Space>
+          <Typography.Paragraph type="secondary" style={{ marginTop: 12, marginBottom: 0 }}>
+            {t("variables.computedHint")}
+          </Typography.Paragraph>
+        </Form>
 
         <section className="modal-section">
-          <h4>{t("variables.schemaSection")}</h4>
-          <div className="btn-row variable-schema-presets" role="group" aria-label={t("variables.schemaPresetLabel")}>
-            {PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                className={`btn small${schemaPreset === preset ? " primary" : ""}`}
-                onClick={() => applyPreset(preset)}
-              >
-                {t(`variables.schemaPreset.${preset}`)}
-              </button>
-            ))}
-          </div>
-          <p className="hint">{t("variables.schemaPresetHint")}</p>
+          <Typography.Title level={4}>{t("variables.schemaSection")}</Typography.Title>
+          <Segmented<SchemaPreset>
+            value={schemaPreset}
+            onChange={applyPreset}
+            options={PRESETS.map((preset) => ({
+              value: preset,
+              label: t(`variables.schemaPreset.${preset}`),
+            }))}
+          />
+          <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>
+            {t("variables.schemaPresetHint")}
+          </Typography.Paragraph>
           <DataSchemaEditor
             value={{ ...schema, name: schemaName }}
             onChange={handleSchemaChange}
@@ -165,14 +175,10 @@ export default function CreateVariableDialog({
 
         {writable && schema.fields.length > 0 && (
           <section className="modal-section">
-            <label className="checkbox-label inline">
-              <input
-                type="checkbox"
-                checked={setInitialValue}
-                onChange={(e) => setSetInitialValue(e.target.checked)}
-              />
-              {t("variables.setInitialValue")}
-            </label>
+            <Space>
+              <Switch checked={setInitialValue} onChange={setSetInitialValue} />
+              <Typography.Text>{t("variables.setInitialValue")}</Typography.Text>
+            </Space>
             {setInitialValue && (
               <DataRecordValueEditor record={record} onChange={setRecord} />
             )}
@@ -180,21 +186,9 @@ export default function CreateVariableDialog({
         )}
 
         {mutation.error && (
-          <p className="hint error">{(mutation.error as Error).message}</p>
+          <Alert type="error" showIcon message={(mutation.error as Error).message} />
         )}
-
-        <footer>
-          <button type="button" className="btn" onClick={onClose}>{t("common:action.cancel")}</button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!nameValid || schema.fields.length === 0 || mutation.isPending}
-            onClick={() => { if (nameValid) mutation.mutate(); }}
-          >
-            {t("common:action.create")}
-          </button>
-        </footer>
-      </div>
-    </div>
+      </Space>
+    </Modal>
   );
 }

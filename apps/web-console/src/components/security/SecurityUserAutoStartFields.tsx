@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Alert, Select, Space, Switch, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { updateSecurityUser, type SecurityUserSummary } from "../../api/securityUsers";
 import type { OperatorAppEntry } from "../../api/operatorApps";
@@ -41,60 +42,53 @@ export default function SecurityUserAutoStartFields({
   const controlsDisabled = disabled || !serverReady || mutation.isPending;
 
   return (
-    <div className="security-user-autostart">
-      <div className="security-user-switch-field">
+    <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+      <Space align="start" style={{ justifyContent: "space-between", width: "100%" }}>
         <div>
-          <span className="field-label">{t("autostart.onLogin")}</span>
-          <p className="security-user-switch-hint">
+          <Typography.Text strong>{t("autostart.onLogin")}</Typography.Text>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
             {enabled ? t("autostart.enabledHint") : t("autostart.disabledHint")}
-          </p>
+          </Typography.Paragraph>
         </div>
-        <label className="switch">
-          <input
-            type="checkbox"
-            checked={enabled}
-            disabled={controlsDisabled}
-            onChange={() => {
-              const nextEnabled = !enabled;
-              mutation.mutate({
-                autoStartEnabled: nextEnabled,
-                autoStartApp: nextEnabled ? selectedApp : user.autoStartApp ?? null,
-              });
-            }}
-          />
-          <span className="switch-slider" aria-hidden />
-        </label>
-      </div>
+        <Switch
+          checked={enabled}
+          disabled={controlsDisabled}
+          onChange={(nextEnabled) => {
+            mutation.mutate({
+              autoStartEnabled: nextEnabled,
+              autoStartApp: nextEnabled ? selectedApp : user.autoStartApp ?? null,
+            });
+          }}
+        />
+      </Space>
 
-      <label className="security-user-autostart-select">
-        <span className="field-label">{t("autostart.app")}</span>
-        <select
+      <div>
+        <Typography.Text strong style={{ display: "block", marginBottom: 6 }}>
+          {t("autostart.app")}
+        </Typography.Text>
+        <Select
+          style={{ width: "100%" }}
           value={user.autoStartApp ?? ""}
           disabled={controlsDisabled || !enabled}
-          onChange={(event) => {
-            const appId = event.target.value;
+          onChange={(appId) => {
             if (!appId) {
               mutation.mutate({ autoStartEnabled: false, autoStartApp: null });
               return;
             }
             mutation.mutate({ autoStartEnabled: true, autoStartApp: appId });
           }}
-        >
-          <option value="">{t("autostart.notSelected")}</option>
-          {apps.map((app) => (
-            <option key={app.appId} value={app.appId}>
-              {app.title} ({app.appId})
-            </option>
-          ))}
-        </select>
-      </label>
+          options={[
+            { value: "", label: t("autostart.notSelected") },
+            ...apps.map((app) => ({
+              value: app.appId,
+              label: `${app.title} (${app.appId})`,
+            })),
+          ]}
+        />
+      </div>
 
-      {!serverReady && (
-        <p className="hint">{t("autostart.serverNotReady")}</p>
-      )}
-      {mutation.error && (
-        <p className="hint error">{String(mutation.error)}</p>
-      )}
-    </div>
+      {!serverReady && <Alert type="info" showIcon message={t("autostart.serverNotReady")} />}
+      {mutation.error && <Alert type="error" showIcon message={String(mutation.error)} />}
+    </Space>
   );
 }

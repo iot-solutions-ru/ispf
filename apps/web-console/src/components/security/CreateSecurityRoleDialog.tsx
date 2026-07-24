@@ -1,30 +1,42 @@
-import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { Alert, Form, Input, Modal } from "antd";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { createSecurityRole } from "../../api/securityRoles";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
 
 interface CreateSecurityRoleDialogProps {
+  open: boolean;
   onClose: () => void;
   onCreated: (objectPath: string) => void;
 }
 
+interface CreateRoleFormValues {
+  name: string;
+  displayName?: string;
+  description?: string;
+}
+
 export default function CreateSecurityRoleDialog({
+  open,
   onClose,
   onCreated,
 }: CreateSecurityRoleDialogProps) {
   const { t } = useTranslation(["security", "common"]);
-  const [name, setName] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [description, setDescription] = useState("");
-  const nameValid = isTechnicalIdentifier(name, "securityName");
+  const [form] = Form.useForm<CreateRoleFormValues>();
+
+  useEffect(() => {
+    if (!open) {
+      form.resetFields();
+    }
+  }, [open, form]);
 
   const mutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (values: CreateRoleFormValues) =>
       createSecurityRole({
-        name: name.trim(),
-        displayName: displayName.trim() || name.trim(),
-        description: description.trim(),
+        name: values.name.trim(),
+        displayName: values.displayName?.trim() || values.name.trim(),
+        description: values.description?.trim() ?? "",
       }),
     onSuccess: (created) => {
       onCreated(created.objectPath);
@@ -33,63 +45,52 @@ export default function CreateSecurityRoleDialog({
   });
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal modal-create-object" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h3>{t("createRole.title")}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>✕</button>
-        </header>
-        <form
-          className="modal-body form-grid"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!nameValid) return;
-            mutation.mutate();
-          }}
+    <Modal
+      title={t("createRole.title")}
+      open={open}
+      onCancel={onClose}
+      okText={t("common:action.create")}
+      cancelText={t("common:action.cancel")}
+      confirmLoading={mutation.isPending}
+      destroyOnHidden
+      onOk={() => form.submit()}
+    >
+      <Form<CreateRoleFormValues>
+        form={form}
+        layout="vertical"
+        requiredMark="optional"
+        onFinish={(values) => mutation.mutate(values)}
+      >
+        <Form.Item
+          name="name"
+          label={t("createRole.name")}
+          rules={[
+            { required: true, message: t("createRole.name") },
+            {
+              validator: async (_, value: string) => {
+                if (!value || isTechnicalIdentifier(value, "securityName")) {
+                  return;
+                }
+                throw new Error(t("common:error.invalidNamedIdentifier"));
+              },
+            },
+          ]}
         >
-          <label className="full">
-            {t("createRole.name")}
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="supervisor"
-              required
-              pattern="[a-zA-Z0-9._-]{2,64}"
-              autoFocus
-              aria-invalid={Boolean(name) && !nameValid}
-            />
-            {name && !nameValid && (
-              <span className="hint error">{t("common:error.invalidNamedIdentifier")}</span>
-            )}
-          </label>
-          <label className="full">
-            {t("common:field.displayName")}
-            <input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Supervisor"
-            />
-          </label>
-          <label className="full">
-            {t("common:field.description")}
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder={t("createRole.descriptionPlaceholder")}
-            />
-          </label>
-          {mutation.error && (
-            <p className="hint error full">{String(mutation.error)}</p>
-          )}
-          <footer className="full form-actions">
-            <button type="button" className="btn" onClick={onClose}>{t("common:action.cancel")}</button>
-            <button type="submit" className="btn primary" disabled={mutation.isPending || !nameValid}>
-              {t("common:action.create")}
-            </button>
-          </footer>
-        </form>
-      </div>
-    </div>
+          <Input placeholder="supervisor" autoFocus />
+        </Form.Item>
+
+        <Form.Item name="displayName" label={t("common:field.displayName")}>
+          <Input placeholder="Supervisor" />
+        </Form.Item>
+
+        <Form.Item name="description" label={t("common:field.description")}>
+          <Input.TextArea rows={3} placeholder={t("createRole.descriptionPlaceholder")} />
+        </Form.Item>
+
+        {mutation.error && (
+          <Alert type="error" showIcon message={String(mutation.error)} style={{ marginBottom: 12 }} />
+        )}
+      </Form>
+    </Modal>
   );
 }

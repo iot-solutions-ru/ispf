@@ -1,0 +1,41 @@
+{
+  "slug": "erp-mes-printing",
+  "title": "ERP-MES Printing (ISA-95)",
+  "description": "Printing industry overlay for erp-mes-core: flexo press fleet, film/ink materials, Flexibase event code catalog (OGP/BM/POUCH), Zero Pull setup tags, job bag sections",
+  "pricing": "free",
+  "appId": "erp-mes-printing",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.0.1",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "erp",
+    "isa95",
+    "iec62264",
+    "printing",
+    "flexo",
+    "oee",
+    "product"
+  ],
+  "changelog": "1.0.1 - Flatten dashboard widget settingsJson to top-level fields (reportPath, objectPath, functionName) so operator UI works without web-console settingsJson expansion.",
+  "metadata": {
+    "changelog": [
+      {
+        "version": "1.0.1",
+        "notes": "1.0.1 - Flatten dashboard widget settingsJson to top-level fields (reportPath, objectPath, functionName) so operator UI works without web-console settingsJson expansion."
+      },
+      {
+        "version": "1.0.0",
+        "notes": "Initial release: flexo printing overlay on erp-mes-core 1.0.0, certified by ErpMesPrintingOverlayTest cross-bundle scenarios"
+      }
+    ]
+  }
+}

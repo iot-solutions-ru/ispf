@@ -60,6 +60,7 @@ ISPF implements a **BPMN subset**, not full BPMN 2.0. Engine: pure Java in `ispf
 | `exclusiveGateway` | Conditional transitions (CEL) |
 | `parallelGateway` | Fork/join, execution tokens |
 | `subProcess` | Embedded subprocess — enter inner start, exit on inner end (nested embedded OK; not event subprocess) |
+| `callActivity` | Start another WORKFLOW and **wait** until it completes (`ispf:workflowPath` or `calledElement`; optional `ispf:objectPath`, `ispf:inputMap`). Child variables appear as `call.{id}.*`. Fire-and-forget remains `serviceTask` + `start_workflow`. |
 | `sequenceFlow` | `ispf:condition`, `ispf:default` |
 | Message catch / throw | Yes — catch waits until `deliverMessage`; throw is `intermediateThrowEvent` + `messageEventDefinition` (non-message throw rejected at parse) |
 
@@ -71,7 +72,6 @@ These are **out of the ISPF subset**. The parser **rejects** them with a clear e
 
 | Element / feature | Status |
 |-------------------|--------|
-| `callActivity` | Not supported |
 | Multi-instance (`multiInstanceLoopCharacteristics`) | Not supported |
 | `inclusiveGateway` | Not supported |
 | `eventBasedGateway` | Not supported |
@@ -240,18 +240,16 @@ Definition: `WorkflowDefinitions.DEMO_ALARM_HANDLER`.
 
 ![BPMN workflow editor — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
-- **WorkflowBuilder** — status, run, BPMN editor (bpmn-js); product status **Beta — BPMN subset** (see tables above)
-- **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`; palette filtered to the ISPF subset (`ispfPaletteFilter.ts` — no pool/participant, data objects/stores, generic `task`, or group). Hard gate remains parser reject (ADR-0047).
+- **WorkflowBuilder** — status, run, ISPF Workflow Diagram Editor; product status **Beta — BPMN subset** (see tables above)
+- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — first-party React+SVG editor (no bpmn.io / no watermark). Document model serializes to BPMN 2.0 + `bpmndi` + `ispf:*`. Properties panel configures tasks, events, and sequence flows; XML tab is for AI and edge cases.
+- **Import** — foreign BPMN (Camunda/Flowable/…) via **Import BPMN**; `adaptForeignBpmn` rewrites/maps/stubs into the ISPF model and shows a warning report (same spirit as SVG normalize). Hard gate for unsupported constructs remains parser reject at save/run (ADR-0047).
+- Palette presets cover the supported subset (timer/signal/message catch, message throw, messageTask, built-in actions, AI tasks). Marketplace `bpmn-element-pack` (palette contributions) is the extension path for external “elements.”
 
 ### Diagram without layout (DI)
 
-BPMN from the engine or scripts often contains only process logic, **without a `bpmndi` section** (Diagram Interchange).  
-In that case `bpmn-js` reports `no diagram to display`.
+BPMN from the engine or scripts often contains only process logic, **without a `bpmndi` section**. The editor auto-places nodes when DI is missing; saving rewrites XML with `bpmndi`. The new-process template (`EMPTY_BPMN` in `constants.ts`) already includes minimal layout markup.
 
-The Web Console automatically invokes **`bpmn-auto-layout`** (`src/bpmn/ensureDiagram.ts`) before rendering.  
-The new-process template (`EMPTY_BPMN` in `constants.ts`) already includes minimal layout markup.
-
-If the diagram does not display: open the **Source** tab, ensure `bpmnXml` is not empty, save — layout will be generated on the next open.
+If the diagram does not display: open the **Source** tab, ensure `bpmnXml` is not empty, or use **Import BPMN** for foreign files.
 
 ## Instance cancellation
 

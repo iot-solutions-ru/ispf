@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -55,21 +56,21 @@ function InstalledAppCard({
       </dl>
       <footer className="solution-catalog-card-actions">
         {app.activeVersion && (
-          <a
-            className="btn small"
+          <Button
+            size="small"
             href={`/?mode=operator&app=${encodeURIComponent(app.appId)}`}
           >
             {t("solutions.openOperator")}
-          </a>
+          </Button>
         )}
-        <button
-          type="button"
-          className="btn small danger"
+        <Button
+          size="small"
+          danger
           disabled={uninstalling}
           onClick={() => onUninstall(app.appId)}
         >
           {t("solutions.uninstall")}
-        </button>
+        </Button>
       </footer>
     </article>
   );
@@ -107,14 +108,14 @@ function InstalledAnalyticsPackCard({
         </p>
       )}
       <footer className="solution-catalog-card-actions">
-        <button
-          type="button"
-          className="btn small danger"
+        <Button
+          size="small"
+          danger
           disabled={uninstalling}
           onClick={() => onUninstall(pack.packId)}
         >
           {t("solutions.uninstall")}
-        </button>
+        </Button>
       </footer>
     </article>
   );
@@ -163,30 +164,22 @@ export default function SolutionCatalogPanel() {
           <h3>{t("solutions.title")}</h3>
           <p className="op-muted">{t("solutions.subtitle")}</p>
         </div>
-        <button
-          type="button"
-          className="btn"
+        <Button
           disabled={catalogQuery.isFetching}
           onClick={refreshAll}
         >
           {t("metrics.refresh")}
-        </button>
+        </Button>
       </header>
 
-      {catalogQuery.error && (
-        <div className="op-alert op-alert-error">{String(catalogQuery.error)}</div>
-      )}
-      {uninstallAppMutation.error && (
-        <div className="op-alert op-alert-error">{String(uninstallAppMutation.error)}</div>
-      )}
-      {uninstallPackMutation.error && (
-        <div className="op-alert op-alert-error">{String(uninstallPackMutation.error)}</div>
-      )}
+      {catalogQuery.error && <Alert type="error" showIcon message={String(catalogQuery.error)} />}
+      {uninstallAppMutation.error && <Alert type="error" showIcon message={String(uninstallAppMutation.error)} />}
+      {uninstallPackMutation.error && <Alert type="error" showIcon message={String(uninstallPackMutation.error)} />}
       {(uninstallAppMutation.isSuccess || uninstallPackMutation.isSuccess) && (
-        <div className="op-alert op-alert-success">{t("solutions.uninstallOk")}</div>
+        <Alert type="success" showIcon message={t("solutions.uninstallOk")} />
       )}
       {marketplaceMessage && (
-        <div className="op-alert op-alert-success">{marketplaceMessage}</div>
+        <Alert type="success" showIcon message={marketplaceMessage} />
       )}
 
       <section className="solution-catalog-section">

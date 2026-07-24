@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { Button, Input, Select } from "antd";
 import { fetchFunctionAuditStatus, fetchFunctionInvocations } from "../../api";
 import type { FunctionInvokeAuditEntry } from "../../types/runtime";
 import { mapFunctionInvokeExportRow } from "../../utils/journal/journalExport";
@@ -190,7 +191,7 @@ export default function FunctionInvokeJournalPanel({
             {showFilters && !fixedFunctionName && (
               <label>
                 functionName
-                <input
+                <Input
                   value={functionName}
                   onChange={(e) => setFunctionName(e.target.value)}
                   placeholder="acknowledgeAlarm"
@@ -200,20 +201,21 @@ export default function FunctionInvokeJournalPanel({
             {(showFilters || mode === "history") && (
               <label>
                 success
-                <select
+                <Select
                   value={successFilter}
-                  onChange={(e) => setSuccessFilter(e.target.value as "" | "true" | "false")}
-                >
-                  <option value="">{t("functionJournal.filter.all")}</option>
-                  <option value="true">{t("functionJournal.filter.success")}</option>
-                  <option value="false">{t("functionJournal.filter.error")}</option>
-                </select>
+                  onChange={(value) => setSuccessFilter(value as "" | "true" | "false")}
+                  options={[
+                    { value: "", label: t("functionJournal.filter.all") },
+                    { value: "true", label: t("functionJournal.filter.success") },
+                    { value: "false", label: t("functionJournal.filter.error") },
+                  ]}
+                />
               </label>
             )}
             {mode === "history" && (
               <label>
                 {t("common:action.search")}
-                <input
+                <Input
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder={t("journal:filter.searchPlaceholder")}
@@ -226,14 +228,13 @@ export default function FunctionInvokeJournalPanel({
       footer={
         canLoadMore ? (
           <div className="journal-footer">
-            <button
-              type="button"
-              className="btn small"
-              disabled={query.isFetching}
+            <Button
+              size="small"
+              loading={query.isFetching}
               onClick={() => setHistoryLimit((n) => Math.min(n + HISTORY_PAGE, HISTORY_MAX))}
             >
               {t("journal:loadMore")}
-            </button>
+            </Button>
           </div>
         ) : undefined
       }
