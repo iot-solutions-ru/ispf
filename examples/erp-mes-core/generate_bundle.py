@@ -2325,6 +2325,37 @@ def _html_widget(key, title, x, y, w, h, html):
             "htmlJson": html}
 
 
+def _job_actions_widget(key, title, x, y, w, h, person_default, object_path=None):
+    """Status-aware job action bar (ISA-95 dispatch state machine): one widget with
+    Start/Pause/Resume/Complete buttons, each enabled only when the selected job's
+    dispatch_status (session param `dispatchStatus`, written by the job table on row
+    click) allows the transition. Server-side functions validate the same rules."""
+    def btn(label, fn, equals, extra=None, confirm=None):
+        b = {"label": label, "functionName": fn,
+             "inputJson": json.dumps(dict({"jobNo": "${param:jobNo}"}, **(extra or {}))),
+             "enabledWhenJson": json.dumps({"paramKey": "dispatchStatus", "equals": equals})}
+        if confirm:
+            b["confirmMessage"] = confirm
+        return b
+    buttons = [
+        btn("Запустить", "emc_joborder_start", ["ALLOWED"], {"personId": person_default}),
+        btn("Пауза", "emc_joborder_pause", ["RUNNING"]),
+        btn("Возобновить", "emc_joborder_resume", ["SUSPENDED"]),
+        btn("Завершить", "emc_joborder_complete", ["RUNNING"], confirm="Завершить сменное задание?"),
+    ]
+    return {"id": key, "type": "function", "title": title, "x": x, "y": y, "w": w, "h": h,
+            "objectPath": object_path or HUB, "buttonsJson": json.dumps(buttons, ensure_ascii=False)}
+
+
+_JOB_STATUS_LEGEND_HTML = (
+    "<p>Кнопки активируются статусом выбранного задания (ISA-95):</p>"
+    "<ul><li><b>Запустить</b> — ALLOWED</li>"
+    "<li><b>Пауза</b> — RUNNING</li>"
+    "<li><b>Возобновить</b> — SUSPENDED</li>"
+    "<li><b>Завершить</b> — RUNNING, без открытых дефектов</li></ul>"
+)
+
+
 def _value_widget(key, title, x, y, w, h, variable, decimals=0, unit=None, object_path=None):
     wgt = {"id": key, "type": "value", "title": title, "x": x, "y": y, "w": w, "h": h,
            "objectPath": object_path or HUB, "variableName": variable, "valueField": "value",
@@ -2364,7 +2395,6 @@ def _static(name, label, options, default=None, required=False):
 # on the live stand, +2 rows of safety margin for label wrapping at other
 # viewport widths). 1 grid row = 8px + 4px margin = 12px.
 _FORM_H_BOOST = {
-    "Запустить задание": 5, "Пауза": 6, "Возобновить": 6, "Завершить": 6,
     "Списать материал": 5, "Поставить лот на линию": 7, "Произвести материал": 12,
     "Сбор данных (OPC 10031-4)": 4,
     "Зарегистрировать лот": 12, "На линию": 7, "Создать ERP-документ": 8,
@@ -2554,23 +2584,13 @@ DASHBOARDS = [
                    _value_widget("kpiLowStock", "Лотов ниже минимума", 56, 0, 28, 12, "lowStockCount"),
                    _report_widget("jobs", "Сменные задания", 0, 12, 56, 49, "root.platform.reports.emc-job-board",
                                   selectable=True, rowSelectionKey="job_no",
-                                  rowParamsFromRowJson=json.dumps({"jobNo": "job_no"}),
+                                  rowParamsFromRowJson=json.dumps({"jobNo": "job_no", "dispatchStatus": "dispatch_status"}),
                                   autoSelectFirstRow=True, filterable=True,
                                   columnFiltersJson=json.dumps(["dispatch_status", "equipment_id"]),
                                   statusDotColumnsJson=json.dumps(["dispatch_status"])),
-                   _form_widget("start", "Запустить задание", 56, 12, 28, 16, "emc_joborder_start",
-                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True),
-                                 _sel("personId", "Оператор", "emc-person-catalog", "code", "name", default="EMP-001")],
-                                "Запустить"),
-                   _form_widget("pause", "Пауза", 56, 28, 28, 11, "emc_joborder_pause",
-                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
-                                "Пауза"),
-                   _form_widget("resume", "Возобновить", 56, 39, 28, 11, "emc_joborder_resume",
-                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
-                                "Возобновить"),
-                   _form_widget("complete", "Завершить", 56, 50, 28, 11, "emc_joborder_complete",
-                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
-                                "Завершить"),
+                   _job_actions_widget("jobActions", "Действия с заданием", 56, 12, 28, 14, "EMP-001"),
+                   _html_widget("jobActionsHint", "Логика статусов (ISA-95)", 56, 26, 28, 30,
+                                _JOB_STATUS_LEGEND_HTML),
                ]),
     _dashboard("root.platform.dashboards.emc-execution", "Исполнение и материалы",
                "Учёт материалов на линии: расход, постановка, производство, сбор данных.",
@@ -2758,7 +2778,7 @@ EVENTS = [
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.1.1",
+    "version": "1.2.0",
     "displayName": "ERP-MES Core (ISA-95)",
     "tablePrefix": "emc_",
     "schemaName": "app_erp_mes_core",
@@ -2798,7 +2818,7 @@ bundle = {
         "product": "erp-mes-core",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.1.1 form heights calibrated to renderer (no clipped submit buttons); 1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal",
+        "changelog": "1.2.0 status-aware job action bar (Start/Pause/Resume/Complete enabled by dispatch_status, requires platform with function.buttonsJson); 1.1.1 form heights calibrated to renderer; 1.1.0 operator UI rework",
     },
 }
 

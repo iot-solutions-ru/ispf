@@ -12,7 +12,7 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.1.1",
+  "latestVersion": "1.2.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -25,9 +25,13 @@
     "quality",
     "product"
   ],
-  "changelog": "1.1.1 - form heights calibrated to the real renderer - submit buttons no longer clipped on any operator tab; 1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; +8 catalog reports (material/equipment/person/defect-type/reason-code/eventdef/shift/event-journal)",
+  "changelog": "1.2.0 - status-aware job action bar (buttons enabled by dispatch_status); 1.1.1 - form heights calibrated to the real renderer - submit buttons no longer clipped on any operator tab; 1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; +8 catalog reports (material/equipment/person/defect-type/reason-code/eventdef/shift/event-journal)",
   "metadata": {
     "changelog": [
+      {
+        "version": "1.2.0",
+        "notes": "1.2.0: status-aware job action bar - one widget with Start/Pause/Resume/Complete buttons enabled by the selected job dispatch_status (ISA-95 state machine); requires platform with function.buttonsJson support"
+      },
       {
         "version": "1.1.1",
         "notes": "1.1.1: form heights calibrated to the real renderer - submit buttons no longer clipped on any operator tab"

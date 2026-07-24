@@ -1177,6 +1177,17 @@
   align-self: flex-start;
 }
 
+.function-widget-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.function-widget-actions .function-widget-btn {
+  align-self: auto;
+  flex: 1 1 auto;
+}
+
 .function-widget-msg {
   margin: 0;
   font-size: 0.8rem;

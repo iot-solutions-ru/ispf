@@ -234,6 +234,32 @@ export interface FunctionWidget extends DashboardWidgetBase {
   inputJson?: string;
   /** When set, button runs workflow instead of invoking a function. */
   workflowPath?: string;
+  /**
+   * Multi-button action bar (JSON array of {@link FunctionButton}).
+   * When set, replaces the single functionName/buttonLabel button.
+   */
+  buttonsJson?: string;
+}
+
+export interface FunctionButton {
+  label?: string;
+  functionName?: string;
+  workflowPath?: string;
+  /**
+   * Static JSON input for invoke; string values support `${param:sessionKey}`
+   * placeholders substituted from dashboard session params at click time.
+   */
+  inputJson?: string;
+  confirmMessage?: string;
+  /** Visual kind: "primary" (default) or "danger". */
+  kind?: "primary" | "danger";
+  /**
+   * Enable condition on a dashboard session param (JSON object):
+   * `{ "paramKey": "dispatchStatus", "equals": ["ALLOWED"] }` — button is
+   * enabled only when String(session.params[paramKey]) is in `equals`
+   * (or not in `notEquals`). Without a condition the button is always enabled.
+   */
+  enabledWhenJson?: string;
 }
 
 export interface FunctionFormSelectOption {

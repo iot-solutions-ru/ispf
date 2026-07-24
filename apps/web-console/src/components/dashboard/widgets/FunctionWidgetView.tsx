@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invokeFunction, runWorkflow } from "../../../api";
 import { refreshWorkQueue } from "../../../hooks/workQueueCache";
 import type { DataRecord } from "../../../types";
-import type { FunctionWidget } from "../../../types/dashboard";
+import type { FunctionButton, FunctionWidget } from "../../../types/dashboard";
 import { parseInstanceState, type WorkflowView } from "../../../types/workflow";
-import { parseFunctionInputJson, resolveWidgetPath } from "../dashboardUtils";
+import { parseFunctionInputJson, parseJsonArray, resolveWidgetPath } from "../dashboardUtils";
 import { useDashboardContext } from "../DashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
@@ -16,37 +16,86 @@ interface FunctionWidgetViewProps {
   editable?: boolean;
 }
 
+interface EnabledWhen {
+  paramKey?: string;
+  equals?: string[];
+  notEquals?: string[];
+}
+
+/** `${param:key}` placeholders in button inputJson are filled from session params. */
+function substituteSessionParams(raw: string, sessionParams: Record<string, unknown>): string {
+  return raw.replace(/\$\{param:([\w.-]+)\}/g, (_m, key: string) => {
+    const value = sessionParams[key];
+    return value === undefined || value === null ? "" : String(value);
+  });
+}
+
+function isButtonEnabled(btn: FunctionButton, sessionParams: Record<string, unknown>): boolean {
+  if (!btn.enabledWhenJson?.trim()) return true;
+  let cond: EnabledWhen;
+  try {
+    cond = JSON.parse(btn.enabledWhenJson) as EnabledWhen;
+  } catch {
+    return true;
+  }
+  const paramKey = cond.paramKey?.trim();
+  if (!paramKey) return true;
+  const raw = sessionParams[paramKey];
+  const value = raw === undefined || raw === null ? "" : String(raw);
+  if (Array.isArray(cond.equals) && cond.equals.length > 0) {
+    return cond.equals.includes(value);
+  }
+  if (Array.isArray(cond.notEquals) && cond.notEquals.length > 0) {
+    return !cond.notEquals.includes(value);
+  }
+  return value.trim() !== "";
+}
+
 export default function FunctionWidgetView({ widget, editable }: FunctionWidgetViewProps) {
   const { t } = useTranslation("widgets");
   const styles = useWidgetStyles(widget.stylesJson);
-  const { selection } = useDashboardContext();
+  const { selection, params: sessionParams } = useDashboardContext();
   const queryClient = useQueryClient();
   const objectPath = resolveWidgetPath(widget.objectPath, widget.selectionKey, selection);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const workflowPath = widget.workflowPath?.trim();
-  const canRun = workflowPath ? true : Boolean(objectPath && widget.functionName);
+
+  const buttons = useMemo(
+    () => parseJsonArray<FunctionButton>(widget.buttonsJson, []),
+    [widget.buttonsJson]
+  );
+  // Single-button mode (legacy) is expressed as a one-element action list.
+  const actions: FunctionButton[] = buttons.length > 0
+    ? buttons
+    : [{
+        label: widget.buttonLabel,
+        functionName: widget.functionName,
+        workflowPath: widget.workflowPath,
+        inputJson: widget.inputJson,
+        confirmMessage: widget.confirmMessage,
+      }];
 
   const mutation = useMutation<
     WorkflowView | { schema: unknown; rows: Array<Record<string, unknown>> },
     Error,
-    void
+    FunctionButton
   >({
-    mutationFn: () => {
+    mutationFn: (btn) => {
+      const workflowPath = btn.workflowPath?.trim();
       if (workflowPath) {
         return runWorkflow(workflowPath, objectPath ?? undefined);
       }
-      if (!objectPath || !widget.functionName) {
+      if (!objectPath || !btn.functionName) {
         throw new Error(t("error.objectAndFunctionRequired"));
       }
       let input: DataRecord | undefined;
-      if (widget.inputJson?.trim()) {
-        input = parseFunctionInputJson(widget.inputJson);
+      if (btn.inputJson?.trim()) {
+        input = parseFunctionInputJson(substituteSessionParams(btn.inputJson, sessionParams));
       }
-      return invokeFunction(objectPath, widget.functionName, input);
+      return invokeFunction(objectPath, btn.functionName, input);
     },
-    onSuccess: (result) => {
-      if (workflowPath) {
+    onSuccess: (result, btn) => {
+      if (btn.workflowPath?.trim()) {
         const state = parseInstanceState((result as WorkflowView).instanceState);
         if (state.status === "FAILED") {
           setError(state.errorMessage ?? t("view.errorGeneric"));
@@ -93,12 +142,12 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
     },
   });
 
-  const handleClick = () => {
+  const handleClick = (btn: FunctionButton) => {
     if (editable) return;
-    if (widget.confirmMessage && !window.confirm(widget.confirmMessage)) {
+    if (btn.confirmMessage && !window.confirm(btn.confirmMessage)) {
       return;
     }
-    mutation.mutate();
+    mutation.mutate(btn);
   };
 
   return (
@@ -108,17 +157,29 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
       className="dash-widget function-widget"
       editable={editable}
     >
-      <button
-        type="button"
-        className="btn primary function-widget-btn"
-        style={styles.value}
-        disabled={editable || mutation.isPending || !canRun}
-        onClick={handleClick}
-      >
-        {mutation.isPending
-          ? "…"
-          : widget.buttonLabel ?? widget.functionName ?? workflowPath ?? t("view.runWorkflow")}
-      </button>
+      <div className="function-widget-actions">
+        {actions.map((btn, idx) => {
+          const canRun = btn.workflowPath?.trim()
+            ? true
+            : Boolean(objectPath && btn.functionName);
+          const enabled =
+            !editable && !mutation.isPending && canRun && isButtonEnabled(btn, sessionParams);
+          return (
+            <button
+              key={idx}
+              type="button"
+              className={`btn ${btn.kind === "danger" ? "danger" : "primary"} function-widget-btn`}
+              style={styles.value}
+              disabled={!enabled}
+              onClick={() => handleClick(btn)}
+            >
+              {mutation.isPending
+                ? "…"
+                : btn.label ?? btn.functionName ?? btn.workflowPath ?? t("view.runWorkflow")}
+            </button>
+          );
+        })}
+      </div>
       {message && <p className="function-widget-msg ok">{message}</p>}
       {error && <p className="function-widget-msg error">{error}</p>}
     </DashWidgetShell>
