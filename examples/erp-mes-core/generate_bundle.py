@@ -2299,27 +2299,70 @@ OBJECTS = [
 # Dashboards, reports
 # ----------------------------------------------------------------------------
 
-def _report_widget(key, title, x, y, w, h, report_path, page_size=25):
-    return {"key": key, "type": "report", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"reportPath": report_path, "pageSize": page_size})}
+def _report_widget(key, title, x, y, w, h, report_path, **opts):
+    wgt = {"id": key, "type": "report", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "reportPath": report_path}
+    wgt.update(opts)
+    return wgt
 
-def _form_widget(key, title, x, y, w, h, function_name, fields, button_label):
-    return {"key": key, "type": "function-form", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"objectPath": HUB, "functionName": function_name,
-                                        "buttonLabel": button_label, "fieldsJson": json.dumps(fields)})}
 
-def _func_widget(key, title, x, y, w, h, function_name, button_label, input_map):
-    return {"key": key, "type": "function", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"objectPath": HUB, "functionName": function_name,
-                                        "buttonLabel": button_label, "inputMapJson": json.dumps(input_map)})}
+def _form_widget(key, title, x, y, w, h, function_name, fields, button_label, object_path=None, **opts):
+    wgt = {"id": key, "type": "function-form", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "objectPath": object_path or HUB, "functionName": function_name,
+           "buttonLabel": button_label, "fieldsJson": json.dumps(fields, ensure_ascii=False)}
+    wgt.update(opts)
+    return wgt
+
+
+def _func_widget(key, title, x, y, w, h, function_name, button_label, input_map, object_path=None):
+    return {"id": key, "type": "function", "title": title, "x": x, "y": y, "w": w, "h": h,
+            "objectPath": object_path or HUB, "functionName": function_name,
+            "buttonLabel": button_label, "inputJson": json.dumps(input_map, ensure_ascii=False)}
+
 
 def _html_widget(key, title, x, y, w, h, html):
-    return {"key": key, "type": "html-snippet", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"htmlJson": json.dumps({"html": html})})}
+    return {"id": key, "type": "html-snippet", "title": title, "x": x, "y": y, "w": w, "h": h,
+            "htmlJson": html}
+
+
+def _value_widget(key, title, x, y, w, h, variable, decimals=0, unit=None, object_path=None):
+    wgt = {"id": key, "type": "value", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "objectPath": object_path or HUB, "variableName": variable, "valueField": "value",
+           "decimals": decimals}
+    if unit:
+        wgt["unit"] = unit
+    return wgt
+
+
+def _sel(name, label, report, value_field, label_field=None, default=None, required=False, hint=None):
+    """Select field fed by a (possibly cross-bundle) catalog report."""
+    f = {"name": name, "label": label, "type": "select",
+         "optionsFromReport": "root.platform.reports." + report,
+         "optionsValueField": value_field}
+    if label_field:
+        f["optionsLabelField"] = label_field
+    if default is not None:
+        f["defaultValue"] = default
+    if required:
+        f["required"] = True
+    if hint:
+        f["hint"] = hint
+    return f
+
+
+def _static(name, label, options, default=None, required=False):
+    f = {"name": name, "label": label, "type": "select", "staticOptions": options}
+    if default is not None:
+        f["defaultValue"] = default
+    if required:
+        f["required"] = True
+    return f
+
 
 def _dashboard(path, title, description, widgets):
     return {"path": path, "title": title,
             "layoutJson": json.dumps({"columns": 84, "rowHeight": 8, "widgets": widgets})}
+
 
 REPORTS = [
     {"reportId": "emc-job-board", "title": "Job Board (ISA-95 Job Orders)",
@@ -2389,101 +2432,228 @@ ORDER BY calculated_at DESC
          ("produced_qty", "Produced"), ("good_qty", "Good"),
          ("availability_pct", "A %"), ("performance_pct", "P %"), ("quality_pct", "Q %"), ("oee_pct", "OEE %"),
          ("calculated_at", "Calculated")]]},
+    # --- Catalog reports: option sources for form dropdowns (code = value, name = label) ---
+    {"reportId": "emc-material-catalog", "title": "Material Catalog",
+     "description": "Material definitions as code/name options for form dropdowns.",
+     "query": """
+SELECT definition_id AS code, COALESCE(description, '') AS name,
+       COALESCE(class_id, '') AS class_id, kind, base_uom
+FROM emc_material_definition
+ORDER BY definition_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Code"), ("name", "Name"), ("class_id", "Class"), ("kind", "Kind"), ("base_uom", "UOM")]]},
+    {"reportId": "emc-equipment-catalog", "title": "Equipment Catalog",
+     "description": "Equipment hierarchy as code/name options for form dropdowns.",
+     "query": """
+SELECT equipment_id AS code, COALESCE(description, '') AS name,
+       equipment_level, COALESCE(parent_id, '') AS parent_id
+FROM emc_equipment
+ORDER BY hierarchy_path
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Code"), ("name", "Name"), ("equipment_level", "Level"), ("parent_id", "Parent")]]},
+    {"reportId": "emc-person-catalog", "title": "Personnel Catalog",
+     "description": "Persons as code/name options for form dropdowns.",
+     "query": """
+SELECT person_id AS code, person_name AS name, COALESCE(personnel_class_id, '') AS personnel_class_id
+FROM emc_person
+ORDER BY person_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Code"), ("name", "Name"), ("personnel_class_id", "Class")]]},
+    {"reportId": "emc-defect-type-catalog", "title": "Defect Type Catalog",
+     "description": "Defect types as code/name options for form dropdowns.",
+     "query": """
+SELECT defect_type_id AS code, COALESCE(description, '') AS name, COALESCE(category, '') AS category
+FROM emc_defect_type
+ORDER BY defect_type_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Code"), ("name", "Name"), ("category", "Category")]]},
+    {"reportId": "emc-reason-code-catalog", "title": "Reason Code Catalog",
+     "description": "Reason codes as code/name options for form dropdowns.",
+     "query": """
+SELECT reason_code AS code, COALESCE(description, '') AS name
+FROM emc_reason_code
+ORDER BY reason_code
+""",
+     "columns": [{"field": f, "label": l} for f, l in [("code", "Code"), ("name", "Name")]]},
+    {"reportId": "emc-eventdef-catalog", "title": "Event Definition Catalog",
+     "description": "Operations event definitions as code/name options for form dropdowns.",
+     "query": """
+SELECT code, name, event_class, oee_bucket
+FROM emc_operations_event_definition
+ORDER BY sort_order
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Code"), ("name", "Name"), ("event_class", "Class"), ("oee_bucket", "OEE Bucket")]]},
+    {"reportId": "emc-shift-catalog", "title": "Shift Catalog",
+     "description": "Calendar shifts as code/name options for form dropdowns.",
+     "query": """
+SELECT shift_id AS code, shift_label AS name, equipment_id, state
+FROM emc_work_calendar
+ORDER BY shift_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Code"), ("name", "Shift"), ("equipment_id", "Equipment"), ("state", "State")]]},
+    {"reportId": "emc-event-journal", "title": "Operations Event Journal",
+     "description": "Registered operations events with definition names and OEE buckets.",
+     "query": """
+SELECT e.event_id AS id, e.definition_code, d.name, d.oee_bucket,
+       COALESCE(e.job_no, '') AS job_no, COALESCE(e.equipment_id, '') AS equipment_id,
+       e.time_min, e.status, e.started_at, e.ended_at
+FROM emc_operations_event e
+JOIN emc_operations_event_definition d ON d.code = e.definition_code
+ORDER BY e.started_at DESC
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("id", "ID"), ("definition_code", "Code"), ("name", "Name"), ("oee_bucket", "OEE Bucket"),
+         ("job_no", "Job #"), ("equipment_id", "Equipment"), ("time_min", "Time min"),
+         ("status", "Status"), ("started_at", "Started"), ("ended_at", "Ended")]]},
 ]
 
 DASHBOARDS = [
-    _dashboard("root.platform.dashboards.emc-dispatch", "MES Dispatch (Job Board)",
-               "ISA-95 Part 4 dispatching: job list, release/start/pause/complete.",
+    _dashboard("root.platform.dashboards.emc-dispatch", "Диспетчер производства (ISA-95)",
+               "Доска сменных заданий: запуск, пауза, возобновление, завершение.",
                [
-                   _report_widget("jobs", "Job Orders", 0, 0, 54, 42, "root.platform.reports.emc-job-board"),
-                   _form_widget("start", "Start Job", 54, 0, 30, 10, "emc_joborder_start",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"},
-                                 {"name": "personId", "label": "Operator", "type": "text", "default": "EMP-001"}], "Start"),
-                   _form_widget("pause", "Pause Job", 54, 10, 30, 8, "emc_joborder_pause",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Pause"),
-                   _form_widget("resume", "Resume Job", 54, 18, 30, 8, "emc_joborder_resume",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Resume"),
-                   _form_widget("complete", "Complete Job", 54, 26, 30, 8, "emc_joborder_complete",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Complete"),
-                   _html_widget("help", "About", 54, 38, 30, 12,
-                                "<h3>MES Dispatch</h3><p>ISA-95 Part 4 job list. Statuses follow the job-order state machine: ALLOWED &rarr; RUNNING &rarr; (PAUSED) &rarr; ENDED.</p>"),
+                   _value_widget("kpiDowntime", "Открыто простоев", 0, 0, 28, 12, "activeDowntimeCount"),
+                   _value_widget("kpiOutbox", "Сообщений ERP в outbox", 28, 0, 28, 12, "pendingOutboxCount"),
+                   _value_widget("kpiLowStock", "Лотов ниже минимума", 56, 0, 28, 12, "lowStockCount"),
+                   _report_widget("jobs", "Сменные задания", 0, 12, 56, 49, "root.platform.reports.emc-job-board",
+                                  selectable=True, rowSelectionKey="job_no",
+                                  rowParamsFromRowJson=json.dumps({"jobNo": "job_no"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["dispatch_status", "equipment_id"]),
+                                  statusDotColumnsJson=json.dumps(["dispatch_status"])),
+                   _form_widget("start", "Запустить задание", 56, 12, 28, 16, "emc_joborder_start",
+                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True),
+                                 _sel("personId", "Оператор", "emc-person-catalog", "code", "name", default="EMP-001")],
+                                "Запустить"),
+                   _form_widget("pause", "Пауза", 56, 28, 28, 11, "emc_joborder_pause",
+                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
+                                "Пауза"),
+                   _form_widget("resume", "Возобновить", 56, 39, 28, 11, "emc_joborder_resume",
+                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
+                                "Возобновить"),
+                   _form_widget("complete", "Завершить", 56, 50, 28, 11, "emc_joborder_complete",
+                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
+                                "Завершить"),
                ]),
-    _dashboard("root.platform.dashboards.emc-execution", "MES Execution (Track &amp; Trace)",
-               "Material consumption, production and genealogy at the work unit.",
+    _dashboard("root.platform.dashboards.emc-execution", "Исполнение и материалы",
+               "Учёт материалов на линии: расход, постановка, производство, сбор данных.",
                [
-                   _form_widget("consume", "Consume Material", 0, 0, 28, 14, "emc_matlot_consume",
-                                [{"name": "barcode", "label": "Lot barcode", "type": "text"},
-                                 {"name": "quantity", "label": "Qty", "type": "number", "default": "1"}], "Consume"),
-                   _form_widget("produce", "Produce Material", 28, 0, 28, 14, "emc_matlot_produce",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"},
-                                 {"name": "lotId", "label": "New Lot ID", "type": "text"},
-                                 {"name": "barcode", "label": "Barcode", "type": "text"},
-                                 {"name": "definitionId", "label": "Material ID", "type": "text", "default": "WIP-HOUSING"},
-                                 {"name": "quantity", "label": "Qty", "type": "number", "default": "1"},
-                                 {"name": "storageLocation", "label": "Location", "type": "text", "default": "WH-CENTRAL"}], "Produce"),
-                   _form_widget("dc", "Data Collection (OPC-10031-4)", 56, 0, 28, 14, "emc_dc_recordQuantity",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"},
-                                 {"name": "paramKey", "label": "Parameter", "type": "text", "default": "GOOD_QTY"},
-                                 {"name": "paramValue", "label": "Value", "type": "text", "default": "0"},
-                                 {"name": "uom", "label": "UOM", "type": "text", "default": "pcs"}], "Record"),
-                   _report_widget("moves", "Material Movement", 0, 14, 84, 30, "root.platform.reports.emc-material-movement"),
+                   _form_widget("consume", "Списать материал", 0, 0, 28, 16, "emc_matlot_consume",
+                                [_sel("barcode", "Штрихкод лота", "emc-stock-report", "barcode", "material_id", required=True),
+                                 {"name": "quantity", "label": "Количество", "type": "number", "defaultValue": "1"}],
+                                "Списать"),
+                   _form_widget("place", "Поставить лот на линию", 0, 16, 28, 16, "emc_matlot_placeOnLine",
+                                [_sel("barcode", "Штрихкод лота", "emc-stock-report", "barcode", "material_id", required=True),
+                                 _sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
+                                "Поставить"),
+                   _form_widget("produce", "Произвести материал", 28, 0, 28, 32, "emc_matlot_produce",
+                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True),
+                                 {"name": "lotId", "label": "Новый лот (ID)", "type": "text", "required": True},
+                                 {"name": "barcode", "label": "Штрихкод", "type": "text", "required": True},
+                                 _sel("definitionId", "Материал", "emc-material-catalog", "code", "name", required=True),
+                                 {"name": "quantity", "label": "Количество", "type": "number", "defaultValue": "1"},
+                                 _sel("storageLocation", "Склад", "emc-equipment-catalog", "code", "name")],
+                                "Произвести"),
+                   _form_widget("dc", "Сбор данных (OPC 10031-4)", 56, 0, 28, 26, "emc_dc_recordQuantity",
+                                [_sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True),
+                                 _static("paramKey", "Параметр", ["GOOD_QTY", "REJECT_QTY", "RATE", "SPEED"], default="GOOD_QTY"),
+                                 {"name": "paramValue", "label": "Значение", "type": "text", "defaultValue": "0"},
+                                 _static("uom", "Единица", ["pcs", "kg", "m", "m2"], default="pcs")],
+                                "Записать"),
+                   _report_widget("moves", "Движение материалов", 0, 36, 84, 26, "root.platform.reports.emc-material-movement",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["material_use", "job_no"])),
                ]),
-    _dashboard("root.platform.dashboards.emc-inventory", "Inventory Operations",
-               "Stock, lots on line, and ERP inventory documents (DELIVERY_REQUEST / STOCK_TAKING ...).",
+    _dashboard("root.platform.dashboards.emc-inventory", "Склад и документы ERP",
+               "Остатки, постановка на линию и инвентарные документы ERP.",
                [
-                   _report_widget("stock", "Stock", 0, 0, 54, 26, "root.platform.reports.emc-stock-report"),
-                   _form_widget("register", "Register Lot", 54, 0, 30, 13, "emc_matlot_register",
-                                [{"name": "lotId", "label": "Lot ID", "type": "text"},
-                                 {"name": "barcode", "label": "Barcode", "type": "text"},
-                                 {"name": "definitionId", "label": "Material ID", "type": "text"},
-                                 {"name": "storageLocation", "label": "Location", "type": "text", "default": "WH-CENTRAL"},
-                                 {"name": "quantity", "label": "Qty", "type": "number", "default": "1"}], "Register"),
-                   _form_widget("place", "Place Lot on Line", 54, 13, 30, 13, "emc_matlot_placeOnLine",
-                                [{"name": "barcode", "label": "Barcode", "type": "text"},
-                                 {"name": "jobNo", "label": "Job #", "type": "text", "default": "JO-DEMO-002"}], "Place"),
-                   _form_widget("invdoc", "Create ERP Inventory Doc", 54, 26, 30, 14, "emc_invdoc_create",
-                                [{"name": "docId", "label": "Doc #", "type": "text"},
-                                 {"name": "kind", "label": "Kind", "type": "text", "default": "DELIVERY_REQUEST"},
-                                 {"name": "operatorPersonId", "label": "By", "type": "text", "default": "EMP-001"}], "Create"),
-                   _html_widget("kinds", "Doc kinds", 0, 26, 54, 14,
-                                "<b>ISA-95 Part 5 / Part 4 inventory kinds:</b><ul>"
-                                "<li>DELIVERY_REQUEST &ndash; ERP asks MES to deliver materials</li>"
-                                "<li>RESOURCE_REQUEST &ndash; line-side material call</li>"
-                                "<li>STOCK_TAKING &ndash; physical inventory</li>"
-                                "<li>SCRAP_REQUEST / RELEASE / TRANSFER</li></ul>"),
+                   _report_widget("stock", "Остатки (лоты)", 0, 0, 56, 60, "root.platform.reports.emc-stock-report",
+                                  selectable=True, rowSelectionKey="lot_id",
+                                  rowParamsFromRowJson=json.dumps({"barcode": "barcode", "lotId": "lot_id"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "class_id", "storage_location"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _form_widget("register", "Зарегистрировать лот", 56, 0, 28, 26, "emc_matlot_register",
+                                [{"name": "lotId", "label": "Лот (ID)", "type": "text", "required": True},
+                                 {"name": "barcode", "label": "Штрихкод", "type": "text", "required": True},
+                                 _sel("definitionId", "Материал", "emc-material-catalog", "code", "name", required=True),
+                                 _sel("storageLocation", "Склад", "emc-equipment-catalog", "code", "name"),
+                                 {"name": "quantity", "label": "Количество", "type": "number", "defaultValue": "1"}],
+                                "Зарегистрировать"),
+                   _form_widget("place", "На линию", 56, 26, 28, 16, "emc_matlot_placeOnLine",
+                                [_sel("barcode", "Штрихкод лота", "emc-stock-report", "barcode", "material_id", required=True),
+                                 _sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True)],
+                                "Поставить"),
+                   _form_widget("invdoc", "Создать ERP-документ", 56, 42, 28, 18, "emc_invdoc_create",
+                                [{"name": "docId", "label": "Документ №", "type": "text", "required": True},
+                                 _static("kind", "Вид документа",
+                                         ["DELIVERY_REQUEST", "RESOURCE_REQUEST", "STOCK_TAKING",
+                                          "SCRAP_REQUEST", "RELEASE", "TRANSFER"], default="DELIVERY_REQUEST"),
+                                 _sel("operatorPersonId", "Сотрудник", "emc-person-catalog", "code", "name", default="EMP-001")],
+                                "Создать"),
                ]),
-    _dashboard("root.platform.dashboards.emc-quality", "Quality Operations",
-               "Defect registration and QA workflow (REGISTERED &rarr; CONFIRMED/REJECTED &rarr; CLOSED).",
+    _dashboard("root.platform.dashboards.emc-quality", "Качество",
+               "Регистрация дефектов и QA-поток (REGISTERED → CONFIRMED/REJECTED → CLOSED).",
                [
-                   _report_widget("defects", "Defects", 0, 0, 54, 30, "root.platform.reports.emc-defect-report"),
-                   _form_widget("register", "Register Defect", 54, 0, 30, 15, "emc_qa_registerDefect",
-                                [{"name": "defectNo", "label": "Defect #", "type": "text"},
-                                 {"name": "jobNo", "label": "Job #", "type": "text"},
-                                 {"name": "defectTypeId", "label": "Type", "type": "text", "default": "DFT-VISUAL"},
-                                 {"name": "reasonCode", "label": "Reason", "type": "text", "default": ""},
-                                 {"name": "qtyDeclared", "label": "Qty", "type": "number", "default": "1"},
-                                 {"name": "severity", "label": "Severity", "type": "text", "default": "MINOR"},
-                                 {"name": "createdBy", "label": "By", "type": "text", "default": "operator"}], "Register"),
-                   _form_widget("confirm", "Confirm Defect", 54, 15, 30, 8, "emc_qa_confirmDefect",
-                                [{"name": "defectNo", "label": "Defect #", "type": "text"},
-                                 {"name": "by", "label": "By", "type": "text", "default": "qa"},
-                                 {"name": "reasonCode", "label": "Reason", "type": "text", "default": ""}], "Confirm"),
-                   _form_widget("close", "Close Defect", 54, 23, 30, 8, "emc_qa_closeDefect",
-                                [{"name": "defectNo", "label": "Defect #", "type": "text"},
-                                 {"name": "by", "label": "By", "type": "text", "default": "qa"}], "Close"),
+                   _report_widget("defects", "Дефекты", 0, 0, 56, 67, "root.platform.reports.emc-defect-report",
+                                  selectable=True, rowSelectionKey="defect_no",
+                                  rowParamsFromRowJson=json.dumps({"defectNo": "defect_no"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "severity", "defect_type_id"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _form_widget("register", "Зарегистрировать дефект", 56, 0, 28, 41, "emc_qa_registerDefect",
+                                [{"name": "defectNo", "label": "Дефект №", "type": "text", "required": True},
+                                 _sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status", required=True),
+                                 _sel("defectTypeId", "Тип дефекта", "emc-defect-type-catalog", "code", "name", required=True),
+                                 _sel("reasonCode", "Код причины", "emc-reason-code-catalog", "code", "name"),
+                                 _static("severity", "Критичность", ["MINOR", "MAJOR", "CRITICAL"], default="MINOR"),
+                                 {"name": "qtyDeclared", "label": "Количество", "type": "number", "defaultValue": "1"},
+                                 _sel("createdBy", "Сотрудник", "emc-person-catalog", "code", "name", default="EMP-001")],
+                                "Зарегистрировать"),
+                   _form_widget("confirm", "Подтвердить дефект", 56, 41, 28, 16, "emc_qa_confirmDefect",
+                                [_sel("defectNo", "Дефект №", "emc-defect-report", "defect_no", "status", required=True),
+                                 {"name": "by", "label": "Кем", "type": "text", "defaultValue": "qa"},
+                                 _sel("reasonCode", "Код причины", "emc-reason-code-catalog", "code", "name")],
+                                "Подтвердить"),
+                   _form_widget("close", "Закрыть дефект", 56, 57, 28, 11, "emc_qa_closeDefect",
+                                [_sel("defectNo", "Дефект №", "emc-defect-report", "defect_no", "status", required=True),
+                                 {"name": "by", "label": "Кем", "type": "text", "defaultValue": "qa"}],
+                                "Закрыть"),
                ]),
-    _dashboard("root.platform.dashboards.emc-oee", "OEE / Performance Analysis",
-               "ISO 22400-subset KPIs per shift (Part 3 performance analysis).",
+    _dashboard("root.platform.dashboards.emc-oee", "OEE и простои",
+               "Журнал событий, регистрация простоев и расчёт OEE по сменам.",
                [
-                   _form_widget("calc", "Calculate Shift OEE", 0, 0, 28, 12, "emc_oee_calcShift",
-                                [{"name": "equipmentId", "label": "Equipment", "type": "text", "default": "WU-A01"},
-                                 {"name": "shiftLabel", "label": "Shift", "type": "text", "default": "SHIFT-DEMO-1"},
-                                 {"name": "plannedMinutes", "label": "Planned min", "type": "number", "default": "480"}], "Calculate"),
-                   _func_widget("kpi1", "OEE WU-A01", 28, 0, 28, 6, "emc_oee_getKpi", "Refresh OEE", {"equipmentId": "WU-A01"}),
-                   _func_widget("kpi2", "OEE WU-A02", 56, 0, 28, 6, "emc_oee_getKpi", "Refresh OEE", {"equipmentId": "WU-A02"}),
-                   _report_widget("shifts", "Shift KPIs", 0, 12, 84, 30, "root.platform.reports.emc-oee-shift-report"),
+                   _form_widget("registerEvent", "Зарегистрировать событие/простой", 0, 0, 28, 36, "emc_event_register",
+                                [_sel("definitionCode", "Код события", "emc-eventdef-catalog", "code", "name", required=True),
+                                 _sel("jobNo", "Сменное задание", "emc-job-board", "job_no", "dispatch_status"),
+                                 _sel("equipmentId", "Оборудование", "emc-equipment-catalog", "code", "name"),
+                                 {"name": "timeMin", "label": "Длительность, мин", "type": "number", "defaultValue": ""},
+                                 {"name": "lengthM", "label": "Метраж, м", "type": "number", "defaultValue": ""},
+                                 {"name": "comment", "label": "Комментарий", "type": "textarea", "defaultValue": ""}],
+                                "Зарегистрировать"),
+                   _form_widget("closeEvent", "Закрыть событие", 0, 36, 28, 11, "emc_event_close",
+                                [_sel("eventId", "Событие", "emc-event-journal", "id", "name", required=True),
+                                 {"name": "by", "label": "Кем", "type": "text", "defaultValue": "operator"}],
+                                "Закрыть"),
+                   _form_widget("calc", "Рассчитать OEE смены", 28, 0, 28, 16, "emc_oee_calcShift",
+                                [_sel("equipmentId", "Оборудование", "emc-equipment-catalog", "code", "name", required=True),
+                                 _sel("shiftLabel", "Смена", "emc-shift-catalog", "code", required=True),
+                                 {"name": "plannedMinutes", "label": "Плановые минуты", "type": "number", "defaultValue": "480"}],
+                                "Рассчитать"),
+                   _value_widget("kpiDowntime", "Открыто простоев", 56, 0, 28, 12, "activeDowntimeCount"),
+                   _report_widget("journal", "Журнал событий", 28, 16, 56, 30, "root.platform.reports.emc-event-journal",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "oee_bucket", "equipment_id"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("shifts", "KPI смен (OEE)", 0, 47, 84, 20, "root.platform.reports.emc-oee-shift-report"),
                ]),
 ]
+
 
 # ----------------------------------------------------------------------------
 # Bindings, alert rules, schedules, workflow, events
@@ -2556,7 +2726,7 @@ EVENTS = [
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "displayName": "ERP-MES Core (ISA-95)",
     "tablePrefix": "emc_",
     "schemaName": "app_erp_mes_core",
@@ -2576,11 +2746,11 @@ bundle = {
         "title": "ERP-MES Core (ISA-95)",
         "defaultDashboard": "root.platform.dashboards.emc-dispatch",
         "dashboards": [
-            {"path": "root.platform.dashboards.emc-dispatch", "title": "Dispatch"},
-            {"path": "root.platform.dashboards.emc-execution", "title": "Execution"},
-            {"path": "root.platform.dashboards.emc-inventory", "title": "Inventory"},
-            {"path": "root.platform.dashboards.emc-quality", "title": "Quality"},
-            {"path": "root.platform.dashboards.emc-oee", "title": "OEE"},
+            {"path": "root.platform.dashboards.emc-dispatch", "title": "Диспетчер"},
+            {"path": "root.platform.dashboards.emc-execution", "title": "Исполнение"},
+            {"path": "root.platform.dashboards.emc-inventory", "title": "Склад"},
+            {"path": "root.platform.dashboards.emc-quality", "title": "Качество"},
+            {"path": "root.platform.dashboards.emc-oee", "title": "OEE и простои"},
         ],
         "eventJournalObjectPath": HUB,
         "reports": [
@@ -2596,7 +2766,7 @@ bundle = {
         "product": "erp-mes-core",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.0.0 initial ISA-95 canonical ERP-MES core bundle",
+        "changelog": "1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal",
     },
 }
 

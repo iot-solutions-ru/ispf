@@ -928,27 +928,69 @@ EVENTS = [
 # Dashboards, reports
 # ----------------------------------------------------------------------------
 
-def _report_widget(key, title, x, y, w, h, report_path, page_size=25):
-    return {"key": key, "type": "report", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"reportPath": report_path, "pageSize": page_size})}
+def _report_widget(key, title, x, y, w, h, report_path, **opts):
+    wgt = {"id": key, "type": "report", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "reportPath": report_path}
+    wgt.update(opts)
+    return wgt
 
 
-def _form_widget(key, title, x, y, w, h, function_name, fields, button_label, object_path=HUB):
-    return {"key": key, "type": "function-form", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"objectPath": object_path, "functionName": function_name,
-                                        "buttonLabel": button_label, "fieldsJson": json.dumps(fields)})}
+def _form_widget(key, title, x, y, w, h, function_name, fields, button_label, object_path=None, **opts):
+    wgt = {"id": key, "type": "function-form", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "objectPath": object_path or HUB, "functionName": function_name,
+           "buttonLabel": button_label, "fieldsJson": json.dumps(fields, ensure_ascii=False)}
+    wgt.update(opts)
+    return wgt
+
+
+def _func_widget(key, title, x, y, w, h, function_name, button_label, input_map, object_path=None):
+    return {"id": key, "type": "function", "title": title, "x": x, "y": y, "w": w, "h": h,
+            "objectPath": object_path or HUB, "functionName": function_name,
+            "buttonLabel": button_label, "inputJson": json.dumps(input_map, ensure_ascii=False)}
 
 
 def _html_widget(key, title, x, y, w, h, html):
-    return {"key": key, "type": "html-snippet", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"htmlJson": json.dumps({"html": html})})}
+    return {"id": key, "type": "html-snippet", "title": title, "x": x, "y": y, "w": w, "h": h,
+            "htmlJson": html}
+
+
+def _value_widget(key, title, x, y, w, h, variable, decimals=0, unit=None, object_path=None):
+    wgt = {"id": key, "type": "value", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "objectPath": object_path or HUB, "variableName": variable, "valueField": "value",
+           "decimals": decimals}
+    if unit:
+        wgt["unit"] = unit
+    return wgt
+
+
+def _sel(name, label, report, value_field, label_field=None, default=None, required=False, hint=None):
+    """Select field fed by a (possibly cross-bundle) catalog report."""
+    f = {"name": name, "label": label, "type": "select",
+         "optionsFromReport": "root.platform.reports." + report,
+         "optionsValueField": value_field}
+    if label_field:
+        f["optionsLabelField"] = label_field
+    if default is not None:
+        f["defaultValue"] = default
+    if required:
+        f["required"] = True
+    if hint:
+        f["hint"] = hint
+    return f
+
+
+def _static(name, label, options, default=None, required=False):
+    f = {"name": name, "label": label, "type": "select", "staticOptions": options}
+    if default is not None:
+        f["defaultValue"] = default
+    if required:
+        f["required"] = True
+    return f
 
 
 def _dashboard(path, title, description, widgets):
     return {"path": path, "title": title,
             "layoutJson": json.dumps({"columns": 84, "rowHeight": 8, "widgets": widgets})}
-
-
 REPORTS = [
     {"reportId": "pha-job-board", "title": "Pharma Job Board (ISA-95/ISA-88)",
      "description": "Active job orders on solid dosage and packaging lines with dispatch status.",
@@ -1015,89 +1057,110 @@ ORDER BY signed_at DESC
          ("meaning", "Meaning"), ("comment_text", "Comment"), ("signed_at", "Signed At")]]},
 ]
 
+
 DASHBOARDS = [
     _dashboard("root.platform.dashboards.pha-production", "Производство (фарма, ISA-88)",
-               "Solid dosage production: job board, job-order lifecycle and verified dispensing.",
+               "Производство твёрдых форм: доска заданий, запуск/пауза/завершение, взвешивание.",
                [
-                   _report_widget("jobs", "Pharma Job Orders", 0, 0, 54, 50,
-                                  "root.platform.reports.pha-job-board"),
-                   _form_widget("start", "Start Job", 54, 0, 30, 10, "emc_joborder_start",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"},
-                                 {"name": "personId", "label": "Operator", "type": "text", "default": "EMP-H02"}],
-                                "Start", CORE_HUB),
-                   _form_widget("pause", "Pause Job", 54, 10, 30, 8, "emc_joborder_pause",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Pause", CORE_HUB),
-                   _form_widget("resume", "Resume Job", 54, 18, 30, 8, "emc_joborder_resume",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Resume", CORE_HUB),
-                   _form_widget("complete", "Complete Job", 54, 26, 30, 8, "emc_joborder_complete",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Complete", CORE_HUB),
-                   _form_widget("dispense", "Dispensing (double verification)", 54, 34, 30, 16,
-                                "pha_dispense_weigh",
-                                [{"name": "barcode", "label": "Lot barcode", "type": "text", "default": "BC-EXC-0001"},
-                                 {"name": "targetQty", "label": "Target qty", "type": "number", "default": "100"},
-                                 {"name": "actualQty", "label": "Actual qty", "type": "number", "default": ""},
-                                 {"name": "tolerancePct", "label": "Tolerance %", "type": "number", "default": "2"},
-                                 {"name": "weighedBy", "label": "Weighed by", "type": "text", "default": "EMP-H02"},
-                                 {"name": "verifiedBy", "label": "Verified by", "type": "text", "default": "EMP-H01"}],
-                                "Verify & Sign"),
+                   _value_widget("kpiQuarantine", "Лотов на карантине", 0, 0, 28, 12, "quarantineLotCount"),
+                   _value_widget("kpiDeviations", "Открытые девиации", 28, 0, 28, 12, "openDeviationCount"),
+                   _value_widget("kpiJobs", "Серий в работе", 56, 0, 28, 12, "activePharmaJobCount"),
+                   _report_widget("jobs", "Задания (линии ТФ и упаковки)", 0, 12, 56, 49, "root.platform.reports.pha-job-board",
+                                  selectable=True, rowSelectionKey="job_no",
+                                  rowParamsFromRowJson=json.dumps({"jobNo": "job_no"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["dispatch_status", "equipment_id"]),
+                                  statusDotColumnsJson=json.dumps(["dispatch_status"])),
+                   _form_widget("start", "Запустить задание", 56, 12, 28, 16, "emc_joborder_start",
+                                [_sel("jobNo", "Задание", "pha-job-board", "job_no", "dispatch_status", required=True),
+                                 _sel("personId", "Оператор", "emc-person-catalog", "code", "name", default="EMP-H02")],
+                                "Запустить", CORE_HUB),
+                   _form_widget("pause", "Пауза", 56, 28, 28, 11, "emc_joborder_pause",
+                                [_sel("jobNo", "Задание", "pha-job-board", "job_no", "dispatch_status", required=True)],
+                                "Пауза", CORE_HUB),
+                   _form_widget("resume", "Возобновить", 56, 39, 28, 11, "emc_joborder_resume",
+                                [_sel("jobNo", "Задание", "pha-job-board", "job_no", "dispatch_status", required=True)],
+                                "Возобновить", CORE_HUB),
+                   _form_widget("complete", "Завершить", 56, 50, 28, 11, "emc_joborder_complete",
+                                [_sel("jobNo", "Задание", "pha-job-board", "job_no", "dispatch_status", required=True)],
+                                "Завершить", CORE_HUB),
+                   _form_widget("dispense", "Взвешивание (GMP, 2-я подпись)", 0, 61, 28, 36, "pha_dispense_weigh",
+                                [_sel("barcode", "Штрихкод серии", "emc-stock-report", "barcode", "material_id", required=True),
+                                 {"name": "targetQty", "label": "Целевая масса", "type": "number", "defaultValue": "100"},
+                                 {"name": "actualQty", "label": "Фактическая масса", "type": "number", "defaultValue": ""},
+                                 {"name": "tolerancePct", "label": "Допуск, %", "type": "number", "defaultValue": "2"},
+                                 _sel("weighedBy", "Взвесил", "emc-person-catalog", "code", "name", default="EMP-H02"),
+                                 _sel("verifiedBy", "Проверил", "emc-person-catalog", "code", "name", default="EMP-H01")],
+                                "Проверить и подписать"),
                ]),
     _dashboard("root.platform.dashboards.pha-quality", "Качество и выпуск серии (GMP)",
-               "Quarantine, batch release/reject with e-signature, deviation registration.",
+               "Карантин, выпуск/браковка серий с e-подписью, регистрация девиаций.",
                [
-                   _report_widget("quarantine", "Quarantine & Batch Release", 0, 0, 54, 50,
-                                  "root.platform.reports.pha-quarantine-lots"),
-                   _form_widget("release", "Release Lot (QA, e-sign)", 54, 0, 30, 10, "pha_lot_release",
-                                [{"name": "lotId", "label": "Lot ID", "type": "text"},
-                                 {"name": "by", "label": "QA signer", "type": "text", "default": "EMP-H03"},
-                                 {"name": "comment", "label": "Comment", "type": "text", "default": ""}],
-                                "Release"),
-                   _form_widget("reject", "Reject Lot", 54, 10, 30, 10, "pha_lot_reject",
-                                [{"name": "lotId", "label": "Lot ID", "type": "text"},
-                                 {"name": "by", "label": "Signer", "type": "text", "default": "EMP-H03"},
-                                 {"name": "reason", "label": "Reason", "type": "text", "default": ""}],
-                                "Reject"),
-                   _form_widget("defect", "Register Deviation", 54, 20, 30, 15, "emc_qa_registerDefect",
-                                [{"name": "defectNo", "label": "Deviation #", "type": "text"},
-                                 {"name": "jobNo", "label": "Job #", "type": "text", "default": "JO-PH-001"},
-                                 {"name": "defectTypeId", "label": "Defect type", "type": "text", "default": "DFT-WEIGHT-VAR"},
-                                 {"name": "reasonCode", "label": "Reason code", "type": "text", "default": ""},
-                                 {"name": "lotId", "label": "Lot ID", "type": "text", "default": ""},
-                                 {"name": "qtyDeclared", "label": "Qty", "type": "number", "default": "1"},
-                                 {"name": "severity", "label": "Severity", "type": "text", "default": "MINOR"},
-                                 {"name": "createdBy", "label": "Created by", "type": "text", "default": "EMP-H03"}],
-                                "Register", CORE_HUB),
+                   _report_widget("quarantine", "Карантин и выпуск серий", 0, 0, 56, 30, "root.platform.reports.pha-quarantine-lots",
+                                  selectable=True, rowSelectionKey="lot_id",
+                                  rowParamsFromRowJson=json.dumps({"lotId": "lot_id"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  statusDotColumnsJson=json.dumps(["disposition"])),
+                   _form_widget("release", "Выпустить серию (релиз ОКК)", 56, 0, 28, 20, "pha_lot_release",
+                                [_sel("lotId", "Серия", "pha-quarantine-lots", "lot_id", "material_id", required=True),
+                                 _sel("by", "Подписант ОКК", "emc-person-catalog", "code", "name", default="EMP-H03"),
+                                 {"name": "comment", "label": "Комментарий", "type": "text", "defaultValue": ""}],
+                                "Выпустить"),
+                   _form_widget("reject", "Забраковать серию", 56, 20, 28, 20, "pha_lot_reject",
+                                [_sel("lotId", "Серия", "pha-quarantine-lots", "lot_id", "material_id", required=True),
+                                 _sel("by", "Подписант", "emc-person-catalog", "code", "name", default="EMP-H03"),
+                                 {"name": "reason", "label": "Причина", "type": "text", "defaultValue": ""}],
+                                "Забраковать"),
+                   _report_widget("defects", "Девиации (дефекты)", 0, 30, 56, 37, "root.platform.reports.emc-defect-report",
+                                  selectable=True, rowSelectionKey="defect_no",
+                                  rowParamsFromRowJson=json.dumps({"defectNo": "defect_no"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "severity"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _form_widget("registerDefect", "Зарегистрировать девиацию", 56, 40, 28, 36, "emc_qa_registerDefect",
+                                [{"name": "defectNo", "label": "Девиация №", "type": "text", "required": True},
+                                 _sel("jobNo", "Задание", "pha-job-board", "job_no", "dispatch_status", required=True),
+                                 _sel("defectTypeId", "Тип дефекта", "emc-defect-type-catalog", "code", "name", required=True),
+                                 _sel("reasonCode", "Код причины", "emc-reason-code-catalog", "code", "name"),
+                                 _static("severity", "Критичность", ["MINOR", "MAJOR", "CRITICAL"], default="MINOR"),
+                                 {"name": "qtyDeclared", "label": "Количество", "type": "number", "defaultValue": "1"},
+                                 _sel("createdBy", "Сотрудник", "emc-person-catalog", "code", "name", default="EMP-H03")],
+                                "Зарегистрировать", CORE_HUB),
                ]),
     _dashboard("root.platform.dashboards.pha-serialization", "Сериализация и аудит",
-               "DataMatrix serial registry with aggregation and the e-signature audit trail.",
+               "Реестр серийных кодов (DataMatrix) с агрегацией и аудит электронных подписей.",
                [
-                   _report_widget("serials", "Serial Code Registry", 0, 0, 54, 25,
-                                  "root.platform.reports.pha-serial-report"),
-                   _report_widget("audit", "E-Signature Audit", 0, 25, 54, 25,
-                                  "root.platform.reports.pha-esign-audit"),
-                   _form_widget("register", "Register Serial Code", 54, 0, 30, 18, "pha_serial_register",
-                                [{"name": "serialCode", "label": "Serial code", "type": "text"},
-                                 {"name": "gtin", "label": "GTIN", "type": "text", "default": "04607012340018"},
-                                 {"name": "lotId", "label": "Lot ID", "type": "text", "default": "LOT-FG-PH-0001"},
-                                 {"name": "jobNo", "label": "Job #", "type": "text", "default": "JO-PH-003"},
-                                 {"name": "parentCode", "label": "Aggregate (box/pallet)", "type": "text", "default": ""}],
-                                "Commission"),
-                   _html_widget("note", "Агрегация", 54, 18, 30, 14,
-                                "<h3>Aggregation</h3><p>Hierarchy: unit &rarr; box (<i>DM-BOX-*</i>) &rarr; pallet. "
-                                "The <b>Aggregate</b> field links a unit code to the upper-level package. "
-                                "Decommissioning is a status change (<i>DECOMMISSIONED</i>).</p>"),
+                   _report_widget("serials", "Реестр серийных кодов", 0, 0, 56, 30, "root.platform.reports.pha-serial-report",
+                                  filterable=True),
+                   _form_widget("registerSerial", "Зарегистрировать код", 56, 0, 28, 30, "pha_serial_register",
+                                [_sel("jobNo", "Задание", "pha-job-board", "job_no", "dispatch_status"),
+                                 _sel("lotId", "Серия", "emc-stock-report", "lot_id", "material_id"),
+                                 {"name": "gtin", "label": "GTIN", "type": "text", "defaultValue": "04607012340018"},
+                                 {"name": "serialCode", "label": "Серийный код", "type": "text", "required": True},
+                                 {"name": "parentCode", "label": "Агрегат", "type": "text", "defaultValue": "",
+                                  "hint": "Код короба для агрегации"}],
+                                "Ввести в оборот"),
+                   _report_widget("audit", "Аудит электронных подписей", 0, 30, 56, 30, "root.platform.reports.pha-esign-audit",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["entity_type", "meaning"])),
+                   _html_widget("note", "Агрегация", 56, 30, 28, 30,
+                                "<h3>Агрегация</h3><p>Иерархия: пачка &rarr; короб (<i>DM-BOX-*</i>) &rarr; паллета. "
+                                "Поле <b>Агрегат</b> связывает код единицы с кодом упаковки верхнего уровня. "
+                                "Вывод из оборота — смена статуса кода (<i>DECOMMISSIONED</i>).</p>"),
                ]),
 ]
+
 
 # ----------------------------------------------------------------------------
 # Assembly
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "displayName": "ERP-MES Pharma (ISA-95/ISA-88)",
     "tablePrefix": "pha_",
     "schemaName": SCHEMA,
-    "requires": [{"appId": "erp-mes-core", "minVersion": "1.0.0"}],
+    "requires": [{"appId": "erp-mes-core", "minVersion": "1.1.0"}],
     "migrations": MIGRATIONS,
     "objects": OBJECTS,
     "functions": FUNCTIONS,
@@ -1129,7 +1192,7 @@ bundle = {
         "product": "erp-mes-pharma",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.0.0 pharma (solid dosage) overlay on erp-mes-core: GMP/eBR/e-signatures/serialization",
+        "changelog": "1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards (requires erp-mes-core 1.1.0)",
     },
 }
 

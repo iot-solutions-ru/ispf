@@ -17,7 +17,7 @@ python examples/erp-mes-pharma/generate_bundle.py
 
 ## Dependency on erp-mes-core
 
-- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "1.0.0"}]` — deploy **the core
+- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "1.1.0"}]` — deploy **the core
   first**, the platform dependency verifier rejects the overlay otherwise.
 - Same `schemaName` as the core (`app_erp_mes_core`): overlay migrations, functions and bindings
   run with `search_path` into the core schema and read/write the core `emc_*` tables directly.
@@ -44,7 +44,7 @@ python examples/erp-mes-pharma/generate_bundle.py
 | Live objects | Hub singleton `root.platform.singleton-blueprints.erp-mes-pharma-hub-v1` (counters `quarantineLotCount`, `openDeviationCount`, `activePharmaJobCount` + 2 alert rules + 2 platform events) | bundle |
 | BFF functions | `pha_eventdef_list(section)`, `pha_lot_release`, `pha_lot_reject`, `pha_esign_list`, `pha_serial_register`, `pha_serial_list`, `pha_dispense_weigh` | bundle |
 | Reports | `pha-job-board`, `pha-quarantine-lots`, `pha-serial-report`, `pha-esign-audit` | bundle |
-| Dashboards | `pha-production` (Производство — job board + Start/Pause/Resume/Complete core actions + dispensing form), `pha-quality` (Качество — quarantine lots + release/reject with e-signature + deviation registration), `pha-serialization` (Сериализация и аудит — serial registry + e-signature audit + register form) | bundle |
+| Dashboards | **v1.1.0 — переработанный UI оператора (flat widget format).** `pha-production` — «Производство (фарма, ISA-88)»: KPI-полоса (активные заказы, простой, карантин, отклонения, outbox), selectable job board с statusDot по `dispatch_status` и row-click автозаполнением форм, Start/Pause/Resume/Complete с dropdown'ами из отчётов ядра, форма «Взвешивание (GMP, 2-я подпись)» с select'ами из `emc-stock-report`/`emc-person-catalog`; `pha-quality` — «Качество и выпуск серии (GMP)»: selectable карантинные серии (statusDot по `disposition`), «Выпустить серию (релиз ОКК)» / «Забраковать серию» с dropdown'ами, «Зарегистрировать девиацию», журналы дефектов и движения с фильтрами; `pha-serialization` — «Сериализация и аудит»: реестр кодов и e-sign аудит (filterable), «Зарегистрировать код» с select job/серия, HTML-виджет агрегации кодов. Требует erp-mes-core ≥ 1.1.0 | bundle |
 
 ## GMP specifics modelled here
 
@@ -98,7 +98,8 @@ Then open **Solutions → ERP-MES Pharma (ISA-95/ISA-88)** in the web console.
 
 1. Open the **Производство (фарма, ISA-88)** dashboard — `JO-PH-001` is RUNNING on TPR-01
    (tableting), `JO-PH-002` is ALLOWED on COT-01, `JO-PH-003` is NOT_ALLOWED on BLS-01.
-2. Dispense on the **Взвешивание** form: scan the barcode of an excipient lot (`BC-EXC-0001`),
+2. Dispense on the **Взвешивание (GMP, 2-я подпись)** form on the **Производство** dashboard:
+   pick the excipient lot barcode from the dropdown (options come from `emc-stock-report`),
    enter target/actual weight and two different operators — both e-signatures are recorded.
 3. On **Качество и выпуск серии (GMP)**: two lots sit in quarantine (`quarantineLotCount = 2`
    raises the `quarantineAgingAlert`). Release `LOT-FG-PH-0001` with a QA signature — the lot becomes

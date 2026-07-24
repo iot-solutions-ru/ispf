@@ -12,7 +12,7 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.1.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -25,9 +25,13 @@
     "quality",
     "product"
   ],
-  "changelog": "1.0.0 - initial ISA-95 canonical ERP-MES core bundle: 12 migrations, 61 BFF functions, 5 dashboards, 5 reports, singleton hub, BPMN job-dispatch workflow",
+  "changelog": "1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; +8 catalog reports (material/equipment/person/defect-type/reason-code/eventdef/shift/event-journal)",
   "metadata": {
     "changelog": [
+      {
+        "version": "1.1.0",
+        "notes": "1.1.0: operator UI rework - flat dashboard widget format (no settingsJson), dropdown selects fed by catalog reports, row-click autofill into forms, KPI value cards, event journal report"
+      },
       {
         "version": "1.0.0",
         "notes": "Initial release: ISA-95 Parts 1-5 + ISO 22400 OEE subset, certified by ErpMesCoreIntegrationTest happy path"

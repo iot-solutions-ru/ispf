@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "ERP-MES Core (ISA-95)",
   "tablePrefix": "emc_",
   "schemaName": "app_erp_mes_core",
@@ -3793,28 +3793,28 @@
   "dashboards": [
     {
       "path": "root.platform.dashboards.emc-dispatch",
-      "title": "MES Dispatch (Job Board)",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"jobs\", \"type\": \"report\", \"title\": \"Job Orders\", \"x\": 0, \"y\": 0, \"w\": 54, \"h\": 42, \"settingsJson\": \"{\\\"reportPath\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"pageSize\\\": 25}\"}, {\"key\": \"start\", \"type\": \"function-form\", \"title\": \"Start Job\", \"x\": 54, \"y\": 0, \"w\": 30, \"h\": 10, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_joborder_start\\\", \\\"buttonLabel\\\": \\\"Start\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"personId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Operator\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"EMP-001\\\\\\\"}]\\\"}\"}, {\"key\": \"pause\", \"type\": \"function-form\", \"title\": \"Pause Job\", \"x\": 54, \"y\": 10, \"w\": 30, \"h\": 8, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_joborder_pause\\\", \\\"buttonLabel\\\": \\\"Pause\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}]\\\"}\"}, {\"key\": \"resume\", \"type\": \"function-form\", \"title\": \"Resume Job\", \"x\": 54, \"y\": 18, \"w\": 30, \"h\": 8, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_joborder_resume\\\", \\\"buttonLabel\\\": \\\"Resume\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}]\\\"}\"}, {\"key\": \"complete\", \"type\": \"function-form\", \"title\": \"Complete Job\", \"x\": 54, \"y\": 26, \"w\": 30, \"h\": 8, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_joborder_complete\\\", \\\"buttonLabel\\\": \\\"Complete\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}]\\\"}\"}, {\"key\": \"help\", \"type\": \"html-snippet\", \"title\": \"About\", \"x\": 54, \"y\": 38, \"w\": 30, \"h\": 12, \"settingsJson\": \"{\\\"htmlJson\\\": \\\"{\\\\\\\"html\\\\\\\": \\\\\\\"<h3>MES Dispatch</h3><p>ISA-95 Part 4 job list. Statuses follow the job-order state machine: ALLOWED &rarr; RUNNING &rarr; (PAUSED) &rarr; ENDED.</p>\\\\\\\"}\\\"}\"}]}"
+      "title": "Диспетчер производства (ISA-95)",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"kpiDowntime\", \"type\": \"value\", \"title\": \"\\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u043e \\u043f\\u0440\\u043e\\u0441\\u0442\\u043e\\u0435\\u0432\", \"x\": 0, \"y\": 0, \"w\": 28, \"h\": 12, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"variableName\": \"activeDowntimeCount\", \"valueField\": \"value\", \"decimals\": 0}, {\"id\": \"kpiOutbox\", \"type\": \"value\", \"title\": \"\\u0421\\u043e\\u043e\\u0431\\u0449\\u0435\\u043d\\u0438\\u0439 ERP \\u0432 outbox\", \"x\": 28, \"y\": 0, \"w\": 28, \"h\": 12, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"variableName\": \"pendingOutboxCount\", \"valueField\": \"value\", \"decimals\": 0}, {\"id\": \"kpiLowStock\", \"type\": \"value\", \"title\": \"\\u041b\\u043e\\u0442\\u043e\\u0432 \\u043d\\u0438\\u0436\\u0435 \\u043c\\u0438\\u043d\\u0438\\u043c\\u0443\\u043c\\u0430\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 12, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"variableName\": \"lowStockCount\", \"valueField\": \"value\", \"decimals\": 0}, {\"id\": \"jobs\", \"type\": \"report\", \"title\": \"\\u0421\\u043c\\u0435\\u043d\\u043d\\u044b\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u044f\", \"x\": 0, \"y\": 12, \"w\": 56, \"h\": 49, \"reportPath\": \"root.platform.reports.emc-job-board\", \"selectable\": true, \"rowSelectionKey\": \"job_no\", \"rowParamsFromRowJson\": \"{\\\"jobNo\\\": \\\"job_no\\\"}\", \"autoSelectFirstRow\": true, \"filterable\": true, \"columnFiltersJson\": \"[\\\"dispatch_status\\\", \\\"equipment_id\\\"]\", \"statusDotColumnsJson\": \"[\\\"dispatch_status\\\"]\"}, {\"id\": \"start\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u043f\\u0443\\u0441\\u0442\\u0438\\u0442\\u044c \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\", \"x\": 56, \"y\": 12, \"w\": 28, \"h\": 16, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_start\", \"buttonLabel\": \"\\u0417\\u0430\\u043f\\u0443\\u0441\\u0442\\u0438\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"personId\\\", \\\"label\\\": \\\"\\u041e\\u043f\\u0435\\u0440\\u0430\\u0442\\u043e\\u0440\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-person-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"defaultValue\\\": \\\"EMP-001\\\"}]\"}, {\"id\": \"pause\", \"type\": \"function-form\", \"title\": \"\\u041f\\u0430\\u0443\\u0437\\u0430\", \"x\": 56, \"y\": 28, \"w\": 28, \"h\": 11, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_pause\", \"buttonLabel\": \"\\u041f\\u0430\\u0443\\u0437\\u0430\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}]\"}, {\"id\": \"resume\", \"type\": \"function-form\", \"title\": \"\\u0412\\u043e\\u0437\\u043e\\u0431\\u043d\\u043e\\u0432\\u0438\\u0442\\u044c\", \"x\": 56, \"y\": 39, \"w\": 28, \"h\": 11, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_resume\", \"buttonLabel\": \"\\u0412\\u043e\\u0437\\u043e\\u0431\\u043d\\u043e\\u0432\\u0438\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}]\"}, {\"id\": \"complete\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u0432\\u0435\\u0440\\u0448\\u0438\\u0442\\u044c\", \"x\": 56, \"y\": 50, \"w\": 28, \"h\": 11, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_complete\", \"buttonLabel\": \"\\u0417\\u0430\\u0432\\u0435\\u0440\\u0448\\u0438\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}]\"}]}"
     },
     {
       "path": "root.platform.dashboards.emc-execution",
-      "title": "MES Execution (Track &amp; Trace)",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"consume\", \"type\": \"function-form\", \"title\": \"Consume Material\", \"x\": 0, \"y\": 0, \"w\": 28, \"h\": 14, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_matlot_consume\\\", \\\"buttonLabel\\\": \\\"Consume\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"barcode\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Lot barcode\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"quantity\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Qty\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"number\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"1\\\\\\\"}]\\\"}\"}, {\"key\": \"produce\", \"type\": \"function-form\", \"title\": \"Produce Material\", \"x\": 28, \"y\": 0, \"w\": 28, \"h\": 14, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_matlot_produce\\\", \\\"buttonLabel\\\": \\\"Produce\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"lotId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"New Lot ID\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"barcode\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Barcode\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"definitionId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Material ID\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"WIP-HOUSING\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"quantity\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Qty\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"number\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"1\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"storageLocation\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Location\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"WH-CENTRAL\\\\\\\"}]\\\"}\"}, {\"key\": \"dc\", \"type\": \"function-form\", \"title\": \"Data Collection (OPC-10031-4)\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 14, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_dc_recordQuantity\\\", \\\"buttonLabel\\\": \\\"Record\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"paramKey\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Parameter\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"GOOD_QTY\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"paramValue\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Value\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"0\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"uom\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"UOM\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"pcs\\\\\\\"}]\\\"}\"}, {\"key\": \"moves\", \"type\": \"report\", \"title\": \"Material Movement\", \"x\": 0, \"y\": 14, \"w\": 84, \"h\": 30, \"settingsJson\": \"{\\\"reportPath\\\": \\\"root.platform.reports.emc-material-movement\\\", \\\"pageSize\\\": 25}\"}]}"
+      "title": "Исполнение и материалы",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"consume\", \"type\": \"function-form\", \"title\": \"\\u0421\\u043f\\u0438\\u0441\\u0430\\u0442\\u044c \\u043c\\u0430\\u0442\\u0435\\u0440\\u0438\\u0430\\u043b\", \"x\": 0, \"y\": 0, \"w\": 28, \"h\": 16, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_matlot_consume\", \"buttonLabel\": \"\\u0421\\u043f\\u0438\\u0441\\u0430\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"barcode\\\", \\\"label\\\": \\\"\\u0428\\u0442\\u0440\\u0438\\u0445\\u043a\\u043e\\u0434 \\u043b\\u043e\\u0442\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-stock-report\\\", \\\"optionsValueField\\\": \\\"barcode\\\", \\\"optionsLabelField\\\": \\\"material_id\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"quantity\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u043b\\u0438\\u0447\\u0435\\u0441\\u0442\\u0432\\u043e\\\", \\\"type\\\": \\\"number\\\", \\\"defaultValue\\\": \\\"1\\\"}]\"}, {\"id\": \"place\", \"type\": \"function-form\", \"title\": \"\\u041f\\u043e\\u0441\\u0442\\u0430\\u0432\\u0438\\u0442\\u044c \\u043b\\u043e\\u0442 \\u043d\\u0430 \\u043b\\u0438\\u043d\\u0438\\u044e\", \"x\": 0, \"y\": 16, \"w\": 28, \"h\": 16, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_matlot_placeOnLine\", \"buttonLabel\": \"\\u041f\\u043e\\u0441\\u0442\\u0430\\u0432\\u0438\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"barcode\\\", \\\"label\\\": \\\"\\u0428\\u0442\\u0440\\u0438\\u0445\\u043a\\u043e\\u0434 \\u043b\\u043e\\u0442\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-stock-report\\\", \\\"optionsValueField\\\": \\\"barcode\\\", \\\"optionsLabelField\\\": \\\"material_id\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}]\"}, {\"id\": \"produce\", \"type\": \"function-form\", \"title\": \"\\u041f\\u0440\\u043e\\u0438\\u0437\\u0432\\u0435\\u0441\\u0442\\u0438 \\u043c\\u0430\\u0442\\u0435\\u0440\\u0438\\u0430\\u043b\", \"x\": 28, \"y\": 0, \"w\": 28, \"h\": 32, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_matlot_produce\", \"buttonLabel\": \"\\u041f\\u0440\\u043e\\u0438\\u0437\\u0432\\u0435\\u0441\\u0442\\u0438\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"lotId\\\", \\\"label\\\": \\\"\\u041d\\u043e\\u0432\\u044b\\u0439 \\u043b\\u043e\\u0442 (ID)\\\", \\\"type\\\": \\\"text\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"barcode\\\", \\\"label\\\": \\\"\\u0428\\u0442\\u0440\\u0438\\u0445\\u043a\\u043e\\u0434\\\", \\\"type\\\": \\\"text\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"definitionId\\\", \\\"label\\\": \\\"\\u041c\\u0430\\u0442\\u0435\\u0440\\u0438\\u0430\\u043b\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-material-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"quantity\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u043b\\u0438\\u0447\\u0435\\u0441\\u0442\\u0432\\u043e\\\", \\\"type\\\": \\\"number\\\", \\\"defaultValue\\\": \\\"1\\\"}, {\\\"name\\\": \\\"storageLocation\\\", \\\"label\\\": \\\"\\u0421\\u043a\\u043b\\u0430\\u0434\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-equipment-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\"}]\"}, {\"id\": \"dc\", \"type\": \"function-form\", \"title\": \"\\u0421\\u0431\\u043e\\u0440 \\u0434\\u0430\\u043d\\u043d\\u044b\\u0445 (OPC 10031-4)\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 26, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_dc_recordQuantity\", \"buttonLabel\": \"\\u0417\\u0430\\u043f\\u0438\\u0441\\u0430\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"paramKey\\\", \\\"label\\\": \\\"\\u041f\\u0430\\u0440\\u0430\\u043c\\u0435\\u0442\\u0440\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"GOOD_QTY\\\", \\\"REJECT_QTY\\\", \\\"RATE\\\", \\\"SPEED\\\"], \\\"defaultValue\\\": \\\"GOOD_QTY\\\"}, {\\\"name\\\": \\\"paramValue\\\", \\\"label\\\": \\\"\\u0417\\u043d\\u0430\\u0447\\u0435\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"0\\\"}, {\\\"name\\\": \\\"uom\\\", \\\"label\\\": \\\"\\u0415\\u0434\\u0438\\u043d\\u0438\\u0446\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"pcs\\\", \\\"kg\\\", \\\"m\\\", \\\"m2\\\"], \\\"defaultValue\\\": \\\"pcs\\\"}]\"}, {\"id\": \"moves\", \"type\": \"report\", \"title\": \"\\u0414\\u0432\\u0438\\u0436\\u0435\\u043d\\u0438\\u0435 \\u043c\\u0430\\u0442\\u0435\\u0440\\u0438\\u0430\\u043b\\u043e\\u0432\", \"x\": 0, \"y\": 36, \"w\": 84, \"h\": 26, \"reportPath\": \"root.platform.reports.emc-material-movement\", \"filterable\": true, \"columnFiltersJson\": \"[\\\"material_use\\\", \\\"job_no\\\"]\"}]}"
     },
     {
       "path": "root.platform.dashboards.emc-inventory",
-      "title": "Inventory Operations",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"stock\", \"type\": \"report\", \"title\": \"Stock\", \"x\": 0, \"y\": 0, \"w\": 54, \"h\": 26, \"settingsJson\": \"{\\\"reportPath\\\": \\\"root.platform.reports.emc-stock-report\\\", \\\"pageSize\\\": 25}\"}, {\"key\": \"register\", \"type\": \"function-form\", \"title\": \"Register Lot\", \"x\": 54, \"y\": 0, \"w\": 30, \"h\": 13, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_matlot_register\\\", \\\"buttonLabel\\\": \\\"Register\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"lotId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Lot ID\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"barcode\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Barcode\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"definitionId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Material ID\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"storageLocation\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Location\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"WH-CENTRAL\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"quantity\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Qty\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"number\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"1\\\\\\\"}]\\\"}\"}, {\"key\": \"place\", \"type\": \"function-form\", \"title\": \"Place Lot on Line\", \"x\": 54, \"y\": 13, \"w\": 30, \"h\": 13, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_matlot_placeOnLine\\\", \\\"buttonLabel\\\": \\\"Place\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"barcode\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Barcode\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"JO-DEMO-002\\\\\\\"}]\\\"}\"}, {\"key\": \"invdoc\", \"type\": \"function-form\", \"title\": \"Create ERP Inventory Doc\", \"x\": 54, \"y\": 26, \"w\": 30, \"h\": 14, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_invdoc_create\\\", \\\"buttonLabel\\\": \\\"Create\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"docId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Doc #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"kind\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Kind\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"DELIVERY_REQUEST\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"operatorPersonId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"By\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"EMP-001\\\\\\\"}]\\\"}\"}, {\"key\": \"kinds\", \"type\": \"html-snippet\", \"title\": \"Doc kinds\", \"x\": 0, \"y\": 26, \"w\": 54, \"h\": 14, \"settingsJson\": \"{\\\"htmlJson\\\": \\\"{\\\\\\\"html\\\\\\\": \\\\\\\"<b>ISA-95 Part 5 / Part 4 inventory kinds:</b><ul><li>DELIVERY_REQUEST &ndash; ERP asks MES to deliver materials</li><li>RESOURCE_REQUEST &ndash; line-side material call</li><li>STOCK_TAKING &ndash; physical inventory</li><li>SCRAP_REQUEST / RELEASE / TRANSFER</li></ul>\\\\\\\"}\\\"}\"}]}"
+      "title": "Склад и документы ERP",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"stock\", \"type\": \"report\", \"title\": \"\\u041e\\u0441\\u0442\\u0430\\u0442\\u043a\\u0438 (\\u043b\\u043e\\u0442\\u044b)\", \"x\": 0, \"y\": 0, \"w\": 56, \"h\": 60, \"reportPath\": \"root.platform.reports.emc-stock-report\", \"selectable\": true, \"rowSelectionKey\": \"lot_id\", \"rowParamsFromRowJson\": \"{\\\"barcode\\\": \\\"barcode\\\", \\\"lotId\\\": \\\"lot_id\\\"}\", \"autoSelectFirstRow\": true, \"filterable\": true, \"columnFiltersJson\": \"[\\\"status\\\", \\\"class_id\\\", \\\"storage_location\\\"]\", \"statusDotColumnsJson\": \"[\\\"status\\\"]\"}, {\"id\": \"register\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u0440\\u0435\\u0433\\u0438\\u0441\\u0442\\u0440\\u0438\\u0440\\u043e\\u0432\\u0430\\u0442\\u044c \\u043b\\u043e\\u0442\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 26, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_matlot_register\", \"buttonLabel\": \"\\u0417\\u0430\\u0440\\u0435\\u0433\\u0438\\u0441\\u0442\\u0440\\u0438\\u0440\\u043e\\u0432\\u0430\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"lotId\\\", \\\"label\\\": \\\"\\u041b\\u043e\\u0442 (ID)\\\", \\\"type\\\": \\\"text\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"barcode\\\", \\\"label\\\": \\\"\\u0428\\u0442\\u0440\\u0438\\u0445\\u043a\\u043e\\u0434\\\", \\\"type\\\": \\\"text\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"definitionId\\\", \\\"label\\\": \\\"\\u041c\\u0430\\u0442\\u0435\\u0440\\u0438\\u0430\\u043b\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-material-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"storageLocation\\\", \\\"label\\\": \\\"\\u0421\\u043a\\u043b\\u0430\\u0434\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-equipment-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\"}, {\\\"name\\\": \\\"quantity\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u043b\\u0438\\u0447\\u0435\\u0441\\u0442\\u0432\\u043e\\\", \\\"type\\\": \\\"number\\\", \\\"defaultValue\\\": \\\"1\\\"}]\"}, {\"id\": \"place\", \"type\": \"function-form\", \"title\": \"\\u041d\\u0430 \\u043b\\u0438\\u043d\\u0438\\u044e\", \"x\": 56, \"y\": 26, \"w\": 28, \"h\": 16, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_matlot_placeOnLine\", \"buttonLabel\": \"\\u041f\\u043e\\u0441\\u0442\\u0430\\u0432\\u0438\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"barcode\\\", \\\"label\\\": \\\"\\u0428\\u0442\\u0440\\u0438\\u0445\\u043a\\u043e\\u0434 \\u043b\\u043e\\u0442\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-stock-report\\\", \\\"optionsValueField\\\": \\\"barcode\\\", \\\"optionsLabelField\\\": \\\"material_id\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}]\"}, {\"id\": \"invdoc\", \"type\": \"function-form\", \"title\": \"\\u0421\\u043e\\u0437\\u0434\\u0430\\u0442\\u044c ERP-\\u0434\\u043e\\u043a\\u0443\\u043c\\u0435\\u043d\\u0442\", \"x\": 56, \"y\": 42, \"w\": 28, \"h\": 18, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_invdoc_create\", \"buttonLabel\": \"\\u0421\\u043e\\u0437\\u0434\\u0430\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"docId\\\", \\\"label\\\": \\\"\\u0414\\u043e\\u043a\\u0443\\u043c\\u0435\\u043d\\u0442 \\u2116\\\", \\\"type\\\": \\\"text\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"kind\\\", \\\"label\\\": \\\"\\u0412\\u0438\\u0434 \\u0434\\u043e\\u043a\\u0443\\u043c\\u0435\\u043d\\u0442\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"DELIVERY_REQUEST\\\", \\\"RESOURCE_REQUEST\\\", \\\"STOCK_TAKING\\\", \\\"SCRAP_REQUEST\\\", \\\"RELEASE\\\", \\\"TRANSFER\\\"], \\\"defaultValue\\\": \\\"DELIVERY_REQUEST\\\"}, {\\\"name\\\": \\\"operatorPersonId\\\", \\\"label\\\": \\\"\\u0421\\u043e\\u0442\\u0440\\u0443\\u0434\\u043d\\u0438\\u043a\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-person-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"defaultValue\\\": \\\"EMP-001\\\"}]\"}]}"
     },
     {
       "path": "root.platform.dashboards.emc-quality",
-      "title": "Quality Operations",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"defects\", \"type\": \"report\", \"title\": \"Defects\", \"x\": 0, \"y\": 0, \"w\": 54, \"h\": 30, \"settingsJson\": \"{\\\"reportPath\\\": \\\"root.platform.reports.emc-defect-report\\\", \\\"pageSize\\\": 25}\"}, {\"key\": \"register\", \"type\": \"function-form\", \"title\": \"Register Defect\", \"x\": 54, \"y\": 0, \"w\": 30, \"h\": 15, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_qa_registerDefect\\\", \\\"buttonLabel\\\": \\\"Register\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"defectNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Defect #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"jobNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Job #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"defectTypeId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Type\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"DFT-VISUAL\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"reasonCode\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Reason\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"qtyDeclared\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Qty\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"number\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"1\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"severity\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Severity\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"MINOR\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"createdBy\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"By\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"operator\\\\\\\"}]\\\"}\"}, {\"key\": \"confirm\", \"type\": \"function-form\", \"title\": \"Confirm Defect\", \"x\": 54, \"y\": 15, \"w\": 30, \"h\": 8, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_qa_confirmDefect\\\", \\\"buttonLabel\\\": \\\"Confirm\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"defectNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Defect #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"by\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"By\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"qa\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"reasonCode\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Reason\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"\\\\\\\"}]\\\"}\"}, {\"key\": \"close\", \"type\": \"function-form\", \"title\": \"Close Defect\", \"x\": 54, \"y\": 23, \"w\": 30, \"h\": 8, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_qa_closeDefect\\\", \\\"buttonLabel\\\": \\\"Close\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"defectNo\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Defect #\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"by\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"By\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"qa\\\\\\\"}]\\\"}\"}]}"
+      "title": "Качество",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"defects\", \"type\": \"report\", \"title\": \"\\u0414\\u0435\\u0444\\u0435\\u043a\\u0442\\u044b\", \"x\": 0, \"y\": 0, \"w\": 56, \"h\": 67, \"reportPath\": \"root.platform.reports.emc-defect-report\", \"selectable\": true, \"rowSelectionKey\": \"defect_no\", \"rowParamsFromRowJson\": \"{\\\"defectNo\\\": \\\"defect_no\\\"}\", \"autoSelectFirstRow\": true, \"filterable\": true, \"columnFiltersJson\": \"[\\\"status\\\", \\\"severity\\\", \\\"defect_type_id\\\"]\", \"statusDotColumnsJson\": \"[\\\"status\\\"]\"}, {\"id\": \"register\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u0440\\u0435\\u0433\\u0438\\u0441\\u0442\\u0440\\u0438\\u0440\\u043e\\u0432\\u0430\\u0442\\u044c \\u0434\\u0435\\u0444\\u0435\\u043a\\u0442\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 41, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_qa_registerDefect\", \"buttonLabel\": \"\\u0417\\u0430\\u0440\\u0435\\u0433\\u0438\\u0441\\u0442\\u0440\\u0438\\u0440\\u043e\\u0432\\u0430\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"defectNo\\\", \\\"label\\\": \\\"\\u0414\\u0435\\u0444\\u0435\\u043a\\u0442 \\u2116\\\", \\\"type\\\": \\\"text\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"defectTypeId\\\", \\\"label\\\": \\\"\\u0422\\u0438\\u043f \\u0434\\u0435\\u0444\\u0435\\u043a\\u0442\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-defect-type-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"reasonCode\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u0434 \\u043f\\u0440\\u0438\\u0447\\u0438\\u043d\\u044b\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-reason-code-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\"}, {\\\"name\\\": \\\"severity\\\", \\\"label\\\": \\\"\\u041a\\u0440\\u0438\\u0442\\u0438\\u0447\\u043d\\u043e\\u0441\\u0442\\u044c\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"MINOR\\\", \\\"MAJOR\\\", \\\"CRITICAL\\\"], \\\"defaultValue\\\": \\\"MINOR\\\"}, {\\\"name\\\": \\\"qtyDeclared\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u043b\\u0438\\u0447\\u0435\\u0441\\u0442\\u0432\\u043e\\\", \\\"type\\\": \\\"number\\\", \\\"defaultValue\\\": \\\"1\\\"}, {\\\"name\\\": \\\"createdBy\\\", \\\"label\\\": \\\"\\u0421\\u043e\\u0442\\u0440\\u0443\\u0434\\u043d\\u0438\\u043a\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-person-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"defaultValue\\\": \\\"EMP-001\\\"}]\"}, {\"id\": \"confirm\", \"type\": \"function-form\", \"title\": \"\\u041f\\u043e\\u0434\\u0442\\u0432\\u0435\\u0440\\u0434\\u0438\\u0442\\u044c \\u0434\\u0435\\u0444\\u0435\\u043a\\u0442\", \"x\": 56, \"y\": 41, \"w\": 28, \"h\": 16, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_qa_confirmDefect\", \"buttonLabel\": \"\\u041f\\u043e\\u0434\\u0442\\u0432\\u0435\\u0440\\u0434\\u0438\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"defectNo\\\", \\\"label\\\": \\\"\\u0414\\u0435\\u0444\\u0435\\u043a\\u0442 \\u2116\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-defect-report\\\", \\\"optionsValueField\\\": \\\"defect_no\\\", \\\"optionsLabelField\\\": \\\"status\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"by\\\", \\\"label\\\": \\\"\\u041a\\u0435\\u043c\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"qa\\\"}, {\\\"name\\\": \\\"reasonCode\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u0434 \\u043f\\u0440\\u0438\\u0447\\u0438\\u043d\\u044b\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-reason-code-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\"}]\"}, {\"id\": \"close\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u043a\\u0440\\u044b\\u0442\\u044c \\u0434\\u0435\\u0444\\u0435\\u043a\\u0442\", \"x\": 56, \"y\": 57, \"w\": 28, \"h\": 11, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_qa_closeDefect\", \"buttonLabel\": \"\\u0417\\u0430\\u043a\\u0440\\u044b\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"defectNo\\\", \\\"label\\\": \\\"\\u0414\\u0435\\u0444\\u0435\\u043a\\u0442 \\u2116\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-defect-report\\\", \\\"optionsValueField\\\": \\\"defect_no\\\", \\\"optionsLabelField\\\": \\\"status\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"by\\\", \\\"label\\\": \\\"\\u041a\\u0435\\u043c\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"qa\\\"}]\"}]}"
     },
     {
       "path": "root.platform.dashboards.emc-oee",
-      "title": "OEE / Performance Analysis",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"key\": \"calc\", \"type\": \"function-form\", \"title\": \"Calculate Shift OEE\", \"x\": 0, \"y\": 0, \"w\": 28, \"h\": 12, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_oee_calcShift\\\", \\\"buttonLabel\\\": \\\"Calculate\\\", \\\"fieldsJson\\\": \\\"[{\\\\\\\"name\\\\\\\": \\\\\\\"equipmentId\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Equipment\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"WU-A01\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"shiftLabel\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Shift\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"text\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"SHIFT-DEMO-1\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"plannedMinutes\\\\\\\", \\\\\\\"label\\\\\\\": \\\\\\\"Planned min\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"number\\\\\\\", \\\\\\\"default\\\\\\\": \\\\\\\"480\\\\\\\"}]\\\"}\"}, {\"key\": \"kpi1\", \"type\": \"function\", \"title\": \"OEE WU-A01\", \"x\": 28, \"y\": 0, \"w\": 28, \"h\": 6, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_oee_getKpi\\\", \\\"buttonLabel\\\": \\\"Refresh OEE\\\", \\\"inputMapJson\\\": \\\"{\\\\\\\"equipmentId\\\\\\\": \\\\\\\"WU-A01\\\\\\\"}\\\"}\"}, {\"key\": \"kpi2\", \"type\": \"function\", \"title\": \"OEE WU-A02\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 6, \"settingsJson\": \"{\\\"objectPath\\\": \\\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\\\", \\\"functionName\\\": \\\"emc_oee_getKpi\\\", \\\"buttonLabel\\\": \\\"Refresh OEE\\\", \\\"inputMapJson\\\": \\\"{\\\\\\\"equipmentId\\\\\\\": \\\\\\\"WU-A02\\\\\\\"}\\\"}\"}, {\"key\": \"shifts\", \"type\": \"report\", \"title\": \"Shift KPIs\", \"x\": 0, \"y\": 12, \"w\": 84, \"h\": 30, \"settingsJson\": \"{\\\"reportPath\\\": \\\"root.platform.reports.emc-oee-shift-report\\\", \\\"pageSize\\\": 25}\"}]}"
+      "title": "OEE и простои",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"registerEvent\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u0440\\u0435\\u0433\\u0438\\u0441\\u0442\\u0440\\u0438\\u0440\\u043e\\u0432\\u0430\\u0442\\u044c \\u0441\\u043e\\u0431\\u044b\\u0442\\u0438\\u0435/\\u043f\\u0440\\u043e\\u0441\\u0442\\u043e\\u0439\", \"x\": 0, \"y\": 0, \"w\": 28, \"h\": 36, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_event_register\", \"buttonLabel\": \"\\u0417\\u0430\\u0440\\u0435\\u0433\\u0438\\u0441\\u0442\\u0440\\u0438\\u0440\\u043e\\u0432\\u0430\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"definitionCode\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u0434 \\u0441\\u043e\\u0431\\u044b\\u0442\\u0438\\u044f\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-eventdef-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u043d\\u043e\\u0435 \\u0437\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-job-board\\\", \\\"optionsValueField\\\": \\\"job_no\\\", \\\"optionsLabelField\\\": \\\"dispatch_status\\\"}, {\\\"name\\\": \\\"equipmentId\\\", \\\"label\\\": \\\"\\u041e\\u0431\\u043e\\u0440\\u0443\\u0434\\u043e\\u0432\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-equipment-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\"}, {\\\"name\\\": \\\"timeMin\\\", \\\"label\\\": \\\"\\u0414\\u043b\\u0438\\u0442\\u0435\\u043b\\u044c\\u043d\\u043e\\u0441\\u0442\\u044c, \\u043c\\u0438\\u043d\\\", \\\"type\\\": \\\"number\\\", \\\"defaultValue\\\": \\\"\\\"}, {\\\"name\\\": \\\"lengthM\\\", \\\"label\\\": \\\"\\u041c\\u0435\\u0442\\u0440\\u0430\\u0436, \\u043c\\\", \\\"type\\\": \\\"number\\\", \\\"defaultValue\\\": \\\"\\\"}, {\\\"name\\\": \\\"comment\\\", \\\"label\\\": \\\"\\u041a\\u043e\\u043c\\u043c\\u0435\\u043d\\u0442\\u0430\\u0440\\u0438\\u0439\\\", \\\"type\\\": \\\"textarea\\\", \\\"defaultValue\\\": \\\"\\\"}]\"}, {\"id\": \"closeEvent\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u043a\\u0440\\u044b\\u0442\\u044c \\u0441\\u043e\\u0431\\u044b\\u0442\\u0438\\u0435\", \"x\": 0, \"y\": 36, \"w\": 28, \"h\": 11, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_event_close\", \"buttonLabel\": \"\\u0417\\u0430\\u043a\\u0440\\u044b\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"eventId\\\", \\\"label\\\": \\\"\\u0421\\u043e\\u0431\\u044b\\u0442\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-event-journal\\\", \\\"optionsValueField\\\": \\\"id\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"by\\\", \\\"label\\\": \\\"\\u041a\\u0435\\u043c\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"operator\\\"}]\"}, {\"id\": \"calc\", \"type\": \"function-form\", \"title\": \"\\u0420\\u0430\\u0441\\u0441\\u0447\\u0438\\u0442\\u0430\\u0442\\u044c OEE \\u0441\\u043c\\u0435\\u043d\\u044b\", \"x\": 28, \"y\": 0, \"w\": 28, \"h\": 16, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_oee_calcShift\", \"buttonLabel\": \"\\u0420\\u0430\\u0441\\u0441\\u0447\\u0438\\u0442\\u0430\\u0442\\u044c\", \"fieldsJson\": \"[{\\\"name\\\": \\\"equipmentId\\\", \\\"label\\\": \\\"\\u041e\\u0431\\u043e\\u0440\\u0443\\u0434\\u043e\\u0432\\u0430\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-equipment-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"optionsLabelField\\\": \\\"name\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"shiftLabel\\\", \\\"label\\\": \\\"\\u0421\\u043c\\u0435\\u043d\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-shift-catalog\\\", \\\"optionsValueField\\\": \\\"code\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"plannedMinutes\\\", \\\"label\\\": \\\"\\u041f\\u043b\\u0430\\u043d\\u043e\\u0432\\u044b\\u0435 \\u043c\\u0438\\u043d\\u0443\\u0442\\u044b\\\", \\\"type\\\": \\\"number\\\", \\\"defaultValue\\\": \\\"480\\\"}]\"}, {\"id\": \"kpiDowntime\", \"type\": \"value\", \"title\": \"\\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u043e \\u043f\\u0440\\u043e\\u0441\\u0442\\u043e\\u0435\\u0432\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 12, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"variableName\": \"activeDowntimeCount\", \"valueField\": \"value\", \"decimals\": 0}, {\"id\": \"journal\", \"type\": \"report\", \"title\": \"\\u0416\\u0443\\u0440\\u043d\\u0430\\u043b \\u0441\\u043e\\u0431\\u044b\\u0442\\u0438\\u0439\", \"x\": 28, \"y\": 16, \"w\": 56, \"h\": 30, \"reportPath\": \"root.platform.reports.emc-event-journal\", \"filterable\": true, \"columnFiltersJson\": \"[\\\"status\\\", \\\"oee_bucket\\\", \\\"equipment_id\\\"]\", \"statusDotColumnsJson\": \"[\\\"status\\\"]\"}, {\"id\": \"shifts\", \"type\": \"report\", \"title\": \"KPI \\u0441\\u043c\\u0435\\u043d (OEE)\", \"x\": 0, \"y\": 47, \"w\": 84, \"h\": 20, \"reportPath\": \"root.platform.reports.emc-oee-shift-report\"}]}"
     }
   ],
   "workflows": [
@@ -4087,6 +4087,210 @@
           "label": "Calculated"
         }
       ]
+    },
+    {
+      "reportId": "emc-material-catalog",
+      "title": "Material Catalog",
+      "description": "Material definitions as code/name options for form dropdowns.",
+      "query": "\nSELECT definition_id AS code, COALESCE(description, '') AS name,\n       COALESCE(class_id, '') AS class_id, kind, base_uom\nFROM emc_material_definition\nORDER BY definition_id\n",
+      "columns": [
+        {
+          "field": "code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        },
+        {
+          "field": "class_id",
+          "label": "Class"
+        },
+        {
+          "field": "kind",
+          "label": "Kind"
+        },
+        {
+          "field": "base_uom",
+          "label": "UOM"
+        }
+      ]
+    },
+    {
+      "reportId": "emc-equipment-catalog",
+      "title": "Equipment Catalog",
+      "description": "Equipment hierarchy as code/name options for form dropdowns.",
+      "query": "\nSELECT equipment_id AS code, COALESCE(description, '') AS name,\n       equipment_level, COALESCE(parent_id, '') AS parent_id\nFROM emc_equipment\nORDER BY hierarchy_path\n",
+      "columns": [
+        {
+          "field": "code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        },
+        {
+          "field": "equipment_level",
+          "label": "Level"
+        },
+        {
+          "field": "parent_id",
+          "label": "Parent"
+        }
+      ]
+    },
+    {
+      "reportId": "emc-person-catalog",
+      "title": "Personnel Catalog",
+      "description": "Persons as code/name options for form dropdowns.",
+      "query": "\nSELECT person_id AS code, person_name AS name, COALESCE(personnel_class_id, '') AS personnel_class_id\nFROM emc_person\nORDER BY person_id\n",
+      "columns": [
+        {
+          "field": "code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        },
+        {
+          "field": "personnel_class_id",
+          "label": "Class"
+        }
+      ]
+    },
+    {
+      "reportId": "emc-defect-type-catalog",
+      "title": "Defect Type Catalog",
+      "description": "Defect types as code/name options for form dropdowns.",
+      "query": "\nSELECT defect_type_id AS code, COALESCE(description, '') AS name, COALESCE(category, '') AS category\nFROM emc_defect_type\nORDER BY defect_type_id\n",
+      "columns": [
+        {
+          "field": "code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        },
+        {
+          "field": "category",
+          "label": "Category"
+        }
+      ]
+    },
+    {
+      "reportId": "emc-reason-code-catalog",
+      "title": "Reason Code Catalog",
+      "description": "Reason codes as code/name options for form dropdowns.",
+      "query": "\nSELECT reason_code AS code, COALESCE(description, '') AS name\nFROM emc_reason_code\nORDER BY reason_code\n",
+      "columns": [
+        {
+          "field": "code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        }
+      ]
+    },
+    {
+      "reportId": "emc-eventdef-catalog",
+      "title": "Event Definition Catalog",
+      "description": "Operations event definitions as code/name options for form dropdowns.",
+      "query": "\nSELECT code, name, event_class, oee_bucket\nFROM emc_operations_event_definition\nORDER BY sort_order\n",
+      "columns": [
+        {
+          "field": "code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        },
+        {
+          "field": "event_class",
+          "label": "Class"
+        },
+        {
+          "field": "oee_bucket",
+          "label": "OEE Bucket"
+        }
+      ]
+    },
+    {
+      "reportId": "emc-shift-catalog",
+      "title": "Shift Catalog",
+      "description": "Calendar shifts as code/name options for form dropdowns.",
+      "query": "\nSELECT shift_id AS code, shift_label AS name, equipment_id, state\nFROM emc_work_calendar\nORDER BY shift_id\n",
+      "columns": [
+        {
+          "field": "code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Shift"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Equipment"
+        },
+        {
+          "field": "state",
+          "label": "State"
+        }
+      ]
+    },
+    {
+      "reportId": "emc-event-journal",
+      "title": "Operations Event Journal",
+      "description": "Registered operations events with definition names and OEE buckets.",
+      "query": "\nSELECT e.event_id AS id, e.definition_code, d.name, d.oee_bucket,\n       COALESCE(e.job_no, '') AS job_no, COALESCE(e.equipment_id, '') AS equipment_id,\n       e.time_min, e.status, e.started_at, e.ended_at\nFROM emc_operations_event e\nJOIN emc_operations_event_definition d ON d.code = e.definition_code\nORDER BY e.started_at DESC\n",
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "definition_code",
+          "label": "Code"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        },
+        {
+          "field": "oee_bucket",
+          "label": "OEE Bucket"
+        },
+        {
+          "field": "job_no",
+          "label": "Job #"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Equipment"
+        },
+        {
+          "field": "time_min",
+          "label": "Time min"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        },
+        {
+          "field": "started_at",
+          "label": "Started"
+        },
+        {
+          "field": "ended_at",
+          "label": "Ended"
+        }
+      ]
     }
   ],
   "alertRules": [
@@ -4158,23 +4362,23 @@
     "dashboards": [
       {
         "path": "root.platform.dashboards.emc-dispatch",
-        "title": "Dispatch"
+        "title": "Диспетчер"
       },
       {
         "path": "root.platform.dashboards.emc-execution",
-        "title": "Execution"
+        "title": "Исполнение"
       },
       {
         "path": "root.platform.dashboards.emc-inventory",
-        "title": "Inventory"
+        "title": "Склад"
       },
       {
         "path": "root.platform.dashboards.emc-quality",
-        "title": "Quality"
+        "title": "Качество"
       },
       {
         "path": "root.platform.dashboards.emc-oee",
-        "title": "OEE"
+        "title": "OEE и простои"
       }
     ],
     "eventJournalObjectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
@@ -4206,6 +4410,6 @@
     "product": "erp-mes-core",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "1.0.0 initial ISA-95 canonical ERP-MES core bundle"
+    "changelog": "1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal"
   }
 }

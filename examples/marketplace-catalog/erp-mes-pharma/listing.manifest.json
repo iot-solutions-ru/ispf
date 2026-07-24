@@ -12,7 +12,7 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.1.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -25,9 +25,13 @@
     "serialization",
     "product"
   ],
-  "changelog": "1.0.0 - pharma (solid dosage) overlay on erp-mes-core: 5 migrations (20 GMP event codes, solid-dosage equipment/personnel/materials/segments, demo batch order with eBR sections), 7 BFF functions, 3 dashboards, 4 reports, singleton hub",
+  "changelog": "1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; requires erp-mes-core 1.1.0",
   "metadata": {
     "changelog": [
+      {
+        "version": "1.1.0",
+        "notes": "1.1.0: operator UI rework - flat dashboard widget format (no settingsJson), dropdown selects fed by catalog reports, row-click autofill into forms, KPI value cards, event journal report"
+      },
       {
         "version": "1.0.0",
         "notes": "Initial release: solid dosage pharma overlay on erp-mes-core 1.0.0, certified by ErpMesPharmaOverlayTest cross-bundle scenarios"

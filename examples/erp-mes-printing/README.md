@@ -19,7 +19,7 @@ do not edit by hand either.
 
 ## Dependency on erp-mes-core
 
-- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "1.0.0"}]` — deploy **the core
+- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "1.1.0"}]` — deploy **the core
   first**, the platform dependency verifier rejects the overlay otherwise.
 - Same `schemaName` as the core (`app_erp_mes_core`): overlay migrations, functions and bindings
   run with `search_path` into the core schema and read/write the core `emc_*` tables directly.
@@ -43,8 +43,8 @@ do not edit by hand either.
 | Demo order | `SCH-PRINT-001` (ERP ref `ORD-2026-042`) → `REQ-PRINT-001` (20 000 m of `FG-SLEEVE-ROLL`) → `JO-PRINT-001` RUNNING on PR120 (response + RUN interval + actuals), `JO-PRINT-002` ALLOWED on LM210, `JO-PRINT-003` NOT_ALLOWED on SL300; shift `SHIFT-PRINT-1`; work record `WR-JO-PRINT-001` with `colorControl` and `imposition` sections | migration `emp_m5` |
 | Live objects | Hub singleton `root.platform.singleton-blueprints.erp-mes-printing-hub-v1` (counters `openPrintDowntimeCount`, `activePrintJobCount`, `lowRollStockCount` + 2 alert rules + 2 platform events); devices `emp-pr120/emp-lm210/emp-sl300` on the core MIXIN `emc-work-unit-v1` | bundle |
 | BFF functions | `emp_eventdef_list(section, catalog)`, `emp_roll_list(definitionId)`, `emp_setuptag_list()` | bundle |
-| Reports | `emp-print-job-board`, `emp-downtime-by-code`, `emp-roll-stock` | bundle |
-| Dashboards | `emp-print-dispatch` (Диспетчер печати — job board + Start/Pause/Resume/Complete + event registration, core functions), `emp-print-events` (События и простои), `emp-print-rolls` (Рулоны и материалы) | bundle |
+| Reports | `emp-print-job-board`, `emp-downtime-by-code`, `emp-roll-stock` + catalog/option sources `emp-eventdef-catalog`, `emp-setuptag-catalog` (dropdown feeds) | bundle |
+| Dashboards | `emp-print-dispatch` (Диспетчер печати — KPI cards, selectable job board with row-click autofill, Start/Pause/Resume/Complete with dropdowns), `emp-print-events` (События и простои — event registration from `emp-eventdef-catalog`, downtime analytics, Zero Pull tags report), `emp-print-rolls` (Рулоны и материалы — selectable stock, place/consume/register with dropdowns). Flat widget format; selects pull options from overlay and core catalog reports (requires erp-mes-core 1.1.0) | bundle |
 
 ## Deploy
 
@@ -80,7 +80,8 @@ Then open **Solutions → ERP-MES Printing (ISA-95)** in the web console.
 
 1. Open the **Диспетчер печати** dashboard — `JO-PRINT-001` is RUNNING on PR120 (flexo print),
    `JO-PRINT-002` is ALLOWED on LM210, `JO-PRINT-003` is NOT_ALLOWED on SL300.
-2. Register a setup event with the **Register Event** form (code `OGP-120`, job `JO-PRINT-001`) —
+2. Register a setup event with the **Зарегистрировать событие** form on **События и простои**
+   (code `OGP-120` picked from the `emp-eventdef-catalog` dropdown, job `JO-PRINT-001`) —
    the core `emc_event_register` accepts overlay catalog codes; AVAILABILITY events stay OPEN and
    raise the `openPrintDowntimeCount` hub counter.
 3. Stage materials on the **Рулоны и материалы** dashboard: place roll `BC-FILM-0001` (PET 12 µm,

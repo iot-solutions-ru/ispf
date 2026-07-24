@@ -746,28 +746,69 @@ EVENTS = [
 # Dashboards, reports
 # ----------------------------------------------------------------------------
 
-def _report_widget(key, title, x, y, w, h, report_path, page_size=25):
-    return {"key": key, "type": "report", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"reportPath": report_path, "pageSize": page_size})}
+def _report_widget(key, title, x, y, w, h, report_path, **opts):
+    wgt = {"id": key, "type": "report", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "reportPath": report_path}
+    wgt.update(opts)
+    return wgt
 
-def _form_widget(key, title, x, y, w, h, function_name, fields, button_label, object_path=HUB):
-    return {"key": key, "type": "function-form", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"objectPath": object_path, "functionName": function_name,
-                                        "buttonLabel": button_label, "fieldsJson": json.dumps(fields)})}
 
-def _func_widget(key, title, x, y, w, h, function_name, button_label, input_map, object_path=HUB):
-    return {"key": key, "type": "function", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"objectPath": object_path, "functionName": function_name,
-                                        "buttonLabel": button_label, "inputMapJson": json.dumps(input_map)})}
+def _form_widget(key, title, x, y, w, h, function_name, fields, button_label, object_path=None, **opts):
+    wgt = {"id": key, "type": "function-form", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "objectPath": object_path or HUB, "functionName": function_name,
+           "buttonLabel": button_label, "fieldsJson": json.dumps(fields, ensure_ascii=False)}
+    wgt.update(opts)
+    return wgt
+
+
+def _func_widget(key, title, x, y, w, h, function_name, button_label, input_map, object_path=None):
+    return {"id": key, "type": "function", "title": title, "x": x, "y": y, "w": w, "h": h,
+            "objectPath": object_path or HUB, "functionName": function_name,
+            "buttonLabel": button_label, "inputJson": json.dumps(input_map, ensure_ascii=False)}
+
 
 def _html_widget(key, title, x, y, w, h, html):
-    return {"key": key, "type": "html-snippet", "title": title, "x": x, "y": y, "w": w, "h": h,
-            "settingsJson": json.dumps({"htmlJson": json.dumps({"html": html})})}
+    return {"id": key, "type": "html-snippet", "title": title, "x": x, "y": y, "w": w, "h": h,
+            "htmlJson": html}
+
+
+def _value_widget(key, title, x, y, w, h, variable, decimals=0, unit=None, object_path=None):
+    wgt = {"id": key, "type": "value", "title": title, "x": x, "y": y, "w": w, "h": h,
+           "objectPath": object_path or HUB, "variableName": variable, "valueField": "value",
+           "decimals": decimals}
+    if unit:
+        wgt["unit"] = unit
+    return wgt
+
+
+def _sel(name, label, report, value_field, label_field=None, default=None, required=False, hint=None):
+    """Select field fed by a (possibly cross-bundle) catalog report."""
+    f = {"name": name, "label": label, "type": "select",
+         "optionsFromReport": "root.platform.reports." + report,
+         "optionsValueField": value_field}
+    if label_field:
+        f["optionsLabelField"] = label_field
+    if default is not None:
+        f["defaultValue"] = default
+    if required:
+        f["required"] = True
+    if hint:
+        f["hint"] = hint
+    return f
+
+
+def _static(name, label, options, default=None, required=False):
+    f = {"name": name, "label": label, "type": "select", "staticOptions": options}
+    if default is not None:
+        f["defaultValue"] = default
+    if required:
+        f["required"] = True
+    return f
+
 
 def _dashboard(path, title, description, widgets):
     return {"path": path, "title": title,
             "layoutJson": json.dumps({"columns": 84, "rowHeight": 8, "widgets": widgets})}
-
 REPORTS = [
     {"reportId": "emp-print-job-board", "title": "Print Job Board (ISA-95 Job Orders)",
      "description": "Active job orders on printing equipment with dispatch status (Part 4 job list).",
@@ -821,75 +862,117 @@ ORDER BY l.lot_id
          ("status", "Status"), ("storage_location", "Location"), ("quantity", "Qty"), ("uom", "UOM"),
          ("length_m", "Length m"), ("weight_kg", "Weight kg"), ("width_mm", "Width mm"),
          ("thickness_mkm", "Thickness µm")]]},
+    # --- Catalog reports: option sources for form dropdowns ---
+    {"reportId": "emp-eventdef-catalog", "title": "Print Event Code Catalog",
+     "description": "Flexibase event codes as code/name options for form dropdowns.",
+     "query": """
+SELECT d.code, d.name, x.catalog, x.section
+FROM emc_operations_event_definition d
+JOIN emp_eventdef_ext x ON x.code = d.code
+ORDER BY d.sort_order
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Code"), ("name", "Name"), ("catalog", "Catalog"), ("section", "Section")]]},
+    {"reportId": "emp-setuptag-catalog", "title": "Zero Pull Setup Tags",
+     "description": "Zero Pull setup tag dictionary (repeated setup attempts at OGP-120).",
+     "query": """
+SELECT tag AS code, COALESCE(name, '') AS name, COALESCE(description, '') AS description
+FROM emp_setup_tag
+ORDER BY sort_order
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("code", "Tag"), ("name", "Name"), ("description", "Description")]]},
 ]
 
 DASHBOARDS = [
-    _dashboard("root.platform.dashboards.emp-print-dispatch", "Диспетчер печати (ISA-95)",
-               "Print dispatching: job board, job-order lifecycle and downtime event capture.",
+    _dashboard("root.platform.dashboards.emp-print-dispatch", "Диспетчер печати",
+               "Диспетчеризация печати: доска заданий, запуск/пауза/завершение, KPI простоев.",
                [
-                   _report_widget("jobs", "Print Job Orders", 0, 0, 54, 50, "root.platform.reports.emp-print-job-board"),
-                   _form_widget("start", "Start Job", 54, 0, 30, 10, "emc_joborder_start",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"},
-                                 {"name": "personId", "label": "Operator", "type": "text", "default": "EMP-P01"}],
-                                "Start", CORE_HUB),
-                   _form_widget("pause", "Pause Job", 54, 10, 30, 8, "emc_joborder_pause",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Pause", CORE_HUB),
-                   _form_widget("resume", "Resume Job", 54, 18, 30, 8, "emc_joborder_resume",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Resume", CORE_HUB),
-                   _form_widget("complete", "Complete Job", 54, 26, 30, 8, "emc_joborder_complete",
-                                [{"name": "jobNo", "label": "Job #", "type": "text"}], "Complete", CORE_HUB),
-                   _form_widget("event", "Register Event", 54, 34, 30, 16, "emc_event_register",
-                                [{"name": "definitionCode", "label": "Code", "type": "text", "default": "OGP-120"},
-                                 {"name": "jobNo", "label": "Job #", "type": "text"},
-                                 {"name": "equipmentId", "label": "Equipment", "type": "text", "default": "PR120"},
-                                 {"name": "lengthM", "label": "Length m", "type": "number", "default": ""},
-                                 {"name": "timeMin", "label": "Time min", "type": "number", "default": ""},
-                                 {"name": "comment", "label": "Comment", "type": "text", "default": ""}],
-                                "Register", CORE_HUB),
+                   _value_widget("kpiDowntime", "Открыто простоев", 0, 0, 28, 12, "openPrintDowntimeCount"),
+                   _value_widget("kpiJobs", "Заданий в работе", 28, 0, 28, 12, "activePrintJobCount"),
+                   _value_widget("kpiRolls", "Рулонов ниже минимума", 56, 0, 28, 12, "lowRollStockCount"),
+                   _report_widget("jobs", "Задания печати", 0, 12, 56, 49, "root.platform.reports.emp-print-job-board",
+                                  selectable=True, rowSelectionKey="job_no",
+                                  rowParamsFromRowJson=json.dumps({"jobNo": "job_no"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["dispatch_status", "equipment_id"]),
+                                  statusDotColumnsJson=json.dumps(["dispatch_status"])),
+                   _form_widget("start", "Запустить задание", 56, 12, 28, 16, "emc_joborder_start",
+                                [_sel("jobNo", "Задание", "emp-print-job-board", "job_no", "dispatch_status", required=True),
+                                 _sel("personId", "Печатник", "emc-person-catalog", "code", "name", default="EMP-P01")],
+                                "Запустить", CORE_HUB),
+                   _form_widget("pause", "Пауза", 56, 28, 28, 11, "emc_joborder_pause",
+                                [_sel("jobNo", "Задание", "emp-print-job-board", "job_no", "dispatch_status", required=True)],
+                                "Пауза", CORE_HUB),
+                   _form_widget("resume", "Возобновить", 56, 39, 28, 11, "emc_joborder_resume",
+                                [_sel("jobNo", "Задание", "emp-print-job-board", "job_no", "dispatch_status", required=True)],
+                                "Возобновить", CORE_HUB),
+                   _form_widget("complete", "Завершить", 56, 50, 28, 11, "emc_joborder_complete",
+                                [_sel("jobNo", "Задание", "emp-print-job-board", "job_no", "dispatch_status", required=True)],
+                                "Завершить", CORE_HUB),
                ]),
     _dashboard("root.platform.dashboards.emp-print-events", "События и простои",
-               "Downtime analytics by Flexibase event code with catalog filters.",
+               "Регистрация событий по каталогу Flexibase, аналитика простоев, теги Zero Pull.",
                [
-                   _report_widget("downtime", "Downtime by Code", 0, 0, 54, 40, "root.platform.reports.emp-downtime-by-code"),
-                   _form_widget("defs", "Event Catalog", 54, 0, 30, 12, "emp_eventdef_list",
-                                [{"name": "section", "label": "Section ('' = all)", "type": "text", "default": ""},
-                                 {"name": "catalog", "label": "Catalog (OGP/BM/POUCH/MES)", "type": "text", "default": "OGP"}],
-                                "Filter"),
-                   _html_widget("zeropull", "Zero Pull tags", 54, 12, 30, 18,
-                                "<h3>Zero Pull</h3><p>Repeated setup attempts at code <b>OGP-120</b> are tagged "
-                                "with Zero Pull reasons (dictionary <i>emp_setup_tag</i>, function "
-                                "<i>emp_setuptag_list</i>):</p><ul>"
-                                "<li><b>Zerropull</b> &ndash; first setup pass / planned check</li>"
-                                "<li><b>A&ndash;E</b> &ndash; print quality out of spec (grammage, viscosity, density, &Delta;E, standard)</li>"
-                                "<li><b>F&ndash;K</b> &ndash; ink contamination, machine state, registration, cylinder, doctor blade</li>"
-                                "<li><b>L&ndash;N</b> &ndash; other print defects / material-caused / comment required</li>"
-                                "<li><b>P</b> &ndash; check passed, no deviation found</li></ul>"),
+                   _form_widget("registerEvent", "Зарегистрировать событие", 0, 0, 28, 36, "emc_event_register",
+                                [_sel("definitionCode", "Код события", "emp-eventdef-catalog", "code", "name", required=True),
+                                 _sel("jobNo", "Задание", "emp-print-job-board", "job_no", "dispatch_status"),
+                                 _static("equipmentId", "Оборудование",
+                                         ["PR120", "PR130", "LM210", "SL300", "RW100"], default="PR120"),
+                                 {"name": "timeMin", "label": "Длительность, мин", "type": "number", "defaultValue": ""},
+                                 {"name": "lengthM", "label": "Метраж, м", "type": "number", "defaultValue": ""},
+                                 {"name": "comment", "label": "Комментарий", "type": "textarea", "defaultValue": ""}],
+                                "Зарегистрировать", CORE_HUB),
+                   _form_widget("closeEvent", "Закрыть событие", 0, 36, 28, 11, "emc_event_close",
+                                [_sel("eventId", "Событие", "emc-event-journal", "id", "name", required=True),
+                                 {"name": "by", "label": "Кем", "type": "text", "defaultValue": "operator"}],
+                                "Закрыть", CORE_HUB),
+                   _report_widget("tags", "Теги Zero Pull", 0, 47, 28, 17, "root.platform.reports.emp-setuptag-catalog"),
+                   _report_widget("downtime", "Простои по кодам", 28, 0, 56, 30, "root.platform.reports.emp-downtime-by-code",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["section"])),
+                   _report_widget("catalog", "Каталог кодов событий", 28, 30, 56, 34, "root.platform.reports.emp-eventdef-catalog",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["catalog", "section"])),
                ]),
     _dashboard("root.platform.dashboards.emp-print-rolls", "Рулоны и материалы",
-               "Roll and ink stock, line staging and consumption for print jobs.",
+               "Склад рулонов и чернил, постановка на линию и расход по заданиям.",
                [
-                   _report_widget("rolls", "Roll & Material Stock", 0, 0, 54, 30, "root.platform.reports.emp-roll-stock"),
-                   _form_widget("place", "Place Roll on Line", 54, 0, 30, 13, "emc_matlot_placeOnLine",
-                                [{"name": "barcode", "label": "Barcode", "type": "text"},
-                                 {"name": "jobNo", "label": "Job #", "type": "text", "default": "JO-PRINT-001"}],
-                                "Place", CORE_HUB),
-                   _form_widget("consume", "Consume Material", 54, 13, 30, 13, "emc_matlot_consume",
-                                [{"name": "barcode", "label": "Barcode", "type": "text"},
-                                 {"name": "quantity", "label": "Qty", "type": "number", "default": "1"}],
-                                "Consume", CORE_HUB),
+                   _report_widget("rolls", "Рулоны и материалы", 0, 0, 56, 56, "root.platform.reports.emp-roll-stock",
+                                  selectable=True, rowSelectionKey="barcode",
+                                  rowParamsFromRowJson=json.dumps({"barcode": "barcode"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "material_id"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _form_widget("place", "Поставить рулон на линию", 56, 0, 28, 16, "emc_matlot_placeOnLine",
+                                [_sel("barcode", "Штрихкод рулона", "emp-roll-stock", "barcode", "material_id", required=True),
+                                 _sel("jobNo", "Задание", "emp-print-job-board", "job_no", "dispatch_status", required=True)],
+                                "Поставить", CORE_HUB),
+                   _form_widget("consume", "Списать материал", 56, 16, 28, 16, "emc_matlot_consume",
+                                [_sel("barcode", "Штрихкод рулона", "emp-roll-stock", "barcode", "material_id", required=True),
+                                 {"name": "quantity", "label": "Количество", "type": "number", "defaultValue": "1"}],
+                                "Списать", CORE_HUB),
+                   _form_widget("register", "Зарегистрировать рулон", 56, 32, 28, 24, "emc_matlot_register",
+                                [{"name": "lotId", "label": "Рулон (ID)", "type": "text", "required": True},
+                                 {"name": "barcode", "label": "Штрихкод", "type": "text", "required": True},
+                                 _sel("definitionId", "Материал", "emc-material-catalog", "code", "name", required=True),
+                                 _static("storageLocation", "Склад", ["WH-PRINT", "WH-PR120-LS"], default="WH-PRINT"),
+                                 {"name": "quantity", "label": "Количество", "type": "number", "defaultValue": "1"}],
+                                "Зарегистрировать", CORE_HUB),
                ]),
 ]
+
 
 # ----------------------------------------------------------------------------
 # Assembly
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "displayName": "ERP-MES Printing (ISA-95)",
     "tablePrefix": "emp_",
     "schemaName": SCHEMA,
-    "requires": [{"appId": "erp-mes-core", "minVersion": "1.0.0"}],
+    "requires": [{"appId": "erp-mes-core", "minVersion": "1.1.0"}],
     "migrations": MIGRATIONS,
     "objects": OBJECTS,
     "functions": FUNCTIONS,
@@ -920,7 +1003,7 @@ bundle = {
         "product": "erp-mes-printing",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.0.0 printing industry overlay on erp-mes-core (Flexibase event code catalog)",
+        "changelog": "1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards (requires erp-mes-core 1.1.0)",
     },
 }
 

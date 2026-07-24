@@ -48,9 +48,18 @@ Warehouses are modeled canonically as **equipment** of level `STORAGE_ZONE` / `S
   2 (disabled) schedules, event journal, and all 61 BFF functions.
 - Two work-unit devices `emc-wu-a01` / `emc-wu-a02` (blueprint `emc-work-unit-v1`): `status`, `speed`,
   `activeJobOrderId` mirrored by job-order lifecycle.
-- 5 dashboards: **Dispatch** (job board), **Execution** (consume/produce/PDC), **Inventory** (stock + ERP docs),
-  **Quality** (defect workflow), **OEE** (shift KPIs).
-- 5 reports, 1 BPMN workflow (`emc-job-dispatch` — operator confirms job start), 2 platform events.
+- 5 dashboards (operator UI in Russian): **Диспетчер** (job board + lifecycle + KPI cards),
+  **Исполнение** (consume/place/produce/PDC), **Склад** (stock + ERP docs), **Качество** (defect
+  workflow), **OEE и простои** (event journal + shift KPIs). Widgets use the flat dashboard format
+  (`id`/`type`/settings inline); form fields are dropdown selects fed by catalog reports
+  (`optionsFromReport`), report rows write `session.params` on click (`rowParamsFromRowJson` +
+  `autoSelectFirstRow`) so the forms pick up the selected job/lot/defect automatically.
+- 13 reports: 5 operational (`emc-job-board`, `emc-stock-report`, `emc-material-movement`,
+  `emc-defect-report`, `emc-oee-shift-report`) + 8 catalog/option sources
+  (`emc-material-catalog`, `emc-equipment-catalog`, `emc-person-catalog`, `emc-defect-type-catalog`,
+  `emc-reason-code-catalog`, `emc-eventdef-catalog`, `emc-shift-catalog`, `emc-event-journal`)
+  reused by overlay bundles for dropdowns.
+- 1 BPMN workflow (`emc-job-dispatch` — operator confirms job start), 2 platform events.
 
 ## Deploy
 
