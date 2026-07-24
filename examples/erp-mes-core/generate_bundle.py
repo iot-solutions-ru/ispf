@@ -2359,7 +2359,39 @@ def _static(name, label, options, default=None, required=False):
     return f
 
 
+# Extra grid height for function-form widgets, calibrated against the real
+# web-console renderer (Playwright measurement of scrollHeight vs clientHeight
+# on the live stand, +2 rows of safety margin for label wrapping at other
+# viewport widths). 1 grid row = 8px + 4px margin = 12px.
+_FORM_H_BOOST = {
+    "Запустить задание": 5, "Пауза": 6, "Возобновить": 6, "Завершить": 6,
+    "Списать материал": 5, "Поставить лот на линию": 7, "Произвести материал": 12,
+    "Сбор данных (OPC 10031-4)": 4,
+    "Зарегистрировать лот": 12, "На линию": 7, "Создать ERP-документ": 8,
+    "Зарегистрировать дефект": 6, "Подтвердить дефект": 10, "Закрыть дефект": 10,
+    "Зарегистрировать событие/простой": 6, "Закрыть событие": 10,
+    "Рассчитать OEE смены": 12,
+}
+
+
+def _autopack(widgets):
+    """Push widgets down where a grown widget would overlap them (never up)."""
+    placed = []
+    for w in sorted(widgets, key=lambda k: (k["y"], k["x"])):
+        ny = w["y"]
+        for o in placed:
+            if o["x"] < w["x"] + w["w"] and w["x"] < o["x"] + o["w"]:
+                ny = max(ny, o["y"] + o["h"])
+        w["y"] = ny
+        placed.append(w)
+    return widgets
+
+
 def _dashboard(path, title, description, widgets):
+    for w in widgets:
+        if w.get("type") == "function-form" and w.get("title") in _FORM_H_BOOST:
+            w["h"] += _FORM_H_BOOST[w["title"]]
+    _autopack(widgets)
     return {"path": path, "title": title,
             "layoutJson": json.dumps({"columns": 84, "rowHeight": 8, "widgets": widgets})}
 
@@ -2726,7 +2758,7 @@ EVENTS = [
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "displayName": "ERP-MES Core (ISA-95)",
     "tablePrefix": "emc_",
     "schemaName": "app_erp_mes_core",
@@ -2766,7 +2798,7 @@ bundle = {
         "product": "erp-mes-core",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal",
+        "changelog": "1.1.1 form heights calibrated to renderer (no clipped submit buttons); 1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal",
     },
 }
 

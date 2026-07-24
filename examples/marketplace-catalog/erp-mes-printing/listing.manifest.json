@@ -12,7 +12,7 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.1.0",
+  "latestVersion": "1.1.1",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -25,9 +25,13 @@
     "oee",
     "product"
   ],
-  "changelog": "1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; +2 catalog reports (eventdef, setuptag); requires erp-mes-core 1.1.0",
+  "changelog": "1.1.1 - form heights calibrated to the real renderer - submit buttons no longer clipped on any operator tab; 1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; +2 catalog reports (eventdef, setuptag); requires erp-mes-core 1.1.0",
   "metadata": {
     "changelog": [
+      {
+        "version": "1.1.1",
+        "notes": "1.1.1: form heights calibrated to the real renderer - submit buttons no longer clipped on any operator tab"
+      },
       {
         "version": "1.1.0",
         "notes": "1.1.0: operator UI rework - flat dashboard widget format (no settingsJson), dropdown selects fed by catalog reports, row-click autofill into forms, KPI value cards, event journal report"

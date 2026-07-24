@@ -806,7 +806,35 @@ def _static(name, label, options, default=None, required=False):
     return f
 
 
+# Extra grid height for function-form widgets, calibrated against the real
+# web-console renderer (Playwright measurement of scrollHeight vs clientHeight
+# on the live stand, +2 rows of safety margin). 1 grid row = 12px.
+_FORM_H_BOOST = {
+    "Запустить задание": 5, "Пауза": 6, "Возобновить": 6, "Завершить": 6,
+    "Зарегистрировать событие": 6, "Закрыть событие": 10,
+    "Поставить рулон на линию": 7, "Списать материал": 5,
+    "Зарегистрировать рулон": 14,
+}
+
+
+def _autopack(widgets):
+    """Push widgets down where a grown widget would overlap them (never up)."""
+    placed = []
+    for w in sorted(widgets, key=lambda k: (k["y"], k["x"])):
+        ny = w["y"]
+        for o in placed:
+            if o["x"] < w["x"] + w["w"] and w["x"] < o["x"] + o["w"]:
+                ny = max(ny, o["y"] + o["h"])
+        w["y"] = ny
+        placed.append(w)
+    return widgets
+
+
 def _dashboard(path, title, description, widgets):
+    for w in widgets:
+        if w.get("type") == "function-form" and w.get("title") in _FORM_H_BOOST:
+            w["h"] += _FORM_H_BOOST[w["title"]]
+    _autopack(widgets)
     return {"path": path, "title": title,
             "layoutJson": json.dumps({"columns": 84, "rowHeight": 8, "widgets": widgets})}
 REPORTS = [
@@ -968,7 +996,7 @@ DASHBOARDS = [
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "displayName": "ERP-MES Printing (ISA-95)",
     "tablePrefix": "emp_",
     "schemaName": SCHEMA,
@@ -1003,7 +1031,7 @@ bundle = {
         "product": "erp-mes-printing",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards (requires erp-mes-core 1.1.0)",
+        "changelog": "1.1.1 form heights calibrated to renderer (no clipped submit buttons); 1.1.0 operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards (requires erp-mes-core 1.1.0)",
     },
 }
 
