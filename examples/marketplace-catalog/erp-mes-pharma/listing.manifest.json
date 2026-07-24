@@ -1,0 +1,37 @@
+{
+  "slug": "erp-mes-pharma",
+  "title": "ERP-MES Pharma (ISA-95/ISA-88)",
+  "description": "Pharmaceutical (solid dosage) overlay for erp-mes-core: quarantine and batch release with electronic signatures (21 CFR Part 11), double verification of dispensing weighments, electronic batch record sections, DataMatrix serialization with aggregation",
+  "pricing": "free",
+  "appId": "erp-mes-pharma",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "erp",
+    "isa95",
+    "isa88",
+    "pharma",
+    "gmp",
+    "serialization",
+    "product"
+  ],
+  "changelog": "1.0.0 - pharma (solid dosage) overlay on erp-mes-core: 5 migrations (20 GMP event codes, solid-dosage equipment/personnel/materials/segments, demo batch order with eBR sections), 7 BFF functions, 3 dashboards, 4 reports, singleton hub",
+  "metadata": {
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "notes": "Initial release: solid dosage pharma overlay on erp-mes-core 1.0.0, certified by ErpMesPharmaOverlayTest cross-bundle scenarios"
+      }
+    ]
+  }
+}
