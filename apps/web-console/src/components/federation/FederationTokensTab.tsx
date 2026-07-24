@@ -1,4 +1,5 @@
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import type { SecurityUserSummary } from "../../api/securityUsers";
 import { copyToClipboard } from "./federationShared";
@@ -36,65 +37,73 @@ export default function FederationTokensTab({
   const userOptions = usersQuery.data ?? [];
 
   return (
-    <div className="panel-card driver-config-form">
-      <h4>{t("tokens.title")}</h4>
-      <p className="op-muted">{t("tokens.subtitle")}</p>
-      <div className="form-grid">
-        <label>
-          {t("tokens.field.user")}
-          <select
-            value={tokenUser}
-            onChange={(e) => setTokenUser(e.target.value)}
-            disabled={userOptions.length === 0}
+    <section className="panel-card driver-config-form">
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <div>
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {t("tokens.title")}
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t("tokens.subtitle")}
+          </Typography.Paragraph>
+        </div>
+        <Form layout="vertical">
+          <Space size="middle" align="start" wrap>
+            <Form.Item label={t("tokens.field.user")} style={{ minWidth: 240, marginBottom: 0 }}>
+              <Select
+                value={tokenUser}
+                onChange={setTokenUser}
+                disabled={userOptions.length === 0}
+                options={
+                  userOptions.length === 0
+                    ? [{ value: tokenUser, label: tokenUser }]
+                    : userOptions.map((user) => ({
+                        value: user.username,
+                        label: `${user.username} (${user.roles.join(", ")})`,
+                      }))
+                }
+              />
+            </Form.Item>
+            <Form.Item label={t("tokens.field.ttlHours")} style={{ marginBottom: 0 }}>
+              <Input
+                type="number"
+                min={1}
+                max={168}
+                value={tokenTtlHours}
+                onChange={(e) => setTokenTtlHours(e.target.value)}
+              />
+            </Form.Item>
+          </Space>
+        </Form>
+        <Space wrap>
+          <Button
+            type="primary"
+            disabled={issueTokenMutation.isPending || tokenApiMissing}
+            loading={issueTokenMutation.isPending}
+            onClick={() => issueTokenMutation.mutate()}
           >
-            {userOptions.length === 0 && <option value={tokenUser}>{tokenUser}</option>}
-            {userOptions.map((user) => (
-              <option key={user.username} value={user.username}>
-                {user.username} ({user.roles.join(", ")})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("tokens.field.ttlHours")}
-          <input
-            type="number"
-            min={1}
-            max={168}
-            value={tokenTtlHours}
-            onChange={(e) => setTokenTtlHours(e.target.value)}
-          />
-        </label>
-      </div>
-      <div className="form-actions">
-        <button
-          type="button"
-          className="btn primary"
-          disabled={issueTokenMutation.isPending || tokenApiMissing}
-          onClick={() => issueTokenMutation.mutate()}
-        >
-          {issueTokenMutation.isPending ? t("tokens.issuing") : t("tokens.issue")}
-        </button>
+            {issueTokenMutation.isPending ? t("tokens.issuing") : t("tokens.issue")}
+          </Button>
+          {issuedToken && (
+            <Button
+              size="small"
+              onClick={() => {
+                copyToClipboard(issuedToken)
+                  .then(() => setTokenCopyFeedback(t("tokens.copied")))
+                  .catch(() => setTokenCopyFeedback(t("tokens.copyFailed")));
+              }}
+            >
+              {t("tokens.copy")}
+            </Button>
+          )}
+        </Space>
+        {issuedTokenMeta && <Typography.Text type="secondary">{issuedTokenMeta}</Typography.Text>}
+        {tokenCopyFeedback && <Alert type="success" showIcon message={tokenCopyFeedback} />}
+        {tokenPanelError && <Alert type="error" showIcon message={tokenPanelError} />}
         {issuedToken && (
-          <button
-            type="button"
-            className="btn compact"
-            onClick={() => {
-              copyToClipboard(issuedToken)
-                .then(() => setTokenCopyFeedback(t("tokens.copied")))
-                .catch(() => setTokenCopyFeedback(t("tokens.copyFailed")));
-            }}
-          >
-            {t("tokens.copy")}
-          </button>
+          <pre className="mono federation-code-block">{issuedToken}</pre>
         )}
-      </div>
-      {issuedTokenMeta && <p className="hint">{issuedTokenMeta}</p>}
-      {tokenCopyFeedback && <p className="hint success">{tokenCopyFeedback}</p>}
-      {tokenPanelError && <p className="hint error">{tokenPanelError}</p>}
-      {issuedToken && (
-        <pre className="mono federation-code-block">{issuedToken}</pre>
-      )}
-    </div>
+      </Space>
+    </section>
   );
 }

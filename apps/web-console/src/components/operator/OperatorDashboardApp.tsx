@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button, Segmented, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AuthSession } from "../../auth/session";
@@ -340,22 +341,22 @@ export default function OperatorDashboardApp({
   if (uiQuery.error || !ui || (!hasDashboards && !hasReports)) {
     return (
       <div className="operator-shell op-empty-ui" data-testid="operator-shell">
-        <h1 className="op-empty-ui__title">{t("operator:uiNotFoundTitle", { appId })}</h1>
-        <p className="op-muted">
+        <Typography.Title level={2} className="op-empty-ui__title">{t("operator:uiNotFoundTitle", { appId })}</Typography.Title>
+        <Typography.Paragraph className="op-muted">
           {uiQuery.error ? String(uiQuery.error) : t("operator:uiNotFound", { appId })}
-        </p>
-        <p className="op-muted">{t("operator:uiNotFoundHint")}</p>
-        <div className="op-empty-ui__actions">
-          <a className="btn primary" href="/?mode=operator">
+        </Typography.Paragraph>
+        <Typography.Paragraph className="op-muted">{t("operator:uiNotFoundHint")}</Typography.Paragraph>
+        <Space className="op-empty-ui__actions" wrap>
+          <Button type="primary" href="/?mode=operator">
             {t("operator:uiNotFoundPickApp")}
-          </a>
-          <a className="btn" href="/?mode=admin&path=root.platform.operator-apps">
+          </Button>
+          <Button href="/?mode=admin&path=root.platform.operator-apps">
             {t("operator:uiNotFoundOpenOperatorApps")}
-          </a>
-          <a className="btn" href="/?mode=admin">
+          </Button>
+          <Button href="/?mode=admin">
             {t("operator:uiNotFoundOpenSolutions")}
-          </a>
-        </div>
+          </Button>
+        </Space>
       </div>
     );
   }
@@ -493,19 +494,40 @@ function OperatorDashboardChrome({
     viewKind === "report"
       ? (ui.reports?.find((item) => item.path === activePath)?.title ?? activePath)
       : (ui.dashboards.find((item) => item.path === activePath)?.title ?? activePath);
+  const navOptions = [
+    ...ui.dashboards.map((dashboard) => ({
+      label: dashboard.title,
+      value: `dashboard:${dashboard.path}`,
+    })),
+    ...(ui.reports ?? []).map((report) => ({
+      label: report.title,
+      value: `report:${report.path}`,
+    })),
+  ];
+  const activeNavValue = `${viewKind}:${activePath}`;
+  const handleNavChange = (value: string) => {
+    const separatorIndex = value.indexOf(":");
+    const kind = value.slice(0, separatorIndex);
+    const path = value.slice(separatorIndex + 1);
+    if (kind === "report") {
+      onSelectReport(path);
+    } else {
+      onSelectDashboard(path);
+    }
+  };
 
   return (
     <>
       <header className="operator-topbar">
-        <div>
-          <strong>{ui.title}</strong>
+        <Space direction="vertical" size={0}>
+          <Typography.Text strong>{ui.title}</Typography.Text>
           <OperatorOfflineBadge visible={Boolean(offline)} />
           <span className="brand-sub">
             {appId} · {activeTitle}
             {session ? ` · ${session.displayName}` : ""}
           </span>
-        </div>
-        <div className="topbar-actions">
+        </Space>
+        <Space className="topbar-actions" wrap>
           <OperatorFederationPeerSelector
             selectedPeerId={federationPeerId}
             onSelectPeer={onFederationPeerChange}
@@ -520,39 +542,24 @@ function OperatorDashboardChrome({
           )}
           <OperatorPreferences />
           {onLogout && (
-            <button type="button" className="btn" onClick={onLogout}>
+            <Button onClick={onLogout}>
               {t("common:action.logout")}
-            </button>
+            </Button>
           )}
           {onSwitchAdmin && (
-            <button type="button" className="btn" onClick={onSwitchAdmin}>
+            <Button onClick={onSwitchAdmin}>
               {t("operator:launcher.switchAdmin")}
-            </button>
+            </Button>
           )}
-        </div>
+        </Space>
       </header>
       {!hideDashboardNav && (
         <nav className="op-nav" data-testid="operator-nav">
-          {ui.dashboards.map((dashboard) => (
-            <button
-              key={dashboard.path}
-              type="button"
-              className={`btn small ${viewKind === "dashboard" && dashboard.path === activePath ? "primary" : ""}`}
-              onClick={() => onSelectDashboard(dashboard.path)}
-            >
-              {dashboard.title}
-            </button>
-          ))}
-          {(ui.reports ?? []).map((report) => (
-            <button
-              key={report.path}
-              type="button"
-              className={`btn small ${viewKind === "report" && report.path === activePath ? "primary" : ""}`}
-              onClick={() => onSelectReport(report.path)}
-            >
-              {report.title}
-            </button>
-          ))}
+          <Segmented<string>
+            options={navOptions}
+            value={activeNavValue}
+            onChange={handleNavChange}
+          />
         </nav>
       )}
     </>

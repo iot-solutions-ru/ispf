@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Dropdown, Space, Switch, Typography } from "antd";
 import ShellPreferences from "../ui/ShellPreferences";
 import {
   isOperatorAlarmSoundEnabled,
@@ -52,42 +53,58 @@ export default function OperatorPreferences() {
     setBrowserNotify(enabled);
   };
 
-  return (
-    <details className="operator-preferences">
-      <summary className="btn small operator-preferences-trigger" title={t("preferences.title")}>
-        {t("preferences.title")}
-      </summary>
-      <div className="operator-preferences-panel">
-        <fieldset className="operator-preferences-fieldset">
-          <legend>{t("preferences.alarmsLegend")}</legend>
-          <label className="checkbox-label operator-preferences-option">
-            <input
-              type="checkbox"
-              checked={soundEnabled}
-              onChange={(event) => toggleSound(event.target.checked)}
-            />
-            {t("preferences.sound")}
-          </label>
-          <label className="checkbox-label operator-preferences-option">
-            <input
-              type="checkbox"
+  const content = (
+    <Space direction="vertical" size="middle" style={{ width: 280 }}>
+      <div>
+        <Typography.Text strong>{t("preferences.alarmsLegend")}</Typography.Text>
+        <Space direction="vertical" size="small" style={{ width: "100%", marginTop: 8 }}>
+          <Space style={{ width: "100%", justifyContent: "space-between" }}>
+            <Typography.Text>{t("preferences.sound")}</Typography.Text>
+            <Switch checked={soundEnabled} onChange={toggleSound} size="small" />
+          </Space>
+          <Space style={{ width: "100%", justifyContent: "space-between" }}>
+            <Typography.Text>{t("preferences.browserNotify")}</Typography.Text>
+            <Switch
               checked={browserNotify}
               disabled={notifyPermission === "unsupported"}
-              onChange={(event) => void toggleBrowserNotify(event.target.checked)}
+              onChange={(checked) => void toggleBrowserNotify(checked)}
+              size="small"
             />
-            {t("preferences.browserNotify")}
-          </label>
-          {notifyPermission === "denied" && (
-            <p className="hint operator-preferences-hint">{t("preferences.browserNotifyDenied")}</p>
-          )}
-          {notifyPermission === "unsupported" && (
-            <p className="hint operator-preferences-hint">{t("preferences.browserNotifyUnsupported")}</p>
-          )}
-        </fieldset>
-        <div className="operator-preferences-shell">
-          <ShellPreferences />
-        </div>
+          </Space>
+        </Space>
+        {notifyPermission === "denied" && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginTop: 8 }}
+            message={t("preferences.browserNotifyDenied")}
+          />
+        )}
+        {notifyPermission === "unsupported" && (
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginTop: 8 }}
+            message={t("preferences.browserNotifyUnsupported")}
+          />
+        )}
       </div>
-    </details>
+      <div className="operator-preferences-shell">
+        <ShellPreferences />
+      </div>
+    </Space>
+  );
+
+  return (
+    <Dropdown
+      trigger={["click"]}
+      popupRender={() => content}
+      menu={{ items: [] }}
+      placement="bottomRight"
+    >
+      <Button size="small" className="operator-preferences-trigger" title={t("preferences.title")}>
+        {t("preferences.title")}
+      </Button>
+    </Dropdown>
   );
 }

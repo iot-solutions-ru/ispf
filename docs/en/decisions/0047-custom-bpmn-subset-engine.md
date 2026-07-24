@@ -17,8 +17,9 @@ Related backlog: BL-176 (subprocess / message events). Product docs: [workflows]
 1. **Keep a custom subset engine** in `ispf-plugin-workflow`. Do **not** embed Camunda, Flowable, or another full BPMN product in this program.
 2. **Supported set** is exactly the table in [workflows § Supported BPMN elements](../workflows.md#supported-bpmn-elements). New element types require an ADR amendment (or a successor ADR), not silent parser growth.
 3. **BL-176 (done):** embedded `subProcess` runtime (enter inner start, exit on inner end, including nested embedded subprocesses); message catch wait + `deliverMessage`; message throw via intermediate throw with `messageEventDefinition`. Boundary timer escalation stays documented as supported.
-4. **Explicit non-goals (reject at parse):** `callActivity`, multi-instance, `inclusiveGateway`, `eventBasedGateway`, compensation, event subprocess, DMN / `businessRuleTask`. Non-message intermediate throw fails at parse. Parser and WorkflowBuilder palette must match the docs “Not supported” table; unsupported XML fails with a clear error. Palette filter: `apps/web-console/src/bpmn/ispfPaletteFilter.ts` (pools, data objects/stores, generic `task`, group removed).
-5. **UI honesty:** WorkflowBuilder / docs remain **Beta — BPMN subset**, not “full BPMN 2.0”.
+4. **Explicit non-goals (reject at parse):** multi-instance, `inclusiveGateway`, `eventBasedGateway`, compensation, event subprocess, DMN / `businessRuleTask`. Non-message intermediate throw fails at parse. Parser and WorkflowBuilder palette must match the docs “Not supported” table; unsupported XML fails with a clear error. Palette filter: `apps/web-console/src/bpmn/ispfPaletteFilter.ts` (pools, data objects/stores, generic `task`, group removed).
+5. **`callActivity` (added after freeze):** start another WORKFLOW and wait for completion (`ispf:workflowPath` / `calledElement`). Fire-and-forget remains `serviceTask` + `start_workflow`. See [workflows](../workflows.md#supported-bpmn-elements).
+6. **UI honesty:** WorkflowBuilder / docs remain **Beta — BPMN subset**, not “full BPMN 2.0”.
 
 ## Consequences
 
@@ -46,3 +47,4 @@ Related backlog: BL-176 (subprocess / message events). Product docs: [workflows]
 - [0001-app-platform-boundary](0001-app-platform-boundary.md) — engines in platform, solutions declarative
 - [0048-server-modularization-seams](0048-server-modularization-seams.md) — parallel modularization program (does not change BPMN choice)
 - [0049-ot-automation-excellence](0049-ot-automation-excellence.md) — execution journal, AI `serviceTask` actions (`LLM_COMPLETE`, `INVOKE_AGENT`); element-type freeze unchanged
+- [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) — first-party diagram editor + foreign BPMN adapt (no bpmn.io); engine subset rules unchanged until supported table + parser land together

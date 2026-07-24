@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import {
   applyChangeSet,
   createChangeSet,
@@ -9,6 +11,7 @@ import {
   previewChangeSet,
   type ChangeSetOp,
   type ChangeSetPreview,
+  type ChangeSetSummary,
 } from "../../api/platformChangeSets";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
@@ -97,201 +100,218 @@ export default function PlatformChangeSetsPanel() {
     () => listQuery.data?.find((item) => item.id === selectedId) ?? null,
     [listQuery.data, selectedId]
   );
+  const listColumns: TableColumnsType<ChangeSetSummary> = [
+    { title: t("changeSets.column.title"), dataIndex: "title", key: "title" },
+    {
+      title: t("changeSets.column.status"),
+      dataIndex: "status",
+      key: "status",
+      render: (status: string) => <Tag>{status}</Tag>,
+    },
+    { title: t("changeSets.column.author"), dataIndex: "author", key: "author" },
+    {
+      title: t("changeSets.column.updated"),
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+      render: (updatedAt: string) => formatDate(updatedAt),
+    },
+  ];
+  const opColumns: TableColumnsType<ChangeSetOp> = [
+    {
+      title: t("changeSets.column.op"),
+      dataIndex: "op",
+      key: "op",
+      render: (op: string) => <Typography.Text code>{op}</Typography.Text>,
+    },
+    {
+      title: t("changeSets.column.path"),
+      dataIndex: "path",
+      key: "path",
+      render: (path: string) => <Typography.Text code>{path}</Typography.Text>,
+    },
+    {
+      title: t("changeSets.column.revision"),
+      dataIndex: "expectedRevision",
+      key: "expectedRevision",
+      render: (value: number | null | undefined) => value ?? "—",
+    },
+  ];
+  const conflictColumns: TableColumnsType<Record<string, unknown>> = [
+    {
+      title: t("changeSets.column.path"),
+      dataIndex: "path",
+      key: "path",
+      render: (value) => <Typography.Text code>{String(value ?? "")}</Typography.Text>,
+    },
+    {
+      title: t("changeSets.column.op"),
+      dataIndex: "op",
+      key: "op",
+      render: (value) => <Typography.Text code>{String(value ?? "")}</Typography.Text>,
+    },
+    {
+      title: t("changeSets.column.expected"),
+      dataIndex: "expectedRevision",
+      key: "expectedRevision",
+      render: (value) => String(value ?? ""),
+    },
+    {
+      title: t("changeSets.column.current"),
+      dataIndex: "currentRevision",
+      key: "currentRevision",
+      render: (value) => String(value ?? ""),
+    },
+  ];
 
   return (
     <section className="system-panel platform-change-sets-panel">
-      <p className="op-muted">{t("changeSets.intro")}</p>
+      <Typography.Paragraph type="secondary">{t("changeSets.intro")}</Typography.Paragraph>
 
-      <div className="platform-change-sets-toolbar">
-        <label>
-          {t("changeSets.statusFilter")}
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">{t("changeSets.statusAll")}</option>
-            <option value="DRAFT">DRAFT</option>
-            <option value="APPLIED">APPLIED</option>
-          </select>
-        </label>
-        <button type="button" className="btn" onClick={() => listQuery.refetch()}>
+      <Space className="platform-change-sets-toolbar">
+        <Form layout="vertical">
+          <Form.Item label={t("changeSets.statusFilter")}>
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: "", label: t("changeSets.statusAll") },
+                { value: "DRAFT", label: "DRAFT" },
+                { value: "APPLIED", label: "APPLIED" },
+              ]}
+            />
+          </Form.Item>
+        </Form>
+        <Button onClick={() => listQuery.refetch()}>
           {t("common:action.refresh")}
-        </button>
-      </div>
+        </Button>
+      </Space>
 
       {listQuery.isLoading ? (
-        <p className="hint">{t("changeSets.loading")}</p>
+        <Typography.Text type="secondary">{t("changeSets.loading")}</Typography.Text>
       ) : listQuery.isError ? (
-        <p className="hint">{t("changeSets.loadError")}</p>
+        <Alert type="error" showIcon message={t("changeSets.loadError")} />
       ) : (
         <div className="platform-change-sets-layout">
           <div className="platform-change-sets-list">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>{t("changeSets.column.title")}</th>
-                  <th>{t("changeSets.column.status")}</th>
-                  <th>{t("changeSets.column.author")}</th>
-                  <th>{t("changeSets.column.updated")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(listQuery.data ?? []).map((item) => (
-                  <tr
-                    key={item.id}
-                    className={selectedId === item.id ? "selected" : ""}
-                    onClick={() => {
-                      setSelectedId(item.id);
-                      setPreview(null);
-                      setActionError(null);
-                    }}
-                  >
-                    <td>{item.title}</td>
-                    <td>
-                      <code>{item.status}</code>
-                    </td>
-                    <td>{item.author}</td>
-                    <td>{formatDate(item.updatedAt)}</td>
-                  </tr>
-                ))}
-                {(listQuery.data ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="hint">
-                      {t("changeSets.empty")}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <Table
+              className="data-table"
+              size="small"
+              pagination={false}
+              rowKey="id"
+              rowClassName={(item) => selectedId === item.id ? "selected" : ""}
+              columns={listColumns}
+              dataSource={listQuery.data ?? []}
+              locale={{ emptyText: t("changeSets.empty") }}
+              onRow={(item) => ({
+                onClick: () => {
+                  setSelectedId(item.id);
+                  setPreview(null);
+                  setActionError(null);
+                },
+              })}
+            />
           </div>
 
           <div className="platform-change-sets-detail">
-            <h3>{t("changeSets.createTitle")}</h3>
-            <label>
-              {t("changeSets.field.title")}
-              <input
-                value={createTitle}
-                onChange={(e) => setCreateTitle(e.target.value)}
-                placeholder={t("changeSets.titlePlaceholder")}
-              />
-            </label>
-            <label>
-              {t("changeSets.field.opsJson")}
-              <textarea
-                className="mono"
-                rows={8}
-                value={createOpsJson}
-                onChange={(e) => setCreateOpsJson(e.target.value)}
-              />
-            </label>
-            {createError && <div className="banner error">{createError}</div>}
-            <button
-              type="button"
-              className="btn primary"
+            <Typography.Title level={3}>{t("changeSets.createTitle")}</Typography.Title>
+            <Form layout="vertical">
+              <Form.Item label={t("changeSets.field.title")}>
+                <Input
+                  value={createTitle}
+                  onChange={(e) => setCreateTitle(e.target.value)}
+                  placeholder={t("changeSets.titlePlaceholder")}
+                />
+              </Form.Item>
+              <Form.Item label={t("changeSets.field.opsJson")}>
+                <Input.TextArea
+                  className="mono"
+                  rows={8}
+                  value={createOpsJson}
+                  onChange={(e) => setCreateOpsJson(e.target.value)}
+                />
+              </Form.Item>
+            </Form>
+            {createError && <Alert type="error" showIcon message={createError} />}
+            <Button
+              type="primary"
               disabled={!createTitle.trim() || createMutation.isPending}
               onClick={() => createMutation.mutate()}
             >
               {createMutation.isPending ? t("changeSets.creating") : t("changeSets.create")}
-            </button>
+            </Button>
 
             {selectedId && (
               <>
-                <h3>{selectedSummary?.title ?? selectedId}</h3>
+                <Typography.Title level={3}>{selectedSummary?.title ?? selectedId}</Typography.Title>
                 {detailQuery.isLoading ? (
-                  <p className="hint">{t("common:action.loading")}</p>
+                  <Typography.Text type="secondary">{t("common:action.loading")}</Typography.Text>
                 ) : detailQuery.data ? (
                   <>
-                    <p className="hint">
-                      <code>{detailQuery.data.status}</code> · {detailQuery.data.author}
-                    </p>
-                    <table className="data-table compact">
-                      <thead>
-                        <tr>
-                          <th>{t("changeSets.column.op")}</th>
-                          <th>{t("changeSets.column.path")}</th>
-                          <th>{t("changeSets.column.revision")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detailQuery.data.ops.map((op, index) => (
-                          <tr key={`${op.path}-${index}`}>
-                            <td>
-                              <code>{op.op}</code>
-                            </td>
-                            <td className="mono">{op.path}</td>
-                            <td>{op.expectedRevision ?? "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <div className="platform-change-sets-actions">
-                      <button
-                        type="button"
-                        className="btn"
+                    <Typography.Paragraph type="secondary">
+                      <Typography.Text code>{detailQuery.data.status}</Typography.Text> · {detailQuery.data.author}
+                    </Typography.Paragraph>
+                    <Table
+                      className="data-table compact"
+                      size="small"
+                      pagination={false}
+                      rowKey={(_, index) => `${_.path}-${index}`}
+                      columns={opColumns}
+                      dataSource={detailQuery.data.ops}
+                    />
+                    <Space className="platform-change-sets-actions">
+                      <Button
                         disabled={previewMutation.isPending}
                         onClick={() => previewMutation.mutate()}
                       >
                         {previewMutation.isPending ? t("changeSets.previewing") : t("changeSets.preview")}
-                      </button>
-                      <label className="inline-check">
-                        <input
-                          type="checkbox"
-                          checked={applyForce}
-                          onChange={(e) => setApplyForce(e.target.checked)}
-                        />
-                        {t("changeSets.forceApply")}
-                      </label>
-                      <button
-                        type="button"
-                        className="btn primary"
+                      </Button>
+                      <Select
+                        value={applyForce ? "true" : "false"}
+                        onChange={(value) => setApplyForce(value === "true")}
+                        options={[
+                          { value: "false", label: t("changeSets.forceApply") },
+                          { value: "true", label: t("changeSets.forceApply") },
+                        ]}
+                      />
+                      <Button
+                        type="primary"
                         disabled={
                           detailQuery.data.status === "APPLIED" || applyMutation.isPending
                         }
                         onClick={() => applyMutation.mutate()}
                       >
                         {applyMutation.isPending ? t("changeSets.applying") : t("changeSets.apply")}
-                      </button>
-                    </div>
+                      </Button>
+                    </Space>
                   </>
                 ) : null}
 
                 {preview && (
                   <div className="platform-change-sets-preview">
-                    <h4>{t("changeSets.previewResult")}</h4>
-                    <p>
+                    <Typography.Title level={4}>{t("changeSets.previewResult")}</Typography.Title>
+                    <Typography.Paragraph>
                       {t("changeSets.conflictCount", { count: preview.conflictCount })}
-                    </p>
+                    </Typography.Paragraph>
                     {preview.conflicts.length > 0 && (
-                      <table className="data-table compact">
-                        <thead>
-                          <tr>
-                            <th>{t("changeSets.column.path")}</th>
-                            <th>{t("changeSets.column.op")}</th>
-                            <th>{t("changeSets.column.expected")}</th>
-                            <th>{t("changeSets.column.current")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {preview.conflicts.map((row, index) => (
-                            <tr key={index}>
-                              <td className="mono">{String(row.path ?? "")}</td>
-                              <td>
-                                <code>{String(row.op ?? "")}</code>
-                              </td>
-                              <td>{String(row.expectedRevision ?? "")}</td>
-                              <td>{String(row.currentRevision ?? "")}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <Table
+                        className="data-table compact"
+                        size="small"
+                        pagination={false}
+                        rowKey={(_, index) => String(index)}
+                        columns={conflictColumns}
+                        dataSource={preview.conflicts}
+                      />
                     )}
                     {preview.applicable.length > 0 && (
-                      <p className="hint">
+                      <Typography.Paragraph type="secondary">
                         {t("changeSets.applicableCount", { count: preview.applicable.length })}
-                      </p>
+                      </Typography.Paragraph>
                     )}
                   </div>
                 )}
-                {actionError && <div className="banner error">{actionError}</div>}
+                {actionError && <Alert type="error" showIcon message={actionError} />}
                 {applyMutation.isSuccess && (
-                  <div className="banner success">{t("changeSets.appliedSuccess")}</div>
+                  <Alert type="success" showIcon message={t("changeSets.appliedSuccess")} />
                 )}
               </>
             )}

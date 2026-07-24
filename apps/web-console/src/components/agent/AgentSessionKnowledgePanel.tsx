@@ -1,3 +1,4 @@
+import { Alert, Button } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -86,7 +87,7 @@ export default function AgentSessionKnowledgePanel({ sessionId }: { sessionId: s
         />
         {uploadMutation.isPending && <span className="op-muted">{t("agent.documents.uploading")}</span>}
       </div>
-      {uploadError && <p className="op-alert op-alert-warn">{uploadError}</p>}
+      {uploadError && <Alert type="warning" showIcon message={uploadError} />}
       {documents.length === 0 ? (
         <p className="op-muted">{t("agent.documents.empty")}</p>
       ) : (
@@ -95,14 +96,14 @@ export default function AgentSessionKnowledgePanel({ sessionId }: { sessionId: s
             <li key={doc.docId}>
               <span>{doc.filename}</span>
               <span className="op-muted"> {formatBytes(doc.byteSize ?? 0)}</span>
-              <button
-                type="button"
-                className="btn small danger"
-                disabled={deleteMutation.isPending}
+              <Button
+                size="small"
+                danger
+                loading={deleteMutation.isPending}
                 onClick={() => deleteMutation.mutate(doc.docId)}
               >
                 {t("agent.documents.delete")}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

@@ -1,3 +1,4 @@
+import { Alert } from "antd";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -76,11 +77,11 @@ export default function MimicEditorPanel({ path, title, onClose }: MimicEditorPa
   usePublishAdminFocus(`mimic-editor:${path}`, mimicFocus, Boolean(path));
 
   if (mimicQuery.isLoading) {
-    return <div className="loading">{t("editor.loading")}</div>;
+    return <Alert className="loading" type="info" showIcon message={t("editor.loading")} />;
   }
 
   if (mimicQuery.isError) {
-    return <div className="error">{(mimicQuery.error as Error).message}</div>;
+    return <Alert className="error" type="error" showIcon message={(mimicQuery.error as Error).message} />;
   }
 
   const displayTitle = title ?? mimicQuery.data?.title ?? path;

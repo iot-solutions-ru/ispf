@@ -45,6 +45,7 @@ public class BpmnParser {
             Map<String, ServiceTaskDefinition> serviceTasks = new HashMap<>();
             Map<String, UserTaskDefinition> userTasks = new HashMap<>();
             Map<String, MessageTaskDefinition> messageTasks = new HashMap<>();
+            Map<String, CallActivityDefinition> callActivities = new HashMap<>();
             Map<String, SignalCatchDefinition> signalCatchEvents = new HashMap<>();
             Map<String, MessageCatchDefinition> messageCatchEvents = new HashMap<>();
             Map<String, MessageThrowDefinition> messageThrowEvents = new HashMap<>();
@@ -95,6 +96,12 @@ public class BpmnParser {
                 messageTasks.put(id, parseMessageTask(task));
             }
 
+            for (Element call : elements(process, "callActivity")) {
+                String id = call.getAttribute("id");
+                nodeTypes.put(id, "callActivity");
+                callActivities.put(id, parseCallActivity(call));
+            }
+
             for (Element catchEvent : elements(process, "intermediateCatchEvent")) {
                 String id = catchEvent.getAttribute("id");
                 nodeTypes.put(id, "intermediateCatchEvent");
@@ -139,6 +146,7 @@ public class BpmnParser {
                         serviceTasks,
                         userTasks,
                         messageTasks,
+                        callActivities,
                         signalCatchEvents,
                         messageCatchEvents,
                         messageThrowEvents,
@@ -166,6 +174,7 @@ public class BpmnParser {
                     serviceTasks,
                     userTasks,
                     messageTasks,
+                    callActivities,
                     signalCatchEvents,
                     messageCatchEvents,
                     messageThrowEvents,
@@ -188,6 +197,7 @@ public class BpmnParser {
             Map<String, ServiceTaskDefinition> serviceTasks,
             Map<String, UserTaskDefinition> userTasks,
             Map<String, MessageTaskDefinition> messageTasks,
+            Map<String, CallActivityDefinition> callActivities,
             Map<String, SignalCatchDefinition> signalCatchEvents,
             Map<String, MessageCatchDefinition> messageCatchEvents,
             Map<String, MessageThrowDefinition> messageThrowEvents,
@@ -244,6 +254,12 @@ public class BpmnParser {
             messageTasks.put(taskId, parseMessageTask(task));
         }
 
+        for (Element call : elements(subProcess, "callActivity")) {
+            String callId = call.getAttribute("id");
+            nodeTypes.put(callId, "callActivity");
+            callActivities.put(callId, parseCallActivity(call));
+        }
+
         for (Element catchEvent : elements(subProcess, "intermediateCatchEvent")) {
             String catchId = catchEvent.getAttribute("id");
             nodeTypes.put(catchId, "intermediateCatchEvent");
@@ -288,6 +304,7 @@ public class BpmnParser {
                     serviceTasks,
                     userTasks,
                     messageTasks,
+                    callActivities,
                     signalCatchEvents,
                     messageCatchEvents,
                     messageThrowEvents,
@@ -317,8 +334,6 @@ public class BpmnParser {
      * ADR-0047 freeze: reject elements outside the ISPF BPMN subset with a clear error.
      */
     private static void rejectUnsupportedElements(Element process) throws WorkflowException {
-        rejectNamedElements(process, "callActivity",
-                "callActivity is not supported (ISPF BPMN subset)");
         rejectNamedElements(process, "businessRuleTask",
                 "businessRuleTask / DMN is not supported (ISPF BPMN subset)");
         rejectNamedElements(process, "inclusiveGateway",
@@ -497,6 +512,31 @@ public class BpmnParser {
                 subject,
                 message,
                 channel,
+                Map.copyOf(parameters)
+        );
+    }
+
+    private CallActivityDefinition parseCallActivity(Element call) throws WorkflowException {
+        Map<String, String> parameters = new HashMap<>();
+        readIspfAttribute(call, parameters, "workflowPath");
+        readIspfAttribute(call, parameters, "objectPath");
+        readIspfAttribute(call, parameters, "inputMap");
+        String workflowPath = parameters.get("workflowPath");
+        if (workflowPath == null || workflowPath.isBlank()) {
+            workflowPath = call.getAttribute("calledElement");
+        }
+        if (workflowPath == null || workflowPath.isBlank()) {
+            throw new WorkflowException(
+                    "callActivity requires ispf:workflowPath or calledElement: " + call.getAttribute("id"));
+        }
+        if (!workflowPath.contains(".")) {
+            workflowPath = "root.platform.workflows." + workflowPath;
+        }
+        parameters.put("workflowPath", workflowPath);
+        return new CallActivityDefinition(
+                call.getAttribute("id"),
+                call.getAttribute("name"),
+                workflowPath,
                 Map.copyOf(parameters)
         );
     }

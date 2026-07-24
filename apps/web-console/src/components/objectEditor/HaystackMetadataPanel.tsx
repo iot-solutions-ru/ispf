@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Checkbox, Input, Select, Space, Tag } from "antd";
 import { fetchVariables, setVariable } from "../../api";
 import {
   COMMON_HAYSTACK_MARKERS,
@@ -115,8 +116,7 @@ export default function HaystackMetadataPanel({ devicePath, canManage }: Haystac
         <div className="function-form-multiselect-options">
           {COMMON_HAYSTACK_MARKERS.map((tag) => (
             <label key={tag} className="function-form-multiselect-option">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={selectedTags.includes(tag)}
                 disabled={!canManage}
                 onChange={() => toggleTag(tag)}
@@ -132,15 +132,16 @@ export default function HaystackMetadataPanel({ devicePath, canManage }: Haystac
           <span className="haystack-custom-tags-label">{t("haystack.customTags")}</span>
           <div className="haystack-custom-tags-list">
             {customTags.map((tag) => (
-              <button
+              <Tag
                 key={tag}
-                type="button"
-                className="chip chip-removable"
-                disabled={!canManage}
-                onClick={() => toggleTag(tag)}
+                closable={canManage}
+                onClose={(event) => {
+                  event.preventDefault();
+                  toggleTag(tag);
+                }}
               >
-                {tag} ×
-              </button>
+                {tag}
+              </Tag>
             ))}
           </div>
         </div>
@@ -151,8 +152,7 @@ export default function HaystackMetadataPanel({ devicePath, canManage }: Haystac
           <label className="full">
             {t("haystack.addCustomTag")}
             <div className="haystack-custom-tag-row">
-              <input
-                type="text"
+              <Input
                 value={customTag}
                 placeholder={t("haystack.customTagPlaceholder")}
                 onChange={(event) => setCustomTag(event.target.value)}
@@ -163,9 +163,9 @@ export default function HaystackMetadataPanel({ devicePath, canManage }: Haystac
                   }
                 }}
               />
-              <button type="button" className="btn btn-sm" onClick={addCustomTag}>
+              <Button size="small" onClick={addCustomTag}>
                 {t("common:action.add")}
-              </button>
+              </Button>
             </div>
           </label>
         </div>
@@ -174,21 +174,21 @@ export default function HaystackMetadataPanel({ devicePath, canManage }: Haystac
       <div className="property-fields">
         <label className="full">
           {t("haystack.kind")}
-          <select
+          <Select
             value={haystackKind}
             disabled={!canManage}
-            onChange={(event) => setHaystackKind(event.target.value)}
-          >
-            <option value="">{t("haystack.kindNone")}</option>
-            <option value="equip">{t("haystack.kindEquip")}</option>
-            <option value="point">{t("haystack.kindPoint")}</option>
-            <option value="site">{t("haystack.kindSite")}</option>
-          </select>
+            onChange={setHaystackKind}
+            options={[
+              { value: "", label: t("haystack.kindNone") },
+              { value: "equip", label: t("haystack.kindEquip") },
+              { value: "point", label: t("haystack.kindPoint") },
+              { value: "site", label: t("haystack.kindSite") },
+            ]}
+          />
         </label>
         <label className="full">
           {t("haystack.ref")}
-          <input
-            type="text"
+          <Input
             value={haystackRef}
             disabled={!canManage}
             placeholder="@site.equip"
@@ -197,19 +197,14 @@ export default function HaystackMetadataPanel({ devicePath, canManage }: Haystac
         </label>
       </div>
 
-      {formError && <div className="banner error">{formError}</div>}
+      {formError && <Alert type="error" message={formError} showIcon />}
 
       {canManage && (
-        <div className="panel-toolbar">
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={saveMutation.isPending}
-            onClick={() => saveMutation.mutate()}
-          >
+        <Space className="panel-toolbar">
+          <Button type="primary" loading={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
             {saveMutation.isPending ? t("common:action.saving") : t("haystack.save")}
-          </button>
-        </div>
+          </Button>
+        </Space>
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Input, InputNumber, Segmented } from "antd";
 import { useTranslation } from "react-i18next";
 
 export type DataSourceConnectionMode = "internal" | "external";
@@ -70,30 +71,20 @@ export default function DataSourceConnectionFields({
 
   return (
     <div className="ds-connection-fields">
-      <div className="ds-mode-segment" role="tablist" aria-label={t("platform:dataSource.connectionMode")}>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={connectionMode === "internal"}
-          className={`ds-mode-segment-btn${connectionMode === "internal" ? " active" : ""}`}
-          onClick={() => onConnectionModeChange("internal")}
-        >
-          {t("platform:dataSource.modeInternalShort")}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={connectionMode === "external"}
-          className={`ds-mode-segment-btn${connectionMode === "external" ? " active" : ""}`}
-          onClick={() => onConnectionModeChange("external")}
-        >
-          {t("platform:dataSource.modeExternalShort")}
-        </button>
-      </div>
+      <Segmented<DataSourceConnectionMode>
+        className="ds-mode-segment"
+        aria-label={t("platform:dataSource.connectionMode")}
+        value={connectionMode}
+        onChange={onConnectionModeChange}
+        options={[
+          { label: t("platform:dataSource.modeInternalShort"), value: "internal" },
+          { label: t("platform:dataSource.modeExternalShort"), value: "external" },
+        ]}
+      />
 
       {connectionMode === "internal" ? (
         <Field label={t("platform:dataSource.schema")} span={2}>
-          <input
+          <Input
             value={schemaName}
             onChange={(e) => onSchemaNameChange(e.target.value)}
             required
@@ -103,26 +94,24 @@ export default function DataSourceConnectionFields({
       ) : (
         <>
           <Field label={t("platform:dataSource.jdbcUrl")} span={2}>
-            <input value={jdbcUrl} onChange={(e) => onJdbcUrlChange(e.target.value)} required />
+            <Input value={jdbcUrl} onChange={(e) => onJdbcUrlChange(e.target.value)} required />
           </Field>
           <Field label={t("platform:dataSource.jdbcDriverClass")}>
-            <input value={jdbcDriverClass} onChange={(e) => onJdbcDriverClassChange(e.target.value)} />
+            <Input value={jdbcDriverClass} onChange={(e) => onJdbcDriverClassChange(e.target.value)} />
           </Field>
           <Field label={t("platform:dataSource.poolSize")}>
-            <input
-              type="number"
+            <InputNumber
               min={1}
               max={20}
               value={poolSize}
-              onChange={(e) => onPoolSizeChange(Number(e.target.value))}
+              onChange={(value) => onPoolSizeChange(value ?? 1)}
             />
           </Field>
           <Field label={t("platform:dataSource.jdbcUsername")}>
-            <input value={jdbcUsername} onChange={(e) => onJdbcUsernameChange(e.target.value)} />
+            <Input value={jdbcUsername} onChange={(e) => onJdbcUsernameChange(e.target.value)} />
           </Field>
           <Field label={t("platform:dataSource.jdbcPassword")}>
-            <input
-              type="password"
+            <Input.Password
               value={jdbcPassword}
               onChange={(e) => onJdbcPasswordChange(e.target.value)}
               placeholder={passwordPlaceholder}

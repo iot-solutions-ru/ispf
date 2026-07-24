@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { Alert, Button, Space, Typography } from "antd";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { exportPlatformBackup, importPlatformBackup } from "../../api/platformBackup";
@@ -72,23 +73,18 @@ export default function PlatformBackupPanel() {
 
   return (
     <section className="panel-card platform-backup-panel">
-      <h4>{t("backup.title")}</h4>
-      <p className="hint">{t("backup.subtitle")}</p>
-      {feedback && <div className="op-alert op-alert-success">{feedback}</div>}
-      {error && <div className="op-alert op-alert-error">{error}</div>}
-      {previewText && <div className="op-alert">{previewText}</div>}
-      <div className="form-actions">
-        <button
-          type="button"
-          className="btn primary"
-          disabled={exportMutation.isPending}
-          onClick={startExport}
-        >
+      <Typography.Title level={5} style={{ marginTop: 0 }}>
+        {t("backup.title")}
+      </Typography.Title>
+      <Typography.Paragraph type="secondary">{t("backup.subtitle")}</Typography.Paragraph>
+      {feedback && <Alert type="success" showIcon message={feedback} style={{ marginBottom: 12 }} />}
+      {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 12 }} />}
+      {previewText && <Alert showIcon message={previewText} style={{ marginBottom: 12 }} />}
+      <Space wrap>
+        <Button type="primary" loading={exportMutation.isPending} onClick={startExport}>
           {t("backup.export")}
-        </button>
-        <button type="button" className="btn" onClick={() => fileInputRef.current?.click()}>
-          {t("backup.chooseFile")}
-        </button>
+        </Button>
+        <Button onClick={() => fileInputRef.current?.click()}>{t("backup.chooseFile")}</Button>
         <input
           ref={fileInputRef}
           type="file"
@@ -106,16 +102,15 @@ export default function PlatformBackupPanel() {
           }}
         />
         {pendingJson && (
-          <button
-            type="button"
-            className="btn danger"
-            disabled={importMutation.isPending || previewMutation.isPending}
+          <Button
+            danger
+            loading={importMutation.isPending || previewMutation.isPending}
             onClick={() => importMutation.mutate(pendingJson)}
           >
             {t("backup.importApply")}
-          </button>
+          </Button>
         )}
-      </div>
+      </Space>
     </section>
   );
 }

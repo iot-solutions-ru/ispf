@@ -1,3 +1,4 @@
+import { Badge, Button, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import type { AlarmShelf } from "../../api";
 
@@ -36,28 +37,28 @@ export default function AlarmShelfPanel({ shelves, onUnshelve }: AlarmShelfPanel
   return (
     <aside className="operator-alarm-shelf-panel" data-testid="operator-alarm-shelves">
       <header className="operator-alarm-shelf-panel-head">
-        <strong>{t("alarmShelves.title")}</strong>
-        <span className="hint">{t("alarmShelves.count", { count: shelves.length })}</span>
+        <Typography.Text strong>{t("alarmShelves.title")}</Typography.Text>
+        <Badge count={t("alarmShelves.count", { count: shelves.length })} />
       </header>
       <ul className="operator-alarm-shelf-list">
         {shelves.map((shelf) => (
           <li key={shelf.id} className="operator-alarm-shelf-item">
-            <div className="operator-alarm-shelf-main">
-              <span className="operator-alarm-shelf-event">{shelf.eventName}</span>
-              <span className="operator-alarm-shelf-path">{shelf.objectPath}</span>
-              {shelf.comment && <span className="hint operator-alarm-shelf-comment">{shelf.comment}</span>}
-              <span className="hint operator-alarm-shelf-meta">
+            <Space className="operator-alarm-shelf-main" direction="vertical" size={2}>
+              <Typography.Text className="operator-alarm-shelf-event">{shelf.eventName}</Typography.Text>
+              <Typography.Text className="operator-alarm-shelf-path">{shelf.objectPath}</Typography.Text>
+              {shelf.comment && <Typography.Text className="hint operator-alarm-shelf-comment">{shelf.comment}</Typography.Text>}
+              <Typography.Text className="hint operator-alarm-shelf-meta">
                 {t("alarmShelves.by", { user: shelf.shelvedBy })} · {t("alarmShelves.expires", {
                   time: formatExpiry(shelf.expiresAt, {
                     noExpiry: t("alarmShelves.noExpiry"),
                     expired: t("alarmShelves.expired"),
                   }),
                 })}
-              </span>
-            </div>
-            <button type="button" className="btn small operator-alarm-shelf-unshelve" onClick={() => onUnshelve(shelf.id)}>
+              </Typography.Text>
+            </Space>
+            <Button size="small" className="operator-alarm-shelf-unshelve" onClick={() => onUnshelve(shelf.id)}>
               {t("alarmShelves.unshelve")}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

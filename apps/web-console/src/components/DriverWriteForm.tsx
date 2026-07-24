@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select, Space, Typography } from "antd";
 import { fetchVariables } from "../api";
 import { pollDriver, writeDriverPoint } from "../api/drivers";
 import { parseDriverPointMappings, parseDriverWriteValue } from "../utils/driverPointMappings";
@@ -100,103 +101,101 @@ export default function DriverWriteForm({
     ?? (writeMutation.error && !formError ? writeMutation.error : null);
 
   if (variablesQuery.isLoading) {
-    return <p className="hint">{t("inspector:driver.write.loading")}</p>;
+    return <Typography.Paragraph type="secondary">{t("inspector:driver.write.loading")}</Typography.Paragraph>;
   }
 
   if (!canManage) {
-    return <p className="hint">{t("common:hint.adminOnly")}</p>;
+    return <Typography.Paragraph type="secondary">{t("common:hint.adminOnly")}</Typography.Paragraph>;
   }
 
   if (!supportsWrite) {
-    return <p className="hint warning driver-hint-box">{t("inspector:driver.write.readOnlyDriver")}</p>;
+    return <Alert type="warning" showIcon message={t("inspector:driver.write.readOnlyDriver")} />;
   }
 
   return (
-    <section className="driver-write-form">
-      <header className="driver-write-head">
+    <Space orientation="vertical" size="middle" style={{ width: "100%" }} className="driver-write-form">
+      <div className="driver-write-head">
         <div>
-          <h4>{t("inspector:driver.write.title")}</h4>
-          <p className="hint">{t("inspector:driver.write.subtitle")}</p>
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {t("inspector:driver.write.title")}
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t("inspector:driver.write.subtitle")}
+          </Typography.Paragraph>
         </div>
         {showPoll && (
-          <button
-            type="button"
-            className="btn"
+          <Button
             disabled={isBusy}
+            loading={pollMutation.isPending}
             onClick={() => pollMutation.mutate()}
           >
             {pollMutation.isPending ? t("inspector:driver.write.polling") : t("inspector:driver.write.pollNow")}
-          </button>
+          </Button>
         )}
-      </header>
+      </div>
 
       {mappingEntries.length === 0 ? (
-        <p className="hint warning driver-hint-box">{t("inspector:driver.write.noMappings")}</p>
+        <Alert type="warning" showIcon message={t("inspector:driver.write.noMappings")} />
       ) : (
-        <form
+        <Form
+          layout="vertical"
           className="driver-write-fields"
-          onSubmit={(event) => {
-            event.preventDefault();
+          onFinish={() => {
             writeMutation.mutate();
           }}
         >
-          <div className="form-grid">
-            <label>
-              {t("inspector:driver.write.pointLabel")}
-              <select value={pointId} onChange={(event) => setPointId(event.target.value)}>
-                {mappingEntries.map(([variableName]) => (
-                  <option key={variableName} value={variableName}>
-                    {variableName}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+            <Form.Item label={t("inspector:driver.write.pointLabel")} style={{ marginBottom: 0 }}>
+              <Select
+                value={pointId}
+                onChange={setPointId}
+                options={mappingEntries.map(([variableName]) => ({
+                  value: variableName,
+                  label: variableName,
+                }))}
+              />
+            </Form.Item>
             {selectedMapping && (
-              <p className="hint full">
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
                 {t("inspector:driver.write.mappingHint", { mapping: selectedMapping })}
-              </p>
+              </Typography.Paragraph>
             )}
-            <div className="full section-inline-tools">
-              <span className="field-label">{t("inspector:driver.write.valueLabel")}</span>
-              <button type="button" className="btn tiny" onClick={() => setShowJson((value) => !value)}>
+            <Space style={{ justifyContent: "space-between", width: "100%" }}>
+              <Typography.Text strong>{t("inspector:driver.write.valueLabel")}</Typography.Text>
+              <Button size="small" onClick={() => setShowJson((value) => !value)}>
                 JSON
-              </button>
-            </div>
+              </Button>
+            </Space>
             {showJson ? (
-              <label className="full">
-                {t("inspector:driver.write.valueJsonLabel")}
-                <textarea
+              <Form.Item label={t("inspector:driver.write.valueJsonLabel")} style={{ marginBottom: 0 }}>
+                <Input.TextArea
                   className="mono"
                   rows={6}
                   value={valueJson}
                   onChange={(event) => setValueJson(event.target.value)}
                   spellCheck={false}
                 />
-              </label>
+              </Form.Item>
             ) : (
-              <label className="full">
-                {t("inspector:driver.write.valueLabel")}
-                <input
-                  type="text"
+              <Form.Item label={t("inspector:driver.write.valueLabel")} style={{ marginBottom: 0 }}>
+                <Input
                   value={valueText}
                   onChange={(event) => setValueText(event.target.value)}
                   placeholder={t("inspector:driver.write.valuePlaceholder")}
                 />
-              </label>
+              </Form.Item>
             )}
-          </div>
-          <div className="form-actions">
-            <button type="submit" className="btn primary" disabled={isBusy}>
+            <Button htmlType="submit" type="primary" disabled={isBusy} loading={writeMutation.isPending}>
               {writeMutation.isPending ? t("inspector:driver.write.writing") : t("inspector:driver.write.submit")}
-            </button>
-          </div>
-          {formError && <p className="hint error">{formError}</p>}
-        </form>
+            </Button>
+            {formError && <Alert type="error" showIcon message={formError} />}
+          </Space>
+        </Form>
       )}
 
       {actionError && (
-        <p className="hint error">{(actionError as Error).message}</p>
+        <Alert type="error" showIcon message={(actionError as Error).message} />
       )}
-    </section>
+    </Space>
   );
 }

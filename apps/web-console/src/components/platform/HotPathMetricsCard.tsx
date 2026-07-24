@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button, Space, Typography } from "antd";
 import type { PlatformMetricSection, PlatformMetricsResponse } from "../../api/platformMetrics";
 
 const HOT_PATH_KEYS = [
@@ -43,21 +44,23 @@ export default function HotPathMetricsCard({ data }: { data: PlatformMetricsResp
     <section className="system-metrics-card system-hot-path-card">
       <header className="system-hot-path-header">
         <div>
-          <h3>{t("metrics.hotPath.title")}</h3>
-          <p className="op-muted hint">{t("metrics.hotPath.subtitle")}</p>
+          <Typography.Title level={3}>{t("metrics.hotPath.title")}</Typography.Title>
+          <Typography.Paragraph type="secondary" className="hint">
+            {t("metrics.hotPath.subtitle")}
+          </Typography.Paragraph>
         </div>
-        <a className="btn small" href={dashboardHref}>
+        <Button href={dashboardHref}>
           {t("metrics.hotPath.openDashboard")}
-        </a>
+        </Button>
       </header>
-      <div className="system-hot-path-grid">
+      <Space orientation="vertical" className="system-hot-path-grid">
         {HOT_PATH_KEYS.map((key) => (
           <article key={key} className="system-hot-path-stat">
             <div className="system-hot-path-label">{t(`metrics.${key}`)}</div>
             <div className="system-hot-path-value">{formatValue(merged[key])}</div>
           </article>
         ))}
-      </div>
+      </Space>
     </section>
   );
 }

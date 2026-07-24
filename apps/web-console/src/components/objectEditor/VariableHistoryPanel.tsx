@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Segmented, Select, Space, Typography } from "antd";
 import {
   CartesianGrid,
   Line,
@@ -93,7 +94,7 @@ export default function VariableHistoryPanel({
                 {textSamples.length} {t("variables.historyPanel.snapshots")}
               </span>
             ) : (
-              <span className="hint">{t("variables.historyPanel.noData")}</span>
+              <Typography.Text type="secondary">{t("variables.historyPanel.noData")}</Typography.Text>
             )
           ) : stats.latest != null ? (
             <>
@@ -108,56 +109,49 @@ export default function VariableHistoryPanel({
               )}
             </>
           ) : (
-            <span className="hint">{t("variables.historyPanel.noData")}</span>
+            <Typography.Text type="secondary">{t("variables.historyPanel.noData")}</Typography.Text>
           )}
         </div>
         <div className="variable-history-controls">
           {fields.length > 1 && (
             <label className="variable-history-field-select">
               <span className="sr-only">{t("variables.historyPanel.field")}</span>
-              <select value={field} onChange={(e) => setField(e.target.value)}>
-                {fields.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+              <Select
+                size="small"
+                value={field}
+                onChange={setField}
+                options={fields.map((item) => ({ label: item, value: item }))}
+              />
             </label>
           )}
-          <div className="variable-history-ranges">
-            {rangeOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`btn tiny ${range === option.id ? "primary" : ""}`}
-                onClick={() => setRange(option.id)}
-              >
-                {t(option.labelKey)}
-              </button>
-            ))}
-          </div>
-          <div className="variable-history-export">
-            <button
-              type="button"
-              className="btn tiny"
+          <Segmented
+            size="small"
+            value={range}
+            onChange={(value) => setRange(value as HistoryRange)}
+            options={rangeOptions.map((option) => ({ label: t(option.labelKey), value: option.id }))}
+          />
+          <Space.Compact className="variable-history-export">
+            <Button
+              size="small"
               disabled={exporting != null}
+              loading={exporting === "csv"}
               onClick={() => exportHistory("csv")}
             >
-              {exporting === "csv" ? "…" : "CSV"}
-            </button>
-            <button
-              type="button"
-              className="btn tiny"
+              CSV
+            </Button>
+            <Button
+              size="small"
               disabled={exporting != null}
+              loading={exporting === "json"}
               onClick={() => exportHistory("json")}
             >
-              {exporting === "json" ? "…" : "JSON"}
-            </button>
-          </div>
+              JSON
+            </Button>
+          </Space.Compact>
         </div>
       </div>
 
-      {exportError && <p className="hint error variable-history-export-error">{exportError}</p>}
+      {exportError && <Alert type="error" message={exportError} showIcon className="variable-history-export-error" />}
 
       <div className={isRecordSnapshot ? "variable-history-snapshots" : "variable-history-chart"}>
         {isRecordSnapshot ? (

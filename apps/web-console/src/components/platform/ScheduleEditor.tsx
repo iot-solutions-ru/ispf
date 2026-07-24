@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Checkbox, Form, Input } from "antd";
 import { fetchSchedule, updateSchedule } from "../../api/platformSchedules";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
+
+const { TextArea } = Input;
 
 interface ScheduleEditorProps {
   path: string;
@@ -62,7 +65,7 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
   }
 
   if (scheduleQuery.error) {
-    return <div className="op-alert op-alert-error">{String(scheduleQuery.error)}</div>;
+    return <Alert type="error" showIcon message={String(scheduleQuery.error)} />;
   }
 
   const lastTick = scheduleQuery.data?.lastTickAt;
@@ -76,30 +79,29 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
       onClose={onClose}
       onOpenProperties={onOpenProperties}
       toolbar={
-        <button
-          type="button"
-          className="btn primary"
+        <Button
+          type="primary"
           disabled={saveMutation.isPending || !objectPath.trim() || !functionName.trim()}
           onClick={() => saveMutation.mutate()}
         >
           {saveMutation.isPending ? t("common:action.saving") : t("common:action.save")}
-        </button>
+        </Button>
       }
     >
-      <form
-        className="form-grid report-builder-form"
-        onSubmit={(e) => {
-          e.preventDefault();
+      <Form
+        className="report-builder-form"
+        layout="vertical"
+        onFinish={() => {
           saveMutation.mutate();
         }}
       >
         <label>
           {t("common:field.displayName")}
-          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
         </label>
         <label>
           {t("platform:schedule.intervalMs")}
-          <input
+          <Input
             type="number"
             min={1000}
             step={1000}
@@ -110,7 +112,7 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
         </label>
         <label className="full">
           {t("platform:schedule.objectPath")}
-          <input
+          <Input
             value={objectPath}
             onChange={(e) => setObjectPath(e.target.value)}
             placeholder="root.platform.devices.demo-sensor-01"
@@ -119,7 +121,7 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
         </label>
         <label className="full">
           {t("platform:schedule.functionName")}
-          <input
+          <Input
             value={functionName}
             onChange={(e) => setFunctionName(e.target.value)}
             placeholder="refresh"
@@ -127,18 +129,13 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
           />
         </label>
         <label className="full">
-          <span className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-            />
+          <Checkbox checked={enabled} onChange={(e) => setEnabled(e.target.checked)}>
             {t("platform:schedule.enabled")}
-          </span>
+          </Checkbox>
         </label>
         <label className="full">
           {t("common:field.description")}
-          <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+          <TextArea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
         {lastTick && (
           <p className="hint full">{t("platform:schedule.lastTick", { time: lastTick })}</p>
@@ -146,9 +143,9 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
         {lastError && (
           <p className="hint error full">{t("platform:schedule.lastError", { error: lastError })}</p>
         )}
-        {saveError && <p className="hint error full">{saveError}</p>}
-        {saveMutation.isSuccess && <p className="hint full">{t("common:action.saved")}</p>}
-      </form>
+        {saveError && <Alert className="full" type="error" showIcon message={saveError} />}
+        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon message={t("common:action.saved")} />}
+      </Form>
     </PlatformSqlEditorShell>
   );
 }

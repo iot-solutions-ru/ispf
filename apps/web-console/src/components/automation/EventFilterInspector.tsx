@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Form, Input, InputNumber, Switch } from "antd";
 import { updateEventFilter, validateExpression } from "../../api";
 import type { EventFilterPayload } from "../../types/automation";
 import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
@@ -17,6 +18,7 @@ export default function EventFilterInspector({ path, canManage = false }: EventF
   const variablesQuery = useInspectorVariables(path);
 
   const variables = variablesQuery.data ?? [];
+  const [antdForm] = Form.useForm();
   const form = {
     filterId: variableString(variables, "filterId"),
     eventNamePattern: variableString(variables, "eventNamePattern") || "*",
@@ -56,114 +58,68 @@ export default function EventFilterInspector({ path, canManage = false }: EventF
           </p>
         </div>
       </header>
-      <form
+      <Form
+        form={antdForm}
         key={path}
-        className="form-grid"
-        onSubmit={(e) => {
-          e.preventDefault();
+        layout="vertical"
+        className="antd-control-grid"
+        initialValues={form}
+        disabled={!canManage}
+        onFinish={(values: typeof form) => {
           if (!canManage) {
             return;
           }
-          const data = new FormData(e.currentTarget);
           saveMutation.mutate({
-            filterId: String(data.get("filterId") ?? ""),
-            eventNamePattern: String(data.get("eventNamePattern") ?? "*"),
-            sourceObjectPathPattern: String(data.get("sourceObjectPathPattern") ?? "root.platform.**"),
-            minSeverity: Number(data.get("minSeverity") ?? 0),
-            maxSeverity: Number(data.get("maxSeverity") ?? 100),
-            timeWindowMs: Number(data.get("timeWindowMs") ?? 0),
-            filterExpression: String(data.get("filterExpression") ?? ""),
-            enabled: data.get("enabled") === "on",
+            filterId: String(values.filterId ?? ""),
+            eventNamePattern: String(values.eventNamePattern ?? "*"),
+            sourceObjectPathPattern: String(values.sourceObjectPathPattern ?? "root.platform.**"),
+            minSeverity: Number(values.minSeverity ?? 0),
+            maxSeverity: Number(values.maxSeverity ?? 100),
+            timeWindowMs: Number(values.timeWindowMs ?? 0),
+            filterExpression: String(values.filterExpression ?? ""),
+            enabled: Boolean(values.enabled),
           });
         }}
       >
-        <label>
-          {t("automation:eventFilter.filterId")}
-          <input name="filterId" defaultValue={form.filterId} required readOnly={!canManage} />
-        </label>
-        <label>
-          {t("automation:eventFilter.eventNamePattern")}
-          <input name="eventNamePattern" defaultValue={form.eventNamePattern} required readOnly={!canManage} />
-        </label>
-        <label className="full">
-          {t("automation:eventFilter.sourceObjectPathPattern")}
-          <input
-            name="sourceObjectPathPattern"
-            defaultValue={form.sourceObjectPathPattern}
-            required
-            readOnly={!canManage}
-          />
-        </label>
-        <label>
-          {t("automation:eventFilter.minSeverity")}
-          <input
-            name="minSeverity"
-            type="number"
-            min={0}
-            max={100}
-            step={1}
-            defaultValue={form.minSeverity}
-            readOnly={!canManage}
-          />
-        </label>
-        <label>
-          {t("automation:eventFilter.maxSeverity")}
-          <input
-            name="maxSeverity"
-            type="number"
-            min={0}
-            max={100}
-            step={1}
-            defaultValue={form.maxSeverity}
-            readOnly={!canManage}
-          />
-        </label>
-        <label>
-          {t("automation:eventFilter.timeWindowMs")}
-          <input
-            name="timeWindowMs"
-            type="number"
-            min={0}
-            step={1000}
-            defaultValue={form.timeWindowMs}
-            readOnly={!canManage}
-          />
-        </label>
-        <label className="full">
-          {t("automation:eventFilter.filterExpression")}
-          <textarea
-            name="filterExpression"
-            defaultValue={form.filterExpression}
-            rows={3}
-            readOnly={!canManage}
-            placeholder={t("automation:eventFilter.filterExpressionPlaceholder")}
-          />
-        </label>
-        <label className="checkbox">
-          <input type="checkbox" name="enabled" defaultChecked={form.enabled} disabled={!canManage} />
-          {t("automation:eventFilter.enabled")}
-        </label>
+        <Form.Item name="filterId" label={t("automation:eventFilter.filterId")} rules={[{ required: true }]} required>
+          <Input />
+        </Form.Item>
+        <Form.Item name="eventNamePattern" label={t("automation:eventFilter.eventNamePattern")} rules={[{ required: true }]} required>
+          <Input />
+        </Form.Item>
+        <Form.Item className="full" name="sourceObjectPathPattern" label={t("automation:eventFilter.sourceObjectPathPattern")} rules={[{ required: true }]} required>
+          <Input />
+        </Form.Item>
+        <Form.Item name="minSeverity" label={t("automation:eventFilter.minSeverity")}>
+          <InputNumber min={0} max={100} step={1} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="maxSeverity" label={t("automation:eventFilter.maxSeverity")}>
+          <InputNumber min={0} max={100} step={1} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="timeWindowMs" label={t("automation:eventFilter.timeWindowMs")}>
+          <InputNumber min={0} step={1000} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item className="full" name="filterExpression" label={t("automation:eventFilter.filterExpression")}>
+          <Input.TextArea rows={3} placeholder={t("automation:eventFilter.filterExpressionPlaceholder")} />
+        </Form.Item>
+        <Form.Item name="enabled" valuePropName="checked" label={t("automation:eventFilter.enabled")}>
+          <Switch />
+        </Form.Item>
         {canManage && (
           <div className="form-actions full">
-            <button
-              type="button"
-              className="btn"
+            <Button
               onClick={() => {
-                const expression = (
-                  document.querySelector(
-                    'textarea[name="filterExpression"]'
-                  ) as HTMLTextAreaElement | null
-                )?.value;
+                const expression = antdForm.getFieldValue("filterExpression") as string | undefined;
                 if (expression) {
                   validateMutation.mutate(expression);
                 }
               }}
             >
               {t("automation:eventFilter.validateCel")}
-            </button>
-            <button type="submit" className="btn primary" disabled={saveMutation.isPending}>
+            </Button>
+            <Button htmlType="submit" type="primary" loading={saveMutation.isPending}>
               {t("common:action.save")}
-            </button>
+            </Button>
           </div>
         )}
         {validateMutation.data && (
@@ -171,8 +127,8 @@ export default function EventFilterInspector({ path, canManage = false }: EventF
             {validateMutation.data.valid ? t("automation:eventFilter.celOk") : validateMutation.data.error}
           </p>
         )}
-        {saveMutation.error && <p className="hint error full">{String(saveMutation.error)}</p>}
-      </form>
+        {saveMutation.error && <Alert className="full" type="error" message={String(saveMutation.error)} showIcon />}
+      </Form>
       <ObjectFederationBindSection path={path} canManage={canManage} />
     </section>
   );

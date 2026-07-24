@@ -518,7 +518,8 @@ final class AgentAutomationTools {
 
             @Override
             public String description() {
-                return "Create a new variable on an object (for CUSTOM logic, computed fields). "
+                return "Create a new variable on an object (prefer SINGLETON orchestrator or INSTANCE twin for "
+                        + "app/twin logic; DEVICE is telemetry only). "
                         + "Args: path, name, valueType (DOUBLE|BOOLEAN|STRING|INTEGER), "
                         + "initialValue? (map or scalar), "
                         + "writable? (default false), historyEnabled? (default false). "
@@ -974,7 +975,7 @@ final class AgentAutomationTools {
                         "windowSeconds", "minOccurrences", "cooldownSeconds", "actionType", "actionTarget",
                         "payloadFilterExpr", "enabled"
                 ),
-                "note", "COUNT correlator counts events per targetObjectPath; cross-device logic use CUSTOM hub + read(remote/ref) + alert",
+                "note", "COUNT correlator counts events per targetObjectPath; cross-device logic use SINGLETON hub + read(remote/ref) + alert",
                 "tool", "configure_correlator"
         );
     }
@@ -1040,7 +1041,8 @@ final class AgentAutomationTools {
         return List.of(
                 Map.of("type", "DEVICE", "use", "Sensors, PLCs, simulators", "keyVars", "driverConfigJson, driverPointMappingsJson, status"),
                 Map.of("type", "DASHBOARD", "use", "Operator screens", "keyVars", "title, layout, refreshIntervalMs"),
-                Map.of("type", "CUSTOM", "use", "Logic hub, aggregations, PlatformRef bindings", "keyVars", "user-defined via create_variable"),
+                Map.of("type", "CUSTOM", "use", "Device folder / object-query — not app hub", "keyVars", "user-defined via create_variable"),
+                Map.of("type", "SINGLETON", "use", "App logic hub under singleton-blueprints", "keyVars", "KPIs, aggregations via create_variable + bindings"),
                 Map.of("type", "ALERT", "use", "CEL rules в†’ events", "parent", AutomationTreeService.ALERT_RULES_ROOT),
                 Map.of("type", "CORRELATOR", "use", "Event patterns", "parent", AutomationTreeService.CORRELATORS_ROOT),
                 Map.of("type", "WORKFLOW", "use", "BPMN automation", "parent", "root.platform.workflows"),

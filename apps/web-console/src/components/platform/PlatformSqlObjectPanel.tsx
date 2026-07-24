@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import {
   isDataSourcePath,
   isMigrationPath,
@@ -47,9 +48,9 @@ export default function PlatformSqlObjectPanel({ path, onOpenEditor }: PlatformS
           <p className="op-muted">{descriptionForPath(path)}</p>
           <p className="hint mono small">{path}</p>
         </div>
-        <button type="button" className="btn primary" onClick={() => onOpenEditor(path)}>
+        <Button type="primary" onClick={() => onOpenEditor(path)}>
           {t("common:action.openInEditor")}
-        </button>
+        </Button>
       </header>
       <p className="op-muted">
         {t("platform:hint.openInEditorWorkspace")}

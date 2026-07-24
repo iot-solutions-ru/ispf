@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, Input, Select } from "antd";
 import type { ObjectType } from "../types";
 import ObjectTreePickerDialog from "./ObjectTreePickerDialog";
 
@@ -46,21 +47,18 @@ export default function ObjectPathField({
         {label && <span className="field-caption">{label}</span>}
         <div className="object-path-field-controls">
           {objects && objects.length > 0 && (
-            <select
+            <Select
               value={value}
               disabled={disabled}
-              onChange={(event) => onChange(event.target.value)}
-            >
-              <option value="">—</option>
-              {objects.map((obj) => (
-                <option key={obj.path} value={obj.path}>
-                  {obj.displayName}
-                </option>
-              ))}
-            </select>
+              onChange={onChange}
+              options={[
+                { value: "", label: "—" },
+                ...objects.map((obj) => ({ value: obj.path, label: obj.displayName })),
+              ]}
+            />
           )}
           {allowManual && (
-            <input
+            <Input
               id={id}
               type="text"
               value={value}
@@ -69,16 +67,16 @@ export default function ObjectPathField({
               onChange={(event) => onChange(event.target.value)}
             />
           )}
-          <button
-            type="button"
-            className="btn small object-path-browse"
+          <Button
+            size="small"
+            className="object-path-browse"
             disabled={disabled}
             title={t("objectPath.browseTree")}
             aria-label={t("objectPath.browseTree")}
             onClick={() => setPickerOpen(true)}
           >
             …
-          </button>
+          </Button>
         </div>
       </label>
       <ObjectTreePickerDialog

@@ -1,6 +1,8 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Modal, Segmented, Select, Space, Tabs, Tag, Typography } from "antd";
 import {
   cancelWorkflowInstance,
   fetchWorkflow,
@@ -32,6 +34,28 @@ const STATUS_KEYS: Record<WorkflowLifecycleStatus, string> = {
   ACTIVE: "status.active",
   STOPPED: "status.stopped",
 };
+
+const STATUS_TAG_COLORS: Record<WorkflowLifecycleStatus, string> = {
+  DRAFT: "default",
+  ACTIVE: "success",
+  STOPPED: "error",
+};
+
+function instanceStatusColor(status?: string) {
+  switch (status) {
+    case "RUNNING":
+      return "processing";
+    case "WAITING":
+      return "warning";
+    case "COMPLETED":
+      return "success";
+    case "FAILED":
+    case "CANCELLED":
+      return "error";
+    default:
+      return "default";
+  }
+}
 
 type BpmnTab = "diagram" | "xml";
 const BPMN_TABS: readonly BpmnTab[] = ["diagram", "xml"];
@@ -161,131 +185,279 @@ export default function WorkflowBuilder({
     && instance.status === "WAITING"
     && Boolean(instance.pendingSignalName?.trim());
 
+  const bpmnFullscreen = mode === "edit";
+
+  useEffect(() => {
+    if (!bpmnFullscreen) return;
+    document.body.classList.add("workflow-bpmn-editor-open");
+    return () => {
+      document.body.classList.remove("workflow-bpmn-editor-open");
+    };
+  }, [bpmnFullscreen]);
+
+  useEffect(() => {
+    if (!bpmnFullscreen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.target as HTMLElement | null)?.isContentEditable) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMode("view");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [bpmnFullscreen]);
+
   if (workflow.isLoading) {
-    return <div className="workflow-shell loading">{t("workflow:loading")}</div>;
+    return (
+      <div className="workflow-shell loading">
+        <Typography.Text type="secondary">{t("workflow:loading")}</Typography.Text>
+      </div>
+    );
   }
 
   if (workflow.error) {
     return (
       <div className="workflow-shell error">
-        {t("workflow:loadError", { message: (workflow.error as Error).message })}
+        <Alert
+          type="error"
+          showIcon
+          title={t("workflow:loadError", { message: (workflow.error as Error).message })}
+        />
       </div>
     );
   }
 
   const status = workflow.data?.status ?? "DRAFT";
+  const title = workflow.data?.title ?? path;
+
+  const bpmnEditorOverlay =
+    bpmnFullscreen &&
+    createPortal(
+      <div className="workflow-bpmn-editor-overlay">
+        <div
+          className="workflow-bpmn-editor-fs"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("workflow:bpmn.title")}
+          data-testid="workflow-bpmn-editor-fs"
+        >
+          <header className="workflow-bpmn-editor-toolbar">
+            <div className="workflow-bpmn-editor-brand">
+              <div className="workflow-bpmn-editor-logo" aria-hidden />
+              <div className="workflow-bpmn-editor-brand-text">
+                <strong>{t("workflow:bpmn.title")}</strong>
+                <span className="workflow-bpmn-editor-subtitle">{title}</span>
+              </div>
+              <Tag color="blue" title={t("workflow:betaHint")} style={{ marginInlineEnd: 0 }}>
+                {t("workflow:betaBadge")}
+              </Tag>
+            </div>
+            <Tabs
+              className="workflow-bpmn-editor-tabs"
+              activeKey={bpmnTab}
+              onChange={(key) => setBpmnTab(key as BpmnTab)}
+              items={[
+                { key: "diagram", label: t("workflow:bpmn.tab.diagram") },
+                { key: "xml", label: t("workflow:bpmn.tab.xml") },
+              ]}
+            />
+            <Space className="workflow-bpmn-editor-actions" size="small" wrap>
+              {dirty && (
+                <Button
+                  type="primary"
+                  disabled={saveMutation.isPending}
+                  loading={saveMutation.isPending}
+                  onClick={() => saveMutation.mutate()}
+                >
+                  {t("workflow:saveBpmn")}
+                </Button>
+              )}
+              <Button
+                onClick={() => setMode("view")}
+                title={t("workflow:bpmn.exitFullscreenHint")}
+              >
+                {t("workflow:bpmn.exitFullscreen")}
+              </Button>
+              <Button onClick={onClose}>{t("common:action.close")}</Button>
+            </Space>
+          </header>
+          {(saveMutation.error || runMutation.error || statusMutation.error) && (
+            <Alert
+              type="error"
+              showIcon
+              style={{ margin: "0.5rem 1rem 0" }}
+              title={String(
+                (saveMutation.error as Error | null)?.message
+                  ?? (runMutation.error as Error | null)?.message
+                  ?? (statusMutation.error as Error | null)?.message
+              )}
+            />
+          )}
+          <div className="workflow-bpmn-editor-fs-body">
+            {bpmnTab === "diagram" && (
+              <Typography.Paragraph type="secondary" className="bpmn-hint">
+                {t("workflow:bpmn.hint")}
+              </Typography.Paragraph>
+            )}
+            {bpmnTab === "diagram" && (
+              <Suspense
+                fallback={
+                  <Typography.Paragraph type="secondary">
+                    {t("workflow:bpmn.loadingEditor")}
+                  </Typography.Paragraph>
+                }
+              >
+                <BpmnDiagramEditor
+                  key={`${path}-diagram-fs`}
+                  xml={bpmnXml}
+                  onChange={(next) => setDraftBpmn(next)}
+                />
+              </Suspense>
+            )}
+            {bpmnTab === "xml" && (
+              <textarea
+                className="workflow-bpmn-editor workflow-bpmn-editor--fullscreen"
+                value={bpmnXml}
+                onChange={(e) => setDraftBpmn(e.target.value)}
+                spellCheck={false}
+              />
+            )}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
 
   return (
     <div className="workflow-shell">
+      {bpmnEditorOverlay}
       <header className="dashboard-toolbar workflow-toolbar">
         <div>
           <div className="dashboard-kicker">
             {t("workflow:kicker")}
-            <span className="workflow-pill workflow-beta" title={t("workflow:betaHint")}>
+            <Tag color="blue" title={t("workflow:betaHint")} style={{ marginInlineEnd: 0 }}>
               {t("workflow:betaBadge")}
-            </span>
+            </Tag>
           </div>
-          <h2>{workflow.data?.title ?? path}</h2>
-          <code className="path-code">{path}</code>
+          <Typography.Title level={2} style={{ margin: "0.15rem 0" }}>
+            {title}
+          </Typography.Title>
+          <Typography.Text code>{path}</Typography.Text>
           <div className="workflow-status-row">
-            <span className={`workflow-pill status-${status.toLowerCase()}`}>
+            <Tag color={STATUS_TAG_COLORS[status]}>
               {t(`workflow:${STATUS_KEYS[status]}`)}
-            </span>
+            </Tag>
             {workflow.data?.lastRunAt && (
-              <span className="hint">{t("workflow:lastRun", { time: workflow.data.lastRunAt })}</span>
+              <Typography.Text type="secondary">
+                {t("workflow:lastRun", { time: workflow.data.lastRunAt })}
+              </Typography.Text>
             )}
           </div>
         </div>
-        <div className="dashboard-toolbar-actions">
-          <button
-            type="button"
-            className={`btn ${mode === "view" ? "primary" : ""}`}
-            onClick={() => setMode("view")}
-          >
-            {t("common:action.view")}
-          </button>
-          <button
-            type="button"
-            className={`btn ${mode === "edit" ? "primary" : ""}`}
-            onClick={() => {
-              setMode("edit");
-              setBpmnTab("diagram");
+        <Space className="dashboard-toolbar-actions" size="small" wrap>
+          <Segmented<"view" | "edit">
+            value={mode}
+            onChange={(nextMode) => {
+              setMode(nextMode);
+              if (nextMode === "edit") {
+                setBpmnTab("diagram");
+              }
             }}
-          >
-            {t("common:action.editor")}
-          </button>
+            options={[
+              { value: "view", label: t("common:action.view") },
+              { value: "edit", label: t("common:action.editor") },
+            ]}
+          />
           {status !== "ACTIVE" && (
-            <button
-              type="button"
-              className="btn"
+            <Button
               disabled={statusMutation.isPending}
+              loading={statusMutation.isPending}
               onClick={() => statusMutation.mutate("ACTIVE")}
             >
               {t("workflow:activate")}
-            </button>
+            </Button>
           )}
           {status === "ACTIVE" && (
-            <button
-              type="button"
-              className="btn"
+            <Button
               disabled={statusMutation.isPending}
+              loading={statusMutation.isPending}
               onClick={() => statusMutation.mutate("STOPPED")}
             >
               {t("workflow:stop")}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            className="btn primary"
+          <Button
+            type="primary"
             disabled={runMutation.isPending}
+            loading={runMutation.isPending}
             onClick={() => runMutation.mutate()}
           >
             {t("workflow:run")}
-          </button>
+          </Button>
           {onOpenProperties && (
-            <button type="button" className="btn" onClick={onOpenProperties}>
+            <Button onClick={onOpenProperties}>
               {t("common:action.properties")}
-            </button>
+            </Button>
           )}
-          {dirty && (
-            <button
-              type="button"
-              className="btn primary"
+          {dirty && !bpmnFullscreen && (
+            <Button
+              type="primary"
               disabled={saveMutation.isPending}
+              loading={saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
             >
               {t("workflow:saveBpmn")}
-            </button>
+            </Button>
           )}
-          <button type="button" className="btn" onClick={onClose}>
+          <Button onClick={onClose}>
             {t("common:action.close")}
-          </button>
-        </div>
+          </Button>
+        </Space>
       </header>
+
+      {(saveMutation.error || runMutation.error || statusMutation.error) && (
+        <Alert
+          type="error"
+          showIcon
+          style={{ margin: "0.75rem 1rem 0" }}
+          title={String(
+            (saveMutation.error as Error | null)?.message
+              ?? (runMutation.error as Error | null)?.message
+              ?? (statusMutation.error as Error | null)?.message
+          )}
+        />
+      )}
 
       <div className="workflow-body">
         <section className="workflow-panel workflow-side-panel">
-          <h3>{t("workflow:operatorApp.title")}</h3>
-          <p className="hint">
+          <Typography.Title level={3} style={{ marginTop: 0 }}>
+            {t("workflow:operatorApp.title")}
+          </Typography.Title>
+          <Typography.Paragraph type="secondary">
             {t("workflow:operatorApp.hint")}
-          </p>
-          <label className="workflow-operator-app-field">
-            <span className="field-label">{t("workflow:operatorApp.field")}</span>
-            <select
+          </Typography.Paragraph>
+          <Space direction="vertical" size={4} style={{ width: "100%" }}>
+            <Typography.Text type="secondary">{t("workflow:operatorApp.field")}</Typography.Text>
+            <Select
               value={workflow.data?.operatorAppId ?? ""}
               disabled={operatorAppMutation.isPending}
-              onChange={(e) => operatorAppMutation.mutate(e.target.value)}
-            >
-              <option value="">{t("common:empty.notAssigned")}</option>
-              {(operatorApps.data ?? []).map((app) => (
-                <option key={app.appId} value={app.appId}>
-                  {app.title} ({app.appId})
-                </option>
-              ))}
-            </select>
-          </label>
+              loading={operatorApps.isLoading || operatorAppMutation.isPending}
+              onChange={(value) => operatorAppMutation.mutate(value)}
+              options={[
+                { value: "", label: t("common:empty.notAssigned") },
+                ...(operatorApps.data ?? []).map((app) => ({
+                  value: app.appId,
+                  label: `${app.title} (${app.appId})`,
+                })),
+              ]}
+              style={{ width: "100%" }}
+            />
+          </Space>
 
-          <h3>{t("workflow:trigger.title")}</h3>
+          <Typography.Title level={3}>{t("workflow:trigger.title")}</Typography.Title>
           <pre className="workflow-code-block">{workflow.data?.triggerJson}</pre>
 
           {mode === "edit" && (
@@ -294,129 +466,141 @@ export default function WorkflowBuilder({
             </Suspense>
           )}
 
-          <h3>{t("workflow:instance.title")}</h3>
+          <Typography.Title level={3}>{t("workflow:instance.title")}</Typography.Title>
           {!instance.instanceId ? (
-            <p className="hint">{t("workflow:instance.empty")}</p>
+            <Typography.Paragraph type="secondary">{t("workflow:instance.empty")}</Typography.Paragraph>
           ) : (
             <>
               <div className="workflow-instance-grid">
                 <div>
-                  <span className="field-label">{t("common:table.id")}</span>
-                  <div className="mono">{instance.instanceId}</div>
+                  <Typography.Text type="secondary">{t("common:table.id")}</Typography.Text>
+                  <div>
+                    <Typography.Text code>{instance.instanceId}</Typography.Text>
+                  </div>
                 </div>
                 <div>
-                  <span className="field-label">{t("workflow:instance.status")}</span>
+                  <Typography.Text type="secondary">{t("workflow:instance.status")}</Typography.Text>
                   <div>
                     {instance.status ? (
-                      <span className={`workflow-pill status-${instance.status.toLowerCase()}`}>
+                      <Tag color={instanceStatusColor(instance.status)}>
                         {instance.status}
-                      </span>
+                      </Tag>
                     ) : (
                       t("common:empty.dash")
                     )}
                   </div>
                 </div>
                 <div>
-                  <span className="field-label">{t("workflow:instance.node")}</span>
-                  <div className="mono">{instance.currentNodeId ?? t("common:empty.dash")}</div>
+                  <Typography.Text type="secondary">{t("workflow:instance.node")}</Typography.Text>
+                  <div>
+                    <Typography.Text code>{instance.currentNodeId ?? t("common:empty.dash")}</Typography.Text>
+                  </div>
                 </div>
                 {instance.pendingSignalName && (
                   <div>
-                    <span className="field-label">{t("workflow:instance.pendingSignal")}</span>
-                    <div className="mono">{instance.pendingSignalName}</div>
+                    <Typography.Text type="secondary">{t("workflow:instance.pendingSignal")}</Typography.Text>
+                    <div>
+                      <Typography.Text code>{instance.pendingSignalName}</Typography.Text>
+                    </div>
                   </div>
                 )}
                 {instance.assignee && (
                   <div>
-                    <span className="field-label">{t("workflow:instance.assignee")}</span>
+                    <Typography.Text type="secondary">{t("workflow:instance.assignee")}</Typography.Text>
                     <div>{instance.assignee}</div>
                   </div>
                 )}
               </div>
               {(canSignal || canCancel) && (
-                <div className="workflow-instance-actions form-actions">
+                <Space className="workflow-instance-actions" size="small" wrap>
                   {canSignal && instance.pendingSignalName && (
-                    <button
-                      type="button"
-                      className="btn primary"
+                    <Button
+                      type="primary"
                       disabled={signalMutation.isPending}
+                      loading={signalMutation.isPending}
                       onClick={() => signalMutation.mutate(instance.pendingSignalName!)}
                     >
                       {signalMutation.isPending
                         ? t("workflow:instance.signaling")
                         : t("workflow:instance.signal", { signal: instance.pendingSignalName })}
-                    </button>
+                    </Button>
                   )}
                   {canCancel && !cancelModalOpen && (
-                    <button
-                      type="button"
-                      className="btn danger"
+                    <Button
+                      danger
                       disabled={cancelMutation.isPending}
+                      loading={cancelMutation.isPending}
                       onClick={() => setCancelModalOpen(true)}
                     >
                       {t("workflow:instance.cancel")}
-                    </button>
+                    </Button>
                   )}
-                </div>
-              )}
-              {cancelModalOpen && (
-                <div className="workflow-cancel-inline">
-                  <label>
-                    <span className="field-label">{t("workflow:instance.cancelReason")}</span>
-                    <input
-                      value={cancelReason}
-                      onChange={(e) => setCancelReason(e.target.value)}
-                      placeholder={t("workflow:instance.cancelReasonPlaceholder")}
-                    />
-                  </label>
-                  <div className="form-actions">
-                    <button
-                      type="button"
-                      className="btn danger"
-                      disabled={cancelMutation.isPending}
-                      onClick={() => cancelMutation.mutate(cancelReason)}
-                    >
-                      {cancelMutation.isPending
-                        ? t("workflow:instance.cancelling")
-                        : t("workflow:instance.confirmCancel")}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn"
-                      disabled={cancelMutation.isPending}
-                      onClick={() => {
-                        setCancelModalOpen(false);
-                        setCancelReason("");
-                      }}
-                    >
-                      {t("common:action.cancel")}
-                    </button>
-                  </div>
-                </div>
+                </Space>
               )}
             </>
           )}
+          <Modal
+            title={t("workflow:instance.confirmCancel")}
+            open={cancelModalOpen}
+            onCancel={() => {
+              setCancelModalOpen(false);
+              setCancelReason("");
+            }}
+            destroyOnHidden
+            footer={[
+              <Button
+                key="dismiss"
+                disabled={cancelMutation.isPending}
+                onClick={() => {
+                  setCancelModalOpen(false);
+                  setCancelReason("");
+                }}
+              >
+                {t("common:action.cancel")}
+              </Button>,
+              <Button
+                key="confirm"
+                danger
+                type="primary"
+                disabled={cancelMutation.isPending}
+                loading={cancelMutation.isPending}
+                onClick={() => cancelMutation.mutate(cancelReason)}
+              >
+                {cancelMutation.isPending
+                  ? t("workflow:instance.cancelling")
+                  : t("workflow:instance.confirmCancel")}
+              </Button>,
+            ]}
+          >
+            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <Typography.Text type="secondary">{t("workflow:instance.cancelReason")}</Typography.Text>
+              <input
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder={t("workflow:instance.cancelReasonPlaceholder")}
+              />
+            </Space>
+          </Modal>
           {(cancelMutation.error || signalMutation.error) && (
-            <p className="hint error">
-              {String(cancelMutation.error ?? signalMutation.error)}
-            </p>
+            <Alert type="error" showIcon title={String(cancelMutation.error ?? signalMutation.error)} />
           )}
           {(cancelMutation.isSuccess || signalMutation.isSuccess) && (
-            <p className="hint">{t("workflow:instance.actionDone")}</p>
+            <Alert type="success" showIcon title={t("workflow:instance.actionDone")} />
           )}
           {stepsQuery.data && stepsQuery.data.length > 0 && (
             <div className="workflow-step-timeline">
-              <h4>{t("workflow:instance.timeline")}</h4>
+              <Typography.Title level={4}>{t("workflow:instance.timeline")}</Typography.Title>
               <ol className="workflow-step-list">
                 {stepsQuery.data.map((step: WorkflowStepSummary) => (
                   <li key={step.id} className={`workflow-step status-${step.status.toLowerCase()}`}>
                     <div className="workflow-step-head">
-                      <span className="mono">
+                      <Typography.Text code>
                         #{step.seq} {step.nodeId}
-                      </span>
-                      <span className="hint">
-                        {step.nodeType} · {step.status}
-                      </span>
+                      </Typography.Text>
+                      <Space size="small" wrap>
+                        <Typography.Text type="secondary">{step.nodeType}</Typography.Text>
+                        <Tag color={instanceStatusColor(step.status)}>{step.status}</Tag>
+                      </Space>
                     </div>
                     {(step.inputJson || step.outputJson || step.errorJson) && (
                       <details>
@@ -441,62 +625,38 @@ export default function WorkflowBuilder({
             <pre className="workflow-code-block workflow-history">{instance.history.join("\n")}</pre>
           )}
           {instance.errorMessage && (
-            <p className="hint error">{instance.errorMessage}</p>
+            <Alert type="error" showIcon title={instance.errorMessage} />
           )}
         </section>
 
         <section className="workflow-panel workflow-bpmn-panel">
           <div className="workflow-bpmn-head">
-            <h3>{t("workflow:bpmn.title")}</h3>
-            {mode === "edit" && (
-              <div className="workflow-bpmn-tabs">
-                <button
-                  type="button"
-                  className={`btn ${bpmnTab === "diagram" ? "primary" : ""}`}
-                  onClick={() => setBpmnTab("diagram")}
-                >
-                  {t("workflow:bpmn.tab.diagram")}
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${bpmnTab === "xml" ? "primary" : ""}`}
-                  onClick={() => setBpmnTab("xml")}
-                >
-                  {t("workflow:bpmn.tab.xml")}
-                </button>
-              </div>
+            <Typography.Title level={3} style={{ margin: 0 }}>
+              {t("workflow:bpmn.title")}
+            </Typography.Title>
+            {mode === "view" && (
+              <Button
+                type="primary"
+                onClick={() => {
+                  setMode("edit");
+                  setBpmnTab("diagram");
+                }}
+              >
+                {t("workflow:bpmn.openFullscreen")}
+              </Button>
             )}
           </div>
 
-          {mode === "edit" && bpmnTab === "diagram" && (
-            <p className="hint bpmn-hint">
-              {t("workflow:bpmn.hint")}
-            </p>
-          )}
-
           {mode === "view" && (
-            <Suspense fallback={<p className="hint">{t("workflow:bpmn.loadingDiagram")}</p>}>
+            <Suspense fallback={<Typography.Paragraph type="secondary">{t("workflow:bpmn.loadingDiagram")}</Typography.Paragraph>}>
               <BpmnDiagramViewer xml={bpmnXml} />
             </Suspense>
           )}
 
-          {mode === "edit" && bpmnTab === "diagram" && (
-            <Suspense fallback={<p className="hint">{t("workflow:bpmn.loadingEditor")}</p>}>
-              <BpmnDiagramEditor
-                key={`${path}-diagram`}
-                xml={bpmnXml}
-                onChange={(next) => setDraftBpmn(next)}
-              />
-            </Suspense>
-          )}
-
-          {mode === "edit" && bpmnTab === "xml" && (
-            <textarea
-              className="workflow-bpmn-editor"
-              value={bpmnXml}
-              onChange={(e) => setDraftBpmn(e.target.value)}
-              spellCheck={false}
-            />
+          {mode === "edit" && (
+            <Typography.Paragraph type="secondary" className="bpmn-hint">
+              {t("workflow:bpmn.fullscreenActive")}
+            </Typography.Paragraph>
           )}
         </section>
       </div>

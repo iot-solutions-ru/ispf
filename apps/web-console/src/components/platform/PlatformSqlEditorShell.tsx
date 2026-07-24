@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Button } from "antd";
 import { useTranslation } from "react-i18next";
 
 interface PlatformSqlEditorShellProps {
@@ -49,14 +50,14 @@ export default function PlatformSqlEditorShell({
         <div className="platform-sql-editor-actions">
           {toolbar}
           {onOpenProperties && (
-            <button type="button" className="btn" onClick={onOpenProperties}>
+            <Button onClick={onOpenProperties}>
               {t("inspector:tab.general")}
-            </button>
+            </Button>
           )}
           {onClose && (
-            <button type="button" className="btn" onClick={onClose}>
+            <Button onClick={onClose}>
               {t("common:action.close")}
-            </button>
+            </Button>
           )}
         </div>
       </header>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { Button, Input, Select } from "antd";
 import { fetchBindingAuditStatus, fetchBindingInvocations } from "../../api";
 import type { BindingInvokeAuditEntry } from "../../types/runtime";
 import { mapBindingInvokeExportRow } from "../../utils/journal/journalExport";
@@ -195,7 +196,7 @@ export default function BindingInvokeJournalPanel({
             {showFilters && !fixedObjectPath && (
               <label>
                 objectPath
-                <input
+                <Input
                   value={objectPath}
                   onChange={(e) => setObjectPath(e.target.value)}
                   placeholder="root.platform.devices…"
@@ -206,40 +207,46 @@ export default function BindingInvokeJournalPanel({
               <>
                 <label>
                   {t("bindingJournal.filter.kind")}
-                  <select value={bindingKind} onChange={(e) => setBindingKind(e.target.value)}>
-                    <option value="">{t("journal:filter.all")}</option>
-                    <option value="cel">CEL</option>
-                    <option value="sql">SQL</option>
-                  </select>
+                  <Select
+                    value={bindingKind}
+                    onChange={setBindingKind}
+                    options={[
+                      { value: "", label: t("journal:filter.all") },
+                      { value: "cel", label: "CEL" },
+                      { value: "sql", label: "SQL" },
+                    ]}
+                  />
                 </label>
                 <label>
                   success
-                  <select
+                  <Select
                     value={successFilter}
-                    onChange={(e) => setSuccessFilter(e.target.value as "" | "true" | "false")}
-                  >
-                    <option value="">{t("bindingJournal.filter.all")}</option>
-                    <option value="true">{t("bindingJournal.filter.success")}</option>
-                    <option value="false">{t("bindingJournal.filter.error")}</option>
-                  </select>
+                    onChange={(value) => setSuccessFilter(value as "" | "true" | "false")}
+                    options={[
+                      { value: "", label: t("bindingJournal.filter.all") },
+                      { value: "true", label: t("bindingJournal.filter.success") },
+                      { value: "false", label: t("bindingJournal.filter.error") },
+                    ]}
+                  />
                 </label>
                 <label>
                   {t("bindingJournal.filter.changed")}
-                  <select
+                  <Select
                     value={changedFilter}
-                    onChange={(e) => setChangedFilter(e.target.value as "" | "true" | "false")}
-                  >
-                    <option value="">{t("journal:filter.all")}</option>
-                    <option value="true">{t("bindingJournal.filter.changedYes")}</option>
-                    <option value="false">{t("bindingJournal.filter.changedNo")}</option>
-                  </select>
+                    onChange={(value) => setChangedFilter(value as "" | "true" | "false")}
+                    options={[
+                      { value: "", label: t("journal:filter.all") },
+                      { value: "true", label: t("bindingJournal.filter.changedYes") },
+                      { value: "false", label: t("bindingJournal.filter.changedNo") },
+                    ]}
+                  />
                 </label>
               </>
             )}
             {showFilters && !fixedRuleId && (
               <label>
                 ruleId
-                <input
+                <Input
                   value={ruleFilter}
                   onChange={(e) => setRuleFilter(e.target.value)}
                   placeholder="rule-id"
@@ -249,7 +256,7 @@ export default function BindingInvokeJournalPanel({
             {mode === "history" && (
               <label>
                 {t("common:action.search")}
-                <input
+                <Input
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder={t("journal:filter.searchPlaceholder")}
@@ -262,14 +269,13 @@ export default function BindingInvokeJournalPanel({
       footer={
         canLoadMore ? (
           <div className="journal-footer">
-            <button
-              type="button"
-              className="btn small"
-              disabled={query.isFetching}
+            <Button
+              size="small"
+              loading={query.isFetching}
               onClick={() => setHistoryLimit((n) => Math.min(n + HISTORY_PAGE, HISTORY_MAX))}
             >
               {t("journal:loadMore")}
-            </button>
+            </Button>
           </div>
         ) : undefined
       }

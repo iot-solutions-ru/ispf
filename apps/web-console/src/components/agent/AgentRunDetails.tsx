@@ -1,3 +1,4 @@
+import { Button } from "antd";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AiAgentStep } from "../../api/ai";
@@ -162,14 +163,14 @@ export function AgentRunDetails({
       {!isRunning && (
         <div className="ai-agent-run-links">
           {devicePath && (
-            <a className="btn small" href={dashboardLink(devicePath) ?? "#"}>
+            <Button size="small" href={dashboardLink(devicePath) ?? "#"}>
               {t("agent.openDevice")}
-            </a>
+            </Button>
           )}
           {dashboardPath && (
-            <a className="btn small" href={dashboardLink(dashboardPath) ?? "#"}>
+            <Button size="small" href={dashboardLink(dashboardPath) ?? "#"}>
               {t("agent.openDashboard")}
-            </a>
+            </Button>
           )}
         </div>
       )}

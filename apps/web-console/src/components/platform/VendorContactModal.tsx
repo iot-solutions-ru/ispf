@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button, Descriptions, Modal, Typography } from "antd";
 import type { MarketplaceListing } from "../../api/solutions";
 
 interface VendorContactModalProps {
@@ -39,90 +40,71 @@ export default function VendorContactModal({ listing, onClose }: VendorContactMo
   );
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div
-        className="modal marketplace-vendor-contact-modal"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header>
-          <h3>{t("solutions.marketplace.contactVendor")}</h3>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label={t("solutions.marketplace.close")}>
-            ✕
-          </button>
-        </header>
-
-        <p className="op-muted marketplace-vendor-contact-listing">
+    <Modal
+      title={t("solutions.marketplace.contactVendor")}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      className="marketplace-vendor-contact-modal"
+      footer={
+        <Button onClick={onClose}>
+          {t("solutions.marketplace.close")}
+        </Button>
+      }
+    >
+      <Typography.Paragraph type="secondary" className="marketplace-vendor-contact-listing">
           {listing.title}
-        </p>
+      </Typography.Paragraph>
 
-        <dl className="solution-catalog-kv marketplace-vendor-contact-kv">
+      <Descriptions column={1} size="small" className="marketplace-vendor-contact-kv">
           {isIndividual ? (
-            <div>
-              <dt>{t("solutions.marketplace.vendorType")}</dt>
-              <dd>{t("solutions.marketplace.vendorIndividual")}</dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorType")}>
+              {t("solutions.marketplace.vendorIndividual")}
+            </Descriptions.Item>
           ) : companyName ? (
-            <div>
-              <dt>{t("solutions.marketplace.vendorCompany")}</dt>
-              <dd>{companyName}</dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorCompany")}>
+              {companyName}
+            </Descriptions.Item>
           ) : null}
 
           {showBrand && (
-            <div>
-              <dt>{t("solutions.marketplace.vendorBrand")}</dt>
-              <dd>{listing.vendorName}</dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorBrand")}>
+              {listing.vendorName}
+            </Descriptions.Item>
           )}
 
           {!isIndividual && listing.vendorInn && (
-            <div>
-              <dt>{t("solutions.marketplace.vendorInn")}</dt>
-              <dd>{listing.vendorInn}</dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorInn")}>
+              {listing.vendorInn}
+            </Descriptions.Item>
           )}
 
           {listing.vendorContactPerson && (
-            <div>
-              <dt>{t("solutions.marketplace.vendorContactPerson")}</dt>
-              <dd>{listing.vendorContactPerson}</dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorContactPerson")}>
+              {listing.vendorContactPerson}
+            </Descriptions.Item>
           )}
 
           {isIndividual && listing.vendorName && (
-            <div>
-              <dt>{t("solutions.marketplace.vendorPersonName")}</dt>
-              <dd>{listing.vendorName}</dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorPersonName")}>
+              {listing.vendorName}
+            </Descriptions.Item>
           )}
 
           {listing.vendorContactEmail && (
-            <div>
-              <dt>{t("solutions.marketplace.vendorEmail")}</dt>
-              <dd>
-                <a href={`mailto:${listing.vendorContactEmail}`}>{listing.vendorContactEmail}</a>
-              </dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorEmail")}>
+              <a href={`mailto:${listing.vendorContactEmail}`}>{listing.vendorContactEmail}</a>
+            </Descriptions.Item>
           )}
 
           {listing.vendorContactPhone && (
-            <div>
-              <dt>{t("solutions.marketplace.vendorPhone")}</dt>
-              <dd>
-                <a href={`tel:${listing.vendorContactPhone.replace(/\s/g, "")}`}>
-                  {listing.vendorContactPhone}
-                </a>
-              </dd>
-            </div>
+            <Descriptions.Item label={t("solutions.marketplace.vendorPhone")}>
+              <a href={`tel:${listing.vendorContactPhone.replace(/\s/g, "")}`}>
+                {listing.vendorContactPhone}
+              </a>
+            </Descriptions.Item>
           )}
-        </dl>
-
-        <footer className="modal-actions">
-          <button type="button" className="btn" onClick={onClose}>
-            {t("solutions.marketplace.close")}
-          </button>
-        </footer>
-      </div>
-    </div>
+      </Descriptions>
+    </Modal>
   );
 }

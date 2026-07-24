@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Input, Space, Typography } from "antd";
 import ObjectTree from "../components/objectEditor/ObjectTree";
 import { useLazyObjectTree } from "../hooks/useLazyObjectTree";
 import type { ObjectType } from "../types";
@@ -142,45 +143,45 @@ export default function ObjectTreePickerDialog({
       wide
       className="modal-object-tree-picker"
       footer={
-        <>
-          <button type="button" className="btn" onClick={onClose}>
+        <Space>
+          <Button onClick={onClose}>
             {t("action.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn primary"
+          </Button>
+          <Button
+            type="primary"
             disabled={!selectedPath}
             onClick={confirmSelection}
           >
             {t("modal.select")}
-          </button>
-        </>
+          </Button>
+        </Space>
       }
     >
-      <input
-        type="search"
-        className="object-tree-picker-search"
-        placeholder={t("action.search")}
-        value={filterQuery}
-        onChange={(event) => setFilterQuery(event.target.value)}
-        autoFocus
-      />
-      {treeLoadError && <p className="op-alert op-alert-error">{treeLoadError}</p>}
-      <div className="object-tree-picker-body">
-        <ObjectTree
-          nodes={filteredTree}
-          objects={objects}
-          selectedPath={selectedPath}
-          selectedKeys={selectedKeys}
-          onRowSelect={handleRowSelect}
-          onLoadChildren={handleTreeLoadChildren}
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <Input.Search
+          className="object-tree-picker-search"
+          placeholder={t("action.search")}
+          value={filterQuery}
+          onChange={(event) => setFilterQuery(event.target.value)}
+          autoFocus
         />
-      </div>
-      {filterTypes && filterTypes.length > 0 && (
-        <p className="hint object-tree-picker-hint">
-          {t("objectPath.filterHint", { types: filterTypes.join(", ") })}
-        </p>
-      )}
+        {treeLoadError && <Alert type="error" showIcon message={treeLoadError} />}
+        <div className="object-tree-picker-body">
+          <ObjectTree
+            nodes={filteredTree}
+            objects={objects}
+            selectedPath={selectedPath}
+            selectedKeys={selectedKeys}
+            onRowSelect={handleRowSelect}
+            onLoadChildren={handleTreeLoadChildren}
+          />
+        </div>
+        {filterTypes && filterTypes.length > 0 && (
+          <Typography.Paragraph type="secondary" className="object-tree-picker-hint" style={{ marginBottom: 0 }}>
+            {t("objectPath.filterHint", { types: filterTypes.join(", ") })}
+          </Typography.Paragraph>
+        )}
+      </Space>
     </Modal>
   );
 }

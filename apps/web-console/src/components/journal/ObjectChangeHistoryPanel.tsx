@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { Button, Input, Select } from "antd";
 import { fetchObjectAudit, type ObjectConfigAuditEntry } from "../../api";
 import {
   formatAuditValue,
@@ -105,18 +106,18 @@ export default function ObjectChangeHistoryPanel({
         <div className="journal-filters form-grid">
           <label>
             {t("common:table.type")}
-            <select value={changeType} onChange={(e) => setChangeType(e.target.value)}>
-              <option value="">{t("journal:filter.all")}</option>
-              {changeTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={changeType}
+              onChange={setChangeType}
+              options={[
+                { value: "", label: t("journal:filter.all") },
+                ...changeTypes.map((type) => ({ value: type, label: type })),
+              ]}
+            />
           </label>
           <label>
             {t("common:field.field")}
-            <input
+            <Input
               value={fieldFilter}
               onChange={(e) => setFieldFilter(e.target.value)}
               placeholder={t("journal:filter.fieldPlaceholder")}
@@ -124,7 +125,7 @@ export default function ObjectChangeHistoryPanel({
           </label>
           <label>
             {t("common:field.actor")}
-            <input
+            <Input
               value={actorFilter}
               onChange={(e) => setActorFilter(e.target.value)}
               placeholder={t("journal:filter.actorPlaceholder")}
@@ -135,14 +136,13 @@ export default function ObjectChangeHistoryPanel({
       footer={
         canLoadMore ? (
           <div className="journal-footer">
-            <button
-              type="button"
-              className="btn small"
-              disabled={auditQuery.isFetching}
+            <Button
+              size="small"
+              loading={auditQuery.isFetching}
               onClick={() => setHistoryLimit((n) => Math.min(n + HISTORY_PAGE, HISTORY_MAX))}
             >
               {t("journal:loadMore")}
-            </button>
+            </Button>
           </div>
         ) : undefined
       }
@@ -189,14 +189,14 @@ function AuditRow({ entry }: { entry: ObjectConfigAuditEntry }) {
         </td>
         <td className="journal-audit-diff-col">
           {showDiff && (
-            <button
-              type="button"
-              className="btn small journal-audit-diff-toggle"
+            <Button
+              size="small"
+              className="journal-audit-diff-toggle"
               aria-expanded={expanded}
               onClick={() => setExpanded((open) => !open)}
             >
               {expanded ? t("changeHistory.hideDiff") : t("changeHistory.showDiff")}
-            </button>
+            </Button>
           )}
         </td>
       </tr>

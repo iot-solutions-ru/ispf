@@ -248,9 +248,23 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | Process with operator tasks | BPMN WORKFLOW | [workflows](workflows.md) |
 | SQL CRUD on app schema | Script function (steps) | [applications](applications.md), [object-functions](object-functions.md) |
 | SQL → variable poll | sqlBinding / bindings[] | [applications](applications.md) |
-| Device telemetry | Driver + point mappings | [drivers](drivers.md) |
+| Device telemetry | Driver + point mappings on **DEVICE** | [drivers](drivers.md) |
+| Unique project orchestrator (one logic hub) | **SINGLETON** — prefer `root.platform.singleton-blueprints.{project}` | [blueprints](blueprints.md), [agent-knowledge](agent-knowledge.md) |
+| Digital-twin logic (many alike) | **INSTANCE** type → `instantiate_instance_type` (each twin holds its logic; not DEVICE) | [blueprints](blueprints.md) |
 | HMI table | Widget `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
 | Legacy mini-DSL on widget | **Deprecated** → Platform rules | [platform-logic](platform-logic.md) § legacy |
+
+### Logic objects vs DEVICE (mandatory)
+
+**Hard rule:** the object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE is for drivers and telemetry only.
+
+| Need | Blueprint kind | Typical placement | Notes |
+|------|----------------|-------------------|-------|
+| One orchestrator for the solution/cluster | **SINGLETON** | Prefer `root.platform.singleton-blueprints.{name}` | Unique live hub; `ensure_singleton_instance` |
+| Many digital twins with per-twin logic | **INSTANCE** | Often under `root.platform.devices.{plant}.*` or `instances` | Create via Instance Type; children may be DEVICE endpoints |
+| Cluster tree: hub + devices under it | Hub = SINGLETON or INSTANCE (**not** DEVICE); children = DEVICE | e.g. `…devices.{cluster}/` children, or hub parent with DEVICE kids | **Path under `devices` is an implementation choice**; the hub’s **type** must not be DEVICE |
+
+Do **not** invent a fake “hub DEVICE” and hang KPIs on it. A CUSTOM/folder container under `devices` is fine for grouping; logic lives on SINGLETON (orchestrator) or INSTANCE (twin).
 
 ---
 
@@ -267,6 +281,7 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | Blueprint / change set / UI / agent as peer “ways to build an app” | Five doors, no rule of the game (P7) | Layers: AUTHOR → SHAPE → SHIP → PROMOTE |
 | Change set for greenfield bootstrap | Wrong layer; no durable ship artifact | Bundle (SHIP) or tree-first AUTHOR |
 | Hand-duplicating blueprint structure | Breaks SHAPE; drift across instances | Blueprint apply / `models[]` |
+| Logic object typed as **DEVICE** (including “hub” DEVICE) | Wrong role: driver lifecycle, not orchestration/twin logic | SINGLETON orchestrator **or** INSTANCE twin; DEVICE only for I/O children |
 
 ---
 
@@ -285,10 +300,11 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 ### “Create monitoring / SNMP / dashboard” (no app schema)
 
 1. P7: layer = **AUTHOR** tree-first (not bundle-for-its-own-sake); **SHAPE** via blueprints for typed devices.
-2. Tree-first playbook (SNMP / virtual cluster).
-3. Driver + dashboard template.
-4. Platform rules as needed (detail mode, widget visibility).
-5. `configure_operator_ui` for platform app.
+2. Logic hub first: **SINGLETON** orchestrator (`ensure_singleton_instance`) or **INSTANCE** twin — **never** type DEVICE.
+3. Tree-first playbook (SNMP / virtual cluster): DEVICE children for I/O; bindings on the non-DEVICE hub.
+4. Driver + dashboard template.
+5. Platform rules as needed (detail mode, widget visibility).
+6. `configure_operator_ui` for platform app.
 
 ### “Do not break platform” (P2, P10)
 

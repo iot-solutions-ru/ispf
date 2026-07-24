@@ -1,4 +1,5 @@
 import { useQueries, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Badge, Button, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import {
   fetchOperatorApps,
@@ -56,22 +57,22 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
   return (
     <div className="operator-shell" data-testid="operator-shell">
       <header className="operator-topbar">
-        <div>
-          <strong>{t("operator:launcher.title")}</strong>
+        <Space direction="vertical" size={0}>
+          <Typography.Text strong>{t("operator:launcher.title")}</Typography.Text>
           <span className="brand-sub">{t("operator:launcher.subtitle")}</span>
-        </div>
-        <div className="topbar-actions">
+        </Space>
+        <Space className="topbar-actions" wrap>
           <ShellPreferences />
           {onSwitchAdmin && (
-            <button type="button" className="btn" onClick={onSwitchAdmin}>
+            <Button onClick={onSwitchAdmin}>
               {t("operator:launcher.switchAdmin")}
-            </button>
+            </Button>
           )}
-        </div>
+        </Space>
       </header>
       <main className="op-launcher">
-        {appsQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}
-        {appsQuery.error && <p className="op-alert op-alert-error">{String(appsQuery.error)}</p>}
+        {appsQuery.isLoading && <Typography.Paragraph className="op-muted">{t("common:action.loading")}</Typography.Paragraph>}
+        {appsQuery.error && <Alert type="error" message={String(appsQuery.error)} />}
         <div className="op-launcher-grid">
           {apps.map((app: OperatorAppEntry, index) => {
             const ui = uiQueries[index]?.data ?? null;
@@ -79,9 +80,9 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
             const alarmsOn = Boolean(ui?.alarmBar?.enabled);
             const dashCount = ui?.dashboards?.length ?? 0;
             return (
-              <button
+              <Button
                 key={app.appId}
-                type="button"
+                type="text"
                 className={`op-launcher-card${ready ? " op-launcher-card--ready" : ""}`}
                 onClick={() => onOpenApp(app.appId)}
               >
@@ -98,24 +99,26 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
                       {ready ? t("launcher.statusReady") : t("launcher.statusSetup")}
                     </span>
                     {alarmsOn && (
-                      <span className="op-launcher-alarm-badge" title={t("launcher.alarmsEnabled")}>
-                        {t("launcher.alarmsOn")}
-                      </span>
+                      <Badge
+                        className="op-launcher-alarm-badge"
+                        title={t("launcher.alarmsEnabled")}
+                        count={t("launcher.alarmsOn")}
+                      />
                     )}
                     {dashCount > 0 && (
                       <span className="op-muted">{t("launcher.dashboards", { count: dashCount })}</span>
                     )}
                   </span>
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
 
         {missingStarters.length > 0 && (
           <section className="op-launcher-starters" data-testid="operator-starters">
-            <h3>{t("operator:launcher.startersTitle")}</h3>
-            <p className="op-muted">{t("operator:launcher.startersHint")}</p>
+            <Typography.Title level={3}>{t("operator:launcher.startersTitle")}</Typography.Title>
+            <Typography.Paragraph className="op-muted">{t("operator:launcher.startersHint")}</Typography.Paragraph>
             <div className="op-launcher-grid">
               {missingStarters.map((starter) => (
                 <div key={starter.appId} className="op-launcher-card op-launcher-card-static">
@@ -130,23 +133,22 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              className="btn primary"
+            <Button
+              type="primary"
               disabled={installMutation.isPending}
               onClick={() => installMutation.mutate()}
             >
               {installMutation.isPending
                 ? t("common:action.loading")
                 : t("operator:launcher.installStarters")}
-            </button>
+            </Button>
             {installMutation.error && (
-              <p className="op-alert op-alert-error">{String(installMutation.error)}</p>
+              <Alert type="error" message={String(installMutation.error)} />
             )}
           </section>
         )}
 
-        <p className="op-muted op-launcher-hint">{t("operator:launcher.hint")}</p>
+        <Typography.Paragraph className="op-muted op-launcher-hint">{t("operator:launcher.hint")}</Typography.Paragraph>
       </main>
     </div>
   );

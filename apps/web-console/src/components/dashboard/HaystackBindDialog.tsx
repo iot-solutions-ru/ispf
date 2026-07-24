@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
+import { Alert, Button, Checkbox, Input, Modal, Radio, Space, Typography } from "antd";
 import { COMMON_HAYSTACK_MARKERS } from "../../constants/haystackMarkers";
 import {
   queryHaystackFilter,
@@ -9,7 +10,6 @@ import {
 } from "../../api/haystackSearch";
 import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
 import { newWidget } from "../../types/dashboard";
-import ModalPortal from "../../ui/ModalPortal";
 import { nextWidgetZIndex } from "./widgetLayerUtils";
 
 interface HaystackBindDialogProps {
@@ -63,7 +63,7 @@ function appendValueWidgets(
 }
 
 export default function HaystackBindDialog({ layout, onApply, onClose }: HaystackBindDialogProps) {
-  const { t } = useTranslation(["dashboard", "inspector"]);
+  const { t } = useTranslation(["dashboard", "inspector", "common"]);
   const [mode, setMode] = useState<BindMode>("filter");
   const [selectedTags, setSelectedTags] = useState<string[]>([...BIND_TAGS]);
   const [filterQuery, setFilterQuery] = useState(DEFAULT_FILTER);
@@ -125,132 +125,109 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
   };
 
   return (
-    <ModalPortal>
-      <div className="modal-backdrop" role="presentation">
-      <div
-        className="modal-dialog haystack-bind-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="haystack-bind-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="modal-header">
-          <h2 id="haystack-bind-title">{t("haystackBind.title")}</h2>
-          <button type="button" className="btn" onClick={onClose}>
-            {t("modal.close")}
-          </button>
-        </header>
-
-        <p className="hint">{t("haystackBind.intro")}</p>
-
-        <div className="haystack-bind-mode" role="radiogroup" aria-label={t("haystackBind.modeLabel")}>
-          <label className="radio-inline">
-            <input
-              type="radio"
-              name="haystack-bind-mode"
-              checked={mode === "filter"}
-              onChange={() => setMode("filter")}
-            />
-            {t("haystackBind.modeFilter")}
-          </label>
-          <label className="radio-inline">
-            <input
-              type="radio"
-              name="haystack-bind-mode"
-              checked={mode === "tags"}
-              onChange={() => setMode("tags")}
-            />
-            {t("haystackBind.modeTags")}
-          </label>
-        </div>
-
-        {mode === "filter" ? (
-          <label className="property-field">
-            {t("haystackBind.filterQuery")}
-            <input
-              type="text"
-              value={filterQuery}
-              onChange={(event) => setFilterQuery(event.target.value)}
-              placeholder={DEFAULT_FILTER}
-              spellCheck={false}
-            />
-            <span className="hint">{t("haystackBind.filterHint")}</span>
-          </label>
-        ) : (
-          <fieldset className="function-form-multiselect haystack-marker-fieldset">
-            <legend>{t("inspector:haystack.tags")}</legend>
-            {COMMON_HAYSTACK_MARKERS.map((tag) => (
-              <label key={tag} className="checkbox-inline">
-                <input
-                  type="checkbox"
-                  checked={selectedTags.includes(tag)}
-                  onChange={() => toggleTag(tag)}
-                />
-                {t(`inspector:haystack.marker.${tag}`, tag)}
-              </label>
-            ))}
-          </fieldset>
-        )}
-
-        <label className="property-field">
-          {t("haystackBind.rootPath")}
-          <input
-            type="text"
-            value={rootPath}
-            onChange={(event) => setRootPath(event.target.value)}
-            placeholder={DEFAULT_ROOT_PATH}
-          />
-        </label>
-
-        <div className="haystack-bind-actions">
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!canSearch || searchMutation.isPending}
-            onClick={handleSearch}
-          >
-            {searchMutation.isPending ? t("haystackBind.searching") : t("haystackBind.search")}
-          </button>
-        </div>
-
-        {searchMutation.isError && (
-          <p className="error">{t("haystackBind.error")}</p>
-        )}
-
-        {matches.length > 0 && (
-          <p className="hint">
-            {t("haystackBind.results", { count: pointCount })}
-          </p>
-        )}
-
-        {pointCount > 0 && (
-          <ul className="haystack-bind-preview">
-            {matches
-              .filter((match) => match.entityKind === "point" && match.variableName)
-              .slice(0, 8)
-              .map((match) => (
-                <li key={`${match.objectPath}.${match.variableName}`}>
-                  {match.dis || match.variableName} — {match.objectPath}
-                </li>
-              ))}
-          </ul>
-        )}
-
-        <footer className="modal-footer">
-          <button type="button" className="btn" onClick={onClose}>
+    <Modal
+      title={t("haystackBind.title")}
+      open
+      onCancel={onClose}
+      className="haystack-bind-dialog"
+      width={720}
+      destroyOnHidden
+      footer={
+        <Space>
+          <Button onClick={onClose}>
             {t("common:action.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn primary"
+          </Button>
+          <Button
+            type="primary"
             disabled={pointCount === 0}
             onClick={handleBind}
           >
             {t("haystackBind.addWidgets", { count: pointCount })}
-          </button>
-        </footer>
+          </Button>
+        </Space>
+      }
+    >
+      <Typography.Paragraph type="secondary">{t("haystackBind.intro")}</Typography.Paragraph>
+
+      <Radio.Group
+        className="haystack-bind-mode"
+        aria-label={t("haystackBind.modeLabel")}
+        value={mode}
+        onChange={(event) => setMode(event.target.value as BindMode)}
+      >
+        <Radio value="filter">{t("haystackBind.modeFilter")}</Radio>
+        <Radio value="tags">{t("haystackBind.modeTags")}</Radio>
+      </Radio.Group>
+
+      {mode === "filter" ? (
+        <label className="property-field">
+          {t("haystackBind.filterQuery")}
+          <Input
+            value={filterQuery}
+            onChange={(event) => setFilterQuery(event.target.value)}
+            placeholder={DEFAULT_FILTER}
+            spellCheck={false}
+          />
+          <span className="hint">{t("haystackBind.filterHint")}</span>
+        </label>
+      ) : (
+        <fieldset className="function-form-multiselect haystack-marker-fieldset">
+          <legend>{t("inspector:haystack.tags")}</legend>
+          {COMMON_HAYSTACK_MARKERS.map((tag) => (
+            <Checkbox
+              key={tag}
+              className="checkbox-inline"
+              checked={selectedTags.includes(tag)}
+              onChange={() => toggleTag(tag)}
+            >
+              {t(`inspector:haystack.marker.${tag}`, tag)}
+            </Checkbox>
+          ))}
+        </fieldset>
+      )}
+
+      <label className="property-field">
+        {t("haystackBind.rootPath")}
+        <Input
+          value={rootPath}
+          onChange={(event) => setRootPath(event.target.value)}
+          placeholder={DEFAULT_ROOT_PATH}
+        />
+      </label>
+
+      <div className="haystack-bind-actions">
+        <Button
+          type="primary"
+          disabled={!canSearch || searchMutation.isPending}
+          loading={searchMutation.isPending}
+          onClick={handleSearch}
+        >
+          {searchMutation.isPending ? t("haystackBind.searching") : t("haystackBind.search")}
+        </Button>
       </div>
-    </div>
-    </ModalPortal>
+
+      {searchMutation.isError && (
+        <Alert type="error" message={t("haystackBind.error")} />
+      )}
+
+      {matches.length > 0 && (
+        <Typography.Paragraph type="secondary">
+          {t("haystackBind.results", { count: pointCount })}
+        </Typography.Paragraph>
+      )}
+
+      {pointCount > 0 && (
+        <ul className="haystack-bind-preview">
+          {matches
+            .filter((match) => match.entityKind === "point" && match.variableName)
+            .slice(0, 8)
+            .map((match) => (
+              <li key={`${match.objectPath}.${match.variableName}`}>
+                {match.dis || match.variableName} — {match.objectPath}
+              </li>
+            ))}
+        </ul>
+      )}
+    </Modal>
   );
 }

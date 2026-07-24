@@ -914,20 +914,45 @@ export function emptyLayout(): DashboardLayout {
   return { columns: DASHBOARD_COLUMNS, rowHeight: DASHBOARD_ROW_HEIGHT, widgets: [] };
 }
 
-function normalizeLayoutWidget(widget: DashboardWidget): DashboardWidget {
-  const legacyType = String((widget as { type?: string }).type ?? "");
-  if (legacyType === "topology-svg") {
-    return { ...(widget as DashboardWidget), type: "svg-widget" };
+function expandWidgetSettingsJson(widget: DashboardWidget): DashboardWidget {
+  const raw = widget as DashboardWidget & { settingsJson?: unknown; key?: string };
+  const settingsRaw = raw.settingsJson;
+  let settings: Record<string, unknown> = {};
+  if (typeof settingsRaw === "string" && settingsRaw.trim()) {
+    try {
+      const parsed = JSON.parse(settingsRaw) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        settings = parsed as Record<string, unknown>;
+      }
+    } catch {
+      settings = {};
+    }
+  } else if (settingsRaw && typeof settingsRaw === "object" && !Array.isArray(settingsRaw)) {
+    settings = settingsRaw as Record<string, unknown>;
   }
-  if (widget.type === "dashboard-link") {
-    const legacy = widget as DashboardLinkWidget & { dashboardPath?: string; label?: string };
+  const { settingsJson: _drop, ...rest } = raw;
+  const merged = { ...settings, ...rest } as DashboardWidget & { key?: string; id?: string };
+  if (!merged.id && merged.key) {
+    merged.id = merged.key;
+  }
+  return merged as DashboardWidget;
+}
+
+function normalizeLayoutWidget(widget: DashboardWidget): DashboardWidget {
+  const expanded = expandWidgetSettingsJson(widget);
+  const legacyType = String((expanded as { type?: string }).type ?? "");
+  if (legacyType === "topology-svg") {
+    return { ...(expanded as DashboardWidget), type: "svg-widget" };
+  }
+  if (expanded.type === "dashboard-link") {
+    const legacy = expanded as DashboardLinkWidget & { dashboardPath?: string; label?: string };
     return {
-      ...widget,
+      ...expanded,
       targetDashboardPath: legacy.targetDashboardPath ?? legacy.dashboardPath,
       buttonLabel: legacy.buttonLabel ?? legacy.label,
     };
   }
-  return widget;
+  return expanded;
 }
 
 function reflowOverlappingWidgets(widgets: DashboardWidget[]): DashboardWidget[] {

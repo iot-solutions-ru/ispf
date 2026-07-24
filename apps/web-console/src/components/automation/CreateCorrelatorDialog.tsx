@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Switch } from "antd";
 import { createCorrelator } from "../../api";
 import type { CreateCorrelatorPayload, CorrelatorPatternType } from "../../types/automation";
 import {
@@ -49,63 +50,72 @@ export default function CreateCorrelatorDialog({ onClose, onCreated }: CreateCor
   });
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h3>{t("automation:correlator.newTitle")}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>✕</button>
-        </header>
-        <form
-          className="form-grid"
-          onSubmit={(e) => {
-            e.preventDefault();
+    <Modal
+      title={t("automation:correlator.newTitle")}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={760}
+      footer={null}
+    >
+      <Form
+        layout="vertical"
+        onFinish={() => {
             mutation.mutate();
-          }}
-        >
-          <label>
-            {t("common:table.name")} *
-            <input
+        }}
+      >
+        <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+          <Space size="middle" align="start" wrap>
+            <Form.Item label={`${t("common:table.name")} *`} required style={{ minWidth: 240, marginBottom: 0 }}>
+              <Input
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               required
             />
-          </label>
-          <label>
-            {t("automation:correlator.pattern")}
-            <select
+            </Form.Item>
+            <Form.Item label={t("automation:correlator.pattern")} style={{ minWidth: 240, marginBottom: 0 }}>
+              <Select
               value={form.patternType ?? "COUNT"}
-              onChange={(e) =>
+                onChange={(value: CorrelatorPatternType) =>
                 setForm((f) => ({
                   ...f,
-                  patternType: e.target.value as CorrelatorPatternType,
-                  windowSeconds: e.target.value === "SEQUENCE" && f.windowSeconds <= 0 ? 300 : f.windowSeconds,
+                    patternType: value,
+                    windowSeconds: value === "SEQUENCE" && f.windowSeconds <= 0 ? 300 : f.windowSeconds,
                 }))
               }
+                options={[
+                  { value: "COUNT", label: t("automation:correlator.patternCount") },
+                  { value: "SEQUENCE", label: t("automation:correlator.patternSequence") },
+                  { value: "EVENT_CHAIN", label: t("automation:correlator.patternEventChain") },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              label={isSequence ? t("automation:correlator.eventA") : t("automation:correlator.event")}
+              required
+              style={{ minWidth: 240, marginBottom: 0 }}
             >
-              <option value="COUNT">{t("automation:correlator.patternCount")}</option>
-              <option value="SEQUENCE">{t("automation:correlator.patternSequence")}</option>
-              <option value="EVENT_CHAIN">{t("automation:correlator.patternEventChain")}</option>
-            </select>
-          </label>
-          <label>
-            {isSequence ? t("automation:correlator.eventA") : t("automation:correlator.event")}
-            <input
+              <Input
               value={form.eventName}
               onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
               required
             />
-          </label>
+            </Form.Item>
           {needsSecondEvent && (
-            <label>
-              {isEventChain ? t("automation:correlator.eventChain") : t("automation:correlator.eventB")}
-              <input
+              <Form.Item
+                label={isEventChain ? t("automation:correlator.eventChain") : t("automation:correlator.eventB")}
+                required
+                style={{ minWidth: 240, marginBottom: 0 }}
+              >
+                <Input
                 value={form.secondEventName ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, secondEventName: e.target.value }))}
                 required
                 placeholder={isEventChain ? "eventA,eventB,eventC" : "alarmActive"}
               />
-            </label>
+              </Form.Item>
           )}
+          </Space>
           <ObjectPathField
             className="full"
             label={t("automation:correlator.objectPath")}
@@ -113,89 +123,81 @@ export default function CreateCorrelatorDialog({ onClose, onCreated }: CreateCor
             onChange={(objectPath) => setForm((f) => ({ ...f, objectPath }))}
             placeholder={t("automation:correlator.objectPathPlaceholder")}
           />
-          <label>
-            {t("automation:correlator.windowSec")}
-            <input
-              type="number"
-              min={isSequence ? 1 : 0}
-              value={form.windowSeconds}
-              onChange={(e) => setForm((f) => ({ ...f, windowSeconds: Number(e.target.value) }))}
-            />
-          </label>
+          <Space size="middle" align="start" wrap>
+            <Form.Item label={t("automation:correlator.windowSec")} style={{ minWidth: 180, marginBottom: 0 }}>
+              <InputNumber
+                min={isSequence ? 1 : 0}
+                value={form.windowSeconds}
+                onChange={(value) => setForm((f) => ({ ...f, windowSeconds: Number(value ?? 0) }))}
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
           {!needsSecondEvent && (
-            <label>
-              {t("automation:correlator.minRepetitions")}
-              <input
-                type="number"
+              <Form.Item label={t("automation:correlator.minRepetitions")} style={{ minWidth: 180, marginBottom: 0 }}>
+                <InputNumber
                 min={1}
                 value={form.minOccurrences}
-                onChange={(e) => setForm((f) => ({ ...f, minOccurrences: Number(e.target.value) }))}
+                  onChange={(value) => setForm((f) => ({ ...f, minOccurrences: Number(value ?? 1) }))}
+                  style={{ width: "100%" }}
               />
-            </label>
+              </Form.Item>
           )}
-          <label>
-            {t("automation:correlator.cooldownSec")}
-            <input
-              type="number"
-              min={0}
-              value={form.cooldownSeconds}
-              onChange={(e) => setForm((f) => ({ ...f, cooldownSeconds: Number(e.target.value) }))}
-            />
-          </label>
+            <Form.Item label={t("automation:correlator.cooldownSec")} style={{ minWidth: 180, marginBottom: 0 }}>
+              <InputNumber
+                min={0}
+                value={form.cooldownSeconds}
+                onChange={(value) => setForm((f) => ({ ...f, cooldownSeconds: Number(value ?? 0) }))}
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
           {needsSecondEvent && (
-            <label>
-              {t("automation:correlator.maxGapSec")}
-              <input
-                type="number"
+              <Form.Item label={t("automation:correlator.maxGapSec")} style={{ minWidth: 180, marginBottom: 0 }}>
+                <InputNumber
                 min={0}
                 value={form.sequenceGapSeconds ?? 0}
-                onChange={(e) => setForm((f) => ({ ...f, sequenceGapSeconds: Number(e.target.value) }))}
+                  onChange={(value) => setForm((f) => ({ ...f, sequenceGapSeconds: Number(value ?? 0) }))}
+                  style={{ width: "100%" }}
               />
-            </label>
+              </Form.Item>
           )}
-          <label>
-            {t("automation:correlator.action")}
-            <select
+          </Space>
+          <Form.Item label={t("automation:correlator.action")} style={{ marginBottom: 0 }}>
+            <Select
               value={form.actionType}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, actionType: e.target.value as CreateCorrelatorPayload["actionType"] }))
+              onChange={(value: CreateCorrelatorPayload["actionType"]) =>
+                setForm((f) => ({ ...f, actionType: value }))
               }
-            >
-              {CORRELATOR_ACTION_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {t(`automation:${CORRELATOR_ACTION_LABEL_KEYS[type]}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="full">
-            {correlatorActionTargetLabel(form.actionType, t)}
-            <input
+              options={CORRELATOR_ACTION_TYPES.map((type) => ({
+                value: type,
+                label: t(`automation:${CORRELATOR_ACTION_LABEL_KEYS[type]}`),
+              }))}
+            />
+          </Form.Item>
+          <Form.Item label={correlatorActionTargetLabel(form.actionType, t)} required style={{ marginBottom: 0 }}>
+            <Input
               value={form.actionTarget}
               onChange={(e) => setForm((f) => ({ ...f, actionTarget: e.target.value }))}
               required
               placeholder={correlatorActionTargetPlaceholder(form.actionType, t)}
             />
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
+          </Form.Item>
+          <Form.Item label={t("automation:alertRule.enabled")} style={{ marginBottom: 0 }}>
+            <Switch
               checked={form.enabled}
-              onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
+              onChange={(checked) => setForm((f) => ({ ...f, enabled: checked }))}
             />
-            {t("automation:alertRule.enabled")}
-          </label>
+          </Form.Item>
           {mutation.error && (
-            <p className="hint error full">{(mutation.error as Error).message}</p>
+            <Alert type="error" showIcon message={(mutation.error as Error).message} />
           )}
-          <footer className="full form-actions">
-            <button type="button" className="btn" onClick={onClose}>{t("common:action.cancel")}</button>
-            <button type="submit" className="btn primary" disabled={mutation.isPending || !form.name}>
+          <Space>
+            <Button onClick={onClose}>{t("common:action.cancel")}</Button>
+            <Button htmlType="submit" type="primary" disabled={mutation.isPending || !form.name} loading={mutation.isPending}>
               {t("common:action.create")}
-            </button>
-          </footer>
-        </form>
-      </div>
-    </div>
+            </Button>
+          </Space>
+        </Space>
+      </Form>
+    </Modal>
   );
 }

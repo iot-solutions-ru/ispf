@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, Select, Tag } from "antd";
 import {
   askAnalyticsTag,
   evaluateAnalyticsExpression,
@@ -224,24 +225,25 @@ export default function AnalyticsTagInspector({
 
       {readOnly && (
         <div className="analytics-tag-readonly-actions">
-          <button
-            type="button"
-            className="btn primary small"
-            disabled={evaluateMutation.isPending || (!readOnly && !expressionDraft.trim())}
+          <Button
+            type="primary"
+            size="small"
+            loading={evaluateMutation.isPending}
+            disabled={!readOnly && !expressionDraft.trim()}
             onClick={() => evaluateMutation.mutate()}
           >
             {t("automation:analyticsTag.evaluate")}
-          </button>
-          <button
-            type="button"
-            className="btn small"
-            disabled={askMutation.isPending || !tagQuery.data}
+          </Button>
+          <Button
+            size="small"
+            loading={askMutation.isPending}
+            disabled={!tagQuery.data}
             onClick={() => askMutation.mutate()}
           >
             {askMutation.isPending
               ? t("automation:analyticsTag.askAiPending")
               : t("automation:analyticsTag.askAi")}
-          </button>
+          </Button>
           {evalResult && <p className="hint">{evalResult}</p>}
           {askResult && <p className="hint analytics-ask-narrative">{askResult}</p>}
         </div>
@@ -251,13 +253,14 @@ export default function AnalyticsTagInspector({
         <section className="analytics-tag-editor">
           <label className="analytics-tag-editor-mode">
             <span>{t("automation:analyticsTag.helperMode")}</span>
-            <select
+            <Select
               value={helperMode}
-              onChange={(event) => setHelperMode(event.target.value as "builtin" | "cel")}
-            >
-              <option value="builtin">{t("automation:analyticsTag.helperBuiltin")}</option>
-              <option value="cel">{t("automation:analyticsTag.helperCel")}</option>
-            </select>
+              onChange={(value) => setHelperMode(value as "builtin" | "cel")}
+              options={[
+                { value: "builtin", label: t("automation:analyticsTag.helperBuiltin") },
+                { value: "cel", label: t("automation:analyticsTag.helperCel") },
+              ]}
+            />
           </label>
 
           {isCelMode && (
@@ -283,32 +286,29 @@ export default function AnalyticsTagInspector({
               </label>
               <p className="hint">{t("automation:analyticsTag.expressionHint")}</p>
               <div className="analytics-tag-editor-actions">
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={!expressionDraft.trim() || saveMutation.isPending}
+                <Button
+                  type="primary"
+                  loading={saveMutation.isPending}
+                  disabled={!expressionDraft.trim()}
                   onClick={() => saveMutation.mutate()}
                 >
                   {t("automation:analyticsTag.save")}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={!expressionDraft.trim() || evaluateMutation.isPending}
+                </Button>
+                <Button
+                  loading={evaluateMutation.isPending}
+                  disabled={!expressionDraft.trim()}
                   onClick={() => evaluateMutation.mutate()}
                 >
                   {t("automation:analyticsTag.evaluate")}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={askMutation.isPending}
+                </Button>
+                <Button
+                  loading={askMutation.isPending}
                   onClick={() => askMutation.mutate()}
                 >
                   {askMutation.isPending
                     ? t("automation:analyticsTag.askAiPending")
                     : t("automation:analyticsTag.askAi")}
-                </button>
+                </Button>
               </div>
               {evalResult && <p className="hint">{evalResult}</p>}
               {askResult && <p className="hint analytics-ask-narrative">{askResult}</p>}
@@ -345,7 +345,7 @@ export default function AnalyticsTagInspector({
         </div>
         <div>
           <dt>{t("automation:analyticsTag.qualityStatus")}</dt>
-          <dd><span className={`status-badge quality-${tag.qualityStatus}`}>{tag.qualityStatus}</span></dd>
+          <dd><Tag className={`quality-${tag.qualityStatus}`}>{tag.qualityStatus}</Tag></dd>
         </div>
         <div>
           <dt>{t("automation:analyticsTag.lastEvalAt")}</dt>

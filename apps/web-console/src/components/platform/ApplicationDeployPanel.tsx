@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Space, Table, Tabs } from "antd";
 import {
   createBundleObjects,
   deleteBundleObjects,
@@ -136,24 +137,16 @@ export default function ApplicationDeployPanel({
 
   return (
     <div className="application-deploy-panel">
-      <div className="tabs-scroll application-deploy-tabs-scroll">
-        <nav className="tabs application-deploy-tabs" aria-label={t("deploy.tabsAria")}>
-          <button
-            type="button"
-            className={tab === "bundle" ? "active" : ""}
-            onClick={() => setTab("bundle")}
-          >
-            {t("deploy.tabBundle")}
-          </button>
-          <button
-            type="button"
-            className={tab === "operations" ? "active" : ""}
-            onClick={() => setTab("operations")}
-          >
-            {t("deploy.tabOperations")}
-          </button>
-        </nav>
-      </div>
+      <Tabs
+        className="application-deploy-tabs"
+        activeKey={tab}
+        onChange={(key) => setTab(key as DeployTab)}
+        aria-label={t("deploy.tabsAria")}
+        items={[
+          { key: "bundle", label: t("deploy.tabBundle") },
+          { key: "operations", label: t("deploy.tabOperations") },
+        ]}
+      />
 
       {tab === "bundle" && (
         <ApplicationBundlePanel
@@ -171,9 +164,7 @@ export default function ApplicationDeployPanel({
             <p className="op-muted">{t("deploy.historyHint")}</p>
 
             {historyQuery.isLoading && <p className="op-muted">{t("deploy.loadingHistory")}</p>}
-            {historyQuery.error && (
-              <div className="op-alert op-alert-error">{String(historyQuery.error)}</div>
-            )}
+            {historyQuery.error && <Alert type="error" showIcon message={String(historyQuery.error)} />}
 
             {historyQuery.data && historyQuery.data.length === 0 && (
               <p className="op-muted">{t("deploy.emptyHistory")}</p>
@@ -192,9 +183,7 @@ export default function ApplicationDeployPanel({
                       </span>
                       <span className="op-muted">{formatDeployedAt(entry.deployedAt)}</span>
                       {canManage && !entry.active && (
-                        <button
-                          type="button"
-                          className="btn"
+                        <Button
                           disabled={rollbackMutation.isPending}
                           onClick={() => {
                             setRollbackVersion(entry.version);
@@ -202,7 +191,7 @@ export default function ApplicationDeployPanel({
                           }}
                         >
                           {rollingBack ? t("deploy.rollingBack") : t("deploy.rollbackBundle")}
-                        </button>
+                        </Button>
                       )}
                     </li>
                   );
@@ -210,16 +199,20 @@ export default function ApplicationDeployPanel({
               </ul>
             )}
 
-            {rollbackMutation.error && (
-              <div className="op-alert op-alert-error">{String(rollbackMutation.error)}</div>
-            )}
+            {rollbackMutation.error && <Alert type="error" showIcon message={String(rollbackMutation.error)} />}
             {rollbackMutation.isSuccess && (
-              <div className="op-alert op-alert-success">
+              <Alert
+                type="success"
+                showIcon
+                message={
+                  <>
                 {t("deploy.rollbackSuccess")}
                 {rollbackMutation.data?.rolledBackTo
                   ? ` → ${t("deploy.versionLabel", { version: rollbackMutation.data.rolledBackTo })}`
                   : ""}
-              </div>
+                  </>
+                }
+              />
             )}
           </section>
 
@@ -229,33 +222,31 @@ export default function ApplicationDeployPanel({
             {eventCatalogQuery.isLoading && (
               <p className="op-muted">{t("deploy.eventCatalogLoading")}</p>
             )}
-            {eventCatalogQuery.error && (
-              <div className="op-alert op-alert-error">{String(eventCatalogQuery.error)}</div>
-            )}
+            {eventCatalogQuery.error && <Alert type="error" showIcon message={String(eventCatalogQuery.error)} />}
             {eventCatalogQuery.data && eventCatalogQuery.data.length === 0 && (
               <p className="op-muted">{t("deploy.eventCatalogEmpty")}</p>
             )}
             {eventCatalogQuery.data && eventCatalogQuery.data.length > 0 && (
-              <table className="data-table compact">
-                <thead>
-                  <tr>
-                    <th>{t("deploy.eventCatalogId")}</th>
-                    <th>{t("deploy.eventCatalogRoles")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {eventCatalogQuery.data.map((entry) => (
-                    <tr key={entry.id}>
-                      <td><code>{entry.id}</code></td>
-                      <td>
-                        {(entry.roles ?? []).length > 0
-                          ? entry.roles!.join(", ")
-                          : t("deploy.eventCatalogAnyRole")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Table
+                size="small"
+                pagination={false}
+                rowKey="id"
+                dataSource={eventCatalogQuery.data}
+                columns={[
+                  {
+                    title: t("deploy.eventCatalogId"),
+                    dataIndex: "id",
+                    render: (value: string) => <code>{value}</code>,
+                  },
+                  {
+                    title: t("deploy.eventCatalogRoles"),
+                    render: (_, entry) =>
+                      (entry.roles ?? []).length > 0
+                        ? entry.roles!.join(", ")
+                        : t("deploy.eventCatalogAnyRole"),
+                  },
+                ]}
+              />
             )}
           </section>
 
@@ -263,45 +254,42 @@ export default function ApplicationDeployPanel({
             <h3>{t("deploy.bundleObjectsTitle")}</h3>
             <p className="op-muted">{t("deploy.bundleObjectsHint")}</p>
             {canManage && (
-              <div className="bundle-object-actions">
-                <button
-                  type="button"
-                  className="btn"
+              <Space wrap className="bundle-object-actions">
+                <Button
                   disabled={Boolean(lifecycleMutation?.isPending)}
                   onClick={() => runLifecycle("create")}
                 >
                   {lifecycleAction === "create" && createObjectsMutation.isPending
                     ? t("deploy.bundleObjectsCreating")
                     : t("deploy.bundleObjectsCreate")}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
+                </Button>
+                <Button
                   disabled={Boolean(lifecycleMutation?.isPending)}
                   onClick={() => runLifecycle("update")}
                 >
                   {lifecycleAction === "update" && updateObjectsMutation.isPending
                     ? t("deploy.bundleObjectsUpdating")
                     : t("deploy.bundleObjectsUpdate")}
-                </button>
-                <button
-                  type="button"
-                  className="btn danger"
+                </Button>
+                <Button
+                  danger
                   disabled={Boolean(lifecycleMutation?.isPending)}
                   onClick={() => runLifecycle("delete")}
                 >
                   {lifecycleAction === "delete" && deleteObjectsMutation.isPending
                     ? t("deploy.bundleObjectsDeleting")
                     : t("deploy.bundleObjectsDelete")}
-                </button>
-              </div>
+                </Button>
+              </Space>
             )}
 
-            {lifecycleMutation?.error && (
-              <div className="op-alert op-alert-error">{String(lifecycleMutation.error)}</div>
-            )}
+            {lifecycleMutation?.error && <Alert type="error" showIcon message={String(lifecycleMutation.error)} />}
             {lifecycleMutation?.isSuccess && lifecycleMutation.data && (
-              <div className="op-alert op-alert-success">
+              <Alert
+                type="success"
+                showIcon
+                message={
+                  <>
                 {t("deploy.bundleObjectsSuccess", {
                   action: lifecycleMutation.data.action ?? lifecycleAction ?? "",
                   status: lifecycleMutation.data.status ?? "OK",
@@ -330,14 +318,16 @@ export default function ApplicationDeployPanel({
                     })}
                   </span>
                 )}
-              </div>
+                  </>
+                }
+              />
             )}
           </section>
 
           <section className="application-operations-section">
             <h3>{t("deploy.functionVersionsTitle")}</h3>
             <p className="op-muted">{t("deploy.functionVersionsHint")}</p>
-            <div className="form-grid">
+            <Form component="div" layout="vertical" className="application-deploy-function-form">
               <ObjectPathField
                 label="objectPath"
                 value={fnObjectPath}
@@ -345,19 +335,19 @@ export default function ApplicationDeployPanel({
               />
               <label>
                 functionName
-                <input
+                <Input
                   value={fnName}
                   onChange={(e) => setFnName(e.target.value)}
                   placeholder="myFunction"
                 />
               </label>
-            </div>
+            </Form>
 
             {functionVersionsQuery.isFetching && fnName.trim() && (
               <p className="op-muted">{t("deploy.loadingVersions")}</p>
             )}
             {functionVersionsQuery.error && (
-              <div className="op-alert op-alert-error">{String(functionVersionsQuery.error)}</div>
+              <Alert type="error" showIcon message={String(functionVersionsQuery.error)} />
             )}
 
             {functionVersionsQuery.data && functionVersionsQuery.data.length > 0 && (
@@ -375,9 +365,7 @@ export default function ApplicationDeployPanel({
                         <span className="op-muted">{formatDeployedAt(entry.deployedAt)}</span>
                       )}
                       {canManage && !entry.active && (
-                        <button
-                          type="button"
-                          className="btn"
+                        <Button
                           disabled={functionRollbackMutation.isPending}
                           onClick={() => {
                             setFnRollbackVersion(entry.version);
@@ -385,7 +373,7 @@ export default function ApplicationDeployPanel({
                           }}
                         >
                           {rollingBack ? t("deploy.deploying") : t("deploy.deployPrevious")}
-                        </button>
+                        </Button>
                       )}
                     </li>
                   );
@@ -394,12 +382,14 @@ export default function ApplicationDeployPanel({
             )}
 
             {functionRollbackMutation.error && (
-              <div className="op-alert op-alert-error">{String(functionRollbackMutation.error)}</div>
+              <Alert type="error" showIcon message={String(functionRollbackMutation.error)} />
             )}
             {functionRollbackMutation.isSuccess && (
-              <div className="op-alert op-alert-success">
-                {t("deploy.functionActiveVersion", { version: functionRollbackMutation.data?.version })}
-              </div>
+              <Alert
+                type="success"
+                showIcon
+                message={t("deploy.functionActiveVersion", { version: functionRollbackMutation.data?.version })}
+              />
             )}
           </section>
 

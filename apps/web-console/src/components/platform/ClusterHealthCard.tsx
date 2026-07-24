@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import {
   fetchClusterHealth,
   type ClusterHealth,
@@ -14,6 +16,12 @@ function statusClass(status: ClusterNodeStatus): string {
   if (status === "UP") return "system-health-ok";
   if (status === "STALE") return "system-health-warn";
   return "system-health-bad";
+}
+
+function statusColor(status: ClusterNodeStatus): "success" | "warning" | "error" {
+  if (status === "UP") return "success";
+  if (status === "STALE") return "warning";
+  return "error";
 }
 
 function profileClass(profile: string | null | undefined): string {
@@ -42,35 +50,7 @@ function ProfileBadge({
   const label = KNOWN_PROFILES.includes(normalized as (typeof KNOWN_PROFILES)[number])
     ? t(labelKey)
     : profile ?? "—";
-  return <span className={profileClass(profile)}>{label}</span>;
-}
-
-function NodeRow({ node, t }: { node: ClusterNode; t: (key: string) => string }) {
-  return (
-    <tr className={node.self ? "cluster-node-self" : undefined}>
-      <td className="mono">
-        {node.replicaId}
-        {node.self && (
-          <span className="cluster-node-self-badge" title={t("clusterHealth.thisNode")}>
-            {" "}
-            *
-          </span>
-        )}
-      </td>
-      <td>
-        <ProfileBadge profile={node.replicaProfile ?? node.replicaRole} t={t} />
-      </td>
-      <td>
-        <span className={statusClass(node.status)}>
-          {t(`clusterHealth.status.${node.status}`)}
-        </span>
-      </td>
-      <td className="mono">{node.version ?? "—"}</td>
-      <td>{node.environment ?? "—"}</td>
-      <td>{node.heldDriverLocks}</td>
-      <td>{formatInstant(node.lastHeartbeatAt)}</td>
-    </tr>
-  );
+  return <Tag className={profileClass(profile)}>{label}</Tag>;
 }
 
 export default function ClusterHealthPanel({ showTitle = true }: { showTitle?: boolean }) {
@@ -85,10 +65,10 @@ export default function ClusterHealthPanel({ showTitle = true }: { showTitle?: b
 
   return (
     <section className="system-metrics-card cluster-health-card system-metrics-card-wide">
-      {showTitle && <h3>{t("clusterHealth.title")}</h3>}
-      {healthQuery.isLoading && <p className="hint">{t("clusterHealth.loading")}</p>}
+      {showTitle && <Typography.Title level={3}>{t("clusterHealth.title")}</Typography.Title>}
+      {healthQuery.isLoading && <Typography.Text type="secondary">{t("clusterHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <div className="op-alert op-alert-error">{t("clusterHealth.loadError")}</div>
+        <Alert type="error" showIcon message={t("clusterHealth.loadError")} />
       )}
       {data && <ClusterHealthContent data={data} t={t} />}
     </section>
@@ -102,118 +82,163 @@ function ClusterHealthContent({
   data: ClusterHealth;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
-  return (
-    <>
-      <table className="op-table system-metrics-table">
-        <tbody>
-          <tr>
-            <th>{t("clusterHealth.clusterEnabled")}</th>
-            <td>{data.clusterEnabled ? t("common:action.yes") : t("common:action.no")}</td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.thisReplica")}</th>
-            <td className="mono">{data.replicaId}</td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.thisInstanceRole")}</th>
-            <td>
-              <ProfileBadge profile={data.replicaProfile ?? data.replicaRole} t={t} />
-            </td>
-          </tr>
-          {data.replicaCapabilities?.length > 0 && (
-            <tr>
-              <th>{t("clusterHealth.capabilities")}</th>
-              <td className="mono cluster-capabilities-list">
-                {data.replicaCapabilities.join(", ")}
-              </td>
-            </tr>
+  const summaryRows = [
+    {
+      key: "clusterEnabled",
+      label: t("clusterHealth.clusterEnabled"),
+      value: data.clusterEnabled ? t("common:action.yes") : t("common:action.no"),
+    },
+    {
+      key: "thisReplica",
+      label: t("clusterHealth.thisReplica"),
+      value: <Typography.Text code>{data.replicaId}</Typography.Text>,
+    },
+    {
+      key: "thisInstanceRole",
+      label: t("clusterHealth.thisInstanceRole"),
+      value: <ProfileBadge profile={data.replicaProfile ?? data.replicaRole} t={t} />,
+    },
+    ...(data.replicaCapabilities?.length > 0
+      ? [{
+          key: "capabilities",
+          label: t("clusterHealth.capabilities"),
+          value: <Typography.Text code>{data.replicaCapabilities.join(", ")}</Typography.Text>,
+        }]
+      : []),
+    {
+      key: "jobConsumer",
+      label: t("clusterHealth.jobConsumer"),
+      value: data.jobConsumerActive ? t("common:action.yes") : t("common:action.no"),
+    },
+    {
+      key: "driverOwnership",
+      label: t("clusterHealth.driverOwnership"),
+      value: data.driverOwnershipEnabled ? t("common:action.yes") : t("common:action.no"),
+    },
+    { key: "localDriverLocks", label: t("clusterHealth.localDriverLocks"), value: data.heldDriverLocks },
+    {
+      key: "nodesSummary",
+      label: t("clusterHealth.nodesSummary"),
+      value: (
+        <Tag color={data.nodesUp === data.nodesTotal ? "success" : "warning"}>
+          {t("clusterHealth.nodesUpOfTotal", { up: data.nodesUp, total: data.nodesTotal })}
+        </Tag>
+      ),
+    },
+    {
+      key: "natsReplicaEvents",
+      label: t("clusterHealth.natsReplicaEvents"),
+      value: data.natsEnabled && data.natsReplicaEventsEnabled ? t("common:action.yes") : t("common:action.no"),
+    },
+    {
+      key: "liveVariableSync",
+      label: t("clusterHealth.liveVariableSync"),
+      value: data.liveVariableSyncEnabled ? t("common:action.yes") : t("common:action.no"),
+    },
+    {
+      key: "liveVariableSyncCoalesce",
+      label: t("clusterHealth.liveVariableSyncCoalesce"),
+      value: t("clusterHealth.coalesceMs", { count: data.liveVariableSyncCoalesceMs }),
+    },
+    {
+      key: "clusterPathInterest",
+      label: t("clusterHealth.clusterPathInterest"),
+      value: data.clusterPathInterestEnabled ? t("common:action.yes") : t("common:action.no"),
+    },
+    {
+      key: "driverLockTtl",
+      label: t("clusterHealth.driverLockTtl"),
+      value: t("clusterHealth.ttlSeconds", { count: data.driverLockTtlSeconds }),
+    },
+  ];
+  const summaryColumns: TableColumnsType<(typeof summaryRows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    { title: "", dataIndex: "value", key: "value" },
+  ];
+  const nodeColumns: TableColumnsType<ClusterNode> = [
+    {
+      title: t("clusterHealth.col.replicaId"),
+      dataIndex: "replicaId",
+      key: "replicaId",
+      render: (replicaId: string, node) => (
+        <Typography.Text code>
+          {replicaId}
+          {node.self && (
+            <span className="cluster-node-self-badge" title={t("clusterHealth.thisNode")}>
+              {" "}*
+            </span>
           )}
-          <tr>
-            <th>{t("clusterHealth.jobConsumer")}</th>
-            <td>
-              {data.jobConsumerActive ? t("common:action.yes") : t("common:action.no")}
-            </td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.driverOwnership")}</th>
-            <td>
-              {data.driverOwnershipEnabled ? t("common:action.yes") : t("common:action.no")}
-            </td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.localDriverLocks")}</th>
-            <td>{data.heldDriverLocks}</td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.nodesSummary")}</th>
-            <td>
-              <span className={data.nodesUp === data.nodesTotal ? "system-health-ok" : "system-health-warn"}>
-                {t("clusterHealth.nodesUpOfTotal", {
-                  up: data.nodesUp,
-                  total: data.nodesTotal,
-                })}
-              </span>
-            </td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.natsReplicaEvents")}</th>
-            <td>
-              {data.natsEnabled && data.natsReplicaEventsEnabled
-                ? t("common:action.yes")
-                : t("common:action.no")}
-            </td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.liveVariableSync")}</th>
-            <td>
-              {data.liveVariableSyncEnabled ? t("common:action.yes") : t("common:action.no")}
-            </td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.liveVariableSyncCoalesce")}</th>
-            <td>{t("clusterHealth.coalesceMs", { count: data.liveVariableSyncCoalesceMs })}</td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.clusterPathInterest")}</th>
-            <td>
-              {data.clusterPathInterestEnabled ? t("common:action.yes") : t("common:action.no")}
-            </td>
-          </tr>
-          <tr>
-            <th>{t("clusterHealth.driverLockTtl")}</th>
-            <td>{t("clusterHealth.ttlSeconds", { count: data.driverLockTtlSeconds })}</td>
-          </tr>
-        </tbody>
-      </table>
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("clusterHealth.col.role"),
+      key: "role",
+      render: (_, node) => <ProfileBadge profile={node.replicaProfile ?? node.replicaRole} t={t} />,
+    },
+    {
+      title: t("clusterHealth.col.status"),
+      dataIndex: "status",
+      key: "status",
+      render: (status: ClusterNodeStatus) => (
+        <Tag className={statusClass(status)} color={statusColor(status)}>
+          {t(`clusterHealth.status.${status}`)}
+        </Tag>
+      ),
+    },
+    {
+      title: t("clusterHealth.col.version"),
+      dataIndex: "version",
+      key: "version",
+      render: (version: string | null) => <Typography.Text code>{version ?? "—"}</Typography.Text>,
+    },
+    {
+      title: t("clusterHealth.col.environment"),
+      dataIndex: "environment",
+      key: "environment",
+      render: (environment: string | null) => environment ?? "—",
+    },
+    { title: t("clusterHealth.col.driverLocks"), dataIndex: "heldDriverLocks", key: "heldDriverLocks" },
+    {
+      title: t("clusterHealth.col.lastHeartbeat"),
+      dataIndex: "lastHeartbeatAt",
+      key: "lastHeartbeatAt",
+      render: (value: string | null) => formatInstant(value),
+    },
+  ];
 
-      <h4 className="cluster-health-nodes-title">{t("clusterHealth.nodesTitle")}</h4>
+  return (
+    <Space orientation="vertical" style={{ width: "100%" }}>
+      <Table
+        className="system-metrics-table"
+        size="small"
+        pagination={false}
+        showHeader={false}
+        columns={summaryColumns}
+        dataSource={summaryRows}
+      />
+
+      <Typography.Title level={4} className="cluster-health-nodes-title">
+        {t("clusterHealth.nodesTitle")}
+      </Typography.Title>
       {data.nodes.length === 0 ? (
-        <p className="hint">{t("clusterHealth.nodesEmpty")}</p>
+        <Typography.Text type="secondary">{t("clusterHealth.nodesEmpty")}</Typography.Text>
       ) : (
         <div className="cluster-health-nodes-wrap">
-          <table className="op-table cluster-health-nodes-table">
-            <thead>
-              <tr>
-                <th>{t("clusterHealth.col.replicaId")}</th>
-                <th>{t("clusterHealth.col.role")}</th>
-                <th>{t("clusterHealth.col.status")}</th>
-                <th>{t("clusterHealth.col.version")}</th>
-                <th>{t("clusterHealth.col.environment")}</th>
-                <th>{t("clusterHealth.col.driverLocks")}</th>
-                <th>{t("clusterHealth.col.lastHeartbeat")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.nodes.map((node) => (
-                <NodeRow key={node.replicaId} node={node} t={t} />
-              ))}
-            </tbody>
-          </table>
+          <Table
+            className="cluster-health-nodes-table"
+            size="small"
+            pagination={false}
+            rowKey="replicaId"
+            rowClassName={(node) => node.self ? "cluster-node-self" : ""}
+            columns={nodeColumns}
+            dataSource={data.nodes}
+          />
         </div>
       )}
 
-      <p className="hint">{t("clusterHealth.hint")}</p>
-    </>
+      <Typography.Paragraph type="secondary">{t("clusterHealth.hint")}</Typography.Paragraph>
+    </Space>
   );
 }
 

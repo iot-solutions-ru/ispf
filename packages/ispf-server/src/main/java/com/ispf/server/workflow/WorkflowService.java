@@ -13,6 +13,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.plugin.workflow.BpmnProcess;
+import com.ispf.plugin.workflow.CallActivityDefinition;
+import com.ispf.plugin.workflow.CallActivityExecutor;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.MessageTaskDefinition;
 import com.ispf.plugin.workflow.ServiceTaskDefinition;
@@ -23,6 +25,7 @@ import com.ispf.plugin.workflow.WorkflowEngine;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
+import jakarta.annotation.PostConstruct;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowDeadLetterEntity;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
@@ -120,6 +123,11 @@ public class WorkflowService {
         this.deadLetterService = deadLetterService;
         this.webhookIndex = webhookIndex;
         this.retryService = retryService;
+    }
+
+    @PostConstruct
+    void wireCallActivityExecutor() {
+        workflowEngine.setCallActivityExecutor(this::executeCallActivity);
     }
 
     @Transactional
@@ -260,6 +268,20 @@ public class WorkflowService {
             AutomationMetricsRecorder.WorkflowStartTrigger trigger,
             Map<String, String> input
     ) throws WorkflowException {
+        runWorkflowInstance(path, triggerObjectPath, trigger, input);
+        return getWorkflow(path);
+    }
+
+    /**
+     * Starts a workflow and returns the runtime instance (used by callActivity and tests).
+     */
+    @Transactional
+    public WorkflowInstance runWorkflowInstance(
+            String path,
+            String triggerObjectPath,
+            AutomationMetricsRecorder.WorkflowStartTrigger trigger,
+            Map<String, String> input
+    ) throws WorkflowException {
         automationMetricsRecorder.recordWorkflowStart(trigger);
         structureService.ensureWorkflowStructure(path);
         PlatformObject node = objectManager.require(path);
@@ -297,7 +319,8 @@ public class WorkflowService {
         if (instance.status() == InstanceStatus.FAILED) {
             handleFailure(path, instance, input);
         }
-        return getWorkflow(path);
+        notifyCallActivityParents(instance);
+        return instance;
     }
 
     @Transactional
@@ -581,6 +604,10 @@ public class WorkflowService {
         instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
         persistInstanceSnapshot(workflowPath, instance);
         publishInstanceEvent(workflowPath, instance);
+        if (instance.status() == InstanceStatus.FAILED) {
+            handleFailure(workflowPath, instance, instance.variables());
+        }
+        notifyCallActivityParents(instance);
         return getWorkflow(workflowPath);
     }
 
@@ -624,6 +651,10 @@ public class WorkflowService {
         instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
         persistInstanceSnapshot(workflowPath, instance);
         publishInstanceEvent(workflowPath, instance);
+        if (instance.status() == InstanceStatus.FAILED) {
+            handleFailure(workflowPath, instance, instance.variables());
+        }
+        notifyCallActivityParents(instance);
 
         return Map.of(
                 "instanceId", instanceId,
@@ -672,6 +703,10 @@ public class WorkflowService {
         instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
         persistInstanceSnapshot(workflowPath, instance);
         publishInstanceEvent(workflowPath, instance);
+        if (instance.status() == InstanceStatus.FAILED) {
+            handleFailure(workflowPath, instance, instance.variables());
+        }
+        notifyCallActivityParents(instance);
 
         return Map.of(
                 "instanceId", instanceId,
@@ -715,6 +750,10 @@ public class WorkflowService {
         instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
         persistInstanceSnapshot(workflowPath, instance);
         publishInstanceEvent(workflowPath, instance);
+        if (instance.status() == InstanceStatus.FAILED) {
+            handleFailure(workflowPath, instance, instance.variables());
+        }
+        notifyCallActivityParents(instance);
 
         return Map.of(
                 "instanceId", instanceId,
@@ -848,6 +887,121 @@ public class WorkflowService {
             return;
         }
         log.info("[workflow:{}] message {} -> {}", instance.workflowPath(), task.subject(), task.message());
+    }
+
+    private CallActivityExecutor.Result executeCallActivity(
+            CallActivityDefinition call,
+            WorkflowInstance parent
+    ) throws WorkflowException {
+        Map<String, String> input = new HashMap<>();
+        input.put("__callParentInstanceId", parent.instanceId());
+        String inputMap = call.parameters().get("inputMap");
+        if (inputMap != null && !inputMap.isBlank()) {
+            for (String part : inputMap.split(",")) {
+                String[] kv = part.split("=", 2);
+                if (kv.length != 2) {
+                    continue;
+                }
+                String key = kv[0].trim();
+                String valueExpr = kv[1].trim();
+                String value = valueExpr.startsWith("${") && valueExpr.endsWith("}")
+                        ? parent.variables().getOrDefault(valueExpr.substring(2, valueExpr.length() - 1), "")
+                        : valueExpr;
+                input.put(key, value);
+            }
+        }
+        String trigger = call.parameters().get("objectPath");
+        if (trigger == null || trigger.isBlank()) {
+            trigger = parent.variables().get("triggerObjectPath");
+        }
+        WorkflowInstance child = self.getObject().runWorkflowInstance(
+                call.workflowPath(),
+                trigger,
+                AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
+                input
+        );
+        return new CallActivityExecutor.Result(
+                child.status(),
+                child.instanceId(),
+                child.variables(),
+                child.errorMessage()
+        );
+    }
+
+    private void notifyCallActivityParents(WorkflowInstance child) {
+        if (child.status() != InstanceStatus.COMPLETED && child.status() != InstanceStatus.FAILED) {
+            return;
+        }
+        String parentId = child.variables().get("__callParentInstanceId");
+        if (parentId == null || parentId.isBlank()) {
+            return;
+        }
+        try {
+            self.getObject().resumeParentCallActivity(
+                    parentId,
+                    child.instanceId(),
+                    child.status() == InstanceStatus.FAILED ? child.errorMessage() : null,
+                    child.variables()
+            );
+        } catch (WorkflowException e) {
+            log.debug(
+                    "callActivity parent {} not resumed for child {}: {}",
+                    parentId,
+                    child.instanceId(),
+                    e.getMessage()
+            );
+        }
+    }
+
+    /**
+     * Resumes a parent instance waiting on {@code childInstanceId} (BPMN callActivity).
+     * No-op when the parent is not waiting on that child (sync child completion path).
+     */
+    @Transactional
+    public void resumeParentCallActivity(
+            String parentInstanceId,
+            String childInstanceId,
+            String childFailedMessage,
+            Map<String, String> childVariables
+    ) throws WorkflowException {
+        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(parentInstanceId);
+        WorkflowInstance parent = stored.instance();
+        if (parent.status() != InstanceStatus.WAITING) {
+            return;
+        }
+        boolean waitingOnChild = parent.waitingTokens().stream()
+                .anyMatch(token -> childInstanceId.equals(token.pendingCallChildInstanceId()));
+        if (!waitingOnChild) {
+            return;
+        }
+
+        String workflowPath = parent.workflowPath();
+        BpmnProcess process = workflowEngine.parse(
+                readString(objectManager.require(workflowPath), "bpmnXml")
+                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        );
+        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
+        workflowEngine.resumeAfterCallActivityChild(
+                parent,
+                process,
+                childInstanceId,
+                childVariables,
+                childFailedMessage,
+                this::executeTask,
+                this::executeMessageTask,
+                evaluator
+        );
+
+        UserTaskDefinition nextPending = parent.pendingUserTaskId()
+                .map(id -> process.userTasks().get(id))
+                .orElse(null);
+        instanceStore.save(parent, process, stored.triggerObjectPath(), nextPending);
+        persistInstanceSnapshot(workflowPath, parent);
+        publishInstanceEvent(workflowPath, parent);
+        if (parent.status() == InstanceStatus.FAILED) {
+            handleFailure(workflowPath, parent, parent.variables());
+        }
+        notifyCallActivityParents(parent);
     }
 
     private void executeTask(ServiceTaskDefinition task, WorkflowInstance instance) throws WorkflowException {

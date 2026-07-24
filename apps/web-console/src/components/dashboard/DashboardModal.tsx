@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import ModalPortal from "../../ui/ModalPortal";
+import { Button, Modal } from "antd";
 import DashboardBuilder from "./DashboardBuilder";
 import type { DashboardSession } from "./DashboardContext";
 import type { OpenDashboardOptions } from "./DashboardContext";
@@ -38,33 +38,35 @@ export default function DashboardModal({
   const { t } = useTranslation(["dashboard", "common"]);
 
   return (
-    <ModalPortal>
-      <div className="modal-backdrop dashboard-modal-backdrop" role="presentation">
-        <div className="modal dashboard-modal" onClick={(event) => event.stopPropagation()}>
-          <header>
-            <h3>{title}</h3>
-            <button type="button" className="btn" onClick={onClose}>
-              {t("common:action.close")}
-            </button>
-          </header>
-          <div className="dashboard-modal-body">
-            <DashboardBuilder
-              path={path}
-              operatorMode
-              embeddedModal
-              onClose={onClose}
-              session={session}
-              selection={selection}
-              params={params}
-              onSessionChange={onSessionChange}
-              onSelectionChange={onSelectionChange}
-              onParamsChange={onParamsChange}
-              onNavigateDashboard={onNavigateDashboard}
-              onOpenDashboardModal={onOpenDashboardModal}
-            />
-          </div>
-        </div>
+    <Modal
+      title={title}
+      open
+      onCancel={onClose}
+      footer={
+        <Button onClick={onClose}>
+          {t("common:action.close")}
+        </Button>
+      }
+      width="min(96vw, 1400px)"
+      className="dashboard-modal"
+      destroyOnHidden
+    >
+      <div className="dashboard-modal-body">
+        <DashboardBuilder
+          path={path}
+          operatorMode
+          embeddedModal
+          onClose={onClose}
+          session={session}
+          selection={selection}
+          params={params}
+          onSessionChange={onSessionChange}
+          onSelectionChange={onSelectionChange}
+          onParamsChange={onParamsChange}
+          onNavigateDashboard={onNavigateDashboard}
+          onOpenDashboardModal={onOpenDashboardModal}
+        />
       </div>
-    </ModalPortal>
+    </Modal>
   );
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import { formatJournalJson } from "../../utils/journal/journalDetails";
 
 export interface JournalDetailSection {
@@ -40,14 +41,14 @@ export default function JournalExpandableItem({
       <div className="journal-entry-head">
         <div className="journal-entry-summary">{children}</div>
         {hasDetails && (
-          <button
-            type="button"
-            className="btn small journal-entry-toggle"
+          <Button
+            size="small"
+            className="journal-entry-toggle"
             aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
           >
             {open ? t("details.hide") : t("details.show")}
-          </button>
+          </Button>
         )}
       </div>
       {open && hasDetails && (

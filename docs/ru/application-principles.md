@@ -249,9 +249,23 @@ DONE    = validate → dry-run/preview → apply  (P10)
 | Процесс с задачами оператора | BPMN WORKFLOW | [workflows](workflows.md) |
 | SQL CRUD по app schema | Script function (steps) | [applications](applications.md), [object-functions](object-functions.md) |
 | SQL → poll переменной | sqlBinding / bindings[] | [applications](applications.md) |
-| Телеметрия устройства | Driver + point mappings | [drivers](drivers.md) |
+| Телеметрия устройства | Driver + point mappings на **DEVICE** | [drivers](drivers.md) |
+| Уникальный оркестратор решения (один logic-хаб) | **SINGLETON** — предпочтительно `root.platform.singleton-blueprints.{project}` | [blueprints](blueprints.md), [agent-knowledge](agent-knowledge.md) |
+| Логика цифрового двойника (много однотипных) | **INSTANCE** → `instantiate_instance_type` (каждый twin несёт свою логику; не DEVICE) | [blueprints](blueprints.md) |
 | HMI-таблица | Виджет `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
 | Legacy mini-DSL на виджете | **Deprecated** → Platform rules | [platform-logic](platform-logic.md) § legacy |
+
+### Объекты логики vs DEVICE (обязательно)
+
+**Жёсткое правило:** объект с логикой приложения / оркестрации / twin **не** должен иметь `ObjectType.DEVICE`. DEVICE — только драйверы и телеметрия.
+
+| Нужно | Вид blueprint | Типичное размещение | Заметки |
+|-------|---------------|---------------------|---------|
+| Один оркестратор решения/кластера | **SINGLETON** | Предпочтительно `root.platform.singleton-blueprints.{name}` | Уникальный live-хаб; `ensure_singleton_instance` |
+| Много цифровых двойников с логикой на twin | **INSTANCE** | Часто под `root.platform.devices.{plant}.*` или `instances` | Создание через Instance Type; дети могут быть DEVICE |
+| Дерево кластера: hub + устройства под ним | Hub = SINGLETON или INSTANCE (**не** DEVICE); дети = DEVICE | напр. дети под `…devices.{cluster}/`, или hub-родитель с DEVICE-детьми | **Путь под `devices` — выбор реализации**; **тип** хаба не должен быть DEVICE |
+
+Не создавайте фейковый «hub DEVICE» и не вешайте на него KPI. CUSTOM/папка под `devices` — нормальный контейнер; логика — на SINGLETON (оркестратор) или INSTANCE (twin).
 
 ---
 
@@ -268,6 +282,7 @@ DONE    = validate → dry-run/preview → apply  (P10)
 | Blueprint / change set / UI / агент как ровни «способы собрать приложение» | Пять дверей без правил игры (P7) | Слои: AUTHOR → SHAPE → SHIP → PROMOTE |
 | Change set для greenfield bootstrap | Неверный слой; нет durable ship-артефакта | Bundle (SHIP) или tree-first AUTHOR |
 | Ручное дублирование структуры blueprint | Ломает SHAPE; drift между инстансами | Blueprint apply / `models[]` |
+| Объект логики с типом **DEVICE** (в т.ч. «hub» DEVICE) | Неверная роль: lifecycle драйвера, не оркестрация/twin | SINGLETON-оркестратор **или** INSTANCE-twin; DEVICE только для I/O-детей |
 
 ---
 
@@ -286,10 +301,11 @@ DONE    = validate → dry-run/preview → apply  (P10)
 ### «Создай мониторинг / SNMP / dashboard» (без app schema)
 
 1. P7: слой = **AUTHOR** tree-first (не bundle «ради bundle»); **SHAPE** через blueprints для типизированных devices.
-2. Tree-first playbook (SNMP / virtual cluster).
-3. Driver + dashboard template.
-4. Platform rules по необходимости (detail mode, видимость виджетов).
-5. `configure_operator_ui` для platform app.
+2. Сначала logic-хаб: **SINGLETON**-оркестратор (`ensure_singleton_instance`) или **INSTANCE**-twin — **никогда** тип DEVICE.
+3. Tree-first playbook (SNMP / virtual cluster): DEVICE-дети для I/O; bindings на non-DEVICE хабе.
+4. Driver + dashboard template.
+5. Platform rules по необходимости (detail mode, видимость виджетов).
+6. `configure_operator_ui` для platform app.
 
 ### «Не ломай платформу» (P2, P10)
 

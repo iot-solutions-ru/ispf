@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert } from "antd";
 import { fetchAutomationIndexStats } from "../../api/automationIndex";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
@@ -17,7 +18,7 @@ export default function AutomationIndexStatsCard() {
       <h3>{t("automationIndex.title")}</h3>
       {statsQuery.isLoading && <p className="hint">{t("automationIndex.loading")}</p>}
       {statsQuery.error && (
-        <div className="op-alert op-alert-error">{t("automationIndex.loadError")}</div>
+        <Alert type="error" message={t("automationIndex.loadError")} showIcon />
       )}
       {statsQuery.data && (
         <div className="automation-index-stats">

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Tabs } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -359,32 +360,27 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
         </div>
       </header>
 
-      {peersQuery.error && <div className="op-alert op-alert-error">{String(peersQuery.error)}</div>}
+      {peersQuery.error && <Alert type="error" showIcon message={String(peersQuery.error)} />}
 
       {tokenApiMissing && (
-        <div className="op-alert op-alert-error">
-          {t("panel.tokenApiMissing")}
-        </div>
+        <Alert type="error" showIcon message={t("panel.tokenApiMissing")} />
       )}
 
-      {syncFeedback && <div className="op-alert op-alert-success">{syncFeedback}</div>}
+      {syncFeedback && <Alert type="success" showIcon message={syncFeedback} />}
 
-      <nav className="tabs" aria-label={t("panel.tabsAria")}>
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={activeTab === tab ? "active" : ""}
-            onClick={() => {
-              setActiveTab(tab);
-              setFormError(null);
-              setTokenPanelError(null);
-            }}
-          >
-            {t(FEDERATION_TAB_KEYS[tab])}
-          </button>
-        ))}
-      </nav>
+      <Tabs
+        activeKey={activeTab}
+        onChange={(tab) => {
+          setActiveTab(tab as FederationTab);
+          setFormError(null);
+          setTokenPanelError(null);
+        }}
+        aria-label={t("panel.tabsAria")}
+        items={tabs.map((tab) => ({
+          key: tab,
+          label: t(FEDERATION_TAB_KEYS[tab]),
+        }))}
+      />
 
       <div className={`federation-tab-panel ${activeTab === "peers" ? "active" : ""}`}>
         <FederationPeersTab

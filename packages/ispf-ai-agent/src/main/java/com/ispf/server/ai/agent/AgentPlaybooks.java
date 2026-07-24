@@ -18,7 +18,8 @@ public final class AgentPlaybooks {
     public static final String SNMP_DRIVER_ID = "snmp";
 
     public static final String VIRT_CLUSTER_FOLDER = "root.platform.devices.virt-cluster";
-    public static final String VIRT_CLUSTER_HUB = VIRT_CLUSTER_FOLDER + ".hub";
+    /** Application logic hub — SINGLETON catalog, not under devices. */
+    public static final String VIRT_CLUSTER_HUB = "root.platform.singleton-blueprints.virt-cluster-hub";
     public static final String VIRT_CLUSTER_DEV_01 = VIRT_CLUSTER_FOLDER + ".dev-01";
     public static final String VIRT_CLUSTER_DEV_02 = VIRT_CLUSTER_FOLDER + ".dev-02";
     public static final String VIRT_CLUSTER_DEV_03 = VIRT_CLUSTER_FOLDER + ".dev-03";
@@ -225,8 +226,10 @@ public final class AgentPlaybooks {
                 
                 | ObjectType | Catalog / parent | Create autonomously when TZ needs it |
                 |------------|------------------|--------------------------------------|
-                | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_mixin_blueprint + configure_driver |
-                | CUSTOM | root.platform.devices.* or instances | create_object type=CUSTOM — hub, aggregation, read(...) bindings |
+                | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_mixin_blueprint + configure_driver — I/O only |
+                | SINGLETON hub | root.platform.singleton-blueprints (or under devices tree) | ensure_singleton_instance — unique orchestrator; type ≠ DEVICE |
+                | INSTANCE twin | instance-types → instantiate | instantiate_instance_type — per-twin logic; may parent DEVICE children |
+                | CUSTOM | root.platform.devices.* (folder) or queries | create_object type=CUSTOM — folder / object-query; not a substitute for typed logic hub |
                 | DASHBOARD | root.platform.dashboards | create_object + set_dashboard_layout template= |
                 | MIMIC | root.platform.mimics | create_object + save_mimic_diagram |
                 | ALERT | root.platform.alert-rules | configure_alert (or create_object ALERT) |
@@ -242,8 +245,8 @@ public final class AgentPlaybooks {
                 
                 Plan must include objectTypesCoverage[]: [{type, action, reason, modelName?}] for each type used or N/A with reason.
                 Execution: create missing types yourself via tools — never defer «создайте вручную в UI» if a tool exists.
-                If catalog has no fit: compose CUSTOM + create_variable + create_binding_rule, or stack Mixin Blueprints; \
-                only then ask user (with options) which catalog model is closest.
+                If catalog has no fit: ensure/create SINGLETON hub under singleton-blueprints + create_variable + create_binding_rule, \
+                or stack Mixin Blueprints; only then ask user (with options) which catalog model is closest.
                 
                 ## Questions — maximize dialogue (complex TZ only)
                 
@@ -359,10 +362,9 @@ public final class AgentPlaybooks {
                    Для каждого устройства и переменных sineWave, sawtoothWave, triangleWave:
                    configure_variable_history path=... name=<var> historyEnabled=true
                 
-                3. create_object parentPath="""
-                + VIRT_CLUSTER_FOLDER
-                + """
-                 name=hub type=CUSTOM displayName=Cluster hub
+                3. create_object parentPath=root.platform.singleton-blueprints name=virt-cluster-hub type=CUSTOM
+                   (non-DEVICE hub for cluster logic; DEVICE children under devices.virt-cluster)
+                   Prefer SINGLETON catalog; path under devices tree with DEVICE kids is also valid if hub type ≠ DEVICE
                 4. create_variable path="""
                 + VIRT_CLUSTER_HUB
                 + " name=member1Sine valueType=DOUBLE writable=false\n"
@@ -478,7 +480,9 @@ public final class AgentPlaybooks {
                 + "2. **Model strategy**: выбери INSTANCE vs MIXIN vs SINGLETON "
                 + "(см. get_automation_schema topic=instanceTypes).\n"
                 + "3. **Source layer**: устройства/драйверы/телеметрия (DEVICE, configure_driver, list_variables).\n"
-                + "4. **Aggregation layer**: CUSTOM hub + create_variable + create_binding_rule (read/CEL).\n"
+                + "4. **Aggregation layer**: non-DEVICE hub — SINGLETON orchestrator "
+                + "(prefer singleton-blueprints) **or** INSTANCE twin; create_variable + create_binding_rule. "
+                + "Never ObjectType.DEVICE for the hub.\n"
                 + "5. **Alert layer**: configure_alert на hub/device переменных.\n"
                 + "6. **Correlation layer**: configure_correlator для pattern/action цепочек.\n"
                 + "7. **Operator layer**: DASHBOARD + MIMIC + REPORT + configure_operator_ui.\n"
@@ -494,17 +498,21 @@ public final class AgentPlaybooks {
         return """
                 ## INSTANCE vs MIXIN vs SINGLETON (decision tree)
 
-                1) Нужен готовый шаблон "создать экземпляр из каталога"?
+                1) Нужен готовый шаблон "создать экземпляр из каталога" (в т.ч. digital twin с логикой на каждом инстансе)?
                    -> **INSTANCE**
                    tools: list_instance_types -> instantiate_instance_type
+                   (twin may parent DEVICE children; hub/twin itself is NOT ObjectType.DEVICE)
 
                 2) Нужно обогатить уже существующий objectPath (добавить variables/events/functions)?
                    -> **MIXIN**
                    tools: list_mixin_blueprints -> apply_mixin_blueprint
 
-                3) Нужна строгая каноническая структура по абсолютной модели (без mixin-слоёв)?
+                3) Нужен уникальный оркестратор (один live-хаб на решение/кластер)?
                    -> **SINGLETON**
+                   path: prefer root.platform.singleton-blueprints.{name}
                    tools: list_singleton_blueprints -> ensure_singleton_instance
+                   Cluster may also place non-DEVICE hub under devices tree with DEVICE kids (path = implementation choice).
+                   NEVER type the logic/hub object as DEVICE.
 
                 Quick flow:
                 - Сначала покажи каталоги: list_instance_types, list_mixin_blueprints, list_singleton_blueprints.
@@ -517,10 +525,12 @@ public final class AgentPlaybooks {
         return "## ObjectType creation matrix\n\n"
                 + "| ObjectType | Parent path | Typical template/model | Primary tools |\n"
                 + "|------------|-------------|------------------------|---------------|\n"
-                + "| DEVICE | root.platform.devices | snmp-agent-v1 / virtual-lab-v1 / singleton blueprint | "
+                + "| DEVICE | root.platform.devices | snmp-agent-v1 / virtual-lab-v1 | "
                 + "create_object, create_virtual_device, configure_driver |\n"
-                + "| CUSTOM | root.platform.devices.* or root.platform.singleton-blueprints.* | (hub / app logic) | "
-                + "create_object, create_variable, create_binding_rule |\n"
+                + "| SINGLETON hub | root.platform.singleton-blueprints | SINGLETON blueprint | "
+                + "ensure_singleton_instance, create_variable, create_binding_rule |\n"
+                + "| CUSTOM | root.platform.devices.* (folder) / queries | — | "
+                + "create_object (folder or object-query only; not app hub) |\n"
                 + "| DASHBOARD | root.platform.dashboards | dashboard-v1 | "
                 + "create_object, set_dashboard_layout, add_dashboard_widget |\n"
                 + "| MIMIC | root.platform.mimics | mimic-v1 | "
@@ -535,7 +545,6 @@ public final class AgentPlaybooks {
                 + "| SCHEDULE | root.platform.schedules or app tree | schedule-v1 | create_object, configure_schedule |\n"
                 + "| DATA_SOURCE | root.platform.data-sources | data-source-v1 | create_object, test connection |\n"
                 + "| APPLICATION | root.platform.applications | bundle manifest | register_application, import_package |\n"
-                + "| CUSTOM | root.platform.devices.* / instances | — | create_object, create_variable, create_binding_rule |\n"
                 + "| FUNCTION | on parent object | script/java | create_function, deploy_app_function |\n";
     }
 
@@ -786,7 +795,7 @@ public final class AgentPlaybooks {
                 - expression: CEL string result; condition uses context.selection.* and read(path/var)
                 - onContextChange=true (default)
                 
-                ### Variable binding (devices, CUSTOM hubs)
+                ### Variable binding (devices, SINGLETON hubs)
                 - create_binding_rule path=... targetKind=variable targetVariable=... expression=...
                 - Cross-device: activator `{ "ref": "remotePath/variableName" }` or remoteObjectPath + remoteVariableName
                 - read(otherPath/varName) in expression for computed values

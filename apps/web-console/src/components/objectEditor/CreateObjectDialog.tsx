@@ -1,6 +1,7 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Switch, Typography } from "antd";
 import { createObject, createEventFilter, upsertFunction } from "../../api";
 import { buildObjectQueryRunFunction } from "../../utils/object/objectQueryDefaults";
 import { fetchInstanceTypes, instantiateBlueprint } from "../../api/blueprints";
@@ -72,7 +73,6 @@ export default function CreateObjectDialog({
   onCreated,
 }: CreateObjectDialogProps) {
   const { t } = useTranslation(["explorer", "common", "platform"]);
-  const titleId = useId();
   const mode = resolveCreateDialogMode(parentPath);
   const isMimicCatalog = parentPath.endsWith(".mimics");
   const [name, setName] = useState("");
@@ -402,126 +402,121 @@ export default function CreateObjectDialog({
   const showVirtClusterPreset = mode === "object" && parentPath === "root.platform.devices";
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
-      <div
-        className="modal modal-create-object"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header>
-          <h3 id={titleId}>{dialogTitle}</h3>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label={t("common:action.close")}>
-            ✕
-          </button>
-        </header>
-        <div className="modal-body">
-          <p className="hint">
-            {t("dialog.parent")} <code>{parentPath}</code>
-          </p>
+    <Modal
+      title={dialogTitle}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={820}
+      className="modal-create-object"
+      footer={null}
+    >
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t("dialog.parent")} <Typography.Text code>{parentPath}</Typography.Text>
+          </Typography.Paragraph>
           {showVirtClusterPreset && (
-            <div className="full" style={{ marginBottom: "0.75rem" }}>
-              <p className="hint">{t("dialog.virtClusterHint")}</p>
-              <button
-                type="button"
-                className="btn"
+            <Space orientation="vertical" size="small" style={{ width: "100%" }}>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                {t("dialog.virtClusterHint")}
+              </Typography.Paragraph>
+              <Button
                 disabled={virtClusterMutation.isPending || mutation.isPending}
+                loading={virtClusterMutation.isPending}
                 onClick={() => virtClusterMutation.mutate()}
               >
                 {virtClusterMutation.isPending
                   ? t("dialog.virtClusterInstalling")
                   : t("dialog.virtClusterInstall")}
-              </button>
+              </Button>
               {virtClusterMutation.error && (
-                <p className="hint error">
-                  {(virtClusterMutation.error as Error).message}
-                </p>
+                <Alert type="error" showIcon message={(virtClusterMutation.error as Error).message} />
               )}
-            </div>
+            </Space>
           )}
           {mode === "application" && (
             <>
-              <p className="hint">{t("dialog.deployAppHint")}</p>
-              <label className="full">
-                PostgreSQL schema
-                <input
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.deployAppHint")}</Typography.Paragraph>
+              <Form layout="vertical">
+                <Form.Item label="PostgreSQL schema" style={{ marginBottom: 0 }}>
+                <Input
                   value={schemaName}
                   onChange={(e) => setSchemaName(e.target.value)}
                   placeholder={`app_${name || "myapp"}`}
                 />
-              </label>
+                </Form.Item>
+              </Form>
             </>
           )}
           {mode === "operator-app" && (
-            <p className="hint">{t("dialog.operatorAppHint")}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.operatorAppHint")}</Typography.Paragraph>
           )}
           {(mode === "alert-rule" || mode === "correlator") && (
-            <p className="hint">{t("dialog.alertCorrelatorHint")}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.alertCorrelatorHint")}</Typography.Paragraph>
           )}
           {mode === "report" && (
             <>
-              <p className="hint">{t("dialog.reportHint", { path: parentPath })}</p>
-              <label>
-                Data source *
-                <select
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.reportHint", { path: parentPath })}</Typography.Paragraph>
+              <Form layout="vertical">
+                <Form.Item label="Data source *" required style={{ marginBottom: 0 }}>
+                <Select
                   value={reportDataSourcePath}
-                  onChange={(e) => setReportDataSourcePath(e.target.value)}
-                  required
-                >
-                  <option value="">{t("platform:sqlBinding.selectPlaceholder")}</option>
-                  {(dataSourcesQuery.data ?? []).map((source) => (
-                    <option key={source.path} value={source.path}>
-                      {source.displayName} ({source.path})
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  onChange={setReportDataSourcePath}
+                  options={[
+                    { value: "", label: t("platform:sqlBinding.selectPlaceholder") },
+                    ...(dataSourcesQuery.data ?? []).map((source) => ({
+                      value: source.path,
+                      label: `${source.displayName} (${source.path})`,
+                    })),
+                  ]}
+                />
+                </Form.Item>
+              </Form>
             </>
           )}
           {mode === "object" && isMimicCatalog && (
-            <p className="hint">{t("dialog.mimicHint", { path: parentPath })}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.mimicHint", { path: parentPath })}</Typography.Paragraph>
           )}
           {mode === "data-source" && (
-            <p className="hint">{t("dialog.dataSourceHint", { path: parentPath })}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.dataSourceHint", { path: parentPath })}</Typography.Paragraph>
           )}
           {mode === "migration" && (
-            <p className="hint">{t("dialog.migrationHint", { path: parentPath })}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.migrationHint", { path: parentPath })}</Typography.Paragraph>
           )}
           {mode === "sql-binding" && (
-            <p className="hint">{t("dialog.sqlBindingHint")}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.sqlBindingHint")}</Typography.Paragraph>
           )}
           {mode === "schedule" && (
-            <p className="hint">{t("dialog.scheduleHint")}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t("dialog.scheduleHint")}</Typography.Paragraph>
           )}
           {(mode === "query" || mode === "event-filter" || mode === "process-program") && (
-            <p className="hint">{t(`dialog.${mode}Hint`, { path: parentPath })}</p>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t(`dialog.${mode}Hint`, { path: parentPath })}</Typography.Paragraph>
           )}
-          <form
-            className="form-grid"
-            onSubmit={(e) => {
-              e.preventDefault();
+          <Form
+            layout="vertical"
+            className="antd-control-grid"
+            onFinish={() => {
               if (!nameValid) return;
               mutation.mutate();
             }}
           >
-            <label>
-              {mode === "object" ? t("dialog.namePathSegment") : t("dialog.nameOrId")}
-              <input
+            <Form.Item
+              label={mode === "object" ? t("dialog.namePathSegment") : t("dialog.nameOrId")}
+              validateStatus={name && !nameValid ? "error" : undefined}
+              help={name && !nameValid ? t("common:error.invalidPathSegment") : undefined}
+              required
+            >
+              <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 pattern="[a-zA-Z0-9_-]+"
                 aria-invalid={Boolean(name) && !nameValid}
               />
-              {name && !nameValid && (
-                <span className="hint error">{t("common:error.invalidPathSegment")}</span>
-              )}
-            </label>
-            <label>
-              {t("common:field.displayName")}
-              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-            </label>
+            </Form.Item>
+            <Form.Item label={t("common:field.displayName")}>
+              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+            </Form.Item>
 
             {mode === "data-source" && (
               <DataSourceConnectionFields
@@ -544,36 +539,32 @@ export default function CreateObjectDialog({
 
             {mode === "migration" && (
               <>
-                <label>
-                  Script ID
-                  <input
+                <Form.Item label="Script ID">
+                  <Input
                     value={scriptId}
                     onChange={(e) => setScriptId(e.target.value)}
                     placeholder={t("dialog.scriptIdPlaceholder")}
                   />
-                </label>
-                <label>
-                  Version
-                  <input value={migrationVersion} onChange={(e) => setMigrationVersion(e.target.value)} />
-                </label>
-                <label className="full">
-                  Data source path
-                  <input
+                </Form.Item>
+                <Form.Item label="Version">
+                  <Input value={migrationVersion} onChange={(e) => setMigrationVersion(e.target.value)} />
+                </Form.Item>
+                <Form.Item label="Data source path" className="full">
+                  <Input
                     value={migrationDataSourcePath}
                     onChange={(e) => setMigrationDataSourcePath(e.target.value)}
                     placeholder="root.platform.data-sources.myapp"
                   />
-                </label>
-                <label className="full">
-                  {t("dialog.sqlOptional")}
-                  <textarea
+                </Form.Item>
+                <Form.Item label={t("dialog.sqlOptional")} className="full">
+                  <Input.TextArea
                     className="mono"
                     rows={4}
                     value={migrationSql}
                     onChange={(e) => setMigrationSql(e.target.value)}
                     spellCheck={false}
                   />
-                </label>
+                </Form.Item>
               </>
             )}
 
@@ -587,10 +578,9 @@ export default function CreateObjectDialog({
                   onChange={setBindingTargetPath}
                   placeholder="root.platform.devices.demo-sensor-01"
                 />
-                <label>
-                  {t("dialog.sqlBindingVariable")}
-                  <input value={bindingVariable} onChange={(e) => setBindingVariable(e.target.value)} />
-                </label>
+                <Form.Item label={t("dialog.sqlBindingVariable")}>
+                  <Input value={bindingVariable} onChange={(e) => setBindingVariable(e.target.value)} />
+                </Form.Item>
                 <ObjectPathField
                   className="full"
                   label={t("dialog.sqlBindingDataSourcePath")}
@@ -601,59 +591,53 @@ export default function CreateObjectDialog({
                   rootPath={DATA_SOURCES_ROOT}
                   placeholder="root.platform.data-sources.myapp"
                 />
-                <label className="full">
-                  {t("dialog.sqlBindingQuery")}
-                  <textarea
+                <Form.Item label={t("dialog.sqlBindingQuery")} className="full">
+                  <Input.TextArea
                     className="mono"
                     rows={3}
                     value={bindingQuery}
                     onChange={(e) => setBindingQuery(e.target.value)}
                     spellCheck={false}
                   />
-                </label>
+                </Form.Item>
               </>
             )}
 
             {mode === "schedule" && (
               <>
-                <label>
-                  {t("platform:schedule.intervalMs")}
-                  <input
-                    type="number"
+                <Form.Item label={t("platform:schedule.intervalMs")}>
+                  <InputNumber
                     min={1000}
                     step={1000}
                     value={scheduleIntervalMs}
-                    onChange={(e) => setScheduleIntervalMs(Number(e.target.value) || 60_000)}
+                    onChange={(value) => setScheduleIntervalMs(Number(value) || 60_000)}
                     required
+                    style={{ width: "100%" }}
                   />
-                </label>
-                <label className="full">
-                  {t("platform:schedule.objectPath")}
-                  <input
+                </Form.Item>
+                <Form.Item label={t("platform:schedule.objectPath")} className="full">
+                  <Input
                     value={scheduleObjectPath}
                     onChange={(e) => setScheduleObjectPath(e.target.value)}
                     placeholder="root.platform.devices.demo-sensor-01"
                     required
                   />
-                </label>
-                <label className="full">
-                  {t("platform:schedule.functionName")}
-                  <input
+                </Form.Item>
+                <Form.Item label={t("platform:schedule.functionName")} className="full">
+                  <Input
                     value={scheduleFunctionName}
                     onChange={(e) => setScheduleFunctionName(e.target.value)}
                     required
                   />
-                </label>
+                </Form.Item>
               </>
             )}
 
             {mode === "object" && !isMimicCatalog && (
-              <label>
-                {t("dialog.type")}
-                <select
+              <Form.Item label={t("dialog.type")}>
+                <Select
                   value={typeSelection}
-                  onChange={(e) => {
-                    const next = e.target.value;
+                  onChange={(next) => {
                     setTypeSelection(next);
                     if (!next.startsWith(INSTANCE_TYPE_PREFIX)) {
                       setType(next as ObjectType);
@@ -666,132 +650,125 @@ export default function CreateObjectDialog({
                       }
                     }
                   }}
-                >
-                  <optgroup label="Platform types">
-                    {OBJECT_TYPES.map((objectType) => (
-                      <option key={objectType} value={objectType}>
-                        {objectType === "VISUAL_GROUP"
-                          ? t("dialog.typeVisualGroup")
-                          : objectType}
-                      </option>
-                    ))}
-                  </optgroup>
-                  {(instanceTypesQuery.data?.length ?? 0) > 0 && (
-                    <optgroup label={t("dialog.instanceTypes")}>
-                      {(instanceTypesQuery.data ?? []).map((model: BlueprintDto) => (
-                        <option key={model.id} value={`${INSTANCE_TYPE_PREFIX}${model.id}`}>
-                          {model.name}
-                          {model.targetObjectType ? ` (${model.targetObjectType})` : ""}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-              </label>
+                  options={[
+                    {
+                      label: "Platform types",
+                      options: OBJECT_TYPES.map((objectType) => ({
+                        value: objectType,
+                        label: objectType === "VISUAL_GROUP" ? t("dialog.typeVisualGroup") : objectType,
+                      })),
+                    },
+                    ...(instanceTypesQuery.data?.length
+                      ? [{
+                          label: t("dialog.instanceTypes"),
+                          options: (instanceTypesQuery.data ?? []).map((model: BlueprintDto) => ({
+                            value: `${INSTANCE_TYPE_PREFIX}${model.id}`,
+                            label: `${model.name}${model.targetObjectType ? ` (${model.targetObjectType})` : ""}`,
+                          })),
+                        }]
+                      : []),
+                  ]}
+                />
+              </Form.Item>
             )}
 
             {mode === "object" && type === "DASHBOARD" && (
-              <label className="full">
-                {t("dialog.dashboardLayoutTemplate")}
-                <select
+              <Form.Item
+                label={t("dialog.dashboardLayoutTemplate")}
+                className="full"
+                extra={t("dialog.dashboardLayoutTemplateHint")}
+              >
+                <Select
                   value={dashboardLayoutTemplate}
-                  onChange={(e) => setDashboardLayoutTemplate(e.target.value)}
+                  onChange={setDashboardLayoutTemplate}
                   disabled={dashboardTemplatesQuery.isLoading}
-                >
-                  <option value="">{t("dialog.dashboardLayoutTemplateNone")}</option>
-                  {(dashboardTemplatesQuery.data ?? []).map((template) => (
-                    <option key={template} value={template}>
-                      {template}
-                    </option>
-                  ))}
-                </select>
-                <span className="hint">{t("dialog.dashboardLayoutTemplateHint")}</span>
-              </label>
+                  options={[
+                    { value: "", label: t("dialog.dashboardLayoutTemplateNone") },
+                    ...(dashboardTemplatesQuery.data ?? []).map((template) => ({
+                      value: template,
+                      label: template,
+                    })),
+                  ]}
+                />
+              </Form.Item>
             )}
 
             {mode === "object" && type === "DEVICE" && !selectedInstanceModel && (
               <>
-                <label>
-                  {t("dialog.driver")}
-                  <span className="inline-badge-wrap">
-                    <select
+                <Form.Item label={t("dialog.driver")}>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Select
                       value={driverId}
-                      onChange={(e) => handleDriverChange(e.target.value)}
+                      onChange={handleDriverChange}
                       disabled={driversQuery.isLoading}
-                    >
-                      {(driversQuery.data ?? []).map((driver) => (
-                        <option key={driver.id} value={driver.id}>
-                          {formatDriverOptionLabel(driver.id, driver.name, driver.maturity)}
-                        </option>
-                      ))}
-                    </select>
+                      options={(driversQuery.data ?? []).map((driver) => ({
+                        value: driver.id,
+                        label: formatDriverOptionLabel(driver.id, driver.name, driver.maturity),
+                      }))}
+                    />
                     {selectedDriver && <DriverMaturityBadge maturity={selectedDriver.maturity} />}
-                  </span>
-                </label>
-                <label>
-                  {t("dialog.pollIntervalMs")}
-                  <input
-                    type="number"
+                  </Space.Compact>
+                </Form.Item>
+                <Form.Item label={t("dialog.pollIntervalMs")}>
+                  <InputNumber
                     min={500}
                     step={500}
                     value={pollIntervalMs}
-                    onChange={(e) =>
-                      setPollIntervalMs(Number(e.target.value) || DEFAULT_POLL_INTERVAL_MS)
+                    onChange={(value) =>
+                      setPollIntervalMs(Number(value) || DEFAULT_POLL_INTERVAL_MS)
                     }
+                    style={{ width: "100%" }}
                   />
-                </label>
+                </Form.Item>
                 {driverId === "virtual" && (
-                  <label className="full" style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <input
-                      type="checkbox"
+                  <Space className="full">
+                    <Switch
                       checked={applyVirtualLab}
-                      onChange={(e) => setApplyVirtualLab(e.target.checked)}
+                      onChange={setApplyVirtualLab}
                     />
-                    <span>{t("dialog.applyVirtualLab")}</span>
-                  </label>
+                    <Typography.Text>{t("dialog.applyVirtualLab")}</Typography.Text>
+                  </Space>
                 )}
                 {selectedDriver?.description && (
-                  <p className="hint full">{selectedDriver.description}</p>
+                  <Typography.Paragraph type="secondary" className="full">{selectedDriver.description}</Typography.Paragraph>
                 )}
-                <label className="full">
-                  {t("dialog.defaultDriverConfig")}
-                  <textarea
+                <Form.Item label={t("dialog.defaultDriverConfig")} className="full">
+                  <Input.TextArea
                     className="mono readonly"
                     rows={4}
                     value={configPreview}
                     readOnly
                     spellCheck={false}
                   />
-                </label>
-                <p className="hint full">
+                </Form.Item>
+                <Typography.Paragraph type="secondary" className="full">
                   {driverId === "virtual" && applyVirtualLab
                     ? t("dialog.virtualLabHint")
                     : t("dialog.deviceDriverHint")}
-                </p>
+                </Typography.Paragraph>
               </>
             )}
 
             {(mode === "object" || mode === "data-source" || mode === "migration" || mode === "sql-binding"
               || mode === "query" || mode === "event-filter" || mode === "process-program") && (
-              <label className="full">
-                {t("common:field.description")}
-                <textarea
+              <Form.Item label={t("common:field.description")} className="full">
+                <Input.TextArea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-              </label>
+              </Form.Item>
             )}
             {mutation.error && (
-              <p className="hint error full">{(mutation.error as Error).message}</p>
+              <Alert className="full" type="error" showIcon message={(mutation.error as Error).message} />
             )}
-            <footer className="full form-actions">
-              <button type="button" className="btn" onClick={onClose}>
+            <Space className="full">
+              <Button onClick={onClose}>
                 {t("common:action.cancel")}
-              </button>
-              <button
-                type="submit"
-                className="btn primary"
+              </Button>
+              <Button
+                htmlType="submit"
+                type="primary"
                 disabled={
                   mutation.isPending
                   || !nameValid
@@ -804,13 +781,13 @@ export default function CreateObjectDialog({
                   || (mode === "sql-binding"
                     && (!bindingTargetPath.trim() || !bindingDataSourcePath.trim()))
                 }
+                loading={mutation.isPending}
               >
                 {t("common:action.create")}
-              </button>
-            </footer>
-          </form>
-        </div>
-      </div>
-    </div>
+              </Button>
+            </Space>
+          </Form>
+      </Space>
+    </Modal>
   );
 }

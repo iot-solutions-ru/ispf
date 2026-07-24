@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ModalPortal from "../../ui/ModalPortal";
+import { Alert, Button, Modal, Segmented, Select, Tag, Typography } from "antd";
 import {
   Brush,
   CartesianGrid,
@@ -123,107 +123,103 @@ export default function MultiPenTrendModal({
   }, [merged, pens, t]);
 
   return (
-    <ModalPortal>
-      <div className="modal-backdrop" role="presentation">
-      <div
-        className="modal modal-wide modal-variable-history modal-multi-pen-trend"
-        data-testid="multi-pen-trend-modal"
-        onClick={(event) => event.stopPropagation()}
-        onDoubleClick={resetZoom}
-      >
-        <header>
-          <h3>{t("view.multiPenTrend.title")}</h3>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label={t("common:action.close")}>
-            ✕
-          </button>
-        </header>
-
+    <Modal
+      open
+      title={t("view.multiPenTrend.title")}
+      onCancel={onClose}
+      footer={null}
+      width={960}
+      destroyOnHidden
+      className="modal-multi-pen-trend"
+      data-testid="multi-pen-trend-modal"
+      modalRender={(node) => (
+        <div onDoubleClick={resetZoom}>{node}</div>
+      )}
+    >
         <div className="multi-pen-trend-pens">
           {pens.map((pen) => (
-            <span key={pen.id} className="multi-pen-trend-pen-chip" style={{ borderColor: pen.color }}>
+            <Tag key={pen.id} className="multi-pen-trend-pen-chip" style={{ borderColor: pen.color }}>
               <span className="multi-pen-trend-pen-swatch" style={{ background: pen.color }} />
               <span className="multi-pen-trend-pen-label">{pen.label}</span>
               {pens.length > 1 && (
-                <button
-                  type="button"
+                <Button
+                  type="text"
+                  size="small"
                   className="multi-pen-trend-pen-remove"
                   aria-label={t("view.multiPenTrend.removePen")}
                   onClick={() => removePen(pen.id)}
                 >
                   ×
-                </button>
+                </Button>
               )}
-            </span>
+            </Tag>
           ))}
           {addablePens.length > 0 && pens.length < MAX_TREND_PENS && (
             <div className="multi-pen-trend-add">
               <label>
                 <span className="sr-only">{t("view.multiPenTrend.addPen")}</span>
-                <select
-                  defaultValue=""
-                  onChange={(event) => {
-                    const next = addablePens.find((pen) => pen.id === event.target.value);
+                <Select
+                  value=""
+                  onChange={(value) => {
+                    const next = addablePens.find((pen) => pen.id === value);
                     if (next) {
                       addPen(createTrendPen(next.objectPath, next.variableName, next.label, next.valueField));
-                      event.target.value = "";
                     }
                   }}
-                >
-                  <option value="">{t("view.multiPenTrend.addPen")}</option>
-                  {addablePens.map((pen) => (
-                    <option key={pen.id} value={pen.id}>
-                      {pen.label}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: "", label: t("view.multiPenTrend.addPen") },
+                    ...addablePens.map((pen) => ({ value: pen.id, label: pen.label })),
+                  ]}
+                />
               </label>
             </div>
           )}
           {pens.length >= MAX_TREND_PENS && (
-            <span className="hint multi-pen-trend-max">{t("view.multiPenTrend.maxPens", { count: MAX_TREND_PENS })}</span>
+            <Typography.Text type="secondary" className="multi-pen-trend-max">
+              {t("view.multiPenTrend.maxPens", { count: MAX_TREND_PENS })}
+            </Typography.Text>
           )}
         </div>
 
         <div className="variable-history-toolbar">
           <div className="variable-history-stats">
-            <span className="hint">
+            <Typography.Text type="secondary">
               {t("view.multiPenTrend.pointHint", { count: merged.length, limit: pointLimit })}
-            </span>
+            </Typography.Text>
           </div>
           <div className="variable-history-controls">
-            <div className="variable-history-ranges">
-              {rangeOptions.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={`btn tiny ${range === option.id ? "primary" : ""}`}
-                  onClick={() => {
-                    setRange(option.id);
-                    setBrushRange({});
-                  }}
-                >
-                  {t(`inspector:${option.labelKey}`)}
-                </button>
-              ))}
-            </div>
+            <Segmented
+              size="small"
+              value={range}
+              onChange={(value) => {
+                setRange(value as HistoryRange);
+                setBrushRange({});
+              }}
+              options={rangeOptions.map((option) => ({
+                value: option.id,
+                label: t(`inspector:${option.labelKey}`),
+              }))}
+            />
             <div className="variable-history-export">
-              <button type="button" className="btn tiny" onClick={exportCsv}>
+              <Button size="small" onClick={exportCsv}>
                 CSV
-              </button>
+              </Button>
             </div>
           </div>
         </div>
 
-        <p className="hint multi-pen-trend-zoom-hint">{t("view.multiPenTrend.zoomHint")}</p>
-        {exportError && <p className="hint error">{exportError}</p>}
+        <Typography.Paragraph type="secondary" className="multi-pen-trend-zoom-hint">
+          {t("view.multiPenTrend.zoomHint")}
+        </Typography.Paragraph>
+        {exportError && <Alert type="error" message={exportError} showIcon />}
 
         <div className="variable-history-chart multi-pen-trend-chart">
           {isLoading && merged.length === 0 ? (
-            <p className="hint">{t("inspector:variables.historyPanel.loading")}</p>
+            <Typography.Text type="secondary">{t("inspector:variables.historyPanel.loading")}</Typography.Text>
           ) : isError ? (
-            <p className="hint error">{(error as Error).message}</p>
+            <Alert type="error" showIcon message={(error as Error).message} />
           ) : visibleData.length < 2 ? (
-            <p className="hint">{t("inspector:variables.historyPanel.notEnoughPoints")}</p>
+            <Typography.Text type="secondary">{t("inspector:variables.historyPanel.notEnoughPoints")}</Typography.Text>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={visibleData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -267,8 +263,6 @@ export default function MultiPenTrendModal({
             </ResponsiveContainer>
           )}
         </div>
-      </div>
-      </div>
-    </ModalPortal>
+    </Modal>
   );
 }

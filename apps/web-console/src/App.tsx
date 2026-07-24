@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef, useCallback, lazy, Suspense } fro
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import { fetchPlatformInfo, reorderObjectChildren } from "./api";
 import { fetchOperatorApps } from "./api/operatorApps";
 import { logout } from "./auth/login";
@@ -61,6 +62,7 @@ import AdminCopilotFab from "./components/agent/AdminCopilotFab";
 import AdminWorkspaceFocusSync from "./components/agent/AdminWorkspaceFocusSync";
 import CommandPalette from "./components/ui/CommandPalette";
 import { useAgentRunStatus } from "./utils/agent/agentRunStatus";
+import AntdThemeProvider from "./antd/AntdThemeProvider";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
 import {
@@ -126,7 +128,9 @@ export default function App() {
   const theme = useThemeController();
   return (
     <ThemeProvider value={theme}>
-      <AppShell />
+      <AntdThemeProvider>
+        <AppShell />
+      </AntdThemeProvider>
     </ThemeProvider>
   );
 }
@@ -694,18 +698,16 @@ function AppShell() {
           </div>
         </div>
         <div className="topbar-actions">
-          <button
-            type="button"
-            className="btn"
+          <Button
             title={t("shell:commandPalette.openShortcut")}
             onClick={() => setCommandPaletteOpen(true)}
           >
             {t("shell:commandPalette.open")}
-          </button>
+          </Button>
           <ShellPreferences />
-          <button type="button" className="btn" onClick={() => void handleLogout()}>
+          <Button onClick={() => void handleLogout()}>
             {t("common:action.logout")}
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -774,9 +776,9 @@ function AppShell() {
               <div className="sidebar-head-title">
                 <h3>{t("shell:admin.treeTitle")}</h3>
                 {canConfigure && (
-                  <button
-                    type="button"
-                    className="btn small primary"
+                  <Button
+                    size="small"
+                    type="primary"
                     aria-label={t("shell:admin.createChild")}
                     title={t("shell:admin.createChild")}
                     onClick={() => {
@@ -786,7 +788,7 @@ function AppShell() {
                     }}
                   >
                     + {t("common:action.create")}
-                  </button>
+                  </Button>
                 )}
               </div>
               <input

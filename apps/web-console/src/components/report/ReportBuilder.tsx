@@ -1,3 +1,4 @@
+import { Button, Space } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOptionalUserTimeZone } from "../../context/UserTimeZoneContext";
@@ -96,13 +97,12 @@ function ColumnsEditor({
     <div className="report-builder-columns full">
       <div className="report-builder-columns-head">
         <span>{t("columns.title")}</span>
-        <button
-          type="button"
-          className="btn small"
+        <Button
+          size="small"
           onClick={() => onChange([...columns, { field: "", label: "" }])}
         >
           {t("columns.add")}
-        </button>
+        </Button>
       </div>
       {columns.length === 0 && <p className="hint">{t("columns.empty")}</p>}
       <table className="report-builder-columns-table">
@@ -140,13 +140,13 @@ function ColumnsEditor({
                 />
               </td>
               <td>
-                <button
-                  type="button"
-                  className="btn small danger"
+                <Button
+                  size="small"
+                  danger
                   onClick={() => onChange(columns.filter((_, i) => i !== index))}
                 >
                   ×
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
@@ -168,13 +168,9 @@ function ParametersEditor({
     <div className="report-builder-parameters">
       <div className="report-builder-columns-head">
         <span>{t("parameters.title")}</span>
-        <button
-          type="button"
-          className="btn small"
-          onClick={() => onChange([...parameters, ""])}
-        >
+        <Button size="small" onClick={() => onChange([...parameters, ""])}>
           {t("parameters.add")}
-        </button>
+        </Button>
       </div>
       {parameters.length === 0 && <p className="hint">{t("parameters.empty")}</p>}
       <ul className="report-builder-param-list">
@@ -190,13 +186,13 @@ function ParametersEditor({
               }}
               placeholder="status"
             />
-            <button
-              type="button"
-              className="btn small danger"
+            <Button
+              size="small"
+              danger
               onClick={() => onChange(parameters.filter((_, i) => i !== index))}
             >
               ×
-            </button>
+            </Button>
           </li>
         ))}
       </ul>
@@ -442,36 +438,34 @@ export default function ReportBuilder({
   }, [runQuery.data?.columns]);
 
   const toolbar = (
-    <>
+    <Space wrap>
       {!operatorMode && (
-        <button
-          type="button"
-          className={`btn ${mode === "edit" ? "primary" : ""}`}
+        <Button
+          type={mode === "edit" ? "primary" : "default"}
           onClick={() => {
             setMode(mode === "edit" ? "view" : "edit");
             setPreviewRequested(false);
           }}
         >
           {mode === "edit" ? t("report:mode.view") : t("report:mode.edit")}
-        </button>
+        </Button>
       )}
-      <button
-        type="button"
-        className="btn"
+      <Button
         onClick={() => {
           setPreviewRequested(true);
           void runQuery.refetch();
         }}
-        disabled={!canRun || runQuery.isFetching}
+        disabled={!canRun}
+        loading={runQuery.isFetching}
       >
         {runQuery.isFetching ? t("report:running") : t("report:run")}
-      </button>
+      </Button>
       <ReportExportControls
         disabled={!canRun}
         busy={exportBusy}
         onExport={handleExport}
       />
-    </>
+    </Space>
   );
 
   return (
@@ -499,21 +493,19 @@ export default function ReportBuilder({
       )}
 
       <div className="report-tabs">
-        <button
-          type="button"
-          className={`btn ${activeTab === "data" ? "primary" : ""}`}
+        <Button
+          type={activeTab === "data" ? "primary" : "default"}
           onClick={() => setActiveTab("data")}
         >
           {t("report:tab.data")}
-        </button>
+        </Button>
         {!operatorMode && (
-          <button
-            type="button"
-            className={`btn ${activeTab === "template" ? "primary" : ""}`}
+          <Button
+            type={activeTab === "template" ? "primary" : "default"}
             onClick={() => setActiveTab("template")}
           >
             {t("report:tab.template")}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -565,24 +557,20 @@ export default function ReportBuilder({
           </label>
           <div className="form-actions">
             {hasTemplate && (
-              <>
-                <button
-                  type="button"
-                  className="btn"
+              <Space wrap>
+                <Button
                   disabled={templateBusy}
                   onClick={() => void downloadReportTemplate(path)}
                 >
                   {t("report:template.download")}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
+                </Button>
+                <Button
                   disabled={templateBusy}
                   onClick={() => void handleTemplateDelete()}
                 >
                   {t("report:template.delete")}
-                </button>
-              </>
+                </Button>
+              </Space>
             )}
           </div>
           {templateError && <div className="banner error">{templateError}</div>}
@@ -759,50 +747,47 @@ export default function ReportBuilder({
           </label>
 
           <div className="form-actions full">
-            {mode === "edit" && (
-              <button
-                type="button"
-                className="btn"
-                disabled={!canRun}
-                onClick={() => setPreviewRequested(true)}
+            <Space wrap>
+              {mode === "edit" && (
+                <Button
+                  disabled={!canRun}
+                  onClick={() => setPreviewRequested(true)}
+                >
+                  {t("report:preview.saved")}
+                </Button>
+              )}
+              <Button
+                type="primary"
+                loading={saveMutation.isPending}
+                onClick={() => saveMutation.mutate()}
               >
-                {t("report:preview.saved")}
-              </button>
-            )}
-            <button
-              type="button"
-              className="btn primary"
-              disabled={saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-            >
-              {t("common:action.save")}
-            </button>
-            {isDirty && (
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setSqlDraft(null);
-                  setTreeDraft(null);
-                  setPreviewRequested(false);
-                  if (reportQuery.data) {
-                    setColumns((reportQuery.data.columns ?? []).map(normalizeColumn));
-                    setParameters(reportQuery.data.parameters ?? []);
-                    setDefaultParamValues(
-                      defaultParameterValues(
-                        reportQuery.data.parameters ?? [],
-                        reportQuery.data.defaultParameters
-                      )
-                    );
-                    setEditKind(
-                      isTreeVariablesReport(reportQuery.data.reportType) ? "tree-variables" : "sql"
-                    );
-                  }
-                }}
-              >
-                {t("common:action.cancel")}
-              </button>
-            )}
+                {t("common:action.save")}
+              </Button>
+              {isDirty && (
+                <Button
+                  onClick={() => {
+                    setSqlDraft(null);
+                    setTreeDraft(null);
+                    setPreviewRequested(false);
+                    if (reportQuery.data) {
+                      setColumns((reportQuery.data.columns ?? []).map(normalizeColumn));
+                      setParameters(reportQuery.data.parameters ?? []);
+                      setDefaultParamValues(
+                        defaultParameterValues(
+                          reportQuery.data.parameters ?? [],
+                          reportQuery.data.defaultParameters
+                        )
+                      );
+                      setEditKind(
+                        isTreeVariablesReport(reportQuery.data.reportType) ? "tree-variables" : "sql"
+                      );
+                    }
+                  }}
+                >
+                  {t("common:action.cancel")}
+                </Button>
+              )}
+            </Space>
           </div>
           {saveError && <div className="banner error full">{saveError}</div>}
           {saveMutation.isSuccess && <div className="banner success full">{t("common:action.saved")}</div>}

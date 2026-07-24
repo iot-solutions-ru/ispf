@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, Checkbox, Select, Space, Typography } from "antd";
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
 import { newWidget, WIDGET_TYPES } from "../../types/dashboard";
 import { translateWidgetType } from "./widgetI18n";
@@ -47,7 +48,7 @@ export default function WidgetEditorPanel({
   if (!widget) {
     return (
       <aside className="dashboard-sidebar">
-        <h4>{t("editor.widgetTitle")}</h4>
+        <Typography.Title level={4}>{t("editor.widgetTitle")}</Typography.Title>
         <p className="hint">{t("editor.selectWidgetHint")}</p>
       </aside>
     );
@@ -76,10 +77,10 @@ export default function WidgetEditorPanel({
   return (
     <aside className="dashboard-sidebar">
       <header className="dashboard-sidebar-head">
-        <h4>{t("editor.widgetEditorTitle")}</h4>
-        <button type="button" className="btn danger small" onClick={onDelete}>
+        <Typography.Title level={4}>{t("editor.widgetEditorTitle")}</Typography.Title>
+        <Button danger size="small" onClick={onDelete}>
           {t("common:action.delete")}
-        </button>
+        </Button>
       </header>
 
       <div className="form-grid compact widget-editor-form">
@@ -91,10 +92,13 @@ export default function WidgetEditorPanel({
           </label>
           <label>
             <span className="field-caption">{t("editor.typeField")}</span>
-            <select
+            <Select
               value={widget.type}
-              onChange={(e) => {
-                const nextType = e.target.value as WidgetType;
+              options={WIDGET_TYPES.map((item) => ({
+                value: item.type,
+                label: translateWidgetType(t, item.type),
+              }))}
+              onChange={(nextType: WidgetType) => {
                 const next = newWidget(nextType, 0);
                 onChange({
                   ...next,
@@ -108,13 +112,7 @@ export default function WidgetEditorPanel({
                   visible: widget.visible,
                 });
               }}
-            >
-              {WIDGET_TYPES.map((item) => (
-                <option key={item.type} value={item.type}>
-                  {translateWidgetType(t, item.type)}
-                </option>
-              ))}
-            </select>
+            />
           </label>
           <label>
             <span className="field-caption">x</span>
@@ -158,12 +156,12 @@ export default function WidgetEditorPanel({
 
           <h5 className="widget-editor-section">{t("editor.layerTitle")}</h5>
           <label className="widget-layer-visible">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={widget.visible !== false}
               onChange={(e) => update({ visible: e.target.checked })}
-            />
-            <span>{t("editor.layerVisible")}</span>
+            >
+              {t("editor.layerVisible")}
+            </Checkbox>
           </label>
           <label>
             <span className="field-caption">{t("editor.layerZIndex")}</span>
@@ -177,36 +175,32 @@ export default function WidgetEditorPanel({
               }}
             />
           </label>
-          <div className="widget-layer-actions full">
-            <button
-              type="button"
-              className="btn small"
+          <Space className="widget-layer-actions full" wrap>
+            <Button
+              size="small"
               onClick={() => onWidgetsChange(sendWidgetBackward(widgets, widget.id))}
             >
               {t("editor.layerBackward")}
-            </button>
-            <button
-              type="button"
-              className="btn small"
+            </Button>
+            <Button
+              size="small"
               onClick={() => onWidgetsChange(bringWidgetForward(widgets, widget.id))}
             >
               {t("editor.layerForward")}
-            </button>
-            <button
-              type="button"
-              className="btn small"
+            </Button>
+            <Button
+              size="small"
               onClick={() => onWidgetsChange(sendWidgetToBack(widgets, widget.id))}
             >
               {t("editor.layerToBack")}
-            </button>
-            <button
-              type="button"
-              className="btn small"
+            </Button>
+            <Button
+              size="small"
               onClick={() => onWidgetsChange(bringWidgetToFront(widgets, widget.id))}
             >
               {t("editor.layerToFront")}
-            </button>
-          </div>
+            </Button>
+          </Space>
           <p className="hint full">{t("editor.layerHint")}</p>
         </FieldPairs>
 

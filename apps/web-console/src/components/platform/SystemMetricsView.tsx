@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Space, Table, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchPlatformMetrics, type PlatformMetricSection } from "../../api/platformMetrics";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import AutomationIndexStatsCard from "../automation/AutomationIndexStatsCard";
@@ -97,38 +99,53 @@ function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
     }
     return String(value);
   };
+  const rows = entries.map(([key, value]) => {
+    let tone = "";
+    if (typeof value === "number") {
+      if (key === "pressureScore" || key === "heapUsedPercent" || key === "processCpuPercent") {
+        if (value >= 85) tone = "metric-tone-bad";
+        else if (value >= 65) tone = "metric-tone-warn";
+        else tone = "metric-tone-ok";
+      } else if (key === "driversWithError" || key === "objectChangeDroppedTotal") {
+        tone = value > 0 ? "metric-tone-bad" : "metric-tone-ok";
+      }
+    }
+    return {
+      key,
+      label: metricLabel(key),
+      value,
+      tone,
+    };
+  });
+  const columns: TableColumnsType<(typeof rows)[number]> = [
+    { title: "", dataIndex: "label", key: "label" },
+    {
+      title: "",
+      dataIndex: "value",
+      key: "value",
+      render: (value, row) => (
+        <span className={row.tone || undefined}>
+          {typeof value === "string" && value.includes("T") && value.endsWith("Z") ? (
+            <time dateTime={value}>{formatDate(value)}</time>
+          ) : (
+            formatMetricValue(value)
+          )}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <section className="system-metrics-card">
-      <h3>{section.title}</h3>
-      <table className="op-table system-metrics-table">
-        <tbody>
-          {entries.map(([key, value]) => {
-            let tone = "";
-            if (typeof value === "number") {
-              if (key === "pressureScore" || key === "heapUsedPercent" || key === "processCpuPercent") {
-                if (value >= 85) tone = "metric-tone-bad";
-                else if (value >= 65) tone = "metric-tone-warn";
-                else tone = "metric-tone-ok";
-              } else if (key === "driversWithError" || key === "objectChangeDroppedTotal") {
-                tone = value > 0 ? "metric-tone-bad" : "metric-tone-ok";
-              }
-            }
-            return (
-              <tr key={key}>
-                <th>{metricLabel(key)}</th>
-                <td className={tone || undefined}>
-                  {typeof value === "string" && value.includes("T") && value.endsWith("Z") ? (
-                    <time dateTime={value}>{formatDate(value)}</time>
-                  ) : (
-                    formatMetricValue(value)
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <Typography.Title level={3}>{section.title}</Typography.Title>
+      <Table
+        className="system-metrics-table"
+        size="small"
+        pagination={false}
+        showHeader={false}
+        columns={columns}
+        dataSource={rows}
+      />
     </section>
   );
 }
@@ -165,18 +182,17 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
       )}
 
       <div className="tabs-scroll system-metrics-subtabs">
-        <nav className="tabs" aria-label={t("metrics.tabsAria")}>
+        <Space role="tablist" aria-label={t("metrics.tabsAria")}>
           {subTabs.map((item) => (
-            <button
+            <Button
               key={item.id}
-              type="button"
-              className={subTab === item.id ? "active" : ""}
+              type={subTab === item.id ? "primary" : "default"}
               onClick={() => setSubTab(item.id)}
             >
               {t(item.labelKey)}
-            </button>
+            </Button>
           ))}
-        </nav>
+        </Space>
       </div>
 
       {subTab === "diagnostics" && (
@@ -188,29 +204,27 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
       {subTab === "overview" && (
         <>
           <div className="system-embedded-toolbar">
-            <button
-              type="button"
-              className="btn"
+            <Button
               disabled={metricsQuery.isFetching}
               onClick={() => metricsQuery.refetch()}
             >
               {t(embedded ? "metrics.refreshMetrics" : "metrics.refresh")}
-            </button>
+            </Button>
           </div>
 
           {metricsQuery.error && (
-            <div className="op-alert op-alert-error">{String(metricsQuery.error)}</div>
+            <Alert type="error" showIcon message={String(metricsQuery.error)} />
           )}
 
-          {metricsQuery.isLoading && <p className="hint">{t("metrics.loading")}</p>}
+          {metricsQuery.isLoading && <Typography.Text type="secondary">{t("metrics.loading")}</Typography.Text>}
 
           {metricsQuery.data && (
             <>
-              <p className="system-metrics-updated hint">
+              <Typography.Paragraph type="secondary" className="system-metrics-updated hint">
                 {t("metrics.updatedAt", {
                   time: formatDate(metricsQuery.data.timestamp),
                 })}
-              </p>
+              </Typography.Paragraph>
               <HotPathMetricsCard data={metricsQuery.data} />
               <AutomationIndexStatsCard />
               <StorageHealthCard />

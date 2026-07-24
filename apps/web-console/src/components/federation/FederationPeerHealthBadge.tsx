@@ -1,4 +1,5 @@
 import type { FederationPeerHealthLevel } from "../../api/federation";
+import { Tag } from "antd";
 import { useTranslation } from "react-i18next";
 
 interface FederationPeerHealthBadgeProps {
@@ -8,9 +9,9 @@ interface FederationPeerHealthBadgeProps {
 }
 
 export function federationPeerHealthBadgeClass(level: FederationPeerHealthLevel | undefined): string {
-  if (level === "GREEN") return "badge ok";
-  if (level === "YELLOW") return "badge warn";
-  return "badge danger";
+  if (level === "GREEN") return "success";
+  if (level === "YELLOW") return "warning";
+  return "error";
 }
 
 export default function FederationPeerHealthBadge({
@@ -20,12 +21,13 @@ export default function FederationPeerHealthBadge({
 }: FederationPeerHealthBadgeProps) {
   const { t } = useTranslation("federation");
   return (
-    <span
-      className={`federation-peer-health-badge ${federationPeerHealthBadgeClass(level)}${compact ? " is-compact" : ""}`}
+    <Tag
+      color={federationPeerHealthBadgeClass(level)}
+      className={`federation-peer-health-badge${compact ? " is-compact" : ""}`}
       title={summary ?? t("peers.healthUnknown")}
       data-health={level}
     >
       {t(`peers.health.${level.toLowerCase()}`)}
-    </span>
+    </Tag>
   );
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, Input, Select, Space } from "antd";
 import ObjectQuerySpecEditorModal from "../objectEditor/ObjectQuerySpecEditorModal";
 import {
   buildPlatformBindingExpression,
@@ -50,7 +51,7 @@ function ParamField({
         : "";
     return (
       <div className="platform-binding-oq-spec">
-        <input
+        <Input
           type="text"
           className="mono"
           value={value}
@@ -58,14 +59,13 @@ function ParamField({
           placeholder={t("platformBindings.oqSpecPlaceholder")}
           onChange={(event) => onChange(event.target.value)}
         />
-        <button
-          type="button"
-          className="btn btn-sm"
+        <Button
+          size="small"
           disabled={disabled}
           onClick={() => setOqEditorOpen(true)}
         >
           {t("objectQuery.openEditor")}
-        </button>
+        </Button>
         {displayValue && !isObjectQuerySpecVariableRef(value) && (
           <pre className="hint mono object-query-spec-preview">{displayValue}</pre>
         )}
@@ -88,30 +88,28 @@ function ParamField({
 
   if (param.kind === "var" && variableNames.length > 0) {
     return (
-      <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
-        {variableNames.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
+      <Select
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+        options={variableNames.map((name) => ({ value: name, label: name }))}
+      />
     );
   }
 
   if (param.kind === "func" && functionNames.length > 0) {
     return (
-      <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
-        {functionNames.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
+      <Select
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+        options={functionNames.map((name) => ({ value: name, label: name }))}
+      />
     );
   }
 
   return (
-    <input
+    <Input
       type={param.kind === "number" ? "number" : "text"}
       className={param.kind === "path" ? "mono" : undefined}
       value={value}
@@ -168,19 +166,19 @@ export default function PlatformBindingComposer({
       <p className="hint platform-binding-composer-preview">
         {t("platformBindings.preview")}: <code>{preview}</code>
       </p>
-      <div className="platform-binding-composer-actions">
-        <button type="button" className="btn small" disabled={disabled} onClick={onClose}>
+      <Space className="platform-binding-composer-actions">
+        <Button size="small" disabled={disabled} onClick={onClose}>
           {t("platformBindings.cancel")}
-        </button>
-        <button
-          type="button"
-          className="btn small primary"
+        </Button>
+        <Button
+          type="primary"
+          size="small"
           disabled={disabled}
           onClick={() => onInsert(preview)}
         >
           {t("platformBindings.insertExpression")}
-        </button>
-      </div>
+        </Button>
+      </Space>
     </div>
   );
 }

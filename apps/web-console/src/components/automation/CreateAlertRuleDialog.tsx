@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Form, Modal, Space } from "antd";
 import { createAlertRule, fetchVariables, validateExpression } from "../../api";
 import type { AlertRuleFormValues } from "../../types/automation";
 import AlertRuleFormFields, { toCreateAlertRulePayload } from "./AlertRuleFormFields";
@@ -56,23 +57,25 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
   });
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
-      <div className="modal modal-wide alert-rule-modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h3>{t("automation:alertRule.newTitle")}</h3>
-          <button type="button" className="icon-btn" onClick={onClose}>
-            ✕
-          </button>
-        </header>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
+    <Modal
+      title={t("automation:alertRule.newTitle")}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={900}
+      footer={null}
+      className="alert-rule-modal"
+    >
+      <Form
+        layout="vertical"
+        onFinish={() => {
             if (!form.name?.trim() || !!exprError) {
               return;
             }
             createMutation.mutate();
-          }}
-        >
+        }}
+      >
+        <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
           <AlertRuleFormFields
             value={form}
             onChange={(patch) => {
@@ -94,15 +97,15 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
             }}
           />
           {createMutation.error && (
-            <p className="hint error">{(createMutation.error as Error).message}</p>
+            <Alert type="error" showIcon message={(createMutation.error as Error).message} />
           )}
-          <footer className="form-actions">
-            <button type="button" className="btn" onClick={onClose}>
+          <Space>
+            <Button onClick={onClose}>
               {t("common:action.cancel")}
-            </button>
-            <button
-              type="submit"
-              className="btn primary"
+            </Button>
+            <Button
+              htmlType="submit"
+              type="primary"
               disabled={
                 createMutation.isPending
                 || !form.name?.trim()
@@ -112,12 +115,13 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
                 || !form.conditionExpr.trim()
                 || !!exprError
               }
+              loading={createMutation.isPending}
             >
               {t("common:action.create")}
-            </button>
-          </footer>
-        </form>
-      </div>
-    </div>
+            </Button>
+          </Space>
+        </Space>
+      </Form>
+    </Modal>
   );
 }

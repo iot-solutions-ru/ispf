@@ -16,6 +16,16 @@ Module `ispf-plugin-blueprint` — **blueprint** system (object structure templa
 | `INSTANCE` | `root.platform.instance-types` | **Object type** template — create instances via instantiate |
 | `SINGLETON` | `root.platform.singleton-blueprints` | Unique live node under the catalog (`root.platform.singleton-blueprints.*`) — blueprint **and** application logic on the same object |
 
+**Where application logic lives:**
+
+| Role | Blueprint kind | Rule |
+|------|----------------|------|
+| Unique orchestrator (one per solution/cluster) | **SINGLETON** | Prefer `root.platform.singleton-blueprints.{name}` + `ensure_singleton_instance` |
+| Digital twin with per-twin logic (many) | **INSTANCE** | `instantiate_instance_type`; each instance holds twin logic |
+| Telemetry endpoint | — | **DEVICE** only |
+
+**Hard rule:** the logic-bearing object must **not** be `ObjectType.DEVICE`. A cluster may place a non-DEVICE hub under the `devices` tree with DEVICE children — that **path layout is an implementation choice**; the hub’s **type** is not. See [application-principles](application-principles.md) § Logic objects vs DEVICE.
+
 **Intrinsic schemas** (1:1 with `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) live in the registry for bootstrap but **do not appear** in the mixin-blueprints catalog and **are not used** in `appliedBlueprintIds`. Structure is embedded in the instance via `*ObjectService.ensureStructure()`.
 
 See [0011-model-type-semantics](decisions/0011-model-type-semantics.md).

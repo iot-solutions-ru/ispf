@@ -34,6 +34,29 @@ class BpmnParserTest {
     }
 
     @Test
+    void parsesCallActivityWithCalledElement() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <process id="parent" name="Parent" isExecutable="true">
+                    <startEvent id="start"/>
+                    <callActivity id="call" name="Child" calledElement="child-flow"/>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="call"/>
+                    <sequenceFlow sourceRef="call" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        BpmnProcess process = new BpmnParser().parse(xml);
+
+        assertThat(process.nodeTypes().get("call")).isEqualTo("callActivity");
+        assertThat(process.callActivities().get("call").workflowPath())
+                .isEqualTo("root.platform.workflows.child-flow");
+    }
+
+    @Test
     void parsesMessageCatchEvent() throws Exception {
         String xml = """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -106,7 +129,6 @@ class BpmnParserTest {
 
     @ParameterizedTest(name = "rejects {0}")
     @CsvSource({
-            "callActivity, callActivity is not supported",
             "businessRuleTask, businessRuleTask / DMN is not supported",
             "inclusiveGateway, inclusiveGateway is not supported",
             "eventBasedGateway, eventBasedGateway is not supported"

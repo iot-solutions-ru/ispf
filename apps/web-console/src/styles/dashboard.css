@@ -863,18 +863,21 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 }
 
 .scada-layer-panel {
+  flex: 0 0 auto;
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--border, #444c56);
+  background: var(--bg-elevated);
 }
 
 .scada-elements-list-panel {
+  flex: 1 0 auto;
+  min-height: 10rem;
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--border, #444c56);
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--bg-elevated);
 }
 
 .scada-elements-list-count {
@@ -941,6 +944,7 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 .scada-elements-list-item.selected {
   background: color-mix(in srgb, var(--accent) 22%, transparent);
   outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: none;
 }
 
 .scada-elements-list-z {
@@ -969,9 +973,34 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 .scada-layer-panel-item {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   font-size: 0.85rem;
   padding: 0.15rem 0;
+  min-width: 0;
+}
+
+.scada-layer-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.scada-layer-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 0.15rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.scada-layer-panel-item .ant-btn {
+  flex: 0 0 auto;
+  min-width: 1.75rem;
+  width: 1.75rem;
+  padding-inline: 0;
 }
 
 .scada-layer-name-input {
@@ -1086,6 +1115,20 @@ body.scada-mimic-editor-open {
   background: var(--bg);
   border: 1px solid var(--border);
   gap: 2px;
+}
+
+.scada-toolbar-tools.ant-segmented {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.scada-toolbar-tools .ant-segmented-item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 28px;
 }
 
 .scada-tool-btn {
@@ -1283,7 +1326,9 @@ body.scada-mimic-editor-open {
 .scada-mimic-editor-sidebar {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Grow layers/stack downward; scroll the column instead of overlapping the palette. */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .scada-mimic-editor-props {
@@ -1327,12 +1372,17 @@ body.scada-mimic-editor-open {
   color: var(--accent);
 }
 
-/* �� Palette �� */
+/* Palette — fixed budget so layers expand below, not over the list */
 .scada-palette {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  flex: 1;
+  flex: 0 0 auto;
+  height: min(42vh, 22rem);
+  min-height: 14rem;
+  max-height: 50%;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
 }
 
 .scada-palette-body {
@@ -1340,6 +1390,7 @@ body.scada-mimic-editor-open {
   flex-direction: column;
   min-height: 0;
   flex: 1;
+  overflow: hidden;
   padding: 0 0.75rem 0.75rem;
 }
 
@@ -1349,26 +1400,28 @@ body.scada-mimic-editor-open {
 }
 
 .scada-palette-search-icon {
-  position: absolute;
-  left: 0.55rem;
-  top: 50%;
-  transform: translateY(-50%);
   width: 14px;
   height: 14px;
   color: var(--text-muted);
-  pointer-events: none;
 }
 
 .scada-palette-search {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.45rem 0.6rem 0.45rem 1.85rem;
-  border: 1px solid var(--border);
+  margin: 0.65rem 0 0.5rem;
+  font-size: 0.8rem;
+}
+
+.scada-palette-search.ant-input-affix-wrapper,
+.scada-palette-search.ant-input {
   border-radius: 8px;
   background: var(--bg);
   color: var(--text);
-  font-size: 0.8rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  border-color: var(--border);
+}
+
+.scada-palette-category-control {
+  width: 100%;
 }
 
 .scada-palette-search:focus {
@@ -2680,6 +2733,129 @@ body.scada-mimic-editor-open {
   min-height: 0;
 }
 
+/* Fullscreen BPMN editor (same pattern as SCADA mimic overlay) */
+body.workflow-bpmn-editor-open {
+  overflow: hidden;
+}
+
+.workflow-bpmn-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15000;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  animation: workflow-bpmn-overlay-in 0.2s ease-out;
+}
+
+@keyframes workflow-bpmn-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.workflow-bpmn-editor-fs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.workflow-bpmn-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  min-height: 52px;
+  flex-shrink: 0;
+}
+
+.workflow-bpmn-editor-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.workflow-bpmn-editor-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent) 0%, #0ea5e9 100%);
+  box-shadow: 0 2px 8px rgba(47, 129, 247, 0.35);
+  flex-shrink: 0;
+}
+
+.workflow-bpmn-editor-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.workflow-bpmn-editor-brand-text strong {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.workflow-bpmn-editor-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.workflow-bpmn-editor-tabs {
+  flex: 0 1 auto;
+}
+
+.workflow-bpmn-editor-tabs .ant-tabs-nav {
+  margin: 0 !important;
+}
+
+.workflow-bpmn-editor-actions {
+  margin-inline-start: auto;
+}
+
+.workflow-bpmn-editor-fs-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem 1rem;
+  overflow: hidden;
+}
+
+.workflow-bpmn-editor-fs-body .bpmn-editor-layout,
+.workflow-bpmn-editor-fs-body .ispf-bpmn-editor {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.workflow-bpmn-editor--fullscreen {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
 .workflow-shell.loading,
 .workflow-shell.error {
   padding: 2rem;
@@ -2755,11 +2931,16 @@ body.scada-mimic-editor-open {
   display: flex;
   gap: 1rem;
   min-height: 0;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .bpmn-ispf-panel {
   width: 280px;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-height: 0;
+  max-height: 100%;
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -2768,6 +2949,9 @@ body.scada-mimic-editor-open {
   flex-direction: column;
   gap: 0.5rem;
   font-size: 0.85rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .bpmn-ispf-panel label {
@@ -2794,35 +2978,166 @@ body.scada-mimic-editor-open {
   margin: 0 0 0.5rem;
 }
 
-.bpmn-editor-canvas,
-.bpmn-viewer-canvas {
-  flex: 1 1 0;
-  min-height: 0;
+/* ISPF Workflow Diagram Editor (ADR-0052) — no bpmn-js */
+.ispf-bpmn-palette {
+  width: 160px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  padding: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #f8f9fb;
-  overflow: hidden;
+  background: var(--bg-elevated);
+  font-size: 0.8rem;
 }
 
-.bpmn-editor-canvas .djs-container,
-.bpmn-viewer-canvas .djs-container {
-  background: #f8f9fb !important;
+.ispf-bpmn-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-/* bpmn-js license: watermark must remain visible (see node_modules/bpmn-js/LICENSE) */
-.bpmn-editor-canvas .bjs-powered-by,
-.bpmn-viewer-canvas .bjs-powered-by,
-.bpmn-editor-canvas .bjs-powered-by-link,
-.bpmn-viewer-canvas .bjs-powered-by-link,
-.bpmn-editor-canvas a[href="http://bpmn.io"],
-.bpmn-viewer-canvas a[href="http://bpmn.io"],
-.bpmn-editor-canvas a[href="https://bpmn.io"],
-.bpmn-viewer-canvas a[href="https://bpmn.io"] {
-  visibility: visible !important;
-  opacity: 1 !important;
-  display: block !important;
-  z-index: 20 !important;
-  pointer-events: auto !important;
+.ispf-bpmn-tools button,
+.ispf-bpmn-palette-group button,
+.ispf-bpmn-import-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ispf-bpmn-tools button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 18%, transparent));
+}
+
+.ispf-bpmn-palette-group-title {
+  font-weight: 600;
+  margin: 0.35rem 0 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.ispf-bpmn-canvas {
+  flex: 1 1 0;
+  min-height: 320px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  fill: var(--text);
+  touch-action: none;
+}
+
+.ispf-bpmn-node {
+  cursor: grab;
+  color: var(--text);
+  fill: var(--text);
+}
+
+.ispf-bpmn-node text,
+.ispf-bpmn-label {
+  fill: var(--text);
+  color: var(--text);
+}
+
+.bpmn-glyph {
+  color: var(--text);
+}
+
+.bpmn-glyph circle,
+.bpmn-glyph rect,
+.bpmn-glyph polygon,
+.bpmn-glyph line,
+.bpmn-glyph polyline,
+.bpmn-glyph path {
+  vector-effect: non-scaling-stroke;
+}
+
+.bpmn-glyph-inner-label {
+  pointer-events: none;
+  font-weight: 500;
+}
+
+.ispf-bpmn-canvas .bpmn-glyph-end circle {
+  stroke-width: 4;
+}
+
+.ispf-bpmn-node.selected rect,
+.ispf-bpmn-node.selected circle,
+.ispf-bpmn-node.selected polygon {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.ispf-bpmn-edge {
+  cursor: pointer;
+  color: var(--text-muted);
+  fill: var(--text-muted);
+  stroke: var(--text-muted);
+}
+
+.ispf-bpmn-edge text {
+  fill: var(--text-muted);
+}
+
+.ispf-bpmn-edge.selected {
+  color: var(--accent);
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.ispf-bpmn-edge.selected text {
+  fill: var(--accent);
+}
+
+.ispf-bpmn-import-report {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  font-size: 0.85rem;
+}
+
+.ispf-bpmn-import-report ul {
+  margin: 0.35rem 0;
+  padding-left: 1.2rem;
+}
+
+.bpmn-prop-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.bpmn-prop-section h5 {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.bpmn-prop-checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+}
+
+.bpmn-prop-checkbox input {
+  width: auto !important;
+}
+
+.bpmn-ispf-panel .btn.danger {
+  margin-top: 0.5rem;
 }
 
 .bpmn-viewer-fallback .workflow-bpmn-view {

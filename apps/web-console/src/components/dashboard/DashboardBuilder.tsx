@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Input, Space } from "antd";
 import {
   fetchObjects,
   fetchDashboard,
@@ -628,7 +629,7 @@ export default function DashboardBuilder({
           <div>
             <div className="dashboard-kicker">{t("kicker")}</div>
             {mode === "edit" ? (
-              <input
+              <Input
                 className="dashboard-title-input"
                 value={title}
                 onChange={(e) => setDraftTitle(e.target.value)}
@@ -642,68 +643,63 @@ export default function DashboardBuilder({
               <code className="path-code">{path}</code>
             )}
           </div>
-          <div className="dashboard-toolbar-actions">
-            <button
-              type="button"
-              className={`btn ${mode === "view" ? "primary" : ""}`}
+          <Space className="dashboard-toolbar-actions" wrap>
+            <Button
+              type={mode === "view" ? "primary" : "default"}
               onClick={() => setMode("view")}
             >
               {t("mode.view")}
-            </button>
-            <button
-              type="button"
-              className={`btn ${mode === "edit" ? "primary" : ""}`}
+            </Button>
+            <Button
+              type={mode === "edit" ? "primary" : "default"}
               onClick={() => setMode("edit")}
             >
               {t("mode.edit")}
-            </button>
-            <button type="button" className="btn" onClick={() => setShowJson((v) => !v)}>
+            </Button>
+            <Button onClick={() => setShowJson((v) => !v)}>
               {t("json")}
-            </button>
+            </Button>
             {mode === "edit" && (
               <>
                 {isMobileLayout && (
-                  <button
-                    type="button"
-                    className={`btn ${mobilePaletteOpen ? "primary" : ""}`}
+                  <Button
+                    type={mobilePaletteOpen ? "primary" : "default"}
                     onClick={() => setMobilePaletteOpen((open) => !open)}
                   >
                     {t("palette.title")}
-                  </button>
+                  </Button>
                 )}
-                <button type="button" className="btn" onClick={() => setShowHaystackBind(true)}>
+                <Button onClick={() => setShowHaystackBind(true)}>
                   {t("haystackBind.open")}
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${editorSidePanel === "settings" ? "primary" : ""}`}
+                </Button>
+                <Button
+                  type={editorSidePanel === "settings" ? "primary" : "default"}
                   onClick={() =>
                     setEditorSidePanel((panel) => (panel === "settings" ? "widget" : "settings"))
                   }
                 >
                   {t("settings")}
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${editorSidePanel === "rules" ? "primary" : ""}`}
+                </Button>
+                <Button
+                  type={editorSidePanel === "rules" ? "primary" : "default"}
                   onClick={() =>
                     setEditorSidePanel((panel) => (panel === "rules" ? "widget" : "rules"))
                   }
                 >
                   {t("rules.tab")}
-                </button>
+                </Button>
               </>
             )}
             {onOpenProperties && (
-              <button type="button" className="btn" onClick={onOpenProperties}>
+              <Button onClick={onOpenProperties}>
                 {t("common:action.properties")}
-              </button>
+              </Button>
             )}
             {dirty && (
-              <button
-                type="button"
-                className="btn primary"
+              <Button
+                type="primary"
                 disabled={saveMutation.isPending}
+                loading={saveMutation.isPending}
                 onClick={() =>
                   saveMutation.mutate({
                     layout: layoutRef.current,
@@ -713,14 +709,14 @@ export default function DashboardBuilder({
                 }
               >
                 {t("common:action.save")}
-              </button>
+              </Button>
             )}
             {onClose && (
-              <button type="button" className="btn" onClick={onClose}>
+              <Button onClick={onClose}>
                 {t("common:action.close")}
-              </button>
+              </Button>
             )}
-          </div>
+          </Space>
         </header>
       )}
 

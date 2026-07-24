@@ -1,3 +1,5 @@
+import { Alert, Button, Modal, Space, Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -211,100 +213,150 @@ export default function BindingRulesPanel({
   const panelClass = embedded ? "binding-rules-embedded" : "panel";
   const PanelTag = embedded ? "div" : "section";
 
+  const columns: ColumnsType<BindingRule> = [
+    {
+      title: t("common:table.id"),
+      dataIndex: "id",
+      render: (value: string) => <code>{value}</code>,
+    },
+    {
+      title: t("inspector:bindings.column.kind"),
+      key: "kind",
+      render: (_, rule) => (
+        <span className={`inline-badge binding-rule-kind-${ruleKind(rule)}`}>
+          {t(`inspector:bindings.ruleKind.${ruleKind(rule)}`)}
+        </span>
+      ),
+    },
+    {
+      title: t("inspector:bindings.column.target"),
+      key: "target",
+      render: (_, rule) => <code>{targetSummary(rule.target)}</code>,
+    },
+    {
+      title: t("inspector:bindings.column.expression"),
+      key: "expression",
+      className: "mono small",
+      render: (_, rule) => (
+        <span title={rule.expression}>
+          {rule.formulaRef ? (
+            <span className="inline-badge">{t("inspector:formula.linkedShort", { id: rule.formulaRef })}</span>
+          ) : null}
+          {rule.expression || "—"}
+        </span>
+      ),
+    },
+    {
+      title: t("inspector:bindings.column.activators"),
+      key: "activators",
+      className: "small",
+      render: (_, rule) => activatorsSummary(rule),
+    },
+    {
+      title: t("common:table.enabled"),
+      dataIndex: "enabled",
+      render: (enabled: boolean | undefined) =>
+        enabled !== false ? t("common:action.yes") : t("common:action.no"),
+    },
+    ...(canManage || onInspectHistorian
+      ? [
+          {
+            title: t("common:table.actions"),
+            key: "actions",
+            render: (_: unknown, rule: BindingRule) => (
+              <Space className="binding-rules-actions" size="small" wrap>
+                {ruleKind(rule) === "historian" && onInspectHistorian && (
+                  <Button
+                    size="small"
+                    onClick={() => onInspectHistorian(encodeHistorianTagPath(path, rule.id))}
+                  >
+                    {t("inspector:computations.inspect")}
+                  </Button>
+                )}
+                {canManage && (
+                  <>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        targetDrafts.current = {};
+                        setEditing(rule);
+                      }}
+                    >
+                      {t("inspector:bindings.edit")}
+                    </Button>
+                    <Button
+                      size="small"
+                      danger
+                      loading={deleteMutation.isPending}
+                      onClick={() => deleteMutation.mutate(rule.id)}
+                    >
+                      {t("common:action.delete")}
+                    </Button>
+                  </>
+                )}
+              </Space>
+            ),
+          } satisfies ColumnsType<BindingRule>[number],
+        ]
+      : []),
+  ];
+
   return (
     <PanelTag className={panelClass}>
       {canManage && (
-        <div className="panel-toolbar">
-          <button type="button" className="btn primary small" onClick={startNewRule}>
+        <Space className="panel-toolbar" wrap>
+          <Button type="primary" size="small" onClick={startNewRule}>
             {t("inspector:bindings.addRule")}
-          </button>
+          </Button>
           {ruleTemplates.map((template) => (
-            <button
-              key={template.id}
-              type="button"
-              className="btn small"
-              onClick={() => applyTemplate(template)}
-            >
+            <Button key={template.id} size="small" onClick={() => applyTemplate(template)}>
               {template.label}
-            </button>
+            </Button>
           ))}
-        </div>
+        </Space>
       )}
 
       {rules.length === 0 && <p className="hint">{t("inspector:bindings.empty")}</p>}
 
       {rules.length > 0 && (
-        <div className="table-scroll">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{t("common:table.id")}</th>
-                <th>{t("inspector:bindings.column.kind")}</th>
-                <th>{t("inspector:bindings.column.target")}</th>
-                <th>{t("inspector:bindings.column.expression")}</th>
-                <th>{t("inspector:bindings.column.activators")}</th>
-                <th>{t("common:table.enabled")}</th>
-                {(canManage || onInspectHistorian) && <th aria-label={t("common:table.actions")} />}
-              </tr>
-            </thead>
-            <tbody>
-              {rules.map((rule) => (
-                <tr key={rule.id}>
-                  <td><code>{rule.id}</code></td>
-                  <td>
-                    <span className={`inline-badge binding-rule-kind-${ruleKind(rule)}`}>
-                      {t(`inspector:bindings.ruleKind.${ruleKind(rule)}`)}
-                    </span>
-                  </td>
-                  <td><code>{targetSummary(rule.target)}</code></td>
-                  <td className="mono small" title={rule.expression}>
-                    {rule.formulaRef ? (
-                      <span className="inline-badge">{t("inspector:formula.linkedShort", { id: rule.formulaRef })}</span>
-                    ) : null}
-                    {rule.expression || "—"}
-                  </td>
-                  <td className="small">{activatorsSummary(rule)}</td>
-                  <td>{rule.enabled ? t("common:action.yes") : t("common:action.no")}</td>
-                  {(canManage || onInspectHistorian) && (
-                    <td className="binding-rules-actions">
-                      {ruleKind(rule) === "historian" && onInspectHistorian && (
-                        <button
-                          type="button"
-                          className="btn small"
-                          onClick={() => onInspectHistorian(encodeHistorianTagPath(path, rule.id))}
-                        >
-                          {t("inspector:computations.inspect")}
-                        </button>
-                      )}
-                      {canManage && (
-                        <>
-                          <button type="button" className="btn small" onClick={() => { targetDrafts.current = {}; setEditing(rule); }}>{t("inspector:bindings.edit")}</button>
-                          <button
-                            type="button"
-                            className="btn small danger"
-                            disabled={deleteMutation.isPending}
-                            onClick={() => deleteMutation.mutate(rule.id)}
-                          >
-                            {t("common:action.delete")}
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table<BindingRule>
+          size="small"
+          rowKey="id"
+          pagination={false}
+          dataSource={rules}
+          columns={columns}
+        />
       )}
 
-      {editing && (
-        <div className="modal-backdrop" role="presentation">
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <header>
-              <h3>{editing.id ? t("inspector:bindings.ruleTitle", { id: editing.id }) : t("inspector:bindings.newRule")}</h3>
-              <button type="button" className="icon-btn" onClick={() => setEditing(null)}>✕</button>
-            </header>
+      <Modal
+        open={Boolean(editing)}
+        title={
+          editing?.id
+            ? t("inspector:bindings.ruleTitle", { id: editing.id })
+            : t("inspector:bindings.newRule")
+        }
+        onCancel={() => setEditing(null)}
+        width={720}
+        destroyOnHidden
+        footer={
+          <Space>
+            <Button onClick={() => setEditing(null)}>{t("common:action.cancel")}</Button>
+            <Button
+              type="primary"
+              disabled={!editing || !isBindingRuleSaveable(editing)}
+              loading={saveMutation.isPending}
+              onClick={() => {
+                if (!editing) return;
+                saveMutation.mutate(prepareBindingRuleForSave(editing));
+              }}
+            >
+              {t("common:action.save")}
+            </Button>
+          </Space>
+        }
+      >
+        {editing && (
+          <>
             <section className="modal-section form-grid">
               <label className="full">
                 ID
@@ -485,22 +537,16 @@ export default function BindingRulesPanel({
               </label>
             </section>
             {saveMutation.error && (
-              <p className="hint error">{(saveMutation.error as Error).message}</p>
+              <Alert
+                type="error"
+                showIcon
+                style={{ marginTop: 12 }}
+                message={(saveMutation.error as Error).message}
+              />
             )}
-            <footer>
-              <button type="button" className="btn" onClick={() => setEditing(null)}>{t("common:action.cancel")}</button>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={!isBindingRuleSaveable(editing) || saveMutation.isPending}
-                onClick={() => saveMutation.mutate(prepareBindingRuleForSave(editing))}
-              >
-                {t("common:action.save")}
-              </button>
-            </footer>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </PanelTag>
   );
 }

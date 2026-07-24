@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { Modal, Space, Typography } from "antd";
 import { fetchVariables } from "../../api";
 import { historizableFieldsFromVariable } from "../../utils/object/variableHistoryFields";
-import ModalPortal from "../../ui/ModalPortal";
 import VariableHistoryPanel from "./VariableHistoryPanel";
 
 interface VariableHistoryModalProps {
@@ -20,7 +19,6 @@ export default function VariableHistoryModal({
   title,
   onClose,
 }: VariableHistoryModalProps) {
-  const { t } = useTranslation("common");
   const variablesQuery = useQuery({
     queryKey: ["variables", objectPath],
     queryFn: () => fetchVariables(objectPath),
@@ -33,29 +31,26 @@ export default function VariableHistoryModal({
     : [valueField ?? "value"];
 
   return (
-    <ModalPortal>
-      <div className="modal-backdrop" role="presentation">
-        <div
-          className="modal modal-wide modal-variable-history"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <header>
-            <h3>{title ?? variableName}</h3>
-            <button type="button" className="icon-btn" onClick={onClose} aria-label={t("action.close")}>
-              ✕
-            </button>
-          </header>
-          <p className="hint modal-variable-history-path">
-            <code>{objectPath}</code> · <code>{variableName}</code>
-          </p>
-          <VariableHistoryPanel
-            objectPath={objectPath}
-            variableName={variableName}
-            fields={fields}
-            refreshIntervalMs={30_000}
-          />
-        </div>
-      </div>
-    </ModalPortal>
+    <Modal
+      title={title ?? variableName}
+      open
+      onCancel={onClose}
+      footer={null}
+      destroyOnHidden
+      width={960}
+      className="modal-variable-history"
+    >
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <Typography.Paragraph type="secondary" className="modal-variable-history-path" style={{ marginBottom: 0 }}>
+          <Typography.Text code>{objectPath}</Typography.Text> · <Typography.Text code>{variableName}</Typography.Text>
+        </Typography.Paragraph>
+        <VariableHistoryPanel
+          objectPath={objectPath}
+          variableName={variableName}
+          fields={fields}
+          refreshIntervalMs={30_000}
+        />
+      </Space>
+    </Modal>
   );
 }

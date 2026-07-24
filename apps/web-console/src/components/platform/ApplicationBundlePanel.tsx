@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Input, Space, Table } from "antd";
 import {
   deployApplicationBundle,
   exportApplicationBundle,
@@ -18,6 +19,8 @@ import { defaultApplicationManifestText } from "../../utils/platform/defaultAppl
 import { ObjectPathField } from "../../ui/index";
 import BundleLicenseInfoPanel from "./BundleLicenseInfoPanel";
 import BundleLicenseErrorAlert from "./BundleLicenseErrorAlert";
+
+const { TextArea } = Input;
 
 interface ApplicationBundlePanelProps {
   appId: string;
@@ -196,9 +199,12 @@ export default function ApplicationBundlePanel({
       )}
 
       {!exportQuery.isLoading && !hasActiveDeploy && (
-        <div className="op-alert op-alert-info application-bundle-status">
-          {t("bundle.noDeployYet")}
-        </div>
+        <Alert
+          className="application-bundle-status"
+          type="info"
+          showIcon
+          message={t("bundle.noDeployYet")}
+        />
       )}
 
       {hasActiveDeploy && (
@@ -213,16 +219,14 @@ export default function ApplicationBundlePanel({
       <BundleLicenseInfoPanel appId={appId} manifest={parsedManifest ?? undefined} compact />
 
       <div className="application-bundle-toolbar">
-        <div className="application-bundle-toolbar-group">
+        <Space wrap className="application-bundle-toolbar-group">
           <span className="application-bundle-toolbar-label">{t("bundle.toolbarSource")}</span>
-          <button
-            type="button"
-            className="btn"
+          <Button
             onClick={reloadFromServer}
             disabled={exportQuery.isFetching}
           >
             {t("bundle.reload")}
-          </button>
+          </Button>
           {canManage && (
             <>
               <input
@@ -238,48 +242,39 @@ export default function ApplicationBundlePanel({
                   event.target.value = "";
                 }}
               />
-              <button
-                type="button"
-                className="btn"
+              <Button
                 onClick={() => fileInputRef.current?.click()}
               >
                 {t("bundle.importJson")}
-              </button>
+              </Button>
             </>
           )}
-          <button
-            type="button"
-            className="btn"
+          <Button
             onClick={downloadManifest}
             disabled={!manifestText.trim()}
           >
             {t("bundle.download")}
-          </button>
+          </Button>
           {canManage && (
-            <button
-              type="button"
-              className="btn"
+            <Button
               disabled={pullMutation.isPending}
               onClick={() => pullMutation.mutate(undefined)}
             >
               {pullMutation.isPending ? t("bundle.pulling") : t("bundle.pullFromTree")}
-            </button>
+            </Button>
           )}
-        </div>
+        </Space>
 
         {canManage && (
-          <div className="application-bundle-toolbar-group application-bundle-toolbar-group--actions">
-            <button
-              type="button"
-              className="btn"
+          <Space wrap className="application-bundle-toolbar-group application-bundle-toolbar-group--actions">
+            <Button
               disabled={validateMutation.isPending || !manifestText.trim()}
               onClick={() => validateMutation.mutate()}
             >
               {validateMutation.isPending ? t("bundle.validating") : t("bundle.validate")}
-            </button>
-            <button
-              type="button"
-              className="btn primary"
+            </Button>
+            <Button
+              type="primary"
               disabled={deployMutation.isPending || !manifestText.trim()}
               onClick={() => {
                 if (!window.confirm(t("bundle.deployConfirm"))) {
@@ -289,14 +284,14 @@ export default function ApplicationBundlePanel({
               }}
             >
               {deployMutation.isPending ? t("bundle.deploying") : t("bundle.deploy")}
-            </button>
-          </div>
+            </Button>
+          </Space>
         )}
       </div>
 
       <label className="application-bundle-editor-label">
         <span>{t("bundle.manifestLabel")}</span>
-        <textarea
+        <TextArea
           className="mono application-bundle-editor"
           rows={22}
           value={manifestText}
@@ -337,36 +332,38 @@ export default function ApplicationBundlePanel({
             {sectionRows.length === 0 ? (
               <p className="op-muted">{t("bundle.sectionsEmpty")}</p>
             ) : (
-              <table className="data-table compact">
-                <thead>
-                  <tr>
-                    <th>{t("bundle.sectionColumn")}</th>
-                    <th>{t("bundle.itemColumn")}</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {sectionRows.map((row) => (
-                    <tr key={`${row.section}-${row.index}-${row.label}`}>
-                      <td><code>{row.section}</code></td>
-                      <td><code>{row.label}</code></td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() => {
-                            if (window.confirm(t("bundle.removeConfirm", { item: row.label }))) {
-                              removeRow(row.section, row.index);
-                            }
-                          }}
-                        >
-                          {t("bundle.remove")}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Table
+                size="small"
+                pagination={false}
+                rowKey={(row) => `${row.section}-${row.index}-${row.label}`}
+                dataSource={sectionRows}
+                columns={[
+                  {
+                    title: t("bundle.sectionColumn"),
+                    dataIndex: "section",
+                    render: (value: string) => <code>{value}</code>,
+                  },
+                  {
+                    title: t("bundle.itemColumn"),
+                    dataIndex: "label",
+                    render: (value: string) => <code>{value}</code>,
+                  },
+                  {
+                    title: "",
+                    render: (_, row) => (
+                      <Button
+                        onClick={() => {
+                          if (window.confirm(t("bundle.removeConfirm", { item: row.label }))) {
+                            removeRow(row.section, row.index);
+                          }
+                        }}
+                      >
+                        {t("bundle.remove")}
+                      </Button>
+                    ),
+                  },
+                ]}
+              />
             )}
           </section>
 
@@ -375,19 +372,19 @@ export default function ApplicationBundlePanel({
             <div className="bundle-add-object-form">
               <label>
                 parentPath
-                <input value={addParentPath} onChange={(event) => setAddParentPath(event.target.value)} />
+                <Input value={addParentPath} onChange={(event) => setAddParentPath(event.target.value)} />
               </label>
               <label>
                 name
-                <input value={addName} onChange={(event) => setAddName(event.target.value)} />
+                <Input value={addName} onChange={(event) => setAddName(event.target.value)} />
               </label>
               <label>
                 type
-                <input value={addType} onChange={(event) => setAddType(event.target.value)} />
+                <Input value={addType} onChange={(event) => setAddType(event.target.value)} />
               </label>
-              <button type="button" className="btn" disabled={!addName.trim()} onClick={addObject}>
+              <Button disabled={!addName.trim()} onClick={addObject}>
                 {t("bundle.addObject")}
-              </button>
+              </Button>
             </div>
           </section>
 
@@ -402,9 +399,7 @@ export default function ApplicationBundlePanel({
                 onChange={setPullPath}
                 placeholder="root.platform.dashboards.my-dashboard"
               />
-              <button
-                type="button"
-                className="btn"
+              <Button
                 disabled={pullMutation.isPending || !pullPath.trim()}
                 onClick={() => {
                   const path = pullPath.trim();
@@ -413,7 +408,7 @@ export default function ApplicationBundlePanel({
                 }}
               >
                 {t("bundle.pullPath")}
-              </button>
+              </Button>
             </div>
           </section>
         </details>

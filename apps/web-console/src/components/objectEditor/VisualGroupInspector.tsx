@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, Checkbox, Typography } from "antd";
 import { fetchGroupMembers, updateGroupMembers } from "../../api";
 import type { ObjectSummary } from "../../types";
 import { objectTreeKey } from "../../utils/tree/treeRowKey";
@@ -70,20 +71,19 @@ export default function VisualGroupInspector({
 
       {canManage && (
         <div className="visual-group-toolbar">
-          <button type="button" className="btn primary" onClick={() => setPickerOpen(true)}>
+          <Button type="primary" onClick={() => setPickerOpen(true)}>
             {t("visualGroup.addObjects")}
-          </button>
-          <button
-            type="button"
-            className="btn"
+          </Button>
+          <Button
             disabled={selectedMemberPaths.size === 0 || mutateMembers.isPending}
+            loading={mutateMembers.isPending}
             onClick={() => {
               mutateMembers.mutate({ action: "remove", paths: [...selectedMemberPaths] });
               setSelectedMemberPaths(new Set());
             }}
           >
             {t("visualGroup.removeSelected")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -104,16 +104,15 @@ export default function VisualGroupInspector({
             className={summary ? "" : "missing"}
           >
             {canManage && (
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={selectedMemberPaths.has(member.path)}
                 onChange={() => toggleMember(member.path)}
               />
             )}
-            <button type="button" className="linkish" onClick={() => onSelectPath(member.path)}>
+            <Button type="link" className="linkish" onClick={() => onSelectPath(member.path)}>
               {summary?.displayName ?? t("visualGroup.missing", { path: member.path })}
-            </button>
-            <span className="tree-type mono">{member.path}</span>
+            </Button>
+            <Typography.Text type="secondary" className="tree-type mono">{member.path}</Typography.Text>
           </li>
         ))}
       </ul>

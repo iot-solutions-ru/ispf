@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select, Space, Typography } from "antd";
 import {
   downloadBrickExport,
   downloadHaystackExport,
@@ -47,11 +48,11 @@ export default function SemanticExportPanel() {
   return (
     <section className="system-panel semantic-export-panel">
       <header>
-        <h3>{t("semanticExport.title")}</h3>
-        <p className="op-muted">{t("semanticExport.subtitle")}</p>
+        <Typography.Title level={3}>{t("semanticExport.title")}</Typography.Title>
+        <Typography.Paragraph type="secondary">{t("semanticExport.subtitle")}</Typography.Paragraph>
       </header>
 
-      <div className="form-grid semantic-export-options">
+      <Form layout="vertical" className="semantic-export-options">
         <ObjectPathField
           className="full"
           label={t("semanticExport.rootPath")}
@@ -59,67 +60,67 @@ export default function SemanticExportPanel() {
           onChange={setRootPath}
           placeholder="root.platform.devices"
         />
-        <label className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={includePoints}
-            onChange={(e) => setIncludePoints(e.target.checked)}
+        <Form.Item label={t("semanticExport.includePoints")}>
+          <Select
+            value={includePoints ? "true" : "false"}
+            onChange={(value) => setIncludePoints(value === "true")}
+            options={[
+              { value: "true", label: t("semanticExport.includePoints") },
+              { value: "false", label: "—" },
+            ]}
           />
-          {t("semanticExport.includePoints")}
-        </label>
-      </div>
+        </Form.Item>
+      </Form>
 
-      <div className="semantic-export-actions">
-        <div className="form-actions semantic-export-preview-actions">
-          <button
-            type="button"
-            className="btn"
+      <Space orientation="vertical" className="semantic-export-actions">
+        <Space className="form-actions semantic-export-preview-actions">
+          <Button
             disabled={previewMutation.isPending}
             onClick={() => previewMutation.mutate()}
           >
             {previewMutation.isPending ? t("semanticExport.previewing") : t("semanticExport.preview")}
-          </button>
-        </div>
-        <div className="form-actions semantic-export-download-actions">
-          <button
-            type="button"
-            className="btn primary"
+          </Button>
+        </Space>
+        <Space className="form-actions semantic-export-download-actions">
+          <Button
+            type="primary"
             disabled={haystackMutation.isPending}
             onClick={() => haystackMutation.mutate()}
           >
             {haystackMutation.isPending ? t("semanticExport.exporting") : t("semanticExport.haystackJson")}
-          </button>
-          <button
-            type="button"
-            className="btn"
+          </Button>
+          <Button
             disabled={brickJsonMutation.isPending}
             onClick={() => brickJsonMutation.mutate()}
           >
             {brickJsonMutation.isPending ? t("semanticExport.exporting") : t("semanticExport.brickJsonLd")}
-          </button>
-          <button
-            type="button"
-            className="btn"
+          </Button>
+          <Button
             disabled={brickTurtleMutation.isPending}
             onClick={() => brickTurtleMutation.mutate()}
           >
             {brickTurtleMutation.isPending ? t("semanticExport.exporting") : t("semanticExport.brickTurtle")}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Space>
+      </Space>
 
-      {error && <div className="op-alert op-alert-error">{String(error)}</div>}
+      {error && <Alert type="error" showIcon message={String(error)} />}
       {(haystackMutation.isSuccess || brickJsonMutation.isSuccess || brickTurtleMutation.isSuccess) && (
-        <div className="op-alert op-alert-success">{t("semanticExport.downloadStarted")}</div>
+        <Alert type="success" showIcon message={t("semanticExport.downloadStarted")} />
       )}
 
       {preview && (
         <div className="semantic-export-preview-block panel-card">
-          <h4>{t("semanticExport.preview")}</h4>
+          <Typography.Title level={4}>{t("semanticExport.preview")}</Typography.Title>
           {previewTruncated && (
-            <p className="op-muted">{t("semanticExport.previewTruncated")}</p>
+            <Typography.Paragraph type="secondary">{t("semanticExport.previewTruncated")}</Typography.Paragraph>
           )}
-          <pre className="semantic-export-preview mono small">{preview}</pre>
+          <Input.TextArea
+            className="semantic-export-preview mono small"
+            value={preview}
+            readOnly
+            autoSize={{ minRows: 6 }}
+          />
         </div>
       )}
     </section>

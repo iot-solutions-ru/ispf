@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Input } from "antd";
 import { fetchBrickInfer, toSuggestionDto, type BrickClassSuggestionDto } from "../../api/brickInfer";
 import { fetchVariables, setVariable } from "../../api";
 import { parseHaystackTagsJson } from "../../constants/haystackMarkers";
@@ -136,7 +137,7 @@ export default function BrickMetadataPanel({ devicePath, canManage }: BrickMetad
       <div className="property-fields">
         <label className="full">
           {t("brick.classUri")}
-          <input
+          <Input
             type="text"
             value={brickClass}
             disabled={!canManage}
@@ -166,13 +167,12 @@ export default function BrickMetadataPanel({ devicePath, canManage }: BrickMetad
                 </div>
                 <p className="hint brick-suggestion-reason">{item.reason}</p>
                 {canManage && (
-                  <button
-                    type="button"
-                    className="btn btn-sm"
+                  <Button
+                    size="small"
                     onClick={() => applySuggestion(item)}
                   >
                     {t("brick.applySuggestion")}
-                  </button>
+                  </Button>
                 )}
               </li>
             ))}
@@ -180,18 +180,17 @@ export default function BrickMetadataPanel({ devicePath, canManage }: BrickMetad
         )}
       </section>
 
-      {formError && <div className="banner error">{formError}</div>}
+      {formError && <Alert type="error" showIcon message={formError} />}
 
       {canManage && (
         <div className="panel-toolbar">
-          <button
-            type="button"
-            className="btn btn-primary"
+          <Button
+            type="primary"
             disabled={saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
             {saveMutation.isPending ? t("common:action.saving") : t("brick.save")}
-          </button>
+          </Button>
         </div>
       )}
     </div>

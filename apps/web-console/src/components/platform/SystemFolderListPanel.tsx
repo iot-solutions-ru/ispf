@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Input, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { fetchObjects } from "../../api";
-import type { ObjectType } from "../../types";
+import type { ObjectSummary, ObjectType } from "../../types";
 import {
   childIdFromPath,
   getSystemFolderListMeta,
@@ -70,26 +72,11 @@ export default function SystemFolderListPanel({
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [menuPath, setMenuPath] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const childrenQuery = useQuery({
     queryKey: ["objects", folderPath],
     queryFn: () => fetchObjects(folderPath),
   });
-
-  useEffect(() => {
-    if (!menuPath) {
-      return;
-    }
-    const onDoc = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuPath(null);
-      }
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [menuPath]);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -148,28 +135,154 @@ export default function SystemFolderListPanel({
     }
     return sortDir === "asc" ? " ↑" : " ↓";
   };
+  const openChild = (child: ObjectSummary) => {
+    const canOpenEditor = Boolean(
+      onOpenEditor && isSpecializedEditorObject(child.path, child.type, child.templateId),
+    );
+    const canOpenOperatorApp = Boolean(
+      onOpenOperatorApp && isOperatorAppChildPath(child.path),
+    );
+    if (canOpenOperatorApp) {
+      onOpenOperatorApp?.(child.path);
+      return;
+    }
+    if (canOpenEditor) {
+      onOpenEditor?.(child.path);
+      return;
+    }
+    onSelectPath(child.path);
+  };
+  const columns: TableColumnsType<ObjectSummary> = [
+    {
+      title: (
+        <Button type="link" className="catalog-sort-btn" onClick={() => toggleSort("name")}>
+          {t("common:field.displayName")}
+          {sortMark("name")}
+        </Button>
+      ),
+      key: "name",
+      render: (_, child) => {
+        const id = childIdFromPath(folderPath, child.path);
+        const name = child.displayName || id;
+        const showIdUnderName = id !== name;
+        const canOpenEditor = Boolean(
+          onOpenEditor && isSpecializedEditorObject(child.path, child.type, child.templateId),
+        );
+        const canOpenOperatorApp = Boolean(
+          onOpenOperatorApp && isOperatorAppChildPath(child.path),
+        );
+        return (
+          <Button
+            type="link"
+            className="catalog-name-btn"
+            onClick={() => {
+              if (canOpenOperatorApp) {
+                onOpenOperatorApp?.(child.path);
+                return;
+              }
+              if (canOpenEditor && child.type === "DASHBOARD") {
+                onOpenEditor?.(child.path);
+                return;
+              }
+              onSelectPath(child.path);
+            }}
+          >
+            <span className="catalog-name">{name}</span>
+            {showIdUnderName && <span className="catalog-id-sub">{id}</span>}
+          </Button>
+        );
+      },
+    },
+    {
+      title: (
+        <Button type="link" className="catalog-sort-btn" onClick={() => toggleSort("type")}>
+          {t("common:table.type")}
+          {sortMark("type")}
+        </Button>
+      ),
+      dataIndex: "type",
+      key: "type",
+      render: (type: string) => <Tag className="catalog-type-chip">{type}</Tag>,
+    },
+    {
+      title: (
+        <Button type="link" className="catalog-sort-btn" onClick={() => toggleSort("template")}>
+          {t("folderList.template")}
+          {sortMark("template")}
+        </Button>
+      ),
+      dataIndex: "templateId",
+      key: "templateId",
+      render: (templateId: string | null | undefined) =>
+        templateId ? (
+          <Tag className="catalog-template-chip" title={templateId}>
+            {shortTemplateId(templateId)}
+          </Tag>
+        ) : (
+          <Typography.Text type="secondary">{t("common:empty.dash")}</Typography.Text>
+        ),
+    },
+    {
+      title: t("common:table.description"),
+      dataIndex: "description",
+      key: "description",
+      render: (descriptionValue: string | null | undefined) => {
+        const description = (descriptionValue || "").trim();
+        return description ? (
+          <span title={description}>{truncateText(description)}</span>
+        ) : (
+          <Typography.Text type="secondary">{t("common:empty.dash")}</Typography.Text>
+        );
+      },
+    },
+    {
+      title: t("common:table.actions"),
+      key: "actions",
+      className: "catalog-actions-col",
+      render: (_, child) => {
+        const canOpenEditor = Boolean(
+          onOpenEditor && isSpecializedEditorObject(child.path, child.type, child.templateId),
+        );
+        const canOpenOperatorApp = Boolean(
+          onOpenOperatorApp && isOperatorAppChildPath(child.path),
+        );
+        return (
+          <Space className="catalog-row-actions">
+            {(canOpenEditor || canOpenOperatorApp) && (
+              <Button size="small" onClick={() => openChild(child)}>
+                {t("common:action.open")}
+              </Button>
+            )}
+            <Button size="small" onClick={() => onSelectPath(child.path)}>
+              {t("folderList.action.select")}
+            </Button>
+          </Space>
+        );
+      },
+    },
+  ];
 
   return (
     <section className="security-users-panel catalog-folder-panel">
       <header className="security-users-header">
         <div>
-          <h3>{meta.title}</h3>
-          <p className="op-muted catalog-folder-desc" title={meta.description}>
+          <Typography.Title level={3}>{meta.title}</Typography.Title>
+          <Typography.Paragraph type="secondary" className="catalog-folder-desc" title={meta.description}>
             {truncateText(meta.description, 160)}
-          </p>
+          </Typography.Paragraph>
         </div>
         {canManage && createAction && (
-          <button type="button" className="btn primary" onClick={createAction}>
+          <Button type="primary" onClick={createAction}>
             {isApplicationsFolder
               ? t("contextMenu.create.application")
               : t("folderList.create")}
-          </button>
+          </Button>
         )}
       </header>
 
-      {childrenQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}
+      {childrenQuery.isLoading && <Typography.Text type="secondary">{t("common:action.loading")}</Typography.Text>}
       {childrenQuery.error && (
-        <div className="op-alert op-alert-error">{String(childrenQuery.error)}</div>
+        <Alert type="error" showIcon message={String(childrenQuery.error)} />
       )}
 
       {!childrenQuery.isLoading && !childrenQuery.error && (childrenQuery.data?.length ?? 0) === 0 && (
@@ -178,9 +291,9 @@ export default function SystemFolderListPanel({
           hint={t("folderList.emptyCreate")}
           action={
             canManage && createAction ? (
-              <button type="button" className="btn primary" onClick={createAction}>
+              <Button type="primary" onClick={createAction}>
                 {t("folderList.create")}
-              </button>
+              </Button>
             ) : undefined
           }
         />
@@ -189,180 +302,34 @@ export default function SystemFolderListPanel({
       {(childrenQuery.data?.length ?? 0) > 0 && (
         <>
           <div className="catalog-folder-toolbar">
-            <input
-              type="search"
+            <Input.Search
               className="catalog-folder-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("folderList.searchPlaceholder")}
               aria-label={t("folderList.searchPlaceholder")}
             />
-            <span className="op-muted catalog-folder-count">
+            <Typography.Text type="secondary" className="catalog-folder-count">
               {t("folderList.count", { count: rows.length, total: childrenQuery.data?.length ?? 0 })}
-            </span>
+            </Typography.Text>
           </div>
 
           {rows.length === 0 ? (
             <EmptyState title={t("common:empty.noMatches")} />
           ) : (
             <div className="catalog-folder-table-wrap">
-              <table className="op-table security-users-table security-users-table-compact catalog-folder-table">
-                <thead>
-                  <tr>
-                    <th>
-                      <button type="button" className="catalog-sort-btn" onClick={() => toggleSort("name")}>
-                        {t("common:field.displayName")}
-                        {sortMark("name")}
-                      </button>
-                    </th>
-                    <th>
-                      <button type="button" className="catalog-sort-btn" onClick={() => toggleSort("type")}>
-                        {t("common:table.type")}
-                        {sortMark("type")}
-                      </button>
-                    </th>
-                    <th>
-                      <button type="button" className="catalog-sort-btn" onClick={() => toggleSort("template")}>
-                        {t("folderList.template")}
-                        {sortMark("template")}
-                      </button>
-                    </th>
-                    <th>{t("common:table.description")}</th>
-                    <th className="catalog-actions-col">{t("common:table.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((child) => {
-                    const id = childIdFromPath(folderPath, child.path);
-                    const name = child.displayName || id;
-                    const showIdUnderName = id !== name;
-                    const canOpenEditor = Boolean(
-                      onOpenEditor && isSpecializedEditorObject(child.path, child.type, child.templateId),
-                    );
-                    const canOpenOperatorApp = Boolean(
-                      onOpenOperatorApp && isOperatorAppChildPath(child.path),
-                    );
-                    const description = (child.description || "").trim();
-                    return (
-                      <tr
-                        key={child.path}
-                        className="catalog-row"
-                        onDoubleClick={() => {
-                          if (canOpenOperatorApp) {
-                            onOpenOperatorApp?.(child.path);
-                            return;
-                          }
-                          if (canOpenEditor) {
-                            onOpenEditor?.(child.path);
-                            return;
-                          }
-                          onSelectPath(child.path);
-                        }}
-                      >
-                        <td>
-                          <button
-                            type="button"
-                            className="link-btn catalog-name-btn"
-                            onClick={() => {
-                              if (canOpenOperatorApp) {
-                                onOpenOperatorApp?.(child.path);
-                                return;
-                              }
-                              if (canOpenEditor && child.type === "DASHBOARD") {
-                                onOpenEditor?.(child.path);
-                                return;
-                              }
-                              onSelectPath(child.path);
-                            }}
-                          >
-                            <span className="catalog-name">{name}</span>
-                            {showIdUnderName && <span className="catalog-id-sub">{id}</span>}
-                          </button>
-                        </td>
-                        <td>
-                          <span className="catalog-type-chip">{child.type}</span>
-                        </td>
-                        <td>
-                          {child.templateId ? (
-                            <span className="catalog-template-chip" title={child.templateId}>
-                              {shortTemplateId(child.templateId)}
-                            </span>
-                          ) : (
-                            <span className="op-muted">{t("common:empty.dash")}</span>
-                          )}
-                        </td>
-                        <td className="catalog-desc-cell">
-                          {description ? (
-                            <span title={description}>{truncateText(description)}</span>
-                          ) : (
-                            <span className="op-muted">{t("common:empty.dash")}</span>
-                          )}
-                        </td>
-                        <td className="catalog-actions-col">
-                          <div className="catalog-row-actions" ref={menuPath === child.path ? menuRef : undefined}>
-                            {(canOpenEditor || canOpenOperatorApp) && (
-                              <button
-                                type="button"
-                                className="btn btn-sm"
-                                onClick={() => {
-                                  if (canOpenOperatorApp) {
-                                    onOpenOperatorApp?.(child.path);
-                                    return;
-                                  }
-                                  onOpenEditor?.(child.path);
-                                }}
-                              >
-                                {t("common:action.open")}
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              className="btn btn-sm catalog-kebab"
-                              aria-label={t("folderList.moreActions")}
-                              aria-expanded={menuPath === child.path}
-                              onClick={() =>
-                                setMenuPath((current) => (current === child.path ? null : child.path))
-                              }
-                            >
-                              ⋮
-                            </button>
-                            {menuPath === child.path && (
-                              <div className="catalog-kebab-menu" role="menu">
-                                <button
-                                  type="button"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    onSelectPath(child.path);
-                                    setMenuPath(null);
-                                  }}
-                                >
-                                  {t("folderList.action.select")}
-                                </button>
-                                {(canOpenEditor || canOpenOperatorApp) && (
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                      if (canOpenOperatorApp) {
-                                        onOpenOperatorApp?.(child.path);
-                                      } else {
-                                        onOpenEditor?.(child.path);
-                                      }
-                                      setMenuPath(null);
-                                    }}
-                                  >
-                                    {t("common:action.open")}
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <Table
+                className="security-users-table security-users-table-compact catalog-folder-table"
+                size="small"
+                pagination={false}
+                rowKey="path"
+                rowClassName="catalog-row"
+                columns={columns}
+                dataSource={rows}
+                onRow={(child) => ({
+                  onDoubleClick: () => openChild(child),
+                })}
+              />
             </div>
           )}
         </>

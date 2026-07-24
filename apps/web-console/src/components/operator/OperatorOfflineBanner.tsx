@@ -1,3 +1,4 @@
+import { Alert } from "antd";
 import { useTranslation } from "react-i18next";
 import { formatUserDateTime } from "../../utils/ui/formatDateTime";
 
@@ -18,17 +19,19 @@ export default function OperatorOfflineBanner({
     return null;
   }
 
-  return (
-    <div
-      className="operator-offline-banner op-alert op-alert-info"
-      data-testid="operator-offline-banner"
-      role="status"
-    >
-      {reconnecting
+  const message = reconnecting
         ? t("offline.reconnecting")
         : t("offline.staleBanner", {
             time: cachedAt ? formatUserDateTime(cachedAt) : t("offline.unknownTime"),
-          })}
-    </div>
+          });
+
+  return (
+    <Alert
+      className="operator-offline-banner"
+      data-testid="operator-offline-banner"
+      role="status"
+      type="info"
+      message={message}
+    />
   );
 }

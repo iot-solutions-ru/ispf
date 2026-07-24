@@ -52,6 +52,7 @@ ISPF реализует **подмножество BPMN**, не полный BPM
 | `exclusiveGateway` | Условные переходы (CEL) |
 | `parallelGateway` | Fork/join, execution tokens |
 | `subProcess` | Встроенный подпроцесс — вход во внутреннее начало, выход во внутренний конец (вложенный embedded OK; не event subprocess) |
+| `callActivity` | Запуск другого WORKFLOW с **ожиданием** завершения (`ispf:workflowPath` или `calledElement`; опционально `ispf:objectPath`, `ispf:inputMap`). Переменные дочернего — `call.{id}.*`. Fire-and-forget — `serviceTask` + `start_workflow`. |
 | `sequenceFlow` | `ispf:condition`, `ispf:default` |
 | Message catch / throw | Да — catch ждёт `deliverMessage`; throw — `intermediateThrowEvent` + `messageEventDefinition` (не-message throw отклоняется при parse) |
 
@@ -63,7 +64,6 @@ Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
 
 | Элемент / возможность | Статус |
 |-----------------------|--------|
-| `callActivity` | Не поддерживается |
 | Multi-instance (`multiInstanceLoopCharacteristics`) | Не поддерживается |
 | `inclusiveGateway` | Не поддерживается |
 | `eventBasedGateway` | Не поддерживается |
@@ -223,18 +223,15 @@ POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 
 ![BPMN-редактор workflow — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
-- **WorkflowBuilder** — статус, запуск, редактор BPMN (bpmn-js); статус продукта **Beta — подмножество BPMN** (см. таблицы выше)
-- **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`; палитра отфильтрована под subset ISPF (`ispfPaletteFilter.ts`). Жёсткий gate — reject при parse (ADR-0047).
+- **WorkflowBuilder** — статус, запуск, ISPF Workflow Diagram Editor; статус продукта **Beta — подмножество BPMN** (см. таблицы выше)
+- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — свой React+SVG редактор (без bpmn.io / без watermark). Модель сериализуется в BPMN 2.0 + `bpmndi` + `ispf:*`. Свойства — в панели; XML — для ИИ и крайних случаев.
+- **Импорт** — чужой BPMN через **Import BPMN**; `adaptForeignBpmn` перестраивает модель и показывает предупреждения. Жёсткий gate — reject при parse (ADR-0047).
 
 ### Диаграмма без разметки (DI)
 
-BPMN из движка или скриптов часто содержит только логику процесса, ** без раздела `bpmndi`** (Diagram Interchange).  
-`bpmn-js` в этом случае выдает ошибку `no diagram to display`.
+BPMN из движка часто без `bpmndi`. Редактор расставляет узлы автоматически; при сохранении XML получает `bpmndi`. Шаблон (`EMPTY_BPMN`) уже содержит минимальную разметку.
 
-Веб-консоль автоматически вызывает **`bpmn-auto-layout`** (`src/bpmn/ensureDiagram.ts`) перед включением.  
-Шаблон нового процесса (`EMPTY_BPMN` в `constants.ts`) уже включает минимальную разметку.
-
-Если диаграмма не отображается: внешняя вкладка **Исходник**, убедитесь, что `bpmnXml` не пустой, сохраните — макет будет сгенерирован при следующем открытии.
+Если диаграмма не отображается: вкладка **Исходник** или **Import BPMN** для чужих файлов.
 
 ## Отмена экземпляра
 

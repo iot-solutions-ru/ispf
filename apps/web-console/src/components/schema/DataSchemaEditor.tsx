@@ -1,5 +1,6 @@
-import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, Checkbox, Input, Select, Space, Table } from "antd";
+import type { TableColumnsType } from "antd";
 import type { DataSchema } from "../../types";
 import {
   isNestedFieldType,
@@ -28,6 +29,7 @@ export default function DataSchemaEditor({
   showSchemaName = true,
 }: DataSchemaEditorProps) {
   const { t } = useTranslation(["inspector", "common"]);
+  type SchemaFieldRow = { field: SchemaField; index: number; key: string };
 
   function updateField(index: number, patch: Partial<SchemaField>) {
     onChange({ ...value, fields: patchField(value.fields, index, patch) });
@@ -48,12 +50,119 @@ export default function DataSchemaEditor({
     onChange({ ...value, fields });
   }
 
+  const fieldRows: SchemaFieldRow[] = value.fields.map((field, index) => ({
+    field,
+    index,
+    key: `${idPrefix}-${field.name}-${index}`,
+  }));
+
+  const columns: TableColumnsType<SchemaFieldRow> = [
+    {
+      title: t("common:table.name"),
+      dataIndex: ["field", "name"],
+      width: "20%",
+      render: (_name, { field, index }) => (
+        <Input
+          className="table-control mono"
+          value={field.name}
+          disabled={disabled}
+          onChange={(e) => updateField(index, { name: e.target.value })}
+        />
+      ),
+    },
+    {
+      title: t("common:table.type"),
+      dataIndex: ["field", "type"],
+      width: "22%",
+      render: (_type, { field, index }) => (
+        <Select
+          className="table-control"
+          value={field.type}
+          disabled={disabled}
+          onChange={(type) => {
+            const patch: Partial<SchemaField> = { type };
+            if (isNestedFieldType(type) && !field.nestedSchema) {
+              patch.nestedSchema = { name: `${field.name}Item`, fields: [] };
+            }
+            if (!isNestedFieldType(type)) {
+              patch.nestedSchema = undefined;
+            }
+            updateField(index, patch);
+          }}
+          options={SCHEMA_FIELD_TYPES.map((type) => ({ value: type, label: type }))}
+        />
+      ),
+    },
+    {
+      title: t("common:table.description"),
+      dataIndex: ["field", "description"],
+      render: (_description, { field, index }) => (
+        <Input
+          className="table-control"
+          value={field.description ?? ""}
+          disabled={disabled}
+          placeholder={t("schemaEditor.descriptionPlaceholder")}
+          onChange={(e) => updateField(index, { description: e.target.value })}
+        />
+      ),
+    },
+    {
+      title: t("schemaEditor.nullable"),
+      dataIndex: ["field", "nullable"],
+      width: 96,
+      align: "center",
+      render: (_nullable, { field, index }) => (
+        <Checkbox
+          className="table-checkbox"
+          checked={field.nullable !== false}
+          disabled={disabled}
+          onChange={(e) => updateField(index, { nullable: e.target.checked })}
+        />
+      ),
+    },
+    {
+      title: "",
+      key: "actions",
+      width: 128,
+      align: "right",
+      render: (_unused, { index }) =>
+        !disabled ? (
+          <Space.Compact className="schema-field-actions">
+            <Button
+              size="small"
+              title={t("schemaEditor.moveUp")}
+              disabled={index === 0}
+              onClick={() => moveField(index, -1)}
+            >
+              ↑
+            </Button>
+            <Button
+              size="small"
+              title={t("schemaEditor.moveDown")}
+              disabled={index === value.fields.length - 1}
+              onClick={() => moveField(index, 1)}
+            >
+              ↓
+            </Button>
+            <Button
+              size="small"
+              danger
+              title={t("common:action.delete")}
+              onClick={() => removeField(index)}
+            >
+              ✕
+            </Button>
+          </Space.Compact>
+        ) : null,
+    },
+  ];
+
   return (
     <div className="data-schema-editor">
       {showSchemaName && (
         <label className="field-block full">
           <span className="field-label">{t("schemaEditor.schemaName")}</span>
-          <input
+          <Input
             value={value.name}
             disabled={disabled}
             onChange={(e) => onChange({ ...value, name: e.target.value })}
@@ -66,138 +175,35 @@ export default function DataSchemaEditor({
       )}
 
       {value.fields.length > 0 && (
-        <div className="table-scroll">
-          <table className="data-table data-schema-fields-table">
-            <colgroup>
-              <col className="schema-col-name" />
-              <col className="schema-col-type" />
-              <col className="schema-col-description" />
-              <col className="schema-col-nullable" />
-              <col className="schema-col-actions" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>{t("common:table.name")}</th>
-                <th>{t("common:table.type")}</th>
-                <th>{t("common:table.description")}</th>
-                <th>{t("schemaEditor.nullable")}</th>
-                <th aria-label={t("common:table.actions")} />
-              </tr>
-            </thead>
-            <tbody>
-              {value.fields.map((field, index) => (
-                <Fragment key={`${idPrefix}-${field.name}-${index}`}>
-                  <tr>
-                    <td>
-                      <input
-                        className="table-control mono"
-                        value={field.name}
-                        disabled={disabled}
-                        onChange={(e) => updateField(index, { name: e.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <select
-                        className="table-control"
-                        value={field.type}
-                        disabled={disabled}
-                        onChange={(e) => {
-                          const type = e.target.value;
-                          const patch: Partial<SchemaField> = { type };
-                          if (isNestedFieldType(type) && !field.nestedSchema) {
-                            patch.nestedSchema = { name: `${field.name}Item`, fields: [] };
-                          }
-                          if (!isNestedFieldType(type)) {
-                            patch.nestedSchema = undefined;
-                          }
-                          updateField(index, patch);
-                        }}
-                      >
-                        {SCHEMA_FIELD_TYPES.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        className="table-control"
-                        value={field.description ?? ""}
-                        disabled={disabled}
-                        placeholder={t("schemaEditor.descriptionPlaceholder")}
-                        onChange={(e) => updateField(index, { description: e.target.value })}
-                      />
-                    </td>
-                    <td className="schema-null-cell">
-                      <input
-                        className="table-checkbox"
-                        type="checkbox"
-                        checked={field.nullable !== false}
-                        disabled={disabled}
-                        onChange={(e) => updateField(index, { nullable: e.target.checked })}
-                      />
-                    </td>
-                    <td className="schema-actions-cell">
-                      {!disabled && (
-                        <span className="schema-field-actions">
-                          <button
-                            type="button"
-                            className="btn tiny"
-                            title={t("schemaEditor.moveUp")}
-                            disabled={index === 0}
-                            onClick={() => moveField(index, -1)}
-                          >
-                            ↑
-                          </button>
-                          <button
-                            type="button"
-                            className="btn tiny"
-                            title={t("schemaEditor.moveDown")}
-                            disabled={index === value.fields.length - 1}
-                            onClick={() => moveField(index, 1)}
-                          >
-                            ↓
-                          </button>
-                          <button
-                            type="button"
-                            className="btn tiny danger"
-                            title={t("common:action.delete")}
-                            onClick={() => removeField(index)}
-                          >
-                            ✕
-                          </button>
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  {isNestedFieldType(field.type) && field.nestedSchema && (
-                    <tr className="schema-nested-row">
-                      <td colSpan={5}>
-                        <div className="schema-nested-panel">
-                          <span className="field-label">{t("schemaEditor.nestedSchema")}</span>
-                          <DataSchemaEditor
-                            value={field.nestedSchema}
-                            onChange={(nestedSchema) => updateField(index, { nestedSchema })}
-                            disabled={disabled}
-                            idPrefix={`${idPrefix}-nested-${index}`}
-                            showSchemaName={false}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table<SchemaFieldRow>
+          className="data-schema-fields-table"
+          columns={columns}
+          dataSource={fieldRows}
+          pagination={false}
+          size="small"
+          scroll={{ x: true }}
+          expandable={{
+            rowExpandable: ({ field }) => isNestedFieldType(field.type) && Boolean(field.nestedSchema),
+            expandedRowRender: ({ field, index }) =>
+              field.nestedSchema ? (
+                <div className="schema-nested-panel">
+                  <span className="field-label">{t("schemaEditor.nestedSchema")}</span>
+                  <DataSchemaEditor
+                    value={field.nestedSchema}
+                    onChange={(nestedSchema) => updateField(index, { nestedSchema })}
+                    disabled={disabled}
+                    idPrefix={`${idPrefix}-nested-${index}`}
+                    showSchemaName={false}
+                  />
+                </div>
+              ) : null,
+          }}
+        />
       )}
 
       {!disabled && (
-        <button
-          type="button"
-          className="btn small"
+        <Button
+          size="small"
           onClick={() =>
             onChange({
               ...value,
@@ -206,7 +212,7 @@ export default function DataSchemaEditor({
           }
         >
           {t("schemaEditor.addField")}
-        </button>
+        </Button>
       )}
     </div>
   );

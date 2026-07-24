@@ -1,4 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { Alert, Button, Input, Select } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MimicCustomSymbol } from "../../types/scadaMimic";
@@ -92,6 +93,10 @@ export default function SymbolPalette({
   }, [documentCustom.length, packReady, paletteCategories]);
 
   const totalCount = listAllSymbols().length + documentCustom.length;
+  const categoryOptions = paletteCategories.map((cat) => ({
+    value: cat,
+    label: `${t(`categories.${cat}`, { defaultValue: cat })} (${categoryCounts[cat] ?? 0})`,
+  }));
 
   const virtualizer = useVirtualizer({
     count: symbols.length,
@@ -107,34 +112,33 @@ export default function SymbolPalette({
         <span className="scada-panel-badge">{totalCount}</span>
       </div>
 
+      {/* Keep a real flex column — Ant Space is inline-flex and breaks virtualized list height. */}
       <div className="scada-palette-body">
         <div className="scada-palette-search-wrap">
-          <IconSearch className="scada-palette-search-icon" />
-          <input
+          <Input
             type="search"
             className="scada-palette-search"
+            prefix={<IconSearch className="scada-palette-search-icon" />}
             placeholder={t("palette.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            allowClear
           />
         </div>
 
         <label className="scada-palette-category-select">
           <span className="scada-palette-category-label">{t("palette.category")}</span>
-          <select
+          <Select
+            className="scada-palette-category-control"
+            style={{ width: "100%" }}
             value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
+            onChange={(value) => {
+              setCategory(value);
               setSearch("");
             }}
             disabled={Boolean(search.trim())}
-          >
-            {paletteCategories.map((cat) => (
-              <option key={cat} value={cat}>
-                {t(`categories.${cat}`, { defaultValue: cat })} ({categoryCounts[cat] ?? 0})
-              </option>
-            ))}
-          </select>
+            options={categoryOptions}
+          />
         </label>
 
         {category === "custom" && onUploadCustomSymbol && (
@@ -150,13 +154,14 @@ export default function SymbolPalette({
                 e.target.value = "";
               }}
             />
-            <button
-              type="button"
+            <Button
+              type="primary"
+              block
               className="scada-btn-primary scada-btn-block scada-palette-upload"
               onClick={() => fileRef.current?.click()}
             >
               {t("palette.uploadSvg")}
-            </button>
+            </Button>
           </>
         )}
 
@@ -168,9 +173,12 @@ export default function SymbolPalette({
 
         <div ref={listRef} className="scada-palette-list">
           {symbols.length === 0 ? (
-            <p className="scada-palette-empty">
-              {category === "custom" ? t("palette.customEmpty") : t("palette.empty")}
-            </p>
+            <Alert
+              className="scada-palette-empty"
+              type="info"
+              showIcon={false}
+              message={category === "custom" ? t("palette.customEmpty") : t("palette.empty")}
+            />
           ) : (
             <div
               className="scada-palette-virtual-inner"

@@ -1,4 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
+import { Button, Modal, Select, Space, Table, Typography } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -86,36 +88,90 @@ export default function FederationCatalogSyncDialog({
   const conflictRows = preview?.conflicts ?? [];
   const titleKey = subtreeMode ? "subtreeSync.title" : "catalogSync.title";
   const applyKey = subtreeMode ? "subtreeSync.apply" : "catalogSync.apply";
+  const conflictColumns: ColumnsType<CatalogSyncConflict> = [
+    {
+      title: t("catalogSync.column.localPath"),
+      dataIndex: "localPath",
+      key: "localPath",
+      render: (_value, conflict) => (
+        <Space orientation="vertical" size={0}>
+          <Typography.Text code>{conflict.localPath}</Typography.Text>
+          <Typography.Text type="secondary">{conflict.localDisplayName}</Typography.Text>
+        </Space>
+      ),
+    },
+    {
+      title: t("catalogSync.column.type"),
+      dataIndex: "type",
+      key: "type",
+      render: (type: CatalogSyncConflict["type"]) => t(`catalogSync.conflict.${type}`),
+    },
+    {
+      title: t("catalogSync.column.action"),
+      key: "action",
+      render: (_value, conflict) => (
+        <Select<CatalogSyncResolutionAction>
+          value={actions[conflict.localPath] ?? "SKIP"}
+          onChange={(value) =>
+            setActions((current) => ({
+              ...current,
+              [conflict.localPath]: value,
+            }))
+          }
+          options={[
+            { value: "SKIP", label: t("catalogSync.action.skip") },
+            { value: "BIND", label: t("catalogSync.action.bind") },
+          ]}
+          style={{ minWidth: 140 }}
+        />
+      ),
+    },
+  ];
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div
-        className="modal federation-sync-dialog"
-        role="dialog"
-        aria-modal="true"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="modal-head">
-          <h3>{t(titleKey, { peer: peerName, remotePath: remoteSubtreePath })}</h3>
-          <button type="button" className="btn icon" onClick={onClose} aria-label={t("common:action.close")}>
-            ×
-          </button>
-        </header>
-        {previewMutation.isPending && <p className="hint">{t("catalogSync.loading")}</p>}
+    <Modal
+      title={t(titleKey, { peer: peerName, remotePath: remoteSubtreePath })}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={760}
+      footer={[
+        <Button key="cancel" onClick={onClose}>
+          {t("common:action.cancel")}
+        </Button>,
+        <Button
+          key="apply"
+          type="primary"
+          disabled={!preview}
+          loading={syncMutation.isPending}
+          onClick={() => {
+            const resolutions = conflictRows.map((conflict) => ({
+              localPath: conflict.localPath,
+              action: actions[conflict.localPath] ?? "SKIP",
+            }));
+            syncMutation.mutate(resolutions);
+          }}
+        >
+          {t(applyKey)}
+        </Button>,
+      ]}
+    >
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        {previewMutation.isPending && <Typography.Text type="secondary">{t("catalogSync.loading")}</Typography.Text>}
         {preview && (
-          <div className="modal-body">
+          <>
             {subtreeMode && (
-              <p className="hint">
-                <code>{remoteSubtreePath}</code>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                <Typography.Text code>{remoteSubtreePath}</Typography.Text>
                 {localParentPath ? (
                   <>
                     {" → "}
-                    <code>{localParentPath}</code>
+                    <Typography.Text code>{localParentPath}</Typography.Text>
                   </>
                 ) : null}
-              </p>
+              </Typography.Paragraph>
             )}
-            <p className="hint">
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
               {t("catalogSync.summary", {
                 localRoot: preview.localRoot,
                 createCount: preview.createCount,
@@ -123,70 +179,23 @@ export default function FederationCatalogSyncDialog({
                 remoteCount: preview.remoteCount,
                 conflictCount: preview.conflicts.length,
               })}
-            </p>
+            </Typography.Paragraph>
             {conflictRows.length > 0 ? (
-              <div className="op-table-wrap">
-                <table className="op-table federation-conflicts-table">
-                  <thead>
-                    <tr>
-                      <th>{t("catalogSync.column.localPath")}</th>
-                      <th>{t("catalogSync.column.type")}</th>
-                      <th>{t("catalogSync.column.action")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {conflictRows.map((conflict: CatalogSyncConflict) => (
-                      <tr key={conflict.localPath}>
-                        <td>
-                          <code>{conflict.localPath}</code>
-                          <div className="op-muted">{conflict.localDisplayName}</div>
-                        </td>
-                        <td>{t(`catalogSync.conflict.${conflict.type}`)}</td>
-                        <td>
-                          <select
-                            className="table-control"
-                            value={actions[conflict.localPath] ?? "SKIP"}
-                            onChange={(event) =>
-                              setActions((current) => ({
-                                ...current,
-                                [conflict.localPath]: event.target.value as CatalogSyncResolutionAction,
-                              }))
-                            }
-                          >
-                            <option value="SKIP">{t("catalogSync.action.skip")}</option>
-                            <option value="BIND">{t("catalogSync.action.bind")}</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table<CatalogSyncConflict>
+                size="small"
+                rowKey="localPath"
+                columns={conflictColumns}
+                dataSource={conflictRows}
+                pagination={false}
+              />
             ) : (
-              <p className="hint">{t("catalogSync.noConflicts")}</p>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                {t("catalogSync.noConflicts")}
+              </Typography.Paragraph>
             )}
-          </div>
+          </>
         )}
-        <footer className="modal-foot">
-          <button type="button" className="btn" onClick={onClose}>
-            {t("common:action.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!preview || syncMutation.isPending}
-            onClick={() => {
-              const resolutions = conflictRows.map((conflict) => ({
-                localPath: conflict.localPath,
-                action: actions[conflict.localPath] ?? "SKIP",
-              }));
-              syncMutation.mutate(resolutions);
-            }}
-          >
-            {t(applyKey)}
-          </button>
-        </footer>
-      </div>
-    </div>
+      </Space>
+    </Modal>
   );
 }

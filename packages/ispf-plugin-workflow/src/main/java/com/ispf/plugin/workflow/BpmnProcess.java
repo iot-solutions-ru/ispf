@@ -12,6 +12,7 @@ public record BpmnProcess(
         Map<String, ServiceTaskDefinition> serviceTasks,
         Map<String, UserTaskDefinition> userTasks,
         Map<String, MessageTaskDefinition> messageTasks,
+        Map<String, CallActivityDefinition> callActivities,
         Map<String, SignalCatchDefinition> signalCatchEvents,
         Map<String, MessageCatchDefinition> messageCatchEvents,
         Map<String, MessageThrowDefinition> messageThrowEvents,

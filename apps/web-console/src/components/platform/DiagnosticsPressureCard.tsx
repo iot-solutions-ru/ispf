@@ -1,6 +1,8 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Alert, Button, Select, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import {
   fetchClusterDiagnostics,
   fetchDiagnosticsMetricsProbe,
@@ -22,6 +24,12 @@ function severityClass(severity: DiagnosticsSeverity): string {
   return "diagnostics-severity-info";
 }
 
+function severityColor(severity: DiagnosticsSeverity): "error" | "warning" | "processing" {
+  if (severity === "critical") return "error";
+  if (severity === "warning") return "warning";
+  return "processing";
+}
+
 function formatPercent(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return `${value.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
@@ -35,18 +43,98 @@ function NodeDetailPanel({ node }: { node: ClusterDiagnosticsNode }) {
   const topThreads = detail.topThreads ?? [];
   const runningJobs = detail.runningJobs ?? [];
   const runningWorkflows = detail.runningWorkflows ?? [];
+  const threadGroupColumns: TableColumnsType<(typeof threadGroups)[number]> = [
+    {
+      title: t("diagnostics.col.threadGroup"),
+      dataIndex: "prefix",
+      key: "prefix",
+      render: (prefix: string) => <Typography.Text code>{prefix}</Typography.Text>,
+    },
+    { title: t("diagnostics.col.threadCount"), dataIndex: "threadCount", key: "threadCount" },
+    {
+      title: t("diagnostics.col.cpuDelta"),
+      dataIndex: "cpuPercentDelta",
+      key: "cpuPercentDelta",
+      render: (value: number | null | undefined) => formatPercent(value),
+    },
+  ];
+  const topThreadColumns: TableColumnsType<(typeof topThreads)[number]> = [
+    {
+      title: t("diagnostics.col.threadName"),
+      dataIndex: "name",
+      key: "name",
+      render: (name: string) => <Typography.Text code>{name}</Typography.Text>,
+    },
+    {
+      title: t("diagnostics.col.cpuDelta"),
+      dataIndex: "cpuPercentDelta",
+      key: "cpuPercentDelta",
+      render: (value: number | null | undefined) => formatPercent(value),
+    },
+  ];
+  const driverColumns: TableColumnsType<DriverDiagnosticsRow> = [
+    {
+      title: t("diagnostics.col.devicePath"),
+      dataIndex: "devicePath",
+      key: "devicePath",
+      render: (devicePath: string) => <Typography.Text code>{devicePath}</Typography.Text>,
+    },
+    { title: t("diagnostics.col.driverId"), dataIndex: "driverId", key: "driverId" },
+    { title: t("diagnostics.col.pollMs"), dataIndex: "pollIntervalMs", key: "pollIntervalMs" },
+    {
+      title: t("diagnostics.col.pointCount"),
+      dataIndex: "pointMappingCount",
+      key: "pointMappingCount",
+      render: (value: number | null | undefined) => value ?? "—",
+    },
+    {
+      title: t("diagnostics.col.ingressPending"),
+      dataIndex: "ingressPending",
+      key: "ingressPending",
+      render: (value: number | null | undefined) => value ?? "—",
+    },
+    {
+      title: t("diagnostics.col.pressure"),
+      dataIndex: "pressureScore",
+      key: "pressureScore",
+      render: (value: number, driver) => <span title={driver.lastError ?? undefined}>{value}</span>,
+    },
+  ];
+  const jobColumns: TableColumnsType<(typeof runningJobs)[number]> = [
+    { title: t("diagnostics.col.jobType"), dataIndex: "jobType", key: "jobType", render: (value) => String(value ?? "—") },
+    {
+      title: t("diagnostics.col.runningSeconds"),
+      dataIndex: "runningSeconds",
+      key: "runningSeconds",
+      render: (value) => String(value ?? "—"),
+    },
+  ];
+  const workflowColumns: TableColumnsType<(typeof runningWorkflows)[number]> = [
+    {
+      title: t("diagnostics.col.workflowPath"),
+      dataIndex: "workflowPath",
+      key: "workflowPath",
+      render: (value) => <Typography.Text code>{String(value ?? "—")}</Typography.Text>,
+    },
+    {
+      title: t("diagnostics.col.runningSeconds"),
+      dataIndex: "runningSeconds",
+      key: "runningSeconds",
+      render: (value) => String(value ?? "—"),
+    },
+  ];
 
   return (
     <div className="diagnostics-node-detail">
       {node.suspects.length > 0 && (
         <section>
-          <h4>{t("diagnostics.suspectsTitle")}</h4>
+          <Typography.Title level={4}>{t("diagnostics.suspectsTitle")}</Typography.Title>
           <ul className="diagnostics-suspect-list">
             {node.suspects.map((suspect) => (
               <li key={`${node.replicaId}-${suspect.id}`} className={severityClass(suspect.severity)}>
-                <span className="diagnostics-suspect-kind">{t(`diagnostics.kind.${suspect.kind}`)}</span>
-                <strong>{suspect.title}</strong>
-                <span className="op-muted">{suspect.detail}</span>
+                <Tag color={severityColor(suspect.severity)}>{t(`diagnostics.kind.${suspect.kind}`)}</Tag>
+                <Typography.Text strong>{suspect.title}</Typography.Text>
+                <Typography.Text type="secondary">{suspect.detail}</Typography.Text>
               </li>
             ))}
           </ul>
@@ -55,132 +143,82 @@ function NodeDetailPanel({ node }: { node: ClusterDiagnosticsNode }) {
 
       {threadGroups.length > 0 && (
         <section>
-          <h4>{t("diagnostics.threadsTitle")}</h4>
+          <Typography.Title level={4}>{t("diagnostics.threadsTitle")}</Typography.Title>
           {detail.threadSampleReady === false && (
-            <p className="op-muted diagnostics-thread-hint">{t("diagnostics.threadSampleWarmup")}</p>
+            <Typography.Paragraph type="secondary" className="diagnostics-thread-hint">
+              {t("diagnostics.threadSampleWarmup")}
+            </Typography.Paragraph>
           )}
           {detail.threadSampleReady !== false && detail.threadCpuAttributedPercent != null && (
-            <p className="op-muted diagnostics-thread-hint">
+            <Typography.Paragraph type="secondary" className="diagnostics-thread-hint">
               {t("diagnostics.threadCpuAttributed", {
                 attributed: formatPercent(detail.threadCpuAttributedPercent),
                 process: formatPercent(node.processCpuPercent),
                 window: detail.threadSampleWindowSeconds ?? "—",
               })}
-            </p>
+            </Typography.Paragraph>
           )}
-          <table className="op-table diagnostics-detail-table">
-            <thead>
-              <tr>
-                <th>{t("diagnostics.col.threadGroup")}</th>
-                <th>{t("diagnostics.col.threadCount")}</th>
-                <th>{t("diagnostics.col.cpuDelta")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {threadGroups.map((group) => (
-                <tr key={group.prefix}>
-                  <td className="mono">{group.prefix}</td>
-                  <td>{group.threadCount}</td>
-                  <td>{formatPercent(group.cpuPercentDelta)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table
+            className="diagnostics-detail-table"
+            size="small"
+            pagination={false}
+            rowKey="prefix"
+            columns={threadGroupColumns}
+            dataSource={threadGroups}
+          />
           {topThreads.length > 0 && (
-            <table className="op-table diagnostics-detail-table">
-              <thead>
-                <tr>
-                  <th>{t("diagnostics.col.threadName")}</th>
-                  <th>{t("diagnostics.col.cpuDelta")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topThreads.map((thread) => (
-                  <tr key={thread.name}>
-                    <td className="mono">{thread.name}</td>
-                    <td>{formatPercent(thread.cpuPercentDelta)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <Table
+              className="diagnostics-detail-table"
+              size="small"
+              pagination={false}
+              rowKey="name"
+              columns={topThreadColumns}
+              dataSource={topThreads}
+            />
           )}
         </section>
       )}
 
       {drivers.length > 0 && (
         <section>
-          <h4>{t("diagnostics.driversTitle")}</h4>
-          <table className="op-table diagnostics-detail-table">
-            <thead>
-              <tr>
-                <th>{t("diagnostics.col.devicePath")}</th>
-                <th>{t("diagnostics.col.driverId")}</th>
-                <th>{t("diagnostics.col.pollMs")}</th>
-                <th>{t("diagnostics.col.pointCount")}</th>
-                <th>{t("diagnostics.col.ingressPending")}</th>
-                <th>{t("diagnostics.col.pressure")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {drivers.map((driver: DriverDiagnosticsRow) => (
-                <tr
-                  key={driver.devicePath}
-                  className={driver.pressureScore >= 100 ? "diagnostics-driver-hot" : undefined}
-                >
-                  <td className="mono">{driver.devicePath}</td>
-                  <td>{driver.driverId}</td>
-                  <td>{driver.pollIntervalMs}</td>
-                  <td>{driver.pointMappingCount ?? "—"}</td>
-                  <td>{driver.ingressPending ?? "—"}</td>
-                  <td title={driver.lastError ?? undefined}>{driver.pressureScore}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Typography.Title level={4}>{t("diagnostics.driversTitle")}</Typography.Title>
+          <Table
+            className="diagnostics-detail-table"
+            size="small"
+            pagination={false}
+            rowKey="devicePath"
+            rowClassName={(driver) => driver.pressureScore >= 100 ? "diagnostics-driver-hot" : ""}
+            columns={driverColumns}
+            dataSource={drivers}
+          />
         </section>
       )}
 
       {runningJobs.length > 0 && (
         <section>
-          <h4>{t("diagnostics.jobsTitle")}</h4>
-          <table className="op-table diagnostics-detail-table">
-            <thead>
-              <tr>
-                <th>{t("diagnostics.col.jobType")}</th>
-                <th>{t("diagnostics.col.runningSeconds")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runningJobs.map((job) => (
-                <tr key={String(job.jobId)}>
-                  <td>{String(job.jobType ?? "—")}</td>
-                  <td>{String(job.runningSeconds ?? "—")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Typography.Title level={4}>{t("diagnostics.jobsTitle")}</Typography.Title>
+          <Table
+            className="diagnostics-detail-table"
+            size="small"
+            pagination={false}
+            rowKey={(job) => String(job.jobId)}
+            columns={jobColumns}
+            dataSource={runningJobs}
+          />
         </section>
       )}
 
       {runningWorkflows.length > 0 && (
         <section>
-          <h4>{t("diagnostics.workflowsTitle")}</h4>
-          <table className="op-table diagnostics-detail-table">
-            <thead>
-              <tr>
-                <th>{t("diagnostics.col.workflowPath")}</th>
-                <th>{t("diagnostics.col.runningSeconds")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runningWorkflows.map((workflow) => (
-                <tr key={String(workflow.instanceId)}>
-                  <td className="mono">{String(workflow.workflowPath ?? "—")}</td>
-                  <td>{String(workflow.runningSeconds ?? "—")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Typography.Title level={4}>{t("diagnostics.workflowsTitle")}</Typography.Title>
+          <Table
+            className="diagnostics-detail-table"
+            size="small"
+            pagination={false}
+            rowKey={(workflow) => String(workflow.instanceId)}
+            columns={workflowColumns}
+            dataSource={runningWorkflows}
+          />
         </section>
       )}
     </div>
@@ -227,127 +265,129 @@ export default function DiagnosticsPressureCard() {
     setProbeToggle(enabled);
     probeMutation.mutate(enabled);
   };
+  const nodeColumns: TableColumnsType<ClusterDiagnosticsNode> = [
+    {
+      title: t("diagnostics.col.replica"),
+      dataIndex: "replicaId",
+      key: "replicaId",
+      render: (replicaId: string, node) => (
+        <Typography.Text code>
+          {replicaId}
+          {node.self && (
+            <span className="diagnostics-self-badge" title={t("diagnostics.thisNode")}>
+              {" "}*
+            </span>
+          )}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("diagnostics.col.profile"),
+      dataIndex: "replicaProfile",
+      key: "replicaProfile",
+      render: (value: string | null | undefined) => value ?? "—",
+    },
+    {
+      title: t("diagnostics.col.status"),
+      key: "status",
+      render: (_, node) =>
+        !node.reachable ? (
+          <Tag color="error">{t("diagnostics.unreachable")}</Tag>
+        ) : (
+          node.status
+        ),
+    },
+    {
+      title: t("diagnostics.col.cpu"),
+      dataIndex: "processCpuPercent",
+      key: "processCpuPercent",
+      render: (value: number) => <span className={cpuClass(value)}>{formatPercent(value)}</span>,
+    },
+    {
+      title: t("diagnostics.col.heap"),
+      dataIndex: "heapUsedPercent",
+      key: "heapUsedPercent",
+      render: (value: number | null | undefined) => formatPercent(value),
+    },
+    {
+      title: t("diagnostics.col.topSuspect"),
+      key: "topSuspect",
+      render: (_, node) => node.topSuspect?.title ?? "—",
+    },
+  ];
 
   return (
     <section className="system-metrics-card diagnostics-pressure-card">
       <div className="diagnostics-pressure-header">
         <div>
-          <h3>{t("diagnostics.title")}</h3>
-          <p className="op-muted">{t("diagnostics.subtitle")}</p>
+          <Typography.Title level={3}>{t("diagnostics.title")}</Typography.Title>
+          <Typography.Paragraph type="secondary">{t("diagnostics.subtitle")}</Typography.Paragraph>
         </div>
-        <div className="diagnostics-pressure-actions">
-          <label className="diagnostics-probe-toggle">
-            <input
-              type="checkbox"
-              checked={probeToggle}
-              disabled={probeMutation.isPending}
-              onChange={(event) => handleProbeToggle(event.target.checked)}
-            />
-            <span>{t("diagnostics.metricsProbeToggle")}</span>
-          </label>
-          <button
-            type="button"
-            className="btn"
+        <Space className="diagnostics-pressure-actions">
+          <Select
+            className="diagnostics-probe-toggle"
+            value={probeToggle ? "true" : "false"}
+            disabled={probeMutation.isPending}
+            onChange={(value) => handleProbeToggle(value === "true")}
+            options={[
+              { value: "true", label: t("diagnostics.metricsProbeToggle") },
+              { value: "false", label: t("diagnostics.metricsProbeToggle") },
+            ]}
+          />
+          <Button
             disabled={diagnosticsQuery.isFetching}
             onClick={() => diagnosticsQuery.refetch()}
           >
             {t("metrics.refresh")}
-          </button>
-        </div>
+          </Button>
+        </Space>
       </div>
 
       {probeToggle && (
-        <p className="op-muted diagnostics-probe-hint">{t("diagnostics.metricsProbeHint")}</p>
+        <Typography.Paragraph type="secondary" className="diagnostics-probe-hint">
+          {t("diagnostics.metricsProbeHint")}
+        </Typography.Paragraph>
       )}
 
       {diagnosticsQuery.error && (
-        <div className="op-alert op-alert-error">{String(diagnosticsQuery.error)}</div>
+        <Alert type="error" showIcon message={String(diagnosticsQuery.error)} />
       )}
 
-      {diagnosticsQuery.isLoading && <p className="hint">{t("diagnostics.loading")}</p>}
+      {diagnosticsQuery.isLoading && <Typography.Text type="secondary">{t("diagnostics.loading")}</Typography.Text>}
 
       {top && top.title && (
         <div className="diagnostics-top-suspect">
           <span className="diagnostics-top-label">{t("diagnostics.clusterTopSuspect")}</span>
-          <strong>
+          <Typography.Text strong>
             {top.replicaId ? `${top.replicaId}: ` : ""}
             {top.title}
-          </strong>
-          <span className="op-muted">{top.detail}</span>
+          </Typography.Text>
+          <Typography.Text type="secondary">{top.detail}</Typography.Text>
         </div>
       )}
 
       {diagnosticsQuery.data && (
-        <table className="op-table diagnostics-cluster-table">
-          <thead>
-            <tr>
-              <th />
-              <th>{t("diagnostics.col.replica")}</th>
-              <th>{t("diagnostics.col.profile")}</th>
-              <th>{t("diagnostics.col.status")}</th>
-              <th>{t("diagnostics.col.cpu")}</th>
-              <th>{t("diagnostics.col.heap")}</th>
-              <th>{t("diagnostics.col.topSuspect")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {diagnosticsQuery.data.nodes.map((node) => {
-              const expanded = expandedReplicaId === node.replicaId;
-              return (
-                <Fragment key={node.replicaId}>
-                  <tr
-                    className={node.self ? "diagnostics-node-self" : undefined}
-                  >
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-ghost diagnostics-expand-btn"
-                        aria-expanded={expanded}
-                        onClick={() =>
-                          setExpandedReplicaId(expanded ? null : node.replicaId)
-                        }
-                      >
-                        {expanded ? "−" : "+"}
-                      </button>
-                    </td>
-                    <td className="mono">
-                      {node.replicaId}
-                      {node.self && (
-                        <span className="diagnostics-self-badge" title={t("diagnostics.thisNode")}>
-                          {" "}*
-                        </span>
-                      )}
-                    </td>
-                    <td>{node.replicaProfile ?? "—"}</td>
-                    <td>
-                      {!node.reachable ? (
-                        <span className="diagnostics-severity-critical">{t("diagnostics.unreachable")}</span>
-                      ) : (
-                        node.status
-                      )}
-                    </td>
-                    <td className={cpuClass(node.processCpuPercent)}>
-                      {formatPercent(node.processCpuPercent)}
-                    </td>
-                    <td>{formatPercent(node.heapUsedPercent)}</td>
-                    <td>{node.topSuspect?.title ?? "—"}</td>
-                  </tr>
-                  {expanded && (
-                    <tr className="diagnostics-detail-row">
-                      <td colSpan={7}>
-                        {!node.reachable ? (
-                          <p className="op-muted">{node.error ?? t("diagnostics.unreachable")}</p>
-                        ) : (
-                          <NodeDetailPanel node={node} />
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+        <Table
+          className="diagnostics-cluster-table"
+          size="small"
+          pagination={false}
+          rowKey="replicaId"
+          rowClassName={(node) => node.self ? "diagnostics-node-self" : ""}
+          columns={nodeColumns}
+          dataSource={diagnosticsQuery.data.nodes}
+          expandable={{
+            expandedRowKeys: expandedReplicaId ? [expandedReplicaId] : [],
+            onExpand: (expanded, node) => setExpandedReplicaId(expanded ? node.replicaId : null),
+            expandedRowRender: (node) =>
+              !node.reachable ? (
+                <Typography.Text type="secondary">
+                  {node.error ?? t("diagnostics.unreachable")}
+                </Typography.Text>
+              ) : (
+                <NodeDetailPanel node={node} />
+              ),
+          }}
+        />
       )}
     </section>
   );

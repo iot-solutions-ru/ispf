@@ -1,3 +1,4 @@
+import { Form, InputNumber, Select, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import type { DashboardLayout, DashboardLayoutPreset } from "../../types/dashboard";
@@ -41,106 +42,99 @@ export default function DashboardSettingsPanel({
   return (
     <aside className="dashboard-sidebar">
       <header className="dashboard-sidebar-head">
-        <h4>{t("settings.title")}</h4>
+        <Typography.Title level={5} style={{ margin: 0 }}>
+          {t("settings.title")}
+        </Typography.Title>
       </header>
-      <div className="form-grid compact">
-        <label>
-          {t("settings.layoutPreset")}
-          <select
+      <Form layout="vertical" size="small" style={{ padding: 12 }}>
+        <Form.Item label={t("settings.layoutPreset")} extra={t("settings.layoutPresetHint")}>
+          <Select
             value={layout.layoutPreset ?? ""}
-            onChange={(e) => {
-              const value = e.target.value as DashboardLayoutPreset | "";
-              if (!value) {
+            onChange={(value) => {
+              const next = value as DashboardLayoutPreset | "";
+              if (!next) {
                 onLayoutChange(clearLayoutPreset(layout));
                 return;
               }
               if (onApplyPreset) {
-                onApplyPreset(value);
+                onApplyPreset(next);
               } else {
-                onLayoutChange(applyLayoutPreset(value, layout));
+                onLayoutChange(applyLayoutPreset(next, layout));
               }
             }}
-          >
-            <option value="">{t("settings.layoutPresetDefault")}</option>
-            <option value="video-wall-2x2">{t("settings.layoutPresetVideoWall2x2")}</option>
-            <option value="video-wall-3x3">{t("settings.layoutPresetVideoWall3x3")}</option>
-            <option value="video-wall-4x4">{t("settings.layoutPresetVideoWall4x4")}</option>
-          </select>
-          <span className="hint">{t("settings.layoutPresetHint")}</span>
-        </label>
+            options={[
+              { value: "", label: t("settings.layoutPresetDefault") },
+              { value: "video-wall-2x2", label: t("settings.layoutPresetVideoWall2x2") },
+              { value: "video-wall-3x3", label: t("settings.layoutPresetVideoWall3x3") },
+              { value: "video-wall-4x4", label: t("settings.layoutPresetVideoWall4x4") },
+            ]}
+          />
+        </Form.Item>
+
         {onApplyLayoutTemplate && (
-          <label>
-            {t("settings.layoutTemplate")}
-            <select
-              defaultValue=""
+          <Form.Item label={t("settings.layoutTemplate")} extra={t("settings.layoutTemplateHint")}>
+            <Select
+              value=""
               disabled={applyLayoutTemplatePending || templatesQuery.isLoading}
-              onChange={(e) => {
-                const template = e.target.value;
-                e.target.value = "";
+              onChange={(template) => {
                 if (!template) return;
                 if (!window.confirm(t("settings.layoutTemplateConfirm", { template }))) {
                   return;
                 }
                 onApplyLayoutTemplate(template);
               }}
-            >
-              <option value="">{t("settings.layoutTemplatePlaceholder")}</option>
-              {(templatesQuery.data ?? []).map((template) => (
-                <option key={template} value={template}>
-                  {template}
-                </option>
-              ))}
-            </select>
-            <span className="hint">{t("settings.layoutTemplateHint")}</span>
-          </label>
+              options={[
+                { value: "", label: t("settings.layoutTemplatePlaceholder") },
+                ...(templatesQuery.data ?? []).map((template) => ({
+                  value: template,
+                  label: template,
+                })),
+              ]}
+            />
+          </Form.Item>
         )}
-        <label>
-          {t("settings.refreshInterval")}
-          <input
-            type="number"
+
+        <Form.Item label={t("settings.refreshInterval")} extra={t("settings.refreshIntervalHint")}>
+          <InputNumber
+            style={{ width: "100%" }}
             min={500}
             step={500}
             value={refreshIntervalMs}
-            onChange={(e) => onRefreshIntervalChange(Number(e.target.value))}
+            onChange={(value) => onRefreshIntervalChange(Number(value ?? refreshIntervalMs))}
           />
-          <span className="hint">{t("settings.refreshIntervalHint")}</span>
-        </label>
-        <label>
-          {t("settings.theme")}
-          <select
+        </Form.Item>
+
+        <Form.Item label={t("settings.theme")}>
+          <Select
             value={layout.theme ?? ""}
-            onChange={(e) =>
-              onLayoutChange({ theme: e.target.value || undefined })
-            }
-          >
-            {THEME_OPTIONS.map((item) => (
-              <option key={item.id || "default"} value={item.id}>
-                {item.labelKey ? t(item.labelKey) : item.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("settings.gridColumns")}
-          <input
-            type="number"
+            onChange={(value) => onLayoutChange({ theme: value || undefined })}
+            options={THEME_OPTIONS.map((item) => ({
+              value: item.id,
+              label: item.labelKey ? t(item.labelKey) : item.label,
+            }))}
+          />
+        </Form.Item>
+
+        <Form.Item label={t("settings.gridColumns")}>
+          <InputNumber
+            style={{ width: "100%" }}
             min={DASHBOARD_COLUMNS}
             max={DASHBOARD_COLUMNS * 2}
             value={layout.columns}
-            onChange={(e) => onLayoutChange({ columns: Number(e.target.value) })}
+            onChange={(value) => onLayoutChange({ columns: Number(value ?? layout.columns) })}
           />
-        </label>
-        <label>
-          {t("settings.rowHeight")}
-          <input
-            type="number"
+        </Form.Item>
+
+        <Form.Item label={t("settings.rowHeight")}>
+          <InputNumber
+            style={{ width: "100%" }}
             min={DASHBOARD_ROW_HEIGHT}
             max={200}
             value={layout.rowHeight}
-            onChange={(e) => onLayoutChange({ rowHeight: Number(e.target.value) })}
+            onChange={(value) => onLayoutChange({ rowHeight: Number(value ?? layout.rowHeight) })}
           />
-        </label>
-      </div>
+        </Form.Item>
+      </Form>
     </aside>
   );
 }

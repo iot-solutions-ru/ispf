@@ -1,3 +1,4 @@
+import { Button } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAgentChat } from "../../context/AgentChatContext";
@@ -77,9 +78,9 @@ export default function AiStudioPrefsTab() {
           </div>
           <span className="ai-studio-session-count">{chatIndex.chats.length}</span>
         </div>
-        <button type="button" className="btn ai-studio-clear-btn" onClick={() => clearLocalChatIndex()}>
+        <Button className="ai-studio-clear-btn" onClick={() => clearLocalChatIndex()}>
           {t("settings.clearLocalChats")}
-        </button>
+        </Button>
       </section>
     </div>
   );

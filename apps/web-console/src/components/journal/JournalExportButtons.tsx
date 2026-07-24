@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button, Space } from "antd";
 import {
   downloadJournalExport,
   type JournalExportFormat,
@@ -27,23 +28,21 @@ export default function JournalExportButtons({
   };
 
   return (
-    <div className="journal-export-actions" role="group" aria-label={t("export.label")}>
-      <button
-        type="button"
-        className="btn small"
+    <Space.Compact className="journal-export-actions" role="group" aria-label={t("export.label")}>
+      <Button
+        size="small"
         disabled={disabled}
         onClick={() => exportRows("csv")}
       >
         {t("export.csv")}
-      </button>
-      <button
-        type="button"
-        className="btn small"
+      </Button>
+      <Button
+        size="small"
         disabled={disabled}
         onClick={() => exportRows("json")}
       >
         {t("export.json")}
-      </button>
-    </div>
+      </Button>
+    </Space.Compact>
   );
 }

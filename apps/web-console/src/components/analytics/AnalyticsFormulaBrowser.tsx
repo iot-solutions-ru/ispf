@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { Button, Input, Select } from "antd";
 import { fetchAnalyticsCatalog } from "../../api/analyticsCatalog";
 import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platform/platformBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
@@ -99,21 +100,22 @@ export default function AnalyticsFormulaBrowser({
   return (
     <div className="analytics-formula-browser">
       <div className="analytics-formula-browser-toolbar">
-        <input
+        <Input
           type="search"
           value={search}
           placeholder={t("catalog.search")}
           onChange={(event) => setSearch(event.target.value)}
         />
         {!mergedMode && (
-          <select
+          <Select
             value={kindFilter}
             disabled={disabled}
-            onChange={(event) => setKindFilter(event.target.value as AnalyticsFormulaKindFilter)}
-          >
-            <option value="historian">{t("catalog.kind.historian")}</option>
-            <option value="reactive">{t("catalog.kind.reactive")}</option>
-          </select>
+            onChange={(value) => setKindFilter(value as AnalyticsFormulaKindFilter)}
+            options={[
+              { value: "historian", label: t("catalog.kind.historian") },
+              { value: "reactive", label: t("catalog.kind.reactive") },
+            ]}
+          />
         )}
       </div>
 
@@ -144,23 +146,21 @@ export default function AnalyticsFormulaBrowser({
                 </button>
                 <div className="platform-binding-catalog-actions">
                   {entry.tier === "B" ? (
-                    <button
-                      type="button"
-                      className="btn btn-sm"
+                    <Button
+                      size="small"
                       disabled={disabled}
                       onClick={() => setApplyEntry(entry)}
                     >
                       {t("formula.use")}
-                    </button>
+                    </Button>
                   ) : (
-                    <button
-                      type="button"
-                      className="btn btn-sm"
+                    <Button
+                      size="small"
                       disabled={disabled}
                       onClick={() => onInsert(buildInsertSnippet(entry))}
                     >
                       {t("catalog.insert")}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -201,14 +201,13 @@ export default function AnalyticsFormulaBrowser({
                   <p className="hint">{t(`platformBindings.${entry.id}.desc`, { defaultValue: "" })}</p>
                 </button>
                 <div className="platform-binding-catalog-actions">
-                  <button
-                    type="button"
-                    className="btn btn-sm"
+                  <Button
+                    size="small"
                     disabled={disabled}
                     onClick={() => onInsert(entry.snippet)}
                   >
                     {t("catalog.insert")}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </li>

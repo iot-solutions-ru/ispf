@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button, Modal, Space, Typography } from "antd";
 import DriverWriteForm from "./DriverWriteForm";
 
 interface DriverWriteDialogProps {
@@ -11,22 +12,24 @@ export default function DriverWriteDialog({ devicePath, canManage, onClose }: Dr
   const { t } = useTranslation(["inspector", "common"]);
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal modal-wide" onClick={(event) => event.stopPropagation()}>
-        <header className="modal-head">
-          <h3>{t("inspector:driver.write.dialogTitle")}</h3>
-          <button type="button" className="btn small" onClick={onClose}>×</button>
-        </header>
-        <div className="modal-body">
-          <p className="hint">
-            <code>{devicePath}</code>
-          </p>
-          <DriverWriteForm devicePath={devicePath} canManage={canManage} />
-        </div>
-        <footer className="modal-foot">
-          <button type="button" className="btn" onClick={onClose}>{t("common:action.close")}</button>
-        </footer>
-      </div>
-    </div>
+    <Modal
+      title={t("inspector:driver.write.dialogTitle")}
+      open
+      onCancel={onClose}
+      destroyOnHidden
+      width={760}
+      footer={
+        <Button onClick={onClose}>
+          {t("common:action.close")}
+        </Button>
+      }
+    >
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          <Typography.Text code>{devicePath}</Typography.Text>
+        </Typography.Paragraph>
+        <DriverWriteForm devicePath={devicePath} canManage={canManage} />
+      </Space>
+    </Modal>
   );
 }

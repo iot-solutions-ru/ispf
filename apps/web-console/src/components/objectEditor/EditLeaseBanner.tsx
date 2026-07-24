@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Space, Typography } from "antd";
 import { acquireEditLease, fetchEditLeases, releaseEditLease } from "../../api";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
@@ -83,56 +84,61 @@ export default function EditLeaseBanner({
 
   if (blockingLease) {
     return (
-      <div className="banner error edit-lease-banner">
-        <span>
-          {t("objectEditor.leaseBlocked", {
-            holder: blockingLease.holder,
-            until: formatDate(blockingLease.expiresAt),
-            prefix: blockingLease.pathPrefix,
-          })}
-        </span>
-      </div>
+      <Alert
+        className="edit-lease-banner"
+        type="error"
+        showIcon
+        message={t("objectEditor.leaseBlocked", {
+          holder: blockingLease.holder,
+          until: formatDate(blockingLease.expiresAt),
+          prefix: blockingLease.pathPrefix,
+        })}
+      />
     );
   }
 
   if (ownLease) {
     return (
-      <div className="banner success edit-lease-banner">
-        <span>
-          {t("objectEditor.leaseHeld", {
-            until: formatDate(ownLease.expiresAt),
-          })}
-        </span>
-        <button
-          type="button"
-          className="btn btn-sm"
-          disabled={releaseMutation.isPending}
-          onClick={() => releaseMutation.mutate()}
-        >
-          {t("objectEditor.leaseRelease")}
-        </button>
-      </div>
+      <Alert
+        className="edit-lease-banner"
+        type="success"
+        showIcon
+        message={
+          <Space>
+            <span>
+              {t("objectEditor.leaseHeld", {
+                until: formatDate(ownLease.expiresAt),
+              })}
+            </span>
+            <Button size="small" loading={releaseMutation.isPending} onClick={() => releaseMutation.mutate()}>
+              {t("objectEditor.leaseRelease")}
+            </Button>
+          </Space>
+        }
+      />
     );
   }
 
   if (!isEditing) {
     return (
-      <div className="banner edit-lease-banner">
-        <span>{t("objectEditor.leaseHint")}</span>
-        <button
-          type="button"
-          className="btn btn-sm"
-          disabled={acquireMutation.isPending}
-          onClick={() => acquireMutation.mutate()}
-        >
-          {acquireMutation.isPending
-            ? t("objectEditor.leaseAcquiring")
-            : t("objectEditor.leaseAcquire")}
-        </button>
-        {acquireMutation.isError && (
-          <span className="hint">{(acquireMutation.error as Error).message}</span>
-        )}
-      </div>
+      <Alert
+        className="edit-lease-banner"
+        type={acquireMutation.isError ? "error" : "info"}
+        showIcon
+        message={
+          <Space wrap>
+            <span>{t("objectEditor.leaseHint")}</span>
+            <Button size="small" loading={acquireMutation.isPending} onClick={() => acquireMutation.mutate()}>
+              {acquireMutation.isPending
+                ? t("objectEditor.leaseAcquiring")
+                : t("objectEditor.leaseAcquire")}
+            </Button>
+            {acquireMutation.isError && (
+              <Typography.Text type="danger">{(acquireMutation.error as Error).message}</Typography.Text>
+            )}
+          </Space>
+        }
+      />
     );
   }
 

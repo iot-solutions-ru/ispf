@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Input, Select, Space, Table, Tag, Typography } from "antd";
+import type { TableColumnsType } from "antd";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,7 +10,6 @@ import {
   type PlatformRuntimeSettingsSection,
 } from "../../api/platformRuntimeSettings";
 import { DatabaseSettingsCard } from "./DatabaseSettingsCard";
-import { SettingRow } from "./SystemSettingsSettingRow";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
 import type { AdminClientFocus } from "../../context/AdminFocusContext";
@@ -42,6 +43,62 @@ function findSetting(
     }
   }
   return undefined;
+}
+
+function SettingValueInput({
+  setting,
+  draftValue,
+  selectOptions,
+  onChange,
+}: {
+  setting: PlatformRuntimeSetting;
+  draftValue: string;
+  selectOptions?: readonly string[];
+  onChange: (value: string) => void;
+}) {
+  const { t } = useTranslation(["system", "common"]);
+
+  if (setting.type === "boolean") {
+    return (
+      <Select
+        className="system-settings-input"
+        value={draftValue}
+        disabled={!setting.editable}
+        onChange={onChange}
+        options={[
+          { value: "true", label: t("common:action.yes") },
+          { value: "false", label: t("common:action.no") },
+        ]}
+      />
+    );
+  }
+
+  if (selectOptions) {
+    return (
+      <Select
+        className="system-settings-input"
+        value={draftValue}
+        disabled={!setting.editable}
+        onChange={onChange}
+        options={selectOptions.map((option) => ({
+          value: option,
+          label: option === ""
+            ? t(`settings.options.${setting.id}.auto`, "Auto")
+            : t(`settings.options.${setting.id}.${option}`, option),
+        }))}
+      />
+    );
+  }
+
+  return (
+    <Input
+      className="system-settings-input"
+      type={setting.type === "integer" ? "number" : setting.sensitive ? "password" : "text"}
+      value={draftValue}
+      disabled={!setting.editable}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
 }
 
 function IntegrationQuickToggles({
@@ -84,28 +141,12 @@ function IntegrationQuickToggles({
               <span className="system-settings-quick-label">
                 {t(`settings.keys.${setting.id}`, setting.id)}
               </span>
-              {isBoolean ? (
-                <input
-                  type="checkbox"
-                  className="system-settings-quick-checkbox"
-                  checked={draftValue === "true"}
-                  disabled={!setting.editable}
-                  onChange={(event) => onDraftChange(setting.id, event.target.checked ? "true" : "false")}
-                />
-              ) : (
-                <select
-                  className="system-settings-input"
-                  value={draftValue}
-                  disabled={!setting.editable}
-                  onChange={(event) => onDraftChange(setting.id, event.target.value)}
-                >
-                  {(selectOptions ?? [draftValue]).map((option) => (
-                    <option key={option} value={option}>
-                      {t(`settings.options.${setting.id}.${option}`, option)}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <SettingValueInput
+                setting={setting}
+                draftValue={draftValue}
+                selectOptions={isBoolean ? undefined : selectOptions ?? [draftValue]}
+                onChange={(value) => onDraftChange(setting.id, value)}
+              />
               <span className="hint system-settings-quick-meta">
                 <code>{setting.envVar}</code>
                 {setting.overridesEnvironment && setting.environmentValue != null && (
@@ -132,36 +173,74 @@ function SettingsSectionCard({
   onDraftChange: (id: string, value: string) => void;
   sectionHint?: string;
 }) {
-  const { t } = useTranslation("system");
+  const { t } = useTranslation(["system", "common"]);
+  const columns: TableColumnsType<PlatformRuntimeSetting> = [
+    {
+      title: t("settings.column.setting"),
+      key: "setting",
+      render: (_, setting) => (
+        <>
+          <div className="system-settings-label">{t(`settings.keys.${setting.id}`, setting.id)}</div>
+          <Typography.Text code className="system-settings-env">{setting.envVar}</Typography.Text>
+        </>
+      ),
+    },
+    {
+      title: t("settings.column.value"),
+      key: "value",
+      render: (_, setting) => (
+        <SettingValueInput
+          setting={setting}
+          draftValue={drafts[setting.id] ?? setting.value}
+          selectOptions={SECTION_SELECT_OPTIONS[setting.id]}
+          onChange={(value) => onDraftChange(setting.id, value)}
+        />
+      ),
+    },
+    {
+      title: t("settings.column.source"),
+      key: "source",
+      render: (_, setting) => (
+        <Space orientation="vertical">
+          <Tag className={`system-settings-source system-settings-source-${setting.source}`}>
+            {t(`settings.source.${setting.source}`)}
+          </Tag>
+          {setting.hotReloadable && <Tag>{t("settings.hotReload")}</Tag>}
+          {setting.restartRequired && <Tag>{t("settings.quickToggles.restartRequired")}</Tag>}
+          {setting.overridesEnvironment && setting.environmentValue != null && (
+            <Typography.Text type="secondary">
+              {t("settings.envOverrideHint", { value: setting.environmentValue })}
+            </Typography.Text>
+          )}
+        </Space>
+      ),
+    },
+    {
+      title: t("settings.column.default"),
+      dataIndex: "defaultValue",
+      key: "defaultValue",
+      render: (value: string | null | undefined) => <Typography.Text code>{value || t("common:empty.dash")}</Typography.Text>,
+    },
+  ];
 
   return (
     <section className="system-metrics-card system-settings-card">
-      <h3>{t(`settings.sections.${section.id}`, section.title)}</h3>
-      {sectionHint && <p className="hint system-settings-section-hint">{sectionHint}</p>}
+      <Typography.Title level={3}>{t(`settings.sections.${section.id}`, section.title)}</Typography.Title>
+      {sectionHint && <Typography.Paragraph type="secondary" className="system-settings-section-hint">{sectionHint}</Typography.Paragraph>}
       {section.id === "elastic" && (
-        <p className="hint system-settings-section-hint">{t("settings.sections.elasticHint")}</p>
+        <Typography.Paragraph type="secondary" className="system-settings-section-hint">
+          {t("settings.sections.elasticHint")}
+        </Typography.Paragraph>
       )}
-      <table className="op-table system-settings-table">
-        <thead>
-          <tr>
-            <th>{t("settings.column.setting")}</th>
-            <th>{t("settings.column.value")}</th>
-            <th>{t("settings.column.source")}</th>
-            <th>{t("settings.column.default")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {section.settings.map((setting) => (
-            <SettingRow
-              key={setting.id}
-              setting={setting}
-              draftValue={drafts[setting.id] ?? setting.value}
-              selectOptions={SECTION_SELECT_OPTIONS[setting.id]}
-              onChange={(value) => onDraftChange(setting.id, value)}
-            />
-          ))}
-        </tbody>
-      </table>
+      <Table
+        className="system-settings-table"
+        size="small"
+        pagination={false}
+        rowKey="id"
+        rowClassName={(setting) => setting.editable ? "" : "system-settings-row-locked"}
+        columns={columns}
+        dataSource={section.settings}
+      />
     </section>
   );
 }
@@ -273,52 +352,50 @@ export default function SystemSettingsView() {
   return (
     <div className="system-settings-view">
       <div className="system-embedded-toolbar">
-        <button
-          type="button"
-          className="btn"
+        <Button
           disabled={settingsQuery.isFetching}
           onClick={() => settingsQuery.refetch()}
         >
           {t("settings.refresh")}
-        </button>
-        <button
-          type="button"
-          className="btn primary"
+        </Button>
+        <Button
+          type="primary"
           disabled={patchMutation.isPending || Object.keys(dirtyValues).length === 0}
           onClick={() => patchMutation.mutate(dirtyValues)}
         >
           {t("settings.saveChanges")}
-        </button>
+        </Button>
       </div>
 
-      <p className="hint system-settings-intro">{t("settings.intro")}</p>
+      <Typography.Paragraph type="secondary" className="system-settings-intro">
+        {t("settings.intro")}
+      </Typography.Paragraph>
       {settingsQuery.data?.settingsFile && (
-        <p className="hint system-settings-file">
+        <Typography.Paragraph type="secondary" className="system-settings-file">
           {t("settings.overrideFile")}: <code>{settingsQuery.data.settingsFile}</code>
-        </p>
+        </Typography.Paragraph>
       )}
 
-      {feedback && <div className="op-alert">{feedback}</div>}
+      {feedback && <Alert showIcon message={feedback} />}
       {settingsQuery.error && (
-        <div className="op-alert op-alert-error">{String(settingsQuery.error)}</div>
+        <Alert type="error" showIcon message={String(settingsQuery.error)} />
       )}
-      {settingsQuery.isLoading && <p className="hint">{t("settings.loading")}</p>}
+      {settingsQuery.isLoading && <Typography.Text type="secondary">{t("settings.loading")}</Typography.Text>}
 
       {settingsQuery.data && allTabs.length > 0 && (
         <>
           <div className="tabs-scroll system-settings-tabs-scroll">
-            <nav className="tabs system-settings-tabs" aria-label={t("settings.tabsAria")}>
+            <Space className="system-settings-tabs" aria-label={t("settings.tabsAria")}>
               {allTabs.map((tabId) => (
-                <button
+                <Button
                   key={tabId}
-                  type="button"
-                  className={activeTab === tabId ? "active" : ""}
+                  type={activeTab === tabId ? "primary" : "default"}
                   onClick={() => setActiveTab(tabId)}
                 >
                   {tabLabel(tabId)}
-                </button>
+                </Button>
               ))}
-            </nav>
+            </Space>
           </div>
 
           {activeTab === INTEGRATIONS_TAB && (

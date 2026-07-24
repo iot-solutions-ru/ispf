@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select, Space, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -137,14 +138,20 @@ export default function FederationBindPanel({
     }
     return (
       <section className="panel panel-card federation-bind-panel">
-        <h3>{t("bind.titleReadonly")}</h3>
-        <span className="badge">{t("common:badge.federated")}</span>
-        <p className="hint">{t("bind.readonlyHint")}</p>
+        <Space orientation="vertical" size="small" style={{ width: "100%" }}>
+        <Typography.Title level={3} style={{ margin: 0 }}>
+          {t("bind.titleReadonly")}
+        </Typography.Title>
+        <Tag>{t("common:badge.federated")}</Tag>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          {t("bind.readonlyHint")}
+        </Typography.Paragraph>
         {object.federationRemotePath && (
-          <p>
-            {t("bind.remotePath")}: <code>{object.federationRemotePath}</code>
-          </p>
+          <Typography.Paragraph style={{ marginBottom: 0 }}>
+            {t("bind.remotePath")}: <Typography.Text code>{object.federationRemotePath}</Typography.Text>
+          </Typography.Paragraph>
         )}
+        </Space>
       </section>
     );
   }
@@ -159,167 +166,175 @@ export default function FederationBindPanel({
 
   return (
     <section className="panel panel-card federation-bind-panel">
-      <h3>{t("bind.title")}</h3>
-      {isBound && <span className="badge">{t("common:badge.federated")}</span>}
-      <p className="hint">{t("bind.subtitle", { path: object.path })}</p>
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+      <div>
+        <Typography.Title level={3} style={{ margin: 0 }}>
+          {t("bind.title")}
+        </Typography.Title>
+        {isBound && <Tag>{t("common:badge.federated")}</Tag>}
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          {t("bind.subtitle", { path: object.path })}
+        </Typography.Paragraph>
+      </div>
 
       {isMirror && (
         <div className="federation-bind-callout">{t("bind.mirrorCallout")}</div>
       )}
 
       {isMirror && mirrorPeer && mirrorRemoteSubtree && (
-        <div className="form-actions" style={{ marginBottom: "1rem" }}>
-          <button type="button" className="btn" onClick={() => setSyncSubtreeOpen(true)}>
+        <Space wrap>
+          <Button onClick={() => setSyncSubtreeOpen(true)}>
             {t("subtreeSync.syncThisFolder")}
-          </button>
-        </div>
+          </Button>
+        </Space>
       )}
 
       {isMirror && !showPlaceLocally && (
-        <div className="form-actions" style={{ marginBottom: "1rem" }}>
-          <button type="button" className="btn primary" onClick={() => setShowPlaceLocally(true)}>
+        <Space wrap>
+          <Button type="primary" onClick={() => setShowPlaceLocally(true)}>
             {t("bind.placeLocally")}
-          </button>
-        </div>
+          </Button>
+        </Space>
       )}
 
       {showPlaceLocally && (
-        <form
-          className="form-grid"
-          onSubmit={(e) => {
-            e.preventDefault();
+        <Form
+          layout="vertical"
+          onFinish={() => {
             placeLocallyMutation.mutate();
           }}
         >
-          <label>
-            {t("bind.parentPath")}
-            <input value={placeParentPath} onChange={(e) => setPlaceParentPath(e.target.value)} />
-          </label>
-          <label>
-            {t("bind.nodeName")}
-            <input value={placeName} onChange={(e) => setPlaceName(e.target.value)} required />
-          </label>
-          <label>
-            {t("bind.peer")}
-            <select value={peerId} onChange={(e) => setPeerId(e.target.value)} required>
-              <option value="">{t("common:empty.dash")}</option>
-              {peerOptions.map((peer) => (
-                <option key={peer.id} value={peer.id}>
-                  {peer.name}
-                  {peer.tunnelConnected ? t("bind.tunnelSuffix") : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="full">
-            {t("bind.remotePathLabel")}
-            <input value={remotePath} onChange={(e) => setRemotePath(e.target.value)} required />
-          </label>
-          <div className="full form-actions">
-            <button type="submit" className="btn primary" disabled={placeLocallyMutation.isPending}>
+          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+            <Space size="middle" align="start" wrap>
+              <Form.Item label={t("bind.parentPath")} style={{ minWidth: 260, marginBottom: 0 }}>
+                <Input value={placeParentPath} onChange={(e) => setPlaceParentPath(e.target.value)} />
+              </Form.Item>
+              <Form.Item label={t("bind.nodeName")} style={{ minWidth: 220, marginBottom: 0 }}>
+                <Input value={placeName} onChange={(e) => setPlaceName(e.target.value)} required />
+              </Form.Item>
+              <Form.Item label={t("bind.peer")} style={{ minWidth: 240, marginBottom: 0 }}>
+                <Select
+                  value={peerId}
+                  onChange={setPeerId}
+                  options={[
+                    { value: "", label: t("common:empty.dash") },
+                    ...peerOptions.map((peer) => ({
+                      value: peer.id,
+                      label: `${peer.name}${peer.tunnelConnected ? t("bind.tunnelSuffix") : ""}`,
+                    })),
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label={t("bind.remotePathLabel")} style={{ minWidth: 360, marginBottom: 0 }}>
+                <Input value={remotePath} onChange={(e) => setRemotePath(e.target.value)} required />
+              </Form.Item>
+            </Space>
+            <Space wrap>
+            <Button htmlType="submit" type="primary" disabled={placeLocallyMutation.isPending} loading={placeLocallyMutation.isPending}>
               {t("bind.createLocalBind")}
-            </button>
-            <button type="button" className="btn" onClick={() => setShowPlaceLocally(false)}>
+            </Button>
+            <Button onClick={() => setShowPlaceLocally(false)}>
               {t("common:action.cancel")}
-            </button>
-          </div>
-        </form>
+            </Button>
+            </Space>
+          </Space>
+        </Form>
       )}
 
       {!showPlaceLocally && (
         <>
-          <div className="form-grid">
-            <label>
-              {t("bind.peer")}
-              <select value={peerId} onChange={(e) => setPeerId(e.target.value)}>
-                <option value="">{t("bind.selectPeer")}</option>
-                {peerOptions.map((peer) => (
-                  <option key={peer.id} value={peer.id}>
-                    {peer.name}
-                    {peer.tunnelConnected ? t("bind.tunnelSuffix") : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="full">
-              {t("bind.remotePathLabel")}
-              <input
-                value={remotePath}
-                onChange={(e) => setRemotePath(e.target.value)}
-                placeholder={t("common:objectPath.placeholder")}
-              />
-            </label>
-          </div>
+          <Form layout="vertical">
+            <Space size="middle" align="start" wrap>
+              <Form.Item label={t("bind.peer")} style={{ minWidth: 240, marginBottom: 0 }}>
+                <Select
+                  value={peerId}
+                  onChange={setPeerId}
+                  options={[
+                    { value: "", label: t("bind.selectPeer") },
+                    ...peerOptions.map((peer) => ({
+                      value: peer.id,
+                      label: `${peer.name}${peer.tunnelConnected ? t("bind.tunnelSuffix") : ""}`,
+                    })),
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label={t("bind.remotePathLabel")} style={{ minWidth: 360, marginBottom: 0 }}>
+                <Input
+                  value={remotePath}
+                  onChange={(e) => setRemotePath(e.target.value)}
+                  placeholder={t("common:objectPath.placeholder")}
+                />
+              </Form.Item>
+            </Space>
+          </Form>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn"
+          <Space wrap>
+            <Button
               disabled={!peerId || !remotePath.trim() || probeMutation.isPending}
+              loading={probeMutation.isPending}
               onClick={() => probeMutation.mutate()}
             >
               {t("bind.probe")}
-            </button>
+            </Button>
             {!isBound && !isMirror && (
-              <button
-                type="button"
-                className="btn primary"
+              <Button
+                type="primary"
                 disabled={!peerId || !remotePath.trim() || bindMutation.isPending}
+                loading={bindMutation.isPending}
                 onClick={() => bindMutation.mutate()}
               >
                 {t("bind.bind")}
-              </button>
+              </Button>
             )}
             {isBound && (
               <>
-                <button
-                  type="button"
-                  className="btn primary"
+                <Button
+                  type="primary"
                   disabled={!peerId || !remotePath.trim() || rebindMutation.isPending}
+                  loading={rebindMutation.isPending}
                   onClick={() => rebindMutation.mutate()}
                 >
                   {t("bind.rebind")}
-                </button>
+                </Button>
                 {!showUnbindConfirm ? (
-                  <button
-                    type="button"
-                    className="btn danger"
+                  <Button
+                    danger
                     disabled={unbindMutation.isPending}
                     onClick={() => setShowUnbindConfirm(true)}
                   >
                     {t("bind.unbind")}
-                  </button>
+                  </Button>
                 ) : (
-                  <div className="federation-unbind-confirm">
+                  <Space className="federation-unbind-confirm" wrap>
                     <span>{t("bind.confirmUnbind", { name: object.displayName })}</span>
-                    <button
-                      type="button"
-                      className="btn danger compact"
+                    <Button
+                      size="small"
+                      danger
                       disabled={unbindMutation.isPending}
+                      loading={unbindMutation.isPending}
                       onClick={() => unbindMutation.mutate()}
                     >
                       {t("bind.confirmUnbindAction")}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn compact"
+                    </Button>
+                    <Button
+                      size="small"
                       onClick={() => setShowUnbindConfirm(false)}
                     >
                       {t("common:action.cancel")}
-                    </button>
-                  </div>
+                    </Button>
+                  </Space>
                 )}
               </>
             )}
-          </div>
+          </Space>
 
           {probeResult && <pre className="mono federation-probe-result">{probeResult}</pre>}
         </>
       )}
 
-      {error && <p className="hint error">{error}</p>}
+      {error && <Alert type="error" showIcon message={error} />}
       {(bindMutation.isSuccess || rebindMutation.isSuccess || unbindMutation.isSuccess) && (
-        <p className="hint success">{t("bind.updated")}</p>
+        <Alert type="success" showIcon message={t("bind.updated")} />
       )}
       {syncSubtreeOpen && mirrorPeer && mirrorRemoteSubtree && (
         <FederationCatalogSyncDialog
@@ -338,6 +353,7 @@ export default function FederationBindPanel({
           }}
         />
       )}
+      </Space>
     </section>
   );
 }

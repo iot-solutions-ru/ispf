@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Button, Typography } from "antd";
 import { fetchClusterHealth } from "../../api/clusterHealth";
 import ClusterHealthPanel from "./ClusterHealthCard";
 import { useUserTimeZone } from "../../context/UserTimeZoneContext";
@@ -16,24 +17,24 @@ export default function ClusterView() {
   return (
     <div className="system-cluster-view">
       <div className="system-embedded-toolbar">
-        <button
-          type="button"
-          className="btn"
+        <Button
           disabled={healthQuery.isFetching}
           onClick={() => healthQuery.refetch()}
         >
           {t("clusterHealth.refresh")}
-        </button>
+        </Button>
         {healthQuery.data && (
-          <p className="system-metrics-updated hint">
+          <Typography.Paragraph type="secondary" className="system-metrics-updated hint">
             {t("clusterHealth.updatedAt", {
               time: formatDate(healthQuery.data.timestamp),
             })}
-          </p>
+          </Typography.Paragraph>
         )}
       </div>
 
-      <p className="op-muted cluster-view-intro">{t("clusterHealth.subtitle")}</p>
+      <Typography.Paragraph type="secondary" className="cluster-view-intro">
+        {t("clusterHealth.subtitle")}
+      </Typography.Paragraph>
 
       <ClusterHealthPanel showTitle={false} />
     </div>

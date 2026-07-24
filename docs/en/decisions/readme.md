@@ -99,6 +99,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) | OT Automation Excellence (journal, AI-BPMN, analytics AI) — **Accepted** |
 | [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | Manufacturing patterns as solution / marketplace configuration — **Accepted** |
 | [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) | Poka-yoke: constraints over guards — **Accepted** |
+| [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | ISPF Workflow Diagram Editor (no bpmn.io) — **Accepted** |
 
 ## Topic chains (read in order)
 
@@ -107,7 +108,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | Cluster HA | [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) → [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) → [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) → [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md) → [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) | [cluster](../cluster.md), [deployment](../deployment.md) |
 | Historian / analytics | [0035-historian-dual-write](0035-historian-dual-write.md) → [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) → [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) → [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | [historian-tiers](../historian-tiers.md), [analytics-platform-roadmap](../analytics-platform-roadmap.md) |
 | Automation / alarms | [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) → [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | [automation](../automation.md) |
-| Workflow / BPMN | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) → [0049-ot-automation-excellence](0049-ot-automation-excellence.md) | [workflows](../workflows.md) |
+| Workflow / BPMN | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) → [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | [workflows](../workflows.md) |
 | Server modularization | [0048-server-modularization-seams](0048-server-modularization-seams.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | — |
 | Manufacturing solutions | [0001-app-platform-boundary](0001-app-platform-boundary.md) → [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | [manufacturing-patterns](../manufacturing-patterns.md), [mes](../mes.md) |
 | Agent quality (poka-yoke) | [0004-ai-artifact-generation-gates](0004-ai-artifact-generation-gates.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) → [0006-mcp-agent-tool-adapter](0006-mcp-agent-tool-adapter.md) → [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) | [application-principles](../application-principles.md) P7, [ai-development](../ai-development.md), [agent-regression](../agent-regression.md) |

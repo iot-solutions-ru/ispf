@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, Select, Space, Table, Tag, Typography } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { assignTenantUser, createTenant, deleteTenant, fetchTenants } from "../../api/tenants";
+import { assignTenantUser, createTenant, deleteTenant, fetchTenants, type TenantSummary } from "../../api/tenants";
 
 interface TenantsPanelProps {
   canManage: boolean;
@@ -114,163 +116,193 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
   };
 
   if (!canManage) {
-    return <p className="op-muted">{t("tenants.adminOnly")}</p>;
+    return <Typography.Paragraph type="secondary">{t("tenants.adminOnly")}</Typography.Paragraph>;
   }
+
+  const tenantRows = tenantsQuery.data ?? [];
+  const tenantColumns: ColumnsType<TenantSummary> = [
+    {
+      title: t("tenants.column.tenantId"),
+      dataIndex: "tenantId",
+      key: "tenantId",
+      render: (_tenantId, tenant) => (
+        <Button type="link" onClick={() => onSelectPath(tenant.platformPath)} style={{ paddingInline: 0 }}>
+          <Typography.Text code>{tenant.tenantId}</Typography.Text>
+        </Button>
+      ),
+    },
+    {
+      title: t("tenants.column.displayName"),
+      dataIndex: "displayName",
+      key: "displayName",
+    },
+    {
+      title: t("tenants.column.platformPath"),
+      dataIndex: "platformPath",
+      key: "platformPath",
+      render: (platformPath: string) => <Typography.Text code>{platformPath}</Typography.Text>,
+    },
+    {
+      title: t("tenants.column.enabled"),
+      dataIndex: "enabled",
+      key: "enabled",
+      render: (enabled: boolean) => (
+        <Tag color={enabled ? "success" : "default"}>
+          {enabled ? t("common:action.yes") : t("common:action.no")}
+        </Tag>
+      ),
+    },
+    {
+      title: t("tenants.column.actions"),
+      key: "actions",
+      render: (_value, tenant) => (
+        <Button
+          size="small"
+          disabled={deleteMutation.isPending}
+          onClick={() => confirmDelete(tenant.tenantId)}
+        >
+          {t("tenants.deleteTenant")}
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <section className="tenants-panel">
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
       <header className="security-users-header">
         <div>
-          <h3>{t("tenants.title")}</h3>
-          <p className="op-muted">{t("tenants.subtitle")}</p>
+          <Typography.Title level={3} style={{ margin: 0 }}>
+            {t("tenants.title")}
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            {t("tenants.subtitle")}
+          </Typography.Paragraph>
         </div>
       </header>
 
       {createdAdmin && (
         <div className="tenants-credentials-banner" role="status">
-          <h4>{t("tenants.credentialsTitle", { tenantId: createdAdmin.tenantId })}</h4>
-          <p className="hint">{t("tenants.credentialsWarning")}</p>
+          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {t("tenants.credentialsTitle", { tenantId: createdAdmin.tenantId })}
+          </Typography.Title>
+          <Alert type="warning" showIcon message={t("tenants.credentialsWarning")} />
           <dl className="tenants-credentials-fields">
             <div>
               <dt>{t("tenants.field.adminUsername")}</dt>
-              <dd><code>{createdAdmin.username}</code></dd>
+              <dd><Typography.Text code>{createdAdmin.username}</Typography.Text></dd>
             </div>
             {createdAdmin.password ? (
               <div>
                 <dt>{t("tenants.field.adminPasswordOnce")}</dt>
-                <dd><code>{createdAdmin.password}</code></dd>
+                <dd><Typography.Text code>{createdAdmin.password}</Typography.Text></dd>
               </div>
             ) : null}
           </dl>
-          <div className="tenants-credentials-actions">
-            <button type="button" className="btn primary" onClick={() => void copyCredentials()}>
+          <Space className="tenants-credentials-actions" wrap>
+            <Button type="primary" onClick={() => void copyCredentials()}>
               {t("tenants.copyCredentials")}
-            </button>
-            <button
-              type="button"
-              className="btn"
+            </Button>
+            <Button
               onClick={() => onSelectPath(createdAdmin.platformPath)}
             >
               {t("tenants.openPlatform")}
-            </button>
-            <button type="button" className="btn" onClick={() => setCreatedAdmin(null)}>
+            </Button>
+            <Button onClick={() => setCreatedAdmin(null)}>
               {t("tenants.dismissCredentials")}
-            </button>
-          </div>
-          {copyHint && <p className="hint">{copyHint}</p>}
+            </Button>
+          </Space>
+          {copyHint && <Typography.Text type="secondary">{copyHint}</Typography.Text>}
+          </Space>
         </div>
       )}
 
-      {formError && <p className="hint error">{formError}</p>}
+      {formError && <Alert type="error" showIcon message={formError} />}
 
-      <table className="op-table security-users-table security-users-table-compact">
-        <thead>
-          <tr>
-            <th>{t("tenants.column.tenantId")}</th>
-            <th>{t("tenants.column.displayName")}</th>
-            <th>{t("tenants.column.platformPath")}</th>
-            <th>{t("tenants.column.enabled")}</th>
-            <th>{t("tenants.column.actions")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(tenantsQuery.data ?? []).map((tenant) => (
-            <tr key={tenant.tenantId}>
-              <td>
-                <button
-                  type="button"
-                  className="link-btn"
-                  onClick={() => onSelectPath(tenant.platformPath)}
-                >
-                  <code>{tenant.tenantId}</code>
-                </button>
-              </td>
-              <td>{tenant.displayName}</td>
-              <td><code>{tenant.platformPath}</code></td>
-              <td>{tenant.enabled ? t("common:action.yes") : t("common:action.no")}</td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  disabled={deleteMutation.isPending}
-                  onClick={() => confirmDelete(tenant.tenantId)}
-                >
-                  {t("tenants.deleteTenant")}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table<TenantSummary>
+        size="small"
+        rowKey="tenantId"
+        columns={tenantColumns}
+        dataSource={tenantRows}
+        loading={tenantsQuery.isLoading}
+        pagination={false}
+      />
 
-      <form
+      <Form
+        layout="vertical"
         className="driver-config-form"
-        onSubmit={(e) => {
-          e.preventDefault();
+        onFinish={() => {
           createMutation.mutate();
         }}
       >
-        <h4>{t("tenants.newTenant")}</h4>
-        <div className="form-grid">
-          <label>
-            {t("tenants.field.tenantId")}
-            <input
+        <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <Typography.Title level={4} style={{ margin: 0 }}>
+          {t("tenants.newTenant")}
+        </Typography.Title>
+        <Space size="middle" align="start" wrap>
+          <Form.Item label={t("tenants.field.tenantId")} style={{ minWidth: 240, marginBottom: 0 }}>
+            <Input
               value={tenantId}
               onChange={(e) => setTenantId(e.target.value)}
               placeholder={t("tenants.field.tenantIdHint")}
             />
-          </label>
-          <label>
-            {t("tenants.field.displayName")}
-            <input
+          </Form.Item>
+          <Form.Item label={t("tenants.field.displayName")} style={{ minWidth: 260, marginBottom: 0 }}>
+            <Input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder={t("tenants.field.displayNameHint")}
             />
-          </label>
-          <label>
-            {t("tenants.field.adminPassword")}
-            <input
-              type="password"
+          </Form.Item>
+          <Form.Item label={t("tenants.field.adminPassword")} style={{ minWidth: 260, marginBottom: 0 }}>
+            <Input.Password
               value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
               placeholder={t("tenants.field.adminPasswordHint")}
               autoComplete="new-password"
             />
-          </label>
-        </div>
-        <p className="op-muted">{t("tenants.localAdminHint")}</p>
-        <button type="submit" className="btn primary" disabled={createMutation.isPending}>
+          </Form.Item>
+        </Space>
+        <Typography.Text type="secondary">{t("tenants.localAdminHint")}</Typography.Text>
+        <Button htmlType="submit" type="primary" disabled={createMutation.isPending} loading={createMutation.isPending}>
           {t("tenants.createTenant")}
-        </button>
-      </form>
+        </Button>
+        </Space>
+      </Form>
 
       <section className="federation-probe">
-        <h4>{t("tenants.assignUser")}</h4>
-        <div className="form-grid">
-          <label>
-            {t("tenants.field.tenant")}
-            <select value={assignTenantId} onChange={(e) => setAssignTenantId(e.target.value)}>
-              <option value="">{t("common:empty.dash")}</option>
-              {(tenantsQuery.data ?? []).map((tenant) => (
-                <option key={tenant.tenantId} value={tenant.tenantId}>{tenant.tenantId}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {t("tenants.field.username")}
-            <input value={assignUsername} onChange={(e) => setAssignUsername(e.target.value)} />
-          </label>
-        </div>
-        <button
-          type="button"
-          className="btn"
+        <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+        <Typography.Title level={4} style={{ margin: 0 }}>
+          {t("tenants.assignUser")}
+        </Typography.Title>
+        <Form layout="vertical">
+          <Space size="middle" align="start" wrap>
+            <Form.Item label={t("tenants.field.tenant")} style={{ minWidth: 240, marginBottom: 0 }}>
+              <Select
+                value={assignTenantId}
+                onChange={setAssignTenantId}
+                options={[
+                  { value: "", label: t("common:empty.dash") },
+                  ...tenantRows.map((tenant) => ({ value: tenant.tenantId, label: tenant.tenantId })),
+                ]}
+              />
+            </Form.Item>
+            <Form.Item label={t("tenants.field.username")} style={{ minWidth: 240, marginBottom: 0 }}>
+              <Input value={assignUsername} onChange={(e) => setAssignUsername(e.target.value)} />
+            </Form.Item>
+          </Space>
+        </Form>
+        <Button
           disabled={assignMutation.isPending || !assignTenantId}
+          loading={assignMutation.isPending}
           onClick={() => assignMutation.mutate()}
         >
           {t("tenants.assignTenant")}
-        </button>
+        </Button>
+        </Space>
       </section>
+      </Space>
     </section>
   );
 }

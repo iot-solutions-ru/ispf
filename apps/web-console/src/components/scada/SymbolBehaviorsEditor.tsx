@@ -1,3 +1,4 @@
+import { Alert, Button, Form, Input, Select, Space } from "antd";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +15,10 @@ interface SymbolBehaviorsEditorProps {
   behaviors?: MimicSymbolBehavior[];
   bindingSchema?: MimicBindingSlot[];
   onChange: (patch: { behaviors: MimicSymbolBehavior[]; bindingSchema: MimicBindingSlot[] }) => void;
+}
+
+function fieldClassName(className?: string) {
+  return ["scada-form-field", className].filter(Boolean).join(" ");
 }
 
 export default function SymbolBehaviorsEditor({
@@ -65,62 +70,67 @@ export default function SymbolBehaviorsEditor({
     <div className="scada-props-section scada-behaviors-editor">
       <div className="scada-props-section-head">
         <h3 className="scada-props-section-title">{t("props.behaviors")}</h3>
-        <button type="button" className="scada-btn-ghost scada-btn-compact" onClick={addBehavior}>
+        <Button type="text" size="small" className="scada-btn-ghost scada-btn-compact" onClick={addBehavior}>
           {t("props.behaviorsAdd")}
-        </button>
+        </Button>
       </div>
 
-      <p className="scada-props-hint scada-props-hint-compact">{t("props.behaviorsHint")}</p>
+      <Alert
+        className="scada-props-hint scada-props-hint-compact"
+        type="info"
+        showIcon={false}
+        message={t("props.behaviorsHint")}
+      />
 
       {behaviors.length === 0 ? (
-        <p className="scada-props-hint scada-props-hint-compact">{t("props.behaviorsEmpty")}</p>
+        <Alert
+          className="scada-props-hint scada-props-hint-compact"
+          type="info"
+          showIcon={false}
+          message={t("props.behaviorsEmpty")}
+        />
       ) : (
         behaviors.map((behavior, index) => (
           <div key={index} className="scada-binding-slot scada-behavior-card">
-            <div className="scada-behavior-card-head">
+            <Space className="scada-behavior-card-head">
               <strong className="scada-binding-slot-title">
                 {t(`behaviorTypes.${behavior.type}`)} · {behavior.bind || "—"}
               </strong>
-              <button
-                type="button"
+              <Button
+                type="text"
+                size="small"
                 className="scada-btn-ghost scada-btn-compact scada-btn-danger-text"
+                danger
                 onClick={() => removeAt(index)}
               >
                 {t("props.behaviorsRemove")}
-              </button>
-            </div>
+              </Button>
+            </Space>
 
             <div className="scada-form-row">
-              <label className="scada-form-field scada-form-field-half">
-                <span className="scada-form-label">{t("props.behaviorType")}</span>
-                <select
+              <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorType")}>
+                <Select
                   className="scada-form-input"
                   value={behavior.type}
-                  onChange={(e) => changeType(index, e.target.value as BehaviorType)}
-                >
-                  {BEHAVIOR_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`behaviorTypes.${type}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="scada-form-field scada-form-field-half">
-                <span className="scada-form-label">{t("props.behaviorBind")}</span>
-                <input
-                  type="text"
+                  onChange={(value) => changeType(index, value)}
+                  options={BEHAVIOR_TYPES.map((type) => ({
+                    value: type,
+                    label: t(`behaviorTypes.${type}`),
+                  }))}
+                />
+              </Form.Item>
+              <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorBind")}>
+                <Input
                   className="scada-form-input mono"
                   spellCheck={false}
                   value={behavior.bind}
                   onChange={(e) => updateAt(index, { bind: e.target.value.trim() })}
                 />
-              </label>
+              </Form.Item>
             </div>
 
-            <label className="scada-form-field">
-              <span className="scada-form-label">{t("props.behaviorTarget")}</span>
-              <input
-                type="text"
+            <Form.Item className={fieldClassName()} label={t("props.behaviorTarget")}>
+              <Input
                 className="scada-form-input mono"
                 list={listId}
                 spellCheck={false}
@@ -128,79 +138,68 @@ export default function SymbolBehaviorsEditor({
                 value={behavior.target}
                 onChange={(e) => updateAt(index, { target: e.target.value })}
               />
-            </label>
+            </Form.Item>
 
             {(behavior.type === "visibility" ||
               behavior.type === "hidden" ||
               behavior.type === "blink") && (
-              <label className="scada-form-field">
-                <span className="scada-form-label">{t("props.behaviorWhen")}</span>
-                <select
+              <Form.Item className={fieldClassName()} label={t("props.behaviorWhen")}>
+                <Select
                   className="scada-form-input"
                   value={behavior.when ?? "truthy"}
-                  onChange={(e) =>
-                    updateAt(index, { when: e.target.value as "truthy" | "falsy" })
-                  }
-                >
-                  <option value="truthy">{t("props.behaviorWhenTruthy")}</option>
-                  <option value="falsy">{t("props.behaviorWhenFalsy")}</option>
-                </select>
-              </label>
+                  onChange={(value) => updateAt(index, { when: value as "truthy" | "falsy" })}
+                  options={[
+                    { value: "truthy", label: t("props.behaviorWhenTruthy") },
+                    { value: "falsy", label: t("props.behaviorWhenFalsy") },
+                  ]}
+                />
+              </Form.Item>
             )}
 
             {(behavior.type === "fill" || behavior.type === "stroke") && (
               <div className="scada-form-row">
-                <label className="scada-form-field scada-form-field-half">
-                  <span className="scada-form-label">{t("props.behaviorTrueColor")}</span>
-                  <input
-                    type="text"
+                <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorTrueColor")}>
+                  <Input
                     className="scada-form-input mono"
                     value={behavior.trueColor ?? ""}
                     onChange={(e) => updateAt(index, { trueColor: e.target.value })}
                   />
-                </label>
-                <label className="scada-form-field scada-form-field-half">
-                  <span className="scada-form-label">{t("props.behaviorFalseColor")}</span>
-                  <input
-                    type="text"
+                </Form.Item>
+                <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorFalseColor")}>
+                  <Input
                     className="scada-form-input mono"
                     value={behavior.falseColor ?? ""}
                     onChange={(e) => updateAt(index, { falseColor: e.target.value })}
                   />
-                </label>
+                </Form.Item>
               </div>
             )}
 
             {behavior.type === "text" && (
               <>
                 <div className="scada-form-row">
-                  <label className="scada-form-field scada-form-field-half">
-                    <span className="scada-form-label">{t("props.behaviorFormat")}</span>
-                    <select
+                  <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorFormat")}>
+                    <Select
                       className="scada-form-input"
                       value={behavior.format ?? "string"}
-                      onChange={(e) =>
-                        updateAt(index, { format: e.target.value as "string" | "number" })
-                      }
-                    >
-                      <option value="string">string</option>
-                      <option value="number">number</option>
-                    </select>
-                  </label>
-                  <label className="scada-form-field scada-form-field-half">
-                    <span className="scada-form-label">{t("props.behaviorSuffix")}</span>
-                    <input
-                      type="text"
+                      onChange={(value) => updateAt(index, { format: value as "string" | "number" })}
+                      options={[
+                        { value: "string", label: "string" },
+                        { value: "number", label: "number" },
+                      ]}
+                    />
+                  </Form.Item>
+                  <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorSuffix")}>
+                    <Input
                       className="scada-form-input mono"
                       value={behavior.suffix ?? ""}
                       onChange={(e) => updateAt(index, { suffix: e.target.value })}
                     />
-                  </label>
+                  </Form.Item>
                 </div>
                 <div className="scada-form-row">
-                  <label className="scada-form-field scada-form-field-half">
-                    <span className="scada-form-label">{t("props.behaviorDecimals")}</span>
-                    <input
+                  <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorDecimals")}>
+                    <Input
                       type="number"
                       className="scada-form-input"
                       min={0}
@@ -212,37 +211,32 @@ export default function SymbolBehaviorsEditor({
                         })
                       }
                     />
-                  </label>
-                  <label className="scada-form-field scada-form-field-half">
-                    <span className="scada-form-label">{t("props.behaviorQualityBind")}</span>
-                    <input
-                      type="text"
+                  </Form.Item>
+                  <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorQualityBind")}>
+                    <Input
                       className="scada-form-input mono"
                       spellCheck={false}
                       placeholder="valueQuality"
                       value={behavior.qualityBind ?? ""}
                       onChange={(e) => updateAt(index, { qualityBind: e.target.value || undefined })}
                     />
-                  </label>
+                  </Form.Item>
                 </div>
               </>
             )}
 
             {behavior.type === "fillLevel" && (
               <div className="scada-form-row">
-                <label className="scada-form-field scada-form-field-half">
-                  <span className="scada-form-label">{t("props.behaviorMaxBind")}</span>
-                  <input
-                    type="text"
+                <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorMaxBind")}>
+                  <Input
                     className="scada-form-input mono"
                     spellCheck={false}
                     value={behavior.maxBind ?? ""}
                     onChange={(e) => updateAt(index, { maxBind: e.target.value || undefined })}
                   />
-                </label>
-                <label className="scada-form-field scada-form-field-half">
-                  <span className="scada-form-label">{t("props.behaviorInset")}</span>
-                  <input
+                </Form.Item>
+                <Form.Item className={fieldClassName("scada-form-field-half")} label={t("props.behaviorInset")}>
+                  <Input
                     type="number"
                     className="scada-form-input"
                     min={0}
@@ -253,7 +247,7 @@ export default function SymbolBehaviorsEditor({
                       })
                     }
                   />
-                </label>
+                </Form.Item>
               </div>
             )}
           </div>
