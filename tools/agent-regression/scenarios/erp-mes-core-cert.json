@@ -1,0 +1,30 @@
+{
+  "id": "erp-mes-core-cert",
+  "version": "1",
+  "domain": "mes",
+  "lane": "agent",
+  "title": "ERP-MES Core (ISA-95) certification (UI verify)",
+  "description": "erp-mes-core bundle deploy scenario: ISA-95 canonical ERP-MES foundation.",
+  "prompt": "Install erp-mes-core and open Dispatch/OEE dashboard paths in Operator.",
+  "uiJourney": "Solutions → Deploy → Operator",
+  "humanSteps": [
+    "Deploy erp-mes-core.",
+    "Open Operator Dispatch and OEE paths."
+  ],
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "erp-mes-core",
+    "manifestPath": "examples/erp-mes-core/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": [
+      "validate_bundle",
+      "import_package"
+    ],
+    "operatorSurfaces": [
+      "solutions",
+      "operator"
+    ]
+  }
+}

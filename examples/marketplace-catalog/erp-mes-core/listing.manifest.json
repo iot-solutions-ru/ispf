@@ -1,0 +1,37 @@
+{
+  "slug": "erp-mes-core",
+  "title": "ERP-MES Core (ISA-95)",
+  "description": "Canonical ISA-95 / IEC 62264 foundation for building ERP-MES products on ISPF: equipment/material/personnel models, process segments and work masters, work schedule -> job order -> job response with genealogy, quality gate, inventory documents, maintenance lite, shift calendar, OEE (ISO 22400) and idempotent verb x noun ERP transactions (Part 5). Industry-neutral core: assemble concrete MES/ERP systems as data overlays, no schema changes.",
+  "pricing": "free",
+  "appId": "erp-mes-core",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "erp",
+    "isa95",
+    "iec62264",
+    "oee",
+    "genealogy",
+    "quality",
+    "product"
+  ],
+  "changelog": "1.0.0 - initial ISA-95 canonical ERP-MES core bundle: 12 migrations, 61 BFF functions, 5 dashboards, 5 reports, singleton hub, BPMN job-dispatch workflow",
+  "metadata": {
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "notes": "Initial release: ISA-95 Parts 1-5 + ISO 22400 OEE subset, certified by ErpMesCoreIntegrationTest happy path"
+      }
+    ]
+  }
+}
