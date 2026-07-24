@@ -18,7 +18,15 @@ if (-not (Test-Path $CatalogDir)) {
 
 Write-Host "Uploading marketplace catalog ($CatalogDir) -> $Remote ..."
 ssh -o BatchMode=yes $Remote "mkdir -p $RemoteSeed"
-scp -r "$CatalogDir\*" "${Remote}:${RemoteSeed}/"
+# Upload each listing entry explicitly. Do NOT use `scp -r "$CatalogDir\*"`:
+# PowerShell passes the unexpanded glob to scp.exe, whose own wildcard handling
+# silently skips directories it cannot expand — new listings then never arrive.
+Get-ChildItem -LiteralPath $CatalogDir -Directory | ForEach-Object {
+    scp -r $_.FullName "${Remote}:${RemoteSeed}/"
+}
+Get-ChildItem -LiteralPath $CatalogDir -File | ForEach-Object {
+    scp $_.FullName "${Remote}:${RemoteSeed}/"
+}
 
 # Upload helper scripts into a private mktemp dir (shared /tmp with fixed names is hijackable).
 $RemoteWork = (ssh -o BatchMode=yes $Remote "mktemp -d /tmp/ispf-marketplace-publish.XXXXXXXX").Trim()
