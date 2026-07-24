@@ -16,6 +16,16 @@
 | `INSTANCE` | `root.platform.instance-types` | Шаблон **типа объекта** — создание экземпляров через instantiate |
 | `SINGLETON` | `root.platform.singleton-blueprints` | Уникальный live-узел в каталоге (`root.platform.singleton-blueprints.*`) — blueprint **и** логика приложения на одном объекте |
 
+**Где живёт логика приложения:**
+
+| Роль | Вид blueprint | Правило |
+|------|---------------|---------|
+| Уникальный оркестратор (один на решение/кластер) | **SINGLETON** | Предпочтительно `root.platform.singleton-blueprints.{name}` + `ensure_singleton_instance` |
+| Цифровой двойник с логикой на twin (много) | **INSTANCE** | `instantiate_instance_type`; каждый инстанс несёт логику twin |
+| Точка телеметрии | — | Только **DEVICE** |
+
+**Жёсткое правило:** объект с логикой **не** должен быть `ObjectType.DEVICE`. Кластер может разместить non-DEVICE хаб в дереве `devices` с DEVICE-детьми — **раскладка пути** это выбор реализации; **тип** хаба — нет. См. [application-principles](application-principles.md) § Объекты логики vs DEVICE.
+
 **Внутренние схемы** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в реестре для начальной загрузки, но **не отображаются** в каталоге mixin-blueprints и **не используются** в `appliedBlueprintIds`. Структура вшивается в экземпляре через `*ObjectService.ensureStructure()`.
 
 См. [0011-model-type-semantics](decisions/0011-model-type-semantics.md).

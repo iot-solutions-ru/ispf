@@ -45,7 +45,7 @@ public final class AgentPlanSections {
                 2. intent_scope — цель, FR mapping, naming/path policy
                 3. model_strategy — INSTANCE vs MIXIN vs SINGLETON per entity
                 4. source_layer — DEVICE, drivers, OOTB virtual / mixin blueprints, list_variables
-                5. aggregation_layer — CUSTOM hub, create_variable, create_binding_rule
+                5. aggregation_layer — SINGLETON orchestrator or INSTANCE twin (never DEVICE), create_variable, create_binding_rule
                 6. alert_layer — configure_alert, thresholds, events
                 7. correlation_layer — configure_correlator, WORKFLOW triggers (N/A if not in TZ)
                 8. operator_layer — MIMIC, DASHBOARD, REPORT, configure_operator_ui

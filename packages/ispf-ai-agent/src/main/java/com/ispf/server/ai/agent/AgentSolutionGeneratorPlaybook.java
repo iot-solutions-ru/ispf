@@ -26,7 +26,9 @@ public final class AgentSolutionGeneratorPlaybook {
                 1. **Intake** — search_context topic=all + get_automation_schema topic=objectTypes + list_objects parent=root.platform
                 2. **Structure** — create_object CUSTOM folder from specBrief.entities[0].name (never hardcoded slugs)
                 3. **Sources** — for each entity: create_virtual_device / create_object DEVICE + configure_driver + list_variables (mandatory per device)
-                4. **Aggregation** — CUSTOM hub variables + create_binding_rule (read/CEL) when spec needs computed KPIs
+                4. **Aggregation** — non-DEVICE hub: SINGLETON orchestrator (prefer singleton-blueprints)
+                   or INSTANCE twin via instantiate_instance_type; create_variable + create_binding_rule.
+                   Hub may parent DEVICE children; never type hub as DEVICE.
                 5. **Historian** — configure_variable_history on trend/chart variables (from list_variables only)
                 6. **Dashboards** — create_object DASHBOARD → set_dashboard_layout (template or custom layoutJson)
                    Fine grid columns=84 rowHeight=8; KPI tiles w=21|28 h=14; charts/tables ≥42×28; bind list_variables paths.
@@ -56,6 +58,7 @@ public final class AgentSolutionGeneratorPlaybook {
                 - **Lab / training:** virtualClusterMonitoring or lab-training bundle
                 
                 ### Anti-patterns (never)
+                - Logic/hub object typed as DEVICE — use SINGLETON (orchestrator) or INSTANCE (twin)
                 - finish before list_variables on every shipped device
                 - Invent variable or object paths — only paths from list_objects / create_object responses
                 - Skip configure_alert when spec explicitly lists alarm thresholds

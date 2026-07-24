@@ -47,15 +47,19 @@ public final class AgentObjectTreeGuide {
                 
                 ### Object types & key variables
                 
-                - **DEVICE**: driverId, driverConfigJson, driverPointMappingsJson; poll via configure_driver / driver_control
+                - **DEVICE**: driverId, driverConfigJson, driverPointMappingsJson; poll via configure_driver / driver_control — **I/O only**, never the logic hub
                 - **DASHBOARD**: title, layout (JSON widgets[]), refreshIntervalMs — NOT a variable named widgets
-                - **CUSTOM**: hub for read(...) bindings, aggregations, clusterError logic
+                - **SINGLETON hub** (`root.platform.singleton-blueprints.*`): unique orchestrator — KPIs, read(...) aggregations; prefer ensure_singleton_instance
+                - **INSTANCE twin**: repeatable digital-twin logic via instantiate_instance_type (may parent DEVICE children under devices tree)
+                - **CUSTOM**: folder / object-query under queries — grouping only unless shaped as INSTANCE/SINGLETON
                 - **ALERT**: targetObjectPath, watchVariable, conditionExpr (CEL), eventName — tool configure_alert
                 - **CORRELATOR**: patternType COUNT|SEQUENCE|EVENT_CHAIN — tool configure_correlator
                 - **WORKFLOW**: BPMN in bundle or platform tree
                 - **REPORT**: SQL report definition path for report widget
                 - **Object query** (under root.platform.queries): CUSTOM child with `run` function (`sourceType=object-query`, spec in `sourceBody`)
                 - **EVENT_FILTER**: eventNamePattern, sourceObjectPathPattern, severity range, filterExpression
+                
+                Hard rule: logic/hub object must not be ObjectType.DEVICE. Cluster hub+DEVICE children under devices.* is allowed; path is implementation choice.
                 
                 ### Models & templates
                 
@@ -88,7 +92,7 @@ public final class AgentObjectTreeGuide {
                 
                 Call get_automation_schema topic=objectTypes. For each layer in TZ, list_objects on catalog root, \
                 then create_object / configure_* / instantiate_instance_type / apply_mixin_blueprint as needed.
-                Include plan.objectTypesCoverage[] — never skip DEVICE, CUSTOM hub, alerts, HMI layers without explicit N/A.
+                Include plan.objectTypesCoverage[] — never skip DEVICE, SINGLETON hub, alerts, HMI layers without explicit N/A.
                 
                 ### Canonical order (every object type)
                 

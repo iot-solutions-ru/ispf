@@ -216,7 +216,7 @@ Platform tools (Java handlers, ACL-aware):
 | `configure_alert` | Create/update ALERT rule (CEL condition → event) |
 | `configure_correlator` | Create/update event correlator |
 | `configure_operator_ui` | Operator HMI default dashboard + menu |
-| `create_variable` | New variable with PlatformRef binding (CUSTOM hub logic) |
+| `create_variable` | New variable with PlatformRef binding (prefer SINGLETON hub for app logic) |
 | `list_automation` | List alert rules and correlators |
 | `get_automation_schema` | Reference for alert/correlator/dashboard/binding/operator fields |
 | `list_variables` | Read object variables + values |

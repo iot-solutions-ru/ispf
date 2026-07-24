@@ -272,7 +272,7 @@ class AgentAutomationToolsTest {
 
     @Test
     void createBindingRuleHistorianSkipsReactiveCelValidation() throws Exception {
-        String path = "root.platform.devices.virt-cluster.hub";
+        String path = "root.platform.singleton-blueprints.virt-cluster-hub";
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
         when(ObjectTreePort.require(path)).thenReturn(
                 new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null)

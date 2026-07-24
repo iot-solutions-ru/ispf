@@ -119,15 +119,19 @@ See `AgentPlaybooks.specIntakeGuide()` and `SpecIntakeScenarioTest`.
 
 **Typical sequence:**
 
-1. `list_object_models` -> `create_object` (DEVICE / DASHBOARD / CUSTOM / WORKFLOW / ...)
-2. `configure_driver` + `driver_control start` (for DEVICE)
-3. `configure_variable_history` (for chart/sparkline)
-4. `create_variable` / binding rules (`set_variable` + CEL) on CUSTOM hub
-5. `configure_alert` / `configure_correlator`
-6. `create_object DASHBOARD` -> `set_dashboard_layout template=...` or `add_dashboard_widget`
-7. Platform rules (ADR-0019): binding rules on DASHBOARD with `target.kind=context`, `onContextChange`
-8. `configure_operator_ui` -> default dashboard + menu
-9. `list_variables` -> `finish` with UI paths
+1. Choose logic object kind: **SINGLETON** orchestrator (one) or **INSTANCE** digital twin (many) — **never** `ObjectType.DEVICE`
+2. Create hub: `ensure_singleton_instance` / create under `singleton-blueprints`, **or** `instantiate_instance_type` for twins (may live under `devices.{plant}` as parent)
+3. DEVICE children for I/O: `create_object` / `create_virtual_device` under the hub or `devices.{project}`
+4. `configure_driver` + `driver_control start` (for DEVICE)
+5. `configure_variable_history` (for chart/sparkline)
+6. `create_variable` / binding rules on the **non-DEVICE** hub (`create_binding_rule`)
+7. `configure_alert` / `configure_correlator`
+8. `create_object DASHBOARD` -> `set_dashboard_layout template=...` or `add_dashboard_widget`
+9. Platform rules (ADR-0019): binding rules on DASHBOARD with `target.kind=context`, `onContextChange`
+10. `configure_operator_ui` -> default dashboard + menu
+11. `list_variables` -> `finish` with UI paths
+
+**Hard rule:** do not type the logic/hub object as DEVICE. Path under `devices` with DEVICE children is allowed; DEVICE = I/O only.
 
 **Playbooks in system prompt:** SNMP, virtual cluster, Modbus, MES, reports, widgets, SCADA mimic — see `AgentPlaybooks.*`.
 
@@ -137,8 +141,8 @@ A complete tree-first project has **8 layers** (see `get_automation_schema topic
 
 | # | Layer | Path | Tools |
 |---|------|------|-------|
-| 1 | Hub (SINGLETON) | `root.platform.singleton-blueprints.{project}` | `ensure_singleton_instance`, binding rules, PlatformRef |
-| 2 | Devices | `root.platform.devices.{project}/*` | `instantiate_instance_type`, `apply_mixin_blueprint`, `create_virtual_device` |
+| 1 | Hub (SINGLETON orchestrator **or** INSTANCE twin) | Prefer `singleton-blueprints.{project}`; twins via Instance Type (may nest under `devices`) | `ensure_singleton_instance` / `instantiate_instance_type`, binding rules |
+| 2 | Devices (I/O) | DEVICE children under hub or `devices.{project}/*` | `instantiate_instance_type`, `apply_mixin_blueprint`, `create_virtual_device` |
 | 3 | Dashboard | `root.platform.dashboards.{project}-*` | `set_dashboard_layout`, `add_dashboard_widget` |
 | 4 | SCADA | `root.platform.mimics.{project}-*` | `save_mimic_diagram`, `get_mimic_diagram` |
 | 5 | Alerts | `root.platform.alert-rules.{project}-*` | `configure_alert` |
@@ -146,7 +150,7 @@ A complete tree-first project has **8 layers** (see `get_automation_schema topic
 | 7 | Workflows | `root.platform.workflows.{project}-*` | `save_workflow_bpmn` |
 | 8 | Reports | `root.platform.reports.{project}-*` | `configure_report` |
 
-**Three blueprint kinds:** `get_automation_schema topic=instanceTypes` -> MIXIN (mixin on existing object), INSTANCE (new object), SINGLETON (live hub under `singleton-blueprints.*` with application logic).
+**Three blueprint kinds:** `get_automation_schema topic=instanceTypes` -> MIXIN (mixin on existing object), INSTANCE (repeatable twin / typed object with logic), SINGLETON (unique orchestrator live hub). Logic object ≠ DEVICE.
 
 **Recipes catalog (1410):** `search_platform_recipes`, `get_automation_schema topic=recipes|projects|recipe/{id}`. Includes **500** ready industry projects (`project-{industry}-{archetype}`). Full index: [agent-recipes](agent-recipes.md).
 
@@ -572,7 +576,7 @@ Use `search_context` with `topic` or keywords from this table.
 ### "Add automation"
 
 1. `get_automation_schema`
-2. CUSTOM hub + `create_variable` or alert on DEVICE
+2. Non-DEVICE hub: SINGLETON orchestrator or INSTANCE twin + `create_variable` / `create_binding_rule` (alerts may watch DEVICE telemetry)
 3. `configure_alert` / `configure_correlator`
 4. Optional: WORKFLOW + `operatorAppId`
 
