@@ -109,64 +109,74 @@ test.describe("operator Android Chrome smoke (Pixel 5)", () => {
     await expect(page.getByTestId("operator-offline-banner")).toBeHidden({ timeout: 20_000 });
   });
 
-  test("service worker runtime caches dashboards and mimics (BL-151)", async ({ page }) => {
+  test("service worker runtime caches operator manifest (BL-151)", async ({ page }) => {
     await mockAuthenticatedApi(page);
     await seedAuthSession(page);
     await page.goto("/?mode=operator&app=demo");
     await expect(page.getByTestId("operator-shell")).toBeVisible({ timeout: 20_000 });
-    await page.evaluate(async () => {
-      await navigator.serviceWorker?.ready;
-    });
 
-    // Warm NetworkFirst caches used by operator HMI offline path
-    await page.evaluate(async () => {
-      await fetch("/operator-apps/demo.manifest.json");
-      await fetch("/api/v1/dashboards/by-path?path=root.platform.dashboards.ops-board", {
-        headers: { Authorization: "Bearer e2e-mock-token" },
+    // Workbox only writes runtime caches for fetches the controlling SW sees.
+    // First load often has active SW but null controller until claim/reload.
+    const controlling = await page.evaluate(async () => {
+      if (!("serviceWorker" in navigator)) {
+        return false;
+      }
+      await navigator.serviceWorker.ready;
+      if (navigator.serviceWorker.controller) {
+        return true;
+      }
+      await new Promise<void>((resolve) => {
+        const onChange = () => {
+          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+          resolve();
+        };
+        navigator.serviceWorker.addEventListener("controllerchange", onChange);
+        window.setTimeout(() => {
+          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+          resolve();
+        }, 5_000);
       });
-      await fetch("/api/v1/mimics/by-path?path=root.platform.mimics.demo", {
-        headers: { Authorization: "Bearer e2e-mock-token" },
-      }).catch(() => undefined);
+      return Boolean(navigator.serviceWorker.controller);
+    });
+    if (!controlling) {
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("operator-shell")).toBeVisible({ timeout: 20_000 });
+      await page.evaluate(async () => {
+        await navigator.serviceWorker?.ready;
+      });
+    }
+
+    // Static operator manifest is served by vite preview (not page.route **/api/**),
+    // so NetworkFirst can populate ispf-operator-manifest. API dashboard/mimic fetches
+    // are intercepted by Playwright mocks and never reach Workbox — covered by
+    // scripts/pwa-offline-evidence.mjs + vite runtimeCaching config.
+    await page.evaluate(async () => {
+      const res = await fetch("/operator-apps/demo.manifest.json");
+      if (!res.ok) {
+        throw new Error(`manifest warm failed: ${res.status}`);
+      }
     });
 
-    // Give Workbox a tick to write Cache Storage
-    await page.waitForTimeout(800);
-
-    const cacheEvidence = await page.evaluate(async () => {
-      const names = await caches.keys();
-      const dashboardCache = names.find((n) => n.includes("ispf-dashboards"));
-      const mimicCache = names.find((n) => n.includes("ispf-mimics"));
-      const manifestCache = names.find((n) => n.includes("ispf-operator-manifest"));
-      let dashboardEntries = 0;
-      let mimicEntries = 0;
-      let manifestEntries = 0;
-      if (dashboardCache) {
-        dashboardEntries = (await caches.open(dashboardCache).then((c) => c.keys())).length;
-      }
-      if (mimicCache) {
-        mimicEntries = (await caches.open(mimicCache).then((c) => c.keys())).length;
-      }
-      if (manifestCache) {
-        manifestEntries = (await caches.open(manifestCache).then((c) => c.keys())).length;
-      }
-      return {
-        names,
-        hasDashboardCache: Boolean(dashboardCache),
-        hasMimicCache: Boolean(mimicCache),
-        hasManifestCache: Boolean(manifestCache),
-        dashboardEntries,
-        mimicEntries,
-        manifestEntries,
-      };
-    });
-
-    expect(
-      cacheEvidence.hasDashboardCache || cacheEvidence.hasManifestCache,
-      JSON.stringify(cacheEvidence)
-    ).toBeTruthy();
-    expect(
-      cacheEvidence.dashboardEntries + cacheEvidence.mimicEntries + cacheEvidence.manifestEntries,
-      JSON.stringify(cacheEvidence)
-    ).toBeGreaterThan(0);
+    await expect
+      .poll(
+        async () => {
+          const snap = await page.evaluate(async () => {
+            const names = await caches.keys();
+            const manifestCache = names.find((n) => n.includes("ispf-operator-manifest"));
+            const manifestEntries = manifestCache
+              ? (await caches.open(manifestCache).then((c) => c.keys())).length
+              : 0;
+            return {
+              names,
+              controlling: Boolean(navigator.serviceWorker?.controller),
+              hasManifestCache: Boolean(manifestCache),
+              manifestEntries,
+            };
+          });
+          return snap.hasManifestCache && snap.manifestEntries > 0 ? snap : null;
+        },
+        { timeout: 15_000, intervals: [200, 400, 800] }
+      )
+      .not.toBeNull();
   });
 });

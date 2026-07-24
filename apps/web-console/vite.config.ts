@@ -56,6 +56,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // First navigation must be controlled so NetworkFirst runtime caches warm in e2e/CI.
+        clientsClaim: true,
+        skipWaiting: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "index.html",
         // Never SPA-fallback foreign apps / APIs on a shared origin.
