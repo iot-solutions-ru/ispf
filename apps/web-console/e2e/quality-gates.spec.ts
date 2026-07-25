@@ -171,17 +171,21 @@ test.describe("mimic runtime FPS", () => {
           );
         };
 
-        // 5 Hz OT-style updates during a single 2s FPS window
+        // 5 Hz OT-style updates across three 1.5s windows; median resists GHA noise.
         const wsTimer = window.setInterval(pumpWs, 200);
         pumpWs();
 
         await new Promise<void>((resolve) => {
           const onFrame = (now: number) => {
             frames += 1;
-            if (now - start >= 2000) {
+            if (now - start >= 1500) {
               samples.push((frames * 1000) / (now - start));
-              resolve();
-              return;
+              if (samples.length >= 3) {
+                resolve();
+                return;
+              }
+              frames = 0;
+              start = now;
             }
             requestAnimationFrame(onFrame);
           };
@@ -189,7 +193,8 @@ test.describe("mimic runtime FPS", () => {
         });
 
         window.clearInterval(wsTimer);
-        return { fps: samples[0] ?? 0, wsUpdates };
+        samples.sort((a, b) => a - b);
+        return { fps: samples[1] ?? samples[0] ?? 0, wsUpdates };
       },
       { bindPath: STRESS_MIMIC_BIND_PATH, eventName: "ispf-object-ws-message" }
     );

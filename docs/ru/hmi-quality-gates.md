@@ -34,7 +34,7 @@ npm run test:quality
 | Профиль | Элементы | Порог FPS | Env |
 | ------- | -------- | --------- | --- |
 | Локально / acceptance (BL-152 **Готово**) | 500 | ≥55 | по умолчанию `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
-| Nightly GHA soft floor | 300 | ≥20 (static + WS) | `ci-nightly.yml`: `MIMIC_STRESS_ELEMENTS=300`, `MIMIC_MIN_FPS=20`, `MIMIC_MIN_FPS_WS=20` — shared runners; не заявление ≥55 на GHA |
+| Nightly GHA soft floor | 300 | ≥15 (static + WS) | `ci-nightly.yml`: `MIMIC_STRESS_ELEMENTS=300`, `MIMIC_MIN_FPS=15`, `MIMIC_MIN_FPS_WS=15` — shared runners; не заявление ≥55 на GHA |
 | Stretch (ops, не acceptance) | 500 | ≥60 | `MIMIC_MIN_FPS=60` + unmocked `E2E_LIVE_FPS=1` при наличии evidence |
 | Legacy S21 proxy | 120 | ≥55 | `MIMIC_STRESS_ELEMENTS=120` |
 | Ручная проверка tank-farm | полная схема | ≥60 | вкладка Performance в Chrome на мнемосхеме оператора |

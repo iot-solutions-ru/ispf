@@ -157,10 +157,10 @@ jobs:
       - name: HMI quality gates (S21)
         working-directory: apps/web-console
         env:
-          # Shared GHA CPUs often land teens–30s FPS @ 500 el; local/docs default stays 55 / WS 35.
+          # Shared GHA CPUs often land teens–30s FPS @ 300–500 el; local/docs default stays 55 / WS 35.
           # Soft floor + fewer stress elements keep the gate meaningful without flake-red nights.
-          MIMIC_MIN_FPS: "20"
-          MIMIC_MIN_FPS_WS: "20"
+          MIMIC_MIN_FPS: "15"
+          MIMIC_MIN_FPS_WS: "15"
           MIMIC_STRESS_ELEMENTS: "300"
         run: |
           npm run bundle:budget
