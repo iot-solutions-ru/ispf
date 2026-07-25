@@ -76,14 +76,14 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
 
         {showLocalLogin && (
           <Form layout="vertical" onFinish={() => void submit()}>
-            <Form.Item label={t("shell:login.username")}>
+            <Form.Item label={t("shell:login.username")} name="username">
               <Input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
               />
             </Form.Item>
-            <Form.Item label={t("shell:login.password")}>
+            <Form.Item label={t("shell:login.password")} name="password">
               <Input.Password
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -91,7 +91,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
               />
             </Form.Item>
             {showTotpField && (
-              <Form.Item label={t("shell:login.totp")}>
+              <Form.Item label={t("shell:login.totp")} name="totp">
                 <Input
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}

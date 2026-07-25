@@ -206,8 +206,9 @@ test.describe("binding expression builder", () => {
     await expect(page.getByRole("button", { name: "+ Rule" })).toBeVisible();
     await page.getByRole("button", { name: "+ Rule" }).click();
 
-    await expect(page.getByRole("heading", { name: "New rule" })).toBeVisible();
-    const rulePanel = page.locator(".modal, .binding-rules-panel").filter({ hasText: "New rule" });
+    // Ant Design Modal title is not a heading element — assert the dialog itself.
+    await expect(page.getByRole("dialog", { name: "New rule" })).toBeVisible();
+    const rulePanel = page.getByRole("dialog", { name: "New rule" });
     await rulePanel.locator(".binding-expression-field").first().getByRole("button", { name: "Edit", exact: true }).click();
 
     const editorModal = page.locator(".binding-expression-editor-modal");
