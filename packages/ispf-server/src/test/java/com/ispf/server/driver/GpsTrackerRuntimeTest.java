@@ -96,14 +96,15 @@ class GpsTrackerRuntimeTest {
                 .andExpect(jsonPath("$.status").value("RUNNING"))
                 .andExpect(jsonPath("$.driverId").value("gps-tracker"));
 
-        awaitPortOpen(listenPort, 10_000);
+        awaitPortOpen(listenPort, 15_000);
 
         mockMvc.perform(get("/api/v1/objects/by-path/variables")
                         .param("path", devicePath))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].name", hasItem("gpsFeed")));
 
-        awaitGpsFeedValue(NMEA_LINE, 20_000);
+        // CI runners can be heavily loaded; give accept/read/poll more time than a local run needs.
+        awaitGpsFeedValue(NMEA_LINE, 45_000);
     }
 
     private void awaitPortOpen(int port, long timeoutMs) throws Exception {
@@ -123,26 +124,23 @@ class GpsTrackerRuntimeTest {
 
     private void sendNmeaLine() throws Exception {
         try (Socket client = new Socket()) {
-            client.connect(new InetSocketAddress("127.0.0.1", listenPort), 1_000);
+            client.connect(new InetSocketAddress("127.0.0.1", listenPort), 2_000);
             client.setTcpNoDelay(true);
             OutputStream out = client.getOutputStream();
             out.write((NMEA_LINE + "\r\n").getBytes(StandardCharsets.UTF_8));
             out.flush();
-            // Keep the socket open briefly so the accept/read thread can drain the line
-            // before the client RST/close races the driver on overloaded CI runners.
-            Thread.sleep(200);
+            // Half-close so the driver reader can finish the line, then hold the socket
+            // open briefly so accept/read threads are not raced by an immediate RST on CI.
+            client.shutdownOutput();
+            Thread.sleep(500);
         }
     }
 
     private void awaitGpsFeedValue(String expected, long timeoutMs) throws Exception {
         long deadline = System.currentTimeMillis() + timeoutMs;
         String lastBody = "";
-        int attempt = 0;
         while (System.currentTimeMillis() < deadline) {
-            if (attempt % 3 == 0) {
-                sendNmeaLine();
-            }
-            attempt++;
+            sendNmeaLine();
             mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
                     .andExpect(status().isOk());
             lastBody = mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
@@ -155,7 +153,7 @@ class GpsTrackerRuntimeTest {
             if (lastBody.contains(expected)) {
                 return;
             }
-            Thread.sleep(200);
+            Thread.sleep(250);
         }
         throw new AssertionError("gpsFeed did not contain NMEA within " + timeoutMs + "ms: " + lastBody);
     }

@@ -79,21 +79,33 @@ describe("EditDescriptorDialog", () => {
     );
   }
 
+  async function selectSourceType(user: ReturnType<typeof userEvent.setup>, label: string) {
+    await user.click(screen.getByRole("combobox", { name: "Source type" }));
+    const option = await screen.findByRole("option", { name: label });
+    // Ant Design Select options sit in a popup; skip pointer-events checks under jsdom.
+    await user.click(option, { pointerEventsCheck: 0 });
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "Source type" })).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      ),
+    );
+  }
+
   it("preserves independent Java and steps drafts when switching source type", async () => {
     const user = userEvent.setup();
     renderDialog();
 
-    const sourceType = screen.getByRole("combobox", { name: "Source type" });
     const javaEditor = await screen.findByRole("textbox", { name: "Java source" });
     fireEvent.change(javaEditor, { target: { value: "custom Java body" } });
 
-    await user.selectOptions(sourceType, "script");
+    await selectSourceType(user, "Script (JSON steps)");
     const stepsEditor = screen.getByRole("textbox", { name: "Steps source" });
     fireEvent.change(stepsEditor, { target: { value: '{"steps":[{"type":"return"}]}' } });
 
-    await user.selectOptions(sourceType, "java");
+    await selectSourceType(user, "Java (compile on save)");
     expect(await screen.findByRole("textbox", { name: "Java source" })).toHaveValue("custom Java body");
-    await user.selectOptions(sourceType, "script");
+    await selectSourceType(user, "Script (JSON steps)");
     expect(screen.getByRole("textbox", { name: "Steps source" })).toHaveValue(
       '{"steps":[{"type":"return"}]}',
     );
@@ -105,7 +117,7 @@ describe("EditDescriptorDialog", () => {
     const initial: FunctionDescriptor = { ...javaFunction, sourceType: "script", sourceBody };
     renderDialog(initial);
 
-    const advanced = screen.getByRole("checkbox", { name: "Edit as JSON (advanced)" });
+    const advanced = screen.getByRole("switch", { name: "Edit as JSON (advanced)" });
     await user.click(advanced);
     const advancedEditor = document.querySelector("textarea.json-editor") as HTMLTextAreaElement;
     expect(JSON.parse(advancedEditor.value).sourceBody).toBe(sourceBody);
@@ -123,14 +135,19 @@ describe("EditDescriptorDialog", () => {
     const user = userEvent.setup();
     renderDialog();
 
-    const advanced = screen.getByRole("checkbox", { name: "Edit as JSON (advanced)" });
-    await user.click(advanced);
+    await user.click(screen.getByRole("switch", { name: "Edit as JSON (advanced)" }));
     const advancedEditor = document.querySelector("textarea.json-editor") as HTMLTextAreaElement;
     fireEvent.change(advancedEditor, { target: { value: "{invalid" } });
-    await user.click(advanced);
+    // Re-query after re-render; a stale switch node will not fire onChange.
+    await user.click(screen.getByRole("switch", { name: "Edit as JSON (advanced)" }));
 
-    expect(advanced).toBeChecked();
-    expect(advancedEditor).toHaveValue("{invalid");
-    expect(screen.getByText("Invalid schema JSON")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Invalid schema JSON")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("switch", { name: "Edit as JSON (advanced)" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByDisplayValue("{invalid")).toBeInTheDocument();
   });
 });

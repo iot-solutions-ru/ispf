@@ -468,8 +468,11 @@ export default function EditDescriptorDialog({
               <Typography.Title level={4} className="full">{t("descriptor.scriptSection")}</Typography.Title>
               <Form.Item label={t("descriptor.sourceType")}>
                 <Select
+                  aria-label={t("descriptor.sourceType")}
                   value={sourceType}
                   onChange={changeSourceType}
+                  // Small fixed option list — disable virtualization so jsdom tests can select options.
+                  virtual={false}
                   options={[
                     { value: "", label: t("descriptor.sourceTypeHandler") },
                     { value: "script", label: t("descriptor.sourceTypeScript") },
@@ -600,6 +603,7 @@ export default function EditDescriptorDialog({
             <Switch
               checked={showAdvancedJson}
               onChange={setAdvancedMode}
+              aria-label={t("descriptor.advancedJson")}
             />
             <Typography.Text>{t("descriptor.advancedJson")}</Typography.Text>
           </Space>
@@ -614,8 +618,8 @@ export default function EditDescriptorDialog({
           )}
         </section>
 
-        {parseError && <Alert type="error" showIcon message={parseError} />}
-        {mutation.error && <Alert type="error" showIcon message={(mutation.error as Error).message} />}
+        {parseError && <Alert type="error" showIcon title={parseError} />}
+        {mutation.error && <Alert type="error" showIcon title={(mutation.error as Error).message} />}
       </Space>
     </Modal>
   );
