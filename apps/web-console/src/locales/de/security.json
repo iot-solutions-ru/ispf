@@ -15,6 +15,8 @@
   "autostart.saveFailed": "Server hat Autostart nicht gespeichert. Starten Sie ispf-server neu (Migration V16).",
   "autostart.serverNotReady": "Autostart erfordert Server-Migration V16.",
   "createRole.descriptionPlaceholder": "Kurze Beschreibung des Rollenzwecks",
+  "createRole.displayNamePlaceholder": "Supervisor",
+  "createUser.displayNamePlaceholder": "Operator 2",
   "createRole.name": "Rollenname",
   "createRole.title": "Neue Rolle",
   "createUser.password": "Passwort",

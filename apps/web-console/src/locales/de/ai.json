@@ -219,5 +219,18 @@
   "copilot.suggest.draftExpression": "Ausdruck/Abfrage aus den aktuellen Bildschirmdaten schreiben",
   "copilot.suggest.dashboard": "Hilf mir, dieses Dashboard-Layout zu verbessern",
   "copilot.suggest.scada": "Hilf mir mit diesem SCADA-Mimic",
-  "copilot.suggest.systemLookup": "Zugehörige Objekte auf der Plattform für diesen Kontext finden"
+  "copilot.suggest.systemLookup": "Zugehörige Objekte auf der Plattform für diesen Kontext finden",
+  "copilot.contextCelRule": "Aktueller CEL für Regel „{{ruleId}}“:\n```\n{{expression}}\n```",
+  "copilot.contextCelEditor": "Aktueller CEL im Editor:\n```\n{{expression}}\n```",
+  "copilot.contextUiObject": "UI-Fokus-Objekt: `{{path}}`",
+  "copilot.contextRulesOnScreen": "Regeln auf dem Bildschirm:\n{{lines}}",
+  "copilot.contextScreen": "UI-Fokus-Bildschirm: {{title}}",
+  "copilot.contextSystemTab": "System-Tab: {{tab}}",
+  "copilot.contextSettingsTab": "Einstellungsbereich: {{tab}}",
+  "copilot.contextStudioTab": "AI-Studio-Tab: {{tab}}",
+  "copilot.contextHint": "Hinweis: {{hint}}",
+  "copilot.contextVisibleSettings": "Sichtbare Einstellungen: {{ids}}",
+  "copilot.contextSampleRows": "Beispielzeilen:\n{{samples}}",
+  "copilot.contextSelectedWidget": "Ausgewähltes Widget: {{widgetId}} ({{widgetType}})",
+  "copilot.contextFieldsJson": "fieldsJson (Fragment): {{fields}}"
 }

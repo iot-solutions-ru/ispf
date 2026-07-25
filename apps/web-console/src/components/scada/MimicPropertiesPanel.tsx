@@ -183,7 +183,7 @@ function MimicActionFields({
         <Form.Item className={fieldClassName()} label={t("props.unitModes")}>
           <Input
             className="scada-form-input mono"
-            placeholder="mm, m3, t"
+            placeholder={t("props.unitModesPlaceholder")}
             value={(action.unitModes ?? []).join(", ")}
             onChange={(e) =>
               onChange({

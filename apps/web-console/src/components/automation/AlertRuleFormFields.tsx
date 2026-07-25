@@ -385,7 +385,7 @@ export default function AlertRuleFormFields({
             <Input
               value={value.notificationEmailTarget ?? ""}
               onChange={(e) => patch({ notificationEmailTarget: e.target.value })}
-              placeholder="ops@example.com|Alert|Threshold exceeded"
+              placeholder={t("automation:alertRule.notificationEmailPlaceholder")}
               disabled={!canManage}
             />
           </label>

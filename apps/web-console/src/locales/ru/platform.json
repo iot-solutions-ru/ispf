@@ -79,6 +79,7 @@
   "dataSource.sectionConnection": "Подключение",
   "dataSource.sectionGeneral": "Основное",
   "dataSource.sqlConsole": "SQL-консоль",
+  "dataSource.sqlInputLabel": "SQL-запрос",
   "dataSource.sqlHint": "Один запрос на чтение (SELECT, WITH, …) или запись (INSERT, UPDATE, DELETE, DDL) через этот источник данных.",
   "dataSource.subtitle": "Схема SQL или внешний JDBC-коннектор для отчётов, миграций, bindings и script-функций",
   "dataSource.testConnection": "Проверить подключение",

@@ -18,6 +18,9 @@ const SKIP_SUFFIX = [".test.ts", ".test.tsx", ".d.ts"];
 /** JSX text nodes: >Visible text< */
 const JSX_TEXT = />([^<>{}[\n]+?)</g;
 
+/** Non-capital JSX element names whose text children are code, not user copy */
+const CODE_TAGS = ["code", "kbd", "samp", "pre", "var"];
+
 /** Common UI string props without t() */
 const UI_ATTR =
   /(?:placeholder|title|aria-label|alt)=["']([^"'{][^"']{2,})["']/g;
@@ -86,6 +89,18 @@ function looksLikeUiText(text) {
   if (/^[a-z][a-zA-Z0-9_-]*$/.test(value) && !CYRILLIC.test(value)) {
     return false;
   }
+  // TypeScript type annotations (e.g. `void | Promise`) are not user-facing copy.
+  if (/^(void|Promise|string|number|boolean|unknown|any)\b/.test(value)) {
+    return false;
+  }
+  // Dotted identifiers (JS logic like `0 && pens.length`) are not user-facing copy.
+  if (/^[a-z][\w.-]*$/.test(value) && !CYRILLIC.test(value)) {
+    return false;
+  }
+  // Code expressions (identifiers, member access, calls, generics) are not user copy.
+  if (/^\w[\w\s().,<>[\]{}|:;'"&|=!?/-]*$/.test(value) && /[.()[\]<>{}&|]/.test(value) && !CYRILLIC.test(value)) {
+    return false;
+  }
   if (!/[A-Za-z\u0400-\u04FF]/.test(value)) {
     return false;
   }
@@ -117,14 +132,21 @@ function scanFile(absPath) {
 
     for (const match of line.matchAll(JSX_TEXT)) {
       const text = match[1]?.trim() ?? "";
-      if (looksLikeUiText(text)) {
-        hits.push({
-          file: rel.replace(/\\/g, "/"),
-          line: index + 1,
-          kind: "jsx-text",
-          text: text.slice(0, 120),
-        });
+      if (!looksLikeUiText(text)) {
+        continue;
       }
+      // Skip text inside inline code tags — it is code, not user-facing copy.
+      const before = line.slice(0, match.index);
+      const tagMatch = before.match(/<([a-zA-Z][\w-]*)[^>]*>\s*$/);
+      if (tagMatch && CODE_TAGS.includes(tagMatch[1].toLowerCase())) {
+        continue;
+      }
+      hits.push({
+        file: rel.replace(/\\/g, "/"),
+        line: index + 1,
+        kind: "jsx-text",
+        text: text.slice(0, 120),
+      });
     }
 
     for (const match of line.matchAll(UI_ATTR)) {

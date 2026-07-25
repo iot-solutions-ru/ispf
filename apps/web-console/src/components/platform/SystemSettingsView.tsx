@@ -332,7 +332,7 @@ export default function SystemSettingsView() {
       surface: "system",
       priority: 70,
       detail: {
-        screenTitle: "System › Settings (Система › Настройки)",
+        screenTitle: "System › Settings",
         systemTab: "settings",
         settingsTab: activeTab,
         settingsTabLabel: tabLabel(activeTab),

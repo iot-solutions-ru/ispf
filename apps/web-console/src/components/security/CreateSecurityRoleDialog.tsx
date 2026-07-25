@@ -80,7 +80,7 @@ export default function CreateSecurityRoleDialog({
         </Form.Item>
 
         <Form.Item name="displayName" label={t("common:field.displayName")}>
-          <Input placeholder="Supervisor" />
+          <Input placeholder={t("security:createRole.displayNamePlaceholder")} />
         </Form.Item>
 
         <Form.Item name="description" label={t("common:field.description")}>

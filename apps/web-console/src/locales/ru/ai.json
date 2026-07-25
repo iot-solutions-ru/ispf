@@ -219,5 +219,18 @@
   "copilot.suggest.draftExpression": "Напиши выражение/запрос из текущих данных экрана",
   "copilot.suggest.dashboard": "Помоги улучшить раскладку дашборда",
   "copilot.suggest.scada": "Помоги с этим SCADA mimic",
-  "copilot.suggest.systemLookup": "Найди связанные объекты на платформе для этого контекста"
+  "copilot.suggest.systemLookup": "Найди связанные объекты на платформе для этого контекста",
+  "copilot.contextCelRule": "Текущий CEL для правила «{{ruleId}}»:\n```\n{{expression}}\n```",
+  "copilot.contextCelEditor": "Текущий CEL в редакторе:\n```\n{{expression}}\n```",
+  "copilot.contextUiObject": "Объект UI focus: `{{path}}`",
+  "copilot.contextRulesOnScreen": "Правила на экране:\n{{lines}}",
+  "copilot.contextScreen": "Экран UI focus: {{title}}",
+  "copilot.contextSystemTab": "Вкладка Система: {{tab}}",
+  "copilot.contextSettingsTab": "Подраздел настроек: {{tab}}",
+  "copilot.contextStudioTab": "Вкладка AI Studio: {{tab}}",
+  "copilot.contextHint": "Описание: {{hint}}",
+  "copilot.contextVisibleSettings": "Видимые настройки: {{ids}}",
+  "copilot.contextSampleRows": "Примеры строк:\n{{samples}}",
+  "copilot.contextSelectedWidget": "Выбранный виджет: {{widgetId}} ({{widgetType}})",
+  "copilot.contextFieldsJson": "fieldsJson (фрагмент): {{fields}}"
 }

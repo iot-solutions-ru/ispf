@@ -118,6 +118,7 @@
   "blueprint.variablesTitle": "Переменные ({{count}})",
   "brick.applySuggestion": "Применить подсказку",
   "brick.classUri": "URI класса Brick",
+  "brick.classUriPlaceholder": "https://brickschema.org/schema/Brick#Sensor",
   "brick.confidence.high": "высокая уверенность",
   "brick.confidence.low": "низкая уверенность",
   "brick.confidence.medium": "средняя уверенность",

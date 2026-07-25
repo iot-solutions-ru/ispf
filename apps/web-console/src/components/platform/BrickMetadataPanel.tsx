@@ -141,7 +141,7 @@ export default function BrickMetadataPanel({ devicePath, canManage }: BrickMetad
             type="text"
             value={brickClass}
             disabled={!canManage}
-            placeholder="https://brickschema.org/schema/Brick#Sensor"
+            placeholder={t("inspector:brick.classUriPlaceholder")}
             onChange={(event) => setBrickClass(event.target.value)}
           />
         </label>

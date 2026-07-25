@@ -8,6 +8,7 @@
   "empty": "No entries yet",
   "filter.all": "All",
   "filter.searchPlaceholder": "Search path or name…",
+  "filter.objectPathPlaceholder": "root.platform.devices…",
   "filter.eventName": "Event",
   "filter.level": "Level",
   "filter.fieldPlaceholder": "Field name…",

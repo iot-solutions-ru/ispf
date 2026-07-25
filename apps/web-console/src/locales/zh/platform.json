@@ -79,6 +79,7 @@
   "dataSource.sectionConnection": "连接",
   "dataSource.sectionGeneral": "常规",
   "dataSource.sqlConsole": "SQL 控制台",
+  "dataSource.sqlInputLabel": "SQL 语句",
   "dataSource.sqlHint": "对此数据源执行单条读（SELECT、WITH 等）或写（INSERT、UPDATE、DELETE、DDL）语句。",
   "dataSource.subtitle": "用于报告、迁移、绑定和脚本函数的 SQL 架构",
   "dataSource.testConnection": "测试连接",

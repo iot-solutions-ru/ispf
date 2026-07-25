@@ -118,6 +118,7 @@
   "blueprint.variablesTitle": "Variablen ({{count}})",
   "brick.applySuggestion": "Vorschlag anwenden",
   "brick.classUri": "Brick-Klassen-URI",
+  "brick.classUriPlaceholder": "https://brickschema.org/schema/Brick#Sensor",
   "brick.confidence.high": "hohes Selbstvertrauen",
   "brick.confidence.low": "geringes Vertrauen",
   "brick.confidence.medium": "mittleres Selbstvertrauen",

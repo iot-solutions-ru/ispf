@@ -24,6 +24,7 @@
   "filter.fieldPlaceholder": "Имя поля…",
   "filter.level": "Уровень",
   "filter.searchPlaceholder": "Поиск по пути или имени…",
+  "filter.objectPathPlaceholder": "root.platform.devices…",
   "liveHint": "Автообновление последних записей",
   "loadError": "Не удалось загрузить журнал",
   "loadMore": "Загрузить ещё",

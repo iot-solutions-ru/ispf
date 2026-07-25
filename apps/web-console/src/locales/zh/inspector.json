@@ -118,6 +118,7 @@
   "blueprint.variablesTitle": "变量 ({{count}})",
   "brick.applySuggestion": "采纳建议",
   "brick.classUri": "砖类 URI",
+  "brick.classUriPlaceholder": "https://brickschema.org/schema/Brick#Sensor",
   "brick.confidence.high": "高置信度",
   "brick.confidence.low": "低置信度",
   "brick.confidence.medium": "中等置信度",

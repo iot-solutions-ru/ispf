@@ -24,6 +24,7 @@
   "alertRule.publishHint": "Das Event wird am ALERT-Regelknoten erstellt und ausgelöst. Payload enthält targetObjectPath, watchVariable, alertRulePath.",
   "alertRule.createEventHint": "Beim Speichern wird der Event-Deskriptor automatisch am Regelknoten erstellt.",
   "alertRule.notificationEmail": "E-Mail (to|subject|body)",
+  "alertRule.notificationEmailPlaceholder": "ops@example.com|Alarm|Schwelle überschritten",
   "alertRule.notificationHint": "Optionale Kanäle bei Auslösung der Regel (zusätzlich zum Event).",
   "alertRule.notificationWebhook": "Webhook-URL für Benachrichtigungen",
   "alertRule.optionalPlaceholder": "optional",

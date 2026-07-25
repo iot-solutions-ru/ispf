@@ -22,6 +22,7 @@
   "dataSource.testFailed": "Connection failed",
   "dataSource.testFailedDetail": "Connection failed: {{message}}",
   "dataSource.sqlConsole": "SQL console",
+  "dataSource.sqlInputLabel": "SQL statement",
   "dataSource.sqlHint": "Run a single read (SELECT, WITH, …) or write (INSERT, UPDATE, DELETE, DDL) statement against this data source.",
   "dataSource.executeQuery": "Execute",
   "dataSource.executing": "Executing…",

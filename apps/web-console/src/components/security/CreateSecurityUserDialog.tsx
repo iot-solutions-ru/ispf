@@ -96,7 +96,7 @@ export default function CreateSecurityUserDialog({
         </Form.Item>
 
         <Form.Item name="displayName" label={t("common:field.displayName")}>
-          <Input placeholder="Operator 2" />
+          <Input placeholder={t("security:createUser.displayNamePlaceholder")} />
         </Form.Item>
 
         <Form.Item

@@ -24,6 +24,7 @@
   "alertRule.publishHint": "Событие создаётся и публикуется на узле правила ALERT. В payload добавляются targetObjectPath, watchVariable, alertRulePath.",
   "alertRule.createEventHint": "При сохранении дескриптор события будет создан на узле правила автоматически.",
   "alertRule.notificationEmail": "Email (to|subject|body)",
+  "alertRule.notificationEmailPlaceholder": "ops@example.com|Оповещение|Порог превышен",
   "alertRule.notificationHint": "Дополнительные каналы при срабатывании правила (помимо события).",
   "alertRule.notificationWebhook": "Webhook URL для уведомлений",
   "alertRule.optionalPlaceholder": "опционально",

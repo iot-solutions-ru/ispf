@@ -252,7 +252,7 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
             value={sqlQuery}
             onChange={(e) => setSqlQuery(e.target.value)}
             spellCheck={false}
-            aria-label="SQL"
+            aria-label={t("platform:dataSource.sqlInputLabel")}
           />
 
           {queryError && <StatusBanner tone="error">{queryError}</StatusBanner>}

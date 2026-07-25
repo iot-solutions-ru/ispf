@@ -199,7 +199,7 @@ export default function BindingInvokeJournalPanel({
                 <Input
                   value={objectPath}
                   onChange={(e) => setObjectPath(e.target.value)}
-                  placeholder="root.platform.devices…"
+                  placeholder={t("journal:filter.objectPathPlaceholder")}
                 />
               </label>
             )}

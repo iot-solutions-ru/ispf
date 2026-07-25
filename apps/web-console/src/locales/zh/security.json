@@ -15,6 +15,8 @@
   "autostart.saveFailed": "服务器未保存自动启动。请重启 ispf-server（迁移 V16）。",
   "autostart.serverNotReady": "自动启动需要服务器迁移 V16。",
   "createRole.descriptionPlaceholder": "角色用途的简要描述",
+  "createRole.displayNamePlaceholder": "主管",
+  "createUser.displayNamePlaceholder": "操作员 2",
   "createRole.name": "角色名称",
   "createRole.title": "新角色",
   "createUser.password": "密码",

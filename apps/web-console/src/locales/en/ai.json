@@ -219,5 +219,18 @@
   "copilot.suggest.draftExpression": "Write an expression/query from current screen data",
   "copilot.suggest.dashboard": "Help me improve this dashboard layout",
   "copilot.suggest.scada": "Help me with this SCADA mimic",
-  "copilot.suggest.systemLookup": "Look up related objects on the platform for this context"
+  "copilot.suggest.systemLookup": "Look up related objects on the platform for this context",
+  "copilot.contextCelRule": "Current CEL for rule \"{{ruleId}}\":\n```\n{{expression}}\n```",
+  "copilot.contextCelEditor": "Current CEL in the editor:\n```\n{{expression}}\n```",
+  "copilot.contextUiObject": "UI focus object: `{{path}}`",
+  "copilot.contextRulesOnScreen": "Rules on screen:\n{{lines}}",
+  "copilot.contextScreen": "UI focus screen: {{title}}",
+  "copilot.contextSystemTab": "System tab: {{tab}}",
+  "copilot.contextSettingsTab": "Settings section: {{tab}}",
+  "copilot.contextStudioTab": "AI Studio tab: {{tab}}",
+  "copilot.contextHint": "Hint: {{hint}}",
+  "copilot.contextVisibleSettings": "Visible settings: {{ids}}",
+  "copilot.contextSampleRows": "Sample rows:\n{{samples}}",
+  "copilot.contextSelectedWidget": "Selected widget: {{widgetId}} ({{widgetType}})",
+  "copilot.contextFieldsJson": "fieldsJson (fragment): {{fields}}"
 }

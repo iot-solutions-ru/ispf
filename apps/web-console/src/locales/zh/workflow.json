@@ -89,5 +89,6 @@
   "status.draft": "草稿",
   "status.stopped": "已停止",
   "stop": "停止",
-  "trigger.title": "触发器"
+  "trigger.title": "触发器",
+  "props.conditionPlaceholder": "CEL 表达式"
 }

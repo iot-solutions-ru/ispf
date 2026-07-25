@@ -89,5 +89,6 @@
   "status.draft": "Entwurf",
   "status.stopped": "Angehalten",
   "stop": "Stopp",
-  "trigger.title": "Auslöser"
+  "trigger.title": "Auslöser",
+  "props.conditionPlaceholder": "CEL-Ausdruck"
 }

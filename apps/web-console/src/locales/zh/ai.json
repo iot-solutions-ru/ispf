@@ -219,5 +219,18 @@
   "copilot.suggest.draftExpression": "根据当前屏幕数据写表达式/查询",
   "copilot.suggest.dashboard": "帮我改进这个仪表板布局",
   "copilot.suggest.scada": "帮我处理这个 SCADA 模拟图",
-  "copilot.suggest.systemLookup": "在平台中查找与此上下文相关的对象"
+  "copilot.suggest.systemLookup": "在平台中查找与此上下文相关的对象",
+  "copilot.contextCelRule": "规则 \"{{ruleId}}\" 的当前 CEL：\n```\n{{expression}}\n```",
+  "copilot.contextCelEditor": "编辑器中的当前 CEL：\n```\n{{expression}}\n```",
+  "copilot.contextUiObject": "UI 焦点对象：`{{path}}`",
+  "copilot.contextRulesOnScreen": "屏幕上的规则：\n{{lines}}",
+  "copilot.contextScreen": "UI 焦点屏幕：{{title}}",
+  "copilot.contextSystemTab": "系统标签页：{{tab}}",
+  "copilot.contextSettingsTab": "设置子分区：{{tab}}",
+  "copilot.contextStudioTab": "AI Studio 标签页：{{tab}}",
+  "copilot.contextHint": "说明：{{hint}}",
+  "copilot.contextVisibleSettings": "可见设置：{{ids}}",
+  "copilot.contextSampleRows": "示例行：\n{{samples}}",
+  "copilot.contextSelectedWidget": "已选小部件：{{widgetId}}（{{widgetType}}）",
+  "copilot.contextFieldsJson": "fieldsJson（片段）：{{fields}}"
 }

@@ -89,5 +89,6 @@
   "bpmn.palette.invokeAgent": "Service: Invoke Agent",
   "bpmn.notationSubset": "Palette shows the ISPF executable BPMN 2.0 subset.",
   "ispfReference.title": "ISPF service task actions",
-  "ispfReference.hint": "On a service task, set ispf:action and fields in the properties panel (or XML for AI)."
+  "ispfReference.hint": "On a service task, set ispf:action and fields in the properties panel (or XML for AI).",
+  "props.conditionPlaceholder": "CEL expression"
 }

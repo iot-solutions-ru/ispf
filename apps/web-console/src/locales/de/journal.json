@@ -24,6 +24,7 @@
   "filter.fieldPlaceholder": "Feldname…",
   "filter.level": "Stufe",
   "filter.searchPlaceholder": "Pfad oder Name suchen…",
+  "filter.objectPathPlaceholder": "root.platform.devices…",
   "liveHint": "Aktuelle Einträge werden automatisch aktualisiert",
   "loadError": "Journal konnte nicht geladen werden",
   "loadMore": "Mehr laden",

@@ -16,7 +16,13 @@ interface AdminCopilotPanelProps {
   onClose: () => void;
 }
 
-function enrichMessageWithFocus(text: string, focus: AdminClientFocus | null): string {
+type Translate = ReturnType<typeof useTranslation>["t"];
+
+function enrichMessageWithFocus(
+  text: string,
+  focus: AdminClientFocus | null,
+  t: Translate,
+): string {
   const trimmed = text.trim();
   if (!trimmed || !focus) {
     return trimmed;
@@ -29,12 +35,12 @@ function enrichMessageWithFocus(text: string, focus: AdminClientFocus | null): s
   if (expression && !trimmed.includes(expression.slice(0, Math.min(24, expression.length)))) {
     parts.push(
       ruleId
-        ? `Текущее CEL правила «${ruleId}»:\n\`\`\`\n${expression}\n\`\`\``
-        : `Текущее CEL в редакторе:\n\`\`\`\n${expression}\n\`\`\``
+        ? t("ai:copilot.contextCelRule", { ruleId, expression })
+        : t("ai:copilot.contextCelEditor", { expression }),
     );
   }
   if (path && !trimmed.includes(path) && focus.surface !== "expression-editor") {
-    parts.push(`Объект UI focus: \`${path}\``);
+    parts.push(t("ai:copilot.contextUiObject", { path }));
   }
   if (
     focus.surface === "binding" &&
@@ -45,7 +51,7 @@ function enrichMessageWithFocus(text: string, focus: AdminClientFocus | null): s
     const lines = (detail.rules as Array<Record<string, unknown>>)
       .slice(0, 8)
       .map((rule) => `- ${String(rule.id ?? "?")} → ${String(rule.target ?? "")} :: ${String(rule.expression ?? "")}`);
-    parts.push(`Правила на экране:\n${lines.join("\n")}`);
+    parts.push(t("ai:copilot.contextRulesOnScreen", { lines: lines.join("\n") }));
   }
   if (focus.surface === "system" || focus.surface === "ai-studio") {
     const title = typeof detail.screenTitle === "string" ? detail.screenTitle : focus.surface;
@@ -60,16 +66,16 @@ function enrichMessageWithFocus(text: string, focus: AdminClientFocus | null): s
       ? (detail.sampleEntries as Array<Record<string, unknown>>).slice(0, 4)
       : [];
     const screenLines = [
-      `Экран UI focus: ${title}`,
-      systemTab ? `Вкладка Система: ${systemTab}` : "",
-      settingsTab ? `Подраздел настроек: ${settingsTab}` : "",
-      studioTab ? `Вкладка AI Studio: ${studioTab}` : "",
-      hint ? `Описание: ${hint}` : "",
-      ids.length > 0 ? `Видимые настройки: ${ids.join(", ")}` : "",
+      t("ai:copilot.contextScreen", { title }),
+      systemTab ? t("ai:copilot.contextSystemTab", { tab: systemTab }) : "",
+      settingsTab ? t("ai:copilot.contextSettingsTab", { tab: settingsTab }) : "",
+      studioTab ? t("ai:copilot.contextStudioTab", { tab: studioTab }) : "",
+      hint ? t("ai:copilot.contextHint", { hint }) : "",
+      ids.length > 0 ? t("ai:copilot.contextVisibleSettings", { ids: ids.join(", ") }) : "",
       samples.length > 0
-        ? `Примеры строк:\n${samples
-            .map((row) => `- ${JSON.stringify(row)}`)
-            .join("\n")}`
+        ? t("ai:copilot.contextSampleRows", {
+            samples: samples.map((row) => `- ${JSON.stringify(row)}`).join("\n"),
+          })
         : "",
     ].filter(Boolean);
     if (screenLines.length > 0 && !trimmed.includes(String(title).slice(0, 12))) {
@@ -82,12 +88,14 @@ function enrichMessageWithFocus(text: string, focus: AdminClientFocus | null): s
     const dashPath = focus.objectPath?.trim() ?? "";
     const dashLines = [
       dashPath ? `Dashboard: \`${dashPath}\`` : "",
-      widgetId ? `Выбранный виджет: ${widgetId} (${widgetType})` : "",
+      widgetId ? t("ai:copilot.contextSelectedWidget", { widgetId, widgetType }) : "",
       typeof detail.dataBinding === "string" ? `dataBinding: ${detail.dataBinding}` : "",
       typeof detail.analyticsBindingExpression === "string"
         ? `analyticsBindingExpression:\n\`\`\`\n${detail.analyticsBindingExpression}\n\`\`\``
         : "",
-      typeof detail.fieldsJson === "string" ? `fieldsJson (фрагмент): ${detail.fieldsJson}` : "",
+      typeof detail.fieldsJson === "string"
+        ? t("ai:copilot.contextFieldsJson", { fields: detail.fieldsJson })
+        : "",
       typeof detail.screenHint === "string" ? detail.screenHint : "",
     ].filter(Boolean);
     if (dashLines.length > 0) {
@@ -204,7 +212,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
 
   const handleSend = useCallback(
     async (text: string) => {
-      const trimmed = enrichMessageWithFocus(text, focusRegistry?.focus ?? null);
+      const trimmed = enrichMessageWithFocus(text, focusRegistry?.focus ?? null, t);
       if (!trimmed || isPending || !providerReady || !agentApiReady) {
         return;
       }
@@ -213,7 +221,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
         clientFocus: focusRegistry?.toClientFocusPayload() ?? null,
       });
     },
-    [agentApiReady, focusRegistry, isPending, providerReady, sendMessage]
+    [agentApiReady, focusRegistry, isPending, providerReady, sendMessage, t]
   );
 
   const openToken = focusRegistry?.copilotOpenToken ?? 0;

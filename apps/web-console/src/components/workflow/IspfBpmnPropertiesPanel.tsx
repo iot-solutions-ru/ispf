@@ -62,7 +62,7 @@ export default function IspfBpmnPropertiesPanel({
           <input
             value={edge.condition ?? ""}
             onChange={(e) => onChangeEdge(edge.id, { condition: e.target.value })}
-            placeholder="CEL expression"
+            placeholder={t("props.conditionPlaceholder")}
           />
         </label>
         <label className="bpmn-prop-checkbox">

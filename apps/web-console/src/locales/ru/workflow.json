@@ -89,5 +89,6 @@
   "status.draft": "Черновик",
   "status.stopped": "Остановлен",
   "stop": "Остановить",
-  "trigger.title": "Триггер"
+  "trigger.title": "Триггер",
+  "props.conditionPlaceholder": "CEL-выражение"
 }

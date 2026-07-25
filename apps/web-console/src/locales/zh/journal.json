@@ -24,6 +24,7 @@
   "filter.fieldPlaceholder": "字段名…",
   "filter.level": "级别",
   "filter.searchPlaceholder": "搜索路径或名称…",
+  "filter.objectPathPlaceholder": "root.platform.devices…",
   "liveHint": "自动刷新最近条目",
   "loadError": "无法加载日志",
   "loadMore": "加载更多",

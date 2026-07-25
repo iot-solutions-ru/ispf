@@ -11,6 +11,7 @@
   "brick.mixinMissing": "Apply the brick-metadata-v1 mixin blueprint to edit Brick class on this device.",
   "brick.intro": "Optional Brick Schema class URI (object tree paths remain the source of truth). Suggestions are inferred from Haystack tags.",
   "brick.classUri": "Brick class URI",
+  "brick.classUriPlaceholder": "https://brickschema.org/schema/Brick#Sensor",
   "brick.inferLoading": "Loading inference suggestions…",
   "brick.inferFallback": "Server inference unavailable — showing local Haystack-based hints.",
   "brick.noSuggestions": "No additional suggestions — current class matches the top inference or no Haystack signals were found.",

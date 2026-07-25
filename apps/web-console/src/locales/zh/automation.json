@@ -24,6 +24,7 @@
   "alertRule.publishHint": "事件在 ALERT 规则节点上创建并触发。payload 包含 targetObjectPath、watchVariable、alertRulePath。",
   "alertRule.createEventHint": "保存时将在规则节点上自动创建事件描述符。",
   "alertRule.notificationEmail": "通知邮件 (to|subject|body)",
+  "alertRule.notificationEmailPlaceholder": "ops@example.com|告警|超过阈值",
   "alertRule.notificationHint": "规则触发时的可选通知渠道（除事件外）。",
   "alertRule.notificationWebhook": "通知 Webhook URL",
   "alertRule.optionalPlaceholder": "可选",

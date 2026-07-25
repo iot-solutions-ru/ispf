@@ -79,6 +79,7 @@
   "dataSource.sectionConnection": "Verbindung",
   "dataSource.sectionGeneral": "Allgemein",
   "dataSource.sqlConsole": "SQL-Konsole",
+  "dataSource.sqlInputLabel": "SQL-Anweisung",
   "dataSource.sqlHint": "Einzelne Lese- (SELECT, WITH, …) oder Schreibabfrage (INSERT, UPDATE, DELETE, DDL) gegen diese Datenquelle ausführen.",
   "dataSource.subtitle": "SQL-Schema für Berichte, Migrationen, Bindungen und Skriptfunktionen",
   "dataSource.testConnection": "Verbindung testen",

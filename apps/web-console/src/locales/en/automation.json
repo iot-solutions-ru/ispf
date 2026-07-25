@@ -82,6 +82,7 @@
   "correlator.actionTargetEmailPlaceholder": "ops@example.com|Alert|Threshold exceeded",
   "alertRule.notificationWebhook": "Notification webhook URL",
   "alertRule.notificationEmail": "Notification email (to|subject|body)",
+  "alertRule.notificationEmailPlaceholder": "ops@example.com|Alert|Threshold exceeded",
   "alertRule.notificationHint": "Optional channels fired when the rule triggers (in addition to the event).",
   "alertRule.priority": "Priority",
   "alertRule.rateLimitSeconds": "Rate limit (seconds, 0 = none)",

@@ -1,149 +1,5 @@
 [
   {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 31,
-    "kind": "cyrillic",
-    "text": "? `Текущее CEL правила «${ruleId}»:\\n\\`\\`\\`\\n${expression}\\n\\`\\`\\``"
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 32,
-    "kind": "cyrillic",
-    "text": ": `Текущее CEL в редакторе:\\n\\`\\`\\`\\n${expression}\\n\\`\\`\\``"
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 36,
-    "kind": "cyrillic",
-    "text": "parts.push(`Объект UI focus: \\`${path}\\``);"
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 47,
-    "kind": "cyrillic",
-    "text": "parts.push(`Правила на экране:\\n${lines.join(\"\\n\")}`);"
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 62,
-    "kind": "cyrillic",
-    "text": "`Экран UI focus: ${title}`,"
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 63,
-    "kind": "cyrillic",
-    "text": "systemTab ? `Вкладка Система: ${systemTab}` : \"\","
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 64,
-    "kind": "cyrillic",
-    "text": "settingsTab ? `Подраздел настроек: ${settingsTab}` : \"\","
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 65,
-    "kind": "cyrillic",
-    "text": "studioTab ? `Вкладка AI Studio: ${studioTab}` : \"\","
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 66,
-    "kind": "cyrillic",
-    "text": "hint ? `Описание: ${hint}` : \"\","
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 67,
-    "kind": "cyrillic",
-    "text": "ids.length > 0 ? `Видимые настройки: ${ids.join(\", \")}` : \"\","
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 69,
-    "kind": "cyrillic",
-    "text": "? `Примеры строк:\\n${samples"
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 84,
-    "kind": "cyrillic",
-    "text": "widgetId ? `Выбранный виджет: ${widgetId} (${widgetType})` : \"\","
-  },
-  {
-    "file": "components/agent/AdminCopilotPanel.tsx",
-    "line": 89,
-    "kind": "cyrillic",
-    "text": "typeof detail.fieldsJson === \"string\" ? `fieldsJson (фрагмент): ${detail.fieldsJson}` : \"\","
-  },
-  {
-    "file": "components/agent/AiStudioStatusTab.tsx",
-    "line": 165,
-    "kind": "jsx-text",
-    "text": "scripts/run-local-with-ai.ps1"
-  },
-  {
-    "file": "components/analytics/MultiPenTrendModal.tsx",
-    "line": 158,
-    "kind": "jsx-text",
-    "text": "0 && pens.length"
-  },
-  {
-    "file": "components/automation/AlertRuleFormFields.tsx",
-    "line": 120,
-    "kind": "jsx-text",
-    "text": "CRITICAL"
-  },
-  {
-    "file": "components/automation/AlertRuleFormFields.tsx",
-    "line": 121,
-    "kind": "jsx-text",
-    "text": "HIGH"
-  },
-  {
-    "file": "components/automation/AlertRuleFormFields.tsx",
-    "line": 122,
-    "kind": "jsx-text",
-    "text": "MEDIUM"
-  },
-  {
-    "file": "components/automation/AlertRuleFormFields.tsx",
-    "line": 123,
-    "kind": "jsx-text",
-    "text": "LOW"
-  },
-  {
-    "file": "components/automation/AlertRuleFormFields.tsx",
-    "line": 380,
-    "kind": "ui-attr",
-    "text": "https://hooks.example.com/alerts"
-  },
-  {
-    "file": "components/automation/AlertRuleFormFields.tsx",
-    "line": 389,
-    "kind": "ui-attr",
-    "text": "ops@example.com|Alert|Threshold exceeded"
-  },
-  {
-    "file": "components/automation/CorrelatorInspector.tsx",
-    "line": 87,
-    "kind": "jsx-text",
-    "text": "COUNT"
-  },
-  {
-    "file": "components/automation/CorrelatorInspector.tsx",
-    "line": 88,
-    "kind": "jsx-text",
-    "text": "SEQUENCE"
-  },
-  {
-    "file": "components/automation/CorrelatorInspector.tsx",
-    "line": 89,
-    "kind": "jsx-text",
-    "text": "EVENT_CHAIN"
-  },
-  {
     "file": "components/binding/BindingExpressionEditorModal.tsx",
     "line": 302,
     "kind": "cyrillic",
@@ -156,34 +12,10 @@
     "text": ": `Объясни текущее CEL-выражение в редакторе:\\n\\`\\`\\`\\n${expr}\\n\\`\\`\\`\\nЧто оно вычисляет?`"
   },
   {
-    "file": "components/dashboard/ScadaMimicWidgetEditorFields.tsx",
-    "line": 64,
-    "kind": "ui-attr",
-    "text": "root.platform.mimics.my-mimic"
-  },
-  {
     "file": "components/dashboard/SvgWidgetInteractiveEditor.tsx",
     "line": 119,
     "kind": "ui-attr",
     "text": "/itm-assets/m11/main_topology.svg"
-  },
-  {
-    "file": "components/dashboard/widgetEditorStructured.tsx",
-    "line": 561,
-    "kind": "ui-attr",
-    "text": "root.platform.dashboards..."
-  },
-  {
-    "file": "components/dashboard/widgetEditorStructured.tsx",
-    "line": 768,
-    "kind": "ui-attr",
-    "text": "0.88rem"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1086,
-    "kind": "ui-attr",
-    "text": "root.platform.workflows..."
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
@@ -217,24 +49,6 @@
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1252,
-    "kind": "ui-attr",
-    "text": "root.platform.devices"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1275,
-    "kind": "ui-attr",
-    "text": "count>10 && name contains abc"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1550,
-    "kind": "ui-attr",
-    "text": "root.platform.reports.ready-items"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
     "line": 1904,
     "kind": "ui-attr",
     "text": "SVG"
@@ -247,27 +61,9 @@
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 2144,
-    "kind": "ui-attr",
-    "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
     "line": 2203,
     "kind": "ui-attr",
     "text": "HTML"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 409,
-    "kind": "ui-attr",
-    "text": "root.platform.dashboards.detail"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 647,
-    "kind": "ui-attr",
-    "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
@@ -355,12 +151,6 @@
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 286,
-    "kind": "ui-attr",
-    "text": "input.value"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
     "line": 377,
     "kind": "ui-attr",
     "text": "literal or ${input.name}"
@@ -370,12 +160,6 @@
     "line": 405,
     "kind": "ui-attr",
     "text": "${input.raw}"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 452,
-    "kind": "ui-attr",
-    "text": "root.platform.devices"
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
@@ -409,12 +193,6 @@
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 537,
-    "kind": "ui-attr",
-    "text": "root.platform.workflows.demo"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
     "line": 543,
     "kind": "ui-attr",
     "text": "RUNNING"
@@ -438,64 +216,10 @@
     "text": "Rev"
   },
   {
-    "file": "components/objectEditor/CreateObjectDialog.tsx",
-    "line": 564,
-    "kind": "ui-attr",
-    "text": "root.platform.data-sources.myapp"
-  },
-  {
-    "file": "components/objectEditor/CreateObjectDialog.tsx",
-    "line": 588,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
-  },
-  {
-    "file": "components/objectEditor/CreateObjectDialog.tsx",
-    "line": 602,
-    "kind": "ui-attr",
-    "text": "root.platform.data-sources.myapp"
-  },
-  {
-    "file": "components/objectEditor/CreateObjectDialog.tsx",
-    "line": 635,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
-  },
-  {
     "file": "components/objectEditor/HaystackMetadataPanel.tsx",
     "line": 194,
     "kind": "ui-attr",
     "text": "@site.equip"
-  },
-  {
-    "file": "components/objectEditor/ObjectAclPanel.tsx",
-    "line": 101,
-    "kind": "jsx-text",
-    "text": "ROLE"
-  },
-  {
-    "file": "components/objectEditor/ObjectAclPanel.tsx",
-    "line": 102,
-    "kind": "jsx-text",
-    "text": "USER"
-  },
-  {
-    "file": "components/objectEditor/ObjectAclPanel.tsx",
-    "line": 122,
-    "kind": "jsx-text",
-    "text": "READ"
-  },
-  {
-    "file": "components/objectEditor/ObjectAclPanel.tsx",
-    "line": 123,
-    "kind": "jsx-text",
-    "text": "WRITE"
-  },
-  {
-    "file": "components/objectEditor/ObjectAclPanel.tsx",
-    "line": 124,
-    "kind": "jsx-text",
-    "text": "INVOKE"
   },
   {
     "file": "components/operator/ManifestActionForm.tsx",
@@ -516,184 +240,16 @@
     "text": "fireAlarm, gasLeak"
   },
   {
-    "file": "components/platform/ApplicationBundlePanel.tsx",
-    "line": 403,
-    "kind": "ui-attr",
-    "text": "root.platform.dashboards.my-dashboard"
-  },
-  {
-    "file": "components/platform/ApplicationLifecyclePanel.tsx",
-    "line": 127,
-    "kind": "jsx-text",
-    "text": "deployApplicationFunction(appId, parseJson(functionText) as Record"
-  },
-  {
-    "file": "components/platform/BrickMetadataPanel.tsx",
-    "line": 143,
-    "kind": "ui-attr",
-    "text": "https://brickschema.org/schema/Brick#Sensor"
-  },
-  {
-    "file": "components/platform/DataSourceEditor.tsx",
-    "line": 249,
-    "kind": "ui-attr",
-    "text": "SQL"
-  },
-  {
-    "file": "components/platform/PlatformChangeSetsPanel.tsx",
-    "line": 110,
-    "kind": "jsx-text",
-    "text": "DRAFT"
-  },
-  {
-    "file": "components/platform/PlatformChangeSetsPanel.tsx",
-    "line": 111,
-    "kind": "jsx-text",
-    "text": "APPLIED"
-  },
-  {
-    "file": "components/platform/ScheduleEditor.tsx",
-    "line": 116,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
-  },
-  {
-    "file": "components/platform/SemanticExportPanel.tsx",
-    "line": 60,
-    "kind": "ui-attr",
-    "text": "root.platform.devices"
-  },
-  {
-    "file": "components/platform/SqlBindingEditor.tsx",
-    "line": 148,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
-  },
-  {
-    "file": "components/platform/SystemSettingsView.tsx",
-    "line": 256,
-    "kind": "cyrillic",
-    "text": "screenTitle: \"System › Settings (Система › Настройки)\","
-  },
-  {
     "file": "components/platform/SystemView.tsx",
     "line": 77,
     "kind": "cyrillic",
     "text": "screenTitle: \"System (Система)\","
   },
   {
-    "file": "components/platform/TenantsPanel.tsx",
-    "line": 111,
-    "kind": "ui-attr",
-    "text": "Acme Corp"
-  },
-  {
-    "file": "components/report/ReportExportControls.tsx",
-    "line": 12,
-    "kind": "jsx-text",
-    "text": "void | Promise"
-  },
-  {
-    "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 201,
-    "kind": "ui-attr",
-    "text": "root.platform.devices…"
-  },
-  {
-    "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 211,
-    "kind": "jsx-text",
-    "text": "CEL"
-  },
-  {
-    "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 212,
-    "kind": "jsx-text",
-    "text": "SQL"
-  },
-  {
-    "file": "components/scada/MimicPropertiesPanel.tsx",
-    "line": 210,
-    "kind": "ui-attr",
-    "text": "mm, m3, t"
-  },
-  {
-    "file": "components/scada/SymbolBehaviorsEditor.tsx",
-    "line": 127,
-    "kind": "ui-attr",
-    "text": "#ispf-label"
-  },
-  {
-    "file": "components/security/CreateSecurityRoleDialog.tsx",
-    "line": 70,
-    "kind": "ui-attr",
-    "text": "Supervisor"
-  },
-  {
-    "file": "components/security/CreateSecurityUserDialog.tsx",
-    "line": 81,
-    "kind": "ui-attr",
-    "text": "Operator 2"
-  },
-  {
-    "file": "components/workflow/BpmnDiagramEditor.tsx",
-    "line": 208,
-    "kind": "jsx-text",
-    "text": "ISPF task properties"
-  },
-  {
-    "file": "context/AdminCopilotChatContext.tsx",
-    "line": 65,
-    "kind": "jsx-text",
-    "text": "Promise"
-  },
-  {
-    "file": "context/AdminCopilotChatContext.tsx",
-    "line": 66,
-    "kind": "jsx-text",
-    "text": "Promise"
-  },
-  {
     "file": "context/AdminFocusContext.tsx",
     "line": 177,
     "kind": "jsx-text",
     "text": "| undefined): Record"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 100,
-    "kind": "jsx-text",
-    "text": "Promise"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 93,
-    "kind": "jsx-text",
-    "text": "Promise"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 94,
-    "kind": "jsx-text",
-    "text": "Promise"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 95,
-    "kind": "jsx-text",
-    "text": "Promise"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 99,
-    "kind": "jsx-text",
-    "text": "Promise"
-  },
-  {
-    "file": "context/UserTimeZoneContext.tsx",
-    "line": 21,
-    "kind": "jsx-text",
-    "text": "Promise"
   },
   {
     "file": "utils/agent/agentChatMarkdown.tsx",

@@ -134,7 +134,7 @@ export default function SymbolBehaviorsEditor({
                 className="scada-form-input mono"
                 list={listId}
                 spellCheck={false}
-                placeholder="#ispf-label"
+                placeholder={t("props.behaviorTargetPlaceholder")}
                 value={behavior.target}
                 onChange={(e) => updateAt(index, { target: e.target.value })}
               />
