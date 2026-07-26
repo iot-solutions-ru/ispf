@@ -28,12 +28,19 @@ if [ ! -f "$CHECKSUMS_FILE" ]; then
   exit 1
 fi
 
-for artifact in ispf-server.jar web-console.zip driver-packs.tar.gz; do
+for artifact in ispf-server.jar web-console.zip; do
   if ! grep -q "[ *]${artifact}\$" "$CHECKSUMS_FILE"; then
     echo "CHECKSUMS.sha256 does not cover $artifact" >&2
     exit 1
   fi
 done
+
+if [ -f "$DRIVER_PACKS_TAR" ]; then
+  if ! grep -q "[ *]driver-packs.tar.gz\$" "$CHECKSUMS_FILE"; then
+    echo "CHECKSUMS.sha256 does not cover driver-packs.tar.gz" >&2
+    exit 1
+  fi
+fi
 
 echo "Verifying artifact checksums..."
 ( cd "$STAGING_DIR" && sha256sum -c CHECKSUMS.sha256 )

@@ -54,7 +54,7 @@ function isButtonEnabled(btn: FunctionButton, sessionParams: Record<string, unkn
 export default function FunctionWidgetView({ widget, editable }: FunctionWidgetViewProps) {
   const { t } = useTranslation("widgets");
   const styles = useWidgetStyles(widget.stylesJson);
-  const { selection, params: sessionParams } = useDashboardContext();
+  const { selection, params: sessionParams, setParams } = useDashboardContext();
   const queryClient = useQueryClient();
   const objectPath = resolveWidgetPath(widget.objectPath, widget.selectionKey, selection);
   const [message, setMessage] = useState<string | null>(null);
@@ -129,6 +129,29 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
       const text = row?.message ? String(row.message) : t("view.done");
       setMessage(text);
       setError(null);
+      // Keep action-bar session params in sync with BFF output immediately.
+      // Job lifecycle BFFs historically return `status`; action bars bind `dispatchStatus`.
+      if (row) {
+        const patch: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(row)) {
+          if (
+            key === "error_code" ||
+            key === "error_message" ||
+            key === "message" ||
+            key === "success" ||
+            key === "rows"
+          ) {
+            continue;
+          }
+          patch[key] = value ?? "";
+        }
+        if (patch.status != null && patch.dispatchStatus == null) {
+          patch.dispatchStatus = patch.status;
+        }
+        if (Object.keys(patch).length > 0) {
+          setParams(patch);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["variables"] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["events"] });

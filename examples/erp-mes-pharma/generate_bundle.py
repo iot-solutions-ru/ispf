@@ -18,7 +18,7 @@ use the pha_ prefix (tablePrefix validator scope). Migration ids use the pha_m
 prefix (global root.platform.migrations namespace, must not clash with emc_*/emp_*).
 
 Dialect: works on H2 (PostgreSQL mode, tests) and PostgreSQL (runtime).
-Rules: UUID PKs + RANDOM_UUID(), no `::` casts, CREATE TABLE IF NOT EXISTS,
+Rules: UUID PKs + gen_random_uuid(), no `::` casts, CREATE TABLE IF NOT EXISTS,
 seeds via INSERT ... SELECT ... WHERE NOT EXISTS (re-entrant on redeploy).
 Script DSL: validator white-listed steps only (see FunctionScriptValidator).
 """
@@ -620,20 +620,20 @@ _M5_STATEMENTS.extend([
        SELECT 'b2000001-0000-0000-0000-000000000001', 'JO-PH-001', 'RUNNING', CURRENT_TIMESTAMP
        WHERE NOT EXISTS (SELECT 1 FROM emc_job_response WHERE job_no = 'JO-PH-001' AND job_state = 'RUNNING')""",
     """INSERT INTO emc_job_response_data (id, response_id, data_kind, started_at)
-       SELECT RANDOM_UUID(), 'b2000001-0000-0000-0000-000000000001', 'RUN_INTERVAL', CURRENT_TIMESTAMP
+       SELECT gen_random_uuid(), 'b2000001-0000-0000-0000-000000000001', 'RUN_INTERVAL', CURRENT_TIMESTAMP
        WHERE NOT EXISTS (SELECT 1 FROM emc_job_response_data WHERE response_id = 'b2000001-0000-0000-0000-000000000001' AND data_kind = 'RUN_INTERVAL' AND ended_at IS NULL)""",
     """INSERT INTO emc_equipment_actual (id, response_id, equipment_id, equipment_use)
-       SELECT RANDOM_UUID(), 'b2000001-0000-0000-0000-000000000001', 'TPR-01', 'PRIMARY'
+       SELECT gen_random_uuid(), 'b2000001-0000-0000-0000-000000000001', 'TPR-01', 'PRIMARY'
        WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_actual WHERE response_id = 'b2000001-0000-0000-0000-000000000001')""",
     """INSERT INTO emc_personnel_actual (id, response_id, person_id, personnel_use)
-       SELECT RANDOM_UUID(), 'b2000001-0000-0000-0000-000000000001', 'EMP-H02', 'OPERATOR'
+       SELECT gen_random_uuid(), 'b2000001-0000-0000-0000-000000000001', 'EMP-H02', 'OPERATOR'
        WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_actual WHERE response_id = 'b2000001-0000-0000-0000-000000000001' AND person_id = 'EMP-H02')""",
     # Shift on TPR-01 with the press operator assigned
     seed("emc_work_calendar", ["shift_id", "equipment_id", "shift_label", "planned_minutes", "state", "planned_start", "actual_start"],
          ["SHIFT-PH-1", "TPR-01", "MORNING", "480", "OPEN", "!TIMESTAMP '2026-07-24 06:00:00'", "!CURRENT_TIMESTAMP"],
          "shift_id = 'SHIFT-PH-1'"),
     """INSERT INTO emc_shift_assignment (id, shift_id, person_id)
-       SELECT RANDOM_UUID(), 'SHIFT-PH-1', 'EMP-H02'
+       SELECT gen_random_uuid(), 'SHIFT-PH-1', 'EMP-H02'
        WHERE NOT EXISTS (SELECT 1 FROM emc_shift_assignment WHERE shift_id = 'SHIFT-PH-1' AND person_id = 'EMP-H02')""",
     # eBR: work record (electronic batch record) for JO-PH-001 with GMP sections
     seed("emc_work_record", ["record_id", "job_no", "record_no"],
@@ -668,12 +668,224 @@ _M5_STATEMENTS.extend([
 ])
 M5_SEGMENTS_QUALITY_DEMO = ";\n".join(_M5_STATEMENTS)
 
+# Align with erp-mes-core 1.4.1: genealogy seed, Product Definition, Physical Asset,
+# Operational Location, domain schedules, capability / ops capability.
+M6_CORE141 = ";\n".join([
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-API-0001', 'LOT-WIP-PH-0001', 25
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-API-0001' AND output_lot_id = 'LOT-WIP-PH-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-EXC-0001', 'LOT-WIP-PH-0001', 50
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-EXC-0001' AND output_lot_id = 'LOT-WIP-PH-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-WIP-PH-0001', 'LOT-FG-PH-0001', 80
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-WIP-PH-0001' AND output_lot_id = 'LOT-FG-PH-0001')""",
+    seed("emc_product_definition", ["product_id", "description", "fg_definition_id", "status"],
+         ["PD-TAB-CARTON", "Парацетамол 500 мг №10 (сериализован)", "FG-TAB-CARTON", "ACTIVE"],
+         "product_id = 'PD-TAB-CARTON'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-TAB-CARTON", "SEG-DISPENSE", "1"],
+         "product_id = 'PD-TAB-CARTON' AND segment_id = 'SEG-DISPENSE'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-TAB-CARTON", "SEG-COMPRESS", "5"],
+         "product_id = 'PD-TAB-CARTON' AND segment_id = 'SEG-COMPRESS'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-TAB-CARTON", "SEG-BLISTER", "7"],
+         "product_id = 'PD-TAB-CARTON' AND segment_id = 'SEG-BLISTER'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-TAB-CARTON", "SEG-CARTON", "8"],
+         "product_id = 'PD-TAB-CARTON' AND segment_id = 'SEG-CARTON'"),
+    seed("emc_physical_asset_class", ["class_id", "description", "parent_class_id"],
+         ["PAC-PHARMA", "Pharma process equipment", None], "class_id = 'PAC-PHARMA'"),
+    seed("emc_physical_asset",
+         ["asset_id", "class_id", "equipment_id", "serial_no", "manufacturer", "description", "status"],
+         ["AST-TPR-01", "PAC-PHARMA", "TPR-01", "TPR-SN-001", "DemoPress", "Tablet press asset", "IN_SERVICE"],
+         "asset_id = 'AST-TPR-01'"),
+    seed("emc_physical_asset",
+         ["asset_id", "class_id", "equipment_id", "serial_no", "manufacturer", "description", "status"],
+         ["AST-BLS-01", "PAC-PHARMA", "BLS-01", "BLS-SN-001", "DemoBlister", "Blister line asset", "IN_SERVICE"],
+         "asset_id = 'AST-BLS-01'"),
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-PH-QUAR", "Quarantine warehouse", "STORAGE", "WH-QUAR", None, "ACTIVE"],
+         "location_id = 'LOC-PH-QUAR'"),
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-PH-REL", "Released warehouse", "STORAGE", "WH-REL", None, "ACTIVE"],
+         "location_id = 'LOC-PH-REL'"),
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-PH-TPR", "Tablet press staging", "STAGING", "TPR-01", "LOC-PH-REL", "ACTIVE"],
+         "location_id = 'LOC-PH-TPR'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-PH-QA-001", "QUALITY", "SAMPLE_PLAN", "LOT-FG-PH-0001", "20", "pcs", "PLANNED",
+          "IPC / release sample plan for FG batch"],
+         "schedule_id = 'DS-PH-QA-001'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-PH-PM-TPR", "MAINTENANCE", "PM_CALENDAR", "TPR-01", "1", "job", "PLANNED",
+          "Monthly PM tablet press"],
+         "schedule_id = 'DS-PH-PM-TPR'"),
+    seed("emc_capability_test_spec",
+         ["spec_id", "target_kind", "target_id", "test_name", "criterion", "uom"],
+         ["CTS-TPR-01-WEIGHT", "EQUIPMENT", "TPR-01", "Avg tablet weight", "600±12", "mg"],
+         "spec_id = 'CTS-TPR-01-WEIGHT'"),
+    """INSERT INTO emc_capability_test_result (result_id, spec_id, measured_value, result, tested_by)
+       SELECT gen_random_uuid(), 'CTS-TPR-01-WEIGHT', '602', 'PASS', 'EMP-H03'
+       WHERE NOT EXISTS (SELECT 1 FROM emc_capability_test_result WHERE spec_id = 'CTS-TPR-01-WEIGHT')""",
+    seed("emc_operations_capability",
+         ["capability_id", "operations_type", "equipment_id", "segment_id", "reason", "status"],
+         ["CAP-TPR-COMPRESS", "PRODUCTION", "TPR-01", "SEG-COMPRESS",
+          "Qualified press + capability PASS", "AVAILABLE"],
+         "capability_id = 'CAP-TPR-COMPRESS'"),
+])
+
+# Align with erp-mes-core 2.0 UML extent: hierarchy scope, Assembled From BOM,
+# product-segment specs, qualification, nested ops capability, WM routing nodes.
+M7_UML200 = ";\n".join([
+    seed("emc_hierarchy_scope", ["scope_id", "name", "parent_scope_id", "description"],
+         ["SCOPE-PHARMA", "Pharma solid-dosage enterprise", None, "ENT-PHARMA hierarchy scope"],
+         "scope_id = 'SCOPE-PHARMA'"),
+    seed("emc_hierarchy_scope", ["scope_id", "name", "parent_scope_id", "description"],
+         ["SCOPE-PH-SITE", "Pharma site PH-01", "SCOPE-PHARMA", "SITE-PH-01 scope"],
+         "scope_id = 'SCOPE-PH-SITE'"),
+    """UPDATE emc_equipment SET hierarchy_scope_id = 'SCOPE-PHARMA'
+       WHERE equipment_id = 'ENT-PHARMA' AND hierarchy_scope_id IS NULL""",
+    """UPDATE emc_equipment SET hierarchy_scope_id = 'SCOPE-PH-SITE'
+       WHERE hierarchy_scope_id IS NULL AND equipment_id IN
+       ('DSP-01','GRN-01','FBD-01','BLN-01','TPR-01','COT-01','BLS-01','CRT-01','WH-QUAR','WH-REL','WH-REJ',
+        'SITE-PH-01','AREA-SOLID','AREA-PACK')""",
+    """UPDATE emc_person SET hierarchy_scope_id = 'SCOPE-PH-SITE'
+       WHERE person_id IN ('EMP-H01','EMP-H02','EMP-H03') AND hierarchy_scope_id IS NULL""",
+    """UPDATE emc_operational_location SET hierarchy_scope_id = 'SCOPE-PH-SITE'
+       WHERE location_id LIKE 'LOC-PH-%' AND hierarchy_scope_id IS NULL""",
+    """UPDATE emc_material_definition SET hierarchy_scope_id = 'SCOPE-PH-SITE'
+       WHERE hierarchy_scope_id IS NULL AND (
+         class_id IN ('MCL-API','MCL-EXCIPIENT','MCL-PACK','MCL-WIP-PH','MCL-FG-PH')
+         OR definition_id LIKE 'API-%' OR definition_id LIKE 'EXC-%' OR definition_id LIKE 'PACK-%'
+         OR definition_id LIKE 'WIP-%' OR definition_id LIKE 'FG-TAB-%' OR definition_id = 'SOLV-WFI')""",
+    seed("emc_material_assembled_from",
+         ["assembly_id", "parent_definition_id", "child_definition_id", "child_class_id",
+          "quantity", "uom", "assembly_type", "sequence_no"],
+         ["AF-PH-API", "FG-TAB-CARTON", "API-PARACETAMOL", None, "0.5", "kg", "BOM", "1"],
+         "assembly_id = 'AF-PH-API'"),
+    seed("emc_material_assembled_from",
+         ["assembly_id", "parent_definition_id", "child_definition_id", "child_class_id",
+          "quantity", "uom", "assembly_type", "sequence_no"],
+         ["AF-PH-EXC", "FG-TAB-CARTON", "EXC-LACTOSE-MONO", None, "1.2", "kg", "BOM", "2"],
+         "assembly_id = 'AF-PH-EXC'"),
+    seed("emc_material_assembled_from",
+         ["assembly_id", "parent_definition_id", "child_definition_id", "child_class_id",
+          "quantity", "uom", "assembly_type", "sequence_no"],
+         ["AF-PH-BLISTER", "FG-TAB-CARTON", "FG-TAB-BLISTER", None, "10", "pcs", "BOM", "3"],
+         "assembly_id = 'AF-PH-BLISTER'"),
+    seed("emc_product_segment_material_spec",
+         ["spec_id", "product_id", "segment_id", "material_class_id", "definition_id", "material_use", "quantity", "uom"],
+         ["PD-TAB:COMPRESS:IN", "PD-TAB-CARTON", "SEG-COMPRESS", None, "WIP-FINAL-BLEND", "CONSUMED", "101", "kg"],
+         "spec_id = 'PD-TAB:COMPRESS:IN'"),
+    seed("emc_product_segment_material_spec",
+         ["spec_id", "product_id", "segment_id", "material_class_id", "definition_id", "material_use", "quantity", "uom"],
+         ["PD-TAB:CARTON:OUT", "PD-TAB-CARTON", "SEG-CARTON", None, "FG-TAB-CARTON", "PRODUCED", "5000", "pcs"],
+         "spec_id = 'PD-TAB:CARTON:OUT'"),
+    seed("emc_product_segment_equipment_spec",
+         ["spec_id", "product_id", "segment_id", "equipment_class_id", "equipment_id", "equipment_use", "quantity"],
+         ["PD-TAB:COMPRESS:EQ", "PD-TAB-CARTON", "SEG-COMPRESS", "EQC-TABLET-PRESS", "TPR-01", "PRIMARY", "1"],
+         "spec_id = 'PD-TAB:COMPRESS:EQ'"),
+    seed("emc_product_segment_personnel_spec",
+         ["spec_id", "product_id", "segment_id", "personnel_class_id", "person_id", "personnel_use", "quantity"],
+         ["PD-TAB:COMPRESS:PERS", "PD-TAB-CARTON", "SEG-COMPRESS", "PCL-OPERATOR-PH", "", "OPERATOR", "1"],
+         "spec_id = 'PD-TAB:COMPRESS:PERS'"),
+    seed("emc_product_segment_parameter_spec",
+         ["spec_id", "product_id", "segment_id", "param_key", "param_name", "default_value", "uom", "required_flag"],
+         ["PD-TAB:COMPRESS:WEIGHT", "PD-TAB-CARTON", "SEG-COMPRESS", "TARGET_WEIGHT_MG", "Target tablet weight", "600", "mg", "true"],
+         "spec_id = 'PD-TAB:COMPRESS:WEIGHT'"),
+    seed("emc_segment_parameter_spec",
+         ["spec_id", "segment_id", "param_key", "param_name", "default_value", "uom", "required_flag"],
+         ["SEG-COMPRESS:HARDNESS", "SEG-COMPRESS", "HARDNESS_N", "Tablet hardness", "80", "N", "false"],
+         "spec_id = 'SEG-COMPRESS:HARDNESS'"),
+    seed("emc_qualification_test_spec",
+         ["spec_id", "person_id", "personnel_class_id", "equipment_id", "equipment_class_id",
+          "test_name", "criterion", "qualification"],
+         ["QTS-H02-TPR", "EMP-H02", None, "TPR-01", None, "Operate tablet press", "GMP checklist PASS", "OPERATE"],
+         "spec_id = 'QTS-H02-TPR'"),
+    """INSERT INTO emc_qualification_test_result (result_id, spec_id, measured_value, result, tested_by)
+       SELECT gen_random_uuid(), 'QTS-H02-TPR', 'OK', 'PASS', 'EMP-H03'
+       WHERE NOT EXISTS (SELECT 1 FROM emc_qualification_test_result WHERE spec_id = 'QTS-H02-TPR')""",
+    seed("emc_ops_capability_equipment",
+         ["capability_id", "equipment_id", "equipment_class_id", "quantity"],
+         ["CAP-TPR-COMPRESS", "TPR-01", "EQC-TABLET-PRESS", "1"],
+         "capability_id = 'CAP-TPR-COMPRESS' AND equipment_id = 'TPR-01'"),
+    seed("emc_ops_capability_personnel",
+         ["capability_id", "person_id", "personnel_class_id", "quantity"],
+         ["CAP-TPR-COMPRESS", "", "PCL-OPERATOR-PH", "1"],
+         "capability_id = 'CAP-TPR-COMPRESS' AND personnel_class_id = 'PCL-OPERATOR-PH'"),
+    seed("emc_ops_capability_segment", ["capability_id", "segment_id"],
+         ["CAP-TPR-COMPRESS", "SEG-COMPRESS"],
+         "capability_id = 'CAP-TPR-COMPRESS' AND segment_id = 'SEG-COMPRESS'"),
+    seed("emc_work_master",
+         ["work_master_id", "version", "segment_id", "duration_min", "description"],
+         ["WM-PH-ROUTE", "1", "SEG-DISPENSE", "480", "Dispense to carton multi-segment route"],
+         "work_master_id = 'WM-PH-ROUTE' AND version = '1'"),
+    seed("emc_work_master_node",
+         ["node_id", "work_master_id", "version", "segment_id", "sequence_no", "node_kind"],
+         ["WMN-PH-DISP", "WM-PH-ROUTE", "1", "SEG-DISPENSE", "1", "SEGMENT"],
+         "node_id = 'WMN-PH-DISP'"),
+    seed("emc_work_master_node",
+         ["node_id", "work_master_id", "version", "segment_id", "sequence_no", "node_kind"],
+         ["WMN-PH-COMP", "WM-PH-ROUTE", "1", "SEG-COMPRESS", "5", "SEGMENT"],
+         "node_id = 'WMN-PH-COMP'"),
+    seed("emc_work_master_node",
+         ["node_id", "work_master_id", "version", "segment_id", "sequence_no", "node_kind"],
+         ["WMN-PH-CART", "WM-PH-ROUTE", "1", "SEG-CARTON", "8", "SEGMENT"],
+         "node_id = 'WMN-PH-CART'"),
+    seed("emc_work_master_edge",
+         ["edge_id", "work_master_id", "version", "from_node_id", "to_node_id", "edge_kind"],
+         ["WME-PH-DC", "WM-PH-ROUTE", "1", "WMN-PH-DISP", "WMN-PH-COMP", "SEQUENCE"],
+         "edge_id = 'WME-PH-DC'"),
+    seed("emc_work_master_edge",
+         ["edge_id", "work_master_id", "version", "from_node_id", "to_node_id", "edge_kind"],
+         ["WME-PH-CC", "WM-PH-ROUTE", "1", "WMN-PH-COMP", "WMN-PH-CART", "SEQUENCE"],
+         "edge_id = 'WME-PH-CC'"),
+    seed("emc_work_directive",
+         ["directive_id", "work_master_id", "version", "job_no", "title", "body_text", "status"],
+         ["WD-PH-LC", "WM-PH-ROUTE", "1", "JO-PH-001",
+          "Line clearance before compression", "Verify previous batch cleared; IPC checklist signed.", "ACTIVE"],
+         "directive_id = 'WD-PH-LC'"),
+    """UPDATE emc_lot_genealogy SET relation_kind = COALESCE(relation_kind, 'CONSUME_PRODUCE'),
+           assembly_type = COALESCE(assembly_type, 'PROCESS')
+       WHERE input_lot_id IN ('LOT-API-0001','LOT-EXC-0001','LOT-WIP-PH-0001')
+          OR output_lot_id IN ('LOT-WIP-PH-0001','LOT-FG-PH-0001')""",
+    seed("emc_genealogy_node",
+         ["node_id", "node_kind", "lot_id", "definition_id", "label"],
+         ["GN-LOT-FG-PH-0001", "LOT", "LOT-FG-PH-0001", "FG-TAB-BLISTER", "Pharma FG blister lot"],
+         "node_id = 'GN-LOT-FG-PH-0001'"),
+])
+
+# Repair warehouse after release/reject + keep demo KPI coherent on upgrades.
+M8_UI_FIXES = ";\n".join([
+    """UPDATE emc_material_lot SET storage_location = 'WH-REL'
+       WHERE disposition = 'RELEASED' AND storage_location = 'WH-QUAR'
+         AND (definition_id LIKE 'API-%' OR definition_id LIKE 'EXC-%' OR definition_id LIKE 'PACK-%'
+              OR definition_id LIKE 'WIP-%' OR definition_id LIKE 'FG-TAB-%' OR definition_id = 'SOLV-WFI')""",
+    """UPDATE emc_material_lot SET storage_location = 'WH-REJ'
+       WHERE disposition = 'REJECTED' AND COALESCE(storage_location, '') <> 'WH-REJ'
+         AND (definition_id LIKE 'API-%' OR definition_id LIKE 'EXC-%' OR definition_id LIKE 'PACK-%'
+              OR definition_id LIKE 'WIP-%' OR definition_id LIKE 'FG-TAB-%' OR definition_id = 'SOLV-WFI')""",
+])
+
 MIGRATIONS = [
     {"id": "pha_m1_overlay_tables", "sql": M1_OVERLAY_TABLES},
     {"id": "pha_m2_event_catalog", "sql": M2_EVENT_CATALOG},
     {"id": "pha_m3_equipment_personnel", "sql": M3_EQUIPMENT_PERSONNEL},
     {"id": "pha_m4_materials", "sql": M4_MATERIALS},
     {"id": "pha_m5_segments_quality_demo", "sql": M5_SEGMENTS_QUALITY_DEMO},
+    {"id": "pha_m6_core141", "sql": M6_CORE141},
+    {"id": "pha_m7_uml200", "sql": M7_UML200},
+    {"id": "pha_m8_ui_fixes", "sql": M8_UI_FIXES},
 ]
 
 
@@ -725,10 +937,11 @@ FUNCTIONS.append(fn(
         fail_ne("lot.disposition", "QUARANTINE", "INVALID_STATE",
                 "Release allowed only from QUARANTINE"),
         ex("UPDATE emc_material_lot SET disposition = 'RELEASED', status = 'STOCK', "
+           "storage_location = 'WH-REL', "
            "version_no = version_no + 1 WHERE lot_id = ?",
            ["${input.lotId}"]),
         ex("INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) "
-           "VALUES (RANDOM_UUID(), 'LOT', ?, ?, 'APPROVED', NULLIF(?, ''))",
+           "VALUES (gen_random_uuid(), 'LOT', ?, ?, 'APPROVED', NULLIF(?, ''))",
            ["${input.lotId}", "${input.by}", "${input.comment}"]),
         ret({"error_code": "OK", "error_message": "",
              "lotId": "${input.lotId}", "disposition": "RELEASED"}),
@@ -749,10 +962,11 @@ FUNCTIONS.append(fn(
         fail_ne("guard.cnt", "1", "INVALID_STATE",
                 "Reject allowed from QUARANTINE or RELEASED"),
         ex("UPDATE emc_material_lot SET disposition = 'REJECTED', status = 'BLOCKED_QC', "
+           "storage_location = 'WH-REJ', "
            "version_no = version_no + 1 WHERE lot_id = ?",
            ["${input.lotId}"]),
         ex("INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) "
-           "VALUES (RANDOM_UUID(), 'LOT', ?, ?, 'REVIEWED', NULLIF(?, ''))",
+           "VALUES (gen_random_uuid(), 'LOT', ?, ?, 'REVIEWED', NULLIF(?, ''))",
            ["${input.lotId}", "${input.by}", "${input.reason}"]),
         ret({"error_code": "OK", "error_message": "",
              "lotId": "${input.lotId}", "disposition": "REJECTED"}),
@@ -849,10 +1063,10 @@ FUNCTIONS.append(fn(
                  "lotId": "", "actualQty": ""}),
         ]),
         ex("INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) "
-           "VALUES (RANDOM_UUID(), 'DISPENSE', ?, ?, 'AUTHORED', CONCAT('target=', ?, ' actual=', ?))",
+           "VALUES (gen_random_uuid(), 'DISPENSE', ?, ?, 'AUTHORED', CONCAT('target=', ?, ' actual=', ?))",
            ["${lot.lot_id}", "${input.weighedBy}", "${input.targetQty}", "${input.actualQty}"]),
         ex("INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) "
-           "VALUES (RANDOM_UUID(), 'DISPENSE', ?, ?, 'REVIEWED', CONCAT('target=', ?, ' actual=', ?))",
+           "VALUES (gen_random_uuid(), 'DISPENSE', ?, ?, 'REVIEWED', CONCAT('target=', ?, ' actual=', ?))",
            ["${lot.lot_id}", "${input.verifiedBy}", "${input.targetQty}", "${input.actualQty}"]),
         ret({"error_code": "OK", "error_message": "",
              "lotId": "${lot.lot_id}", "actualQty": "${input.actualQty}"}),
@@ -900,14 +1114,14 @@ OBJECTS = []
 BINDINGS = [
     {"objectPath": HUB, "variable": "quarantineLotCount",
      "query": "SELECT COUNT(*) AS v FROM emc_material_lot WHERE disposition = 'QUARANTINE'",
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
     {"objectPath": HUB, "variable": "openDeviationCount",
      "query": "SELECT COUNT(*) AS v FROM emc_defect_record WHERE status IN ('REGISTERED', 'CONFIRMED')",
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
     {"objectPath": HUB, "variable": "activePharmaJobCount",
      "query": ("SELECT COUNT(*) AS v FROM emc_job_order "
                "WHERE dispatch_status = 'RUNNING' AND equipment_id IN " + PHARMA_EQUIPMENT_SQL),
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
 ]
 
 ALERT_RULES = [
@@ -1113,6 +1327,52 @@ ORDER BY signed_at DESC
      "columns": [{"field": f, "label": l} for f, l in [
          ("entity_type", "Entity"), ("entity_id", "ID"), ("signer", "Signer"),
          ("meaning", "Meaning"), ("comment_text", "Comment"), ("signed_at", "Signed At")]]},
+    {"reportId": "pha-genealogy-upstream-fg", "title": "Reverse Trace FG (Pharma)",
+     "description": "Multi-level UPSTREAM tree for quarantine FG lot LOT-FG-PH-0001.",
+     "query": """
+WITH RECURSIVE upstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+         CONCAT(g.output_lot_id, '<', g.input_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE g.output_lot_id = 'LOT-FG-PH-0001'
+  UNION ALL
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+         u.depth + 1, CONCAT(u.path, '<', g.input_lot_id)
+  FROM upstream u
+  JOIN emc_lot_genealogy g ON g.output_lot_id = u.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE u.depth < 15
+)
+SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+FROM upstream ORDER BY depth, lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
+    {"reportId": "pha-genealogy-downstream-api", "title": "Forward Trace API (Pharma)",
+     "description": "Multi-level DOWNSTREAM tree for API lot LOT-API-0001.",
+     "query": """
+WITH RECURSIVE downstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+         CONCAT(g.input_lot_id, '>', g.output_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE g.input_lot_id = 'LOT-API-0001'
+  UNION ALL
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+         d.depth + 1, CONCAT(d.path, '>', g.output_lot_id)
+  FROM downstream d
+  JOIN emc_lot_genealogy g ON g.input_lot_id = d.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE d.depth < 15
+)
+SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+FROM downstream ORDER BY depth, lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
 ]
 
 
@@ -1196,6 +1456,34 @@ DASHBOARDS = [
                                 "Поле <b>Агрегат</b> связывает код единицы с кодом упаковки верхнего уровня. "
                                 "Вывод из оборота — смена статуса кода (<i>DECOMMISSIONED</i>).</p>"),
                ]),
+    _dashboard("root.platform.dashboards.pha-genealogy", "Генеалогия серии (GMP)",
+               "Обратная/прямая прослеживаемость партий поверх ядра IEC 62264 (emc_track_genealogyTreeByLot).",
+               [
+                   _html_widget("help", "Batch genealogy", 0, 0, 84, 12,
+                                "<p>Seed: <code>LOT-API-0001</code> + <code>LOT-EXC-0001</code> → "
+                                "<code>LOT-WIP-PH-0001</code> → <code>LOT-FG-PH-0001</code>. "
+                                "BFF ядра: <code>emc_track_genealogyTreeByLot</code>. "
+                                "Матрица MOM: дашборд ядра <code>emc-mom-matrix</code>.</p>"),
+                   _form_widget("trace", "Запрос генеалогии", 0, 12, 28, 28, "emc_track_genealogyTreeByLot",
+                                [_sel("lotId", "Серия (лот)", "emc-stock-report", "lot_id", "material_id",
+                                      required=True, default="LOT-FG-PH-0001"),
+                                 _static("direction", "Направление",
+                                         ["BOTH", "UPSTREAM", "DOWNSTREAM"], default="UPSTREAM")],
+                                "Построить дерево", CORE_HUB),
+                   _func_widget("demoReverse", "Демо: обратная (ГП)", 28, 12, 28, 14,
+                                "emc_track_genealogyTreeByLot", "ГП → API/excipient",
+                                {"lotId": "LOT-FG-PH-0001", "direction": "UPSTREAM"}, CORE_HUB),
+                   _func_widget("demoForward", "Демо: прямая (API)", 56, 12, 28, 14,
+                                "emc_track_genealogyTreeByLot", "API → ГП",
+                                {"lotId": "LOT-API-0001", "direction": "DOWNSTREAM"}, CORE_HUB),
+                   _report_widget("upstream", "Обратная (seed ГП)", 0, 40, 42, 30,
+                                  "root.platform.reports.pha-genealogy-upstream-fg"),
+                   _report_widget("downstream", "Прямая (seed API)", 42, 40, 42, 30,
+                                  "root.platform.reports.pha-genealogy-downstream-api"),
+                   _report_widget("quarantine", "Карантин (контекст выпуска)", 0, 70, 84, 22,
+                                  "root.platform.reports.pha-quarantine-lots",
+                                  statusDotColumnsJson=json.dumps(["disposition"])),
+               ]),
 ]
 
 
@@ -1204,11 +1492,11 @@ DASHBOARDS = [
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.2.0",
+    "version": "1.4.2",
     "displayName": "ERP-MES Pharma (ISA-95/ISA-88)",
     "tablePrefix": "pha_",
     "schemaName": SCHEMA,
-    "requires": [{"appId": "erp-mes-core", "minVersion": "1.1.0"}],
+    "requires": [{"appId": "erp-mes-core", "minVersion": "2.0.0"}],
     "migrations": MIGRATIONS,
     "objects": OBJECTS,
     "functions": FUNCTIONS,
@@ -1226,6 +1514,8 @@ bundle = {
             {"path": "root.platform.dashboards.pha-production", "title": "Производство"},
             {"path": "root.platform.dashboards.pha-quality", "title": "Качество и выпуск серии"},
             {"path": "root.platform.dashboards.pha-serialization", "title": "Сериализация и аудит"},
+            {"path": "root.platform.dashboards.pha-genealogy", "title": "Генеалогия серии"},
+            {"path": "root.platform.dashboards.emc-mom-matrix", "title": "MOM 62264-3 (ядро)"},
         ],
         "eventJournalObjectPath": HUB,
         "reports": [
@@ -1233,6 +1523,8 @@ bundle = {
             {"path": "root.platform.reports.pha-quarantine-lots", "title": "Quarantine & Release"},
             {"path": "root.platform.reports.pha-serial-report", "title": "Serial Registry"},
             {"path": "root.platform.reports.pha-esign-audit", "title": "E-Signature Audit"},
+            {"path": "root.platform.reports.pha-genealogy-upstream-fg", "title": "Reverse Trace FG"},
+            {"path": "root.platform.reports.pha-genealogy-downstream-api", "title": "Forward Trace API"},
         ],
         "defaultReport": "root.platform.reports.pha-job-board",
     },
@@ -1240,7 +1532,7 @@ bundle = {
         "product": "erp-mes-pharma",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.2.0 status-aware job action bar (Start/Pause/Resume/Complete enabled by dispatch_status, requires platform with function.buttonsJson); 1.1.1 form heights calibrated; 1.1.0 operator UI rework (requires erp-mes-core 1.1.0)",
+        "changelog": "1.4.2 release/reject move warehouse WH-REL/WH-REJ; KPI bindings on_schedule; 1.4.1 UML seed; 1.4.0 requires core >=2.0; 1.3.0 genealogy",
     },
 }
 

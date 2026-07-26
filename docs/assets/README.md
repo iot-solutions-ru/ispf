@@ -32,10 +32,20 @@ Screenshots for the root [README](../../README.md) and product docs under `docs/
 | `ispf-operator-building-hvac.png` | Building HVAC operator | reference-building-hvac-walkthrough |
 | `ispf-operator-pump-station.png` | UI Pump Station mimic | lab-training |
 | `ispf-explorer-en.png` | Spare explorer frame | — |
+| `erp-mes-demo-01-apps.png` | Operator apps grid (Core/Pharma/Printing) | erp-mes-demo (ru) |
+| `erp-mes-demo-02-pharma-production.png` | Pharma · Производство | erp-mes-demo (ru) |
+| `erp-mes-demo-03-pharma-quality.png` | Pharma · Качество и выпуск | erp-mes-demo (ru) |
+| `erp-mes-demo-04-pharma-genealogy.png` | Pharma · Генеалогия | erp-mes-demo (ru) |
+| `erp-mes-demo-05-printing-dispatch.png` | Printing · Диспетчер | erp-mes-demo (ru) |
+| `erp-mes-demo-06-printing-events.png` | Printing · События и простои | erp-mes-demo (ru) |
+| `erp-mes-demo-07-core-dispatch.png` | Core · Диспетчер | erp-mes-demo (ru) |
+| `erp-mes-demo-08-mom-matrix.png` | MOM 62264-3 matrix | erp-mes-demo (ru) |
 
 Paths from `docs/en/*.md` and `docs/ru/*.md`: `../assets/<file>.png`.
 
 **Capture (2026-07-19):** demostand [ispf.iot-solutions.ru](https://ispf.iot-solutions.ru/) via Playwright, EN UI, Dark, ~1600×900.
+
+**ERP-MES demo (2026-07-26):** demostand [mes.iot-solutions.ru](https://mes.iot-solutions.ru/) via Playwright, RU operator UI, ~1440×900.
 
 **Not illustrated (by design):** API/CEL reference tables, ADRs, CI/runbooks, legal/license, pure architecture prose — screenshots would not help.
 

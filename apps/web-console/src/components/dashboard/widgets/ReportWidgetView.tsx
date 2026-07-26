@@ -200,6 +200,30 @@ export default function ReportWidgetView({
       return;
     }
     if (selectedKey) {
+      // Keep session.params (e.g. dispatchStatus) in sync after report refresh so
+      // action-bar enabledWhenJson updates without requiring a manual reselect.
+      if (Object.keys(rowParamsFromRow).length === 0) {
+        return;
+      }
+      const match = runQuery.data.rows.find(
+        (r) => String(r[selectionColumn] ?? "").trim() === selectedKey
+      );
+      if (!match) {
+        return;
+      }
+      const patch: Record<string, unknown> = {};
+      let changed = false;
+      for (const [paramKey, columnRaw] of Object.entries(rowParamsFromRow)) {
+        const column = String(columnRaw).trim();
+        const next = column ? match[column] ?? "" : "";
+        patch[paramKey] = next;
+        if (String(sessionParams[paramKey] ?? "") !== String(next ?? "")) {
+          changed = true;
+        }
+      }
+      if (changed) {
+        setParams(patch);
+      }
       return;
     }
     if (widget.autoSelectFirstRow === true) {
@@ -211,6 +235,10 @@ export default function ReportWidgetView({
     editable,
     runQuery.data?.rows,
     selectedKey,
+    rowParamsFromRow,
+    selectionColumn,
+    sessionParams,
+    setParams,
   ]);
 
   const labels = useMemo(() => {

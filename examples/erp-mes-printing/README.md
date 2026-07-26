@@ -13,13 +13,15 @@ by hand — change the generator and re-run:
 python examples/erp-mes-printing/generate_bundle.py
 ```
 
+**Live demo (presenter script):** [docs/ru/erp-mes-demo.md](../../docs/ru/erp-mes-demo.md).
+
 `event_catalog_data.py` next to the generator is reference data parsed one-off from the Flexibase
 customer SQL seeds (`downtime_event_code_dict_customer.sql`, `downtime_setup_tag_dict_zp.sql`) —
 do not edit by hand either.
 
 ## Dependency on erp-mes-core
 
-- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "1.1.0"}]` — deploy **the core
+- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "2.0.0"}]` — deploy **the core
   first**, the platform dependency verifier rejects the overlay otherwise.
 - Same `schemaName` as the core (`app_erp_mes_core`): overlay migrations, functions and bindings
   run with `search_path` into the core schema and read/write the core `emc_*` tables directly.
@@ -44,7 +46,10 @@ do not edit by hand either.
 | Live objects | Hub singleton `root.platform.singleton-blueprints.erp-mes-printing-hub-v1` (counters `openPrintDowntimeCount`, `activePrintJobCount`, `lowRollStockCount` + 2 alert rules + 2 platform events); devices `emp-pr120/emp-lm210/emp-sl300` on the core MIXIN `emc-work-unit-v1` | bundle |
 | BFF functions | `emp_eventdef_list(section, catalog)`, `emp_roll_list(definitionId)`, `emp_setuptag_list()` | bundle |
 | Reports | `emp-print-job-board`, `emp-downtime-by-code`, `emp-roll-stock` + catalog/option sources `emp-eventdef-catalog`, `emp-setuptag-catalog` (dropdown feeds) | bundle |
-| Dashboards | `emp-print-dispatch` (Диспетчер печати — KPI cards, selectable job board with row-click autofill, Start/Pause/Resume/Complete with dropdowns), `emp-print-events` (События и простои — event registration from `emp-eventdef-catalog`, downtime analytics, Zero Pull tags report), `emp-print-rolls` (Рулоны и материалы — selectable stock, place/consume/register with dropdowns). Flat widget format; selects pull options from overlay and core catalog reports (requires erp-mes-core 1.1.0) | bundle |
+| Dashboards | `emp-print-dispatch`, `emp-print-events`, `emp-print-rolls`, **`emp-print-genealogy`** (film→print→lam→sleeve) + меню на **MOM 62264-3** ядра. Flat widget format; requires erp-mes-core ≥ 2.0.0 | bundle |
+| Core 2.0.0 seed | Genealogy chain + LAM/FG lots; Product Definition `PD-SLEEVE-ROLL`; Physical Assets PR120/LM210; locations; QA/INV/PM schedules; capability on PR120 | migration `emp_m6` |
+| UML 2.0 seed | Hierarchy scopes `SCOPE-PRINT`/`SCOPE-PRT-SITE`; Assembled From BOM for `FG-SLEEVE-ROLL`; product/segment specs; qualification `QTS-P01-PR120`; ops capability children; multi-segment `WM-PRT-ROUTE` + directive `WD-PRT-SETUP`; genealogy metadata/node | migration `emp_m7` |
+| UI fixes | KPI bindings `on_schedule`; seed short roll `LOT-FILM-LOW` + open OGP-119 downtime; event form `by` | migration `emp_m8` |
 
 ## Deploy
 

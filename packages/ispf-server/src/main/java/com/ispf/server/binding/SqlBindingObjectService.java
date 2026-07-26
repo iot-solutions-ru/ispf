@@ -91,7 +91,7 @@ public class SqlBindingObjectService {
         setString(path, "dataSourcePath", definition.dataSourcePath());
         setString(path, "query", definition.query());
         setString(path, "valueField", definition.valueField());
-        setString(path, "refresh", definition.refresh());
+        setString(path, "refresh", normalizeRefreshMode(definition.refresh()));
         setInteger(path, "refreshIntervalMs", definition.refreshIntervalMs());
         setString(path, "triggerObjectPath", definition.triggerObjectPath());
         setString(path, "triggerFunctionName", definition.triggerFunctionName());
@@ -103,7 +103,7 @@ public class SqlBindingObjectService {
     public List<BindingDefinition> listEnabledForSchedule() {
         return listAll().stream()
                 .filter(BindingDefinition::enabled)
-                .filter(b -> "on_schedule".equals(b.refresh()))
+                .filter(b -> "on_schedule".equals(normalizeRefreshMode(b.refresh())))
                 .toList();
     }
 
@@ -284,13 +284,29 @@ public class SqlBindingObjectService {
                 readString(node, "dataSourcePath").orElse(""),
                 readString(node, "query").orElse(""),
                 readString(node, "valueField").orElse("value"),
-                readString(node, "refresh").orElse("manual"),
+                normalizeRefreshMode(readString(node, "refresh").orElse("manual")),
                 readLong(node, "refreshIntervalMs").orElse(30_000L),
                 readString(node, "triggerObjectPath").orElse(""),
                 readString(node, "triggerFunctionName").orElse(""),
                 readBoolean(node, "enabled").orElse(true),
                 readInstant(node, "lastRefreshedAt")
         ));
+    }
+
+    /**
+     * Tree deploy historically accepted refresh=interval; scheduler only polls on_schedule.
+     * Normalize aliases so KPI SQL bindings actually refresh.
+     */
+    static String normalizeRefreshMode(String refresh) {
+        if (refresh == null || refresh.isBlank()) {
+            return "on_schedule";
+        }
+        return switch (refresh) {
+            case "on_function_success" -> "on_function_success";
+            case "on_event" -> "on_event";
+            case "manual" -> "manual";
+            default -> "on_schedule"; // on_schedule, interval, unknown
+        };
     }
 
     public static String sanitizeNodeName(String name) {

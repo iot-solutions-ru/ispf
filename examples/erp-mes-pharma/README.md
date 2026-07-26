@@ -15,9 +15,11 @@ by hand — change the generator and re-run:
 python examples/erp-mes-pharma/generate_bundle.py
 ```
 
+**Live demo (presenter script):** [docs/ru/erp-mes-demo.md](../../docs/ru/erp-mes-demo.md).
+
 ## Dependency on erp-mes-core
 
-- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "1.1.0"}]` — deploy **the core
+- Top-level `requires: [{"appId": "erp-mes-core", "minVersion": "2.0.0"}]` — deploy **the core
   first**, the platform dependency verifier rejects the overlay otherwise.
 - Same `schemaName` as the core (`app_erp_mes_core`): overlay migrations, functions and bindings
   run with `search_path` into the core schema and read/write the core `emc_*` tables directly.
@@ -31,7 +33,10 @@ python examples/erp-mes-pharma/generate_bundle.py
 
 | Block | Content | Where |
 |---|---|---|
-| Overlay tables | `pha_eventdef_ext` (GMP section/operator hint/gmp_critical per event code), `pha_esign_record` (e-signature journal), `pha_serial_record` (serial codes with aggregation) | migration `pha_m1` |
+| Overlay tables | `pha_eventdef_ext`, `pha_esign_record`, `pha_serial_record` | migration `pha_m1` |
+| Core 2.0.0 seed | Genealogy edges API/excipient→WIP→FG; Product Definition `PD-TAB-CARTON`; Physical Assets TPR/BLS; operational locations; QA/PM domain schedules; capability test on TPR-01 | migration `pha_m6` |
+| UML 2.0 seed | Hierarchy scopes `SCOPE-PHARMA`/`SCOPE-PH-SITE`; Assembled From BOM for `FG-TAB-CARTON`; product/segment parameter specs; qualification `QTS-H02-TPR`; ops capability children; multi-segment `WM-PH-ROUTE` + directive `WD-PH-LC`; genealogy metadata/node | migration `pha_m7` |
+| UI fixes | Release/reject set `WH-REL`/`WH-REJ`; repair legacy RELEASED+WH-QUAR rows; KPI bindings `on_schedule` | migration `pha_m8` + BFF |
 | Event code catalog | 20 pharma codes `PHA-*` seeded into `emc_operations_event_definition` with `event_class` (SETUP/QUALITY/PRODUCTION/DOWNTIME), `oee_bucket`, six big losses + GMP extension rows (sections: Dispensing, Granulation, Tableting, Coating, Packaging, IPC, Line clearance) | migration `pha_m2` |
 | Equipment | Classes `EQC-DISPENSE-BOOTH/GRANULATOR/FLUID-BED-DRYER/BLENDER/TABLET-PRESS/COATER/BLISTER-LINE/CARTONER`; hierarchy `ENT-PHARMA/SITE-PH-01` → areas `AREA-SOLID/AREA-PACK` → work units `DSP-01, GRN-01, FBD-01, BLN-01, TPR-01, COT-01, BLS-01, CRT-01`; warehouses `WH-QUAR/WH-REL/WH-REJ` (quarantine/released/rejected); properties | migration `pha_m3` |
 | Personnel | Classes `PCL-PHARMACIST/OPERATOR-PH/QA`; persons `EMP-H01/H02/H03`; qualifications | migration `pha_m3` |
@@ -44,7 +49,7 @@ python examples/erp-mes-pharma/generate_bundle.py
 | Live objects | Hub singleton `root.platform.singleton-blueprints.erp-mes-pharma-hub-v1` (counters `quarantineLotCount`, `openDeviationCount`, `activePharmaJobCount` + 2 alert rules + 2 platform events) | bundle |
 | BFF functions | `pha_eventdef_list(section)`, `pha_lot_release`, `pha_lot_reject`, `pha_esign_list`, `pha_serial_register`, `pha_serial_list`, `pha_dispense_weigh` | bundle |
 | Reports | `pha-job-board`, `pha-quarantine-lots`, `pha-serial-report`, `pha-esign-audit` | bundle |
-| Dashboards | **v1.1.0 — переработанный UI оператора (flat widget format).** `pha-production` — «Производство (фарма, ISA-88)»: KPI-полоса (активные заказы, простой, карантин, отклонения, outbox), selectable job board с statusDot по `dispatch_status` и row-click автозаполнением форм, Start/Pause/Resume/Complete с dropdown'ами из отчётов ядра, форма «Взвешивание (GMP, 2-я подпись)» с select'ами из `emc-stock-report`/`emc-person-catalog`; `pha-quality` — «Качество и выпуск серии (GMP)»: selectable карантинные серии (statusDot по `disposition`), «Выпустить серию (релиз ОКК)» / «Забраковать серию» с dropdown'ами, «Зарегистрировать девиацию», журналы дефектов и движения с фильтрами; `pha-serialization` — «Сериализация и аудит»: реестр кодов и e-sign аудит (filterable), «Зарегистрировать код» с select job/серия, HTML-виджет агрегации кодов. Требует erp-mes-core ≥ 1.1.0 | bundle |
+| Dashboards | **v1.3.0 — под ядро 2.0.0.** `pha-production`, `pha-quality`, `pha-serialization`, **`pha-genealogy`** (обратная/прямая генеалогия через `emc_track_genealogyTreeByLot`) + пункт меню на дашборд ядра **MOM 62264-3**. Требует erp-mes-core ≥ 2.0.0 | bundle |
 
 ## GMP specifics modelled here
 

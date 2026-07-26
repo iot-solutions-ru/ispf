@@ -11,15 +11,24 @@ Canonical ISA-95 (IEC 62264) foundation bundle for ISPF:
   KPI     - OEE per ISO 22400 vocabulary
 
 Dialect: works on H2 (PostgreSQL mode, tests) and PostgreSQL (runtime).
-Rules: UUID PKs + RANDOM_UUID(), no `::` casts, CREATE TABLE IF NOT EXISTS,
+Rules: UUID PKs + gen_random_uuid() (not H2-only RANDOM_UUID — app search_path
+excludes public on PostgreSQL), no `::` casts, CREATE TABLE IF NOT EXISTS,
 seeds via INSERT ... SELECT ... WHERE NOT EXISTS (re-entrant on redeploy).
 Script DSL: validator white-listed steps only (see FunctionScriptValidator).
 """
 import io
 import json
 import os
+import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, ROOT)
+from uml_extent import (  # noqa: E402
+    M16_UML_PART2,
+    M17_UML_PART4,
+    build_uml_functions,
+)
+
 BUNDLE_OUT = os.path.join(ROOT, "bundle.json")
 APP_ID = "erp-mes-core"
 SCHEMA = "app_erp_mes_core"
@@ -534,13 +543,13 @@ M5_WORK_PERFORMANCE = ";\n".join([
        SELECT 'b0000002-0000-0000-0000-000000000002', 'JO-DEMO-002', 'RUNNING', CURRENT_TIMESTAMP
        WHERE NOT EXISTS (SELECT 1 FROM emc_job_response WHERE job_no = 'JO-DEMO-002' AND job_state = 'RUNNING')""",
     """INSERT INTO emc_job_response_data (id, response_id, data_kind, started_at)
-       SELECT RANDOM_UUID(), 'b0000002-0000-0000-0000-000000000002', 'RUN_INTERVAL', CURRENT_TIMESTAMP
+       SELECT gen_random_uuid(), 'b0000002-0000-0000-0000-000000000002', 'RUN_INTERVAL', CURRENT_TIMESTAMP
        WHERE NOT EXISTS (SELECT 1 FROM emc_job_response_data WHERE response_id = 'b0000002-0000-0000-0000-000000000002' AND data_kind = 'RUN_INTERVAL' AND ended_at IS NULL)""",
     """INSERT INTO emc_equipment_actual (id, response_id, equipment_id, equipment_use)
-       SELECT RANDOM_UUID(), 'b0000002-0000-0000-0000-000000000002', 'WU-A01', 'PRIMARY'
+       SELECT gen_random_uuid(), 'b0000002-0000-0000-0000-000000000002', 'WU-A01', 'PRIMARY'
        WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_actual WHERE response_id = 'b0000002-0000-0000-0000-000000000002')""",
     """INSERT INTO emc_personnel_actual (id, response_id, person_id, personnel_use)
-       SELECT RANDOM_UUID(), 'b0000002-0000-0000-0000-000000000002', 'EMP-001', 'OPERATOR'
+       SELECT gen_random_uuid(), 'b0000002-0000-0000-0000-000000000002', 'EMP-001', 'OPERATOR'
        WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_actual WHERE response_id = 'b0000002-0000-0000-0000-000000000002')""",
 ])
 
@@ -716,7 +725,7 @@ M9_EVENTS_CALENDAR = ";\n".join([
          ["SHIFT-DEMO-1", "WU-A01", "MORNING", "480", "OPEN", "!TIMESTAMP '2026-07-24 06:00:00'", "!CURRENT_TIMESTAMP"],
          "shift_id = 'SHIFT-DEMO-1'"),
     """INSERT INTO emc_shift_assignment (id, shift_id, person_id)
-       SELECT RANDOM_UUID(), 'SHIFT-DEMO-1', 'EMP-001'
+       SELECT gen_random_uuid(), 'SHIFT-DEMO-1', 'EMP-001'
        WHERE NOT EXISTS (SELECT 1 FROM emc_shift_assignment WHERE shift_id = 'SHIFT-DEMO-1' AND person_id = 'EMP-001')""",
 ])
 
@@ -802,6 +811,235 @@ M12_OEE = ";\n".join([
        calculated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)""",
 ])
 
+# Multi-hop demo genealogy (RAW → WIP → FG) for bidirectional traceability screens.
+# Re-entrant: WHERE NOT EXISTS on the same input/output pair.
+M13_GENEALOGY_SEED = ";\n".join([
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-RAW-0001', 'LOT-WIP-0001', 120
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-RAW-0001' AND output_lot_id = 'LOT-WIP-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-RAW-0002', 'LOT-WIP-0001', 80
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-RAW-0002' AND output_lot_id = 'LOT-WIP-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-WIP-0001', 'LOT-FG-0001', 150
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-WIP-0001' AND output_lot_id = 'LOT-FG-0001')""",
+])
+
+# IEC 62264-2/3/4 extent: Physical Asset, Product Definition, Capability Test,
+# Operations Capability/Performance, MOM 4x8 activity registry (Part 3).
+def _mom_seed(domain, activity, status, note, link):
+    return (
+        "INSERT INTO emc_mom_activity (domain, activity, status, note, ui_link) "
+        f"SELECT '{domain}', '{activity}', '{status}', '{note}', '{link}' "
+        f"WHERE NOT EXISTS (SELECT 1 FROM emc_mom_activity WHERE domain = '{domain}' AND activity = '{activity}')"
+    )
+
+
+_MOM_ACTIVITIES = [
+    ("PRODUCTION", "DEFINITION", "COVERED", "Process segment + work master", "emc-dispatch"),
+    ("PRODUCTION", "RESOURCE", "COVERED", "Equipment / personnel / material", "emc-inventory"),
+    ("PRODUCTION", "DETAILED_SCHEDULING", "COVERED", "Work schedule receive + domain schedule", "emc-dispatch"),
+    ("PRODUCTION", "DISPATCHING", "COVERED", "Release / start / pause / resume", "emc-dispatch"),
+    ("PRODUCTION", "EXECUTION", "COVERED", "Job order lifecycle", "emc-execution"),
+    ("PRODUCTION", "DATA_COLLECTION", "COVERED", "PDC + material actuals", "emc-execution"),
+    ("PRODUCTION", "TRACKING", "COVERED", "Lot genealogy tree", "emc-genealogy"),
+    ("PRODUCTION", "PERFORMANCE_ANALYSIS", "COVERED", "OEE A×P×Q", "emc-oee"),
+    ("QUALITY", "DEFINITION", "COVERED", "Defect types / reason codes", "emc-quality"),
+    ("QUALITY", "RESOURCE", "COVERED", "QA personnel via person catalog", "emc-quality"),
+    ("QUALITY", "DETAILED_SCHEDULING", "COVERED", "QA sample plan (domain schedule)", "emc-quality"),
+    ("QUALITY", "DISPATCHING", "COVERED", "Defect workflow dispatch", "emc-quality"),
+    ("QUALITY", "EXECUTION", "COVERED", "Confirm / reject / close defect", "emc-quality"),
+    ("QUALITY", "DATA_COLLECTION", "COVERED", "QA test results", "emc-quality"),
+    ("QUALITY", "TRACKING", "COVERED", "Defect status history", "emc-quality"),
+    ("QUALITY", "PERFORMANCE_ANALYSIS", "COVERED", "Defect rate KPI", "emc-mom-matrix"),
+    ("INVENTORY", "DEFINITION", "COVERED", "Inventory document kinds", "emc-inventory"),
+    ("INVENTORY", "RESOURCE", "COVERED", "Storage zones + operational locations", "emc-inventory"),
+    ("INVENTORY", "DETAILED_SCHEDULING", "COVERED", "Replenishment schedule", "emc-inventory"),
+    ("INVENTORY", "DISPATCHING", "COVERED", "Submit inventory document", "emc-inventory"),
+    ("INVENTORY", "EXECUTION", "COVERED", "Apply inventory document", "emc-inventory"),
+    ("INVENTORY", "DATA_COLLECTION", "COVERED", "Document lines / stock qty", "emc-inventory"),
+    ("INVENTORY", "TRACKING", "COVERED", "Stock + material movement", "emc-inventory"),
+    ("INVENTORY", "PERFORMANCE_ANALYSIS", "COVERED", "Inventory turns KPI", "emc-mom-matrix"),
+    ("MAINTENANCE", "DEFINITION", "COVERED", "Maintenance request model", "emc-oee"),
+    ("MAINTENANCE", "RESOURCE", "COVERED", "Equipment as maint target", "emc-oee"),
+    ("MAINTENANCE", "DETAILED_SCHEDULING", "COVERED", "PM calendar (domain schedule)", "emc-oee"),
+    ("MAINTENANCE", "DISPATCHING", "COVERED", "Accept maintenance request", "emc-oee"),
+    ("MAINTENANCE", "EXECUTION", "COVERED", "Complete work order", "emc-oee"),
+    ("MAINTENANCE", "DATA_COLLECTION", "COVERED", "Event / downtime capture", "emc-oee"),
+    ("MAINTENANCE", "TRACKING", "COVERED", "Maintenance list", "emc-oee"),
+    ("MAINTENANCE", "PERFORMANCE_ANALYSIS", "COVERED", "MTTR / MTBF", "emc-mom-matrix"),
+]
+
+M14_PART234 = ";\n".join([
+    """CREATE TABLE IF NOT EXISTS emc_physical_asset_class (
+       class_id VARCHAR(64) PRIMARY KEY,
+       description VARCHAR(256),
+       parent_class_id VARCHAR(64))""",
+    """CREATE TABLE IF NOT EXISTS emc_physical_asset (
+       asset_id VARCHAR(64) PRIMARY KEY,
+       class_id VARCHAR(64),
+       equipment_id VARCHAR(64),
+       serial_no VARCHAR(128),
+       manufacturer VARCHAR(128),
+       description VARCHAR(256),
+       status VARCHAR(32) NOT NULL DEFAULT 'IN_SERVICE')""",
+    """CREATE TABLE IF NOT EXISTS emc_physical_asset_property (
+       asset_id VARCHAR(64) NOT NULL,
+       prop_key VARCHAR(64) NOT NULL,
+       prop_value VARCHAR(512),
+       uom VARCHAR(32),
+       PRIMARY KEY (asset_id, prop_key))""",
+    """CREATE TABLE IF NOT EXISTS emc_product_definition (
+       product_id VARCHAR(64) PRIMARY KEY,
+       description VARCHAR(256),
+       fg_definition_id VARCHAR(64),
+       status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE')""",
+    """CREATE TABLE IF NOT EXISTS emc_product_segment (
+       product_id VARCHAR(64) NOT NULL,
+       segment_id VARCHAR(64) NOT NULL,
+       sequence_no INTEGER NOT NULL DEFAULT 1,
+       PRIMARY KEY (product_id, segment_id))""",
+    """CREATE TABLE IF NOT EXISTS emc_capability_test_spec (
+       spec_id VARCHAR(64) PRIMARY KEY,
+       target_kind VARCHAR(32) NOT NULL,
+       target_id VARCHAR(64) NOT NULL,
+       test_name VARCHAR(128) NOT NULL,
+       criterion VARCHAR(256),
+       uom VARCHAR(16))""",
+    """CREATE TABLE IF NOT EXISTS emc_capability_test_result (
+       result_id UUID PRIMARY KEY,
+       spec_id VARCHAR(64) NOT NULL,
+       measured_value VARCHAR(128),
+       result VARCHAR(32) NOT NULL,
+       tested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       tested_by VARCHAR(64))""",
+    """CREATE TABLE IF NOT EXISTS emc_operations_capability (
+       capability_id VARCHAR(64) PRIMARY KEY,
+       operations_type VARCHAR(32) NOT NULL DEFAULT 'PRODUCTION',
+       equipment_id VARCHAR(64),
+       segment_id VARCHAR(64),
+       reason VARCHAR(256),
+       available_from TIMESTAMP,
+       available_to TIMESTAMP,
+       status VARCHAR(32) NOT NULL DEFAULT 'AVAILABLE')""",
+    """CREATE TABLE IF NOT EXISTS emc_operations_performance (
+       performance_id VARCHAR(64) PRIMARY KEY,
+       operations_type VARCHAR(32) NOT NULL DEFAULT 'PRODUCTION',
+       equipment_id VARCHAR(64),
+       shift_id VARCHAR(64),
+       good_qty NUMERIC(14,3) NOT NULL DEFAULT 0,
+       reject_qty NUMERIC(14,3) NOT NULL DEFAULT 0,
+       run_min NUMERIC(14,3) NOT NULL DEFAULT 0,
+       downtime_min NUMERIC(14,3) NOT NULL DEFAULT 0,
+       note VARCHAR(256),
+       calculated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)""",
+    """CREATE TABLE IF NOT EXISTS emc_mom_activity (
+       domain VARCHAR(32) NOT NULL,
+       activity VARCHAR(32) NOT NULL,
+       status VARCHAR(16) NOT NULL,
+       note VARCHAR(256),
+       ui_link VARCHAR(64),
+       PRIMARY KEY (domain, activity))""",
+    seed("emc_physical_asset_class", ["class_id", "description", "parent_class_id"],
+         ["PAC-MACHINE", "Production machines", None], "class_id = 'PAC-MACHINE'"),
+    seed("emc_physical_asset", ["asset_id", "class_id", "equipment_id", "serial_no", "manufacturer", "description", "status"],
+         ["AST-A01", "PAC-MACHINE", "WU-A01", "SN-A01-001", "DemoOEM", "Assembly cell asset", "IN_SERVICE"],
+         "asset_id = 'AST-A01'"),
+    seed("emc_physical_asset", ["asset_id", "class_id", "equipment_id", "serial_no", "manufacturer", "description", "status"],
+         ["AST-A02", "PAC-MACHINE", "WU-A02", "SN-A02-001", "DemoOEM", "Packing cell asset", "IN_SERVICE"],
+         "asset_id = 'AST-A02'"),
+    seed("emc_product_definition", ["product_id", "description", "fg_definition_id", "status"],
+         ["PD-UNIT-PACKED", "Packed finished unit", "FG-UNIT-PACKED", "ACTIVE"],
+         "product_id = 'PD-UNIT-PACKED'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-UNIT-PACKED", "SEG-ASSEMBLE", "1"],
+         "product_id = 'PD-UNIT-PACKED' AND segment_id = 'SEG-ASSEMBLE'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-UNIT-PACKED", "SEG-PACK", "2"],
+         "product_id = 'PD-UNIT-PACKED' AND segment_id = 'SEG-PACK'"),
+    seed("emc_capability_test_spec", ["spec_id", "target_kind", "target_id", "test_name", "criterion", "uom"],
+         ["CTS-WU-A01-SPEED", "EQUIPMENT", "WU-A01", "Rated speed check", ">= 80", "pcs/h"],
+         "spec_id = 'CTS-WU-A01-SPEED'"),
+    """INSERT INTO emc_capability_test_result (result_id, spec_id, measured_value, result, tested_by)
+       SELECT gen_random_uuid(), 'CTS-WU-A01-SPEED', '95', 'PASS', 'EMP-001'
+       WHERE NOT EXISTS (SELECT 1 FROM emc_capability_test_result WHERE spec_id = 'CTS-WU-A01-SPEED')""",
+    seed("emc_operations_capability",
+         ["capability_id", "operations_type", "equipment_id", "segment_id", "reason", "status"],
+         ["CAP-WU-A01-ASSEMBLE", "PRODUCTION", "WU-A01", "SEG-ASSEMBLE", "Qualified + capability test PASS", "AVAILABLE"],
+         "capability_id = 'CAP-WU-A01-ASSEMBLE'"),
+    seed("emc_operations_capability",
+         ["capability_id", "operations_type", "equipment_id", "segment_id", "reason", "status"],
+         ["CAP-WU-A02-PACK", "PRODUCTION", "WU-A02", "SEG-PACK", "Qualified packing cell", "AVAILABLE"],
+         "capability_id = 'CAP-WU-A02-PACK'"),
+] + [_mom_seed(*row) for row in _MOM_ACTIVITIES])
+
+
+def _mom_update(domain, activity, status, note, link):
+    return (
+        f"UPDATE emc_mom_activity SET status = '{status}', note = '{note}', ui_link = '{link}' "
+        f"WHERE domain = '{domain}' AND activity = '{activity}'"
+    )
+
+
+# Close remaining Part 3 ○/◐ cells + Operational Location (Part 2).
+M15_PART3_COMPLETE = ";\n".join([
+    """CREATE TABLE IF NOT EXISTS emc_operational_location (
+       location_id VARCHAR(64) PRIMARY KEY,
+       description VARCHAR(256),
+       location_kind VARCHAR(32) NOT NULL DEFAULT 'STORAGE',
+       equipment_id VARCHAR(64),
+       parent_location_id VARCHAR(64),
+       status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE')""",
+    """CREATE TABLE IF NOT EXISTS emc_domain_schedule (
+       schedule_id VARCHAR(64) PRIMARY KEY,
+       domain VARCHAR(32) NOT NULL,
+       schedule_kind VARCHAR(64) NOT NULL,
+       target_id VARCHAR(64),
+       planned_start TIMESTAMP,
+       planned_end TIMESTAMP,
+       quantity NUMERIC(14,3),
+       uom VARCHAR(16),
+       status VARCHAR(32) NOT NULL DEFAULT 'PLANNED',
+       note VARCHAR(256),
+       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)""",
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-WH-RAW", "Raw material warehouse", "STORAGE", "WH-CENTRAL", None, "ACTIVE"],
+         "location_id = 'LOC-WH-RAW'"),
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-WH-FG", "Finished goods warehouse", "STORAGE", "WH-CENTRAL", None, "ACTIVE"],
+         "location_id = 'LOC-WH-FG'"),
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-LINE-A01", "Line A01 staging", "STAGING", "WU-A01", "LOC-WH-RAW", "ACTIVE"],
+         "location_id = 'LOC-LINE-A01'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-QA-SAMPLE-001", "QUALITY", "SAMPLE_PLAN", "LOT-FG-0001", "5", "pcs", "PLANNED",
+          "Incoming inspection sample plan"],
+         "schedule_id = 'DS-QA-SAMPLE-001'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-INV-REPL-001", "INVENTORY", "REPLENISHMENT", "RAW-PLASTIC-GRANULE", "100", "kg", "PLANNED",
+          "Min/max replenishment for plastic granulate"],
+         "schedule_id = 'DS-INV-REPL-001'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-PM-A01-001", "MAINTENANCE", "PM_CALENDAR", "WU-A01", "1", "job", "PLANNED",
+          "Monthly PM for assembly cell"],
+         "schedule_id = 'DS-PM-A01-001'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-PROD-FIRM-001", "PRODUCTION", "FIRM_SCHEDULE", "SCH-DEMO-001", "1", "schedule", "RELEASED",
+          "Link to work schedule SCH-DEMO-001"],
+         "schedule_id = 'DS-PROD-FIRM-001'"),
+] + [_mom_update(*row) for row in _MOM_ACTIVITIES]
+  + [_mom_seed(*row) for row in _MOM_ACTIVITIES])
+
 MIGRATIONS = [
     {"id": "emc_m1_equipment_personnel", "sql": M1_EQUIPMENT_PERSONNEL},
     {"id": "emc_m2_material", "sql": M2_MATERIAL},
@@ -815,6 +1053,11 @@ MIGRATIONS = [
     {"id": "emc_m10_work_record", "sql": M10_WORK_RECORD},
     {"id": "emc_m11_integration", "sql": M11_INTEGRATION},
     {"id": "emc_m12_oee", "sql": M12_OEE},
+    {"id": "emc_m13_genealogy_seed", "sql": M13_GENEALOGY_SEED},
+    {"id": "emc_m14_part234", "sql": M14_PART234},
+    {"id": "emc_m15_part3_complete", "sql": M15_PART3_COMPLETE},
+    {"id": "emc_m16_uml_part2", "sql": M16_UML_PART2},
+    {"id": "emc_m17_uml_part4", "sql": M17_UML_PART4},
 ]
 
 
@@ -950,7 +1193,7 @@ FUNCTIONS.append(fn(
             "${input.quantity}", "${input.uom}", "${input.plannedStart}", "${input.plannedEnd}", "${input.requestId}"]),
         ex("INSERT INTO emc_job_order (job_order_id, job_no, request_id, work_master_id, work_master_version, segment_id, "
            "equipment_id, dispatch_status, command, priority, planned_start, planned_end) "
-           "SELECT RANDOM_UUID(), ?, ?, ?, ?, ?, ?, 'NOT_ALLOWED', 'STORE', COALESCE(NULLIF(?, ''), '5'), NULLIF(?, ''), NULLIF(?, '') "
+           "SELECT gen_random_uuid(), ?, ?, ?, ?, ?, ?, 'NOT_ALLOWED', 'STORE', COALESCE(NULLIF(?, ''), '5'), NULLIF(?, ''), NULLIF(?, '') "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_job_order WHERE job_no = ?)",
            ["${input.jobNo}", "${input.requestId}", "${input.workMasterId}", "${input.workMasterVersion}",
             "${wm.segment_id}", "${input.equipmentId}", "${input.priority}", "${input.plannedStart}",
@@ -968,7 +1211,7 @@ FUNCTIONS.append(fn(
            "SELECT ?, personnel_class_id, person_id, personnel_use, quantity FROM emc_segment_personnel_spec "
            "WHERE segment_id = ? AND NOT EXISTS (SELECT 1 FROM emc_job_order_personnel_req WHERE job_no = ?)",
            ["${input.jobNo}", "${wm.segment_id}", "${input.jobNo}"]),
-        ex("INSERT INTO emc_job_order_audit (id, job_no, action, detail, actor) VALUES (RANDOM_UUID(), ?, 'RECEIVED', ?, 'erp')",
+        ex("INSERT INTO emc_job_order_audit (id, job_no, action, detail, actor) VALUES (gen_random_uuid(), ?, 'RECEIVED', ?, 'erp')",
            ["${input.jobNo}", "${input.externalRef}"]),
         sel1("job", "SELECT job_no, dispatch_status FROM emc_job_order WHERE job_no = ?", ["${input.jobNo}"]),
         ret({"error_code": "OK", "error_message": "", "scheduleId": "${input.externalRef}",
@@ -1030,7 +1273,7 @@ FUNCTIONS.append(fn(
         fail_null("job", "JOB_NOT_FOUND", "Job order not found"),
         fail_ne("job.dispatch_status", "NOT_ALLOWED", "INVALID_STATE", "Only NOT_ALLOWED job orders can be released"),
         ex("UPDATE emc_job_order SET dispatch_status = 'ALLOWED', command = 'STORE' WHERE job_no = ?", ["${input.jobNo}"]),
-        ex("INSERT INTO emc_job_order_audit (id, job_no, action, actor) VALUES (RANDOM_UUID(), ?, 'RELEASED', 'dispatcher')",
+        ex("INSERT INTO emc_job_order_audit (id, job_no, action, actor) VALUES (gen_random_uuid(), ?, 'RELEASED', 'dispatcher')",
            ["${input.jobNo}"]),
         ret({"error_code": "OK", "error_message": "", "jobNo": "${input.jobNo}", "dispatchStatus": "ALLOWED"}),
     ],
@@ -1051,7 +1294,7 @@ def machine_write(equipment_id, object_path, status, job_no_ref):
 FUNCTIONS.append(fn(
     "emc_joborder_start",
     [F("jobNo"), F("personId")],
-    OUT(F("jobNo"), F("status"), F("responseId")),
+    OUT(F("jobNo"), F("status"), F("dispatchStatus"), F("responseId")),
     [
         sel1("job", "SELECT job_no, dispatch_status, equipment_id, segment_id FROM emc_job_order WHERE job_no = ?",
              ["${input.jobNo}"]),
@@ -1065,7 +1308,7 @@ FUNCTIONS.append(fn(
                  "error_message": "Equipment already has a RUNNING job order: ${conflict.job_no}",
                  "jobNo": "${input.jobNo}", "status": "", "responseId": ""}),
         ]),
-        ex("INSERT INTO emc_job_response (response_id, job_no, job_state) SELECT RANDOM_UUID(), ?, 'RUNNING' "
+        ex("INSERT INTO emc_job_response (response_id, job_no, job_state) SELECT gen_random_uuid(), ?, 'RUNNING' "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_job_response WHERE job_no = ? AND job_state = 'RUNNING')",
            ["${input.jobNo}", "${input.jobNo}"]),
         ex("UPDATE emc_job_order SET dispatch_status = 'RUNNING', command = 'START', actual_start = CURRENT_TIMESTAMP "
@@ -1073,38 +1316,38 @@ FUNCTIONS.append(fn(
         sel1("resp", "SELECT response_id FROM emc_job_response WHERE job_no = ? AND job_state = 'RUNNING'",
              ["${input.jobNo}"]),
         ex("INSERT INTO emc_job_response_data (id, response_id, data_kind, started_at) "
-           "SELECT RANDOM_UUID(), ?, 'RUN_INTERVAL', CURRENT_TIMESTAMP "
+           "SELECT gen_random_uuid(), ?, 'RUN_INTERVAL', CURRENT_TIMESTAMP "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_job_response_data d WHERE d.response_id = ? AND d.ended_at IS NULL)",
            ["${resp.response_id}", "${resp.response_id}"]),
         ex("INSERT INTO emc_equipment_actual (id, response_id, equipment_id, equipment_use) "
-           "SELECT RANDOM_UUID(), ?, ?, 'PRIMARY' WHERE NOT EXISTS "
+           "SELECT gen_random_uuid(), ?, ?, 'PRIMARY' WHERE NOT EXISTS "
            "(SELECT 1 FROM emc_equipment_actual WHERE response_id = ?)",
            ["${resp.response_id}", "${job.equipment_id}", "${resp.response_id}"]),
         when({"var": "input.personId", "notNull": True}, [
             ex("INSERT INTO emc_personnel_actual (id, response_id, person_id, personnel_use) "
-               "SELECT RANDOM_UUID(), ?, ?, 'OPERATOR' WHERE NOT EXISTS "
+               "SELECT gen_random_uuid(), ?, ?, 'OPERATOR' WHERE NOT EXISTS "
                "(SELECT 1 FROM emc_personnel_actual WHERE response_id = ? AND person_id = ?)",
                ["${resp.response_id}", "${input.personId}", "${resp.response_id}", "${input.personId}"]),
         ]),
         # Part 5: PROCESS Operations Event "work commenced" to ERP (idempotent)
         ex("INSERT INTO emc_erp_outbox (id, verb, noun, object_id, payload_json, idempotency_key, status) "
-           "SELECT RANDOM_UUID(), 'PROCESS', 'OPERATIONS_EVENT', ?, "
+           "SELECT gen_random_uuid(), 'PROCESS', 'OPERATIONS_EVENT', ?, "
            "CONCAT('{\"event\":\"work commenced\",\"jobNo\":\"', ?, '\"}'), CONCAT('WO-COMMENCED:', ?), 'PENDING' "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_erp_outbox WHERE idempotency_key = CONCAT('WO-COMMENCED:', ?))",
            ["${input.jobNo}", "${input.jobNo}", "${input.jobNo}", "${input.jobNo}"]),
         *machine_write("WU-A01", WU_A01, "RUNNING", "${job.job_no}"),
         *machine_write("WU-A02", WU_A02, "RUNNING", "${job.job_no}"),
-        ex("INSERT INTO emc_job_order_audit (id, job_no, action, actor) VALUES (RANDOM_UUID(), ?, 'STARTED', 'operator')",
+        ex("INSERT INTO emc_job_order_audit (id, job_no, action, actor) VALUES (gen_random_uuid(), ?, 'STARTED', 'operator')",
            ["${input.jobNo}"]),
         ret({"error_code": "OK", "error_message": "", "jobNo": "${job.job_no}",
-             "status": "RUNNING", "responseId": "${resp.response_id}"}),
+             "status": "RUNNING", "dispatchStatus": "RUNNING", "responseId": "${resp.response_id}"}),
     ],
 ))
 
 FUNCTIONS.append(fn(
     "emc_joborder_pause",
     [F("jobNo")],
-    OUT(F("jobNo"), F("status")),
+    OUT(F("jobNo"), F("status"), F("dispatchStatus")),
     [
         sel1("job", "SELECT job_no, dispatch_status, equipment_id FROM emc_job_order WHERE job_no = ?", ["${input.jobNo}"]),
         fail_null("job", "JOB_NOT_FOUND", "Job order not found"),
@@ -1113,18 +1356,19 @@ FUNCTIONS.append(fn(
         ex("UPDATE emc_job_response_data SET ended_at = CURRENT_TIMESTAMP WHERE ended_at IS NULL "
            "AND response_id IN (SELECT response_id FROM emc_job_response WHERE job_no = ?)", ["${input.jobNo}"]),
         ex("INSERT INTO emc_job_response_data (id, response_id, data_kind, started_at) "
-           "SELECT RANDOM_UUID(), response_id, 'PAUSE_INTERVAL', CURRENT_TIMESTAMP FROM emc_job_response "
+           "SELECT gen_random_uuid(), response_id, 'PAUSE_INTERVAL', CURRENT_TIMESTAMP FROM emc_job_response "
            "WHERE job_no = ? AND job_state = 'RUNNING'", ["${input.jobNo}"]),
         *machine_write("WU-A01", WU_A01, "PAUSED", "${job.job_no}"),
         *machine_write("WU-A02", WU_A02, "PAUSED", "${job.job_no}"),
-        ret({"error_code": "OK", "error_message": "", "jobNo": "${job.job_no}", "status": "SUSPENDED"}),
+        ret({"error_code": "OK", "error_message": "", "jobNo": "${job.job_no}",
+             "status": "SUSPENDED", "dispatchStatus": "SUSPENDED"}),
     ],
 ))
 
 FUNCTIONS.append(fn(
     "emc_joborder_resume",
     [F("jobNo")],
-    OUT(F("jobNo"), F("status")),
+    OUT(F("jobNo"), F("status"), F("dispatchStatus")),
     [
         sel1("job", "SELECT job_no, dispatch_status, equipment_id FROM emc_job_order WHERE job_no = ?", ["${input.jobNo}"]),
         fail_null("job", "JOB_NOT_FOUND", "Job order not found"),
@@ -1133,14 +1377,14 @@ FUNCTIONS.append(fn(
         ex("UPDATE emc_job_response_data SET ended_at = CURRENT_TIMESTAMP WHERE ended_at IS NULL "
            "AND response_id IN (SELECT response_id FROM emc_job_response WHERE job_no = ?)", ["${input.jobNo}"]),
         ex("INSERT INTO emc_job_response_data (id, response_id, data_kind, started_at) "
-           "SELECT RANDOM_UUID(), response_id, 'RUN_INTERVAL', CURRENT_TIMESTAMP FROM emc_job_response "
+           "SELECT gen_random_uuid(), response_id, 'RUN_INTERVAL', CURRENT_TIMESTAMP FROM emc_job_response "
            "WHERE job_no = ? AND job_state = 'RUNNING'", ["${input.jobNo}"]),
         *machine_write("WU-A01", WU_A01, "RUNNING", "${job.job_no}"),
         *machine_write("WU-A02", WU_A02, "RUNNING", "${job.job_no}"),
-        ret({"error_code": "OK", "error_message": "", "jobNo": "${job.job_no}", "status": "RUNNING"}),
+        ret({"error_code": "OK", "error_message": "", "jobNo": "${job.job_no}",
+             "status": "RUNNING", "dispatchStatus": "RUNNING"}),
     ],
 ))
-
 FUNCTIONS.append(fn(
     "emc_joborder_complete",
     [F("jobNo")],
@@ -1174,13 +1418,13 @@ FUNCTIONS.append(fn(
            "WHERE job_no = ?", ["${input.jobNo}"]),
         # Part 5: PROCESS Operations Performance to ERP (idempotent)
         ex("INSERT INTO emc_erp_outbox (id, verb, noun, object_id, payload_json, idempotency_key, status) "
-           "SELECT RANDOM_UUID(), 'PROCESS', 'OPERATIONS_PERFORMANCE', ?, "
+           "SELECT gen_random_uuid(), 'PROCESS', 'OPERATIONS_PERFORMANCE', ?, "
            "CONCAT('{\"jobNo\":\"', ?, '\",\"event\":\"work completed\"}'), CONCAT('WO-COMPLETED:', ?), 'PENDING' "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_erp_outbox WHERE idempotency_key = CONCAT('WO-COMPLETED:', ?))",
            ["${input.jobNo}", "${input.jobNo}", "${input.jobNo}", "${input.jobNo}"]),
         *machine_write("WU-A01", WU_A01, "IDLE", ""),
         *machine_write("WU-A02", WU_A02, "IDLE", ""),
-        ex("INSERT INTO emc_job_order_audit (id, job_no, action, actor) VALUES (RANDOM_UUID(), ?, 'COMPLETED', 'operator')",
+        ex("INSERT INTO emc_job_order_audit (id, job_no, action, actor) VALUES (gen_random_uuid(), ?, 'COMPLETED', 'operator')",
            ["${input.jobNo}"]),
         ret({"error_code": "OK", "error_message": "", "jobNo": "${job.job_no}", "status": "ENDED"}),
     ],
@@ -1203,7 +1447,7 @@ FUNCTIONS.append(fn(
            "WHERE job_no = ? AND job_state = 'RUNNING'", ["${input.jobNo}"]),
         *machine_write("WU-A01", WU_A01, "IDLE", ""),
         *machine_write("WU-A02", WU_A02, "IDLE", ""),
-        ex("INSERT INTO emc_job_order_audit (id, job_no, action, detail, actor) VALUES (RANDOM_UUID(), ?, 'ABORTED', ?, 'operator')",
+        ex("INSERT INTO emc_job_order_audit (id, job_no, action, detail, actor) VALUES (gen_random_uuid(), ?, 'ABORTED', ?, 'operator')",
            ["${input.jobNo}", "${input.reason}"]),
         ret({"error_code": "OK", "error_message": "", "jobNo": "${job.job_no}", "status": "ABORTED"}),
     ],
@@ -1219,7 +1463,7 @@ FUNCTIONS.append(fn(
         fail_null("input.newJobNo", "VALIDATION", "newJobNo is required"),
         ex("INSERT INTO emc_job_order (job_order_id, job_no, request_id, work_master_id, work_master_version, segment_id, "
            "equipment_id, dispatch_status, command, priority, planned_start, planned_end, original_job_no) "
-           "SELECT RANDOM_UUID(), ?, request_id, work_master_id, work_master_version, segment_id, equipment_id, "
+           "SELECT gen_random_uuid(), ?, request_id, work_master_id, work_master_version, segment_id, equipment_id, "
            "'NOT_ALLOWED', 'STORE', priority, NULLIF(?, ''), NULLIF(?, ''), job_no FROM emc_job_order "
            "WHERE job_no = ? AND NOT EXISTS (SELECT 1 FROM emc_job_order WHERE job_no = ?)",
            ["${input.newJobNo}", "${input.plannedStart}", "${input.plannedEnd}", "${input.jobNo}", "${input.newJobNo}"]),
@@ -1230,7 +1474,7 @@ FUNCTIONS.append(fn(
            "SELECT ?, definition_id, material_class_id, material_use, quantity, uom FROM emc_job_order_material_req "
            "WHERE job_no = ? AND NOT EXISTS (SELECT 1 FROM emc_job_order_material_req WHERE job_no = ?)",
            ["${input.newJobNo}", "${input.jobNo}", "${input.newJobNo}"]),
-        ex("INSERT INTO emc_job_order_audit (id, job_no, action, detail, actor) VALUES (RANDOM_UUID(), ?, 'REPLANNED', ?, 'dispatcher')",
+        ex("INSERT INTO emc_job_order_audit (id, job_no, action, detail, actor) VALUES (gen_random_uuid(), ?, 'REPLANNED', ?, 'dispatcher')",
            ["${input.jobNo}", "${input.newJobNo}"]),
         ret({"error_code": "OK", "error_message": "", "jobNo": "${input.jobNo}",
              "newJobNo": "${input.newJobNo}", "dispatchStatus": "NOT_ALLOWED"}),
@@ -1261,7 +1505,7 @@ FUNCTIONS.append(fn(
              ["${input.jobNo}"]),
         fail_null("resp", "NO_RUNNING_RESPONSE", "No running response for job order"),
         ex("INSERT INTO emc_job_response_data (id, response_id, data_kind, param_key, param_value, uom) "
-           "VALUES (RANDOM_UUID(), ?, 'PARAMETER', ?, ?, ?)",
+           "VALUES (gen_random_uuid(), ?, 'PARAMETER', ?, ?, ?)",
            ["${resp.response_id}", "${input.paramKey}", "${input.paramValue}", "${input.uom}"]),
         ret({"error_code": "OK", "error_message": "", "jobNo": "${input.jobNo}", "paramKey": "${input.paramKey}"}),
     ],
@@ -1284,6 +1528,325 @@ FUNCTIONS.append(fn(
             "direction": "${item.direction}", "lotId": "${item.lot_id}", "quantity": "${item.quantity}",
             "definitionId": "${item.definition_id}", "createdAt": "${item.created_at}"}),
         ret({"error_code": "OK", "error_message": "", "lotId": "${input.lotId}", "rows": "${rows}"}),
+    ],
+))
+
+# Recursive bidirectional lot genealogy (mes-demo style: reverse FG→raw + forward raw→FG/shipment).
+# direction: BOTH (default) | UPSTREAM | DOWNSTREAM.
+# H2: WITH must be top-level; RECURSIVE CTE needs explicit column list: name (c1, c2, ...) AS (...).
+_GENEALOGY_TREE_SQL = """
+WITH RECURSIVE upstream (lot_id, linked_from_lot_id, quantity, definition_id, created_at, depth, path) AS (
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''), g.created_at, 1,
+         CONCAT(g.output_lot_id, '>', g.input_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE g.output_lot_id = ?
+  UNION ALL
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''), g.created_at,
+         u.depth + 1, CONCAT(u.path, '>', g.input_lot_id)
+  FROM upstream u
+  JOIN emc_lot_genealogy g ON g.output_lot_id = u.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE u.depth < 15
+),
+downstream (lot_id, linked_from_lot_id, quantity, definition_id, created_at, depth, path) AS (
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''), g.created_at, 1,
+         CONCAT(g.input_lot_id, '>', g.output_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE g.input_lot_id = ?
+  UNION ALL
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''), g.created_at,
+         d.depth + 1, CONCAT(d.path, '>', g.output_lot_id)
+  FROM downstream d
+  JOIN emc_lot_genealogy g ON g.input_lot_id = d.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE d.depth < 15
+),
+tree (direction, lot_id, linked_from_lot_id, quantity, definition_id, depth, path, created_at) AS (
+  SELECT 'UPSTREAM', lot_id, linked_from_lot_id, quantity, definition_id, depth, path, created_at
+  FROM upstream
+  UNION ALL
+  SELECT 'DOWNSTREAM', lot_id, linked_from_lot_id, quantity, definition_id, depth, path, created_at
+  FROM downstream
+)
+SELECT direction, lot_id, linked_from_lot_id, quantity, definition_id, depth, path, created_at
+FROM tree
+WHERE (UPPER(COALESCE(NULLIF(TRIM(?), ''), 'BOTH')) = 'BOTH'
+       OR UPPER(TRIM(?)) = tree.direction)
+ORDER BY direction, depth, lot_id
+"""
+
+FUNCTIONS.append(fn(
+    "emc_track_genealogyTreeByLot",
+    [F("lotId"), F("direction")],
+    OUT(F("lotId"), F("direction"),
+        RL("rows", [F("direction"), F("lotId"), F("linkedFromLotId"), F("quantity"),
+                    F("definitionId"), F("depth"), F("path"), F("createdAt")])),
+    [
+        selN("edges", _GENEALOGY_TREE_SQL,
+             ["${input.lotId}", "${input.lotId}", "${input.direction}", "${input.direction}"]),
+        map_rows("rows", "${edges}", {
+            "direction": "${item.direction}", "lotId": "${item.lot_id}",
+            "linkedFromLotId": "${item.linked_from_lot_id}", "quantity": "${item.quantity}",
+            "definitionId": "${item.definition_id}", "depth": "${item.depth}",
+            "path": "${item.path}", "createdAt": "${item.created_at}"}),
+        ret({"error_code": "OK", "error_message": "", "lotId": "${input.lotId}",
+             "direction": "${input.direction}", "rows": "${rows}"}),
+    ],
+))
+
+# --- Part 2/4 extent (Physical Asset, Product, Capability, Ops Capability/Performance, MOM matrix)
+
+FUNCTIONS.append(fn(
+    "emc_asset_list",
+    [],
+    OUT(RL("rows", [F("assetId"), F("classId"), F("equipmentId"), F("serialNo"),
+                    F("manufacturer"), F("description"), F("status")])),
+    [
+        selN("rows_raw",
+             "SELECT asset_id, COALESCE(class_id, '') AS class_id, COALESCE(equipment_id, '') AS equipment_id, "
+             "COALESCE(serial_no, '') AS serial_no, COALESCE(manufacturer, '') AS manufacturer, "
+             "COALESCE(description, '') AS description, status FROM emc_physical_asset ORDER BY asset_id"),
+        map_rows("rows", "${rows_raw}", {
+            "assetId": "${item.asset_id}", "classId": "${item.class_id}",
+            "equipmentId": "${item.equipment_id}", "serialNo": "${item.serial_no}",
+            "manufacturer": "${item.manufacturer}", "description": "${item.description}",
+            "status": "${item.status}"}),
+        ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_product_list",
+    [],
+    OUT(RL("rows", [F("productId"), F("description"), F("fgDefinitionId"), F("status"), F("segments")])),
+    [
+        selN("rows_raw",
+             "SELECT p.product_id, COALESCE(p.description, '') AS description, "
+             "COALESCE(p.fg_definition_id, '') AS fg_definition_id, p.status, "
+             "(SELECT COUNT(*) FROM emc_product_segment ps WHERE ps.product_id = p.product_id) AS segments "
+             "FROM emc_product_definition p ORDER BY p.product_id"),
+        map_rows("rows", "${rows_raw}", {
+            "productId": "${item.product_id}", "description": "${item.description}",
+            "fgDefinitionId": "${item.fg_definition_id}", "status": "${item.status}",
+            "segments": "${item.segments}"}),
+        ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_capability_listResults",
+    [],
+    OUT(RL("rows", [F("resultId"), F("specId"), F("testName"), F("measuredValue"),
+                    F("result"), F("testedAt"), F("testedBy")])),
+    [
+        selN("rows_raw",
+             "SELECT CAST(r.result_id AS VARCHAR(64)) AS result_id, r.spec_id, s.test_name, "
+             "COALESCE(r.measured_value, '') AS measured_value, r.result, r.tested_at, "
+             "COALESCE(r.tested_by, '') AS tested_by "
+             "FROM emc_capability_test_result r "
+             "JOIN emc_capability_test_spec s ON s.spec_id = r.spec_id "
+             "ORDER BY r.tested_at DESC"),
+        map_rows("rows", "${rows_raw}", {
+            "resultId": "${item.result_id}", "specId": "${item.spec_id}",
+            "testName": "${item.test_name}", "measuredValue": "${item.measured_value}",
+            "result": "${item.result}", "testedAt": "${item.tested_at}",
+            "testedBy": "${item.tested_by}"}),
+        ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_capability_recordResult",
+    [F("specId"), F("measuredValue"), F("result"), F("testedBy")],
+    OUT(F("specId"), F("result")),
+    [
+        sel1("spec", "SELECT spec_id FROM emc_capability_test_spec WHERE spec_id = ?", ["${input.specId}"]),
+        fail_null("spec", "SPEC_NOT_FOUND", "Capability test spec not found"),
+        ex("INSERT INTO emc_capability_test_result (result_id, spec_id, measured_value, result, tested_by) "
+           "VALUES (gen_random_uuid(), ?, ?, ?, ?)",
+           ["${input.specId}", "${input.measuredValue}", "${input.result}", "${input.testedBy}"]),
+        ret({"error_code": "OK", "error_message": "", "specId": "${input.specId}", "result": "${input.result}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_opscap_list",
+    [],
+    OUT(RL("rows", [F("capabilityId"), F("operationsType"), F("equipmentId"), F("segmentId"),
+                    F("reason"), F("status")])),
+    [
+        selN("rows_raw",
+             "SELECT capability_id, operations_type, COALESCE(equipment_id, '') AS equipment_id, "
+             "COALESCE(segment_id, '') AS segment_id, COALESCE(reason, '') AS reason, status "
+             "FROM emc_operations_capability ORDER BY capability_id"),
+        map_rows("rows", "${rows_raw}", {
+            "capabilityId": "${item.capability_id}", "operationsType": "${item.operations_type}",
+            "equipmentId": "${item.equipment_id}", "segmentId": "${item.segment_id}",
+            "reason": "${item.reason}", "status": "${item.status}"}),
+        ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_opsperf_rollup",
+    [F("equipmentId"), F("shiftId")],
+    OUT(F("performanceId"), F("goodQty"), F("rejectQty"), F("runMin"), F("downtimeMin")),
+    [
+        sel1("agg",
+             "SELECT COALESCE((SELECT SUM(a.quantity) FROM emc_material_actual a "
+             "JOIN emc_job_response r ON r.response_id = a.response_id "
+             "JOIN emc_job_order o ON o.job_no = r.job_no "
+             "WHERE o.equipment_id = ? AND a.material_use = 'PRODUCED'), 0) AS good_qty, "
+             "COALESCE((SELECT SUM(d.qty_declared) FROM emc_defect_record d "
+             "JOIN emc_job_order o ON o.job_no = d.job_no WHERE o.equipment_id = ?), 0) AS reject_qty, "
+             "COALESCE((SELECT SUM(e.time_min) FROM emc_operations_event e "
+             "WHERE e.equipment_id = ? AND e.status = 'CLOSED'), 0) AS downtime_min "
+             "FROM (SELECT 1) x",
+             ["${input.equipmentId}", "${input.equipmentId}", "${input.equipmentId}"]),
+        ex("INSERT INTO emc_operations_performance "
+           "(performance_id, operations_type, equipment_id, shift_id, good_qty, reject_qty, run_min, downtime_min, note) "
+           "SELECT CAST(gen_random_uuid() AS VARCHAR(64)), 'PRODUCTION', ?, ?, ?, ?, 0, ?, 'Rollup from actuals/events'",
+           ["${input.equipmentId}", "${input.shiftId}",
+            "${agg.good_qty}", "${agg.reject_qty}", "${agg.downtime_min}"]),
+        ret({"error_code": "OK", "error_message": "", "performanceId": "${input.shiftId}",
+             "goodQty": "${agg.good_qty}", "rejectQty": "${agg.reject_qty}",
+             "runMin": "0", "downtimeMin": "${agg.downtime_min}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_mom_listActivities",
+    [],
+    OUT(RL("rows", [F("domain"), F("activity"), F("status"), F("note"), F("uiLink")])),
+    [
+        selN("rows_raw",
+             "SELECT domain, activity, status, COALESCE(note, '') AS note, COALESCE(ui_link, '') AS ui_link "
+             "FROM emc_mom_activity ORDER BY domain, activity"),
+        map_rows("rows", "${rows_raw}", {
+            "domain": "${item.domain}", "activity": "${item.activity}", "status": "${item.status}",
+            "note": "${item.note}", "uiLink": "${item.ui_link}"}),
+        ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_location_list",
+    [],
+    OUT(RL("rows", [F("locationId"), F("description"), F("locationKind"), F("equipmentId"),
+                    F("parentLocationId"), F("status")])),
+    [
+        selN("rows_raw",
+             "SELECT location_id, COALESCE(description, '') AS description, location_kind, "
+             "COALESCE(equipment_id, '') AS equipment_id, COALESCE(parent_location_id, '') AS parent_location_id, "
+             "status FROM emc_operational_location ORDER BY location_id"),
+        map_rows("rows", "${rows_raw}", {
+            "locationId": "${item.location_id}", "description": "${item.description}",
+            "locationKind": "${item.location_kind}", "equipmentId": "${item.equipment_id}",
+            "parentLocationId": "${item.parent_location_id}", "status": "${item.status}"}),
+        ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_domainschedule_list",
+    [F("domain")],
+    OUT(RL("rows", [F("scheduleId"), F("domain"), F("scheduleKind"), F("targetId"),
+                    F("quantity"), F("uom"), F("status"), F("note")])),
+    [
+        selN("rows_raw",
+             "SELECT schedule_id, domain, schedule_kind, COALESCE(target_id, '') AS target_id, "
+             "COALESCE(quantity, 0) AS quantity, COALESCE(uom, '') AS uom, status, COALESCE(note, '') AS note "
+             "FROM emc_domain_schedule "
+             "WHERE COALESCE(NULLIF(TRIM(?), ''), domain) = domain "
+             "ORDER BY domain, schedule_id",
+             ["${input.domain}"]),
+        map_rows("rows", "${rows_raw}", {
+            "scheduleId": "${item.schedule_id}", "domain": "${item.domain}",
+            "scheduleKind": "${item.schedule_kind}", "targetId": "${item.target_id}",
+            "quantity": "${item.quantity}", "uom": "${item.uom}",
+            "status": "${item.status}", "note": "${item.note}"}),
+        ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_domainschedule_upsert",
+    [F("scheduleId"), F("domain"), F("scheduleKind"), F("targetId"), F("quantity"), F("uom"), F("note")],
+    OUT(F("scheduleId"), F("status")),
+    [
+        ex("UPDATE emc_domain_schedule SET domain = ?, schedule_kind = ?, target_id = ?, "
+           "quantity = CAST(? AS NUMERIC), uom = ?, note = ?, status = 'PLANNED' "
+           "WHERE schedule_id = ?",
+           ["${input.domain}", "${input.scheduleKind}", "${input.targetId}",
+            "${input.quantity}", "${input.uom}", "${input.note}", "${input.scheduleId}"]),
+        ex("INSERT INTO emc_domain_schedule "
+           "(schedule_id, domain, schedule_kind, target_id, quantity, uom, status, note) "
+           "SELECT ?, ?, ?, ?, CAST(? AS NUMERIC), ?, 'PLANNED', ? "
+           "WHERE NOT EXISTS (SELECT 1 FROM emc_domain_schedule WHERE schedule_id = ?)",
+           ["${input.scheduleId}", "${input.domain}", "${input.scheduleKind}",
+            "${input.targetId}", "${input.quantity}", "${input.uom}", "${input.note}",
+            "${input.scheduleId}"]),
+        ret({"error_code": "OK", "error_message": "", "scheduleId": "${input.scheduleId}",
+             "status": "PLANNED"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_qa_defectRateKpi",
+    [],
+    OUT(F("defectCount"), F("confirmedQty"), F("jobsWithDefects"), F("defectRatePct")),
+    [
+        sel1("kpi",
+             "SELECT COUNT(*) AS defect_count, "
+             "COALESCE(SUM(COALESCE(qty_confirmed, qty_declared)), 0) AS confirmed_qty, "
+             "COUNT(DISTINCT job_no) AS jobs_with_defects, "
+             "CASE WHEN (SELECT COUNT(*) FROM emc_job_order) = 0 THEN 0 "
+             "ELSE ROUND(100.0 * COUNT(DISTINCT job_no) / (SELECT COUNT(*) FROM emc_job_order), 2) END "
+             "AS defect_rate_pct "
+             "FROM emc_defect_record"),
+        ret({"error_code": "OK", "error_message": "",
+             "defectCount": "${kpi.defect_count}", "confirmedQty": "${kpi.confirmed_qty}",
+             "jobsWithDefects": "${kpi.jobs_with_defects}", "defectRatePct": "${kpi.defect_rate_pct}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_inv_turnsKpi",
+    [],
+    OUT(F("stockQty"), F("consumedQty"), F("producedQty"), F("turnsApprox")),
+    [
+        sel1("kpi",
+             "SELECT COALESCE((SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 0) AS stock_qty, "
+             "COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'CONSUMED'), 0) AS consumed_qty, "
+             "COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'PRODUCED'), 0) AS produced_qty, "
+             "CASE WHEN COALESCE((SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 0) = 0 THEN 0 "
+             "ELSE ROUND(COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'CONSUMED'), 0) "
+             "/ (SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 3) END AS turns_approx"),
+        ret({"error_code": "OK", "error_message": "",
+             "stockQty": "${kpi.stock_qty}", "consumedQty": "${kpi.consumed_qty}",
+             "producedQty": "${kpi.produced_qty}", "turnsApprox": "${kpi.turns_approx}"}),
+    ],
+))
+
+FUNCTIONS.append(fn(
+    "emc_maint_mttrMtbf",
+    [],
+    OUT(F("closedEvents"), F("totalDowntimeMin"), F("mttrMin"), F("mtbfMin")),
+    [
+        sel1("kpi",
+             "SELECT COUNT(*) AS closed_events, "
+             "COALESCE(SUM(time_min), 0) AS total_downtime_min, "
+             "CASE WHEN COUNT(*) = 0 THEN 0 ELSE ROUND(COALESCE(SUM(time_min), 0) / COUNT(*), 2) END AS mttr_min, "
+             "CASE WHEN COUNT(*) <= 1 THEN 480 "
+             "ELSE ROUND(480.0 * (SELECT COUNT(DISTINCT equipment_id) FROM emc_work_calendar) / COUNT(*), 2) END "
+             "AS mtbf_min "
+             "FROM emc_operations_event "
+             "WHERE status = 'CLOSED' AND COALESCE(time_min, 0) > 0"),
+        ret({"error_code": "OK", "error_message": "",
+             "closedEvents": "${kpi.closed_events}", "totalDowntimeMin": "${kpi.total_downtime_min}",
+             "mttrMin": "${kpi.mttr_min}", "mtbfMin": "${kpi.mtbf_min}"}),
     ],
 ))
 
@@ -1431,7 +1994,7 @@ FUNCTIONS.append(fn(
         fail_null("resp", "NO_RUNNING_RESPONSE", "No running response for the staging job order"),
         # Part 4 Material Actual (consumed)
         ex("INSERT INTO emc_material_actual (id, response_id, lot_id, definition_id, material_use, quantity, uom) "
-           "VALUES (RANDOM_UUID(), ?, ?, ?, 'CONSUMED', ?, ?)",
+           "VALUES (gen_random_uuid(), ?, ?, ?, 'CONSUMED', ?, ?)",
            ["${resp.response_id}", "${lot.lot_id}", "${lot.definition_id}", "${input.quantity}", "${lot.base_uom}"]),
         ex("UPDATE emc_material_lot SET quantity = GREATEST(quantity - ?, 0), "
            "weight_kg = CASE WHEN base_uom = 'kg' THEN GREATEST(COALESCE(weight_kg, 0) - ?, 0) ELSE weight_kg END, "
@@ -1469,11 +2032,11 @@ FUNCTIONS.append(fn(
         fail_null("resp", "NO_RUNNING_RESPONSE", "No running response for job order"),
         # Part 4 Material Actual (produced)
         ex("INSERT INTO emc_material_actual (id, response_id, lot_id, definition_id, material_use, quantity, uom) "
-           "VALUES (RANDOM_UUID(), ?, ?, ?, 'PRODUCED', ?, ?)",
+           "VALUES (gen_random_uuid(), ?, ?, ?, 'PRODUCED', ?, ?)",
            ["${resp.response_id}", "${input.lotId}", "${input.definitionId}", "${input.quantity}", "${def.base_uom}"]),
         # Genealogy edges: all consumed lots of this response -> new lot
         ex("INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, response_id, quantity) "
-           "SELECT RANDOM_UUID(), ma.lot_id, ?, ma.response_id, ma.quantity FROM emc_material_actual ma "
+           "SELECT gen_random_uuid(), ma.lot_id, ?, ma.response_id, ma.quantity FROM emc_material_actual ma "
            "WHERE ma.response_id = ? AND ma.material_use = 'CONSUMED' AND ma.lot_id IS NOT NULL "
            "AND NOT EXISTS (SELECT 1 FROM emc_lot_genealogy g WHERE g.input_lot_id = ma.lot_id "
            "AND g.output_lot_id = ? AND g.response_id = ma.response_id)",
@@ -1509,7 +2072,7 @@ FUNCTIONS.append(fn(
         fail_null("doc", "DOC_NOT_FOUND", "Inventory document not found"),
         fail_ne("doc.status", "DRAFT", "INVALID_STATE", "Lines can be added only to DRAFT documents"),
         ex("INSERT INTO emc_inventory_document_line (line_id, doc_id, definition_id, lot_id, quantity, source_location, dest_location) "
-           "VALUES (RANDOM_UUID(), ?, ?, NULLIF(?, ''), COALESCE(NULLIF(?, ''), '0'), NULLIF(?, ''), NULLIF(?, ''))",
+           "VALUES (gen_random_uuid(), ?, ?, NULLIF(?, ''), COALESCE(NULLIF(?, ''), '0'), NULLIF(?, ''), NULLIF(?, ''))",
            ["${input.docId}", "${input.definitionId}", "${input.lotId}", "${input.quantity}",
             "${input.sourceLocation}", "${input.destLocation}"]),
         ret({"error_code": "OK", "error_message": "", "docId": "${input.docId}"}),
@@ -1528,7 +2091,7 @@ FUNCTIONS.append(fn(
            "version_no = version_no + 1 WHERE doc_id = ?", ["${input.docId}"]),
         # Part 5: PROCESS Material Lot (movement document) to ERP, idempotent
         ex("INSERT INTO emc_erp_outbox (id, verb, noun, object_id, payload_json, idempotency_key, status) "
-           "SELECT RANDOM_UUID(), 'PROCESS', 'MATERIAL_LOT', ?, "
+           "SELECT gen_random_uuid(), 'PROCESS', 'MATERIAL_LOT', ?, "
            "CONCAT('{\"docId\":\"', ?, '\",\"kind\":\"', ?, '\"}'), CONCAT('INVDOC-SUBMIT:', ?), 'PENDING' "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_erp_outbox WHERE idempotency_key = CONCAT('INVDOC-SUBMIT:', ?))",
            ["${input.docId}", "${input.docId}", "${doc.kind}", "${input.docId}", "${input.docId}"]),
@@ -1615,11 +2178,12 @@ FUNCTIONS.append(fn(
                  "defectNo": "${input.defectNo}", "status": ""}),
         ]),
         ex("INSERT INTO emc_defect_record (defect_id, defect_no, job_no, lot_id, defect_type_id, reason_code, severity, qty_declared, created_by) "
-           "VALUES (RANDOM_UUID(), ?, ?, NULLIF(?, ''), ?, NULLIF(?, ''), COALESCE(NULLIF(?, ''), 'MINOR'), COALESCE(NULLIF(?, ''), '1'), NULLIF(?, ''))",
+           "VALUES (gen_random_uuid(), ?, ?, NULLIF(?, ''), ?, NULLIF(?, ''), COALESCE(NULLIF(?, ''), 'MINOR'), "
+           "COALESCE(CAST(NULLIF(CAST(? AS VARCHAR), '') AS NUMERIC), 1), NULLIF(?, ''))",
            ["${input.defectNo}", "${input.jobNo}", "${input.lotId}", "${input.defectTypeId}",
             "${input.reasonCode}", "${input.severity}", "${input.qtyDeclared}", "${input.createdBy}"]),
         ex("INSERT INTO emc_defect_status_history (id, defect_no, from_status, to_status, actor, note) "
-           "VALUES (RANDOM_UUID(), ?, NULL, 'REGISTERED', ?, NULL)",
+           "VALUES (gen_random_uuid(), ?, NULL, 'REGISTERED', ?, NULL)",
            ["${input.defectNo}", "${input.createdBy}"]),
         # CRITICAL severity blocks the affected lot (quality hold)
         when({"var": "input.severity", "equals": "CRITICAL"}, [
@@ -1639,12 +2203,12 @@ FUNCTIONS.append(fn(
         fail_null("d", "DEFECT_NOT_FOUND", "Defect not found"),
         fail_ne("d.status", "REGISTERED", "INVALID_STATE", "Only REGISTERED defects can be confirmed"),
         ex("UPDATE emc_defect_record SET status = 'CONFIRMED', "
-           "qty_confirmed = COALESCE(CAST(NULLIF(?, '') AS NUMERIC), qty_declared), "
+           "qty_confirmed = COALESCE(CAST(NULLIF(CAST(? AS VARCHAR), '') AS NUMERIC), qty_declared), "
            "reason_code = COALESCE(NULLIF(?, ''), reason_code) "
            "WHERE defect_no = ? AND status = 'REGISTERED'",
            ["${input.qtyConfirmed}", "${input.reasonCode}", "${input.defectNo}"]),
         ex("INSERT INTO emc_defect_status_history (id, defect_no, from_status, to_status, actor, note) "
-           "VALUES (RANDOM_UUID(), ?, 'REGISTERED', 'CONFIRMED', ?, NULL)",
+           "VALUES (gen_random_uuid(), ?, 'REGISTERED', 'CONFIRMED', ?, NULL)",
            ["${input.defectNo}", "${input.by}"]),
         ret({"error_code": "OK", "error_message": "", "defectNo": "${input.defectNo}", "status": "CONFIRMED"}),
     ],
@@ -1661,7 +2225,7 @@ FUNCTIONS.append(fn(
         ex("UPDATE emc_defect_record SET status = 'REJECTED' WHERE defect_no = ? AND status = 'REGISTERED'",
            ["${input.defectNo}"]),
         ex("INSERT INTO emc_defect_status_history (id, defect_no, from_status, to_status, actor, note) "
-           "VALUES (RANDOM_UUID(), ?, 'REGISTERED', 'REJECTED', ?, NULLIF(?, ''))",
+           "VALUES (gen_random_uuid(), ?, 'REGISTERED', 'REJECTED', ?, NULLIF(?, ''))",
            ["${input.defectNo}", "${input.by}", "${input.note}"]),
         ret({"error_code": "OK", "error_message": "", "defectNo": "${input.defectNo}", "status": "REJECTED"}),
     ],
@@ -1678,7 +2242,7 @@ FUNCTIONS.append(fn(
         ex("UPDATE emc_defect_record SET status = 'CLOSED' WHERE defect_no = ? AND status = 'CONFIRMED'",
            ["${input.defectNo}"]),
         ex("INSERT INTO emc_defect_status_history (id, defect_no, from_status, to_status, actor, note) "
-           "VALUES (RANDOM_UUID(), ?, 'CONFIRMED', 'CLOSED', ?, NULL)",
+           "VALUES (gen_random_uuid(), ?, 'CONFIRMED', 'CLOSED', ?, NULL)",
            ["${input.defectNo}", "${input.by}"]),
         # release the quality hold on the lot
         ex("UPDATE emc_material_lot SET status = 'STOCK' WHERE lot_id = ? AND status = 'BLOCKED_QC'",
@@ -1722,7 +2286,7 @@ FUNCTIONS.append(fn(
             ]),
         ]),
         ex("INSERT INTO emc_qa_test_result (id, job_no, lot_id, test_name, result, measurements_json) "
-           "VALUES (RANDOM_UUID(), NULLIF(?, ''), NULLIF(?, ''), ?, ?, NULLIF(?, ''))",
+           "VALUES (gen_random_uuid(), NULLIF(?, ''), NULLIF(?, ''), ?, ?, NULLIF(?, ''))",
            ["${input.jobNo}", "${input.lotId}", "${input.testName}", "${input.result}", "${input.measurementsJson}"]),
         ret({"error_code": "OK", "error_message": "", "testName": "${input.testName}", "result": "${input.result}"}),
     ],
@@ -1840,7 +2404,9 @@ FUNCTIONS.append(fn(
         ]),
         ex("INSERT INTO emc_operations_event (event_id, definition_code, job_no, equipment_id, lot_id, "
            "length_m, time_min, comment_text, status, registered_by) "
-           "VALUES (RANDOM_UUID(), ?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), "
+           "VALUES (gen_random_uuid(), ?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), "
+           "CAST(NULLIF(CAST(? AS VARCHAR), '') AS NUMERIC), "
+           "CAST(NULLIF(CAST(? AS VARCHAR), '') AS NUMERIC), "
            "NULLIF(?, ''), CASE WHEN ? = 'AVAILABILITY' THEN 'OPEN' ELSE 'CLOSED' END, NULLIF(?, ''))",
            ["${input.definitionCode}", "${input.jobNo}", "${input.equipmentId}", "${input.lotId}",
             "${input.lengthM}", "${input.timeMin}", "${input.comment}", "${def.oee_bucket}", "${input.by}"]),
@@ -1857,11 +2423,11 @@ FUNCTIONS.append(fn(
         fail_null("input.signalCode", "VALIDATION", "signalCode is required"),
         when({"var": "input.isAuto", "equals": "true"}, [
             ex("INSERT INTO emc_machine_signal (signal_id, equipment_id, signal_code, is_auto) "
-               "VALUES (RANDOM_UUID(), ?, ?, true)",
+               "VALUES (gen_random_uuid(), ?, ?, true)",
                ["${input.equipmentId}", "${input.signalCode}"]),
         ], [
             ex("INSERT INTO emc_machine_signal (signal_id, equipment_id, signal_code, is_auto) "
-               "VALUES (RANDOM_UUID(), ?, ?, false)",
+               "VALUES (gen_random_uuid(), ?, ?, false)",
                ["${input.equipmentId}", "${input.signalCode}"]),
         ]),
         ret({"error_code": "OK", "error_message": "", "equipmentId": "${input.equipmentId}",
@@ -1946,7 +2512,7 @@ FUNCTIONS.append(fn(
         sel1("p", "SELECT person_id FROM emc_person WHERE person_id = ?", ["${input.personId}"]),
         fail_null("p", "PERSON_NOT_FOUND", "Person not found"),
         ex("INSERT INTO emc_shift_assignment (id, shift_id, person_id, handover_from_id) "
-           "SELECT RANDOM_UUID(), ?, ?, NULLIF(?, '') "
+           "SELECT gen_random_uuid(), ?, ?, NULLIF(?, '') "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_shift_assignment WHERE shift_id = ? AND person_id = ?)",
            ["${input.shiftId}", "${input.personId}", "${input.handoverFromId}",
             "${input.shiftId}", "${input.personId}"]),
@@ -2039,7 +2605,7 @@ FUNCTIONS.append(fn(
         fail_null("input.noun", "VALIDATION", "noun is required"),
         fail_null("input.idempotencyKey", "VALIDATION", "idempotencyKey is required"),
         ex("INSERT INTO emc_erp_outbox (id, verb, noun, object_id, payload_json, idempotency_key, status) "
-           "SELECT RANDOM_UUID(), ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, 'PENDING' "
+           "SELECT gen_random_uuid(), ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, 'PENDING' "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_erp_outbox WHERE idempotency_key = ?)",
            ["${input.verb}", "${input.noun}", "${input.objectId}", "${input.payloadJson}",
             "${input.idempotencyKey}", "${input.idempotencyKey}"]),
@@ -2061,7 +2627,7 @@ FUNCTIONS.append(fn(
         ex("UPDATE emc_erp_outbox SET status = 'IN_FLIGHT' WHERE status = 'PENDING'"),
         sel1("cnt", "SELECT COUNT(*) AS cnt FROM emc_erp_outbox WHERE status = 'IN_FLIGHT'"),
         ex("INSERT INTO emc_integration_log (id, direction, verb, noun, success, code, message) "
-           "SELECT RANDOM_UUID(), 'OUT', verb, noun, true, 'OK', 'Simulated transport, ACK ACCEPTED' "
+           "SELECT gen_random_uuid(), 'OUT', verb, noun, true, 'OK', 'Simulated transport, ACK ACCEPTED' "
            "FROM emc_erp_outbox WHERE status = 'IN_FLIGHT'"),
         ex("UPDATE emc_erp_outbox SET status = 'ACKED', ack_code = 'ACCEPTED' WHERE status = 'IN_FLIGHT'"),
         ret({"error_code": "OK", "error_message": "", "transported": "${cnt.cnt}"}),
@@ -2080,7 +2646,7 @@ FUNCTIONS.append(fn(
                  "idempotencyKey": "${input.idempotencyKey}", "status": "DUPLICATE"}),
         ]),
         ex("INSERT INTO emc_erp_inbox (id, verb, noun, payload_json, idempotency_key, status) "
-           "VALUES (RANDOM_UUID(), ?, ?, ?, ?, 'RECEIVED')",
+           "VALUES (gen_random_uuid(), ?, ?, ?, ?, 'RECEIVED')",
            ["${input.verb}", "${input.noun}", "${input.payloadJson}", "${input.idempotencyKey}"]),
         # dispatch by Part 5 noun
         when({"var": "input.noun", "equals": "OPERATIONS_SCHEDULE"}, [
@@ -2172,7 +2738,7 @@ FUNCTIONS.append(fn(
            ["${input.equipmentId}", "${input.shiftLabel}"]),
         ex("INSERT INTO emc_oee_shift (id, equipment_id, shift_label, planned_min, availability_loss_min, "
            "performance_loss_min, produced_qty, good_qty, availability_pct, performance_pct, quality_pct, oee_pct) "
-           "SELECT RANDOM_UUID(), ?, ?, p.planned, p.av, p.pf, p.pr, p.good, p.a_pct, p.p_pct, p.q_pct, "
+           "SELECT gen_random_uuid(), ?, ?, p.planned, p.av, p.pf, p.pr, p.good, p.a_pct, p.p_pct, p.q_pct, "
            "ROUND(p.a_pct * p.p_pct * p.q_pct / 10000, 2) FROM ("
            "SELECT b.planned, b.av, b.pf, b.pr, GREATEST(b.pr - b.df, 0) AS good, "
            "CASE WHEN b.planned > 0 THEN ROUND(100 * (b.planned - b.av) / b.planned, 2) ELSE 0 END AS a_pct, "
@@ -2573,6 +3139,215 @@ ORDER BY e.started_at DESC
          ("id", "ID"), ("definition_code", "Code"), ("name", "Name"), ("oee_bucket", "OEE Bucket"),
          ("job_no", "Job #"), ("equipment_id", "Equipment"), ("time_min", "Time min"),
          ("status", "Status"), ("started_at", "Started"), ("ended_at", "Ended")]]},
+    {"reportId": "emc-genealogy-edges", "title": "Lot Genealogy Edges",
+     "description": "All lot→lot genealogy edges (ISA-95 production tracking).",
+     "query": """
+SELECT g.input_lot_id, COALESCE(li.definition_id, '') AS input_material,
+       g.output_lot_id, COALESCE(lo.definition_id, '') AS output_material,
+       g.quantity, g.created_at
+FROM emc_lot_genealogy g
+LEFT JOIN emc_material_lot li ON li.lot_id = g.input_lot_id
+LEFT JOIN emc_material_lot lo ON lo.lot_id = g.output_lot_id
+ORDER BY g.created_at, g.input_lot_id, g.output_lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("input_lot_id", "Input Lot"), ("input_material", "Input Material"),
+         ("output_lot_id", "Output Lot"), ("output_material", "Output Material"),
+         ("quantity", "Qty"), ("created_at", "Created")]]},
+    {"reportId": "emc-genealogy-upstream-fg", "title": "Reverse Trace (FG → Raw)",
+     "description": "Multi-level UPSTREAM tree for seed FG lot LOT-FG-0001 (mes-demo reverse).",
+     "query": """
+WITH RECURSIVE upstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+         CONCAT(g.output_lot_id, '>', g.input_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE g.output_lot_id = 'LOT-FG-0001'
+  UNION ALL
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+         u.depth + 1, CONCAT(u.path, '>', g.input_lot_id)
+  FROM upstream u
+  JOIN emc_lot_genealogy g ON g.output_lot_id = u.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE u.depth < 15
+)
+SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+FROM upstream
+ORDER BY depth, lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
+    {"reportId": "emc-genealogy-downstream-raw", "title": "Forward Trace (Raw → FG)",
+     "description": "Multi-level DOWNSTREAM tree for seed raw lot LOT-RAW-0001 (mes-demo forward).",
+     "query": """
+WITH RECURSIVE downstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+         CONCAT(g.input_lot_id, '>', g.output_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE g.input_lot_id = 'LOT-RAW-0001'
+  UNION ALL
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+         d.depth + 1, CONCAT(d.path, '>', g.output_lot_id)
+  FROM downstream d
+  JOIN emc_lot_genealogy g ON g.input_lot_id = d.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE d.depth < 15
+)
+SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+FROM downstream
+ORDER BY depth, lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
+    {"reportId": "emc-genealogy-mass-balance", "title": "Genealogy Mass Balance (Actuals)",
+     "description": "Consumed vs produced quantities from material actuals (mass-balance view).",
+     "query": """
+SELECT COALESCE(a.definition_id, '') AS material_id, a.material_use,
+       SUM(a.quantity) AS qty, COALESCE(MAX(a.uom), '') AS uom,
+       COUNT(*) AS rows_n
+FROM emc_material_actual a
+GROUP BY a.definition_id, a.material_use
+ORDER BY a.definition_id, a.material_use
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("material_id", "Material"), ("material_use", "Use"),
+         ("qty", "Qty"), ("uom", "UOM"), ("rows_n", "Rows")]]},
+    {"reportId": "emc-mom-activity-matrix", "title": "MOM Activity Matrix (IEC 62264-3)",
+     "description": "Part 3 4×8 activity coverage: Production/Quality/Inventory/Maintenance × 8 activities.",
+     "query": """
+SELECT domain, activity, status, COALESCE(note, '') AS note, COALESCE(ui_link, '') AS ui_link
+FROM emc_mom_activity
+ORDER BY CASE domain
+  WHEN 'PRODUCTION' THEN 1 WHEN 'QUALITY' THEN 2 WHEN 'INVENTORY' THEN 3 ELSE 4 END,
+  CASE activity
+  WHEN 'DEFINITION' THEN 1 WHEN 'RESOURCE' THEN 2 WHEN 'DETAILED_SCHEDULING' THEN 3
+  WHEN 'DISPATCHING' THEN 4 WHEN 'EXECUTION' THEN 5 WHEN 'DATA_COLLECTION' THEN 6
+  WHEN 'TRACKING' THEN 7 ELSE 8 END
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("domain", "Domain"), ("activity", "Activity"), ("status", "Status"),
+         ("note", "Note"), ("ui_link", "UI")]]},
+    {"reportId": "emc-physical-asset-report", "title": "Physical Assets (Part 2)",
+     "description": "Physical asset register linked to equipment hierarchy.",
+     "query": """
+SELECT a.asset_id, COALESCE(a.class_id, '') AS class_id, COALESCE(a.equipment_id, '') AS equipment_id,
+       COALESCE(a.serial_no, '') AS serial_no, COALESCE(a.manufacturer, '') AS manufacturer,
+       COALESCE(a.description, '') AS description, a.status
+FROM emc_physical_asset a ORDER BY a.asset_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("asset_id", "Asset"), ("class_id", "Class"), ("equipment_id", "Equipment"),
+         ("serial_no", "Serial"), ("manufacturer", "OEM"), ("description", "Description"),
+         ("status", "Status")]]},
+    {"reportId": "emc-product-definition-report", "title": "Product Definitions (Part 2)",
+     "description": "Product definitions with FG material and process segments.",
+     "query": """
+SELECT p.product_id, COALESCE(p.description, '') AS description,
+       COALESCE(p.fg_definition_id, '') AS fg_definition_id, p.status,
+       (SELECT COUNT(*) FROM emc_product_segment ps WHERE ps.product_id = p.product_id) AS segments
+FROM emc_product_definition p ORDER BY p.product_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("product_id", "Product"), ("description", "Description"),
+         ("fg_definition_id", "FG Material"), ("status", "Status"), ("segments", "Segments")]]},
+    {"reportId": "emc-ops-capability-report", "title": "Operations Capability (Part 4)",
+     "description": "What each work unit is capable of running.",
+     "query": """
+SELECT capability_id, operations_type, COALESCE(equipment_id, '') AS equipment_id,
+       COALESCE(segment_id, '') AS segment_id, COALESCE(reason, '') AS reason, status
+FROM emc_operations_capability ORDER BY capability_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("capability_id", "Capability"), ("operations_type", "Type"),
+         ("equipment_id", "Equipment"), ("segment_id", "Segment"),
+         ("reason", "Reason"), ("status", "Status")]]},
+    {"reportId": "emc-capability-test-report", "title": "Capability Test Results (Part 2)",
+     "description": "Capability test specs and latest results.",
+     "query": """
+SELECT s.spec_id, s.target_kind, s.target_id, s.test_name, COALESCE(s.criterion, '') AS criterion,
+       COALESCE(r.measured_value, '') AS measured_value, COALESCE(r.result, '') AS result,
+       r.tested_at
+FROM emc_capability_test_spec s
+LEFT JOIN emc_capability_test_result r ON r.spec_id = s.spec_id
+ORDER BY s.spec_id, r.tested_at DESC
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("spec_id", "Spec"), ("target_kind", "Target Kind"), ("target_id", "Target"),
+         ("test_name", "Test"), ("criterion", "Criterion"), ("measured_value", "Measured"),
+         ("result", "Result"), ("tested_at", "Tested At")]]},
+    {"reportId": "emc-operational-location-report", "title": "Operational Locations (Part 2)",
+     "description": "Operational locations linked to equipment / storage hierarchy.",
+     "query": """
+SELECT location_id, COALESCE(description, '') AS description, location_kind,
+       COALESCE(equipment_id, '') AS equipment_id, COALESCE(parent_location_id, '') AS parent_location_id,
+       status
+FROM emc_operational_location ORDER BY location_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("location_id", "Location"), ("description", "Description"), ("location_kind", "Kind"),
+         ("equipment_id", "Equipment"), ("parent_location_id", "Parent"), ("status", "Status")]]},
+    {"reportId": "emc-domain-schedule-report", "title": "Domain Schedules (Part 3)",
+     "description": "Detailed scheduling across Production / Quality / Inventory / Maintenance.",
+     "query": """
+SELECT schedule_id, domain, schedule_kind, COALESCE(target_id, '') AS target_id,
+       quantity, COALESCE(uom, '') AS uom, status, COALESCE(note, '') AS note
+FROM emc_domain_schedule
+ORDER BY CASE domain
+  WHEN 'PRODUCTION' THEN 1 WHEN 'QUALITY' THEN 2 WHEN 'INVENTORY' THEN 3 ELSE 4 END,
+  schedule_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("schedule_id", "Schedule"), ("domain", "Domain"), ("schedule_kind", "Kind"),
+         ("target_id", "Target"), ("quantity", "Qty"), ("uom", "UOM"),
+         ("status", "Status"), ("note", "Note")]]},
+    {"reportId": "emc-qa-defect-rate-report", "title": "Quality Defect Rate KPI",
+     "description": "Defect counts and share of jobs with defects (Part 3 performance analysis).",
+     "query": """
+SELECT COUNT(*) AS defect_count,
+       COALESCE(SUM(COALESCE(qty_confirmed, qty_declared)), 0) AS confirmed_qty,
+       COUNT(DISTINCT job_no) AS jobs_with_defects,
+       (SELECT COUNT(*) FROM emc_job_order) AS job_count,
+       CASE WHEN (SELECT COUNT(*) FROM emc_job_order) = 0 THEN 0
+            ELSE ROUND(100.0 * COUNT(DISTINCT job_no) / (SELECT COUNT(*) FROM emc_job_order), 2)
+       END AS defect_rate_pct
+FROM emc_defect_record
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("defect_count", "Defects"), ("confirmed_qty", "Confirmed Qty"),
+         ("jobs_with_defects", "Jobs w/ Defects"), ("job_count", "Jobs"),
+         ("defect_rate_pct", "Defect Rate %")]]},
+    {"reportId": "emc-inv-turns-report", "title": "Inventory Turns KPI",
+     "description": "Approx inventory turns from stock vs consumed actuals.",
+     "query": """
+SELECT COALESCE((SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 0) AS stock_qty,
+       COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'CONSUMED'), 0) AS consumed_qty,
+       COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'PRODUCED'), 0) AS produced_qty,
+       CASE WHEN COALESCE((SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 0) = 0 THEN 0
+            ELSE ROUND(COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'CONSUMED'), 0)
+                 / (SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 3)
+       END AS turns_approx
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("stock_qty", "Stock Qty"), ("consumed_qty", "Consumed"),
+         ("produced_qty", "Produced"), ("turns_approx", "Turns ≈")]]},
+    {"reportId": "emc-maint-mttr-report", "title": "Maintenance MTTR / MTBF",
+     "description": "MTTR from closed downtime events; MTBF heuristic from shift calendar.",
+     "query": """
+SELECT COUNT(*) AS closed_events,
+       COALESCE(SUM(time_min), 0) AS total_downtime_min,
+       CASE WHEN COUNT(*) = 0 THEN 0 ELSE ROUND(COALESCE(SUM(time_min), 0) / COUNT(*), 2) END AS mttr_min,
+       CASE WHEN COUNT(*) <= 1 THEN 480
+            ELSE ROUND(480.0 * (SELECT COUNT(DISTINCT equipment_id) FROM emc_work_calendar) / COUNT(*), 2)
+       END AS mtbf_min
+FROM emc_operations_event
+WHERE status = 'CLOSED' AND COALESCE(time_min, 0) > 0
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("closed_events", "Closed Events"), ("total_downtime_min", "Downtime Min"),
+         ("mttr_min", "MTTR Min"), ("mtbf_min", "MTBF Min ≈")]]},
 ]
 
 DASHBOARDS = [
@@ -2686,7 +3461,8 @@ DASHBOARDS = [
                                  _sel("equipmentId", "Оборудование", "emc-equipment-catalog", "code", "name"),
                                  {"name": "timeMin", "label": "Длительность, мин", "type": "number", "defaultValue": ""},
                                  {"name": "lengthM", "label": "Метраж, м", "type": "number", "defaultValue": ""},
-                                 {"name": "comment", "label": "Комментарий", "type": "textarea", "defaultValue": ""}],
+                                 {"name": "comment", "label": "Комментарий", "type": "textarea", "defaultValue": ""},
+                                 {"name": "by", "label": "Кем", "type": "text", "defaultValue": "operator"}],
                                 "Зарегистрировать"),
                    _form_widget("closeEvent", "Закрыть событие", 0, 36, 28, 11, "emc_event_close",
                                 [_sel("eventId", "Событие", "emc-event-journal", "id", "name", required=True),
@@ -2704,6 +3480,113 @@ DASHBOARDS = [
                                   statusDotColumnsJson=json.dumps(["status"])),
                    _report_widget("shifts", "KPI смен (OEE)", 0, 47, 84, 20, "root.platform.reports.emc-oee-shift-report"),
                ]),
+    _dashboard("root.platform.dashboards.emc-genealogy", "Генеалогия партии",
+               "Прослеживаемость партий во всех направлениях: обратная (ГП→сырьё) и прямая (сырьё→ГП).",
+               [
+                   _html_widget("help", "Как пользоваться", 0, 0, 84, 12,
+                                "<p><b>Обратная</b> (ГП → сырьё): выберите партию ГП "
+                                "(seed <code>LOT-FG-0001</code>) и направление <code>UPSTREAM</code> "
+                                "— дерево входов до сырья.</p>"
+                                "<p><b>Прямая</b> (сырьё → ГП/отгрузка): партия сырья "
+                                "(seed <code>LOT-RAW-0001</code>) и <code>DOWNSTREAM</code>.</p>"
+                                "<p><code>BOTH</code> — оба направления. Рёбра пишутся при "
+                                "<code>emc_matlot_consume</code> / <code>emc_matlot_produce</code> "
+                                "и в seed-цепочке RAW→WIP→FG.</p>"),
+                   _form_widget("trace", "Запрос генеалогии", 0, 12, 28, 28, "emc_track_genealogyTreeByLot",
+                                [_sel("lotId", "Партия (лот)", "emc-stock-report", "lot_id", "material_id",
+                                      required=True, default="LOT-FG-0001"),
+                                 _static("direction", "Направление",
+                                         ["BOTH", "UPSTREAM", "DOWNSTREAM"], default="UPSTREAM")],
+                                "Построить дерево"),
+                   _func_widget("demoReverse", "Демо: обратная (ГП)", 28, 12, 28, 14,
+                                "emc_track_genealogyTreeByLot", "ГП → сырьё",
+                                {"lotId": "LOT-FG-0001", "direction": "UPSTREAM"}),
+                   _func_widget("demoForward", "Демо: прямая (сырьё)", 56, 12, 28, 14,
+                                "emc_track_genealogyTreeByLot", "Сырьё → ГП",
+                                {"lotId": "LOT-RAW-0001", "direction": "DOWNSTREAM"}),
+                   _func_widget("demoHop", "Соседи (1 hop)", 28, 26, 28, 14,
+                                "emc_track_genealogyByLot", "INPUT + OUTPUT",
+                                {"lotId": "LOT-WIP-0001"}),
+                   _report_widget("upstream", "Обратная цепочка (seed ГП)", 0, 40, 42, 28,
+                                  "root.platform.reports.emc-genealogy-upstream-fg"),
+                   _report_widget("downstream", "Прямая цепочка (seed сырьё)", 42, 40, 42, 28,
+                                  "root.platform.reports.emc-genealogy-downstream-raw"),
+                   _report_widget("edges", "Все рёбра генеалогии", 0, 68, 42, 24,
+                                  "root.platform.reports.emc-genealogy-edges", filterable=True),
+                   _report_widget("balance", "Масс-баланс (actuals)", 42, 68, 42, 24,
+                                  "root.platform.reports.emc-genealogy-mass-balance"),
+                   _report_widget("defects", "Дефекты (зона риска / QC)", 0, 92, 84, 22,
+                                  "root.platform.reports.emc-defect-report",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "severity"])),
+               ]),
+    _dashboard("root.platform.dashboards.emc-mom-matrix", "MOM (IEC 62264-3)",
+               "Матрица деятельности Level 3: Production / Quality / Inventory / Maintenance × 8 activities.",
+               [
+                   _html_widget("help", "ГОСТ Р МЭК 62264 / IEC 62264-3", 0, 0, 84, 12,
+                                "<p><b>Part 3</b> — модель деятельности MOM (4×8). "
+                                "Статусы ячеек: <code>COVERED</code>. "
+                                "Detailed Scheduling — <code>emc_domain_schedule</code>; "
+                                "Performance — defect rate / turns / MTTR.</p>"
+                                "<p><b>Part 2</b> — Physical Asset, Product Definition, Capability Test, "
+                                "Operational Location. "
+                                "<b>Part 4</b> — Operations Capability / Performance.</p>"),
+                   _report_widget("matrix", "Матрица 4×8", 0, 12, 84, 30,
+                                  "root.platform.reports.emc-mom-activity-matrix",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["domain", "activity", "status"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("sched", "Domain Schedules", 0, 42, 42, 22,
+                                  "root.platform.reports.emc-domain-schedule-report",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["domain", "status"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("locs", "Operational Locations", 42, 42, 42, 22,
+                                  "root.platform.reports.emc-operational-location-report",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("qaKpi", "QA Defect Rate", 0, 64, 28, 16,
+                                  "root.platform.reports.emc-qa-defect-rate-report"),
+                   _report_widget("invKpi", "Inventory Turns", 28, 64, 28, 16,
+                                  "root.platform.reports.emc-inv-turns-report"),
+                   _report_widget("mntKpi", "MTTR / MTBF", 56, 64, 28, 16,
+                                  "root.platform.reports.emc-maint-mttr-report"),
+                   _report_widget("assets", "Physical Assets", 0, 80, 42, 18,
+                                  "root.platform.reports.emc-physical-asset-report"),
+                   _report_widget("products", "Product Definitions", 42, 80, 42, 18,
+                                  "root.platform.reports.emc-product-definition-report"),
+                   _report_widget("capab", "Operations Capability", 0, 98, 42, 18,
+                                  "root.platform.reports.emc-ops-capability-report",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("tests", "Capability Tests", 42, 98, 42, 18,
+                                  "root.platform.reports.emc-capability-test-report"),
+                   _form_widget("upsertSched", "Domain schedule upsert", 0, 116, 42, 24,
+                                "emc_domainschedule_upsert",
+                                [{"name": "scheduleId", "label": "Schedule ID", "type": "text",
+                                  "defaultValue": "DS-QA-SAMPLE-002", "required": True},
+                                 _static("domain", "Domain",
+                                         ["PRODUCTION", "QUALITY", "INVENTORY", "MAINTENANCE"],
+                                         default="QUALITY"),
+                                 _static("scheduleKind", "Kind",
+                                         ["SAMPLE_PLAN", "REPLENISHMENT", "PM_CALENDAR", "FIRM_SCHEDULE"],
+                                         default="SAMPLE_PLAN"),
+                                 {"name": "targetId", "label": "Target", "type": "text",
+                                  "defaultValue": "LOT-FG-0001"},
+                                 {"name": "quantity", "label": "Qty", "type": "number", "defaultValue": "5"},
+                                 {"name": "uom", "label": "UOM", "type": "text", "defaultValue": "pcs"},
+                                 {"name": "note", "label": "Note", "type": "text",
+                                  "defaultValue": "Operator-added sample plan"}],
+                                "Сохранить"),
+                   _form_widget("recordTest", "Capability test result", 42, 116, 42, 24,
+                                "emc_capability_recordResult",
+                                [{"name": "specId", "label": "Spec ID", "type": "text",
+                                  "defaultValue": "CTS-WU-A01-SPEED", "required": True},
+                                 {"name": "measuredValue", "label": "Измерение", "type": "text",
+                                  "defaultValue": "95"},
+                                 _static("result", "Результат", ["PASS", "FAIL"], default="PASS"),
+                                 _sel("testedBy", "Кто", "emc-person-catalog", "code", "name",
+                                      default="EMP-001")],
+                                "Записать"),
+               ]),
 ]
 
 
@@ -2714,15 +3597,15 @@ DASHBOARDS = [
 BINDINGS = [
     {"objectPath": HUB, "variable": "pendingOutboxCount",
      "query": "SELECT COUNT(*) AS v FROM emc_erp_outbox WHERE status = 'PENDING'",
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
     {"objectPath": HUB, "variable": "activeDowntimeCount",
      "query": ("SELECT COUNT(*) AS v FROM emc_operations_event e "
                "JOIN emc_operations_event_definition d ON d.code = e.definition_code "
                "WHERE e.status = 'OPEN' AND d.oee_bucket = 'AVAILABILITY'"),
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
     {"objectPath": HUB, "variable": "lowStockCount",
      "query": "SELECT COUNT(*) AS v FROM emc_material_lot WHERE status = 'STOCK' AND quantity < 10",
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
 ]
 
 ALERT_RULES = [
@@ -2777,8 +3660,11 @@ EVENTS = [
 # Assembly
 # ----------------------------------------------------------------------------
 
+FUNCTIONS.extend(build_uml_functions(
+    fn, F, OUT, RL, selN, sel1, map_rows, ret, ex, fail_null))
+
 bundle = {
-    "version": "1.2.0",
+    "version": "2.0.1",
     "displayName": "ERP-MES Core (ISA-95)",
     "tablePrefix": "emc_",
     "schemaName": "app_erp_mes_core",
@@ -2803,6 +3689,8 @@ bundle = {
             {"path": "root.platform.dashboards.emc-inventory", "title": "Склад"},
             {"path": "root.platform.dashboards.emc-quality", "title": "Качество"},
             {"path": "root.platform.dashboards.emc-oee", "title": "OEE и простои"},
+            {"path": "root.platform.dashboards.emc-genealogy", "title": "Генеалогия партии"},
+            {"path": "root.platform.dashboards.emc-mom-matrix", "title": "MOM 62264-3"},
         ],
         "eventJournalObjectPath": HUB,
         "reports": [
@@ -2811,6 +3699,14 @@ bundle = {
             {"path": "root.platform.reports.emc-material-movement", "title": "Material Movement"},
             {"path": "root.platform.reports.emc-defect-report", "title": "Defects"},
             {"path": "root.platform.reports.emc-oee-shift-report", "title": "OEE by Shift"},
+            {"path": "root.platform.reports.emc-genealogy-edges", "title": "Genealogy Edges"},
+            {"path": "root.platform.reports.emc-genealogy-upstream-fg", "title": "Reverse Trace FG"},
+            {"path": "root.platform.reports.emc-genealogy-downstream-raw", "title": "Forward Trace Raw"},
+            {"path": "root.platform.reports.emc-mom-activity-matrix", "title": "MOM 4x8 Matrix"},
+            {"path": "root.platform.reports.emc-physical-asset-report", "title": "Physical Assets"},
+            {"path": "root.platform.reports.emc-ops-capability-report", "title": "Ops Capability"},
+            {"path": "root.platform.reports.emc-domain-schedule-report", "title": "Domain Schedules"},
+            {"path": "root.platform.reports.emc-operational-location-report", "title": "Locations"},
         ],
         "defaultReport": "root.platform.reports.emc-job-board",
     },
@@ -2818,7 +3714,7 @@ bundle = {
         "product": "erp-mes-core",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.2.0 status-aware job action bar (Start/Pause/Resume/Complete enabled by dispatch_status, requires platform with function.buttonsJson); 1.1.1 form heights calibrated to renderer; 1.1.0 operator UI rework",
+        "changelog": "2.0.1 PG-safe NUMERIC casts for defect/event register; KPI bindings on_schedule; 2.0.0 UML attribute-complete Parts 2+4 (Hierarchy Scope, class/person/material properties, Qualification Spec/Result, Assembled From, parameter & product-segment specs, nested Ops Capability, multi-segment Work Master, Work Directive, Work Performance, genealogy metadata, sublot BFF, MOM activity↔BFF map); 1.4.1 Part 3 COMPLETE + locations/KPIs; 1.4.0 Physical Asset/Product/Capability/MOM UI",
     },
 }
 

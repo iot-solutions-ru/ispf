@@ -1,0 +1,992 @@
+{
+  "version": "2.0.0",
+  "standard": "IEC 62264 / ISA-95",
+  "parts": [
+    "2",
+    "3",
+    "4"
+  ],
+  "milestone": "M3",
+  "policy": "attribute-complete Parts 2+4; Part 3 activity BFF map; Part 5 out of scope",
+  "classes": [
+    {
+      "classId": "HierarchyScope",
+      "part": "2",
+      "emcTables": [
+        "emc_hierarchy_scope"
+      ],
+      "bff": [
+        "emc_hierarchy_scope_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "scopeId",
+          "required": true,
+          "column": "scope_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "parentScopeId",
+          "required": false,
+          "column": "parent_scope_id",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "Equipment",
+          "via": "hierarchy_scope_id"
+        }
+      ]
+    },
+    {
+      "classId": "Equipment",
+      "part": "2",
+      "emcTables": [
+        "emc_equipment",
+        "emc_equipment_property"
+      ],
+      "bff": [
+        "emc_equipment_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "equipmentId",
+          "required": true,
+          "column": "equipment_id",
+          "status": "covered"
+        },
+        {
+          "name": "hierarchyScopeId",
+          "required": false,
+          "column": "hierarchy_scope_id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "EquipmentClass",
+      "part": "2",
+      "emcTables": [
+        "emc_equipment_class",
+        "emc_equipment_class_property"
+      ],
+      "bff": [
+        "emc_classprop_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "PhysicalAsset",
+      "part": "2",
+      "emcTables": [
+        "emc_physical_asset",
+        "emc_physical_asset_property"
+      ],
+      "bff": [
+        "emc_asset_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "PhysicalAssetClass",
+      "part": "2",
+      "emcTables": [
+        "emc_physical_asset_class",
+        "emc_physical_asset_class_property"
+      ],
+      "bff": [
+        "emc_classprop_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "Person",
+      "part": "2",
+      "emcTables": [
+        "emc_person",
+        "emc_person_property"
+      ],
+      "bff": [
+        "emc_person_list",
+        "emc_classprop_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "PersonnelClass",
+      "part": "2",
+      "emcTables": [
+        "emc_personnel_class",
+        "emc_personnel_class_property"
+      ],
+      "bff": [
+        "emc_classprop_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "QualificationTestSpec",
+      "part": "2",
+      "emcTables": [
+        "emc_qualification_test_spec"
+      ],
+      "bff": [
+        "emc_qualification_listSpecs"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "QualificationTestResult",
+      "part": "2",
+      "emcTables": [
+        "emc_qualification_test_result"
+      ],
+      "bff": [
+        "emc_qualification_recordResult"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "MaterialClass",
+      "part": "2",
+      "emcTables": [
+        "emc_material_class",
+        "emc_material_class_property"
+      ],
+      "bff": [
+        "emc_classprop_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "MaterialDefinition",
+      "part": "2",
+      "emcTables": [
+        "emc_material_definition",
+        "emc_material_definition_property"
+      ],
+      "bff": [
+        "emc_classprop_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "MaterialLot",
+      "part": "2",
+      "emcTables": [
+        "emc_material_lot",
+        "emc_material_lot_property"
+      ],
+      "bff": [
+        "emc_matlot_list",
+        "emc_stock_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "MaterialSublot",
+      "part": "2",
+      "emcTables": [
+        "emc_material_sublot"
+      ],
+      "bff": [
+        "emc_sublot_list",
+        "emc_sublot_split"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "MaterialAssembledFrom",
+      "part": "2",
+      "emcTables": [
+        "emc_material_assembled_from"
+      ],
+      "bff": [
+        "emc_assembledfrom_list",
+        "emc_assembledfrom_upsert"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "ProcessSegment",
+      "part": "2",
+      "emcTables": [
+        "emc_process_segment",
+        "emc_segment_material_spec",
+        "emc_segment_equipment_spec",
+        "emc_segment_personnel_spec",
+        "emc_segment_parameter_spec"
+      ],
+      "bff": [
+        "emc_segment_list",
+        "emc_segment_param_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "ProductDefinition",
+      "part": "2",
+      "emcTables": [
+        "emc_product_definition",
+        "emc_product_segment"
+      ],
+      "bff": [
+        "emc_product_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "ProductSegment",
+      "part": "2",
+      "emcTables": [
+        "emc_product_segment",
+        "emc_product_segment_material_spec",
+        "emc_product_segment_equipment_spec",
+        "emc_product_segment_personnel_spec",
+        "emc_product_segment_parameter_spec"
+      ],
+      "bff": [
+        "emc_product_segment_specs_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "OperationsCapability",
+      "part": "2",
+      "emcTables": [
+        "emc_operations_capability",
+        "emc_ops_capability_equipment",
+        "emc_ops_capability_material",
+        "emc_ops_capability_personnel",
+        "emc_ops_capability_segment"
+      ],
+      "bff": [
+        "emc_opscap_list",
+        "emc_opscap_children_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "CapabilityTestSpec",
+      "part": "2",
+      "emcTables": [
+        "emc_capability_test_spec"
+      ],
+      "bff": [
+        "emc_capability_listResults"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "CapabilityTestResult",
+      "part": "2",
+      "emcTables": [
+        "emc_capability_test_result"
+      ],
+      "bff": [
+        "emc_capability_recordResult"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "OperationalLocation",
+      "part": "2",
+      "emcTables": [
+        "emc_operational_location"
+      ],
+      "bff": [
+        "emc_location_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "WorkMaster",
+      "part": "4",
+      "emcTables": [
+        "emc_work_master",
+        "emc_work_master_node",
+        "emc_work_master_edge"
+      ],
+      "bff": [
+        "emc_workmaster_list",
+        "emc_workmaster_nodes_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "WorkSchedule",
+      "part": "4",
+      "emcTables": [
+        "emc_work_schedule"
+      ],
+      "bff": [
+        "emc_schedule_list",
+        "emc_schedule_receive"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "WorkRequest",
+      "part": "4",
+      "emcTables": [
+        "emc_work_request"
+      ],
+      "bff": [
+        "emc_schedule_receive"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "JobOrder",
+      "part": "4",
+      "emcTables": [
+        "emc_job_order",
+        "emc_job_order_material_req",
+        "emc_job_order_equipment_req",
+        "emc_job_order_personnel_req",
+        "emc_job_order_parameter_req"
+      ],
+      "bff": [
+        "emc_joborder_param_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "JobResponse",
+      "part": "4",
+      "emcTables": [
+        "emc_job_response",
+        "emc_job_response_data",
+        "emc_material_actual",
+        "emc_equipment_actual",
+        "emc_personnel_actual"
+      ],
+      "bff": [
+        "emc_track_jobHistory"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "WorkDirective",
+      "part": "4",
+      "emcTables": [
+        "emc_work_directive"
+      ],
+      "bff": [
+        "emc_workdirective_list",
+        "emc_workdirective_upsert"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "WorkPerformance",
+      "part": "4",
+      "emcTables": [
+        "emc_work_performance"
+      ],
+      "bff": [
+        "emc_workperf_list",
+        "emc_workperf_rollup"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "OperationsPerformance",
+      "part": "4",
+      "emcTables": [
+        "emc_operations_performance"
+      ],
+      "bff": [
+        "emc_opsperf_rollup"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "OperationsEvent",
+      "part": "4",
+      "emcTables": [
+        "emc_operations_event",
+        "emc_operations_event_definition"
+      ],
+      "bff": [
+        "emc_event_register",
+        "emc_eventdef_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "WorkCalendar",
+      "part": "4",
+      "emcTables": [
+        "emc_work_calendar",
+        "emc_shift_assignment"
+      ],
+      "bff": [
+        "emc_calendar_current"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "WorkRecord",
+      "part": "4",
+      "emcTables": [
+        "emc_work_record",
+        "emc_work_record_section"
+      ],
+      "bff": [
+        "emc_wrec_get",
+        "emc_wrec_saveSection"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "id",
+          "required": true,
+          "column": "id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "LotGenealogy",
+      "part": "4",
+      "emcTables": [
+        "emc_lot_genealogy",
+        "emc_genealogy_node"
+      ],
+      "bff": [
+        "emc_track_genealogyTreeByLot"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "relationKind",
+          "required": false,
+          "column": "relation_kind",
+          "status": "covered"
+        },
+        {
+          "name": "assemblyType",
+          "required": false,
+          "column": "assembly_type",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    }
+  ],
+  "part3Activities": [
+    {
+      "domain": "PRODUCTION",
+      "activity": "DEFINITION",
+      "functionName": "emc_segment_list",
+      "status": "covered"
+    },
+    {
+      "domain": "PRODUCTION",
+      "activity": "RESOURCE",
+      "functionName": "emc_equipment_list",
+      "status": "covered"
+    },
+    {
+      "domain": "PRODUCTION",
+      "activity": "DETAILED_SCHEDULING",
+      "functionName": "emc_schedule_receive",
+      "status": "covered"
+    },
+    {
+      "domain": "PRODUCTION",
+      "activity": "DISPATCHING",
+      "functionName": "emc_joborder_release",
+      "status": "covered"
+    },
+    {
+      "domain": "PRODUCTION",
+      "activity": "EXECUTION",
+      "functionName": "emc_joborder_start",
+      "status": "covered"
+    },
+    {
+      "domain": "PRODUCTION",
+      "activity": "DATA_COLLECTION",
+      "functionName": "emc_dc_recordQuantity",
+      "status": "covered"
+    },
+    {
+      "domain": "PRODUCTION",
+      "activity": "TRACKING",
+      "functionName": "emc_track_genealogyTreeByLot",
+      "status": "covered"
+    },
+    {
+      "domain": "PRODUCTION",
+      "activity": "PERFORMANCE_ANALYSIS",
+      "functionName": "emc_oee_calcShift",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "DEFINITION",
+      "functionName": "emc_qa_listDefects",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "RESOURCE",
+      "functionName": "emc_person_list",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "DETAILED_SCHEDULING",
+      "functionName": "emc_domainschedule_list",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "DISPATCHING",
+      "functionName": "emc_qa_registerDefect",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "EXECUTION",
+      "functionName": "emc_qa_confirmDefect",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "DATA_COLLECTION",
+      "functionName": "emc_qa_recordTestResult",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "TRACKING",
+      "functionName": "emc_qa_listDefects",
+      "status": "covered"
+    },
+    {
+      "domain": "QUALITY",
+      "activity": "PERFORMANCE_ANALYSIS",
+      "functionName": "emc_qa_defectRateKpi",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "DEFINITION",
+      "functionName": "emc_stock_list",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "RESOURCE",
+      "functionName": "emc_location_list",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "DETAILED_SCHEDULING",
+      "functionName": "emc_domainschedule_list",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "DISPATCHING",
+      "functionName": "emc_invdoc_create",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "EXECUTION",
+      "functionName": "emc_invdoc_apply",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "DATA_COLLECTION",
+      "functionName": "emc_stock_list",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "TRACKING",
+      "functionName": "emc_stock_list",
+      "status": "covered"
+    },
+    {
+      "domain": "INVENTORY",
+      "activity": "PERFORMANCE_ANALYSIS",
+      "functionName": "emc_inv_turnsKpi",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "DEFINITION",
+      "functionName": "emc_maint_list",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "RESOURCE",
+      "functionName": "emc_equipment_list",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "DETAILED_SCHEDULING",
+      "functionName": "emc_domainschedule_list",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "DISPATCHING",
+      "functionName": "emc_maint_acceptRequest",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "EXECUTION",
+      "functionName": "emc_maint_completeWorkOrder",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "DATA_COLLECTION",
+      "functionName": "emc_event_register",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "TRACKING",
+      "functionName": "emc_maint_list",
+      "status": "covered"
+    },
+    {
+      "domain": "MAINTENANCE",
+      "activity": "PERFORMANCE_ANALYSIS",
+      "functionName": "emc_maint_mttrMtbf",
+      "status": "covered"
+    }
+  ],
+  "requiredTables": [
+    "emc_hierarchy_scope",
+    "emc_equipment_class_property",
+    "emc_physical_asset_class_property",
+    "emc_personnel_class_property",
+    "emc_person_property",
+    "emc_material_class_property",
+    "emc_material_definition_property",
+    "emc_qualification_test_spec",
+    "emc_qualification_test_result",
+    "emc_material_assembled_from",
+    "emc_segment_parameter_spec",
+    "emc_product_segment_material_spec",
+    "emc_product_segment_equipment_spec",
+    "emc_product_segment_personnel_spec",
+    "emc_product_segment_parameter_spec",
+    "emc_ops_capability_equipment",
+    "emc_ops_capability_material",
+    "emc_ops_capability_personnel",
+    "emc_ops_capability_segment",
+    "emc_mom_activity_bff",
+    "emc_work_master_node",
+    "emc_work_master_edge",
+    "emc_job_order_parameter_req",
+    "emc_work_directive",
+    "emc_work_performance",
+    "emc_genealogy_node"
+  ],
+  "requiredFunctions": [
+    "emc_hierarchy_scope_list",
+    "emc_qualification_listSpecs",
+    "emc_qualification_recordResult",
+    "emc_assembledfrom_list",
+    "emc_assembledfrom_upsert",
+    "emc_segment_param_list",
+    "emc_product_segment_specs_list",
+    "emc_opscap_children_list",
+    "emc_workmaster_nodes_list",
+    "emc_workdirective_list",
+    "emc_workdirective_upsert",
+    "emc_workperf_list",
+    "emc_workperf_rollup",
+    "emc_sublot_list",
+    "emc_sublot_split",
+    "emc_joborder_param_list",
+    "emc_mom_listActivityBff",
+    "emc_classprop_list"
+  ]
+}

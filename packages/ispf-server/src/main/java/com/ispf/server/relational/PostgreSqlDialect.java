@@ -26,7 +26,9 @@ public class PostgreSqlDialect extends AbstractRelationalDialect {
 
     @Override
     public String activateSchemaSql(String quotedSchema) {
-        return "SET search_path TO " + quotedSchema;
+        // Keep public second so pg_catalog helpers and dual-dialect aliases
+        // (e.g. optional RANDOM_UUID wrappers) remain visible to app SQL.
+        return "SET search_path TO " + quotedSchema + ", public";
     }
 
     @Override

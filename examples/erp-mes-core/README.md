@@ -13,6 +13,9 @@ change the generator and re-run:
 python examples/erp-mes-core/generate_bundle.py
 ```
 
+**Live demo (presenter script):** [docs/ru/erp-mes-demo.md](../../docs/ru/erp-mes-demo.md) — stand
+[mes.iot-solutions.ru](https://mes.iot-solutions.ru/), Core + Pharma + Printing operator UI.
+
 ## What is inside
 
 | ISA-95 part | Concept | Tables (prefix `emc_`) | BFF functions |
@@ -24,7 +27,9 @@ python examples/erp-mes-core/generate_bundle.py
 | Part 4 | Work Definition (Work Master, versioned) | `emc_work_master` | `emc_workmaster_upsert/list` |
 | Part 4 | Work Schedule → Work Request → Job Order (+ requirement snapshots, audit) | `emc_work_schedule`, `emc_work_request`, `emc_job_order`, `emc_job_order_*_req`, `emc_job_order_audit` | `emc_schedule_receive/list`, `emc_joborder_listBoard/release` |
 | Part 4 | Work Performance → Job Response + actuals (material/equipment/personnel), response data (RUN/PAUSE intervals, PDC) | `emc_job_response`, `emc_job_response_data`, `emc_material_actual`, `emc_equipment_actual`, `emc_personnel_actual` | `emc_joborder_start/pause/resume/complete/abort/replan/confirmStart`, `emc_dc_recordQuantity` |
-| Part 4 | Production Tracking & Genealogy | `emc_lot_genealogy` | `emc_track_genealogyByLot`, `emc_track_jobHistory` |
+| Part 2 | Physical Asset / Product Definition / Capability Test | `emc_physical_asset*`, `emc_product_*`, `emc_capability_test_*` | `emc_asset_list`, `emc_product_list`, `emc_capability_*` |
+| Part 3 | MOM activity matrix 4×8 | `emc_mom_activity` | `emc_mom_listActivities` |
+| Part 4 | Operations Capability / Performance rollup | `emc_operations_capability`, `emc_operations_performance` | `emc_opscap_list`, `emc_opsperf_rollup` |
 | Part 3 | Quality Operations: defect types, reason codes, defect workflow (REGISTERED→CONFIRMED/REJECTED→CLOSED), test results | `emc_defect_type`, `emc_reason_code`, `emc_defect_record`, `emc_defect_status_history`, `emc_qa_test_result` | `emc_qa_registerDefect/confirmDefect/rejectDefect/closeDefect/listDefects/recordTestResult` |
 | Part 3 | Inventory Operations: canonical movement documents | `emc_inventory_document`, `emc_inventory_document_line` | `emc_invdoc_create/addLine/submit/apply/list` |
 | Part 3 | Maintenance Operations (lite): request → work order | `emc_maintenance_request`, `emc_maintenance_work_order` | `emc_maint_createRequest/acceptRequest/completeWorkOrder/list` |
@@ -48,14 +53,15 @@ Warehouses are modeled canonically as **equipment** of level `STORAGE_ZONE` / `S
   2 (disabled) schedules, event journal, and all 61 BFF functions.
 - Two work-unit devices `emc-wu-a01` / `emc-wu-a02` (blueprint `emc-work-unit-v1`): `status`, `speed`,
   `activeJobOrderId` mirrored by job-order lifecycle.
-- 5 dashboards (operator UI in Russian): **Диспетчер** (job board + lifecycle + KPI cards),
-  **Исполнение** (consume/place/produce/PDC), **Склад** (stock + ERP docs), **Качество** (defect
-  workflow), **OEE и простои** (event journal + shift KPIs). Widgets use the flat dashboard format
+- 6 dashboards (operator UI in Russian): **Диспетчер**, **Исполнение**, **Склад**, **Качество**,
+  **OEE и простои**, **Генеалогия партии** (bidirectional recursive lot tree, reverse/forward
+  seed reports, mass-balance actuals, defects). Widgets use the flat dashboard format
   (`id`/`type`/settings inline); form fields are dropdown selects fed by catalog reports
   (`optionsFromReport`), report rows write `session.params` on click (`rowParamsFromRowJson` +
   `autoSelectFirstRow`) so the forms pick up the selected job/lot/defect automatically.
-- 13 reports: 5 operational (`emc-job-board`, `emc-stock-report`, `emc-material-movement`,
-  `emc-defect-report`, `emc-oee-shift-report`) + 8 catalog/option sources
+- Reports: operational (`emc-job-board`, `emc-stock-report`, `emc-material-movement`,
+  `emc-defect-report`, `emc-oee-shift-report`, genealogy edges / reverse FG / forward raw /
+  mass-balance) + catalog/option sources
   (`emc-material-catalog`, `emc-equipment-catalog`, `emc-person-catalog`, `emc-defect-type-catalog`,
   `emc-reason-code-catalog`, `emc-eventdef-catalog`, `emc-shift-catalog`, `emc-event-journal`)
   reused by overlay bundles for dropdowns.

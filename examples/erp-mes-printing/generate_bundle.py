@@ -17,7 +17,7 @@ use the emp_ prefix (tablePrefix validator scope). Migration ids use the emp_m
 prefix (global root.platform.migrations namespace, must not clash with emc_*).
 
 Dialect: works on H2 (PostgreSQL mode, tests) and PostgreSQL (runtime).
-Rules: UUID PKs + RANDOM_UUID(), no `::` casts, CREATE TABLE IF NOT EXISTS,
+Rules: UUID PKs + gen_random_uuid(), no `::` casts, CREATE TABLE IF NOT EXISTS,
 seeds via INSERT ... SELECT ... WHERE NOT EXISTS (re-entrant on redeploy).
 Script DSL: validator white-listed steps only (see FunctionScriptValidator).
 """
@@ -547,20 +547,20 @@ M5_SEGMENTS_QUALITY_DEMO = ";\n".join([
        SELECT 'b1000001-0000-0000-0000-000000000001', 'JO-PRINT-001', 'RUNNING', CURRENT_TIMESTAMP
        WHERE NOT EXISTS (SELECT 1 FROM emc_job_response WHERE job_no = 'JO-PRINT-001' AND job_state = 'RUNNING')""",
     """INSERT INTO emc_job_response_data (id, response_id, data_kind, started_at)
-       SELECT RANDOM_UUID(), 'b1000001-0000-0000-0000-000000000001', 'RUN_INTERVAL', CURRENT_TIMESTAMP
+       SELECT gen_random_uuid(), 'b1000001-0000-0000-0000-000000000001', 'RUN_INTERVAL', CURRENT_TIMESTAMP
        WHERE NOT EXISTS (SELECT 1 FROM emc_job_response_data WHERE response_id = 'b1000001-0000-0000-0000-000000000001' AND data_kind = 'RUN_INTERVAL' AND ended_at IS NULL)""",
     """INSERT INTO emc_equipment_actual (id, response_id, equipment_id, equipment_use)
-       SELECT RANDOM_UUID(), 'b1000001-0000-0000-0000-000000000001', 'PR120', 'PRIMARY'
+       SELECT gen_random_uuid(), 'b1000001-0000-0000-0000-000000000001', 'PR120', 'PRIMARY'
        WHERE NOT EXISTS (SELECT 1 FROM emc_equipment_actual WHERE response_id = 'b1000001-0000-0000-0000-000000000001')""",
     """INSERT INTO emc_personnel_actual (id, response_id, person_id, personnel_use)
-       SELECT RANDOM_UUID(), 'b1000001-0000-0000-0000-000000000001', 'EMP-P01', 'OPERATOR'
+       SELECT gen_random_uuid(), 'b1000001-0000-0000-0000-000000000001', 'EMP-P01', 'OPERATOR'
        WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_actual WHERE response_id = 'b1000001-0000-0000-0000-000000000001' AND person_id = 'EMP-P01')""",
     # Shift on PR120 with the printer assigned
     seed("emc_work_calendar", ["shift_id", "equipment_id", "shift_label", "planned_minutes", "state", "planned_start", "actual_start"],
          ["SHIFT-PRINT-1", "PR120", "MORNING", "480", "OPEN", "!TIMESTAMP '2026-07-24 06:00:00'", "!CURRENT_TIMESTAMP"],
          "shift_id = 'SHIFT-PRINT-1'"),
     """INSERT INTO emc_shift_assignment (id, shift_id, person_id)
-       SELECT RANDOM_UUID(), 'SHIFT-PRINT-1', 'EMP-P01'
+       SELECT gen_random_uuid(), 'SHIFT-PRINT-1', 'EMP-P01'
        WHERE NOT EXISTS (SELECT 1 FROM emc_shift_assignment WHERE shift_id = 'SHIFT-PRINT-1' AND person_id = 'EMP-P01')""",
     # Work record (production dossier / job bag) for JO-PRINT-001 with printing sections
     seed("emc_work_record", ["record_id", "job_no", "record_no"],
@@ -573,12 +573,246 @@ M5_SEGMENTS_QUALITY_DEMO = ";\n".join([
        WHERE NOT EXISTS (SELECT 1 FROM emc_work_record_section WHERE record_id = 'WR-JO-PRINT-001' AND section_key = 'imposition')""",
 ])
 
+# Align with erp-mes-core 1.4.1: roll genealogy chain, Product Definition, Physical Asset,
+# Operational Location, domain schedules, capability / ops capability.
+M6_CORE141 = ";\n".join([
+    seed("emc_material_lot",
+         ["lot_id", "barcode", "definition_id", "status", "storage_location", "quantity", "base_uom", "weight_kg", "length_m"],
+         ["LOT-LAM-0001", "BC-LAM-0001", "WIP-LAM-ROLL", "STOCK", "WH-PRINT", "2800", "m", "240", "2800"],
+         "lot_id = 'LOT-LAM-0001'"),
+    seed("emc_material_lot",
+         ["lot_id", "barcode", "definition_id", "status", "storage_location", "quantity", "base_uom", "weight_kg", "length_m"],
+         ["LOT-FG-SLV-0001", "BC-FG-SLV-0001", "FG-SLEEVE-ROLL", "STOCK", "WH-PRINT", "2500", "m", "220", "2500"],
+         "lot_id = 'LOT-FG-SLV-0001'"),
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-FILM-0001', 'LOT-PRT-0001', 3000
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-FILM-0001' AND output_lot_id = 'LOT-PRT-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-INK-K', 'LOT-PRT-0001', 2
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-INK-K' AND output_lot_id = 'LOT-PRT-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-PRT-0001', 'LOT-LAM-0001', 2800
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-PRT-0001' AND output_lot_id = 'LOT-LAM-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-FILM-0003', 'LOT-LAM-0001', 2800
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-FILM-0003' AND output_lot_id = 'LOT-LAM-0001')""",
+    """INSERT INTO emc_lot_genealogy (id, input_lot_id, output_lot_id, quantity)
+       SELECT gen_random_uuid(), 'LOT-LAM-0001', 'LOT-FG-SLV-0001', 2500
+       WHERE NOT EXISTS (SELECT 1 FROM emc_lot_genealogy
+                         WHERE input_lot_id = 'LOT-LAM-0001' AND output_lot_id = 'LOT-FG-SLV-0001')""",
+    seed("emc_product_definition", ["product_id", "description", "fg_definition_id", "status"],
+         ["PD-SLEEVE-ROLL", "Shrink-sleeve finished roll", "FG-SLEEVE-ROLL", "ACTIVE"],
+         "product_id = 'PD-SLEEVE-ROLL'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-SLEEVE-ROLL", "SEG-PRINT", "1"],
+         "product_id = 'PD-SLEEVE-ROLL' AND segment_id = 'SEG-PRINT'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-SLEEVE-ROLL", "SEG-LAMINATE", "2"],
+         "product_id = 'PD-SLEEVE-ROLL' AND segment_id = 'SEG-LAMINATE'"),
+    seed("emc_product_segment", ["product_id", "segment_id", "sequence_no"],
+         ["PD-SLEEVE-ROLL", "SEG-SLIT", "3"],
+         "product_id = 'PD-SLEEVE-ROLL' AND segment_id = 'SEG-SLIT'"),
+    seed("emc_physical_asset_class", ["class_id", "description", "parent_class_id"],
+         ["PAC-PRINT", "Printing process equipment", None], "class_id = 'PAC-PRINT'"),
+    seed("emc_physical_asset",
+         ["asset_id", "class_id", "equipment_id", "serial_no", "manufacturer", "description", "status"],
+         ["AST-PR120", "PAC-PRINT", "PR120", "PR120-SN-001", "DemoFlexo", "Flexo press asset", "IN_SERVICE"],
+         "asset_id = 'AST-PR120'"),
+    seed("emc_physical_asset",
+         ["asset_id", "class_id", "equipment_id", "serial_no", "manufacturer", "description", "status"],
+         ["AST-LM210", "PAC-PRINT", "LM210", "LM210-SN-001", "DemoLam", "Laminator asset", "IN_SERVICE"],
+         "asset_id = 'AST-LM210'"),
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-PRT-WH", "Print warehouse", "STORAGE", "WH-PRINT", None, "ACTIVE"],
+         "location_id = 'LOC-PRT-WH'"),
+    seed("emc_operational_location",
+         ["location_id", "description", "location_kind", "equipment_id", "parent_location_id", "status"],
+         ["LOC-PRT-PR120", "PR120 line staging", "STAGING", "PR120", "LOC-PRT-WH", "ACTIVE"],
+         "location_id = 'LOC-PRT-PR120'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-PRT-QA-001", "QUALITY", "SAMPLE_PLAN", "LOT-FG-SLV-0001", "50", "m", "PLANNED",
+          "Incoming / in-process sample metres"],
+         "schedule_id = 'DS-PRT-QA-001'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-PRT-REPL-FILM", "INVENTORY", "REPLENISHMENT", "FILM-PET12", "2000", "m", "PLANNED",
+          "PET film min/max replenishment"],
+         "schedule_id = 'DS-PRT-REPL-FILM'"),
+    seed("emc_domain_schedule",
+         ["schedule_id", "domain", "schedule_kind", "target_id", "quantity", "uom", "status", "note"],
+         ["DS-PRT-PM-PR120", "MAINTENANCE", "PM_CALENDAR", "PR120", "1", "job", "PLANNED",
+          "Weekly Zero Pull / PM press"],
+         "schedule_id = 'DS-PRT-PM-PR120'"),
+    seed("emc_capability_test_spec",
+         ["spec_id", "target_kind", "target_id", "test_name", "criterion", "uom"],
+         ["CTS-PR120-REG", "EQUIPMENT", "PR120", "Registration accuracy", "<= 0.15", "mm"],
+         "spec_id = 'CTS-PR120-REG'"),
+    """INSERT INTO emc_capability_test_result (result_id, spec_id, measured_value, result, tested_by)
+       SELECT gen_random_uuid(), 'CTS-PR120-REG', '0.08', 'PASS', 'EMP-P01'
+       WHERE NOT EXISTS (SELECT 1 FROM emc_capability_test_result WHERE spec_id = 'CTS-PR120-REG')""",
+    seed("emc_operations_capability",
+         ["capability_id", "operations_type", "equipment_id", "segment_id", "reason", "status"],
+         ["CAP-PR120-PRINT", "PRODUCTION", "PR120", "SEG-PRINT",
+          "Qualified flexo + capability PASS", "AVAILABLE"],
+         "capability_id = 'CAP-PR120-PRINT'"),
+])
+
+# Align with erp-mes-core 2.0 UML extent for printing overlay.
+M7_UML200 = ";\n".join([
+    seed("emc_hierarchy_scope", ["scope_id", "name", "parent_scope_id", "description"],
+         ["SCOPE-PRINT", "Printing enterprise", None, "ENT-PRINT hierarchy scope"],
+         "scope_id = 'SCOPE-PRINT'"),
+    seed("emc_hierarchy_scope", ["scope_id", "name", "parent_scope_id", "description"],
+         ["SCOPE-PRT-SITE", "Print site PRINT-01", "SCOPE-PRINT", "SITE-PRINT-01 scope"],
+         "scope_id = 'SCOPE-PRT-SITE'"),
+    """UPDATE emc_equipment SET hierarchy_scope_id = 'SCOPE-PRINT'
+       WHERE equipment_id = 'ENT-PRINT' AND hierarchy_scope_id IS NULL""",
+    """UPDATE emc_equipment SET hierarchy_scope_id = 'SCOPE-PRT-SITE'
+       WHERE hierarchy_scope_id IS NULL AND equipment_id IN
+       ('PR120','PR130','LM210','SL300','RW100','WH-PRINT','WH-PR120-LS',
+        'SITE-PRINT-01','AREA-PRINT','AREA-LAM','AREA-SLIT')""",
+    """UPDATE emc_person SET hierarchy_scope_id = 'SCOPE-PRT-SITE'
+       WHERE person_id IN ('EMP-P01','EMP-P02','EMP-P03') AND hierarchy_scope_id IS NULL""",
+    """UPDATE emc_operational_location SET hierarchy_scope_id = 'SCOPE-PRT-SITE'
+       WHERE location_id LIKE 'LOC-PRT-%' AND hierarchy_scope_id IS NULL""",
+    """UPDATE emc_material_definition SET hierarchy_scope_id = 'SCOPE-PRT-SITE'
+       WHERE hierarchy_scope_id IS NULL AND (
+         class_id IN ('MCL-FILM','MCL-INK','MCL-GLUE','MCL-SOLVENT','MCL-WIP-ROLL','MCL-FG-ROLL')
+         OR definition_id LIKE 'FILM-%' OR definition_id LIKE 'INK-%' OR definition_id LIKE 'GLUE-%'
+         OR definition_id LIKE 'SOLV-%' OR definition_id LIKE 'WIP-%' OR definition_id LIKE 'FG-%')""",
+    seed("emc_material_assembled_from",
+         ["assembly_id", "parent_definition_id", "child_definition_id", "child_class_id",
+          "quantity", "uom", "assembly_type", "sequence_no"],
+         ["AF-PRT-PET", "FG-SLEEVE-ROLL", "FILM-PET12", None, "1", "m", "BOM", "1"],
+         "assembly_id = 'AF-PRT-PET'"),
+    seed("emc_material_assembled_from",
+         ["assembly_id", "parent_definition_id", "child_definition_id", "child_class_id",
+          "quantity", "uom", "assembly_type", "sequence_no"],
+         ["AF-PRT-BOPP", "FG-SLEEVE-ROLL", "FILM-BOPP20", None, "1", "m", "BOM", "2"],
+         "assembly_id = 'AF-PRT-BOPP'"),
+    seed("emc_material_assembled_from",
+         ["assembly_id", "parent_definition_id", "child_definition_id", "child_class_id",
+          "quantity", "uom", "assembly_type", "sequence_no"],
+         ["AF-PRT-INK", "FG-SLEEVE-ROLL", "INK-K", None, "0.01", "kg", "BOM", "3"],
+         "assembly_id = 'AF-PRT-INK'"),
+    seed("emc_product_segment_material_spec",
+         ["spec_id", "product_id", "segment_id", "material_class_id", "definition_id", "material_use", "quantity", "uom"],
+         ["PD-SLV:PRINT:IN", "PD-SLEEVE-ROLL", "SEG-PRINT", None, "FILM-PET12", "CONSUMED", "500", "m"],
+         "spec_id = 'PD-SLV:PRINT:IN'"),
+    seed("emc_product_segment_material_spec",
+         ["spec_id", "product_id", "segment_id", "material_class_id", "definition_id", "material_use", "quantity", "uom"],
+         ["PD-SLV:SLIT:OUT", "PD-SLEEVE-ROLL", "SEG-SLIT", None, "FG-SLEEVE-ROLL", "PRODUCED", "500", "m"],
+         "spec_id = 'PD-SLV:SLIT:OUT'"),
+    seed("emc_product_segment_equipment_spec",
+         ["spec_id", "product_id", "segment_id", "equipment_class_id", "equipment_id", "equipment_use", "quantity"],
+         ["PD-SLV:PRINT:EQ", "PD-SLEEVE-ROLL", "SEG-PRINT", "EQC-FLEXO-PRESS", "PR120", "PRIMARY", "1"],
+         "spec_id = 'PD-SLV:PRINT:EQ'"),
+    seed("emc_product_segment_personnel_spec",
+         ["spec_id", "product_id", "segment_id", "personnel_class_id", "person_id", "personnel_use", "quantity"],
+         ["PD-SLV:PRINT:PERS", "PD-SLEEVE-ROLL", "SEG-PRINT", "PCL-PRINTER", "", "OPERATOR", "1"],
+         "spec_id = 'PD-SLV:PRINT:PERS'"),
+    seed("emc_product_segment_parameter_spec",
+         ["spec_id", "product_id", "segment_id", "param_key", "param_name", "default_value", "uom", "required_flag"],
+         ["PD-SLV:PRINT:DE", "PD-SLEEVE-ROLL", "SEG-PRINT", "DELTA_E2000", "Color delta E", "1.5", "", "true"],
+         "spec_id = 'PD-SLV:PRINT:DE'"),
+    seed("emc_segment_parameter_spec",
+         ["spec_id", "segment_id", "param_key", "param_name", "default_value", "uom", "required_flag"],
+         ["SEG-PRINT:SPEED", "SEG-PRINT", "LINE_SPEED", "Press line speed", "180", "m/min", "false"],
+         "spec_id = 'SEG-PRINT:SPEED'"),
+    seed("emc_qualification_test_spec",
+         ["spec_id", "person_id", "personnel_class_id", "equipment_id", "equipment_class_id",
+          "test_name", "criterion", "qualification"],
+         ["QTS-P01-PR120", "EMP-P01", None, "PR120", None, "Operate flexo PR120", "Setup checklist PASS", "OPERATE"],
+         "spec_id = 'QTS-P01-PR120'"),
+    """INSERT INTO emc_qualification_test_result (result_id, spec_id, measured_value, result, tested_by)
+       SELECT gen_random_uuid(), 'QTS-P01-PR120', 'OK', 'PASS', 'EMP-P02'
+       WHERE NOT EXISTS (SELECT 1 FROM emc_qualification_test_result WHERE spec_id = 'QTS-P01-PR120')""",
+    seed("emc_ops_capability_equipment",
+         ["capability_id", "equipment_id", "equipment_class_id", "quantity"],
+         ["CAP-PR120-PRINT", "PR120", "EQC-FLEXO-PRESS", "1"],
+         "capability_id = 'CAP-PR120-PRINT' AND equipment_id = 'PR120'"),
+    seed("emc_ops_capability_personnel",
+         ["capability_id", "person_id", "personnel_class_id", "quantity"],
+         ["CAP-PR120-PRINT", "", "PCL-PRINTER", "1"],
+         "capability_id = 'CAP-PR120-PRINT' AND personnel_class_id = 'PCL-PRINTER'"),
+    seed("emc_ops_capability_segment", ["capability_id", "segment_id"],
+         ["CAP-PR120-PRINT", "SEG-PRINT"],
+         "capability_id = 'CAP-PR120-PRINT' AND segment_id = 'SEG-PRINT'"),
+    seed("emc_ops_capability_material",
+         ["capability_id", "definition_id", "material_class_id", "quantity", "uom"],
+         ["CAP-PR120-PRINT", "FILM-PET12", "MCL-FILM", "5000", "m"],
+         "capability_id = 'CAP-PR120-PRINT' AND definition_id = 'FILM-PET12'"),
+    seed("emc_work_master",
+         ["work_master_id", "version", "segment_id", "duration_min", "description"],
+         ["WM-PRT-ROUTE", "1", "SEG-PRINT", "360", "Print→Lam→Slit multi-segment route"],
+         "work_master_id = 'WM-PRT-ROUTE' AND version = '1'"),
+    seed("emc_work_master_node",
+         ["node_id", "work_master_id", "version", "segment_id", "sequence_no", "node_kind"],
+         ["WMN-PRT-PRINT", "WM-PRT-ROUTE", "1", "SEG-PRINT", "1", "SEGMENT"],
+         "node_id = 'WMN-PRT-PRINT'"),
+    seed("emc_work_master_node",
+         ["node_id", "work_master_id", "version", "segment_id", "sequence_no", "node_kind"],
+         ["WMN-PRT-LAM", "WM-PRT-ROUTE", "1", "SEG-LAMINATE", "2", "SEGMENT"],
+         "node_id = 'WMN-PRT-LAM'"),
+    seed("emc_work_master_node",
+         ["node_id", "work_master_id", "version", "segment_id", "sequence_no", "node_kind"],
+         ["WMN-PRT-SLIT", "WM-PRT-ROUTE", "1", "SEG-SLIT", "3", "SEGMENT"],
+         "node_id = 'WMN-PRT-SLIT'"),
+    seed("emc_work_master_edge",
+         ["edge_id", "work_master_id", "version", "from_node_id", "to_node_id", "edge_kind"],
+         ["WME-PRT-PL", "WM-PRT-ROUTE", "1", "WMN-PRT-PRINT", "WMN-PRT-LAM", "SEQUENCE"],
+         "edge_id = 'WME-PRT-PL'"),
+    seed("emc_work_master_edge",
+         ["edge_id", "work_master_id", "version", "from_node_id", "to_node_id", "edge_kind"],
+         ["WME-PRT-LS", "WM-PRT-ROUTE", "1", "WMN-PRT-LAM", "WMN-PRT-SLIT", "SEQUENCE"],
+         "edge_id = 'WME-PRT-LS'"),
+    seed("emc_work_directive",
+         ["directive_id", "work_master_id", "version", "job_no", "title", "body_text", "status"],
+         ["WD-PRT-SETUP", "WM-PRT-ROUTE", "1", "JO-PRINT-001",
+          "Zero Pull setup before print", "Confirm plate set, viscosity, registration targets.", "ACTIVE"],
+         "directive_id = 'WD-PRT-SETUP'"),
+    """UPDATE emc_lot_genealogy SET relation_kind = COALESCE(relation_kind, 'CONSUME_PRODUCE'),
+           assembly_type = COALESCE(assembly_type, 'PROCESS')
+       WHERE input_lot_id IN ('LOT-FILM-0001','LOT-FILM-0003','LOT-INK-K','LOT-PRT-0001','LOT-LAM-0001')
+          OR output_lot_id IN ('LOT-PRT-0001','LOT-LAM-0001','LOT-FG-SLV-0001')""",
+    seed("emc_genealogy_node",
+         ["node_id", "node_kind", "lot_id", "definition_id", "label"],
+         ["GN-LOT-FG-SLV-0001", "LOT", "LOT-FG-SLV-0001", "FG-SLEEVE-ROLL", "Sleeve FG roll"],
+         "node_id = 'GN-LOT-FG-SLV-0001'"),
+])
+
+# Demo KPI seeds: short roll for low-stock card; open AVAILABILITY downtime on PR120.
+M8_UI_FIXES = ";\n".join([
+    seed("emc_material_lot",
+         ["lot_id", "barcode", "definition_id", "status", "storage_location", "quantity", "base_uom",
+          "weight_kg", "length_m"],
+         ["LOT-FILM-LOW", "BC-FILM-LOW", "FILM-PET12", "STOCK", "WH-PRINT", "200", "kg", "14", "200"],
+         "lot_id = 'LOT-FILM-LOW'"),
+    """INSERT INTO emc_operations_event
+         (event_id, definition_code, job_no, equipment_id, time_min, comment_text, status, registered_by)
+       SELECT gen_random_uuid(), 'OGP-119', 'JO-PRINT-001', 'PR120', 15,
+              'Seed open downtime for KPI demo', 'OPEN', 'operator'
+       WHERE NOT EXISTS (
+         SELECT 1 FROM emc_operations_event
+         WHERE definition_code = 'OGP-119' AND equipment_id = 'PR120' AND status = 'OPEN'
+           AND comment_text = 'Seed open downtime for KPI demo')""",
+])
+
 MIGRATIONS = [
     {"id": "emp_m1_overlay_tables", "sql": M1_OVERLAY_TABLES},
     {"id": "emp_m2_event_catalog", "sql": M2_EVENT_CATALOG},
     {"id": "emp_m3_equipment_personnel", "sql": M3_EQUIPMENT_PERSONNEL},
     {"id": "emp_m4_materials", "sql": M4_MATERIALS},
     {"id": "emp_m5_segments_quality_demo", "sql": M5_SEGMENTS_QUALITY_DEMO},
+    {"id": "emp_m6_core141", "sql": M6_CORE141},
+    {"id": "emp_m7_uml200", "sql": M7_UML200},
+    {"id": "emp_m8_ui_fixes", "sql": M8_UI_FIXES},
 ]
 
 
@@ -717,15 +951,15 @@ BINDINGS = [
                "JOIN emc_operations_event_definition d ON d.code = e.definition_code "
                "WHERE e.status = 'OPEN' AND d.oee_bucket = 'AVAILABILITY' "
                "AND e.equipment_id IN " + PRINT_EQUIPMENT_SQL),
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
     {"objectPath": HUB, "variable": "activePrintJobCount",
      "query": ("SELECT COUNT(*) AS v FROM emc_job_order "
                "WHERE dispatch_status = 'RUNNING' AND equipment_id IN " + PRINT_EQUIPMENT_SQL),
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
     {"objectPath": HUB, "variable": "lowRollStockCount",
      "query": ("SELECT COUNT(*) AS v FROM emc_material_lot "
                "WHERE status = 'STOCK' AND length_m IS NOT NULL AND length_m < 500"),
-     "refresh": "interval", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
+     "refresh": "on_schedule", "refreshIntervalMs": 30000, "valueField": "v", "enabled": True},
 ]
 
 ALERT_RULES = [
@@ -940,6 +1174,52 @@ ORDER BY sort_order
 """,
      "columns": [{"field": f, "label": l} for f, l in [
          ("code", "Tag"), ("name", "Name"), ("description", "Description")]]},
+    {"reportId": "emp-genealogy-upstream-fg", "title": "Reverse Trace FG Sleeve",
+     "description": "Multi-level UPSTREAM tree for LOT-FG-SLV-0001 (film→print→lam→sleeve).",
+     "query": """
+WITH RECURSIVE upstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+         CONCAT(g.output_lot_id, '<', g.input_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE g.output_lot_id = 'LOT-FG-SLV-0001'
+  UNION ALL
+  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+         u.depth + 1, CONCAT(u.path, '<', g.input_lot_id)
+  FROM upstream u
+  JOIN emc_lot_genealogy g ON g.output_lot_id = u.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
+  WHERE u.depth < 15
+)
+SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+FROM upstream ORDER BY depth, lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
+    {"reportId": "emp-genealogy-downstream-film", "title": "Forward Trace Film",
+     "description": "Multi-level DOWNSTREAM tree for LOT-FILM-0001.",
+     "query": """
+WITH RECURSIVE downstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+         CONCAT(g.input_lot_id, '>', g.output_lot_id)
+  FROM emc_lot_genealogy g
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE g.input_lot_id = 'LOT-FILM-0001'
+  UNION ALL
+  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+         d.depth + 1, CONCAT(d.path, '>', g.output_lot_id)
+  FROM downstream d
+  JOIN emc_lot_genealogy g ON g.input_lot_id = d.lot_id
+  LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
+  WHERE d.depth < 15
+)
+SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+FROM downstream ORDER BY depth, lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
 ]
 
 DASHBOARDS = [
@@ -969,7 +1249,8 @@ DASHBOARDS = [
                                          ["PR120", "PR130", "LM210", "SL300", "RW100"], default="PR120"),
                                  {"name": "timeMin", "label": "Длительность, мин", "type": "number", "defaultValue": ""},
                                  {"name": "lengthM", "label": "Метраж, м", "type": "number", "defaultValue": ""},
-                                 {"name": "comment", "label": "Комментарий", "type": "textarea", "defaultValue": ""}],
+                                 {"name": "comment", "label": "Комментарий", "type": "textarea", "defaultValue": ""},
+                                 {"name": "by", "label": "Кем", "type": "text", "defaultValue": "operator"}],
                                 "Зарегистрировать", CORE_HUB),
                    _form_widget("closeEvent", "Закрыть событие", 0, 36, 28, 11, "emc_event_close",
                                 [_sel("eventId", "Событие", "emc-event-journal", "id", "name", required=True),
@@ -1008,6 +1289,36 @@ DASHBOARDS = [
                                  {"name": "quantity", "label": "Количество", "type": "number", "defaultValue": "1"}],
                                 "Зарегистрировать", CORE_HUB),
                ]),
+    _dashboard("root.platform.dashboards.emp-print-genealogy", "Генеалогия рулонов",
+               "Обратная/прямая прослеживаемость рулонов (film→print→lam→sleeve) через ядро IEC 62264.",
+               [
+                   _html_widget("help", "Roll genealogy", 0, 0, 84, 12,
+                                "<p>Seed: <code>LOT-FILM-0001</code>/<code>LOT-INK-K</code> → "
+                                "<code>LOT-PRT-0001</code> → <code>LOT-LAM-0001</code> → "
+                                "<code>LOT-FG-SLV-0001</code>. "
+                                "BFF ядра: <code>emc_track_genealogyTreeByLot</code>. "
+                                "MOM: <code>emc-mom-matrix</code>.</p>"),
+                   _form_widget("trace", "Запрос генеалогии", 0, 12, 28, 28, "emc_track_genealogyTreeByLot",
+                                [_sel("lotId", "Рулон (лот)", "emp-roll-stock", "lot_id", "material_id",
+                                      required=True, default="LOT-FG-SLV-0001"),
+                                 _static("direction", "Направление",
+                                         ["BOTH", "UPSTREAM", "DOWNSTREAM"], default="UPSTREAM")],
+                                "Построить дерево", CORE_HUB),
+                   _func_widget("demoReverse", "Демо: обратная (ГП)", 28, 12, 28, 14,
+                                "emc_track_genealogyTreeByLot", "Sleeve → film",
+                                {"lotId": "LOT-FG-SLV-0001", "direction": "UPSTREAM"}, CORE_HUB),
+                   _func_widget("demoForward", "Демо: прямая (плёнка)", 56, 12, 28, 14,
+                                "emc_track_genealogyTreeByLot", "Film → sleeve",
+                                {"lotId": "LOT-FILM-0001", "direction": "DOWNSTREAM"}, CORE_HUB),
+                   _report_widget("upstream", "Обратная (seed ГП)", 0, 40, 42, 30,
+                                  "root.platform.reports.emp-genealogy-upstream-fg"),
+                   _report_widget("downstream", "Прямая (seed плёнка)", 42, 40, 42, 30,
+                                  "root.platform.reports.emp-genealogy-downstream-film"),
+                   _report_widget("rolls", "Склад рулонов", 0, 70, 84, 22,
+                                  "root.platform.reports.emp-roll-stock",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "material_id"])),
+               ]),
 ]
 
 
@@ -1016,11 +1327,11 @@ DASHBOARDS = [
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.2.0",
+    "version": "1.4.2",
     "displayName": "ERP-MES Printing (ISA-95)",
     "tablePrefix": "emp_",
     "schemaName": SCHEMA,
-    "requires": [{"appId": "erp-mes-core", "minVersion": "1.1.0"}],
+    "requires": [{"appId": "erp-mes-core", "minVersion": "2.0.0"}],
     "migrations": MIGRATIONS,
     "objects": OBJECTS,
     "functions": FUNCTIONS,
@@ -1038,12 +1349,16 @@ bundle = {
             {"path": "root.platform.dashboards.emp-print-dispatch", "title": "Диспетчер печати"},
             {"path": "root.platform.dashboards.emp-print-events", "title": "События и простои"},
             {"path": "root.platform.dashboards.emp-print-rolls", "title": "Рулоны и материалы"},
+            {"path": "root.platform.dashboards.emp-print-genealogy", "title": "Генеалогия рулонов"},
+            {"path": "root.platform.dashboards.emc-mom-matrix", "title": "MOM 62264-3 (ядро)"},
         ],
         "eventJournalObjectPath": HUB,
         "reports": [
             {"path": "root.platform.reports.emp-print-job-board", "title": "Print Job Board"},
             {"path": "root.platform.reports.emp-downtime-by-code", "title": "Downtime by Code"},
             {"path": "root.platform.reports.emp-roll-stock", "title": "Roll Stock"},
+            {"path": "root.platform.reports.emp-genealogy-upstream-fg", "title": "Reverse Trace Sleeve"},
+            {"path": "root.platform.reports.emp-genealogy-downstream-film", "title": "Forward Trace Film"},
         ],
         "defaultReport": "root.platform.reports.emp-print-job-board",
     },
@@ -1051,7 +1366,7 @@ bundle = {
         "product": "erp-mes-printing",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.2.0 status-aware job action bar (Start/Pause/Resume/Complete enabled by dispatch_status, requires platform with function.buttonsJson); 1.1.1 form heights calibrated; 1.1.0 operator UI rework (requires erp-mes-core 1.1.0)",
+        "changelog": "1.4.2 KPI bindings on_schedule; low-roll + open downtime seed; event form by; 1.4.1 UML seed; 1.4.0 requires core >=2.0; 1.3.0 genealogy",
     },
 }
 

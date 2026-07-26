@@ -12,7 +12,7 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.2.0",
+  "latestVersion": "2.0.1",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -25,9 +25,21 @@
     "quality",
     "product"
   ],
-  "changelog": "1.2.0 - status-aware job action bar (buttons enabled by dispatch_status); 1.1.1 - form heights calibrated to the real renderer - submit buttons no longer clipped on any operator tab; 1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; +8 catalog reports (material/equipment/person/defect-type/reason-code/eventdef/shift/event-journal)",
+  "changelog": "2.0.1 PG-safe defect/event NUMERIC casts + KPI on_schedule; 2.0.0 attribute-complete IEC 62264 Parts 2+4 + Part 3 BFF map; 1.4.1 - Part 3 complete (MOM 4x8 COVERED), operational locations, domain schedules, QA/INV/MAINT KPIs; 1.4.0 Physical Asset/Product/Capability/Ops Cap-Perf + MOM UI; 1.2.0 - status-aware job action bar (buttons enabled by dispatch_status); 1.1.1 - form heights calibrated to the real renderer - submit buttons no longer clipped on any operator tab; 1.1.0 - operator UI rework: flat widget format, dropdown selects from catalog reports, row-click autofill, KPI cards, event journal; +8 catalog reports (material/equipment/person/defect-type/reason-code/eventdef/shift/event-journal)",
   "metadata": {
     "changelog": [
+      {
+        "version": "2.0.1",
+        "notes": "2.0.1 PG-safe NUMERIC casts for defect/event register; KPI bindings on_schedule"
+      },
+      {
+        "version": "2.0.0",
+        "notes": "2.0.0 attribute-complete IEC 62264 Parts 2+4 + Part 3 BFF map"
+      },
+      {
+        "version": "1.4.1",
+        "notes": "1.4.1 - Part 3 complete (MOM 4x8 COVERED), operational locations, domain schedules, QA/INV/MAINT KPIs; 1.4.0 Physical Asset/Product/Capability/Ops Cap-Perf + MOM UI"
+      },
       {
         "version": "1.2.0",
         "notes": "1.2.0: status-aware job action bar - one widget with Start/Pause/Resume/Complete buttons enabled by the selected job dispatch_status (ISA-95 state machine); requires platform with function.buttonsJson support"

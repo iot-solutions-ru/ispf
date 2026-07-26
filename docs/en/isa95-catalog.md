@@ -90,7 +90,7 @@ Reference walkthroughs:
 
 | Standard | ISPF support |
 |----------|--------------|
-| ISA-95 / IEC 62264 | This catalog (conceptual mapping) |
+| ISA-95 / IEC 62264 | This catalog (conceptual mapping); ERP-MES Core **object/UML layer**: [uml-catalog.json](../../examples/erp-mes-core/uml-conformance/uml-catalog.json), matrix [gost-mek-62264-parts-2-3-4](../ru/gost-mek-62264-parts-2-3-4.md) |
 | ISA-88 (batch) | Partial — workflows + app state; no batch engine |
 | Brick / Haystack | Semantic metadata, query API (BL-101–105) |
 | BPMN 2.0 | Subset in `ispf-plugin-workflow` |
