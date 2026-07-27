@@ -1,0 +1,420 @@
+{
+  "version": "1.1.0",
+  "displayName": "ERP-MES APS",
+  "tablePrefix": "aps_",
+  "schemaName": "app_erp_mes_aps",
+  "requires": [
+    {
+      "appId": "erp-mes-core",
+      "minVersion": "2.1.0"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "aps_m1",
+      "sql": "CREATE TABLE IF NOT EXISTS aps_plan_freeze (\n           freeze_id VARCHAR(64) PRIMARY KEY,\n           equipment_id VARCHAR(64),\n           frozen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n           note VARCHAR(256));\nINSERT INTO aps_plan_freeze (freeze_id, equipment_id, note)\n           SELECT 'FREEZE-DEMO', 'WU-A01', 'Demo freeze placeholder'\n           WHERE NOT EXISTS (SELECT 1 FROM aps_plan_freeze WHERE freeze_id = 'FREEZE-DEMO')"
+    }
+  ],
+  "objects": [],
+  "functions": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-aps-hub-v1",
+      "functionName": "aps_listBoard",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "jobNo",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "equipmentId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "dispatchStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedStart",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedEnd",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"invoke_function\", \"var\": \"board\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_listBoard\", \"input\": {\"equipmentId\": \"\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${board.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-aps-hub-v1",
+      "functionName": "aps_listConflicts",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "jobNo",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "equipmentId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "dispatchStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "conflictKind",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "detail",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"invoke_function\", \"var\": \"c\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_aps_listConflicts\", \"input\": {}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${c.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-aps-hub-v1",
+      "functionName": "aps_replanJob",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "jobNo",
+              "type": "STRING"
+            },
+            {
+              "name": "plannedStart",
+              "type": "STRING"
+            },
+            {
+              "name": "plannedEnd",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "jobNo",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"invoke_function\", \"var\": \"r\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_joborder_updatePlan\", \"input\": {\"jobNo\": \"${input.jobNo}\", \"plannedStart\": \"${input.plannedStart}\", \"plannedEnd\": \"${input.plannedEnd}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"${r.error_code}\", \"error_message\": \"${r.error_message}\", \"jobNo\": \"${input.jobNo}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-aps-hub-v1",
+      "functionName": "aps_freezeEquipment",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "equipmentId",
+              "type": "STRING"
+            },
+            {
+              "name": "note",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "freezeId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO aps_plan_freeze (freeze_id, equipment_id, note) VALUES (gen_random_uuid(), ?, ?)\", \"params\": [\"${input.equipmentId}\", \"${input.note}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"freezeId\": \"CREATED\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-aps-hub-v1",
+      "functionName": "aps_listFreezes",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "freezeId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "equipmentId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "frozenAt",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "note",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT freeze_id, COALESCE(equipment_id,'') AS equipment_id, frozen_at, COALESCE(note,'') AS note FROM aps_plan_freeze ORDER BY frozen_at DESC\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"freezeId\": \"${item.freeze_id}\", \"equipmentId\": \"${item.equipment_id}\", \"frozenAt\": \"${item.frozen_at}\", \"note\": \"${item.note}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "erp-mes-aps-hub-v1",
+      "description": "APS planning hub (requires erp-mes-core)",
+      "type": "SINGLETON",
+      "variables": []
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "aps-job-board",
+      "title": "APS Job Board",
+      "description": "Active job orders from erp-mes-core (cross-schema).",
+      "query": "\nSELECT o.job_no, o.dispatch_status, COALESCE(o.equipment_id,'') AS equipment_id,\n       COALESCE(o.priority, 0) AS priority, o.planned_start, o.planned_end,\n       COALESCE(wr.quantity, 0) AS quantity, COALESCE(wr.uom,'') AS uom\nFROM app_erp_mes_core.emc_job_order o\nJOIN app_erp_mes_core.emc_work_request wr ON wr.request_id = o.request_id\nWHERE o.dispatch_status NOT IN ('ENDED', 'ABORTED', 'CANCELLED')\nORDER BY o.priority, o.planned_start\n",
+      "columns": [
+        {
+          "field": "job_no",
+          "label": "Job #"
+        },
+        {
+          "field": "dispatch_status",
+          "label": "Status"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Equipment"
+        },
+        {
+          "field": "priority",
+          "label": "Pri"
+        },
+        {
+          "field": "planned_start",
+          "label": "Start"
+        },
+        {
+          "field": "planned_end",
+          "label": "End"
+        },
+        {
+          "field": "quantity",
+          "label": "Qty"
+        },
+        {
+          "field": "uom",
+          "label": "UOM"
+        }
+      ]
+    },
+    {
+      "reportId": "aps-conflicts",
+      "title": "APS Conflicts",
+      "description": "Resource busy + missing capability window.",
+      "query": "\nSELECT o.job_no, COALESCE(o.equipment_id,'') AS equipment_id, o.dispatch_status,\n       'RESOURCE_BUSY' AS conflict_kind,\n       CONCAT('Another RUNNING job on ', o.equipment_id) AS detail\nFROM app_erp_mes_core.emc_job_order o\nWHERE o.dispatch_status IN ('ALLOWED','NOT_ALLOWED')\nAND EXISTS (\n  SELECT 1 FROM app_erp_mes_core.emc_job_order r\n  WHERE r.equipment_id = o.equipment_id AND r.dispatch_status = 'RUNNING' AND r.job_no <> o.job_no\n)\nUNION ALL\nSELECT o.job_no, COALESCE(o.equipment_id,'') AS equipment_id, o.dispatch_status,\n       'CAPABILITY_WINDOW' AS conflict_kind,\n       'No AVAILABLE operations capability window for equipment' AS detail\nFROM app_erp_mes_core.emc_job_order o\nWHERE o.dispatch_status IN ('ALLOWED','NOT_ALLOWED')\nAND o.equipment_id IS NOT NULL\nAND NOT EXISTS (\n  SELECT 1 FROM app_erp_mes_core.emc_operations_capability c\n  JOIN app_erp_mes_core.emc_ops_capability_equipment ce ON ce.capability_id = c.capability_id\n  WHERE ce.equipment_id = o.equipment_id AND c.status = 'AVAILABLE'\n  AND (c.available_from IS NULL OR c.available_from <= CURRENT_TIMESTAMP)\n  AND (c.available_to IS NULL OR c.available_to >= CURRENT_TIMESTAMP)\n)\nORDER BY job_no\n",
+      "columns": [
+        {
+          "field": "job_no",
+          "label": "Job #"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Equipment"
+        },
+        {
+          "field": "dispatch_status",
+          "label": "Status"
+        },
+        {
+          "field": "conflict_kind",
+          "label": "Kind"
+        },
+        {
+          "field": "detail",
+          "label": "Detail"
+        }
+      ]
+    },
+    {
+      "reportId": "aps-freezes",
+      "title": "Plan freezes",
+      "description": "Frozen equipment windows.",
+      "query": "\nSELECT freeze_id, COALESCE(equipment_id,'') AS equipment_id, frozen_at, COALESCE(note,'') AS note\nFROM aps_plan_freeze ORDER BY frozen_at DESC\n",
+      "columns": [
+        {
+          "field": "freeze_id",
+          "label": "Freeze"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Equipment"
+        },
+        {
+          "field": "frozen_at",
+          "label": "Frozen at"
+        },
+        {
+          "field": "note",
+          "label": "Note"
+        }
+      ]
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.aps-board",
+      "title": "APS Planner",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"board\", \"type\": \"report\", \"title\": \"Job board\", \"x\": 0, \"y\": 0, \"w\": 56, \"h\": 32, \"reportPath\": \"root.platform.reports.aps-job-board\"}, {\"id\": \"conflicts\", \"type\": \"report\", \"title\": \"Conflicts\", \"x\": 56, \"y\": 0, \"w\": 28, \"h\": 32, \"reportPath\": \"root.platform.reports.aps-conflicts\"}, {\"id\": \"replan\", \"type\": \"function-form\", \"title\": \"Replan job\", \"x\": 0, \"y\": 32, \"w\": 28, \"h\": 22, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-aps-hub-v1\", \"functionName\": \"aps_replanJob\", \"buttonLabel\": \"Replan\", \"fieldsJson\": \"[{\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job #\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"plannedStart\\\", \\\"label\\\": \\\"Planned start\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"plannedEnd\\\", \\\"label\\\": \\\"Planned end\\\", \\\"type\\\": \\\"text\\\"}]\"}, {\"id\": \"freeze\", \"type\": \"function-form\", \"title\": \"Freeze equipment\", \"x\": 28, \"y\": 32, \"w\": 28, \"h\": 22, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-aps-hub-v1\", \"functionName\": \"aps_freezeEquipment\", \"buttonLabel\": \"Freeze\", \"fieldsJson\": \"[{\\\"name\\\": \\\"equipmentId\\\", \\\"label\\\": \\\"Equipment\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"WU-A01\\\"}, {\\\"name\\\": \\\"note\\\", \\\"label\\\": \\\"Note\\\", \\\"type\\\": \\\"text\\\"}]\"}, {\"id\": \"freezes\", \"type\": \"report\", \"title\": \"Freezes\", \"x\": 56, \"y\": 32, \"w\": 28, \"h\": 22, \"reportPath\": \"root.platform.reports.aps-freezes\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "erp-mes-aps",
+    "title": "MES APS",
+    "defaultDashboard": "root.platform.dashboards.aps-board",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.aps-board",
+        "title": "Planner"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.erp-mes-aps-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.aps-job-board",
+        "title": "Job Board"
+      },
+      {
+        "path": "root.platform.reports.aps-conflicts",
+        "title": "Conflicts"
+      },
+      {
+        "path": "root.platform.reports.aps-freezes",
+        "title": "Freezes"
+      }
+    ],
+    "defaultReport": "root.platform.reports.aps-job-board"
+  },
+  "metadata": {
+    "product": "erp-mes-aps",
+    "publisher": "IoT Solutions",
+    "delivery": "marketplace",
+    "changelog": "1.1.0 report tables for board/conflicts/freezes; prior invoke/hub fixes"
+  }
+}

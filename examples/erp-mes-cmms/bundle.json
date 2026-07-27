@@ -1,0 +1,499 @@
+{
+  "version": "1.1.0",
+  "displayName": "ERP-MES CMMS",
+  "tablePrefix": "cmms_",
+  "schemaName": "app_erp_mes_cmms",
+  "requires": [
+    {
+      "appId": "erp-mes-core",
+      "minVersion": "2.1.0"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "cmms_m1",
+      "sql": "CREATE TABLE IF NOT EXISTS cmms_spare_part (\n           part_id VARCHAR(64) PRIMARY KEY,\n           name VARCHAR(256) NOT NULL,\n           qty_on_hand NUMERIC(14,3) NOT NULL DEFAULT 0,\n           uom VARCHAR(32),\n           min_qty NUMERIC(14,3) NOT NULL DEFAULT 0);\nCREATE TABLE IF NOT EXISTS cmms_failure_code (\n           code VARCHAR(64) PRIMARY KEY,\n           description VARCHAR(256) NOT NULL,\n           parent_code VARCHAR(64));\nCREATE TABLE IF NOT EXISTS cmms_pm_plan (\n           plan_id VARCHAR(64) PRIMARY KEY,\n           equipment_id VARCHAR(64) NOT NULL,\n           title VARCHAR(256) NOT NULL,\n           interval_days INT NOT NULL DEFAULT 30,\n           checklist_json VARCHAR(2000),\n           next_due TIMESTAMP);\nCREATE TABLE IF NOT EXISTS cmms_wo_labor (\n           id VARCHAR(64) PRIMARY KEY,\n           core_wo_id VARCHAR(64) NOT NULL,\n           person_id VARCHAR(64),\n           hours NUMERIC(14,3) NOT NULL DEFAULT 0,\n           note VARCHAR(256));\nCREATE TABLE IF NOT EXISTS cmms_wo_part_issue (\n           id VARCHAR(64) PRIMARY KEY,\n           core_wo_id VARCHAR(64) NOT NULL,\n           part_id VARCHAR(64) NOT NULL,\n           qty NUMERIC(14,3) NOT NULL,\n           issued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);\nINSERT INTO cmms_spare_part (part_id, name, qty_on_hand, uom, min_qty)\n           SELECT 'SP-BEARING-01', 'Assembly bearing', 12, 'pcs', 2\n           WHERE NOT EXISTS (SELECT 1 FROM cmms_spare_part WHERE part_id = 'SP-BEARING-01');\nINSERT INTO cmms_failure_code (code, description, parent_code)\n           SELECT 'FC-MECH', 'Mechanical', NULL\n           WHERE NOT EXISTS (SELECT 1 FROM cmms_failure_code WHERE code = 'FC-MECH');\nINSERT INTO cmms_failure_code (code, description, parent_code)\n           SELECT 'FC-MECH-BEARING', 'Bearing wear', 'FC-MECH'\n           WHERE NOT EXISTS (SELECT 1 FROM cmms_failure_code WHERE code = 'FC-MECH-BEARING');\nINSERT INTO cmms_pm_plan (plan_id, equipment_id, title, interval_days, checklist_json)\n           SELECT 'PM-WU-A01-M', 'WU-A01', 'Monthly assembly PM', 30, '[\"lube\",\"inspect belt\",\"torque check\"]'\n           WHERE NOT EXISTS (SELECT 1 FROM cmms_pm_plan WHERE plan_id = 'PM-WU-A01-M')"
+    }
+  ],
+  "objects": [],
+  "functions": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+      "functionName": "cmms_listParts",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "partId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qtyOnHand",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "uom",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "minQty",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT part_id, name, qty_on_hand, COALESCE(uom,'') AS uom, min_qty FROM cmms_spare_part ORDER BY part_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"partId\": \"${item.part_id}\", \"name\": \"${item.name}\", \"qtyOnHand\": \"${item.qty_on_hand}\", \"uom\": \"${item.uom}\", \"minQty\": \"${item.min_qty}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+      "functionName": "cmms_listPmPlans",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "planId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "equipmentId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "title",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "intervalDays",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT plan_id, equipment_id, title, interval_days FROM cmms_pm_plan ORDER BY plan_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"planId\": \"${item.plan_id}\", \"equipmentId\": \"${item.equipment_id}\", \"title\": \"${item.title}\", \"intervalDays\": \"${item.interval_days}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+      "functionName": "cmms_generatePmRequest",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "planId",
+              "type": "STRING"
+            },
+            {
+              "name": "requestId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "planId",
+              "type": "STRING"
+            },
+            {
+              "name": "requestId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"p\", \"sql\": \"SELECT plan_id, equipment_id, title FROM cmms_pm_plan WHERE plan_id = ?\", \"params\": [\"${input.planId}\"]}, {\"type\": \"failIfNull\", \"var\": \"p\", \"message\": \"PM plan not found\"}, {\"type\": \"invoke_function\", \"var\": \"req\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_maint_createRequest\", \"input\": {\"requestId\": \"${input.requestId}\", \"equipmentId\": \"${p.equipment_id}\", \"description\": \"PM: ${p.title}\", \"priority\": \"5\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"${req.error_code}\", \"error_message\": \"${req.error_message}\", \"planId\": \"${input.planId}\", \"requestId\": \"${input.requestId}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+      "functionName": "cmms_issuePart",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "coreWoId",
+              "type": "STRING"
+            },
+            {
+              "name": "partId",
+              "type": "STRING"
+            },
+            {
+              "name": "qty",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "partId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO cmms_wo_part_issue (id, core_wo_id, part_id, qty) VALUES (gen_random_uuid(), ?, ?, CAST(? AS DOUBLE))\", \"params\": [\"${input.coreWoId}\", \"${input.partId}\", \"${input.qty}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE cmms_spare_part SET qty_on_hand = qty_on_hand - CAST(? AS DOUBLE) WHERE part_id = ?\", \"params\": [\"${input.qty}\", \"${input.partId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"partId\": \"${input.partId}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+      "functionName": "cmms_bookLabor",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "coreWoId",
+              "type": "STRING"
+            },
+            {
+              "name": "personId",
+              "type": "STRING"
+            },
+            {
+              "name": "hours",
+              "type": "STRING"
+            },
+            {
+              "name": "note",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "coreWoId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO cmms_wo_labor (id, core_wo_id, person_id, hours, note) VALUES (gen_random_uuid(), ?, ?, CAST(? AS DOUBLE), ?)\", \"params\": [\"${input.coreWoId}\", \"${input.personId}\", \"${input.hours}\", \"${input.note}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"coreWoId\": \"${input.coreWoId}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+      "functionName": "cmms_listFailureCodes",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "description",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "parentCode",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT code, description, COALESCE(parent_code,'') AS parent_code FROM cmms_failure_code ORDER BY code\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"code\": \"${item.code}\", \"description\": \"${item.description}\", \"parentCode\": \"${item.parent_code}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+      "functionName": "cmms_bridgeListMaint",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "requestId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "equipmentId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "description",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"invoke_function\", \"var\": \"m\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_maint_list\", \"input\": {}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${m.rows}\"}}]}"
+      }
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "erp-mes-cmms-hub-v1",
+      "description": "CMMS hub bridging core maintenance lite",
+      "type": "SINGLETON",
+      "variables": []
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "cmms-spare-parts",
+      "title": "Spare parts",
+      "query": "\nSELECT part_id, name, qty_on_hand, COALESCE(uom,'') AS uom, min_qty\nFROM cmms_spare_part ORDER BY part_id\n",
+      "columns": [
+        {
+          "field": "part_id",
+          "label": "Part"
+        },
+        {
+          "field": "name",
+          "label": "Name"
+        },
+        {
+          "field": "qty_on_hand",
+          "label": "On hand"
+        },
+        {
+          "field": "uom",
+          "label": "UOM"
+        },
+        {
+          "field": "min_qty",
+          "label": "Min"
+        }
+      ]
+    },
+    {
+      "reportId": "cmms-pm-plans",
+      "title": "PM plans",
+      "query": "\nSELECT plan_id, equipment_id, title, interval_days, next_due\nFROM cmms_pm_plan ORDER BY plan_id\n",
+      "columns": [
+        {
+          "field": "plan_id",
+          "label": "Plan"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Equipment"
+        },
+        {
+          "field": "title",
+          "label": "Title"
+        },
+        {
+          "field": "interval_days",
+          "label": "Days"
+        },
+        {
+          "field": "next_due",
+          "label": "Next due"
+        }
+      ]
+    },
+    {
+      "reportId": "cmms-core-maint",
+      "title": "Core maintenance requests",
+      "query": "\nSELECT request_id, COALESCE(equipment_id,'') AS equipment_id,\n       COALESCE(status,'') AS status, COALESCE(description,'') AS description\nFROM app_erp_mes_core.emc_maintenance_request\nORDER BY request_id\n",
+      "columns": [
+        {
+          "field": "request_id",
+          "label": "Request"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Equipment"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        },
+        {
+          "field": "description",
+          "label": "Description"
+        }
+      ]
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.cmms-main",
+      "title": "CMMS",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"parts\", \"type\": \"report\", \"title\": \"Spare parts\", \"x\": 0, \"y\": 0, \"w\": 42, \"h\": 24, \"reportPath\": \"root.platform.reports.cmms-spare-parts\"}, {\"id\": \"pm\", \"type\": \"report\", \"title\": \"PM plans\", \"x\": 42, \"y\": 0, \"w\": 42, \"h\": 24, \"reportPath\": \"root.platform.reports.cmms-pm-plans\"}, {\"id\": \"gen\", \"type\": \"function-form\", \"title\": \"Generate PM request\", \"x\": 0, \"y\": 24, \"w\": 42, \"h\": 18, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-cmms-hub-v1\", \"functionName\": \"cmms_generatePmRequest\", \"buttonLabel\": \"Create request\", \"fieldsJson\": \"[{\\\"name\\\": \\\"planId\\\", \\\"label\\\": \\\"Plan ID\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"PM-WU-A01-M\\\"}, {\\\"name\\\": \\\"requestId\\\", \\\"label\\\": \\\"Request ID\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"MR-DEMO-001\\\"}]\"}, {\"id\": \"maint\", \"type\": \"report\", \"title\": \"Core maintenance\", \"x\": 42, \"y\": 24, \"w\": 42, \"h\": 18, \"reportPath\": \"root.platform.reports.cmms-core-maint\"}, {\"id\": \"issue\", \"type\": \"function-form\", \"title\": \"Issue part to WO\", \"x\": 0, \"y\": 42, \"w\": 42, \"h\": 20, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-cmms-hub-v1\", \"functionName\": \"cmms_issuePart\", \"buttonLabel\": \"Issue\", \"fieldsJson\": \"[{\\\"name\\\": \\\"coreWoId\\\", \\\"label\\\": \\\"Core WO id\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"partId\\\", \\\"label\\\": \\\"Part\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"SP-BEARING-01\\\"}, {\\\"name\\\": \\\"qty\\\", \\\"label\\\": \\\"Qty\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"1\\\"}]\"}, {\"id\": \"labor\", \"type\": \"function-form\", \"title\": \"Book labor\", \"x\": 42, \"y\": 42, \"w\": 42, \"h\": 20, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-cmms-hub-v1\", \"functionName\": \"cmms_bookLabor\", \"buttonLabel\": \"Book\", \"fieldsJson\": \"[{\\\"name\\\": \\\"coreWoId\\\", \\\"label\\\": \\\"Core WO id\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"personId\\\", \\\"label\\\": \\\"Person\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"hours\\\", \\\"label\\\": \\\"Hours\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"note\\\", \\\"label\\\": \\\"Note\\\", \\\"type\\\": \\\"text\\\"}]\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "erp-mes-cmms",
+    "title": "MES CMMS",
+    "defaultDashboard": "root.platform.dashboards.cmms-main",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.cmms-main",
+        "title": "CMMS"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.erp-mes-cmms-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.cmms-spare-parts",
+        "title": "Spare parts"
+      },
+      {
+        "path": "root.platform.reports.cmms-pm-plans",
+        "title": "PM plans"
+      },
+      {
+        "path": "root.platform.reports.cmms-core-maint",
+        "title": "Core maint"
+      }
+    ],
+    "defaultReport": "root.platform.reports.cmms-spare-parts"
+  },
+  "metadata": {
+    "product": "erp-mes-cmms",
+    "publisher": "IoT Solutions",
+    "delivery": "marketplace",
+    "changelog": "1.1.0 report tables for parts/PM/maint; prior invoke/hub fixes"
+  }
+}

@@ -1117,7 +1117,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-166 | **Work order dispatch** | **Done** | BPMN + work-queue + operator confirm → WO status |
 | BL-167 | **Quality module** | **Done** | SPC charts, defect `QUALITY_RECORD`, genealogy report (BL-193) |
 | BL-168 | **ISA-88 batch lite** | **Done** | Recipe + phase + seed `LOT` + Operator batch dashboard |
-| BL-169 | **ERP outbox (live connector)** | **Deferred** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog](isa95-catalog.md) Level 4 |
+| BL-169 | **ERP outbox (live connector)** | **Done (1C path)** | B2MML envelope + `mes-integration-catalog` 1.0 `1c-http` ready profile on `emc_erp_*`; SAP IDoc remains deferred profile |
 | BL-170 | **MES certification bundle** | **Done** | `mes-platform` / production — deploy ≤30 min lab — [reference-mes-platform](reference-mes-platform.md) |
 | BL-220 | **Manufacturing pattern catalog docs** | **Done** | [manufacturing-patterns](manufacturing-patterns.md) + ADR-0050 docs gate; no platform Java |
 | BL-221 | **Traceability DAG pattern** | **Done** | `mes-platform` 1.4.0 DAG BFF `mes_genealogy_queryDagByLot` / `mes_genealogy_listDagEdges`; schema `mes_platform_genealogy_dag_v2` |

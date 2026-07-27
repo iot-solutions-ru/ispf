@@ -1,14 +1,156 @@
 {
-  "version": "2.0.0",
+  "version": "2.2.0",
   "standard": "IEC 62264 / ISA-95",
   "parts": [
+    "1",
     "2",
     "3",
-    "4"
+    "4",
+    "5"
   ],
-  "milestone": "M3",
-  "policy": "attribute-complete Parts 2+4; Part 3 activity BFF map; Part 5 out of scope",
+  "milestone": "M5",
+  "policy": "attribute-complete Parts 1-5 demostand GOST object set (M5): RRN, Container/Tool/Software, Ops Definition/Schedule, Work Capability/WMC, Work Alert/KPI; Part 3 4x8 BFF map; Part 5 B2M UML",
   "classes": [
+    {
+      "classId": "Enterprise",
+      "part": "1",
+      "emcTables": [
+        "emc_equipment"
+      ],
+      "bff": [
+        "emc_equipment_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "equipmentId",
+          "required": true,
+          "column": "equipment_id",
+          "status": "covered"
+        },
+        {
+          "name": "level",
+          "required": true,
+          "column": "level",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "Site",
+          "via": "parent_id"
+        }
+      ],
+      "note": "level=ENTERPRISE rows"
+    },
+    {
+      "classId": "Site",
+      "part": "1",
+      "emcTables": [
+        "emc_equipment"
+      ],
+      "bff": [
+        "emc_equipment_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "equipmentId",
+          "required": true,
+          "column": "equipment_id",
+          "status": "covered"
+        },
+        {
+          "name": "level",
+          "required": true,
+          "column": "level",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "level=SITE rows"
+    },
+    {
+      "classId": "Area",
+      "part": "1",
+      "emcTables": [
+        "emc_equipment"
+      ],
+      "bff": [
+        "emc_equipment_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "equipmentId",
+          "required": true,
+          "column": "equipment_id",
+          "status": "covered"
+        },
+        {
+          "name": "level",
+          "required": true,
+          "column": "level",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "level=AREA rows"
+    },
+    {
+      "classId": "WorkCenter",
+      "part": "1",
+      "emcTables": [
+        "emc_equipment"
+      ],
+      "bff": [
+        "emc_equipment_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "equipmentId",
+          "required": true,
+          "column": "equipment_id",
+          "status": "covered"
+        },
+        {
+          "name": "level",
+          "required": true,
+          "column": "level",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "level=WORK_CENTER / LINE rows"
+    },
+    {
+      "classId": "WorkUnit",
+      "part": "1",
+      "emcTables": [
+        "emc_equipment"
+      ],
+      "bff": [
+        "emc_equipment_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "equipmentId",
+          "required": true,
+          "column": "equipment_id",
+          "status": "covered"
+        },
+        {
+          "name": "level",
+          "required": true,
+          "column": "level",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "level=WORK_UNIT rows"
+    },
     {
       "classId": "HierarchyScope",
       "part": "2",
@@ -745,6 +887,809 @@
         }
       ],
       "relationships": []
+    },
+    {
+      "classId": "Transaction",
+      "part": "5",
+      "emcTables": [
+        "emc_erp_outbox",
+        "emc_erp_inbox",
+        "emc_erp_transaction_profile"
+      ],
+      "bff": [
+        "emc_erp_enqueueOutbox",
+        "emc_erp_receiveInbox",
+        "emc_erp_listProfiles"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "verb",
+          "required": true,
+          "column": "verb",
+          "status": "covered"
+        },
+        {
+          "name": "noun",
+          "required": true,
+          "column": "noun",
+          "status": "covered"
+        },
+        {
+          "name": "idempotencyKey",
+          "required": true,
+          "column": "idempotency_key",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "ApplicationAcknowledgement",
+      "part": "5",
+      "emcTables": [
+        "emc_erp_outbox"
+      ],
+      "bff": [
+        "emc_erp_pollOutbox",
+        "emc_erp_listOutbox"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "ackCode",
+          "required": false,
+          "column": "ack_code",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "MasterDataReplica",
+      "part": "5",
+      "emcTables": [
+        "emc_master_data_replica"
+      ],
+      "bff": [
+        "emc_erp_syncMasterData"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "entityType",
+          "required": true,
+          "column": "entity_type",
+          "status": "covered"
+        },
+        {
+          "name": "externalId",
+          "required": true,
+          "column": "external_id",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "IntegrationLog",
+      "part": "5",
+      "emcTables": [
+        "emc_integration_log"
+      ],
+      "bff": [
+        "emc_erp_listIntegrationLog"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "direction",
+          "required": true,
+          "column": "direction",
+          "status": "covered"
+        },
+        {
+          "name": "verb",
+          "required": false,
+          "column": "verb",
+          "status": "covered"
+        },
+        {
+          "name": "noun",
+          "required": false,
+          "column": "noun",
+          "status": "covered"
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "classId": "KpiDefinition",
+      "part": "3",
+      "emcTables": [
+        "emc_kpi_definition",
+        "emc_kpi_value"
+      ],
+      "bff": [
+        "emc_kpi_listDefinitions",
+        "emc_kpi_calc",
+        "emc_kpi_listValues"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "kpiCode",
+          "required": true,
+          "column": "kpi_code",
+          "status": "covered"
+        },
+        {
+          "name": "iso22400Id",
+          "required": false,
+          "column": "iso22400_id",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "ISO 22400 subset registry"
+    },
+    {
+      "classId": "Container",
+      "part": "2",
+      "emcTables": [
+        "emc_container",
+        "emc_container_class",
+        "emc_container_property"
+      ],
+      "bff": [
+        "emc_container_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "containerId",
+          "required": true,
+          "column": "container_id",
+          "status": "covered"
+        },
+        {
+          "name": "classId",
+          "required": true,
+          "column": "class_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "hierarchyScopeId",
+          "required": false,
+          "column": "hierarchy_scope_id",
+          "status": "covered"
+        },
+        {
+          "name": "capacity",
+          "required": false,
+          "column": "capacity",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "ContainerClass",
+          "via": "class_id"
+        }
+      ],
+      "note": "GOST R IEC 62264-2 §5.6"
+    },
+    {
+      "classId": "ContainerClass",
+      "part": "2",
+      "emcTables": [
+        "emc_container_class"
+      ],
+      "bff": [
+        "emc_container_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "classId",
+          "required": true,
+          "column": "class_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "capacityUom",
+          "required": false,
+          "column": "capacity_uom",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "GOST R IEC 62264-2 §5.6"
+    },
+    {
+      "classId": "Tool",
+      "part": "2",
+      "emcTables": [
+        "emc_tool",
+        "emc_tool_class",
+        "emc_tool_property"
+      ],
+      "bff": [
+        "emc_tool_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "toolId",
+          "required": true,
+          "column": "tool_id",
+          "status": "covered"
+        },
+        {
+          "name": "classId",
+          "required": true,
+          "column": "class_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "equipmentId",
+          "required": false,
+          "column": "equipment_id",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "Equipment",
+          "via": "equipment_id"
+        }
+      ],
+      "note": "GOST R IEC 62264-2 §5.6"
+    },
+    {
+      "classId": "ToolClass",
+      "part": "2",
+      "emcTables": [
+        "emc_tool_class"
+      ],
+      "bff": [
+        "emc_tool_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "classId",
+          "required": true,
+          "column": "class_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "GOST R IEC 62264-2 §5.6"
+    },
+    {
+      "classId": "Software",
+      "part": "2",
+      "emcTables": [
+        "emc_software",
+        "emc_software_class",
+        "emc_software_property"
+      ],
+      "bff": [
+        "emc_software_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "softwareId",
+          "required": true,
+          "column": "software_id",
+          "status": "covered"
+        },
+        {
+          "name": "classId",
+          "required": true,
+          "column": "class_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "vendor",
+          "required": false,
+          "column": "vendor",
+          "status": "covered"
+        },
+        {
+          "name": "versionLabel",
+          "required": false,
+          "column": "version_label",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "GOST R IEC 62264-2 §5.6"
+    },
+    {
+      "classId": "SoftwareClass",
+      "part": "2",
+      "emcTables": [
+        "emc_software_class"
+      ],
+      "bff": [
+        "emc_software_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "classId",
+          "required": true,
+          "column": "class_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "GOST R IEC 62264-2 §5.6"
+    },
+    {
+      "classId": "OperationsDefinition",
+      "part": "2",
+      "emcTables": [
+        "emc_operations_definition",
+        "emc_operations_definition_segment"
+      ],
+      "bff": [
+        "emc_opsdef_list",
+        "emc_opsdef_segments_list",
+        "emc_opsdef_upsert"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "definitionId",
+          "required": true,
+          "column": "definition_id",
+          "status": "covered"
+        },
+        {
+          "name": "version",
+          "required": true,
+          "column": "version",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "hierarchyScopeId",
+          "required": false,
+          "column": "hierarchy_scope_id",
+          "status": "covered"
+        },
+        {
+          "name": "publishedFlag",
+          "required": false,
+          "column": "published_flag",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "ProcessSegment",
+          "via": "emc_operations_definition_segment"
+        }
+      ],
+      "note": "GOST R IEC 62264-2 §6.1 first-class"
+    },
+    {
+      "classId": "OperationsSchedule",
+      "part": "2",
+      "emcTables": [
+        "emc_operations_schedule",
+        "emc_operations_request"
+      ],
+      "bff": [
+        "emc_opssched_list",
+        "emc_opsreq_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "scheduleId",
+          "required": true,
+          "column": "schedule_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "hierarchyScopeId",
+          "required": false,
+          "column": "hierarchy_scope_id",
+          "status": "covered"
+        },
+        {
+          "name": "state",
+          "required": true,
+          "column": "state",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "OperationsDefinition",
+          "via": "emc_operations_request.definition_id"
+        }
+      ],
+      "note": "GOST R IEC 62264-2 §6.2 first-class"
+    },
+    {
+      "classId": "ResourceRelationshipNetwork",
+      "part": "4",
+      "emcTables": [
+        "emc_resource_relationship_network",
+        "emc_resource_relationship",
+        "emc_resource_relationship_property"
+      ],
+      "bff": [
+        "emc_rrn_list",
+        "emc_rrn_edges_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "networkId",
+          "required": true,
+          "column": "network_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "hierarchyScopeId",
+          "required": false,
+          "column": "hierarchy_scope_id",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "PNST 172 / IEC 62264-4 §6"
+    },
+    {
+      "classId": "ResourceRelationship",
+      "part": "4",
+      "emcTables": [
+        "emc_resource_relationship",
+        "emc_resource_relationship_property"
+      ],
+      "bff": [
+        "emc_rrn_edges_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "relId",
+          "required": true,
+          "column": "rel_id",
+          "status": "covered"
+        },
+        {
+          "name": "networkId",
+          "required": true,
+          "column": "network_id",
+          "status": "covered"
+        },
+        {
+          "name": "fromResourceType",
+          "required": true,
+          "column": "from_resource_type",
+          "status": "covered"
+        },
+        {
+          "name": "fromResourceId",
+          "required": true,
+          "column": "from_resource_id",
+          "status": "covered"
+        },
+        {
+          "name": "toResourceType",
+          "required": true,
+          "column": "to_resource_type",
+          "status": "covered"
+        },
+        {
+          "name": "toResourceId",
+          "required": true,
+          "column": "to_resource_id",
+          "status": "covered"
+        },
+        {
+          "name": "relationshipType",
+          "required": true,
+          "column": "relationship_type",
+          "status": "covered"
+        },
+        {
+          "name": "dependency",
+          "required": true,
+          "column": "dependency",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "ResourceRelationshipNetwork",
+          "via": "network_id"
+        }
+      ],
+      "note": "PNST 172 / IEC 62264-4 §6"
+    },
+    {
+      "classId": "WorkCapability",
+      "part": "4",
+      "emcTables": [
+        "emc_work_capability",
+        "emc_work_capability_equipment",
+        "emc_work_capability_material",
+        "emc_work_capability_personnel",
+        "emc_work_capability_segment"
+      ],
+      "bff": [
+        "emc_workcap_list",
+        "emc_workcap_children_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "capabilityId",
+          "required": true,
+          "column": "capability_id",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "hierarchyScopeId",
+          "required": false,
+          "column": "hierarchy_scope_id",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "PNST 172 / IEC 62264-4 §10"
+    },
+    {
+      "classId": "WorkMasterCapability",
+      "part": "4",
+      "emcTables": [
+        "emc_work_master_capability"
+      ],
+      "bff": [
+        "emc_wmc_list"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "workMasterId",
+          "required": true,
+          "column": "work_master_id",
+          "status": "covered"
+        },
+        {
+          "name": "version",
+          "required": true,
+          "column": "version",
+          "status": "covered"
+        },
+        {
+          "name": "capabilityId",
+          "required": true,
+          "column": "capability_id",
+          "status": "covered"
+        }
+      ],
+      "relationships": [
+        {
+          "to": "WorkMaster",
+          "via": "work_master_id"
+        },
+        {
+          "to": "WorkCapability",
+          "via": "capability_id"
+        }
+      ],
+      "note": "PNST 172 / IEC 62264-4 §11"
+    },
+    {
+      "classId": "WorkAlert",
+      "part": "4",
+      "emcTables": [
+        "emc_work_alert"
+      ],
+      "bff": [
+        "emc_work_alert_list",
+        "emc_work_alert_ack"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "alertId",
+          "required": true,
+          "column": "alert_id",
+          "status": "covered"
+        },
+        {
+          "name": "alertType",
+          "required": true,
+          "column": "alert_type",
+          "status": "covered"
+        },
+        {
+          "name": "severity",
+          "required": true,
+          "column": "severity",
+          "status": "covered"
+        },
+        {
+          "name": "message",
+          "required": true,
+          "column": "message",
+          "status": "covered"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "column": "status",
+          "status": "covered"
+        },
+        {
+          "name": "raisedAt",
+          "required": true,
+          "column": "raised_at",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "PNST 172 / IEC 62264-4 §13"
+    },
+    {
+      "classId": "WorkKPI",
+      "part": "4",
+      "emcTables": [
+        "emc_kpi_definition",
+        "emc_kpi_value"
+      ],
+      "bff": [
+        "emc_kpi_listDefinitions",
+        "emc_kpi_listValues",
+        "emc_kpi_calc"
+      ],
+      "status": "covered",
+      "attributes": [
+        {
+          "name": "kpiCode",
+          "required": true,
+          "column": "kpi_code",
+          "status": "covered"
+        },
+        {
+          "name": "name",
+          "required": true,
+          "column": "name",
+          "status": "covered"
+        },
+        {
+          "name": "iso22400Id",
+          "required": false,
+          "column": "iso22400_id",
+          "status": "covered"
+        },
+        {
+          "name": "unit",
+          "required": false,
+          "column": "unit",
+          "status": "covered"
+        }
+      ],
+      "relationships": [],
+      "note": "PNST 172 / IEC 62264-4 §12 via ISO 22400 registry"
     }
   ],
   "part3Activities": [
@@ -942,51 +1887,98 @@
     }
   ],
   "requiredTables": [
-    "emc_hierarchy_scope",
+    "emc_container",
+    "emc_container_class",
+    "emc_container_property",
     "emc_equipment_class_property",
-    "emc_physical_asset_class_property",
-    "emc_personnel_class_property",
-    "emc_person_property",
+    "emc_erp_transaction_profile",
+    "emc_genealogy_node",
+    "emc_hierarchy_scope",
+    "emc_job_order_parameter_req",
+    "emc_kpi_definition",
+    "emc_kpi_value",
+    "emc_material_assembled_from",
     "emc_material_class_property",
     "emc_material_definition_property",
-    "emc_qualification_test_spec",
-    "emc_qualification_test_result",
-    "emc_material_assembled_from",
-    "emc_segment_parameter_spec",
-    "emc_product_segment_material_spec",
-    "emc_product_segment_equipment_spec",
-    "emc_product_segment_personnel_spec",
-    "emc_product_segment_parameter_spec",
+    "emc_mom_activity_bff",
+    "emc_operations_definition",
+    "emc_operations_definition_segment",
+    "emc_operations_request",
+    "emc_operations_schedule",
     "emc_ops_capability_equipment",
     "emc_ops_capability_material",
     "emc_ops_capability_personnel",
     "emc_ops_capability_segment",
-    "emc_mom_activity_bff",
-    "emc_work_master_node",
-    "emc_work_master_edge",
-    "emc_job_order_parameter_req",
+    "emc_person_property",
+    "emc_personnel_class_property",
+    "emc_physical_asset_class_property",
+    "emc_product_segment_equipment_spec",
+    "emc_product_segment_material_spec",
+    "emc_product_segment_parameter_spec",
+    "emc_product_segment_personnel_spec",
+    "emc_qualification_test_result",
+    "emc_qualification_test_spec",
+    "emc_resource_relationship",
+    "emc_resource_relationship_network",
+    "emc_resource_relationship_property",
+    "emc_segment_parameter_spec",
+    "emc_software",
+    "emc_software_class",
+    "emc_software_property",
+    "emc_tool",
+    "emc_tool_class",
+    "emc_tool_property",
+    "emc_work_alert",
+    "emc_work_capability",
+    "emc_work_capability_equipment",
+    "emc_work_capability_material",
+    "emc_work_capability_personnel",
+    "emc_work_capability_segment",
     "emc_work_directive",
-    "emc_work_performance",
-    "emc_genealogy_node"
+    "emc_work_master_capability",
+    "emc_work_master_edge",
+    "emc_work_master_node",
+    "emc_work_performance"
   ],
   "requiredFunctions": [
-    "emc_hierarchy_scope_list",
-    "emc_qualification_listSpecs",
-    "emc_qualification_recordResult",
+    "emc_aps_listConflicts",
     "emc_assembledfrom_list",
     "emc_assembledfrom_upsert",
-    "emc_segment_param_list",
-    "emc_product_segment_specs_list",
+    "emc_classprop_list",
+    "emc_container_list",
+    "emc_erp_listIntegrationLog",
+    "emc_erp_listProfiles",
+    "emc_hierarchy_scope_list",
+    "emc_joborder_param_list",
+    "emc_kpi_calc",
+    "emc_kpi_listDefinitions",
+    "emc_kpi_listValues",
+    "emc_mom_listActivityBff",
     "emc_opscap_children_list",
-    "emc_workmaster_nodes_list",
-    "emc_workdirective_list",
-    "emc_workdirective_upsert",
-    "emc_workperf_list",
-    "emc_workperf_rollup",
+    "emc_opsdef_list",
+    "emc_opsdef_segments_list",
+    "emc_opsdef_upsert",
+    "emc_opsreq_list",
+    "emc_opssched_list",
+    "emc_product_segment_specs_list",
+    "emc_qualification_listSpecs",
+    "emc_qualification_recordResult",
+    "emc_rrn_edges_list",
+    "emc_rrn_list",
+    "emc_segment_param_list",
+    "emc_software_list",
     "emc_sublot_list",
     "emc_sublot_split",
-    "emc_joborder_param_list",
-    "emc_mom_listActivityBff",
-    "emc_classprop_list"
+    "emc_tool_list",
+    "emc_wmc_list",
+    "emc_work_alert_ack",
+    "emc_work_alert_list",
+    "emc_workcap_children_list",
+    "emc_workcap_list",
+    "emc_workdirective_list",
+    "emc_workdirective_upsert",
+    "emc_workmaster_nodes_list",
+    "emc_workperf_list",
+    "emc_workperf_rollup"
   ]
 }

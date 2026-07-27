@@ -52,8 +52,8 @@ class ErpMesUmlConformanceTest {
 
         JsonNode catalog = MAPPER.readTree(
                 new ClassPathResource("erp-mes-uml-catalog.json").getInputStream());
-        assertThat(catalog.path("version").asText()).isEqualTo("2.0.0");
-        assertThat(catalog.path("milestone").asText()).isEqualTo("M3");
+        assertThat(catalog.path("version").asText()).isEqualTo("2.2.0");
+        assertThat(catalog.path("milestone").asText()).isEqualTo("M5");
 
         List<String> required = new ArrayList<>();
         for (JsonNode n : catalog.path("requiredFunctions")) {

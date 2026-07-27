@@ -28,6 +28,18 @@ from uml_extent import (  # noqa: E402
     M17_UML_PART4,
     build_uml_functions,
 )
+from m21_extent import (  # noqa: E402
+    M18_PART5_KPI,
+    build_m21_functions,
+)
+from m22_gost_extent import (  # noqa: E402
+    M19_GOST_GAPS,
+    build_gost_functions,
+)
+from m20_demo_extent import (  # noqa: E402
+    M20_DEMO_RICH,
+    build_m20_functions,
+)
 
 BUNDLE_OUT = os.path.join(ROOT, "bundle.json")
 APP_ID = "erp-mes-core"
@@ -1058,6 +1070,9 @@ MIGRATIONS = [
     {"id": "emc_m15_part3_complete", "sql": M15_PART3_COMPLETE},
     {"id": "emc_m16_uml_part2", "sql": M16_UML_PART2},
     {"id": "emc_m17_uml_part4", "sql": M17_UML_PART4},
+    {"id": "emc_m18_part5_kpi", "sql": M18_PART5_KPI},
+    {"id": "emc_m19_gost_gaps", "sql": M19_GOST_GAPS},
+    {"id": "emc_m20_demo_rich", "sql": M20_DEMO_RICH},
 ]
 
 
@@ -1306,7 +1321,21 @@ FUNCTIONS.append(fn(
         when({"var": "conflict.job_no", "notNull": True}, [
             ret({"error_code": "RESOURCE_CONFLICT",
                  "error_message": "Equipment already has a RUNNING job order: ${conflict.job_no}",
-                 "jobNo": "${input.jobNo}", "status": "", "responseId": ""}),
+                 "jobNo": "${input.jobNo}", "status": "", "dispatchStatus": "", "responseId": ""}),
+        ]),
+        # APS-lite: require AVAILABLE operations capability window for equipment
+        sel1("cap",
+             "SELECT c.capability_id FROM emc_operations_capability c "
+             "JOIN emc_ops_capability_equipment ce ON ce.capability_id = c.capability_id "
+             "WHERE ce.equipment_id = ? AND c.status = 'AVAILABLE' "
+             "AND (c.available_from IS NULL OR c.available_from <= CURRENT_TIMESTAMP) "
+             "AND (c.available_to IS NULL OR c.available_to >= CURRENT_TIMESTAMP) "
+             "ORDER BY c.capability_id LIMIT 1",
+             ["${job.equipment_id}"]),
+        when({"var": "cap.capability_id", "notNull": False}, [
+            ret({"error_code": "CAPABILITY_WINDOW",
+                 "error_message": "No AVAILABLE operations capability window for equipment",
+                 "jobNo": "${input.jobNo}", "status": "", "dispatchStatus": "", "responseId": ""}),
         ]),
         ex("INSERT INTO emc_job_response (response_id, job_no, job_state) SELECT gen_random_uuid(), ?, 'RUNNING' "
            "WHERE NOT EXISTS (SELECT 1 FROM emc_job_response WHERE job_no = ? AND job_state = 'RUNNING')",
@@ -2667,6 +2696,21 @@ FUNCTIONS.append(fn(
                 "entityType": "${m.entityType}", "externalId": "${m.externalId}",
                 "payloadJson": "${input.payloadJson}"}),
         ]),
+        when({"var": "input.noun", "equals": "OPERATIONS_CAPABILITY"}, [
+            ex("INSERT INTO emc_integration_log (id, direction, verb, noun, success, code, message) "
+               "VALUES (gen_random_uuid(), 'IN', ?, ?, true, 'OK', 'Capability query acknowledged')",
+               ["${input.verb}", "${input.noun}"]),
+        ]),
+        when({"var": "input.noun", "equals": "OPERATIONS_DEFINITION"}, [
+            ex("INSERT INTO emc_integration_log (id, direction, verb, noun, success, code, message) "
+               "VALUES (gen_random_uuid(), 'IN', ?, ?, true, 'OK', 'Operations definition show acknowledged')",
+               ["${input.verb}", "${input.noun}"]),
+        ]),
+        when({"var": "input.noun", "equals": "PRODUCT_DEFINITION"}, [
+            ex("INSERT INTO emc_integration_log (id, direction, verb, noun, success, code, message) "
+               "VALUES (gen_random_uuid(), 'IN', ?, ?, true, 'OK', 'Product definition show acknowledged')",
+               ["${input.verb}", "${input.noun}"]),
+        ]),
         ex("UPDATE emc_erp_inbox SET status = 'PROCESSED', processed_at = CURRENT_TIMESTAMP "
            "WHERE idempotency_key = ?", ["${input.idempotencyKey}"]),
         ret({"error_code": "OK", "error_message": "", "idempotencyKey": "${input.idempotencyKey}", "status": "PROCESSED"}),
@@ -3140,7 +3184,8 @@ ORDER BY e.started_at DESC
          ("job_no", "Job #"), ("equipment_id", "Equipment"), ("time_min", "Time min"),
          ("status", "Status"), ("started_at", "Started"), ("ended_at", "Ended")]]},
     {"reportId": "emc-genealogy-edges", "title": "Lot Genealogy Edges",
-     "description": "All lot→lot genealogy edges (ISA-95 production tracking).",
+     "description": "Lot→lot edges for the selected lot (direct incident edges).",
+     "parameters": ["lotId"],
      "query": """
 SELECT g.input_lot_id, COALESCE(li.definition_id, '') AS input_material,
        g.output_lot_id, COALESCE(lo.definition_id, '') AS output_material,
@@ -3148,60 +3193,91 @@ SELECT g.input_lot_id, COALESCE(li.definition_id, '') AS input_material,
 FROM emc_lot_genealogy g
 LEFT JOIN emc_material_lot li ON li.lot_id = g.input_lot_id
 LEFT JOIN emc_material_lot lo ON lo.lot_id = g.output_lot_id
+WHERE ? <> '' AND (g.input_lot_id = ? OR g.output_lot_id = ?)
 ORDER BY g.created_at, g.input_lot_id, g.output_lot_id
 """,
      "columns": [{"field": f, "label": l} for f, l in [
          ("input_lot_id", "Input Lot"), ("input_material", "Input Material"),
          ("output_lot_id", "Output Lot"), ("output_material", "Output Material"),
          ("quantity", "Qty"), ("created_at", "Created")]]},
-    {"reportId": "emc-genealogy-upstream-fg", "title": "Reverse Trace (FG → Raw)",
-     "description": "Multi-level UPSTREAM tree for seed FG lot LOT-FG-0001 (mes-demo reverse).",
+    {"reportId": "emc-genealogy-upstream-fg", "title": "Reverse Trace (selected lot → Raw)",
+     "description": "Multi-level UPSTREAM tree for the selected lotId only.",
+     "parameters": ["lotId"],
      "query": """
-WITH RECURSIVE upstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
-  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+WITH RECURSIVE upstream (root_lot, lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.output_lot_id, g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
          CONCAT(g.output_lot_id, '>', g.input_lot_id)
   FROM emc_lot_genealogy g
   LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
-  WHERE g.output_lot_id = 'LOT-FG-0001'
+  WHERE ? <> '' AND g.output_lot_id = ?
   UNION ALL
-  SELECT g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+  SELECT u.root_lot, g.input_lot_id, g.output_lot_id, g.quantity, COALESCE(l.definition_id, ''),
          u.depth + 1, CONCAT(u.path, '>', g.input_lot_id)
   FROM upstream u
   JOIN emc_lot_genealogy g ON g.output_lot_id = u.lot_id
   LEFT JOIN emc_material_lot l ON l.lot_id = g.input_lot_id
   WHERE u.depth < 15
 )
-SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+SELECT root_lot, depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
 FROM upstream
 ORDER BY depth, lot_id
 """,
      "columns": [{"field": f, "label": l} for f, l in [
-         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("root_lot", "Root Lot"), ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
          ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
-    {"reportId": "emc-genealogy-downstream-raw", "title": "Forward Trace (Raw → FG)",
-     "description": "Multi-level DOWNSTREAM tree for seed raw lot LOT-RAW-0001 (mes-demo forward).",
+    {"reportId": "emc-genealogy-downstream-raw", "title": "Forward Trace (selected lot → FG)",
+     "description": "Multi-level DOWNSTREAM tree for the selected lotId only.",
+     "parameters": ["lotId"],
      "query": """
-WITH RECURSIVE downstream (lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
-  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
+WITH RECURSIVE downstream (root_lot, lot_id, linked_from_lot_id, quantity, definition_id, depth, path) AS (
+  SELECT g.input_lot_id, g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''), 1,
          CONCAT(g.input_lot_id, '>', g.output_lot_id)
   FROM emc_lot_genealogy g
   LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
-  WHERE g.input_lot_id = 'LOT-RAW-0001'
+  WHERE ? <> '' AND g.input_lot_id = ?
   UNION ALL
-  SELECT g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''),
+  SELECT d.root_lot, g.output_lot_id, g.input_lot_id, g.quantity, COALESCE(l.definition_id, ''),
          d.depth + 1, CONCAT(d.path, '>', g.output_lot_id)
   FROM downstream d
   JOIN emc_lot_genealogy g ON g.input_lot_id = d.lot_id
   LEFT JOIN emc_material_lot l ON l.lot_id = g.output_lot_id
   WHERE d.depth < 15
 )
-SELECT depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
+SELECT root_lot, depth, lot_id, definition_id AS material_id, linked_from_lot_id, quantity, path
 FROM downstream
 ORDER BY depth, lot_id
 """,
      "columns": [{"field": f, "label": l} for f, l in [
-         ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
+         ("root_lot", "Root Lot"), ("depth", "Level"), ("lot_id", "Lot"), ("material_id", "Material"),
          ("linked_from_lot_id", "From Lot"), ("quantity", "Qty"), ("path", "Path")]]},
+    {"reportId": "emc-genealogy-lot-catalog", "title": "Genealogy Lot Catalog",
+     "description": "Selectable demo lots for genealogy (FG / WIP / RAW).",
+     "query": """
+SELECT lot_id, barcode, definition_id AS material_id, status, storage_location, quantity, base_uom
+FROM emc_material_lot
+WHERE lot_id LIKE 'LOT-FG-%' OR lot_id LIKE 'LOT-WIP-%' OR lot_id LIKE 'LOT-RAW-%'
+ORDER BY CASE WHEN lot_id LIKE 'LOT-FG-%' THEN 1 WHEN lot_id LIKE 'LOT-WIP-%' THEN 2 ELSE 3 END, lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("lot_id", "Lot"), ("barcode", "Barcode"), ("material_id", "Material"),
+         ("status", "Status"), ("storage_location", "Location"),
+         ("quantity", "Qty"), ("base_uom", "UOM")]]},
+    {"reportId": "emc-job-lot-link-report", "title": "Job ↔ Lot Links",
+     "description": "Produced FG lots per job (select job → sets lotId for genealogy).",
+     "query": """
+SELECT j.job_no, j.lot_id, j.link_role,
+       COALESCE(l.definition_id, '') AS material_id, COALESCE(l.status, '') AS lot_status,
+       COALESCE(o.dispatch_status, '') AS dispatch_status
+FROM emc_job_lot_link j
+LEFT JOIN emc_material_lot l ON l.lot_id = j.lot_id
+LEFT JOIN emc_job_order o ON o.job_no = j.job_no
+WHERE j.link_role = 'PRODUCED' AND j.lot_id LIKE 'LOT-FG-%'
+ORDER BY j.job_no, j.lot_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("job_no", "Job"), ("lot_id", "Lot"), ("link_role", "Role"),
+         ("material_id", "Material"), ("lot_status", "Lot Status"),
+         ("dispatch_status", "Job Status")]]},
     {"reportId": "emc-genealogy-mass-balance", "title": "Genealogy Mass Balance (Actuals)",
      "description": "Consumed vs produced quantities from material actuals (mass-balance view).",
      "query": """
@@ -3348,6 +3424,171 @@ WHERE status = 'CLOSED' AND COALESCE(time_min, 0) > 0
      "columns": [{"field": f, "label": l} for f, l in [
          ("closed_events", "Closed Events"), ("total_downtime_min", "Downtime Min"),
          ("mttr_min", "MTTR Min"), ("mtbf_min", "MTBF Min ≈")]]},
+    {"reportId": "emc-rrn-networks", "title": "Resource Relationship Networks (Part 4)",
+     "description": "GOST / IEC 62264-4 Resource Relationship Network headers.",
+     "query": """
+SELECT network_id, name, COALESCE(description, '') AS description,
+       COALESCE(hierarchy_scope_id, '') AS hierarchy_scope_id, status
+FROM emc_resource_relationship_network ORDER BY network_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("network_id", "Network"), ("name", "Name"), ("description", "Description"),
+         ("hierarchy_scope_id", "Scope"), ("status", "Status")]]},
+    {"reportId": "emc-rrn-edges", "title": "RRN Edges (Part 4)",
+     "description": "Resource relationships (equipment↔tool/container/software).",
+     "query": """
+SELECT rel_id, network_id, from_resource_type, from_resource_id,
+       to_resource_type, to_resource_id, relationship_type, dependency
+FROM emc_resource_relationship ORDER BY network_id, rel_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("rel_id", "Rel"), ("network_id", "Network"),
+         ("from_resource_type", "From Type"), ("from_resource_id", "From"),
+         ("to_resource_type", "To Type"), ("to_resource_id", "To"),
+         ("relationship_type", "Type"), ("dependency", "Dependency")]]},
+    {"reportId": "emc-container-report", "title": "Containers (Part 2 §5.6)",
+     "description": "Container resources (GOST R IEC 62264-2).",
+     "query": """
+SELECT container_id, class_id, name, COALESCE(description, '') AS description,
+       COALESCE(hierarchy_scope_id, '') AS hierarchy_scope_id,
+       COALESCE(CAST(capacity AS VARCHAR), '') AS capacity,
+       COALESCE(capacity_uom, '') AS capacity_uom, status
+FROM emc_container ORDER BY container_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("container_id", "Container"), ("class_id", "Class"), ("name", "Name"),
+         ("description", "Description"), ("hierarchy_scope_id", "Scope"),
+         ("capacity", "Capacity"), ("capacity_uom", "UOM"), ("status", "Status")]]},
+    {"reportId": "emc-tool-report", "title": "Tools (Part 2 §5.6)",
+     "description": "Tool resources linked to equipment.",
+     "query": """
+SELECT tool_id, class_id, name, COALESCE(description, '') AS description,
+       COALESCE(equipment_id, '') AS equipment_id,
+       COALESCE(CAST(calibration_due AS VARCHAR), '') AS calibration_due, status
+FROM emc_tool ORDER BY tool_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("tool_id", "Tool"), ("class_id", "Class"), ("name", "Name"),
+         ("description", "Description"), ("equipment_id", "Equipment"),
+         ("calibration_due", "Calibration Due"), ("status", "Status")]]},
+    {"reportId": "emc-software-report", "title": "Software (Part 2 §5.6)",
+     "description": "Software resources (MES agents / control software).",
+     "query": """
+SELECT software_id, class_id, name, COALESCE(vendor, '') AS vendor,
+       COALESCE(version_label, '') AS version_label, status
+FROM emc_software ORDER BY software_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("software_id", "Software"), ("class_id", "Class"), ("name", "Name"),
+         ("vendor", "Vendor"), ("version_label", "Version"), ("status", "Status")]]},
+    {"reportId": "emc-opsdef-report", "title": "Operations Definitions (Part 2)",
+     "description": "First-class Operations Definition headers.",
+     "query": """
+SELECT definition_id, version, name, COALESCE(description, '') AS description,
+       published_flag, status,
+       (SELECT COUNT(*) FROM emc_operations_definition_segment s
+        WHERE s.definition_id = d.definition_id AND s.version = d.version) AS segments
+FROM emc_operations_definition d ORDER BY definition_id, version
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("definition_id", "Definition"), ("version", "Ver"), ("name", "Name"),
+         ("description", "Description"), ("published_flag", "Published"),
+         ("status", "Status"), ("segments", "Segments")]]},
+    {"reportId": "emc-opssched-report", "title": "Operations Schedules (Part 2)",
+     "description": "Operations Schedule + request count.",
+     "query": """
+SELECT s.schedule_id, s.name, s.state, COALESCE(s.description, '') AS description,
+       (SELECT COUNT(*) FROM emc_operations_request r WHERE r.schedule_id = s.schedule_id) AS requests
+FROM emc_operations_schedule s ORDER BY s.schedule_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("schedule_id", "Schedule"), ("name", "Name"), ("state", "State"),
+         ("description", "Description"), ("requests", "Requests")]]},
+    {"reportId": "emc-workcap-report", "title": "Work Capability (Part 4)",
+     "description": "Work Capability headers (distinct from Operations Capability).",
+     "query": """
+SELECT capability_id, name, COALESCE(description, '') AS description,
+       COALESCE(hierarchy_scope_id, '') AS hierarchy_scope_id, status
+FROM emc_work_capability ORDER BY capability_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("capability_id", "Capability"), ("name", "Name"), ("description", "Description"),
+         ("hierarchy_scope_id", "Scope"), ("status", "Status")]]},
+    {"reportId": "emc-wmc-report", "title": "Work Master Capability (Part 4)",
+     "description": "Work Master ↔ Work Capability links.",
+     "query": """
+SELECT work_master_id, version, capability_id
+FROM emc_work_master_capability ORDER BY work_master_id, version, capability_id
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("work_master_id", "Work Master"), ("version", "Ver"),
+         ("capability_id", "Capability")]]},
+    {"reportId": "emc-work-alert-report", "title": "Work Alerts (Part 4)",
+     "description": "Work Alert register.",
+     "query": """
+SELECT alert_id, alert_type, severity, COALESCE(work_master_id, '') AS work_master_id,
+       message, status, CAST(raised_at AS VARCHAR) AS raised_at,
+       COALESCE(ack_by, '') AS ack_by
+FROM emc_work_alert ORDER BY raised_at DESC
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("alert_id", "Alert"), ("alert_type", "Type"), ("severity", "Severity"),
+         ("work_master_id", "Work Master"), ("message", "Message"),
+         ("status", "Status"), ("raised_at", "Raised"), ("ack_by", "Ack By")]]},
+    {"reportId": "emc-kpi-value-report", "title": "Work KPI Values (ISO 22400)",
+     "description": "Calculated / seeded KPI values (Part 4 Work KPI).",
+     "query": """
+SELECT v.kpi_code, d.name, COALESCE(v.scope_id, '') AS scope_id,
+       COALESCE(v.period_label, '') AS period_label, v.value_num,
+       CAST(v.calculated_at AS VARCHAR) AS calculated_at
+FROM emc_kpi_value v
+LEFT JOIN emc_kpi_definition d ON d.kpi_code = v.kpi_code
+ORDER BY v.calculated_at DESC
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("kpi_code", "KPI"), ("name", "Name"), ("scope_id", "Scope"),
+         ("period_label", "Period"), ("value_num", "Value"),
+         ("calculated_at", "Calculated")]]},
+    {"reportId": "emc-maint-request-report", "title": "Maintenance Requests",
+     "description": "Maintenance requests and linked work orders.",
+     "query": """
+SELECT r.request_id, r.equipment_id, COALESCE(r.description, '') AS description,
+       r.priority, r.status,
+       COALESCE((SELECT w.wo_id FROM emc_maintenance_work_order w
+                 WHERE w.request_id = r.request_id LIMIT 1), '') AS wo_id,
+       CAST(r.created_at AS VARCHAR) AS created_at
+FROM emc_maintenance_request r ORDER BY r.created_at DESC
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("request_id", "Request"), ("equipment_id", "Equipment"),
+         ("description", "Description"), ("priority", "Priority"),
+         ("status", "Status"), ("wo_id", "WO"), ("created_at", "Created")]]},
+    {"reportId": "emc-invdoc-report", "title": "Inventory Documents",
+     "description": "Inventory movement documents (Part 3 Inventory).",
+     "query": """
+SELECT d.doc_id, d.kind, d.status,
+       (SELECT COUNT(*) FROM emc_inventory_document_line l WHERE l.doc_id = d.doc_id) AS lines,
+       COALESCE(d.operator_person_id, '') AS operator_person_id,
+       CAST(d.created_at AS VARCHAR) AS created_at
+FROM emc_inventory_document d ORDER BY d.created_at DESC
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("doc_id", "Doc"), ("kind", "Kind"), ("status", "Status"),
+         ("lines", "Lines"), ("operator_person_id", "Operator"),
+         ("created_at", "Created")]]},
+    {"reportId": "emc-qa-test-report", "title": "QA Test Results",
+     "description": "Quality test results (Part 3 Quality).",
+     "query": """
+SELECT CAST(id AS VARCHAR) AS id, COALESCE(job_no, '') AS job_no,
+       COALESCE(lot_id, '') AS lot_id, test_name, result,
+       COALESCE(measurements_json, '') AS measurements_json,
+       CAST(created_at AS VARCHAR) AS created_at
+FROM emc_qa_test_result ORDER BY created_at DESC
+""",
+     "columns": [{"field": f, "label": l} for f, l in [
+         ("id", "ID"), ("job_no", "Job"), ("lot_id", "Lot"),
+         ("test_name", "Test"), ("result", "Result"),
+         ("measurements_json", "Measurements"), ("created_at", "Created")]]},
 ]
 
 DASHBOARDS = [
@@ -3423,6 +3664,23 @@ DASHBOARDS = [
                                           "SCRAP_REQUEST", "RELEASE", "TRANSFER"], default="DELIVERY_REQUEST"),
                                  _sel("operatorPersonId", "Сотрудник", "emc-person-catalog", "code", "name", default="EMP-001")],
                                 "Создать"),
+                   _report_widget("invdocs", "Документы склада", 0, 60, 56, 22,
+                                  "root.platform.reports.emc-invdoc-report",
+                                  selectable=True, rowSelectionKey="doc_id",
+                                  rowParamsFromRowJson=json.dumps({"docId": "doc_id"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "kind"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _form_widget("submitDoc", "Submit документ", 56, 60, 28, 11,
+                                "emc_invdoc_submit",
+                                [{"name": "docId", "label": "Документ №", "type": "text",
+                                  "defaultValue": "INV-DEMO-001", "required": True}],
+                                "Submit"),
+                   _form_widget("acceptDoc", "Accept документ", 56, 71, 28, 11,
+                                "emc_invdoc_apply",
+                                [{"name": "docId", "label": "Документ №", "type": "text",
+                                  "defaultValue": "INV-DEMO-001", "required": True}],
+                                "Accept"),
                ]),
     _dashboard("root.platform.dashboards.emc-quality", "Качество",
                "Регистрация дефектов и QA-поток (REGISTERED → CONFIRMED/REJECTED → CLOSED).",
@@ -3451,6 +3709,22 @@ DASHBOARDS = [
                                 [_sel("defectNo", "Дефект №", "emc-defect-report", "defect_no", "status", required=True),
                                  {"name": "by", "label": "Кем", "type": "text", "defaultValue": "qa"}],
                                 "Закрыть"),
+                   _report_widget("qaTests", "QA Test Results", 0, 67, 56, 18,
+                                  "root.platform.reports.emc-qa-test-report",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["result", "test_name"]),
+                                  statusDotColumnsJson=json.dumps(["result"])),
+                   _form_widget("recordQa", "Записать QA-тест", 56, 68, 28, 18,
+                                "emc_qa_recordTestResult",
+                                [{"name": "jobNo", "label": "Job", "type": "text", "defaultValue": ""},
+                                 {"name": "lotId", "label": "Lot", "type": "text",
+                                  "defaultValue": "LOT-FG-0001"},
+                                 {"name": "testName", "label": "Test", "type": "text",
+                                  "defaultValue": "Dimensional check", "required": True},
+                                 _static("result", "Result", ["PASS", "FAIL"], default="PASS"),
+                                 {"name": "measurementsJson", "label": "JSON", "type": "text",
+                                  "defaultValue": "{}"}],
+                                "Записать"),
                ]),
     _dashboard("root.platform.dashboards.emc-oee", "OEE и простои",
                "Журнал событий, регистрация простоев и расчёт OEE по сменам.",
@@ -3481,44 +3755,72 @@ DASHBOARDS = [
                    _report_widget("shifts", "KPI смен (OEE)", 0, 47, 84, 20, "root.platform.reports.emc-oee-shift-report"),
                ]),
     _dashboard("root.platform.dashboards.emc-genealogy", "Генеалогия партии",
-               "Прослеживаемость партий во всех направлениях: обратная (ГП→сырьё) и прямая (сырьё→ГП).",
+               "Прослеживаемость партий: выберите лот или заказ — дерево только для него.",
                [
-                   _html_widget("help", "Как пользоваться", 0, 0, 84, 12,
-                                "<p><b>Обратная</b> (ГП → сырьё): выберите партию ГП "
-                                "(seed <code>LOT-FG-0001</code>) и направление <code>UPSTREAM</code> "
-                                "— дерево входов до сырья.</p>"
-                                "<p><b>Прямая</b> (сырьё → ГП/отгрузка): партия сырья "
-                                "(seed <code>LOT-RAW-0001</code>) и <code>DOWNSTREAM</code>.</p>"
-                                "<p><code>BOTH</code> — оба направления. Рёбра пишутся при "
-                                "<code>emc_matlot_consume</code> / <code>emc_matlot_produce</code> "
-                                "и в seed-цепочке RAW→WIP→FG.</p>"),
-                   _form_widget("trace", "Запрос генеалогии", 0, 12, 28, 28, "emc_track_genealogyTreeByLot",
-                                [_sel("lotId", "Партия (лот)", "emc-stock-report", "lot_id", "material_id",
-                                      required=True, default="LOT-FG-0001"),
+                   _html_widget("help", "Как пользоваться", 0, 0, 84, 10,
+                                "<p>1) Выберите <b>лот</b> в каталоге (радио) — параметр <code>lotId</code>. "
+                                "2) Или выберите <b>заказ</b> в Job↔Lot (FG produced). "
+                                "3) Таблицы ниже показывают <b>только выбранный</b> лот "
+                                "(↑ обратная / ↓ прямая цепочка и рёбра).</p>"),
+                   _report_widget("lots", "Каталог лотов (выбрать)", 0, 10, 42, 26,
+                                  "root.platform.reports.emc-genealogy-lot-catalog",
+                                  selectable=True, rowSelectionKey="lot_id",
+                                  rowParamsFromRowJson=json.dumps({"lotId": "lot_id"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["material_id", "status"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("jobLots", "Job ↔ Lot (выбрать заказ)", 42, 10, 42, 26,
+                                  "root.platform.reports.emc-job-lot-link-report",
+                                  selectable=True, rowSelectionKey="lot_id",
+                                  rowParamsFromRowJson=json.dumps({
+                                      "lotId": "lot_id", "jobNo": "job_no"}),
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["job_no", "link_role"]),
+                                  statusDotColumnsJson=json.dumps(["dispatch_status"])),
+                   _form_widget("trace", "Запрос генеалогии", 0, 36, 28, 22, "emc_track_genealogyTreeByLot",
+                                [{"name": "lotId", "label": "Партия (лот)", "type": "text",
+                                  "defaultValue": "${param:lotId}", "required": True},
                                  _static("direction", "Направление",
                                          ["BOTH", "UPSTREAM", "DOWNSTREAM"], default="UPSTREAM")],
                                 "Построить дерево"),
-                   _func_widget("demoReverse", "Демо: обратная (ГП)", 28, 12, 28, 14,
-                                "emc_track_genealogyTreeByLot", "ГП → сырьё",
+                   _func_widget("demoFg1", "Демо FG-0001 ↑", 28, 36, 18, 11,
+                                "emc_track_genealogyTreeByLot", "ГП→сырьё",
                                 {"lotId": "LOT-FG-0001", "direction": "UPSTREAM"}),
-                   _func_widget("demoForward", "Демо: прямая (сырьё)", 56, 12, 28, 14,
-                                "emc_track_genealogyTreeByLot", "Сырьё → ГП",
+                   _func_widget("demoFg2", "Демо FG-0002 ↑", 46, 36, 18, 11,
+                                "emc_track_genealogyTreeByLot", "ГП→сырьё",
+                                {"lotId": "LOT-FG-0002", "direction": "UPSTREAM"}),
+                   _func_widget("demoFg3", "Демо FG-0003 ↑", 64, 36, 20, 11,
+                                "emc_track_genealogyTreeByLot", "ГП→сырьё",
+                                {"lotId": "LOT-FG-0003", "direction": "UPSTREAM"}),
+                   _func_widget("demoRaw1", "Демо RAW-0001 ↓", 28, 47, 18, 11,
+                                "emc_track_genealogyTreeByLot", "Сырьё→ГП",
                                 {"lotId": "LOT-RAW-0001", "direction": "DOWNSTREAM"}),
-                   _func_widget("demoHop", "Соседи (1 hop)", 28, 26, 28, 14,
-                                "emc_track_genealogyByLot", "INPUT + OUTPUT",
-                                {"lotId": "LOT-WIP-0001"}),
-                   _report_widget("upstream", "Обратная цепочка (seed ГП)", 0, 40, 42, 28,
-                                  "root.platform.reports.emc-genealogy-upstream-fg"),
-                   _report_widget("downstream", "Прямая цепочка (seed сырьё)", 42, 40, 42, 28,
-                                  "root.platform.reports.emc-genealogy-downstream-raw"),
-                   _report_widget("edges", "Все рёбра генеалогии", 0, 68, 42, 24,
-                                  "root.platform.reports.emc-genealogy-edges", filterable=True),
-                   _report_widget("balance", "Масс-баланс (actuals)", 42, 68, 42, 24,
+                   _func_widget("demoRaw3", "Демо RAW-0003 ↓", 46, 47, 18, 11,
+                                "emc_track_genealogyTreeByLot", "Сырьё→ГП",
+                                {"lotId": "LOT-RAW-0003", "direction": "DOWNSTREAM"}),
+                   _func_widget("demoRaw5", "Демо RAW-0005 ↓", 64, 47, 20, 11,
+                                "emc_track_genealogyTreeByLot", "Сырьё→ГП",
+                                {"lotId": "LOT-RAW-0005", "direction": "DOWNSTREAM"}),
+                   _report_widget("upstream", "Обратная цепочка (выбранный лот)", 0, 58, 42, 28,
+                                  "root.platform.reports.emc-genealogy-upstream-fg",
+                                  contextParamsJson=json.dumps({"lotId": "lotId"}),
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["depth", "lot_id"])),
+                   _report_widget("downstream", "Прямая цепочка (выбранный лот)", 42, 58, 42, 28,
+                                  "root.platform.reports.emc-genealogy-downstream-raw",
+                                  contextParamsJson=json.dumps({"lotId": "lotId"}),
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["depth", "lot_id"])),
+                   _report_widget("edges", "Рёбра выбранного лота", 0, 86, 42, 22,
+                                  "root.platform.reports.emc-genealogy-edges",
+                                  contextParamsJson=json.dumps({"lotId": "lotId"}),
+                                  filterable=True),
+                   _report_widget("balance", "Масс-баланс (actuals)", 42, 86, 42, 22,
                                   "root.platform.reports.emc-genealogy-mass-balance"),
-                   _report_widget("defects", "Дефекты (зона риска / QC)", 0, 92, 84, 22,
+                   _report_widget("defects", "Дефекты (зона риска / QC)", 0, 108, 84, 20,
                                   "root.platform.reports.emc-defect-report",
                                   filterable=True,
-                                  columnFiltersJson=json.dumps(["status", "severity"])),
+                                  columnFiltersJson=json.dumps(["status", "severity", "job_no"])),
                ]),
     _dashboard("root.platform.dashboards.emc-mom-matrix", "MOM (IEC 62264-3)",
                "Матрица деятельности Level 3: Production / Quality / Inventory / Maintenance × 8 activities.",
@@ -3586,6 +3888,113 @@ DASHBOARDS = [
                                  _sel("testedBy", "Кто", "emc-person-catalog", "code", "name",
                                       default="EMP-001")],
                                 "Записать"),
+               ]),
+    _dashboard("root.platform.dashboards.emc-gost-conformance",
+               "ГОСТ Р МЭК 62264 / IEC 62264 (M5)",
+               "Объектное покрытие Parts 2+4: RRN, Container/Tool/Software, Ops Definition, Work Capability, Alerts.",
+               [
+                   _html_widget("help", "Приёмка demostand", 0, 0, 84, 10,
+                                "<p><b>Ручная приёмка только через UI</b>. "
+                                "Проверьте таблицы ниже (seed-данные) и формы действий. "
+                                "Part 4 в РФ = <b>ПНСТ 172—2016</b>.</p>"),
+                   _report_widget("rrn", "RRN Networks", 0, 10, 42, 18,
+                                  "root.platform.reports.emc-rrn-networks",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("edges", "RRN Edges", 42, 10, 42, 18,
+                                  "root.platform.reports.emc-rrn-edges",
+                                  filterable=True,
+                                  columnFiltersJson=json.dumps(["from_resource_type", "to_resource_type"])),
+                   _report_widget("ctr", "Containers", 0, 28, 28, 18,
+                                  "root.platform.reports.emc-container-report",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("tool", "Tools", 28, 28, 28, 18,
+                                  "root.platform.reports.emc-tool-report",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("sw", "Software", 56, 28, 28, 18,
+                                  "root.platform.reports.emc-software-report",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("opsdef", "Operations Definitions", 0, 46, 42, 18,
+                                  "root.platform.reports.emc-opsdef-report",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("opssched", "Operations Schedules", 42, 46, 42, 18,
+                                  "root.platform.reports.emc-opssched-report",
+                                  statusDotColumnsJson=json.dumps(["state"])),
+                   _report_widget("wcap", "Work Capability", 0, 64, 28, 16,
+                                  "root.platform.reports.emc-workcap-report",
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _report_widget("wmc", "Work Master Capability", 28, 64, 28, 16,
+                                  "root.platform.reports.emc-wmc-report"),
+                   _report_widget("kpi", "Work KPI", 56, 64, 28, 16,
+                                  "root.platform.reports.emc-kpi-value-report"),
+                   _report_widget("alerts", "Work Alerts", 0, 80, 56, 20,
+                                  "root.platform.reports.emc-work-alert-report",
+                                  selectable=True, rowSelectionKey="alert_id",
+                                  rowParamsFromRowJson=json.dumps({"alertId": "alert_id"}),
+                                  autoSelectFirstRow=True,
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _form_widget("ackAlert", "Acknowledge Work Alert", 56, 80, 28, 20,
+                                "emc_work_alert_ack",
+                                [{"name": "alertId", "label": "Alert ID", "type": "text",
+                                  "defaultValue": "WA-DEMO-001", "required": True},
+                                 {"name": "ackBy", "label": "Кем", "type": "text",
+                                  "defaultValue": "EMP-001", "required": True}],
+                                "Подтвердить"),
+                   _form_widget("upsertOd", "Ops Definition upsert", 0, 100, 84, 22,
+                                "emc_opsdef_upsert",
+                                [{"name": "definitionId", "label": "Definition ID", "type": "text",
+                                  "defaultValue": "OD-ASSEMBLY-01", "required": True},
+                                 {"name": "version", "label": "Version", "type": "text",
+                                  "defaultValue": "1"},
+                                 {"name": "name", "label": "Name", "type": "text",
+                                  "defaultValue": "Assembly operations definition", "required": True},
+                                 {"name": "description", "label": "Description", "type": "text",
+                                  "defaultValue": "Updated from demostand UI"},
+                                 {"name": "hierarchyScopeId", "label": "Scope", "type": "text",
+                                  "defaultValue": "SCOPE-SITE-01"},
+                                 _static("publishedFlag", "Published", ["true", "false"], default="true")],
+                                "Сохранить"),
+               ]),
+    _dashboard("root.platform.dashboards.emc-maint",
+               "ТОиР / Maintenance (Part 3)",
+               "Заявки ТОиР и наряды: создать → принять → завершить.",
+               [
+                   _report_widget("reqs", "Заявки ТОиР", 0, 0, 56, 40,
+                                  "root.platform.reports.emc-maint-request-report",
+                                  selectable=True, rowSelectionKey="request_id",
+                                  rowParamsFromRowJson=json.dumps({
+                                      "requestId": "request_id", "woId": "wo_id"}),
+                                  autoSelectFirstRow=True, filterable=True,
+                                  columnFiltersJson=json.dumps(["status", "equipment_id"]),
+                                  statusDotColumnsJson=json.dumps(["status"])),
+                   _form_widget("createReq", "Создать заявку", 56, 0, 28, 28,
+                                "emc_maint_createRequest",
+                                [{"name": "requestId", "label": "Request ID", "type": "text",
+                                  "defaultValue": "MR-UI-001", "required": True},
+                                 _sel("equipmentId", "Оборудование", "emc-equipment-catalog",
+                                      "code", "name", default="WU-A01", required=True),
+                                 {"name": "description", "label": "Описание", "type": "text",
+                                  "defaultValue": "UI demostand request"},
+                                 {"name": "priority", "label": "Приоритет", "type": "number",
+                                  "defaultValue": "3"}],
+                                "Создать"),
+                   _form_widget("acceptReq", "Принять → WO", 56, 28, 28, 22,
+                                "emc_maint_acceptRequest",
+                                [{"name": "requestId", "label": "Request ID", "type": "text",
+                                  "defaultValue": "MR-UI-001", "required": True},
+                                 {"name": "woId", "label": "WO ID", "type": "text",
+                                  "defaultValue": "MWO-UI-001", "required": True},
+                                 {"name": "plannedStart", "label": "План старт", "type": "text",
+                                  "defaultValue": ""},
+                                 {"name": "plannedEnd", "label": "План конец", "type": "text",
+                                  "defaultValue": ""}],
+                                "Принять"),
+                   _form_widget("completeWo", "Завершить WO", 0, 40, 42, 16,
+                                "emc_maint_completeWorkOrder",
+                                [{"name": "woId", "label": "WO ID", "type": "text",
+                                  "defaultValue": "MWO-DEMO-001", "required": True}],
+                                "Завершить"),
+                   _report_widget("mttr", "MTTR / MTBF", 42, 40, 42, 16,
+                                  "root.platform.reports.emc-maint-mttr-report"),
                ]),
 ]
 
@@ -3662,9 +4071,15 @@ EVENTS = [
 
 FUNCTIONS.extend(build_uml_functions(
     fn, F, OUT, RL, selN, sel1, map_rows, ret, ex, fail_null))
+FUNCTIONS.extend(build_m21_functions(
+    fn, F, OUT, RL, selN, sel1, map_rows, ret, ex, fail_null, when, invoke))
+FUNCTIONS.extend(build_gost_functions(
+    fn, F, OUT, RL, selN, sel1, map_rows, ret, ex, fail_null))
+FUNCTIONS.extend(build_m20_functions(
+    fn, F, OUT, RL, selN, map_rows, ret))
 
 bundle = {
-    "version": "2.0.1",
+    "version": "2.2.2",
     "displayName": "ERP-MES Core (ISA-95)",
     "tablePrefix": "emc_",
     "schemaName": "app_erp_mes_core",
@@ -3691,6 +4106,8 @@ bundle = {
             {"path": "root.platform.dashboards.emc-oee", "title": "OEE и простои"},
             {"path": "root.platform.dashboards.emc-genealogy", "title": "Генеалогия партии"},
             {"path": "root.platform.dashboards.emc-mom-matrix", "title": "MOM 62264-3"},
+            {"path": "root.platform.dashboards.emc-gost-conformance", "title": "ГОСТ 62264"},
+            {"path": "root.platform.dashboards.emc-maint", "title": "ТОиР"},
         ],
         "eventJournalObjectPath": HUB,
         "reports": [
@@ -3707,6 +4124,13 @@ bundle = {
             {"path": "root.platform.reports.emc-ops-capability-report", "title": "Ops Capability"},
             {"path": "root.platform.reports.emc-domain-schedule-report", "title": "Domain Schedules"},
             {"path": "root.platform.reports.emc-operational-location-report", "title": "Locations"},
+            {"path": "root.platform.reports.emc-rrn-edges", "title": "RRN Edges"},
+            {"path": "root.platform.reports.emc-container-report", "title": "Containers"},
+            {"path": "root.platform.reports.emc-tool-report", "title": "Tools"},
+            {"path": "root.platform.reports.emc-software-report", "title": "Software"},
+            {"path": "root.platform.reports.emc-opsdef-report", "title": "Ops Definitions"},
+            {"path": "root.platform.reports.emc-maint-request-report", "title": "Maint Requests"},
+            {"path": "root.platform.reports.emc-invdoc-report", "title": "Inventory Docs"},
         ],
         "defaultReport": "root.platform.reports.emc-job-board",
     },
@@ -3714,7 +4138,7 @@ bundle = {
         "product": "erp-mes-core",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "2.0.1 PG-safe NUMERIC casts for defect/event register; KPI bindings on_schedule; 2.0.0 UML attribute-complete Parts 2+4 (Hierarchy Scope, class/person/material properties, Qualification Spec/Result, Assembled From, parameter & product-segment specs, nested Ops Capability, multi-segment Work Master, Work Directive, Work Performance, genealogy metadata, sublot BFF, MOM activity↔BFF map); 1.4.1 Part 3 COMPLETE + locations/KPIs; 1.4.0 Physical Asset/Product/Capability/MOM UI",
+        "changelog": "2.2.1 rich demostand seeds (3+ examples/process) + job↔lot genealogy links; 2.2.0 GOST M5; 2.1.0 Part 5 UML + KPI + APS-lite",
     },
 }
 

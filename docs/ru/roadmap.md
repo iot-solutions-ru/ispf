@@ -1118,7 +1118,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-166 | **Отправка заказа на работу** | **Готово** | BPMN + work-queue + confirm → WO status |
 | БЛ-167 | **Модуль качества** | **Готово** | SPC charts, defect `QUALITY_RECORD`, genealogy (БЛ-193) |
 | БЛ-168 | **Облегченная пакетная обработка ISA-88** | **Готово** | Recipe + phase + seed `LOT` + Operator batch dashboard |
-| БЛ-169 | **Исходящие ERP (живой коннектор)** | **Отложено** | Реальный адаптер SAP **или** 1C (не stub); идемпотентная синхронизация + retry/DLQ; round-trip НСИ (заказы/материалы) — [isa95-catalog](isa95-catalog.md) Level 4 |
+| БЛ-169 | **Исходящие ERP (живой коннектор)** | **Готово (путь 1C)** | B2MML envelope + `mes-integration-catalog` 1.0 профиль `1c-http` на `emc_erp_*`; SAP IDoc — deferred-профиль |
 | БЛ-170 | **Пакет сертификации MES** | **Готово** | `mes-platform` / production — lab ≤30 мин — [reference-mes-platform](reference-mes-platform.md) |
 
 **Этап метрики:** Прохождение OEE → производство MES за 1 день без пользовательской Java.

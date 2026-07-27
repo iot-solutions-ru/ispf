@@ -1327,11 +1327,11 @@ DASHBOARDS = [
 # ----------------------------------------------------------------------------
 
 bundle = {
-    "version": "1.4.2",
+    "version": "1.5.0",
     "displayName": "ERP-MES Printing (ISA-95)",
     "tablePrefix": "emp_",
     "schemaName": SCHEMA,
-    "requires": [{"appId": "erp-mes-core", "minVersion": "2.0.0"}],
+    "requires": [{"appId": "erp-mes-core", "minVersion": "2.1.0"}],
     "migrations": MIGRATIONS,
     "objects": OBJECTS,
     "functions": FUNCTIONS,
@@ -1366,7 +1366,7 @@ bundle = {
         "product": "erp-mes-printing",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.4.2 KPI bindings on_schedule; low-roll + open downtime seed; event form by; 1.4.1 UML seed; 1.4.0 requires core >=2.0; 1.3.0 genealogy",
+        "changelog": "1.5.0 requires core ≥2.1; 1.4.2 KPI on_schedule + low-roll/downtime seed; 1.4.1 UML seed",
     },
 }
 

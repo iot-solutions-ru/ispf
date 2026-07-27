@@ -27,6 +27,10 @@ import json
 import os
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, ROOT)
+from pha_isa88 import M9_ISA88, build_isa88_functions  # noqa: E402
+
 BUNDLE_OUT = os.path.join(ROOT, "bundle.json")
 APP_ID = "erp-mes-pharma"
 SCHEMA = "app_erp_mes_core"
@@ -886,6 +890,7 @@ MIGRATIONS = [
     {"id": "pha_m6_core141", "sql": M6_CORE141},
     {"id": "pha_m7_uml200", "sql": M7_UML200},
     {"id": "pha_m8_ui_fixes", "sql": M8_UI_FIXES},
+    {"id": "pha_m9_isa88", "sql": M9_ISA88},
 ]
 
 
@@ -1484,6 +1489,27 @@ DASHBOARDS = [
                                   "root.platform.reports.pha-quarantine-lots",
                                   statusDotColumnsJson=json.dumps(["disposition"])),
                ]),
+    _dashboard("root.platform.dashboards.pha-batch", "ISA-88 Batch",
+               "Recipe / phase procedural control (ISA-88) linked to job orders.",
+               [
+                   _html_widget("help", "ISA-88", 0, 0, 84, 10,
+                                "<p>Recipe <code>RCP-TAB-CARTON</code>: DISPENSE → GRANULATE → COMPRESS → PACK. "
+                                "Seed batch run <code>BR-PH-001</code> linked to <code>JO-PH-001</code>.</p>"),
+                   _form_widget("status", "Статус batch run", 0, 10, 28, 18, "pha_batch_getStatus",
+                                [_static("batchRunId", "Batch run", ["BR-PH-001"], default="BR-PH-001")],
+                                "Получить статус"),
+                   _form_widget("phase", "Сменить фазу", 28, 10, 28, 18, "pha_batch_runPhase",
+                                [_static("batchRunId", "Batch run", ["BR-PH-001"], default="BR-PH-001"),
+                                 _static("phaseCode", "Фаза",
+                                         ["DISPENSE", "GRANULATE", "COMPRESS", "PACK"], default="PACK")],
+                                "Advance phase"),
+                   _form_widget("start", "Старт batch", 56, 10, 28, 18, "pha_batch_start",
+                                [_static("batchRunId", "Batch run id", [], default="BR-NEW-001"),
+                                 _static("batchId", "Batch id", [], default="BATCH-NEW"),
+                                 _static("recipeId", "Recipe", ["RCP-TAB-CARTON"], default="RCP-TAB-CARTON"),
+                                 _static("jobNo", "Job", ["JO-PH-001"], default="JO-PH-001")],
+                                "Start"),
+               ]),
 ]
 
 
@@ -1491,12 +1517,15 @@ DASHBOARDS = [
 # Assembly
 # ----------------------------------------------------------------------------
 
+FUNCTIONS.extend(build_isa88_functions(
+    fn, F, OUT, RL, selN, sel1, map_rows, ret, ex, fail_null, when))
+
 bundle = {
-    "version": "1.4.2",
+    "version": "2.0.0",
     "displayName": "ERP-MES Pharma (ISA-95/ISA-88)",
     "tablePrefix": "pha_",
     "schemaName": SCHEMA,
-    "requires": [{"appId": "erp-mes-core", "minVersion": "2.0.0"}],
+    "requires": [{"appId": "erp-mes-core", "minVersion": "2.1.0"}],
     "migrations": MIGRATIONS,
     "objects": OBJECTS,
     "functions": FUNCTIONS,
@@ -1515,6 +1544,7 @@ bundle = {
             {"path": "root.platform.dashboards.pha-quality", "title": "Качество и выпуск серии"},
             {"path": "root.platform.dashboards.pha-serialization", "title": "Сериализация и аудит"},
             {"path": "root.platform.dashboards.pha-genealogy", "title": "Генеалогия серии"},
+            {"path": "root.platform.dashboards.pha-batch", "title": "ISA-88 Batch"},
             {"path": "root.platform.dashboards.emc-mom-matrix", "title": "MOM 62264-3 (ядро)"},
         ],
         "eventJournalObjectPath": HUB,
@@ -1532,7 +1562,7 @@ bundle = {
         "product": "erp-mes-pharma",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.4.2 release/reject move warehouse WH-REL/WH-REJ; KPI bindings on_schedule; 1.4.1 UML seed; 1.4.0 requires core >=2.0; 1.3.0 genealogy",
+        "changelog": "2.0.0 ISA-88 recipe/phase/batch run (pha_batch_*); requires core ≥2.1; 1.4.2 WH-REL/WH-REJ + KPI schedule",
     },
 }
 

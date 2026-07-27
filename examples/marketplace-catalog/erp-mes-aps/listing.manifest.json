@@ -1,0 +1,20 @@
+{
+  "slug": "erp-mes-aps",
+  "title": "ERP-MES APS",
+  "description": "Finite planning UI on erp-mes-core: job board, capability conflicts, soft replan, plan freeze. Requires erp-mes-core ≥ 2.1.0.",
+  "pricing": "free",
+  "appId": "erp-mes-aps",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.1.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": ["mes", "aps", "isa95", "scheduling", "product"],
+  "changelog": "1.1.0 report tables; prior hub/invoke fixes"
+}

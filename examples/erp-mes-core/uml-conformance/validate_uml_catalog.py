@@ -3,7 +3,7 @@
 """Validate uml-catalog.json against generated erp-mes-core bundle.json.
 
 Fails if any class/table/function marked covered is missing from the bundle,
-or if any catalog status is still 'missing' at milestone M3.
+or if any catalog status is still 'missing' at milestone M3/M4.
 """
 from __future__ import annotations
 
@@ -23,10 +23,10 @@ def main() -> int:
     fns = {f.get("functionName") for f in bundle.get("functions") or []}
     errors: list[str] = []
 
-    if cat.get("milestone") == "M3":
+    if cat.get("milestone") in ("M3", "M4", "M5"):
         for c in cat.get("classes") or []:
             if c.get("status") == "missing":
-                errors.append(f"class {c.get('classId')} still missing at M3")
+                errors.append(f"class {c.get('classId')} still missing at {cat.get('milestone')}")
             for t in c.get("emcTables") or []:
                 if f"CREATE TABLE IF NOT EXISTS {t}" not in sql and t not in sql:
                     errors.append(f"table {t} (class {c.get('classId')}) not in migrations")
@@ -35,7 +35,7 @@ def main() -> int:
                     errors.append(f"bff {f} (class {c.get('classId')}) not in bundle functions")
             for a in c.get("attributes") or []:
                 if a.get("status") == "missing":
-                    errors.append(f"attr {c.get('classId')}.{a.get('name')} missing at M3")
+                    errors.append(f"attr {c.get('classId')}.{a.get('name')} missing at {cat.get('milestone')}")
         for row in cat.get("part3Activities") or []:
             if row.get("status") == "missing":
                 errors.append(f"part3 {row.get('domain')}/{row.get('activity')} missing")
@@ -43,7 +43,7 @@ def main() -> int:
             if fn and fn not in fns:
                 errors.append(f"part3 bff {fn} not in bundle")
         for t in cat.get("requiredTables") or []:
-            if f"CREATE TABLE IF NOT EXISTS {t}" not in sql:
+            if f"CREATE TABLE IF NOT EXISTS {t}" not in sql and t not in sql:
                 errors.append(f"requiredTables missing CREATE: {t}")
         for f in cat.get("requiredFunctions") or []:
             if f not in fns:

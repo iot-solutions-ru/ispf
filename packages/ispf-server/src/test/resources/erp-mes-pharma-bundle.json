@@ -1,12 +1,12 @@
 {
-  "version": "1.4.2",
+  "version": "2.0.0",
   "displayName": "ERP-MES Pharma (ISA-95/ISA-88)",
   "tablePrefix": "pha_",
   "schemaName": "app_erp_mes_core",
   "requires": [
     {
       "appId": "erp-mes-core",
-      "minVersion": "2.0.1"
+      "minVersion": "2.1.0"
     }
   ],
   "migrations": [
@@ -41,6 +41,10 @@
     {
       "id": "pha_m8_ui_fixes",
       "sql": "UPDATE emc_material_lot SET storage_location = 'WH-REL'\n       WHERE disposition = 'RELEASED' AND storage_location = 'WH-QUAR'\n         AND (definition_id LIKE 'API-%' OR definition_id LIKE 'EXC-%' OR definition_id LIKE 'PACK-%'\n              OR definition_id LIKE 'WIP-%' OR definition_id LIKE 'FG-TAB-%' OR definition_id = 'SOLV-WFI');\nUPDATE emc_material_lot SET storage_location = 'WH-REJ'\n       WHERE disposition = 'REJECTED' AND COALESCE(storage_location, '') <> 'WH-REJ'\n         AND (definition_id LIKE 'API-%' OR definition_id LIKE 'EXC-%' OR definition_id LIKE 'PACK-%'\n              OR definition_id LIKE 'WIP-%' OR definition_id LIKE 'FG-TAB-%' OR definition_id = 'SOLV-WFI')"
+    },
+    {
+      "id": "pha_m9_isa88",
+      "sql": "CREATE TABLE IF NOT EXISTS pha_recipe (\n       recipe_id VARCHAR(64) PRIMARY KEY,\n       name VARCHAR(256) NOT NULL,\n       product_definition_id VARCHAR(64),\n       version VARCHAR(32) NOT NULL DEFAULT '1',\n       status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE');\nCREATE TABLE IF NOT EXISTS pha_recipe_phase (\n       recipe_id VARCHAR(64) NOT NULL,\n       phase_seq INT NOT NULL,\n       phase_code VARCHAR(64) NOT NULL,\n       phase_name VARCHAR(256) NOT NULL,\n       segment_id VARCHAR(64),\n       PRIMARY KEY (recipe_id, phase_seq));\nCREATE TABLE IF NOT EXISTS pha_batch_run (\n       batch_run_id VARCHAR(64) PRIMARY KEY,\n       batch_id VARCHAR(64) NOT NULL,\n       recipe_id VARCHAR(64) NOT NULL,\n       job_no VARCHAR(64),\n       phase_code VARCHAR(64) NOT NULL,\n       phase_seq INT NOT NULL DEFAULT 1,\n       status VARCHAR(32) NOT NULL DEFAULT 'RUNNING',\n       started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);\nINSERT INTO pha_recipe (recipe_id, name, product_definition_id, version, status) SELECT 'RCP-TAB-CARTON', 'Paracetamol tablet cartoning', 'PD-TAB-CARTON', '1', 'ACTIVE' WHERE NOT EXISTS (SELECT 1 FROM pha_recipe WHERE recipe_id = 'RCP-TAB-CARTON');\nINSERT INTO pha_recipe_phase (recipe_id, phase_seq, phase_code, phase_name, segment_id) SELECT 'RCP-TAB-CARTON', '1', 'DISPENSE', 'Dispense API/excipients', 'SEG-DISPENSE' WHERE NOT EXISTS (SELECT 1 FROM pha_recipe_phase WHERE recipe_id = 'RCP-TAB-CARTON' AND phase_seq = 1);\nINSERT INTO pha_recipe_phase (recipe_id, phase_seq, phase_code, phase_name, segment_id) SELECT 'RCP-TAB-CARTON', '2', 'GRANULATE', 'Wet granulation', 'SEG-GRANULATE' WHERE NOT EXISTS (SELECT 1 FROM pha_recipe_phase WHERE recipe_id = 'RCP-TAB-CARTON' AND phase_seq = 2);\nINSERT INTO pha_recipe_phase (recipe_id, phase_seq, phase_code, phase_name, segment_id) SELECT 'RCP-TAB-CARTON', '3', 'COMPRESS', 'Tablet compression', 'SEG-COMPRESS' WHERE NOT EXISTS (SELECT 1 FROM pha_recipe_phase WHERE recipe_id = 'RCP-TAB-CARTON' AND phase_seq = 3);\nINSERT INTO pha_recipe_phase (recipe_id, phase_seq, phase_code, phase_name, segment_id) SELECT 'RCP-TAB-CARTON', '4', 'PACK', 'Blister + carton', 'SEG-PACK' WHERE NOT EXISTS (SELECT 1 FROM pha_recipe_phase WHERE recipe_id = 'RCP-TAB-CARTON' AND phase_seq = 4);\nINSERT INTO pha_batch_run (batch_run_id, batch_id, recipe_id, job_no, phase_code, phase_seq, status) SELECT 'BR-PH-001', 'BATCH-PH-DEMO-001', 'RCP-TAB-CARTON', 'JO-PH-001', 'COMPRESS', '3', 'RUNNING' WHERE NOT EXISTS (SELECT 1 FROM pha_batch_run WHERE batch_run_id = 'BR-PH-001');\nINSERT INTO emc_operations_capability (capability_id, operations_type, equipment_id, segment_id, reason, status)\n       SELECT 'CAP-TPR-01', 'PRODUCTION', 'TPR-01', 'SEG-COMPRESS', 'Tablet press capability', 'AVAILABLE'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_operations_capability WHERE capability_id = 'CAP-TPR-01');\nINSERT INTO emc_ops_capability_equipment (capability_id, equipment_id, equipment_class_id, quantity)\n       SELECT 'CAP-TPR-01', 'TPR-01', 'EQC-TABLET-PRESS', '1'\n       WHERE NOT EXISTS (SELECT 1 FROM emc_ops_capability_equipment\n                         WHERE capability_id = 'CAP-TPR-01' AND equipment_id = 'TPR-01')"
     }
   ],
   "objects": [],
@@ -486,6 +490,353 @@
         "type": "script",
         "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"lot\", \"sql\": \"SELECT lot_id FROM emc_material_lot WHERE barcode = ?\", \"params\": [\"${input.barcode}\"]}, {\"type\": \"failIfNull\", \"var\": \"lot\", \"error_code\": \"LOT_NOT_FOUND\", \"error_message\": \"Lot not found\"}, {\"type\": \"failIfNull\", \"var\": \"input.targetQty\", \"error_code\": \"VALIDATION\", \"error_message\": \"targetQty required\"}, {\"type\": \"failIfNull\", \"var\": \"input.actualQty\", \"error_code\": \"VALIDATION\", \"error_message\": \"actualQty required\"}, {\"type\": \"selectOne\", \"var\": \"same\", \"sql\": \"SELECT CASE WHEN ? = ? THEN '1' ELSE '0' END AS v\", \"params\": [\"${input.weighedBy}\", \"${input.verifiedBy}\"]}, {\"type\": \"when\", \"then\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"SECOND_PERSON_REQUIRED\", \"error_message\": \"Second person verification required\", \"lotId\": \"\", \"actualQty\": \"\"}}], \"var\": \"same.v\", \"equals\": \"1\"}, {\"type\": \"selectOne\", \"var\": \"tol\", \"sql\": \"SELECT CASE WHEN ABS(CAST(NULLIF(?, '') AS NUMERIC) - CAST(NULLIF(?, '') AS NUMERIC)) <= CAST(NULLIF(?, '') AS NUMERIC) * CAST(NULLIF(?, '') AS NUMERIC) / 100 THEN '1' ELSE '0' END AS v\", \"params\": [\"${input.actualQty}\", \"${input.targetQty}\", \"${input.targetQty}\", \"${input.tolerancePct}\"]}, {\"type\": \"when\", \"then\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"TOLERANCE_EXCEEDED\", \"error_message\": \"Weight deviation exceeds tolerance\", \"lotId\": \"\", \"actualQty\": \"\"}}], \"var\": \"tol.v\", \"equals\": \"0\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) VALUES (gen_random_uuid(), 'DISPENSE', ?, ?, 'AUTHORED', CONCAT('target=', ?, ' actual=', ?))\", \"params\": [\"${lot.lot_id}\", \"${input.weighedBy}\", \"${input.targetQty}\", \"${input.actualQty}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_esign_record (id, entity_type, entity_id, signer, meaning, comment_text) VALUES (gen_random_uuid(), 'DISPENSE', ?, ?, 'REVIEWED', CONCAT('target=', ?, ' actual=', ?))\", \"params\": [\"${lot.lot_id}\", \"${input.verifiedBy}\", \"${input.targetQty}\", \"${input.actualQty}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"lotId\": \"${lot.lot_id}\", \"actualQty\": \"${input.actualQty}\"}}]}"
       }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_recipe_list",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "recipeId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "productDefinitionId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "version",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT recipe_id, name, COALESCE(product_definition_id,'') AS product_definition_id, version, status FROM pha_recipe ORDER BY recipe_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"recipeId\": \"${item.recipe_id}\", \"name\": \"${item.name}\", \"productDefinitionId\": \"${item.product_definition_id}\", \"version\": \"${item.version}\", \"status\": \"${item.status}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_recipe_listPhases",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "recipeId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "phaseSeq",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "phaseCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "phaseName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "segmentId",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT phase_seq, phase_code, phase_name, COALESCE(segment_id,'') AS segment_id FROM pha_recipe_phase WHERE recipe_id = ? ORDER BY phase_seq\", \"params\": [\"${input.recipeId}\"]}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"phaseSeq\": \"${item.phase_seq}\", \"phaseCode\": \"${item.phase_code}\", \"phaseName\": \"${item.phase_name}\", \"segmentId\": \"${item.segment_id}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_batch_start",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "batchRunId",
+              "type": "STRING"
+            },
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "recipeId",
+              "type": "STRING"
+            },
+            {
+              "name": "jobNo",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "batchRunId",
+              "type": "STRING"
+            },
+            {
+              "name": "phaseCode",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"failIfNull\", \"var\": \"input.batchRunId\", \"error_code\": \"VALIDATION\", \"error_message\": \"batchRunId required\"}, {\"type\": \"failIfNull\", \"var\": \"input.recipeId\", \"error_code\": \"VALIDATION\", \"error_message\": \"recipeId required\"}, {\"type\": \"selectOne\", \"var\": \"ph\", \"sql\": \"SELECT phase_code, phase_seq FROM pha_recipe_phase WHERE recipe_id = ? ORDER BY phase_seq LIMIT 1\", \"params\": [\"${input.recipeId}\"]}, {\"type\": \"failIfNull\", \"var\": \"ph\", \"error_code\": \"RECIPE_EMPTY\", \"error_message\": \"Recipe has no phases\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO pha_batch_run (batch_run_id, batch_id, recipe_id, job_no, phase_code, phase_seq, status) SELECT ?, ?, ?, NULLIF(?, ''), ?, ?, 'RUNNING' WHERE NOT EXISTS (SELECT 1 FROM pha_batch_run WHERE batch_run_id = ?)\", \"params\": [\"${input.batchRunId}\", \"${input.batchId}\", \"${input.recipeId}\", \"${input.jobNo}\", \"${ph.phase_code}\", \"${ph.phase_seq}\", \"${input.batchRunId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"batchRunId\": \"${input.batchRunId}\", \"phaseCode\": \"${ph.phase_code}\", \"status\": \"RUNNING\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_batch_runPhase",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "batchRunId",
+              "type": "STRING"
+            },
+            {
+              "name": "phaseCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "batchRunId",
+              "type": "STRING"
+            },
+            {
+              "name": "phaseCode",
+              "type": "STRING"
+            },
+            {
+              "name": "phaseSeq",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"br\", \"sql\": \"SELECT batch_run_id, recipe_id, status FROM pha_batch_run WHERE batch_run_id = ?\", \"params\": [\"${input.batchRunId}\"]}, {\"type\": \"failIfNull\", \"var\": \"br\", \"error_code\": \"NOT_FOUND\", \"error_message\": \"Batch run not found\"}, {\"type\": \"selectOne\", \"var\": \"ph\", \"sql\": \"SELECT phase_seq, phase_code FROM pha_recipe_phase WHERE recipe_id = ? AND phase_code = ?\", \"params\": [\"${br.recipe_id}\", \"${input.phaseCode}\"]}, {\"type\": \"failIfNull\", \"var\": \"ph\", \"error_code\": \"PHASE_NOT_FOUND\", \"error_message\": \"Phase not in recipe\"}, {\"type\": \"exec\", \"sql\": \"UPDATE pha_batch_run SET phase_code = ?, phase_seq = ?, updated_at = CURRENT_TIMESTAMP, status = CASE WHEN ? = (SELECT MAX(phase_seq) FROM pha_recipe_phase WHERE recipe_id = ?) THEN 'COMPLETED' ELSE 'RUNNING' END WHERE batch_run_id = ?\", \"params\": [\"${input.phaseCode}\", \"${ph.phase_seq}\", \"${ph.phase_seq}\", \"${br.recipe_id}\", \"${input.batchRunId}\"]}, {\"type\": \"selectOne\", \"var\": \"st\", \"sql\": \"SELECT status FROM pha_batch_run WHERE batch_run_id = ?\", \"params\": [\"${input.batchRunId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"batchRunId\": \"${input.batchRunId}\", \"phaseCode\": \"${input.phaseCode}\", \"phaseSeq\": \"${ph.phase_seq}\", \"status\": \"${st.status}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_batch_getStatus",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "batchRunId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "batchRunId",
+              "type": "STRING"
+            },
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "recipeId",
+              "type": "STRING"
+            },
+            {
+              "name": "jobNo",
+              "type": "STRING"
+            },
+            {
+              "name": "phaseCode",
+              "type": "STRING"
+            },
+            {
+              "name": "phaseSeq",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"br\", \"sql\": \"SELECT batch_run_id, batch_id, recipe_id, COALESCE(job_no,'') AS job_no, phase_code, phase_seq, status FROM pha_batch_run WHERE batch_run_id = ?\", \"params\": [\"${input.batchRunId}\"]}, {\"type\": \"failIfNull\", \"var\": \"br\", \"error_code\": \"NOT_FOUND\", \"error_message\": \"Batch run not found\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"batchRunId\": \"${br.batch_run_id}\", \"batchId\": \"${br.batch_id}\", \"recipeId\": \"${br.recipe_id}\", \"jobNo\": \"${br.job_no}\", \"phaseCode\": \"${br.phase_code}\", \"phaseSeq\": \"${br.phase_seq}\", \"status\": \"${br.status}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-pharma-hub-v1",
+      "functionName": "pha_batch_list",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "batchRunId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "batchId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "recipeId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "jobNo",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "phaseCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT batch_run_id, batch_id, recipe_id, COALESCE(job_no,'') AS job_no, phase_code, status FROM pha_batch_run ORDER BY started_at DESC\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"batchRunId\": \"${item.batch_run_id}\", \"batchId\": \"${item.batch_id}\", \"recipeId\": \"${item.recipe_id}\", \"jobNo\": \"${item.job_no}\", \"phaseCode\": \"${item.phase_code}\", \"status\": \"${item.status}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
     }
   ],
   "blueprints": [
@@ -613,6 +964,11 @@
       "path": "root.platform.dashboards.pha-genealogy",
       "title": "Генеалогия серии (GMP)",
       "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"Batch genealogy\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 12, \"htmlJson\": \"<p>Seed: <code>LOT-API-0001</code> + <code>LOT-EXC-0001</code> \\u2192 <code>LOT-WIP-PH-0001</code> \\u2192 <code>LOT-FG-PH-0001</code>. BFF \\u044f\\u0434\\u0440\\u0430: <code>emc_track_genealogyTreeByLot</code>. \\u041c\\u0430\\u0442\\u0440\\u0438\\u0446\\u0430 MOM: \\u0434\\u0430\\u0448\\u0431\\u043e\\u0440\\u0434 \\u044f\\u0434\\u0440\\u0430 <code>emc-mom-matrix</code>.</p>\"}, {\"id\": \"trace\", \"type\": \"function-form\", \"title\": \"\\u0417\\u0430\\u043f\\u0440\\u043e\\u0441 \\u0433\\u0435\\u043d\\u0435\\u0430\\u043b\\u043e\\u0433\\u0438\\u0438\", \"x\": 0, \"y\": 12, \"w\": 28, \"h\": 28, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_track_genealogyTreeByLot\", \"buttonLabel\": \"\\u041f\\u043e\\u0441\\u0442\\u0440\\u043e\\u0438\\u0442\\u044c \\u0434\\u0435\\u0440\\u0435\\u0432\\u043e\", \"fieldsJson\": \"[{\\\"name\\\": \\\"lotId\\\", \\\"label\\\": \\\"\\u0421\\u0435\\u0440\\u0438\\u044f (\\u043b\\u043e\\u0442)\\\", \\\"type\\\": \\\"select\\\", \\\"optionsFromReport\\\": \\\"root.platform.reports.emc-stock-report\\\", \\\"optionsValueField\\\": \\\"lot_id\\\", \\\"optionsLabelField\\\": \\\"material_id\\\", \\\"defaultValue\\\": \\\"LOT-FG-PH-0001\\\", \\\"required\\\": true}, {\\\"name\\\": \\\"direction\\\", \\\"label\\\": \\\"\\u041d\\u0430\\u043f\\u0440\\u0430\\u0432\\u043b\\u0435\\u043d\\u0438\\u0435\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"BOTH\\\", \\\"UPSTREAM\\\", \\\"DOWNSTREAM\\\"], \\\"defaultValue\\\": \\\"UPSTREAM\\\"}]\"}, {\"id\": \"demoReverse\", \"type\": \"function\", \"title\": \"\\u0414\\u0435\\u043c\\u043e: \\u043e\\u0431\\u0440\\u0430\\u0442\\u043d\\u0430\\u044f (\\u0413\\u041f)\", \"x\": 28, \"y\": 12, \"w\": 28, \"h\": 14, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_track_genealogyTreeByLot\", \"buttonLabel\": \"\\u0413\\u041f \\u2192 API/excipient\", \"inputJson\": \"{\\\"lotId\\\": \\\"LOT-FG-PH-0001\\\", \\\"direction\\\": \\\"UPSTREAM\\\"}\"}, {\"id\": \"demoForward\", \"type\": \"function\", \"title\": \"\\u0414\\u0435\\u043c\\u043e: \\u043f\\u0440\\u044f\\u043c\\u0430\\u044f (API)\", \"x\": 56, \"y\": 12, \"w\": 28, \"h\": 14, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_track_genealogyTreeByLot\", \"buttonLabel\": \"API \\u2192 \\u0413\\u041f\", \"inputJson\": \"{\\\"lotId\\\": \\\"LOT-API-0001\\\", \\\"direction\\\": \\\"DOWNSTREAM\\\"}\"}, {\"id\": \"upstream\", \"type\": \"report\", \"title\": \"\\u041e\\u0431\\u0440\\u0430\\u0442\\u043d\\u0430\\u044f (seed \\u0413\\u041f)\", \"x\": 0, \"y\": 40, \"w\": 42, \"h\": 30, \"reportPath\": \"root.platform.reports.pha-genealogy-upstream-fg\"}, {\"id\": \"downstream\", \"type\": \"report\", \"title\": \"\\u041f\\u0440\\u044f\\u043c\\u0430\\u044f (seed API)\", \"x\": 42, \"y\": 40, \"w\": 42, \"h\": 30, \"reportPath\": \"root.platform.reports.pha-genealogy-downstream-api\"}, {\"id\": \"quarantine\", \"type\": \"report\", \"title\": \"\\u041a\\u0430\\u0440\\u0430\\u043d\\u0442\\u0438\\u043d (\\u043a\\u043e\\u043d\\u0442\\u0435\\u043a\\u0441\\u0442 \\u0432\\u044b\\u043f\\u0443\\u0441\\u043a\\u0430)\", \"x\": 0, \"y\": 70, \"w\": 84, \"h\": 22, \"reportPath\": \"root.platform.reports.pha-quarantine-lots\", \"statusDotColumnsJson\": \"[\\\"disposition\\\"]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.pha-batch",
+      "title": "ISA-88 Batch",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"ISA-88\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 10, \"htmlJson\": \"<p>Recipe <code>RCP-TAB-CARTON</code>: DISPENSE \\u2192 GRANULATE \\u2192 COMPRESS \\u2192 PACK. Seed batch run <code>BR-PH-001</code> linked to <code>JO-PH-001</code>.</p>\"}, {\"id\": \"status\", \"type\": \"function-form\", \"title\": \"\\u0421\\u0442\\u0430\\u0442\\u0443\\u0441 batch run\", \"x\": 0, \"y\": 10, \"w\": 28, \"h\": 18, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-pharma-hub-v1\", \"functionName\": \"pha_batch_getStatus\", \"buttonLabel\": \"\\u041f\\u043e\\u043b\\u0443\\u0447\\u0438\\u0442\\u044c \\u0441\\u0442\\u0430\\u0442\\u0443\\u0441\", \"fieldsJson\": \"[{\\\"name\\\": \\\"batchRunId\\\", \\\"label\\\": \\\"Batch run\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"BR-PH-001\\\"], \\\"defaultValue\\\": \\\"BR-PH-001\\\"}]\"}, {\"id\": \"phase\", \"type\": \"function-form\", \"title\": \"\\u0421\\u043c\\u0435\\u043d\\u0438\\u0442\\u044c \\u0444\\u0430\\u0437\\u0443\", \"x\": 28, \"y\": 10, \"w\": 28, \"h\": 18, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-pharma-hub-v1\", \"functionName\": \"pha_batch_runPhase\", \"buttonLabel\": \"Advance phase\", \"fieldsJson\": \"[{\\\"name\\\": \\\"batchRunId\\\", \\\"label\\\": \\\"Batch run\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"BR-PH-001\\\"], \\\"defaultValue\\\": \\\"BR-PH-001\\\"}, {\\\"name\\\": \\\"phaseCode\\\", \\\"label\\\": \\\"\\u0424\\u0430\\u0437\\u0430\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"DISPENSE\\\", \\\"GRANULATE\\\", \\\"COMPRESS\\\", \\\"PACK\\\"], \\\"defaultValue\\\": \\\"PACK\\\"}]\"}, {\"id\": \"start\", \"type\": \"function-form\", \"title\": \"\\u0421\\u0442\\u0430\\u0440\\u0442 batch\", \"x\": 56, \"y\": 10, \"w\": 28, \"h\": 18, \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-pharma-hub-v1\", \"functionName\": \"pha_batch_start\", \"buttonLabel\": \"Start\", \"fieldsJson\": \"[{\\\"name\\\": \\\"batchRunId\\\", \\\"label\\\": \\\"Batch run id\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [], \\\"defaultValue\\\": \\\"BR-NEW-001\\\"}, {\\\"name\\\": \\\"batchId\\\", \\\"label\\\": \\\"Batch id\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [], \\\"defaultValue\\\": \\\"BATCH-NEW\\\"}, {\\\"name\\\": \\\"recipeId\\\", \\\"label\\\": \\\"Recipe\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"RCP-TAB-CARTON\\\"], \\\"defaultValue\\\": \\\"RCP-TAB-CARTON\\\"}, {\\\"name\\\": \\\"jobNo\\\", \\\"label\\\": \\\"Job\\\", \\\"type\\\": \\\"select\\\", \\\"staticOptions\\\": [\\\"JO-PH-001\\\"], \\\"defaultValue\\\": \\\"JO-PH-001\\\"}]\"}]}"
     }
   ],
   "bindings": [
@@ -948,6 +1304,10 @@
         "title": "Генеалогия серии"
       },
       {
+        "path": "root.platform.dashboards.pha-batch",
+        "title": "ISA-88 Batch"
+      },
+      {
         "path": "root.platform.dashboards.emc-mom-matrix",
         "title": "MOM 62264-3 (ядро)"
       }
@@ -985,6 +1345,6 @@
     "product": "erp-mes-pharma",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "1.4.2 release/reject move warehouse WH-REL/WH-REJ; KPI bindings on_schedule; 1.4.1 UML seed; 1.4.0 requires core >=2.0; 1.3.0 genealogy"
+    "changelog": "2.0.0 ISA-88 recipe/phase/batch run (pha_batch_*); requires core ≥2.1; 1.4.2 WH-REL/WH-REJ + KPI schedule"
   }
 }

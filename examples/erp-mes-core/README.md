@@ -129,16 +129,22 @@ The core is deliberately industry-neutral. A concrete MES/ERP product = this bun
 5. **ERP connector** — replace the outbox simulator with a real transport by polling `emc_erp_outbox`
    (`status='PENDING'`) and writing ACKs; inbound ERP calls go through `emc_erp_receiveInbox`.
 
-## Conscious gaps (by design)
+## Conscious gaps / product line (honest)
 
-- B2MML XML payloads — the integration layer carries canonical verb×noun semantics in JSON;
-  XML (B2MML V0600/V0701 XSD) mapping is a connector concern.
-- Physical Asset model (Part 2 2018) — equipment model covers it for MES scope.
-- Operations Capability / Process Segment Capability queries (Part 4 cl.10) — not yet surfaced as functions.
-- Workflow Specification graph (Part 4 cl.7) — Work Master is single-segment; multi-segment routings
-  are an overlay.
-- Full ISO 22400 KPI catalogue — only the OEE subset (A/P/Q/OEE) is computed.
-- APS-grade finite scheduling, full CMMS — out of scope (Maintenance is lite by design).
+Closed in core **2.0+** (do not treat as gaps): Physical Asset model, multi-segment Work Master
+(`emc_work_master_node/edge`), Ops Capability list + nested children BFF (`emc_opscap_list`,
+`emc_opscap_children_list`).
+
+Still split across the product line:
+
+- **B2MML XML** — core carries canonical JSON verb×noun on `emc_erp_*`; XML map + live 1C/SAP live in
+  `mes-integration-catalog` / connector (BL-169).
+- **ISO 22400** — core **2.1+** ships a KPI registry (`emc_kpi_*`) beyond OEE A×P×Q; not every PE code
+  in the standard is computed.
+- **APS** — core 2.1 adds capability-window gates on start/release; finite planning UI is
+  **`erp-mes-aps`** (requires core ≥ 2.1).
+- **CMMS** — core keeps Maintenance **lite**; full parts/labor/PM is **`erp-mes-cmms`**.
+- **ISA-88 procedural control** — industry overlay **`erp-mes-pharma` 2.0+** (recipe/phase), not core.
 
 ## Verification
 

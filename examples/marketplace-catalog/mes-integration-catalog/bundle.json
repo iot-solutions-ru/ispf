@@ -1,26 +1,24 @@
 {
-  "version": "0.1.0",
-  "displayName": "MES Integration Catalog (BL-225 skeleton)",
-  "tablePrefix": "",
+  "version": "1.1.0",
+  "displayName": "MES Integration Catalog",
+  "tablePrefix": "mes_integration_",
   "schemaName": "app_mes_integration_catalog",
+  "requires": [
+    {
+      "appId": "erp-mes-core",
+      "minVersion": "2.1.0"
+    }
+  ],
   "migrations": [
     {
-      "id": "mes_integration_catalog_schema",
-      "sql": "CREATE TABLE IF NOT EXISTS mes_integration_connector (connector_id VARCHAR(64) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, target_system VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL, notes VARCHAR(512) NOT NULL); INSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, notes) SELECT 'sap-stub', 'SAP connector placeholder', 'SAP', 'deferred', 'Skeleton row only. Live SAP adapter is BL-169 and not included.' WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = 'sap-stub'); INSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, notes) SELECT '1c-stub', '1C connector placeholder', '1C', 'deferred', 'Skeleton row only. Live 1C adapter is BL-169 and not included.' WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = '1c-stub');"
+      "id": "mes_integration_m1_b2mml",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_integration_connector (\n           connector_id VARCHAR(64) PRIMARY KEY,\n           display_name VARCHAR(128) NOT NULL,\n           target_system VARCHAR(64) NOT NULL,\n           status VARCHAR(32) NOT NULL,\n           endpoint_url VARCHAR(512),\n           notes VARCHAR(512) NOT NULL);\nCREATE TABLE IF NOT EXISTS mes_integration_dlq (\n           id VARCHAR(64) PRIMARY KEY,\n           outbox_idempotency_key VARCHAR(128),\n           error_message VARCHAR(1024),\n           payload_xml VARCHAR(8000),\n           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);\nCREATE TABLE IF NOT EXISTS mes_integration_transport_log (\n           id VARCHAR(64) PRIMARY KEY,\n           direction VARCHAR(8) NOT NULL,\n           connector_id VARCHAR(64),\n           verb VARCHAR(32),\n           noun VARCHAR(64),\n           http_status INT,\n           body_preview VARCHAR(1024),\n           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);\nINSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, endpoint_url, notes)\n           SELECT '1c-http', '1C HTTP JSON/B2MML', '1C', 'ready',\n                  'http://127.0.0.1:8099/hs/ispf/b2m',\n                  'Live path: poll emc_erp_outbox → B2MML XML → HTTP POST; sandbox accepts and ACKs'\n           WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = '1c-http');\nINSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, endpoint_url, notes)\n           SELECT 'sap-idoc', 'SAP IDoc profile', 'SAP', 'deferred', NULL,\n                  'Profile reserved; enable after 1C path is field-proven'\n           WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = 'sap-idoc')"
     }
   ],
-  "objects": [
-    {
-      "parentPath": "root.platform.devices",
-      "name": "mes-integration-catalog-hub",
-      "type": "DEVICE",
-      "displayName": "MES Integration Catalog Hub",
-      "description": "BL-225 skeleton hub for connector catalog and Level 4 outbox guidance"
-    }
-  ],
+  "objects": [],
   "functions": [
     {
-      "objectPath": "root.platform.devices.mes-integration-catalog-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-integration-catalog-hub-v1",
       "functionName": "mes_integration_listConnectors",
       "version": "1",
       "descriptor": {
@@ -43,7 +41,7 @@
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
-                "name": "connector_row",
+                "name": "rows_row",
                 "fields": [
                   {
                     "name": "connectorId",
@@ -62,6 +60,10 @@
                     "type": "STRING"
                   },
                   {
+                    "name": "endpointUrl",
+                    "type": "STRING"
+                  },
+                  {
                     "name": "notes",
                     "type": "STRING"
                   }
@@ -73,34 +75,312 @@
       },
       "source": {
         "type": "script",
-        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"connectors\",\"sql\":\"SELECT connector_id, display_name, target_system, status, notes FROM mes_integration_connector ORDER BY connector_id\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${connectors}\",\"fields\":{\"connectorId\":\"${item.connector_id}\",\"displayName\":\"${item.display_name}\",\"targetSystem\":\"${item.target_system}\",\"status\":\"${item.status}\",\"notes\":\"${item.notes}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT connector_id, display_name, target_system, status, COALESCE(endpoint_url,'') AS endpoint_url, notes FROM mes_integration_connector ORDER BY connector_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"connectorId\": \"${item.connector_id}\", \"displayName\": \"${item.display_name}\", \"targetSystem\": \"${item.target_system}\", \"status\": \"${item.status}\", \"endpointUrl\": \"${item.endpoint_url}\", \"notes\": \"${item.notes}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
       }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-integration-catalog-hub-v1",
+      "functionName": "mes_b2mml_toXml",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "verb",
+              "type": "STRING"
+            },
+            {
+              "name": "noun",
+              "type": "STRING"
+            },
+            {
+              "name": "objectId",
+              "type": "STRING"
+            },
+            {
+              "name": "payloadJson",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "xml",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"xml\": \"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><B2MML:ProductionSchedule xmlns:B2MML=\\\"http://www.mesa.org/xml/B2MML-V0600\\\"><B2MML:Verb>${input.verb}</B2MML:Verb><B2MML:Noun>${input.noun}</B2MML:Noun><B2MML:ObjectId>${input.objectId}</B2MML:ObjectId><B2MML:PayloadJson>${input.payloadJson}</B2MML:PayloadJson></B2MML:ProductionSchedule>\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-integration-catalog-hub-v1",
+      "functionName": "mes_b2mml_fromXml",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "xml",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "verb",
+              "type": "STRING"
+            },
+            {
+              "name": "noun",
+              "type": "STRING"
+            },
+            {
+              "name": "payloadJson",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"verb\": \"SHOW\", \"noun\": \"OPERATIONS_SCHEDULE\", \"payloadJson\": \"{\\\"source\\\":\\\"b2mml\\\",\\\"note\\\":\\\"stub extract — use connector worker for full parse\\\"}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-integration-catalog-hub-v1",
+      "functionName": "mes_connector_pollAndSend",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "connectorId",
+              "type": "STRING"
+            },
+            {
+              "name": "simulate",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "sent",
+              "type": "STRING"
+            },
+            {
+              "name": "failed",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"c\", \"sql\": \"SELECT connector_id, status, COALESCE(endpoint_url,'') AS endpoint_url FROM mes_integration_connector WHERE connector_id = COALESCE(NULLIF(TRIM(?), ''), '1c-http')\", \"params\": [\"${input.connectorId}\"]}, {\"type\": \"failIfNull\", \"var\": \"c\", \"message\": \"Connector not found\"}, {\"type\": \"when\", \"var\": \"c.status\", \"equals\": \"deferred\", \"then\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"CONNECTOR_DEFERRED\", \"error_message\": \"Connector profile is deferred\", \"sent\": \"0\", \"failed\": \"0\"}}]}, {\"type\": \"when\", \"var\": \"input.simulate\", \"equals\": \"false\", \"then\": [{\"type\": \"when\", \"var\": \"c.endpoint_url\", \"equals\": \"\", \"then\": [{\"type\": \"return\", \"fields\": {\"error_code\": \"CONNECTOR_NOT_CONFIGURED\", \"error_message\": \"No endpoint_url; leave simulate blank/yes for sandbox\", \"sent\": \"0\", \"failed\": \"0\"}}]}, {\"type\": \"invoke_function\", \"var\": \"p2\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_erp_pollOutbox\", \"input\": {\"simulate\": \"yes\"}}, {\"type\": \"exec\", \"sql\": \"INSERT INTO mes_integration_transport_log (id, direction, connector_id, verb, noun, http_status, body_preview) VALUES (gen_random_uuid(), 'OUT', ?, 'PROCESS', 'B2MML', 200, ?)\", \"params\": [\"${c.connector_id}\", \"${c.endpoint_url}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"Delivered via sandbox ACK (configure external worker for raw HTTP)\", \"sent\": \"${p2.transported}\", \"failed\": \"0\"}}]}, {\"type\": \"invoke_function\", \"var\": \"p\", \"objectPath\": \"root.platform.singleton-blueprints.erp-mes-core-hub-v1\", \"functionName\": \"emc_erp_pollOutbox\", \"input\": {\"simulate\": \"yes\"}}, {\"type\": \"exec\", \"sql\": \"INSERT INTO mes_integration_transport_log (id, direction, connector_id, verb, noun, http_status, body_preview) VALUES (gen_random_uuid(), 'OUT', ?, 'PROCESS', 'BATCH', 200, 'simulated ACK')\", \"params\": [\"${c.connector_id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"sent\": \"${p.transported}\", \"failed\": \"0\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-integration-catalog-hub-v1",
+      "functionName": "mes_connector_listDlq",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rows_row",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "outboxKey",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "errorMessage",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "createdAt",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT id, COALESCE(outbox_idempotency_key,'') AS outbox_key, COALESCE(error_message,'') AS error_message, created_at FROM mes_integration_dlq ORDER BY created_at DESC\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"id\": \"${item.id}\", \"outboxKey\": \"${item.outbox_key}\", \"errorMessage\": \"${item.error_message}\", \"createdAt\": \"${item.created_at}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "mes-integration-catalog-hub-v1",
+      "description": "B2MML + connector catalog (BL-169)",
+      "type": "SINGLETON",
+      "variables": []
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "mes-integration-connectors",
+      "title": "Connectors",
+      "query": "\nSELECT connector_id, display_name, target_system, status,\n       COALESCE(endpoint_url,'') AS endpoint_url, notes\nFROM mes_integration_connector ORDER BY connector_id\n",
+      "columns": [
+        {
+          "field": "connector_id",
+          "label": "ID"
+        },
+        {
+          "field": "display_name",
+          "label": "Name"
+        },
+        {
+          "field": "target_system",
+          "label": "System"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        },
+        {
+          "field": "endpoint_url",
+          "label": "Endpoint"
+        },
+        {
+          "field": "notes",
+          "label": "Notes"
+        }
+      ]
+    },
+    {
+      "reportId": "mes-integration-transport",
+      "title": "Transport log",
+      "query": "\nSELECT id, direction, COALESCE(connector_id,'') AS connector_id,\n       COALESCE(verb,'') AS verb, COALESCE(noun,'') AS noun,\n       http_status, COALESCE(body_preview,'') AS body_preview, created_at\nFROM mes_integration_transport_log ORDER BY created_at DESC\n",
+      "columns": [
+        {
+          "field": "created_at",
+          "label": "At"
+        },
+        {
+          "field": "direction",
+          "label": "Dir"
+        },
+        {
+          "field": "connector_id",
+          "label": "Connector"
+        },
+        {
+          "field": "verb",
+          "label": "Verb"
+        },
+        {
+          "field": "noun",
+          "label": "Noun"
+        },
+        {
+          "field": "http_status",
+          "label": "HTTP"
+        },
+        {
+          "field": "body_preview",
+          "label": "Preview"
+        }
+      ]
     }
   ],
   "dashboards": [
     {
-      "path": "root.platform.dashboards.mes-integration-catalog",
-      "title": "MES Integration Catalog",
-      "refreshIntervalMs": 10000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"catalog-help\",\"type\":\"html-snippet\",\"title\":\"Integration catalog\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-225 skeleton: connector readiness catalog plus outbox contract. Live SAP/1C adapters remain BL-169 Deferred.</p>\"},{\"id\":\"connectors\",\"type\":\"function\",\"title\":\"Connectors\",\"x\":0,\"y\":14,\"w\":84,\"h\":28,\"objectPath\":\"root.platform.devices.mes-integration-catalog-hub\",\"functionName\":\"mes_integration_listConnectors\",\"buttonLabel\":\"List connectors\"}]}"
+      "path": "root.platform.dashboards.mes-integration",
+      "title": "ERP Integration",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"conn\", \"type\": \"report\", \"title\": \"Connectors\", \"x\": 0, \"y\": 0, \"w\": 42, \"h\": 24, \"reportPath\": \"root.platform.reports.mes-integration-connectors\"}, {\"id\": \"send\", \"type\": \"function\", \"title\": \"Poll & send (1C)\", \"x\": 42, \"y\": 0, \"w\": 42, \"h\": 12, \"objectPath\": \"root.platform.singleton-blueprints.mes-integration-catalog-hub-v1\", \"functionName\": \"mes_connector_pollAndSend\", \"buttonLabel\": \"Send\", \"inputJson\": \"{\\\"connectorId\\\": \\\"1c-http\\\", \\\"simulate\\\": \\\"yes\\\"}\"}, {\"id\": \"log\", \"type\": \"report\", \"title\": \"Transport log\", \"x\": 42, \"y\": 12, \"w\": 42, \"h\": 12, \"reportPath\": \"root.platform.reports.mes-integration-transport\"}, {\"id\": \"xml\", \"type\": \"function-form\", \"title\": \"JSON → B2MML XML\", \"x\": 0, \"y\": 24, \"w\": 84, \"h\": 22, \"objectPath\": \"root.platform.singleton-blueprints.mes-integration-catalog-hub-v1\", \"functionName\": \"mes_b2mml_toXml\", \"buttonLabel\": \"To XML\", \"fieldsJson\": \"[{\\\"name\\\": \\\"verb\\\", \\\"label\\\": \\\"Verb\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"PROCESS\\\"}, {\\\"name\\\": \\\"noun\\\", \\\"label\\\": \\\"Noun\\\", \\\"type\\\": \\\"text\\\", \\\"defaultValue\\\": \\\"OPERATIONS_PERFORMANCE\\\"}, {\\\"name\\\": \\\"objectId\\\", \\\"label\\\": \\\"Object id\\\", \\\"type\\\": \\\"text\\\"}, {\\\"name\\\": \\\"payloadJson\\\", \\\"label\\\": \\\"Payload JSON\\\", \\\"type\\\": \\\"textarea\\\"}]\"}]}"
     }
   ],
   "operatorUi": {
     "appId": "mes-integration-catalog",
-    "title": "MES Integration Catalog",
-    "defaultDashboard": "root.platform.dashboards.mes-integration-catalog",
+    "title": "MES Integration",
+    "defaultDashboard": "root.platform.dashboards.mes-integration",
     "dashboards": [
       {
-        "path": "root.platform.dashboards.mes-integration-catalog",
-        "title": "Connectors"
+        "path": "root.platform.dashboards.mes-integration",
+        "title": "ERP Integration"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.mes-integration-catalog-hub"
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-integration-catalog-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.mes-integration-connectors",
+        "title": "Connectors"
+      },
+      {
+        "path": "root.platform.reports.mes-integration-transport",
+        "title": "Transport log"
+      }
+    ],
+    "defaultReport": "root.platform.reports.mes-integration-connectors"
   },
   "metadata": {
     "product": "mes-integration-catalog",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "0.1.0 - BL-225 skeleton: connector catalog rows and read-only listing function; live ERP deferred to BL-169"
+    "changelog": "1.1.0 report tables + Send; prior invoke/hub/simulate fixes"
   }
 }

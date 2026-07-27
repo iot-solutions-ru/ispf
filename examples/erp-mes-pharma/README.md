@@ -119,12 +119,12 @@ Then open **Solutions → ERP-MES Pharma (ISA-95/ISA-88)** in the web console.
 
 - No real interface to the national serialization registry («Честный знак» / EPCIS) or to a LIMS —
   `pha_serial_record` and the e-sign journal are the system of record in this demo.
-- IPC/CIP/SIP activities are represented as event codes and eBR sections, not as automated
-  equipment phases — no batch engine (ISA-88 procedural control) is attached.
+- ISA-88 **recipe / phase / batch run** is included from **2.0.0** (`pha_recipe*`, `pha_batch_*`);
+  it is not a full procedural control / PLC phase engine — phases are advanced via BFF.
 - No validation documentation package (IQ/OQ/PQ), no audit-trail review workflow — out of scope
   for a reference bundle.
-- Job lifecycle stays in the **core** `emc_*` functions; the overlay adds only GMP-specific
-  transaction guards (disposition, double verification, serialization).
+- Job lifecycle stays in the **core** `emc_*` functions; the overlay adds GMP-specific
+  transaction guards (disposition, double verification, serialization) plus ISA-88 batch UI.
 
 ## Verification
 
