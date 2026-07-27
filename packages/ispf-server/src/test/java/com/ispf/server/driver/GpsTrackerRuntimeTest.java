@@ -139,8 +139,17 @@ class GpsTrackerRuntimeTest {
     private void awaitGpsFeedValue(String expected, long timeoutMs) throws Exception {
         long deadline = System.currentTimeMillis() + timeoutMs;
         String lastBody = "";
+        IOException lastSendError = null;
         while (System.currentTimeMillis() < deadline) {
-            sendNmeaLine();
+            try {
+                sendNmeaLine();
+                lastSendError = null;
+            } catch (IOException e) {
+                // Driver accept can stall under CI load; keep retrying until the deadline.
+                lastSendError = e;
+                Thread.sleep(250);
+                continue;
+            }
             mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
                     .andExpect(status().isOk());
             lastBody = mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
@@ -155,6 +164,11 @@ class GpsTrackerRuntimeTest {
             }
             Thread.sleep(250);
         }
-        throw new AssertionError("gpsFeed did not contain NMEA within " + timeoutMs + "ms: " + lastBody);
+        AssertionError failure = new AssertionError(
+                "gpsFeed did not contain NMEA within " + timeoutMs + "ms: " + lastBody);
+        if (lastSendError != null) {
+            failure.addSuppressed(lastSendError);
+        }
+        throw failure;
     }
 }
