@@ -1070,18 +1070,6 @@
     width: min(100vw - 2.5rem, 360px);
   }
 
-  .op-nav {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
-
-  .op-nav .btn {
-    flex-shrink: 0;
-  }
-
   .operator-dashboard {
     padding: 0.5rem;
   }
@@ -1149,6 +1137,16 @@
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.op-nav .btn {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .op-panel {

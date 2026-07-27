@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Segmented, Space, Typography } from "antd";
+import { Button, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AuthSession } from "../../auth/session";
@@ -494,28 +494,6 @@ function OperatorDashboardChrome({
     viewKind === "report"
       ? (ui.reports?.find((item) => item.path === activePath)?.title ?? activePath)
       : (ui.dashboards.find((item) => item.path === activePath)?.title ?? activePath);
-  const navOptions = [
-    ...ui.dashboards.map((dashboard) => ({
-      label: dashboard.title,
-      value: `dashboard:${dashboard.path}`,
-    })),
-    ...(ui.reports ?? []).map((report) => ({
-      label: report.title,
-      value: `report:${report.path}`,
-    })),
-  ];
-  const activeNavValue = `${viewKind}:${activePath}`;
-  const handleNavChange = (value: string) => {
-    const separatorIndex = value.indexOf(":");
-    const kind = value.slice(0, separatorIndex);
-    const path = value.slice(separatorIndex + 1);
-    if (kind === "report") {
-      onSelectReport(path);
-    } else {
-      onSelectDashboard(path);
-    }
-  };
-
   return (
     <>
       <header className="operator-topbar">
@@ -555,11 +533,34 @@ function OperatorDashboardChrome({
       </header>
       {!hideDashboardNav && (
         <nav className="op-nav" data-testid="operator-nav">
-          <Segmented<string>
-            options={navOptions}
-            value={activeNavValue}
-            onChange={handleNavChange}
-          />
+          {ui.dashboards.map((dashboard) => {
+            const active = viewKind === "dashboard" && activePath === dashboard.path;
+            return (
+              <button
+                key={`dashboard:${dashboard.path}`}
+                type="button"
+                className={`btn small${active ? " primary" : ""}`}
+                aria-current={active ? "page" : undefined}
+                onClick={() => onSelectDashboard(dashboard.path)}
+              >
+                {dashboard.title}
+              </button>
+            );
+          })}
+          {(ui.reports ?? []).map((report) => {
+            const active = viewKind === "report" && activePath === report.path;
+            return (
+              <button
+                key={`report:${report.path}`}
+                type="button"
+                className={`btn small${active ? " primary" : ""}`}
+                aria-current={active ? "page" : undefined}
+                onClick={() => onSelectReport(report.path)}
+              >
+                {report.title}
+              </button>
+            );
+          })}
         </nav>
       )}
     </>
