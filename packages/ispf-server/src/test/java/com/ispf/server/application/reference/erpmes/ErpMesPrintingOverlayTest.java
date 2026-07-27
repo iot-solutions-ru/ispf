@@ -66,13 +66,14 @@ class ErpMesPrintingOverlayTest {
                 .andExpect(jsonPath("$.result.rows.length()", greaterThan(15)))
                 .andExpect(jsonPath("$.result.rows[?(@.tag=='Zerropull')]", hasSize(1)));
 
-        // (b) roll stock: FILM-PET12 roll carries width/thickness lot properties
+        // (b) roll stock: FILM-PET12 rolls (incl. LOT-FILM-LOW low-stock seed) + width/thickness props
         invoke(PRINT_HUB, "emp_roll_list", fields("definitionId"), """
                 {"definitionId": "FILM-PET12"}""")
                 .andExpect(jsonPath("$.error_code").value("OK"))
-                .andExpect(jsonPath("$.result.rows", hasSize(2)))
+                .andExpect(jsonPath("$.result.rows", hasSize(3)))
                 .andExpect(jsonPath("$.result.rows[?(@.lotId=='LOT-FILM-0001' && @.widthMm=='1050' && @.thicknessMkm=='12')]",
-                        hasSize(1)));
+                        hasSize(1)))
+                .andExpect(jsonPath("$.result.rows[?(@.lotId=='LOT-FILM-LOW')]", hasSize(1)));
 
         // (c) cross-bundle: the core event register accepts an overlay catalog code
         invoke(CORE_HUB, "emc_event_register",

@@ -52,7 +52,7 @@ class ApplicationSchemaSessionTest {
 
         verify(poolStatement, atLeastOnce()).execute(anyString()); // CREATE SCHEMA IF NOT EXISTS on pool conn
         // Transactional/search_path connection must only SET search_path — never CREATE.
-        verify(txStatement, atLeastOnce()).execute("SET search_path TO app_employees_app");
+        verify(txStatement, atLeastOnce()).execute("SET search_path TO app_employees_app, public");
         verify(txStatement, atLeastOnce()).execute("SET search_path TO public");
         verify(txStatement, never()).execute(org.mockito.ArgumentMatchers.contains("CREATE SCHEMA"));
     }

@@ -118,7 +118,8 @@ public class ApplicationSchemaSession {
     }
 
     private void restoreSchema(Connection connection, String previousSchema) throws SQLException {
-        if (previousSchema != null && !previousSchema.isBlank()) {
+        if (previousSchema != null && !previousSchema.isBlank()
+                && !dialect.defaultPlatformSchema().equalsIgnoreCase(previousSchema)) {
             switchSearchPath(connection, previousSchema);
         } else {
             resetSchema(connection);
