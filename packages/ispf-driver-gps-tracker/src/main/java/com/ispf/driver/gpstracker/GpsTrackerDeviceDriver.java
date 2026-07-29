@@ -10,13 +10,16 @@ import com.ispf.driver.DriverMetadata;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -79,14 +82,18 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         releaseResources();
         try {
-            serverSocket = new ServerSocket(listenPort);
+            serverSocket = new ServerSocket();
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(listenPort));
             acceptExecutor = Executors.newCachedThreadPool(r -> {
                 Thread t = new Thread(r, "gps-tracker-accept");
                 t.setDaemon(true);
                 return t;
             });
-            acceptExecutor.submit(this::acceptLoop);
+            // Mark connected before accept loop starts — otherwise the loop can exit
+            // immediately on overloaded CI runners (submit races ahead of this flag).
             connected = true;
+            acceptExecutor.submit(this::acceptLoop);
             driverObject.log(DriverLogLevel.INFO, "GPS tracker listening on port " + listenPort);
         } catch (IOException e) {
             releaseResources();
@@ -95,16 +102,55 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
     }
 
     private void acceptLoop() {
-        while (connected && serverSocket != null && !serverSocket.isClosed()) {
-            try {
-                Socket client = serverSocket.accept();
-                connectedClients.incrementAndGet();
-                acceptExecutor.submit(() -> handleClient(client));
-            } catch (IOException e) {
-                if (connected) {
-                    driverObject.log(DriverLogLevel.WARNING, "GPS tracker accept error: " + e.getMessage());
-                }
+        while (connected) {
+            ServerSocket listening = serverSocket;
+            if (listening == null || listening.isClosed()) {
                 break;
+            }
+            try {
+                Socket client = listening.accept();
+                connectedClients.incrementAndGet();
+                ExecutorService executor = acceptExecutor;
+                if (executor == null) {
+                    try {
+                        client.close();
+                    } catch (IOException ignored) {
+                        // best effort
+                    }
+                    connectedClients.updateAndGet(current -> Math.max(0, current - 1));
+                    break;
+                }
+                try {
+                    executor.submit(() -> handleClient(client));
+                } catch (RejectedExecutionException e) {
+                    // Shutting down — close the accepted socket ourselves.
+                    try {
+                        client.close();
+                    } catch (IOException ignored) {
+                        // best effort
+                    }
+                    connectedClients.updateAndGet(current -> Math.max(0, current - 1));
+                    break;
+                }
+            } catch (SocketException e) {
+                // Expected when serverSocket is closed during disconnect().
+                if (!connected || serverSocket == null || serverSocket.isClosed()) {
+                    break;
+                }
+                driverObject.log(DriverLogLevel.WARNING, "GPS tracker accept error: " + e.getMessage());
+            } catch (IOException e) {
+                if (!connected || serverSocket == null || serverSocket.isClosed()) {
+                    break;
+                }
+                // Transient accept failures must not kill the listener permanently —
+                // that caused CI flakes (clients then hit connect timeouts forever).
+                driverObject.log(DriverLogLevel.WARNING, "GPS tracker accept error: " + e.getMessage());
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
         }
     }
@@ -112,15 +158,12 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
     private void handleClient(Socket client) {
         try (client;
              BufferedReader reader = new BufferedReader(
-                     new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8))) {
-            char[] buffer = new char[bufferSize];
-            int read;
-            while ((read = reader.read(buffer)) > 0) {
-                String chunk = new String(buffer, 0, read);
-                for (String line : chunk.split("\\R")) {
-                    if (!line.isBlank()) {
-                        lastFeed.set(line.trim());
-                    }
+                     new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8),
+                     Math.max(256, bufferSize))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isBlank()) {
+                    lastFeed.set(line.trim());
                 }
             }
         } catch (IOException e) {
