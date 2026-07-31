@@ -100,6 +100,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | Manufacturing patterns as solution / marketplace configuration — **Accepted** |
 | [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) | Poka-yoke: constraints over guards — **Accepted** |
 | [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | ISPF Workflow Diagram Editor (no bpmn.io) — **Accepted** |
+| [0053-ispf-template-filler](0053-ispf-template-filler.md) | ISPF Template Filler (POI) replaces YARG for spreadsheet — **Accepted** |
 
 ## Topic chains (read in order)
 

@@ -8,19 +8,21 @@ import org.springframework.test.context.ActiveProfiles;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @ActiveProfiles("test")
 class IncomesXlsxTemplateTest {
 
     @Autowired
+    private ReportTemplateRouter templateRouter;
+
+    @Autowired
     private YargReportService yargReportService;
 
-  @Test
+    @Test
     void smokeXlsTemplateValidates() throws Exception {
         byte[] template = ReportYargTemplateTestHelper.smokeTestTemplate();
-        assertDoesNotThrow(() -> yargReportService.validateTemplate(template, "xls"));
+        assertDoesNotThrow(() -> templateRouter.validate(template, "xls"));
     }
 
     @Test
@@ -32,7 +34,7 @@ class IncomesXlsxTemplateTest {
             }
             template = input.readAllBytes();
         }
-        assertDoesNotThrow(() -> yargReportService.validateTemplate(template, "xlsx"));
+        assertDoesNotThrow(() -> templateRouter.validate(template, "xlsx"));
     }
 
     @Test
@@ -44,6 +46,19 @@ class IncomesXlsxTemplateTest {
             }
             template = input.readAllBytes();
         }
+        assertDoesNotThrow(() -> templateRouter.validate(template, "xlsx"));
+    }
+
+    @Test
+    void yargFallbackStillValidatesWhenForced() throws Exception {
+        byte[] template;
+        try (InputStream input = getClass().getResourceAsStream("/yarg/incomes-minimal.xlsx")) {
+            if (input == null) {
+                throw new IllegalStateException("missing incomes-minimal.xlsx");
+            }
+            template = input.readAllBytes();
+        }
+        // Dual-run: YARG path remains available for regression / template-engine=yarg
         assertDoesNotThrow(() -> yargReportService.validateTemplate(template, "xlsx"));
     }
 }

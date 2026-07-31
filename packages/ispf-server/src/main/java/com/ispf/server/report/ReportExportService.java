@@ -3,6 +3,7 @@ package com.ispf.server.report;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,17 +14,20 @@ public class ReportExportService {
     private final YargReportService yargReportService;
     private final ReportTemplateStore templateStore;
     private final LibreOfficeDocumentConverter libreOfficeDocumentConverter;
+    private final ReportTemplateRouter templateRouter;
 
     public ReportExportService(
             ReportService reportService,
             YargReportService yargReportService,
             ReportTemplateStore templateStore,
-            LibreOfficeDocumentConverter libreOfficeDocumentConverter
+            LibreOfficeDocumentConverter libreOfficeDocumentConverter,
+            ReportTemplateRouter templateRouter
     ) {
         this.reportService = reportService;
         this.yargReportService = yargReportService;
         this.templateStore = templateStore;
         this.libreOfficeDocumentConverter = libreOfficeDocumentConverter;
+        this.templateRouter = templateRouter;
     }
 
     @Transactional(readOnly = true)
@@ -34,7 +38,7 @@ public class ReportExportService {
             case XLSX -> exportSpreadsheet(path, parameters, ReportExportFormat.XLSX);
             case XLS -> exportSpreadsheet(path, parameters, ReportExportFormat.XLS);
             case PDF -> exportPdf(path, parameters);
-            case DOCX -> exportYarg(path, ReportExportFormat.DOCX, parameters);
+            case DOCX -> exportTemplated(path, ReportExportFormat.DOCX, parameters);
         };
     }
 
@@ -50,7 +54,7 @@ public class ReportExportService {
     private ExportedFile exportHtml(String path, Map<String, Object> parameters) {
         if (reportService.hasTemplate(path)) {
             try {
-                return exportYarg(path, ReportExportFormat.HTML, parameters);
+                return exportTemplated(path, ReportExportFormat.HTML, parameters);
             } catch (IllegalArgumentException ignored) {
                 // fall through to table HTML
             }
@@ -82,22 +86,40 @@ public class ReportExportService {
             return table(path, parameters, targetFormat);
         }
 
-        ReportExportFormat yargFormat = "xls".equals(templateFormat)
+        ReportExportFormat nativeFormat = "xls".equals(templateFormat)
                 ? ReportExportFormat.XLS
                 : ReportExportFormat.XLSX;
 
         try {
             Map<String, Object> runResult = reportService.run(path, parameters);
-            YargReportService.ExportedReport exported = yargReportService.export(path, yargFormat, parameters);
-            byte[] content = exported.content();
-            String filename = exported.filename();
-            String contentType = exported.contentType();
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) runResult.get("rows");
 
-            if (targetFormat == ReportExportFormat.XLSX && yargFormat == ReportExportFormat.XLS) {
+            byte[] content;
+            String filename;
+            String contentType;
+
+            if (templateRouter.usePoi(templateFormat)) {
+                ReportService.ReportView report = reportService.getReport(path);
+                TemplateExportResult filled = templateRouter.fillSpreadsheet(
+                        report, template.get(), rows, nativeFormat
+                );
+                content = filled.content();
+                filename = filled.filename();
+                contentType = filled.contentType();
+            } else {
+                YargReportService.ExportedReport exported =
+                        yargReportService.export(path, nativeFormat, parameters);
+                content = exported.content();
+                filename = exported.filename();
+                contentType = exported.contentType();
+            }
+
+            if (targetFormat == ReportExportFormat.XLSX && nativeFormat == ReportExportFormat.XLS) {
                 content = libreOfficeDocumentConverter.convertSpreadsheet(content, "xls", "xlsx");
                 filename = ReportService.reportIdFromPath(path) + ".xlsx";
                 contentType = ReportExportFormat.XLSX.contentType();
-            } else if (targetFormat == ReportExportFormat.XLS && yargFormat == ReportExportFormat.XLSX) {
+            } else if (targetFormat == ReportExportFormat.XLS && nativeFormat == ReportExportFormat.XLSX) {
                 content = libreOfficeDocumentConverter.convertSpreadsheet(content, "xlsx", "xls");
                 filename = ReportService.reportIdFromPath(path) + ".xls";
                 contentType = ReportExportFormat.XLS.contentType();
@@ -106,7 +128,8 @@ public class ReportExportService {
                 contentType = ReportExportFormat.XLSX.contentType();
             }
 
-            if (yargFormat == ReportExportFormat.XLSX
+            // XLSX is a ZIP; UTF-8 substring search is unreliable. Guard applies to .xls (BIFF).
+            if (nativeFormat == ReportExportFormat.XLS
                     && YargExportContentGuard.outputMissingReportData(content, runResult)) {
                 return table(path, parameters, targetFormat);
             }
@@ -127,12 +150,12 @@ public class ReportExportService {
         }
 
         String templateFormat = template.get().format().toLowerCase();
-        if ("xlsx".equals(templateFormat)) {
-            return exportPdfFromExcelTemplate(path, parameters);
+        if ("xlsx".equals(templateFormat) || "xls".equals(templateFormat)) {
+            return exportPdfFromExcelTemplate(path, parameters, template.get());
         }
 
         try {
-            return exportYarg(path, ReportExportFormat.PDF, parameters);
+            return exportTemplated(path, ReportExportFormat.PDF, parameters);
         } catch (IllegalArgumentException ex) {
             if (YargReportingSupport.isLibreOfficeRequiredError(ex.getMessage())) {
                 throw ex;
@@ -141,17 +164,49 @@ public class ReportExportService {
         }
     }
 
-    private ExportedFile exportPdfFromExcelTemplate(String path, Map<String, Object> parameters) {
+    private ExportedFile exportPdfFromExcelTemplate(
+            String path,
+            Map<String, Object> parameters,
+            ReportTemplateStore.StoredTemplate template
+    ) {
+        String templateFormat = template.format().toLowerCase();
         try {
-            YargReportService.ExportedReport exported = yargReportService.export(path, ReportExportFormat.XLSX, parameters);
-            if (!YargExportContentGuard.outputMissingReportData(exported.content(), reportService.run(path, parameters))) {
-                byte[] pdf = libreOfficeDocumentConverter.convertSpreadsheetToPdf(exported.content(), "xlsx");
-                return new ExportedFile(
-                        pdf,
-                        ReportService.reportIdFromPath(path) + ".pdf",
-                        ReportExportFormat.PDF.contentType()
+            Map<String, Object> runResult = reportService.run(path, parameters);
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) runResult.get("rows");
+
+            byte[] spreadsheet;
+            String loFormat = templateFormat;
+            ReportExportFormat nativeFormat = "xls".equals(templateFormat)
+                    ? ReportExportFormat.XLS
+                    : ReportExportFormat.XLSX;
+
+            if (templateRouter.usePoi(templateFormat)) {
+                ReportService.ReportView report = reportService.getReport(path);
+                TemplateExportResult filled = templateRouter.fillSpreadsheet(
+                        report, template, rows, nativeFormat
                 );
+                spreadsheet = filled.content();
+            } else {
+                YargReportService.ExportedReport exported =
+                        yargReportService.export(path, nativeFormat, parameters);
+                spreadsheet = exported.content();
+                if (nativeFormat == ReportExportFormat.XLS
+                        && YargExportContentGuard.outputMissingReportData(spreadsheet, runResult)) {
+                    return pdfFromTable(path, parameters);
+                }
             }
+
+            if ("xls".equals(loFormat)) {
+                spreadsheet = libreOfficeDocumentConverter.convertSpreadsheet(spreadsheet, "xls", "xlsx");
+                loFormat = "xlsx";
+            }
+            byte[] pdf = libreOfficeDocumentConverter.convertSpreadsheetToPdf(spreadsheet, loFormat);
+            return new ExportedFile(
+                    pdf,
+                    ReportService.reportIdFromPath(path) + ".pdf",
+                    ReportExportFormat.PDF.contentType()
+            );
         } catch (IllegalArgumentException ex) {
             if (YargReportingSupport.isLibreOfficeRequiredError(ex.getMessage())) {
                 throw ex;
@@ -160,11 +215,11 @@ public class ReportExportService {
         return pdfFromTable(path, parameters);
     }
 
-    private ExportedFile exportYarg(String path, ReportExportFormat format, Map<String, Object> parameters) {
+    private ExportedFile exportTemplated(String path, ReportExportFormat format, Map<String, Object> parameters) {
         if (!reportService.hasTemplate(path)) {
             throw new IllegalArgumentException(
                     "Export format " + format.fileExtension().toUpperCase()
-                            + " requires a YARG template. Upload via Report Builder → Шаблон YARG."
+                            + " requires a report template. Upload via Report Builder → Report template."
             );
         }
         YargReportService.ExportedReport exported = yargReportService.export(path, format, parameters);
@@ -172,7 +227,7 @@ public class ReportExportService {
             Map<String, Object> runResult = reportService.run(path, parameters);
             if (YargExportContentGuard.outputMissingReportData(exported.content(), runResult)) {
                 throw new IllegalArgumentException(
-                        "YARG template did not receive report data — check ${Band1.FIELD} placeholders "
+                        "Template did not receive report data — check ${Band1.FIELD} placeholders "
                                 + "match report columns in UPPERCASE."
                 );
             }

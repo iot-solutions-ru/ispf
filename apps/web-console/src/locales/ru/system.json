@@ -645,12 +645,12 @@
   "title": "Система",
   "yargHealth.available": "Доступен",
   "yargHealth.configuredPath": "Заданный путь",
-  "yargHealth.hint": "PDF из Excel/Word YARG-шаблонов требует LibreOffice на сервере. ISPF_REPORTS_LIBREOFFICE_PATH или libreoffice-nogui. XLSX/HTML/CSV работают без LibreOffice.",
+  "yargHealth.hint": "PDF из Excel/Word-шаблонов требует LibreOffice на сервере. ISPF_REPORTS_LIBREOFFICE_PATH или libreoffice-nogui. Spreadsheet Band1 по умолчанию через POI (ispf.reports.template-engine=poi).",
   "yargHealth.libreOffice": "LibreOffice для PDF",
-  "yargHealth.loadError": "Не удалось загрузить статус YARG",
-  "yargHealth.loading": "Загрузка статуса YARG…",
+  "yargHealth.loadError": "Не удалось загрузить статус экспорта отчётов",
+  "yargHealth.loading": "Загрузка статуса экспорта отчётов…",
   "yargHealth.resolvedPath": "Найденный путь",
   "yargHealth.timeoutSeconds": "Таймаут конвертации (с)",
-  "yargHealth.title": "YARG и LibreOffice",
+  "yargHealth.title": "Шаблоны отчётов и LibreOffice",
   "yargHealth.unavailable": "Не найден"
 }

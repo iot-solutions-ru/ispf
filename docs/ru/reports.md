@@ -87,15 +87,19 @@ Content-Type: application/json
 { "parameters": { "status": "ready" } }
 ```
 
-## Шаблоны YARG (этап 13)
+## Шаблоны отчётов (Band1)
 
-Серверный export через [YARG](https://github.com/cuba-platform/yarg) (Apache-2.0):
+Заполнение spreadsheet-шаблонов — **ISPF Template Filler** (Apache POI; [ADR-0053](decisions/0053-ispf-template-filler.md)). DOCX/HTML пока могут идти через YARG.
 
-1. Создайте шаблон в Excel/Word с полосой **`Band1`** и полями `${Band1.COLUMN}` (имена колонок SQL в **верхнем регистре**, например `${Band1.ITEM_CODE}`). Пример — [образец дыма YARG](https://github.com/cuba-platform/yarg/tree/master/core/modules/core/test/sample).
-2. Загрузите файл во вкладку **Шаблон YARG** в Report Builder (`POST .../template`).
-3. Экспорт: `GET .../export?format=pdf|xlsx|html` — данные берутся из того же запуска SQL.
+1. Excel-шаблон с именованным диапазоном **`Band1`** и полями `${Band1.COLUMN}` (колонки SQL в **верхнем регистре**).
+2. Загрузка во вкладке **Шаблон отчёта** в Report Builder (`POST .../template`).
+3. Экспорт: `GET .../export?format=pdf|xlsx|html`.
 
-Без шаблона доступен только `format=csv`.
+Конфиг: `ispf.reports.template-engine=poi` (по умолчанию) или `yarg`.
+
+**Ограничение:** YARG + docx4j 8.3.x запинены для DOCX; не поднимать docx4j до 17+, пока DOCX на YARG.
+
+Без шаблона доступны CSV и табличные HTML/XLSX.
 
 ## Развертывать
 
@@ -152,7 +156,7 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|
 
 - Только read-only SQL (без `INSERT`/`UPDATE`/`DELETE`/DDL).
 - Запрос выполняется в schema объекта data source (`dataSourcePath`).
-- PDF/XLSX/HTML требует загруженный YARG-шаблон.
+- PDF/XLSX/HTML со spreadsheet-шаблоном — Band1 (POI по умолчанию); DOCX требует Word-шаблон.
 
 ## Пример
 

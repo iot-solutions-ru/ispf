@@ -87,15 +87,19 @@ Content-Type: application/json
 { "parameters": { "status": "ready" } }
 ```
 
-## YARG templates (Phase 13)
+## Report templates (Band1)
 
-Server export via [YARG](https://github.com/cuba-platform/yarg) (Apache-2.0):
+Server template fill for spreadsheets uses the **ISPF Template Filler** (Apache POI; [ADR-0053](decisions/0053-ispf-template-filler.md)). DOCX/HTML templates may still use YARG until a later cutover.
 
-1. Create Excel/Word template with band **`Band1`** and fields `${Band1.COLUMN}` (SQL column names in **uppercase**, e.g. `${Band1.ITEM_CODE}`). Example — [YARG smoke sample](https://github.com/cuba-platform/yarg/tree/master/core/modules/core/test/sample).
-2. Upload file in **YARG Template** tab in Report Builder (`POST .../template`).
-3. Export: `GET .../export?format=pdf|xlsx|html` — data from same SQL run.
+1. Create an Excel template with named range **`Band1`** and fields `${Band1.COLUMN}` (SQL column names in **uppercase**, e.g. `${Band1.ITEM_CODE}`).
+2. Upload in the **Report template** tab in Report Builder (`POST .../template`).
+3. Export: `GET .../export?format=pdf|xlsx|html` — data from the same SQL run.
 
-Without template only `format=csv` is available.
+Config: `ispf.reports.template-engine=poi` (default) or `yarg` for spreadsheet fallback.
+
+**Known constraint:** YARG + `docx4j` 8.3.x remain pinned for DOCX; do not bump docx4j to 17+ while YARG is on that path.
+
+Without a template, `format=csv` and table HTML/XLSX are available.
 
 ## Deploy
 
@@ -152,7 +156,7 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|
 
 - Read-only SQL only (no `INSERT`/`UPDATE`/`DELETE`/DDL).
 - Query runs in data source object schema (`dataSourcePath`).
-- PDF/XLSX/HTML require uploaded YARG template.
+- PDF/XLSX/HTML with a spreadsheet template use Band1 fill (POI by default); DOCX still requires a Word template.
 
 ## Example
 

@@ -5,8 +5,8 @@ import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.report.ReportExportService;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.report.ReportTemplateFormatDetector;
+import com.ispf.server.report.ReportTemplateRouter;
 import com.ispf.server.report.ReportTemplateStore;
-import com.ispf.server.report.YargReportService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -37,18 +37,18 @@ public class ReportController {
 
     private final ReportService reportService;
     private final ReportExportService reportExportService;
-    private final YargReportService yargReportService;
+    private final ReportTemplateRouter templateRouter;
     private final PlatformJobService platformJobService;
 
     public ReportController(
             ReportService reportService,
             ReportExportService reportExportService,
-            YargReportService yargReportService,
+            ReportTemplateRouter templateRouter,
             PlatformJobService platformJobService
     ) {
         this.reportService = reportService;
         this.reportExportService = reportExportService;
-        this.yargReportService = yargReportService;
+        this.templateRouter = templateRouter;
         this.platformJobService = platformJobService;
     }
 
@@ -178,7 +178,7 @@ public class ReportController {
         }
         byte[] content = file.getBytes();
         String resolvedFormat = ReportTemplateFormatDetector.resolve(format, file.getOriginalFilename(), content);
-        yargReportService.validateTemplate(content, resolvedFormat);
+        templateRouter.validate(content, resolvedFormat);
         return reportService.saveTemplate(path, resolvedFormat, content);
     }
 
