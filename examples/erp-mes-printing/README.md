@@ -47,7 +47,7 @@ do not edit by hand either.
 | BFF functions | `emp_eventdef_list(section, catalog)`, `emp_roll_list(definitionId)`, `emp_setuptag_list()` | bundle |
 | Reports | `emp-print-job-board`, `emp-downtime-by-code`, `emp-roll-stock` + catalog/option sources `emp-eventdef-catalog`, `emp-setuptag-catalog` (dropdown feeds) | bundle |
 | Dashboards | `emp-print-dispatch`, `emp-print-events`, `emp-print-rolls`, **`emp-print-genealogy`** (film→print→lam→sleeve) + меню на **MOM 62264-3** ядра. Flat widget format; requires erp-mes-core ≥ 2.0.0 | bundle |
-| Core 2.0.0 seed | Genealogy chain + LAM/FG lots; Product Definition `PD-SLEEVE-ROLL`; Physical Assets PR120/LM210; locations; QA/INV/PM schedules; capability on PR120 | migration `emp_m6` |
+| Core 2.0.0 seed | Genealogy chain + LAM/FG lots; Product Definition `PD-SLEEVE-ROLL`; Physical Assets PR120/LM210; locations; QA/INV/PM schedules; capability on PR120 + LM210 (`CAP-LM210-LAM`) | migration `emp_m6` |
 | UML 2.0 seed | Hierarchy scopes `SCOPE-PRINT`/`SCOPE-PRT-SITE`; Assembled From BOM for `FG-SLEEVE-ROLL`; product/segment specs; qualification `QTS-P01-PR120`; ops capability children; multi-segment `WM-PRT-ROUTE` + directive `WD-PRT-SETUP`; genealogy metadata/node | migration `emp_m7` |
 | UI fixes | KPI bindings `on_schedule`; seed short roll `LOT-FILM-LOW` + open OGP-119 downtime; event form `by` | migration `emp_m8` |
 
