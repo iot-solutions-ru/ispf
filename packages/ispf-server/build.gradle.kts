@@ -57,7 +57,7 @@ dependencies {
     // Spreadsheet Band1 fill defaults to POI (ADR-0053); pin docx4j 8.3.x (Dependabot major ignore).
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
-    implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.11")
+    implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.15")
     implementation("org.apache.poi:poi-ooxml")
     implementation("org.apache.poi:poi")
 
