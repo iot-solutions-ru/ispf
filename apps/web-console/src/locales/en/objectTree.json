@@ -23,7 +23,7 @@
   "path.root__platform__dashboards.title": "Dashboards",
   "path.root__platform__dashboards.description": "HMI dashboard catalog. DASHBOARD objects store widget layouts for admin preview and operator mode. Widgets bind to device variables, sub-dashboards, SQL reports, maps, and workflows. Operator Apps reference dashboards by path; open the Dashboard editor with a double-click.",
   "path.root__platform__reports.title": "Reports",
-  "path.root__platform__reports.description": "Platform-wide report catalog. REPORT children use report-v1 (SQL against a data source) or tree-variables-report-v1 (scan device variables by path pattern). Configure columns, parameters, and optional YARG export templates (CSV, HTML, XLSX, PDF). Application-owned reports may also live under root.platform.applications.{appId}.reports.",
+  "path.root__platform__reports.description": "Platform-wide report catalog. REPORT children use report-v1 (SQL against a data source) or tree-variables-report-v1 (scan device variables by path pattern). Configure columns, parameters, and optional Band1 export templates (CSV, HTML, XLSX, PDF). Application-owned reports may also live under root.platform.applications.{appId}.reports.",
   "path.root__platform__data-sources.title": "Data Sources",
   "path.root__platform__data-sources.description": "PostgreSQL schema registry for SQL-backed platform features. Each DATA_SOURCE child maps a display name to a schema name (e.g. app_myapp) used by reports, SQL bindings, migrations, and script functions. Create manually in the Data Source editor or import from an application bundle deploy.",
   "path.root__platform__schedules.title": "Schedules",

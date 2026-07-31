@@ -53,10 +53,13 @@ dependencies {
     implementation("com.haulmont.yarg:yarg:2.2.22") {
         exclude(group = "javax.xml.bind", module = "jaxb-api")
     }
-    // YARG XlsxFormatter uses docx4j; JDK 11+ removed internal JAXB — required for .xlsx templates
+    // YARG XlsxFormatter uses docx4j; JDK 11+ removed internal JAXB — required for .xlsx/.docx via YARG.
+    // Spreadsheet Band1 fill defaults to POI (ADR-0053); pin docx4j 8.3.x (Dependabot major ignore).
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
     implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.11")
+    implementation("org.apache.poi:poi-ooxml")
+    implementation("org.apache.poi:poi")
 
     implementation("org.apache.parquet:parquet-avro:1.17.1") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")

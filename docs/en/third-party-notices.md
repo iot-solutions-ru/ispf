@@ -74,9 +74,9 @@ Inventory source: `packages/**/build.gradle.kts`, `:packages:ispf-server:runtime
 | Micrometer metrics/tracing | 1.16.6 / 1.6.6 | Apache-2.0 | Prometheus, OTLP, tracing bridge |
 | OpenTelemetry Java APIs/SDK (transitive) | via Micrometer | Apache-2.0 | Observability |
 | JNATS | 2.20.5 | Apache-2.0 | NATS integration |
-| YARG | 2.2.22 | Apache-2.0 | Report export |
-| Apache POI (transitive via YARG) | managed by YARG | Apache-2.0 | Office export/templates |
-| docx4j | 8.3.11 | Apache-2.0 | Document export support |
+| YARG | 2.2.22 | Apache-2.0 | DOCX/HTML report templates (legacy; spreadsheet defaults to POI) |
+| Apache POI | via Spring Boot BOM / direct | Apache-2.0 | Spreadsheet Band1 Template Filler + table export |
+| docx4j | 8.3.11 | Apache-2.0 | YARG XLSX/DOCX path (pinned; majors ignored, ADR-0053) |
 | JAXB API/runtime | 2.3.1 / 2.3.9 | CDDL/GPL with classpath exception / EDL-style variants; verify exact artifacts in SBOM | XML binding |
 
 ### Protocol Drivers
