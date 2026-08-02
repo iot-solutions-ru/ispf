@@ -21,7 +21,17 @@ jobs:
         run: chmod +x deploy/tools/driver-interop-smoke.sh
 
       - name: Start OT docker fixtures (BL-141)
-        run: docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait
+        run: |
+          set -euo pipefail
+          if ! docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait; then
+            echo "::error::docker compose --wait failed"
+            docker compose -f deploy/driver-interop/docker-compose.yml ps -a || true
+            for c in ispf-interop-mosquitto ispf-interop-modbus-tcp ispf-interop-opcua; do
+              echo "===== logs: $c ====="
+              docker logs "$c" 2>&1 | tail -n 200 || true
+            done
+            exit 1
+          fi
 
       - name: Smoke MQTT / Modbus / OPC UA endpoints
         run: deploy/tools/driver-interop-smoke.sh
