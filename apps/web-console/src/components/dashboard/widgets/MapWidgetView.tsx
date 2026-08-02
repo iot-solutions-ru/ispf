@@ -12,6 +12,7 @@ import { resolveMapStyle } from "../mapStyleUtils";
 import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import "../../../map/maplibreSetup";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 interface MapWidgetViewProps {
