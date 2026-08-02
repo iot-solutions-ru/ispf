@@ -149,7 +149,7 @@ Inventory source: `apps/web-console/package.json`, `apps/web-console/package-loc
 | `cytoscape` | 3.34.0 | MIT | Graph/topology widget |
 | `exceljs` | 4.4.0 | MIT | Spreadsheet XLSX (lazy) |
 | `i18next` | 26.3.1 | MIT | |
-| `maplibre-gl` | 5.24.0 | BSD-3-Clause | |
+| `maplibre-gl` | 6.1.0 | BSD-3-Clause | |
 | `react` | 19.2.7 | MIT | |
 | `react-dom` | 19.2.7 | MIT | |
 | `react-i18next` | 17.0.8 | MIT | |
