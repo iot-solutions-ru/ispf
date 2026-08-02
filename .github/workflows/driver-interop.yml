@@ -103,22 +103,25 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Make scripts executable
-        run: chmod +x gradlew deploy/tools/driver-interop-report.sh
-
-      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
-        with:
-          distribution: temurin
-          java-version: "25"
-
-      - name: Generate interop report
-        if: always()
-        run: deploy/tools/driver-interop-report.sh --ci-summary
-
-      - name: Interop matrix complete
-        run: echo "Driver interop matrix finished (see job summaries per pack)." >> "$GITHUB_STEP_SUMMARY"
+      - name: Interop summary (matrix is source of truth)
+        env:
+          MATRIX_RESULT: ${{ needs.matrix.result }}
+          FIXTURES_RESULT: ${{ needs.docker-fixtures-smoke.result }}
+        run: |
+          set -euo pipefail
+          {
+            echo "# Driver interop summary"
+            echo
+            echo "Matrix: **${MATRIX_RESULT}**"
+            echo "Docker fixtures smoke: **${FIXTURES_RESULT}**"
+            echo
+            echo "Per-pack results are in the matrix job summaries."
+            echo "Local full re-run: \`deploy/tools/driver-interop-report.sh\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$MATRIX_RESULT" != "success" || "$FIXTURES_RESULT" != "success" ]]; then
+            echo "::error::Driver interop gate failed (matrix=${MATRIX_RESULT}, fixtures=${FIXTURES_RESULT})"
+            exit 1
+          fi
 
   pr-comment:
     needs: [matrix, docker-fixtures-smoke]
