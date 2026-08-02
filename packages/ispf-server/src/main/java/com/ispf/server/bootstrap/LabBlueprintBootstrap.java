@@ -407,7 +407,7 @@ public class LabBlueprintBootstrap {
                         writableStringDef("defaultParameters", "Unused for tree-variables reports", "config", "{}"),
                         intDef("maxRows", "Maximum rows returned", "config", 1000),
                         intDef("refreshIntervalMs", "Auto-refresh interval in view mode", "config", 30000),
-                        writableStringDef("templateFormat", "YARG template format (empty = none)", "config", ""),
+                        writableStringDef("templateFormat", "Spreadsheet template format (empty = none)", "config", ""),
                         writableStringDef("layout", "Report layout JSON", "config", "")
                 ),
                 List.of(),

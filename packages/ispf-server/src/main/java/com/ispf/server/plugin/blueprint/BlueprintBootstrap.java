@@ -594,7 +594,7 @@ public class BlueprintBootstrap {
                         ),
                         BlueprintVariableDefinition.of(
                                 "templateFormat",
-                                "YARG template format: xlsx, docx, html (empty = no template)",
+                                "Spreadsheet template format: xlsx, xls (empty = no template)",
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,

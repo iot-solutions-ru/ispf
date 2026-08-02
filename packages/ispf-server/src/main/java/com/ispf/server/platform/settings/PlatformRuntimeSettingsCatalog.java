@@ -249,8 +249,8 @@ final class PlatformRuntimeSettingsCatalog {
             def("platform", "update.staging-dir", "ISPF_UPDATE_STAGING_DIR", "ispf.platform.update.staging-dir", PlatformRuntimeSettingType.STRING, "/opt/ispf/staging", false, false),
 
             def("platform", "reports.template-engine", "ISPF_REPORTS_TEMPLATE_ENGINE", "ispf.reports.template-engine", PlatformRuntimeSettingType.STRING, "poi", false, false),
-            def("platform", "reports.yarg.libre-office.path", "ISPF_REPORTS_LIBREOFFICE_PATH", "ispf.reports.yarg.libre-office.path", PlatformRuntimeSettingType.STRING, "", false, false),
-            def("platform", "reports.yarg.libre-office.timeout-seconds", "ISPF_REPORTS_LIBREOFFICE_TIMEOUT_SECONDS", "ispf.reports.yarg.libre-office.timeout-seconds", PlatformRuntimeSettingType.INTEGER, "120", false, false),
+            def("platform", "reports.libre-office.path", "ISPF_REPORTS_LIBREOFFICE_PATH", "ispf.reports.libre-office.path", PlatformRuntimeSettingType.STRING, "", false, false),
+            def("platform", "reports.libre-office.timeout-seconds", "ISPF_REPORTS_LIBREOFFICE_TIMEOUT_SECONDS", "ispf.reports.libre-office.timeout-seconds", PlatformRuntimeSettingType.INTEGER, "120", false, false),
 
             def("tenant", "tenant.isolation-mode", "ISPF_TENANT_ISOLATION_MODE", "ispf.tenant.isolation-mode", PlatformRuntimeSettingType.STRING, "logical", false, false),
             def("tenant", "tenant.schema-prefix", "ISPF_TENANT_SCHEMA_PREFIX", "ispf.tenant.schema-prefix", PlatformRuntimeSettingType.STRING, "tenant_", false, false),

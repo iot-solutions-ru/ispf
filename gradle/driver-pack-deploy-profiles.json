@@ -1,6 +1,6 @@
 {
   "permissive": {
-    "description": "Apache-2.0 and public-domain driver packs only. Excludes copyleft (GPL/LGPL/MPL) and StepFunc-restricted DNP3.",
+    "description": "Apache-2.0 and public-domain driver packs. Catalog no longer contains GPL/LGPL/MPL/StepFunc packs (ISPF clean-room codecs).",
     "excludeLicensePatterns": [
       "^GPL",
       "^LGPL",

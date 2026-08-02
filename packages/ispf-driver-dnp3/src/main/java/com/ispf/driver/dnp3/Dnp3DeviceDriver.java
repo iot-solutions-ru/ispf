@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DNP3 TCP master driver — Class 0/1/2/3 integrity poll via {@code io.stepfunc:dnp3}.
+ * DNP3 TCP master driver with ISPF-owned Class 0/1/2/3 integrity poll codec.
  * <p>
  * Point mapping: {@code index:dataType} e.g. {@code 0:ANALOG_INPUT}.
  */
@@ -21,7 +21,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
             "dnp3",
             "DNP3 Driver",
             "0.2.0",
-            "DNP3 TCP master with Class 0/1/2/3 poll (io.stepfunc:dnp3)",
+            "DNP3 TCP master with Class 0/1/2/3 poll (ISPF clean-room codec)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",

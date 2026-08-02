@@ -10,36 +10,6 @@ allprojects {
 
     repositories {
         mavenCentral()
-        // Offline mirror for BACnet4J (+ lohbihler) and YARG JAI transitives — remote hosts often 503/500 in CI.
-        maven {
-            name = "third-party-local"
-            url = uri(rootProject.layout.projectDirectory.dir("third-party/maven-repo").asFile.toURI())
-            content {
-                includeGroup("com.infiniteautomation")
-                includeGroup("lohbihler")
-                includeGroup("javax.media.jai")
-            }
-        }
-        maven {
-            name = "ias-releases"
-            url = uri("https://maven.mangoautomation.net/repository/ias-release/")
-            content {
-                includeGroup("com.infiniteautomation")
-                includeGroup("lohbihler")
-            }
-        }
-        // YARG lives on Jmix; cuba-platform work repo often 500s and must not be probed via ias-releases.
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = "jmix-releases"
-                    url = uri("https://nexus.jmix.io/repository/releases/")
-                }
-            }
-            filter {
-                includeGroupByRegex("com\\.haulmont(\\..*)?")
-            }
-        }
     }
 }
 

@@ -17,7 +17,7 @@
     "driverClass": "com.ispf.driver.bacnet.BacnetDeviceDriver",
     "driverId": "bacnet",
     "jarFile": "ispf-driver-bacnet.jar",
-    "licenseType": "GPL-3.0-only",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-bacnet"
   },
   "ispf-driver-coap": {
@@ -41,6 +41,13 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-cwmp"
   },
+  "ispf-driver-ddk": {
+    "driverClass": "com.ispf.driver.jsonpoller.JsonPollerDeviceDriver",
+    "driverId": "ddk",
+    "jarFile": "ispf-driver-ddk.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ddk"
+  },
   "ispf-driver-dhcp": {
     "driverClass": "com.ispf.driver.dhcp.DhcpDeviceDriver",
     "driverId": "dhcp",
@@ -52,14 +59,14 @@
     "driverClass": "com.ispf.driver.dlms.DlmsDeviceDriver",
     "driverId": "dlms",
     "jarFile": "ispf-driver-dlms.jar",
-    "licenseType": "GPL-2.0-only",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-dlms"
   },
   "ispf-driver-dnp3": {
     "driverClass": "com.ispf.driver.dnp3.Dnp3DeviceDriver",
     "driverId": "dnp3",
     "jarFile": "ispf-driver-dnp3.jar",
-    "licenseType": "LicenseRef-StepFunc-NonCommercial",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-dnp3"
   },
   "ispf-driver-ethernet-ip": {
@@ -136,14 +143,14 @@
     "driverClass": "com.ispf.driver.iec104.Iec104DeviceDriver",
     "driverId": "iec104",
     "jarFile": "ispf-driver-iec104.jar",
-    "licenseType": "GPL-3.0-or-later",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-iec104"
   },
   "ispf-driver-iec104-server": {
     "driverClass": "com.ispf.driver.iec104server.Iec104ServerDeviceDriver",
     "driverId": "iec104-server",
     "jarFile": "ispf-driver-iec104-server.jar",
-    "licenseType": "GPL-3.0-or-later",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-iec104-server"
   },
   "ispf-driver-imap": {
@@ -152,6 +159,27 @@
     "jarFile": "ispf-driver-imap.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-imap"
+  },
+  "ispf-driver-ingress-sflow": {
+    "driverClass": "com.ispf.driver.ingress.sflow.SflowIngressDeviceDriver",
+    "driverId": "ingress-sflow",
+    "jarFile": "ispf-driver-ingress-sflow.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ingress-sflow"
+  },
+  "ispf-driver-ingress-snmp-trap": {
+    "driverClass": "com.ispf.driver.ingress.snmptrap.SnmpTrapIngressDeviceDriver",
+    "driverId": "ingress-snmp-trap",
+    "jarFile": "ispf-driver-ingress-snmp-trap.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ingress-snmp-trap"
+  },
+  "ispf-driver-ingress-syslog": {
+    "driverClass": "com.ispf.driver.ingress.syslog.SyslogIngressDeviceDriver",
+    "driverId": "ingress-syslog",
+    "jarFile": "ispf-driver-ingress-syslog.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ingress-syslog"
   },
   "ispf-driver-ip-host": {
     "driverClass": "com.ispf.driver.iphost.IpHostDeviceDriver",
@@ -164,7 +192,7 @@
     "driverClass": "com.ispf.driver.ipmi.IpmiDeviceDriver",
     "driverId": "ipmi",
     "jarFile": "ispf-driver-ipmi.jar",
-    "licenseType": "GPL-3.0-or-later",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-ipmi"
   },
   "ispf-driver-jdbc": {
@@ -206,7 +234,7 @@
     "driverClass": "com.ispf.driver.mbus.MbusDeviceDriver",
     "driverId": "mbus",
     "jarFile": "ispf-driver-mbus.jar",
-    "licenseType": "MPL-2.0",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-mbus"
   },
   "ispf-driver-message-stream": {
@@ -311,7 +339,7 @@
     "driverClass": "com.ispf.driver.radius.RadiusDeviceDriver",
     "driverId": "radius",
     "jarFile": "ispf-driver-radius.jar",
-    "licenseType": "LGPL-3.0-or-later",
+    "licenseType": "Apache-2.0",
     "packId": "ispf-driver-radius"
   },
   "ispf-driver-s7": {
@@ -404,27 +432,6 @@
     "jarFile": "ispf-driver-wmi.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-wmi"
-  },
-  "ispf-driver-ingress-syslog": {
-    "driverClass": "com.ispf.driver.ingress.syslog.SyslogIngressDeviceDriver",
-    "driverId": "ingress-syslog",
-    "jarFile": "ispf-driver-ingress-syslog.jar",
-    "licenseType": "Apache-2.0",
-    "packId": "ispf-driver-ingress-syslog"
-  },
-  "ispf-driver-ingress-snmp-trap": {
-    "driverClass": "com.ispf.driver.ingress.snmptrap.SnmpTrapIngressDeviceDriver",
-    "driverId": "ingress-snmp-trap",
-    "jarFile": "ispf-driver-ingress-snmp-trap.jar",
-    "licenseType": "Apache-2.0",
-    "packId": "ispf-driver-ingress-snmp-trap"
-  },
-  "ispf-driver-ingress-sflow": {
-    "driverClass": "com.ispf.driver.ingress.sflow.SflowIngressDeviceDriver",
-    "driverId": "ingress-sflow",
-    "jarFile": "ispf-driver-ingress-sflow.jar",
-    "licenseType": "Apache-2.0",
-    "packId": "ispf-driver-ingress-sflow"
   },
   "ispf-driver-xmpp": {
     "driverClass": "com.ispf.driver.xmpp.XmppDeviceDriver",

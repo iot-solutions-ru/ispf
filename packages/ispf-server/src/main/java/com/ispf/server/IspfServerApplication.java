@@ -22,7 +22,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.AiProperties.class,
         com.ispf.server.config.McpProperties.class,
         com.ispf.server.config.DriverPackProperties.class,
-        com.ispf.server.config.ReportYargProperties.class,
+        com.ispf.server.config.ReportLibreOfficeProperties.class,
         com.ispf.server.config.ReportEngineProperties.class,
         com.ispf.server.config.RuntimeTelemetryProperties.class,
         com.ispf.server.config.ObjectChangeProperties.class,

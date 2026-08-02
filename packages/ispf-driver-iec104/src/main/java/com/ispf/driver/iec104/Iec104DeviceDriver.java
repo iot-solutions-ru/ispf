@@ -6,19 +6,11 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import org.openmuc.j60870.ASdu;
-import org.openmuc.j60870.CauseOfTransmission;
-import org.openmuc.j60870.ClientConnectionBuilder;
-import org.openmuc.j60870.Connection;
-import org.openmuc.j60870.ConnectionEventListener;
-import org.openmuc.j60870.ie.IeDoublePointWithQuality;
-import org.openmuc.j60870.ie.IeNormalizedValue;
-import org.openmuc.j60870.ie.IeQualifierOfSetPointCommand;
-import org.openmuc.j60870.ie.IeShortFloat;
-import org.openmuc.j60870.ie.IeSingleCommand;
-import org.openmuc.j60870.ie.IeSinglePointWithQuality;
-import org.openmuc.j60870.ie.InformationElement;
-import org.openmuc.j60870.ie.InformationObject;
+import com.ispf.driver.iec104.codec.Iec104Asdu;
+import com.ispf.driver.iec104.codec.Iec104Connection;
+import com.ispf.driver.iec104.codec.Iec104ConnectionListener;
+import com.ispf.driver.iec104.codec.Iec104Type;
+import com.ispf.driver.iec104.codec.Iec104Value;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -61,7 +53,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
             .build();
 
     private DriverObject driverObject;
-    private Connection connection;
+    private Iec104Connection connection;
     private String host = "127.0.0.1";
     private int port = 2404;
     private int commonAddress = 1;
@@ -87,11 +79,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         try {
-            ClientConnectionBuilder builder = new ClientConnectionBuilder(InetAddress.getByName(host))
-                    .setPort(port)
-                    .setConnectionTimeout(timeoutMs)
-                    .setConnectionEventListener(eventListener);
-            connection = builder.build();
+            connection = Iec104Connection.connect(InetAddress.getByName(host), port, timeoutMs, eventListener);
             connection.startDataTransfer();
             connected = true;
             driverObject.log(DriverLogLevel.INFO, "Connected to IEC104 " + host + ":" + port);
@@ -157,26 +145,11 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
         try {
             switch (point.dataType()) {
-                case BOOL, M_SP_NA_1 -> connection.singleCommand(
-                        commonAddress,
-                        CauseOfTransmission.ACTIVATION,
-                        point.ioa(),
-                        new IeSingleCommand(extractBoolean(value), 0, false)
-                );
-                case FLOAT, M_ME_NC_1, M_ME_TF_1 -> connection.setShortFloatCommand(
-                        commonAddress,
-                        CauseOfTransmission.ACTIVATION,
-                        point.ioa(),
-                        new IeShortFloat((float) extractDouble(value)),
-                        new IeQualifierOfSetPointCommand(0, false)
-                );
-                case INT, M_ME_NA_1 -> connection.setNormalizedValueCommand(
-                        commonAddress,
-                        CauseOfTransmission.ACTIVATION,
-                        point.ioa(),
-                        new IeNormalizedValue((float) extractDouble(value)),
-                        new IeQualifierOfSetPointCommand(0, false)
-                );
+                case BOOL, M_SP_NA_1 -> connection.singleCommand(commonAddress, point.ioa(), extractBoolean(value));
+                case FLOAT, M_ME_NC_1, M_ME_TF_1 ->
+                        connection.setShortFloatCommand(commonAddress, point.ioa(), extractDouble(value));
+                case INT, M_ME_NA_1 ->
+                        connection.setNormalizedValueCommand(commonAddress, point.ioa(), extractDouble(value));
                 default -> throw new DriverException("Unsupported IEC104 write data type: " + point.dataType());
             }
             driverObject.updateVariable(pointId, writeResult(point, value));
@@ -254,73 +227,39 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
     }
 
-    private void handleAsdu(ASdu aSdu) {
-        for (InformationObject informationObject : aSdu.getInformationObjects()) {
-            int ioa = informationObject.getInformationObjectAddress();
+    private void handleAsdu(Iec104Asdu asdu) {
+        for (Iec104Value value : asdu.values()) {
+            int ioa = value.ioa();
             PendingRead pending = pendingReads.get(ioa);
             if (pending == null) {
                 continue;
             }
             try {
-                pending.complete(decodeInformationObject(informationObject, pending.dataType()));
+                pending.complete(decodeValue(value, pending.dataType()));
             } catch (DriverException e) {
                 pending.fail(e);
             }
         }
     }
 
-    private DataRecord decodeInformationObject(InformationObject informationObject, Iec104Point.Iec104DataType hint)
+    private DataRecord decodeValue(Iec104Value value, Iec104Point.Iec104DataType hint)
             throws DriverException {
-        InformationElement[][] elements = informationObject.getInformationElements();
-        if (elements.length == 0 || elements[0].length == 0) {
-            throw new DriverException("No information elements in ASDU");
+        if (value.typeId() == Iec104Type.M_SP_NA_1) {
+            return DataRecord.single(BOOL_SCHEMA, Map.of("value", value.booleanValue(), "quality", value.quality()));
         }
-        InformationElement element = elements[0][0];
-        if (element instanceof IeSinglePointWithQuality singlePoint) {
-            return DataRecord.single(BOOL_SCHEMA, Map.of(
-                    "value", singlePoint.isOn(),
-                    "quality", singlePointQuality(singlePoint)
-            ));
+        if (value.typeId() == Iec104Type.M_DP_NA_1) {
+            return DataRecord.single(VALUE_SCHEMA, Map.of("value", value.numericValue(), "quality", value.quality()));
         }
-        if (element instanceof IeDoublePointWithQuality doublePoint) {
-            return DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", (double) doublePoint.getDoublePointInformation().ordinal(),
-                    "quality", doublePointQuality(doublePoint)
-            ));
-        }
-        if (element instanceof IeShortFloat shortFloat) {
-            return DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", (double) shortFloat.getValue(),
-                    "quality", "GOOD"
-            ));
-        }
-        if (element instanceof IeNormalizedValue normalizedValue) {
-            return DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", normalizedValue.getNormalizedValue(),
-                    "quality", "GOOD"
-            ));
+        if (value.typeId() == Iec104Type.M_ME_NC_1
+                || value.typeId() == Iec104Type.M_ME_TF_1
+                || value.typeId() == Iec104Type.M_ME_NA_1) {
+            return DataRecord.single(VALUE_SCHEMA, Map.of("value", value.numericValue(), "quality", value.quality()));
         }
         return switch (hint) {
             case BOOL, M_SP_NA_1 -> DataRecord.single(BOOL_SCHEMA, Map.of("value", false, "quality", "UNKNOWN"));
             case INT -> DataRecord.single(VALUE_SCHEMA, Map.of("value", 0.0, "quality", "UNKNOWN"));
             default -> DataRecord.single(VALUE_SCHEMA, Map.of("value", 0.0, "quality", "UNKNOWN"));
         };
-    }
-
-    private static String singlePointQuality(IeSinglePointWithQuality quality) {
-        return quality.isBlocked() ? "BLOCKED"
-                : quality.isInvalid() ? "INVALID"
-                : quality.isNotTopical() ? "NOT_TOPICAL"
-                : quality.isSubstituted() ? "SUBSTITUTED"
-                : "GOOD";
-    }
-
-    private static String doublePointQuality(IeDoublePointWithQuality quality) {
-        return quality.isBlocked() ? "BLOCKED"
-                : quality.isInvalid() ? "INVALID"
-                : quality.isNotTopical() ? "NOT_TOPICAL"
-                : quality.isSubstituted() ? "SUBSTITUTED"
-                : "GOOD";
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {
@@ -335,14 +274,14 @@ public class Iec104DeviceDriver implements DeviceDriver {
         });
     }
 
-    private final ConnectionEventListener eventListener = new ConnectionEventListener() {
+    private final Iec104ConnectionListener eventListener = new Iec104ConnectionListener() {
         @Override
-        public void newASdu(Connection conn, ASdu aSdu) {
-            handleAsdu(aSdu);
+        public void onAsdu(Iec104Connection conn, Iec104Asdu asdu) {
+            handleAsdu(asdu);
         }
 
         @Override
-        public void connectionClosed(Connection conn, IOException cause) {
+        public void onConnectionClosed(Iec104Connection conn, IOException cause) {
             connected = false;
             pendingReads.values().forEach(PendingRead::cancel);
             pendingReads.clear();
@@ -350,7 +289,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
 
         @Override
-        public void dataTransferStateChanged(Connection conn, boolean active) {
+        public void onDataTransferStateChanged(Iec104Connection conn, boolean active) {
             // no-op
         }
     };

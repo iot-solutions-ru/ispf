@@ -119,29 +119,29 @@ class ReportApiTest {
     }
 
     @Test
-    void yargExportRequiresTemplate() throws Exception {
+    void spreadsheetExportFallsBackWithoutTemplate() throws Exception {
         mockMvc.perform(post("/api/v1/objects")
                         .header("X-ISPF-Role", "admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "parentPath": "root.platform.reports",
-                                  "name": "yarg-export-test",
+                                  "name": "spreadsheet-export-test",
                                   "type": "REPORT",
-                                  "displayName": "YARG Export Test",
+                                  "displayName": "Spreadsheet Export Test",
                                   "templateId": "report-v1"
                                 }
                                 """))
                 .andExpect(status().isOk());
 
-        String path = "root.platform.reports.yarg-export-test";
+        String path = "root.platform.reports.spreadsheet-export-test";
         mockMvc.perform(put("/api/v1/reports/by-path/definition")
                         .header("X-ISPF-Role", "admin")
                         .param("path", path)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "title": "YARG Export Test",
+                                  "title": "Spreadsheet Export Test",
                                   "dataSourcePath": "%s",
                                   "query": "SELECT item_code FROM platform_item",
                                   "parameters": [],
@@ -173,22 +173,22 @@ class ReportApiTest {
                         .content("""
                                 {
                                   "parentPath": "root.platform.reports",
-                                  "name": "yarg-template-test",
+                                  "name": "spreadsheet-template-test",
                                   "type": "REPORT",
-                                  "displayName": "YARG Template Test",
+                                  "displayName": "Spreadsheet Template Test",
                                   "templateId": "report-v1"
                                 }
                                 """))
                 .andExpect(status().isOk());
 
-        String path = "root.platform.reports.yarg-template-test";
+        String path = "root.platform.reports.spreadsheet-template-test";
         mockMvc.perform(put("/api/v1/reports/by-path/definition")
                         .header("X-ISPF-Role", "admin")
                         .param("path", path)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "title": "YARG Template Test",
+                                  "title": "Spreadsheet Template Test",
                                   "dataSourcePath": "%s",
                                   "query": "SELECT item_code FROM platform_item",
                                   "parameters": [],
@@ -198,7 +198,7 @@ class ReportApiTest {
                                 """.formatted(DATA_SOURCE_PATH)))
                 .andExpect(status().isOk());
 
-        byte[] template = ReportYargTemplateTestHelper.smokeTestTemplate();
+        byte[] template = ReportTemplateTestHelper.smokeTestTemplate();
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "report.xls",

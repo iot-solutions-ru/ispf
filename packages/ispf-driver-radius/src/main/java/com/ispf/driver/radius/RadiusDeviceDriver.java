@@ -6,15 +6,13 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import org.tinyradius.packet.AccessRequest;
-import org.tinyradius.packet.RadiusPacket;
-import org.tinyradius.util.RadiusClient;
+import com.ispf.driver.radius.codec.RadiusPapClient;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * RADIUS authentication probe driver — TinyRadius Access-Request.
+ * RADIUS authentication probe driver using the ISPF clean-room PAP codec.
  */
 public class RadiusDeviceDriver implements DeviceDriver {
 
@@ -28,7 +26,7 @@ public class RadiusDeviceDriver implements DeviceDriver {
             "radius",
             "RADIUS Auth Driver",
             "0.1.0",
-            "RADIUS Access-Request authentication probe via TinyRadius",
+            "RADIUS Access-Request authentication probe via ISPF PAP codec",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -116,17 +114,13 @@ public class RadiusDeviceDriver implements DeviceDriver {
             throw new DriverException("Unsupported RADIUS point kind: " + point.kind());
         }
         try {
-            RadiusClient client = new RadiusClient(host, secret);
-            client.setAuthPort(port);
-            client.setSocketTimeout(timeoutMs);
-            AccessRequest request = new AccessRequest(username, password);
-            request.setAuthProtocol(AccessRequest.AUTH_PAP);
-            RadiusPacket response = client.authenticate(request);
-            boolean success = response != null && response.getPacketType() == RadiusPacket.ACCESS_ACCEPT;
+            RadiusPapClient client = new RadiusPapClient(host, port, secret, timeoutMs);
+            RadiusPapClient.Response response = client.authenticate(username, password);
+            boolean success = response.code() == RadiusPapClient.ACCESS_ACCEPT;
             return DataRecord.single(AUTH_SCHEMA, Map.of(
                     "value", success ? "success" : "fail",
                     "success", success,
-                    "responseCode", response == null ? -1 : response.getPacketType()
+                    "responseCode", response.code()
             ));
         } catch (Exception e) {
             return DataRecord.single(AUTH_SCHEMA, Map.of(

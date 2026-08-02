@@ -6,35 +6,17 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.veraxsystems.vxipmi.api.async.ConnectionHandle;
-import com.veraxsystems.vxipmi.api.sync.IpmiConnector;
-import com.veraxsystems.vxipmi.coding.commands.IpmiVersion;
-import com.veraxsystems.vxipmi.coding.commands.chassis.GetChassisStatus;
-import com.veraxsystems.vxipmi.coding.commands.chassis.GetChassisStatusResponseData;
-import com.veraxsystems.vxipmi.coding.commands.sdr.GetSdr;
-import com.veraxsystems.vxipmi.coding.commands.sdr.GetSdrResponseData;
-import com.veraxsystems.vxipmi.coding.commands.sdr.GetSensorReading;
-import com.veraxsystems.vxipmi.coding.commands.sdr.GetSensorReadingResponseData;
-import com.veraxsystems.vxipmi.coding.commands.sdr.ReserveSdrRepository;
-import com.veraxsystems.vxipmi.coding.commands.sdr.ReserveSdrRepositoryResponseData;
-import com.veraxsystems.vxipmi.coding.commands.sdr.record.CompactSensorRecord;
-import com.veraxsystems.vxipmi.coding.commands.sdr.record.FullSensorRecord;
-import com.veraxsystems.vxipmi.coding.commands.sdr.record.SensorRecord;
-import com.veraxsystems.vxipmi.coding.protocol.AuthenticationType;
-import com.veraxsystems.vxipmi.coding.security.CipherSuite;
+import com.ispf.driver.ipmi.codec.IpmiLanClient;
+import com.ispf.driver.ipmi.codec.IpmiSdrRecord;
 
-import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * IPMI LAN driver — vxIPMI sensor/power reads with RMCP+ UDP ping fallback.
+ * IPMI LAN driver with ISPF-owned RMCP command client and SDR parser.
  */
 public class IpmiDeviceDriver implements DeviceDriver {
-
-    private static final int SDR_END_RECORD_ID = 0xFFFF;
 
     private static final DataSchema IPMI_SCHEMA = DataSchema.builder("ipmiValue")
             .field("value", FieldType.STRING)
@@ -47,7 +29,7 @@ public class IpmiDeviceDriver implements DeviceDriver {
             "ipmi",
             "IPMI LAN Driver",
             "0.1.0",
-            "IPMI LAN sensor and chassis power reads via vxIPMI (fr.jrds:vxIPMI)",
+            "IPMI LAN sensor and chassis power reads (ISPF clean-room codec)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -120,41 +102,17 @@ public class IpmiDeviceDriver implements DeviceDriver {
         }
         points.clear();
         boolean reachable = RmcpPingClient.ping(host, port, timeoutMs);
-        IpmiConnector connector = null;
-        ConnectionHandle handle = null;
-        CipherSuite cipherSuite = CipherSuite.getEmpty();
-        try {
+        try (IpmiLanClient client = authenticatedClient()) {
             if (!username.isBlank() && !password.isBlank()) {
-                connector = new IpmiConnector(0);
-                handle = connector.createConnection(InetAddress.getByName(host), port);
-                connector.setTimeout(handle, timeoutMs);
-                List<CipherSuite> suites = connector.getAvailableCipherSuites(handle);
-                if (!suites.isEmpty()) {
-                    cipherSuite = suites.getFirst();
-                }
-                connector.openSession(handle, username, password, password.getBytes(StandardCharsets.US_ASCII));
+                client.openSession(username, password);
             }
             for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
                 IpmiPoint point = IpmiPoint.parse(entry.getValue());
                 points.put(entry.getKey(), point);
-                driverObject.updateVariable(entry.getKey(), readPoint(point, connector, handle, cipherSuite, reachable));
+                driverObject.updateVariable(entry.getKey(), readPoint(point, client, reachable));
             }
         } catch (Exception e) {
             throw new DriverException("IPMI read failed for " + host + ":" + port, e);
-        } finally {
-            if (connector != null && handle != null) {
-                try {
-                    connector.closeSession(handle);
-                } catch (Exception ignored) {
-                    // best-effort cleanup
-                }
-                try {
-                    connector.closeConnection(handle);
-                } catch (Exception ignored) {
-                    // best-effort cleanup
-                }
-                connector.tearDown();
-            }
         }
     }
 
@@ -163,9 +121,15 @@ public class IpmiDeviceDriver implements DeviceDriver {
         throw new DriverException("IPMI driver is read-only in v0.1");
     }
 
-    private DataRecord readPoint(IpmiPoint point, IpmiConnector connector, ConnectionHandle handle,
-            CipherSuite cipherSuite, boolean reachable) throws Exception {
-        if (connector == null || handle == null) {
+    private IpmiLanClient authenticatedClient() throws Exception {
+        if (username.isBlank() || password.isBlank()) {
+            return null;
+        }
+        return new IpmiLanClient(host, port, timeoutMs);
+    }
+
+    private DataRecord readPoint(IpmiPoint point, IpmiLanClient client, boolean reachable) throws Exception {
+        if (client == null) {
             return DataRecord.single(IPMI_SCHEMA, Map.of(
                     "value", reachable ? "reachable" : "unreachable",
                     "reachable", reachable,
@@ -174,16 +138,13 @@ public class IpmiDeviceDriver implements DeviceDriver {
             ));
         }
         return switch (point.kind()) {
-            case POWER -> readPower(connector, handle, cipherSuite, reachable);
-            case SENSOR -> readSensor(connector, handle, cipherSuite, point.sensorName(), reachable);
+            case POWER -> readPower(client, reachable);
+            case SENSOR -> readSensor(client, point.sensorName(), reachable);
         };
     }
 
-    private DataRecord readPower(IpmiConnector connector, ConnectionHandle handle, CipherSuite cipherSuite,
-            boolean reachable) throws Exception {
-        GetChassisStatusResponseData status = (GetChassisStatusResponseData) connector.sendMessage(
-                handle, new GetChassisStatus(IpmiVersion.V20, cipherSuite, AuthenticationType.RMCPPlus));
-        boolean powerOn = status.isPowerOn();
+    private DataRecord readPower(IpmiLanClient client, boolean reachable) throws Exception {
+        boolean powerOn = client.getChassisPowerOn();
         return DataRecord.single(IPMI_SCHEMA, Map.of(
                 "value", powerOn ? "on" : "off",
                 "reachable", reachable,
@@ -192,34 +153,18 @@ public class IpmiDeviceDriver implements DeviceDriver {
         ));
     }
 
-    private DataRecord readSensor(IpmiConnector connector, ConnectionHandle handle, CipherSuite cipherSuite,
-            String sensorName, boolean reachable) throws Exception {
-        ReserveSdrRepositoryResponseData reserve = (ReserveSdrRepositoryResponseData) connector.sendMessage(
-                handle, new ReserveSdrRepository(IpmiVersion.V20, cipherSuite, AuthenticationType.RMCPPlus));
-        int reservationId = reserve.getReservationId();
-        int recordId = 0;
-        while (recordId != SDR_END_RECORD_ID) {
-            GetSdrResponseData sdr = (GetSdrResponseData) connector.sendMessage(
-                    handle, new GetSdr(IpmiVersion.V20, cipherSuite, AuthenticationType.RMCPPlus,
-                            reservationId, recordId));
-            byte[] recordData = sdr.getSensorRecordData();
-            if (recordData != null && recordData.length > 0) {
-                SensorRecord record = SensorRecord.populateSensorRecord(recordData);
-                String name = sensorName(record);
-                Integer sensorNumber = sensorNumber(record);
-                if (name != null && sensorNumber != null && sensorName.equalsIgnoreCase(name)) {
-                    GetSensorReadingResponseData reading = (GetSensorReadingResponseData) connector.sendMessage(
-                            handle, new GetSensorReading(IpmiVersion.V20, cipherSuite, AuthenticationType.RMCPPlus,
-                                    sensorNumber));
-                    return DataRecord.single(IPMI_SCHEMA, Map.of(
-                            "value", String.valueOf(sensorReading(record, reading)),
-                            "reachable", reachable,
-                            "powerOn", false,
-                            "sensor", name
-                    ));
-                }
+    private DataRecord readSensor(IpmiLanClient client, String sensorName, boolean reachable) throws Exception {
+        List<IpmiSdrRecord> records = client.readSdrRepository();
+        for (IpmiSdrRecord record : records) {
+            if (sensorName.equalsIgnoreCase(record.name())) {
+                int rawReading = client.getSensorReading(record.sensorNumber());
+                return DataRecord.single(IPMI_SCHEMA, Map.of(
+                        "value", String.valueOf(record.convertReading(rawReading)),
+                        "reachable", reachable,
+                        "powerOn", false,
+                        "sensor", record.name()
+                ));
             }
-            recordId = sdr.getNextRecordId();
         }
         return DataRecord.single(IPMI_SCHEMA, Map.of(
                 "value", "",
@@ -227,32 +172,5 @@ public class IpmiDeviceDriver implements DeviceDriver {
                 "powerOn", false,
                 "sensor", ""
         ));
-    }
-
-    static double sensorReading(SensorRecord record, GetSensorReadingResponseData reading) {
-        if (record instanceof FullSensorRecord full) {
-            return reading.getSensorReading(full);
-        }
-        return reading.getPlainSensorReading();
-    }
-
-    static Integer sensorNumber(SensorRecord record) {
-        if (record instanceof FullSensorRecord full) {
-            return full.getSensorNumber() & 0xFF;
-        }
-        if (record instanceof CompactSensorRecord compact) {
-            return compact.getSensorNumber() & 0xFF;
-        }
-        return null;
-    }
-
-    private static String sensorName(SensorRecord record) {
-        if (record instanceof FullSensorRecord full) {
-            return full.getName();
-        }
-        if (record instanceof CompactSensorRecord compact) {
-            return compact.getName();
-        }
-        return null;
     }
 }

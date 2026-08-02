@@ -16,12 +16,9 @@ class IncomesXlsxTemplateTest {
     @Autowired
     private ReportTemplateRouter templateRouter;
 
-    @Autowired
-    private YargReportService yargReportService;
-
     @Test
     void smokeXlsTemplateValidates() throws Exception {
-        byte[] template = ReportYargTemplateTestHelper.smokeTestTemplate();
+        byte[] template = ReportTemplateTestHelper.smokeTestTemplate();
         assertDoesNotThrow(() -> templateRouter.validate(template, "xls"));
     }
 
@@ -38,7 +35,7 @@ class IncomesXlsxTemplateTest {
     }
 
     @Test
-    void incomesBand1XlsxValidatesAfterJaxbFix() throws Exception {
+    void incomesBand1XlsxValidates() throws Exception {
         byte[] template;
         try (InputStream input = getClass().getResourceAsStream("/yarg/incomes-band1.xlsx")) {
             if (input == null) {
@@ -47,18 +44,5 @@ class IncomesXlsxTemplateTest {
             template = input.readAllBytes();
         }
         assertDoesNotThrow(() -> templateRouter.validate(template, "xlsx"));
-    }
-
-    @Test
-    void yargFallbackStillValidatesWhenForced() throws Exception {
-        byte[] template;
-        try (InputStream input = getClass().getResourceAsStream("/yarg/incomes-minimal.xlsx")) {
-            if (input == null) {
-                throw new IllegalStateException("missing incomes-minimal.xlsx");
-            }
-            template = input.readAllBytes();
-        }
-        // Dual-run: YARG path remains available for regression / template-engine=yarg
-        assertDoesNotThrow(() -> yargReportService.validateTemplate(template, "xlsx"));
     }
 }

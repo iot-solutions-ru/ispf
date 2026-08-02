@@ -1,7 +1,7 @@
 package com.ispf.driver.dlms;
 
+import com.ispf.driver.dlms.codec.DlmsObjectType;
 import com.ispf.driver.DriverException;
-import gurux.dlms.enums.ObjectType;
 
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -12,13 +12,13 @@ import java.util.regex.Pattern;
  * <p>
  * Forms:
  * <ul>
- *   <li>{@code logicalDevice:obis} — default {@link ObjectType#REGISTER}, attribute 2</li>
+ *   <li>{@code logicalDevice:obis} — default {@link DlmsObjectType#REGISTER}, attribute 2</li>
  *   <li>{@code logicalDevice:obis:objectType} — attribute 2</li>
  *   <li>{@code logicalDevice:obis:objectType:attribute}</li>
  * </ul>
  * Example: {@code 1:1.0.1.8.0.255} or {@code 1:0.0.42.0.0.255:DATA:2}.
  */
-record DlmsPoint(int logicalDevice, String obis, ObjectType objectType, int attributeIndex) {
+record DlmsPoint(int logicalDevice, String obis, DlmsObjectType objectType, int attributeIndex) {
 
     private static final Pattern MAPPING = Pattern.compile(
             "^(\\d+):((?:\\d+\\.){5}\\d+)(?::([A-Za-z_]+))?(?::(\\d+))?$"
@@ -36,9 +36,9 @@ record DlmsPoint(int logicalDevice, String obis, ObjectType objectType, int attr
             int logicalDevice = Integer.parseInt(matcher.group(1));
             String obis = matcher.group(2);
             String typeName = matcher.group(3);
-            ObjectType objectType = ObjectType.REGISTER;
+            DlmsObjectType objectType = DlmsObjectType.REGISTER;
             if (typeName != null && !typeName.isBlank()) {
-                objectType = ObjectType.valueOf(typeName.trim().toUpperCase(Locale.ROOT));
+                objectType = DlmsObjectType.valueOf(typeName.trim().toUpperCase(Locale.ROOT));
             }
             int attributeIndex = 2;
             if (matcher.group(4) != null) {

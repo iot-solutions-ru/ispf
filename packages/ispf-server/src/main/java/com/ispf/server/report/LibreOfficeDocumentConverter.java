@@ -1,6 +1,6 @@
 package com.ispf.server.report;
 
-import com.ispf.server.config.ReportYargProperties;
+import com.ispf.server.config.ReportLibreOfficeProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,10 +16,10 @@ public class LibreOfficeDocumentConverter {
 
     private static final Logger log = LoggerFactory.getLogger(LibreOfficeDocumentConverter.class);
 
-    private final ReportYargProperties reportYargProperties;
+    private final ReportLibreOfficeProperties libreOfficeProperties;
 
-    public LibreOfficeDocumentConverter(ReportYargProperties reportYargProperties) {
-        this.reportYargProperties = reportYargProperties;
+    public LibreOfficeDocumentConverter(ReportLibreOfficeProperties libreOfficeProperties) {
+        this.libreOfficeProperties = libreOfficeProperties;
     }
 
     public byte[] convertSpreadsheetToPdf(byte[] spreadsheet, String extension) {
@@ -42,7 +42,7 @@ public class LibreOfficeDocumentConverter {
             Path inputPath = tempDir.resolve(baseName + "." + inputExt);
             Files.write(inputPath, input);
 
-            int timeoutSeconds = Math.max(30, reportYargProperties.getLibreOffice().getTimeoutSeconds());
+            int timeoutSeconds = Math.max(30, libreOfficeProperties.getTimeoutSeconds());
             ProcessBuilder processBuilder = new ProcessBuilder(
                     soffice.toString(),
                     "--headless",
@@ -84,10 +84,10 @@ public class LibreOfficeDocumentConverter {
     }
 
     private Path resolveSofficeBinary() {
-        String officeProgramDir = YargReportingSupport.resolveProgramPath(reportYargProperties.getLibreOffice().getPath())
+        String officeProgramDir = LibreOfficeSupport.resolveProgramPath(libreOfficeProperties.getPath())
                 .orElse(null);
         if (officeProgramDir == null) {
-            throw new IllegalArgumentException(YargReportingSupport.libreOfficeRequiredMessage());
+            throw new IllegalArgumentException(LibreOfficeSupport.libreOfficeRequiredMessage());
         }
         Path soffice = Path.of(officeProgramDir, isWindows() ? "soffice.exe" : "soffice");
         if (!Files.isRegularFile(soffice)) {

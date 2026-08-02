@@ -1,7 +1,5 @@
 package com.ispf.server.report;
 
-import com.haulmont.yarg.structure.ReportOutputType;
-
 public enum ReportExportFormat {
     CSV,
     PDF,
@@ -15,17 +13,6 @@ public enum ReportExportFormat {
             return CSV;
         }
         return ReportExportFormat.valueOf(value.trim().toUpperCase());
-    }
-
-    public ReportOutputType toYargOutputType() {
-        return switch (this) {
-            case PDF -> ReportOutputType.pdf;
-            case XLSX -> ReportOutputType.xlsx;
-            case XLS -> ReportOutputType.xls;
-            case HTML -> ReportOutputType.html;
-            case DOCX -> ReportOutputType.docx;
-            case CSV -> ReportOutputType.csv;
-        };
     }
 
     public String fileExtension() {

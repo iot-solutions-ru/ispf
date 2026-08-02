@@ -50,16 +50,8 @@ dependencies {
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("org.apache.cassandra:java-driver-core:4.19.3")
 
-    implementation("com.haulmont.yarg:yarg:2.2.22") {
-        exclude(group = "javax.xml.bind", module = "jaxb-api")
-    }
-    // YARG XlsxFormatter uses docx4j; JDK 11+ removed internal JAXB — required for .xlsx/.docx via YARG.
-    // Spreadsheet Band1 fill defaults to POI (ADR-0053); pin docx4j 8.3.x (Dependabot major ignore).
-    implementation("javax.xml.bind:jaxb-api:2.3.1")
-    implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
-    implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.15")
-    implementation("org.apache.poi:poi-ooxml")
-    implementation("org.apache.poi:poi")
+    implementation("org.apache.poi:poi-ooxml:5.5.1")
+    implementation("org.apache.poi:poi:5.5.1")
 
     implementation("org.apache.parquet:parquet-avro:1.17.1") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
@@ -78,10 +70,7 @@ dependencies {
     }
 
     constraints {
-        implementation("net.sf.jasperreports:jasperreports:7.0.7")
-        implementation("net.sf.jasperreports:jasperreports-fonts:7.0.7")
         implementation("commons-beanutils:commons-beanutils:1.11.0")
-        implementation("com.lowagie:itext:4.2.2")
     }
 
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")

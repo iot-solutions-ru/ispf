@@ -576,13 +576,12 @@ ispf:
     agent-disable-thinking: ${ISPF_AI_AGENT_DISABLE_THINKING:true}
     agent-require-approval-for-mutate: ${ISPF_AI_AGENT_REQUIRE_APPROVAL_FOR_MUTATE:true}
   reports:
-    # Spreadsheet Band1 fill: poi (default, ADR-0053) or yarg (legacy). DOCX/HTML still use YARG.
+    # Spreadsheet Band1 fill: poi only (ADR-0053).
     template-engine: ${ISPF_REPORTS_TEMPLATE_ENGINE:poi}
-    yarg:
-      libre-office:
-        path: ${ISPF_REPORTS_LIBREOFFICE_PATH:}
-        timeout-seconds: ${ISPF_REPORTS_LIBREOFFICE_TIMEOUT:120}
-        display-device-available: false
+    libre-office:
+      path: ${ISPF_REPORTS_LIBREOFFICE_PATH:}
+      timeout-seconds: ${ISPF_REPORTS_LIBREOFFICE_TIMEOUT:120}
+      display-device-available: false
 
 logging:
   level:

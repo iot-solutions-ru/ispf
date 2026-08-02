@@ -2,7 +2,6 @@
 """Regenerate gradle/driver-packs.json from driver module sources."""
 import json
 import re
-import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,15 +26,8 @@ OVERRIDES = {
     "ispf-driver-smis": "smi-s",
 }
 
+# Non-Apache pack licenses only (NIST SIP RI). All protocol packs are Apache-2.0 ISPF codecs.
 LICENSE_TYPES = {
-    "ispf-driver-bacnet": "GPL-3.0-only",
-    "ispf-driver-dlms": "GPL-2.0-only",
-    "ispf-driver-dnp3": "LicenseRef-StepFunc-NonCommercial",
-    "ispf-driver-iec104": "GPL-3.0-or-later",
-    "ispf-driver-iec104-server": "GPL-3.0-or-later",
-    "ispf-driver-ipmi": "GPL-3.0-or-later",
-    "ispf-driver-radius": "LGPL-3.0-or-later",
-    "ispf-driver-mbus": "MPL-2.0",
     "ispf-driver-sip": "LicenseRef-NIST-PublicDomain",
 }
 
@@ -52,19 +44,20 @@ def main() -> None:
             continue
         module = path.parts[path.parts.index("packages") + 1]
         driver_class = f"{pkg.group(1)}.{cls.group(1)}"
-        driver_id = OVERRIDES.get(module, module.replace("ispf-driver-", ""))
+        driver_id = OVERRIDES.get(module, module.removeprefix("ispf-driver-"))
+        jar_file = f"{module}.jar"
+        license_type = LICENSE_TYPES.get(module, "Apache-2.0")
         entries[module] = {
-            "packId": module,
-            "driverId": driver_id,
             "driverClass": driver_class,
-            "licenseType": LICENSE_TYPES.get(module, "Apache-2.0"),
-            "jarFile": f"{module}.jar",
+            "driverId": driver_id,
+            "jarFile": jar_file,
+            "licenseType": license_type,
+            "packId": module,
         }
 
     out = ROOT / "gradle" / "driver-packs.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(entries, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"Wrote {len(entries)} entries to {out}")
+    out.write_text(json.dumps(dict(sorted(entries.items())), indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote {len(entries)} packs to {out}")
 
 
 if __name__ == "__main__":

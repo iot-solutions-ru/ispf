@@ -6,9 +6,9 @@ import com.ispf.driver.DriverException;
  * Parsed DNP3 point reference from mapping string {@code index:dataType}.
  * Example: {@code 0:ANALOG_INPUT}.
  */
-record Dnp3Point(int index, Dnp3DataType dataType) {
+public record Dnp3Point(int index, Dnp3Point.Dnp3DataType dataType) {
 
-    enum Dnp3DataType {
+    public enum Dnp3DataType {
         BINARY_INPUT,
         BINARY_OUTPUT,
         ANALOG_INPUT,

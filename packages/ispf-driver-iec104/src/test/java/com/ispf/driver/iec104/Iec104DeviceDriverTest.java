@@ -7,6 +7,14 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.iec104.codec.Iec104Asdu;
+import com.ispf.driver.iec104.codec.Iec104Cause;
+import com.ispf.driver.iec104.codec.Iec104Connection;
+import com.ispf.driver.iec104.codec.Iec104ConnectionListener;
+import com.ispf.driver.iec104.codec.Iec104Server;
+import com.ispf.driver.iec104.codec.Iec104ServerListener;
+import com.ispf.driver.iec104.codec.Iec104Type;
+import com.ispf.driver.iec104.codec.Iec104Value;
 import com.ispf.driver.iec104server.Iec104ServerDeviceDriver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -33,13 +42,49 @@ class Iec104DeviceDriverTest {
             .build();
 
     private Iec104ServerDeviceDriver serverDriver;
+    private Iec104Server mockOutstation;
 
     @AfterEach
     void tearDown() {
+        if (mockOutstation != null) {
+            mockOutstation.close();
+            mockOutstation = null;
+        }
         if (serverDriver != null) {
             serverDriver.disconnect();
             serverDriver = null;
         }
+    }
+
+    @Test
+    void readsTypedInformationObjects() throws Exception {
+        int port = freePort();
+        startMockOutstation(port, Map.of(
+                2001, Iec104Value.singlePoint(2001, true, "GOOD"),
+                3001, Iec104Value.shortFloat(3001, 42.5, "GOOD"),
+                3002, Iec104Value.normalized(3002, 0.25, "GOOD")
+        ));
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "commonAddress", "1",
+                "timeoutMs", "10000"
+        ));
+        Iec104DeviceDriver client = new Iec104DeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+
+        client.readPoints(Map.of(
+                "relay", "2001:BOOL",
+                "temperature", "3001:FLOAT",
+                "normalized", "3002:INT"
+        ));
+
+        assertEquals(true, clientObject.variables.get("relay").firstRow().get("value"));
+        assertEquals(42.5, number(clientObject.variables.get("temperature"), "value"), 0.001);
+        assertEquals(0.25, number(clientObject.variables.get("normalized"), "value"), 0.001);
+        client.disconnect();
     }
 
     @Test
@@ -162,10 +207,43 @@ class Iec104DeviceDriverTest {
         assertEquals(expected, ((Number) record.firstRow().get("value")).doubleValue(), 0.01);
     }
 
+    private void startMockOutstation(int port, Map<Integer, Iec104Value> values) throws IOException {
+        mockOutstation = new Iec104Server(port);
+        mockOutstation.start(new Iec104ServerListener() {
+            @Override
+            public Iec104ConnectionListener onConnection(Iec104Connection connection) {
+                return new Iec104ConnectionListener() {
+                    @Override
+                    public void onAsdu(Iec104Connection ignored, Iec104Asdu asdu) {
+                        if (asdu.commonAddress() != 1 || asdu.typeId() != Iec104Type.C_RD_NA_1) {
+                            return;
+                        }
+                        for (Iec104Value request : asdu.values()) {
+                            Iec104Value value = values.get(request.ioa());
+                            if (value == null) {
+                                continue;
+                            }
+                            try {
+                                connection.sendAsdu(new Iec104Asdu(value.typeId(), Iec104Cause.REQUEST,
+                                        0, 1, List.of(value)));
+                            } catch (IOException ignoredException) {
+                                // test teardown may close the socket first
+                            }
+                        }
+                    }
+                };
+            }
+        });
+    }
+
     private static int freePort() throws Exception {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         }
+    }
+
+    private static double number(DataRecord record, String field) {
+        return ((Number) record.firstRow().get(field)).doubleValue();
     }
 
     private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")

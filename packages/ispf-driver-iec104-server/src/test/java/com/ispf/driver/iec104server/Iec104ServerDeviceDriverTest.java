@@ -7,23 +7,19 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.iec104.codec.Iec104Asdu;
+import com.ispf.driver.iec104.codec.Iec104Cause;
+import com.ispf.driver.iec104.codec.Iec104Connection;
+import com.ispf.driver.iec104.codec.Iec104ConnectionListener;
+import com.ispf.driver.iec104.codec.Iec104Type;
+import com.ispf.driver.iec104.codec.Iec104Value;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.openmuc.j60870.ASdu;
-import org.openmuc.j60870.ASduType;
-import org.openmuc.j60870.CauseOfTransmission;
-import org.openmuc.j60870.ClientConnectionBuilder;
-import org.openmuc.j60870.Connection;
-import org.openmuc.j60870.ConnectionEventListener;
-import org.openmuc.j60870.ie.IeQualifierOfSetPointCommand;
-import org.openmuc.j60870.ie.IeQuality;
-import org.openmuc.j60870.ie.IeShortFloat;
-import org.openmuc.j60870.ie.IeSingleCommand;
-import org.openmuc.j60870.ie.InformationObject;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * In-module loopback tests for {@link Iec104ServerDeviceDriver}: a real j60870 client connects to the
- * driver over TCP and pushes ASDUs; the assertions observe the driver's variable updates.
+ * In-module loopback tests for {@link Iec104ServerDeviceDriver}: the ISPF-owned IEC104 client codec
+ * connects to the driver over TCP and pushes ASDUs; assertions observe the driver's variable updates.
  */
 class Iec104ServerDeviceDriverTest {
 
@@ -53,12 +49,16 @@ class Iec104ServerDeviceDriverTest {
             .build();
 
     private Iec104ServerDeviceDriver driver;
-    private Connection clientConnection;
+    private Iec104Connection clientConnection;
 
     @AfterEach
     void tearDown() {
         if (clientConnection != null) {
-            clientConnection.close();
+            try {
+                clientConnection.close();
+            } catch (IOException ignored) {
+                // best effort
+            }
             clientConnection = null;
         }
         if (driver != null) {
@@ -93,21 +93,17 @@ class Iec104ServerDeviceDriverTest {
         assertEquals("NOT_CONNECTED", initial.firstRow().get("quality"));
         assertEquals(-1, number(initial, "clientOriginatorAddress"), 0.001);
 
-        Connection client = newClient(port);
+        Iec104Connection client = newClient(port);
         client.startDataTransfer();
-        client.singleCommand(COMMON_ADDRESS, CauseOfTransmission.ACTIVATION, 2001,
-                new IeSingleCommand(true, 0, false));
+        client.singleCommand(COMMON_ADDRESS, 2001, true);
 
         awaitValue(object, "relay", 1.0);
         DataRecord on = object.variables.get("relay");
         assertEquals(true, on.firstRow().get("clientConnected"));
         assertEquals("GOOD", on.firstRow().get("quality"));
-        // Note: j60870 server-side connections never learn the client's originator address from
-        // received ASDUs — Connection.getOriginatorAddress() returns the locally configured default (0).
         assertEquals(0, number(on, "clientOriginatorAddress"), 0.001);
 
-        client.singleCommand(COMMON_ADDRESS, CauseOfTransmission.ACTIVATION, 2001,
-                new IeSingleCommand(false, 0, false));
+        client.singleCommand(COMMON_ADDRESS, 2001, false);
         awaitValue(object, "relay", 0.0);
     }
 
@@ -117,10 +113,9 @@ class Iec104ServerDeviceDriverTest {
         StubDriverObject object = startServer(port);
         driver.readPoints(Map.of("setpoint", "3001"));
 
-        Connection client = newClient(port);
+        Iec104Connection client = newClient(port);
         client.startDataTransfer();
-        client.setShortFloatCommand(COMMON_ADDRESS, CauseOfTransmission.ACTIVATION, 3001,
-                new IeShortFloat(42.5f), new IeQualifierOfSetPointCommand(0, false));
+        client.setShortFloatCommand(COMMON_ADDRESS, 3001, 42.5);
 
         awaitValue(object, "setpoint", 42.5);
     }
@@ -131,12 +126,11 @@ class Iec104ServerDeviceDriverTest {
         StubDriverObject object = startServer(port);
         driver.readPoints(Map.of("temperature", "4001"));
 
-        Connection client = newClient(port);
+        Iec104Connection client = newClient(port);
         client.startDataTransfer();
-        ASdu measurement = new ASdu(ASduType.M_ME_NC_1, false, CauseOfTransmission.SPONTANEOUS, false, false,
-                0, COMMON_ADDRESS,
-                new InformationObject(4001, new IeShortFloat(13.25f), new IeQuality(false, false, false, false, false)));
-        client.send(measurement);
+        Iec104Asdu measurement = new Iec104Asdu(Iec104Type.M_ME_NC_1, Iec104Cause.SPONTANEOUS, 0,
+                COMMON_ADDRESS, List.of(Iec104Value.shortFloat(4001, 13.25, "GOOD")));
+        client.sendAsdu(measurement);
 
         awaitValue(object, "temperature", 13.25);
         assertEquals("GOOD", object.variables.get("temperature").firstRow().get("quality"));
@@ -148,10 +142,9 @@ class Iec104ServerDeviceDriverTest {
         StubDriverObject object = startServer(port);
         driver.readPoints(Map.of("relay", "2001"));
 
-        Connection client = newClient(port);
+        Iec104Connection client = newClient(port);
         client.startDataTransfer();
-        client.singleCommand(COMMON_ADDRESS + 1, CauseOfTransmission.ACTIVATION, 2001,
-                new IeSingleCommand(true, 0, false));
+        client.singleCommand(COMMON_ADDRESS + 1, 2001, true);
 
         TimeUnit.MILLISECONDS.sleep(700);
         assertEquals(0.0, number(object.variables.get("relay"), "value"), 0.001);
@@ -188,33 +181,20 @@ class Iec104ServerDeviceDriverTest {
         driver.initialize(object);
         driver.connect();
         assertTrue(driver.isConnected());
-        // j60870 Server.start() binds synchronously, so the port is ready here. Note: any accepted
+        // Server.start() binds synchronously, so the port is ready here. Note: any accepted
         // TCP connection flips the driver's clientConnected flag — do not probe the port with a
         // bare socket in these tests.
         return object;
     }
 
-    private Connection newClient(int port) throws IOException {
-        clientConnection = new ClientConnectionBuilder(InetAddress.getByName("127.0.0.1"))
-                .setPort(port)
-                .setConnectionTimeout(5000)
-                .setConnectionEventListener(new ConnectionEventListener() {
+    private Iec104Connection newClient(int port) throws IOException {
+        clientConnection = Iec104Connection.connect(InetAddress.getByName("127.0.0.1"), port, 5000,
+                new Iec104ConnectionListener() {
                     @Override
-                    public void newASdu(Connection connection, ASdu aSdu) {
+                    public void onAsdu(Iec104Connection connection, Iec104Asdu asdu) {
                         // no server-initiated ASDUs expected in these tests
                     }
-
-                    @Override
-                    public void connectionClosed(Connection connection, IOException cause) {
-                        // no-op
-                    }
-
-                    @Override
-                    public void dataTransferStateChanged(Connection connection, boolean stopped) {
-                        // no-op
-                    }
-                })
-                .build();
+                });
         return clientConnection;
     }
 

@@ -12,9 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * YARG's {@code JsonMap} treats dots in map keys as nested paths, so Excel placeholders like
- * {@code ${Band1.DEVICEPATH}} never resolve (containsKey passes, get returns null). Word
- * formatters split band prefixes; {@link com.haulmont.yarg.formatters.impl.XLSFormatter} does not.
+ * Normalizes legacy .xls Band1 placeholders to the POI spreadsheet form.
  */
 final class XlsTemplatePlaceholderNormalizer {
 
