@@ -21,10 +21,19 @@ jobs:
       - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         id: filter
         with:
+          # Default 'some' treats '!glob' as "match everything except glob", so a single
+          # negation like '!packages/ispf-driver-*/**' makes backend=true for UI-only PRs.
+          # 'some-with-excludes' = any include AND no exclude (excludes are final).
+          predicate-quantifier: some-with-excludes
           filters: |
             backend:
-              - 'packages/**'
-              - '!packages/ispf-driver-*/**'
+              # Explicit non-driver packages (cannot re-include after a broad !ispf-driver-* exclude).
+              - 'packages/ispf-server/**'
+              - 'packages/ispf-core/**'
+              - 'packages/ispf-expression/**'
+              - 'packages/ispf-ai-*/**'
+              - 'packages/ispf-analytics-*/**'
+              - 'packages/ispf-plugin-*/**'
               - 'packages/ispf-driver-api/**'
               - 'buildSrc/**'
               - 'gradle/**'
