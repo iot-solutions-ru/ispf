@@ -1,10 +1,7 @@
 package com.ispf.driver.bacnet;
 
-import com.serotonin.bacnet4j.type.Encodable;
-import com.serotonin.bacnet4j.type.enumerated.BinaryPV;
-import com.serotonin.bacnet4j.type.enumerated.ObjectType;
-import com.serotonin.bacnet4j.type.primitive.Real;
-import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
+import com.ispf.driver.bacnet.codec.BacnetObjectType;
+import com.ispf.driver.bacnet.codec.BacnetValue;
 
 /**
  * Formats BACnet property values for ISPF variable payloads (BL-81).
@@ -14,30 +11,24 @@ final class BacnetValueDecoder {
     private BacnetValueDecoder() {
     }
 
-    static String formatValue(Encodable rawValue, ObjectType objectType) {
+    static String formatValue(BacnetValue rawValue, BacnetObjectType objectType) {
         if (rawValue == null) {
             return "";
         }
-        if (rawValue instanceof Real real) {
-            return trimFloat(real.floatValue());
+        if (rawValue instanceof BacnetValue.RealValue real) {
+            return trimFloat(real.value());
         }
-        if (rawValue instanceof BinaryPV binary) {
-            return binary.equals(BinaryPV.active) ? "active" : "inactive";
+        if (rawValue instanceof BacnetValue.BinaryValue binary) {
+            return binary.active() ? "active" : "inactive";
         }
-        if (rawValue instanceof UnsignedInteger state) {
-            return Integer.toString(state.intValue());
+        if (rawValue instanceof BacnetValue.UnsignedValue state) {
+            return Integer.toString(state.value());
         }
         return rawValue.toString();
     }
 
-    static boolean supportsUnitMetadata(ObjectType objectType) {
-        return isAnalogType(objectType);
-    }
-
-    private static boolean isAnalogType(ObjectType objectType) {
-        return objectType.equals(ObjectType.analogInput)
-                || objectType.equals(ObjectType.analogOutput)
-                || objectType.equals(ObjectType.analogValue);
+    static boolean supportsUnitMetadata(BacnetObjectType objectType) {
+        return objectType.isAnalog();
     }
 
     private static String trimFloat(float value) {

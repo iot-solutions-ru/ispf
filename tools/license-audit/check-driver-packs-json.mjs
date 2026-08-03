@@ -12,15 +12,7 @@ const catalogPath = path.join(repoRoot, "gradle/driver-packs.json");
 const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
 
 const REQUIRED_OVERRIDES = {
-  "ispf-driver-dnp3": "LicenseRef-StepFunc-NonCommercial",
-  "ispf-driver-ipmi": "GPL-3.0-or-later",
   "ispf-driver-sip": "LicenseRef-NIST-PublicDomain",
-  "ispf-driver-bacnet": "GPL-3.0-only",
-  "ispf-driver-dlms": "GPL-2.0-only",
-  "ispf-driver-iec104": "GPL-3.0-or-later",
-  "ispf-driver-iec104-server": "GPL-3.0-or-later",
-  "ispf-driver-mbus": "MPL-2.0",
-  "ispf-driver-radius": "LGPL-3.0-or-later",
 };
 
 const problems = [];
@@ -40,8 +32,7 @@ for (const [module, expected] of Object.entries(REQUIRED_OVERRIDES)) {
 
 for (const [module, entry] of Object.entries(catalog)) {
   if (!entry.licenseType || entry.licenseType === "Apache-2.0") continue;
-  if (entry.licenseType.startsWith("GPL") && !module.includes("bacnet") &&
-      !module.includes("dlms") && !module.includes("iec104") && !module.includes("ipmi")) {
+  if (entry.licenseType.startsWith("GPL")) {
     problems.push(`${module}: unexpected GPL licenseType ${entry.licenseType}`);
   }
 }

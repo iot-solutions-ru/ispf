@@ -10,19 +10,17 @@ import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.driver.ingress.DriverIngressFifoExecutor;
 import com.ispf.driver.ingress.IngressElasticSettings;
-import org.openmuc.j60870.ASdu;
-import org.openmuc.j60870.Connection;
-import org.openmuc.j60870.ConnectionEventListener;
-import org.openmuc.j60870.Server;
-import org.openmuc.j60870.ServerEventListener;
-import org.openmuc.j60870.ie.IeNormalizedValue;
-import org.openmuc.j60870.ie.IeScaledValue;
-import org.openmuc.j60870.ie.IeShortFloat;
-import org.openmuc.j60870.ie.IeSingleCommand;
-import org.openmuc.j60870.ie.InformationElement;
-import org.openmuc.j60870.ie.InformationObject;
+import com.ispf.driver.iec104.codec.Iec104Asdu;
+import com.ispf.driver.iec104.codec.Iec104Cause;
+import com.ispf.driver.iec104.codec.Iec104Connection;
+import com.ispf.driver.iec104.codec.Iec104ConnectionListener;
+import com.ispf.driver.iec104.codec.Iec104Server;
+import com.ispf.driver.iec104.codec.Iec104ServerListener;
+import com.ispf.driver.iec104.codec.Iec104Type;
+import com.ispf.driver.iec104.codec.Iec104Value;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -59,11 +57,13 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private static final IngressElasticSettings DEFAULT_ELASTIC = IngressElasticSettings.fixed(2);
 
     private DriverObject driverObject;
-    private Server server;
+    private Iec104Server server;
     private int listenPort = 2404;
     private int commonAddress = 1;
     private final Map<String, Iec104ServerPoint> points = new ConcurrentHashMap<>();
     private final Map<Integer, Double> ioaValues = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> ioaTypes = new ConcurrentHashMap<>();
+    private final AtomicReference<Iec104Connection> activeConnection = new AtomicReference<>();
     private final AtomicReference<String> lastClientInfo = new AtomicReference<>("");
     private final AtomicInteger clientOriginatorAddress = new AtomicInteger(-1);
     private volatile boolean clientConnected;
@@ -99,9 +99,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         releaseResources();
         try {
-            server = Server.builder()
-                    .setPort(listenPort)
-                    .build();
+            server = new Iec104Server(listenPort);
             server.start(serverEventListener);
             listening = true;
             startIngress();
@@ -120,9 +118,10 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private void releaseResources() {
         listening = false;
         clientConnected = false;
+        activeConnection.set(null);
         shutdownIngress();
         if (server != null) {
-            server.stop();
+            server.close();
             server = null;
         }
     }
@@ -197,15 +196,26 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         throw new IllegalArgumentException("IEC104 server write requires numeric raw/value field");
     }
 
-    private void handleAsdu(ASdu aSdu) {
-        if (aSdu.getCommonAddress() != commonAddress) {
+    private void handleAsdu(Iec104Connection connection, Iec104Asdu asdu) {
+        if (asdu.commonAddress() != commonAddress) {
             return;
         }
-        for (InformationObject informationObject : aSdu.getInformationObjects()) {
-            int ioa = informationObject.getInformationObjectAddress();
-            Double parsed = decodeWriteValue(informationObject);
+        if (asdu.typeId() == Iec104Type.C_RD_NA_1) {
+            for (Iec104Value value : asdu.values()) {
+                sendCurrentValue(connection, value.ioa());
+            }
+            return;
+        }
+        if (asdu.typeId() == Iec104Type.C_IC_NA_1) {
+            sendAllCurrentValues(connection);
+            return;
+        }
+        for (Iec104Value value : asdu.values()) {
+            int ioa = value.ioa();
+            Double parsed = decodeWriteValue(value);
             if (parsed != null) {
                 ioaValues.put(ioa, parsed);
+                ioaTypes.put(ioa, measurementTypeFor(value.typeId()));
                 refreshPointsForIoa(ioa);
             }
         }
@@ -226,6 +236,30 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
                     driverObject.updateVariable(variableName, readPoint(point));
                 }
             }
+        }
+    }
+
+    private void sendAllCurrentValues(Iec104Connection connection) {
+        for (Iec104ServerPoint point : points.values()) {
+            sendCurrentValue(connection, point.ioa());
+        }
+    }
+
+    private void sendCurrentValue(Iec104Connection connection, int ioa) {
+        if (connection == null || !connection.isOpen()) {
+            return;
+        }
+        double current = ioaValues.getOrDefault(ioa, 0.0);
+        int type = ioaTypes.getOrDefault(ioa, Iec104Type.M_ME_NC_1);
+        Iec104Value value = switch (type) {
+            case Iec104Type.M_SP_NA_1 -> Iec104Value.singlePoint(ioa, current != 0.0, "GOOD");
+            case Iec104Type.M_ME_NA_1 -> Iec104Value.normalized(ioa, current, "GOOD");
+            default -> Iec104Value.shortFloat(ioa, current, "GOOD");
+        };
+        try {
+            connection.sendAsdu(new Iec104Asdu(value.typeId(), Iec104Cause.REQUEST, 0, commonAddress, List.of(value)));
+        } catch (IOException e) {
+            driverObject.log(DriverLogLevel.DEBUG, "IEC104 read response failed: " + e.getMessage());
         }
     }
 
@@ -250,25 +284,22 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         }
     }
 
-    private static Double decodeWriteValue(InformationObject informationObject) {
-        InformationElement[][] elements = informationObject.getInformationElements();
-        if (elements.length == 0 || elements[0].length == 0) {
-            return null;
-        }
-        InformationElement element = elements[0][0];
-        if (element instanceof IeScaledValue scaledValue) {
-            return (double) scaledValue.getNormalizedValue();
-        }
-        if (element instanceof IeSingleCommand singleCommand) {
-            return singleCommand.isCommandStateOn() ? 1.0 : 0.0;
-        }
-        if (element instanceof IeShortFloat shortFloat) {
-            return (double) shortFloat.getValue();
-        }
-        if (element instanceof IeNormalizedValue normalizedValue) {
-            return (double) normalizedValue.getNormalizedValue();
-        }
-        return null;
+    private static Double decodeWriteValue(Iec104Value value) {
+        return switch (value.typeId()) {
+            case Iec104Type.C_SC_NA_1, Iec104Type.M_SP_NA_1 -> value.booleanValue() ? 1.0 : 0.0;
+            case Iec104Type.C_SE_NA_1, Iec104Type.M_ME_NA_1,
+                    Iec104Type.C_SE_NC_1, Iec104Type.M_ME_NC_1, Iec104Type.M_ME_TF_1 -> value.numericValue();
+            default -> null;
+        };
+    }
+
+    private static int measurementTypeFor(int typeId) {
+        return switch (typeId) {
+            case Iec104Type.C_SC_NA_1 -> Iec104Type.M_SP_NA_1;
+            case Iec104Type.C_SE_NA_1 -> Iec104Type.M_ME_NA_1;
+            case Iec104Type.C_SE_NC_1 -> Iec104Type.M_ME_NC_1;
+            default -> typeId;
+        };
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {
@@ -283,44 +314,46 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         });
     }
 
-    private final ServerEventListener serverEventListener = new ServerEventListener() {
+    private final Iec104ServerListener serverEventListener = new Iec104ServerListener() {
         @Override
-        public ConnectionEventListener connectionIndication(Connection connection) {
+        public Iec104ConnectionListener onConnection(Iec104Connection connection) {
+            activeConnection.set(connection);
             clientConnected = true;
-            clientOriginatorAddress.set(connection.getOriginatorAddress());
-            lastClientInfo.set(connection.getRemoteInetAddress().getHostAddress());
+            clientOriginatorAddress.set(connection.originatorAddress());
+            lastClientInfo.set(connection.remoteAddress());
             driverObject.log(DriverLogLevel.INFO, "IEC104 client connected from " + lastClientInfo.get());
             return connectionEventListener;
         }
 
         @Override
-        public void serverStoppedListeningIndication(IOException e) {
+        public void onStopped(IOException e) {
             listening = false;
             driverObject.log(DriverLogLevel.WARNING, "IEC104 server stopped listening");
         }
 
         @Override
-        public void connectionAttemptFailed(IOException e) {
+        public void onConnectionAttemptFailed(IOException e) {
             driverObject.log(DriverLogLevel.DEBUG, "IEC104 connection attempt failed: " + e.getMessage());
         }
     };
 
-    private final ConnectionEventListener connectionEventListener = new ConnectionEventListener() {
+    private final Iec104ConnectionListener connectionEventListener = new Iec104ConnectionListener() {
         @Override
-        public void newASdu(Connection connection, ASdu aSdu) {
-            handleAsdu(aSdu);
+        public void onAsdu(Iec104Connection connection, Iec104Asdu asdu) {
+            handleAsdu(connection, asdu);
         }
 
         @Override
-        public void connectionClosed(Connection connection, IOException cause) {
+        public void onConnectionClosed(Iec104Connection connection, IOException cause) {
             clientConnected = false;
             clientOriginatorAddress.set(-1);
+            activeConnection.compareAndSet(connection, null);
             driverObject.log(DriverLogLevel.INFO, "IEC104 client disconnected");
         }
 
         @Override
-        public void dataTransferStateChanged(Connection connection, boolean stopped) {
-            clientConnected = !stopped;
+        public void onDataTransferStateChanged(Iec104Connection connection, boolean active) {
+            clientConnected = active;
         }
     };
 }

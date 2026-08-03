@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DLMS/COSEM meter driver — Gurux client with read/write over TCP WRAPPER.
+ * DLMS/COSEM meter driver with ISPF-owned TCP WRAPPER codec.
  * <p>
  * Point mapping: {@code logicalDevice:obis[:objectType[:attribute]]}.
  */
@@ -23,7 +23,7 @@ public class DlmsDeviceDriver implements DeviceDriver {
             "dlms",
             "DLMS/COSEM Driver",
             "0.2.0",
-            "DLMS/COSEM smart meters over TCP WRAPPER (Gurux read/write)",
+            "DLMS/COSEM smart meters over TCP WRAPPER (ISPF clean-room codec)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",

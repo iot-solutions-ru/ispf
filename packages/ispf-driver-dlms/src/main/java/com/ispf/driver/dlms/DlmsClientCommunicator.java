@@ -2,26 +2,19 @@ package com.ispf.driver.dlms;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DriverException;
-import gurux.common.ReceiveParameters;
-import gurux.dlms.GXByteBuffer;
-import gurux.dlms.GXDLMSClient;
-import gurux.dlms.GXDLMSException;
-import gurux.dlms.GXReplyData;
-import gurux.dlms.enums.Authentication;
-import gurux.dlms.enums.DataType;
-import gurux.dlms.enums.ErrorCode;
-import gurux.dlms.enums.InterfaceType;
-import gurux.net.GXNet;
+import com.ispf.driver.dlms.codec.DlmsTcpWrapperCodec;
 
-import java.util.concurrent.TimeUnit;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 /**
- * Gurux DLMS/COSEM client session over TCP WRAPPER.
+ * Clean-room DLMS/COSEM client session over TCP WRAPPER.
  */
 final class DlmsClientCommunicator implements AutoCloseable {
 
-    private final GXNet media;
-    private final GXDLMSClient client;
+    private final Socket socket;
+    private final int clientAddress;
+    private final int logicalDevice;
     private final int timeoutMs;
     private boolean associated;
 
@@ -32,16 +25,13 @@ final class DlmsClientCommunicator implements AutoCloseable {
             int logicalDevice,
             int timeoutMs
     ) throws DriverException {
+        this.clientAddress = clientAddress;
+        this.logicalDevice = logicalDevice;
         this.timeoutMs = timeoutMs;
-        this.client = new GXDLMSClient(true);
-        client.setUseLogicalNameReferencing(true);
-        client.setInterfaceType(InterfaceType.WRAPPER);
-        client.setAuthentication(Authentication.NONE);
-        client.setClientAddress(clientAddress);
-        client.setServerAddress(GXDLMSClient.getServerAddress(logicalDevice, 1));
+        socket = new Socket();
         try {
-            media = new GXNet(gurux.net.enums.NetworkType.TCP, host, port);
-            media.open();
+            socket.connect(new InetSocketAddress(host, port), timeoutMs);
+            socket.setSoTimeout(timeoutMs);
             associate();
         } catch (DriverException ex) {
             closeQuietly();
@@ -53,17 +43,14 @@ final class DlmsClientCommunicator implements AutoCloseable {
     }
 
     boolean isOpen() {
-        return media != null && media.isOpen() && associated;
+        return socket != null && socket.isConnected() && !socket.isClosed() && associated;
     }
 
     Object readAttribute(DlmsPoint point) throws DriverException {
         try {
-            byte[][] data = client.read(point.obis(), point.objectType(), point.attributeIndex());
-            GXReplyData reply = new GXReplyData();
-            readDataBlock(data, reply);
-            return reply.getValue();
-        } catch (GXDLMSException ex) {
-            throw new DriverException("DLMS read failed for " + point.obis(), ex);
+            byte[] request = DlmsTcpWrapperCodec.getRequest(point.objectType(), point.obis(), point.attributeIndex());
+            byte[] response = exchange(request);
+            return DlmsTcpWrapperCodec.parseGetResponse(response);
         } catch (Exception ex) {
             throw new DriverException("DLMS read failed for " + point.obis(), ex);
         }
@@ -72,96 +59,28 @@ final class DlmsClientCommunicator implements AutoCloseable {
     void writeAttribute(DlmsPoint point, DataRecord value) throws DriverException {
         try {
             Object raw = DlmsValueCodec.extractWriteValue(value, point);
-            DataType dataType = DlmsValueCodec.writeDataType(point, raw);
-            byte[][] data = client.write(
-                    point.obis(),
-                    raw,
-                    dataType,
-                    point.objectType(),
-                    point.attributeIndex()
-            );
-            GXReplyData reply = new GXReplyData();
-            readDataBlock(data, reply);
-            if (reply.getError() != 0 && reply.getError() != ErrorCode.OK.getValue()) {
-                throw new DriverException("DLMS write rejected for " + point.obis() + " (error=" + reply.getError() + ")");
-            }
+            byte[] request = DlmsTcpWrapperCodec.setRequest(point.objectType(), point.obis(), point.attributeIndex(), raw);
+            DlmsTcpWrapperCodec.parseSetResponse(exchange(request));
         } catch (DriverException ex) {
             throw ex;
-        } catch (GXDLMSException ex) {
-            throw new DriverException("DLMS write failed for " + point.obis(), ex);
         } catch (Exception ex) {
             throw new DriverException("DLMS write failed for " + point.obis(), ex);
         }
     }
 
     private void associate() throws Exception {
-        GXReplyData reply = new GXReplyData();
-        byte[] snrm = client.snrmRequest();
-        if (snrm.length != 0) {
-            readDlmsPacket(snrm, reply);
-            client.parseUAResponse(reply.getData());
+        byte[] response = exchange(DlmsTcpWrapperCodec.associateRequest(clientAddress, logicalDevice));
+        if (!DlmsTcpWrapperCodec.parseAssociateResponse(response)) {
+            throw new DriverException("DLMS association rejected");
         }
-        reply.clear();
-        readDataBlock(client.aarqRequest(), reply);
-        client.parseAareResponse(reply.getData());
         associated = true;
     }
 
-    private void readDataBlock(byte[][] data, GXReplyData reply) throws Exception {
-        if (data == null) {
-            return;
-        }
-        for (byte[] packet : data) {
-            reply.clear();
-            readDataBlock(packet, reply);
-        }
-    }
-
-    private void readDataBlock(byte[] data, GXReplyData reply) throws Exception {
-        if (data == null || data.length == 0) {
-            return;
-        }
-        readDlmsPacket(data, reply);
-        while (reply.isMoreData()) {
-            readDlmsPacket(client.receiverReady(reply), reply);
-        }
-    }
-
-    private void readDlmsPacket(byte[] data, GXReplyData reply) throws Exception {
-        if (data == null || data.length == 0) {
-            return;
-        }
-        Object endOfPacket = null;
-        GXByteBuffer buffer = new GXByteBuffer();
-        ReceiveParameters<byte[]> params = new ReceiveParameters<>(byte[].class);
-        params.setEop(endOfPacket);
-        params.setAllData(true);
-        params.setCount(client.getFrameSize(buffer));
-        params.setWaitTime(timeoutMs);
-
-        synchronized (media.getSynchronous()) {
-            media.send(data, null);
-            if (!media.receive(params)) {
-                throw new DriverException("DLMS receive timeout");
-            }
-            buffer = new GXByteBuffer(params.getReply());
-            GXReplyData notify = new GXReplyData();
-            while (!client.getData(buffer, reply, notify)) {
-                params.setReply(null);
-                params.setCount(client.getFrameSize(buffer));
-                if (!media.receive(params)) {
-                    throw new DriverException("DLMS receive timeout");
-                }
-                buffer.set(params.getReply());
-            }
-        }
-        if (reply.getError() != 0 && reply.getError() != ErrorCode.OK.getValue()) {
-            if (reply.getError() == ErrorCode.REJECTED.getValue()) {
-                TimeUnit.MILLISECONDS.sleep(200);
-                readDlmsPacket(data, reply);
-                return;
-            }
-            throw new GXDLMSException(reply.getError());
+    private byte[] exchange(byte[] payload) throws Exception {
+        synchronized (socket) {
+            DlmsTcpWrapperCodec.writeFrame(socket.getOutputStream(), clientAddress, logicalDevice, payload);
+            DlmsTcpWrapperCodec.Frame response = DlmsTcpWrapperCodec.readFrame(socket.getInputStream());
+            return response.payload();
         }
     }
 
@@ -176,15 +95,9 @@ final class DlmsClientCommunicator implements AutoCloseable {
     @Override
     public void close() {
         associated = false;
-        if (media != null && media.isOpen()) {
+        if (socket != null && !socket.isClosed()) {
             try {
-                GXReplyData reply = new GXReplyData();
-                readDlmsPacket(client.disconnectRequest(), reply);
-            } catch (Exception ignored) {
-                // best effort
-            }
-            try {
-                media.close();
+                socket.close();
             } catch (Exception ignored) {
                 // best effort
             }

@@ -3,10 +3,10 @@ package com.ispf.server.application.report;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.datasource.DataSourceObjectService;
+import com.ispf.server.report.ExportedReport;
 import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.report.ReportExportService;
 import com.ispf.server.report.ReportService;
-import com.ispf.server.report.YargReportService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,10 +90,10 @@ public class ApplicationReportService {
     }
 
     @Transactional(readOnly = true)
-    public YargReportService.ExportedReport export(String appId, String reportId, ReportExportFormat format, Map<String, Object> parameters) {
+    public ExportedReport export(String appId, String reportId, ReportExportFormat format, Map<String, Object> parameters) {
         String path = ReportService.reportPath(reportId);
         ReportExportService.ExportedFile exported = reportExportService.export(path, format, parameters);
-        return new YargReportService.ExportedReport(exported.content(), exported.filename(), exported.contentType());
+        return new ExportedReport(exported.content(), exported.filename(), exported.contentType());
     }
 
     private String inferSchema(String appId) {

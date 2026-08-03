@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Loopback tests for {@link MbusDeviceDriver} against a fake M-Bus TCP meter (EN 13757-3 framing)
- * on an ephemeral port. The fake answers jMBus REQ_UD2 short frames with a protocol-valid RSP_UD
+ * on an ephemeral port. The fake answers REQ_UD2 short frames with a protocol-valid RSP_UD
  * long frame (CI=0x72, long header, no encryption) carrying a single 32-bit energy register.
  */
 class MbusDeviceDriverTest {
@@ -116,12 +116,24 @@ class MbusDeviceDriverTest {
     }
 
     @Test
+    void serialConnectionTypeThrowsClearMessage() {
+        driverObject = new StubDriverObject(Map.of(
+                "connectionType", "serial",
+                "serialPort", "COM1"
+        ));
+        driver = new MbusDeviceDriver();
+        driver.initialize(driverObject);
+
+        DriverException error = assertThrows(DriverException.class, driver::connect);
+        assertTrue(error.getMessage().contains("serial not yet implemented in ISPF codec"));
+    }
+
+    @Test
     void readFailsWhenMeterStaysSilent() throws Exception {
         startMeter(false);
         driver = newDriver(meter.port());
         driver.connect();
 
-        // jMBus applies a bounded read timeout (500 ms default), so this fails fast.
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.readPoints(Map.of("energy", "1:0:energy")));
         assertTrue(error.getMessage().contains("M-Bus read failed"));
@@ -131,7 +143,8 @@ class MbusDeviceDriverTest {
         driverObject = new StubDriverObject(Map.of(
                 "connectionType", "tcp",
                 "host", "127.0.0.1",
-                "port", String.valueOf(port)
+                "port", String.valueOf(port),
+                "timeoutMs", "500"
         ));
         MbusDeviceDriver newDriver = new MbusDeviceDriver();
         newDriver.initialize(driverObject);

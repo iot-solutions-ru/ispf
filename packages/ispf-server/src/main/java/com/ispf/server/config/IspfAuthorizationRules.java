@@ -38,7 +38,7 @@ public final class IspfAuthorizationRules {
                         "/api/v1/platform/cluster/**",
                         "/api/v1/platform/diagnostics/**",
                         "/api/v1/platform/storage/**",
-                        "/api/v1/platform/reports/yarg/**", "/api/v1/platform/mcp/**",
+                        "/api/v1/platform/reports/**", "/api/v1/platform/mcp/**",
                         "/api/v1/platform/backup/**",
                         "/api/v1/platform/runtime-settings")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);

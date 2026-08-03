@@ -17,8 +17,8 @@ class BacnetLoopbackServerTest {
         }
 
         try (BacnetLoopbackServer server = new BacnetLoopbackServer(1001, port, 18.5f)) {
-            assertEquals(1001, server.localDevice().getInstanceNumber());
-            assertFalse(server.localDevice().getLocalObjects().isEmpty());
+            assertEquals(1001, server.deviceId());
+            assertFalse(server.objectCount() == 0);
         }
     }
 }

@@ -574,7 +574,7 @@ Config: `host`, `port` (102), `rack`, `slot`, `timeoutMs`.
 
 ### iec104 (`ispf-driver-iec104`)
 
-IEC 60870-5-104 master. Config: `host`, `port` (2404), `commonAddress`, `timeoutMs`.
+IEC 60870-5-104 master (ISPF-owned codec). Config: `host`, `port` (2404), `commonAddress`, `timeoutMs`.
 
 Point mapping: `ioa:dataType` (for example `2001:BOOL`, `3001:FLOAT`, `1001:M_ME_NA_1`).
 
@@ -586,17 +586,17 @@ Maturity: **production** (BL-140).
 
 ### iec104-server (`ispf-driver-iec104-server`)
 
-IEC 60870-5-104 **slave/server** (j60870). Config: `listenPort` (2404), `commonAddress` (1). Devices of this driver accept master connections; decoded ASDUs (single command, short-float/normalized setpoints, measured values) update the IOA state and flow to ingress.
+IEC 60870-5-104 **slave/server** (ISPF-owned codec). Config: `listenPort` (2404), `commonAddress` (1). Devices of this driver accept master connections; decoded ASDUs (single command, short-float/normalized setpoints, measured values) update the IOA state and flow to ingress.
 
 Point mapping: `<ioa>` (integer, for example `2001`). Variable: `value`, `quality` (`GOOD`/`NOT_CONNECTED`), `clientConnected`, `clientOriginatorAddress`.
 
 **Write:** `writePoint` mutates the server-side IOA state (numeric from `raw`/`value`) and updates the variable synchronously; it does not emit ASDUs to connected masters.
 
-Maturity: **production** (`POLL` + `WRITE` + `QUALITY`). Loopback test: `Iec104ServerDeviceDriverTest` (j60870 client end-to-end). Limitations: any accepted TCP connection flips `clientConnected=true` (before the 104 handshake); `clientOriginatorAddress` is not populated from received ASDUs (always 0); `writePoint` has no connected guard.
+Maturity: **production** (`POLL` + `WRITE` + `QUALITY`). Loopback test: `Iec104ServerDeviceDriverTest` (ISPF codec end-to-end). Limitations: any accepted TCP connection flips `clientConnected=true` (before the 104 handshake); `clientOriginatorAddress` is not populated from received ASDUs (always 0); `writePoint` has no connected guard.
 
 ### bacnet (`ispf-driver-bacnet`)
 
-BACnet/IP read/write property (`present-value`). Config:
+BACnet/IP read/write property (`present-value`) via ISPF-owned BACnet/IP UDP codec. Config:
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -609,17 +609,17 @@ BACnet/IP read/write property (`present-value`). Config:
 | `bindAddress` | `0.0.0.0` | Local UDP bind address |
 | `bindPort` | same as `port` | Local UDP bind port when different from remote |
 
-Point mapping: `objectType:instance:property` (for example `analog-output:1:present-value`).
+Point mapping: `objectType:instance:property` (for example `analog-value:1:present-value`).
 
-**Read output:** `value` (typed string: analog float, binary `active`/`inactive`, multi-state integer), `property`, optional `unit` (Haystack-friendly, from BACnet `units` on analog present-value).
+**Read output:** `value` (typed string: analog float, binary `active`/`inactive`), `property`, optional `unit` (Haystack-friendly, from BACnet `units` on analog present-value).
 
-**Write:** `analog-output`/`analog-value` → `Real`; `binary-output`/`binary-value` → `BinaryPV`; `multi-state-output`/`multi-state-value` → `UnsignedInteger`. Read-only: `analog-input`, `binary-input`, `multi-state-input`.
+**Write:** `analog-value` → `Real`; `binary-value` → `BinaryPV`. Read-only: `analog-input`, `binary-input`.
 
-Maturity: **production**. Tests: guard-rails + `BacnetLoopbackServer` Who-Is smoke (`BacnetDeviceDriverTest`); property read/write + discovery — `BacnetDeviceDriverNetworkTest` (bacnet4j in-memory `TestNetwork`, CI-safe). Loopback subnet (`127.0.0.0/8`) auto-selected for `127.0.0.1` / Who-Is mode.
+Maturity: **production**. Tests: guard-rails + owned UDP `BacnetLoopbackServer`; property read/write + discovery — `BacnetDeviceDriverNetworkTest` and `BacnetUdpExchangeTest`.
 
 ### dnp3 (`ispf-driver-dnp3`)
 
-DNP3 TCP **master** with integrity poll Class 0/1/2/3 (`io.stepfunc:dnp3` 1.6.0).
+DNP3 TCP **master** with integrity poll Class 0/1/2/3 (ISPF-owned codec).
 
 Config: `host`, `port`, `localAddress` (master link address, default `1`), `outstationAddress` (default `1024`), `timeoutMs`.
 
@@ -631,7 +631,7 @@ Maturity: **production** in registry for Class 0/1/2/3 **poll/read** (loopback `
 
 ### dlms (`ispf-driver-dlms`)
 
-DLMS/COSEM **master** over TCP **WRAPPER** (`gurux.dlms` + `gurux.net`).
+DLMS/COSEM **master** over TCP **WRAPPER** (ISPF-owned codec).
 
 Config: `host`, `port` (default `4059`), `clientAddress` (default `16`), `logicalDevice` (default `1`), `timeoutMs`.
 
@@ -859,11 +859,11 @@ Response schema: `value`, `raw`, `bytesRead` (STRING/STRING/INTEGER).
 
 ### mbus (`ispf-driver-mbus`)
 
-M-Bus meter read (jMBus 3.x). Config: `connectionType` (`tcp`/`serial`), `host`, `port` (10001) or `serialPort` (2400 baud).
+M-Bus meter read (ISPF-owned TCP codec). Config: `connectionType` (`tcp`/`serial`), `host`, `port` (10001) or `serialPort` (2400 baud).
 
-Point mapping: `primary:secondary:register` (for example `1:12345678:energy`); a non-zero secondary address switches to broadcast primary `0xFD`. Register matching: DIB/VIB pair, jMBus `Description` or `FunctionField` name; no match → first data record. Variable: `value` (raw `DataRecord` value — scaling factors are **not** applied), `register`, `unit`.
+Point mapping: `primary:secondary:register` (for example `1:12345678:energy`); a non-zero secondary address switches to broadcast primary `0xFD`. Register matching: DIB/VIB pair or description; no match → first data record. Variable: `value` (raw value — scaling factors are **not** applied), `register`, `unit`.
 
-Maturity: **production**. Loopback test: `MbusDeviceDriverTest` (fake M-Bus TCP meter, RSP_UD frames). Read-only. Limitations: serial path untested; one synchronous meter round-trip per point.
+Maturity: **production**. Loopback test: `MbusDeviceDriverTest` (fake M-Bus TCP meter, RSP_UD frames). Read-only. Limitations: serial path may be unimplemented in v0.1 ISPF codec; one synchronous meter round-trip per point.
 
 ### omron-fins (`ispf-driver-omron-fins`)
 
@@ -891,11 +891,11 @@ Maturity: **production**. Loopback test: `SipDeviceDriverTest` (in-test UDP SIP 
 
 ### radius (`ispf-driver-radius`)
 
-RADIUS authentication check (TinyRadius, **PAP only**). Config: `host`, `port` (1812), `secret`, `username`, `password`, `timeoutMs`.
+RADIUS authentication check (ISPF-owned PAP client, RFC 2865). Config: `host`, `port` (1812), `secret`, `username`, `password`, `timeoutMs`.
 
 Point mapping: `auth`. Variable: `value` (`success`/`fail`), `success`, `responseCode` (RADIUS packet type; `-1` when no response — errors collapse to failure without exceptions).
 
-Maturity: **production**. Loopback test: `RadiusDeviceDriverTest` (in-process TinyRadius `RadiusServer`: Access-Accept / Access-Reject / unreachable). Read-only. Limitations: no CHAP/MS-CHAP, no accounting.
+Maturity: **production**. Loopback test: `RadiusDeviceDriverTest` (ISPF loopback auth server: Access-Accept / Access-Reject / unreachable). Read-only. Limitations: no CHAP/MS-CHAP, no accounting.
 
 ### smpp (`ispf-driver-smpp`)
 
@@ -961,7 +961,7 @@ Maturity: **production**. Loopback test: `XmppDeviceDriverTest` (in-test XMPP se
 
 ### ipmi (`ispf-driver-ipmi`)
 
-IPMI 2.0 over RMCP+ (Verax IPMI client). Config: `host`, `port` (623), `username`, `password`, `timeoutMs`.
+IPMI over RMCP/RMCP+ (ISPF-owned codec). Config: `host`, `port` (623), `username`, `password`, `timeoutMs`.
 
 Point mapping: `power` (chassis power status) or `sensor:<name>` (`Get Sensor Reading` — real sensor readout; `value` is the raw reading). Variable: `value`, `reachable`, `raw`.
 

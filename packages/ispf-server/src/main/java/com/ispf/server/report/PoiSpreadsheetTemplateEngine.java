@@ -113,7 +113,7 @@ public class PoiSpreadsheetTemplateEngine implements ReportTemplateEngine {
         }
         try (Workbook workbook = openWorkbook(template.content())) {
             BandRange band = requireBand1(workbook);
-            List<Map<String, Object>> prepared = YargReportService.prepareRows(rows == null ? List.of() : rows);
+            List<Map<String, Object>> prepared = ReportRowPreparation.prepareRows(rows);
             fillWorkbook(workbook, band, prepared);
             byte[] bytes = writeWorkbook(workbook, templateFormat);
             String filename = safeFileName(report.title()) + "." + templateFormat;

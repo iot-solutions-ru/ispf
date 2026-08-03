@@ -11,20 +11,17 @@ import java.util.Optional;
 public class ReportExportService {
 
     private final ReportService reportService;
-    private final YargReportService yargReportService;
     private final ReportTemplateStore templateStore;
     private final LibreOfficeDocumentConverter libreOfficeDocumentConverter;
     private final ReportTemplateRouter templateRouter;
 
     public ReportExportService(
             ReportService reportService,
-            YargReportService yargReportService,
             ReportTemplateStore templateStore,
             LibreOfficeDocumentConverter libreOfficeDocumentConverter,
             ReportTemplateRouter templateRouter
     ) {
         this.reportService = reportService;
-        this.yargReportService = yargReportService;
         this.templateStore = templateStore;
         this.libreOfficeDocumentConverter = libreOfficeDocumentConverter;
         this.templateRouter = templateRouter;
@@ -38,7 +35,7 @@ public class ReportExportService {
             case XLSX -> exportSpreadsheet(path, parameters, ReportExportFormat.XLSX);
             case XLS -> exportSpreadsheet(path, parameters, ReportExportFormat.XLS);
             case PDF -> exportPdf(path, parameters);
-            case DOCX -> exportTemplated(path, ReportExportFormat.DOCX, parameters);
+            case DOCX -> throw docxTemplateUnsupported();
         };
     }
 
@@ -52,13 +49,6 @@ public class ReportExportService {
     }
 
     private ExportedFile exportHtml(String path, Map<String, Object> parameters) {
-        if (reportService.hasTemplate(path)) {
-            try {
-                return exportTemplated(path, ReportExportFormat.HTML, parameters);
-            } catch (IllegalArgumentException ignored) {
-                // fall through to table HTML
-            }
-        }
         return table(path, parameters, ReportExportFormat.HTML);
     }
 
@@ -99,21 +89,13 @@ public class ReportExportService {
             String filename;
             String contentType;
 
-            if (templateRouter.usePoi(templateFormat)) {
-                ReportService.ReportView report = reportService.getReport(path);
-                TemplateExportResult filled = templateRouter.fillSpreadsheet(
-                        report, template.get(), rows, nativeFormat
-                );
-                content = filled.content();
-                filename = filled.filename();
-                contentType = filled.contentType();
-            } else {
-                YargReportService.ExportedReport exported =
-                        yargReportService.export(path, nativeFormat, parameters);
-                content = exported.content();
-                filename = exported.filename();
-                contentType = exported.contentType();
-            }
+            ReportService.ReportView report = reportService.getReport(path);
+            TemplateExportResult filled = templateRouter.fillSpreadsheet(
+                    report, template.get(), rows, nativeFormat
+            );
+            content = filled.content();
+            filename = filled.filename();
+            contentType = filled.contentType();
 
             if (targetFormat == ReportExportFormat.XLSX && nativeFormat == ReportExportFormat.XLS) {
                 content = libreOfficeDocumentConverter.convertSpreadsheet(content, "xls", "xlsx");
@@ -130,13 +112,13 @@ public class ReportExportService {
 
             // XLSX is a ZIP; UTF-8 substring search is unreliable. Guard applies to .xls (BIFF).
             if (nativeFormat == ReportExportFormat.XLS
-                    && YargExportContentGuard.outputMissingReportData(content, runResult)) {
+                    && ReportExportContentGuard.outputMissingReportData(content, runResult)) {
                 return table(path, parameters, targetFormat);
             }
 
             return new ExportedFile(content, filename, contentType);
         } catch (IllegalArgumentException ex) {
-            if (YargReportingSupport.isLibreOfficeRequiredError(ex.getMessage())) {
+            if (LibreOfficeSupport.isLibreOfficeRequiredError(ex.getMessage())) {
                 throw ex;
             }
             return table(path, parameters, targetFormat);
@@ -154,14 +136,7 @@ public class ReportExportService {
             return exportPdfFromExcelTemplate(path, parameters, template.get());
         }
 
-        try {
-            return exportTemplated(path, ReportExportFormat.PDF, parameters);
-        } catch (IllegalArgumentException ex) {
-            if (YargReportingSupport.isLibreOfficeRequiredError(ex.getMessage())) {
-                throw ex;
-            }
-            return pdfFromTable(path, parameters);
-        }
+        return pdfFromTable(path, parameters);
     }
 
     private ExportedFile exportPdfFromExcelTemplate(
@@ -181,20 +156,14 @@ public class ReportExportService {
                     ? ReportExportFormat.XLS
                     : ReportExportFormat.XLSX;
 
-            if (templateRouter.usePoi(templateFormat)) {
-                ReportService.ReportView report = reportService.getReport(path);
-                TemplateExportResult filled = templateRouter.fillSpreadsheet(
-                        report, template, rows, nativeFormat
-                );
-                spreadsheet = filled.content();
-            } else {
-                YargReportService.ExportedReport exported =
-                        yargReportService.export(path, nativeFormat, parameters);
-                spreadsheet = exported.content();
-                if (nativeFormat == ReportExportFormat.XLS
-                        && YargExportContentGuard.outputMissingReportData(spreadsheet, runResult)) {
-                    return pdfFromTable(path, parameters);
-                }
+            ReportService.ReportView report = reportService.getReport(path);
+            TemplateExportResult filled = templateRouter.fillSpreadsheet(
+                    report, template, rows, nativeFormat
+            );
+            spreadsheet = filled.content();
+            if (nativeFormat == ReportExportFormat.XLS
+                    && ReportExportContentGuard.outputMissingReportData(spreadsheet, runResult)) {
+                return pdfFromTable(path, parameters);
             }
 
             if ("xls".equals(loFormat)) {
@@ -208,31 +177,17 @@ public class ReportExportService {
                     ReportExportFormat.PDF.contentType()
             );
         } catch (IllegalArgumentException ex) {
-            if (YargReportingSupport.isLibreOfficeRequiredError(ex.getMessage())) {
+            if (LibreOfficeSupport.isLibreOfficeRequiredError(ex.getMessage())) {
                 throw ex;
             }
         }
         return pdfFromTable(path, parameters);
     }
 
-    private ExportedFile exportTemplated(String path, ReportExportFormat format, Map<String, Object> parameters) {
-        if (!reportService.hasTemplate(path)) {
-            throw new IllegalArgumentException(
-                    "Export format " + format.fileExtension().toUpperCase()
-                            + " requires a report template. Upload via Report Builder → Report template."
-            );
-        }
-        YargReportService.ExportedReport exported = yargReportService.export(path, format, parameters);
-        if (YargExportContentGuard.shouldValidate(format)) {
-            Map<String, Object> runResult = reportService.run(path, parameters);
-            if (YargExportContentGuard.outputMissingReportData(exported.content(), runResult)) {
-                throw new IllegalArgumentException(
-                        "Template did not receive report data — check ${Band1.FIELD} placeholders "
-                                + "match report columns in UPPERCASE."
-                );
-            }
-        }
-        return new ExportedFile(exported.content(), exported.filename(), exported.contentType());
+    private IllegalArgumentException docxTemplateUnsupported() {
+        return new IllegalArgumentException(
+                "DOCX templated export is not available. Use XLSX Band1 spreadsheet templates instead."
+        );
     }
 
     private ExportedFile pdfFromTable(String path, Map<String, Object> parameters) {

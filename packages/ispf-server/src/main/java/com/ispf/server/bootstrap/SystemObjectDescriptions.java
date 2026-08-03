@@ -76,7 +76,7 @@ public final class SystemObjectDescriptions {
         map.put("root.platform.reports", new Entry("Reports", """
                 Platform-wide report catalog. REPORT children use report-v1 (SQL against a data source) or \
                 tree-variables-report-v1 (scan device variables by path pattern). \
-                Configure columns, parameters, and optional YARG export templates (CSV, HTML, XLSX, PDF). \
+                Configure columns, parameters, and optional XLS/XLSX Band1 spreadsheet templates. \
                 Application-owned reports may also live under root.platform.applications.{appId}.reports."""));
         map.put(DataSourcePathResolver.DATA_SOURCES_ROOT, new Entry("Data Sources", """
                 PostgreSQL schema registry for SQL-backed platform features. \

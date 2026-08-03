@@ -7,31 +7,36 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Selects POI vs YARG for Band1 templates (ADR-0053).
+ * Routes Band1 templates to the POI spreadsheet engine (ADR-0053).
  */
 @Service
 public class ReportTemplateRouter {
 
     private final ReportEngineProperties engineProperties;
     private final PoiSpreadsheetTemplateEngine poiEngine;
-    private final YargReportService yargReportService;
 
     public ReportTemplateRouter(
             ReportEngineProperties engineProperties,
-            PoiSpreadsheetTemplateEngine poiEngine,
-            YargReportService yargReportService
+            PoiSpreadsheetTemplateEngine poiEngine
     ) {
         this.engineProperties = engineProperties;
         this.poiEngine = poiEngine;
-        this.yargReportService = yargReportService;
     }
 
     public void validate(byte[] content, String format) {
-        if (usePoi(format)) {
-            poiEngine.validate(content, format);
-        } else {
-            yargReportService.validateTemplate(content, format);
+        if (!poiEngine.supportsTemplateFormat(format)) {
+            throw new IllegalArgumentException(
+                    "Only xls/xlsx spreadsheet Band1 templates are supported. "
+                            + "Use XLSX Band1 templates for templated exports."
+            );
         }
+        if (!usePoi(format)) {
+            throw new IllegalArgumentException(
+                    "Report template engine '" + engineProperties.getTemplateEngine()
+                            + "' is not available. Configure ispf.reports.template-engine=poi."
+            );
+        }
+        poiEngine.validate(content, format);
     }
 
     public boolean usePoi(String templateFormat) {
@@ -48,10 +53,5 @@ public class ReportTemplateRouter {
             throw new IllegalStateException("POI spreadsheet engine is not selected");
         }
         return poiEngine.fill(report, template, rows, outputFormat);
-    }
-
-    public TemplateExportResult fillWithYarg(String path, ReportExportFormat format, Map<String, Object> parameters) {
-        YargReportService.ExportedReport exported = yargReportService.export(path, format, parameters);
-        return new TemplateExportResult(exported.content(), exported.filename(), exported.contentType());
     }
 }

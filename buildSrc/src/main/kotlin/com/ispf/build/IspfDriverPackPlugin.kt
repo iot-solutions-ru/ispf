@@ -37,22 +37,9 @@ data class ExternalDependency(
     val notice: String,
 )
 
-private val FAT_JAR_EXCLUDED_GROUPS = mapOf(
-    "ispf-driver-dnp3" to setOf("io.stepfunc"),
-)
+private val FAT_JAR_EXCLUDED_GROUPS = emptyMap<String, Set<String>>()
 
-private val EXTERNAL_DEPENDENCIES = mapOf(
-    "ispf-driver-dnp3" to listOf(
-        ExternalDependency(
-            groupId = "io.stepfunc",
-            artifactId = "dnp3",
-            version = "1.6.0",
-            licenseType = "LicenseRef-StepFunc-NonCommercial",
-            notice = "Not bundled in this pack. Non-production evaluation only under Step Function I/O terms; " +
-                "production/commercial use requires a separate license from https://stepfunc.io/contact",
-        ),
-    ),
-)
+private val EXTERNAL_DEPENDENCIES = emptyMap<String, List<ExternalDependency>>()
 
 class IspfDriverPackPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -180,8 +167,6 @@ abstract class AssembleDriverPackTask : DefaultTask() {
     private fun resolveLicenseFile(root: java.io.File, licenseType: String): java.io.File = when {
         licenseType.startsWith("GPL") || licenseType.startsWith("LGPL") || licenseType == "MPL-2.0" ->
             root.resolve("LICENSE-DRIVER-COPYLEFT.txt")
-        licenseType.startsWith("LicenseRef-StepFunc") ->
-            root.resolve("LICENSE-DRIVER-PROPRIETARY.txt")
         licenseType.startsWith("LicenseRef-NIST") || licenseType.contains("PublicDomain", ignoreCase = true) ->
             root.resolve("LICENSE-DRIVER-PUBLIC-DOMAIN.txt")
         else -> root.resolve("LICENSE-DRIVER-APACHE-2.0.txt")

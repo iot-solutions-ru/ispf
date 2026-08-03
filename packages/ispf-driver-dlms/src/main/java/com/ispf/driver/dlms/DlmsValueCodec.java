@@ -2,8 +2,6 @@ package com.ispf.driver.dlms;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DriverException;
-import gurux.dlms.enums.DataType;
-import gurux.dlms.enums.ObjectType;
 
 /**
  * Value coercion for DLMS read/write.
@@ -26,14 +24,6 @@ final class DlmsValueCodec {
             case DATA -> raw.toString();
             case CLOCK -> raw;
             default -> raw;
-        };
-    }
-
-    static DataType writeDataType(DlmsPoint point, Object raw) {
-        return switch (point.objectType()) {
-            case REGISTER, EXTENDED_REGISTER, DEMAND_REGISTER -> DataType.FLOAT64;
-            case DATA -> DataType.OCTET_STRING;
-            default -> DataType.NONE;
         };
     }
 

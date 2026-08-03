@@ -1,23 +1,14 @@
 package com.ispf.driver.dnp3;
 
-import io.stepfunc.dnp3.AnalogInput;
-import io.stepfunc.dnp3.AnalogOutputStatus;
-import io.stepfunc.dnp3.BinaryInput;
-import io.stepfunc.dnp3.BinaryOutputStatus;
-import io.stepfunc.dnp3.Counter;
-import io.stepfunc.dnp3.HeaderInfo;
-import io.stepfunc.dnp3.ReadHandler;
-import io.stepfunc.dnp3.ReadType;
-import io.stepfunc.dnp3.ResponseHeader;
+import com.ispf.driver.dnp3.codec.Dnp3TcpCodec;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Collects measurement values from DNP3 read responses (Class 0/1/2/3 integrity poll).
  */
-final class Dnp3ReadCache implements ReadHandler {
+final class Dnp3ReadCache implements Dnp3TcpCodec.MeasurementSink {
 
     private final Map<Integer, Boolean> binaryInputs = new ConcurrentHashMap<>();
     private final Map<Integer, Boolean> binaryOutputs = new ConcurrentHashMap<>();
@@ -36,58 +27,29 @@ final class Dnp3ReadCache implements ReadHandler {
     }
 
     @Override
-    public void handleBinaryInput(HeaderInfo info, List<BinaryInput> values) {
-        for (BinaryInput point : values) {
-            int index = point.index.intValue();
-            binaryInputs.put(index, point.value);
-            qualities.put(indexKey(Dnp3Point.Dnp3DataType.BINARY_INPUT, index), formatFlags(point.flags.value.intValue()));
+    public void binary(Dnp3Point.Dnp3DataType type, int index, boolean value, int flags) {
+        if (type == Dnp3Point.Dnp3DataType.BINARY_INPUT) {
+            binaryInputs.put(index, value);
+        } else {
+            binaryOutputs.put(index, value);
         }
+        qualities.put(indexKey(type, index), formatFlags(flags));
     }
 
     @Override
-    public void handleBinaryOutputStatus(HeaderInfo info, List<BinaryOutputStatus> values) {
-        for (BinaryOutputStatus point : values) {
-            int index = point.index.intValue();
-            binaryOutputs.put(index, point.value);
-            qualities.put(indexKey(Dnp3Point.Dnp3DataType.BINARY_OUTPUT, index), formatFlags(point.flags.value.intValue()));
+    public void analog(Dnp3Point.Dnp3DataType type, int index, double value, int flags) {
+        if (type == Dnp3Point.Dnp3DataType.ANALOG_INPUT) {
+            analogInputs.put(index, value);
+        } else {
+            analogOutputs.put(index, value);
         }
+        qualities.put(indexKey(type, index), formatFlags(flags));
     }
 
     @Override
-    public void handleAnalogInput(HeaderInfo info, List<AnalogInput> values) {
-        for (AnalogInput point : values) {
-            int index = point.index.intValue();
-            analogInputs.put(index, point.value);
-            qualities.put(indexKey(Dnp3Point.Dnp3DataType.ANALOG_INPUT, index), formatFlags(point.flags.value.intValue()));
-        }
-    }
-
-    @Override
-    public void handleAnalogOutputStatus(HeaderInfo info, List<AnalogOutputStatus> values) {
-        for (AnalogOutputStatus point : values) {
-            int index = point.index.intValue();
-            analogOutputs.put(index, point.value);
-            qualities.put(indexKey(Dnp3Point.Dnp3DataType.ANALOG_OUTPUT, index), formatFlags(point.flags.value.intValue()));
-        }
-    }
-
-    @Override
-    public void handleCounter(HeaderInfo info, List<Counter> values) {
-        for (Counter point : values) {
-            int index = point.index.intValue();
-            counters.put(index, point.value.longValue());
-            qualities.put(indexKey(Dnp3Point.Dnp3DataType.COUNTER, index), formatFlags(point.flags.value.intValue()));
-        }
-    }
-
-    @Override
-    public void beginFragment(ReadType readType, ResponseHeader header) {
-        // no-op
-    }
-
-    @Override
-    public void endFragment(ReadType readType, ResponseHeader header) {
-        // no-op
+    public void counter(int index, long value, int flags) {
+        counters.put(index, value);
+        qualities.put(indexKey(Dnp3Point.Dnp3DataType.COUNTER, index), formatFlags(flags));
     }
 
     Object valueFor(Dnp3Point point) {

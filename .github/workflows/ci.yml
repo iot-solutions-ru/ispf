@@ -21,14 +21,21 @@ jobs:
       - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         id: filter
         with:
+          # Positive-only globs: pinned paths-filter only supports predicate-quantifier
+          # every|some, and with 'some' a '!glob' matches almost every file (UI-only PRs
+          # incorrectly started backend). Omit gradle/driver-packs.json on purpose.
           filters: |
             backend:
-              - 'packages/**'
-              - '!packages/ispf-driver-*/**'
+              - 'packages/ispf-server/**'
+              - 'packages/ispf-core/**'
+              - 'packages/ispf-expression/**'
+              - 'packages/ispf-ai-*/**'
+              - 'packages/ispf-analytics-*/**'
+              - 'packages/ispf-plugin-*/**'
               - 'packages/ispf-driver-api/**'
               - 'buildSrc/**'
-              - 'gradle/**'
-              - '!gradle/driver-packs.json'
+              - 'gradle/wrapper/**'
+              - 'gradle/driver-pack-deploy-profiles.json'
               - 'gradlew'
               - 'build.gradle.kts'
               - 'settings.gradle.kts'

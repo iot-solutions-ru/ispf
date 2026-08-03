@@ -609,13 +609,13 @@ BACnet/IP read/write property (`present-value`). Конфиг:
 | `bindAddress` | `0.0.0.0` | Локальный UDP bind address |
 | `bindPort` | как `port` | Локальный UDP bind port, если отличается от удалённого |
 
-Маппинг точек: `objectType:instance:property` (например `analog-output:1:present-value`).
+Маппинг точек: `objectType:instance:property` (например `analog-value:1:present-value`).
 
-**Выход read:** `value` (типизированная строка: analog float, binary `active`/`inactive`, multi-state integer), `property`, опционально `unit` (Haystack-friendly, из BACnet `units` на analog present-value).
+**Выход read:** `value` (типизированная строка: analog float, binary `active`/`inactive`), `property`, опционально `unit` (Haystack-friendly, из BACnet `units` на analog present-value).
 
-**Write:** `analog-output`/`analog-value` → `Real`; `binary-output`/`binary-value` → `BinaryPV`; `multi-state-output`/`multi-state-value` → `UnsignedInteger`. Только чтение: `analog-input`, `binary-input`, `multi-state-input`.
+**Write:** `analog-value` → `Real`; `binary-value` → `BinaryPV`. Только чтение: `analog-input`, `binary-input`.
 
-Зрелость: **production**. Тесты: guard-rails + `BacnetLoopbackServer` Who-Is smoke (`BacnetDeviceDriverTest`); property read/write + discovery — `BacnetDeviceDriverNetworkTest` (bacnet4j in-memory `TestNetwork`, CI-safe). Loopback-подсеть (`127.0.0.0/8`) выбирается автоматически для `127.0.0.1` / режима Who-Is.
+Зрелость: **production**. Тесты: guard-rails + собственный UDP `BacnetLoopbackServer`; property read/write + discovery — `BacnetDeviceDriverNetworkTest` и `BacnetUdpExchangeTest`.
 
 ### dnp3 (`ispf-driver-dnp3`)
 

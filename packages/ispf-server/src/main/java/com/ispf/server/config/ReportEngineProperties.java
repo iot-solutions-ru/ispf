@@ -3,15 +3,13 @@ package com.ispf.server.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Report template fill engine selection ({@code poi} | {@code yarg}).
- * LibreOffice settings remain under {@link ReportYargProperties}.
+ * Report template fill engine selection.
  */
 @ConfigurationProperties(prefix = "ispf.reports")
 public class ReportEngineProperties {
 
     /**
-     * Spreadsheet Band1 engine: {@code poi} (default, ADR-0053) or {@code yarg} (legacy).
-     * DOCX/HTML always use YARG until a dedicated engine exists.
+     * Spreadsheet Band1 engine: {@code poi} (default, ADR-0053).
      */
     private String templateEngine = "poi";
 
