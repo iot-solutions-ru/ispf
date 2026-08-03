@@ -1,11 +1,12 @@
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { DashboardProvider } from "../dashboard/DashboardContext";
-import MapWidgetView from "../dashboard/widgets/MapWidgetView";
 import {
   manifestMapToWidget,
   type OperatorManifestMap,
   type OperatorManifestScreen,
 } from "../../types/operatorManifest";
+
+const MapWidgetView = lazy(() => import("../dashboard/widgets/MapWidgetView"));
 
 interface ManifestMapPanelProps {
   screen: OperatorManifestScreen;
@@ -23,7 +24,9 @@ export default function ManifestMapPanel({
   return (
     <div className="op-manifest-embed op-manifest-embed-map">
       <DashboardProvider operatorMode>
-        <MapWidgetView widget={widget} refreshIntervalMs={refreshIntervalMs} />
+        <Suspense fallback={null}>
+          <MapWidgetView widget={widget} refreshIntervalMs={refreshIntervalMs} />
+        </Suspense>
       </DashboardProvider>
     </div>
   );

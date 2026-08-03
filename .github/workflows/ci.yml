@@ -165,7 +165,8 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "22"
+          # jsdom 30 requires ^22.22.2 (or newer LTS lines).
+          node-version: "22.22.2"
           cache: npm
           cache-dependency-path: apps/web-console/package-lock.json
 
@@ -197,7 +198,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "22"
+          node-version: "22.22.2"
 
       - name: Validate marketplace-catalog bundles (BL-183)
         run: node tools/marketplace-catalog/validate-catalog.mjs
@@ -222,7 +223,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "22"
+          node-version: "22.22.2"
 
       - name: Validate agent-regression scenario schemas (BL-178)
         run: node tools/agent-regression/validate-scenarios.mjs
