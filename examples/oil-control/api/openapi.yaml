@@ -1,0 +1,248 @@
+openapi: 3.0.3
+info:
+  title: Ойл Контроль — BFF Contract
+  version: 0.4.0
+  description: |
+    Контракт React SPA ↔ ISPF application `oil-control` (контур АЗС).
+    Все вызовы бизнес-логики идут через BFF invoke на hub-объект.
+servers:
+  - url: https://ispf.iot-solutions.ru
+    description: Shared ISPF stand
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+  - name: bff
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [auth]
+      summary: Login (local profile)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, example: admin }
+                password: { type: string, example: admin }
+      responses:
+        "200":
+          description: Session token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  expiresAt: { type: string, format: date-time }
+                  username: { type: string }
+                  roles:
+                    type: array
+                    items: { type: string }
+  /api/v1/bff/invoke:
+    post:
+      tags: [bff]
+      summary: Invoke oil-control hub function
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BffInvokeRequest"
+      responses:
+        "200":
+          description: Wire response (anima-operator-v1 compatible)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BffInvokeResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    BffInvokeRequest:
+      type: object
+      required: [objectPath, functionName, input]
+      properties:
+        objectPath:
+          type: string
+          enum: [root.platform.devices.oil-control.hub]
+        functionName:
+          type: string
+          enum:
+            - oc_calcBalance
+            - oc_createIncident
+            - oc_createWorkOrder
+            - oc_getCalibrationProfile
+            - oc_getStation
+            - oc_importCalibration
+            - oc_listAnomalies
+            - oc_listAssets
+            - oc_listB2BOrders
+            - oc_listBalanceTrend
+            - oc_listBatches
+            - oc_listCalibrations
+            - oc_listDischargeSessions
+            - oc_listDischargeTanks
+            - oc_listImbalanceByAzs
+            - oc_listImbalances
+            - oc_listIncidents
+            - oc_listKpiCards
+            - oc_listKpiIncidentSummary
+            - oc_listKpiReports
+            - oc_listLabSamples
+            - oc_listQualityPassports
+            - oc_createLabSample
+            - oc_updateLabSampleStatus
+            - oc_listMeasurements
+            - oc_listMonitorEvents
+            - oc_listRegionFuels
+            - oc_listRegions
+            - oc_listRgsTrk
+            - oc_listRgsTrkSeries
+            - oc_listStationJournal
+            - oc_listStationPumps
+            - oc_listStationTanks
+            - oc_listStations
+            - oc_listStockForecast
+            - oc_listTankStocks
+            - oc_listTanks
+            - oc_listVehicles
+            - oc_listWagonTrips
+            - oc_listWorkOrders
+            - oc_listZones
+            - oc_resolveVolume
+            - oc_submitMeasurement
+            - oc_updateAssetStatus
+            - oc_updateIncidentStatus
+            - oc_updateWorkOrderStatus
+        input:
+          type: object
+          required: [schema, rows]
+          properties:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: in }
+                fields:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      type: { type: string }
+            rows:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+    BffInvokeResponse:
+      type: object
+      properties:
+        error_code: { type: string, example: OK }
+        error_message: { type: string }
+        result:
+          description: Scalar map or { rows: [...] } for list functions
+          oneOf:
+            - type: object
+            - type: array
+              items: { type: object }
+    Tank:
+      type: object
+      properties:
+        tank_code: { type: string }
+        display_name: { type: string }
+        site_code: { type: string }
+        tank_kind: { type: string }
+        max_level_cm: { type: number }
+        active: { type: boolean }
+        product_code: { type: string }
+        azs_code: { type: string }
+        tank_no: { type: integer }
+    Zone:
+      type: object
+      properties:
+        zone_code: { type: string }
+        display_name: { type: string }
+        site_code: { type: string }
+        inflow_desc: { type: string }
+        outflow_desc: { type: string }
+        calc_period: { type: string }
+        loss_norm_pct: { type: number }
+    MeasurementInput:
+      type: object
+      required: [tankCode, levelCm, temperatureC, operatorName]
+      properties:
+        tankCode: { type: string }
+        levelCm: { type: string, description: "Numeric as string for script engine" }
+        temperatureC: { type: string }
+        operatorName: { type: string }
+        measuredAt: { type: string }
+        lat: { type: string }
+        lon: { type: string }
+        note: { type: string }
+    BalanceRow:
+      type: object
+      properties:
+        zone_code: { type: string }
+        display_name: { type: string }
+        loss_norm_pct: { type: number }
+        imbalance_pct: { type: number }
+        imbalance_l: { type: number }
+        status: { type: string, enum: [green, yellow, red] }
+        stock_end_l: { type: number }
+        note: { type: string }
+
+x-function-catalog:
+  oc_calcBalance: { in: [], out: [object] }
+  oc_createIncident: { in: [], out: [object] }
+  oc_createWorkOrder: { in: [], out: [object] }
+  oc_getCalibrationProfile: { in: [], out: [object] }
+  oc_getStation: { in: [], out: [object] }
+  oc_importCalibration: { in: [], out: [object] }
+  oc_listAnomalies: { in: [], out: [object] }
+  oc_listAssets: { in: [], out: [object] }
+  oc_listB2BOrders: { in: [], out: [object] }
+  oc_listBalanceTrend: { in: [], out: [object] }
+  oc_listBatches: { in: [], out: [object] }
+  oc_listCalibrations: { in: [], out: [object] }
+  oc_listDischargeSessions: { in: [], out: [object] }
+  oc_listDischargeTanks: { in: [], out: [object] }
+  oc_listImbalanceByAzs: { in: [], out: [object] }
+  oc_listImbalances: { in: [], out: [object] }
+  oc_listIncidents: { in: [], out: [object] }
+  oc_listKpiCards: { in: [], out: [object] }
+  oc_listKpiIncidentSummary: { in: [], out: [object] }
+  oc_listKpiReports: { in: [], out: [object] }
+  oc_listLabSamples: { in: [], out: [object] }
+  oc_listQualityPassports: { in: [batchId], out: [object] }
+  oc_createLabSample: { in: [batchId, azsCode, tankCode, productCode, samplePoint, operatorName, volumeMl, sealNo, note], out: [object] }
+  oc_updateLabSampleStatus: { in: [actNo, status], out: [object] }
+  oc_listMeasurements: { in: [], out: [object] }
+  oc_listMonitorEvents: { in: [], out: [object] }
+  oc_listRegionFuels: { in: [], out: [object] }
+  oc_listRegions: { in: [], out: [object] }
+  oc_listRgsTrk: { in: [], out: [object] }
+  oc_listRgsTrkSeries: { in: [], out: [object] }
+  oc_listStationJournal: { in: [], out: [object] }
+  oc_listStationPumps: { in: [], out: [object] }
+  oc_listStationTanks: { in: [], out: [object] }
+  oc_listStations: { in: [], out: [object] }
+  oc_listStockForecast: { in: [], out: [object] }
+  oc_listTankStocks: { in: [], out: [object] }
+  oc_listTanks: { in: [], out: [object] }
+  oc_listVehicles: { in: [], out: [object] }
+  oc_listWagonTrips: { in: [], out: [object] }
+  oc_listWorkOrders: { in: [], out: [object] }
+  oc_listZones: { in: [], out: [object] }
+  oc_resolveVolume: { in: [], out: [object] }
+  oc_submitMeasurement: { in: [], out: [object] }
+  oc_updateAssetStatus: { in: [assetCode, status], out: [object] }
+  oc_updateIncidentStatus: { in: [incidentNo, status, assignee], out: [object] }
+  oc_updateWorkOrderStatus: { in: [woNo, status, assignee], out: [object] }
