@@ -31,6 +31,10 @@ export interface OperatorUi {
   hideTasksAndEvents?: boolean;
   /** When true, hide the top dashboard/report navigation strip. */
   hideDashboardNav?: boolean;
+  /** ADR-0054: hosted UI pack URL on the same ISPF origin (`/apps/<appId>/`). */
+  hostedUiUrl?: string;
+  /** ADR-0054 bridge: externally hosted SPA until a ui-pack is installed. */
+  externalSpaUrl?: string;
 }
 
 export function resolveOperatorDashboard(

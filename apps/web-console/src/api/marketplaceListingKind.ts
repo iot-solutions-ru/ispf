@@ -5,6 +5,7 @@ export type MarketplaceListingKind =
   | "application"
   | "analytics-pack"
   | "symbol-pack"
+  | "ui-pack"
   | "driver"
   | "plugin"
   | "workflow-template"
@@ -17,6 +18,7 @@ export const MARKETPLACE_KIND_ORDER: MarketplaceListingKind[] = [
   "application",
   "analytics-pack",
   "symbol-pack",
+  "ui-pack",
   "driver",
   "plugin",
   "workflow-template",
@@ -42,6 +44,9 @@ export function resolveMarketplaceListingKind(listing: MarketplaceListing): Mark
   }
   if (raw === "symbol-pack") {
     return "symbol-pack";
+  }
+  if (raw === "ui-pack") {
+    return "ui-pack";
   }
   if (raw.includes("driver")) {
     return "driver";
@@ -71,6 +76,9 @@ export function marketplaceListingIdentifier(listing: MarketplaceListing): strin
   }
   if (kind === "symbol-pack") {
     return listing.packId?.trim() || listing.slug?.trim() || null;
+  }
+  if (kind === "ui-pack") {
+    return listing.appId?.trim() || listing.packId?.trim() || listing.slug?.trim() || null;
   }
   return listing.appId?.trim() || null;
 }
@@ -109,6 +117,7 @@ export function countMarketplaceListingsByKind(
     application: 0,
     "analytics-pack": 0,
     "symbol-pack": 0,
+    "ui-pack": 0,
     driver: 0,
     plugin: 0,
     "workflow-template": 0,

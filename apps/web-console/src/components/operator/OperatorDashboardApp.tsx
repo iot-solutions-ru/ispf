@@ -506,6 +506,17 @@ function OperatorDashboardChrome({
           </span>
         </Space>
         <Space className="topbar-actions" wrap>
+          {(ui.hostedUiUrl || ui.externalSpaUrl) && (
+            <Button
+              type="primary"
+              href={ui.hostedUiUrl || ui.externalSpaUrl}
+              target="_blank"
+              rel="noreferrer"
+              data-testid="operator-open-hosted-ui"
+            >
+              {t("operator:shell.openHostedUi", { defaultValue: "Open app UI" })}
+            </Button>
+          )}
           <OperatorFederationPeerSelector
             selectedPeerId={federationPeerId}
             onSelectPeer={onFederationPeerChange}

@@ -72,8 +72,11 @@ Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `
 | *(default / omitted)* | Application bundle deploy | [applications](applications.md) |
 | `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` (REAL — BL-185) | [symbol-marketplace](symbol-marketplace.md) |
 | `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
+| `ui-pack` | `ISPF_UI_PACKS_DIR` → served at `/apps/<appId>/` (ADR-0054) | [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) |
 
 Paid **analytics extension packs** (Tier C historian functions) use the same install/activate API as apps. After install, helpers appear in `GET /api/v1/platform/analytics/catalog` with `pack: <packId>`.
+
+**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Free install via Solutions marketplace or local `POST /api/v1/marketplace/ui-packs/{id}/install`. Application listings may set `uiPackSlug` so one-click install also downloads the companion SPA. SPA authors use Vite `base: '/apps/<appId>/'` and same-origin `/api/v1`.
 
 Local symbol catalog (dev/lab, not remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — see [symbol-marketplace](symbol-marketplace.md).
 

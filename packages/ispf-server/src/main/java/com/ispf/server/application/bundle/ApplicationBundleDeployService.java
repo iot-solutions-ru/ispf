@@ -39,6 +39,7 @@ import com.ispf.server.operator.OperatorAppUiStore;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
 import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
+import com.ispf.server.application.uipack.HostedUiPackLinkEnricher;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -76,6 +77,7 @@ public class ApplicationBundleDeployService {
     private final ApplicationEventCatalogService eventCatalogService;
     private final BundleVisualGroupService bundleVisualGroupService;
     private final AnalyticsFormulaService analyticsFormulaService;
+    private final HostedUiPackLinkEnricher hostedUiPackLinkEnricher;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -102,7 +104,8 @@ public class ApplicationBundleDeployService {
             BundleDependencyVerifier dependencyVerifier,
             ApplicationEventCatalogService eventCatalogService,
             BundleVisualGroupService bundleVisualGroupService,
-            AnalyticsFormulaService analyticsFormulaService
+            AnalyticsFormulaService analyticsFormulaService,
+            HostedUiPackLinkEnricher hostedUiPackLinkEnricher
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -129,6 +132,7 @@ public class ApplicationBundleDeployService {
         this.eventCatalogService = eventCatalogService;
         this.bundleVisualGroupService = bundleVisualGroupService;
         this.analyticsFormulaService = analyticsFormulaService;
+        this.hostedUiPackLinkEnricher = hostedUiPackLinkEnricher;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
@@ -857,18 +861,19 @@ public class ApplicationBundleDeployService {
         ApplicationBundleSnapshotStore.BundleSnapshot snapshot = snapshotStore.findActive(appId)
                 .orElseThrow(() -> new IllegalArgumentException("No active bundle deployment for app: " + appId));
         BundleManifest manifest = objectMapper.readValue(snapshot.manifestJson(), BundleManifest.class);
+        Map<String, Object> ui;
         if (manifest.operatorUi() != null && !manifest.operatorUi().isEmpty()) {
-            return manifest.operatorUi();
+            ui = manifest.operatorUi();
+        } else if (manifest.dashboards() != null && !manifest.dashboards().isEmpty()) {
+            ui = buildOperatorUiFromBundle(appId, manifest);
+        } else if (manifest.reports() != null && !manifest.reports().isEmpty()) {
+            ui = buildOperatorUiFromBundle(appId, manifest);
+        } else {
+            throw new IllegalArgumentException(
+                    "Operator UI not defined: set operatorUi or dashboards[] in bundle for app: " + appId
+            );
         }
-        if (manifest.dashboards() != null && !manifest.dashboards().isEmpty()) {
-            return buildOperatorUiFromBundle(appId, manifest);
-        }
-        if (manifest.reports() != null && !manifest.reports().isEmpty()) {
-            return buildOperatorUiFromBundle(appId, manifest);
-        }
-        throw new IllegalArgumentException(
-                "Operator UI not defined: set operatorUi or dashboards[] in bundle for app: " + appId
-        );
+        return hostedUiPackLinkEnricher.enrich(appId, ui);
     }
 
     private Map<String, Object> buildOperatorUiFromBundle(String appId, BundleManifest manifest) {
