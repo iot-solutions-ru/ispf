@@ -35,6 +35,11 @@ public class WebConsoleSpaFallbackFilter extends OncePerRequestFilter {
         }
 
         String path = WebConsoleSecurity.normalizedPath(request);
+        // ADR-0054 hosted UI packs are served by HostedUiPackFilter.
+        if (path.startsWith("/apps/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         if ("/".equals(path) || "/index.html".equals(path)) {
             filterChain.doFilter(request, response);
             return;

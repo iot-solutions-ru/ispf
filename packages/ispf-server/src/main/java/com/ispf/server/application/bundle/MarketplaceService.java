@@ -3,6 +3,7 @@ package com.ispf.server.application.bundle;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.platform.analytics.pack.DropInAnalyticsPackLoader;
 import com.ispf.server.scada.symbol.DropInSymbolPackLoader;
+import com.ispf.server.application.uipack.DropInUiPackLoader;
 import com.ispf.server.config.MarketplaceProperties;
 import com.ispf.server.license.CommercialBundleLicenseSigner;
 import com.ispf.server.license.InstallationIdService;
@@ -40,6 +41,7 @@ public class MarketplaceService {
     private final HttpClient httpClient;
     private final DropInAnalyticsPackLoader analyticsPackLoader;
     private final DropInSymbolPackLoader symbolPackLoader;
+    private final DropInUiPackLoader uiPackLoader;
 
     @Autowired
     public MarketplaceService(
@@ -52,7 +54,8 @@ public class MarketplaceService {
             Optional<BuildProperties> buildProperties,
             ObjectMapper objectMapper,
             DropInAnalyticsPackLoader analyticsPackLoader,
-            DropInSymbolPackLoader symbolPackLoader
+            DropInSymbolPackLoader symbolPackLoader,
+            DropInUiPackLoader uiPackLoader
     ) {
         this(
                 properties,
@@ -65,6 +68,7 @@ public class MarketplaceService {
                 objectMapper,
                 analyticsPackLoader,
                 symbolPackLoader,
+                uiPackLoader,
                 HttpClient.newBuilder()
                         .connectTimeout(Duration.ofSeconds(15))
                         .followRedirects(HttpClient.Redirect.NORMAL)
@@ -83,6 +87,7 @@ public class MarketplaceService {
             ObjectMapper objectMapper,
             DropInAnalyticsPackLoader analyticsPackLoader,
             DropInSymbolPackLoader symbolPackLoader,
+            DropInUiPackLoader uiPackLoader,
             HttpClient httpClient
     ) {
         this.properties = properties;
@@ -95,6 +100,7 @@ public class MarketplaceService {
         this.objectMapper = objectMapper;
         this.analyticsPackLoader = analyticsPackLoader;
         this.symbolPackLoader = symbolPackLoader;
+        this.uiPackLoader = uiPackLoader;
         this.httpClient = httpClient;
     }
 
@@ -142,6 +148,18 @@ public class MarketplaceService {
                 if (packId != null) {
                     row.put("installed", analyticsPackLoader.isPackInstalled(packId));
                 }
+            } else if ("ui-pack".equalsIgnoreCase(artifactKind) || "symbol-pack".equalsIgnoreCase(artifactKind)) {
+                String packId = stringValue(listing.get("packId"));
+                if (packId == null || packId.isBlank()) {
+                    packId = stringValue(listing.get("appId"));
+                }
+                if (packId != null && !packId.isBlank()) {
+                    if ("ui-pack".equalsIgnoreCase(artifactKind)) {
+                        row.put("installed", uiPackLoader.isPackInstalled(packId));
+                    } else {
+                        row.put("installed", symbolPackLoader.isPackInstalled(packId));
+                    }
+                }
             } else {
                 String appId = stringValue(listing.get("appId"));
                 if (appId != null) {
@@ -187,13 +205,16 @@ public class MarketplaceService {
         if (isSymbolPackListing(detail)) {
             return installSymbolPackListing(endpoint, slug, detail, "free-download");
         }
+        if (isUiPackListing(detail)) {
+            return installUiPackListing(endpoint, slug, detail, "free-download");
+        }
         if (isWorkflowTemplateListing(detail)) {
             return installWorkflowTemplateListing(endpoint, slug, detail, "free-download");
         }
         String appId = requireAppId(detail);
         String installationId = installationIdService.ensureInstallationId();
         String manifestJson = httpGet(buildFreeDownloadUrl(endpoint, slug, installationId));
-        return deployManifest(
+        Map<String, Object> deployed = deployManifest(
                 appId,
                 manifestJson,
                 marketplaceId,
@@ -202,6 +223,8 @@ public class MarketplaceService {
                 stringValue(detail.get("latestVersion")),
                 resolveTrustedFreeInstall(manifestJson)
         );
+        maybeInstallCompanionUiPack(endpoint, detail, deployed);
+        return deployed;
     }
 
     public Map<String, Object> activatePaidListing(
@@ -412,6 +435,99 @@ public class MarketplaceService {
         return "symbol-pack".equalsIgnoreCase(kind) || "symbol_pack".equalsIgnoreCase(kind);
     }
 
+    private static boolean isUiPackListing(Map<String, Object> detail) {
+        String artifactKind = stringValue(detail.get("artifactKind"));
+        if ("ui-pack".equalsIgnoreCase(artifactKind)) {
+            return true;
+        }
+        String kind = stringValue(detail.get("kind"));
+        return "ui-pack".equalsIgnoreCase(kind) || "ui_pack".equalsIgnoreCase(kind);
+    }
+
+    private Map<String, Object> installUiPackListing(
+            MarketplaceProperties.Endpoint endpoint,
+            String slug,
+            Map<String, Object> detail,
+            String source
+    ) throws Exception {
+        String installationId = installationIdService.ensureInstallationId();
+        byte[] zipBytes = httpGetBytes(buildFreeDownloadUrl(endpoint, slug, installationId));
+        String appId = requireUiPackAppId(detail);
+        Map<String, Object> installed = uiPackLoader.installZipArchive(zipBytes, appId);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", "OK");
+        result.put("artifactKind", "ui-pack");
+        result.put("appId", appId);
+        result.put("packId", appId);
+        result.put("hostedUiUrl", installed.get("hostedUiUrl"));
+        result.put("path", installed.get("path"));
+        result.put("marketplaceId", endpoint.getId());
+        result.put("listingSlug", slug);
+        result.put("installedFrom", source);
+        result.put("installationId", installationId);
+        return result;
+    }
+
+    private void maybeInstallCompanionUiPack(
+            MarketplaceProperties.Endpoint endpoint,
+            Map<String, Object> detail,
+            Map<String, Object> deployed
+    ) {
+        String uiPackSlug = resolveCompanionUiPackSlug(detail);
+        if (uiPackSlug == null || uiPackSlug.isBlank()) {
+            return;
+        }
+        try {
+            Map<String, Object> uiPackDetail = fetchListingDetail(endpoint, uiPackSlug);
+            if (!isUiPackListing(uiPackDetail)) {
+                deployed.put("uiPackWarning", "Companion listing is not artifactKind=ui-pack: " + uiPackSlug);
+                return;
+            }
+            Map<String, Object> uiInstalled = installUiPackListing(
+                    endpoint,
+                    uiPackSlug,
+                    uiPackDetail,
+                    "companion-free-download"
+            );
+            deployed.put("uiPack", uiInstalled);
+        } catch (Exception ex) {
+            deployed.put("uiPackWarning", "Companion ui-pack install failed: " + ex.getMessage());
+        }
+    }
+
+    private static String resolveCompanionUiPackSlug(Map<String, Object> detail) {
+        String direct = stringValue(detail.get("uiPackSlug"));
+        if (direct != null && !direct.isBlank()) {
+            return direct;
+        }
+        Object uiPack = detail.get("uiPack");
+        if (uiPack instanceof Map<?, ?> map) {
+            String slug = stringValue(map.get("slug"));
+            if (!slug.isBlank()) {
+                return slug;
+            }
+            String packId = stringValue(map.get("packId"));
+            if (!packId.isBlank()) {
+                return packId;
+            }
+        }
+        return null;
+    }
+
+    private static String requireUiPackAppId(Map<String, Object> detail) {
+        String appId = stringValue(detail.get("appId"));
+        if (appId == null || appId.isBlank()) {
+            appId = stringValue(detail.get("packId"));
+        }
+        if (appId == null || appId.isBlank()) {
+            appId = stringValue(detail.get("slug"));
+        }
+        if (appId == null || appId.isBlank()) {
+            throw new IllegalStateException("UI pack listing has no appId/packId");
+        }
+        return appId;
+    }
+
     private static boolean isWorkflowTemplateListing(Map<String, Object> detail) {
         String artifactKind = stringValue(detail.get("artifactKind"));
         if ("workflow-template".equalsIgnoreCase(artifactKind)) {
@@ -593,6 +709,9 @@ public class MarketplaceService {
         }
         if ("symbol-pack".equals(raw)) {
             return "symbol-pack";
+        }
+        if ("ui-pack".equals(raw)) {
+            return "ui-pack";
         }
         if (raw.contains("driver") || raw.equals("driver-pack")) {
             return "driver";

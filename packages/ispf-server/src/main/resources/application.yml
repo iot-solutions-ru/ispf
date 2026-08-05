@@ -537,6 +537,9 @@ ispf:
     packs-dir: ${ISPF_ANALYTICS_PACKS_DIR:./data/analytics-packs}
   scada:
     symbol-packs-dir: ${ISPF_SYMBOL_PACKS_DIR:./data/symbol-packs}
+  ui-pack:
+    packs-dir: ${ISPF_UI_PACKS_DIR:./data/ui-packs}
+    max-zip-bytes: ${ISPF_UI_PACK_MAX_ZIP_BYTES:52428800}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}

@@ -16,6 +16,8 @@ Product overview: [product](product.md). UI technical details: [web-console](web
 2. Sign in with an operator account (demo: `operator` / `operator`).
 3. After sign-in, **Operator HMI** opens — full-screen mode without the object tree or editors.
 
+![Operator applications launcher](../assets/ispf-operator-apps-launcher.png)
+
 If you have the admin role but need operator mode:
 
 ```
@@ -36,21 +38,11 @@ An administrator can configure **auto-start** for your account: after sign-in, t
 
 ---
 
-## Operator HMI Layout
+## Operator HMI
 
 ![Operator HMI — Mini-CHP station overview with AI assistant](../assets/ispf-operator-hmi.png)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  [App title]                              [Logout]          │
-├───────────────────────────────────────┬─────────────────────┤
-│                                       │  Work Queue         │
-│         Dashboard (read-only)         │  ─────────────      │
-│         Widgets: values,              │  Event Journal      │
-│         charts, tables                │                     │
-│                                       │                     │
-└───────────────────────────────────────┴─────────────────────┘
-```
+Left: dashboard (widgets, charts, tables). Right: **Work Queue** / event journal sidebar. Bottom-right: shift AI assistant (read-only).
 
 ### What operators can do
 

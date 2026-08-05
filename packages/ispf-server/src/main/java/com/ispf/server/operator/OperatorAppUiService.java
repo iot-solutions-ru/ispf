@@ -4,6 +4,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.application.uipack.HostedUiPackLinkEnricher;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.tenant.TenantPaths;
 import com.ispf.server.tenant.TenantScopeService;
@@ -38,6 +39,7 @@ public class OperatorAppUiService {
     private final ObjectMapper objectMapper;
     private final BootstrapProperties bootstrapProperties;
     private final TenantScopeService tenantScopeService;
+    private final HostedUiPackLinkEnricher hostedUiPackLinkEnricher;
 
     public OperatorAppUiService(
             OperatorAppUiStore store,
@@ -46,7 +48,8 @@ public class OperatorAppUiService {
             OperatorAppObjectTreeService objectTreeService,
             ObjectMapper objectMapper,
             BootstrapProperties bootstrapProperties,
-            TenantScopeService tenantScopeService
+            TenantScopeService tenantScopeService,
+            HostedUiPackLinkEnricher hostedUiPackLinkEnricher
     ) {
         this.store = store;
         this.applicationDataStore = applicationDataStore;
@@ -55,6 +58,7 @@ public class OperatorAppUiService {
         this.objectMapper = objectMapper;
         this.bootstrapProperties = bootstrapProperties;
         this.tenantScopeService = tenantScopeService;
+        this.hostedUiPackLinkEnricher = hostedUiPackLinkEnricher;
     }
 
     public boolean isTenantScoped(Authentication authentication) {
@@ -496,6 +500,10 @@ public class OperatorAppUiService {
         if (Boolean.TRUE.equals(extras.get("hideDashboardNav"))) {
             ui.put("hideDashboardNav", true);
         }
-        return ui;
+        Object externalSpaUrl = extras.get("externalSpaUrl");
+        if (externalSpaUrl != null) {
+            ui.put("externalSpaUrl", externalSpaUrl);
+        }
+        return hostedUiPackLinkEnricher.enrich(record.appId(), ui);
     }
 }

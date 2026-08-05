@@ -27,6 +27,7 @@ const KIND_FILTERS: MarketplaceKindFilter[] = [
   "application",
   "analytics-pack",
   "symbol-pack",
+  "ui-pack",
   "driver",
   "plugin",
   "workflow-template",
