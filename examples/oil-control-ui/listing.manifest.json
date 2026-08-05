@@ -1,0 +1,29 @@
+{
+  "slug": "oil-control-ui",
+  "title": "Ойл Контроль — Web UI (SPA)",
+  "description": "Hosted React SPA for oil-control (base /apps/oil-control/). Same-origin /api/v1 → ISPF BFF. Install with application listing oil-control (uiPackSlug) or separately as artifactKind ui-pack.",
+  "pricing": "free",
+  "artifactKind": "ui-pack",
+  "appId": "oil-control",
+  "packId": "oil-control-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "0.5.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "oil-control-ui-0.5.0.zip",
+  "tags": [
+    "azs",
+    "fuel",
+    "spa",
+    "ui-pack",
+    "marketplace",
+    "oil-control"
+  ],
+  "changelog": "0.5.0 — Initial ui-pack for oil-control SPA (Vite base /apps/oil-control/)."
+}

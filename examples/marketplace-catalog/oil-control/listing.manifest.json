@@ -1,0 +1,28 @@
+{
+  "slug": "oil-control",
+  "title": "Ойл Контроль (АЗС)",
+  "description": "Контроль количества и качества топлива на сети АЗС: баланс, дебалансы, РГС–ТРК, градуировки, приём НП, качество/АОП, логистика, активы/инциденты, KPI. BFF appId=oil-control; Web UI — ui-pack oil-control-ui (/apps/oil-control/).",
+  "pricing": "free",
+  "appId": "oil-control",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "0.5.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "azs",
+    "fuel",
+    "balance",
+    "metrology",
+    "quality",
+    "marketplace"
+  ],
+  "changelog": "0.5.0 — SPA nav/i18n parity; АЗС contour; dispensing imbalance; tank assessment; quality/АОП; assets vs incidents; Key Indicators; collapsible filters.",
+  "uiPackSlug": "oil-control-ui"
+}
