@@ -43,7 +43,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.2.8",
     "react-i18next": "^17.0.11",
-    "react-map-gl": "^8.0.4",
+    "react-map-gl": "^8.1.2",
     "react-router-dom": "^7.6.2",
     "recharts": "^3.10.1"
   },
