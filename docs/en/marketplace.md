@@ -72,6 +72,7 @@ Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `
 | *(default / omitted)* | Application bundle deploy | [applications](applications.md) |
 | `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` (REAL — BL-185) | [symbol-marketplace](symbol-marketplace.md) |
 | `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
+| `ui-pack` | `ISPF_UI_PACKS_DIR` → serve `/apps/{appId}/` (**Proposed** — [ADR-0054](decisions/0054-hosted-ui-packs.md)) | [ADR-0054](decisions/0054-hosted-ui-packs.md) |
 
 Paid **analytics extension packs** (Tier C historian functions) use the same install/activate API as apps. After install, helpers appear in `GET /api/v1/platform/analytics/catalog` with `pack: <packId>`.
 

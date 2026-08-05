@@ -101,6 +101,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) | Poka-yoke: constraints over guards — **Accepted** |
 | [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | ISPF Workflow Diagram Editor (no bpmn.io) — **Accepted** |
 | [0053-ispf-template-filler](0053-ispf-template-filler.md) | ISPF Template Filler (POI) replaces YARG for spreadsheet — **Accepted** |
+| [0054-hosted-ui-packs](0054-hosted-ui-packs.md) | Hosted UI packs (`artifactKind: ui-pack`) for SPA + application bundle — **Proposed** |
 
 ## Topic chains (read in order)
 

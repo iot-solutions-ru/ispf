@@ -72,6 +72,7 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` доба�
 | *(по умолчанию / не указан)* | Deploy application bundle | [applications](applications.md) |
 | `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` (REAL — BL-185) | [symbol-marketplace](symbol-marketplace.md) |
 | `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
+| `ui-pack` | `ISPF_UI_PACKS_DIR` → раздача `/apps/{appId}/` (**Proposed** — [ADR-0054](decisions/0054-hosted-ui-packs.md)) | [ADR-0054](decisions/0054-hosted-ui-packs.md) |
 
 Платные **analytics extension packs** (Tier C historian-функции) используют тот же install/activate API, что и приложения. После установки helpers появляются в `GET /api/v1/platform/analytics/catalog` с `pack: <packId>`.
 
