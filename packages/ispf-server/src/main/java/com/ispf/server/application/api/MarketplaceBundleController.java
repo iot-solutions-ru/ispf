@@ -3,6 +3,7 @@ package com.ispf.server.application.api;
 import com.ispf.server.application.bundle.MarketplaceLocalBundleService;
 import com.ispf.server.application.bundle.MarketplaceAnalyticsPackLocalService;
 import com.ispf.server.application.bundle.MarketplaceSymbolListingService;
+import com.ispf.server.application.bundle.MarketplaceUiPackLocalService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,15 +25,18 @@ public class MarketplaceBundleController {
     private final MarketplaceLocalBundleService localBundleService;
     private final MarketplaceAnalyticsPackLocalService analyticsPackLocalService;
     private final MarketplaceSymbolListingService symbolListingService;
+    private final MarketplaceUiPackLocalService uiPackLocalService;
 
     public MarketplaceBundleController(
             MarketplaceLocalBundleService localBundleService,
             MarketplaceAnalyticsPackLocalService analyticsPackLocalService,
-            MarketplaceSymbolListingService symbolListingService
+            MarketplaceSymbolListingService symbolListingService,
+            MarketplaceUiPackLocalService uiPackLocalService
     ) {
         this.localBundleService = localBundleService;
         this.analyticsPackLocalService = analyticsPackLocalService;
         this.symbolListingService = symbolListingService;
+        this.uiPackLocalService = uiPackLocalService;
     }
 
     @GetMapping("/bundles")
@@ -54,6 +58,32 @@ public class MarketplaceBundleController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), ex);
+        }
+    }
+
+    /** ADR-0054: hosted UI packs (local examples). */
+    @GetMapping("/ui-packs")
+    public Map<String, Object> listUiPacks() {
+        return uiPackLocalService.listLocalPacks();
+    }
+
+    @PostMapping("/ui-packs/{id}/install")
+    public Map<String, Object> installUiPack(@PathVariable("id") String packId) {
+        try {
+            Map<String, Object> result = uiPackLocalService.installLocalPack(packId);
+            if ("ERROR".equals(result.get("status"))) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        String.valueOf(result.getOrDefault("errors", "UI pack validation failed"))
+                );
+            }
+            return result;
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), ex);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
         }
     }
 

@@ -72,8 +72,11 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` доба�
 | *(по умолчанию / не указан)* | Deploy application bundle | [applications](applications.md) |
 | `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` (REAL — BL-185) | [symbol-marketplace](symbol-marketplace.md) |
 | `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
+| `ui-pack` | `ISPF_UI_PACKS_DIR` → раздача `/apps/<appId>/` (ADR-0054) | [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) |
 
 Платные **analytics extension packs** (Tier C historian-функции) используют тот же install/activate API, что и приложения. После установки helpers появляются в `GET /api/v1/platform/analytics/catalog` с `pack: <packId>`.
+
+**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Установка — Solutions marketplace или локально `POST /api/v1/marketplace/ui-packs/{id}/install`. В листинге приложения можно указать `uiPackSlug`, чтобы one-click ставил BFF и SPA вместе. Для SPA: Vite `base: '/apps/<appId>/'` и same-origin `/api/v1`.
 
 Локальный symbol catalog (dev/lab, не remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — см. [symbol-marketplace](symbol-marketplace.md).
 

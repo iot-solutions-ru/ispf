@@ -110,6 +110,7 @@ class MarketplaceServiceTest {
                 new ObjectMapper(),
                 mock(DropInAnalyticsPackLoader.class),
                 mock(com.ispf.server.scada.symbol.DropInSymbolPackLoader.class),
+                mock(com.ispf.server.application.uipack.DropInUiPackLoader.class),
                 java.net.http.HttpClient.newHttpClient()
         );
     }

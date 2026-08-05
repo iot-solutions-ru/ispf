@@ -1,0 +1,7 @@
+{
+  "id": "ui-pack-demo",
+  "appId": "ui-pack-demo",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/ui-pack-demo/"
+}

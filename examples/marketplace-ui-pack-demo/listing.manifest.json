@@ -1,0 +1,17 @@
+{
+  "slug": "ui-pack-demo",
+  "title": "Hosted UI Pack Demo",
+  "description": "ADR-0054 dogfood: static SPA served at /apps/ui-pack-demo/ after marketplace install.",
+  "pricing": "free",
+  "artifactKind": "ui-pack",
+  "appId": "ui-pack-demo",
+  "packId": "ui-pack-demo",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorSellerKind": "company",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "tags": ["ui-pack", "demo", "marketplace"],
+  "changelog": "1.0.0 — Initial hosted UI pack demo."
+}
