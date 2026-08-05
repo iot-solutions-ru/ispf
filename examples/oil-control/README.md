@@ -9,24 +9,32 @@ Self-contained ISPF application for fuel quantity & quality control on a petrol-
 | **tablePrefix** | `oc_` |
 | **version** | `0.5.0` |
 | **listing** | `listing.manifest.json` · catalog `../marketplace-catalog/oil-control/` |
+| **Web UI pack** | `../oil-control-ui/` (`artifactKind: ui-pack`, slug `oil-control-ui`) |
 | **BFF contract** | `api/openapi.yaml` |
-| **React SPA** | separate package `oil-control-azs-web` (not in marketplace JAR) |
 
 ## Install
 
 ```bash
-# after login — deploy bundle (unsigned stepwise / signed import_package on prod)
+# after login — deploy application bundle
 curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   --data-binary @bundle.json \
   "$ISPF/api/v1/applications/oil-control/deploy"
 ```
 
-Or agent: `import_package` / `validate_bundle` with this manifest.  
+Or Marketplace free install of listing `oil-control` (with `uiPackSlug: oil-control-ui` when ui-pack runtime is available).
+
 Production stands with `require-signed-bundles=true` need a signed `license` block.
+
+### UI after install
+
+- Hosted SPA: `https://<ispf-host>/apps/oil-control/` (from ui-pack)
+- Bridge (demo): `operatorUi.externalSpaUrl` → http://82.146.32.188/
+
+See [oil-control-ui/README.md](../oil-control-ui/README.md) for pack build (`npm run pack:ui` in SPA repo).
 
 ## Modules
 
-Balance · monitoring map · tank stocks · imbalances · RGS–TRK (dispense-system) · calibration / tank assessment · manual measurement · product receipt · supply / tanker logistics · quality & sampling acts · assets & work orders · incidents · KPI.
+Balance · monitoring map · tank stocks · imbalances · RGS–TRK · calibration · manual measurement · product receipt · logistics · quality · assets · incidents · KPI.
 
 ## Migrations
 

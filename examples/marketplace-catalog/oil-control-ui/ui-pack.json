@@ -1,0 +1,9 @@
+{
+  "appId": "oil-control",
+  "packId": "oil-control-ui",
+  "version": "0.5.0",
+  "entry": "index.html",
+  "basePath": "/apps/oil-control/",
+  "title": "Oil Control AZS Web",
+  "minIspfVersion": "0.9.30"
+}

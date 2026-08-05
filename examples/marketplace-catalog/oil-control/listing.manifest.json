@@ -1,7 +1,7 @@
 {
   "slug": "oil-control",
   "title": "Ойл Контроль (АЗС)",
-  "description": "Контроль количества и качества топлива на сети АЗС: баланс, дебалансы, РГС–ТРК, градуировки, приём НП, качество/АОП, логистика, активы/инциденты, KPI. BFF appId=oil-control; React SPA поставляется отдельно (oil-control-azs-web).",
+  "description": "Контроль количества и качества топлива на сети АЗС: баланс, дебалансы, РГС–ТРК, градуировки, приём НП, качество/АОП, логистика, активы/инциденты, KPI. BFF appId=oil-control; Web UI — ui-pack oil-control-ui (/apps/oil-control/).",
   "pricing": "free",
   "appId": "oil-control",
   "vendorName": "IoT Solutions",
@@ -23,5 +23,6 @@
     "quality",
     "marketplace"
   ],
-  "changelog": "0.5.0 — SPA nav/i18n parity; АЗС contour; dispensing imbalance; tank assessment; quality/АОП; assets vs incidents; Key Indicators; collapsible filters."
+  "changelog": "0.5.0 — SPA nav/i18n parity; АЗС contour; dispensing imbalance; tank assessment; quality/АОП; assets vs incidents; Key Indicators; collapsible filters.",
+  "uiPackSlug": "oil-control-ui"
 }
