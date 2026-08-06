@@ -5,20 +5,24 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
- * SSH driver — executes remote shell commands and maps stdout to ISPF variables.
+ * SSH driver — poll remote shell commands; optional opt-in {@code writePoint} for one-shot exec.
  * Point mapping: shell command string per variable name.
  */
 public class SshDeviceDriver implements DeviceDriver {
@@ -32,8 +36,8 @@ public class SshDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "ssh",
             "SSH Command Driver",
-            "0.1.0",
-            "Executes remote shell commands over SSH and maps stdout/stderr to ISPF variables",
+            "0.2.0",
+            "Executes remote shell commands over SSH (poll + opt-in write). writeEnabled + allowlist required for write.",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -41,8 +45,12 @@ public class SshDeviceDriver implements DeviceDriver {
                     "username", "admin",
                     "password", "",
                     "timeoutMs", "10000",
-                    "pollIntervalMs", "60000"
-            )
+                    "pollIntervalMs", "60000",
+                    "writeEnabled", "false",
+                    "writeCommandAllowlist", ""
+            ),
+            DriverMaturity.PRODUCTION,
+            Set.of("read", "write")
     );
 
     private DriverObject driverObject;
@@ -51,6 +59,8 @@ public class SshDeviceDriver implements DeviceDriver {
     private String username = "admin";
     private String password = "";
     private int timeoutMs = 10_000;
+    private boolean writeEnabled;
+    private final List<Pattern> writeAllowlist = new ArrayList<>();
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -75,7 +85,22 @@ public class SshDeviceDriver implements DeviceDriver {
             case "username" -> username = value.trim();
             case "password" -> password = value;
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "writeEnabled" -> writeEnabled = Boolean.parseBoolean(value.trim());
+            case "writeCommandAllowlist" -> parseAllowlist(value);
             default -> { }
+        }
+    }
+
+    private void parseAllowlist(String raw) {
+        writeAllowlist.clear();
+        if (raw.isBlank()) {
+            return;
+        }
+        for (String part : raw.split("[,\\n]")) {
+            String token = part.trim();
+            if (!token.isEmpty()) {
+                writeAllowlist.add(Pattern.compile(token));
+            }
         }
     }
 
@@ -113,7 +138,53 @@ public class SshDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("SSH driver is read-only in v0.1");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        if (!writeEnabled) {
+            throw new DriverException("SSH write disabled (set writeEnabled=true and writeCommandAllowlist)");
+        }
+        if (writeAllowlist.isEmpty()) {
+            throw new DriverException("SSH write requires non-empty writeCommandAllowlist");
+        }
+        if (value == null || value.rowCount() == 0) {
+            throw new DriverException("SSH write requires a non-empty DataRecord");
+        }
+        String mapped = points.get(pointId);
+        Map<String, Object> row = value.firstRow();
+        String command = firstNonBlank(row, "command", "value", "raw");
+        if (command == null || command.isBlank()) {
+            command = mapped;
+        }
+        if (command == null || command.isBlank()) {
+            throw new DriverException("SSH write requires command (field or mapped point " + pointId + ")");
+        }
+        command = command.trim();
+        if (!isAllowed(command)) {
+            throw new DriverException("SSH write command not allowlisted: " + command);
+        }
+        driverObject.log(DriverLogLevel.INFO, "SSH write exec: " + command);
+        DataRecord result = execute(command);
+        driverObject.updateVariable(pointId, result);
+    }
+
+    private boolean isAllowed(String command) {
+        for (Pattern pattern : writeAllowlist) {
+            if (pattern.matcher(command).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String firstNonBlank(Map<String, Object> row, String... keys) {
+        for (String key : keys) {
+            Object value = row.get(key);
+            if (value != null && !String.valueOf(value).isBlank()) {
+                return String.valueOf(value);
+            }
+        }
+        return null;
     }
 
     private DataRecord execute(String command) throws DriverException {

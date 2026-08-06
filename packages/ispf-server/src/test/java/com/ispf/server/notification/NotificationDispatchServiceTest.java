@@ -75,6 +75,30 @@ class NotificationDispatchServiceTest {
     }
 
     @Test
+    void postsJsonToSmsRelay() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> body = new AtomicReference<>();
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/sms", exchange -> {
+            body.set(new String(exchange.getRequestBody().readAllBytes()));
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+            latch.countDown();
+        });
+        server.start();
+
+        NotificationProperties properties = new NotificationProperties();
+        properties.setSmsRelayUrl("http://127.0.0.1:" + server.getAddress().getPort() + "/sms");
+        NotificationDispatchService service = new NotificationDispatchService(properties, new ObjectMapper());
+        service.sendSms("+15551234567|Site down", Map.of("eventName", "thresholdExceeded"));
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
+        assertThat(body.get()).contains("+15551234567");
+        assertThat(body.get()).contains("Site down");
+        assertThat(body.get()).contains("thresholdExceeded");
+    }
+
+    @Test
     void rejectsBlankWebhookUrl() throws IOException {
         NotificationDispatchService service = new NotificationDispatchService(
                 new NotificationProperties(),

@@ -56,6 +56,21 @@ public class NotificationDispatchService {
         postJson(relay.trim(), payload);
     }
 
+    public void sendSms(String target, Map<String, Object> context) {
+        SmsTarget parsed = SmsTarget.parse(target);
+        String relay = properties.getSmsRelayUrl();
+        if (relay == null || relay.isBlank()) {
+            throw new IllegalStateException(
+                    "SMS relay not configured (ispf.notifications.sms-relay-url). "
+                            + "Use SEND_WEBHOOK, an SMPP device write, or configure relay."
+            );
+        }
+        Map<String, Object> payload = new LinkedHashMap<>(context);
+        payload.put("to", parsed.to());
+        payload.put("body", parsed.body());
+        postJson(relay.trim(), payload);
+    }
+
     public Map<String, Object> baseContext(
             String source,
             String sourceId,
@@ -104,6 +119,19 @@ public class NotificationDispatchService {
                 throw new IllegalArgumentException("Email target format: to@host|subject|body");
             }
             return new EmailTarget(parts[0].trim(), parts[1].trim(), parts[2]);
+        }
+    }
+
+    private record SmsTarget(String to, String body) {
+        static SmsTarget parse(String raw) {
+            if (raw == null || raw.isBlank()) {
+                throw new IllegalArgumentException("SMS target is required (msisdn|body)");
+            }
+            String[] parts = raw.split("\\|", 2);
+            if (parts.length < 2 || parts[0].isBlank() || parts[1].isBlank()) {
+                throw new IllegalArgumentException("SMS target format: msisdn|body");
+            }
+            return new SmsTarget(parts[0].trim(), parts[1]);
         }
     }
 }

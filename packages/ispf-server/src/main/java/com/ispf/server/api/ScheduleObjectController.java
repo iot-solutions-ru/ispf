@@ -33,6 +33,8 @@ public class ScheduleObjectController {
                 request.description(),
                 request.enabled(),
                 request.intervalMs(),
+                request.cronExpression(),
+                request.timeZone(),
                 request.objectPath(),
                 request.functionName()
         );
@@ -49,6 +51,8 @@ public class ScheduleObjectController {
                 request.description(),
                 request.enabled(),
                 request.intervalMs(),
+                request.cronExpression(),
+                request.timeZone(),
                 request.objectPath(),
                 request.functionName()
         );
@@ -60,6 +64,8 @@ public class ScheduleObjectController {
             String description,
             Boolean enabled,
             Long intervalMs,
+            String cronExpression,
+            String timeZone,
             String objectPath,
             String functionName
     ) {
@@ -70,6 +76,8 @@ public class ScheduleObjectController {
             String description,
             Boolean enabled,
             Long intervalMs,
+            String cronExpression,
+            String timeZone,
             String objectPath,
             String functionName
     ) {

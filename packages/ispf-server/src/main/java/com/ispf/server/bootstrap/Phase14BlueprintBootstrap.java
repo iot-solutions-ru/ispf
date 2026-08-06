@@ -98,7 +98,9 @@ public class Phase14BlueprintBootstrap {
                 List.of(
                         varDef("scheduleId", "Stable schedule id", "info", ""),
                         boolDef("enabled", "Enabled", true),
-                        intDef("intervalMs", "Tick interval ms", 60000),
+                        intDef("intervalMs", "Tick interval ms (used when cronExpression blank)", 60000),
+                        varDef("cronExpression", "Optional cron (every:Nm or 5/6-field)", "config", ""),
+                        varDef("timeZone", "IANA time zone for cron", "config", "UTC"),
                         varDef("actionType", "Action type", "config", "invoke_function"),
                         varDef("actionJson", "Action JSON", "config", "{}"),
                         varDef("lastTickAt", "Last tick ISO instant", "runtime", ""),

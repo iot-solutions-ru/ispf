@@ -50,6 +50,8 @@
   "schedule.loading": "Loading schedule…",
   "schedule.subtitle": "Invoke a platform function on a fixed interval (intervalMs)",
   "schedule.intervalMs": "Interval (ms)",
+  "schedule.cronExpression": "Cron (optional)",
+  "schedule.timeZone": "Time zone",
   "schedule.objectPath": "Target object path",
   "schedule.functionName": "Function name",
   "schedule.enabled": "Enabled",

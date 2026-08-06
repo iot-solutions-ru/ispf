@@ -6,5 +6,6 @@ public enum CorrelatorActionType {
     SET_VARIABLE,
     OPEN_OPERATOR_REPORT,
     SEND_WEBHOOK,
-    SEND_EMAIL
+    SEND_EMAIL,
+    SEND_SMS
 }

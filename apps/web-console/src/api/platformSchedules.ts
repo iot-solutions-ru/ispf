@@ -23,6 +23,8 @@ export interface ScheduleDefinition {
   description: string;
   enabled: boolean;
   intervalMs: number;
+  cronExpression?: string;
+  timeZone?: string;
   actionType: string;
   objectPath: string;
   functionName: string;
@@ -41,6 +43,8 @@ export function createSchedule(payload: {
   description?: string;
   enabled?: boolean;
   intervalMs?: number;
+  cronExpression?: string;
+  timeZone?: string;
   objectPath?: string;
   functionName?: string;
 }): Promise<ScheduleDefinition> {
@@ -57,6 +61,8 @@ export function updateSchedule(
     description?: string;
     enabled?: boolean;
     intervalMs?: number;
+    cronExpression?: string;
+    timeZone?: string;
     objectPath?: string;
     functionName?: string;
   },

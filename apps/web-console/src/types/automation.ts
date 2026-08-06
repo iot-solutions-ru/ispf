@@ -4,7 +4,8 @@ export type CorrelatorActionType =
   | "SET_VARIABLE"
   | "OPEN_OPERATOR_REPORT"
   | "SEND_WEBHOOK"
-  | "SEND_EMAIL";
+  | "SEND_EMAIL"
+  | "SEND_SMS";
 
 export type CorrelatorPatternType = "COUNT" | "SEQUENCE" | "EVENT_CHAIN" | "WINDOW";
 

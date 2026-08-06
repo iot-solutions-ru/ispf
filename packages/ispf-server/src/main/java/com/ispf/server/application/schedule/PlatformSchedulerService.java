@@ -5,8 +5,10 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.function.FunctionInvocationScope;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.schedule.ScheduleDueChecker;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,6 +29,7 @@ public class PlatformSchedulerService {
 
     private final JdbcTemplate jdbcTemplate;
     private final FunctionService functionService;
+    private final DriverRuntimeService driverRuntimeService;
     private final ObjectMapper objectMapper;
     private final PlatformLeaderLockService leaderLockService;
     private final ScheduleObjectService scheduleObjectService;
@@ -35,6 +38,7 @@ public class PlatformSchedulerService {
     public PlatformSchedulerService(
             JdbcTemplate jdbcTemplate,
             FunctionService functionService,
+            DriverRuntimeService driverRuntimeService,
             ObjectMapper objectMapper,
             PlatformLeaderLockService leaderLockService,
             ScheduleObjectService scheduleObjectService,
@@ -42,6 +46,7 @@ public class PlatformSchedulerService {
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.functionService = functionService;
+        this.driverRuntimeService = driverRuntimeService;
         this.objectMapper = objectMapper;
         this.leaderLockService = leaderLockService;
         this.scheduleObjectService = scheduleObjectService;
@@ -116,8 +121,13 @@ public class PlatformSchedulerService {
     private void tickTreeSchedules() {
         Instant now = Instant.now();
         for (com.ispf.server.schedule.ScheduleObjectService.ScheduleDefinition schedule : scheduleObjectService.listEnabled()) {
-            if (schedule.lastTickAt() != null
-                    && schedule.lastTickAt().plusMillis(schedule.intervalMs()).isAfter(now)) {
+            if (!ScheduleDueChecker.isDue(
+                    now,
+                    schedule.lastTickAt(),
+                    schedule.intervalMs(),
+                    schedule.cronExpression(),
+                    schedule.timeZone()
+            )) {
                 continue;
             }
             try {
@@ -160,9 +170,16 @@ public class PlatformSchedulerService {
     }
 
     private void executeAction(String actionType, String actionJson) throws Exception {
-        if (!"invoke_function".equals(actionType)) {
+        if ("invoke_function".equals(actionType)) {
+            executeInvokeFunction(actionJson);
             return;
         }
+        if ("write_point".equals(actionType)) {
+            executeWritePoint(actionJson);
+        }
+    }
+
+    private void executeInvokeFunction(String actionJson) throws Exception {
         Map<?, ?> action = objectMapper.readValue(actionJson, Map.class);
         String objectPath = String.valueOf(action.get("objectPath"));
         String functionName = String.valueOf(action.get("functionName"));
@@ -180,6 +197,37 @@ public class PlatformSchedulerService {
         final DataRecord invokeInput = input;
         FunctionInvocationScope.runSystemTrusted(() ->
                 functionService.invoke(objectPath, functionName, invokeInput));
+    }
+
+    private void executeWritePoint(String actionJson) throws Exception {
+        Map<?, ?> action = objectMapper.readValue(actionJson, Map.class);
+        String objectPath = String.valueOf(action.get("objectPath"));
+        String pointId = String.valueOf(action.get("pointId"));
+        if (objectPath == null || objectPath.isBlank() || "null".equals(objectPath)) {
+            throw new IllegalArgumentException("write_point requires objectPath");
+        }
+        if (pointId == null || pointId.isBlank() || "null".equals(pointId)) {
+            throw new IllegalArgumentException("write_point requires pointId");
+        }
+        Map<String, Object> fields = new LinkedHashMap<>();
+        Object fieldsRaw = action.get("fields");
+        if (fieldsRaw instanceof Map<?, ?> fieldsMap) {
+            for (Map.Entry<?, ?> entry : fieldsMap.entrySet()) {
+                fields.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        } else if (action.get("value") != null) {
+            fields.put("value", action.get("value"));
+        }
+        if (fields.isEmpty()) {
+            throw new IllegalArgumentException("write_point requires fields or value");
+        }
+        DataSchema.Builder schemaBuilder = DataSchema.builder("scheduleWrite");
+        Map<String, Object> row = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            schemaBuilder.field(entry.getKey(), FieldType.STRING);
+            row.put(entry.getKey(), entry.getValue() == null ? "" : String.valueOf(entry.getValue()));
+        }
+        driverRuntimeService.writePoint(objectPath, pointId, DataRecord.single(schemaBuilder.build(), row));
     }
 
     private static Instant toInstant(Object value) {

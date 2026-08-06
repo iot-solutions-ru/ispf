@@ -3,13 +3,15 @@ package com.ispf.driver.smpp;
 import java.util.Locale;
 
 /**
- * Point mapping: {@code bind} for status or {@code destination:message} to submit SMS.
+ * Point mapping: {@code bind} for status, {@code outbound}/{@code write} for on-demand send,
+ * or {@code destination:message} to submit SMS on poll.
  */
 public record SmppPoint(SmppMode mode, String destination, String message) {
 
     public enum SmppMode {
         BIND,
-        SUBMIT
+        SUBMIT,
+        OUTBOUND
     }
 
     public static SmppPoint parse(String raw) {
@@ -17,8 +19,12 @@ public record SmppPoint(SmppMode mode, String destination, String message) {
             throw new IllegalArgumentException("SMPP point mapping is blank");
         }
         String trimmed = raw.trim();
-        if ("bind".equalsIgnoreCase(trimmed)) {
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+        if ("bind".equals(lower)) {
             return new SmppPoint(SmppMode.BIND, null, null);
+        }
+        if ("outbound".equals(lower) || "write".equals(lower)) {
+            return new SmppPoint(SmppMode.OUTBOUND, null, null);
         }
         int colon = trimmed.indexOf(':');
         if (colon > 0) {

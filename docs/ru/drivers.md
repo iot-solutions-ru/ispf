@@ -322,9 +322,11 @@ Loopback-тест: `SnmpDeviceDriverTest` + in-process `SnmpLoopbackAgent` (GET/
 
 ### http (`ispf-driver-http`)
 
-HTTP/HTTPS client (Java HttpClient). Опрос REST-эндпоинтов.
+HTTP/HTTPS client (Java HttpClient). Опрос REST и опциональная запись POST/PUT/PATCH.
 
-Маппинг точек: `path`, `GET:path`, `HEAD:path`, полный URL, суффикс `:json` для JSON-скаляра в виде строки.
+Для **email / SMS / webhook** используйте отдельные драйверы `email`, `sms`, `webhook` (см. ниже).
+
+Маппинг точек: `path`, `GET:path`, `HEAD:path`, `POST:path`, полный URL, суффикс `:json`.
 
 ```json
 {
@@ -333,7 +335,25 @@ HTTP/HTTPS client (Java HttpClient). Опрос REST-эндпоинтов.
 }
 ```
 
-Пример маппингов: `{"platformVersion": "GET:/api/v1/info:json"}`
+Возможности: **read**, **write**. Зрелость: **production**.
+
+### email (`ispf-driver-email`)
+
+Шлюз email: POST JSON `{to,subject,body}` на **свой** `relayUrl` устройства.
+
+Конфиг: `relayUrl` (обязателен), `timeoutMs`, опц. `defaultTo` / `defaultSubject`. Маппинг: `outbound`/`send`/`email`. Write: `to`, `subject`, `body`.
+
+Отдельно от `imap`/`pop3` и от глобального `email-relay-url` коррелятора.
+
+### sms (`ispf-driver-sms`)
+
+Шлюз SMS через **HTTP SMS-relay** (`{to,body}`). Не SMPP — для SMSC используйте `smpp`.
+
+Конфиг: `relayUrl`, `timeoutMs`, опц. `defaultTo`. Маппинг: `outbound`/`send`/`sms`.
+
+### webhook (`ispf-driver-webhook`)
+
+Шлюз webhook: POST JSON на `targetUrl` (алиасы `relayUrl`/`url`). Маппинг: `outbound`/`send`/`webhook`.
 
 ### haystack (`ispf-driver-haystack`)
 
@@ -901,9 +921,17 @@ SIP-проба (фабрики JAIN-SIP, обмен сырым UDP). Конфи�
 
 SMPP 3.x (jsmpp). Конфиг: `host`, `port`, `systemId`, `password`.
 
-Маппинг точек: `bind` (статус сессии) или `destination:message` (отправка `submit_sm`; результат — `messageId` от SMSC). На каждый poll открывается новая сессия bind. Переменная: `value`, `bound`, `messageId`.
+Маппинг точек:
 
-Зрелость: **production**. Loopback-тест: `SmppDeviceDriverTest` (фейковый SMSC: bind + submit_sm). Семантики чтения нет — только `writePoint`; исправлена адресация submit (source = `systemId`, destination = destination точки).
+| Маппинг | Poll | Write |
+|---------|------|-------|
+| `bind` | статус сессии | не пишется |
+| `outbound` / `write` | idle (`value=idle`) — SMS не шлётся | `to`/`destination` + `text`/`body`/`message`/`value` → `submit_sm` |
+| `destination:message` | отправка `submit_sm` | опциональный override destination/message |
+
+Переменная: `value`, `bound`, `messageId`. На каждый submit — новая сессия bind.
+
+Возможности: **read**, **write**. Зрелость: **production**. Loopback: `SmppDeviceDriverTest`.
 
 ### smb (`ispf-driver-smb`)
 
