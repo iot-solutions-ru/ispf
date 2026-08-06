@@ -103,7 +103,7 @@ class GpsTrackerRuntimeTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].name", hasItem("gpsFeed")));
 
-        // CI runners can be heavily loaded; give accept/read/poll more time than a local run needs.
+        // CI runners can be heavily loaded; keep retrying connect/send until the deadline.
         awaitGpsFeedValue(NMEA_LINE, 45_000);
     }
 
@@ -122,7 +122,7 @@ class GpsTrackerRuntimeTest {
         throw new AssertionError("GPS tracker did not listen on port " + port + " within " + timeoutMs + "ms", last);
     }
 
-    private void sendNmeaLine() throws Exception {
+    private void sendNmeaLine() throws IOException, InterruptedException {
         try (Socket client = new Socket()) {
             client.connect(new InetSocketAddress("127.0.0.1", listenPort), 2_000);
             client.setTcpNoDelay(true);

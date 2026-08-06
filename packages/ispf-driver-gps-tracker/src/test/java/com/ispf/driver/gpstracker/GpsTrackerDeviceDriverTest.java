@@ -79,6 +79,85 @@ class GpsTrackerDeviceDriverTest {
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> awaitConnectedClients(0, lastRecord));
     }
 
+    @Test
+    void acceptLoopKeepsListeningAndCapturesNmeaLines() throws Exception {
+        int port;
+        try (ServerSocket probe = new ServerSocket(0)) {
+            port = probe.getLocalPort();
+        }
+
+        AtomicReference<DataRecord> lastRecord = new AtomicReference<>();
+        DeviceDriver.DriverObject driverObject = new DeviceDriver.DriverObject() {
+            @Override
+            public PlatformObject deviceObject() {
+                return null;
+            }
+
+            @Override
+            public void updateVariable(String name, DataRecord value) {
+                lastRecord.set(value);
+            }
+
+            @Override
+            public Optional<DataRecord> getVariable(String name) {
+                return Optional.empty();
+            }
+
+            @Override
+            public void log(DeviceDriver.DriverLogLevel level, String message) {
+                // no-op
+            }
+
+            @Override
+            public Map<String, String> configuration() {
+                return Map.of(
+                        "listenPort", String.valueOf(port),
+                        "bufferSize", "64"
+                );
+            }
+        };
+
+        driver = new GpsTrackerDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+
+        String nmea = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
+        assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
+            // Multiple sequential clients must all be accepted — proves acceptLoop did not exit.
+            for (int i = 0; i < 3; i++) {
+                try (Socket client = new Socket()) {
+                    client.connect(new java.net.InetSocketAddress("127.0.0.1", port), 2_000);
+                    client.setTcpNoDelay(true);
+                    var out = client.getOutputStream();
+                    out.write((nmea + "\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    out.flush();
+                    client.shutdownOutput();
+                    Thread.sleep(100);
+                }
+                awaitFeedValue(nmea, lastRecord);
+            }
+        });
+    }
+
+    private void awaitFeedValue(String expected, AtomicReference<DataRecord> lastRecord) throws Exception {
+        long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+        while (System.nanoTime() < deadline) {
+            driver.readPoints(Map.of("gps.last", "feed"));
+            DataRecord record = lastRecord.get();
+            if (record != null) {
+                Object value = record.firstRow().get("value");
+                if (expected.equals(value)) {
+                    return;
+                }
+            }
+            Thread.sleep(25);
+        }
+        driver.readPoints(Map.of("gps.last", "feed"));
+        DataRecord record = lastRecord.get();
+        Object value = record == null ? null : record.firstRow().get("value");
+        assertEquals(expected, value);
+    }
+
     private void awaitConnectedClients(int expected, AtomicReference<DataRecord> lastRecord) throws Exception {
         long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
         while (System.nanoTime() < deadline) {
