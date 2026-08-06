@@ -1,0 +1,535 @@
+{
+  "version": "1.1.1",
+  "displayName": "Мониторинг ИТ-инфраструктуры М11",
+  "metadata": {
+    "description": "NMS ISPF для М11: продукт it-infra-monitoring v1.1.1, выровненный под ТЗ Мониторинг М11 v2 и React UI m11-monitor (обзор, сеть, платформа, сервисы, аварии, конфиги, отчёты, инвентарь, OPC, планировщик, KPI).",
+    "siteEdition": "m11",
+    "appId": "it-infra-monitoring",
+    "treeRoot": "root.platform.devices.itm",
+    "uiPack": "m11-monitor-ui",
+    "uiPackSlug": "m11-monitor-ui",
+    "sitePlugins": [
+      "itm-plugin-inventory-m11",
+      "itm-plugin-topology-m11",
+      "itm-plugin-integrations-m11"
+    ],
+    "requiredDriverPacks": [
+      "ispf-driver-snmp",
+      "ispf-driver-icmp",
+      "ispf-driver-ingress-snmp-trap",
+      "ispf-driver-ingress-syslog",
+      "ispf-driver-ingress-sflow",
+      "ispf-driver-ssh",
+      "ispf-driver-opc-da",
+      "ispf-driver-ldap",
+      "ispf-driver-ipmi",
+      "ispf-driver-http"
+    ]
+  },
+  "migrationsExtra": [
+    {
+      "id": "itm_m11_ui_domains_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS itm_alarm_lifecycle (\n  alarm_id VARCHAR(64) PRIMARY KEY,\n  level VARCHAR(32) NOT NULL,\n  title VARCHAR(256) NOT NULL,\n  object_path VARCHAR(512),\n  state VARCHAR(32) NOT NULL,\n  assignee VARCHAR(64),\n  opened_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  deactivate_event VARCHAR(256)\n);\nCREATE TABLE IF NOT EXISTS itm_alarm_history (\n  id BIGSERIAL PRIMARY KEY,\n  alarm_id VARCHAR(64) NOT NULL,\n  at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  actor VARCHAR(64),\n  action VARCHAR(64) NOT NULL,\n  detail VARCHAR(512)\n);\nCREATE TABLE IF NOT EXISTS itm_config_versions (\n  id BIGSERIAL PRIMARY KEY,\n  device_path VARCHAR(512) NOT NULL,\n  ver VARCHAR(32) NOT NULL,\n  collected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  by_user VARCHAR(64),\n  is_baseline BOOLEAN DEFAULT FALSE,\n  content TEXT\n);\nCREATE TABLE IF NOT EXISTS itm_inventory_assets (\n  asset_id VARCHAR(64) PRIMARY KEY,\n  name VARCHAR(128) NOT NULL,\n  type VARCHAR(64),\n  vendor VARCHAR(64),\n  model VARCHAR(128),\n  sn VARCHAR(128),\n  loc VARCHAR(256),\n  ip VARCHAR(64),\n  firmware VARCHAR(64),\n  status VARCHAR(32),\n  object_path VARCHAR(512)\n);\nCREATE TABLE IF NOT EXISTS itm_opc_signals (\n  tag VARCHAR(256) PRIMARY KEY,\n  kind VARCHAR(16) NOT NULL,\n  value INTEGER NOT NULL DEFAULT 0,\n  quality VARCHAR(32),\n  mapped_alarm VARCHAR(128),\n  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\nCREATE TABLE IF NOT EXISTS itm_scheduler_jobs (\n  job_id VARCHAR(64) PRIMARY KEY,\n  name VARCHAR(128) NOT NULL,\n  job_type VARCHAR(64),\n  cron_expr VARCHAR(64),\n  target VARCHAR(256),\n  enabled BOOLEAN DEFAULT TRUE,\n  last_run TIMESTAMPTZ,\n  next_run TIMESTAMPTZ,\n  status VARCHAR(32)\n);"
+    },
+    {
+      "id": "itm_m11_seed_v1",
+      "sql": "INSERT INTO itm_scheduler_jobs (job_id, name, job_type, cron_expr, target, enabled, status)\nVALUES\n ('job-disc','Network discovery','Discovery','0 */6 * * *','СПД 10.120.0.0/16',TRUE,'ok'),\n ('job-cfg','Сбор конфигураций','Config backup','0 4 * * *','SSH network',TRUE,'ok'),\n ('job-opc','Публикация OPC DA','Integration','*/30 * * * * *','CMS',TRUE,'warn'),\n ('job-poll','SNMP poll KPI','Poll','*/1 * * * *','All devices',TRUE,'ok')\nON CONFLICT (job_id) DO NOTHING;\nINSERT INTO itm_opc_signals (tag, kind, value, quality, mapped_alarm)\nVALUES\n ('M11.SPD.Alarm.TP16_CPU5','alarm',1,'good','TP-16 → S12708-1'),\n ('M11.SPD.Alarm.TP14_Down','alarm',1,'good','TP-14 offline'),\n ('M11.SPD.Warn.ASA_IPS','warning',1,'good','ASA IPS')\nON CONFLICT (tag) DO NOTHING;"
+    }
+  ],
+  "reportsExtra": [
+    {
+      "reportId": "itm-inventory-assets",
+      "title": "Инвентаризация активов",
+      "description": "CMDB-lite: S/N, расположение, статус",
+      "reportType": "sql",
+      "query": "SELECT asset_id, name, type, vendor, model, sn, loc, ip, status FROM itm_inventory_assets ORDER BY name",
+      "columns": [
+        {
+          "field": "asset_id",
+          "label": "ID"
+        },
+        {
+          "field": "name",
+          "label": "Имя"
+        },
+        {
+          "field": "type",
+          "label": "Тип"
+        },
+        {
+          "field": "vendor",
+          "label": "Производитель"
+        },
+        {
+          "field": "model",
+          "label": "Модель"
+        },
+        {
+          "field": "sn",
+          "label": "S/N"
+        },
+        {
+          "field": "loc",
+          "label": "Расположение"
+        },
+        {
+          "field": "ip",
+          "label": "IP"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 2000
+    },
+    {
+      "reportId": "itm-alarm-lifecycle",
+      "title": "ЖЦ аварий",
+      "description": "Активные и исторические аварии с состояниями ЖЦ",
+      "reportType": "sql",
+      "query": "SELECT alarm_id, level, title, state, assignee, opened_at, updated_at FROM itm_alarm_lifecycle ORDER BY updated_at DESC",
+      "columns": [
+        {
+          "field": "alarm_id",
+          "label": "ID"
+        },
+        {
+          "field": "level",
+          "label": "Уровень"
+        },
+        {
+          "field": "title",
+          "label": "Авария"
+        },
+        {
+          "field": "state",
+          "label": "Состояние"
+        },
+        {
+          "field": "assignee",
+          "label": "Исполнитель"
+        },
+        {
+          "field": "opened_at",
+          "label": "Открыта"
+        },
+        {
+          "field": "updated_at",
+          "label": "Обновлена"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "itm-config-drift",
+      "title": "Отклонения конфигураций",
+      "description": "Устройства без совпадения с эталоном (последние версии)",
+      "reportType": "sql",
+      "query": "SELECT device_path, ver, collected_at, by_user, is_baseline FROM itm_config_versions ORDER BY collected_at DESC LIMIT 500",
+      "columns": [
+        {
+          "field": "device_path",
+          "label": "Устройство"
+        },
+        {
+          "field": "ver",
+          "label": "Версия"
+        },
+        {
+          "field": "collected_at",
+          "label": "Сбор"
+        },
+        {
+          "field": "by_user",
+          "label": "Кто"
+        },
+        {
+          "field": "is_baseline",
+          "label": "Эталон"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "itm-opc-cms",
+      "title": "Сигналы OPC DA → CMS",
+      "description": "Теги warning/alarm для внешней CMS",
+      "reportType": "sql",
+      "query": "SELECT tag, kind, value, quality, mapped_alarm, updated_at FROM itm_opc_signals ORDER BY updated_at DESC",
+      "columns": [
+        {
+          "field": "tag",
+          "label": "Тег"
+        },
+        {
+          "field": "kind",
+          "label": "Тип"
+        },
+        {
+          "field": "value",
+          "label": "Значение"
+        },
+        {
+          "field": "quality",
+          "label": "Quality"
+        },
+        {
+          "field": "mapped_alarm",
+          "label": "Сопоставление"
+        },
+        {
+          "field": "updated_at",
+          "label": "Обновлено"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "itm-scheduler-jobs",
+      "title": "Планировщик заданий",
+      "description": "Discovery / config / reports / OPC poll",
+      "reportType": "sql",
+      "query": "SELECT job_id, name, job_type, cron_expr, target, enabled, last_run, next_run, status FROM itm_scheduler_jobs ORDER BY name",
+      "columns": [
+        {
+          "field": "job_id",
+          "label": "ID"
+        },
+        {
+          "field": "name",
+          "label": "Задание"
+        },
+        {
+          "field": "job_type",
+          "label": "Тип"
+        },
+        {
+          "field": "cron_expr",
+          "label": "Cron"
+        },
+        {
+          "field": "target",
+          "label": "Цель"
+        },
+        {
+          "field": "enabled",
+          "label": "Вкл"
+        },
+        {
+          "field": "last_run",
+          "label": "Последний"
+        },
+        {
+          "field": "next_run",
+          "label": "Следующий"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 200
+    },
+    {
+      "reportId": "itm-users-accounts",
+      "title": "Учётные записи пользователей",
+      "description": "Предустановленный отчёт ТЗ",
+      "reportType": "sql",
+      "query": "SELECT 'admin' AS login, 'Администратор' AS role UNION ALL SELECT 'admSpd','Администратор СПД' UNION ALL SELECT 'admSrv','Администратор серверов' UNION ALL SELECT 'admIt','Администратор ИТ' UNION ALL SELECT 'director','Руководитель'",
+      "columns": [
+        {
+          "field": "login",
+          "label": "Логин"
+        },
+        {
+          "field": "role",
+          "label": "Роль"
+        }
+      ],
+      "maxRows": 50
+    }
+  ],
+  "schedules": [
+    {
+      "scheduleId": "itm-snmp-poll",
+      "enabled": true,
+      "intervalMs": 60000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.itm.hub",
+        "functionName": "itm_refreshKpis"
+      }
+    },
+    {
+      "scheduleId": "itm-config-backup-daily",
+      "enabled": true,
+      "intervalMs": 86400000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.itm.hub",
+        "functionName": "itm_collectConfigs"
+      }
+    },
+    {
+      "scheduleId": "itm-discovery-6h",
+      "enabled": true,
+      "intervalMs": 21600000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.itm.hub",
+        "functionName": "itm_runDiscovery"
+      }
+    },
+    {
+      "scheduleId": "itm-opc-publish-30s",
+      "enabled": true,
+      "intervalMs": 30000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.itm.hub",
+        "functionName": "itm_publishOpcSignals"
+      }
+    },
+    {
+      "scheduleId": "itm-report-alarms-hourly",
+      "enabled": true,
+      "intervalMs": 3600000,
+      "actionType": "run_report",
+      "action": {
+        "reportId": "itm-active-alarms",
+        "emailTo": "noc@m11.local"
+      }
+    },
+    {
+      "scheduleId": "itm-report-sla-daily",
+      "enabled": true,
+      "intervalMs": 86400000,
+      "actionType": "run_report",
+      "action": {
+        "reportId": "itm-sla-summary",
+        "emailTo": "director@m11.local"
+      }
+    }
+  ],
+  "operatorUiExtras": {
+    "title": "ИТ-Мониторинг · Магистраль двух столиц",
+    "externalSpaUrl": "http://127.0.0.1:5173",
+    "uiPack": {
+      "packId": "m11-monitor-ui",
+      "version": "0.1.0",
+      "entry": "index.html",
+      "basePath": "/apps/it-infra-monitoring/"
+    },
+    "spaNav": [
+      {
+        "id": "overview",
+        "title": "Обзор",
+        "dashboard": "root.platform.dashboards.itm-overview",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSpd",
+          "admSrv",
+          "noc",
+          "operator"
+        ]
+      },
+      {
+        "id": "network",
+        "title": "Сеть",
+        "dashboard": "root.platform.dashboards.itm-dcn",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSpd",
+          "noc",
+          "operator"
+        ]
+      },
+      {
+        "id": "platform",
+        "title": "Платформа",
+        "dashboard": "root.platform.dashboards.itm-servers",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSrv",
+          "noc",
+          "operator"
+        ]
+      },
+      {
+        "id": "services",
+        "title": "Сервисы",
+        "dashboard": "root.platform.dashboards.itm-services-voip",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSpd",
+          "admSrv",
+          "noc",
+          "operator"
+        ]
+      },
+      {
+        "id": "alarms",
+        "title": "Аварии",
+        "dashboard": "root.platform.dashboards.itm-alarms",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSpd",
+          "admSrv",
+          "noc",
+          "operator"
+        ]
+      },
+      {
+        "id": "reports",
+        "title": "Отчёты",
+        "report": "root.platform.reports.itm-active-alarms",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSpd",
+          "admSrv",
+          "noc"
+        ]
+      },
+      {
+        "id": "inventory",
+        "title": "Инвентарь",
+        "report": "root.platform.reports.itm-inventory-assets",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSpd",
+          "admSrv"
+        ]
+      },
+      {
+        "id": "opc",
+        "title": "OPC / CMS",
+        "report": "root.platform.reports.itm-opc-cms",
+        "roles": [
+          "admin",
+          "admIt"
+        ]
+      },
+      {
+        "id": "scheduler",
+        "title": "Планировщик",
+        "report": "root.platform.reports.itm-scheduler-jobs",
+        "roles": [
+          "admin",
+          "admIt"
+        ]
+      },
+      {
+        "id": "sla",
+        "title": "KPI / SLA",
+        "dashboard": "root.platform.dashboards.itm-sla",
+        "roles": [
+          "admin",
+          "admIt",
+          "admSpd",
+          "admSrv",
+          "director",
+          "viewer"
+        ]
+      }
+    ],
+    "reportsExtra": [
+      {
+        "path": "root.platform.reports.itm-inventory-assets",
+        "title": "Инвентаризация активов"
+      },
+      {
+        "path": "root.platform.reports.itm-alarm-lifecycle",
+        "title": "ЖЦ аварий"
+      },
+      {
+        "path": "root.platform.reports.itm-config-drift",
+        "title": "Отклонения конфигураций"
+      },
+      {
+        "path": "root.platform.reports.itm-opc-cms",
+        "title": "Сигналы OPC DA → CMS"
+      },
+      {
+        "path": "root.platform.reports.itm-scheduler-jobs",
+        "title": "Планировщик заданий"
+      },
+      {
+        "path": "root.platform.reports.itm-users-accounts",
+        "title": "Учётные записи пользователей"
+      }
+    ]
+  },
+  "hubFunctions": [
+    {
+      "name": "itm_refreshKpis",
+      "description": "Aggregate device/link KPIs for overview",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returnType": "VOID"
+    },
+    {
+      "name": "itm_collectConfigs",
+      "description": "SSH/SNMP config backup for network devices",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returnType": "VOID"
+    },
+    {
+      "name": "itm_runDiscovery",
+      "description": "Network discovery scan",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returnType": "VOID"
+    },
+    {
+      "name": "itm_publishOpcSignals",
+      "description": "Publish warning/alarm tags to CMS via OPC DA",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returnType": "VOID"
+    },
+    {
+      "name": "itm_ackAlarm",
+      "description": "Acknowledge alarm in lifecycle",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returnType": "VOID"
+    },
+    {
+      "name": "itm_escalateAlarm",
+      "description": "Escalate alarm / notify SMS email",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returnType": "VOID"
+    },
+    {
+      "name": "itm_clearAlarm",
+      "description": "Clear/deactivate alarm",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      },
+      "returnType": "VOID"
+    }
+  ]
+}

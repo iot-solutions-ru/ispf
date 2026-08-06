@@ -589,5 +589,37 @@ const bundle = {
   },
 };
 
+// M11 MMI / ui-pack overlay (spaNav, schedules, extra reports/migrations, hub functions)
+const overlayPath = path.join(root, "m11-ui-overlay.json");
+if (fs.existsSync(overlayPath)) {
+  const overlay = JSON.parse(fs.readFileSync(overlayPath, "utf8"));
+  if (overlay.version) bundle.version = overlay.version;
+  if (overlay.displayName) bundle.displayName = overlay.displayName;
+  if (overlay.metadata) bundle.metadata = { ...bundle.metadata, ...overlay.metadata };
+  if (Array.isArray(overlay.migrationsExtra)) {
+    bundle.migrations = [...(bundle.migrations || []), ...overlay.migrationsExtra];
+  }
+  if (Array.isArray(overlay.reportsExtra)) {
+    bundle.reports = [...(bundle.reports || []), ...overlay.reportsExtra];
+  }
+  if (Array.isArray(overlay.schedules)) {
+    bundle.schedules = overlay.schedules;
+  }
+  if (overlay.operatorUiExtras) {
+    const ex = overlay.operatorUiExtras;
+    if (ex.title) bundle.operatorUi.title = ex.title;
+    if (ex.externalSpaUrl) bundle.operatorUi.externalSpaUrl = ex.externalSpaUrl;
+    if (ex.uiPack) bundle.operatorUi.uiPack = ex.uiPack;
+    if (ex.spaNav) bundle.operatorUi.spaNav = ex.spaNav;
+    if (Array.isArray(ex.reportsExtra)) {
+      bundle.operatorUi.reports = [...(bundle.operatorUi.reports || []), ...ex.reportsExtra];
+    }
+  }
+  if (Array.isArray(overlay.hubFunctions)) {
+    const hub = (bundle.blueprints || []).find((b) => b.name === "itm-hub-v1");
+    if (hub) hub.functions = overlay.hubFunctions;
+  }
+}
+
 fs.writeFileSync(path.join(root, "bundle.json"), JSON.stringify(bundle, null, 2));
-console.log(`Wrote bundle.json (${dashboards.length} dashboards)`);
+console.log(`Wrote bundle.json (${dashboards.length} dashboards, v${bundle.version})`);

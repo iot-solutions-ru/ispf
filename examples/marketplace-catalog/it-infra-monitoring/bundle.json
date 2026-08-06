@@ -5,9 +5,9 @@
   "schemaName": "it_infra_monitoring",
   "metadata": {
     "description": "NMS ISPF для М11: продукт it-infra-monitoring v1.1.1, выровненный под ТЗ Мониторинг М11 v2 и React UI m11-monitor (обзор, сеть, платформа, сервисы, аварии, конфиги, отчёты, инвентарь, OPC, планировщик, KPI).",
+    "siteEdition": "m11",
     "appId": "it-infra-monitoring",
     "treeRoot": "root.platform.devices.itm",
-    "siteEdition": "m11",
     "uiPack": "m11-monitor-ui",
     "uiPackSlug": "m11-monitor-ui",
     "sitePlugins": [
