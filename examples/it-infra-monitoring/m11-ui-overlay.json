@@ -1,8 +1,8 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "displayName": "Мониторинг ИТ-инфраструктуры М11",
   "metadata": {
-    "description": "NMS ISPF для М11: продукт it-infra-monitoring v1.1.1, выровненный под ТЗ Мониторинг М11 v2 и React UI m11-monitor (обзор, сеть, платформа, сервисы, аварии, конфиги, отчёты, инвентарь, OPC, планировщик, KPI).",
+    "description": "NMS ISPF for M11: it-infra-monitoring v1.1.2 — hub CUSTOM+INSTANCE, notify email/sms/webhook DEVICE gateways (write_point), SSH write allowlist, OPC UA (not DA).",
     "siteEdition": "m11",
     "appId": "it-infra-monitoring",
     "treeRoot": "root.platform.devices.itm",
@@ -20,7 +20,10 @@
       "ispf-driver-ingress-syslog",
       "ispf-driver-ingress-sflow",
       "ispf-driver-ssh",
-      "ispf-driver-opc-da",
+      "ispf-driver-opcua",
+      "ispf-driver-email",
+      "ispf-driver-sms",
+      "ispf-driver-webhook",
       "ispf-driver-ldap",
       "ispf-driver-ipmi",
       "ispf-driver-http"
@@ -34,6 +37,10 @@
     {
       "id": "itm_m11_seed_v1",
       "sql": "INSERT INTO itm_scheduler_jobs (job_id, name, job_type, cron_expr, target, enabled, status)\nVALUES\n ('job-disc','Network discovery','Discovery','0 */6 * * *','СПД 10.120.0.0/16',TRUE,'ok'),\n ('job-cfg','Сбор конфигураций','Config backup','0 4 * * *','SSH network',TRUE,'ok'),\n ('job-opc','Публикация OPC DA','Integration','*/30 * * * * *','CMS',TRUE,'warn'),\n ('job-poll','SNMP poll KPI','Poll','*/1 * * * *','All devices',TRUE,'ok')\nON CONFLICT (job_id) DO NOTHING;\nINSERT INTO itm_opc_signals (tag, kind, value, quality, mapped_alarm)\nVALUES\n ('M11.SPD.Alarm.TP16_CPU5','alarm',1,'good','TP-16 → S12708-1'),\n ('M11.SPD.Alarm.TP14_Down','alarm',1,'good','TP-14 offline'),\n ('M11.SPD.Warn.ASA_IPS','warning',1,'good','ASA IPS')\nON CONFLICT (tag) DO NOTHING;"
+    },
+    {
+      "id": "itm_m11_opcua_labels_v1",
+      "sql": "UPDATE itm_scheduler_jobs SET name = 'OPC UA publish', target = 'CMS OPC UA' WHERE job_id = 'job-opc';"
     }
   ],
   "reportsExtra": [
@@ -153,8 +160,8 @@
     },
     {
       "reportId": "itm-opc-cms",
-      "title": "Сигналы OPC DA → CMS",
-      "description": "Теги warning/alarm для внешней CMS",
+      "title": "OPC UA signals → CMS",
+      "description": "warning/alarm tags for CMS via OPC UA",
       "reportType": "sql",
       "query": "SELECT tag, kind, value, quality, mapped_alarm, updated_at FROM itm_opc_signals ORDER BY updated_at DESC",
       "columns": [
@@ -255,6 +262,8 @@
       "scheduleId": "itm-snmp-poll",
       "enabled": true,
       "intervalMs": 60000,
+      "cronExpression": "every:1m",
+      "timeZone": "Europe/Moscow",
       "actionType": "invoke_function",
       "action": {
         "objectPath": "root.platform.devices.itm.hub",
@@ -265,16 +274,23 @@
       "scheduleId": "itm-config-backup-daily",
       "enabled": true,
       "intervalMs": 86400000,
-      "actionType": "invoke_function",
+      "cronExpression": "0 4 * * *",
+      "timeZone": "Europe/Moscow",
+      "actionType": "write_point",
       "action": {
-        "objectPath": "root.platform.devices.itm.hub",
-        "functionName": "itm_collectConfigs"
+        "objectPath": "root.platform.devices.itm.ssh-config-jump",
+        "pointId": "show running-config",
+        "fields": {
+          "command": "show running-config"
+        }
       }
     },
     {
       "scheduleId": "itm-discovery-6h",
       "enabled": true,
       "intervalMs": 21600000,
+      "cronExpression": "0 */6 * * *",
+      "timeZone": "Europe/Moscow",
       "actionType": "invoke_function",
       "action": {
         "objectPath": "root.platform.devices.itm.hub",
@@ -295,20 +311,34 @@
       "scheduleId": "itm-report-alarms-hourly",
       "enabled": true,
       "intervalMs": 3600000,
-      "actionType": "run_report",
+      "cronExpression": "0 * * * *",
+      "timeZone": "Europe/Moscow",
+      "actionType": "write_point",
       "action": {
-        "reportId": "itm-active-alarms",
-        "emailTo": "noc@m11.local"
+        "objectPath": "root.platform.devices.itm.notify-email",
+        "pointId": "outbound",
+        "fields": {
+          "to": "noc@m11.local",
+          "subject": "ITM active alarms",
+          "body": "See report root.platform.reports.itm-active-alarms"
+        }
       }
     },
     {
       "scheduleId": "itm-report-sla-daily",
       "enabled": true,
       "intervalMs": 86400000,
-      "actionType": "run_report",
+      "cronExpression": "0 8 * * *",
+      "timeZone": "Europe/Moscow",
+      "actionType": "write_point",
       "action": {
-        "reportId": "itm-sla-summary",
-        "emailTo": "director@m11.local"
+        "objectPath": "root.platform.devices.itm.notify-email",
+        "pointId": "outbound",
+        "fields": {
+          "to": "director@m11.local",
+          "subject": "ITM daily SLA",
+          "body": "See report root.platform.reports.itm-sla-summary"
+        }
       }
     }
   ],
@@ -410,7 +440,7 @@
       },
       {
         "id": "opc",
-        "title": "OPC / CMS",
+        "title": "OPC UA / CMS",
         "report": "root.platform.reports.itm-opc-cms",
         "roles": [
           "admin",
@@ -455,7 +485,7 @@
       },
       {
         "path": "root.platform.reports.itm-opc-cms",
-        "title": "Сигналы OPC DA → CMS"
+        "title": "OPC UA signals → CMS"
       },
       {
         "path": "root.platform.reports.itm-scheduler-jobs",
@@ -479,7 +509,7 @@
     },
     {
       "name": "itm_collectConfigs",
-      "description": "SSH/SNMP config backup for network devices",
+      "description": "SSH config backup via DEVICE ssh-config-jump (writeEnabled + writeCommandAllowlist); schedule uses write_point",
       "parameters": {
         "type": "object",
         "properties": {}
@@ -497,7 +527,7 @@
     },
     {
       "name": "itm_publishOpcSignals",
-      "description": "Publish warning/alarm tags to CMS via OPC DA",
+      "description": "Publish tags to CMS via OPC UA DEVICE cms-opcua (driverId=opcua); Classic DA stays BETA shell",
       "parameters": {
         "type": "object",
         "properties": {}
@@ -515,7 +545,7 @@
     },
     {
       "name": "itm_escalateAlarm",
-      "description": "Escalate alarm / notify SMS email",
+      "description": "Escalate via correlator SEND_EMAIL/SEND_SMS and/or write_point to notify-email / notify-sms DEVICE gateways",
       "parameters": {
         "type": "object",
         "properties": {}
@@ -531,5 +561,75 @@
       },
       "returnType": "VOID"
     }
-  ]
+  ],
+  "correlators": [
+    {
+      "name": "itm-escalate-email",
+      "objectPath": "root.platform.devices.itm.hub",
+      "patternType": "COUNT",
+      "eventName": "itmDeviceDown",
+      "windowSeconds": 60,
+      "minOccurrences": 1,
+      "cooldownSeconds": 300,
+      "actionType": "SEND_EMAIL",
+      "actionTarget": "noc@m11.local|ITM escalate|Device down on M11",
+      "enabled": true
+    },
+    {
+      "name": "itm-escalate-sms",
+      "objectPath": "root.platform.devices.itm.hub",
+      "patternType": "COUNT",
+      "eventName": "itmDeviceDown",
+      "windowSeconds": 60,
+      "minOccurrences": 1,
+      "cooldownSeconds": 600,
+      "actionType": "SEND_SMS",
+      "actionTarget": "+70000000000|ITM: device down",
+      "enabled": false
+    }
+  ],
+  "deviceDriverHints": {
+    "root.platform.devices.itm.notify-email": {
+      "driverId": "email",
+      "relayUrl": "https://relay.m11.local/email",
+      "defaultTo": "noc@m11.local",
+      "timeoutMs": "15000",
+      "pointMapping": {
+        "outbound": "outbound"
+      }
+    },
+    "root.platform.devices.itm.notify-sms": {
+      "driverId": "sms",
+      "relayUrl": "https://sms.m11.local/send",
+      "timeoutMs": "15000",
+      "pointMapping": {
+        "outbound": "outbound"
+      }
+    },
+    "root.platform.devices.itm.notify-webhook": {
+      "driverId": "webhook",
+      "targetUrl": "https://hooks.m11.local/itm",
+      "timeoutMs": "15000",
+      "pointMapping": {
+        "outbound": "outbound"
+      }
+    },
+    "root.platform.devices.itm.cms-opcua": {
+      "driverId": "opcua",
+      "endpointUrl": "opc.tcp://cms-m11.local:4840",
+      "timeoutMs": "5000",
+      "pollIntervalMs": "1000",
+      "readMode": "poll"
+    },
+    "root.platform.devices.itm.ssh-config-jump": {
+      "driverId": "ssh",
+      "host": "10.120.0.1",
+      "port": "22",
+      "username": "backup",
+      "password": "CHANGE_ME",
+      "timeoutMs": "30000",
+      "writeEnabled": "true",
+      "writeCommandAllowlist": "show running-config,show configuration,display current-configuration"
+    }
+  }
 }

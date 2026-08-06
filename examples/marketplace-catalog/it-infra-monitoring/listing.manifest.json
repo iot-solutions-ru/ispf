@@ -8,9 +8,15 @@
   "uiPackSlug": "m11-monitor-ui",
   "vendorName": "IoT Solutions",
   "priceCents": 0,
-  "latestVersion": "1.1.1",
-  "minIspfVersion": "0.7.6",
+  "latestVersion": "1.1.2",
+  "minIspfVersion": "0.9.186",
   "bundleArtifact": "bundle.json",
-  "tags": ["m11", "nms", "monitoring", "snmp", "opc"],
-  "changelog": "1.1.1 — M11 edition: operatorUi.uiPack + spaNav aligned to m11-monitor."
+  "tags": [
+    "m11",
+    "nms",
+    "monitoring",
+    "snmp",
+    "opc"
+  ],
+  "changelog": "1.1.2 — hub CUSTOM+INSTANCE; notify email/sms/webhook write_point; SSH allowlist; OPC UA (not DA)."
 }
