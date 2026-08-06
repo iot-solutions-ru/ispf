@@ -78,6 +78,8 @@ Paid **analytics extension packs** (Tier C historian functions) use the same ins
 
 **UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Free install via Solutions marketplace or local `POST /api/v1/marketplace/ui-packs/{id}/install`. Application listings may set `uiPackSlug` so one-click install also downloads the companion SPA. SPA authors use Vite `base: '/apps/<appId>/'` and same-origin `/api/v1`.
 
+**Split nginx deploy:** `location ^~ /apps/` **must** `proxy_pass` to `ispf-server` (same as `/api/`). Otherwise `try_files … /index.html` serves the admin console at `/apps/<appId>/`. See [ADR-0054](decisions/0054-hosted-ui-packs.md#edge--nginx-mandatory-for-split-deploy) and `deploy/nginx-ispf.conf`.
+
 Local symbol catalog (dev/lab, not remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — see [symbol-marketplace](symbol-marketplace.md).
 
 ## Marketplace readiness checklist (BL-183)
