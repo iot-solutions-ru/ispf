@@ -1,0 +1,16 @@
+{
+  "slug": "it-infra-monitoring",
+  "title": "Мониторинг ИТ-инфраструктуры М11",
+  "description": "NMS ISPF для трассы М-11: SNMP/syslog/sFlow, топология, аварии, конфиги, OPC→CMS, отчёты. Web UI — ui-pack m11-monitor-ui (/apps/it-infra-monitoring/).",
+  "pricing": "free",
+  "artifactKind": "application",
+  "appId": "it-infra-monitoring",
+  "uiPackSlug": "m11-monitor-ui",
+  "vendorName": "IoT Solutions",
+  "priceCents": 0,
+  "latestVersion": "1.1.1",
+  "minIspfVersion": "0.7.6",
+  "bundleArtifact": "product/bundle.json",
+  "tags": ["m11", "nms", "monitoring", "snmp", "opc"],
+  "changelog": "1.1.1 — M11 edition: operatorUi.uiPack + spaNav aligned to m11-monitor."
+}

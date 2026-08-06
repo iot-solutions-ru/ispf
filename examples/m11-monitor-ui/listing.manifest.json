@@ -1,0 +1,27 @@
+{
+  "slug": "m11-monitor-ui",
+  "title": "ИТ-Мониторинг М11 — Web UI (SPA)",
+  "description": "Hosted React SPA for it-infra-monitoring (base /apps/it-infra-monitoring/). MMI по ТЗ Мониторинг М11 v2. Install with application listing it-infra-monitoring (uiPackSlug) or separately as artifactKind ui-pack.",
+  "pricing": "free",
+  "artifactKind": "ui-pack",
+  "appId": "it-infra-monitoring",
+  "packId": "m11-monitor-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorSellerKind": "company",
+  "vendorContactEmail": "info@iot-solutions.ru",
+  "priceCents": 0,
+  "latestVersion": "0.1.0",
+  "minIspfVersion": "0.7.6",
+  "bundleArtifact": "m11-monitor-ui-0.1.0.zip",
+  "uiPackSlug": "m11-monitor-ui",
+  "tags": [
+    "m11",
+    "nms",
+    "monitoring",
+    "spa",
+    "ui-pack",
+    "it-infra-monitoring"
+  ],
+  "changelog": "0.1.0 — Initial ui-pack for m11-monitor (Vite base /apps/it-infra-monitoring/)."
+}
