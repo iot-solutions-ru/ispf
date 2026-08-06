@@ -353,9 +353,9 @@ const bundle = {
   blueprints: [
     {
       name: "itm-hub-v1",
-      description: "ITM monitoring hub (KPI aggregates, event journal anchor)",
-      type: "RELATIVE",
-      targetObjectType: "DEVICE",
+      description: "ITM monitoring hub (KPI aggregates, event journal anchor) — logic hub, not a driver DEVICE",
+      type: "INSTANCE",
+      targetObjectType: "CUSTOM",
       variables: [
         {
           name: "siteLabel",
@@ -504,6 +504,30 @@ const bundle = {
             rows: [{ items: [] }],
           },
         },
+        {
+          name: "opcEndpoint",
+          description: "OPC UA CMS endpoint (opc.tcp://…)",
+          group: "integration",
+          schema: { name: "stringValue", fields: [{ name: "value", type: "STRING" }] },
+          readable: true,
+          writable: true,
+          defaultValue: {
+            schema: { name: "stringValue", fields: [{ name: "value", type: "STRING" }] },
+            rows: [{ value: "opc.tcp://cms-m11.local:4840" }],
+          },
+        },
+        {
+          name: "opcStatus",
+          description: "OPC UA bridge status",
+          group: "integration",
+          schema: { name: "stringValue", fields: [{ name: "value", type: "STRING" }] },
+          readable: true,
+          writable: true,
+          defaultValue: {
+            schema: { name: "stringValue", fields: [{ name: "value", type: "STRING" }] },
+            rows: [{ value: "unconfigured" }],
+          },
+        },
       ],
       events: [
         { name: "itmDeviceDown", description: "Device offline", level: "WARNING" },
@@ -523,9 +547,39 @@ const bundle = {
     {
       parentPath: "root.platform.devices.itm",
       name: "hub",
-      type: "DEVICE",
+      type: "CUSTOM",
       displayName: "ITM Hub",
       templateId: "itm-hub-v1",
+    },
+    {
+      parentPath: "root.platform.devices.itm",
+      name: "notify-email",
+      type: "DEVICE",
+      displayName: "ITM email gateway",
+    },
+    {
+      parentPath: "root.platform.devices.itm",
+      name: "notify-sms",
+      type: "DEVICE",
+      displayName: "ITM SMS gateway",
+    },
+    {
+      parentPath: "root.platform.devices.itm",
+      name: "notify-webhook",
+      type: "DEVICE",
+      displayName: "ITM webhook gateway",
+    },
+    {
+      parentPath: "root.platform.devices.itm",
+      name: "cms-opcua",
+      type: "DEVICE",
+      displayName: "CMS OPC UA bridge",
+    },
+    {
+      parentPath: "root.platform.devices.itm",
+      name: "ssh-config-jump",
+      type: "DEVICE",
+      displayName: "SSH config collector",
     },
     {
       parentPath: "root.platform.devices.itm",
@@ -618,6 +672,18 @@ if (fs.existsSync(overlayPath)) {
   if (Array.isArray(overlay.hubFunctions)) {
     const hub = (bundle.blueprints || []).find((b) => b.name === "itm-hub-v1");
     if (hub) hub.functions = overlay.hubFunctions;
+  }
+  if (Array.isArray(overlay.objectsExtra)) {
+    bundle.objects = [...(bundle.objects || []), ...overlay.objectsExtra];
+  }
+  if (Array.isArray(overlay.correlators)) {
+    bundle.correlators = [...(bundle.correlators || []), ...overlay.correlators];
+  }
+  if (Array.isArray(overlay.hubVariablesExtra)) {
+    const hub = (bundle.blueprints || []).find((b) => b.name === "itm-hub-v1");
+    if (hub) {
+      hub.variables = [...(hub.variables || []), ...overlay.hubVariablesExtra];
+    }
   }
 }
 

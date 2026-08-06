@@ -1,5 +1,5 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "displayName": "ITM integrations — Трасса М11",
   "tablePrefix": "",
   "schemaName": "it_infra_monitoring",
@@ -21,19 +21,6 @@
         "CN=ISPF-Director,OU=Groups,DC=m11,DC=local": "director"
       }
     },
-    "opcDa": {
-      "enabled": true,
-      "driverId": "opc-da",
-      "progId": "Aggregate.OPC",
-      "cmsBridgeHost": "cms-m11.local",
-      "cmsBridgePort": 135,
-      "mode": "stub-until-windows-bridge",
-      "tags": [
-        "M11.SPD.Alarm.*",
-        "M11.SPD.Warn.*",
-        "M11.SRV.Warn.*"
-      ]
-    },
     "roles": [
       "admin",
       "admSpd",
@@ -43,7 +30,19 @@
       "noc",
       "operator",
       "viewer"
-    ]
+    ],
+    "opcUa": {
+      "enabled": true,
+      "driverId": "opcua",
+      "endpointUrl": "opc.tcp://cms-m11.local:4840",
+      "mode": "native-ua-or-da-ua-gateway",
+      "devicePath": "root.platform.devices.itm.cms-opcua",
+      "tags": [
+        "ns=2;s=M11.SPD.Alarm.*",
+        "ns=2;s=M11.SPD.Warn.*",
+        "ns=2;s=M11.SRV.Warn.*"
+      ]
+    }
   },
   "events": [
     {
@@ -64,7 +63,7 @@
   "migrations": [
     {
       "id": "itm_integrations_m11_note",
-      "sql": "CREATE TABLE IF NOT EXISTS itm_integrations_m11_meta (site_id VARCHAR(64) PRIMARY KEY, note VARCHAR(256)); INSERT INTO itm_integrations_m11_meta (site_id, note) SELECT 'm11', 'LDAP/OPC stubs — configure in metadata' WHERE NOT EXISTS (SELECT 1 FROM itm_integrations_m11_meta WHERE site_id = 'm11');"
+      "sql": "CREATE TABLE IF NOT EXISTS itm_integrations_m11_meta (site_id VARCHAR(64) PRIMARY KEY, note VARCHAR(256)); INSERT INTO itm_integrations_m11_meta (site_id, note) SELECT 'm11', 'LDAP + OPC UA (cms-opcua DEVICE) — configure drivers post-deploy' WHERE NOT EXISTS (SELECT 1 FROM itm_integrations_m11_meta WHERE site_id = 'm11');"
     }
   ]
 }
