@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.1",
   "displayName": "ITM integrations — Трасса М11",
   "tablePrefix": "",
   "schemaName": "it_infra_monitoring",
@@ -8,21 +8,58 @@
     "siteId": "m11",
     "dependsOnApp": "it-infra-monitoring",
     "ldap": {
-      "enabled": false,
-      "url": "ldap://ad.example.invalid:389",
-      "baseDn": "DC=example,DC=invalid",
-      "bindDn": "CN=ispf-svc,OU=Service,DC=example,DC=invalid"
+      "enabled": true,
+      "driverId": "ldap",
+      "url": "ldap://ad.m11.local:389",
+      "baseDn": "DC=m11,DC=local",
+      "bindDn": "CN=ispf-svc,OU=Service,DC=m11,DC=local",
+      "roleMap": {
+        "CN=ISPF-Admin,OU=Groups,DC=m11,DC=local": "admin",
+        "CN=ISPF-AdmSpd,OU=Groups,DC=m11,DC=local": "admSpd",
+        "CN=ISPF-AdmSrv,OU=Groups,DC=m11,DC=local": "admSrv",
+        "CN=ISPF-AdmIt,OU=Groups,DC=m11,DC=local": "admIt",
+        "CN=ISPF-Director,OU=Groups,DC=m11,DC=local": "director"
+      }
     },
     "opcDa": {
-      "enabled": false,
-      "cmsBridgeHost": "127.0.0.1",
-      "cmsBridgePort": 135
+      "enabled": true,
+      "driverId": "opc-da",
+      "progId": "Aggregate.OPC",
+      "cmsBridgeHost": "cms-m11.local",
+      "cmsBridgePort": 135,
+      "mode": "stub-until-windows-bridge",
+      "tags": [
+        "M11.SPD.Alarm.*",
+        "M11.SPD.Warn.*",
+        "M11.SRV.Warn.*"
+      ]
     },
-    "roles": ["noc", "operator", "admin", "viewer"]
+    "roles": [
+      "admin",
+      "admSpd",
+      "admSrv",
+      "admIt",
+      "director",
+      "noc",
+      "operator",
+      "viewer"
+    ]
   },
   "events": [
-    { "id": "itmAdAuthFailure", "roles": ["admin", "noc"] },
-    { "id": "itmCmsBridgeDown", "roles": ["admin", "noc"] }
+    {
+      "id": "itmAdAuthFailure",
+      "roles": [
+        "admin",
+        "noc"
+      ]
+    },
+    {
+      "id": "itmCmsBridgeDown",
+      "roles": [
+        "admin",
+        "noc"
+      ]
+    }
   ],
   "migrations": [
     {

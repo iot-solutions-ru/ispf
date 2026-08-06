@@ -1,0 +1,9 @@
+{
+  "appId": "it-infra-monitoring",
+  "packId": "m11-monitor-ui",
+  "version": "0.1.0",
+  "entry": "index.html",
+  "basePath": "/apps/it-infra-monitoring/",
+  "title": "ИТ-Мониторинг М11",
+  "minIspfVersion": "0.7.6"
+}
