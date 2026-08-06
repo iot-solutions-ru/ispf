@@ -29,6 +29,35 @@ Introduce a generic platform capability **hosted UI packs**, parallel to symbol/
 7. Security: path sandbox, size limits (`ispf.ui-pack.max-zip-bytes`); **no** server-side JS execution of pack content.
 8. Signing / `minIspfVersion` follow existing marketplace pack rules.
 
+### Edge / nginx (mandatory for split deploy)
+
+Production often serves `web-console` as **static files** from nginx (`root /opt/ispf/web-console`) and only proxies `/api/` and `/ws/` to `ispf-server`. In that layout, a catch-all:
+
+```nginx
+location / { try_files $uri $uri/ /index.html; }
+```
+
+will answer `GET /apps/<appId>/` with the **admin console** SPA (title “ISPF Admin Console”), even when the ui-pack is correctly installed under `ISPF_UI_PACKS_DIR/<appId>/` and Java serves it on `:8080`.
+
+**Required:** proxy hosted UI packs to the JVM (same as `/api/`), before the SPA fallback. Templates: [`deploy/nginx-ispf.conf`](../../deploy/nginx-ispf.conf), [`deploy/nginx-vps-ssl.conf`](../../deploy/nginx-vps-ssl.conf):
+
+```nginx
+location ^~ /apps/ {
+    proxy_pass http://127.0.0.1:8080;
+    # … Host / X-Forwarded-* / Authorization as for /api/
+}
+```
+
+Smoke after every nginx or platform deploy:
+
+```bash
+curl -fsS "https://<host>/apps/<appId>/" | grep -q '<app title or ui-pack marker>'
+# Must NOT contain: <title>ISPF Admin Console</title>
+curl -fsS -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:8080/apps/<appId>/"   # expect 200 when pack installed
+```
+
+All-in-one JAR (UI embedded, no separate nginx static root) does not need this location — `HostedUiPackFilter` handles `/apps/` on the same port.
+
 ### Non-goals
 
 - Embedding industry SPA source into `apps/web-console`.
@@ -48,9 +77,11 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 
 ### Risks
 
+- **Nginx SPA fallback steals `/apps/`** on split VPS deploy — always keep `location ^~ /apps/` → JVM (see above). Symptom: public URL shows Admin Console; `curl :8080/apps/...` shows the real pack.
 - Subpath base URL mistakes break asset loading — document pack contract clearly.
 - Large SPA zips increase marketplace artifact size — enforce limits.
 - Iframe embedding in operator shell needs CSP review; default to top-level navigation.
+- Catalog `installed` for ui-pack must key off **`appId`** (install directory), not listing `packId` / slug when they differ (e.g. slug `oil-control-ui`, appId `oil-control`).
 
 ## Acceptance (dogfood)
 

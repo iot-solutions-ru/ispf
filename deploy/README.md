@@ -39,3 +39,15 @@ Secrets: `.env` (see [`.env.example`](../.env.example)). Never commit passwords 
 Both `docker-compose.vps-*.yml` run the JVM containers as uid/gid `10001` (same as the all-in-one Dockerfile image); the host data dir must be writable by it: `sudo chown -R 10001:10001 /opt/ispf/data`.
 
 `apply-platform-update.sh` requires `CHECKSUMS.sha256` next to the staged artifacts (generated on the build side with `sha256sum ispf-server.jar web-console.zip driver-packs.tar.gz > CHECKSUMS.sha256`); the update aborts before install when checksums are missing or mismatched.
+
+## Nginx + hosted UI packs (ADR-0054)
+
+On VPS split deploy (`web-console` from disk, JVM on `:8080`), **always** proxy `/apps/` to the server — never let the console SPA fallback handle it:
+
+| Path | Handler |
+|------|---------|
+| `/api/`, `/ws/` | `proxy_pass` → `:8080` |
+| `/apps/` | `proxy_pass` → `:8080` (`HostedUiPackFilter`) |
+| `/`, `/assets/` | static `web-console` |
+
+Templates already include `location ^~ /apps/` in [`nginx-ispf.conf`](nginx-ispf.conf) / [`nginx-vps-ssl.conf`](nginx-vps-ssl.conf). After changing nginx: `curl -fsS https://<host>/apps/<appId>/` must not return `<title>ISPF Admin Console</title>`. Details: [ADR-0054](../docs/en/decisions/0054-hosted-ui-packs.md).

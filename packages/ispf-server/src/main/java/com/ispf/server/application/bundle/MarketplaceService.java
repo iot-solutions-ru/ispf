@@ -148,17 +148,22 @@ public class MarketplaceService {
                 if (packId != null) {
                     row.put("installed", analyticsPackLoader.isPackInstalled(packId));
                 }
-            } else if ("ui-pack".equalsIgnoreCase(artifactKind) || "symbol-pack".equalsIgnoreCase(artifactKind)) {
+            } else if ("ui-pack".equalsIgnoreCase(artifactKind)) {
+                // Hosted under appId (ADR-0054); packId may be listing slug (e.g. oil-control-ui).
+                String installKey = stringValue(listing.get("appId"));
+                if (installKey == null || installKey.isBlank()) {
+                    installKey = stringValue(listing.get("packId"));
+                }
+                if (installKey != null && !installKey.isBlank()) {
+                    row.put("installed", uiPackLoader.isPackInstalled(installKey));
+                }
+            } else if ("symbol-pack".equalsIgnoreCase(artifactKind)) {
                 String packId = stringValue(listing.get("packId"));
                 if (packId == null || packId.isBlank()) {
                     packId = stringValue(listing.get("appId"));
                 }
                 if (packId != null && !packId.isBlank()) {
-                    if ("ui-pack".equalsIgnoreCase(artifactKind)) {
-                        row.put("installed", uiPackLoader.isPackInstalled(packId));
-                    } else {
-                        row.put("installed", symbolPackLoader.isPackInstalled(packId));
-                    }
+                    row.put("installed", symbolPackLoader.isPackInstalled(packId));
                 }
             } else {
                 String appId = stringValue(listing.get("appId"));

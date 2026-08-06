@@ -78,6 +78,8 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` доба�
 
 **UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Установка — Solutions marketplace или локально `POST /api/v1/marketplace/ui-packs/{id}/install`. В листинге приложения можно указать `uiPackSlug`, чтобы one-click ставил BFF и SPA вместе. Для SPA: Vite `base: '/apps/<appId>/'` и same-origin `/api/v1`.
 
+**Split nginx:** `location ^~ /apps/` **обязан** идти `proxy_pass` на `ispf-server` (как `/api/`). Иначе `try_files … /index.html` отдаёт админ-консоль на `/apps/<appId>/`. См. [ADR-0054](decisions/0054-hosted-ui-packs.md) и `deploy/nginx-ispf.conf`.
+
 Локальный symbol catalog (dev/lab, не remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — см. [symbol-marketplace](symbol-marketplace.md).
 
 ## Чеклист готовности маркетплейса (BL-183)
