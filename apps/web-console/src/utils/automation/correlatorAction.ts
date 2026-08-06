@@ -16,6 +16,8 @@ export function correlatorActionTargetLabel(
       return t("correlator.actionTargetWebhook");
     case "SEND_EMAIL":
       return t("correlator.actionTargetEmail");
+    case "SEND_SMS":
+      return t("correlator.actionTargetSms");
     default:
       return t("correlator.workflowTarget");
   }
@@ -36,6 +38,8 @@ export function correlatorActionTargetPlaceholder(
       return t("correlator.actionTargetWebhookPlaceholder");
     case "SEND_EMAIL":
       return t("correlator.actionTargetEmailPlaceholder");
+    case "SEND_SMS":
+      return t("correlator.actionTargetSmsPlaceholder");
     default:
       return t("correlator.actionTargetWorkflowPlaceholder");
   }
@@ -48,6 +52,7 @@ export const CORRELATOR_ACTION_TYPES: CorrelatorActionType[] = [
   "OPEN_OPERATOR_REPORT",
   "SEND_WEBHOOK",
   "SEND_EMAIL",
+  "SEND_SMS",
 ];
 
 export const CORRELATOR_ACTION_LABEL_KEYS: Record<CorrelatorActionType, string> = {
@@ -57,4 +62,5 @@ export const CORRELATOR_ACTION_LABEL_KEYS: Record<CorrelatorActionType, string> 
   OPEN_OPERATOR_REPORT: "correlator.actionOpenOperatorReport",
   SEND_WEBHOOK: "correlator.actionSendWebhook",
   SEND_EMAIL: "correlator.actionSendEmail",
+  SEND_SMS: "correlator.actionSendSms",
 };

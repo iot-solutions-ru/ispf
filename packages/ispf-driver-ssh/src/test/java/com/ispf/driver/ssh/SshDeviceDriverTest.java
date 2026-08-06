@@ -118,15 +118,69 @@ class SshDeviceDriverTest {
     }
 
     @Test
-    void writeIsRejectedAsReadOnly() {
+    void writeRejectedWhenDisabled() {
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.writePoint("load", DataRecord.single(
                         com.ispf.core.model.DataSchema.builder("value")
                                 .field("value", com.ispf.core.model.FieldType.STRING)
                                 .build(),
-                        Map.of("value", "1")
+                        Map.of("value", "show-load")
                 )));
-        assertTrue(error.getMessage().contains("read-only"));
+        assertTrue(error.getMessage().contains("write disabled"));
+    }
+
+    @Test
+    void writeExecutesAllowlistedCommand() throws Exception {
+        SshDeviceDriver writable = new SshDeviceDriver();
+        StubDriverObject writableObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "username", "tester",
+                "password", "s3cret",
+                "timeoutMs", "10000",
+                "writeEnabled", "true",
+                "writeCommandAllowlist", "show-load,fail"
+        ));
+        writable.initialize(writableObject);
+        writable.connect();
+        writable.readPoints(Map.of("load", "show-load"));
+
+        writable.writePoint("load", DataRecord.single(
+                com.ispf.core.model.DataSchema.builder("value")
+                        .field("command", com.ispf.core.model.FieldType.STRING)
+                        .build(),
+                Map.of("command", "show-load")
+        ));
+
+        DataRecord record = writableObject.variables.get("load");
+        assertEquals("load-average: 0.42", record.firstRow().get("value"));
+        writable.disconnect();
+    }
+
+    @Test
+    void writeRejectsNonAllowlistedCommand() throws Exception {
+        SshDeviceDriver writable = new SshDeviceDriver();
+        writable.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "username", "tester",
+                "password", "s3cret",
+                "timeoutMs", "10000",
+                "writeEnabled", "true",
+                "writeCommandAllowlist", "show-load"
+        )));
+        writable.connect();
+        writable.readPoints(Map.of("load", "show-load"));
+
+        DriverException error = assertThrows(DriverException.class, () ->
+                writable.writePoint("load", DataRecord.single(
+                        com.ispf.core.model.DataSchema.builder("value")
+                                .field("command", com.ispf.core.model.FieldType.STRING)
+                                .build(),
+                        Map.of("command", "rm -rf /")
+                )));
+        assertTrue(error.getMessage().contains("allowlisted"));
+        writable.disconnect();
     }
 
     /**

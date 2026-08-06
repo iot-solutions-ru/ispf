@@ -551,7 +551,9 @@ public class ApplicationBundlePullFromTreeService {
                 view.enabled(),
                 view.intervalMs(),
                 view.actionType(),
-                action
+                action,
+                view.cronExpression(),
+                view.timeZone()
         );
     }
 

@@ -25,6 +25,8 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
   const [description, setDescription] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [intervalMs, setIntervalMs] = useState(60_000);
+  const [cronExpression, setCronExpression] = useState("");
+  const [timeZone, setTimeZone] = useState("UTC");
   const [objectPath, setObjectPath] = useState("");
   const [functionName, setFunctionName] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -38,6 +40,8 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
     setDescription(data.description ?? "");
     setEnabled(data.enabled);
     setIntervalMs(data.intervalMs);
+    setCronExpression(data.cronExpression ?? "");
+    setTimeZone(data.timeZone ?? "UTC");
     setObjectPath(data.objectPath);
     setFunctionName(data.functionName);
   }, [scheduleQuery.data]);
@@ -49,6 +53,8 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
         description,
         enabled,
         intervalMs,
+        cronExpression: cronExpression.trim(),
+        timeZone: timeZone.trim() || "UTC",
         objectPath: objectPath.trim(),
         functionName: functionName.trim(),
       }),
@@ -109,6 +115,18 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
             onChange={(e) => setIntervalMs(Number(e.target.value) || 60_000)}
             required
           />
+        </label>
+        <label>
+          {t("platform:schedule.cronExpression")}
+          <Input
+            value={cronExpression}
+            onChange={(e) => setCronExpression(e.target.value)}
+            placeholder="every:5m or 0 8 * * *"
+          />
+        </label>
+        <label>
+          {t("platform:schedule.timeZone")}
+          <Input value={timeZone} onChange={(e) => setTimeZone(e.target.value)} placeholder="UTC" />
         </label>
         <label className="full">
           {t("platform:schedule.objectPath")}

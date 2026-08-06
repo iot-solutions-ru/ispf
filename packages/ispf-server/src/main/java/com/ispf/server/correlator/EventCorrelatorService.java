@@ -448,6 +448,15 @@ public class EventCorrelatorService {
                                 correlator.eventName()
                         )
                 );
+                case SEND_SMS -> notificationDispatchService.sendSms(
+                        correlator.actionTarget(),
+                        notificationDispatchService.baseContext(
+                                "correlator",
+                                correlator.id(),
+                                objectPath,
+                                correlator.eventName()
+                        )
+                );
             }
         } catch (Exception e) {
             log.warn("Correlator {} action failed: {}", correlator.id(), e.getMessage());
@@ -619,6 +628,12 @@ public class EventCorrelatorService {
         if (actionType == CorrelatorActionType.SEND_WEBHOOK) {
             // SSRF guard: webhook targets must be safe outbound http(s) URLs (checked at dispatch too).
             OutboundUrlSafety.requireSafeHttpUrl(actionTarget, "", false);
+        }
+        if (actionType == CorrelatorActionType.SEND_EMAIL && (actionTarget == null || actionTarget.isBlank())) {
+            throw new IllegalArgumentException("actionTarget email is required for SEND_EMAIL (to|subject|body)");
+        }
+        if (actionType == CorrelatorActionType.SEND_SMS && (actionTarget == null || actionTarget.isBlank())) {
+            throw new IllegalArgumentException("actionTarget SMS is required for SEND_SMS (msisdn|body)");
         }
         if (patternType == CorrelatorPatternType.SEQUENCE) {
             if (secondEventName == null || secondEventName.isBlank()) {

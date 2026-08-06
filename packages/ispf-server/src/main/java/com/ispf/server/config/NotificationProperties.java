@@ -8,6 +8,9 @@ public class NotificationProperties {
     /** Optional HTTP relay for SEND_EMAIL (JSON: to, subject, body). */
     private String emailRelayUrl = "";
 
+    /** Optional HTTP relay for SEND_SMS (JSON: to, body, ...context). */
+    private String smsRelayUrl = "";
+
     private int timeoutSeconds = 15;
 
     public String getEmailRelayUrl() {
@@ -16,6 +19,14 @@ public class NotificationProperties {
 
     public void setEmailRelayUrl(String emailRelayUrl) {
         this.emailRelayUrl = emailRelayUrl;
+    }
+
+    public String getSmsRelayUrl() {
+        return smsRelayUrl;
+    }
+
+    public void setSmsRelayUrl(String smsRelayUrl) {
+        this.smsRelayUrl = smsRelayUrl;
     }
 
     public int getTimeoutSeconds() {

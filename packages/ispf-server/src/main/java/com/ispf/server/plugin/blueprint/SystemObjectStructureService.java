@@ -55,10 +55,11 @@ public class SystemObjectStructureService {
 
     @Transactional
     public void ensureScheduleStructure(String path) {
-        if (objectManager.require(path).getVariable("scheduleId").isPresent()) {
-            return;
+        if (objectManager.require(path).getVariable("scheduleId").isEmpty()) {
+            applyIntrinsic("schedule-v1", path);
         }
-        applyIntrinsic("schedule-v1", path);
+        ensureStringVariable(path, "cronExpression", "");
+        ensureStringVariable(path, "timeZone", "UTC");
     }
 
     @Transactional

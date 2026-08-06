@@ -183,6 +183,7 @@ Example: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderS
 | `OPEN_OPERATOR_REPORT` | report path | `openOperatorReport` event |
 | `SEND_WEBHOOK` | URL | HTTP POST JSON (`NotificationDispatchService`) |
 | `SEND_EMAIL` | `to\|subject\|body` | POST to email relay (see config below) |
+| `SEND_SMS` | `msisdn\|body` | POST to SMS relay (`sms-relay-url`) or use SMPP device write |
 
 ### SEQUENCE example
 
@@ -202,18 +203,60 @@ A = `thresholdExceeded`, B = `thresholdExceeded` (repeat), window = 60s → star
 
 ---
 
-## Notification channels (BL-44)
+## Notification channels (BL-44 / BL-230 / BL-231)
 
-`NotificationDispatchService` — HTTP webhook and optional email relay for alert rules and correlator actions.
+`NotificationDispatchService` — HTTP webhook, optional email relay, and optional SMS relay for alert rules and correlator actions.
+
+Device gateways — **one driver per channel** (separate packs, separate DEVICE config):
+
+| driverId | Pack | Config | Write fields |
+|----------|------|--------|--------------|
+| `email` | `ispf-driver-email` | `relayUrl`, optional `defaultTo` / `defaultSubject` | `to`, `subject`, `body` |
+| `sms` | `ispf-driver-sms` | `relayUrl`, optional `defaultTo` | `to`, `body`/`text` |
+| `webhook` | `ispf-driver-webhook` | `targetUrl` (or `relayUrl`) | JSON fields or `value` payload |
+
+Point mapping: `outbound` / `send` / channel name. Schedule ticks use `actionType: write_point`.  
+(`smpp` remains the SMSC protocol driver; `sms` is the HTTP SMS-relay notification gateway.)
 
 ### Configuration
 
 | Property | Env (relaxed binding) | Description |
 |----------|----------------------|----------|
-| `ispf.notifications.email-relay-url` | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` | HTTP relay endpoint: accepts JSON `{ "to", "subject", "body", ...context }` |
+| `ispf.notifications.email-relay-url` | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` | Global HTTP relay for correlator/alert `SEND_EMAIL` (not the email DEVICE) |
+| `ispf.notifications.sms-relay-url` | `ISPF_NOTIFICATIONS_SMS_RELAY_URL` | Global HTTP relay for correlator `SEND_SMS` |
 | `ispf.notifications.timeout-seconds` | `ISPF_NOTIFICATIONS_TIMEOUT_SECONDS` | HTTP timeout (default 15) |
 
-Without `email-relay-url`, `SEND_EMAIL` and alert-rule email fail in the log; webhooks work without a relay.
+Without `email-relay-url`, correlator `SEND_EMAIL` fails in the log; webhooks work without a relay. Device gateways use **per-device** `relayUrl` / `targetUrl` and do not require these globals.
+
+### Schedule → notification DEVICE (BL-230)
+
+```json
+{
+  "actionType": "write_point",
+  "action": {
+    "objectPath": "root.platform.devices.noc-email",
+    "pointId": "outbound",
+    "fields": {
+      "to": "noc@example.com",
+      "subject": "Daily report",
+      "body": "See attachment / portal"
+    }
+  }
+}
+```
+
+Create `noc-email` with `driverId=email`, `relayUrl=https://relay.example/email`, mapping `{"outbound":"outbound"}`. SMS: `driverId=sms`. Webhook: `driverId=webhook`, `targetUrl=…`.
+
+### Platform SCHEDULE cron (BL-232)
+
+Tree schedules (`root.platform.schedules.*`) still default to `intervalMs`. Optional:
+
+| Variable | Example | Meaning |
+|----------|---------|---------|
+| `cronExpression` | `every:5m` or `0 8 * * *` | When set, replaces interval due-check |
+| `timeZone` | `Europe/Moscow` | IANA zone for calendar cron (default `UTC`) |
+
+Five-field cron is minute-first (seconds `0` prefixed internally). Blank `cronExpression` keeps `lastTickAt + intervalMs`.
 
 ### Webhook payload / email context
 
@@ -234,9 +277,11 @@ Base fields (`NotificationDispatchService.baseContext`):
 | Source | UI | Variables / fields |
 |----------|-----|-------------------|
 | Alert rule | Explorer → `alert-rules` → inspector | `notificationWebhookUrl`, `notificationEmailTarget` |
-| Correlator | Explorer → `correlators` → inspector | `actionType` = `SEND_WEBHOOK` / `SEND_EMAIL`, `actionTarget` |
+| Correlator | Explorer → `correlators` → inspector | `actionType` = `SEND_WEBHOOK` / `SEND_EMAIL` / `SEND_SMS`, `actionTarget` |
 
 Alert rules API accepts the same fields in `POST/PUT` body (`CreateAlertRuleRequest` / `UpdateAlertRuleRequest`).
+
+`SEND_SMS` `actionTarget` format: `msisdn|body` (example `+15551234567|Site down`).
 
 ---
 

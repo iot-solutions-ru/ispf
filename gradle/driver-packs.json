@@ -69,6 +69,13 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-dnp3"
   },
+  "ispf-driver-email": {
+    "driverClass": "com.ispf.driver.email.EmailDeviceDriver",
+    "driverId": "email",
+    "jarFile": "ispf-driver-email.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-email"
+  },
   "ispf-driver-ethernet-ip": {
     "driverClass": "com.ispf.driver.ethernetip.EthernetIpDeviceDriver",
     "driverId": "ethernet-ip",
@@ -377,6 +384,13 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-smpp"
   },
+  "ispf-driver-sms": {
+    "driverClass": "com.ispf.driver.sms.SmsDeviceDriver",
+    "driverId": "sms",
+    "jarFile": "ispf-driver-sms.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-sms"
+  },
   "ispf-driver-snmp": {
     "driverClass": "com.ispf.driver.snmp.SnmpDeviceDriver",
     "driverId": "snmp",
@@ -425,6 +439,13 @@
     "jarFile": "ispf-driver-web-transaction.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-web-transaction"
+  },
+  "ispf-driver-webhook": {
+    "driverClass": "com.ispf.driver.webhook.WebhookDeviceDriver",
+    "driverId": "webhook",
+    "jarFile": "ispf-driver-webhook.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-webhook"
   },
   "ispf-driver-wmi": {
     "driverClass": "com.ispf.driver.wmi.WmiDeviceDriver",

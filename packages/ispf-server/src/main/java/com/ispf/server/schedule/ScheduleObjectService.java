@@ -97,6 +97,9 @@ public class ScheduleObjectService {
         setString(path, "scheduleId", definition.scheduleId());
         setBoolean(path, "enabled", definition.enabled());
         setInteger(path, "intervalMs", definition.intervalMs());
+        setString(path, "cronExpression", definition.cronExpression() != null ? definition.cronExpression() : "");
+        setString(path, "timeZone", definition.timeZone() != null && !definition.timeZone().isBlank()
+                ? definition.timeZone() : "UTC");
         setString(path, "actionType", definition.actionType());
         setString(path, "actionJson", definition.actionJson());
     }
@@ -117,6 +120,8 @@ public class ScheduleObjectService {
                 node.description(),
                 definition.enabled(),
                 definition.intervalMs(),
+                definition.cronExpression(),
+                definition.timeZone(),
                 definition.actionType(),
                 target.objectPath(),
                 target.functionName(),
@@ -136,6 +141,21 @@ public class ScheduleObjectService {
             String objectPath,
             String functionName
     ) {
+        return create(scheduleId, displayName, description, enabled, intervalMs, null, null, objectPath, functionName);
+    }
+
+    @Transactional
+    public ScheduleView create(
+            String scheduleId,
+            String displayName,
+            String description,
+            Boolean enabled,
+            Long intervalMs,
+            String cronExpression,
+            String timeZone,
+            String objectPath,
+            String functionName
+    ) {
         if (scheduleId == null || scheduleId.isBlank()) {
             throw new IllegalArgumentException("scheduleId is required");
         }
@@ -152,7 +172,7 @@ public class ScheduleObjectService {
                 description != null ? description : "",
                 null
         );
-        applyScheduleFields(path, scheduleId, enabled, intervalMs, objectPath, functionName);
+        applyScheduleFields(path, scheduleId, enabled, intervalMs, cronExpression, timeZone, objectPath, functionName);
         if (displayName != null && !displayName.isBlank()) {
             objectManager.updateInfo(path, displayName, description != null ? description : "");
         }
@@ -169,6 +189,21 @@ public class ScheduleObjectService {
             String objectPath,
             String functionName
     ) {
+        return update(path, displayName, description, enabled, intervalMs, null, null, objectPath, functionName);
+    }
+
+    @Transactional
+    public ScheduleView update(
+            String path,
+            String displayName,
+            String description,
+            Boolean enabled,
+            Long intervalMs,
+            String cronExpression,
+            String timeZone,
+            String objectPath,
+            String functionName
+    ) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.SCHEDULE) {
             throw new IllegalArgumentException("Not a schedule object: " + path);
@@ -177,7 +212,7 @@ public class ScheduleObjectService {
         String nextDisplayName = displayName != null && !displayName.isBlank() ? displayName : node.displayName();
         String nextDescription = description != null ? description : node.description();
         objectManager.updateInfo(path, nextDisplayName, nextDescription);
-        applyScheduleFields(path, scheduleId, enabled, intervalMs, objectPath, functionName);
+        applyScheduleFields(path, scheduleId, enabled, intervalMs, cronExpression, timeZone, objectPath, functionName);
         return getByPath(path);
     }
 
@@ -190,6 +225,8 @@ public class ScheduleObjectService {
             String scheduleId,
             Boolean enabled,
             Long intervalMs,
+            String cronExpression,
+            String timeZone,
             String objectPath,
             String functionName
     ) {
@@ -200,6 +237,13 @@ public class ScheduleObjectService {
         }
         if (intervalMs != null) {
             setInteger(path, "intervalMs", intervalMs);
+        }
+        if (cronExpression != null) {
+            setString(path, "cronExpression", ScheduleDueChecker.normalizeCronOrBlank(cronExpression));
+        }
+        if (timeZone != null) {
+            ScheduleDueChecker.resolveZone(timeZone.isBlank() ? "UTC" : timeZone);
+            setString(path, "timeZone", timeZone.isBlank() ? "UTC" : timeZone.trim());
         }
         if (objectPath != null || functionName != null) {
             ScheduleDefinition current = toDefinition(path, objectManager.require(path)).orElseThrow();
@@ -261,6 +305,8 @@ public class ScheduleObjectService {
                 scheduleId,
                 readBoolean(node, "enabled").orElse(true),
                 readInteger(node, "intervalMs").orElse(60_000L),
+                readString(node, "cronExpression").orElse(""),
+                readString(node, "timeZone").orElse("UTC"),
                 readString(node, "actionType").orElse("invoke_function"),
                 readString(node, "actionJson").orElse("{}"),
                 readInstant(node, "lastTickAt"),
@@ -321,11 +367,25 @@ public class ScheduleObjectService {
             String scheduleId,
             boolean enabled,
             long intervalMs,
+            String cronExpression,
+            String timeZone,
             String actionType,
             String actionJson,
             Instant lastTickAt,
             String lastError
     ) {
+        public ScheduleDefinition(
+                String path,
+                String scheduleId,
+                boolean enabled,
+                long intervalMs,
+                String actionType,
+                String actionJson,
+                Instant lastTickAt,
+                String lastError
+        ) {
+            this(path, scheduleId, enabled, intervalMs, "", "UTC", actionType, actionJson, lastTickAt, lastError);
+        }
     }
 
     public record ScheduleView(
@@ -335,6 +395,8 @@ public class ScheduleObjectService {
             String description,
             boolean enabled,
             long intervalMs,
+            String cronExpression,
+            String timeZone,
             String actionType,
             String objectPath,
             String functionName,

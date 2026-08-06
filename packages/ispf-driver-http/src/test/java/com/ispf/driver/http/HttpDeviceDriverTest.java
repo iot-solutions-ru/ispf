@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,6 +61,72 @@ class HttpDeviceDriverTest {
     }
 
     @Test
+    void writesPostBodyToMappedUrl() throws Exception {
+        AtomicReference<String> method = new AtomicReference<>();
+        AtomicReference<String> body = new AtomicReference<>();
+        AtomicReference<String> contentType = new AtomicReference<>();
+        startServer(exchange -> {
+            method.set(exchange.getRequestMethod());
+            contentType.set(exchange.getRequestHeaders().getFirst("Content-Type"));
+            body.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+        });
+
+        StubDriverObject driverObject = driverConfig();
+        HttpDeviceDriver driver = new HttpDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("relay", "GET:/health"));
+
+        driver.writePoint("relay", DataRecord.single(
+                com.ispf.core.model.DataSchema.builder("payload")
+                        .field("to", com.ispf.core.model.FieldType.STRING)
+                        .field("subject", com.ispf.core.model.FieldType.STRING)
+                        .field("body", com.ispf.core.model.FieldType.STRING)
+                        .build(),
+                Map.of("to", "noc@example.com", "subject", "Alert", "body", "Threshold")
+        ));
+
+        assertEquals("POST", method.get());
+        assertTrue(contentType.get().contains("application/json"));
+        assertTrue(body.get().contains("noc@example.com"));
+        assertTrue(body.get().contains("Alert"));
+        assertEquals(204, driverObject.variables.get("relay").firstRow().get("statusCode"));
+        driver.disconnect();
+    }
+
+    @Test
+    void writeUsesWritePathWhenConfigured() throws Exception {
+        AtomicReference<String> path = new AtomicReference<>();
+        startServer(exchange -> {
+            path.set(exchange.getRequestURI().getPath());
+            exchange.sendResponseHeaders(200, 0);
+            exchange.close();
+        });
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "baseUrl", baseUrl,
+                "timeoutMs", "5000",
+                "writePath", "/v1/email"
+        ));
+        HttpDeviceDriver driver = new HttpDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("health", "GET:/health"));
+
+        driver.writePoint("health", DataRecord.single(
+                com.ispf.core.model.DataSchema.builder("payload")
+                        .field("value", com.ispf.core.model.FieldType.STRING)
+                        .build(),
+                Map.of("value", "{\"to\":\"a@b.c\",\"subject\":\"s\",\"body\":\"b\"}")
+        ));
+
+        assertEquals("/v1/email", path.get());
+        driver.disconnect();
+    }
+
+    @Test
     void writeRequiresConnection() {
         HttpDeviceDriver driver = new HttpDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
@@ -70,7 +138,7 @@ class HttpDeviceDriverTest {
                                 .build(),
                         Map.of("value", "1")
                 )));
-        assertTrue(error.getMessage().contains("read-only"));
+        assertTrue(error.getMessage().contains("Not connected"));
     }
 
     private void startServer(com.sun.net.httpserver.HttpHandler handler) throws IOException {

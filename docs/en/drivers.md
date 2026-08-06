@@ -45,7 +45,8 @@ In `DriverProductionMatrix` — **58** drivers at **PRODUCTION** (including `cwm
 | `ingress-syslog`, `ingress-snmp-trap`, `ingress-sflow` | PRODUCTION | UDP listeners, raw capture; `observed_at` |
 | `iec104-server` | PRODUCTION | slave/server; write + quality; interop partner for `iec104` |
 | `omron-fins`, `mbus` | PRODUCTION | industrial read; loopback tests |
-| `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` submit via mapping; loopback tests |
+| `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` SMSC; loopback tests |
+| `email`, `sms`, `webhook` | PRODUCTION | notification gateways (HTTP relay / webhook); per-device config |
 | `ipmi`, `wmi` | PRODUCTION | hardware/OS probes; `wmi` Windows-only |
 | `odbc` | PRODUCTION | SQL read; requires external ODBC-JDBC bridge JAR |
 | `ethernet-ip` | PRODUCTION | UCMM CIP Read/Write Tag (atomic types); loopback CIP emulator test |
@@ -322,18 +323,75 @@ Config v3 (additional fields; defaults `authProtocol: SHA`, `privProtocol: AES` 
 
 ### http (`ispf-driver-http`)
 
-HTTP/HTTPS client (Java HttpClient). Polls REST endpoints.
+HTTP/HTTPS client (Java HttpClient). Polls REST endpoints and can **write** POST/PUT/PATCH bodies to mapped URLs.
 
-Point mapping: `path`, `GET:path`, `HEAD:path`, full URL, `:json` suffix for a JSON scalar string.
+For **email / SMS / webhook notifications**, prefer dedicated drivers `email`, `sms`, `webhook` (separate packs and DEVICE config) — see below.
+
+Point mapping: `path`, `GET:path`, `HEAD:path`, `POST:path`, full URL, `:json` suffix for a JSON scalar string on poll.
+
+Write: `writePoint` posts a body to the mapped URL (GET/HEAD mappings upgrade to POST). Optional config `writePath` overrides the write URL.
 
 ```json
 {
   "baseUrl": "http://127.0.0.1:8080",
-  "timeoutMs": "5000"
+  "timeoutMs": "5000",
+  "writePath": "/v1/custom"
 }
 ```
 
 Example mappings: `{"platformVersion": "GET:/api/v1/info:json"}`
+
+Capabilities: **read**, **write**. Maturity: **production**.
+
+### email (`ispf-driver-email`)
+
+Email notification gateway. POSTs JSON `{to,subject,body}` to a **per-device** HTTP relay.
+
+Config: `relayUrl` (required), `timeoutMs`, optional `defaultTo`, `defaultSubject`.
+
+Point mapping: `outbound` / `send` / `email` (poll = ready; no mail sent). Write fields: `to`, `subject`, `body`.
+
+```json
+{
+  "relayUrl": "https://relay.example/email",
+  "timeoutMs": "15000",
+  "defaultTo": "noc@example.com"
+}
+```
+
+Capabilities: **read**, **write**. Maturity: **production**. Loopback: `EmailDeviceDriverTest`. Distinct from inbound `imap`/`pop3` and from correlator global `email-relay-url`.
+
+### sms (`ispf-driver-sms`)
+
+SMS notification gateway via **HTTP SMS relay** (JSON `{to,body}`). Not SMPP — use `smpp` for SMSC bind/submit.
+
+Config: `relayUrl` (required), `timeoutMs`, optional `defaultTo`.
+
+Point mapping: `outbound` / `send` / `sms`. Write fields: `to`/`destination`, `body`/`text`/`message`.
+
+```json
+{
+  "relayUrl": "https://sms-gw.example/send",
+  "timeoutMs": "15000"
+}
+```
+
+Capabilities: **read**, **write**. Maturity: **production**. Loopback: `SmsDeviceDriverTest`.
+
+### webhook (`ispf-driver-webhook`)
+
+Webhook notification gateway. POSTs JSON to a **per-device** `targetUrl` (aliases `relayUrl` / `url`).
+
+Point mapping: `outbound` / `send` / `webhook`. Write: JSON object from fields, or raw JSON in `value`/`payload`/`body`.
+
+```json
+{
+  "targetUrl": "https://hooks.example.com/alerts",
+  "timeoutMs": "15000"
+}
+```
+
+Capabilities: **read**, **write**. Maturity: **production**. Loopback: `WebhookDeviceDriverTest`. Distinct from generic `http` poll client.
 
 ### haystack (`ispf-driver-haystack`)
 
@@ -387,7 +445,7 @@ Maturity: **production**. Loopback test: `IcmpDeviceDriverTest` (localhost reach
 
 ### ssh (`ispf-driver-ssh`)
 
-Remote shell command execution (JSch).
+Remote shell command execution (JSch). Poll runs mapped commands; **write is opt-in**.
 
 Point mapping: command per variable, for example `uptime`.
 
@@ -397,13 +455,17 @@ Point mapping: command per variable, for example `uptime`.
   "port": "22",
   "username": "admin",
   "password": "secret",
-  "timeoutMs": "10000"
+  "timeoutMs": "10000",
+  "writeEnabled": "true",
+  "writeCommandAllowlist": "uptime,df -h,systemctl restart nginx"
 }
 ```
 
 Variable: `value` (stdout), `exitCode`, `stderr`.
 
-Maturity: **production**. Loopback test: `SshDeviceDriverTest` (embedded Apache MINA SSHD server). Limitation: `StrictHostKeyChecking=no` — for production hosts pin keys out-of-band (the driver does not verify host keys).
+Write (`writePoint`): requires `writeEnabled=true` and a non-empty `writeCommandAllowlist` (comma/newline-separated **full-match** regexes). Command from field `command` / `value` / `raw`, else the point mapping. Schedule can use `actionType: write_point`.
+
+Capabilities: **read**, **write**. Maturity: **production**. Loopback: `SshDeviceDriverTest`. Limitation: `StrictHostKeyChecking=no`.
 
 ### coap (`ispf-driver-coap`)
 
@@ -462,6 +524,9 @@ Full list of `driverId` in `DriverCatalog`:
 | `modbus-udp` | `ispf-driver-modbus-udp` | Modbus UDP |
 | `snmp` | `ispf-driver-snmp` | SNMP v1/v2c/v3 |
 | `http` | `ispf-driver-http` | HTTP/HTTPS client |
+| `email` | `ispf-driver-email` | Email via HTTP relay |
+| `sms` | `ispf-driver-sms` | SMS via HTTP relay |
+| `webhook` | `ispf-driver-webhook` | Webhook POST JSON |
 | `haystack` | `ispf-driver-haystack` | Project Haystack HTTP JSON client |
 | `http-server` | `ispf-driver-http-server` | Embedded HTTP server |
 | `icmp` | `ispf-driver-icmp` | Ping |
@@ -551,6 +616,8 @@ Config:
 **Browse / discovery:** `GET /api/v1/drivers/runtime/browse?devicePath=…&nodeId=` (optional). Driver implements `DriverDiscovery`; Web Console inspector — "Browse OPC UA" on connected device.
 
 **Security (v0.2):** production deployments should use Sign/SignAndEncrypt with client certificate and trust store. Current driver connects with **SecurityPolicy None** only (lab/loopback).
+
+**ITM / plant OPC path (BL-229):** prefer this `opcua` driver for monitoring and write-back. Classic `opc-da` / `opc-bridge` remain **BETA** connectivity shells — for DA-only plant assets use an external DA→UA gateway (e.g. Kepware) and attach ISPF via `opcua`.
 
 Maturity: **production**. Loopback tests: `OpcUaDeviceDriverTest` (browse, write, `readMode=subscribe`).
 
@@ -901,9 +968,17 @@ Maturity: **production**. Loopback test: `RadiusDeviceDriverTest` (ISPF loopback
 
 SMPP 3.x (jsmpp). Config: `host`, `port`, `systemId`, `password`.
 
-Point mapping: `bind` (session status) or `destination:message` (send `submit_sm`; result is the SMSC `messageId`). A fresh bind/session is opened per poll. Variable: `value`, `bound`, `messageId`.
+Point mapping:
 
-Maturity: **production**. Loopback test: `SmppDeviceDriverTest` (fake SMSC: bind + submit_sm). No read semantics — `writePoint` only; submit addressing fixed (source = `systemId`, destination = point destination).
+| Mapping | Poll | Write |
+|---------|------|-------|
+| `bind` | session status | not writable |
+| `outbound` / `write` | idle (`value=idle`) — no SMS | `to`/`destination` + `text`/`body`/`message`/`value` → `submit_sm` |
+| `destination:message` | send `submit_sm` | optional override of destination/message |
+
+Variable: `value`, `bound`, `messageId`. A fresh bind/session is opened per submit.
+
+Capabilities: **read**, **write**. Maturity: **production**. Loopback test: `SmppDeviceDriverTest`.
 
 ### smb (`ispf-driver-smb`)
 

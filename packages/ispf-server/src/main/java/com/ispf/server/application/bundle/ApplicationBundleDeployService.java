@@ -567,6 +567,8 @@ public class ApplicationBundleDeployService {
                             schedule.scheduleId(),
                             schedule.enabled(),
                             schedule.intervalMs(),
+                            schedule.cronExpression() != null ? schedule.cronExpression() : "",
+                            schedule.timeZone() != null && !schedule.timeZone().isBlank() ? schedule.timeZone() : "UTC",
                             schedule.actionType(),
                             actionJson,
                             null,
@@ -1276,8 +1278,19 @@ public class ApplicationBundleDeployService {
             boolean enabled,
             long intervalMs,
             String actionType,
-            Map<String, Object> action
+            Map<String, Object> action,
+            String cronExpression,
+            String timeZone
     ) {
+        public BundleSchedule(
+                String scheduleId,
+                boolean enabled,
+                long intervalMs,
+                String actionType,
+                Map<String, Object> action
+        ) {
+            this(scheduleId, enabled, intervalMs, actionType, action, null, null);
+        }
     }
 
     public record BundleAnalyticsFormula(

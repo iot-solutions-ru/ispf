@@ -1299,6 +1299,11 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-223 | 29 | CTO configurator pattern | P2 | **Done** |
 | BL-224 | 29 | QMS lite + documents/labels patterns | P2 | **Done** |
 | BL-225 | 29 | Integration catalog + domain MCP + portal role patterns | P2 | **Done** |
+| BL-230 | 25 | Schedule write_point → email/sms/webhook DEVICE gateways | P1 | **Done** |
+| BL-231 | 25 | SEND_SMS + sms-relay-url; dedicated sms driver | P1 | **Done** |
+| BL-228 | 25 | SSH write opt-in (allowlist) | P1 | **Done** |
+| BL-229 | 25 | OPC path for ITM = opcua (Classic DA stays BETA shell) | P1 | **Done** |
+| BL-232 | 25 | SCHEDULE cronExpression + timeZone | P1 | **Done** |
 
 ---
 
@@ -1325,6 +1330,23 @@ Docs/marketplace wave for ISPF manufacturing solution patterns. Boundary: [ADR-0
 | **BL-223** | 29 | **CTO configurator pattern** | **Done** | `mes-cto` 1.0.0: option compatibility validation, generated build package/work-order draft, Operator dashboard, smoke test |
 | **BL-224** | 29 | **QMS lite + documents/labels patterns** | **Done** | [manufacturing-patterns](manufacturing-patterns.md) + [mes](mes.md): QMS-lite maps to `QUALITY_RECORD`, `mes-defect-demo` BPMN disposition, genealogy/quality reports, and reports-as-documents registry; platform document engine not included |
 | **BL-225** | 29 | **Integration catalog + domain MCP + portal role patterns** | **Done** | [manufacturing-patterns](manufacturing-patterns.md) + [mes-capability-mcp](mes-capability-mcp.md) + `examples/mes-integration-catalog`: outbox enqueue/poll/idempotency contract, stub connector catalog, capability mapping, portal ACL pattern; live ERP remains BL-169 |
+
+## BL-230…231 — Notification DEVICE gateways
+
+One **driver pack per channel** (`email`, `sms`, `webhook`), each with its own DEVICE config (`relayUrl` / `targetUrl`).
+
+| ID | Phase | Task | Status | Notes |
+| -- | ----- | ---- | ------ | ----- |
+| **BL-230** | 25 | **Schedule → DEVICE gateway** | **Done** | `write_point` + drivers `email` / `sms` / `webhook`; [automation](automation.md) / [drivers](drivers.md) |
+| **BL-231** | 25 | **SMS channel** | **Done** | Correlator `SEND_SMS` + global `sms-relay-url`; DEVICE `driverId=sms` for per-gateway relay |
+
+## BL-228 / 229 / 232 — ITM connectivity & schedule
+
+| ID | Phase | Task | Status | Notes |
+| -- | ----- | ---- | ------ | ----- |
+| **BL-228** | 25 | **SSH write** | **Done** | `ssh` driver `writeEnabled` + `writeCommandAllowlist`; matrix POLL+WRITE |
+| **BL-229** | 25 | **OPC path** | **Done** | ITM/NMS path = **`opcua`** (PRODUCTION). `opc-da` / `opc-bridge` remain BETA shells — use external DA→UA gateway if Classic DA needed |
+| **BL-232** | 25 | **SCHEDULE cron** | **Done** | Optional `cronExpression` (`every:Nm` or 5/6-field) + `timeZone` on tree schedules; blank cron keeps `intervalMs` |
 
 ---
 

@@ -178,6 +178,7 @@ CEL-правило изменения переменной. При истинн�
 | `OPEN_OPERATOR_REPORT` | path отчёта | Событие `openOperatorReport` |
 | `SEND_WEBHOOK` | URL | HTTP POST JSON (`NotificationDispatchService`) |
 | `SEND_EMAIL` | `to\|subject\|body` | POST на email relay (см. конфиг ниже) |
+| `SEND_SMS` | `msisdn\|body` | POST на SMS relay (`sms-relay-url`) или write на SMPP DEVICE |
 
 ### Пример ПОСЛЕДОВАТЕЛЬНОСТЬ
 
@@ -197,20 +198,51 @@ A = `thresholdExceeded`, B = `thresholdExceeded` (повтор), window = 60s �
 
 ---
 
-## Каналы уведомлений (BL-44)
+## Каналы уведомлений (BL-44 / BL-230 / BL-231)
 
-`NotificationDispatchService` — веб-перехватчик HTTP и дополнительная ретрансляция электронной почты для правил оповещений и действий коррелятора.
+`NotificationDispatchService` — HTTP webhook, опциональный email-relay и SMS-relay для alert rules и correlator.
+
+Шлюзы — **отдельный драйвер на канал** (отдельный pack и DEVICE-конфиг):
+
+| driverId | Pack | Config | Поля write |
+|----------|------|--------|------------|
+| `email` | `ispf-driver-email` | `relayUrl`, опц. `defaultTo` / `defaultSubject` | `to`, `subject`, `body` |
+| `sms` | `ispf-driver-sms` | `relayUrl`, опц. `defaultTo` | `to`, `body`/`text` |
+| `webhook` | `ispf-driver-webhook` | `targetUrl` (или `relayUrl`) | JSON-поля или `value` |
+
+Маппинг точки: `outbound` / `send` / имя канала. Schedule: `actionType: write_point`.  
+(`smpp` — протокол SMSC; `sms` — HTTP SMS-relay шлюз уведомлений.)
 
 ### Конфигурация
 
 | Свойство | Env (слабая привязка) | Описание |
 |----------|----------------------|----------|
-| `ispf.notifications.email-relay-url` | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` | HTTP endpoint relay: принимает JSON `{ "to", "subject", "body", ...context }` |
+| `ispf.notifications.email-relay-url` | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` | Глобальный relay для correlator/alert `SEND_EMAIL` (не DEVICE email) |
+| `ispf.notifications.sms-relay-url` | `ISPF_NOTIFICATIONS_SMS_RELAY_URL` | Глобальный relay для correlator `SEND_SMS` |
 | `ispf.notifications.timeout-seconds` | `ISPF_NOTIFICATIONS_TIMEOUT_SECONDS` | Таймаут HTTP (по умолчанию 15) |
 
-Без действия `email-relay-url` `SEND_EMAIL` и электронная почта в правиле оповещения завершатся ошибкой в ​​логе; вебхук работает без реле.
+DEVICE-шлюзы используют **свой** `relayUrl` / `targetUrl` и не требуют глобальных свойств.
 
-### Вебхук полезной нагрузки/контекст электронной почты
+### Schedule → DEVICE-шлюз (BL-230)
+
+```json
+{
+  "actionType": "write_point",
+  "action": {
+    "objectPath": "root.platform.devices.noc-email",
+    "pointId": "outbound",
+    "fields": {
+      "to": "noc@example.com",
+      "subject": "Суточный отчёт",
+      "body": "См. портал"
+    }
+  }
+}
+```
+
+Создайте DEVICE с `driverId=email`, `relayUrl=…`, mapping `{"outbound":"outbound"}`. SMS: `driverId=sms`. Webhook: `driverId=webhook`.
+
+### Вебхук / контекст
 
 Базовые поля (`NotificationDispatchService.baseContext`):
 
@@ -229,9 +261,11 @@ A = `thresholdExceeded`, B = `thresholdExceeded` (повтор), window = 60s �
 | Источник | Пользовательский интерфейс | Переменные / поля |
 |----------|-----|-------------------|
 | Alert rule | Explorer → `alert-rules` → inspector | `notificationWebhookUrl`, `notificationEmailTarget` |
-| Correlator | Explorer → `correlators` → inspector | `actionType` = `SEND_WEBHOOK` / `SEND_EMAIL`, `actionTarget` |
+| Correlator | Explorer → `correlators` → inspector | `actionType` = `SEND_WEBHOOK` / `SEND_EMAIL` / `SEND_SMS`, `actionTarget` |
 
 API alert rules принимает те же поля в `POST/PUT` body (`CreateAlertRuleRequest` / `UpdateAlertRuleRequest`).
+
+Формат `SEND_SMS`: `msisdn|body` (пример `+79001234567|Объект недоступен`).
 
 ---
 

@@ -196,7 +196,7 @@ final class DriverProductionMatrix {
             entry("modem-at", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-modem-at", "com.ispf.driver.modemat.ModemAtDeviceDriverTest"),
                     "ispf-driver-modem-at"),
-            entry("ssh", DriverMaturity.PRODUCTION, POLL_ONLY,
+            entry("ssh", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-ssh", "com.ispf.driver.ssh.SshDeviceDriverTest"),
                     "ispf-driver-ssh"),
             entry("file", DriverMaturity.PRODUCTION, POLL_ONLY,

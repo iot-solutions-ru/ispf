@@ -42,7 +42,11 @@ public record HttpPoint(String method, String url, boolean parseJsonBody) {
         };
     }
 
-    private static String resolveUrl(String target, String baseUrl) {
+    /** Resolve relative path or absolute URL against {@code baseUrl}. */
+    public static String resolveUrl(String target, String baseUrl) {
+        if (target == null || target.isBlank()) {
+            throw new IllegalArgumentException("HTTP URL target is blank");
+        }
         if (target.startsWith("http://") || target.startsWith("https://")) {
             return target;
         }

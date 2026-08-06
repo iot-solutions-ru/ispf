@@ -129,7 +129,38 @@ class SmppDeviceDriverTest {
     }
 
     @Test
-    void writeIsReadOnly() {
+    void writeOutboundPointSubmitsDynamicMessage() throws Exception {
+        try (FakeSmppServer server = new FakeSmppServer()) {
+            StubDriverObject driverObject = driverConfig(server.port());
+            SmppDeviceDriver driver = new SmppDeviceDriver();
+            driver.initialize(driverObject);
+            driver.connect();
+            driver.readPoints(Map.of("sms", "outbound"));
+
+            DataRecord idle = driverObject.variables.get("sms");
+            assertEquals("idle", idle.firstRow().get("value"));
+            assertEquals(0, server.submissions().size());
+
+            driver.writePoint("sms", DataRecord.single(
+                    DataSchema.builder("payload")
+                            .field("to", FieldType.STRING)
+                            .field("text", FieldType.STRING)
+                            .build(),
+                    Map.of("to", "+15559876543", "text", "on-demand alert")
+            ));
+
+            DataRecord record = driverObject.variables.get("sms");
+            assertEquals("sent", record.firstRow().get("value"));
+            assertEquals("msg-1", record.firstRow().get("messageId"));
+            assertEquals(1, server.submissions().size());
+            assertEquals("+15559876543", server.submissions().getFirst().destination());
+            assertEquals("on-demand alert", server.submissions().getFirst().shortMessage());
+            driver.disconnect();
+        }
+    }
+
+    @Test
+    void writeIsNotConnectedWithoutConnect() {
         SmppDeviceDriver driver = new SmppDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
 
@@ -142,7 +173,7 @@ class SmppDeviceDriverTest {
                                 .build(),
                         Map.of("value", "bound", "bound", true, "messageId", "")
                 )));
-        assertTrue(error.getMessage().contains("read-only"));
+        assertTrue(error.getMessage().contains("Not connected"));
     }
 
     private StubDriverObject driverConfig(int port) {

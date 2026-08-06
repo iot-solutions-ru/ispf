@@ -7,6 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SmppPointTest {
 
     @Test
+    void parsesOutbound() {
+        SmppPoint point = SmppPoint.parse("outbound");
+        assertEquals(SmppPoint.SmppMode.OUTBOUND, point.mode());
+    }
+
+    @Test
     void parsesBind() {
         SmppPoint point = SmppPoint.parse("bind");
         assertEquals(SmppPoint.SmppMode.BIND, point.mode());
