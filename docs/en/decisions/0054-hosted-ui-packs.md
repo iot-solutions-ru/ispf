@@ -97,6 +97,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - [x] web-console SW denylist includes `/apps` (Open app UI must not get console shell).
 - [x] Bundle deploy persists `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` into operator UI extras.
 - [x] Open app UI works without Ctrl+F5 (SW release on click + one-shot migration).
+
 ## Related
 
 - [0001-app-platform-boundary](0001-app-platform-boundary.md)
