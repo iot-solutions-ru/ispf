@@ -1,0 +1,522 @@
+{
+  "version": 2,
+  "width": 800,
+  "height": 480,
+  "background": "#faf8f4",
+  "grid": {
+    "size": 16,
+    "snap": false,
+    "visible": false
+  },
+  "layers": [
+    {
+      "id": "layer-default",
+      "name": "Зал",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "elements": [
+    {
+      "id": "floor-bg",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 20,
+      "y": 20,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 760,
+        "height": 440,
+        "fill": "#f4f1ea",
+        "stroke": "#d6d0c4",
+        "strokeWidth": 2
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "title",
+          "text": "ТТ №101 · схема зала",
+          "x": 16,
+          "y": 16,
+          "fontSize": 16
+        }
+      ]
+    },
+    {
+      "id": "zone-zone-dmp",
+      "symbolId": "ellipse",
+      "layerId": "layer-default",
+      "x": 460.0,
+      "y": 82.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 100,
+        "height": 60,
+        "fill": "#e8e2d6",
+        "stroke": "#c4bba8",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "zl-zone-dmp",
+          "text": "ДМП",
+          "x": 8,
+          "y": 22,
+          "fontSize": 11
+        }
+      ]
+    },
+    {
+      "id": "zone-zone-checkout",
+      "symbolId": "ellipse",
+      "layerId": "layer-default",
+      "x": 460.0,
+      "y": 242.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 100,
+        "height": 60,
+        "fill": "#e8e2d6",
+        "stroke": "#c4bba8",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "zl-zone-checkout",
+          "text": "Кассовая зона",
+          "x": 8,
+          "y": 22,
+          "fontSize": 11
+        }
+      ]
+    },
+    {
+      "id": "zone-zone-dairy",
+      "symbolId": "ellipse",
+      "layerId": "layer-default",
+      "x": 80.0,
+      "y": 22.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 100,
+        "height": 60,
+        "fill": "#e8e2d6",
+        "stroke": "#c4bba8",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "zl-zone-dairy",
+          "text": "Молочная / Бакалея",
+          "x": 8,
+          "y": 22,
+          "fontSize": 11
+        }
+      ]
+    },
+    {
+      "id": "zone-zone-bakery",
+      "symbolId": "ellipse",
+      "layerId": "layer-default",
+      "x": 640.0,
+      "y": 22.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 100,
+        "height": 60,
+        "fill": "#e8e2d6",
+        "stroke": "#c4bba8",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "zl-zone-bakery",
+          "text": "Пекарня",
+          "x": 8,
+          "y": 22,
+          "fontSize": 11
+        }
+      ]
+    },
+    {
+      "id": "zone-zone-cold",
+      "symbolId": "ellipse",
+      "layerId": "layer-default",
+      "x": 300.0,
+      "y": 22.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 100,
+        "height": 60,
+        "fill": "#e8e2d6",
+        "stroke": "#c4bba8",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "zl-zone-cold",
+          "text": "Холод / Заморозка",
+          "x": 8,
+          "y": 22,
+          "fontSize": 11
+        }
+      ]
+    },
+    {
+      "id": "eq-cam1",
+      "symbolId": "ellipse",
+      "layerId": "layer-default",
+      "x": 190.0,
+      "y": 10.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 20,
+        "height": 20,
+        "fill": "#64748b",
+        "stroke": "#1e293b",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-cam1",
+          "text": "CAM-A1",
+          "x": -4,
+          "y": 24,
+          "fontSize": 9
+        }
+      ]
+    },
+    {
+      "id": "eq-cam2",
+      "symbolId": "ellipse",
+      "layerId": "layer-default",
+      "x": 510.0,
+      "y": 10.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 20,
+        "height": 20,
+        "fill": "#64748b",
+        "stroke": "#1e293b",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-cam2",
+          "text": "CAM-B2",
+          "x": -4,
+          "y": 24,
+          "fontSize": 9
+        }
+      ]
+    },
+    {
+      "id": "eq-d01",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 425.0,
+      "y": 92.5,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 70.0,
+        "height": 55.0,
+        "fill": "#b45309",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-d01",
+          "text": "ДМП-П1",
+          "x": 4,
+          "y": 21.5,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-d02",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 540.0,
+      "y": 85.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 40.0,
+        "height": 70.0,
+        "fill": "#b45309",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-d02",
+          "text": "ДМП-С2",
+          "x": 4,
+          "y": 29.0,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-k01",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 395.0,
+      "y": 252.5,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 50.0,
+        "height": 55.0,
+        "fill": "#5b4b8a",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-k01",
+          "text": "КАССА-1",
+          "x": 4,
+          "y": 21.5,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-cf01",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 692.0,
+      "y": 40.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 36.0,
+        "height": 40.0,
+        "fill": "#92400e",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-cf01",
+          "text": "КОФЕ-1",
+          "x": 4,
+          "y": 14.0,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-c01",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 457.5,
+      "y": 257.5,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 45.0,
+        "height": 45.0,
+        "fill": "#5b4b8a",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-c01",
+          "text": "КСО-1",
+          "x": 4,
+          "y": 16.5,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-c02",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 517.5,
+      "y": 257.5,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 45.0,
+        "height": 45.0,
+        "fill": "#5b4b8a",
+        "stroke": "#d97706",
+        "strokeWidth": 3
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-c02",
+          "text": "КСО-2",
+          "x": 4,
+          "y": 16.5,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-r01",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 35.0,
+      "y": 42.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 90.0,
+        "height": 36.0,
+        "fill": "#3d6b4f",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-r01",
+          "text": "КЭШ-5",
+          "x": 4,
+          "y": 12.0,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-f02",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 225.0,
+      "y": 135.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 110.0,
+        "height": 50.0,
+        "fill": "#1e4f6f",
+        "stroke": "#dc2626",
+        "strokeWidth": 3
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-f02",
+          "text": "МР-01",
+          "x": 4,
+          "y": 19.0,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-o01",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 615.0,
+      "y": 35.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 50.0,
+        "height": 50.0,
+        "fill": "#7c2d12",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-o01",
+          "text": "ПЕЧЬ-1",
+          "x": 4,
+          "y": 19.0,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-r02",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 10.0,
+      "y": 122.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 140.0,
+        "height": 36.0,
+        "fill": "#3d6b4f",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-r02",
+          "text": "СТ-12",
+          "x": 4,
+          "y": 12.0,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-r03",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 20.0,
+      "y": 202.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 120.0,
+        "height": 36.0,
+        "fill": "#3d6b4f",
+        "stroke": "#d97706",
+        "strokeWidth": 3
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-r03",
+          "text": "СТ-18",
+          "x": 4,
+          "y": 12.0,
+          "fontSize": 10
+        }
+      ]
+    },
+    {
+      "id": "eq-f01",
+      "symbolId": "rect",
+      "layerId": "layer-default",
+      "x": 205.0,
+      "y": 36.0,
+      "lockAspectRatio": false,
+      "props": {
+        "width": 150.0,
+        "height": 48.0,
+        "fill": "#2f6f8f",
+        "stroke": "#334155",
+        "strokeWidth": 1
+      },
+      "bindings": {},
+      "labels": [
+        {
+          "id": "l-eq-f01",
+          "text": "ХЛ-03",
+          "x": 4,
+          "y": 18.0,
+          "fontSize": 10
+        }
+      ]
+    }
+  ],
+  "connections": []
+}
