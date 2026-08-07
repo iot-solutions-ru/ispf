@@ -121,12 +121,12 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
           <Input
             value={cronExpression}
             onChange={(e) => setCronExpression(e.target.value)}
-            placeholder="every:5m or 0 8 * * *"
+            placeholder={t("platform:schedule.cronExpressionPlaceholder")}
           />
         </label>
         <label>
           {t("platform:schedule.timeZone")}
-          <Input value={timeZone} onChange={(e) => setTimeZone(e.target.value)} placeholder="UTC" />
+          <Input value={timeZone} onChange={(e) => setTimeZone(e.target.value)} placeholder={t("platform:schedule.timeZonePlaceholder")} />
         </label>
         <label className="full">
           {t("platform:schedule.objectPath")}

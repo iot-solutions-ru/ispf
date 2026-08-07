@@ -25,9 +25,11 @@ Introduce a generic platform capability **hosted UI packs**, parallel to symbol/
 3. HTTP: serve `GET /apps/<appId>/**` from `ispf-server` with SPA fallback to `index.html` (same origin as `/api`).
 4. Operator launcher: **Open app UI** → `hostedUiUrl` (`/apps/<appId>/`) or bridge `externalSpaUrl`.
 5. Optional listing field: `uiPackSlug` — free application install also downloads the companion ui-pack.
-6. Optional bundle field: `operatorUi.uiPack = { packId, version, entry }` / `externalSpaUrl`.
+6. Optional bundle field: `operatorUi.uiPack = { packId, version, entry }` / `externalSpaUrl` / `spaNav` — **persisted** into operator UI extras on deploy and returned by `GET …/operator-apps/{appId}/ui`.
 7. Security: path sandbox, size limits (`ispf.ui-pack.max-zip-bytes`); **no** server-side JS execution of pack content.
 8. Signing / `minIspfVersion` follow existing marketplace pack rules.
+9. **Shared-origin PWA:** web-console Service Worker `navigateFallbackDenylist` **must** include `/^\/apps(?:\/|$)/` so an active console SW cannot replace ui-pack documents with `index.html`. Server-side `WebConsoleSpaFallbackFilter` already skips `/apps/`.
+10. **Open app UI without hard refresh:** Operator launcher temporarily unregisters the console SW before opening same-origin `/apps/…` (then re-registers). First load of a build that includes the denylist also runs a one-shot SW migration reload so stale workers are dropped without Ctrl+F5.
 
 ### Edge / nginx (mandatory for split deploy)
 
@@ -82,6 +84,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - Large SPA zips increase marketplace artifact size — enforce limits.
 - Iframe embedding in operator shell needs CSP review; default to top-level navigation.
 - Catalog `installed` for ui-pack must key off **`appId`** (install directory), not listing `packId` / slug when they differ (e.g. slug `oil-control-ui`, appId `oil-control`).
+- Console PWA without `/apps` in `navigateFallbackDenylist` hijacks hosted UI navigations after visiting Admin/Operator (same-origin SW).
 
 ## Acceptance (dogfood)
 
@@ -91,6 +94,9 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - [ ] Oil Control: publish `oil-control` bundle + ui-pack from `oil-control-azs-web` dist on marketplace.
 - [x] Operator dashboards still work if ui-pack is missing.
 - [x] `docs/en/marketplace.md` documents `ui-pack`; example under `examples/marketplace-ui-pack-demo/`.
+- [x] web-console SW denylist includes `/apps` (Open app UI must not get console shell).
+- [x] Bundle deploy persists `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` into operator UI extras.
+- [x] Open app UI works without Ctrl+F5 (SW release on click + one-shot migration).
 
 ## Related
 
