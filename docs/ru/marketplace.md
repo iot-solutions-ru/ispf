@@ -80,7 +80,7 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` доба�
 
 **Split nginx:** `location ^~ /apps/` **обязан** идти `proxy_pass` на `ispf-server` (как `/api/`). Иначе `try_files … /index.html` отдаёт админ-консоль на `/apps/<appId>/`. См. [ADR-0054](decisions/0054-hosted-ui-packs.md) и `deploy/nginx-ispf.conf`.
 
-**PWA web-console:** после визита в Admin/Operator SW контролирует same-origin navigations. В `navigateFallbackDenylist` должен быть `/apps`, иначе **Open app UI** открывает оболочку консоли вместо ui-pack.
+**PWA web-console:** после визита в Admin/Operator SW контролирует same-origin navigations. В `navigateFallbackDenylist` должен быть `/apps`, иначе **Open app UI** открывает оболочку консоли вместо ui-pack. Кнопка Open app UI снимает SW на время открытия same-origin `/apps` — без Ctrl+F5 после деплоя консоли.
 Локальный symbol catalog (dev/lab, не remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — см. [symbol-marketplace](symbol-marketplace.md).
 
 ## Чеклист готовности маркетплейса (BL-183)

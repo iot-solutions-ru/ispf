@@ -32,6 +32,7 @@ import OperatorVideoWallGrid from "./OperatorVideoWallGrid";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 import { cachedAtForOperatorUi } from "../../utils/operator/operatorOfflineCache";
 import { syncOperatorCachesOnReconnect } from "../../utils/operator/operatorOfflineSync";
+import { openHostedAppUi } from "../../pwa/openHostedAppUi";
 
 interface OperatorDashboardAppProps {
   appId: string;
@@ -513,6 +514,14 @@ function OperatorDashboardChrome({
               target="_blank"
               rel="noreferrer"
               data-testid="operator-open-hosted-ui"
+              onClick={(event) => {
+                const url = ui.hostedUiUrl || ui.externalSpaUrl;
+                if (!url) {
+                  return;
+                }
+                event.preventDefault();
+                void openHostedAppUi(url);
+              }}
             >
               {t("operator:shell.openHostedUi", { defaultValue: "Open app UI" })}
             </Button>

@@ -80,7 +80,7 @@ Paid **analytics extension packs** (Tier C historian functions) use the same ins
 
 **Split nginx deploy:** `location ^~ /apps/` **must** `proxy_pass` to `ispf-server` (same as `/api/`). Otherwise `try_files … /index.html` serves the admin console at `/apps/<appId>/`. See [ADR-0054](decisions/0054-hosted-ui-packs.md#edge--nginx-mandatory-for-split-deploy) and `deploy/nginx-ispf.conf`.
 
-**Web-console PWA:** after visiting Admin/Operator, the Service Worker owns same-origin navigations. `navigateFallbackDenylist` must include `/apps` or **Open app UI** opens the console shell instead of the ui-pack.
+**Web-console PWA:** after visiting Admin/Operator, the Service Worker owns same-origin navigations. `navigateFallbackDenylist` must include `/apps` or **Open app UI** opens the console shell instead of the ui-pack. The Operator launcher also releases the SW for same-origin `/apps` opens so users do not need Ctrl+F5 after a console deploy.
 Local symbol catalog (dev/lab, not remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — see [symbol-marketplace](symbol-marketplace.md).
 
 ## Marketplace readiness checklist (BL-183)

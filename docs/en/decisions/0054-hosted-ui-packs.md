@@ -29,6 +29,7 @@ Introduce a generic platform capability **hosted UI packs**, parallel to symbol/
 7. Security: path sandbox, size limits (`ispf.ui-pack.max-zip-bytes`); **no** server-side JS execution of pack content.
 8. Signing / `minIspfVersion` follow existing marketplace pack rules.
 9. **Shared-origin PWA:** web-console Service Worker `navigateFallbackDenylist` **must** include `/^\/apps(?:\/|$)/` so an active console SW cannot replace ui-pack documents with `index.html`. Server-side `WebConsoleSpaFallbackFilter` already skips `/apps/`.
+10. **Open app UI without hard refresh:** Operator launcher temporarily unregisters the console SW before opening same-origin `/apps/…` (then re-registers). First load of a build that includes the denylist also runs a one-shot SW migration reload so stale workers are dropped without Ctrl+F5.
 
 ### Edge / nginx (mandatory for split deploy)
 
@@ -95,6 +96,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - [x] `docs/en/marketplace.md` documents `ui-pack`; example under `examples/marketplace-ui-pack-demo/`.
 - [x] web-console SW denylist includes `/apps` (Open app UI must not get console shell).
 - [x] Bundle deploy persists `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` into operator UI extras.
+- [x] Open app UI works without Ctrl+F5 (SW release on click + one-shot migration).
 ## Related
 
 - [0001-app-platform-boundary](0001-app-platform-boundary.md)
