@@ -197,7 +197,7 @@ public class OperatorAppUiService {
             Map<String, Object> alarmBar,
             String agentInstructions
     ) throws Exception {
-        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, agentInstructions, null, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, agentInstructions, null, null, null);
     }
 
     public Map<String, Object> saveUi(
@@ -210,6 +210,30 @@ public class OperatorAppUiService {
             Boolean hideTasksAndEvents,
             Boolean hideDashboardNav
     ) throws Exception {
+        return saveUi(
+                appId,
+                title,
+                defaultDashboard,
+                dashboards,
+                alarmBar,
+                agentInstructions,
+                hideTasksAndEvents,
+                hideDashboardNav,
+                null
+        );
+    }
+
+    public Map<String, Object> saveUi(
+            String appId,
+            String title,
+            String defaultDashboard,
+            List<Map<String, String>> dashboards,
+            Map<String, Object> alarmBar,
+            String agentInstructions,
+            Boolean hideTasksAndEvents,
+            Boolean hideDashboardNav,
+            String externalSpaUrl
+    ) throws Exception {
         return saveUiInternal(
                 appId,
                 title,
@@ -218,7 +242,8 @@ public class OperatorAppUiService {
                 alarmBar,
                 agentInstructions,
                 hideTasksAndEvents,
-                hideDashboardNav
+                hideDashboardNav,
+                externalSpaUrl
         );
     }
 
@@ -230,7 +255,8 @@ public class OperatorAppUiService {
             Map<String, Object> alarmBar,
             String agentInstructions,
             Boolean hideTasksAndEvents,
-            Boolean hideDashboardNav
+            Boolean hideDashboardNav,
+            String externalSpaUrl
     ) throws Exception {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("title is required");
@@ -267,7 +293,8 @@ public class OperatorAppUiService {
                 alarmBar,
                 agentInstructions,
                 hideTasksAndEvents,
-                hideDashboardNav
+                hideDashboardNav,
+                externalSpaUrl
         );
         store.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 resolvedAppId,
@@ -368,7 +395,7 @@ public class OperatorAppUiService {
             String defaultDashboard,
             List<Map<String, String>> dashboards
     ) throws Exception {
-        return saveUiInternal(appId, title, defaultDashboard, dashboards, null, null, null, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, null, null, null, null, null);
     }
 
     public Map<String, Object> saveUi(
@@ -378,7 +405,7 @@ public class OperatorAppUiService {
             List<Map<String, String>> dashboards,
             Map<String, Object> alarmBar
     ) throws Exception {
-        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, null, null, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, null, null, null, null);
     }
 
     public String getAgentInstructions(String appId) {
@@ -405,7 +432,7 @@ public class OperatorAppUiService {
     public void saveUiExtras(String appId, Map<String, Object> alarmBar) throws Exception {
         OperatorAppUiStore.OperatorAppUiRecord record = store.findByAppId(appId)
                 .orElseThrow(() -> new IllegalArgumentException("Operator app not found: " + appId));
-        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar, null, null, null);
+        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar, null, null, null, null);
         store.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 record.appId(),
                 record.title(),
@@ -421,7 +448,8 @@ public class OperatorAppUiService {
             Map<String, Object> alarmBar,
             String agentInstructions,
             Boolean hideTasksAndEvents,
-            Boolean hideDashboardNav
+            Boolean hideDashboardNav,
+            String externalSpaUrl
     ) throws Exception {
         Map<String, Object> extras = readExtras(store.findByAppId(appId).map(OperatorAppUiStore.OperatorAppUiRecord::uiExtrasJson).orElse(null));
         if (alarmBar != null) {
@@ -441,6 +469,14 @@ public class OperatorAppUiService {
         }
         putChromeHideFlag(extras, "hideTasksAndEvents", hideTasksAndEvents);
         putChromeHideFlag(extras, "hideDashboardNav", hideDashboardNav);
+        if (externalSpaUrl != null) {
+            String trimmed = externalSpaUrl.trim();
+            if (trimmed.isEmpty()) {
+                extras.remove("externalSpaUrl");
+            } else {
+                extras.put("externalSpaUrl", trimmed);
+            }
+        }
         if (extras.isEmpty()) {
             return null;
         }
@@ -503,6 +539,18 @@ public class OperatorAppUiService {
         Object externalSpaUrl = extras.get("externalSpaUrl");
         if (externalSpaUrl != null) {
             ui.put("externalSpaUrl", externalSpaUrl);
+        }
+        Object spaNav = extras.get("spaNav");
+        if (spaNav != null) {
+            ui.put("spaNav", spaNav);
+        }
+        Object uiPack = extras.get("uiPack");
+        if (uiPack != null) {
+            ui.put("uiPack", uiPack);
+        }
+        Object eventJournalObjectPath = extras.get("eventJournalObjectPath");
+        if (eventJournalObjectPath != null) {
+            ui.put("eventJournalObjectPath", eventJournalObjectPath);
         }
         return hostedUiPackLinkEnricher.enrich(record.appId(), ui);
     }

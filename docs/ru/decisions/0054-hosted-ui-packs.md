@@ -25,7 +25,9 @@ Marketplace уже ставит **application bundles** (SQL, BFF, дерево,
 3. HTTP: `GET /apps/<appId>/**` с SPA fallback на `index.html` (тот же origin, что `/api`).
 4. Кнопка Operator **Open app UI** → `hostedUiUrl` или bridge `externalSpaUrl`.
 5. Опционально в листинге приложения: `uiPackSlug` — free install тянет companion ui-pack.
-6. Безопасность: sandbox путей, лимит размера zip; **без** server-side JS из пакета.
+6. Поля бандла `operatorUi.uiPack` / `externalSpaUrl` / `spaNav` **сохраняются** в extras Operator UI при deploy и отдаются в `GET …/operator-apps/{appId}/ui`.
+7. Безопасность: sandbox путей, лимит размера zip; **без** server-side JS из пакета.
+8. PWA web-console: в `navigateFallbackDenylist` обязателен `/^\/apps(?:\/|$)/`, иначе SW подменяет ui-pack оболочкой консоли.
 
 ### Edge / nginx (обязательно при split deploy)
 

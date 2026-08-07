@@ -665,7 +665,18 @@ public class ApplicationBundleDeployService {
             Map<String, Object> typed = (Map<String, Object>) alarmBarMap;
             alarmBar = typed;
         }
+        // Preserve prior extras (e.g. manually set bridge URL), then overlay bundle fields.
         Map<String, Object> extras = new LinkedHashMap<>();
+        operatorAppUiStore.findByAppId(appId).ifPresent(existing -> {
+            try {
+                if (existing.uiExtrasJson() != null && !existing.uiExtrasJson().isBlank()) {
+                    extras.putAll(objectMapper.readValue(existing.uiExtrasJson(), new TypeReference<>() {
+                    }));
+                }
+            } catch (Exception ignored) {
+                // Corrupt extras must not block operatorUi sync.
+            }
+        });
         if (alarmBar != null && !alarmBar.isEmpty()) {
             extras.put("alarmBar", alarmBar);
         }
@@ -692,6 +703,11 @@ public class ApplicationBundleDeployService {
         if (Boolean.TRUE.equals(ui.get("hideDashboardNav"))) {
             extras.put("hideDashboardNav", true);
         }
+        // ADR-0054 launch contract: persist so Open app UI / spaNav survive deploy.
+        putOperatorLaunchExtra(ui, extras, "externalSpaUrl");
+        putOperatorLaunchExtra(ui, extras, "spaNav");
+        putOperatorLaunchExtra(ui, extras, "uiPack");
+        putOperatorLaunchExtra(ui, extras, "eventJournalObjectPath");
         String uiExtrasJson = extras.isEmpty() ? null : objectMapper.writeValueAsString(extras);
         operatorAppUiStore.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 appId,
@@ -702,6 +718,17 @@ public class ApplicationBundleDeployService {
                 Instant.now()
         ));
         operatorAppObjectTreeService.syncAll();
+    }
+
+    /** Copy ADR-0054 / spa launch fields from bundle operatorUi into persisted extras. */
+    static void putOperatorLaunchExtra(Map<String, Object> operatorUi, Map<String, Object> extras, String key) {
+        if (operatorUi == null || extras == null || key == null) {
+            return;
+        }
+        Object value = operatorUi.get(key);
+        if (value != null) {
+            extras.put(key, value);
+        }
     }
 
     /**

@@ -62,8 +62,12 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "index.html",
         // Never SPA-fallback foreign apps / APIs on a shared origin.
+        // /apps must stay out: ADR-0054 HostedUiPackFilter serves ui-packs there.
+        // Without this denylist, an active console SW replaces /apps/<id>/ with
+        // web-console index.html and "Open app UI" appears broken.
         navigateFallbackDenylist: [
           /^\/api(?:\/|$)/,
+          /^\/apps(?:\/|$)/,
           /^\/ws(?:\/|$)/,
           /^\/actuator(?:\/|$)/,
           /^\/operator-printing/,
