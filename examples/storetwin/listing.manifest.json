@@ -1,0 +1,28 @@
+{
+  "slug": "storetwin",
+  "title": "Цифровой двойник розничной точки",
+  "description": "StoreTwin — цифровой двойник розничной ТТ: схема зала, планограммы (полки/SKU/отклонения), полочное пространство, заявки/задачи с lifecycle, KPI, интеграции. BFF appId=storetwin; Web UI — ui-pack storetwin-ui (/apps/storetwin/).",
+  "pricing": "free",
+  "appId": "storetwin",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.1.6",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "retail",
+    "storetwin",
+    "planogram",
+    "shelf",
+    "twin",
+    "marketplace"
+  ],
+  "changelog": "1.1.6 — UI parity seed + BFF (15), operator dashboards/reports, HTML floor plan, planogram/shelf HTML widgets, ui-pack storetwin-ui.",
+  "uiPackSlug": "storetwin-ui"
+}

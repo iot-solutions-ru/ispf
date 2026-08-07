@@ -1,0 +1,28 @@
+{
+  "slug": "storetwin-ui",
+  "title": "StoreTwin — Web UI (SPA)",
+  "description": "Hosted React SPA for storetwin (base /apps/storetwin/). Same-origin /api/v1 → ISPF BFF. Install with application listing storetwin (uiPackSlug) or separately as artifactKind ui-pack.",
+  "pricing": "free",
+  "artifactKind": "ui-pack",
+  "appId": "storetwin",
+  "packId": "storetwin-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "storetwin-ui-1.0.0.zip",
+  "tags": [
+    "ui-pack",
+    "retail",
+    "storetwin",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "1.0.0 — StoreTwin SPA hosted at /apps/storetwin/; live BFF client with mock fallback."
+}
