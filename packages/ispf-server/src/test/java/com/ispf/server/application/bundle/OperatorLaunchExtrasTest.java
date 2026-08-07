@@ -39,4 +39,27 @@ class OperatorLaunchExtrasTest {
         ApplicationBundleDeployService.putOperatorLaunchExtra(Map.of(), extras, "externalSpaUrl");
         assertThat(extras).containsEntry("externalSpaUrl", "keep-me");
     }
+
+    @Test
+    void putOperatorLaunchExtraSkipsUnsafeExternalSpaUrl() {
+        Map<String, Object> extras = new LinkedHashMap<>();
+        ApplicationBundleDeployService.putOperatorLaunchExtra(
+                Map.of("externalSpaUrl", "javascript:alert(1)"),
+                extras,
+                "externalSpaUrl"
+        );
+        ApplicationBundleDeployService.putOperatorLaunchExtra(
+                Map.of("externalSpaUrl", "/api/v1/info"),
+                extras,
+                "externalSpaUrl"
+        );
+        assertThat(extras).isEmpty();
+
+        ApplicationBundleDeployService.putOperatorLaunchExtra(
+                Map.of("externalSpaUrl", "/apps/storetwin/"),
+                extras,
+                "externalSpaUrl"
+        );
+        assertThat(extras).containsEntry("externalSpaUrl", "/apps/storetwin/");
+    }
 }

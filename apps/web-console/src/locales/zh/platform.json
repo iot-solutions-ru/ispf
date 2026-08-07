@@ -181,6 +181,8 @@
   "schedule.enabled": "启用",
   "schedule.functionName": "函数名称",
   "schedule.intervalMs": "间隔（毫秒）",
+  "schedule.cronExpression": "Cron（可选）",
+  "schedule.timeZone": "时区",
   "schedule.lastError": "最后一个错误：{{error}}",
   "schedule.lastTick": "上次运行：{{time}}",
   "schedule.loading": "加载时间表...",

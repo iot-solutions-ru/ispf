@@ -181,6 +181,8 @@
   "schedule.enabled": "Aktiviert",
   "schedule.functionName": "Funktionsname",
   "schedule.intervalMs": "Intervall (ms)",
+  "schedule.cronExpression": "Cron (optional)",
+  "schedule.timeZone": "Zeitzone",
   "schedule.lastError": "Letzter Fehler: {{error}}",
   "schedule.lastTick": "Letzte Ausführung: {{time}}",
   "schedule.loading": "Zeitplan wird geladen…",

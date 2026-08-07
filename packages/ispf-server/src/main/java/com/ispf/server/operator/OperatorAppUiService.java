@@ -474,7 +474,7 @@ public class OperatorAppUiService {
             if (trimmed.isEmpty()) {
                 extras.remove("externalSpaUrl");
             } else {
-                extras.put("externalSpaUrl", trimmed);
+                extras.put("externalSpaUrl", requireSafeOperatorLaunchUrl(trimmed));
             }
         }
         if (extras.isEmpty()) {
@@ -492,6 +492,39 @@ public class OperatorAppUiService {
         } else {
             extras.remove(key);
         }
+    }
+
+    /**
+     * Operator launch URL allowlist: relative {@code /apps/…} (resolved by the browser) or {@code http(s):}.
+     * Rejects {@code javascript:}, {@code data:}, and other schemes.
+     */
+    public static boolean isSafeOperatorLaunchUrl(String url) {
+        if (url == null) {
+            return false;
+        }
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        String lower = trimmed.toLowerCase();
+        if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) {
+            return false;
+        }
+        if (trimmed.startsWith("/")) {
+            // Relative path — only allow hosted ui-pack roots, not arbitrary console routes.
+            return trimmed.startsWith("/apps/") && !trimmed.contains("://");
+        }
+        return lower.startsWith("https://") || lower.startsWith("http://");
+    }
+
+    private static String requireSafeOperatorLaunchUrl(String url) {
+        if (!isSafeOperatorLaunchUrl(url)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "externalSpaUrl must be an http(s) URL or a path under /apps/"
+            );
+        }
+        return url.trim();
     }
 
     private Map<String, Object> readExtras(String uiExtrasJson) throws Exception {
@@ -537,8 +570,8 @@ public class OperatorAppUiService {
             ui.put("hideDashboardNav", true);
         }
         Object externalSpaUrl = extras.get("externalSpaUrl");
-        if (externalSpaUrl != null) {
-            ui.put("externalSpaUrl", externalSpaUrl);
+        if (externalSpaUrl instanceof String spa && isSafeOperatorLaunchUrl(spa)) {
+            ui.put("externalSpaUrl", spa.trim());
         }
         Object spaNav = extras.get("spaNav");
         if (spaNav != null) {

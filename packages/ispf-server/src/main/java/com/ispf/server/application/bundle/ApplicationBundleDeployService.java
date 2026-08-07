@@ -35,6 +35,7 @@ import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.operator.OperatorAppObjectTreeService;
+import com.ispf.server.operator.OperatorAppUiService;
 import com.ispf.server.operator.OperatorAppUiStore;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
@@ -726,9 +727,17 @@ public class ApplicationBundleDeployService {
             return;
         }
         Object value = operatorUi.get(key);
-        if (value != null) {
-            extras.put(key, value);
+        if (value == null) {
+            return;
         }
+        if ("externalSpaUrl".equals(key)) {
+            if (!(value instanceof String spa) || !OperatorAppUiService.isSafeOperatorLaunchUrl(spa)) {
+                return;
+            }
+            extras.put(key, spa.trim());
+            return;
+        }
+        extras.put(key, value);
     }
 
     /**
