@@ -1,0 +1,28 @@
+{
+  "slug": "farmtwin",
+  "title": "Цифровой двойник фермы",
+  "description": "FarmTwin — цифровой двойник свинокомплекса: площадки, секции, аварии, тренды, микроклимат, кормление, здоровье, видео, роботы, прослеживаемость, задания, СППР, интеграции. BFF appId=farmtwin; Web UI — companion ui-pack farmtwin-ui (/apps/farmtwin/).",
+  "appId": "farmtwin",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.30",
+  "latestVersion": "1.1.0",
+  "bundleArtifact": "bundle.json",
+  "uiPackSlug": "farmtwin-ui",
+  "tags": [
+    "farm",
+    "farmtwin",
+    "livestock",
+    "twin",
+    "ot",
+    "marketplace"
+  ],
+  "changelog": "1.1.0 — Full UI parity BFF + seed; companion ui-pack farmtwin-ui; Open app UI via /apps/farmtwin/."
+}

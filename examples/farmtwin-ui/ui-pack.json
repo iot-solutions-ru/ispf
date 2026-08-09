@@ -1,0 +1,10 @@
+{
+  "id": "farmtwin",
+  "appId": "farmtwin",
+  "packId": "farmtwin-ui",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/farmtwin/",
+  "title": "Цифровой двойник фермы",
+  "minIspfVersion": "0.9.30"
+}
