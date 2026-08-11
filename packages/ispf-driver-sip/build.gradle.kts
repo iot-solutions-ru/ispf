@@ -9,5 +9,5 @@ dependencies {
     // connect() creates the SipStack, so the driver pack needs the log4j-1.2 API on the classpath.
     implementation("ch.qos.reload4j:reload4j:1.2.26")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
 }

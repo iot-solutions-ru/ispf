@@ -4,6 +4,6 @@ dependencies {
 
     implementation("com.github.mwiede:jsch:2.28.6")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testImplementation("org.apache.sshd:sshd-core:2.19.0")
 }
