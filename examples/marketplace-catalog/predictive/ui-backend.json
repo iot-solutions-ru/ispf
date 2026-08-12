@@ -1,0 +1,96 @@
+{
+  "role": "backend-for-ui",
+  "hubPath": "root.platform.devices.predictive.hub",
+  "dataSourcePath": "root.platform.data-sources.predictive",
+  "uiPack": {
+    "packId": "predictive-ui",
+    "basePath": "/apps/predictive/",
+    "entry": "index.html"
+  },
+  "periods": [
+    "live",
+    "yesterday",
+    "-24h",
+    "fault-7d"
+  ],
+  "screens": {
+    "monitor.scene": {
+      "ui": [
+        "PlantScene"
+      ],
+      "read": [
+        "spa_listAssets",
+        "spa_getAsset",
+        "spa_listChildren"
+      ]
+    },
+    "monitor.hierarchy": {
+      "ui": [
+        "HierarchyPanel",
+        "Header.search"
+      ],
+      "read": [
+        "spa_listAggregates",
+        "spa_listChildren",
+        "spa_searchAssets"
+      ]
+    },
+    "monitor.time": {
+      "ui": [
+        "TimeScrubber",
+        "KpiStrip",
+        "AlarmTray"
+      ],
+      "read": [
+        "spa_kpiSummary",
+        "spa_listAlarms",
+        "spa_getSnapshot",
+        "spa_listSnapshotParams"
+      ]
+    },
+    "monitor.inspector": {
+      "ui": [
+        "ObjectInspector"
+      ],
+      "read": [
+        "spa_getAsset",
+        "spa_listParams",
+        "spa_listDefect",
+        "spa_listSnapshotTrend"
+      ]
+    },
+    "compare": {
+      "ui": [
+        "ComparePage"
+      ],
+      "read": [
+        "spa_compareStatuses",
+        "spa_getSnapshot",
+        "spa_listSnapshotParams",
+        "spa_listSnapshotTrend"
+      ]
+    },
+    "actions": {
+      "ui": [
+        "Overlays.ack",
+        "Overlays.diag",
+        "Overlays.workorder"
+      ],
+      "write": [
+        "spa_ackAlarm",
+        "spa_startDiagnostics",
+        "spa_createWorkOrder"
+      ],
+      "read": [
+        "spa_listEvents"
+      ]
+    }
+  },
+  "clientOnly": [
+    "heatmap",
+    "tour",
+    "explodeToggle",
+    "orbitCamera",
+    "panelCollapse"
+  ]
+}
