@@ -11,5 +11,5 @@ dependencies {
     implementation("org.igniterealtime.smack:smack-xmlparser-xpp3:4.4.8")
     implementation("org.igniterealtime.smack:smack-java8:4.4.8")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
 }

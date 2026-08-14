@@ -4,5 +4,5 @@ dependencies {
 
     implementation("com.hierynomus:smbj:0.14.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
 }
