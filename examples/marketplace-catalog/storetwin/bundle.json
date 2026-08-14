@@ -1,0 +1,1179 @@
+{
+  "version": "1.1.6",
+  "displayName": "Цифровой двойник розничной точки",
+  "tablePrefix": "st_",
+  "schemaName": "app_storetwin",
+  "metadata": {
+    "purpose": "StoreTwin — цифровой двойник розничной ТТ: схема, планограммы, ПП, заявки, задачи, KPI, интеграции",
+    "ui": "React StoreTwin SPA (app/) · parity via operatorUi.spaNav + BFF",
+    "changelog": "1.1.6 — Floor plan as pure HTML/CSS (no SVG; html-snippet sanitizes SVG). 1.1.5 — Floor plan via HTML/SVG widget (mimic props fixed under platform.mimics.storetwin-floor). 1.1.4 — Operator visuals without images: SCADA mimic floor + HTML planogram/shelf widgets. 1.1.3 — UI preview SVGs on operator dashboards (floor / planograms / shelf). 1.1.2 — Operator: KPI sales/traffic reports, tasks+lifecycle, integrations+ping. 1.1.1 — Operator dashboards/reports: planogram shelves/SKU/issues + shelf faces/equipment_ids. 1.1.0 — UI parity: nested planograms (shelves/SKU/issues), lifecycle, KPIs, users; 15 BFF with app dataSourcePath; seed from mock.ts. 1.0.0 — v1 domain model.",
+    "deployNote": "Stand requires signed license for import_package; deployed piecemeal via MCP. Tree script functions MUST set dataSourcePath=root.platform.data-sources.storetwin (otherwise SQL hits default DS and tables appear missing).",
+    "previewAssets": "https://ispf.ai/apps/storetwin/previews/",
+    "marketplace": {
+      "slug": "storetwin",
+      "uiPackSlug": "storetwin-ui",
+      "catalog": "examples/marketplace-catalog/storetwin/"
+    }
+  },
+  "migrations": [
+    {
+      "id": "st_v1_schema_seed",
+      "sql": "CREATE TABLE IF NOT EXISTS st_store (\n  id VARCHAR(64) PRIMARY KEY,\n  name VARCHAR(128) NOT NULL,\n  address VARCHAR(256) NOT NULL,\n  area_m2 INTEGER NOT NULL\n);\nCREATE TABLE IF NOT EXISTS st_zone (\n  id VARCHAR(64) PRIMARY KEY,\n  store_id VARCHAR(64) NOT NULL,\n  label VARCHAR(128) NOT NULL,\n  x DOUBLE PRECISION NOT NULL DEFAULT 0,\n  y DOUBLE PRECISION NOT NULL DEFAULT 0,\n  w DOUBLE PRECISION NOT NULL DEFAULT 100,\n  h DOUBLE PRECISION NOT NULL DEFAULT 80\n);\nCREATE TABLE IF NOT EXISTS st_equipment (\n  id VARCHAR(64) PRIMARY KEY,\n  store_id VARCHAR(64) NOT NULL,\n  code VARCHAR(64) NOT NULL,\n  name VARCHAR(256) NOT NULL,\n  eq_type VARCHAR(32) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  brand VARCHAR(64),\n  zone_label VARCHAR(128),\n  category VARCHAR(128),\n  shelf_meters DOUBLE PRECISION DEFAULT 0,\n  shelves INTEGER DEFAULT 0,\n  temperature DOUBLE PRECISION,\n  pos_x DOUBLE PRECISION DEFAULT 0,\n  pos_y DOUBLE PRECISION DEFAULT 0,\n  width DOUBLE PRECISION DEFAULT 80,\n  height DOUBLE PRECISION DEFAULT 40\n);\nCREATE TABLE IF NOT EXISTS st_planogram (\n  id VARCHAR(64) PRIMARY KEY,\n  store_id VARCHAR(64) NOT NULL,\n  name VARCHAR(256) NOT NULL,\n  equipment_id VARCHAR(64),\n  compliance INTEGER NOT NULL DEFAULT 0,\n  version INTEGER NOT NULL DEFAULT 1,\n  category VARCHAR(128)\n);\nCREATE TABLE IF NOT EXISTS st_shelf_space (\n  id VARCHAR(64) PRIMARY KEY,\n  store_id VARCHAR(64) NOT NULL,\n  category VARCHAR(128) NOT NULL,\n  meters DOUBLE PRECISION NOT NULL,\n  share_pct DOUBLE PRECISION NOT NULL DEFAULT 0\n);\nCREATE TABLE IF NOT EXISTS st_incident (\n  id VARCHAR(64) PRIMARY KEY,\n  store_id VARCHAR(64) NOT NULL,\n  title VARCHAR(512) NOT NULL,\n  equipment_id VARCHAR(64),\n  severity VARCHAR(16) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  assignee VARCHAR(128),\n  reporter VARCHAR(128),\n  source VARCHAR(32),\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  sla_due_at TIMESTAMPTZ\n);\nCREATE TABLE IF NOT EXISTS st_task (\n  id VARCHAR(64) PRIMARY KEY,\n  store_id VARCHAR(64) NOT NULL,\n  title VARCHAR(512) NOT NULL,\n  task_type VARCHAR(32) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  priority VARCHAR(16) NOT NULL DEFAULT 'normal',\n  assignee VARCHAR(128),\n  equipment_id VARCHAR(64),\n  due_at TIMESTAMPTZ,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\nCREATE TABLE IF NOT EXISTS st_integration (\n  id VARCHAR(64) PRIMARY KEY,\n  name VARCHAR(128) NOT NULL,\n  protocol VARCHAR(128) NOT NULL,\n  health VARCHAR(32) NOT NULL,\n  latency_ms INTEGER NOT NULL DEFAULT 0,\n  endpoint VARCHAR(512),\n  description VARCHAR(512)\n);\n\nINSERT INTO st_store (id, name, address, area_m2)\nSELECT 'st-101', 'ТТ №101 · Центр', 'ул. Ленина, 12', 420\nWHERE NOT EXISTS (SELECT 1 FROM st_store WHERE id = 'st-101');\n\nINSERT INTO st_zone (id, store_id, label, x, y, w, h)\nSELECT * FROM (VALUES\n  ('z-dairy', 'st-101', 'Молочная', 40, 40, 200, 120),\n  ('z-grocery', 'st-101', 'Бакалея', 40, 180, 200, 120),\n  ('z-promo', 'st-101', 'Промо / ДМП', 280, 280, 220, 100),\n  ('z-checkout', 'st-101', 'Кассовая зона', 520, 40, 160, 200)\n) AS v(id, store_id, label, x, y, w, h)\nWHERE NOT EXISTS (SELECT 1 FROM st_zone WHERE id = v.id);\n\nINSERT INTO st_equipment (id, store_id, code, name, eq_type, status, brand, zone_label, category, shelf_meters, shelves, temperature, pos_x, pos_y, width, height)\nSELECT * FROM (VALUES\n  ('eq-r01','st-101','КЭШ-5','Стеллаж молочный КЭШ-5','rack','ok','MetalRack','Молочная','Молоко ТП',6.25,5,NULL,80,60,90,36),\n  ('eq-r02','st-101','СТ-12','Стеллаж бакалея СТ-12','rack','ok','MetalRack','Бакалея','Крупы',15.0,6,NULL,80,140,140,36),\n  ('eq-r03','st-101','СТ-18','Стеллаж напитки СТ-18','rack','warning','MetalRack','Напитки','Вода',10.0,5,NULL,80,220,120,36),\n  ('eq-f01','st-101','ХЛ-03','Холодильник открытый ХЛ-03','fridge','ok','ColdLine','Гастрономия','Колбасы',10.0,4,3.2,280,60,150,48),\n  ('eq-f02','st-101','МР-01','Морозильный ларь МР-01','freezer','critical','FrostPro','Морозильная',NULL,2.0,1,-12.4,280,140,120,56),\n  ('eq-c01','st-101','КСО-1','Касса самообслуживания КСО-1','selfcheckout','ok','SelfPay','Кассовая зона',NULL,0.0,0,NULL,520,60,70,50),\n  ('eq-c02','st-101','КСО-2','Касса самообслуживания КСО-2','selfcheckout','warning','SelfPay','Кассовая зона',NULL,0.0,0,NULL,600,60,70,50),\n  ('eq-d01','st-101','ДМП-01','Промо-паллета ДМП-01','dmp','ok','PromoRack','Промо / ДМП','Акции',3.0,1,NULL,320,300,100,60),\n  ('eq-cam01','st-101','CV-01','Камера видеоаналитики CV-01','camera','ok','VisionAI','Зал',NULL,0.0,0,NULL,450,40,40,40)\n) AS v(id, store_id, code, name, eq_type, status, brand, zone_label, category, shelf_meters, shelves, temperature, pos_x, pos_y, width, height)\nWHERE NOT EXISTS (SELECT 1 FROM st_equipment WHERE id = v.id);\n\nINSERT INTO st_planogram (id, store_id, name, equipment_id, compliance, version, category)\nSELECT * FROM (VALUES\n  ('pg-1','st-101','Молоко ТП · КЭШ-5','eq-r01',87,3,'Молоко ТП'),\n  ('pg-2','st-101','Крупы · СТ-12','eq-r02',94,2,'Крупы'),\n  ('pg-3','st-101','Вода · СТ-18','eq-r03',72,1,'Вода')\n) AS v(id, store_id, name, equipment_id, compliance, version, category)\nWHERE NOT EXISTS (SELECT 1 FROM st_planogram WHERE id = v.id);\n\nINSERT INTO st_shelf_space (id, store_id, category, meters, share_pct)\nSELECT * FROM (VALUES\n  ('ss-1','st-101','Молоко ТП',18.5,22.0),\n  ('ss-2','st-101','Крупы',15.0,18.0),\n  ('ss-3','st-101','Напитки',12.0,14.0),\n  ('ss-4','st-101','Гастрономия',10.0,12.0),\n  ('ss-5','st-101','ДМП / промо',8.0,10.0)\n) AS v(id, store_id, category, meters, share_pct)\nWHERE NOT EXISTS (SELECT 1 FROM st_shelf_space WHERE id = v.id);\n\nINSERT INTO st_incident (id, store_id, title, equipment_id, severity, status, assignee, reporter, source, created_at, sla_due_at)\nSELECT * FROM (VALUES\n  ('inc-1','st-101','Температура морозильника выше нормы (−12.4 °C)','eq-f02','high','in_progress','С. Орлов','Шлюз телеметрии','iot', TIMESTAMPTZ '2026-08-06 16:42:00+03', TIMESTAMPTZ '2026-08-06 18:42:00+03'),\n  ('inc-2','st-101','Отклонение выкладки от планограммы · КЭШ-5 (видеоаналитика)','eq-r01','medium','assigned','И. Петров','Движок видеоаналитики','cv', TIMESTAMPTZ '2026-08-06 15:10:00+03', TIMESTAMPTZ '2026-08-06 19:10:00+03'),\n  ('inc-3','st-101','КСО-2: ошибка сканера штрихкода','eq-c02','high','waiting','С. Орлов','Шлюз телеметрии','iot', TIMESTAMPTZ '2026-08-06 14:55:00+03', TIMESTAMPTZ '2026-08-06 20:00:00+03'),\n  ('inc-4','st-101','Низкий остаток SKU «Молоко 3.2%» на полке','eq-r01','low','new',NULL,'Касса / остатки','pos', TIMESTAMPTZ '2026-08-06 13:20:00+03', TIMESTAMPTZ '2026-08-06 21:20:00+03')\n) AS v(id, store_id, title, equipment_id, severity, status, assignee, reporter, source, created_at, sla_due_at)\nWHERE NOT EXISTS (SELECT 1 FROM st_incident WHERE id = v.id);\n\nINSERT INTO st_task (id, store_id, title, task_type, status, priority, assignee, equipment_id, due_at, created_at)\nSELECT * FROM (VALUES\n  ('t-1','st-101','Восстановить выкладку по планограмме КЭШ-5','planogram','in_progress','high','И. Петров','eq-r01', TIMESTAMPTZ '2026-08-06 18:00:00+03', TIMESTAMPTZ '2026-08-06 15:15:00+03'),\n  ('t-2','st-101','Пополнить лица «Вода 5л» на СТ-18','restock','queued','normal','М. Сидорова','eq-r03', TIMESTAMPTZ '2026-08-06 19:00:00+03', TIMESTAMPTZ '2026-08-06 16:00:00+03'),\n  ('t-3','st-101','Сервисный выезд: морозильный ларь МР-01','service','accepted','high','С. Орлов','eq-f02', TIMESTAMPTZ '2026-08-06 18:30:00+03', TIMESTAMPTZ '2026-08-06 16:50:00+03')\n) AS v(id, store_id, title, task_type, status, priority, assignee, equipment_id, due_at, created_at)\nWHERE NOT EXISTS (SELECT 1 FROM st_task WHERE id = v.id);\n\nINSERT INTO st_integration (id, name, protocol, health, latency_ms, endpoint, description)\nSELECT * FROM (VALUES\n  ('erp','Учётная система','REST / JSON','online',120,'https://erp.retail.local/api/v1','Учёт товаров, заказы, справочник СЭС'),\n  ('pos','Кассы','REST / JSON · XML','online',85,'https://pos.retail.local/stream','Продажи и остатки на кассах'),\n  ('sfa','Полевые задачи','REST / JSON','online',140,'https://sfa.retail.local/api','Задачи персонала'),\n  ('iot','Платформа телеметрии','OPC UA','degraded',420,'opc.tcp://iot-gw.retail.local:4840','Телеметрия холодильников, печей, КСО'),\n  ('cv','Видеоаналитика','RTSP + REST','online',210,'https://cv.retail.local/api/v2','Сверка выкладки с планограммой'),\n  ('bi','Бизнес-аналитика','CSV / REST','online',180,'https://bi.retail.local/export','Отчёты и дашборды KPI'),\n  ('notify','Оповещения','Push / SMS / Email','online',60,'https://notify.retail.local/gateway','Уведомления сотрудникам')\n) AS v(id, name, protocol, health, latency_ms, endpoint, description)\nWHERE NOT EXISTS (SELECT 1 FROM st_integration WHERE id = v.id);"
+    },
+    {
+      "id": "st_v2_ui_parity",
+      "sql": "-- StoreTwin v2: UI parity with app/src/data/mock.ts\nALTER TABLE st_equipment ADD COLUMN IF NOT EXISTS owner VARCHAR(16);\nALTER TABLE st_equipment ADD COLUMN IF NOT EXISTS dim_l DOUBLE PRECISION;\nALTER TABLE st_equipment ADD COLUMN IF NOT EXISTS dim_w DOUBLE PRECISION;\nALTER TABLE st_equipment ADD COLUMN IF NOT EXISTS dim_h DOUBLE PRECISION;\nALTER TABLE st_equipment ADD COLUMN IF NOT EXISTS rotation DOUBLE PRECISION DEFAULT 0;\nALTER TABLE st_planogram ADD COLUMN IF NOT EXISTS export_name VARCHAR(256);\nALTER TABLE st_planogram ADD COLUMN IF NOT EXISTS folder_path VARCHAR(512);\nALTER TABLE st_planogram ADD COLUMN IF NOT EXISTS author VARCHAR(128);\nALTER TABLE st_planogram ADD COLUMN IF NOT EXISTS version_label VARCHAR(32);\nALTER TABLE st_planogram ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;\nALTER TABLE st_shelf_space ADD COLUMN IF NOT EXISTS faces INTEGER DEFAULT 0;\nALTER TABLE st_shelf_space ADD COLUMN IF NOT EXISTS equipment_ids VARCHAR(512);\nALTER TABLE st_incident ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;\nALTER TABLE st_incident ADD COLUMN IF NOT EXISTS resolution VARCHAR(1024);\nALTER TABLE st_incident ADD COLUMN IF NOT EXISTS linked_task_id VARCHAR(64);\nALTER TABLE st_task ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;\nALTER TABLE st_task ADD COLUMN IF NOT EXISTS reporter VARCHAR(128);\nALTER TABLE st_task ADD COLUMN IF NOT EXISTS linked_incident_id VARCHAR(64);\nALTER TABLE st_task ADD COLUMN IF NOT EXISTS result_note VARCHAR(1024);\nALTER TABLE st_integration ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMPTZ;\nCREATE TABLE IF NOT EXISTS st_planogram_shelf (\n  id VARCHAR(64) PRIMARY KEY,\n  planogram_id VARCHAR(64) NOT NULL,\n  level INTEGER NOT NULL,\n  height_cm DOUBLE PRECISION,\n  capacity_cm DOUBLE PRECISION\n);\nCREATE TABLE IF NOT EXISTS st_planogram_sku (\n  id VARCHAR(64) PRIMARY KEY,\n  planogram_id VARCHAR(64) NOT NULL,\n  shelf_level INTEGER NOT NULL,\n  name VARCHAR(256) NOT NULL,\n  brand VARCHAR(128),\n  barcode VARCHAR(64),\n  faces INTEGER,\n  actual_faces INTEGER,\n  depth INTEGER,\n  width_cm DOUBLE PRECISION,\n  price DOUBLE PRECISION,\n  color VARCHAR(32),\n  status VARCHAR(32)\n);\nCREATE TABLE IF NOT EXISTS st_planogram_issue (\n  id VARCHAR(64) PRIMARY KEY,\n  planogram_id VARCHAR(64) NOT NULL,\n  shelf_level INTEGER,\n  severity VARCHAR(16),\n  message VARCHAR(1024)\n);\nCREATE TABLE IF NOT EXISTS st_lifecycle_event (\n  id VARCHAR(64) PRIMARY KEY,\n  entity_type VARCHAR(16) NOT NULL,\n  entity_id VARCHAR(64) NOT NULL,\n  at_ts TIMESTAMPTZ NOT NULL,\n  actor VARCHAR(128),\n  from_status VARCHAR(32),\n  to_status VARCHAR(32) NOT NULL,\n  comment VARCHAR(1024)\n);\nCREATE TABLE IF NOT EXISTS st_kpi_point (\n  id VARCHAR(64) PRIMARY KEY,\n  store_id VARCHAR(64) NOT NULL,\n  series VARCHAR(64) NOT NULL,\n  label VARCHAR(64) NOT NULL,\n  value DOUBLE PRECISION NOT NULL,\n  sort_order INTEGER DEFAULT 0\n);\nCREATE TABLE IF NOT EXISTS st_user (\n  id VARCHAR(64) PRIMARY KEY,\n  name VARCHAR(128) NOT NULL,\n  email VARCHAR(256) NOT NULL,\n  role VARCHAR(32) NOT NULL,\n  store_id VARCHAR(64)\n);\n\n\nDELETE FROM st_lifecycle_event;\nDELETE FROM st_planogram_sku;\nDELETE FROM st_planogram_shelf;\nDELETE FROM st_planogram_issue;\nDELETE FROM st_kpi_point;\nDELETE FROM st_user;\nDELETE FROM st_shelf_space;\nDELETE FROM st_incident;\nDELETE FROM st_task;\nDELETE FROM st_planogram;\nDELETE FROM st_equipment;\nDELETE FROM st_zone;\nDELETE FROM st_integration;\nDELETE FROM st_store;\n\nINSERT INTO st_store (id,name,address,area_m2) VALUES\n  ('st-101','ТТ №101 · Центр','ул. Ленина, 12',420),\n  ('st-214','ТТ №214 · Юг','пр. Мира, 88',380);\nINSERT INTO st_zone (id,store_id,label,x,y,w,h) VALUES\n  ('zone-dairy','st-101','Молочная / Бакалея',120,50,100,80),\n  ('zone-cold','st-101','Холод / Заморозка',340,50,100,80),\n  ('zone-dmp','st-101','ДМП',500,110,100,80),\n  ('zone-checkout','st-101','Кассовая зона',500,270,100,80),\n  ('zone-bakery','st-101','Пекарня',680,50,100,80);\nINSERT INTO st_equipment (id,store_id,code,name,eq_type,status,brand,zone_label,category,shelf_meters,shelves,temperature,pos_x,pos_y,width,height,owner,dim_l,dim_w,dim_h,rotation) VALUES\n  ('eq-r01','st-101','КЭШ-5','Стеллаж молочный КЭШ-5','rack','ok','MetalRack','Молочная','Молоко ТП',6.25,5,NULL,80,60,90,36,'own',1.25,0.6,2.1,0),\n  ('eq-r02','st-101','СТ-12','Стеллаж бакалея СТ-12','rack','ok','MetalRack','Бакалея','Крупы',15,6,NULL,80,140,140,36,'own',2.5,0.55,2.2,0),\n  ('eq-r03','st-101','СТ-18','Стеллаж напитки СТ-18','rack','warning','MetalRack','Напитки','Вода',10,5,NULL,80,220,120,36,'own',2,0.55,2.2,0),\n  ('eq-f01','st-101','ХЛ-03','Холодильник открытый ХЛ-03','fridge','ok','ColdLine','Гастрономия','Колбасы',10,4,3.2,280,60,150,48,'own',2.5,0.9,2,0),\n  ('eq-f02','st-101','МР-01','Морозильный ларь МР-01','freezer','critical','FrostPro','Заморозка','Мороженое',1.8,1,-12.4,280,160,110,50,'supplier',1.8,0.85,0.9,0),\n  ('eq-d01','st-101','ДМП-П1','Паллета промо ДМП-П1','dmp','ok','PromoBase','Промо','Акция недели',2.4,2,NULL,460,120,70,55,'own',1.2,0.8,1.4,0),\n  ('eq-d02','st-101','ДМП-С2','Стойка брендированная ДМП-С2','dmp','ok','PepsiCo','Промо','Напитки',2.4,4,NULL,560,120,40,70,'supplier',0.6,0.5,1.8,0),\n  ('eq-c01','st-101','КСО-1','Касса самообслуживания 1','selfcheckout','ok','SelfPay','Кассы',NULL,0,0,NULL,480,280,45,45,'own',0.8,0.7,1.5,0),\n  ('eq-c02','st-101','КСО-2','Касса самообслуживания 2','selfcheckout','warning','SelfPay','Кассы',NULL,0,0,NULL,540,280,45,45,'own',0.8,0.7,1.5,0),\n  ('eq-k01','st-101','КАССА-1','Касса операторская 1','checkout','ok','RetailPOS','Кассы',NULL,0,0,NULL,420,280,50,55,'own',1.6,0.9,1.1,0),\n  ('eq-o01','st-101','ПЕЧЬ-1','Конвекционная печь','oven','ok','BakeTech','Пекарня',NULL,0,0,185,640,60,50,50,'own',0.9,0.8,1.7,0),\n  ('eq-cf01','st-101','КОФЕ-1','Кофейный аппарат','coffee','ok','BrewMax','Пекарня',NULL,0,0,NULL,710,60,36,40,'own',0.5,0.5,1.6,0),\n  ('eq-cam1','st-101','CAM-A1','Камера аналитики A1','camera','ok','VisionAI','Зал',NULL,0,0,NULL,200,20,22,22,'own',0.12,0.12,0.2,0),\n  ('eq-cam2','st-101','CAM-B2','Камера аналитики B2','camera','ok','VisionAI','Зал',NULL,0,0,NULL,520,20,22,22,'own',0.12,0.12,0.2,0);\nINSERT INTO st_planogram (id,store_id,name,equipment_id,compliance,version,category,export_name,folder_path,author,version_label,updated_at) VALUES\n  ('pg-1','st-101','Молоко ТП на КЭШ-5','eq-r01',84,1,'Молоко ТП','PLNG_Milk_TP_KESH5_v12','Планограммы / Молочная / Молоко ТП / КЭШ-5','Отдел ПЛНГ','12.4',TIMESTAMPTZ '2026-08-04T09:20:00+03'),\n  ('pg-2','st-101','Колбасы · ХЛ-03','eq-f01',78,1,'Колбасы','PLNG_Sausage_HL03_v08','Планограммы / Гастрономия / Колбасы / ХЛ-03','Отдел ПЛНГ','8.1',TIMESTAMPTZ '2026-08-05T14:10:00+03'),\n  ('pg-3','st-101','Промо паллета · ДМП-П1','eq-d01',100,1,'Акция недели','DMP_Promo_Week32_P1','Планограммы / ДМП / Акция недели / Паллета-1','Отдел ДМП','3.0',TIMESTAMPTZ '2026-08-06T08:00:00+03'),\n  ('pg-4','st-101','Бакалея крупы · СТ-12','eq-r02',96,1,'Крупы','PLNG_Grocery_ST12_v05','Планограммы / Бакалея / Крупы / СТ-12','Отдел ПЛНГ','5.2',TIMESTAMPTZ '2026-08-03T11:40:00+03');\nINSERT INTO st_planogram_shelf (id,planogram_id,level,height_cm,capacity_cm) VALUES\n  ('pg-1-s5','pg-1',5,35,125),\n  ('pg-1-s4','pg-1',4,32,125),\n  ('pg-1-s3','pg-1',3,30,125),\n  ('pg-1-s2','pg-1',2,28,125),\n  ('pg-1-s1','pg-1',1,26,125),\n  ('pg-2-s4','pg-2',4,28,250),\n  ('pg-2-s3','pg-2',3,28,250),\n  ('pg-2-s2','pg-2',2,26,250),\n  ('pg-2-s1','pg-2',1,24,250),\n  ('pg-3-s2','pg-3',2,40,120),\n  ('pg-3-s1','pg-3',1,45,120),\n  ('pg-4-s6','pg-4',6,30,250),\n  ('pg-4-s5','pg-4',5,30,250),\n  ('pg-4-s4','pg-4',4,28,250),\n  ('pg-4-s3','pg-4',3,28,250),\n  ('pg-4-s2','pg-4',2,26,250),\n  ('pg-4-s1','pg-4',1,24,250);\nINSERT INTO st_planogram_sku (id,planogram_id,shelf_level,name,brand,barcode,faces,actual_faces,depth,width_cm,price,color,status) VALUES\n  ('sku-m1','pg-1',5,'Молоко 3.2% 1л','Простоквашино','4607025390011',4,4,3,9.5,89.9,'#F2F0E4','ok'),\n  ('sku-m2','pg-1',5,'Молоко 2.5% 1л','Домик в деревне','4607025390142',3,2,3,9.5,84.5,'#E8F4FC','missing'),\n  ('sku-k1','pg-1',4,'Кефир 1% 0.9л','Простоквашино','4607025391018',3,3,2,9,72,'#FCE8E8','ok'),\n  ('sku-k2','pg-1',4,'Ряженка 4% 0.45л','Вкуснотеево','4607025391186',2,2,2,8,54,'#FDF2DC','ok'),\n  ('sku-k3','pg-1',4,'Снежок 0.4л','Кубанский','4607025391223',2,2,2,7.5,48,'#EAF8EF','ok'),\n  ('sku-s1','pg-1',3,'Сметана 15% 300г','Простоквашино','4607025392015',4,4,2,9,69,'#FFF8E7','ok'),\n  ('sku-s2','pg-1',3,'Творог 5% 200г','Домик в деревне','4607025392145',3,1,2,10,78,'#F5F0E8','wrong'),\n  ('sku-y1','pg-1',2,'Йогурт питьевой 270г','Активиа','4607025393012',4,4,2,7,52,'#E6F7F2','ok'),\n  ('sku-y2','pg-1',2,'Йогурт густой 120г','Чудо','4607025393081',3,3,2,7,39,'#FCE9F2','ok'),\n  ('sku-b1','pg-1',1,'Масло сливочное 82% 180г','Вологодское','4607025394019',5,4,2,11,149,'#FFF3C4','low_stock'),\n  ('sku-c1','pg-2',4,'Сервелат в/с 300г','Мираторг','4607025400017',3,3,2,14,289,'#F0D6D6','ok'),\n  ('sku-c2','pg-2',4,'Салями Финская','Черкизово','4607025400086',2,2,2,12,319,'#E8C4C4','ok'),\n  ('sku-c3','pg-2',3,'Докторская ГОСТ','Папа может','4607025401014',4,4,2,13,249,'#F8DEDE','ok'),\n  ('sku-c4','pg-2',3,'Молочная варёная','Останкино','4607025401090',3,2,2,13,219,'#F5E6E6','missing'),\n  ('sku-c5','pg-2',2,'Сосиски молочные','Мираторг','4607025402011',5,3,2,11,189,'#FFE8D6','missing'),\n  ('sku-c6','pg-2',1,'Ветчина нарезка','Дымов','4607025403018',3,3,2,16,279,'#F2D4C8','ok'),\n  ('sku-c7','pg-2',1,'Бекон сырокопчёный','Черкизово','4607025403087',2,3,2,14,349,'#E8C8B8','extra'),\n  ('sku-p1','pg-3',2,'Чипсы 150г (акция)','Layʼs','4607025410014',8,8,4,12,99,'#FFE566','ok'),\n  ('sku-p2','pg-3',1,'Напиток 0.5л (акция)','Pepsi','4607025411011',6,6,3,7,69,'#1B4F9C','ok'),\n  ('sku-g1','pg-4',6,'Гречка ядрица 900г','Увелка','4607025420011',4,3,3,12,119,'#C4A574','low_stock'),\n  ('sku-g2','pg-4',6,'Рис длиннозёрный 800г','Мистраль','4607025420080',3,3,3,12,129,'#F5F0E0','ok'),\n  ('sku-g3','pg-4',5,'Овсянка Геркулес','Nordic','4607025421018',5,5,2,10,89,'#E8D9B8','ok'),\n  ('sku-g4','pg-4',4,'Макароны спагетти','Shebekinskie','4607025422015',4,4,2,11,79,'#F0E4C8','ok'),\n  ('sku-g5','pg-4',4,'Макароны перья','Макфа','4607025422084',3,3,2,11,72,'#EDE0C0','ok'),\n  ('sku-g6','pg-4',3,'Мука пшеничная 2кг','Макфа','4607025423012',3,3,2,14,98,'#FAF6EE','ok'),\n  ('sku-g7','pg-4',2,'Сахар песок 1кг','Русский','4607025424019',4,4,2,12,69,'#FFFFFF','ok'),\n  ('sku-g8','pg-4',1,'Соль экстра 1кг','Полесье','4607025425016',3,3,2,10,35,'#F7F7F7','ok');\nINSERT INTO st_planogram_issue (id,planogram_id,shelf_level,severity,message) VALUES\n  ('iss-1','pg-1',5,'medium','Молоко 2.5% — факт 2 лица вместо 3 (видеоаналитика)'),\n  ('iss-2','pg-1',3,'high','На месте творога обнаружен чужой SKU'),\n  ('iss-3','pg-1',1,'low','Масло: глубина выкладки ниже эталона'),\n  ('iss-4','pg-2',2,'high','Сосиски: лиц меньше эталона на 2'),\n  ('iss-5','pg-2',4,'medium','Сервелат сдвинут от центрирования'),\n  ('iss-6','pg-4',6,'low','Гречка: одно лицо пустое (низкий остаток)');\nINSERT INTO st_shelf_space (id,store_id,category,meters,share_pct,faces,equipment_ids) VALUES\n  ('ss-1','st-101','Молоко ТП',6.25,12.4,30,'eq-r01'),\n  ('ss-2','st-101','Крупы',15,29.8,72,'eq-r02'),\n  ('ss-3','st-101','Вода',10,19.9,48,'eq-r03'),\n  ('ss-4','st-101','Колбасы',10,19.9,40,'eq-f01'),\n  ('ss-5','st-101','Мороженое',1.8,3.6,12,'eq-f02'),\n  ('ss-6','st-101','ДМП / Промо',4.8,9.5,28,'eq-d01,eq-d02'),\n  ('ss-7','st-101','Прочее',2.4,4.9,10,'');\nINSERT INTO st_incident (id,store_id,title,equipment_id,severity,status,assignee,reporter,source,created_at,sla_due_at,updated_at,resolution,linked_task_id) VALUES\n  ('inc-1','st-101','Температура морозильника выше нормы (−12.4 °C)','eq-f02','high','in_progress','С. Орлов','Шлюз телеметрии','iot',TIMESTAMPTZ '2026-08-06T16:42:00+03',TIMESTAMPTZ '2026-08-06T18:42:00+03',TIMESTAMPTZ '2026-08-06T17:05:00+03',NULL,'t-3'),\n  ('inc-2','st-101','Отклонение выкладки от планограммы · КЭШ-5 (видеоаналитика)','eq-r01','medium','assigned','И. Петров','Движок видеоаналитики','cv',TIMESTAMPTZ '2026-08-06T15:10:00+03',TIMESTAMPTZ '2026-08-06T19:10:00+03',TIMESTAMPTZ '2026-08-06T15:20:00+03',NULL,'t-1'),\n  ('inc-3','st-101','КСО-2: ошибка сканера штрихкода','eq-c02','high','waiting','С. Орлов','Шлюз телеметрии','iot',TIMESTAMPTZ '2026-08-06T14:55:00+03',TIMESTAMPTZ '2026-08-06T17:55:00+03',TIMESTAMPTZ '2026-08-06T16:10:00+03',NULL,NULL),\n  ('inc-4','st-101','Низкий остаток SKU «Молоко 3.2%» на полке','eq-r01','low','new',NULL,'Касса / остатки','pos',TIMESTAMPTZ '2026-08-06T13:20:00+03',TIMESTAMPTZ '2026-08-06T21:20:00+03',TIMESTAMPTZ '2026-08-06T13:20:00+03',NULL,NULL),\n  ('inc-5','st-101','ДМП-01: нет связи со шлюзом электронных ценников','eq-d01','medium','verification','С. Орлов',NULL,'iot',TIMESTAMPTZ '2026-08-06T11:00:00+03',TIMESTAMPTZ '2026-08-06T17:00:00+03',TIMESTAMPTZ '2026-08-06T16:30:00+03',NULL,NULL),\n  ('inc-6','st-101','Ложное срабатывание датчика двери холодильника','eq-f01','low','closed','С. Орлов',NULL,'iot',TIMESTAMPTZ '2026-08-05T09:00:00+03',NULL,TIMESTAMPTZ '2026-08-05T11:30:00+03','Калибровка геркона, ложное срабатывание снято',NULL);\nINSERT INTO st_task (id,store_id,title,task_type,status,priority,assignee,equipment_id,due_at,created_at,updated_at,reporter,linked_incident_id,result_note) VALUES\n  ('t-1','st-101','Восстановить выкладку по планограмме КЭШ-5','planogram','in_progress','high','И. Петров','eq-r01',TIMESTAMPTZ '2026-08-06T18:00:00+03',TIMESTAMPTZ '2026-08-06T15:15:00+03',TIMESTAMPTZ '2026-08-06T15:45:00+03','Автореакция видеоаналитики','inc-2',NULL),\n  ('t-2','st-101','Пополнить лица «Вода 5л» на СТ-18','restock','queued','normal','М. Сидорова','eq-r03',TIMESTAMPTZ '2026-08-06T19:00:00+03',TIMESTAMPTZ '2026-08-06T16:00:00+03',TIMESTAMPTZ '2026-08-06T16:05:00+03','Аналитика остатков',NULL,NULL),\n  ('t-3','st-101','Сервисный выезд: морозильный ларь МР-01','service','accepted','high','С. Орлов','eq-f02',TIMESTAMPTZ '2026-08-06T20:00:00+03',TIMESTAMPTZ '2026-08-06T16:45:00+03',TIMESTAMPTZ '2026-08-06T17:00:00+03','Диспетчер ТО','inc-1',NULL),\n  ('t-4','st-101','Разместить ДМП по акции «Выходные»','promo','done','normal','А. Ковалёва','eq-d01',TIMESTAMPTZ '2026-08-06T12:00:00+03',TIMESTAMPTZ '2026-08-06T09:00:00+03',TIMESTAMPTZ '2026-08-06T11:40:00+03',NULL,NULL,'ДМП размещён, фото в мобильном приложении'),\n  ('t-5','st-101','Аудит полочного пространства бакалея','audit','overdue','normal','Отдел ПЛНГ','eq-r02',TIMESTAMPTZ '2026-08-05T17:00:00+03',TIMESTAMPTZ '2026-08-05T10:00:00+03',TIMESTAMPTZ '2026-08-05T17:01:00+03',NULL,NULL,NULL),\n  ('t-6','st-101','Переставить промо-паллету у входа','promo','blocked','low','М. Сидорова','eq-d01',TIMESTAMPTZ '2026-08-06T21:00:00+03',TIMESTAMPTZ '2026-08-06T14:00:00+03',TIMESTAMPTZ '2026-08-06T15:30:00+03',NULL,NULL,NULL);\nINSERT INTO st_lifecycle_event (id,entity_type,entity_id,at_ts,actor,from_status,to_status,comment) VALUES\n  ('h1-1','incident','inc-1',TIMESTAMPTZ '2026-08-06T16:42:00+03','Система телеметрии',NULL,'new','Порог −15 °C превышен 8 мин подряд'),\n  ('h1-2','incident','inc-1',TIMESTAMPTZ '2026-08-06T16:44:00+03','Автореакция','new','triage','Критичность → высокая, маршрут: сервис холодильного'),\n  ('h1-3','incident','inc-1',TIMESTAMPTZ '2026-08-06T16:50:00+03','Диспетчер ТО','triage','assigned','Назначен С. Орлов · SLA 2 ч'),\n  ('h1-4','incident','inc-1',TIMESTAMPTZ '2026-08-06T17:05:00+03','С. Орлов','assigned','in_progress','Диагностика компрессора на объекте'),\n  ('h2-1','incident','inc-2',TIMESTAMPTZ '2026-08-06T15:10:00+03','Видеоаналитика',NULL,'new','Соответствие 72% · порог 85%'),\n  ('h2-2','incident','inc-2',TIMESTAMPTZ '2026-08-06T15:12:00+03','Автореакция','new','triage',NULL),\n  ('h2-3','incident','inc-2',TIMESTAMPTZ '2026-08-06T15:20:00+03','Старший смены','triage','assigned','Создана задача t-1 на выкладку'),\n  ('h3-1','incident','inc-3',TIMESTAMPTZ '2026-08-06T14:55:00+03','Система телеметрии',NULL,'new','Ошибки сканера > 12 за 5 мин'),\n  ('h3-2','incident','inc-3',TIMESTAMPTZ '2026-08-06T15:00:00+03','Диспетчер ТО','new','triage',NULL),\n  ('h3-3','incident','inc-3',TIMESTAMPTZ '2026-08-06T15:10:00+03','Диспетчер ТО','triage','assigned','Назначен С. Орлов'),\n  ('h3-4','incident','inc-3',TIMESTAMPTZ '2026-08-06T15:40:00+03','С. Орлов','assigned','in_progress','Замена сканирующей головки'),\n  ('h3-5','incident','inc-3',TIMESTAMPTZ '2026-08-06T16:10:00+03','С. Орлов','in_progress','waiting','Ожидание ЗИП со склада РЦ · ориентир 19:00'),\n  ('h4-1','incident','inc-4',TIMESTAMPTZ '2026-08-06T13:20:00+03','Коннектор касс',NULL,'new','Остаток на полке < 2 лица'),\n  ('h5-1','incident','inc-5',TIMESTAMPTZ '2026-08-06T11:00:00+03','Система телеметрии',NULL,'new',NULL),\n  ('h5-2','incident','inc-5',TIMESTAMPTZ '2026-08-06T11:15:00+03','Диспетчер ТО','new','assigned','Пропуск классификации — типовой инцидент электронных ценников'),\n  ('h5-3','incident','inc-5',TIMESTAMPTZ '2026-08-06T12:00:00+03','С. Орлов','assigned','in_progress',NULL),\n  ('h5-4','incident','inc-5',TIMESTAMPTZ '2026-08-06T16:30:00+03','С. Орлов','in_progress','verification','Перезапуск шлюза · ждём 15 мин стабильной связи'),\n  ('h6-1','incident','inc-6',TIMESTAMPTZ '2026-08-05T09:00:00+03','Система телеметрии',NULL,'new',NULL),\n  ('h6-2','incident','inc-6',TIMESTAMPTZ '2026-08-05T09:20:00+03','Диспетчер ТО','new','triage',NULL),\n  ('h6-3','incident','inc-6',TIMESTAMPTZ '2026-08-05T10:00:00+03','С. Орлов','triage','in_progress',NULL),\n  ('h6-4','incident','inc-6',TIMESTAMPTZ '2026-08-05T11:00:00+03','С. Орлов','in_progress','resolved','Калибровка выполнена'),\n  ('h6-5','incident','inc-6',TIMESTAMPTZ '2026-08-05T11:30:00+03','Диспетчер ТО','resolved','closed','SLA выполнен'),\n  ('th1-1','task','t-1',TIMESTAMPTZ '2026-08-06T15:15:00+03','Автореакция',NULL,'new','По инциденту inc-2'),\n  ('th1-2','task','t-1',TIMESTAMPTZ '2026-08-06T15:18:00+03','Старший смены','new','queued',NULL),\n  ('th1-3','task','t-1',TIMESTAMPTZ '2026-08-06T15:30:00+03','И. Петров','queued','accepted','Принято в мобильном приложении'),\n  ('th1-4','task','t-1',TIMESTAMPTZ '2026-08-06T15:45:00+03','И. Петров','accepted','in_progress','Корректировка полки 2–3'),\n  ('th2-1','task','t-2',TIMESTAMPTZ '2026-08-06T16:00:00+03','Аналитика',NULL,'new',NULL),\n  ('th2-2','task','t-2',TIMESTAMPTZ '2026-08-06T16:05:00+03','Старший смены','new','queued','В план смены 16:00–20:00'),\n  ('th3-1','task','t-3',TIMESTAMPTZ '2026-08-06T16:45:00+03','Диспетчер ТО',NULL,'new','По заявке inc-1'),\n  ('th3-2','task','t-3',TIMESTAMPTZ '2026-08-06T16:50:00+03','Диспетчер ТО','new','queued',NULL),\n  ('th3-3','task','t-3',TIMESTAMPTZ '2026-08-06T17:00:00+03','С. Орлов','queued','accepted',NULL),\n  ('th4-1','task','t-4',TIMESTAMPTZ '2026-08-06T09:00:00+03','Мерчендайзинг',NULL,'new',NULL),\n  ('th4-2','task','t-4',TIMESTAMPTZ '2026-08-06T09:10:00+03','Старший смены','new','queued',NULL),\n  ('th4-3','task','t-4',TIMESTAMPTZ '2026-08-06T09:30:00+03','А. Ковалёва','queued','accepted',NULL),\n  ('th4-4','task','t-4',TIMESTAMPTZ '2026-08-06T10:00:00+03','А. Ковалёва','accepted','in_progress',NULL),\n  ('th4-5','task','t-4',TIMESTAMPTZ '2026-08-06T11:20:00+03','А. Ковалёва','in_progress','review','Фото отправлено на проверку'),\n  ('th4-6','task','t-4',TIMESTAMPTZ '2026-08-06T11:40:00+03','Старший смены','review','done','Принято'),\n  ('th5-1','task','t-5',TIMESTAMPTZ '2026-08-05T10:00:00+03','Аналитик',NULL,'new',NULL),\n  ('th5-2','task','t-5',TIMESTAMPTZ '2026-08-05T10:30:00+03','Руководитель сети','new','queued',NULL),\n  ('th5-3','task','t-5',TIMESTAMPTZ '2026-08-05T12:00:00+03','Отдел ПЛНГ','queued','accepted',NULL),\n  ('th5-4','task','t-5',TIMESTAMPTZ '2026-08-05T17:01:00+03','Система SLA','accepted','overdue','Срок 17:00 истёк без старта работ'),\n  ('th6-1','task','t-6',TIMESTAMPTZ '2026-08-06T14:00:00+03','Администратор',NULL,'new',NULL),\n  ('th6-2','task','t-6',TIMESTAMPTZ '2026-08-06T14:20:00+03','М. Сидорова','new','queued',NULL),\n  ('th6-3','task','t-6',TIMESTAMPTZ '2026-08-06T14:40:00+03','М. Сидорова','queued','accepted',NULL),\n  ('th6-4','task','t-6',TIMESTAMPTZ '2026-08-06T15:00:00+03','М. Сидорова','accepted','in_progress',NULL),\n  ('th6-5','task','t-6',TIMESTAMPTZ '2026-08-06T15:30:00+03','М. Сидорова','in_progress','blocked','Паллета не прибыла с РЦ');\nINSERT INTO st_integration (id,name,protocol,health,latency_ms,endpoint,description,last_sync_at) VALUES\n  ('erp','Учётная система','REST / JSON','online',120,'https://erp.retail.local/api/v1','Учёт товаров, заказы, справочник СЭС, статусы заявок',TIMESTAMPTZ '2026-08-06T18:55:00+03'),\n  ('pos','Кассы','REST / JSON · XML','online',85,'https://pos.retail.local/stream','Продажи в реальном времени, остатки на кассах',TIMESTAMPTZ '2026-08-06T18:59:40+03'),\n  ('sfa','Полевые задачи','REST / JSON','online',140,'https://sfa.retail.local/api','Задачи персонала, маршруты, учёт исполнения',TIMESTAMPTZ '2026-08-06T18:50:00+03'),\n  ('iot','Платформа телеметрии','OPC UA','degraded',420,'opc.tcp://iot-gw.retail.local:4840','Телеметрия холодильников, печей, КСО; команды управления',TIMESTAMPTZ '2026-08-06T18:58:10+03'),\n  ('scada','SCADA','OPC UA','online',95,'opc.tcp://scada.retail.local:4840','Двусторонний обмен телеметрией и командами',TIMESTAMPTZ '2026-08-06T18:59:00+03'),\n  ('cv','Видеоаналитика','RTSP + REST','online',210,'https://cv.retail.local/api/v2','Сверка выкладки с планограммой, зоны интереса',TIMESTAMPTZ '2026-08-06T18:57:30+03'),\n  ('bi','Бизнес-аналитика','CSV / REST','online',180,'https://bi.retail.local/export','Агрегированные отчёты и дашборды KPI',TIMESTAMPTZ '2026-08-06T18:00:00+03'),\n  ('notify','Оповещения','Push / SMS / Email','online',60,'https://notify.retail.local/gateway','Уведомления сотрудникам и ответственным отделам',TIMESTAMPTZ '2026-08-06T18:59:55+03');\nINSERT INTO st_kpi_point (id,store_id,series,label,value,sort_order) VALUES\n  ('kpi-1','st-101','sales','Пн',420,1),\n  ('kpi-2','st-101','sales','Вт',390,2),\n  ('kpi-3','st-101','sales','Ср',455,3),\n  ('kpi-4','st-101','sales','Чт',480,4),\n  ('kpi-5','st-101','sales','Пт',610,5),\n  ('kpi-6','st-101','sales','Сб',720,6),\n  ('kpi-7','st-101','sales','Вс',680,7),\n  ('kpi-8','st-101','traffic','09',45,8),\n  ('kpi-9','st-101','traffic','11',120,9),\n  ('kpi-10','st-101','traffic','13',180,10),\n  ('kpi-11','st-101','traffic','15',160,11),\n  ('kpi-12','st-101','traffic','17',210,12),\n  ('kpi-13','st-101','traffic','19',240,13),\n  ('kpi-14','st-101','traffic','21',90,14);\nINSERT INTO st_user (id,name,email,role,store_id) VALUES\n  ('u-1','Анна Ковалёва','a.kovaleva@retail.local','admin','st-101'),\n  ('u-2','Иван Петров','i.petrov@retail.local','merchandiser','st-101'),\n  ('u-3','Сергей Орлов','s.orlov@retail.local','service','st-101'),\n  ('u-4','Мария Сидорова','m.sidorova@retail.local','floor','st-101'),\n  ('u-5','Ольга Аналитик','o.analyst@retail.local','analyst','st-101'),\n  ('u-6','Директор сети','director@retail.local','management','st-101');"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "storetwin-hub-v1",
+      "description": "Application logic hub (BFF) — INSTANCE blueprint with targetObjectType CUSTOM; not a driver DEVICE",
+      "type": "INSTANCE",
+      "targetObjectType": "CUSTOM",
+      "variables": []
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "storetwin",
+      "type": "CUSTOM",
+      "displayName": "StoreTwin",
+      "description": "Цифровой двойник розничной точки"
+    },
+    {
+      "parentPath": "root.platform.devices.storetwin",
+      "name": "hub",
+      "type": "CUSTOM",
+        "templateId": "storetwin-hub-v1",
+      "displayName": "StoreTwin — Hub",
+      "description": "BFF functions host"
+    },
+    {
+      "parentPath": "root.platform.devices.storetwin",
+      "name": "store-101",
+      "type": "DEVICE",
+      "displayName": "ТТ №101 · Центр",
+      "description": "Торговая точка демо"
+    },
+    {
+      "parentPath": "root.platform.devices.storetwin",
+      "name": "floor-mimic",
+      "type": "MIMIC",
+      "displayName": "Схема торгового зала",
+      "description": "Floor plan mimic from StoreTwin equipment/zones"
+    },
+    {
+      "parentPath": "root.platform.mimics",
+      "name": "storetwin-floor",
+      "type": "MIMIC",
+      "displayName": "StoreTwin · схема зала",
+      "description": "Retail floor plan mimic"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_getStore",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, name, address, area_m2 FROM st_store WHERE id='st-101'\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listZones",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, store_id, label, x, y, w, h FROM st_zone WHERE store_id='st-101' ORDER BY label\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listEquipment",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, store_id, code, name, eq_type, status, brand, zone_label, category, shelf_meters, shelves, temperature, pos_x, pos_y, width, height, \\\"owner\\\" AS owner, dim_l, dim_w, dim_h, rotation FROM st_equipment WHERE store_id='st-101' ORDER BY code\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listPlanograms",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, store_id, name, COALESCE(equipment_id,'') AS equipment_id, compliance, version, COALESCE(category,'') AS category, COALESCE(export_name,'') AS export_name, COALESCE(folder_path,'') AS folder_path, COALESCE(author,'') AS author, COALESCE(version_label,'') AS version_label, updated_at FROM st_planogram WHERE store_id='st-101' ORDER BY name\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listPlanogramShelves",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, planogram_id, level, height_cm, capacity_cm FROM st_planogram_shelf ORDER BY planogram_id, level DESC\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listPlanogramSkus",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, planogram_id, shelf_level, name, brand, barcode, faces, actual_faces, depth, width_cm, price, color, status FROM st_planogram_sku ORDER BY planogram_id, shelf_level DESC, name\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listPlanogramIssues",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, planogram_id, shelf_level, severity, message FROM st_planogram_issue ORDER BY planogram_id, shelf_level DESC\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listShelfSpace",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, store_id, category, meters, share_pct, faces, COALESCE(equipment_ids,'') AS equipment_ids FROM st_shelf_space WHERE store_id='st-101' ORDER BY meters DESC\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listIncidents",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, store_id, title, COALESCE(equipment_id,'') AS equipment_id, severity, status, COALESCE(assignee,'') AS assignee, COALESCE(reporter,'') AS reporter, COALESCE(source,'') AS source, created_at, sla_due_at, updated_at, COALESCE(resolution,'') AS resolution, COALESCE(linked_task_id,'') AS linked_task_id FROM st_incident WHERE store_id='st-101' ORDER BY created_at DESC\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listTasks",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, store_id, title, task_type, status, priority, COALESCE(assignee,'') AS assignee, COALESCE(equipment_id,'') AS equipment_id, due_at, created_at, updated_at, COALESCE(reporter,'') AS reporter, COALESCE(linked_incident_id,'') AS linked_incident_id, COALESCE(result_note,'') AS result_note FROM st_task WHERE store_id='st-101' ORDER BY created_at DESC\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listLifecycle",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, entity_type, entity_id, at_ts, COALESCE(actor,'') AS actor, COALESCE(from_status,'') AS from_status, to_status, COALESCE(comment,'') AS comment FROM st_lifecycle_event ORDER BY at_ts DESC\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listKpis",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, store_id, series, label, value, sort_order FROM st_kpi_point WHERE store_id='st-101' ORDER BY series, sort_order, label\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listIntegrations",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, name, protocol, health, latency_ms, COALESCE(endpoint,'') AS endpoint, COALESCE(description,'') AS description, last_sync_at FROM st_integration ORDER BY name\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_listUsers",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT id, name, email, role, COALESCE(store_id,'') AS store_id FROM st_user ORDER BY name\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.storetwin.hub",
+      "functionName": "st_pingIntegration",
+      "version": "ui1",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "id",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "id",
+              "type": "STRING"
+            },
+            {
+              "name": "name",
+              "type": "STRING"
+            },
+            {
+              "name": "health",
+              "type": "STRING"
+            },
+            {
+              "name": "latency_ms",
+              "type": "INTEGER"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT id, name, health, latency_ms FROM st_integration WHERE id = ?\", \"params\": [\"${input.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"id\": \"${row.id}\", \"name\": \"${row.name}\", \"health\": \"${row.health}\", \"latency_ms\": \"${row.latency_ms}\"}}]}"
+      }
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.storetwin-twin",
+      "title": "Цифровой двойник",
+      "refreshIntervalMs": 8000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"StoreTwin\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 7, \"htmlJson\": \"<p><b>Цифровой двойник</b> — схема зала (HTML), KPI, задачи, интеграции.</p>\"}, {\"id\": \"floor\", \"type\": \"html-snippet\", \"title\": \"Схема зала\", \"x\": 0, \"y\": 7, \"w\": 84, \"h\": 56, \"htmlJson\": \"<div style=\\\"font-family:system-ui,sans-serif\\\"><div style=\\\"font-weight:700;font-size:14px;margin:0 0 8px 0;color:#1c1917\\\">ТТ №101 · схема зала</div><div style=\\\"display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px;color:#57534e\\\"><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#3d6b4f\\\"></span>Стеллаж</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#2f6f8f\\\"></span>Холод</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#b45309\\\"></span>ДМП</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#5b4b8a\\\"></span>Касса</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#7c2d12\\\"></span>Печь</span><span style=\\\"margin-left:8px\\\">рамка: <b style=\\\"color:#d97706\\\">warning</b> / <b style=\\\"color:#dc2626\\\">critical</b></span></div><div style=\\\"position:relative;width:100%;padding-bottom:60%;background:#faf8f4;border:1px solid #d6d0c4;border-radius:8px;overflow:hidden\\\"><div style=\\\"position:absolute;left:62.50%;top:22.92%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">ДМП</div><div style=\\\"position:absolute;left:62.50%;top:56.25%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Кассовая зона</div><div style=\\\"position:absolute;left:15.00%;top:10.42%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Молочная / Бакалея</div><div style=\\\"position:absolute;left:85.00%;top:10.42%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Пекарня</div><div style=\\\"position:absolute;left:42.50%;top:10.42%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Холод / Заморозка</div><div title=\\\"CAM-A1\\\" style=\\\"position:absolute;left:25.00%;top:4.17%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#64748b;border:1px solid #1e293b;z-index:3\\\"></div><div title=\\\"CAM-B2\\\" style=\\\"position:absolute;left:65.00%;top:4.17%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#64748b;border:1px solid #1e293b;z-index:3\\\"></div><div title=\\\"Паллета промо ДМП-П1\\\" style=\\\"position:absolute;left:53.12%;top:19.27%;width:8.75%;height:11.46%;background:#b45309;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ДМП-П1</div><div title=\\\"Стойка брендированная ДМП-С2\\\" style=\\\"position:absolute;left:67.50%;top:17.71%;width:5.00%;height:14.58%;background:#b45309;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ДМП-С2</div><div title=\\\"Касса операторская 1\\\" style=\\\"position:absolute;left:49.38%;top:52.60%;width:6.25%;height:11.46%;background:#5b4b8a;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КАССА-1</div><div title=\\\"Кофейный аппарат\\\" style=\\\"position:absolute;left:86.50%;top:8.33%;width:4.50%;height:8.33%;background:#92400e;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КОФЕ-1</div><div title=\\\"Касса самообслуживания 1\\\" style=\\\"position:absolute;left:57.19%;top:53.65%;width:5.62%;height:9.38%;background:#5b4b8a;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КСО-1</div><div title=\\\"Касса самообслуживания 2\\\" style=\\\"position:absolute;left:64.69%;top:53.65%;width:5.62%;height:9.38%;background:#5b4b8a;border:2px solid #d97706;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КСО-2</div><div title=\\\"Стеллаж молочный КЭШ-5\\\" style=\\\"position:absolute;left:4.38%;top:8.75%;width:11.25%;height:7.50%;background:#3d6b4f;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КЭШ-5</div><div title=\\\"Морозильный ларь МР-01\\\" style=\\\"position:absolute;left:28.12%;top:28.12%;width:13.75%;height:10.42%;background:#1e4f6f;border:2px solid #dc2626;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">МР-01</div><div title=\\\"Конвекционная печь\\\" style=\\\"position:absolute;left:76.88%;top:7.29%;width:6.25%;height:10.42%;background:#7c2d12;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ПЕЧЬ-1</div><div title=\\\"Стеллаж бакалея СТ-12\\\" style=\\\"position:absolute;left:1.25%;top:25.42%;width:17.50%;height:7.50%;background:#3d6b4f;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">СТ-12</div><div title=\\\"Стеллаж напитки СТ-18\\\" style=\\\"position:absolute;left:2.50%;top:42.08%;width:15.00%;height:7.50%;background:#3d6b4f;border:2px solid #d97706;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">СТ-18</div><div title=\\\"Холодильник открытый ХЛ-03\\\" style=\\\"position:absolute;left:25.62%;top:7.50%;width:18.75%;height:10.00%;background:#2f6f8f;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ХЛ-03</div></div><div style=\\\"margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px\\\"><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>CAM-A1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Камера · Зал</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>CAM-B2</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Камера · Зал</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ДМП-П1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">ДМП · Промо</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ДМП-С2</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">ДМП · Промо</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КАССА-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Касса · Кассы</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КОФЕ-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Кофе · Пекарня</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КСО-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">КСО · Кассы</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КСО-2</b><span style=\\\"color:#d97706\\\">warning</span></div><div style=\\\"color:#78716c\\\">КСО · Кассы</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КЭШ-5</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Стеллаж · Молочная</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>МР-01</b><span style=\\\"color:#dc2626\\\">critical</span></div><div style=\\\"color:#78716c\\\">Морозилка · Заморозка</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ПЕЧЬ-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Печь · Пекарня</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>СТ-12</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Стеллаж · Бакалея</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>СТ-18</b><span style=\\\"color:#d97706\\\">warning</span></div><div style=\\\"color:#78716c\\\">Стеллаж · Напитки</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ХЛ-03</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Холод · Гастрономия</div></div></div></div>\"}, {\"id\": \"sales\", \"type\": \"report\", \"title\": \"Продажи\", \"x\": 0, \"y\": 63, \"w\": 28, \"h\": 28, \"reportPath\": \"root.platform.reports.st-kpi-sales\"}, {\"id\": \"traffic\", \"type\": \"report\", \"title\": \"Клиентопоток\", \"x\": 28, \"y\": 63, \"w\": 28, \"h\": 28, \"reportPath\": \"root.platform.reports.st-kpi-traffic\"}, {\"id\": \"eq\", \"type\": \"report\", \"title\": \"Оборудование\", \"x\": 56, \"y\": 63, \"w\": 28, \"h\": 28, \"reportPath\": \"root.platform.reports.st-equipment\"}, {\"id\": \"tasks\", \"type\": \"report\", \"title\": \"Задачи\", \"x\": 0, \"y\": 91, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.st-tasks\"}, {\"id\": \"integ\", \"type\": \"report\", \"title\": \"Интеграции\", \"x\": 42, \"y\": 91, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.st-integrations\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.storetwin-equipment",
+      "title": "Оборудование",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"Оборудование\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 7, \"htmlJson\": \"<p>Схема зала и реестр оборудования.</p>\"}, {\"id\": \"floor-eq\", \"type\": \"html-snippet\", \"title\": \"Схема зала\", \"x\": 0, \"y\": 7, \"w\": 84, \"h\": 56, \"htmlJson\": \"<div style=\\\"font-family:system-ui,sans-serif\\\"><div style=\\\"font-weight:700;font-size:14px;margin:0 0 8px 0;color:#1c1917\\\">ТТ №101 · схема зала</div><div style=\\\"display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px;color:#57534e\\\"><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#3d6b4f\\\"></span>Стеллаж</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#2f6f8f\\\"></span>Холод</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#b45309\\\"></span>ДМП</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#5b4b8a\\\"></span>Касса</span><span style=\\\"display:inline-flex;align-items:center;gap:4px\\\"><span style=\\\"width:10px;height:10px;border-radius:2px;background:#7c2d12\\\"></span>Печь</span><span style=\\\"margin-left:8px\\\">рамка: <b style=\\\"color:#d97706\\\">warning</b> / <b style=\\\"color:#dc2626\\\">critical</b></span></div><div style=\\\"position:relative;width:100%;padding-bottom:60%;background:#faf8f4;border:1px solid #d6d0c4;border-radius:8px;overflow:hidden\\\"><div style=\\\"position:absolute;left:62.50%;top:22.92%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">ДМП</div><div style=\\\"position:absolute;left:62.50%;top:56.25%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Кассовая зона</div><div style=\\\"position:absolute;left:15.00%;top:10.42%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Молочная / Бакалея</div><div style=\\\"position:absolute;left:85.00%;top:10.42%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Пекарня</div><div style=\\\"position:absolute;left:42.50%;top:10.42%;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;background:#e8e2d6;border:1px dashed #c4bba8;font-size:10px;color:#6b6458;white-space:nowrap;z-index:1\\\">Холод / Заморозка</div><div title=\\\"CAM-A1\\\" style=\\\"position:absolute;left:25.00%;top:4.17%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#64748b;border:1px solid #1e293b;z-index:3\\\"></div><div title=\\\"CAM-B2\\\" style=\\\"position:absolute;left:65.00%;top:4.17%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#64748b;border:1px solid #1e293b;z-index:3\\\"></div><div title=\\\"Паллета промо ДМП-П1\\\" style=\\\"position:absolute;left:53.12%;top:19.27%;width:8.75%;height:11.46%;background:#b45309;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ДМП-П1</div><div title=\\\"Стойка брендированная ДМП-С2\\\" style=\\\"position:absolute;left:67.50%;top:17.71%;width:5.00%;height:14.58%;background:#b45309;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ДМП-С2</div><div title=\\\"Касса операторская 1\\\" style=\\\"position:absolute;left:49.38%;top:52.60%;width:6.25%;height:11.46%;background:#5b4b8a;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КАССА-1</div><div title=\\\"Кофейный аппарат\\\" style=\\\"position:absolute;left:86.50%;top:8.33%;width:4.50%;height:8.33%;background:#92400e;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КОФЕ-1</div><div title=\\\"Касса самообслуживания 1\\\" style=\\\"position:absolute;left:57.19%;top:53.65%;width:5.62%;height:9.38%;background:#5b4b8a;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КСО-1</div><div title=\\\"Касса самообслуживания 2\\\" style=\\\"position:absolute;left:64.69%;top:53.65%;width:5.62%;height:9.38%;background:#5b4b8a;border:2px solid #d97706;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КСО-2</div><div title=\\\"Стеллаж молочный КЭШ-5\\\" style=\\\"position:absolute;left:4.38%;top:8.75%;width:11.25%;height:7.50%;background:#3d6b4f;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">КЭШ-5</div><div title=\\\"Морозильный ларь МР-01\\\" style=\\\"position:absolute;left:28.12%;top:28.12%;width:13.75%;height:10.42%;background:#1e4f6f;border:2px solid #dc2626;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">МР-01</div><div title=\\\"Конвекционная печь\\\" style=\\\"position:absolute;left:76.88%;top:7.29%;width:6.25%;height:10.42%;background:#7c2d12;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ПЕЧЬ-1</div><div title=\\\"Стеллаж бакалея СТ-12\\\" style=\\\"position:absolute;left:1.25%;top:25.42%;width:17.50%;height:7.50%;background:#3d6b4f;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">СТ-12</div><div title=\\\"Стеллаж напитки СТ-18\\\" style=\\\"position:absolute;left:2.50%;top:42.08%;width:15.00%;height:7.50%;background:#3d6b4f;border:2px solid #d97706;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">СТ-18</div><div title=\\\"Холодильник открытый ХЛ-03\\\" style=\\\"position:absolute;left:25.62%;top:7.50%;width:18.75%;height:10.00%;background:#2f6f8f;border:1px solid #1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;z-index:2;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px\\\">ХЛ-03</div></div><div style=\\\"margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px\\\"><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>CAM-A1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Камера · Зал</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>CAM-B2</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Камера · Зал</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ДМП-П1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">ДМП · Промо</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ДМП-С2</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">ДМП · Промо</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КАССА-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Касса · Кассы</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КОФЕ-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Кофе · Пекарня</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КСО-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">КСО · Кассы</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КСО-2</b><span style=\\\"color:#d97706\\\">warning</span></div><div style=\\\"color:#78716c\\\">КСО · Кассы</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>КЭШ-5</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Стеллаж · Молочная</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>МР-01</b><span style=\\\"color:#dc2626\\\">critical</span></div><div style=\\\"color:#78716c\\\">Морозилка · Заморозка</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ПЕЧЬ-1</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Печь · Пекарня</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>СТ-12</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Стеллаж · Бакалея</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>СТ-18</b><span style=\\\"color:#d97706\\\">warning</span></div><div style=\\\"color:#78716c\\\">Стеллаж · Напитки</div></div><div style=\\\"border:1px solid #e7e5e4;border-radius:6px;padding:6px 8px;font-size:11px;background:#fff\\\"><div style=\\\"display:flex;justify-content:space-between;gap:6px\\\"><b>ХЛ-03</b><span style=\\\"color:#16a34a\\\">ok</span></div><div style=\\\"color:#78716c\\\">Холод · Гастрономия</div></div></div></div>\"}, {\"id\": \"tbl\", \"type\": \"report\", \"title\": \"Оборудование\", \"x\": 0, \"y\": 63, \"w\": 84, \"h\": 42, \"reportPath\": \"root.platform.reports.st-equipment\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.storetwin-planograms",
+      "title": "Планограммы",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"Планограммы\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 8, \"htmlJson\": \"<p>Выкладка: HTML-стеллаж и обзор полок + SKU / отклонения.</p>\"}, {\"id\": \"rack\", \"type\": \"html-snippet\", \"title\": \"Стеллаж · Молоко ТП\", \"x\": 0, \"y\": 8, \"w\": 42, \"h\": 42, \"htmlJson\": \"<div style=\\\"font-family:system-ui,sans-serif;padding:8px 4px\\\"><div style='font-weight:700;font-size:14px;margin-bottom:2px'>Молоко ТП на КЭШ-5</div><div style='color:#6b6458;font-size:12px;margin-bottom:10px'>compliance 84% · Молоко ТП</div><div style='display:flex;align-items:center;gap:8px;margin:6px 0'><div style='width:28px;font-size:11px;font-weight:600;color:#57534e'>П5</div><div style='flex:1;display:flex;gap:3px;background:#ebe6dc;border-radius:6px;padding:6px;min-height:36px'><div title='Молоко 2.5% 1л' style='flex:3;background:#E8F4FC;border:2px solid #dc2626;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#ffffff99;border:1px solid #dc262655'></span></div><div title='Молоко 3.2% 1л' style='flex:4;background:#F2F0E4;border:2px solid #94a3b8;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span></div></div></div><div style='display:flex;align-items:center;gap:8px;margin:6px 0'><div style='width:28px;font-size:11px;font-weight:600;color:#57534e'>П4</div><div style='flex:1;display:flex;gap:3px;background:#ebe6dc;border-radius:6px;padding:6px;min-height:36px'><div title='Кефир 1% 0.9л' style='flex:3;background:#FCE8E8;border:2px solid #94a3b8;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span></div><div title='Ряженка 4% 0.45л' style='flex:2;background:#FDF2DC;border:2px solid #94a3b8;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span></div><div title='Снежок 0.4л' style='flex:2;background:#EAF8EF;border:2px solid #94a3b8;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span></div></div></div><div style='display:flex;align-items:center;gap:8px;margin:6px 0'><div style='width:28px;font-size:11px;font-weight:600;color:#57534e'>П3</div><div style='flex:1;display:flex;gap:3px;background:#ebe6dc;border-radius:6px;padding:6px;min-height:36px'><div title='Сметана 15% 300г' style='flex:4;background:#FFF8E7;border:2px solid #94a3b8;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span></div><div title='Творог 5% 200г' style='flex:3;background:#F5F0E8;border:2px solid #7c3aed;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#ffffff99;border:1px solid #dc262655'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#ffffff99;border:1px solid #dc262655'></span></div></div></div><div style='display:flex;align-items:center;gap:8px;margin:6px 0'><div style='width:28px;font-size:11px;font-weight:600;color:#57534e'>П2</div><div style='flex:1;display:flex;gap:3px;background:#ebe6dc;border-radius:6px;padding:6px;min-height:36px'><div title='Йогурт густой 120г' style='flex:3;background:#FCE9F2;border:2px solid #94a3b8;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span></div><div title='Йогурт питьевой 270г' style='flex:4;background:#E6F7F2;border:2px solid #94a3b8;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span></div></div></div><div style='display:flex;align-items:center;gap:8px;margin:6px 0'><div style='width:28px;font-size:11px;font-weight:600;color:#57534e'>П1</div><div style='flex:1;display:flex;gap:3px;background:#ebe6dc;border-radius:6px;padding:6px;min-height:36px'><div title='Масло сливочное 82% 180г' style='flex:5;background:#FFF3C4;border:2px solid #dc2626;border-radius:4px;padding:4px 2px;text-align:center;min-width:24px'><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#00000022;border:1px solid transparent'></span><span style='display:inline-block;width:8px;height:22px;margin:0 1px;border-radius:2px;background:#ffffff99;border:1px solid #dc262655'></span></div></div></div></div>\"}, {\"id\": \"cards\", \"type\": \"html-snippet\", \"title\": \"Обзор планограмм\", \"x\": 42, \"y\": 8, \"w\": 42, \"h\": 42, \"htmlJson\": \"<div style=\\\"font-family:system-ui,sans-serif;padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:10px\\\"><div style='border:1px solid #d6d0c4;border-radius:10px;padding:10px;background:#faf8f4'><div style='font-weight:700;font-size:13px'>Бакалея крупы · СТ-12</div><div style='color:#6b6458;font-size:11px;margin:4px 0 8px'>96% · Крупы</div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:4;height:14px;border-radius:2px;background:#C4A574' title='Гречка ядрица 900г'></div><div style='flex:3;height:14px;border-radius:2px;background:#F5F0E0' title='Рис длиннозёрный 800г'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:5;height:14px;border-radius:2px;background:#E8D9B8' title='Овсянка Геркулес'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:3;height:14px;border-radius:2px;background:#EDE0C0' title='Макароны перья'></div><div style='flex:4;height:14px;border-radius:2px;background:#F0E4C8' title='Макароны спагетти'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:3;height:14px;border-radius:2px;background:#FAF6EE' title='Мука пшеничная 2кг'></div></div></div><div style='border:1px solid #d6d0c4;border-radius:10px;padding:10px;background:#faf8f4'><div style='font-weight:700;font-size:13px'>Колбасы · ХЛ-03</div><div style='color:#6b6458;font-size:11px;margin:4px 0 8px'>78% · Колбасы</div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:2;height:14px;border-radius:2px;background:#E8C4C4' title='Салями Финская'></div><div style='flex:3;height:14px;border-radius:2px;background:#F0D6D6' title='Сервелат в/с 300г'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:4;height:14px;border-radius:2px;background:#F8DEDE' title='Докторская ГОСТ'></div><div style='flex:3;height:14px;border-radius:2px;background:#F5E6E6' title='Молочная варёная'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:5;height:14px;border-radius:2px;background:#FFE8D6' title='Сосиски молочные'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:2;height:14px;border-radius:2px;background:#E8C8B8' title='Бекон сырокопчёный'></div><div style='flex:3;height:14px;border-radius:2px;background:#F2D4C8' title='Ветчина нарезка'></div></div></div><div style='border:1px solid #d6d0c4;border-radius:10px;padding:10px;background:#faf8f4'><div style='font-weight:700;font-size:13px'>Молоко ТП на КЭШ-5</div><div style='color:#6b6458;font-size:11px;margin:4px 0 8px'>84% · Молоко ТП</div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:3;height:14px;border-radius:2px;background:#E8F4FC' title='Молоко 2.5% 1л'></div><div style='flex:4;height:14px;border-radius:2px;background:#F2F0E4' title='Молоко 3.2% 1л'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:3;height:14px;border-radius:2px;background:#FCE8E8' title='Кефир 1% 0.9л'></div><div style='flex:2;height:14px;border-radius:2px;background:#FDF2DC' title='Ряженка 4% 0.45л'></div><div style='flex:2;height:14px;border-radius:2px;background:#EAF8EF' title='Снежок 0.4л'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:4;height:14px;border-radius:2px;background:#FFF8E7' title='Сметана 15% 300г'></div><div style='flex:3;height:14px;border-radius:2px;background:#F5F0E8' title='Творог 5% 200г'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:3;height:14px;border-radius:2px;background:#FCE9F2' title='Йогурт густой 120г'></div><div style='flex:4;height:14px;border-radius:2px;background:#E6F7F2' title='Йогурт питьевой 270г'></div></div></div><div style='border:1px solid #d6d0c4;border-radius:10px;padding:10px;background:#faf8f4'><div style='font-weight:700;font-size:13px'>Промо паллета · ДМП-П1</div><div style='color:#6b6458;font-size:11px;margin:4px 0 8px'>100% · Акция недели</div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:8;height:14px;border-radius:2px;background:#FFE566' title='Чипсы 150г (акция)'></div></div><div style='display:flex;gap:2px;background:#ebe6dc;border-radius:4px;padding:4px;margin:3px 0;min-height:18px'><div style='flex:6;height:14px;border-radius:2px;background:#1B4F9C' title='Напиток 0.5л (акция)'></div></div></div></div>\"}, {\"id\": \"pg\", \"type\": \"function\", \"title\": \"Планограммы\", \"x\": 0, \"y\": 50, \"w\": 42, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_listPlanograms\", \"buttonLabel\": \"Обновить\"}, {\"id\": \"issues\", \"type\": \"function\", \"title\": \"Отклонения\", \"x\": 42, \"y\": 50, \"w\": 42, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_listPlanogramIssues\", \"buttonLabel\": \"Обновить\"}, {\"id\": \"shelves\", \"type\": \"function\", \"title\": \"Полки\", \"x\": 0, \"y\": 78, \"w\": 28, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_listPlanogramShelves\", \"buttonLabel\": \"Обновить\"}, {\"id\": \"skus\", \"type\": \"report\", \"title\": \"SKU на полках\", \"x\": 28, \"y\": 78, \"w\": 56, \"h\": 28, \"reportPath\": \"root.platform.reports.st-planogram-skus\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.storetwin-shelf",
+      "title": "Полочное пространство",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"ПП\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 8, \"htmlJson\": \"<p>Полочное пространство: HTML-бары + отчёт (faces / equipment) и BFF.</p>\"}, {\"id\": \"bars\", \"type\": \"html-snippet\", \"title\": \"ПП по группам\", \"x\": 0, \"y\": 8, \"w\": 84, \"h\": 35, \"htmlJson\": \"<div style=\\\"font-family:system-ui,sans-serif;padding:8px 4px\\\"><div style='font-weight:700;font-size:14px;margin-bottom:10px'>Полочное пространство</div><div style='display:grid;grid-template-columns:120px 1fr 70px 40px;gap:8px;align-items:center;margin:7px 0'><div style='font-size:12px;color:#44403c'>Крупы</div><div style='background:#e7e5e4;border-radius:4px;height:14px;overflow:hidden'><div style='width:100.0%;height:100%;background:#3d6b4f;border-radius:4px'></div></div><div style='font-size:12px;font-weight:600;text-align:right'>15 м</div><div style='font-size:11px;color:#78716c;text-align:right'>72f</div></div><div style='display:grid;grid-template-columns:120px 1fr 70px 40px;gap:8px;align-items:center;margin:7px 0'><div style='font-size:12px;color:#44403c'>Вода</div><div style='background:#e7e5e4;border-radius:4px;height:14px;overflow:hidden'><div style='width:66.7%;height:100%;background:#3d6b4f;border-radius:4px'></div></div><div style='font-size:12px;font-weight:600;text-align:right'>10 м</div><div style='font-size:11px;color:#78716c;text-align:right'>48f</div></div><div style='display:grid;grid-template-columns:120px 1fr 70px 40px;gap:8px;align-items:center;margin:7px 0'><div style='font-size:12px;color:#44403c'>Колбасы</div><div style='background:#e7e5e4;border-radius:4px;height:14px;overflow:hidden'><div style='width:66.7%;height:100%;background:#3d6b4f;border-radius:4px'></div></div><div style='font-size:12px;font-weight:600;text-align:right'>10 м</div><div style='font-size:11px;color:#78716c;text-align:right'>40f</div></div><div style='display:grid;grid-template-columns:120px 1fr 70px 40px;gap:8px;align-items:center;margin:7px 0'><div style='font-size:12px;color:#44403c'>Молоко ТП</div><div style='background:#e7e5e4;border-radius:4px;height:14px;overflow:hidden'><div style='width:41.7%;height:100%;background:#3d6b4f;border-radius:4px'></div></div><div style='font-size:12px;font-weight:600;text-align:right'>6.25 м</div><div style='font-size:11px;color:#78716c;text-align:right'>30f</div></div><div style='display:grid;grid-template-columns:120px 1fr 70px 40px;gap:8px;align-items:center;margin:7px 0'><div style='font-size:12px;color:#44403c'>ДМП / Промо</div><div style='background:#e7e5e4;border-radius:4px;height:14px;overflow:hidden'><div style='width:32.0%;height:100%;background:#3d6b4f;border-radius:4px'></div></div><div style='font-size:12px;font-weight:600;text-align:right'>4.8 м</div><div style='font-size:11px;color:#78716c;text-align:right'>28f</div></div><div style='display:grid;grid-template-columns:120px 1fr 70px 40px;gap:8px;align-items:center;margin:7px 0'><div style='font-size:12px;color:#44403c'>Прочее</div><div style='background:#e7e5e4;border-radius:4px;height:14px;overflow:hidden'><div style='width:16.0%;height:100%;background:#3d6b4f;border-radius:4px'></div></div><div style='font-size:12px;font-weight:600;text-align:right'>2.4 м</div><div style='font-size:11px;color:#78716c;text-align:right'>10f</div></div><div style='display:grid;grid-template-columns:120px 1fr 70px 40px;gap:8px;align-items:center;margin:7px 0'><div style='font-size:12px;color:#44403c'>Мороженое</div><div style='background:#e7e5e4;border-radius:4px;height:14px;overflow:hidden'><div style='width:12.0%;height:100%;background:#3d6b4f;border-radius:4px'></div></div><div style='font-size:12px;font-weight:600;text-align:right'>1.8 м</div><div style='font-size:11px;color:#78716c;text-align:right'>12f</div></div></div>\"}, {\"id\": \"tbl\", \"type\": \"report\", \"title\": \"ПП по группам\", \"x\": 0, \"y\": 43, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.st-shelf-space\"}, {\"id\": \"fn\", \"type\": \"function\", \"title\": \"ПП (BFF)\", \"x\": 0, \"y\": 71, \"w\": 84, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_listShelfSpace\", \"buttonLabel\": \"Обновить\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.storetwin-incidents",
+      "title": "Заявки",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"Заявки\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 8, \"htmlJson\": \"<p>Жизненный цикл заявок · SLA · severity low/medium/high.</p>\"}, {\"id\": \"tbl\", \"type\": \"report\", \"title\": \"Заявки\", \"x\": 0, \"y\": 8, \"w\": 84, \"h\": 48, \"reportPath\": \"root.platform.reports.st-incidents\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.storetwin-tasks",
+      "title": "Задачи",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"Задачи\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 8, \"htmlJson\": \"<p>Задачи персонала: тип, приоритет, SLA, связь с заявками, история lifecycle.</p>\"}, {\"id\": \"tbl\", \"type\": \"report\", \"title\": \"Задачи\", \"x\": 0, \"y\": 8, \"w\": 84, \"h\": 32, \"reportPath\": \"root.platform.reports.st-tasks\"}, {\"id\": \"fn\", \"type\": \"function\", \"title\": \"Задачи (BFF)\", \"x\": 0, \"y\": 40, \"w\": 42, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_listTasks\", \"buttonLabel\": \"Обновить\"}, {\"id\": \"life\", \"type\": \"report\", \"title\": \"Lifecycle задач\", \"x\": 42, \"y\": 40, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.st-lifecycle-tasks\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.storetwin-analytics",
+      "title": "Аналитика KPI",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"KPI\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 8, \"htmlJson\": \"<p>Аналитика зала: продажи по дням и клиентопоток по часам (series sales / traffic).</p>\"}, {\"id\": \"sales\", \"type\": \"report\", \"title\": \"Продажи (тыс. ₽)\", \"x\": 0, \"y\": 8, \"w\": 42, \"h\": 32, \"reportPath\": \"root.platform.reports.st-kpi-sales\"}, {\"id\": \"traffic\", \"type\": \"report\", \"title\": \"Клиентопоток\", \"x\": 42, \"y\": 8, \"w\": 42, \"h\": 32, \"reportPath\": \"root.platform.reports.st-kpi-traffic\"}, {\"id\": \"fn\", \"type\": \"function\", \"title\": \"Все KPI (BFF)\", \"x\": 0, \"y\": 40, \"w\": 84, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_listKpis\", \"buttonLabel\": \"Обновить\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.storetwin-integrations",
+      "title": "Интеграции",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"Интеграции\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 8, \"htmlJson\": \"<p>Каналы ERP / POS / IoT / SCADA / CV / BI: health, latency, endpoint, last sync. Ping через <code>st_pingIntegration</code>.</p>\"}, {\"id\": \"tbl\", \"type\": \"report\", \"title\": \"Каналы\", \"x\": 0, \"y\": 8, \"w\": 84, \"h\": 32, \"reportPath\": \"root.platform.reports.st-integrations\"}, {\"id\": \"fn\", \"type\": \"function\", \"title\": \"Каналы (BFF)\", \"x\": 0, \"y\": 40, \"w\": 42, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_listIntegrations\", \"buttonLabel\": \"Обновить\"}, {\"id\": \"ping\", \"type\": \"function\", \"title\": \"Ping ERP\", \"x\": 42, \"y\": 40, \"w\": 42, \"h\": 28, \"objectPath\": \"root.platform.devices.storetwin.hub\", \"functionName\": \"st_pingIntegration\", \"buttonLabel\": \"Ping erp\", \"inputMapJson\": \"{\\\"id\\\":\\\"erp\\\"}\"}]}"
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "st-equipment",
+      "title": "Оборудование торгового зала",
+      "description": "Реестр оборудования ТТ №101",
+      "query": "SELECT code, name, eq_type, status, zone_label, shelf_meters FROM st_equipment WHERE store_id = 'st-101' ORDER BY code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "name",
+          "label": "Наименование"
+        },
+        {
+          "field": "eq_type",
+          "label": "Тип"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "zone_label",
+          "label": "Зона"
+        },
+        {
+          "field": "shelf_meters",
+          "label": "ПП, м"
+        }
+      ],
+      "maxRows": 500,
+      "dataSourcePath": "root.platform.data-sources.storetwin"
+    },
+    {
+      "reportId": "st-shelf-space",
+      "title": "Полочное пространство по группам",
+      "description": "Метраж ПП, faces и оборудование для СЭС / ПЛНГ",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT category, meters, share_pct, faces, COALESCE(equipment_ids,'') AS equipment_ids FROM st_shelf_space WHERE store_id = 'st-101' ORDER BY meters DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "category",
+          "label": "Группа"
+        },
+        {
+          "field": "meters",
+          "label": "Метры"
+        },
+        {
+          "field": "share_pct",
+          "label": "Доля %"
+        },
+        {
+          "field": "faces",
+          "label": "Faces"
+        },
+        {
+          "field": "equipment_ids",
+          "label": "Оборудование"
+        }
+      ],
+      "maxRows": 200
+    },
+    {
+      "reportId": "st-incidents",
+      "title": "Журнал заявок",
+      "description": "Активные и закрытые заявки",
+      "query": "SELECT id, title, severity, status, COALESCE(assignee,'') AS assignee, COALESCE(source,'') AS source, COALESCE(equipment_id,'') AS equipment_id, created_at, sla_due_at, updated_at, COALESCE(linked_task_id,'') AS linked_task_id FROM st_incident WHERE store_id = 'st-101' ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "title",
+          "label": "Заявка"
+        },
+        {
+          "field": "severity",
+          "label": "Критичность"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "assignee",
+          "label": "Исполнитель"
+        },
+        {
+          "field": "source",
+          "label": "Источник"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Оборудование"
+        },
+        {
+          "field": "created_at",
+          "label": "Создана"
+        },
+        {
+          "field": "sla_due_at",
+          "label": "SLA до"
+        },
+        {
+          "field": "linked_task_id",
+          "label": "Задача"
+        }
+      ],
+      "maxRows": 500,
+      "dataSourcePath": "root.platform.data-sources.storetwin"
+    },
+    {
+      "reportId": "st-planogram-skus",
+      "title": "SKU планограмм",
+      "description": "Позиции на полках: faces / факт / статус",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT planogram_id, shelf_level, name, brand, barcode, faces, actual_faces, status FROM st_planogram_sku ORDER BY planogram_id, shelf_level DESC, name",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "planogram_id",
+          "label": "Планограмма"
+        },
+        {
+          "field": "shelf_level",
+          "label": "Полка"
+        },
+        {
+          "field": "name",
+          "label": "SKU"
+        },
+        {
+          "field": "brand",
+          "label": "Бренд"
+        },
+        {
+          "field": "barcode",
+          "label": "Штрихкод"
+        },
+        {
+          "field": "faces",
+          "label": "Faces"
+        },
+        {
+          "field": "actual_faces",
+          "label": "Факт"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "st-planogram-issues",
+      "title": "Отклонения планограмм",
+      "description": "Issues видеоаналитики / сверки выкладки",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT planogram_id, shelf_level, severity, message FROM st_planogram_issue ORDER BY planogram_id, shelf_level DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "planogram_id",
+          "label": "Планограмма"
+        },
+        {
+          "field": "shelf_level",
+          "label": "Полка"
+        },
+        {
+          "field": "severity",
+          "label": "Критичность"
+        },
+        {
+          "field": "message",
+          "label": "Сообщение"
+        }
+      ],
+      "maxRows": 200
+    },
+    {
+      "reportId": "st-tasks",
+      "title": "Задачи персонала",
+      "description": "Тип, приоритет, статусы, связи с заявками",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT id, title, task_type, status, priority, COALESCE(assignee,'') AS assignee, COALESCE(equipment_id,'') AS equipment_id, due_at, created_at, updated_at, COALESCE(reporter,'') AS reporter, COALESCE(linked_incident_id,'') AS linked_incident_id, COALESCE(result_note,'') AS result_note FROM st_task WHERE store_id = 'st-101' ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "title",
+          "label": "Задача"
+        },
+        {
+          "field": "task_type",
+          "label": "Тип"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "priority",
+          "label": "Приоритет"
+        },
+        {
+          "field": "assignee",
+          "label": "Исполнитель"
+        },
+        {
+          "field": "equipment_id",
+          "label": "Оборудование"
+        },
+        {
+          "field": "due_at",
+          "label": "Срок"
+        },
+        {
+          "field": "linked_incident_id",
+          "label": "Заявка"
+        },
+        {
+          "field": "result_note",
+          "label": "Результат"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "st-lifecycle-tasks",
+      "title": "Lifecycle задач",
+      "description": "История статусов задач",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT entity_id, at_ts, COALESCE(actor,'') AS actor, COALESCE(from_status,'') AS from_status, to_status, COALESCE(comment,'') AS comment FROM st_lifecycle_event WHERE entity_type = 'task' ORDER BY at_ts DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "entity_id",
+          "label": "Задача"
+        },
+        {
+          "field": "at_ts",
+          "label": "Когда"
+        },
+        {
+          "field": "actor",
+          "label": "Кто"
+        },
+        {
+          "field": "from_status",
+          "label": "Из"
+        },
+        {
+          "field": "to_status",
+          "label": "В"
+        },
+        {
+          "field": "comment",
+          "label": "Комментарий"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "st-kpi-sales",
+      "title": "KPI · продажи",
+      "description": "Продажи по дням недели",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT label, value, sort_order FROM st_kpi_point WHERE store_id = 'st-101' AND series = 'sales' ORDER BY sort_order, label",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "label",
+          "label": "День"
+        },
+        {
+          "field": "value",
+          "label": "Значение"
+        },
+        {
+          "field": "sort_order",
+          "label": "Порядок"
+        }
+      ],
+      "maxRows": 100
+    },
+    {
+      "reportId": "st-kpi-traffic",
+      "title": "KPI · клиентопоток",
+      "description": "Посетители по часам",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT label, value, sort_order FROM st_kpi_point WHERE store_id = 'st-101' AND series = 'traffic' ORDER BY sort_order, label",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "label",
+          "label": "Час"
+        },
+        {
+          "field": "value",
+          "label": "Значение"
+        },
+        {
+          "field": "sort_order",
+          "label": "Порядок"
+        }
+      ],
+      "maxRows": 100
+    },
+    {
+      "reportId": "st-integrations",
+      "title": "Интеграционные каналы",
+      "description": "Health, latency, endpoint, last sync",
+      "dataSourcePath": "root.platform.data-sources.storetwin",
+      "query": "SELECT id, name, protocol, health, latency_ms, COALESCE(endpoint,'') AS endpoint, COALESCE(description,'') AS description, last_sync_at FROM st_integration ORDER BY name",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "name",
+          "label": "Канал"
+        },
+        {
+          "field": "protocol",
+          "label": "Протокол"
+        },
+        {
+          "field": "health",
+          "label": "Статус"
+        },
+        {
+          "field": "latency_ms",
+          "label": "Latency, мс"
+        },
+        {
+          "field": "endpoint",
+          "label": "Endpoint"
+        },
+        {
+          "field": "last_sync_at",
+          "label": "Last sync"
+        },
+        {
+          "field": "description",
+          "label": "Описание"
+        }
+      ],
+      "maxRows": 100
+    }
+  ],
+  "operatorUi": {
+    "appId": "storetwin",
+    "title": "Цифровой двойник розничной точки",
+    "defaultDashboard": "root.platform.dashboards.storetwin-twin",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.storetwin-twin",
+        "title": "Цифровой двойник"
+      },
+      {
+        "path": "root.platform.dashboards.storetwin-equipment",
+        "title": "Оборудование"
+      },
+      {
+        "path": "root.platform.dashboards.storetwin-planograms",
+        "title": "Планограммы"
+      },
+      {
+        "path": "root.platform.dashboards.storetwin-shelf",
+        "title": "Полочное пространство"
+      },
+      {
+        "path": "root.platform.dashboards.storetwin-incidents",
+        "title": "Заявки"
+      },
+      {
+        "path": "root.platform.dashboards.storetwin-tasks",
+        "title": "Задачи"
+      },
+      {
+        "path": "root.platform.dashboards.storetwin-analytics",
+        "title": "Аналитика KPI"
+      },
+      {
+        "path": "root.platform.dashboards.storetwin-integrations",
+        "title": "Интеграции"
+      }
+    ],
+    "reports": [
+      {
+        "path": "st-equipment",
+        "title": "Оборудование"
+      },
+      {
+        "path": "st-shelf-space",
+        "title": "Полочное пространство"
+      },
+      {
+        "path": "st-planogram-skus",
+        "title": "SKU планограмм"
+      },
+      {
+        "path": "st-planogram-issues",
+        "title": "Отклонения планограмм"
+      },
+      {
+        "path": "st-tasks",
+        "title": "Задачи"
+      },
+      {
+        "path": "st-lifecycle-tasks",
+        "title": "Lifecycle задач"
+      },
+      {
+        "path": "st-kpi-sales",
+        "title": "KPI · продажи"
+      },
+      {
+        "path": "st-kpi-traffic",
+        "title": "KPI · клиентопоток"
+      },
+      {
+        "path": "st-integrations",
+        "title": "Интеграции"
+      },
+      {
+        "path": "st-incidents",
+        "title": "Заявки"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.storetwin.hub",
+    "spaNav": [
+      {
+        "to": "/",
+        "label": "Цифровой двойник",
+        "group": "Зал",
+        "bff": [
+          "st_getStore",
+          "st_listEquipment",
+          "st_listIncidents",
+          "st_listTasks",
+          "st_listKpis",
+          "st_listIntegrations"
+        ]
+      },
+      {
+        "to": "/equipment",
+        "label": "Оборудование",
+        "group": "Зал",
+        "bff": [
+          "st_listEquipment"
+        ]
+      },
+      {
+        "to": "/planograms",
+        "label": "Планограммы",
+        "group": "Мерч",
+        "bff": [
+          "st_listPlanograms",
+          "st_listPlanogramShelves",
+          "st_listPlanogramSkus",
+          "st_listPlanogramIssues"
+        ]
+      },
+      {
+        "to": "/shelf-space",
+        "label": "Полочное пространство",
+        "group": "Мерч",
+        "bff": [
+          "st_listShelfSpace"
+        ]
+      },
+      {
+        "to": "/incidents",
+        "label": "Заявки",
+        "group": "Операции",
+        "bff": [
+          "st_listIncidents"
+        ]
+      },
+      {
+        "to": "/tasks",
+        "label": "Задачи",
+        "group": "Операции",
+        "bff": [
+          "st_listTasks",
+          "st_listLifecycle"
+        ]
+      },
+      {
+        "to": "/analytics",
+        "label": "Аналитика KPI",
+        "group": "Аналитика",
+        "bff": [
+          "st_listKpis"
+        ]
+      },
+      {
+        "to": "/integrations",
+        "label": "Интеграции",
+        "group": "Платформа",
+        "bff": [
+          "st_listIntegrations",
+          "st_pingIntegration"
+        ]
+      },
+      {
+        "to": "/reports",
+        "label": "Отчёты",
+        "group": "Аналитика",
+        "bff": []
+      },
+      {
+        "to": "/settings",
+        "label": "Настройки",
+        "group": "Платформа",
+        "bff": []
+      }
+    ],
+    "externalSpaUrl": "https://ispf.ai/apps/storetwin/",
+    "uiPack": {
+      "packId": "storetwin-ui",
+      "version": "1.0.0",
+      "entry": "index.html"
+    }
+  }
+}

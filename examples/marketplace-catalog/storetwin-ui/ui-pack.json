@@ -1,0 +1,10 @@
+{
+  "id": "storetwin",
+  "appId": "storetwin",
+  "packId": "storetwin-ui",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/storetwin/",
+  "title": "Цифровой двойник розничной точки",
+  "minIspfVersion": "0.9.30"
+}

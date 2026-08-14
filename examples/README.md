@@ -11,6 +11,8 @@
 | [mes-platform](mes-platform/) | BL-165/170: MES platform certification bundle + OEE BFF |
 | [escalation-templates](escalation-templates/) | BL-123: BPMN ack-timeout + correlator templates |
 | [warehouse-app](warehouse-app/) | Reference app #2 (dogfooding REQ-PF) |
+| [storetwin](storetwin/) | StoreTwin: цифровой двойник розничной ТТ (bundle + ui-pack) |
+| [storetwin-ui](storetwin-ui/) | ADR-0054 ui-pack for StoreTwin SPA (`/apps/storetwin/`) |
 | [lab-training](lab-training/) | Importable lab package (Phase 15) |
 | [spreadsheet-demo](spreadsheet-demo/) | Эталон: объект с `sheetValues` + виджет spreadsheet |
 | [mes-defect-demo](mes-defect-demo/) | MES defect routing demo (bundle + smoke test) |
