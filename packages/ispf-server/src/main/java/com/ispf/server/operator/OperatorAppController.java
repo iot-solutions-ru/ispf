@@ -94,7 +94,8 @@ public class OperatorAppController {
                     request.alarmBar(),
                     request.agentInstructions(),
                     request.hideTasksAndEvents(),
-                    request.hideDashboardNav()
+                    request.hideDashboardNav(),
+                    request.externalSpaUrl()
             );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
@@ -113,7 +114,8 @@ public class OperatorAppController {
             Map<String, Object> alarmBar,
             String agentInstructions,
             Boolean hideTasksAndEvents,
-            Boolean hideDashboardNav
+            Boolean hideDashboardNav,
+            String externalSpaUrl
     ) {
     }
 }

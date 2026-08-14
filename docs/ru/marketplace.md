@@ -76,10 +76,11 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` доба�
 
 Платные **analytics extension packs** (Tier C historian-функции) используют тот же install/activate API, что и приложения. После установки helpers появляются в `GET /api/v1/platform/analytics/catalog` с `pack: <packId>`.
 
-**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Установка — Solutions marketplace или локально `POST /api/v1/marketplace/ui-packs/{id}/install`. В листинге приложения можно указать `uiPackSlug`, чтобы one-click ставил BFF и SPA вместе. Для SPA: Vite `base: '/apps/<appId>/'` и same-origin `/api/v1`.
+**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Установка — Solutions marketplace или локально `POST /api/v1/marketplace/ui-packs/{id}/install`. В листинге приложения можно указать `uiPackSlug`, чтобы one-click ставил BFF и SPA вместе. Для SPA: Vite `base: '/apps/<appId>/'` и same-origin `/api/v1`. Поля бандла `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` сохраняются при deploy — кнопка Operator **Open app UI** не требует повторного configure.
 
 **Split nginx:** `location ^~ /apps/` **обязан** идти `proxy_pass` на `ispf-server` (как `/api/`). Иначе `try_files … /index.html` отдаёт админ-консоль на `/apps/<appId>/`. См. [ADR-0054](decisions/0054-hosted-ui-packs.md) и `deploy/nginx-ispf.conf`.
 
+**PWA web-console:** после визита в Admin/Operator SW контролирует same-origin navigations. В `navigateFallbackDenylist` должен быть `/apps`, иначе **Open app UI** открывает оболочку консоли вместо ui-pack. Кнопка Open app UI снимает SW на время открытия same-origin `/apps` — без Ctrl+F5 после деплоя консоли.
 Локальный symbol catalog (dev/lab, не remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — см. [symbol-marketplace](symbol-marketplace.md).
 
 ## Чеклист готовности маркетплейса (BL-183)

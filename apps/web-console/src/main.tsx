@@ -7,9 +7,13 @@ import { ObjectWebSocketCacheBridge } from "./hooks/ObjectWebSocketCacheBridge";
 import { UserTimeZoneProvider } from "./context/UserTimeZoneContext";
 import { i18nReady } from "./i18n";
 import { initThemeOnDocument } from "./themeInit";
+import { migrateAppsDenylistServiceWorker } from "./pwa/migrateAppsDenylistSw";
 import "./styles/index.css";
 
 initThemeOnDocument();
+
+// Drop stale console SW that SPA-fallbacks /apps before React mounts (one reload max).
+void migrateAppsDenylistServiceWorker();
 
 const queryClient = new QueryClient({
   defaultOptions: {
