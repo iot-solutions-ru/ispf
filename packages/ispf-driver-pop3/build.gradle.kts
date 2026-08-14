@@ -7,7 +7,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     // Jakarta-based embedded mail server for loopback tests. The redundant Angus
     // "jakarta.mail" artifact is excluded: angus-mail (above) already ships the same classes.
-    testImplementation("com.icegreen:greenmail:2.1.11") {
+    testImplementation("com.icegreen:greenmail:2.1.12") {
         exclude(group = "org.eclipse.angus", module = "jakarta.mail")
     }
 }
