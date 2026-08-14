@@ -1,0 +1,28 @@
+{
+  "slug": "predictive-ui",
+  "title": "Система предиктивной аналитики — Web UI (SPA)",
+  "description": "Hosted React SPA for predictive (3D monitor + compare). Same-origin /api/v1 → ISPF hub. Install with application listing predictive (uiPackSlug) or separately as artifactKind ui-pack.",
+  "pricing": "free",
+  "artifactKind": "ui-pack",
+  "appId": "predictive",
+  "packId": "predictive-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "latestVersion": "1.2.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "predictive-ui-1.2.0.zip",
+  "tags": [
+    "predictive",
+    "ui-pack",
+    "3d",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "1.2.0 — Initial marketplace ui-pack (Vite base /apps/predictive/); overlays → hub actions."
+}

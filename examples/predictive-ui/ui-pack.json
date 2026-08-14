@@ -1,0 +1,13 @@
+{
+  "id": "predictive",
+  "appId": "predictive",
+  "packId": "predictive-ui",
+  "version": "1.2.0",
+  "entry": "index.html",
+  "basePath": "/apps/predictive/",
+  "title": "Система предиктивной аналитики",
+  "minIspfVersion": "0.9.30",
+  "role": "ui-frontend",
+  "backendAppId": "predictive",
+  "hubPath": "root.platform.devices.predictive.hub"
+}
