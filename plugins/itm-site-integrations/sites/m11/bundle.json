@@ -1,6 +1,6 @@
 {
   "version": "1.1.2",
-  "displayName": "ITM integrations — Трасса М11",
+  "displayName": "ITM integrations — demo site",
   "tablePrefix": "",
   "schemaName": "it_infra_monitoring",
   "metadata": {
@@ -10,15 +10,15 @@
     "ldap": {
       "enabled": true,
       "driverId": "ldap",
-      "url": "ldap://ad.m11.local:389",
-      "baseDn": "DC=m11,DC=local",
-      "bindDn": "CN=ispf-svc,OU=Service,DC=m11,DC=local",
+      "url": "ldap://ad.demo.local:389",
+      "baseDn": "DC=demo,DC=local",
+      "bindDn": "CN=ispf-svc,OU=Service,DC=demo,DC=local",
       "roleMap": {
-        "CN=ISPF-Admin,OU=Groups,DC=m11,DC=local": "admin",
-        "CN=ISPF-AdmSpd,OU=Groups,DC=m11,DC=local": "admSpd",
-        "CN=ISPF-AdmSrv,OU=Groups,DC=m11,DC=local": "admSrv",
-        "CN=ISPF-AdmIt,OU=Groups,DC=m11,DC=local": "admIt",
-        "CN=ISPF-Director,OU=Groups,DC=m11,DC=local": "director"
+        "CN=ISPF-Admin,OU=Groups,DC=demo,DC=local": "admin",
+        "CN=ISPF-AdmSpd,OU=Groups,DC=demo,DC=local": "admSpd",
+        "CN=ISPF-AdmSrv,OU=Groups,DC=demo,DC=local": "admSrv",
+        "CN=ISPF-AdmIt,OU=Groups,DC=demo,DC=local": "admIt",
+        "CN=ISPF-Director,OU=Groups,DC=demo,DC=local": "director"
       }
     },
     "roles": [
@@ -34,13 +34,13 @@
     "opcUa": {
       "enabled": true,
       "driverId": "opcua",
-      "endpointUrl": "opc.tcp://cms-m11.local:4840",
+      "endpointUrl": "opc.tcp://cms-demo.local:4840",
       "mode": "native-ua-or-da-ua-gateway",
       "devicePath": "root.platform.devices.itm.cms-opcua",
       "tags": [
-        "ns=2;s=M11.SPD.Alarm.*",
-        "ns=2;s=M11.SPD.Warn.*",
-        "ns=2;s=M11.SRV.Warn.*"
+        "ns=2;s=ITM.SPD.Alarm.*",
+        "ns=2;s=ITM.SPD.Warn.*",
+        "ns=2;s=ITM.SRV.Warn.*"
       ]
     }
   },

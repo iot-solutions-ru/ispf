@@ -1,6 +1,6 @@
-# m11-monitor-ui — Hosted SPA pack (ITM / Трасса М11)
+# m11-monitor-ui — Hosted SPA pack (IT infrastructure monitoring)
 
-React MMI **ИТ-Мониторинг** as an ISPF Marketplace **`ui-pack`**.
+React MMI **ИТ-мониторинг** as an ISPF Marketplace **`ui-pack`**.
 
 | | |
 |---|---|
@@ -21,7 +21,7 @@ brand/*
 …
 ```
 
-## Build (from SPA repo `M11/m11-monitor`)
+## Build
 
 ```bash
 npm ci
@@ -31,7 +31,7 @@ npm run pack:ui
 
 Copy zip + `ui-pack.json` into this folder (and `examples/marketplace-catalog/m11-monitor-ui/`).
 
-## Bridge (until ui-pack is mounted on nginx)
+## Bridge (until ui-pack is mounted)
 
 Application bundle `operatorUi.externalSpaUrl` = `http://127.0.0.1:5173` (local Vite).
 Production target: `https://<ispf-host>/apps/it-infra-monitoring/`.

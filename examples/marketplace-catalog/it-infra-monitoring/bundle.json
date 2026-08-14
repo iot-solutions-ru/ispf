@@ -1,10 +1,10 @@
 {
   "version": "1.1.2",
-  "displayName": "Мониторинг ИТ-инфраструктуры М11",
+  "displayName": "Мониторинг ИТ-инфраструктуры",
   "tablePrefix": "itm_",
   "schemaName": "it_infra_monitoring",
   "metadata": {
-    "description": "NMS ISPF for M11: it-infra-monitoring v1.1.2 — hub CUSTOM+INSTANCE, notify email/sms/webhook DEVICE gateways (write_point), SSH write allowlist, OPC UA (not DA).",
+    "description": "NMS ISPF: it-infra-monitoring v1.1.2 — hub CUSTOM+INSTANCE, notify email/sms/webhook DEVICE gateways (write_point), SSH write allowlist, OPC UA (not DA).",
     "appId": "it-infra-monitoring",
     "treeRoot": "root.platform.devices.itm",
     "siteEdition": "m11",
@@ -42,7 +42,7 @@
     },
     {
       "id": "itm_m11_seed_v1",
-      "sql": "INSERT INTO itm_scheduler_jobs (job_id, name, job_type, cron_expr, target, enabled, status)\nVALUES\n ('job-disc','Network discovery','Discovery','0 */6 * * *','СПД 10.120.0.0/16',TRUE,'ok'),\n ('job-cfg','Сбор конфигураций','Config backup','0 4 * * *','SSH network',TRUE,'ok'),\n ('job-opc','Публикация OPC DA','Integration','*/30 * * * * *','CMS',TRUE,'warn'),\n ('job-poll','SNMP poll KPI','Poll','*/1 * * * *','All devices',TRUE,'ok')\nON CONFLICT (job_id) DO NOTHING;\nINSERT INTO itm_opc_signals (tag, kind, value, quality, mapped_alarm)\nVALUES\n ('M11.SPD.Alarm.TP16_CPU5','alarm',1,'good','TP-16 → S12708-1'),\n ('M11.SPD.Alarm.TP14_Down','alarm',1,'good','TP-14 offline'),\n ('M11.SPD.Warn.ASA_IPS','warning',1,'good','ASA IPS')\nON CONFLICT (tag) DO NOTHING;"
+      "sql": "INSERT INTO itm_scheduler_jobs (job_id, name, job_type, cron_expr, target, enabled, status)\nVALUES\n ('job-disc','Network discovery','Discovery','0 */6 * * *','СПД 10.120.0.0/16',TRUE,'ok'),\n ('job-cfg','Сбор конфигураций','Config backup','0 4 * * *','SSH network',TRUE,'ok'),\n ('job-opc','Публикация OPC DA','Integration','*/30 * * * * *','CMS',TRUE,'warn'),\n ('job-poll','SNMP poll KPI','Poll','*/1 * * * *','All devices',TRUE,'ok')\nON CONFLICT (job_id) DO NOTHING;\nINSERT INTO itm_opc_signals (tag, kind, value, quality, mapped_alarm)\nVALUES\n ('ITM.SPD.Alarm.TP16_CPU5','alarm',1,'good','TP-16 → S12708-1'),\n ('ITM.SPD.Alarm.TP14_Down','alarm',1,'good','TP-14 offline'),\n ('ITM.SPD.Warn.ASA_IPS','warning',1,'good','ASA IPS')\nON CONFLICT (tag) DO NOTHING;"
     },
     {
       "id": "itm_m11_opcua_labels_v1",
@@ -975,7 +975,7 @@
             },
             "rows": [
               {
-                "value": "opc.tcp://cms-m11.local:4840"
+                "value": "opc.tcp://cms-demo.local:4840"
               }
             ]
           }
@@ -1243,7 +1243,7 @@
   ],
   "operatorUi": {
     "appId": "it-infra-monitoring",
-    "title": "ИТ-Мониторинг · Магистраль двух столиц",
+    "title": "ИТ-мониторинг",
     "defaultDashboard": "root.platform.dashboards.itm-overview",
     "eventJournalObjectPath": "root.platform.devices.itm.hub",
     "dashboards": [
@@ -1555,7 +1555,7 @@
         "objectPath": "root.platform.devices.itm.notify-email",
         "pointId": "outbound",
         "fields": {
-          "to": "noc@m11.local",
+          "to": "noc@demo.local",
           "subject": "ITM active alarms",
           "body": "See report root.platform.reports.itm-active-alarms"
         }
@@ -1572,7 +1572,7 @@
         "objectPath": "root.platform.devices.itm.notify-email",
         "pointId": "outbound",
         "fields": {
-          "to": "director@m11.local",
+          "to": "director@demo.local",
           "subject": "ITM daily SLA",
           "body": "See report root.platform.reports.itm-sla-summary"
         }
@@ -1589,7 +1589,7 @@
       "minOccurrences": 1,
       "cooldownSeconds": 300,
       "actionType": "SEND_EMAIL",
-      "actionTarget": "noc@m11.local|ITM escalate|Device down on M11",
+      "actionTarget": "noc@demo.local|ITM escalate|Device down",
       "enabled": true
     },
     {

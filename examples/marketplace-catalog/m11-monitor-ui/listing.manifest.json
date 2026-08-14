@@ -1,7 +1,7 @@
 {
   "slug": "m11-monitor-ui",
-  "title": "ИТ-Мониторинг М11 — Web UI (SPA)",
-  "description": "Hosted React SPA for it-infra-monitoring (base /apps/it-infra-monitoring/). MMI по ТЗ Мониторинг М11 v2.",
+  "title": "ИТ-мониторинг — Web UI (SPA)",
+  "description": "Hosted React SPA for it-infra-monitoring (base /apps/it-infra-monitoring/).",
   "pricing": "free",
   "artifactKind": "ui-pack",
   "appId": "it-infra-monitoring",
@@ -12,12 +12,12 @@
   "minIspfVersion": "0.9.186",
   "bundleArtifact": "m11-monitor-ui-0.1.0.zip",
   "tags": [
-    "m11",
+    "itm",
     "nms",
     "monitoring",
     "spa",
     "ui-pack",
     "it-infra-monitoring"
   ],
-  "changelog": "0.1.0 — Initial ui-pack for m11-monitor."
+  "changelog": "0.1.0 — Initial ui-pack for IT infrastructure monitoring."
 }

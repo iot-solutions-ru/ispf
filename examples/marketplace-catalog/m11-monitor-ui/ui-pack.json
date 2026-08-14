@@ -4,6 +4,6 @@
   "version": "0.1.0",
   "entry": "index.html",
   "basePath": "/apps/it-infra-monitoring/",
-  "title": "ИТ-Мониторинг М11",
+  "title": "ИТ-мониторинг",
   "minIspfVersion": "0.7.6"
 }

@@ -1,8 +1,8 @@
 {
   "version": "1.1.2",
-  "displayName": "Мониторинг ИТ-инфраструктуры М11",
+  "displayName": "Мониторинг ИТ-инфраструктуры",
   "metadata": {
-    "description": "NMS ISPF for M11: it-infra-monitoring v1.1.2 — hub CUSTOM+INSTANCE, notify email/sms/webhook DEVICE gateways (write_point), SSH write allowlist, OPC UA (not DA).",
+    "description": "NMS ISPF: it-infra-monitoring v1.1.2 — hub CUSTOM+INSTANCE, notify email/sms/webhook DEVICE gateways (write_point), SSH write allowlist, OPC UA (not DA).",
     "siteEdition": "m11",
     "appId": "it-infra-monitoring",
     "treeRoot": "root.platform.devices.itm",
@@ -36,7 +36,7 @@
     },
     {
       "id": "itm_m11_seed_v1",
-      "sql": "INSERT INTO itm_scheduler_jobs (job_id, name, job_type, cron_expr, target, enabled, status)\nVALUES\n ('job-disc','Network discovery','Discovery','0 */6 * * *','СПД 10.120.0.0/16',TRUE,'ok'),\n ('job-cfg','Сбор конфигураций','Config backup','0 4 * * *','SSH network',TRUE,'ok'),\n ('job-opc','Публикация OPC DA','Integration','*/30 * * * * *','CMS',TRUE,'warn'),\n ('job-poll','SNMP poll KPI','Poll','*/1 * * * *','All devices',TRUE,'ok')\nON CONFLICT (job_id) DO NOTHING;\nINSERT INTO itm_opc_signals (tag, kind, value, quality, mapped_alarm)\nVALUES\n ('M11.SPD.Alarm.TP16_CPU5','alarm',1,'good','TP-16 → S12708-1'),\n ('M11.SPD.Alarm.TP14_Down','alarm',1,'good','TP-14 offline'),\n ('M11.SPD.Warn.ASA_IPS','warning',1,'good','ASA IPS')\nON CONFLICT (tag) DO NOTHING;"
+      "sql": "INSERT INTO itm_scheduler_jobs (job_id, name, job_type, cron_expr, target, enabled, status)\nVALUES\n ('job-disc','Network discovery','Discovery','0 */6 * * *','СПД 10.120.0.0/16',TRUE,'ok'),\n ('job-cfg','Сбор конфигураций','Config backup','0 4 * * *','SSH network',TRUE,'ok'),\n ('job-opc','Публикация OPC DA','Integration','*/30 * * * * *','CMS',TRUE,'warn'),\n ('job-poll','SNMP poll KPI','Poll','*/1 * * * *','All devices',TRUE,'ok')\nON CONFLICT (job_id) DO NOTHING;\nINSERT INTO itm_opc_signals (tag, kind, value, quality, mapped_alarm)\nVALUES\n ('ITM.SPD.Alarm.TP16_CPU5','alarm',1,'good','TP-16 → S12708-1'),\n ('ITM.SPD.Alarm.TP14_Down','alarm',1,'good','TP-14 offline'),\n ('ITM.SPD.Warn.ASA_IPS','warning',1,'good','ASA IPS')\nON CONFLICT (tag) DO NOTHING;"
     },
     {
       "id": "itm_m11_opcua_labels_v1",
@@ -318,7 +318,7 @@
         "objectPath": "root.platform.devices.itm.notify-email",
         "pointId": "outbound",
         "fields": {
-          "to": "noc@m11.local",
+          "to": "noc@demo.local",
           "subject": "ITM active alarms",
           "body": "See report root.platform.reports.itm-active-alarms"
         }
@@ -335,7 +335,7 @@
         "objectPath": "root.platform.devices.itm.notify-email",
         "pointId": "outbound",
         "fields": {
-          "to": "director@m11.local",
+          "to": "director@demo.local",
           "subject": "ITM daily SLA",
           "body": "See report root.platform.reports.itm-sla-summary"
         }
@@ -343,7 +343,7 @@
     }
   ],
   "operatorUiExtras": {
-    "title": "ИТ-Мониторинг · Магистраль двух столиц",
+    "title": "ИТ-мониторинг",
     "externalSpaUrl": "http://127.0.0.1:5173",
     "uiPack": {
       "packId": "m11-monitor-ui",
@@ -572,7 +572,7 @@
       "minOccurrences": 1,
       "cooldownSeconds": 300,
       "actionType": "SEND_EMAIL",
-      "actionTarget": "noc@m11.local|ITM escalate|Device down on M11",
+      "actionTarget": "noc@demo.local|ITM escalate|Device down",
       "enabled": true
     },
     {
@@ -591,8 +591,8 @@
   "deviceDriverHints": {
     "root.platform.devices.itm.notify-email": {
       "driverId": "email",
-      "relayUrl": "https://relay.m11.local/email",
-      "defaultTo": "noc@m11.local",
+      "relayUrl": "https://relay.demo.local/email",
+      "defaultTo": "noc@demo.local",
       "timeoutMs": "15000",
       "pointMapping": {
         "outbound": "outbound"
@@ -600,7 +600,7 @@
     },
     "root.platform.devices.itm.notify-sms": {
       "driverId": "sms",
-      "relayUrl": "https://sms.m11.local/send",
+      "relayUrl": "https://sms.demo.local/send",
       "timeoutMs": "15000",
       "pointMapping": {
         "outbound": "outbound"
@@ -608,7 +608,7 @@
     },
     "root.platform.devices.itm.notify-webhook": {
       "driverId": "webhook",
-      "targetUrl": "https://hooks.m11.local/itm",
+      "targetUrl": "https://hooks.demo.local/itm",
       "timeoutMs": "15000",
       "pointMapping": {
         "outbound": "outbound"
@@ -616,7 +616,7 @@
     },
     "root.platform.devices.itm.cms-opcua": {
       "driverId": "opcua",
-      "endpointUrl": "opc.tcp://cms-m11.local:4840",
+      "endpointUrl": "opc.tcp://cms-demo.local:4840",
       "timeoutMs": "5000",
       "pollIntervalMs": "1000",
       "readMode": "poll"

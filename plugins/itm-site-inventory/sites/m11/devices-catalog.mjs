@@ -1,5 +1,5 @@
 export const siteId = "m11";
-export const siteLabel = "Трасса М11";
+export const siteLabel = "Демо-площадка";
 export const snmpHost = "127.0.0.1";
 
 /** @typedef {{ zone: string, id: string, name: string, role: string, svgId?: string, description?: string }} DeviceDef */

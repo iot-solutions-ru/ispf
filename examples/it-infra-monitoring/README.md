@@ -1,13 +1,13 @@
 # Мониторинг ИТ инфраструктуры (`it-infra-monitoring`)
 
-Универсальное NMS-приложение ISPF. Пилотная площадка: **Трасса М11** (`m11`).
+Универсальное NMS-приложение ISPF. Демо-площадка: `m11` (технический siteId).
 
 ## Структура
 
 | Слой | Путь |
 |------|------|
-| Product bundle | `examples/it-infra-monitoring/bundle.json` (**v1.1.1**, M11 MMI) |
-| M11 overlay | `examples/it-infra-monitoring/m11-ui-overlay.json` (applied by `build-bundle.mjs`) |
+| Product bundle | `examples/it-infra-monitoring/bundle.json` (**v1.1.2**, ITM MMI) |
+| UI overlay | `examples/it-infra-monitoring/m11-ui-overlay.json` (applied by `build-bundle.mjs`) |
 | UI pack | `examples/m11-monitor-ui/` (`m11-monitor-ui-0.1.0.zip`, base `/apps/it-infra-monitoring/`) |
 | Site inventory | `plugins/itm-site-inventory/sites/m11/bundle.json` |
 | Site topology | `plugins/itm-site-topology/sites/m11/bundle.json` |
@@ -49,7 +49,7 @@ $env:ISPF_TOKEN = "<jwt>"
 
 ## Operator UI
 
-После импорта: приложение **«Мониторинг ИТ-инфраструктуры М11»**, дашборды `itm-*`.
+После импорта: приложение **«Мониторинг ИТ-инфраструктуры»**, дашборды `itm-*`.
 
 React MMI: ui-pack `m11-monitor-ui` → `/apps/it-infra-monitoring/` (или `operatorUi.externalSpaUrl` на Vite `http://127.0.0.1:5173`).
 `operatorUi.spaNav` / `uiPack` — в `bundle.json` и `m11-ui-overlay.json`.

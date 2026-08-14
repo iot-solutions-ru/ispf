@@ -1,5 +1,5 @@
 /**
- * Demo topology faults for M11 pilot — drives SVG link stroke / node fill via status bindings
+ * Demo topology faults — drives SVG link stroke / node fill via status bindings
  * and keeps hub.activeAlarmsFeed in sync (report «Активные аварии»).
  *
  * Usage:

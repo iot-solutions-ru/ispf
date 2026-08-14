@@ -36,7 +36,7 @@ const bundle = {
       parentPath: "root.platform.mimics",
       name: `itm-${siteId}-dcn`,
       type: "MIMIC",
-      displayName: `М11 DCN topology`,
+      displayName: `DCN topology`,
     },
   ],
   operatorUi: {

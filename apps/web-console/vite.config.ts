@@ -66,8 +66,8 @@ export default defineConfig({
         // Without this denylist, an active console SW replaces /apps/<id>/ with
         // web-console index.html and "Open app UI" appears broken.
         navigateFallbackDenylist: [
-          /^\/api(?:\/|$)/,
           /^\/apps(?:\/|$)/,
+          /^\/api(?:\/|$)/,
           /^\/ws(?:\/|$)/,
           /^\/actuator(?:\/|$)/,
           /^\/operator-printing/,

@@ -1,11 +1,11 @@
-# Marketplace — IT Infrastructure Monitoring (М11)
+# Marketplace — IT Infrastructure Monitoring
 
 ## Артефакты
 
 | Поле | Значение |
 |---|---|
 | Package / appId | `it-infra-monitoring` |
-| Display name | Мониторинг ИТ-инфраструктуры М11 |
+| Display name | Мониторинг ИТ-инфраструктуры |
 | Bundle | `examples/it-infra-monitoring/bundle.json` **v1.1.2** |
 | UI pack | `examples/m11-monitor-ui/m11-monitor-ui-0.1.0.zip` |
 | Site plugins | inventory / topology / integrations (`sites/m11`) |
@@ -35,7 +35,7 @@ Hints live in `m11-ui-overlay.json` → `deviceDriverHints`. Rebuild: `node scri
 
 1. Application listing `it-infra-monitoring` (`uiPackSlug: m11-monitor-ui`)
 2. UI pack listing `m11-monitor-ui` — static under `/apps/it-infra-monitoring/`
-3. Site plugins M11 (inventory → topology → integrations)
+3. Site plugins (inventory → topology → integrations)
 4. `configure-integrations.mjs` (relay URLs / OPC endpoint / SSH host)
 5. Smoke: `https://<ispf-host>/apps/it-infra-monitoring/`
 

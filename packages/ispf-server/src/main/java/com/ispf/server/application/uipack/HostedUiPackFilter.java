@@ -58,6 +58,22 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "UI pack not installed: " + appId);
             return;
         }
+        String canonicalAppId = String.valueOf(uiPackLoader.packSummary(appId).getOrDefault("appId", "")).trim();
+        // Directory alias (e.g. oil-control-ui → oil-control): Vite basePath is /apps/<appId>/.
+        if (!canonicalAppId.isEmpty() && !canonicalAppId.equals(appId) && isSafeAppId(canonicalAppId)) {
+            String suffix = slash < 0 ? "/" : rest.substring(slash);
+            if (suffix.isEmpty()) {
+                suffix = "/";
+            }
+            String location = "/apps/" + canonicalAppId + suffix;
+            String query = request.getQueryString();
+            if (query != null && !query.isBlank()) {
+                location = location + "?" + query;
+            }
+            response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+            response.setHeader("Location", location);
+            return;
+        }
         Path asset;
         try {
             asset = uiPackLoader.resolveAsset(appId, relative);
@@ -124,5 +140,18 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
             return "/";
         }
         return path;
+    }
+
+    private static boolean isSafeAppId(String appId) {
+        if (appId.length() > 64) {
+            return false;
+        }
+        for (int i = 0; i < appId.length(); i++) {
+            char c = appId.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == '.')) {
+                return false;
+            }
+        }
+        return !appId.contains("..");
     }
 }

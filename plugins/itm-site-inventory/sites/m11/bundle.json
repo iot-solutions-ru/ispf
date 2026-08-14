@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "displayName": "ITM inventory — Трасса М11",
+  "displayName": "ITM inventory — demo site",
   "tablePrefix": "",
   "schemaName": "it_infra_monitoring",
   "metadata": {
     "packageId": "itm-plugin-inventory-m11",
     "siteId": "m11",
-    "siteLabel": "Трасса М11",
+    "siteLabel": "Демо-площадка",
     "dependsOnApp": "it-infra-monitoring",
     "deviceCount": 99,
     "snmpHost": "127.0.0.1"
@@ -887,7 +887,7 @@
       "parentPath": "root.platform.devices.itm.sites",
       "name": "m11",
       "type": "CUSTOM",
-      "displayName": "Трасса М11"
+      "displayName": "Демо-площадка"
     },
     {
       "parentPath": "root.platform.devices.itm.sites.m11",

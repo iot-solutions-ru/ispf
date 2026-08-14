@@ -20,7 +20,7 @@
       "parentPath": "root.platform.mimics",
       "name": "itm-m11-dcn",
       "type": "MIMIC",
-      "displayName": "М11 DCN topology"
+      "displayName": "DCN topology"
     }
   ],
   "operatorUi": {

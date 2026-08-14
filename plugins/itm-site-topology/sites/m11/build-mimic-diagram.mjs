@@ -18,10 +18,7 @@ import {
 
 const siteDir = path.dirname(fileURLToPath(import.meta.url));
 
-const defaultSource = path.resolve(
-  siteDir,
-  "../../../../../YandexDisk/Трасса М11/Interface/main_topology_7_РАБОТАЕТ_07.07.20.svg"
-);
+const defaultSource = path.join(siteDir, "assets", "main_topology.svg");
 const sourcePath = process.env.TOPOLOGY_SVG_SOURCE ?? defaultSource;
 const assetsDir = path.join(siteDir, "assets");
 const outSvg = path.join(assetsDir, "main_topology.svg");
@@ -113,7 +110,7 @@ const elements = [
     y: 0,
     props: { width: 1309, height: 503 },
     bindings,
-    tooltip: "Топология DCN — М11 (статусы узлов и линков)",
+    tooltip: "Топология DCN (статусы узлов и линков)",
   },
   ...hitAreas.map((area) => ({
     id: `hit-${area.nodeName}`,

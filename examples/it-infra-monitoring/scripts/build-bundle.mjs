@@ -513,7 +513,7 @@ const bundle = {
           writable: true,
           defaultValue: {
             schema: { name: "stringValue", fields: [{ name: "value", type: "STRING" }] },
-            rows: [{ value: "opc.tcp://cms-m11.local:4840" }],
+            rows: [{ value: "opc.tcp://cms.demo.local:4840" }],
           },
         },
         {
@@ -643,7 +643,7 @@ const bundle = {
   },
 };
 
-// M11 MMI / ui-pack overlay (spaNav, schedules, extra reports/migrations, hub functions)
+// ITM MMI / ui-pack overlay (spaNav, schedules, extra reports/migrations, hub functions)
 const overlayPath = path.join(root, "m11-ui-overlay.json");
 if (fs.existsSync(overlayPath)) {
   const overlay = JSON.parse(fs.readFileSync(overlayPath, "utf8"));
