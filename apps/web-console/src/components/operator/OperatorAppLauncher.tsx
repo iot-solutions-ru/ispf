@@ -55,7 +55,7 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
   const missingStarters = (startersQuery.data ?? []).filter((starter) => !appIds.has(starter.appId));
 
   return (
-    <div className="operator-shell" data-testid="operator-shell">
+    <div className="operator-shell operator-shell--launcher" data-testid="operator-shell">
       <header className="operator-topbar">
         <Space direction="vertical" size={0}>
           <Typography.Text strong>{t("operator:launcher.title")}</Typography.Text>
