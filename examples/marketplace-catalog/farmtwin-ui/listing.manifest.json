@@ -1,0 +1,29 @@
+{
+  "slug": "farmtwin-ui",
+  "title": "FarmTwin — Web UI (SPA)",
+  "description": "Hosted React SPA for farmtwin (base /apps/farmtwin/). Same-origin /api/v1 → ISPF BFF. Install with application listing farmtwin (uiPackSlug) or separately as artifactKind ui-pack.",
+  "artifactKind": "ui-pack",
+  "appId": "farmtwin",
+  "packId": "farmtwin-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.30",
+  "latestVersion": "1.0.0",
+  "bundleArtifact": "farmtwin-ui-1.0.0.zip",
+  "tags": [
+    "ui-pack",
+    "farm",
+    "farmtwin",
+    "livestock",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "1.0.0 — FarmTwin SPA at /apps/farmtwin/; live BFF client with mock fallback; no login gate."
+}
