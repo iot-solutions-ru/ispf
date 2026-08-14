@@ -39,6 +39,10 @@
   }
 }
 
+.operator-shell--launcher .operator-topbar {
+  flex-shrink: 0;
+}
+
 .operator-topbar {
   display: flex;
   align-items: center;
