@@ -344,23 +344,35 @@ export default function AiAgentChat() {
             const text = input;
             setInput("");
             void submitMessage(text);
-          }}        >
-          <label className={`ai-agent-mode-select ai-agent-mode-select--compose ai-agent-mode-select--${interactionMode}`}>
-            <span className="ai-agent-mode-label">{t("agent.mode.label")}</span>
-            <select
-              className={`ai-agent-mode-select-input ai-agent-mode-select-input--${interactionMode}`}
-              value={interactionMode}
-              disabled={sending || !chatEnabled}
-              aria-label={t("agent.mode.label")}
-              onChange={(event) => setInteractionMode(event.target.value as AgentInteractionMode)}
+          }}
+        >
+          <div className="ai-agent-chat-compose-toolbar">
+            <label
+              className={`ai-agent-mode-select ai-agent-mode-select--compose ai-agent-mode-select--${interactionMode}`}
             >
-              {modeOptions.map((mode) => (
-                <option key={mode} value={mode} title={t(`agent.mode.hint.${mode}`)}>
-                  {t(`agent.mode.${mode}`)}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span className="ai-agent-mode-label">{t("agent.mode.label")}</span>
+              <select
+                className={`ai-agent-mode-select-input ai-agent-mode-select-input--${interactionMode}`}
+                value={interactionMode}
+                disabled={sending || !chatEnabled}
+                aria-label={t("agent.mode.label")}
+                onChange={(event) => setInteractionMode(event.target.value as AgentInteractionMode)}
+              >
+                {modeOptions.map((mode) => (
+                  <option key={mode} value={mode} title={t(`agent.mode.hint.${mode}`)}>
+                    {t(`agent.mode.${mode}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <AgentChatComposeAttachments
+              provider={provider}
+              attachments={pendingAttachments}
+              disabled={sending || !chatEnabled}
+              onChange={setPendingAttachments}
+              onReject={rejectAttachment}
+            />
+          </div>
           {attachmentRejectHint && (
             <Alert
               type="warning"
@@ -374,31 +386,24 @@ export default function AiAgentChat() {
               }
             />
           )}
-          <AgentChatComposeAttachments
-            provider={provider}
-            attachments={pendingAttachments}
+          <textarea
+            ref={inputRef}
+            rows={2}
+            value={input}
+            placeholder={t("agent.placeholder")}
+            onChange={(e) => {
+              setInput(e.target.value);
+              resizeChatInput(e.target);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
             disabled={sending || !chatEnabled}
-            onChange={setPendingAttachments}
-            onReject={rejectAttachment}
           />
-          <div className="ai-agent-chat-compose-row">
-            <textarea
-              ref={inputRef}
-              rows={1}
-              value={input}
-              placeholder={t("agent.placeholder")}
-              onChange={(e) => {
-                setInput(e.target.value);
-                resizeChatInput(e.target);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-              disabled={sending || !chatEnabled}
-            />
+          <div className="ai-agent-chat-compose-actions">
             <Button
               type="primary"
               htmlType="submit"

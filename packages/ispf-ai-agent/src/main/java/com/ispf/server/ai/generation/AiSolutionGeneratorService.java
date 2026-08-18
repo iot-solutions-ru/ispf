@@ -492,19 +492,19 @@ public class AiSolutionGeneratorService {
         if (containsKeyword(lower, "mes", "dispatch", "oee", "work order", "manufacturing", "shopfloor")) {
             return "mes";
         }
-        if (containsKeyword(lower, "scada", "mimic", "historian", "plc", "РјРЅРµРјРѕ", "РјРёРјРёРє")) {
+        if (containsKeyword(lower, "scada", "mimic", "historian", "plc", "мнемо", "мимик")) {
             return "scada";
         }
         if (containsKeyword(lower, "oil", "gas", "neft", "refinery", "upstream", "downstream",
-                "tank farm", "pump station", "РЅРµС„С‚РµР±Р°Р·", "nps", "oil-gas")) {
+                "tank farm", "pump station", "нефтебаз", "nps", "oil-gas")) {
             return "oil-gas";
         }
         if (containsKeyword(lower, "water", "wastewater", "treatment plant", "desalination",
-                "irrigation", "flood", "utility water", "РІРѕРґРѕРєР°РЅР°Р»")) {
+                "irrigation", "flood", "utility water", "водокanal")) {
             return "water";
         }
         if (containsKeyword(lower, "energy", "power plant", "thermal", "turbine", "boiler",
-                "kwh", "substation", "grid", "generation", "С‚СЌС†", "mini-tec")) {
+                "kwh", "substation", "grid", "generation", "тэц", "mini-tec")) {
             return "energy";
         }
         if (containsKeyword(lower, "hvac", "comfort", "zone", "ahu", "chiller", "setpoint")) {

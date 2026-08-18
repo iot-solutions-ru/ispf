@@ -244,7 +244,7 @@ public class TreeFirstAgentService {
             publishStep(sessionId, Map.of(
                     "step", 0,
                     "type", "status",
-                    "label", "РџРѕРґРіРѕС‚РѕРІРєР° Р·Р°РїСЂРѕСЃР°вЂ¦",
+                    "label", "Подготовка запроса…",
                     "result", Map.of("status", "RUNNING")
             ));
 
@@ -329,8 +329,8 @@ public class TreeFirstAgentService {
             while (steps.size() < maxStepsTotal) {
                 if (cancellationRegistry.isCancelled(session.sessionId())) {
                     finalStatus = AgentTurnStatus.CANCELLED;
-                    finishSummary = "Р’С‹РїРѕР»РЅРµРЅРёРµ РѕСЃС‚Р°РЅРѕРІР»РµРЅРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј РїРѕСЃР»Рµ "
-                            + steps.size() + " С€Р°Рі(РѕРІ).";
+                    finishSummary = "Выполнение остановлено пользователем после "
+                            + steps.size() + " шаг(ов).";
                     break;
                 }
 
@@ -374,17 +374,17 @@ public class TreeFirstAgentService {
                             || AgentJsonProtocol.looksLikeTruncatedContent(response.content()));
                     finishSummary = truncated
                             ? """
-                            РћС‚РІРµС‚ РјРѕРґРµР»Рё РѕР±СЂРµР·Р°РЅ вЂ” РїР»Р°РЅ СЃР»РёС€РєРѕРј Р±РѕР»СЊС€РѕР№ РґР»СЏ РѕРґРЅРѕРіРѕ СЃРѕРѕР±С‰РµРЅРёСЏ. \
-                            Р§Р°СЃС‚РёС‡РЅС‹Р№ РїР»Р°РЅ СЃРѕС…СЂР°РЅС‘РЅ, РµСЃР»Рё СѓРґР°Р»РѕСЃСЊ РёР·РІР»РµС‡СЊ РґР°РЅРЅС‹Рµ. \
-                            РќР°РїРёС€РёС‚Рµ В«РїСЂРѕРґРѕР»Р¶Рё РїР»Р°РЅВ» РёР»Рё В«РґРѕР±Р°РІСЊ СЃР»РµРґСѓСЋС‰РёРµ СЂР°Р·РґРµР»С‹В» вЂ” РїР»Р°РЅ РґРѕСЃС‚СЂР°РёРІР°РµС‚СЃСЏ РїРѕСЌС‚Р°РїРЅРѕ."""
+                            Ответ модели обрезан — план слишком большой для одного сообщения. \
+                            Частичный план сохранён, если удалось извлечь данные. \
+                            Напишите «продолжи план» или «добавь следующие разделы» — план достраивается поэтапно."""
                             : """
-                            РќРµ СѓРґР°Р»РѕСЃСЊ СЂР°Р·РѕР±СЂР°С‚СЊ РѕС‚РІРµС‚ РјРѕРґРµР»Рё РїРѕСЃР»Рµ РЅРµСЃРєРѕР»СЊРєРёС… РїРѕРїС‹С‚РѕРє. \
-                            РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРµСЂРµС„РѕСЂРјСѓР»РёСЂРѕРІР°С‚СЊ Р·Р°РїСЂРѕСЃ РєРѕСЂРѕС‡Рµ РёР»Рё РЅР°С‡РЅРёС‚Рµ РЅРѕРІС‹Р№ С‡Р°С‚.""";
+                            Не удалось разобрать ответ модели после нескольких попыток. \
+                            Попробуйте переформулировать запрос короче или начните новый чат.""";
                     finalStatus = AgentTurnStatus.ERROR;
                     Map<String, Object> errorStep = new LinkedHashMap<>();
                     errorStep.put("step", stepNumber);
                     errorStep.put("type", "error");
-                    errorStep.put("label", truncated ? "РћС‚РІРµС‚ РѕР±СЂРµР·Р°РЅ" : "РћС€РёР±РєР° СЂР°Р·Р±РѕСЂР° РѕС‚РІРµС‚Р° РјРѕРґРµР»Рё");
+                    errorStep.put("label", truncated ? "Ответ обрезан" : "Ошибка разбора ответа модели");
                     errorStep.put("error", parsed.error() != null ? parsed.error() : "parse failed");
                     errorStep.put("rawPreview", preview(response != null ? response.content() : null));
                     if (truncated) {
@@ -510,14 +510,14 @@ public class TreeFirstAgentService {
                                 || planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL) {
                             boolean executeMode = session.runState().interactionMode() == AgentInteractionMode.EXECUTE;
                             String guardLabel = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
-                                    ? "РўСЂРµР±СѓРµС‚СЃСЏ СѓС‚РІРµСЂР¶РґРµРЅРёРµ РїР»Р°РЅР°"
+                                    ? "Требуется утверждение плана"
                                     : askMode
-                                            ? "Р РµР¶РёРј В«РЎРїСЂРѕСЃРёС‚СЊВ»"
+                                            ? "Режим «Спросить»"
                                             : executeMode
-                                                    ? "Р РµР¶РёРј В«Р’С‹РїРѕР»РЅРёС‚СЊВ»"
+                                                    ? "Режим «Выполнить»"
                                                     : runStateAntiReplanHint(session.runState(), candidateResult)
-                                                            ? "Р’С‹РїРѕР»РЅРµРЅРёРµ РїР»Р°РЅР°"
-                                                            : "РўСЂРµР±СѓРµС‚СЃСЏ РїР»Р°РЅ";
+                                                            ? "Выполнение плана"
+                                                            : "Требуется план";
                             String guardError = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
                                     ? "Execution finish blocked: plan not approved yet."
                                     : askMode
@@ -534,7 +534,7 @@ public class TreeFirstAgentService {
                                     finishResult = new LinkedHashMap<>(recovered.get());
                                     AgentPlanGuard.capturePlan(session.runState(), finishResult);
                                     syncRunPlanState(session);
-                                    finishSummary = "РџРѕРґРіРѕС‚РѕРІР»РµРЅ СЌС‚Р°Р»РѕРЅРЅС‹Р№ LITE-РїР»Р°РЅ вЂ” СѓС‚РІРµСЂРґРёС‚Рµ Рё РЅР°С‡РЅС‘Рј РІС‹РїРѕР»РЅРµРЅРёРµ.";
+                                    finishSummary = "Подготовлен эталонный LITE-план — утвердите и начнём выполнение.";
                                     finalStatus = AgentTurnStatus.OK;
                                     Map<String, Object> finishStep = Map.of(
                                             "step", stepNumber,
@@ -564,7 +564,7 @@ public class TreeFirstAgentService {
                                 }
                             }
                             String guardHint = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
-                                    ? "Wait for user approval (e.g. В«Р”Р°, РЅР°С‡РёРЅР°РµРјВ») before finishing with devicePath/dashboardPath."
+                                    ? "Wait for user approval (e.g. «Да, начинаем») before finishing with devicePath/dashboardPath."
                                     : askMode
                                             ? "Use read-only discovery tools, then finish with summary only "
                                                     + "(optional read-only suggestions вЂ” no plan panel)."
@@ -575,7 +575,7 @@ public class TreeFirstAgentService {
                                                             ? "Follow the approved plan checklist step-by-step with tools."
                                                             : "Run discovery tools, then finish with result.phase=plan, "
                                                                     + "result.plan, result.questions, result.suggestions "
-                                                                    + "(include primary: В«РЈС‚РІРµСЂРґРёС‚СЊ РїРѕР»РЅС‹Р№ РїР»Р°РЅВ»).";
+                                                                    + "(include primary: «Утвердить полный план»).";
                             Map<String, Object> guardStep = Map.of(
                                     "step", stepNumber,
                                     "type", "guard",
@@ -614,7 +614,7 @@ public class TreeFirstAgentService {
                                 Map<String, Object> guardStep = Map.of(
                                         "step", stepNumber,
                                         "type", "guard",
-                                        "label", "РџСЂРѕРІРµСЂРєР° SIF-РїР»Р°РЅР°",
+                                        "label", "Проверка SIF-плана",
                                         "error", "Plan validation failed",
                                         "hint", AgentSpecPlanValidator.formatValidationHint(specValidation)
                                 );
@@ -638,8 +638,8 @@ public class TreeFirstAgentService {
                             if (block.isPresent()) {
                                 AgentPlatformTurnGuard.BlockDecision decision = block.get();
                                 if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
-                                    finishSummary = "РџСЂРѕРІРµСЂРєР° Р·Р°РІРµСЂС€РµРЅРёСЏ РїРѕРІС‚РѕСЂСЏР»Р°СЃСЊ вЂ” РѕР±СЉРµРєС‚С‹, РІРµСЂРѕСЏС‚РЅРѕ, СѓР¶Рµ СЃРѕР·РґР°РЅС‹. "
-                                            + "РџСЂРѕРІРµСЂСЊС‚Рµ РїР»Р°С‚С„РѕСЂРјСѓ РІСЂСѓС‡РЅСѓСЋ Рё РїСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РїСЂРѕРґРѕР»Р¶РёС‚Рµ РІ РЅРѕРІРѕРј СЃРѕРѕР±С‰РµРЅРёРё.";
+                                    finishSummary = "Проверка завершения повторялась — объекты, вероятно, уже созданы. "
+                                            + "Проверьте платформу вручную и при необходимости продолжите в новом сообщении.";
                                     finishResult = new LinkedHashMap<>();
                                     finishResult.put("interactive", true);
                                     finishResult.put("platformGuardStuck", true);
@@ -660,7 +660,7 @@ public class TreeFirstAgentService {
                                 Map<String, Object> guardStep = Map.of(
                                         "step", stepNumber,
                                         "type", "guard",
-                                        "label", "РџСЂРѕРІРµСЂРєР° РїРµСЂРµРґ Р·Р°РІРµСЂС€РµРЅРёРµРј",
+                                        "label", "Проверка перед завершением",
                                         "error", decision.error(),
                                         "hint", decision.hint() != null ? decision.hint() : ""
                                 );
@@ -926,16 +926,16 @@ public class TreeFirstAgentService {
             if (finishSummary == null && !AgentTurnStatus.CANCELLED.equals(finalStatus)) {
                 finalStatus = AgentTurnStatus.OK;
                 int completed = steps.size();
-                finishSummary = "Р’ СЌС‚РѕРј turn РІС‹РїРѕР»РЅРµРЅРѕ " + completed + " С€Р°Рі(РѕРІ) вЂ” РґРѕСЃС‚РёРіРЅСѓС‚ РјСЏРіРєРёР№ Р»РёРјРёС‚ "
-                        + maxStepsTotal + ". РџР»Р°РЅ Рё СЃРµСЃСЃРёСЏ СЃРѕС…СЂР°РЅРµРЅС‹; РѕС‚РїСЂР°РІСЊС‚Рµ В«РџСЂРѕРґРѕР»Р¶Р°Р№В» РґР»СЏ СЃР»РµРґСѓСЋС‰РµР№ РїРѕСЂС†РёРё.";
+                finishSummary = "В этом turn выполнено " + completed + " шаг(ов) — достигнут мягкий лимит "
+                        + maxStepsTotal + ". План и сессия сохранены; отправьте «Продолжай» для следующей порции.";
                 finishResult = new LinkedHashMap<>();
                 finishResult.put("interactive", true);
                 finishResult.put("stepLimitReached", true);
                 finishResult.put("stepsCompleted", completed);
                 finishResult.put("suggestions", List.of(
                         Map.of(
-                                "label", "РџСЂРѕРґРѕР»Р¶РёС‚СЊ",
-                                "message", "РџСЂРѕРґРѕР»Р¶Р°Р№ РІС‹РїРѕР»РЅРµРЅРёРµ СЃ С‚РѕРіРѕ РјРµСЃС‚Р°, РіРґРµ РѕСЃС‚Р°РЅРѕРІРёР»СЃСЏ",
+                                "label", "Продолжить",
+                                "message", "Продолжай выполнение с того места, где остановился",
                                 "primary", true
                         )
                 ));
@@ -998,7 +998,7 @@ public class TreeFirstAgentService {
             Map<String, Object> errorStep = Map.of(
                     "step", 1,
                     "type", "error",
-                    "label", "РћС€РёР±РєР° РІС‹РїРѕР»РЅРµРЅРёСЏ",
+                    "label", "Ошибка выполнения",
                     "error", summary
             );
             Map<String, Object> result = new LinkedHashMap<>();

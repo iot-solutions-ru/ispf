@@ -219,7 +219,7 @@ class TreeFirstAgentServiceSessionTest {
         Map<String, Object> result = agentService.runTurn(session, "do something", auth, "admin");
 
         assertEquals("ERROR", result.get("status"));
-        assertTrue(String.valueOf(result.get("summary")).contains("СЂР°Р·РѕР±СЂР°С‚СЊ РѕС‚РІРµС‚ РјРѕРґРµР»Рё"));
+        assertTrue(String.valueOf(result.get("summary")).contains("разобрать ответ модели"));
     }
 
     @Test
@@ -238,7 +238,7 @@ class TreeFirstAgentServiceSessionTest {
         Map<String, Object> result = agentService.runTurn(session, "long task", auth, "admin");
         assertEquals(AgentTurnStatus.OK, result.get("status"));
         assertEquals(8, result.get("stepsCompleted"));
-        assertTrue(String.valueOf(result.get("summary")).contains("РјСЏРіРєРёР№ Р»РёРјРёС‚"));
+        assertTrue(String.valueOf(result.get("summary")).contains("мягкий лимит"));
         @SuppressWarnings("unchecked")
         Map<String, Object> finishResult = (Map<String, Object>) result.get("result");
         assertEquals(Boolean.TRUE, finishResult.get("stepLimitReached"));
@@ -294,7 +294,7 @@ class TreeFirstAgentServiceSessionTest {
 
         Map<String, Object> result = agentService.runTurn(sessionForCancel, "cancel me", auth, "admin");
         assertEquals(AgentTurnStatus.CANCELLED, result.get("status"));
-        assertTrue(String.valueOf(result.get("summary")).contains("РѕСЃС‚Р°РЅРѕРІР»РµРЅРѕ"));
+        assertTrue(String.valueOf(result.get("summary")).contains("остановлено"));
         assertEquals(1, sessionForCancel.turns().size());
     }
 
@@ -302,11 +302,11 @@ class TreeFirstAgentServiceSessionTest {
     void askModeFinishesOnceWhenLlmReturnsPlanPayload() throws Exception {
         when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
                 """
-                {"type":"finish","summary":"РљСЂР°С‚РєРёР№ РѕР±Р·РѕСЂ РїР»Р°С‚С„РѕСЂРјС‹: Explorer, СѓСЃС‚СЂРѕР№СЃС‚РІР°, РґР°С€Р±РѕСЂРґС‹.","result":{
+                {"type":"finish","summary":"Краткий обзор платформы: Explorer, устройства, дашборды.","result":{
                   "phase":"plan",
                   "plan":{"goal":"Onboarding","steps":["1. Explorer","2. Devices"]},
-                  "questions":[{"id":"q1","text":"РљР°РєРѕР№ СЂР°Р·РґРµР» РёРЅС‚РµСЂРµСЃСѓРµС‚?"}],
-                  "suggestions":[{"label":"РЈС‚РІРµСЂРґРёС‚СЊ РїРѕР»РЅС‹Р№ РїР»Р°РЅ","message":"РЈС‚РІРµСЂР¶РґР°СЋ","primary":true}]
+                  "questions":[{"id":"q1","text":"Какой раздел интересует?"}],
+                  "suggestions":[{"label":"Утвердить полный план","message":"Утверждаю","primary":true}]
                 }}""",
                 "test-model",
                 new LlmUsage(1, 1, 2)
@@ -316,7 +316,7 @@ class TreeFirstAgentServiceSessionTest {
         var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
         Map<String, Object> result = agentService.runTurn(
                 session,
-                "РљР°Рє СЂР°Р±РѕС‚Р°С‚СЊ РІ РїР»Р°С‚С„РѕСЂРјРµ?",
+                "Как работать в платформе?",
                 auth,
                 "admin",
                 "ask"
@@ -324,7 +324,7 @@ class TreeFirstAgentServiceSessionTest {
 
         assertEquals("OK", result.get("status"));
         assertEquals(
-                "РљСЂР°С‚РєРёР№ РѕР±Р·РѕСЂ РїР»Р°С‚С„РѕСЂРјС‹: Explorer, СѓСЃС‚СЂРѕР№СЃС‚РІР°, РґР°С€Р±РѕСЂРґС‹.",
+                "Краткий обзор платформы: Explorer, устройства, дашборды.",
                 result.get("summary")
         );
         @SuppressWarnings("unchecked")
