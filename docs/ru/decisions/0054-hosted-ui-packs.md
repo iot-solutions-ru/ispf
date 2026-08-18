@@ -67,7 +67,7 @@ All-in-one JAR без отдельного static root — отдельный `l
 ## Последствия
 
 - One-click / air-gap: BFF + SPA.
-- Авторы SPA: Vite `base: '/apps/<appId>/'`, same-origin `/api/v1`.
+- Авторы SPA: Vite `base: '/apps/<appId>/'`, same-origin `/api/v1`. Инжект ИИ-помощника читает токен сессии из storage пакета (`oca_token`, `ispf-auth-session` или ключ `*token*`), а не только из вкладки консоли.
 - **Риск:** nginx SPA fallback «съедает» `/apps/` — см. секцию Edge/nginx выше. Флаг `installed` в каталоге для ui-pack — по **`appId`**, не по slug/`packId`, если они различаются.
 
 ## Acceptance

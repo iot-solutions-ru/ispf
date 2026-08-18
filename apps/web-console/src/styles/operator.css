@@ -1,4 +1,4 @@
-/* Split from styles.css lines 5477-6645 — do not reorder imports in index.css */
+/* Split from styles.css lines 5477-6645 - do not reorder imports in index.css */
 /* Operator HMI */
 .operator-shell {
   display: flex;
@@ -131,13 +131,27 @@
   display: none;
 }
 
+.operator-preferences-dropdown {
+  z-index: 1200;
+}
+
 .operator-preferences-panel {
   min-width: 16rem;
-  padding: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.28));
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border, #30363d);
+  border-radius: 8px;
+  background: var(--surface-elevated, var(--bg-elevated, #161b22));
+  color: var(--text, #e6edf3);
+  box-shadow: var(--shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.45));
+  isolation: isolate;
+}
+
+.operator-topbar .topbar-actions .ant-btn {
+  height: 32px;
+  min-height: 32px;
+  padding-block: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .operator-preferences-fieldset {

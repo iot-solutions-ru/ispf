@@ -23,7 +23,7 @@ Introduce a generic platform capability **hosted UI packs**, parallel to symbol/
 1. New marketplace **`artifactKind: ui-pack`** (zip of static assets + `ui-pack.json`).
 2. Install root: `ISPF_UI_PACKS_DIR/<appId>/` (versioned replace on upgrade).
 3. HTTP: serve `GET /apps/<appId>/**` from `ispf-server` with SPA fallback to `index.html` (same origin as `/api`).
-4. Operator launcher: **Open app UI** → `hostedUiUrl` (`/apps/<appId>/`) or bridge `externalSpaUrl`.
+4. Operator launcher: **Open app UI** → `hostedUiUrl` (`/apps/<appId>/`) or bridge `externalSpaUrl`. Hosted HTML gets the **operator AI assistant** (same FAB as Operator HMI) injected by default, scoped to that `appId`. Packs opt out with `ispf-skip-operator-agent` in `index.html`.
 5. Optional listing field: `uiPackSlug` — free application install also downloads the companion ui-pack.
 6. Optional bundle field: `operatorUi.uiPack = { packId, version, entry }` / `externalSpaUrl` / `spaNav` — **persisted** into operator UI extras on deploy and returned by `GET …/operator-apps/{appId}/ui`.
 7. Security: path sandbox, size limits (`ispf.ui-pack.max-zip-bytes`); **no** server-side JS execution of pack content.
@@ -74,7 +74,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 ## Consequences
 
 - One-click / air-gap install can cover BFF + SPA under one catalog flow (application listing + `uiPackSlug`, or separate ui-pack listing).
-- SPA authors use relative `/api/v1` and a Vite `base` under `/apps/<appId>/`.
+- SPA authors use relative `/api/v1` and a Vite `base` under `/apps/<appId>/`. The injected operator assistant reads the same-origin session token from pack storage (`oca_token`, `ispf-auth-session`, or a `*token*` key) — not only the console tab's session.
 - Docs and CI catalog validate learn `artifactKind: ui-pack` for local examples (not under `marketplace-catalog/` bundle-only folders).
 
 ### Risks
@@ -96,7 +96,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - [x] `docs/en/marketplace.md` documents `ui-pack`; example under `examples/marketplace-ui-pack-demo/`.
 - [x] web-console SW denylist includes `/apps` (Open app UI must not get console shell).
 - [x] Bundle deploy persists `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` into operator UI extras.
-- [x] Open app UI works without Ctrl+F5 (SW release on click + one-shot migration).
+- [x] Hosted UI packs inject the operator AI assistant (FAB) scoped to `/apps/<appId>/` unless the pack opts out.
 
 ## Related
 

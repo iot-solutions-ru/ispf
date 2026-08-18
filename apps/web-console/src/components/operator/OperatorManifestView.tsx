@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useOperatorManifest } from "../../hooks/useOperatorManifest";
 import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
@@ -117,15 +118,15 @@ export default function OperatorManifestView({
           />
           <OperatorPreferences />
           {onLogout && (
-            <button type="button" className="btn" onClick={onLogout}>
+            <Button onClick={onLogout}>
               {t("common:action.logout")}
-            </button>
+            </Button>
           )}
-        {onSwitchAdmin && (
-          <button type="button" className="btn" onClick={onSwitchAdmin}>
-            {t("operator:launcher.switchAdmin")}
-          </button>
-        )}
+          {onSwitchAdmin && (
+            <Button onClick={onSwitchAdmin}>
+              {t("operator:launcher.switchAdmin")}
+            </Button>
+          )}
         </div>
       </header>
       <OperatorOfflineBanner

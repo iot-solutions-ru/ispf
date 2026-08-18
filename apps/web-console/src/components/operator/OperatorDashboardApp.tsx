@@ -510,9 +510,6 @@ function OperatorDashboardChrome({
           {(ui.hostedUiUrl || ui.externalSpaUrl) && (
             <Button
               type="primary"
-              href={ui.hostedUiUrl || ui.externalSpaUrl}
-              target="_blank"
-              rel="noreferrer"
               data-testid="operator-open-hosted-ui"
               onClick={(event) => {
                 const url = ui.hostedUiUrl || ui.externalSpaUrl;

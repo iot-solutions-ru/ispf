@@ -222,6 +222,7 @@ http://<host>:5173?mode=admin
 
 - Панель чата в Operator HMI (иконка ассистента).
 - Тот же URL, что у operator app: `?mode=operator&app=<appId>`.
+- Hosted UI packs (`/apps/<appId>/`) получают того же помощника по умолчанию, в scope этого приложения. Виджет берёт токен из логина SPA (например `oca_token` в Ойл Контроль) или из сессии консоли (`ispf-auth-session`).
 
 Администратор задаёт инструкции и загружает документы в **operator app** (`root.platform.operator-apps` → Agent instructions / Knowledge base).
 

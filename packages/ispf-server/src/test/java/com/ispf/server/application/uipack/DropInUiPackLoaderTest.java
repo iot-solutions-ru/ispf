@@ -82,6 +82,20 @@ class DropInUiPackLoaderTest {
         }).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void rejectsReservedPlatformAppId() {
+        assertThatThrownBy(() -> {
+            Path source = tempDir.resolve("platform-pack");
+            Files.createDirectories(source);
+            Files.writeString(source.resolve("ui-pack.json"), """
+                    {"appId":"_platform","entry":"index.html"}
+                    """);
+            Files.writeString(source.resolve("index.html"), "x");
+            loader.installPackDirectory(source, "_platform");
+        }).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid ui-pack appId");
+    }
+
     private static byte[] zipDir(Path source) throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(bos);

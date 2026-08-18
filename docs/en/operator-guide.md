@@ -216,6 +216,7 @@ Details: [ai-development](ai-development.md), BL-179.
 
 - Chat panel in Operator HMI (assistant icon).
 - Same URL as the operator app: `?mode=operator&app=<appId>`.
+- Hosted UI packs (`/apps/<appId>/`) get the same assistant by default, scoped to that application. The widget uses the pack's own login token (for example Oil Control `oca_token`) or the console session (`ispf-auth-session`).
 
 An administrator sets instructions and uploads documents in the **operator app** (`root.platform.operator-apps` → Agent instructions / Knowledge base).
 

@@ -76,7 +76,7 @@ Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `
 
 Paid **analytics extension packs** (Tier C historian functions) use the same install/activate API as apps. After install, helpers appear in `GET /api/v1/platform/analytics/catalog` with `pack: <packId>`.
 
-**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Free install via Solutions marketplace or local `POST /api/v1/marketplace/ui-packs/{id}/install`. Application listings may set `uiPackSlug` so one-click install also downloads the companion SPA. SPA authors use Vite `base: '/apps/<appId>/'` and same-origin `/api/v1`. Bundle `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` are persisted on deploy so Operator **Open app UI** works without a second configure step.
+**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Free install via Solutions marketplace or local `POST /api/v1/marketplace/ui-packs/{id}/install`. Application listings may set `uiPackSlug` so one-click install also downloads the companion SPA. SPA authors use Vite `base: '/apps/<appId>/'` and same-origin `/api/v1`. Bundle `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` are persisted on deploy so Operator **Open app UI** works without a second configure step. The platform injects the operator AI assistant into hosted HTML (`/apps/<appId>/`) by default; opt out with `ispf-skip-operator-agent` in `index.html`.
 
 **Split nginx deploy:** `location ^~ /apps/` **must** `proxy_pass` to `ispf-server` (same as `/api/`). Otherwise `try_files … /index.html` serves the admin console at `/apps/<appId>/`. See [ADR-0054](decisions/0054-hosted-ui-packs.md#edge--nginx-mandatory-for-split-deploy) and `deploy/nginx-ispf.conf`.
 

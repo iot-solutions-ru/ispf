@@ -327,6 +327,9 @@ public class DropInUiPackLoader {
         if (appId == null || appId.isBlank() || appId.length() > 64) {
             return false;
         }
+        if (HostedUiPackOperatorAgentInjector.PLATFORM_APP_ID.equalsIgnoreCase(appId)) {
+            return false;
+        }
         for (int i = 0; i < appId.length(); i++) {
             char c = appId.charAt(i);
             if (!(Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == '.')) {

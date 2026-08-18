@@ -54,55 +54,58 @@ export default function OperatorPreferences() {
   };
 
   const content = (
-    <Space direction="vertical" size="middle" style={{ width: 280 }}>
-      <div>
-        <Typography.Text strong>{t("preferences.alarmsLegend")}</Typography.Text>
-        <Space direction="vertical" size="small" style={{ width: "100%", marginTop: 8 }}>
-          <Space style={{ width: "100%", justifyContent: "space-between" }}>
-            <Typography.Text>{t("preferences.sound")}</Typography.Text>
-            <Switch checked={soundEnabled} onChange={toggleSound} size="small" />
+    <div className="operator-preferences-panel" onClick={(event) => event.stopPropagation()}>
+      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+        <div>
+          <Typography.Text strong>{t("preferences.alarmsLegend")}</Typography.Text>
+          <Space direction="vertical" size="small" style={{ width: "100%", marginTop: 8 }}>
+            <Space style={{ width: "100%", justifyContent: "space-between" }}>
+              <Typography.Text>{t("preferences.sound")}</Typography.Text>
+              <Switch checked={soundEnabled} onChange={toggleSound} size="small" />
+            </Space>
+            <Space style={{ width: "100%", justifyContent: "space-between" }}>
+              <Typography.Text>{t("preferences.browserNotify")}</Typography.Text>
+              <Switch
+                checked={browserNotify}
+                disabled={notifyPermission === "unsupported"}
+                onChange={(checked) => void toggleBrowserNotify(checked)}
+                size="small"
+              />
+            </Space>
           </Space>
-          <Space style={{ width: "100%", justifyContent: "space-between" }}>
-            <Typography.Text>{t("preferences.browserNotify")}</Typography.Text>
-            <Switch
-              checked={browserNotify}
-              disabled={notifyPermission === "unsupported"}
-              onChange={(checked) => void toggleBrowserNotify(checked)}
-              size="small"
+          {notifyPermission === "denied" && (
+            <Alert
+              type="warning"
+              showIcon
+              style={{ marginTop: 8 }}
+              message={t("preferences.browserNotifyDenied")}
             />
-          </Space>
-        </Space>
-        {notifyPermission === "denied" && (
-          <Alert
-            type="warning"
-            showIcon
-            style={{ marginTop: 8 }}
-            message={t("preferences.browserNotifyDenied")}
-          />
-        )}
-        {notifyPermission === "unsupported" && (
-          <Alert
-            type="info"
-            showIcon
-            style={{ marginTop: 8 }}
-            message={t("preferences.browserNotifyUnsupported")}
-          />
-        )}
-      </div>
-      <div className="operator-preferences-shell">
-        <ShellPreferences />
-      </div>
-    </Space>
+          )}
+          {notifyPermission === "unsupported" && (
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginTop: 8 }}
+              message={t("preferences.browserNotifyUnsupported")}
+            />
+          )}
+        </div>
+        <div className="operator-preferences-shell">
+          <ShellPreferences />
+        </div>
+      </Space>
+    </div>
   );
 
   return (
     <Dropdown
       trigger={["click"]}
       popupRender={() => content}
-      menu={{ items: [] }}
       placement="bottomRight"
+      overlayClassName="operator-preferences-dropdown"
+      getPopupContainer={() => document.body}
     >
-      <Button size="small" className="operator-preferences-trigger" title={t("preferences.title")}>
+      <Button className="operator-preferences-trigger" title={t("preferences.title")}>
         {t("preferences.title")}
       </Button>
     </Dropdown>

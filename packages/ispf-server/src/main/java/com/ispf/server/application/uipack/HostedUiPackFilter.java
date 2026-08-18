@@ -11,7 +11,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -54,6 +56,10 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
+        if (HostedUiPackOperatorAgentInjector.isPlatformAsset(appId, relative)) {
+            servePlatformWidget(request, response);
+            return;
+        }
         if (!uiPackLoader.isPackInstalled(appId)) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "UI pack not installed: " + appId);
             return;
@@ -75,12 +81,49 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
         }
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("X-Content-Type-Options", "nosniff");
+        boolean html = contentType != null && contentType.toLowerCase().contains("html");
+        if (html) {
+            String htmlBody = Files.readString(asset, StandardCharsets.UTF_8);
+            String injected = HostedUiPackOperatorAgentInjector.inject(htmlBody, appId);
+            byte[] bytes = injected.getBytes(StandardCharsets.UTF_8);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            response.setContentLength(bytes.length);
+            if ("HEAD".equalsIgnoreCase(request.getMethod())) {
+                return;
+            }
+            try (OutputStream out = response.getOutputStream()) {
+                out.write(bytes);
+            }
+            return;
+        }
         if ("HEAD".equalsIgnoreCase(request.getMethod())) {
             response.setContentLengthLong(Files.size(asset));
             return;
         }
         try (OutputStream out = response.getOutputStream()) {
             Files.copy(asset, out);
+        }
+    }
+
+    private void servePlatformWidget(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        try (InputStream in = getClass().getResourceAsStream(
+                "/uipack-platform/" + HostedUiPackOperatorAgentInjector.WIDGET_FILE
+        )) {
+            if (in == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            byte[] bytes = in.readAllBytes();
+            response.setContentType("text/javascript; charset=UTF-8");
+            response.setHeader("Cache-Control", "no-cache");
+            response.setHeader("X-Content-Type-Options", "nosniff");
+            response.setContentLength(bytes.length);
+            if ("HEAD".equalsIgnoreCase(request.getMethod())) {
+                return;
+            }
+            try (OutputStream out = response.getOutputStream()) {
+                out.write(bytes);
+            }
         }
     }
 
