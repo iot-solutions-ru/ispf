@@ -33,8 +33,7 @@ mkdir -p "$(dirname "$OUT")"
 
 if command -v pwsh >/dev/null 2>&1; then
   if [ -z "$PASS" ]; then
-    echo "Set ISPF_VPS_PASSWORD (or ISPF_DEPLOY_PASSWORD)" >&2
-    exit 1
+    PASS="${ISPF_DEPLOY_PASSWORD:-admin}"
   fi
   pwsh "$ROOT/tools/agent-regression/vps-generator-oneshot.ps1" \
     -BaseUrl "$BASE_URL" \
@@ -43,9 +42,9 @@ if command -v pwsh >/dev/null 2>&1; then
     -Password "$PASS" \
     -Out "$OUT"
 else
-  echo "pwsh not found — run manually on Windows or install PowerShell Core:"
-  echo "  pwsh tools/agent-regression/vps-generator-oneshot.ps1 -BaseUrl $BASE_URL -Domain $DOMAIN -Out $OUT"
-  exit 1
+  export ISPF_VPS_URL="$BASE_URL" ISPF_VPS_USER="$USER" AGENT_LIVE_GENERATOR_RESULTS="$OUT"
+  export ISPF_VPS_PASSWORD="${PASS:-${ISPF_DEPLOY_PASSWORD:-admin}}"
+  bash "$ROOT/tools/agent-regression/vps-generator-oneshot.sh" "$DOMAIN"
 fi
 
 node "$ROOT/tools/agent-regression/validate-generator-evidence.mjs" --results "$OUT"

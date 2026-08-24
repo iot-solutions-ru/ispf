@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-24T18:31:57.887795Z",
+  "runStartedAt": "2026-08-24T18:31:36.421258Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "hvac",
+      "status": "OK",
+      "elapsedMs": 19610,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-building-hvac-plant-with-6qyx",
+      "hubPath": "root.platform.devices.describe-a-building-hvac-plant-with-6qyx-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-building-hvac-plant-with-6qyx-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-building-hvac-plant-with-6qyx-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "platform-generated-unsigned",
+      "operatorUiHttp": "200"
+    }
+  ]
+}
