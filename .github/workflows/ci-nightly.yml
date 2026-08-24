@@ -150,6 +150,7 @@ jobs:
           npx playwright install chromium --with-deps
           npm run test:e2e
           npm run build
+          npm run pwa:offline-evidence
           npm run test:e2e:preview
           test -f dist/legal/LICENSE
           test -f dist/legal/THIRD_PARTY_NOTICES.md
@@ -299,8 +300,8 @@ jobs:
             export ISPF_AI_MODEL=gpt-4o-mini
           fi
           bash tools/agent-regression/run-live-generator-oneshot.sh
-
-      - name: Upload live suite results
+          node tools/agent-regression/validate-generator-evidence.mjs \
+            --results build/agent-regression/live-generator-results.json
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

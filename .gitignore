@@ -129,7 +129,6 @@ deploy/prometheus-observability-local.yml
 deploy/scale-dashboard-*.mjs
 deploy/tools/marketplace-patch-seed-on-vps.py
 deploy/tools/marketplace-vps-sync-catalog.sh
-deploy/tools/mes-platform-production-deploy.sh
 scripts/deploy-lab-*
 
 # Customer MES printing contour example (local only)

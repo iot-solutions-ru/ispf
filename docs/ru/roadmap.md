@@ -1566,7 +1566,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | **S31** | июл–авг 2026 | БЛ-177/178 **Готово** (52/52 live suite; multi-app smoke harness; live нужен `ISPF_LLM_SMOKE`) |
 | **S32** | авг 2026 | БЛ-180 **Готово** (multi-domain live apply harness HVAC/MES/SCADA); continuity по необходимости |
 | **S33** | сен 2026 | **БЛ-193** genealogy lite |
-| **Post-S33** | ongoing | Качественный путь: AI generator oneshot (`run-live-generator-oneshot.sh` / `live-generator-results.json`) + field soak на именованной площадке; полевые доказательства MES/HMI; честность scorecard — **не** новые волны фич |
+| **Post-S33** | ongoing | [AI field soak](en/ai-field-soak-playbook.md) · [MES field pilot](en/mes-field-pilot-playbook.md) · [HMI offline soak](en/hmi-offline-field-soak.md) + evidence under `docs/evidence/` — **не** новые волны фич |
 
 Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP БЛ-169; расширение BPMN/DMN.
 

@@ -16,6 +16,8 @@ See [acceleration-program](acceleration-program.md) · [roadmap § S21](roadmap.
 | Mimic FPS (stress) | `npm run test:quality` | ≥55 fps @ 500 el — **BL-152 Done acceptance** | nightly |
 | Mimic FPS (WS update path) | `npm run test:quality` | WS floor (`MIMIC_MIN_FPS_WS`, default 35) while pumping `VARIABLE_UPDATED` | nightly |
 | Mimic FPS (unmocked live) | `E2E_LIVE_FPS=1` + creds | Optional evidence only — **not** claimed ≥60 without a dated run | on-demand |
+| PWA offline config (BL-151) | `npm run pwa:offline-evidence` | SW 8h TTL + dashboard/mimic cache + reconnect helper | nightly |
+| PWA offline field soak | [hmi-offline-field-soak.md](hmi-offline-field-soak.md) | 2h min / 8h stretch on wall or tablet | on-site |
 
 ```bash
 cd apps/web-console

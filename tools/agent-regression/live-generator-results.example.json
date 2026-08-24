@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-08-24T12:00:00.000Z",
+  "runStartedAt": "2026-08-24T11:58:00.000Z",
+  "source": "AiSolutionGeneratorLiveSmokeTest",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "hvac",
+      "status": "OK",
+      "elapsedMs": 420000,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "hvac-building-a01",
+      "hubPath": "root.platform.devices.hvac-building-a01-hub",
+      "dashboardPath": "root.platform.dashboards.hvac-building-a01-overview",
+      "alertPath": "root.platform.alerts.hvac-building-a01-status"
+    }
+  ]
+}
