@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-24T18:58:29.377100Z",
+  "runStartedAt": "2026-08-24T18:58:07.650327Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "scada",
+      "status": "OK",
+      "elapsedMs": 19467,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-scada-plant-with-one-pump-jfgk",
+      "hubPath": "root.platform.devices.describe-a-scada-plant-with-one-pump-jfgk-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-scada-plant-with-one-pump-jfgk-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-scada-plant-with-one-pump-jfgk-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "platform-generated-unsigned",
+      "operatorUiHttp": "200"
+    }
+  ]
+}
