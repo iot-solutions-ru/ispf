@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-24T18:35:36.447009Z",
+  "runStartedAt": "2026-08-24T18:35:15.364038Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "mes",
+      "status": "OK",
+      "elapsedMs": 19110,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-factory-mes-cell-with-one-bfxw",
+      "hubPath": "root.platform.devices.describe-a-factory-mes-cell-with-one-bfxw-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-factory-mes-cell-with-one-bfxw-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-factory-mes-cell-with-one-bfxw-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "platform-generated-unsigned",
+      "operatorUiHttp": "200"
+    }
+  ]
+}
