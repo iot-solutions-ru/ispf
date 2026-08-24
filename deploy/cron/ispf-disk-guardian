@@ -1,0 +1,6 @@
+# ISPF disk space protection (copy to /etc/cron.d/ispf-disk-guardian on VPS)
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/15 * * * * root /opt/ispf/bin/disk-guardian.sh >/dev/null 2>&1
+30 4 * * 0 root /opt/ispf/bin/disk-guardian.sh && docker image prune -af >/dev/null 2>&1

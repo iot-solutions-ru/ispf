@@ -68,6 +68,7 @@ marketing/
 deploy/local/
 !deploy/local/README.example.md
 deploy/vps-*
+!deploy/vps-hardening.sh
 deploy/lab-*
 deploy/lab_*
 deploy/remote-*

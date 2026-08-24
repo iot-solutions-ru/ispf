@@ -175,7 +175,13 @@ val contextPackResource = layout.projectDirectory.file(
 tasks.register<Exec>("buildContextPack") {
     group = "ai"
     description = "Regenerate ai/context-pack.json from docs and examples (FW-41); runs before server bootJar"
-    commandLine("python", contextPackScript.asFile.absolutePath)
+    val python = listOf("python3", "python").firstOrNull { cmd ->
+        providers.exec {
+            commandLine("sh", "-c", "command -v $cmd")
+            isIgnoreExitValue = true
+        }.result.get().exitValue == 0
+    } ?: "python3"
+    commandLine(python, contextPackScript.asFile.absolutePath)
     environment("ISPF_VERSION", version.toString())
     inputs.file(contextPackScript)
     inputs.dir(layout.projectDirectory.dir("docs/en"))

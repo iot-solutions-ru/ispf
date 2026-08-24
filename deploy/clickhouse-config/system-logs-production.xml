@@ -1,0 +1,37 @@
+<!--
+  Production ClickHouse logging policy for ISPF VPS / single-node deploy.
+  Prevents disk exhaustion from system.* diagnostic tables (text_log, query_log, …).
+-->
+<clickhouse>
+  <!-- Profiling log can grow to multi-GB — not needed in prod -->
+  <processors_profile_log remove="remove"/>
+
+  <text_log>
+    <ttl>event_date + INTERVAL 2 DAY DELETE</ttl>
+    <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+  </text_log>
+
+  <trace_log>
+    <ttl>event_date + INTERVAL 2 DAY DELETE</ttl>
+  </trace_log>
+
+  <query_log>
+    <ttl>event_date + INTERVAL 5 DAY DELETE</ttl>
+  </query_log>
+
+  <part_log>
+    <ttl>event_date + INTERVAL 5 DAY DELETE</ttl>
+  </part_log>
+
+  <metric_log>
+    <ttl>event_date + INTERVAL 2 DAY DELETE</ttl>
+  </metric_log>
+
+  <asynchronous_metric_log>
+    <ttl>event_date + INTERVAL 2 DAY DELETE</ttl>
+  </asynchronous_metric_log>
+
+  <error_log>
+    <ttl>event_date + INTERVAL 14 DAY DELETE</ttl>
+  </error_log>
+</clickhouse>

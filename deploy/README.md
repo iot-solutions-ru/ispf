@@ -14,6 +14,7 @@
 | [`prod-quickstart.sh`](prod-quickstart.sh) | Single-node prod stack |
 | [`cluster-quickstart.sh`](cluster-quickstart.sh) | Multi-replica cluster compose |
 | [`health-check.sh`](health-check.sh) | Post-deploy smoke |
+| [`vps-hardening.sh`](vps-hardening.sh) | Disk guardian, ClickHouse log TTL, journald limits (VPS) |
 | [`air-gap-pack.sh`](air-gap-pack.sh) / [`air-gap-apply.sh`](air-gap-apply.sh) | Offline bundle |
 
 ## Universal `deploy/tools/`
@@ -39,6 +40,25 @@ Secrets: `.env` (see [`.env.example`](../.env.example)). Never commit passwords 
 Both `docker-compose.vps-*.yml` run the JVM containers as uid/gid `10001` (same as the all-in-one Dockerfile image); the host data dir must be writable by it: `sudo chown -R 10001:10001 /opt/ispf/data`.
 
 `apply-platform-update.sh` requires `CHECKSUMS.sha256` next to the staged artifacts (generated on the build side with `sha256sum ispf-server.jar web-console.zip driver-packs.tar.gz > CHECKSUMS.sha256`); the update aborts before install when checksums are missing or mismatched.
+
+## VPS disk protection
+
+ClickHouse `system.*` logs can fill the root disk on long-running VPS nodes. After deploy:
+
+```bash
+sudo bash deploy/vps-hardening.sh
+```
+
+This installs `disk-guardian.sh` (cron every 15 min), journald cap 300M, Docker log rotation, and ClickHouse log TTL config (`deploy/clickhouse-config/system-logs-production.xml`).
+
+For Postgres/Redis on VPS, use external volumes when recreating containers:
+
+```bash
+docker compose -f deploy/docker-compose.postgres.yml \
+  -f deploy/docker-compose.postgres.vps.yml up -d
+```
+
+Monitor: `/opt/ispf/data/disk-guardian.log`
 
 ## Nginx + hosted UI packs (ADR-0054)
 

@@ -4,7 +4,8 @@
 #   ISPF_EVENT_JOURNAL_STORE=clickhouse
 #   ISPF_EVENT_JOURNAL_CLICKHOUSE_URL=http://localhost:8123
 #
-# VPS: bash deploy/vps-clickhouse-setup.sh  (or vps-clickhouse-deploy.ps1 from workstation)
+# VPS: mount clickhouse-local-user.xml + system-logs-production.xml (log TTL).
+# Password in clickhouse-local-user.xml must match ISPF_*_CLICKHOUSE_PASSWORD in ispf-server.env.
 services:
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
@@ -20,6 +21,12 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - ./clickhouse-local-user.xml:/etc/clickhouse-server/users.d/ispf-local.xml:ro
+      - ./clickhouse-config/system-logs-production.xml:/etc/clickhouse-server/config.d/system-logs-production.xml:ro
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   clickhouse-data:

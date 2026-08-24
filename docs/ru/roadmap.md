@@ -977,7 +977,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | **High** | AI | Field soak / soft &lt;15 min | Собственный AI-ров | БЛ-177…180 **Готово** (harness); БЛ-178 полный live 52/52 @100%; остаток: field soak + soft duration budget | БЛ-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30д | Ignition Edge | БЛ-187 Готово (compose+validate); БЛ-145 Частичный (30д soak) | БЛ-145, 187 |
 | High | SCADA | Offline PWA / HMI CI gates | Ignition Perspective | БЛ-151 Готово; БЛ-152 Готово (500@≥55 CI + WS; **не** заявлять unmocked ≥60; LH≥95 = ops stretch, CI floor 90) | БЛ-151, 152 Готово |
-| High | SCADA | Alarm shelving approval in-memory | WinCC / Ignition Alarming | `AlarmShelfApprovalService` STUB | БЛ-158 |
+| High | SCADA | Alarm shelving approval in-memory | WinCC / Ignition Alarming | **Готово** — JPA `alarm_shelf_requests`; очередь переживает рестарт | БЛ-158 |
 | High | Historian | Нет PI-класса: AF-lite / tiers / SLA CI | OSIsoft PI | ClickHouse dual-write Partial | БЛ-159…162 |
 | High | MES | Lab MES ≠ Opcenter / field site | Siemens Opcenter | Scorecard 6.5; БЛ-164…168/170/193 Готово на marketplace; не plant | БЛ-164…170 |
 | High | ERP L4 | Нет двусторонней синхронизации НСИ | Tulip + ERP connectors | Level 4 = reports + outbox pattern | БЛ-169 |
@@ -1083,7 +1083,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-155 | **Строгая мультитенантность** | П2 | **Готово** (честно) — SaaS `tenant-admin` + logical A≠B path/API; OIDC claim; hard schema provision/drop; **PostgreSQL RLS** на shared object-таблицах (`ispf.tenant.db-row-isolation`); физический schema split по-прежнему опционален — [multi-tenant](multi-tenant.md) |
 | БЛ-156 | **Аудиторский след GA** | П2 | Неизменяемый журнал аудита, экспорт, веб-перехватчик SIEM |
 | БЛ-157 | **Шаблоны ролей** | П2 | Пользовательские роли; Разрешения области действия ISA-95 |
-| БЛ-158 | **Стеллаж для сигнализации** | П2 | Отложить/отложить рабочий процесс утверждения — расширение [automation](automation.md) |
+| БЛ-158 | **Стеллаж для сигнализации** | П2 | **Готово** — persistent shelf + approval queue (`alarm_shelves`, `alarm_shelf_requests`) |
 
 **Фаза метрики:** прохождение пентеста; тенант A ≠ тенант B в жестком режиме; MFA обязателен для администратора.
 

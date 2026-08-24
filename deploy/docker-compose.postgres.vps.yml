@@ -1,0 +1,19 @@
+# VPS override: preserve existing Postgres/Redis volumes across container recreate.
+# Usage:
+#   docker compose -f deploy/docker-compose.postgres.yml \
+#     -f deploy/docker-compose.postgres.vps.yml up -d
+services:
+  postgres:
+    volumes:
+      - ispf_pg_data:/var/lib/postgresql/data
+  redis:
+    volumes:
+      - ispf_redis_data:/data
+
+volumes:
+  ispf_pg_data:
+    external: true
+    name: ispf_pg_data
+  ispf_redis_data:
+    external: true
+    name: ispf_redis_data

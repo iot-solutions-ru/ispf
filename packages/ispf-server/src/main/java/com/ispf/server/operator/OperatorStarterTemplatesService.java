@@ -5,7 +5,6 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.object.ObjectManager;
 import org.slf4j.Logger;
@@ -36,31 +35,30 @@ public class OperatorStarterTemplatesService {
     private final ObjectManager objectManager;
     private final DashboardService dashboardService;
     private final OperatorAppUiService operatorAppUiService;
-    private final BootstrapProperties bootstrapProperties;
 
     public OperatorStarterTemplatesService(
             ObjectManager objectManager,
             DashboardService dashboardService,
-            OperatorAppUiService operatorAppUiService,
-            BootstrapProperties bootstrapProperties
+            OperatorAppUiService operatorAppUiService
     ) {
         this.objectManager = objectManager;
         this.dashboardService = dashboardService;
         this.operatorAppUiService = operatorAppUiService;
-        this.bootstrapProperties = bootstrapProperties;
     }
 
+    /**
+     * Platform operator apps (alarm-console, work-queue, hmi-wall) are core admin/operator
+     * infrastructure — not optional demo fixtures. Ensure dashboards exist even when
+     * {@code ispf.bootstrap.fixtures-enabled=false} (prod VPS).
+     */
     @EventListener(ApplicationReadyEvent.class)
     @Order(55)
-    public void seedWhenFixturesEnabled() {
-        if (!bootstrapProperties.isFixturesEnabled() || !bootstrapProperties.shouldSeedGeneralReferenceDemos()) {
-            return;
-        }
+    public void ensurePlatformOperatorStartersOnBoot() {
         try {
             Map<String, Object> result = installStarters(false);
-            log.info("Operator starter templates: {}", result.get("installed"));
+            log.info("Platform operator starters ensured: {}", result.get("installed"));
         } catch (Exception ex) {
-            log.warn("Operator starter templates seed skipped: {}", ex.getMessage());
+            log.warn("Platform operator starters ensure skipped: {}", ex.getMessage());
         }
     }
 
