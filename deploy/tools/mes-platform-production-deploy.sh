@@ -5,7 +5,7 @@
 #   ISPF_BASE_URL=https://ispf.example.invalid bash deploy/tools/mes-platform-production-deploy.sh /path/bundle.json
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." && pwd)"
 BUNDLE="${1:-$ROOT/examples/mes-platform-production/bundle.json}"
 BASE_URL="${ISPF_BASE_URL:-http://127.0.0.1:8080}"
 USER="${ISPF_DEPLOY_USER:-admin}"
@@ -40,11 +40,25 @@ fi
 python3 -m json.tool /tmp/mes-deploy.json | head -20
 
 HUB="root.platform.devices.mes-platform-production-hub"
-echo "==> OEE smoke @ $HUB"
+SEED_SHIFT_ID="${MES_OEE_SEED_SHIFT_ID:-dddddddd-dddd-dddd-dddd-dddddddddddd}"
+
+echo "==> listLines smoke @ $HUB"
+LINES_HTTP=$(curl -sS -w '%{http_code}' -o /tmp/mes-lines.json -X POST "$BASE_URL/api/v1/bff/invoke" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"objectPath\":\"$HUB\",\"functionName\":\"mes_platform_listLines\",\"input\":{\"schema\":{\"name\":\"in\",\"fields\":[]},\"rows\":[{}]}}")
+if [ "$LINES_HTTP" != "200" ]; then
+  echo "listLines smoke failed HTTP $LINES_HTTP:" >&2
+  cat /tmp/mes-lines.json >&2
+  exit 1
+fi
+python3 -m json.tool /tmp/mes-lines.json | head -10
+
+echo "==> OEE smoke @ $HUB (shift $SEED_SHIFT_ID)"
 OEE_HTTP=$(curl -sS -w '%{http_code}' -o /tmp/mes-oee.json -X POST "$BASE_URL/api/v1/bff/invoke" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"functionName\":\"mes_oee_getKpi\",\"contextPath\":\"$HUB\"}")
+  -d "{\"objectPath\":\"$HUB\",\"functionName\":\"mes_oee_getKpi\",\"input\":{\"schema\":{\"name\":\"in\",\"fields\":[{\"name\":\"shiftId\",\"type\":\"STRING\"}]},\"rows\":[{\"shiftId\":\"$SEED_SHIFT_ID\"}]}}")
 if [ "$OEE_HTTP" != "200" ]; then
   echo "OEE smoke failed HTTP $OEE_HTTP:" >&2
   cat /tmp/mes-oee.json >&2
