@@ -47,8 +47,11 @@ export function resolveInitialAppMode(session: AuthSession | null): "admin" | "o
   if (urlMode === "admin") {
     return "admin";
   }
-  if (!isConfiguratorSession(session) || (session?.autoStartEnabled && session.autoStartApp)) {
+  // Operator-only accounts always land in operator shell.
+  if (!isConfiguratorSession(session)) {
     return "operator";
   }
+  // Configurators (admin/developer/tenant-admin) default to admin console.
+  // autoStartApp is for dedicated operator accounts — not for admin login.
   return "admin";
 }

@@ -115,7 +115,7 @@ function useAppMode(session: AuthSession | null): ["admin" | "operator", (mode: 
         url.searchParams.set("app", session.autoStartApp);
       }
     } else {
-      url.searchParams.delete("mode");
+      url.searchParams.set("mode", "admin");
       url.searchParams.delete("app");
       url.searchParams.delete("screen");
     }
@@ -229,6 +229,9 @@ function AppShell() {
     if (!session?.autoStartEnabled || !session.autoStartApp) {
       return;
     }
+    if (isConfiguratorSession(session)) {
+      return;
+    }
     const apps = operatorAppsQuery.data;
     if (!apps) {
       return;
@@ -238,7 +241,7 @@ function AppShell() {
       return;
     }
     const params = new URLSearchParams(window.location.search);
-    if (params.get("mode") === "admin" && isConfiguratorSession(session)) {
+    if (appMode === "admin" || params.get("mode") === "admin") {
       return;
     }
     if (!params.get("app")) {
@@ -248,7 +251,7 @@ function AppShell() {
       window.history.replaceState({}, "", url.toString());
       setAppMode("operator");
     }
-  }, [session, setAppMode, operatorAppsQuery.data]);
+  }, [session, appMode, setAppMode, operatorAppsQuery.data]);
 
   useEffect(() => {
     const fromUrl = searchParams.get("path");
@@ -599,7 +602,12 @@ function AppShell() {
     const autoStartKnown =
       Boolean(autoStartResolved)
       && Boolean(apps?.some((app) => app.appId === autoStartResolved));
-    if (autoStartKnown && autoStartResolved && !urlApp) {
+    if (
+      !isConfiguratorSession(next)
+      && autoStartKnown
+      && autoStartResolved
+      && !urlApp
+    ) {
       const url = new URL(window.location.href);
       url.searchParams.set("mode", "operator");
       url.searchParams.set("app", autoStartResolved);
