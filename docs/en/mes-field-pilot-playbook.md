@@ -33,11 +33,13 @@ Target soak: **minimum 7 days**; log incidents in [mes-field-soak-journal.templa
 ## Deploy (≤ 30 min)
 
 ```bash
-# Local or VPS
+# Local or VPS (unsigned OK when ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=false)
 ISPF_BASE_URL=https://ispf.example.invalid \
 ISPF_DEPLOY_USER=admin ISPF_DEPLOY_PASSWORD=… \
 bash deploy/tools/mes-platform-production-deploy.sh
 ```
+
+**Prod VPS** (`require-signed-bundles=true`): deploy returns **403** until bundle is signed for this installation-id (`GET /api/v1/platform/installation-id`) via `tools/license-builder/sign-bundle.py`, **or** temporarily set `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=false` in `/opt/ispf/ispf-server.env` and recreate the JVM container.
 
 Manual: `POST /api/v1/applications/mes-platform-production/deploy` with [bundle.json](../../examples/mes-platform-production/bundle.json).
 

@@ -13,7 +13,7 @@ See [ai-agent.md](ai-agent.md) · [field-pilot-playbook § ready-for-field](fiel
 | Situation | Action |
 | --------- | ------ |
 | CI / local Gradle smoke | `run-live-generator-oneshot.sh` + `ISPF_LLM_SMOKE=true` |
-| Remote demostand (VPS) | `run-vps-field-soak.sh` or `vps-generator-oneshot.ps1` |
+| Remote demostand (VPS) | `bash tools/agent-regression/run-vps-field-soak.sh hvac` (curl; pwsh optional) |
 | Customer plant (named task) | Same scripts + 3-day journal + archived JSON |
 
 **Do not** claim multi-domain live pass until **each** domain has its own dated JSON file.
