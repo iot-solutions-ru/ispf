@@ -1602,6 +1602,7 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 
 | Дата | Изменение |
 | ---- | --------- |
+| 25.08.2026 | **ispf-vps jar 0.9.188:** verify license по raw JSON (`sign-bundle.py` OK); signed gate ON; MES GA 8/8; Flyway V89. |
 | 25.08.2026 | **Post-S33 named-site field evidence (ispf-vps):** AI generator HVAC/MES/SCADA oneshots в `docs/evidence/ai-generator/` (~19s, soft budget); MES `mes-platform-production` GA smoke 8/8 + Postgres UUID/`RANDOM_UUID` compat; hygiene VPS (oil-control KPI off, `avgTemperature` writable, emc SQL bindings off). Journals AI+MES. **Signed bundles ON** на demostand; fix deploy verify raw JSON (следующий jar). HMI: CI evidence journal; 2h field — на объекте. |
 | 19.07.2026 | **BL-180 soft evidence path:** `LiveGeneratorEvidence` + `run-live-generator-oneshot.sh` → `live-generator-results.json`; чеклист интегратора в [ai-agent](ai-agent.md); pin `AGENT_LIVE_GENERATOR_DOMAIN` (default hvac). Lab oneshot ≠ field Done |
 | 19.07.2026 | **Политика исполнения — качество вместо фич:** hardening уже отгруженного по умолчанию; без новой поверхности BPMN/фаз/продукта без именованного blocker заказчика + ADR; freeze subset BPMN (ADR-0047) сохраняется; OT/ERP остаются parked — [§ Политика исполнения](#политика-исполнения--качество-вместо-фич) |

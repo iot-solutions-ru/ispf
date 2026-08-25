@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | Site / line | ispf.iot-solutions.ru / LINE-A01 (lab VPS) |
-| ISPF version | 0.9.186 |
+| ISPF version | 0.9.188 |
 | Bundle | `mes-platform-production` 1.1.0 |
 | Hub path | `root.platform.devices.mes-platform-production-hub` |
 | ERP connector | stub outbox only (BL-169 deferred) |
