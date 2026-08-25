@@ -2,7 +2,7 @@ dependencies {
     implementation(project(":packages:ispf-driver-api"))
     implementation(project(":packages:ispf-core"))
 
-    implementation("com.hierynomus:smbj:0.14.0")
+    implementation("com.hierynomus:smbj:0.15.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
 }
