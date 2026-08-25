@@ -27,11 +27,27 @@ GET /api/v1/platform/installation-id
 3. **Подписать bundle** (manifest без секции `license`):
 
 ```bash
+# Prefer when server deploy verifies the raw JSON map (post contentSha256 DTO fix):
 python tools/license-builder/sign-bundle.py \
-  --bundle examples/mes-reference/bundle.json \
-  --bundle-id mes-reference \
+  --bundle examples/mes-platform-production/bundle.json \
+  --bundle-id mes-platform-production \
   --installation-id <hex-from-step-2> \
-  --private-key tools/license-builder/keys/license-private.pem
+  --private-key tools/license-builder/keys/license-private.pem \
+  --out /tmp/mes-platform-production-signed.json
+
+# On ISPF ≤0.9.186 (hash over BundleManifest DTO), use the jar helper instead:
+ISPF_SERVER_JAR=/opt/ispf/ispf-server.jar bash tools/license-builder/sign-bundle-via-jar.sh \
+  --bundle examples/mes-platform-production/bundle.json \
+  --bundle-id mes-platform-production \
+  --installation-id <hex-from-step-2> \
+  --private-key /opt/ispf/keys/license-private.pem \
+  --out /tmp/mes-platform-production-signed.json
+```
+
+Demostand one-shot (generate keys + require-signed + smoke):
+
+```bash
+bash deploy/tools/vps-enable-signed-bundles.sh
 ```
 
 4. **Включить проверку на сервере** (production):

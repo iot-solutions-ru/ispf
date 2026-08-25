@@ -12,7 +12,7 @@
 
 | Check | Result | Notes |
 | ----- | ------ | ----- |
-| Deploy | OK | `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=false` on VPS |
+| Deploy | OK | **signed gate ON** (`REQUIRE_SIGNED_BUNDLES=true`); see [signed-bundles note](./2026-08-25-ispf-vps-signed-bundles.md) |
 | `mes_platform_listLines` | OK | LINE-A01 |
 | `mes_oee_getKpi` | OK | OEE 85% after `CAST(? AS uuid)` fix |
 | Dispatch / SPC / batch / outbox | **8/8 PASS** | [2026-08-25-ispf-vps-ga-smoke.json](./2026-08-25-ispf-vps-ga-smoke.json) (`mes-platform-ga-smoke.sh`) |

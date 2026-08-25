@@ -141,8 +141,23 @@ public class ApplicationBundleDeployService {
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest, boolean trustedMarketplaceFreeInstall) {
+        return deploy(appId, manifest, trustedMarketplaceFreeInstall, true);
+    }
+
+    /**
+     * @param verifyLicense when false, caller already verified the license against the raw request map
+     *                      (avoids DTO round-trip contentSha256 mismatch vs {@code sign-bundle.py})
+     */
+    public Map<String, Object> deploy(
+            String appId,
+            BundleManifest manifest,
+            boolean trustedMarketplaceFreeInstall,
+            boolean verifyLicense
+    ) {
         BundleSemverSupport.requireValid(manifest.version());
-        licenseVerifier.verifyOrWarn(appId, manifest, trustedMarketplaceFreeInstall);
+        if (verifyLicense) {
+            licenseVerifier.verifyOrWarn(appId, manifest, trustedMarketplaceFreeInstall);
+        }
         dependencyVerifier.verify(appId, manifest.requires());
         List<String> applied = new ArrayList<>();
         List<String> skipped = new ArrayList<>();

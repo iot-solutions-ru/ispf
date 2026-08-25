@@ -1,5 +1,6 @@
 package com.ispf.server.application.api;
 
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
@@ -16,6 +17,7 @@ import com.ispf.server.application.bundle.BundleDependencyException;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.application.bundle.BundleManifestValidator;
 import com.ispf.server.application.bundle.BundleValidationResult;
+import com.ispf.server.license.CommercialBundleLicenseVerifier;
 import com.ispf.server.license.CommercialLicenseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -49,6 +51,7 @@ public class ApplicationController {
     private final ApplicationEventCatalogService eventCatalogService;
     private final BundleManifestValidator bundleManifestValidator;
     private final ObjectMapper objectMapper;
+    private final CommercialBundleLicenseVerifier licenseVerifier;
 
     public ApplicationController(
             ApplicationDataService dataService,
@@ -60,7 +63,8 @@ public class ApplicationController {
             ApplicationObjectTreeService objectTreeService,
             ApplicationEventCatalogService eventCatalogService,
             BundleManifestValidator bundleManifestValidator,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            CommercialBundleLicenseVerifier licenseVerifier
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -72,15 +76,23 @@ public class ApplicationController {
         this.eventCatalogService = eventCatalogService;
         this.bundleManifestValidator = bundleManifestValidator;
         this.objectMapper = objectMapper;
+        this.licenseVerifier = licenseVerifier;
     }
 
     @PostMapping("/{appId}/deploy")
     public Map<String, Object> deployBundle(
             @PathVariable String appId,
-            @RequestBody ApplicationBundleDeployService.BundleManifest manifest
+            @RequestBody JsonNode body
     ) {
         try {
-            return bundleDeployService.deploy(appId, manifest);
+            // Verify license on the raw JSON map (same shape as tools/license-builder/sign-bundle.py).
+            // Hashing the typed BundleManifest DTO drops unknown nested fields and breaks contentSha256.
+            @SuppressWarnings("unchecked")
+            Map<String, Object> raw = objectMapper.convertValue(body, Map.class);
+            licenseVerifier.verifyOrWarn(appId, raw, false);
+            ApplicationBundleDeployService.BundleManifest manifest =
+                    objectMapper.convertValue(body, ApplicationBundleDeployService.BundleManifest.class);
+            return bundleDeployService.deploy(appId, manifest, false, false);
         } catch (CommercialLicenseException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
         } catch (BundleDependencyException ex) {

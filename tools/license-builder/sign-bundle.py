@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Sign ISPF bundle manifest license block (0003)."""
+"""Sign ISPF bundle manifest license block (0003).
+
+Canonicalization MUST match ``BundleManifestCanonicalizer`` (Java):
+- drop ``license``
+- strip null map values (recursive on nested maps only; lists untouched)
+- sort map keys recursively (maps inside lists are NOT re-sorted)
+- SHA-256 hex of UTF-8 canonical JSON (separators compact, no spaces)
+"""
 
 from __future__ import annotations
 
@@ -14,15 +21,37 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
 
+def strip_nulls(value: object) -> object:
+    if isinstance(value, dict):
+        cleaned: dict[str, object] = {}
+        for key, item in value.items():
+            if item is None:
+                continue
+            cleaned[key] = strip_nulls(item) if isinstance(item, dict) else item
+        return cleaned
+    return value
+
+
+def sort_maps(value: object) -> object:
+    """Sort keys on dicts; do not recurse into list elements (Java parity)."""
+    if isinstance(value, dict):
+        return {k: sort_maps(v) if isinstance(v, dict) else v for k, v in sorted(value.items())}
+    return value
+
+
 def canonical_json(value: object) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 def content_sha256(manifest: dict) -> str:
     body = dict(manifest)
     body.pop("license", None)
-    digest = hashlib.sha256(canonical_json(body).encode("utf-8")).hexdigest()
-    return digest
+    canonical = canonical_json(sort_maps(strip_nulls(body)))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def claims_canonical_json(claims: dict[str, str]) -> str:
+    return canonical_json({k: claims[k] for k in sorted(claims)})
 
 
 def main() -> None:
@@ -42,15 +71,17 @@ def main() -> None:
         raise SystemExit("Remove existing license section before signing")
 
     sha = content_sha256(manifest)
-    expires_at = (datetime.now(timezone.utc) + timedelta(days=args.days_valid)).replace(microsecond=0).isoformat()
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=args.days_valid)).replace(microsecond=0)
+    # Java Instant.parse expects ...Z or offset; use Z
+    expires_at_s = expires_at.strftime("%Y-%m-%dT%H:%M:%SZ")
     claims = {
         "bundleId": args.bundle_id,
         "minPlatformVersion": args.min_platform_version,
         "installationId": args.installation_id,
         "contentSha256": sha,
-        "expiresAt": expires_at,
+        "expiresAt": expires_at_s,
     }
-    payload = canonical_json(claims).encode("utf-8")
+    payload = claims_canonical_json(claims).encode("utf-8")
 
     private_key = serialization.load_pem_private_key(
         Path(args.private_key).read_bytes(),
