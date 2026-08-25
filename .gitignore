@@ -114,6 +114,7 @@ deploy/scylla-sample-*
 deploy/snmpd-*
 deploy/coalesce-sweep-report-*
 deploy/tools/vps-*
+!deploy/tools/vps-enable-signed-bundles.sh
 deploy/tools/_*.py
 deploy/tools/*-lab*
 deploy/tools/analytics-*-gate.sh
