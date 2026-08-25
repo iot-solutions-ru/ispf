@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-25 | **Post-S33 named-site field evidence (ispf-vps):** AI generator HVAC/MES/SCADA oneshots archived under `docs/evidence/ai-generator/` (~19s each, soft budget met); MES `mes-platform-production` GA smoke 8/8 + OEE UUID/`RANDOM_UUID` Postgres compat; VPS hygiene (oil-control KPI bindings off, ice-cream `avgTemperature` writable, `emc` downtime SQL binding off). Journals: AI + MES. HMI 2h offline still on-site only. |
 | 2026-07-19 | **BL-180 soft evidence path:** `LiveGeneratorEvidence` + `run-live-generator-oneshot.sh` → `live-generator-results.json` (`elapsedMs`, `softBudgetMet`); integrator checklist in [ai-agent](ai-agent.md#bl-180-soft-15-min--integrator-oneshot-field-soak-ready); pin `AGENT_LIVE_GENERATOR_DOMAIN` (default hvac). Lab oneshot ≠ field Done |
 | 2026-07-19 | **Execution policy — quality over features:** harden shipped capabilities by default; no new BPMN/phase/product surface without named customer blocker + ADR; BPMN subset freeze (ADR-0047) stays; OT/ERP remain parked — [§ Execution policy](#execution-policy--quality-over-features) |
 | 2026-07-19 | **Phase 32 ecosystem partials closed:** BL-183 Done (CI `marketplace-catalog` validate + honest partner multi-endpoint; not live partner SaaS); BL-186 Done (Helm lint/template + deploy docs); BL-187 Done (ARM compose/validate); BL-188 Done usable MoM path (not 10+ peer soak); BL-190 Done curriculum paths linked |
