@@ -1,0 +1,409 @@
+# Protocol connectivity stubs (maturity: STUB).
+# Regenerate Java sources:
+#   python tools/driver-stubs/generate-protocol-stubs.py
+#
+# Each entry becomes a DeviceDriver in packages/ispf-driver-protocol-stubs.
+# Default port is a conventional/well-known endpoint for that protocol family.
+
+stubs:
+  # —— Industrial Ethernet / PLC ——
+  - id: sparkplug-b
+    name: MQTT Sparkplug B
+    description: MQTT Sparkplug B host/edge stub (MQTT session + Sparkplug payload parsing not implemented)
+    port: 1883
+  - id: opcua-pubsub
+    name: OPC UA PubSub
+    description: OPC UA PubSub (UDP/MQTT) stub — connectivity shell only
+    port: 4840
+  - id: beckhoff-ads
+    name: Beckhoff ADS
+    description: Beckhoff TwinCAT ADS/AMS stub
+    port: 48898
+  - id: profinet
+    name: PROFINET IO
+    description: PROFINET IO controller/device stub (DCP/RPC not implemented)
+    port: 34964
+  - id: profibus
+    name: PROFIBUS
+    description: PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required)
+    port: 9600
+  - id: ethercat
+    name: EtherCAT
+    description: EtherCAT master/gateway stub
+    port: 34980
+  - id: ethernet-powerlink
+    name: Ethernet POWERLINK
+    description: Ethernet POWERLINK stub
+    port: 34980
+  - id: cc-link
+    name: CC-Link
+    description: Mitsubishi CC-Link field network stub
+    port: 5001
+  - id: cc-link-ie
+    name: CC-Link IE
+    description: Mitsubishi CC-Link IE Field/Control stub
+    port: 5001
+  - id: plcnext
+    name: PLCnext
+    description: Phoenix Contact PLCnext Engineer/RSC stub
+    port: 41100
+  - id: codesys
+    name: CODESYS Gateway
+    description: CODESYS gateway / PLCHandler stub
+    port: 1217
+  - id: mitsubishi-melsec
+    name: Mitsubishi MELSEC
+    description: Mitsubishi MELSEC communication stub (MC Protocol / SLMP path planned)
+    port: 5007
+  - id: mitsubishi-slmp
+    name: Mitsubishi SLMP
+    description: Mitsubishi SLMP (Seamless Message Protocol) stub
+    port: 5007
+  - id: ge-srtp
+    name: GE SRTP
+    description: Emerson/GE Fanuc SRTP stub
+    port: 18245
+  - id: keyence-hostlink
+    name: Keyence Host Link
+    description: Keyence PLC Host Link / KV stub
+    port: 8501
+  - id: panasonic-mewto
+    name: Panasonic MEWTOCOL
+    description: Panasonic MEWTOCOL-COM/DAT stub
+    port: 9094
+  - id: yaskawa-memobus
+    name: Yaskawa Memobus
+    description: Yaskawa Memobus/Modbus-family PLC stub
+    port: 502
+  - id: delta-dvp
+    name: Delta DVP
+    description: Delta DVP / AS series PLC stub
+    port: 502
+  - id: fatek
+    name: Fatek FACON
+    description: Fatek FACON protocol stub
+    port: 500
+  - id: ls-xgt
+    name: LS XGT
+    description: LS Electric XGT FEnet stub
+    port: 2004
+  - id: fuji-sph
+    name: Fuji SPH
+    description: Fuji Electric SPH / MICREX stub
+    port: 507
+  - id: hitachi-hidic
+    name: Hitachi HIDIC
+    description: Hitachi HIDIC / EH-150 stub
+    port: 3000
+  - id: toshiba-t-series
+    name: Toshiba T-series
+    description: Toshiba T-series PLC stub
+    port: 9600
+  - id: idec-microsmart
+    name: IDEC MicroSmart
+    description: IDEC MicroSmart FC6A stub
+    port: 10000
+  - id: unitronics
+    name: Unitronics
+    description: Unitronics PCOM stub
+    port: 20256
+  - id: wago
+    name: WAGO
+    description: WAGO PFC / e!COCKPIT stub
+    port: 2455
+  - id: schneider-umac
+    name: Schneider Unity/Modicon
+    description: Schneider Electric Unity/Modicon advanced services stub (beyond Modbus)
+    port: 502
+  - id: rockwell-df1
+    name: Rockwell DF1
+    description: Allen-Bradley DF1 serial/TCP bridge stub
+    port: 2222
+  - id: rockwell-csp
+    name: Rockwell CSP
+    description: Allen-Bradley CSP (legacy Ethernet) stub
+    port: 2222
+  - id: device-net
+    name: DeviceNet
+    description: ODVA DeviceNet gateway stub
+    port: 44818
+  - id: controlnet
+    name: ControlNet
+    description: ODVA ControlNet gateway stub
+    port: 2222
+  - id: interbus
+    name: INTERBUS
+    description: INTERBUS fieldbus gateway stub
+    port: 502
+  - id: as-interface
+    name: AS-Interface
+    description: AS-Interface master/gateway stub
+    port: 9600
+  - id: io-link
+    name: IO-Link
+    description: IO-Link master REST/MQTT bridge stub
+    port: 8080
+  - id: canopen
+    name: CANopen
+    description: CANopen / CAN gateway stub
+    port: 11898
+  - id: canbus-gateway
+    name: CAN bus gateway
+    description: Generic CAN/CAN-FD TCP gateway stub
+    port: 29536
+  - id: j1939
+    name: SAE J1939
+    description: SAE J1939 vehicle network stub
+    port: 29536
+  - id: uds
+    name: UDS (ISO 14229)
+    description: Unified Diagnostic Services over DoIP stub
+    port: 13400
+  - id: someip
+    name: SOME/IP
+    description: AUTOSAR SOME/IP stub
+    port: 30490
+  - id: fanuc-focas
+    name: Fanuc FOCAS
+    description: Fanuc FOCAS CNC stub
+    port: 8193
+  - id: mtconnect
+    name: MTConnect
+    description: MTConnect agent HTTP stub
+    port: 5000
+  - id: opc-ae
+    name: OPC Alarms and Events
+    description: OPC Classic A&E stub (DCOM/bridge required)
+    port: 135
+  - id: opc-hda
+    name: OPC Historical Data Access
+    description: OPC Classic HDA stub (DCOM/bridge required)
+    port: 135
+
+  # —— Energy / utility ——
+  - id: iec61850
+    name: IEC 61850 MMS
+    description: IEC 61850 MMS client stub
+    port: 102
+  - id: iec61850-goose
+    name: IEC 61850 GOOSE
+    description: IEC 61850 GOOSE subscriber stub
+    port: 102
+  - id: iec61850-sv
+    name: IEC 61850 Sampled Values
+    description: IEC 61850 Sampled Values stub
+    port: 102
+  - id: iec101
+    name: IEC 60870-5-101
+    description: IEC 60870-5-101 serial/TCP stub
+    port: 2404
+  - id: iec103
+    name: IEC 60870-5-103
+    description: IEC 60870-5-103 protection stub
+    port: 2404
+  - id: iec62056
+    name: IEC 62056
+    description: IEC 62056 DLMS companion / push stub (beyond existing DLMS pack)
+    port: 4059
+  - id: ansi-c12
+    name: ANSI C12
+    description: ANSI C12.18/C12.22 meter stub
+    port: 1153
+  - id: openadr
+    name: OpenADR
+    description: OpenADR 2.0b VTN/VEN stub
+    port: 443
+  - id: ieee2030-5
+    name: IEEE 2030.5
+    description: IEEE 2030.5 (SEP2) stub
+    port: 443
+  - id: wisun
+    name: Wi-SUN
+    description: Wi-SUN FAN border router stub
+    port: 5683
+
+  # —— Process / field instruments ——
+  - id: hart-ip
+    name: HART-IP
+    description: HART-IP (UDP/TCP) stub
+    port: 5094
+  - id: hart-serial
+    name: HART serial
+    description: HART FSK serial/modem stub
+    port: 5094
+  - id: foundation-fieldbus
+    name: Foundation Fieldbus
+    description: Foundation Fieldbus H1/HSE stub
+    port: 1089
+  - id: profibus-pa
+    name: PROFIBUS PA
+    description: PROFIBUS PA instrument network stub
+    port: 9600
+  - id: wirelesshart
+    name: WirelessHART
+    description: WirelessHART gateway stub
+    port: 5094
+  - id: isa100
+    name: ISA100.11a
+    description: ISA100 wireless gateway stub
+    port: 5094
+
+  # —— Building / HVAC ——
+  - id: knx
+    name: KNX/IP
+    description: KNX/IP tunneling/routing stub
+    port: 3671
+  - id: knx-tp
+    name: KNX TP
+    description: KNX Twisted Pair interface stub
+    port: 3671
+  - id: lonworks
+    name: LonWorks
+    description: LonWorks/LonTalk IP stub
+    port: 1628
+  - id: bacnet-mstp
+    name: BACnet MS/TP
+    description: BACnet MS/TP serial stub (BACnet/IP pack is separate)
+    port: 47808
+  - id: wmbus
+    name: Wireless M-Bus
+    description: Wireless M-Bus (OMS) stub
+    port: 10000
+  - id: enocean
+    name: EnOcean
+    description: EnOcean ESP3 / USB gateway stub
+    port: 54321
+  - id: dali
+    name: DALI
+    description: DALI lighting gateway stub
+    port: 4001
+  - id: ocpp
+    name: OCPP
+    description: Open Charge Point Protocol (CSMS) stub
+    port: 9000
+  - id: eebus
+    name: EEBUS
+    description: EEBUS / SHIP energy management stub
+    port: 4712
+
+  # —— IoT / LPWAN / RF ——
+  - id: lorawan
+    name: LoRaWAN
+    description: LoRaWAN network/application server gateway stub
+    port: 1700
+  - id: zigbee
+    name: Zigbee
+    description: Zigbee coordinator / ZCL stub
+    port: 17754
+  - id: matter
+    name: Matter
+    description: Matter / CHIP controller stub
+    port: 5540
+  - id: zwave
+    name: Z-Wave
+    description: Z-Wave controller stub
+    port: 3000
+  - id: thread
+    name: Thread
+    description: Thread Border Router stub
+    port: 8081
+  - id: bluetooth-le
+    name: Bluetooth LE
+    description: Bluetooth Low Energy gateway stub
+    port: 9999
+  - id: mqtt-sn
+    name: MQTT-SN
+    description: MQTT For Sensor Networks stub
+    port: 1883
+  - id: lwm2m
+    name: LwM2M
+    description: OMA LwM2M client/server stub
+    port: 5683
+  - id: sigfox
+    name: Sigfox
+    description: Sigfox backend callback stub
+    port: 443
+
+  # —— Vision / identity / shop-floor ——
+  - id: onvif
+    name: ONVIF
+    description: ONVIF Profile S/T device stub
+    port: 80
+  - id: rtsp
+    name: RTSP
+    description: RTSP media/metadata stub
+    port: 554
+  - id: genicam
+    name: GenICam
+    description: GenICam / GigE Vision stub
+    port: 3956
+  - id: barcode-scanner
+    name: Barcode scanner
+    description: Barcode/QR TCP/serial scanner stub
+    port: 9001
+  - id: weighbridge
+    name: Weighbridge
+    description: Truck scale / weighbridge protocol stub
+    port: 4001
+  - id: scpi
+    name: SCPI
+    description: IEEE 488.2 SCPI instrument stub
+    port: 5025
+  - id: visa
+    name: VISA
+    description: IVI/VISA instrument resource stub
+    port: 5025
+  - id: secs-gem
+    name: SECS/GEM
+    description: SEMI SECS-I/HSMS/GEM stub
+    port: 5000
+  - id: camera-ai
+    name: Camera AI edge
+    description: Edge vision/AI inference endpoint stub
+    port: 8080
+
+  # —— Cloud / messaging bridges ——
+  - id: azure-iot-hub
+    name: Azure IoT Hub
+    description: Azure IoT Hub device/service stub
+    port: 8883
+  - id: aws-iot-core
+    name: AWS IoT Core
+    description: AWS IoT Core MQTT/HTTP stub
+    port: 8883
+  - id: amqp
+    name: AMQP
+    description: AMQP 0-9-1 / 1.0 broker stub
+    port: 5672
+  - id: nats
+    name: NATS
+    description: NATS messaging stub (cluster messaging is separate)
+    port: 4222
+  - id: pulsar
+    name: Apache Pulsar
+    description: Apache Pulsar client stub
+    port: 6650
+  - id: websocket
+    name: WebSocket
+    description: Generic WebSocket telemetry stub
+    port: 8080
+  - id: grpc
+    name: gRPC
+    description: Generic gRPC telemetry stub
+    port: 50051
+  - id: odata
+    name: OData
+    description: OData v4 REST stub
+    port: 80
+  - id: graphql
+    name: GraphQL
+    description: GraphQL HTTP stub
+    port: 80
+  - id: redis
+    name: Redis
+    description: Redis key/stream telemetry stub
+    port: 6379
+  - id: weather-station
+    name: Weather station
+    description: Davis/Vaisala-class weather station stub
+    port: 22222

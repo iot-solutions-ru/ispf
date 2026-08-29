@@ -28,6 +28,15 @@ Regenerate catalog if you add a new driver module:
 python tools/generate-driver-packs-json.py
 ```
 
+Protocol **STUB** catalog (many `driverId`s in one pack):
+
+```powershell
+python tools/driver-stubs/generate-protocol-stubs.py
+python tools/generate-driver-packs-json.py
+```
+
+Edit `tools/driver-stubs/protocol-stubs.yaml`, then regenerate. Stubs stay `DriverMaturity.STUB` until promoted.
+
 ## Tests
 
 **Recommended pre-push** (matches [CI pr-fast](.github/workflows/ci.yml)):

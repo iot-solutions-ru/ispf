@@ -23,9 +23,9 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **58** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **3** at **BETA**. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **58** drivers at **PRODUCTION** (including `cwmp` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **97** catalog **STUB** protocols in pack `ispf-driver-protocol-stubs` (TCP reachability shells). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests). Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); protocol catalog stubs (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, …) are **STUB** until demand-driven promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
@@ -493,17 +493,19 @@ The `capabilities` field — string set from `DriverProductionMatrix` (ADR-0022)
 
 ### Stub promotion (demand-driven)
 
-58 `driverId` values are registered; some are **STUB** or **BETA** (connectivity shell without full protocol). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
+58 core `driverId` values are in the production matrix; **97** additional protocol-catalog stubs ship in `ispf-driver-protocol-stubs` as **STUB** (TCP reachability only). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
 
 1. The app team describes the scenario (device, point mapping, acceptance test).
-2. A platform PR adds protocol logic to the existing `ispf-driver-*` module.
-3. `DriverMaturityRegistry` is updated; documentation in this file.
+2. A platform PR adds protocol logic (new `ispf-driver-*` module or replace the stub class).
+3. `DriverMaturityRegistry` / stub id list is updated; documentation in this file.
 
-Current STUB/BETA candidates (July 2026):
+Current STUB/BETA candidates:
 
 | `driverId` | Maturity | Note |
 |------------|----------|------|
 | `corba` | BETA | CORBA IIOP TCP shell — needs a third-party ORB |
+| `opc-da`, `opc-bridge` | BETA | Classic OPC shells — prefer `opcua` or external DA→UA |
+| Protocol catalog (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, …) | STUB | Generated from `tools/driver-stubs/protocol-stubs.yaml` — see pack `ispf-driver-protocol-stubs` |
 | `vmware` | PRODUCTION | vSphere SOAP: Login + RetrieveProperties |
 | `smi-s` | PRODUCTION | SMI-S CIM-XML parse |
 
@@ -579,6 +581,7 @@ Full list of `driverId` in `DriverCatalog`:
 | `smpp` | `ispf-driver-smpp` | SMPP |
 | `smb` | `ispf-driver-smb` | SMB/CIFS |
 | `corba` | `ispf-driver-corba` | CORBA IIOP TCP stub |
+| `sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, … (97 ids) | `ispf-driver-protocol-stubs` | Protocol catalog **STUB** pack — regenerate via `python tools/driver-stubs/generate-protocol-stubs.py` |
 | `ingress-syslog` | `ispf-driver-ingress-syslog` | Syslog UDP listener (raw capture) |
 | `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | SNMP trap UDP listener (raw capture) |
 | `ingress-sflow` | `ispf-driver-ingress-sflow` | sFlow v5 UDP listener (raw capture) |
@@ -592,6 +595,7 @@ Detailed configs for base drivers — in the sections below. Others follow the s
 | `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
 | `corba` | IIOP TCP | JDK CORBA removed; use bridge |
+| Protocol catalog stubs | TCP reachability only | Demand-driven codec in dedicated pack |
 | `wmi` | PowerShell | Windows only |
 
 ### Examples (brief)

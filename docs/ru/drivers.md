@@ -23,9 +23,9 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **58** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **3** **BETA**. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+В `DriverProductionMatrix` — **58** драйверов **PRODUCTION** (включая `cwmp` вне top-20), **3** **BETA** (`opc-da`, `opc-bridge`, `corba`), плюс **97** каталожных **STUB**-протоколов в пакете `ispf-driver-protocol-stubs` (только TCP reachability). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
-> **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера). Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
+> **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**/**STUB**: `opc-da` / `opc-bridge` (оболочка + тесты парсера); каталог протоколов (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, …) — **STUB** до demand-driven promotion. Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
 | `driverId` | Зрелость (реестр) | Примечания / interop |
 | ---------- | ------------------- | --------------- |
@@ -451,17 +451,19 @@ Loopback-тест: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 
 ### Продвижение stub (по запросу)
 
-58 значений `driverId` зарегистрированы; часть — **STUB** или **BETA** (оболочка подключения без полного протокола). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу команды приложения** через gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
+58 основных `driverId` в production-матрице; **97** дополнительных stub-протоколов — в пакете `ispf-driver-protocol-stubs` (**STUB**, только TCP). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу команды приложения** через gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
 
 1. Команда приложения описывает сценарий (устройство, маппинг точек, приёмочный тест).
-2. PR платформы добавляет протокольную логику в существующий модуль `ispf-driver-*`.
-3. Обновляется `DriverMaturityRegistry`; документация в этом файле.
+2. PR платформы добавляет протокольную логику (новый модуль `ispf-driver-*` или замена stub-класса).
+3. Обновляется `DriverMaturityRegistry` / список stub id; документация в этом файле.
 
-Текущие кандидаты STUB/BETA (июль 2026):
+Текущие кандидаты STUB/BETA:
 
 | `driverId` | Зрелость | Примечание |
 |------------|----------|---------|
 | `corba` | BETA | CORBA IIOP TCP shell — нужна сторонняя ORB |
+| `opc-da`, `opc-bridge` | BETA | Classic OPC shells — предпочтительнее `opcua` или внешний DA→UA |
+| Каталог протоколов (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, …) | STUB | Генерация из `tools/driver-stubs/protocol-stubs.yaml` — пакет `ispf-driver-protocol-stubs` |
 | `vmware` | PRODUCTION | vSphere SOAP: Login + RetrieveProperties |
 | `smi-s` | PRODUCTION | парсинг SMI-S CIM-XML |
 

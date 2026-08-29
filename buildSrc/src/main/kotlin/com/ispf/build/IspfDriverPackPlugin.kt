@@ -21,12 +21,18 @@ import org.gradle.kotlin.dsl.register
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
+data class DriverPackDriverEntry(
+    val driverId: String,
+    val driverClass: String,
+) : java.io.Serializable
+
 data class DriverPackMeta(
     val packId: String,
     val driverId: String,
     val driverClass: String,
     val licenseType: String,
     val jarFile: String,
+    val drivers: List<DriverPackDriverEntry> = emptyList(),
 ) : java.io.Serializable
 
 data class ExternalDependency(
@@ -49,14 +55,28 @@ class IspfDriverPackPlugin : Plugin<Project> {
 
         val catalogFile = project.rootProject.file("gradle/driver-packs.json")
         @Suppress("UNCHECKED_CAST")
-        val catalog = JsonSlurper().parse(catalogFile) as Map<String, Map<String, String>>
+        val catalog = JsonSlurper().parse(catalogFile) as Map<String, Map<String, Any?>>
         val raw = catalog[project.name] ?: error("Missing driver pack metadata for ${project.name}")
+        val driversRaw = raw["drivers"] as? List<*>
+        val drivers = driversRaw
+            ?.mapNotNull { item ->
+                val map = item as? Map<*, *> ?: return@mapNotNull null
+                val driverId = map["driverId"]?.toString()?.trim().orEmpty()
+                val driverClass = map["driverClass"]?.toString()?.trim().orEmpty()
+                if (driverId.isBlank() || driverClass.isBlank()) {
+                    null
+                } else {
+                    DriverPackDriverEntry(driverId, driverClass)
+                }
+            }
+            .orEmpty()
         val meta = DriverPackMeta(
-            packId = raw["packId"]!!,
-            driverId = raw["driverId"]!!,
-            driverClass = raw["driverClass"]!!,
-            licenseType = raw["licenseType"]!!,
-            jarFile = raw["jarFile"]!!,
+            packId = raw["packId"]!!.toString(),
+            driverId = raw["driverId"]!!.toString(),
+            driverClass = raw["driverClass"]!!.toString(),
+            licenseType = raw["licenseType"]!!.toString(),
+            jarFile = raw["jarFile"]!!.toString(),
+            drivers = drivers,
         )
 
         project.afterEvaluate {
@@ -123,18 +143,28 @@ abstract class AssembleDriverPackTask : DefaultTask() {
             StandardCopyOption.REPLACE_EXISTING,
         )
 
+        val driverEntries = if (meta.drivers.isNotEmpty()) {
+            meta.drivers.map {
+                mapOf(
+                    "driverId" to it.driverId,
+                    "driverClass" to it.driverClass,
+                )
+            }
+        } else {
+            listOf(
+                mapOf(
+                    "driverId" to meta.driverId,
+                    "driverClass" to meta.driverClass,
+                ),
+            )
+        }
         val manifest = linkedMapOf<String, Any>(
             "packId" to meta.packId,
             "driverId" to meta.driverId,
             "minPlatformVersion" to platformVersion.get(),
             "jarFile" to meta.jarFile,
             "licenseType" to meta.licenseType,
-            "drivers" to listOf(
-                mapOf(
-                    "driverId" to meta.driverId,
-                    "driverClass" to meta.driverClass,
-                ),
-            ),
+            "drivers" to driverEntries,
         )
 
         val external = EXTERNAL_DEPENDENCIES[module]

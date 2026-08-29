@@ -58,6 +58,7 @@ include(
     "packages:ispf-driver-corba",
     "packages:ispf-driver-opc-da",
     "packages:ispf-driver-opc-bridge",
+    "packages:ispf-driver-protocol-stubs",
     "packages:ispf-driver-odbc",
     "packages:ispf-driver-jms",
     "packages:ispf-driver-cwmp",

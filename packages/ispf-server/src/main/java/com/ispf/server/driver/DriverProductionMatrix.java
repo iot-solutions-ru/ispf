@@ -279,15 +279,51 @@ final class DriverProductionMatrix {
                     "ispf-driver-ipmi")
     );
 
+    /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */
+    private static final Set<String> PROTOCOL_STUB_IDS = loadProtocolStubIds();
+
     private DriverProductionMatrix() {
     }
 
     static DriverMaturity resolveMaturity(String driverId) {
+        if (PROTOCOL_STUB_IDS.contains(driverId)) {
+            return DriverMaturity.STUB;
+        }
         Entry entry = ENTRIES.get(driverId);
         if (entry != null) {
             return entry.maturity();
         }
         return DriverMaturity.BETA;
+    }
+
+    static Set<String> protocolStubIds() {
+        return PROTOCOL_STUB_IDS;
+    }
+
+    private static Set<String> loadProtocolStubIds() {
+        try (var input = DriverProductionMatrix.class.getResourceAsStream("/driver-pack/protocol-stub-ids.json")) {
+            if (input == null) {
+                return Set.of();
+            }
+            // Lightweight parse without pulling Jackson into this static init path.
+            String json = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            int start = json.indexOf('[');
+            int end = json.indexOf(']', start);
+            if (start < 0 || end < 0) {
+                return Set.of();
+            }
+            String body = json.substring(start + 1, end);
+            java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>();
+            for (String part : body.split(",")) {
+                String token = part.trim();
+                if (token.length() >= 2 && token.charAt(0) == '"' && token.charAt(token.length() - 1) == '"') {
+                    ids.add(token.substring(1, token.length() - 1));
+                }
+            }
+            return Set.copyOf(ids);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to load protocol-stub-ids.json", ex);
+        }
     }
 
     static Set<Capability> resolveCapabilities(String driverId) {
