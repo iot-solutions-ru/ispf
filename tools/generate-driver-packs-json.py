@@ -31,29 +31,32 @@ LICENSE_TYPES = {
     "ispf-driver-sip": "LicenseRef-NIST-PublicDomain",
 }
 
-MULTI_DRIVER_SIDECAR = ROOT / "tools" / "driver-stubs" / "generated-drivers.json"
+SKIP_MODULES = {
+    "ispf-driver-api",
+    "ispf-driver-ddk",
+    "ispf-driver-stub-kit",
+}
 
 
-def discover_single_driver_modules() -> dict[str, dict]:
-    entries: dict[str, dict] = {}
+def main() -> None:
+    entries: dict[str, dict[str, str]] = {}
     for path in (ROOT / "packages").rglob("*DeviceDriver.java"):
         if "ispf-driver-" not in str(path):
             continue
+        module = path.parts[path.parts.index("packages") + 1]
+        if module in SKIP_MODULES:
+            continue
         if path.name == "ProtocolStubDeviceDriver.java":
-            continue
-        if "ispf-driver-ddk" in path.parts:
-            continue
-        if "ispf-driver-protocol-stubs" in path.parts:
-            # Multi-driver pack handled via sidecar.
             continue
         text = path.read_text(encoding="utf-8")
         if re.search(r"abstract\s+class\s+\w+DeviceDriver", text):
+            continue
+        if "ispf-driver-ddk" in path.parts:
             continue
         pkg = re.search(r"^package\s+([\w.]+);", text, re.M)
         cls = re.search(r"^public class (\w+DeviceDriver)", text, re.M)
         if not pkg or not cls:
             continue
-        module = path.parts[path.parts.index("packages") + 1]
         driver_class = f"{pkg.group(1)}.{cls.group(1)}"
         driver_id = OVERRIDES.get(module, module.removeprefix("ispf-driver-"))
         jar_file = f"{module}.jar"
@@ -65,39 +68,15 @@ def discover_single_driver_modules() -> dict[str, dict]:
             "licenseType": license_type,
             "packId": module,
         }
-    return entries
 
-
-def load_multi_driver_sidecar() -> dict[str, dict]:
-    if not MULTI_DRIVER_SIDECAR.is_file():
-        return {}
-    raw = json.loads(MULTI_DRIVER_SIDECAR.read_text(encoding="utf-8"))
-    module = raw["module"]
-    drivers = raw["drivers"]
-    if not drivers:
-        return {}
-    first = drivers[0]
-    return {
-        module: {
-            "driverClass": first["driverClass"],
-            "driverId": first["driverId"],
-            "jarFile": raw["jarFile"],
-            "licenseType": raw.get("licenseType", "Apache-2.0"),
-            "packId": raw["packId"],
-            "drivers": drivers,
-        }
-    }
-
-
-def main() -> None:
-    entries = discover_single_driver_modules()
-    entries.update(load_multi_driver_sidecar())
     out = ROOT / "gradle" / "driver-packs.json"
     out.write_text(json.dumps(dict(sorted(entries.items())), indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {len(entries)} packs to {out}")
-    multi = entries.get("ispf-driver-protocol-stubs", {}).get("drivers")
-    if multi:
-        print(f"  protocol-stubs drivers: {len(multi)}")
+
+    licenses = {}
+    for entry in entries.values():
+        licenses[entry["licenseType"]] = licenses.get(entry["licenseType"], 0) + 1
+    print("licenseType counts:", licenses)
 
 
 if __name__ == "__main__":

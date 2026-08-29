@@ -16,7 +16,11 @@ allprojects {
 subprojects {
     apply(plugin = "java")
 
-    if (name.startsWith("ispf-driver-") && name != "ispf-driver-api" && name != "ispf-driver-ddk") {
+    if (name.startsWith("ispf-driver-")
+        && name != "ispf-driver-api"
+        && name != "ispf-driver-ddk"
+        && name != "ispf-driver-stub-kit"
+    ) {
         apply(plugin = "ispf-driver-pack")
     }
 
@@ -56,7 +60,10 @@ gradle.projectsEvaluated {
 }
 
 val driverPackProjects = subprojects.filter {
-    it.name.startsWith("ispf-driver-") && it.name != "ispf-driver-api" && it.name != "ispf-driver-ddk"
+    it.name.startsWith("ispf-driver-")
+        && it.name != "ispf-driver-api"
+        && it.name != "ispf-driver-ddk"
+        && it.name != "ispf-driver-stub-kit"
 }
 
 /** Minimal packs for local bootRun, PR-fast, and most integration tests (issue #65). */

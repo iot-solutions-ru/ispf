@@ -28,14 +28,14 @@ Regenerate catalog if you add a new driver module:
 python tools/generate-driver-packs-json.py
 ```
 
-Protocol **STUB** catalog (many `driverId`s in one pack):
+Protocol **STUB** catalog (one pack per `driverId`, Apache-2.0):
 
 ```powershell
 python tools/driver-stubs/generate-protocol-stubs.py
 python tools/generate-driver-packs-json.py
 ```
 
-Edit `tools/driver-stubs/protocol-stubs.yaml`, then regenerate. Stubs stay `DriverMaturity.STUB` until promoted.
+Edit `tools/driver-stubs/protocol-stubs.yaml`, then regenerate. Stubs stay `DriverMaturity.STUB` until promoted. Shared base: `packages/ispf-driver-stub-kit` (not a pack).
 
 ## Tests
 

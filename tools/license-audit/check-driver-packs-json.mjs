@@ -11,6 +11,11 @@ const repoRoot = path.resolve(here, "../..");
 const catalogPath = path.join(repoRoot, "gradle/driver-packs.json");
 const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
 
+const ALLOWED_LICENSE_TYPES = new Set([
+  "Apache-2.0",
+  "LicenseRef-NIST-PublicDomain",
+]);
+
 const REQUIRED_OVERRIDES = {
   "ispf-driver-sip": "LicenseRef-NIST-PublicDomain",
 };
@@ -31,9 +36,14 @@ for (const [module, expected] of Object.entries(REQUIRED_OVERRIDES)) {
 }
 
 for (const [module, entry] of Object.entries(catalog)) {
-  if (!entry.licenseType || entry.licenseType === "Apache-2.0") continue;
-  if (entry.licenseType.startsWith("GPL")) {
-    problems.push(`${module}: unexpected GPL licenseType ${entry.licenseType}`);
+  const lic = entry.licenseType || "";
+  if (!ALLOWED_LICENSE_TYPES.has(lic)) {
+    problems.push(
+      `${module}: disallowed licenseType ${lic || "(missing)"} (allowed: Apache-2.0, LicenseRef-NIST-PublicDomain)`,
+    );
+  }
+  if (/GPL|proprietary|commercial|LicenseRef-StepFunc/i.test(lic)) {
+    problems.push(`${module}: restricted/proprietary licenseType ${lic}`);
   }
 }
 

@@ -97,5 +97,6 @@
     "graphql",
     "redis",
     "weather-station"
-  ]
+  ],
+  "licenseType": "Apache-2.0"
 }

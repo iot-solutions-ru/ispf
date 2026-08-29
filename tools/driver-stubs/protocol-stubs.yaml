@@ -1,8 +1,10 @@
-# Protocol connectivity stubs (maturity: STUB).
-# Regenerate Java sources:
+# Protocol connectivity stubs (maturity: STUB, license: Apache-2.0).
+# Regenerate individual packs:
 #   python tools/driver-stubs/generate-protocol-stubs.py
+#   python tools/generate-driver-packs-json.py
 #
-# Each entry becomes a DeviceDriver in packages/ispf-driver-protocol-stubs.
+# Each entry becomes packages/ispf-driver-<id>/ (one driver = one pack).
+# Shared base: packages/ispf-driver-stub-kit (not a pack).
 # Default port is a conventional/well-known endpoint for that protocol family.
 
 stubs:

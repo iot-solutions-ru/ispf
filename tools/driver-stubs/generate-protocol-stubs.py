@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Generate packages/ispf-driver-protocol-stubs from protocol-stubs.yaml."""
+"""Generate one ispf-driver-* pack per protocol stub (Apache-2.0, maturity STUB)."""
 from __future__ import annotations
 
+import json
 import re
+import shutil
 from pathlib import Path
-
-try:
-    import yaml
-except ImportError:  # pragma: no cover
-    yaml = None
 
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = Path(__file__).resolve().parent / "protocol-stubs.yaml"
-OUT = ROOT / "packages" / "ispf-driver-protocol-stubs"
-PKG = "com.ispf.driver.protocolstubs"
+PACKAGES = ROOT / "packages"
+STUB_KIT = PACKAGES / "ispf-driver-stub-kit"
+LEGACY_MULTI = PACKAGES / "ispf-driver-protocol-stubs"
+NON_PACK_MODULES = {"ispf-driver-api", "ispf-driver-ddk", "ispf-driver-stub-kit"}
 
 
 def to_class_prefix(driver_id: str) -> str:
@@ -21,40 +20,71 @@ def to_class_prefix(driver_id: str) -> str:
     return "".join(p[:1].upper() + p[1:] for p in parts if p)
 
 
-def load_stubs() -> list[dict]:
-    text = CATALOG.read_text(encoding="utf-8")
-    if yaml is not None:
-        data = yaml.safe_load(text)
-        return list(data["stubs"])
-    # Minimal fallback parser for this file's shape (no PyYAML in some CI images).
-    stubs: list[dict] = []
-    current: dict | None = None
-    for line in text.splitlines():
-        if line.startswith("  - id:"):
-            if current:
-                stubs.append(current)
-            current = {"id": line.split(":", 1)[1].strip()}
-        elif current is not None and line.startswith("    name:"):
-            current["name"] = line.split(":", 1)[1].strip()
-        elif current is not None and line.startswith("    description:"):
-            current["description"] = line.split(":", 1)[1].strip()
-        elif current is not None and line.startswith("    port:"):
-            current["port"] = int(line.split(":", 1)[1].strip())
-    if current:
-        stubs.append(current)
-    return stubs
+def to_java_package_suffix(driver_id: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9]", "", driver_id).lower()
 
 
 def java_string(value: str) -> str:
-    return (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
+def load_stubs() -> list[dict]:
+    text = CATALOG.read_text(encoding="utf-8")
+    try:
+        import yaml  # type: ignore
+
+        return list(yaml.safe_load(text)["stubs"])
+    except Exception:
+        stubs: list[dict] = []
+        current: dict | None = None
+        for line in text.splitlines():
+            if line.startswith("  - id:"):
+                if current:
+                    stubs.append(current)
+                current = {"id": line.split(":", 1)[1].strip()}
+            elif current is not None and line.startswith("    name:"):
+                current["name"] = line.split(":", 1)[1].strip()
+            elif current is not None and line.startswith("    description:"):
+                current["description"] = line.split(":", 1)[1].strip()
+            elif current is not None and line.startswith("    port:"):
+                current["port"] = int(line.split(":", 1)[1].strip())
+        if current:
+            stubs.append(current)
+        return stubs
+
+
+def write_stub_kit() -> None:
+    main = STUB_KIT / "src/main/java/com/ispf/driver/stubkit"
+    test = STUB_KIT / "src/test/java/com/ispf/driver/stubkit"
+    if STUB_KIT.exists():
+        shutil.rmtree(STUB_KIT)
+    main.mkdir(parents=True)
+    test.mkdir(parents=True)
+
+    (STUB_KIT / "build.gradle.kts").write_text(
+        """dependencies {
+    implementation(project(":packages:ispf-driver-api"))
+    implementation(project(":packages:ispf-core"))
+
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
+}
+""",
+        encoding="utf-8",
+    )
+    (STUB_KIT / "README.md").write_text(
+        """# ISPF driver stub kit
+
+Shared TCP-reachability base for generated protocol **STUB** packs.
+
+- Not a driver pack (excluded from `ispf-driver-pack` plugin)
+- License: Apache-2.0 (same as other in-tree protocol packs)
+- Generator: `python tools/driver-stubs/generate-protocol-stubs.py`
+""",
+        encoding="utf-8",
     )
 
-
-def write_base(out_main: Path) -> None:
-    content = '''package PKG_PLACEHOLDER;
+    (main / "ProtocolStubDeviceDriver.java").write_text(
+        """package com.ispf.driver.stubkit;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -72,6 +102,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Shared TCP reachability shell for protocol catalog stubs (maturity {@code STUB}).
+ * <p>
+ * Clean-room ISPF code, Apache-2.0 — no third-party protocol stacks.
  */
 public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
 
@@ -197,67 +229,12 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
         }
     }
 }
-'''.replace("PKG_PLACEHOLDER", PKG)
-    (out_main / "ProtocolStubDeviceDriver.java").write_text(content, encoding="utf-8")
-
-
-def write_driver(out_main: Path, stub: dict) -> str:
-    prefix = to_class_prefix(stub["id"])
-    class_name = f"{prefix}DeviceDriver"
-    path = out_main / f"{class_name}.java"
-    path.write_text(
-        f'''package {PKG};
-
-/**
- * {java_string(stub["name"])} protocol stub ({stub["id"]}).
- * <p>
- * {java_string(stub["description"])}.
- */
-public class {class_name} extends ProtocolStubDeviceDriver {{
-
-    public {class_name}() {{
-        super(
-                "{stub["id"]}",
-                "{java_string(stub["name"])} Driver",
-                "{java_string(stub["description"])}",
-                {int(stub["port"])}
-        );
-    }}
-}}
-''',
+""",
         encoding="utf-8",
     )
-    return f"{PKG}.{class_name}"
 
-
-def write_catalog_java(out_main: Path, stubs: list[dict]) -> None:
-    lines = [
-        f"package {PKG};",
-        "",
-        "import java.util.List;",
-        "",
-        "/** Generated catalog of protocol stub driver ids (see tools/driver-stubs/). */",
-        "public final class ProtocolStubCatalog {",
-        "",
-        "    public static final List<String> DRIVER_IDS = List.of(",
-    ]
-    for i, stub in enumerate(stubs):
-        comma = "," if i < len(stubs) - 1 else ""
-        lines.append(f'            "{stub["id"]}"{comma}')
-    lines += [
-        "    );",
-        "",
-        "    private ProtocolStubCatalog() {",
-        "    }",
-        "}",
-        "",
-    ]
-    (out_main / "ProtocolStubCatalog.java").write_text("\n".join(lines), encoding="utf-8")
-
-
-def write_test(out_test: Path, first_class: str, first_id: str) -> None:
-    (out_test / "ProtocolStubDeviceDriverTest.java").write_text(
-        f'''package {PKG};
+    (test / "ProtocolStubDeviceDriverTest.java").write_text(
+        """package com.ispf.driver.stubkit;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -277,21 +254,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ProtocolStubDeviceDriverTest {{
+class ProtocolStubDeviceDriverTest {
 
     @Test
-    void catalogIsNonEmptyAndUnique() {{
-        assertTrue(ProtocolStubCatalog.DRIVER_IDS.size() > 40);
-        assertEquals(
-                ProtocolStubCatalog.DRIVER_IDS.size(),
-                ProtocolStubCatalog.DRIVER_IDS.stream().distinct().count()
-        );
-    }}
-
-    @Test
-    void sampleStubIsMarkedStubAndReadOnly() throws Exception {{
-        {first_class} driver = new {first_class}();
-        assertEquals("{first_id}", driver.metadata().id());
+    void stubIsMarkedStubAndReadOnly() throws Exception {
+        ProtocolStubDeviceDriver driver = new ProtocolStubDeviceDriver(
+                "unit-test-stub",
+                "Unit Test Stub Driver",
+                "Unit test connectivity stub",
+                1
+        ) {};
+        assertEquals("unit-test-stub", driver.metadata().id());
         assertEquals(DriverMaturity.STUB, driver.metadata().maturity());
 
         StubDriverObject driverObject = new StubDriverObject(Map.of(
@@ -302,8 +275,7 @@ class ProtocolStubDeviceDriverTest {{
         driver.initialize(driverObject);
         driver.connect();
         driver.readPoints(Map.of("status", "connected"));
-        DataRecord record = driverObject.variables.get("status");
-        assertEquals(false, record.firstRow().get("connected"));
+        assertEquals(false, driverObject.variables.get("status").firstRow().get("connected"));
 
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.writePoint("status", DataRecord.single(
@@ -312,18 +284,18 @@ class ProtocolStubDeviceDriverTest {{
                 )));
         assertTrue(error.getMessage().contains("read-only"));
         driver.disconnect();
-    }}
+    }
 
-    private static final class StubDriverObject implements DeviceDriver.DriverObject {{
+    private static final class StubDriverObject implements DeviceDriver.DriverObject {
         private final Map<String, String> configuration;
         private final Map<String, DataRecord> variables = new HashMap<>();
 
-        StubDriverObject(Map<String, String> configuration) {{
+        StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;
-        }}
+        }
 
         @Override
-        public PlatformObject deviceObject() {{
+        public PlatformObject deviceObject() {
             return new PlatformObject(
                     "test-protocol-stub",
                     "root.platform.devices.test",
@@ -332,92 +304,112 @@ class ProtocolStubDeviceDriverTest {{
                     "",
                     null
             );
-        }}
+        }
 
         @Override
-        public void updateVariable(String name, DataRecord value) {{
+        public void updateVariable(String name, DataRecord value) {
             variables.put(name, value);
-        }}
+        }
 
         @Override
-        public Optional<DataRecord> getVariable(String name) {{
+        public Optional<DataRecord> getVariable(String name) {
             return Optional.ofNullable(variables.get(name));
-        }}
+        }
 
         @Override
-        public void log(DeviceDriver.DriverLogLevel level, String message) {{
-        }}
+        public void log(DeviceDriver.DriverLogLevel level, String message) {
+        }
 
         @Override
-        public Map<String, String> configuration() {{
+        public Map<String, String> configuration() {
             return configuration;
-        }}
-    }}
-}}
-''',
+        }
+    }
+}
+""",
         encoding="utf-8",
     )
 
 
-def write_build_gradle(out_root: Path) -> None:
-    (out_root / "build.gradle.kts").write_text(
-        '''dependencies {
+def write_driver_pack(stub: dict) -> str:
+    driver_id = stub["id"]
+    module = f"ispf-driver-{driver_id}"
+    if module in NON_PACK_MODULES:
+        raise SystemExit(f"Refusing to overwrite reserved module {module}")
+    class_prefix = to_class_prefix(driver_id)
+    class_name = f"{class_prefix}DeviceDriver"
+    pkg_suffix = to_java_package_suffix(driver_id)
+    java_pkg = f"com.ispf.driver.{pkg_suffix}"
+    out = PACKAGES / module
+
+    if out.exists():
+        shutil.rmtree(out)
+
+    main = out / f"src/main/java/{java_pkg.replace('.', '/')}"
+    main.mkdir(parents=True)
+
+    (out / "build.gradle.kts").write_text(
+        """dependencies {
+    implementation(project(":packages:ispf-driver-stub-kit"))
     implementation(project(":packages:ispf-driver-api"))
     implementation(project(":packages:ispf-core"))
-
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
 }
-''',
+""",
         encoding="utf-8",
     )
+
+    (main / f"{class_name}.java").write_text(
+        f"""package {java_pkg};
+
+import com.ispf.driver.stubkit.ProtocolStubDeviceDriver;
+
+/**
+ * {java_string(stub["name"])} protocol stub ({driver_id}).
+ * <p>
+ * {java_string(stub["description"])}.
+ * Clean-room ISPF stub, Apache-2.0 — no proprietary protocol stack.
+ */
+public class {class_name} extends ProtocolStubDeviceDriver {{
+
+    public {class_name}() {{
+        super(
+                "{driver_id}",
+                "{java_string(stub["name"])} Driver",
+                "{java_string(stub["description"])}",
+                {int(stub["port"])}
+        );
+    }}
+}}
+""",
+        encoding="utf-8",
+    )
+    return module
 
 
 def main() -> None:
     stubs = load_stubs()
     if not stubs:
-        raise SystemExit("No stubs loaded from " + str(CATALOG))
+        raise SystemExit("No stubs loaded")
     ids = [s["id"] for s in stubs]
     if len(ids) != len(set(ids)):
-        raise SystemExit("Duplicate stub ids in catalog")
+        raise SystemExit("Duplicate stub ids")
 
-    out_main = OUT / "src" / "main" / "java" / "com" / "ispf" / "driver" / "protocolstubs"
-    out_test = OUT / "src" / "test" / "java" / "com" / "ispf" / "driver" / "protocolstubs"
-    if OUT.exists():
-        for path in OUT.rglob("*.java"):
-            path.unlink()
-    out_main.mkdir(parents=True, exist_ok=True)
-    out_test.mkdir(parents=True, exist_ok=True)
+    # Remove legacy multi-driver pack if present.
+    if LEGACY_MULTI.exists():
+        shutil.rmtree(LEGACY_MULTI)
 
-    write_build_gradle(OUT)
-    write_base(out_main)
-    write_catalog_java(out_main, stubs)
-    classes: list[tuple[str, str]] = []
-    for stub in stubs:
-        fqcn = write_driver(out_main, stub)
-        classes.append((stub["id"], fqcn))
-    first_id, first_fqcn = classes[0]
-    first_simple = first_fqcn.rsplit(".", 1)[-1]
-    write_test(out_test, first_simple, first_id)
+    # Remove previously generated stub packs (idempotent regenerate).
+    for path in PACKAGES.glob("ispf-driver-*"):
+        if path.name in NON_PACK_MODULES:
+            continue
+        # Only delete packs that are known stub ids (avoid wiping real drivers).
+        driver_id = path.name.removeprefix("ispf-driver-")
+        if driver_id in ids:
+            shutil.rmtree(path)
 
-    manifest_drivers = [{"driverId": driver_id, "driverClass": fqcn} for driver_id, fqcn in classes]
-    # Side-car for generate-driver-packs-json / docs (committed).
-    import json
+    write_stub_kit()
+    modules = [write_driver_pack(stub) for stub in stubs]
 
-    sidecar = ROOT / "tools" / "driver-stubs" / "generated-drivers.json"
-    sidecar.write_text(
-        json.dumps(
-            {
-                "module": "ispf-driver-protocol-stubs",
-                "packId": "ispf-driver-protocol-stubs",
-                "licenseType": "Apache-2.0",
-                "jarFile": "ispf-driver-protocol-stubs.jar",
-                "drivers": manifest_drivers,
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
     ids_resource = (
         ROOT
         / "packages"
@@ -430,12 +422,35 @@ def main() -> None:
     )
     ids_resource.parent.mkdir(parents=True, exist_ok=True)
     ids_resource.write_text(
-        json.dumps({"driverIds": [stub["id"] for stub in stubs]}, indent=2) + "\n",
+        json.dumps({"driverIds": ids, "licenseType": "Apache-2.0"}, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(f"Generated {len(stubs)} protocol stubs into {OUT}")
-    print(f"Wrote sidecar {sidecar}")
-    print(f"Wrote maturity ids {ids_resource}")
+
+    sidecar = Path(__file__).resolve().parent / "generated-drivers.json"
+    sidecar.write_text(
+        json.dumps(
+            {
+                "licenseType": "Apache-2.0",
+                "modules": modules,
+                "drivers": [
+                    {
+                        "driverId": stub["id"],
+                        "module": f"ispf-driver-{stub['id']}",
+                        "licenseType": "Apache-2.0",
+                    }
+                    for stub in stubs
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    # Drop obsolete multi-driver sidecar semantics note in YAML header expectation.
+    print(f"Generated stub-kit + {len(modules)} individual Apache-2.0 stub packs")
+    print(f"Wrote {ids_resource}")
+    print(f"Wrote {sidecar}")
 
 
 if __name__ == "__main__":

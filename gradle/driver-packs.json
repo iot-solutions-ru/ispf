@@ -1,10 +1,31 @@
 {
+  "ispf-driver-amqp": {
+    "driverClass": "com.ispf.driver.amqp.AmqpDeviceDriver",
+    "driverId": "amqp",
+    "jarFile": "ispf-driver-amqp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-amqp"
+  },
+  "ispf-driver-ansi-c12": {
+    "driverClass": "com.ispf.driver.ansic12.AnsiC12DeviceDriver",
+    "driverId": "ansi-c12",
+    "jarFile": "ispf-driver-ansi-c12.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ansi-c12"
+  },
   "ispf-driver-application": {
     "driverClass": "com.ispf.driver.application.ApplicationDeviceDriver",
     "driverId": "application",
     "jarFile": "ispf-driver-application.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-application"
+  },
+  "ispf-driver-as-interface": {
+    "driverClass": "com.ispf.driver.asinterface.AsInterfaceDeviceDriver",
+    "driverId": "as-interface",
+    "jarFile": "ispf-driver-as-interface.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-as-interface"
   },
   "ispf-driver-asterisk": {
     "driverClass": "com.ispf.driver.asterisk.AsteriskDeviceDriver",
@@ -13,6 +34,20 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-asterisk"
   },
+  "ispf-driver-aws-iot-core": {
+    "driverClass": "com.ispf.driver.awsiotcore.AwsIotCoreDeviceDriver",
+    "driverId": "aws-iot-core",
+    "jarFile": "ispf-driver-aws-iot-core.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-aws-iot-core"
+  },
+  "ispf-driver-azure-iot-hub": {
+    "driverClass": "com.ispf.driver.azureiothub.AzureIotHubDeviceDriver",
+    "driverId": "azure-iot-hub",
+    "jarFile": "ispf-driver-azure-iot-hub.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-azure-iot-hub"
+  },
   "ispf-driver-bacnet": {
     "driverClass": "com.ispf.driver.bacnet.BacnetDeviceDriver",
     "driverId": "bacnet",
@@ -20,12 +55,89 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-bacnet"
   },
+  "ispf-driver-bacnet-mstp": {
+    "driverClass": "com.ispf.driver.bacnetmstp.BacnetMstpDeviceDriver",
+    "driverId": "bacnet-mstp",
+    "jarFile": "ispf-driver-bacnet-mstp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-bacnet-mstp"
+  },
+  "ispf-driver-barcode-scanner": {
+    "driverClass": "com.ispf.driver.barcodescanner.BarcodeScannerDeviceDriver",
+    "driverId": "barcode-scanner",
+    "jarFile": "ispf-driver-barcode-scanner.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-barcode-scanner"
+  },
+  "ispf-driver-beckhoff-ads": {
+    "driverClass": "com.ispf.driver.beckhoffads.BeckhoffAdsDeviceDriver",
+    "driverId": "beckhoff-ads",
+    "jarFile": "ispf-driver-beckhoff-ads.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-beckhoff-ads"
+  },
+  "ispf-driver-bluetooth-le": {
+    "driverClass": "com.ispf.driver.bluetoothle.BluetoothLeDeviceDriver",
+    "driverId": "bluetooth-le",
+    "jarFile": "ispf-driver-bluetooth-le.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-bluetooth-le"
+  },
+  "ispf-driver-camera-ai": {
+    "driverClass": "com.ispf.driver.cameraai.CameraAiDeviceDriver",
+    "driverId": "camera-ai",
+    "jarFile": "ispf-driver-camera-ai.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-camera-ai"
+  },
+  "ispf-driver-canbus-gateway": {
+    "driverClass": "com.ispf.driver.canbusgateway.CanbusGatewayDeviceDriver",
+    "driverId": "canbus-gateway",
+    "jarFile": "ispf-driver-canbus-gateway.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-canbus-gateway"
+  },
+  "ispf-driver-canopen": {
+    "driverClass": "com.ispf.driver.canopen.CanopenDeviceDriver",
+    "driverId": "canopen",
+    "jarFile": "ispf-driver-canopen.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-canopen"
+  },
+  "ispf-driver-cc-link": {
+    "driverClass": "com.ispf.driver.cclink.CcLinkDeviceDriver",
+    "driverId": "cc-link",
+    "jarFile": "ispf-driver-cc-link.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-cc-link"
+  },
+  "ispf-driver-cc-link-ie": {
+    "driverClass": "com.ispf.driver.cclinkie.CcLinkIeDeviceDriver",
+    "driverId": "cc-link-ie",
+    "jarFile": "ispf-driver-cc-link-ie.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-cc-link-ie"
+  },
   "ispf-driver-coap": {
     "driverClass": "com.ispf.driver.coap.CoapDeviceDriver",
     "driverId": "coap",
     "jarFile": "ispf-driver-coap.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-coap"
+  },
+  "ispf-driver-codesys": {
+    "driverClass": "com.ispf.driver.codesys.CodesysDeviceDriver",
+    "driverId": "codesys",
+    "jarFile": "ispf-driver-codesys.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-codesys"
+  },
+  "ispf-driver-controlnet": {
+    "driverClass": "com.ispf.driver.controlnet.ControlnetDeviceDriver",
+    "driverId": "controlnet",
+    "jarFile": "ispf-driver-controlnet.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-controlnet"
   },
   "ispf-driver-corba": {
     "driverClass": "com.ispf.driver.corba.CorbaDeviceDriver",
@@ -40,6 +152,27 @@
     "jarFile": "ispf-driver-cwmp.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-cwmp"
+  },
+  "ispf-driver-dali": {
+    "driverClass": "com.ispf.driver.dali.DaliDeviceDriver",
+    "driverId": "dali",
+    "jarFile": "ispf-driver-dali.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-dali"
+  },
+  "ispf-driver-delta-dvp": {
+    "driverClass": "com.ispf.driver.deltadvp.DeltaDvpDeviceDriver",
+    "driverId": "delta-dvp",
+    "jarFile": "ispf-driver-delta-dvp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-delta-dvp"
+  },
+  "ispf-driver-device-net": {
+    "driverClass": "com.ispf.driver.devicenet.DeviceNetDeviceDriver",
+    "driverId": "device-net",
+    "jarFile": "ispf-driver-device-net.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-device-net"
   },
   "ispf-driver-dhcp": {
     "driverClass": "com.ispf.driver.dhcp.DhcpDeviceDriver",
@@ -62,6 +195,13 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-dnp3"
   },
+  "ispf-driver-eebus": {
+    "driverClass": "com.ispf.driver.eebus.EebusDeviceDriver",
+    "driverId": "eebus",
+    "jarFile": "ispf-driver-eebus.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-eebus"
+  },
   "ispf-driver-email": {
     "driverClass": "com.ispf.driver.email.EmailDeviceDriver",
     "driverId": "email",
@@ -69,12 +209,47 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-email"
   },
+  "ispf-driver-enocean": {
+    "driverClass": "com.ispf.driver.enocean.EnoceanDeviceDriver",
+    "driverId": "enocean",
+    "jarFile": "ispf-driver-enocean.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-enocean"
+  },
+  "ispf-driver-ethercat": {
+    "driverClass": "com.ispf.driver.ethercat.EthercatDeviceDriver",
+    "driverId": "ethercat",
+    "jarFile": "ispf-driver-ethercat.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ethercat"
+  },
   "ispf-driver-ethernet-ip": {
     "driverClass": "com.ispf.driver.ethernetip.EthernetIpDeviceDriver",
     "driverId": "ethernet-ip",
     "jarFile": "ispf-driver-ethernet-ip.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-ethernet-ip"
+  },
+  "ispf-driver-ethernet-powerlink": {
+    "driverClass": "com.ispf.driver.ethernetpowerlink.EthernetPowerlinkDeviceDriver",
+    "driverId": "ethernet-powerlink",
+    "jarFile": "ispf-driver-ethernet-powerlink.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ethernet-powerlink"
+  },
+  "ispf-driver-fanuc-focas": {
+    "driverClass": "com.ispf.driver.fanucfocas.FanucFocasDeviceDriver",
+    "driverId": "fanuc-focas",
+    "jarFile": "ispf-driver-fanuc-focas.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-fanuc-focas"
+  },
+  "ispf-driver-fatek": {
+    "driverClass": "com.ispf.driver.fatek.FatekDeviceDriver",
+    "driverId": "fatek",
+    "jarFile": "ispf-driver-fatek.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-fatek"
   },
   "ispf-driver-file": {
     "driverClass": "com.ispf.driver.file.FileDeviceDriver",
@@ -97,6 +272,34 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-folder"
   },
+  "ispf-driver-foundation-fieldbus": {
+    "driverClass": "com.ispf.driver.foundationfieldbus.FoundationFieldbusDeviceDriver",
+    "driverId": "foundation-fieldbus",
+    "jarFile": "ispf-driver-foundation-fieldbus.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-foundation-fieldbus"
+  },
+  "ispf-driver-fuji-sph": {
+    "driverClass": "com.ispf.driver.fujisph.FujiSphDeviceDriver",
+    "driverId": "fuji-sph",
+    "jarFile": "ispf-driver-fuji-sph.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-fuji-sph"
+  },
+  "ispf-driver-ge-srtp": {
+    "driverClass": "com.ispf.driver.gesrtp.GeSrtpDeviceDriver",
+    "driverId": "ge-srtp",
+    "jarFile": "ispf-driver-ge-srtp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ge-srtp"
+  },
+  "ispf-driver-genicam": {
+    "driverClass": "com.ispf.driver.genicam.GenicamDeviceDriver",
+    "driverId": "genicam",
+    "jarFile": "ispf-driver-genicam.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-genicam"
+  },
   "ispf-driver-gps-tracker": {
     "driverClass": "com.ispf.driver.gpstracker.GpsTrackerDeviceDriver",
     "driverId": "gps-tracker",
@@ -111,12 +314,47 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-graph-db"
   },
+  "ispf-driver-graphql": {
+    "driverClass": "com.ispf.driver.graphql.GraphqlDeviceDriver",
+    "driverId": "graphql",
+    "jarFile": "ispf-driver-graphql.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-graphql"
+  },
+  "ispf-driver-grpc": {
+    "driverClass": "com.ispf.driver.grpc.GrpcDeviceDriver",
+    "driverId": "grpc",
+    "jarFile": "ispf-driver-grpc.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-grpc"
+  },
+  "ispf-driver-hart-ip": {
+    "driverClass": "com.ispf.driver.hartip.HartIpDeviceDriver",
+    "driverId": "hart-ip",
+    "jarFile": "ispf-driver-hart-ip.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-hart-ip"
+  },
+  "ispf-driver-hart-serial": {
+    "driverClass": "com.ispf.driver.hartserial.HartSerialDeviceDriver",
+    "driverId": "hart-serial",
+    "jarFile": "ispf-driver-hart-serial.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-hart-serial"
+  },
   "ispf-driver-haystack": {
     "driverClass": "com.ispf.driver.haystack.HaystackDeviceDriver",
     "driverId": "haystack",
     "jarFile": "ispf-driver-haystack.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-haystack"
+  },
+  "ispf-driver-hitachi-hidic": {
+    "driverClass": "com.ispf.driver.hitachihidic.HitachiHidicDeviceDriver",
+    "driverId": "hitachi-hidic",
+    "jarFile": "ispf-driver-hitachi-hidic.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-hitachi-hidic"
   },
   "ispf-driver-http": {
     "driverClass": "com.ispf.driver.http.HttpDeviceDriver",
@@ -139,6 +377,27 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-icmp"
   },
+  "ispf-driver-idec-microsmart": {
+    "driverClass": "com.ispf.driver.idecmicrosmart.IdecMicrosmartDeviceDriver",
+    "driverId": "idec-microsmart",
+    "jarFile": "ispf-driver-idec-microsmart.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-idec-microsmart"
+  },
+  "ispf-driver-iec101": {
+    "driverClass": "com.ispf.driver.iec101.Iec101DeviceDriver",
+    "driverId": "iec101",
+    "jarFile": "ispf-driver-iec101.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-iec101"
+  },
+  "ispf-driver-iec103": {
+    "driverClass": "com.ispf.driver.iec103.Iec103DeviceDriver",
+    "driverId": "iec103",
+    "jarFile": "ispf-driver-iec103.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-iec103"
+  },
   "ispf-driver-iec104": {
     "driverClass": "com.ispf.driver.iec104.Iec104DeviceDriver",
     "driverId": "iec104",
@@ -152,6 +411,41 @@
     "jarFile": "ispf-driver-iec104-server.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-iec104-server"
+  },
+  "ispf-driver-iec61850": {
+    "driverClass": "com.ispf.driver.iec61850.Iec61850DeviceDriver",
+    "driverId": "iec61850",
+    "jarFile": "ispf-driver-iec61850.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-iec61850"
+  },
+  "ispf-driver-iec61850-goose": {
+    "driverClass": "com.ispf.driver.iec61850goose.Iec61850GooseDeviceDriver",
+    "driverId": "iec61850-goose",
+    "jarFile": "ispf-driver-iec61850-goose.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-iec61850-goose"
+  },
+  "ispf-driver-iec61850-sv": {
+    "driverClass": "com.ispf.driver.iec61850sv.Iec61850SvDeviceDriver",
+    "driverId": "iec61850-sv",
+    "jarFile": "ispf-driver-iec61850-sv.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-iec61850-sv"
+  },
+  "ispf-driver-iec62056": {
+    "driverClass": "com.ispf.driver.iec62056.Iec62056DeviceDriver",
+    "driverId": "iec62056",
+    "jarFile": "ispf-driver-iec62056.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-iec62056"
+  },
+  "ispf-driver-ieee2030-5": {
+    "driverClass": "com.ispf.driver.ieee20305.Ieee20305DeviceDriver",
+    "driverId": "ieee2030-5",
+    "jarFile": "ispf-driver-ieee2030-5.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ieee2030-5"
   },
   "ispf-driver-imap": {
     "driverClass": "com.ispf.driver.imap.ImapDeviceDriver",
@@ -181,6 +475,20 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-ingress-syslog"
   },
+  "ispf-driver-interbus": {
+    "driverClass": "com.ispf.driver.interbus.InterbusDeviceDriver",
+    "driverId": "interbus",
+    "jarFile": "ispf-driver-interbus.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-interbus"
+  },
+  "ispf-driver-io-link": {
+    "driverClass": "com.ispf.driver.iolink.IoLinkDeviceDriver",
+    "driverId": "io-link",
+    "jarFile": "ispf-driver-io-link.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-io-link"
+  },
   "ispf-driver-ip-host": {
     "driverClass": "com.ispf.driver.iphost.IpHostDeviceDriver",
     "driverId": "ip-host",
@@ -194,6 +502,20 @@
     "jarFile": "ispf-driver-ipmi.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-ipmi"
+  },
+  "ispf-driver-isa100": {
+    "driverClass": "com.ispf.driver.isa100.Isa100DeviceDriver",
+    "driverId": "isa100",
+    "jarFile": "ispf-driver-isa100.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-isa100"
+  },
+  "ispf-driver-j1939": {
+    "driverClass": "com.ispf.driver.j1939.J1939DeviceDriver",
+    "driverId": "j1939",
+    "jarFile": "ispf-driver-j1939.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-j1939"
   },
   "ispf-driver-jdbc": {
     "driverClass": "com.ispf.driver.jdbc.JdbcDeviceDriver",
@@ -223,12 +545,68 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-kafka"
   },
+  "ispf-driver-keyence-hostlink": {
+    "driverClass": "com.ispf.driver.keyencehostlink.KeyenceHostlinkDeviceDriver",
+    "driverId": "keyence-hostlink",
+    "jarFile": "ispf-driver-keyence-hostlink.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-keyence-hostlink"
+  },
+  "ispf-driver-knx": {
+    "driverClass": "com.ispf.driver.knx.KnxDeviceDriver",
+    "driverId": "knx",
+    "jarFile": "ispf-driver-knx.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-knx"
+  },
+  "ispf-driver-knx-tp": {
+    "driverClass": "com.ispf.driver.knxtp.KnxTpDeviceDriver",
+    "driverId": "knx-tp",
+    "jarFile": "ispf-driver-knx-tp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-knx-tp"
+  },
   "ispf-driver-ldap": {
     "driverClass": "com.ispf.driver.ldap.LdapDeviceDriver",
     "driverId": "ldap",
     "jarFile": "ispf-driver-ldap.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-ldap"
+  },
+  "ispf-driver-lonworks": {
+    "driverClass": "com.ispf.driver.lonworks.LonworksDeviceDriver",
+    "driverId": "lonworks",
+    "jarFile": "ispf-driver-lonworks.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-lonworks"
+  },
+  "ispf-driver-lorawan": {
+    "driverClass": "com.ispf.driver.lorawan.LorawanDeviceDriver",
+    "driverId": "lorawan",
+    "jarFile": "ispf-driver-lorawan.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-lorawan"
+  },
+  "ispf-driver-ls-xgt": {
+    "driverClass": "com.ispf.driver.lsxgt.LsXgtDeviceDriver",
+    "driverId": "ls-xgt",
+    "jarFile": "ispf-driver-ls-xgt.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ls-xgt"
+  },
+  "ispf-driver-lwm2m": {
+    "driverClass": "com.ispf.driver.lwm2m.Lwm2mDeviceDriver",
+    "driverId": "lwm2m",
+    "jarFile": "ispf-driver-lwm2m.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-lwm2m"
+  },
+  "ispf-driver-matter": {
+    "driverClass": "com.ispf.driver.matter.MatterDeviceDriver",
+    "driverId": "matter",
+    "jarFile": "ispf-driver-matter.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-matter"
   },
   "ispf-driver-mbus": {
     "driverClass": "com.ispf.driver.mbus.MbusDeviceDriver",
@@ -243,6 +621,20 @@
     "jarFile": "ispf-driver-message-stream.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-message-stream"
+  },
+  "ispf-driver-mitsubishi-melsec": {
+    "driverClass": "com.ispf.driver.mitsubishimelsec.MitsubishiMelsecDeviceDriver",
+    "driverId": "mitsubishi-melsec",
+    "jarFile": "ispf-driver-mitsubishi-melsec.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-mitsubishi-melsec"
+  },
+  "ispf-driver-mitsubishi-slmp": {
+    "driverClass": "com.ispf.driver.mitsubishislmp.MitsubishiSlmpDeviceDriver",
+    "driverId": "mitsubishi-slmp",
+    "jarFile": "ispf-driver-mitsubishi-slmp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-mitsubishi-slmp"
   },
   "ispf-driver-modbus": {
     "driverClass": "com.ispf.driver.modbus.ModbusTcpDeviceDriver",
@@ -279,12 +671,47 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-mqtt"
   },
+  "ispf-driver-mqtt-sn": {
+    "driverClass": "com.ispf.driver.mqttsn.MqttSnDeviceDriver",
+    "driverId": "mqtt-sn",
+    "jarFile": "ispf-driver-mqtt-sn.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-mqtt-sn"
+  },
+  "ispf-driver-mtconnect": {
+    "driverClass": "com.ispf.driver.mtconnect.MtconnectDeviceDriver",
+    "driverId": "mtconnect",
+    "jarFile": "ispf-driver-mtconnect.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-mtconnect"
+  },
+  "ispf-driver-nats": {
+    "driverClass": "com.ispf.driver.nats.NatsDeviceDriver",
+    "driverId": "nats",
+    "jarFile": "ispf-driver-nats.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-nats"
+  },
   "ispf-driver-nmea": {
     "driverClass": "com.ispf.driver.nmea.NmeaDeviceDriver",
     "driverId": "nmea",
     "jarFile": "ispf-driver-nmea.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-nmea"
+  },
+  "ispf-driver-ocpp": {
+    "driverClass": "com.ispf.driver.ocpp.OcppDeviceDriver",
+    "driverId": "ocpp",
+    "jarFile": "ispf-driver-ocpp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-ocpp"
+  },
+  "ispf-driver-odata": {
+    "driverClass": "com.ispf.driver.odata.OdataDeviceDriver",
+    "driverId": "odata",
+    "jarFile": "ispf-driver-odata.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-odata"
   },
   "ispf-driver-odbc": {
     "driverClass": "com.ispf.driver.odbc.OdbcDeviceDriver",
@@ -300,6 +727,20 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-omron-fins"
   },
+  "ispf-driver-onvif": {
+    "driverClass": "com.ispf.driver.onvif.OnvifDeviceDriver",
+    "driverId": "onvif",
+    "jarFile": "ispf-driver-onvif.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-onvif"
+  },
+  "ispf-driver-opc-ae": {
+    "driverClass": "com.ispf.driver.opcae.OpcAeDeviceDriver",
+    "driverId": "opc-ae",
+    "jarFile": "ispf-driver-opc-ae.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-opc-ae"
+  },
   "ispf-driver-opc-bridge": {
     "driverClass": "com.ispf.driver.opcbridge.OpcBridgeDeviceDriver",
     "driverId": "opc-bridge",
@@ -314,12 +755,26 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-opc-da"
   },
+  "ispf-driver-opc-hda": {
+    "driverClass": "com.ispf.driver.opchda.OpcHdaDeviceDriver",
+    "driverId": "opc-hda",
+    "jarFile": "ispf-driver-opc-hda.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-opc-hda"
+  },
   "ispf-driver-opcua": {
     "driverClass": "com.ispf.driver.opcua.OpcUaDeviceDriver",
     "driverId": "opcua",
     "jarFile": "ispf-driver-opcua.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-opcua"
+  },
+  "ispf-driver-opcua-pubsub": {
+    "driverClass": "com.ispf.driver.opcuapubsub.OpcuaPubsubDeviceDriver",
+    "driverId": "opcua-pubsub",
+    "jarFile": "ispf-driver-opcua-pubsub.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-opcua-pubsub"
   },
   "ispf-driver-opcua-server": {
     "driverClass": "com.ispf.driver.opcuaserver.OpcUaServerDeviceDriver",
@@ -328,6 +783,27 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-opcua-server"
   },
+  "ispf-driver-openadr": {
+    "driverClass": "com.ispf.driver.openadr.OpenadrDeviceDriver",
+    "driverId": "openadr",
+    "jarFile": "ispf-driver-openadr.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-openadr"
+  },
+  "ispf-driver-panasonic-mewto": {
+    "driverClass": "com.ispf.driver.panasonicmewto.PanasonicMewtoDeviceDriver",
+    "driverId": "panasonic-mewto",
+    "jarFile": "ispf-driver-panasonic-mewto.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-panasonic-mewto"
+  },
+  "ispf-driver-plcnext": {
+    "driverClass": "com.ispf.driver.plcnext.PlcnextDeviceDriver",
+    "driverId": "plcnext",
+    "jarFile": "ispf-driver-plcnext.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-plcnext"
+  },
   "ispf-driver-pop3": {
     "driverClass": "com.ispf.driver.pop3.Pop3DeviceDriver",
     "driverId": "pop3",
@@ -335,402 +811,33 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-pop3"
   },
-  "ispf-driver-protocol-stubs": {
-    "driverClass": "com.ispf.driver.protocolstubs.SparkplugBDeviceDriver",
-    "driverId": "sparkplug-b",
-    "jarFile": "ispf-driver-protocol-stubs.jar",
+  "ispf-driver-profibus": {
+    "driverClass": "com.ispf.driver.profibus.ProfibusDeviceDriver",
+    "driverId": "profibus",
+    "jarFile": "ispf-driver-profibus.jar",
     "licenseType": "Apache-2.0",
-    "packId": "ispf-driver-protocol-stubs",
-    "drivers": [
-      {
-        "driverId": "sparkplug-b",
-        "driverClass": "com.ispf.driver.protocolstubs.SparkplugBDeviceDriver"
-      },
-      {
-        "driverId": "opcua-pubsub",
-        "driverClass": "com.ispf.driver.protocolstubs.OpcuaPubsubDeviceDriver"
-      },
-      {
-        "driverId": "beckhoff-ads",
-        "driverClass": "com.ispf.driver.protocolstubs.BeckhoffAdsDeviceDriver"
-      },
-      {
-        "driverId": "profinet",
-        "driverClass": "com.ispf.driver.protocolstubs.ProfinetDeviceDriver"
-      },
-      {
-        "driverId": "profibus",
-        "driverClass": "com.ispf.driver.protocolstubs.ProfibusDeviceDriver"
-      },
-      {
-        "driverId": "ethercat",
-        "driverClass": "com.ispf.driver.protocolstubs.EthercatDeviceDriver"
-      },
-      {
-        "driverId": "ethernet-powerlink",
-        "driverClass": "com.ispf.driver.protocolstubs.EthernetPowerlinkDeviceDriver"
-      },
-      {
-        "driverId": "cc-link",
-        "driverClass": "com.ispf.driver.protocolstubs.CcLinkDeviceDriver"
-      },
-      {
-        "driverId": "cc-link-ie",
-        "driverClass": "com.ispf.driver.protocolstubs.CcLinkIeDeviceDriver"
-      },
-      {
-        "driverId": "plcnext",
-        "driverClass": "com.ispf.driver.protocolstubs.PlcnextDeviceDriver"
-      },
-      {
-        "driverId": "codesys",
-        "driverClass": "com.ispf.driver.protocolstubs.CodesysDeviceDriver"
-      },
-      {
-        "driverId": "mitsubishi-melsec",
-        "driverClass": "com.ispf.driver.protocolstubs.MitsubishiMelsecDeviceDriver"
-      },
-      {
-        "driverId": "mitsubishi-slmp",
-        "driverClass": "com.ispf.driver.protocolstubs.MitsubishiSlmpDeviceDriver"
-      },
-      {
-        "driverId": "ge-srtp",
-        "driverClass": "com.ispf.driver.protocolstubs.GeSrtpDeviceDriver"
-      },
-      {
-        "driverId": "keyence-hostlink",
-        "driverClass": "com.ispf.driver.protocolstubs.KeyenceHostlinkDeviceDriver"
-      },
-      {
-        "driverId": "panasonic-mewto",
-        "driverClass": "com.ispf.driver.protocolstubs.PanasonicMewtoDeviceDriver"
-      },
-      {
-        "driverId": "yaskawa-memobus",
-        "driverClass": "com.ispf.driver.protocolstubs.YaskawaMemobusDeviceDriver"
-      },
-      {
-        "driverId": "delta-dvp",
-        "driverClass": "com.ispf.driver.protocolstubs.DeltaDvpDeviceDriver"
-      },
-      {
-        "driverId": "fatek",
-        "driverClass": "com.ispf.driver.protocolstubs.FatekDeviceDriver"
-      },
-      {
-        "driverId": "ls-xgt",
-        "driverClass": "com.ispf.driver.protocolstubs.LsXgtDeviceDriver"
-      },
-      {
-        "driverId": "fuji-sph",
-        "driverClass": "com.ispf.driver.protocolstubs.FujiSphDeviceDriver"
-      },
-      {
-        "driverId": "hitachi-hidic",
-        "driverClass": "com.ispf.driver.protocolstubs.HitachiHidicDeviceDriver"
-      },
-      {
-        "driverId": "toshiba-t-series",
-        "driverClass": "com.ispf.driver.protocolstubs.ToshibaTSeriesDeviceDriver"
-      },
-      {
-        "driverId": "idec-microsmart",
-        "driverClass": "com.ispf.driver.protocolstubs.IdecMicrosmartDeviceDriver"
-      },
-      {
-        "driverId": "unitronics",
-        "driverClass": "com.ispf.driver.protocolstubs.UnitronicsDeviceDriver"
-      },
-      {
-        "driverId": "wago",
-        "driverClass": "com.ispf.driver.protocolstubs.WagoDeviceDriver"
-      },
-      {
-        "driverId": "schneider-umac",
-        "driverClass": "com.ispf.driver.protocolstubs.SchneiderUmacDeviceDriver"
-      },
-      {
-        "driverId": "rockwell-df1",
-        "driverClass": "com.ispf.driver.protocolstubs.RockwellDf1DeviceDriver"
-      },
-      {
-        "driverId": "rockwell-csp",
-        "driverClass": "com.ispf.driver.protocolstubs.RockwellCspDeviceDriver"
-      },
-      {
-        "driverId": "device-net",
-        "driverClass": "com.ispf.driver.protocolstubs.DeviceNetDeviceDriver"
-      },
-      {
-        "driverId": "controlnet",
-        "driverClass": "com.ispf.driver.protocolstubs.ControlnetDeviceDriver"
-      },
-      {
-        "driverId": "interbus",
-        "driverClass": "com.ispf.driver.protocolstubs.InterbusDeviceDriver"
-      },
-      {
-        "driverId": "as-interface",
-        "driverClass": "com.ispf.driver.protocolstubs.AsInterfaceDeviceDriver"
-      },
-      {
-        "driverId": "io-link",
-        "driverClass": "com.ispf.driver.protocolstubs.IoLinkDeviceDriver"
-      },
-      {
-        "driverId": "canopen",
-        "driverClass": "com.ispf.driver.protocolstubs.CanopenDeviceDriver"
-      },
-      {
-        "driverId": "canbus-gateway",
-        "driverClass": "com.ispf.driver.protocolstubs.CanbusGatewayDeviceDriver"
-      },
-      {
-        "driverId": "j1939",
-        "driverClass": "com.ispf.driver.protocolstubs.J1939DeviceDriver"
-      },
-      {
-        "driverId": "uds",
-        "driverClass": "com.ispf.driver.protocolstubs.UdsDeviceDriver"
-      },
-      {
-        "driverId": "someip",
-        "driverClass": "com.ispf.driver.protocolstubs.SomeipDeviceDriver"
-      },
-      {
-        "driverId": "fanuc-focas",
-        "driverClass": "com.ispf.driver.protocolstubs.FanucFocasDeviceDriver"
-      },
-      {
-        "driverId": "mtconnect",
-        "driverClass": "com.ispf.driver.protocolstubs.MtconnectDeviceDriver"
-      },
-      {
-        "driverId": "opc-ae",
-        "driverClass": "com.ispf.driver.protocolstubs.OpcAeDeviceDriver"
-      },
-      {
-        "driverId": "opc-hda",
-        "driverClass": "com.ispf.driver.protocolstubs.OpcHdaDeviceDriver"
-      },
-      {
-        "driverId": "iec61850",
-        "driverClass": "com.ispf.driver.protocolstubs.Iec61850DeviceDriver"
-      },
-      {
-        "driverId": "iec61850-goose",
-        "driverClass": "com.ispf.driver.protocolstubs.Iec61850GooseDeviceDriver"
-      },
-      {
-        "driverId": "iec61850-sv",
-        "driverClass": "com.ispf.driver.protocolstubs.Iec61850SvDeviceDriver"
-      },
-      {
-        "driverId": "iec101",
-        "driverClass": "com.ispf.driver.protocolstubs.Iec101DeviceDriver"
-      },
-      {
-        "driverId": "iec103",
-        "driverClass": "com.ispf.driver.protocolstubs.Iec103DeviceDriver"
-      },
-      {
-        "driverId": "iec62056",
-        "driverClass": "com.ispf.driver.protocolstubs.Iec62056DeviceDriver"
-      },
-      {
-        "driverId": "ansi-c12",
-        "driverClass": "com.ispf.driver.protocolstubs.AnsiC12DeviceDriver"
-      },
-      {
-        "driverId": "openadr",
-        "driverClass": "com.ispf.driver.protocolstubs.OpenadrDeviceDriver"
-      },
-      {
-        "driverId": "ieee2030-5",
-        "driverClass": "com.ispf.driver.protocolstubs.Ieee20305DeviceDriver"
-      },
-      {
-        "driverId": "wisun",
-        "driverClass": "com.ispf.driver.protocolstubs.WisunDeviceDriver"
-      },
-      {
-        "driverId": "hart-ip",
-        "driverClass": "com.ispf.driver.protocolstubs.HartIpDeviceDriver"
-      },
-      {
-        "driverId": "hart-serial",
-        "driverClass": "com.ispf.driver.protocolstubs.HartSerialDeviceDriver"
-      },
-      {
-        "driverId": "foundation-fieldbus",
-        "driverClass": "com.ispf.driver.protocolstubs.FoundationFieldbusDeviceDriver"
-      },
-      {
-        "driverId": "profibus-pa",
-        "driverClass": "com.ispf.driver.protocolstubs.ProfibusPaDeviceDriver"
-      },
-      {
-        "driverId": "wirelesshart",
-        "driverClass": "com.ispf.driver.protocolstubs.WirelesshartDeviceDriver"
-      },
-      {
-        "driverId": "isa100",
-        "driverClass": "com.ispf.driver.protocolstubs.Isa100DeviceDriver"
-      },
-      {
-        "driverId": "knx",
-        "driverClass": "com.ispf.driver.protocolstubs.KnxDeviceDriver"
-      },
-      {
-        "driverId": "knx-tp",
-        "driverClass": "com.ispf.driver.protocolstubs.KnxTpDeviceDriver"
-      },
-      {
-        "driverId": "lonworks",
-        "driverClass": "com.ispf.driver.protocolstubs.LonworksDeviceDriver"
-      },
-      {
-        "driverId": "bacnet-mstp",
-        "driverClass": "com.ispf.driver.protocolstubs.BacnetMstpDeviceDriver"
-      },
-      {
-        "driverId": "wmbus",
-        "driverClass": "com.ispf.driver.protocolstubs.WmbusDeviceDriver"
-      },
-      {
-        "driverId": "enocean",
-        "driverClass": "com.ispf.driver.protocolstubs.EnoceanDeviceDriver"
-      },
-      {
-        "driverId": "dali",
-        "driverClass": "com.ispf.driver.protocolstubs.DaliDeviceDriver"
-      },
-      {
-        "driverId": "ocpp",
-        "driverClass": "com.ispf.driver.protocolstubs.OcppDeviceDriver"
-      },
-      {
-        "driverId": "eebus",
-        "driverClass": "com.ispf.driver.protocolstubs.EebusDeviceDriver"
-      },
-      {
-        "driverId": "lorawan",
-        "driverClass": "com.ispf.driver.protocolstubs.LorawanDeviceDriver"
-      },
-      {
-        "driverId": "zigbee",
-        "driverClass": "com.ispf.driver.protocolstubs.ZigbeeDeviceDriver"
-      },
-      {
-        "driverId": "matter",
-        "driverClass": "com.ispf.driver.protocolstubs.MatterDeviceDriver"
-      },
-      {
-        "driverId": "zwave",
-        "driverClass": "com.ispf.driver.protocolstubs.ZwaveDeviceDriver"
-      },
-      {
-        "driverId": "thread",
-        "driverClass": "com.ispf.driver.protocolstubs.ThreadDeviceDriver"
-      },
-      {
-        "driverId": "bluetooth-le",
-        "driverClass": "com.ispf.driver.protocolstubs.BluetoothLeDeviceDriver"
-      },
-      {
-        "driverId": "mqtt-sn",
-        "driverClass": "com.ispf.driver.protocolstubs.MqttSnDeviceDriver"
-      },
-      {
-        "driverId": "lwm2m",
-        "driverClass": "com.ispf.driver.protocolstubs.Lwm2mDeviceDriver"
-      },
-      {
-        "driverId": "sigfox",
-        "driverClass": "com.ispf.driver.protocolstubs.SigfoxDeviceDriver"
-      },
-      {
-        "driverId": "onvif",
-        "driverClass": "com.ispf.driver.protocolstubs.OnvifDeviceDriver"
-      },
-      {
-        "driverId": "rtsp",
-        "driverClass": "com.ispf.driver.protocolstubs.RtspDeviceDriver"
-      },
-      {
-        "driverId": "genicam",
-        "driverClass": "com.ispf.driver.protocolstubs.GenicamDeviceDriver"
-      },
-      {
-        "driverId": "barcode-scanner",
-        "driverClass": "com.ispf.driver.protocolstubs.BarcodeScannerDeviceDriver"
-      },
-      {
-        "driverId": "weighbridge",
-        "driverClass": "com.ispf.driver.protocolstubs.WeighbridgeDeviceDriver"
-      },
-      {
-        "driverId": "scpi",
-        "driverClass": "com.ispf.driver.protocolstubs.ScpiDeviceDriver"
-      },
-      {
-        "driverId": "visa",
-        "driverClass": "com.ispf.driver.protocolstubs.VisaDeviceDriver"
-      },
-      {
-        "driverId": "secs-gem",
-        "driverClass": "com.ispf.driver.protocolstubs.SecsGemDeviceDriver"
-      },
-      {
-        "driverId": "camera-ai",
-        "driverClass": "com.ispf.driver.protocolstubs.CameraAiDeviceDriver"
-      },
-      {
-        "driverId": "azure-iot-hub",
-        "driverClass": "com.ispf.driver.protocolstubs.AzureIotHubDeviceDriver"
-      },
-      {
-        "driverId": "aws-iot-core",
-        "driverClass": "com.ispf.driver.protocolstubs.AwsIotCoreDeviceDriver"
-      },
-      {
-        "driverId": "amqp",
-        "driverClass": "com.ispf.driver.protocolstubs.AmqpDeviceDriver"
-      },
-      {
-        "driverId": "nats",
-        "driverClass": "com.ispf.driver.protocolstubs.NatsDeviceDriver"
-      },
-      {
-        "driverId": "pulsar",
-        "driverClass": "com.ispf.driver.protocolstubs.PulsarDeviceDriver"
-      },
-      {
-        "driverId": "websocket",
-        "driverClass": "com.ispf.driver.protocolstubs.WebsocketDeviceDriver"
-      },
-      {
-        "driverId": "grpc",
-        "driverClass": "com.ispf.driver.protocolstubs.GrpcDeviceDriver"
-      },
-      {
-        "driverId": "odata",
-        "driverClass": "com.ispf.driver.protocolstubs.OdataDeviceDriver"
-      },
-      {
-        "driverId": "graphql",
-        "driverClass": "com.ispf.driver.protocolstubs.GraphqlDeviceDriver"
-      },
-      {
-        "driverId": "redis",
-        "driverClass": "com.ispf.driver.protocolstubs.RedisDeviceDriver"
-      },
-      {
-        "driverId": "weather-station",
-        "driverClass": "com.ispf.driver.protocolstubs.WeatherStationDeviceDriver"
-      }
-    ]
+    "packId": "ispf-driver-profibus"
+  },
+  "ispf-driver-profibus-pa": {
+    "driverClass": "com.ispf.driver.profibuspa.ProfibusPaDeviceDriver",
+    "driverId": "profibus-pa",
+    "jarFile": "ispf-driver-profibus-pa.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-profibus-pa"
+  },
+  "ispf-driver-profinet": {
+    "driverClass": "com.ispf.driver.profinet.ProfinetDeviceDriver",
+    "driverId": "profinet",
+    "jarFile": "ispf-driver-profinet.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-profinet"
+  },
+  "ispf-driver-pulsar": {
+    "driverClass": "com.ispf.driver.pulsar.PulsarDeviceDriver",
+    "driverId": "pulsar",
+    "jarFile": "ispf-driver-pulsar.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-pulsar"
   },
   "ispf-driver-radius": {
     "driverClass": "com.ispf.driver.radius.RadiusDeviceDriver",
@@ -739,12 +846,68 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-radius"
   },
+  "ispf-driver-redis": {
+    "driverClass": "com.ispf.driver.redis.RedisDeviceDriver",
+    "driverId": "redis",
+    "jarFile": "ispf-driver-redis.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-redis"
+  },
+  "ispf-driver-rockwell-csp": {
+    "driverClass": "com.ispf.driver.rockwellcsp.RockwellCspDeviceDriver",
+    "driverId": "rockwell-csp",
+    "jarFile": "ispf-driver-rockwell-csp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-rockwell-csp"
+  },
+  "ispf-driver-rockwell-df1": {
+    "driverClass": "com.ispf.driver.rockwelldf1.RockwellDf1DeviceDriver",
+    "driverId": "rockwell-df1",
+    "jarFile": "ispf-driver-rockwell-df1.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-rockwell-df1"
+  },
+  "ispf-driver-rtsp": {
+    "driverClass": "com.ispf.driver.rtsp.RtspDeviceDriver",
+    "driverId": "rtsp",
+    "jarFile": "ispf-driver-rtsp.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-rtsp"
+  },
   "ispf-driver-s7": {
     "driverClass": "com.ispf.driver.s7.S7DeviceDriver",
     "driverId": "s7",
     "jarFile": "ispf-driver-s7.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-s7"
+  },
+  "ispf-driver-schneider-umac": {
+    "driverClass": "com.ispf.driver.schneiderumac.SchneiderUmacDeviceDriver",
+    "driverId": "schneider-umac",
+    "jarFile": "ispf-driver-schneider-umac.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-schneider-umac"
+  },
+  "ispf-driver-scpi": {
+    "driverClass": "com.ispf.driver.scpi.ScpiDeviceDriver",
+    "driverId": "scpi",
+    "jarFile": "ispf-driver-scpi.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-scpi"
+  },
+  "ispf-driver-secs-gem": {
+    "driverClass": "com.ispf.driver.secsgem.SecsGemDeviceDriver",
+    "driverId": "secs-gem",
+    "jarFile": "ispf-driver-secs-gem.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-secs-gem"
+  },
+  "ispf-driver-sigfox": {
+    "driverClass": "com.ispf.driver.sigfox.SigfoxDeviceDriver",
+    "driverId": "sigfox",
+    "jarFile": "ispf-driver-sigfox.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-sigfox"
   },
   "ispf-driver-sip": {
     "driverClass": "com.ispf.driver.sip.SipDeviceDriver",
@@ -795,6 +958,20 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-soap"
   },
+  "ispf-driver-someip": {
+    "driverClass": "com.ispf.driver.someip.SomeipDeviceDriver",
+    "driverId": "someip",
+    "jarFile": "ispf-driver-someip.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-someip"
+  },
+  "ispf-driver-sparkplug-b": {
+    "driverClass": "com.ispf.driver.sparkplugb.SparkplugBDeviceDriver",
+    "driverId": "sparkplug-b",
+    "jarFile": "ispf-driver-sparkplug-b.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-sparkplug-b"
+  },
   "ispf-driver-ssh": {
     "driverClass": "com.ispf.driver.ssh.SshDeviceDriver",
     "driverId": "ssh",
@@ -809,6 +986,34 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-telnet"
   },
+  "ispf-driver-thread": {
+    "driverClass": "com.ispf.driver.thread.ThreadDeviceDriver",
+    "driverId": "thread",
+    "jarFile": "ispf-driver-thread.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-thread"
+  },
+  "ispf-driver-toshiba-t-series": {
+    "driverClass": "com.ispf.driver.toshibatseries.ToshibaTSeriesDeviceDriver",
+    "driverId": "toshiba-t-series",
+    "jarFile": "ispf-driver-toshiba-t-series.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-toshiba-t-series"
+  },
+  "ispf-driver-uds": {
+    "driverClass": "com.ispf.driver.uds.UdsDeviceDriver",
+    "driverId": "uds",
+    "jarFile": "ispf-driver-uds.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-uds"
+  },
+  "ispf-driver-unitronics": {
+    "driverClass": "com.ispf.driver.unitronics.UnitronicsDeviceDriver",
+    "driverId": "unitronics",
+    "jarFile": "ispf-driver-unitronics.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-unitronics"
+  },
   "ispf-driver-virtual": {
     "driverClass": "com.ispf.driver.virtual.VirtualDeviceDriver",
     "driverId": "virtual",
@@ -816,12 +1021,33 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-virtual"
   },
+  "ispf-driver-visa": {
+    "driverClass": "com.ispf.driver.visa.VisaDeviceDriver",
+    "driverId": "visa",
+    "jarFile": "ispf-driver-visa.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-visa"
+  },
   "ispf-driver-vmware": {
     "driverClass": "com.ispf.driver.vmware.VmwareDeviceDriver",
     "driverId": "vmware",
     "jarFile": "ispf-driver-vmware.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-vmware"
+  },
+  "ispf-driver-wago": {
+    "driverClass": "com.ispf.driver.wago.WagoDeviceDriver",
+    "driverId": "wago",
+    "jarFile": "ispf-driver-wago.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-wago"
+  },
+  "ispf-driver-weather-station": {
+    "driverClass": "com.ispf.driver.weatherstation.WeatherStationDeviceDriver",
+    "driverId": "weather-station",
+    "jarFile": "ispf-driver-weather-station.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-weather-station"
   },
   "ispf-driver-web-transaction": {
     "driverClass": "com.ispf.driver.webtransaction.WebTransactionDeviceDriver",
@@ -837,6 +1063,41 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-webhook"
   },
+  "ispf-driver-websocket": {
+    "driverClass": "com.ispf.driver.websocket.WebsocketDeviceDriver",
+    "driverId": "websocket",
+    "jarFile": "ispf-driver-websocket.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-websocket"
+  },
+  "ispf-driver-weighbridge": {
+    "driverClass": "com.ispf.driver.weighbridge.WeighbridgeDeviceDriver",
+    "driverId": "weighbridge",
+    "jarFile": "ispf-driver-weighbridge.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-weighbridge"
+  },
+  "ispf-driver-wirelesshart": {
+    "driverClass": "com.ispf.driver.wirelesshart.WirelesshartDeviceDriver",
+    "driverId": "wirelesshart",
+    "jarFile": "ispf-driver-wirelesshart.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-wirelesshart"
+  },
+  "ispf-driver-wisun": {
+    "driverClass": "com.ispf.driver.wisun.WisunDeviceDriver",
+    "driverId": "wisun",
+    "jarFile": "ispf-driver-wisun.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-wisun"
+  },
+  "ispf-driver-wmbus": {
+    "driverClass": "com.ispf.driver.wmbus.WmbusDeviceDriver",
+    "driverId": "wmbus",
+    "jarFile": "ispf-driver-wmbus.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-wmbus"
+  },
   "ispf-driver-wmi": {
     "driverClass": "com.ispf.driver.wmi.WmiDeviceDriver",
     "driverId": "wmi",
@@ -850,5 +1111,26 @@
     "jarFile": "ispf-driver-xmpp.jar",
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-xmpp"
+  },
+  "ispf-driver-yaskawa-memobus": {
+    "driverClass": "com.ispf.driver.yaskawamemobus.YaskawaMemobusDeviceDriver",
+    "driverId": "yaskawa-memobus",
+    "jarFile": "ispf-driver-yaskawa-memobus.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-yaskawa-memobus"
+  },
+  "ispf-driver-zigbee": {
+    "driverClass": "com.ispf.driver.zigbee.ZigbeeDeviceDriver",
+    "driverId": "zigbee",
+    "jarFile": "ispf-driver-zigbee.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-zigbee"
+  },
+  "ispf-driver-zwave": {
+    "driverClass": "com.ispf.driver.zwave.ZwaveDeviceDriver",
+    "driverId": "zwave",
+    "jarFile": "ispf-driver-zwave.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-zwave"
   }
 }

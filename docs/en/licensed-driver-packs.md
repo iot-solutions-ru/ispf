@@ -1,7 +1,7 @@
 # Licensed driver packs (FW-50)
 
-All ISPF device drivers ship as **driver packs** (normally 1 driver = 1 pack = 1 `licenseType`).
-The protocol-catalog stub pack `ispf-driver-protocol-stubs` is an exception: **many STUB `driverId`s in one JAR** (see `drivers[]` in the catalog / assembled `driver-pack.json`).
+All ISPF device drivers ship as **driver packs** (1 driver = 1 pack = 1 `licenseType`).
+Protocol catalog stubs follow the same rule: each `driverId` is its own `ispf-driver-<id>` pack (shared base library `ispf-driver-stub-kit` is not a pack).
 The platform JAR contains only the pack loader — not protocol implementations.
 
 ## Layout
