@@ -37,6 +37,13 @@ python tools/generate-driver-packs-json.py
 
 Edit `tools/driver-stubs/protocol-stubs.yaml`, then regenerate. Stubs stay `DriverMaturity.STUB` until promoted. Shared base: `packages/ispf-driver-stub-kit` (not a pack).
 
+Refresh driver catalog tables in docs:
+
+```powershell
+python tools/driver-stubs/generate-driver-catalog-docs.py
+```
+
+
 ## Tests
 
 **Recommended pre-push** (matches [CI pr-fast](.github/workflows/ci.yml)):
