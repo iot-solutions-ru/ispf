@@ -88,7 +88,7 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 | G-05 | **Per-variable / custom roles** | Variable roles + history ACL + event/function `invokeRoles` API/UI + ISA-95 template scopes on REST; interactive analytics, agent, WebSocket/editor, Object Query/function/binding evaluation, expression, and federation HTTP/tunnel on-behalf-of paths enforce `MEMBER` ACL | **Closed / Exists for interactive paths.** OQ omits denied live/historian columns and expanded rows; HTTP and agent function invocation carries MEMBER context into nested queries. HTTP federation peers limit delegated roles to channel ∩ on-behalf-of roles, preventing service-account privilege escalation. Health probes remain channel-only with no variable values/history, and scheduler/binding-engine `SYSTEM` automation still does not apply end-user ACL | [BL-154](roadmap.md#phase-27--enterprise-security) **Done**, [BL-157](roadmap.md#phase-27--enterprise-security) **Done** |
 | G-06 | **IEC 62443 certification** | This lite mapping | No accredited 62443 product certificate | Out of scope for BL-192 docs; future if sponsored |
 | G-07 | **GAMP / CSV package** | This checklist + engineering docs | No supplier IQ/OQ templates or validated-state claim | Customer validation; [certification](certification.md) training only |
-| G-08 | **Security doc drift** | Scorecard / code: TOTP REAL | `[security.md](security.md)` may lag on MFA wording — prefer code + this pack + tests for tender evidence | Docs maintenance |
+| G-08 | **Security doc drift** | Scorecard / code: TOTP REAL; [security](security.md) MFA + per-var ACL + tenancy/RLS pointers aligned (2026-08-30) | Prefer this pack + tests for tender evidence; re-check after WebAuthn (BL-194) | Docs maintenance |
 
 ---
 

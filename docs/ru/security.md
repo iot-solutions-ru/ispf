@@ -175,6 +175,19 @@ Docker Compose поднимает Keycloak на порт **8180**.
 
 Фоновые планировщики, вычисления binding engine и материализаторы остаются в режиме `SYSTEM`: ACL конечного пользователя к ним не применяется. Проверки состояния федеративных пиров аутентифицируют только канал и не передают on-behalf-of identity; они не могут возвращать значения переменных или историю.
 
+## Изоляция multi-tenancy
+
+Канон: [multi-tenant](../en/multi-tenant.md). Tender: [compliance-tender-pack G-03](../en/compliance-tender-pack.md).
+
+| Слой | Статус |
+| ---- | ------ |
+| Logical SaaS A≠B (path + API + `tenant-admin`) | **Done** |
+| OIDC `tenant_id` + hard mode schema provision/drop | **Done** |
+| PostgreSQL RLS на shared tables (`ispf.tenant.db-row-isolation`) | **Done** (на H2 no-op) |
+| Physical per-tenant table routing | **Опционально / не заявляется** |
+
+Не заявлять H2 row isolation и physical schema isolation для shared tables.
+
 ## Рекомендации для производства
 
 - Предпочтительно `--spring.profiles.active=prod` (см. `application-prod.yml`) или переменные окружения ниже

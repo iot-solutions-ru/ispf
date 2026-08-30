@@ -177,6 +177,19 @@ Federated hub reads omit remote-only variables that have no local mirror ACL met
 
 Background schedulers, binding-engine evaluations, and materializers remain in `SYSTEM` mode and do not apply an end user's member ACL. Federation health probes authenticate only the channel and send no on-behalf-of identity; they cannot return variable values or history.
 
+## Multi-tenancy isolation
+
+Canonical detail: [multi-tenant](multi-tenant.md). Tender view: [compliance-tender-pack G-03](compliance-tender-pack.md).
+
+| Layer | Status |
+| ----- | ------ |
+| Logical SaaS A≠B (path + API + `tenant-admin`) | **Done** |
+| OIDC `tenant_id` claim + hard mode schema provision/drop | **Done** |
+| PostgreSQL RLS on shared platform object tables (`ispf.tenant.db-row-isolation`) | **Done** (no-op on H2) |
+| Physical per-tenant table routing | **Optional / not claimed** |
+
+Do **not** claim H2 row isolation or physical schema isolation for shared tables.
+
 ## Production recommendations
 
 - Prefer `--spring.profiles.active=prod` (see `application-prod.yml`) or set the env vars below

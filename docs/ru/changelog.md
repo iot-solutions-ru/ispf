@@ -12,6 +12,7 @@ Changelog отдельных application bundles — в манифестах п�
 ### Документация
 
 - Post-S33 scorecard/tender honesty (pin 0.9.192, AI re-soak 0.9.191, G-03 RLS, ADR-0055 в expression-language).
+- G-08/security tenancy RLS + HMI offline CI reaffirm (0.9.192).
 
 ## [0.9.192] - 2026-08-30
 
