@@ -12,22 +12,31 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "ispf.security.rbac-enabled=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class PlatformAnalyticsTagEvaluateApiTest {
 
+    private static final Authentication ADMIN = UsernamePasswordAuthenticationToken.authenticated(
+            "admin",
+            "n/a",
+            List.of(new SimpleGrantedAuthority("admin"))
+    );
     private static final String SENSOR = "root.platform.devices.demo-sensor-01";
 
     @Autowired
@@ -60,6 +69,7 @@ class PlatformAnalyticsTagEvaluateApiTest {
 
         mockMvc.perform(get("/api/v1/platform/analytics/tags/evaluate")
                         .param("path", tagPath)
+                        .principal(ADMIN)
                         .header("X-ISPF-Role", "admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ok"))
@@ -67,7 +77,7 @@ class PlatformAnalyticsTagEvaluateApiTest {
     }
 
     @Test
-    void evaluateTagProbeSurvivesMissingSourceVariable() throws Exception {
+    void evaluateTagProbeRejectsMissingSourceVariableBeforeEvaluation() throws Exception {
         String chainB = HistorianComputationTestSupport.ensureDevice(objectManager, "root.platform.devices", "probe-chain-b");
         String ruleId = "probe-chain-b-rule";
         HistorianComputationTestSupport.upsertRollingAvgRule(
@@ -83,9 +93,10 @@ class PlatformAnalyticsTagEvaluateApiTest {
 
         mockMvc.perform(get("/api/v1/platform/analytics/tags/evaluate")
                         .param("path", tagPath)
+                        .principal(ADMIN)
                         .header("X-ISPF-Role", "admin"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("skipped"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Variable: derived-a"));
     }
 
     private void seedHistorianSamples(double value) {

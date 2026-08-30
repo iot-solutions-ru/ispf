@@ -14,6 +14,7 @@ import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +42,8 @@ class AgentDiscoveryToolsTest {
     private ObjectTreePort ObjectTreePort;
     @Mock
     private ObjectAccessService objectAccessService;
+    @Mock
+    private VariableMemberAccessService variableMemberAccessService;
     @Mock
     private TenantScopeService tenantScopeService;
     @Mock
@@ -52,6 +58,7 @@ class AgentDiscoveryToolsTest {
         tools = AgentDiscoveryTools.all(
                 ObjectTreePort,
                 objectAccessService,
+                variableMemberAccessService,
                 tenantScopeService,
                 functionStore,
                 eventCatalogService,
@@ -126,6 +133,8 @@ class AgentDiscoveryToolsTest {
         node.addVariable(new Variable("temperature", schema, true, true, null));
         when(ObjectTreePort.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(variableMemberAccessService.filterReadable(eq(path), anyCollection(), isNull()))
+                .thenReturn(List.copyOf(node.variables().values()));
 
         Map<String, Object> result = tool("describe_variables").execute(
                 Map.of("objectPath", path),
@@ -135,6 +144,44 @@ class AgentDiscoveryToolsTest {
         assertEquals("OK", result.get("status"));
         assertEquals(1, result.get("count"));
         assertTrue(result.toString().contains("DOUBLE"));
+    }
+
+    @Test
+    void describeVariablesDoesNotLeakRestrictedVariables() throws Exception {
+        String path = "root.platform.devices.demo-sensor-01";
+        DataSchema schema = DataSchema.builder("numeric")
+                .field(FieldDefinition.of("value", FieldType.DOUBLE))
+                .build();
+        PlatformObject node = new PlatformObject(
+                "1", path, ObjectType.DEVICE, "Demo", "", null
+        );
+        Variable temperature = new Variable("temperature", schema, true, false, null);
+        Variable secret = new Variable(
+                "secretSetpoint",
+                schema,
+                true,
+                false,
+                null,
+                false,
+                null,
+                List.of("engineer"),
+                List.of()
+        );
+        node.addVariable(temperature);
+        node.addVariable(secret);
+        when(ObjectTreePort.require(path)).thenReturn(node);
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(variableMemberAccessService.filterReadable(eq(path), anyCollection(), isNull()))
+                .thenReturn(List.of(temperature));
+
+        Map<String, Object> result = tool("describe_variables").execute(
+                Map.of("objectPath", path),
+                new AgentContext("operator", null, null)
+        );
+
+        assertEquals(1, result.get("count"));
+        assertTrue(result.toString().contains("temperature"));
+        assertTrue(!result.toString().contains("secretSetpoint"));
     }
 
     @Test

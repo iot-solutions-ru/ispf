@@ -70,7 +70,7 @@ POST /api/v1/platform/analytics/query
 ```
 
 - Body: `{ tags: [{path, variable, field}], from, to, bucket, agg: avg|min|max|last }`
-- Auth: operator+; respects variable ACL when BL-154 lands.
+- Auth: operator+; variable ACL is enforced via `VariableAclRequestContext.MEMBER`.
 - Implementation: `TierRoutingVariableHistoryQueryStore` + rollup table + CH HTTP.
 
 Optional: `POST .../analytics/expression` for CEL-over-historian (v2).

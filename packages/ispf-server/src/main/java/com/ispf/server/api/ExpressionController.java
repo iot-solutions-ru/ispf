@@ -6,6 +6,7 @@ import com.ispf.expression.FormalVerificationReport;
 import com.ispf.server.expression.ExpressionEvaluationService;
 import com.ispf.server.expression.ExpressionFormalVerificationService;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,13 +73,14 @@ public class ExpressionController {
     }
 
     @PostMapping("/evaluate")
-    public EvaluateResponse evaluate(@RequestBody EvaluateRequest request) {
+    public EvaluateResponse evaluate(@RequestBody EvaluateRequest request, Authentication authentication) {
         ExpressionEvaluationService.EvaluateResult result = evaluationService.evaluate(
                 request.objectPath(),
                 request.expression(),
                 request.targetVariable(),
                 request.breakpoints() != null ? request.breakpoints() : List.of(),
-                request.resumeFrom()
+                request.resumeFrom(),
+                authentication
         );
         return new EvaluateResponse(
                 result.valid(),

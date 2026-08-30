@@ -38,6 +38,9 @@ public class TenantScopeService {
         if (IspfRoles.isGlobalAdmin(authentication)) {
             return Optional.empty();
         }
+        if (authentication.getDetails() instanceof DelegatedTenantAuthenticationDetails details) {
+            return Optional.ofNullable(isolationValidator.normalizeOidcTenantClaim(details.tenantId()));
+        }
         Optional<String> fromClaim = resolveOidcTenantClaim(authentication);
         if (fromClaim.isPresent()) {
             return fromClaim;

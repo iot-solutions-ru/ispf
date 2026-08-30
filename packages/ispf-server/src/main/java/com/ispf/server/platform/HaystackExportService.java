@@ -9,7 +9,10 @@ import com.ispf.core.object.Variable;
 import com.ispf.server.driver.DriverPointMappingParser;
 import com.ispf.server.driver.DriverPointMappingParser.Entry;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,14 +36,27 @@ public class HaystackExportService {
 
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
+    private final ObjectAccessService objectAccessService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
-    public HaystackExportService(ObjectManager objectManager, ObjectMapper objectMapper) {
+    public HaystackExportService(
+            ObjectManager objectManager,
+            ObjectMapper objectMapper,
+            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService
+    ) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
+        this.objectAccessService = objectAccessService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> exportSubtree(String rootPath, boolean includePoints) {
+    public Map<String, Object> exportSubtree(
+            Authentication authentication,
+            String rootPath,
+            boolean includePoints
+    ) {
         String normalizedRoot = normalizeRootPath(rootPath);
         List<Map<String, Object>> rows = new ArrayList<>();
         for (PlatformObject node : objectManager.tree().all()) {
@@ -50,16 +66,22 @@ public class HaystackExportService {
             if (node.type() != ObjectType.DEVICE) {
                 continue;
             }
-            if (!hasHaystackMetadata(node)) {
+            if (authentication != null && !objectAccessService.canRead(node.path(), authentication)) {
                 continue;
             }
-            rows.add(buildEquipRow(node));
+            if (!hasReadableHaystackMetadata(node, authentication)) {
+                continue;
+            }
+            rows.add(buildEquipRow(node, authentication));
             if (includePoints) {
-                Map<String, Entry> pointMappings = parsePointMappings(node);
+                Map<String, Entry> pointMappings = parsePointMappings(node, authentication);
                 for (String variableName : pointVariableNames(node, pointMappings)) {
-                    node.getVariable(variableName).ifPresent(variable ->
-                            rows.add(buildPointRow(node, variable, pointMappings.get(variableName)))
-                    );
+                    var variableOpt = node.getVariable(variableName);
+                    if (variableOpt.isEmpty()
+                            || !canReadVariable(node, variableName, authentication)) {
+                        continue;
+                    }
+                    rows.add(buildPointRow(node, variableOpt.get(), pointMappings.get(variableName)));
                 }
             }
         }
@@ -75,6 +97,7 @@ public class HaystackExportService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> searchByTags(
+            Authentication authentication,
             String rootPath,
             List<String> tags,
             String entityKind,
@@ -99,13 +122,16 @@ public class HaystackExportService {
             if (node.type() != ObjectType.DEVICE) {
                 continue;
             }
-            if (!hasHaystackMetadata(node)) {
+            if (authentication != null && !objectAccessService.canRead(node.path(), authentication)) {
                 continue;
             }
-            Map<String, Boolean> equipTags = parseTags(readString(node, "haystackTags"));
+            if (!hasReadableHaystackMetadata(node, authentication)) {
+                continue;
+            }
+            Map<String, Boolean> equipTags = parseTags(readString(node, "haystackTags", authentication));
             if (includeEntityKind(kindFilter, "equip")
                     && tagsMatch(equipTags, requiredTags)) {
-                matches.add(toSearchMatch(buildEquipRow(node), node.path(), null));
+                matches.add(toSearchMatch(buildEquipRow(node, authentication), node.path(), null));
                 if (matches.size() >= cappedLimit) {
                     break;
                 }
@@ -113,7 +139,7 @@ public class HaystackExportService {
             if (!includeEntityKind(kindFilter, "point")) {
                 continue;
             }
-            Map<String, Entry> pointMappings = parsePointMappings(node);
+            Map<String, Entry> pointMappings = parsePointMappings(node, authentication);
             for (String variableName : pointVariableNames(node, pointMappings)) {
                 if (matches.size() >= cappedLimit) {
                     break;
@@ -121,6 +147,9 @@ public class HaystackExportService {
                 Entry mapping = pointMappings.get(variableName);
                 var variableOpt = node.getVariable(variableName);
                 if (variableOpt.isEmpty()) {
+                    continue;
+                }
+                if (!canReadVariable(node, variableName, authentication)) {
                     continue;
                 }
                 List<String> pointTags = mapping != null && !mapping.haystackTags().isEmpty()
@@ -226,10 +255,10 @@ public class HaystackExportService {
         return true;
     }
 
-    private Map<String, Object> buildEquipRow(PlatformObject node) {
+    private Map<String, Object> buildEquipRow(PlatformObject node, Authentication authentication) {
         Map<String, Object> row = baseRow(node);
         row.put("entityKind", "equip");
-        mergeHaystackVariables(row, node);
+        mergeHaystackVariables(row, node, authentication);
         return row;
     }
 
@@ -253,8 +282,11 @@ public class HaystackExportService {
         return row;
     }
 
-    private Map<String, Entry> parsePointMappings(PlatformObject node) {
-        return DriverPointMappingParser.parse(readString(node, "driverPointMappingsJson"), objectMapper);
+    private Map<String, Entry> parsePointMappings(PlatformObject node, Authentication authentication) {
+        return DriverPointMappingParser.parse(
+                readString(node, "driverPointMappingsJson", authentication),
+                objectMapper
+        );
     }
 
     private static Set<String> pointVariableNames(PlatformObject node, Map<String, Entry> pointMappings) {
@@ -280,19 +312,48 @@ public class HaystackExportService {
         return row;
     }
 
-    private void mergeHaystackVariables(Map<String, Object> row, PlatformObject node) {
-        row.put("haystackRef", readString(node, "haystackRef"));
-        row.put("haystackKind", readString(node, "haystackKind"));
-        row.put("tags", parseTags(readString(node, "haystackTags")));
+    private void mergeHaystackVariables(
+            Map<String, Object> row,
+            PlatformObject node,
+            Authentication authentication
+    ) {
+        row.put("haystackRef", readString(node, "haystackRef", authentication));
+        row.put("haystackKind", readString(node, "haystackKind", authentication));
+        row.put("tags", parseTags(readString(node, "haystackTags", authentication)));
     }
 
-    private static boolean hasHaystackMetadata(PlatformObject node) {
-        return node.getVariable("haystackTags").isPresent()
-                || node.getVariable("haystackRef").isPresent()
-                || node.getVariable("haystackKind").isPresent();
+    private boolean hasReadableHaystackMetadata(PlatformObject node, Authentication authentication) {
+        return isReadableVariablePresent(node, "haystackTags", authentication)
+                || isReadableVariablePresent(node, "haystackRef", authentication)
+                || isReadableVariablePresent(node, "haystackKind", authentication);
     }
 
-    private static String readString(PlatformObject node, String variableName) {
+    private boolean isReadableVariablePresent(
+            PlatformObject node,
+            String variableName,
+            Authentication authentication
+    ) {
+        return node.getVariable(variableName).isPresent()
+                && canReadVariable(node, variableName, authentication);
+    }
+
+    private boolean canReadVariable(
+            PlatformObject node,
+            String variableName,
+            Authentication authentication
+    ) {
+        return authentication == null
+                || variableMemberAccessService.canRead(node.path(), variableName, authentication);
+    }
+
+    private String readString(
+            PlatformObject node,
+            String variableName,
+            Authentication authentication
+    ) {
+        if (!isReadableVariablePresent(node, variableName, authentication)) {
+            return "";
+        }
         return node.getVariable(variableName)
                 .flatMap(Variable::value)
                 .map(record -> record.firstRow().get("value"))

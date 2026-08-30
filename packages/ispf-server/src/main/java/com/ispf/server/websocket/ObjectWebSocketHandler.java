@@ -12,6 +12,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantVirtualRoot;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -56,6 +57,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final ObjectWebSocketPathInterestRegistry pathInterestRegistry;
     private final ClusterPathInterestStore clusterPathInterestStore;
     private final ObjectAccessService objectAccessService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public ObjectWebSocketHandler(
             WebSocketProperties webSocketProperties,
@@ -66,7 +68,8 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             ApplicationEventCatalogService eventCatalogService,
             ObjectWebSocketPathInterestRegistry pathInterestRegistry,
             ClusterPathInterestStore clusterPathInterestStore,
-            ObjectAccessService objectAccessService
+            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.webSocketProperties = webSocketProperties;
         this.objectMapper = objectMapper;
@@ -77,6 +80,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         this.pathInterestRegistry = pathInterestRegistry;
         this.clusterPathInterestStore = clusterPathInterestStore;
         this.objectAccessService = objectAccessService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @PostConstruct
@@ -225,7 +229,16 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         Map<String, Set<String>> variablesByPath = new java.util.HashMap<>();
         for (Map.Entry<String, Set<String>> entry : interest.variablesByPath.entrySet()) {
             if (objectAccessService.canRead(entry.getKey(), authentication)) {
-                variablesByPath.put(entry.getKey(), entry.getValue());
+                Set<String> readableVariables = entry.getValue().stream()
+                        .filter(variableName -> variableMemberAccessService.canRead(
+                                entry.getKey(),
+                                variableName,
+                                authentication
+                        ))
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+                if (!readableVariables.isEmpty()) {
+                    variablesByPath.put(entry.getKey(), readableVariables);
+                }
             }
         }
         return new SessionInterest(pathWide, variablesByPath);
@@ -244,6 +257,16 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private boolean canSessionRead(WebSocketSession session, String eventPath) {
         Authentication authentication = sessionAuthentication(session);
         return authentication == null || objectAccessService.canRead(eventPath, authentication);
+    }
+
+    private boolean canSessionReadVariable(
+            WebSocketSession session,
+            String eventPath,
+            String variableName
+    ) {
+        Authentication authentication = sessionAuthentication(session);
+        return authentication == null
+                || variableMemberAccessService.canRead(eventPath, variableName, authentication);
     }
 
     private void handlePresence(WebSocketSession session, JsonNode node) throws IOException {
@@ -392,6 +415,9 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             }
             if (variableName == null || variableName.isBlank()) {
                 targets.add(session);
+                continue;
+            }
+            if (!canSessionReadVariable(session, eventPath, variableName)) {
                 continue;
             }
             Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);

@@ -7,7 +7,10 @@ import com.ispf.core.object.Variable;
 import com.ispf.server.driver.DriverPointMappingParser;
 import com.ispf.server.driver.DriverPointMappingParser.Entry;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,16 +36,29 @@ public class BrickExportService {
 
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
+    private final ObjectAccessService objectAccessService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
-    public BrickExportService(ObjectManager objectManager, ObjectMapper objectMapper) {
+    public BrickExportService(
+            ObjectManager objectManager,
+            ObjectMapper objectMapper,
+            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService
+    ) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
+        this.objectAccessService = objectAccessService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> exportJsonLd(String rootPath, boolean includePoints) {
+    public Map<String, Object> exportJsonLd(
+            Authentication authentication,
+            String rootPath,
+            boolean includePoints
+    ) {
         String normalizedRoot = HaystackExportService.normalizeRootPath(rootPath);
-        List<Map<String, Object>> graph = buildGraph(normalizedRoot, includePoints);
+        List<Map<String, Object>> graph = buildGraph(authentication, normalizedRoot, includePoints);
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("formatVersion", FORMAT_VERSION);
         payload.put("format", "jsonld");
@@ -60,9 +76,13 @@ public class BrickExportService {
     }
 
     @Transactional(readOnly = true)
-    public String exportTurtle(String rootPath, boolean includePoints) {
+    public String exportTurtle(
+            Authentication authentication,
+            String rootPath,
+            boolean includePoints
+    ) {
         String normalizedRoot = HaystackExportService.normalizeRootPath(rootPath);
-        List<Map<String, Object>> graph = buildGraph(normalizedRoot, includePoints);
+        List<Map<String, Object>> graph = buildGraph(authentication, normalizedRoot, includePoints);
         StringBuilder ttl = new StringBuilder();
         ttl.append("@prefix brick: <").append(BRICK_NS).append("> .\n");
         ttl.append("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n");
@@ -94,7 +114,11 @@ public class BrickExportService {
         return ttl.toString();
     }
 
-    private List<Map<String, Object>> buildGraph(String normalizedRoot, boolean includePoints) {
+    private List<Map<String, Object>> buildGraph(
+            Authentication authentication,
+            String normalizedRoot,
+            boolean includePoints
+    ) {
         List<Map<String, Object>> graph = new ArrayList<>();
         for (PlatformObject node : objectManager.tree().all()) {
             if (!HaystackExportService.isUnderRoot(node.path(), normalizedRoot)) {
@@ -103,7 +127,10 @@ public class BrickExportService {
             if (node.type() != ObjectType.DEVICE) {
                 continue;
             }
-            String brickClass = readString(node, "brickClass");
+            if (authentication != null && !objectAccessService.canRead(node.path(), authentication)) {
+                continue;
+            }
+            String brickClass = readString(node, "brickClass", authentication);
             if (brickClass.isBlank()) {
                 continue;
             }
@@ -115,8 +142,12 @@ public class BrickExportService {
 
             List<Map<String, String>> pointRefs = new ArrayList<>();
             if (includePoints) {
-                Map<String, Entry> pointMappings = parsePointMappings(node);
+                Map<String, Entry> pointMappings = parsePointMappings(node, authentication);
                 for (String variableName : pointVariableNames(node, pointMappings)) {
+                    if (node.getVariable(variableName).isEmpty()
+                            || !canReadVariable(node, variableName, authentication)) {
+                        continue;
+                    }
                     Entry mapping = pointMappings.get(variableName);
                     Map<String, Object> pointNode = new LinkedHashMap<>();
                     String pointIri = entityIri(node.path(), variableName);
@@ -197,8 +228,11 @@ public class BrickExportService {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    private Map<String, Entry> parsePointMappings(PlatformObject node) {
-        return DriverPointMappingParser.parse(readString(node, "driverPointMappingsJson"), objectMapper);
+    private Map<String, Entry> parsePointMappings(PlatformObject node, Authentication authentication) {
+        return DriverPointMappingParser.parse(
+                readString(node, "driverPointMappingsJson", authentication),
+                objectMapper
+        );
     }
 
     private static Set<String> pointVariableNames(PlatformObject node, Map<String, Entry> pointMappings) {
@@ -216,12 +250,29 @@ public class BrickExportService {
         return names;
     }
 
-    private static String readString(PlatformObject node, String variableName) {
+    private String readString(
+            PlatformObject node,
+            String variableName,
+            Authentication authentication
+    ) {
+        if (node.getVariable(variableName).isEmpty()
+                || !canReadVariable(node, variableName, authentication)) {
+            return "";
+        }
         return node.getVariable(variableName)
                 .flatMap(Variable::value)
                 .map(record -> record.firstRow().get("value"))
                 .map(Object::toString)
                 .orElse("");
+    }
+
+    private boolean canReadVariable(
+            PlatformObject node,
+            String variableName,
+            Authentication authentication
+    ) {
+        return authentication == null
+                || variableMemberAccessService.canRead(node.path(), variableName, authentication);
     }
 
     public static String normalizeFormat(String format) {

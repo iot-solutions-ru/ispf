@@ -1,5 +1,6 @@
 package com.ispf.server.platform.analytics;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,8 +21,12 @@ public class AnalyticsQueryExportService {
         this.analyticsQueryService = analyticsQueryService;
     }
 
-    public void exportCsv(AnalyticsQueryRequest request, OutputStream outputStream) throws IOException {
-        AnalyticsQueryResponse response = analyticsQueryService.query(request);
+    public void exportCsv(
+            AnalyticsQueryRequest request,
+            OutputStream outputStream,
+            Authentication authentication
+    ) throws IOException {
+        AnalyticsQueryResponse response = analyticsQueryService.query(request, authentication);
         StringBuilder header = new StringBuilder("timestamp");
         for (AnalyticsQueryResponse.AnalyticsQuerySeries series : response.series()) {
             header.append(',').append(escapeCsv(series.id()));
@@ -43,8 +48,11 @@ public class AnalyticsQueryExportService {
         outputStream.flush();
     }
 
-    public byte[] exportParquet(AnalyticsQueryRequest request) throws IOException {
-        AnalyticsQueryResponse response = analyticsQueryService.query(request);
+    public byte[] exportParquet(
+            AnalyticsQueryRequest request,
+            Authentication authentication
+    ) throws IOException {
+        AnalyticsQueryResponse response = analyticsQueryService.query(request, authentication);
         StringBuilder jsonLines = new StringBuilder();
         List<String> timestamps = response.timestamps();
         for (int i = 0; i < timestamps.size(); i++) {

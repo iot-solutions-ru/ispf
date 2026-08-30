@@ -2,6 +2,8 @@ package com.ispf.server.platform.analytics.engine;
 
 import com.ispf.analytics.engine.HistorianPort;
 import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -11,9 +13,14 @@ import java.util.List;
 public class AnalyticsHistorianPortAdapter implements HistorianPort {
 
     private final VariableHistoryService variableHistoryService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
-    AnalyticsHistorianPortAdapter(VariableHistoryService variableHistoryService) {
+    AnalyticsHistorianPortAdapter(
+            VariableHistoryService variableHistoryService,
+            VariableMemberAccessService variableMemberAccessService
+    ) {
         this.variableHistoryService = variableHistoryService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @Override
@@ -26,6 +33,13 @@ public class AnalyticsHistorianPortAdapter implements HistorianPort {
             String windowBucket,
             int maxBuckets
     ) {
+        if (VariableAclRequestContext.isMemberEnforced()) {
+            variableMemberAccessService.requireRead(
+                    objectPath,
+                    variableName,
+                    VariableAclRequestContext.requireAuthentication()
+            );
+        }
         return variableHistoryService.aggregate(objectPath, variableName, fieldName, from, to, windowBucket, maxBuckets)
                 .buckets()
                 .stream()
@@ -42,6 +56,13 @@ public class AnalyticsHistorianPortAdapter implements HistorianPort {
             Instant to,
             int limit
     ) {
+        if (VariableAclRequestContext.isMemberEnforced()) {
+            variableMemberAccessService.requireRead(
+                    objectPath,
+                    variableName,
+                    VariableAclRequestContext.requireAuthentication()
+            );
+        }
         return variableHistoryService.query(objectPath, variableName, fieldName, from, to, limit)
                 .samples()
                 .stream()

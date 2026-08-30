@@ -66,12 +66,12 @@ public class BrickExportController {
     ) {
         String normalizedFormat = BrickExportService.normalizeFormat(format);
         if ("turtle".equals(normalizedFormat)) {
-            String turtle = brickExportService.exportTurtle(rootPath, includePoints);
+            String turtle = brickExportService.exportTurtle(authentication, rootPath, includePoints);
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType("text/turtle"))
                     .body(turtle);
         }
-        Map<String, Object> payload = brickExportService.exportJsonLd(rootPath, includePoints);
+        Map<String, Object> payload = brickExportService.exportJsonLd(authentication, rootPath, includePoints);
         return ResponseEntity.ok(payload);
     }
 }

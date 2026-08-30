@@ -4,6 +4,8 @@ import com.ispf.analytics.engine.LiveVariablePort;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.Variable;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
@@ -13,13 +15,25 @@ import java.util.Optional;
 public class AnalyticsLiveVariablePortAdapter implements LiveVariablePort {
 
     private final ObjectManager objectManager;
+    private final VariableMemberAccessService variableMemberAccessService;
 
-    AnalyticsLiveVariablePortAdapter(ObjectManager objectManager) {
+    AnalyticsLiveVariablePortAdapter(
+            ObjectManager objectManager,
+            VariableMemberAccessService variableMemberAccessService
+    ) {
         this.objectManager = objectManager;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @Override
     public Optional<Double> readNumeric(String objectPath, String variableName, String fieldName) {
+        if (VariableAclRequestContext.isMemberEnforced()) {
+            variableMemberAccessService.requireRead(
+                    objectPath,
+                    variableName,
+                    VariableAclRequestContext.requireAuthentication()
+            );
+        }
         return objectManager.tree().findByPath(objectPath)
                 .flatMap(node -> node.getVariable(variableName))
                 .flatMap(Variable::value)

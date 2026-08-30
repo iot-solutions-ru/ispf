@@ -1,7 +1,7 @@
 package com.ispf.server.ai.agent;
 
 import com.ispf.server.history.VariableHistoryService;
-import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.workflow.WorkQueueService;
 import com.ispf.server.workflow.WorkQueueService.WorkQueueItem;
@@ -21,7 +21,7 @@ public final class AgentOperatorTools {
     public static List<PlatformAgentTool> all(
             VariableHistoryService variableHistoryService,
             WorkQueueService workQueueService,
-            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
             com.ispf.server.operator.OperatorAgentMemoryService memoryService,
             com.ispf.server.operator.OperatorAppDocumentService documentService
@@ -34,8 +34,8 @@ public final class AgentOperatorTools {
                 readAppDocumentTool(documentService),
                 searchAppDocumentsTool(documentService),
                 getOperatorLinkTool(),
-                getVariableHistoryTool(variableHistoryService, objectAccessService, tenantScopeService),
-                getVariableHistoryTrendTool(variableHistoryService, objectAccessService, tenantScopeService),
+                getVariableHistoryTool(variableHistoryService, variableMemberAccessService, tenantScopeService),
+                getVariableHistoryTrendTool(variableHistoryService, variableMemberAccessService, tenantScopeService),
                 listWorkQueueTool(workQueueService)
         );
     }
@@ -316,7 +316,7 @@ public final class AgentOperatorTools {
 
     private static PlatformAgentTool getVariableHistoryTool(
             VariableHistoryService variableHistoryService,
-            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         return new PlatformAgentTool() {
@@ -339,7 +339,7 @@ public final class AgentOperatorTools {
                     return Map.of("status", "ERROR", "error", "path and name are required");
                 }
                 var auth = context.authentication();
-                objectAccessService.requireRead(path, auth);
+                variableMemberAccessService.requireRead(path, name, auth);
                 if (!tenantScopeService.isPathVisible(path, auth)) {
                     return Map.of("status", "ERROR", "error", "Path not visible: " + path);
                 }
@@ -390,7 +390,7 @@ public final class AgentOperatorTools {
 
     private static PlatformAgentTool getVariableHistoryTrendTool(
             VariableHistoryService variableHistoryService,
-            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         return new PlatformAgentTool() {
@@ -413,7 +413,7 @@ public final class AgentOperatorTools {
                     return Map.of("status", "ERROR", "error", "path and name are required");
                 }
                 var auth = context.authentication();
-                objectAccessService.requireRead(path, auth);
+                variableMemberAccessService.requireRead(path, name, auth);
                 if (!tenantScopeService.isPathVisible(path, auth)) {
                     return Map.of("status", "ERROR", "error", "Path not visible: " + path);
                 }

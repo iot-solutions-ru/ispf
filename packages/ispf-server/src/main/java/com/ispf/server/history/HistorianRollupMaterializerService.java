@@ -2,6 +2,8 @@ package com.ispf.server.history;
 
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.platform.analytics.AnalyticsClusterWorkloadService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -25,17 +27,20 @@ public class HistorianRollupMaterializerService {
     private final HistorianRollupSubscriptionIndex subscriptionIndex;
     private final AnalyticsProperties analyticsProperties;
     private final AnalyticsClusterWorkloadService analyticsClusterWorkloadService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public HistorianRollupMaterializerService(
             ClickHouseHistorianRollupStore rollupStore,
             HistorianRollupSubscriptionIndex subscriptionIndex,
             AnalyticsProperties analyticsProperties,
-            AnalyticsClusterWorkloadService analyticsClusterWorkloadService
+            AnalyticsClusterWorkloadService analyticsClusterWorkloadService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.rollupStore = rollupStore;
         this.subscriptionIndex = subscriptionIndex;
         this.analyticsProperties = analyticsProperties;
         this.analyticsClusterWorkloadService = analyticsClusterWorkloadService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     public boolean isEnabled() {
@@ -89,8 +94,10 @@ public class HistorianRollupMaterializerService {
             String fieldName,
             String bucketSpec,
             Instant from,
-            Instant to
+            Instant to,
+            Authentication authentication
     ) {
+        variableMemberAccessService.requireRead(objectPath, variableName, authentication);
         if (!rollupStore.isConfigured()) {
             throw new IllegalStateException("ClickHouse historian rollups are not configured");
         }

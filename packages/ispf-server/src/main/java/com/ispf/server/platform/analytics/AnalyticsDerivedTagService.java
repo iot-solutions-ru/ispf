@@ -7,6 +7,8 @@ import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.analytics.engine.AnalyticsDerivedValueWriter;
 import com.ispf.server.platform.analytics.frames.EventFrameService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,17 +36,20 @@ public class AnalyticsDerivedTagService {
     private final VariableHistoryService variableHistoryService;
     private final AnalyticsDerivedValueWriter derivedValueWriter;
     private final EventFrameService eventFrameService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public AnalyticsDerivedTagService(
             ObjectManager objectManager,
             VariableHistoryService variableHistoryService,
             AnalyticsDerivedValueWriter derivedValueWriter,
-            EventFrameService eventFrameService
+            EventFrameService eventFrameService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.objectManager = objectManager;
         this.variableHistoryService = variableHistoryService;
         this.derivedValueWriter = derivedValueWriter;
         this.eventFrameService = eventFrameService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @Transactional(readOnly = true)
@@ -63,11 +68,25 @@ public class AnalyticsDerivedTagService {
 
     @Transactional
     public DerivedTagRefreshResult refreshDevice(String devicePath) {
-        return refreshDevice(devicePath, Instant.now());
+        return refreshDevice(devicePath, Instant.now(), null, false);
+    }
+
+    @Transactional
+    public DerivedTagRefreshResult refreshDevice(String devicePath, Authentication authentication) {
+        return refreshDevice(devicePath, Instant.now(), authentication, true);
     }
 
     @Transactional
     public DerivedTagRefreshResult refreshDevice(String devicePath, Instant observedAt) {
+        return refreshDevice(devicePath, observedAt, null, false);
+    }
+
+    private DerivedTagRefreshResult refreshDevice(
+            String devicePath,
+            Instant observedAt,
+            Authentication authentication,
+            boolean enforceMemberAcl
+    ) {
         PlatformObject node = objectManager.require(devicePath);
         if (node.type() != ObjectType.DEVICE) {
             throw new IllegalArgumentException("Not a device: " + devicePath);
@@ -76,9 +95,9 @@ public class AnalyticsDerivedTagService {
             return new DerivedTagRefreshResult(devicePath, "skipped", "No analytics derived-tag variables");
         }
         if (node.getVariable("oeePct").isPresent()) {
-            return refreshOee(node, observedAt);
+            return refreshOee(node, observedAt, authentication, enforceMemberAcl);
         }
-        return refreshScalarDerived(node, observedAt);
+        return refreshScalarDerived(node, observedAt, authentication, enforceMemberAcl);
     }
 
     @Transactional
@@ -93,7 +112,12 @@ public class AnalyticsDerivedTagService {
         return updated;
     }
 
-    private DerivedTagRefreshResult refreshScalarDerived(PlatformObject node, Instant observedAt) {
+    private DerivedTagRefreshResult refreshScalarDerived(
+            PlatformObject node,
+            Instant observedAt,
+            Authentication authentication,
+            boolean enforceMemberAcl
+    ) {
         String sourcePath = readString(node, "sourcePath").filter(s -> !s.isBlank()).orElse(node.path());
         String sourceVariable = readString(node, "sourceVariable").orElse("");
         if (sourceVariable.isBlank()) {
@@ -105,6 +129,9 @@ public class AnalyticsDerivedTagService {
 
         Instant to = observedAt != null ? observedAt : Instant.now();
         Instant from = to.minus(24, ChronoUnit.HOURS);
+        if (enforceMemberAcl) {
+            variableMemberAccessService.requireRead(sourcePath, sourceVariable, authentication);
+        }
         VariableHistoryService.VariableHistoryAggregateResponse aggregate = variableHistoryService.aggregate(
                 sourcePath,
                 sourceVariable,
@@ -135,7 +162,12 @@ public class AnalyticsDerivedTagService {
         return new DerivedTagRefreshResult(node.path(), "ok", "derivedValue=" + formatNumber(computed));
     }
 
-    private DerivedTagRefreshResult refreshOee(PlatformObject node, Instant observedAt) {
+    private DerivedTagRefreshResult refreshOee(
+            PlatformObject node,
+            Instant observedAt,
+            Authentication authentication,
+            boolean enforceMemberAcl
+    ) {
         String sourcePath = readString(node, "sourcePath").filter(s -> !s.isBlank()).orElse(node.path());
         String windowBucket = readString(node, "windowBucket").orElse("8h");
         String sourceField = readString(node, "sourceField").orElse("value");
@@ -145,6 +177,11 @@ public class AnalyticsDerivedTagService {
         String qualityVar = readString(node, "qualityVariable").orElse("");
         if (availabilityVar.isBlank() || performanceVar.isBlank() || qualityVar.isBlank()) {
             return new DerivedTagRefreshResult(node.path(), "skipped", "OEE source variables not configured");
+        }
+        if (enforceMemberAcl) {
+            variableMemberAccessService.requireRead(sourcePath, availabilityVar, authentication);
+            variableMemberAccessService.requireRead(sourcePath, performanceVar, authentication);
+            variableMemberAccessService.requireRead(sourcePath, qualityVar, authentication);
         }
 
         Instant to = observedAt != null ? observedAt : Instant.now();

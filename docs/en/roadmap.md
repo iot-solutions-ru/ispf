@@ -1078,7 +1078,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
 | BL-153 | **MFA** | P2 | **Done** — TOTP GA (persisted enroll, admin enforce, login UX). WebAuthn / Keycloak OTP → **BL-194** — [security](security.md) |
-| BL-154 | **Per-variable ACL** | P2 | **Done** — variable R/W + history enforce + UI; event/function `invokeRoles` API + descriptor editor. Honesty: analytics/federation alternate paths may still bypass member ACL (trusted-channel follow-up) |
+| BL-154 | **Per-variable ACL** | P2 | **Done** — variable R/W + history enforce + UI; event/function `invokeRoles` API + descriptor editor. Trusted-channel follow-up closed: member ACL covers analytics, federation tunnel on-behalf-of, agent tools, and WebSocket paths |
 | BL-155 | **Hard multi-tenancy** | P2 | **Done** (honest) — SaaS `tenant-admin` + logical A≠B path/API; OIDC claim; hard schema provision/drop; **PostgreSQL RLS** on shared object tables (`ispf.tenant.db-row-isolation`, default true); physical schema split still optional — [multi-tenant](multi-tenant.md) |
 | BL-156 | **Audit trail GA** | P2 | **Done** — append audit log, CSV export, SIEM webhook (`ISPF_AUDIT_SIEM_WEBHOOK_URL`) |
 | BL-157 | **Role templates** | P2 | **Done** — custom roles + `operator-readonly` / `mes-supervisor` ISA-95 `scopePathPrefixes` enforced on REST |

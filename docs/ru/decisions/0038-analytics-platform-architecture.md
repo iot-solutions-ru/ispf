@@ -70,7 +70,7 @@ POST /api/v1/platform/analytics/query
 ```
 
 - Body: `{ tags: [...], from, to, bucket, agg }`
-- Auth: operator+; variable ACL при BL-154.
+- Auth: operator+; ACL переменных применяется через `VariableAclRequestContext.MEMBER`.
 
 ### 6. Replica profile `analytics` (BL-207)
 

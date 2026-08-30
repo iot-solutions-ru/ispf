@@ -1,6 +1,5 @@
 package com.ispf.server.federation;
 
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
@@ -11,11 +10,17 @@ import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.api.dto.VariableDto;
 import com.ispf.server.dashboard.DashboardService;
+import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectUiIconService;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,6 +39,9 @@ public class FederationTunnelLocalProxyService {
     private final FunctionService functionService;
     private final DashboardService dashboardService;
     private final VariableHistoryService variableHistoryService;
+    private final VariableMemberAccessService variableMemberAccessService;
+    private final ObjectAccessService objectAccessService;
+    private final FunctionInvokeAccessService functionInvokeAccessService;
     private final ObjectMapper objectMapper;
 
     public FederationTunnelLocalProxyService(
@@ -42,6 +50,9 @@ public class FederationTunnelLocalProxyService {
             FunctionService functionService,
             DashboardService dashboardService,
             VariableHistoryService variableHistoryService,
+            VariableMemberAccessService variableMemberAccessService,
+            ObjectAccessService objectAccessService,
+            FunctionInvokeAccessService functionInvokeAccessService,
             ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
@@ -49,6 +60,9 @@ public class FederationTunnelLocalProxyService {
         this.functionService = functionService;
         this.dashboardService = dashboardService;
         this.variableHistoryService = variableHistoryService;
+        this.variableMemberAccessService = variableMemberAccessService;
+        this.objectAccessService = objectAccessService;
+        this.functionInvokeAccessService = functionInvokeAccessService;
         this.objectMapper = objectMapper;
     }
 
@@ -56,15 +70,23 @@ public class FederationTunnelLocalProxyService {
         String normalizedPath = path == null ? "" : path.trim();
         Map<String, String> params = parseQuery(query);
         try {
+            if (VariableAclRequestContext.isMemberEnforced()) {
+                VariableAclRequestContext.requireAuthentication();
+            }
             return switch (normalizedPath) {
-                case "/api/v1/objects" -> result(200, objectMapper.valueToTree(listObjects()));
+                case "/api/v1/info" -> handleInfo(method);
+                case "/api/v1/objects" -> handleObjects(method);
                 case "/api/v1/objects/by-path" -> handleObjectByPath(method, params);
                 case "/api/v1/objects/by-path/variables" -> handleVariables(method, params);
-                case "/api/v1/objects/by-path/variables/value" -> handleVariableValuePatch(params, bodyJson);
-                case "/api/v1/objects/by-path/functions/invoke" -> handleFunctionInvoke(params, bodyJson);
-                case "/api/v1/objects/by-path/variables/history" -> handleVariableHistory(params, false);
-                case "/api/v1/objects/by-path/variables/history/aggregate" -> handleVariableHistory(params, true);
-                case "/api/v1/dashboards/by-path" -> handleDashboard(params);
+                case "/api/v1/objects/by-path/variables/value" ->
+                        handleVariableValuePatch(method, params, bodyJson);
+                case "/api/v1/objects/by-path/functions/invoke" ->
+                        handleFunctionInvoke(method, params, bodyJson);
+                case "/api/v1/objects/by-path/variables/history" ->
+                        handleVariableHistory(method, params, false);
+                case "/api/v1/objects/by-path/variables/history/aggregate" ->
+                        handleVariableHistory(method, params, true);
+                case "/api/v1/dashboards/by-path" -> handleDashboard(method, params);
                 default -> error(HttpStatus.NOT_FOUND, "Unsupported tunnel proxy path: " + normalizedPath);
             };
         } catch (ResponseStatusException ex) {
@@ -74,11 +96,27 @@ public class FederationTunnelLocalProxyService {
         }
     }
 
+    private FederationTunnelLocalProxyResult handleInfo(String method) {
+        if (!"GET".equalsIgnoreCase(method)) {
+            return error(HttpStatus.METHOD_NOT_ALLOWED, "Only GET supported");
+        }
+        return result(200, objectMapper.valueToTree(Map.of("status", "ok")));
+    }
+
+    private FederationTunnelLocalProxyResult handleObjects(String method) {
+        if (!"GET".equalsIgnoreCase(method)) {
+            return error(HttpStatus.METHOD_NOT_ALLOWED, "Only GET supported");
+        }
+        Authentication authentication = currentAuthentication();
+        return result(200, objectMapper.valueToTree(listObjects(authentication)));
+    }
+
     private FederationTunnelLocalProxyResult handleObjectByPath(String method, Map<String, String> params) {
         if (!"GET".equalsIgnoreCase(method)) {
             return error(HttpStatus.METHOD_NOT_ALLOWED, "Only GET supported");
         }
         String objectPath = requiredParam(params, "path");
+        objectAccessService.requireRead(objectPath, currentAuthentication());
         PlatformObject node = objectManager.require(objectPath);
         ObjectDto dto = ObjectDto.from(node, objectUiIconService.readIconId(node).orElse(null));
         return result(200, objectMapper.valueToTree(dto));
@@ -89,28 +127,55 @@ public class FederationTunnelLocalProxyService {
             return error(HttpStatus.METHOD_NOT_ALLOWED, "Only GET supported");
         }
         String objectPath = requiredParam(params, "path");
+        Authentication authentication = currentAuthentication();
+        objectAccessService.requireRead(objectPath, authentication);
         PlatformObject node = objectManager.require(objectPath);
-        List<VariableDto> variables = node.variables().values().stream().map(VariableDto::from).toList();
+        List<VariableDto> variables = variableMemberAccessService
+                .filterReadable(objectPath, node.variables().values(), authentication)
+                .stream()
+                .map(VariableDto::from)
+                .toList();
         return result(200, objectMapper.valueToTree(variables));
     }
 
-    private FederationTunnelLocalProxyResult handleVariableValuePatch(Map<String, String> params, String bodyJson) {
+    private FederationTunnelLocalProxyResult handleVariableValuePatch(
+            String method,
+            Map<String, String> params,
+            String bodyJson
+    ) {
+        if (!"PATCH".equalsIgnoreCase(method)) {
+            return error(HttpStatus.METHOD_NOT_ALLOWED, "Only PATCH supported");
+        }
         String objectPath = requiredParam(params, "path");
         String name = requiredParam(params, "name");
-        DataRecordPayloadRequest payload = bodyJson == null || bodyJson.isBlank()
-                ? null
-                : objectMapper.readValue(bodyJson, DataRecordPayloadRequest.class);
+        Authentication authentication = currentAuthentication();
         PlatformObject node = objectManager.require(objectPath);
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));
+        variableMemberAccessService.requireWrite(variable, objectPath, authentication);
+        DataRecordPayloadRequest payload = bodyJson == null || bodyJson.isBlank()
+                ? null
+                : objectMapper.readValue(bodyJson, DataRecordPayloadRequest.class);
         DataRecord resolved = DataRecordPayloadResolver.resolve(variable.schema(), payload);
         Variable updated = objectManager.setVariableValue(objectPath, name, resolved);
         return result(200, objectMapper.valueToTree(VariableDto.from(updated)));
     }
 
-    private FederationTunnelLocalProxyResult handleFunctionInvoke(Map<String, String> params, String bodyJson) {
+    private FederationTunnelLocalProxyResult handleFunctionInvoke(
+            String method,
+            Map<String, String> params,
+            String bodyJson
+    ) {
+        if (!"POST".equalsIgnoreCase(method)) {
+            return error(HttpStatus.METHOD_NOT_ALLOWED, "Only POST supported");
+        }
         String objectPath = requiredParam(params, "path");
         String functionName = requiredParam(params, "name");
+        functionInvokeAccessService.requireDirectInvoke(
+                objectPath,
+                functionName,
+                currentAuthentication()
+        );
         DataRecordPayloadRequest payload = bodyJson == null || bodyJson.isBlank()
                 ? null
                 : objectMapper.readValue(bodyJson, DataRecordPayloadRequest.class);
@@ -118,9 +183,17 @@ public class FederationTunnelLocalProxyService {
         return result(200, objectMapper.valueToTree(result));
     }
 
-    private FederationTunnelLocalProxyResult handleVariableHistory(Map<String, String> params, boolean aggregate) {
+    private FederationTunnelLocalProxyResult handleVariableHistory(
+            String method,
+            Map<String, String> params,
+            boolean aggregate
+    ) {
+        if (!"GET".equalsIgnoreCase(method)) {
+            return error(HttpStatus.METHOD_NOT_ALLOWED, "Only GET supported");
+        }
         String objectPath = requiredParam(params, "path");
         String name = requiredParam(params, "name");
+        variableMemberAccessService.requireRead(objectPath, name, currentAuthentication());
         String field = params.getOrDefault("field", "value");
         int limit = parseInt(params.get("limit"), 500);
         Instant from = params.containsKey("from") ? Instant.parse(params.get("from")) : null;
@@ -134,16 +207,28 @@ public class FederationTunnelLocalProxyService {
         return result(200, objectMapper.valueToTree(response));
     }
 
-    private FederationTunnelLocalProxyResult handleDashboard(Map<String, String> params) {
+    private FederationTunnelLocalProxyResult handleDashboard(String method, Map<String, String> params) {
+        if (!"GET".equalsIgnoreCase(method)) {
+            return error(HttpStatus.METHOD_NOT_ALLOWED, "Only GET supported");
+        }
         String objectPath = requiredParam(params, "path");
+        objectAccessService.requireRead(objectPath, currentAuthentication());
         var dashboard = dashboardService.getDashboard(objectPath);
         return result(200, objectMapper.valueToTree(dashboard));
     }
 
-    private List<ObjectDto> listObjects() {
+    private List<ObjectDto> listObjects(Authentication authentication) {
         return objectManager.tree().all().stream()
+                .filter(node -> objectAccessService.canRead(node.path(), authentication))
                 .map(node -> ObjectDto.from(node, objectUiIconService.readIconId(node).orElse(null)))
                 .toList();
+    }
+
+    private static Authentication currentAuthentication() {
+        if (VariableAclRequestContext.isMemberEnforced()) {
+            return VariableAclRequestContext.requireAuthentication();
+        }
+        return SecurityContextHolder.getContext().getAuthentication();
     }
 
     private static Map<String, String> parseQuery(String query) {

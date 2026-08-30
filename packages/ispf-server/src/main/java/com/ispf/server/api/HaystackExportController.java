@@ -46,7 +46,7 @@ public class HaystackExportController {
             @RequestParam(defaultValue = "point") String entityKind,
             @RequestParam(defaultValue = "50") int limit
     ) {
-        return haystackExportService.searchByTags(rootPath, tags, entityKind, limit);
+        return haystackExportService.searchByTags(authentication, rootPath, tags, entityKind, limit);
     }
 
     @GetMapping("/export")
@@ -55,6 +55,6 @@ public class HaystackExportController {
             @RequestParam(required = false) String rootPath,
             @RequestParam(defaultValue = "true") boolean includePoints
     ) {
-        return haystackExportService.exportSubtree(rootPath, includePoints);
+        return haystackExportService.exportSubtree(authentication, rootPath, includePoints);
     }
 }

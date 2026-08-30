@@ -17,6 +17,13 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Closed BL-154 per-variable ACL trusted-channel gaps: `MEMBER` enforcement now
+  covers analytics query/export/expression, federation tunnel on-behalf-of
+  requests, agent history and analytics tools, WebSocket delivery, the object
+  editor, expression evaluation, and Haystack/Brick semantic export/query.
+
 ## [0.9.189] - 2026-08-30
 
 ### Added
