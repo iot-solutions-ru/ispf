@@ -208,6 +208,35 @@ public class SqlBindingObjectService {
         }
     }
 
+    /**
+     * Disable tree SQL bindings whose target object path is {@code path} or under it.
+     */
+    @Transactional
+    public int disableForTargetSubtree(String path) {
+        if (path == null || path.isBlank() || objectManager.tree().findByPath(BINDINGS_ROOT).isEmpty()) {
+            return 0;
+        }
+        int disabled = 0;
+        for (PlatformObject child : objectManager.tree().childrenOf(BINDINGS_ROOT)) {
+            if (child.type() != ObjectType.BINDING) {
+                continue;
+            }
+            Optional<BindingDefinition> definition = toDefinition(child.path(), child);
+            if (definition.isEmpty() || !definition.get().enabled()) {
+                continue;
+            }
+            String target = definition.get().targetObjectPath();
+            if (target == null || target.isBlank()) {
+                continue;
+            }
+            if (target.equals(path) || target.startsWith(path + ".")) {
+                setBoolean(child.path(), "enabled", false);
+                disabled++;
+            }
+        }
+        return disabled;
+    }
+
     private List<BindingDefinition> listAll() {
         ensureCatalogInternal();
         List<BindingDefinition> bindings = new ArrayList<>();

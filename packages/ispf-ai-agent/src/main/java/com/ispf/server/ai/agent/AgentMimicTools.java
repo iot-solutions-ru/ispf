@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Agent tools for SCADA MIMIC objects вЂ” read/write diagramJson with elements and bindings.
+ * Agent tools for SCADA MIMIC objects — read/write diagramJson with elements and bindings.
  */
 final class AgentMimicTools {
 
@@ -113,7 +113,7 @@ final class AgentMimicTools {
                         + "Args: path; diagramJson (full v2 document string or object) OR elements[] "
                         + "(+ optional connections[], width, height, devicePath for binding shorthand). "
                         + "Optional merge=true appends elements instead of replacing. "
-                        + "Never use set_variable name=diagram вЂ” use this tool. "
+                        + "Never use set_variable name=diagram — use this tool. "
                         + "Bindings: {slot:{objectPath,variableName,valueField,transform}}.";
             }
 
@@ -254,7 +254,7 @@ final class AgentMimicTools {
             if (elementCount == 0) {
                 response.put(
                         "warning",
-                        "Mimic saved but elements[] is still empty вЂ” add tanks/valves/pipes with save_mimic_diagram or add_mimic_elements"
+                        "Mimic saved but elements[] is still empty — add tanks/valves/pipes with save_mimic_diagram or add_mimic_elements"
                 );
             }
             return response;

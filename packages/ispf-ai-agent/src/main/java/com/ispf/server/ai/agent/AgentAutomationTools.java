@@ -660,7 +660,7 @@ final class AgentAutomationTools {
                         + "onContextChange (bool, dashboard rules), onStartup, order. "
                         + "Historian rolling avg example: ruleKind=historian windowBucket=1m "
                         + "expression=avg(root.platform.devices.dev/sineWave, 1m) targetVariable=avg1m. "
-                        + "Do NOT use rolling-avg Mixin Blueprints for 1-minute averages вЂ” use historian avg(). "
+                        + "Do NOT use rolling-avg Mixin Blueprints for 1-minute averages — use historian avg(). "
                         + "For dashboard @dashboardContext rules prefer configure_platform_context_rule.";
             }
 
@@ -1066,7 +1066,7 @@ final class AgentAutomationTools {
 
     private static Map<String, Object> bindingSchema() {
         Map<String, Object> schema = new LinkedHashMap<>();
-        schema.put("ref", "root.platform.devices.foo/temperature вЂ” read(@/temperature) for rule-local vars");
+        schema.put("ref", "root.platform.devices.foo/temperature — read(@/temperature) for rule-local vars");
         schema.put("cel", "CEL expressions on same object, e.g. self.member1[\"value\"] > 0 && self.member2[\"value\"] > 0");
         schema.put("historian", Map.of(
                 "ruleKind", "historian",

@@ -17,6 +17,18 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.197] - 2026-08-30
+
+### Fixed
+
+- **Historian / periodic binding discovery** — `@bindingRules` path scan joins
+  `object_nodes` so orphan variables for deleted objects no longer WARN.
+- **SQL binding delete cascade** — deleting a tree object disables matching
+  application + tree SQL bindings targeting that subtree.
+- **AI agent UTF-8 mojibake** — operator-visible Russian/punctuation literals
+  restored in agent services.
+- **Prometheus** — `ispf.websocket.clients` gauge for open Object WS sessions.
+
 ## [0.9.196] - 2026-08-30
 
 ### Fixed

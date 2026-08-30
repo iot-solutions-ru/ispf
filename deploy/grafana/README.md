@@ -13,9 +13,7 @@ Dashboard **`ISPF Automation Pipeline`** (`uid: ispf-automation-pipeline`) — M
 | Object-change bus | `ispf_object_change_queue_size{lane}`, `ispf_object_change_workers_active{lane}`, `ispf_object_change_processed_total`, `ispf_object_change_queue_dropped_total` |
 | Event journal | `ispf_event_journal_queue_size`, `ispf_event_journal_flushed_total`, `ispf_event_journal_queue_full_sync_fallback_total`, `ispf_event_history_records` |
 | State | `ispf_workflow_instances_running`, `ispf_variable_history_samples` |
-| Infra | `ispf_drivers_active`, `ispf_drivers_connected`, `ispf_database_connections_*` |
-
-WebSocket session count: not on Prometheus yet — `GET /api/v1/platform/metrics` → `websocketClients`.
+| Infra | `ispf_drivers_active`, `ispf_drivers_connected`, `ispf_websocket_clients`, `ispf_database_connections_*` |
 
 Имена в Prometheus — с подчёркиваниями (`ispf_alert_fires_total`), Micrometer registry использует точки.
 

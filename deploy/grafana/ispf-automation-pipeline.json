@@ -1293,5 +1293,5 @@
   "title": "ISPF Automation Pipeline",
   "uid": "ispf-automation-pipeline",
   "version": 1,
-  "description": "ISPF automation + telemetry hot-path Micrometer metrics. Includes coalesce_drops / binding_bypass / historian_only. Prometheus pull: /actuator/prometheus (admin). OTLP push: ISPF → OTel Collector → Prometheus exporter :8889. WebSocket session count is not on Prometheus yet — use GET /api/v1/platform/metrics."
+  "description": "ISPF automation + telemetry hot-path Micrometer metrics. Includes coalesce_drops / binding_bypass / historian_only. Prometheus pull: /actuator/prometheus (admin). OTLP push: ISPF → OTel Collector → Prometheus exporter :8889. WebSocket sessions: ispf_websocket_clients."
 }

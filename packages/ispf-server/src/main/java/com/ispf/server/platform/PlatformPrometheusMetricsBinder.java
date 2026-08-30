@@ -4,6 +4,7 @@ import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
+import com.ispf.server.websocket.ObjectWebSocketHandler;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.HikariPoolMXBean;
 import io.micrometer.core.instrument.Gauge;
@@ -27,6 +28,7 @@ public class PlatformPrometheusMetricsBinder {
     private final WorkflowInstanceRepository workflowInstanceRepository;
     private final VariableSampleRepository variableSampleRepository;
     private final DriverRuntimeService driverRuntimeService;
+    private final ObjectWebSocketHandler objectWebSocketHandler;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final DataSource dataSource;
 
@@ -36,6 +38,7 @@ public class PlatformPrometheusMetricsBinder {
             WorkflowInstanceRepository workflowInstanceRepository,
             VariableSampleRepository variableSampleRepository,
             DriverRuntimeService driverRuntimeService,
+            ObjectWebSocketHandler objectWebSocketHandler,
             AutomationMetricsRecorder automationMetricsRecorder,
             DataSource dataSource
     ) {
@@ -44,6 +47,7 @@ public class PlatformPrometheusMetricsBinder {
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.variableSampleRepository = variableSampleRepository;
         this.driverRuntimeService = driverRuntimeService;
+        this.objectWebSocketHandler = objectWebSocketHandler;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.dataSource = dataSource;
     }
@@ -70,6 +74,10 @@ public class PlatformPrometheusMetricsBinder {
 
             Gauge.builder("ispf.drivers.connected", this, PlatformPrometheusMetricsBinder::connectedDrivers)
                     .description("Active drivers reporting connected")
+                    .register(registry);
+
+            Gauge.builder("ispf.websocket.clients", objectWebSocketHandler, ObjectWebSocketHandler::activeSessionCount)
+                    .description("Open object-tree WebSocket sessions (websocketClients)")
                     .register(registry);
 
             Gauge.builder("ispf.object_change.queue.size", automationMetricsRecorder,

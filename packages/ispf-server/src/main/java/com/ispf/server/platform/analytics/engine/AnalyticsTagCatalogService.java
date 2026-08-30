@@ -118,9 +118,10 @@ public class AnalyticsTagCatalogService {
     private List<String> objectPathsWithBindingRules() {
         return jdbcTemplate.queryForList(
                 """
-                        SELECT DISTINCT object_path
-                        FROM object_variables
-                        WHERE name = ?
+                        SELECT DISTINCT v.object_path
+                        FROM object_variables v
+                        INNER JOIN object_nodes n ON n.path = v.object_path
+                        WHERE v.name = ?
                         """,
                 String.class,
                 BindingRulesConstants.RULES_VARIABLE

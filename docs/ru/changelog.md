@@ -9,6 +9,15 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.197] - 2026-08-30
+
+### Исправлено
+
+- Historian/periodic `@bindingRules` только для существующих object_nodes.
+- Cascade disable SQL bindings при DELETE объекта.
+- UTF-8 mojibake в AI agent UI-строках.
+- Prometheus gauge `ispf.websocket.clients`.
+
 ## [0.9.196] - 2026-08-30
 
 ### Исправлено

@@ -132,7 +132,7 @@ final class AgentFunctionTools {
             @Override
             public String description() {
                 return "Reference skeleton for object-tree functions. Arg: topic (java|script|comparison). "
-                        + "Java functions compile on save; script functions use JSON steps (selectOne, return, вЂ¦).";
+                        + "Java functions compile on save; script functions use JSON steps (selectOne, return, …).";
             }
 
             @Override
@@ -153,7 +153,7 @@ final class AgentFunctionTools {
                                 "One public class implementing com.ispf.core.function.ObjectJavaFunction",
                                 "Method: DataRecord invoke(DataRecord input, JavaFunctionContext context)",
                                 "Build output with DataSchema.builder(...).field(name, FieldType.*) and DataRecord.single",
-                                "Compiled on save вЂ” compilation error returns ERROR from deploy_tree_function",
+                                "Compiled on save — compilation error returns ERROR from deploy_tree_function",
                                 "No Runtime/ProcessBuilder/reflection/java.net (except InetAddress)/java.io.File",
                                 "For SQL/workflow/readVariable use sourceType=script instead"
                         ));
@@ -178,10 +178,10 @@ final class AgentFunctionTools {
                         response.put("exampleSourceBody", SCRIPT_ECHO_TEMPLATE);
                     }
                     default -> {
-                        response.put("whenJava", "Complex logic, typed computation, no SQL вЂ” deploy_tree_function sourceType=java");
-                        response.put("whenScript", "SQL, readVariable, workflow steps, invoke_function вЂ” sourceType=script");
-                        response.put("whenAppDeploy", "Application BFF with app schema вЂ” deploy_app_function sourceType=script");
-                        response.put("whenBuiltin", "Platform handlers (acknowledgeAlarm, calculate) вЂ” descriptor only, no sourceBody");
+                        response.put("whenJava", "Complex logic, typed computation, no SQL — deploy_tree_function sourceType=java");
+                        response.put("whenScript", "SQL, readVariable, workflow steps, invoke_function — sourceType=script");
+                        response.put("whenAppDeploy", "Application BFF with app schema — deploy_app_function sourceType=script");
+                        response.put("whenBuiltin", "Platform handlers (acknowledgeAlarm, calculate) — descriptor only, no sourceBody");
                     }
                 }
                 return response;

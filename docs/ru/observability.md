@@ -36,6 +36,7 @@
 | `ispf.event_history.records` | gauge | Записей в журнале событий |
 | `ispf.workflow_instances.running` | gauge | Активные workflow instances |
 | `ispf.drivers.active` / `connected` | gauge | Драйверы |
+| `ispf.websocket.clients` | gauge | Открытые object-tree WebSocket-сессии (`websocketClients`) |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
 
 ### Проверка метрик (синхронизация дерева объектов)
@@ -91,8 +92,6 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).
 
 **Опциональный экспорт Grafana** (те же серии Micrometer): [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../../deploy/grafana/README.md). Предпочитайте first-party dashboards выше, если Prometheus уже не эксплуатируете.
-
-**WebSocket sessions** в Prometheus пока не экспортируются — first-party Metrics / probe variable `websocketClients` — source of truth (`GET /api/v1/platform/metrics`).
 
 **Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py) на сервере с fixtures (`demo-sensor-01`).
 

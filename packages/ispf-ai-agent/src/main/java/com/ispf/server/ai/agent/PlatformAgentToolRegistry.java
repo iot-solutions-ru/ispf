@@ -525,7 +525,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Parent not found: " + parentPath,
-                            "hint", "Call list_objects on an existing parent folder and use paths from the tool result вЂ” "
+                            "hint", "Call list_objects on an existing parent folder and use paths from the tool result — "
                                     + "do not invent parentPath from playbooks or recipes."
                     );
                 }
@@ -537,7 +537,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                             "status", "ERROR",
                             "error", "Object exists: " + fullPath,
                             "hint", "Reuse this object: get_object path=" + fullPath
-                                    + " and list_variables вЂ” do not create a duplicate.",
+                                    + " and list_variables — do not create a duplicate.",
                             "existingPath", fullPath
                     );
                 }
@@ -712,7 +712,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                             "widgetCount", widgetCount(objectMapper, layoutJson),
                             "templates", DashboardService.layoutTemplateNames(),
                             "hint", "Widgets live in layout JSON only. Presentable grid: columns=84 rowHeight=8; "
-                                    + "KPI w=21|28 h=14; charts/tables в‰Ґ42Г—28. "
+                                    + "KPI w=21|28 h=14; charts/tables ≥42×28. "
                                     + "get_widget_catalog for types; set_dashboard_layout or add_dashboard_widget to edit."
                     );
                 } catch (Exception ex) {
@@ -740,7 +740,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                         + "OR template (snmp-host-monitoring | virtual-cluster-overview | "
                         + "virtual-cluster-detail | empty). Prefer template= for standard screens. "
                         + "Custom layoutJson MUST be columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row; "
-                        + "charts/tables wв‰Ґ42 hв‰Ґ28; sizes multiples of 7 вЂ” never legacy crumbs w=2..6. "
+                        + "charts/tables w≥42 h≥28; sizes multiples of 7 — never legacy crumbs w=2..6. "
                         + "Requires DASHBOARD object at path. Never use set_variable for layout.";
             }
 
@@ -812,8 +812,8 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
             public String description() {
                 return "Append or replace one widget in layout.widgets[] (by id). Args: path (required), "
                         + "widget (id, type, title, x, y, w, h, variableName, valueField, objectPath OR selectionKey). "
-                        + "Fine grid columns=84 rowHeight=8: KPI tiles w=21|28 h=14; charts/tables wв‰Ґ42 hв‰Ґ28; "
-                        + "scada-mimic w=84 h=63; sizes multiples of 7 вЂ” never w=2..6 crumbs. "
+                        + "Fine grid columns=84 rowHeight=8: KPI tiles w=21|28 h=14; charts/tables w≥42 h≥28; "
+                        + "scada-mimic w=84 h=63; sizes multiples of 7 — never w=2..6 crumbs. "
                         + "For 3+ widgets prefer one set_dashboard_layout layoutJson/template= over many calls. "
                         + "list_variables on device first; columnsJson must be a JSON string.";
             }

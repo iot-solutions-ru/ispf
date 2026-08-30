@@ -9,7 +9,7 @@ Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
 | Pin | Meaning |
 |-----|---------|
 | **0.9.102** | Last **full code audit** of this scorecard (July 2026). Scores and evidence tables below are frozen to that audit. |
-| **0.9.196** | Current `main` / demostand as of 2026-08-30 (report MEMBER ACL + prior hygiene). **Not** a re-scored matrix. |
+| **0.9.197** | Current `main` / demostand as of 2026-08-30 (binding hygiene + agent UTF-8 + WS prometheus). **Not** a re-scored matrix. |
 
 **Current column:** **Code verified** — evidence from `main` source and tests at audit baseline **0.9.102**.
 

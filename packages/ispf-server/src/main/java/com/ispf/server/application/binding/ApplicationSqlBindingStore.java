@@ -166,6 +166,25 @@ public class ApplicationSqlBindingStore {
         );
     }
 
+    /**
+     * Disable scheduled/app bindings whose target object path is {@code path} or under it.
+     * Used when tree nodes are deleted so refresh ticks do not chase missing targets.
+     */
+    public int disableForObjectSubtree(String path) {
+        if (path == null || path.isBlank()) {
+            return 0;
+        }
+        return jdbcTemplate.update("""
+                UPDATE %s
+                SET enabled = FALSE
+                WHERE enabled = TRUE
+                  AND (object_path = ? OR object_path LIKE ?)
+                """.formatted(bindingsTable),
+                path,
+                path + ".%"
+        );
+    }
+
     public Optional<Instant> lastRefreshedAt(UUID id) {
         return jdbcTemplate.query("""
                 SELECT last_refreshed_at FROM %s WHERE id = ?

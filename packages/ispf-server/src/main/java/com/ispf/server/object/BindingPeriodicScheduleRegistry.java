@@ -69,9 +69,10 @@ public class BindingPeriodicScheduleRegistry {
     public List<String> objectPathsWithBindingRules() {
         return jdbcTemplate.queryForList(
                 """
-                        SELECT DISTINCT object_path
-                        FROM object_variables
-                        WHERE name = '@bindingRules'
+                        SELECT DISTINCT v.object_path
+                        FROM object_variables v
+                        INNER JOIN object_nodes n ON n.path = v.object_path
+                        WHERE v.name = '@bindingRules'
                         """,
                 String.class
         );

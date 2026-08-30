@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **ispf-vps jar 0.9.197:** bindingRules⋈object_nodes; SQL binding delete cascade; AI agent UTF-8 mojibake; Prometheus `ispf.websocket.clients`. |
 | 2026-08-30 | **ispf-vps jar 0.9.196:** report tree-variables MEMBER ACL + object ACL on report API/agent; CEL 0.9.195 verify smoke archived. |
 | 2026-08-30 | **ispf-vps jar 0.9.195:** scheduler idle gate until object tree ready; SQL binding soft-fail on missing targets; legacy `root.users.<user>` → `root.platform.security.users.<user>` sync; dogfood-deploy path corrected. HMI 2h offline soak still deferred. |
 | 2026-08-30 | **ispf-vps jar 0.9.194:** WebSocket `/ws/objects` handshake no longer hard-fails when local `JwtDecoder` cannot resolve `example.invalid` issuer (opaque tokens skip JWT; resolution errors return false). |

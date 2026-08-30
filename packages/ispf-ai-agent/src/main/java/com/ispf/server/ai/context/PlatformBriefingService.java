@@ -159,7 +159,7 @@ public class PlatformBriefingService {
                     .append(profile.getOrDefault("driverId", "virtual"))
                     .append(": ")
                     .append(profile.get("vars"))
-                    .append(" вЂ” ")
+                    .append(" — ")
                     .append(profile.get("use"))
                     .append('\n');
         }
@@ -286,7 +286,7 @@ public class PlatformBriefingService {
         if (PlatformVersionSupport.compare(packNumeric, serverVersion) < 0) {
             sb.append("WARNING: context pack (")
                     .append(packVersion)
-                    .append(") is older than server вЂ” use list_objects/list_applications for live state, ")
+                    .append(") is older than server — use list_objects/list_applications for live state, ")
                     .append("not search_context alone.\n");
         }
     }
@@ -382,7 +382,7 @@ public class PlatformBriefingService {
                         .append(folder.path())
                         .append(" [")
                         .append(folder.type())
-                        .append("] вЂ” ")
+                        .append("] — ")
                         .append(items.size())
                         .append(" children\n");
                 int shown = 0;
@@ -422,6 +422,6 @@ public class PlatformBriefingService {
         if (text.length() <= maxChars) {
             return text;
         }
-        return text.substring(0, maxChars - 20) + "\nвЂ¦ (truncated)";
+        return text.substring(0, maxChars - 20) + "\n… (truncated)";
     }
 }

@@ -73,7 +73,7 @@ final class AgentVirtualDeviceTools {
                         "driverId", "virtual",
                         "profiles", List.of(),
                         "defaults", VirtualDeviceDefaults.catalogRow(registered),
-                        "hint", "No profiles вЂ” one OOTB virtual device. Domain enrichment via mixin blueprints."
+                        "hint", "No profiles — one OOTB virtual device. Domain enrichment via mixin blueprints."
                 );
             }
         };
@@ -120,7 +120,7 @@ final class AgentVirtualDeviceTools {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Model not registered: " + VirtualDeviceDefaults.TEMPLATE_ID
-                                    + " вЂ” server bootstrap issue; contact admin",
+                                    + " — server bootstrap issue; contact admin",
                             "templateId", VirtualDeviceDefaults.TEMPLATE_ID
                     );
                 }
@@ -197,7 +197,7 @@ final class AgentVirtualDeviceTools {
                         result.put("connected", runtimeStatus.connected());
                     }
                     if (telemetryCount < 1) {
-                        result.put("warning", "No telemetry variables yet вЂ” run driver_control action=poll or list_variables");
+                        result.put("warning", "No telemetry variables yet — run driver_control action=poll or list_variables");
                     }
                     return result;
                 } catch (Exception ex) {

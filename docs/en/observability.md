@@ -51,6 +51,7 @@ Key ISPF metrics (Micrometer):
 | `ispf.event_history.records` | gauge | Event journal record count |
 | `ispf.workflow_instances.running` | gauge | Active workflow instances |
 | `ispf.drivers.active` / `connected` | gauge | Drivers |
+| `ispf.websocket.clients` | gauge | Open object-tree WebSocket sessions (`websocketClients`) |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
 
 ### Metrics probe (object tree sync)
@@ -106,8 +107,6 @@ ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
 Details: [demostands](demostands.md) (verification section), [vps-demostand](vps-demostand.md) (ops example).
 
 **Optional Grafana export** (same Micrometer series): [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](../../deploy/grafana/README.md). Prefer first-party dashboards above unless you already operate Prometheus.
-
-**WebSocket sessions** on Prometheus are not exported yet — first-party Metrics / probe variable `websocketClients` is the source of truth (`GET /api/v1/platform/metrics`).
 
 **Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py) against a fixtures-enabled server (`demo-sensor-01`).
 

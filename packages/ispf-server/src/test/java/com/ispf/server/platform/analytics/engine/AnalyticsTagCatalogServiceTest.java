@@ -13,6 +13,7 @@ import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -61,8 +62,8 @@ class AnalyticsTagCatalogServiceTest {
                 extensionRegistry,
                 jdbcTemplate
         );
-        when(extensionRegistry.registeredFunctions()).thenReturn(List.of());
-        when(jdbcTemplate.queryForList(any(String.class), eq(String.class), any()))
+        org.mockito.Mockito.lenient().when(extensionRegistry.registeredFunctions()).thenReturn(List.of());
+        org.mockito.Mockito.lenient().when(jdbcTemplate.queryForList(any(String.class), eq(String.class), any()))
                 .thenReturn(List.of(DEVICE_A, DEVICE_B));
     }
 
@@ -77,6 +78,19 @@ class AnalyticsTagCatalogServiceTest {
         verify(bindingRulesService).listRules(DEVICE_A);
         verify(bindingRulesService).listRules(DEVICE_B);
         verify(objectManager, org.mockito.Mockito.never()).tree();
+    }
+
+    @Test
+    void objectPathsQueryJoinsObjectNodesToSkipOrphans() {
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        when(jdbcTemplate.queryForList(sqlCaptor.capture(), eq(String.class), any()))
+                .thenReturn(List.of());
+
+        catalogService.listAllTagDefinitions();
+
+        String sql = sqlCaptor.getValue().replaceAll("\\s+", " ").toLowerCase();
+        assertThat(sql).contains("join object_nodes");
+        assertThat(sql).contains("n.path = v.object_path");
     }
 
     @Test

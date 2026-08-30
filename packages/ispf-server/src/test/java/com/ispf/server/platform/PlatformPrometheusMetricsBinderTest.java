@@ -21,6 +21,7 @@ class PlatformPrometheusMetricsBinderTest {
         assertThat(meterRegistry.find("ispf.workflow_instances.running").gauge()).isNotNull();
         assertThat(meterRegistry.find("ispf.variable_history.samples").gauge()).isNotNull();
         assertThat(meterRegistry.find("ispf.drivers.active").gauge()).isNotNull();
+        assertThat(meterRegistry.find("ispf.websocket.clients").gauge()).isNotNull();
         assertThat(meterRegistry.find("ispf.object_change.queue.size").tag("lane", "total").gauge()).isNotNull();
         assertThat(meterRegistry.find("ispf.alert.fires.total").counter()).isNotNull();
     }
