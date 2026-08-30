@@ -9,6 +9,14 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.195] - 2026-08-30
+
+### Исправлено
+
+- Scheduler idle gate — periodic/application SQL/analytics ждут `ObjectManager.isInitialized()`.
+- SQL binding soft-fail — отсутствующий target → warn + skip.
+- Legacy `root.users.<user>` → `root.platform.security.users.<user>` при syncUser.
+
 ## [0.9.194] - 2026-08-30
 
 ### Исправлено

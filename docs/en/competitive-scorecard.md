@@ -9,7 +9,7 @@ Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
 | Pin | Meaning |
 |-----|---------|
 | **0.9.102** | Last **full code audit** of this scorecard (July 2026). Scores and evidence tables below are frozen to that audit. |
-| **0.9.192** | Current `main` / demostand as of 2026-08-30. **Not** a re-scored matrix — ship notes and post-audit deltas advance without reopening every dimension. |
+| **0.9.195** | Current `main` / demostand as of 2026-08-30 (WS handshake fix + scheduler/SQL/legacy-user hygiene). **Not** a re-scored matrix. |
 
 **Current column:** **Code verified** — evidence from `main` source and tests at audit baseline **0.9.102**.
 

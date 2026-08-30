@@ -17,6 +17,20 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.195] - 2026-08-30
+
+### Fixed
+
+- **Scheduler idle gate** — periodic binding / application SQL binding / analytics
+  schedulers skip work until `ObjectManager` is initialized (avoids early-boot
+  `ObjectNotFoundException` ERROR spam before the object tree is ready).
+- **SQL binding soft-fail** — missing target object or variable on refresh logs a
+  warning and skips the binding instead of failing the scheduler tick
+  (`SqlBindingObjectService`, `ApplicationSqlBindingService`).
+- **Legacy user object path** — `PlatformUserObjectTreeService.syncUser` migrates
+  exact `root.users.<username>` to `root.platform.security.users.<username>`
+  before ensuring the tree node (fixes `dogfood-deploy` sync ERROR).
+
 ## [0.9.194] - 2026-08-30
 
 ### Fixed

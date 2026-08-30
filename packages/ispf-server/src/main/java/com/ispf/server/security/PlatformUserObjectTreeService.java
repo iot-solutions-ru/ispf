@@ -174,8 +174,7 @@ public class PlatformUserObjectTreeService {
             return objectPath;
         }
         String legacyExact = PlatformUserService.LEGACY_USERS_PATH_PREFIX + username;
-        if (legacyExact.equals(objectPath)
-                || objectPath.startsWith(PlatformUserService.LEGACY_USERS_PATH_PREFIX)) {
+        if (legacyExact.equals(objectPath)) {
             return PlatformUserService.USERS_PATH_PREFIX + username;
         }
         return objectPath;

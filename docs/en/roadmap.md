@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **ispf-vps jar 0.9.195:** scheduler idle gate until object tree ready; SQL binding soft-fail on missing targets; legacy `root.users.<user>` → `root.platform.security.users.<user>` sync; dogfood-deploy path corrected. HMI 2h offline soak still deferred. |
 | 2026-08-30 | **ispf-vps jar 0.9.194:** WebSocket `/ws/objects` handshake no longer hard-fails when local `JwtDecoder` cannot resolve `example.invalid` issuer (opaque tokens skip JWT; resolution errors return false). |
 | 2026-08-30 | **CI nightly repaired:** Invalid workflow since 2026-08-24 (`run`+`uses` merged on BL-180 upload) caused empty failed push runs and stalled schedules; fixed as `nightly.yml` + push-ack (heavy jobs schedule/dispatch only). |
 | 2026-08-30 | **HMI live FPS (demostand 0.9.193):** hardened `E2E_LIVE_FPS` against real `ui-pump-station` mimic; median 60 FPS + 479 Object WS `VARIABLE_UPDATED`; evidence `docs/evidence/hmi-fps/`. HMI 2h offline field soak still deferred. |
