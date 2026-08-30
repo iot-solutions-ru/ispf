@@ -17,6 +17,14 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.196] - 2026-08-30
+
+### Fixed
+
+- **Report tree-variables MEMBER ACL** — interactive report/export/agent runs omit
+  per-variable ACL-denied rows (`VariableMemberAccessService`); report API paths
+  require object read/write. CEL demostand verify smoke archived for 0.9.195.
+
 ## [0.9.195] - 2026-08-30
 
 ### Fixed

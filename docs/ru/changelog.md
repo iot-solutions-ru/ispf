@@ -9,6 +9,12 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.196] - 2026-08-30
+
+### Исправлено
+
+- MEMBER ACL на tree-variables reports (API/agent/export); CEL smoke evidence 0.9.195.
+
 ## [0.9.195] - 2026-08-30
 
 ### Исправлено
