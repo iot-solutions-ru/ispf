@@ -1079,7 +1079,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |
 | БЛ-153 | **MFA** | П2 | **Готово** — TOTP GA. WebAuthn / Keycloak OTP → **БЛ-194** — [security](security.md) |
-| БЛ-154 | **ACL для каждой переменной** | П2 | **Готово** — R/W + history + `invokeRoles` API/UI. Follow-up по доверенному каналу закрыт: member ACL действует для аналитики, федеративного туннеля с `onBehalfOf`, инструментов агента и WebSocket |
+| БЛ-154 | **ACL для каждой переменной** | П2 | **Готово** — R/W + history + `invokeRoles` API/UI. Follow-up по доверенному каналу закрыт: member ACL для аналитики, federation tunnel + HTTP peer on-behalf-of (channel∩roles), агента, WebSocket, Haystack/Brick; hub fail-closed для remote-only proxy vars |
 | БЛ-155 | **Строгая мультитенантность** | П2 | **Готово** (честно) — SaaS `tenant-admin` + logical A≠B path/API; OIDC claim; hard schema provision/drop; **PostgreSQL RLS** на shared object-таблицах (`ispf.tenant.db-row-isolation`); физический schema split по-прежнему опционален — [multi-tenant](multi-tenant.md) |
 | БЛ-156 | **Аудиторский след GA** | П2 | Неизменяемый журнал аудита, экспорт, веб-перехватчик SIEM |
 | БЛ-157 | **Шаблоны ролей** | П2 | Пользовательские роли; Разрешения области действия ISA-95 |
