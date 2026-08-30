@@ -7,6 +7,8 @@ import com.ispf.server.report.ReportService;
 import com.ispf.server.report.ReportTemplateFormatDetector;
 import com.ispf.server.report.ReportTemplateRouter;
 import com.ispf.server.report.ReportTemplateStore;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -39,31 +41,39 @@ public class ReportController {
     private final ReportExportService reportExportService;
     private final ReportTemplateRouter templateRouter;
     private final PlatformJobService platformJobService;
+    private final ObjectAccessService objectAccessService;
 
     public ReportController(
             ReportService reportService,
             ReportExportService reportExportService,
             ReportTemplateRouter templateRouter,
-            PlatformJobService platformJobService
+            PlatformJobService platformJobService,
+            ObjectAccessService objectAccessService
     ) {
         this.reportService = reportService;
         this.reportExportService = reportExportService;
         this.templateRouter = templateRouter;
         this.platformJobService = platformJobService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/by-path")
-    public ReportService.ReportView get(@RequestParam String path) {
-        return reportService.getReport(path);
+    public ReportService.ReportView get(@RequestParam String path, Authentication authentication) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireRead(resolved, authentication);
+        return reportService.getReport(resolved);
     }
 
     @PutMapping("/by-path/definition")
     public ReportService.ReportView saveDefinition(
             @RequestParam String path,
-            @Valid @RequestBody SaveDefinitionRequest request
+            @Valid @RequestBody SaveDefinitionRequest request,
+            Authentication authentication
     ) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireWrite(resolved, authentication);
         return reportService.saveDefinition(
-                path,
+                resolved,
                 new ReportService.SaveReportDefinitionRequest(
                         request.title(),
                         request.dataSourcePath(),
@@ -86,10 +96,13 @@ public class ReportController {
     @PutMapping("/by-path/tree-variables-definition")
     public ReportService.ReportView saveTreeVariablesDefinition(
             @RequestParam String path,
-            @Valid @RequestBody TreeVariablesDefinitionRequest request
+            @Valid @RequestBody TreeVariablesDefinitionRequest request,
+            Authentication authentication
     ) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireWrite(resolved, authentication);
         return reportService.saveTreeVariablesDefinition(
-                path,
+                resolved,
                 new ReportService.SaveTreeVariablesDefinitionRequest(
                         request.title(),
                         request.devicePathPattern(),
@@ -108,31 +121,43 @@ public class ReportController {
     @PutMapping("/by-path/layout")
     public ReportService.ReportView saveLayout(
             @RequestParam String path,
-            @RequestBody LayoutRequest request
+            @RequestBody LayoutRequest request,
+            Authentication authentication
     ) {
-        return reportService.saveLayout(path, request.layout());
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireWrite(resolved, authentication);
+        return reportService.saveLayout(resolved, request.layout());
     }
 
     @PostMapping("/by-path/run")
     public Map<String, Object> run(
             @RequestParam String path,
-            @RequestBody(required = false) RunRequest request
+            @RequestBody(required = false) RunRequest request,
+            Authentication authentication
     ) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireRead(resolved, authentication);
         Map<String, Object> parameters = request != null && request.parameters() != null
                 ? request.parameters()
                 : Map.of();
-        return reportService.run(path, parameters);
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> reportService.run(resolved, parameters)
+        );
     }
 
     @PostMapping("/by-path/run-async")
     public ResponseEntity<Map<String, Object>> runAsync(
             @RequestParam String path,
-            @RequestBody(required = false) RunRequest request
+            @RequestBody(required = false) RunRequest request,
+            Authentication authentication
     ) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireRead(resolved, authentication);
         Map<String, Object> parameters = request != null && request.parameters() != null
                 ? request.parameters()
                 : Map.of();
-        var jobId = platformJobService.submitReportRun(path, parameters, currentUserName());
+        var jobId = platformJobService.submitReportRun(resolved, parameters, currentUserName());
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
                 "jobId", jobId.toString(),
                 "status", PlatformJobService.JobStatus.QUEUED.name()
@@ -143,11 +168,17 @@ public class ReportController {
     public ResponseEntity<byte[]> export(
             @RequestParam String path,
             @RequestParam(defaultValue = "csv") String format,
-            HttpServletRequest request
+            HttpServletRequest request,
+            Authentication authentication
     ) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireRead(resolved, authentication);
         Map<String, Object> parameters = queryParameters(request);
         ReportExportFormat exportFormat = ReportExportFormat.parse(format);
-        ReportExportService.ExportedFile exported = reportExportService.export(path, exportFormat, parameters);
+        ReportExportService.ExportedFile exported = VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> reportExportService.export(resolved, exportFormat, parameters)
+        );
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + exported.filename() + "\"")
                 .contentType(MediaType.parseMediaType(exported.contentType()))
@@ -158,36 +189,50 @@ public class ReportController {
     public ReportService.ReportView uploadTemplate(
             @RequestParam String path,
             @RequestParam String format,
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication
     ) throws Exception {
-        return saveUploadedTemplate(path, format, file);
+        return saveUploadedTemplate(path, format, file, authentication);
     }
 
     @PostMapping(value = "/by-path/template", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ReportService.ReportView uploadTemplatePost(
             @RequestParam String path,
             @RequestParam String format,
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication
     ) throws Exception {
-        return saveUploadedTemplate(path, format, file);
+        return saveUploadedTemplate(path, format, file, authentication);
     }
 
-    private ReportService.ReportView saveUploadedTemplate(String path, String format, MultipartFile file) throws Exception {
+    private ReportService.ReportView saveUploadedTemplate(
+            String path,
+            String format,
+            MultipartFile file,
+            Authentication authentication
+    ) throws Exception {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireWrite(resolved, authentication);
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Template file is required");
         }
         byte[] content = file.getBytes();
         String resolvedFormat = ReportTemplateFormatDetector.resolve(format, file.getOriginalFilename(), content);
         templateRouter.validate(content, resolvedFormat);
-        return reportService.saveTemplate(path, resolvedFormat, content);
+        return reportService.saveTemplate(resolved, resolvedFormat, content);
     }
 
     @GetMapping("/by-path/template")
-    public ResponseEntity<byte[]> downloadTemplate(@RequestParam String path) {
-        ReportTemplateStore.StoredTemplate template = reportService.getTemplate(path)
-                .orElseThrow(() -> new IllegalArgumentException("Template not configured for report: " + path));
+    public ResponseEntity<byte[]> downloadTemplate(
+            @RequestParam String path,
+            Authentication authentication
+    ) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireRead(resolved, authentication);
+        ReportTemplateStore.StoredTemplate template = reportService.getTemplate(resolved)
+                .orElseThrow(() -> new IllegalArgumentException("Template not configured for report: " + resolved));
         MediaType mediaType = templateMediaType(template.format());
-        String filename = ReportService.reportIdFromPath(path) + "." + template.format();
+        String filename = ReportService.reportIdFromPath(resolved) + "." + template.format();
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(mediaType)
@@ -195,8 +240,13 @@ public class ReportController {
     }
 
     @DeleteMapping("/by-path/template")
-    public ReportService.ReportView deleteTemplate(@RequestParam String path) {
-        return reportService.deleteTemplate(path);
+    public ReportService.ReportView deleteTemplate(
+            @RequestParam String path,
+            Authentication authentication
+    ) {
+        String resolved = ReportService.resolveReportPath(path);
+        objectAccessService.requireWrite(resolved, authentication);
+        return reportService.deleteTemplate(resolved);
     }
 
     private static MediaType templateMediaType(String format) {

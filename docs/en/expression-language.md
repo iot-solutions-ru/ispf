@@ -31,7 +31,7 @@ Boolean CEL used in alerts, bindings, platform context rules, BPMN design-time g
 | `POST /api/v1/expressions/verify` | Formal only |
 | `POST /api/v1/expressions/verify-equivalence` | Prove `left ≡ right` |
 
-Stable finding `codes` (for UI / AI): `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY`, `NOT_TAUTOLOGY`, `EQUIVALENT`, … — see [ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md). Historian helpers in boolean templates rewrite to correlated `self.__histN` placeholders before SMT. Demostand smoke (0.9.192): [`docs/evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json`](../evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json).
+Stable finding `codes` (for UI / AI): `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY`, `NOT_TAUTOLOGY`, `EQUIVALENT`, … — see [ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md). Historian helpers in boolean templates rewrite to correlated `self.__histN` placeholders before SMT. Demostand smoke (0.9.195): [`docs/evidence/cel-formal/2026-08-30-ispf-vps-0.9.195-verify-smoke.json`](../evidence/cel-formal/2026-08-30-ispf-vps-0.9.195-verify-smoke.json) (0.9.192 archive retained).
 
 **Non-goal:** CEL Policy aggregate packs (multi-hit diagnostic YAML) — not productized.
 

@@ -20,8 +20,11 @@ import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarParameterEnricher;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -78,6 +81,7 @@ public class ReportService {
     private final ObjectMapper objectMapper;
     private final PlatformCalendarParameterEnricher calendarParameterEnricher;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public ReportService(
             ObjectManager objectManager,
@@ -93,7 +97,8 @@ public class ReportService {
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
             PlatformCalendarParameterEnricher calendarParameterEnricher,
-            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.objectManager = objectManager;
         this.BlueprintRegistry = BlueprintRegistry;
@@ -109,6 +114,7 @@ public class ReportService {
         this.objectMapper = objectMapper;
         this.calendarParameterEnricher = calendarParameterEnricher;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     public static String reportPath(String reportId) {
@@ -556,12 +562,22 @@ public class ReportService {
             throw new IllegalArgumentException("Report variableName is required for tree-variables reports");
         }
 
+        Authentication memberAuthentication = null;
+        if (VariableAclRequestContext.isMemberEnforced()) {
+            memberAuthentication = VariableAclRequestContext.requireAuthentication();
+        }
+
         List<Map<String, Object>> rows = new ArrayList<>();
         for (PlatformObject node : objectManager.tree().all()) {
             if (node.type() != ObjectType.DEVICE) {
                 continue;
             }
             if (!matchesDevicePathPattern(node.path(), pattern)) {
+                continue;
+            }
+            // BL-154: interactive MEMBER runs omit devices/variables the caller cannot read.
+            if (memberAuthentication != null
+                    && !variableMemberAccessService.canRead(node.path(), variableName, memberAuthentication)) {
                 continue;
             }
             Optional<DataRecord> record = node.getVariable(variableName).flatMap(Variable::value);

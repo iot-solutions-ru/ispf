@@ -31,7 +31,7 @@
 | `POST /api/v1/expressions/verify` | Только formal |
 | `POST /api/v1/expressions/verify-equivalence` | Доказать `left ≡ right` |
 
-Коды findings: `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY`, … — [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md). Smoke demostand 0.9.192: [`docs/evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json`](../evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json).
+Коды findings: `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY`, … — [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md). Smoke demostand 0.9.195: [`docs/evidence/cel-formal/2026-08-30-ispf-vps-0.9.195-verify-smoke.json`](../evidence/cel-formal/2026-08-30-ispf-vps-0.9.195-verify-smoke.json) (архив 0.9.192 сохранён).
 
 **Non-goal:** CEL Policy aggregate packs — не продуктовая поверхность.
 

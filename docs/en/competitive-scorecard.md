@@ -72,7 +72,7 @@ Evidence classes: **REAL** (runtime + tests), **PARTIAL** (core works, known gap
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES is marketplace product (`mes-platform`, vendor IoT Solutions); base platform does not seed `root.platform.mes`. Bundle JSON/SQL/script BFF; no standalone MES engine module |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
 | 9 | AI-assisted dev | 9.0 | **REAL** | BL-178 full live suite **52/52 @100%** (`build/agent-regression/live-suite-results.json`, `mode=full`, ~2026-07-18/19); BL-177 multi-app `AgentLiveDeploySmokeTest` matrix (`mes-platform`, `building-hvac`, `platform-primitive`); BL-180 multi-domain `AiSolutionGeneratorLiveSmokeTest` (HVAC/MES/SCADA, `composition=primitives`); draft fallback `mode=draft` (not stub); live smoke runs require `ISPF_LLM_SMOKE=true` |
-| 10 | Security / RBAC | 8.5 | **PARTIAL** | TOTP MFA GA **Done** (BL-153); per-var/event/function ACL **Done** (BL-154) including trusted-channel + OQ residual (2026-08-30, pending full audit rescore); audit SIEM + role-template scopes **Done** (BL-156/157); SaaS tenant-admin + logical A≠B path/API **Done** (BL-155); PostgreSQL RLS row isolation **Done** on shared tables (`db-row-isolation`); hard schema table routing still optional; WebAuthn → BL-194 |
+| 10 | Security / RBAC | 8.0 | **PARTIAL** | TOTP MFA GA **Done** (BL-153); per-var/event/function ACL **Done** (BL-154) including trusted-channel + OQ residual (2026-08-30, pending full audit rescore); audit SIEM + role-template scopes **Done** (BL-156/157); SaaS tenant-admin + logical A≠B path/API **Done** (BL-155); PostgreSQL RLS row isolation **Done** on shared tables (`db-row-isolation`); hard schema table routing still optional; WebAuthn → BL-194 |
 | 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | Federation MoM usable path **REAL** (BL-188); Helm lint/template + ARM edge compose **Done** (BL-186/187); no CI load proof for cluster / 10+ peer scale |
 | 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA **Done** (BL-183 — multi-endpoint + CI catalog gate); partner directory + enroll `"source": "db"` (BL-184); symbol packs BL-185 Done; Partner Portal sync still external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADRs; code comments mark stubs honestly |
@@ -119,7 +119,7 @@ Historical **program** scores tracked BL delivery velocity; they are **not** com
 | 7 | MES / ISA-95 | 6.2 | 6.4 | 6.6 | 8.5 | 8.8 | 9.5 | 9.6 | 9.7 |
 | 8 | Low-code velocity | 8.5 | 8.6 | 8.7 | 8.8 | 9.0 | 9.5 | 9.6 | 9.7 |
 | 9 | AI-assisted development | 9.4 | 9.6 | 9.7 | 9.8 | 9.85 | 9.95 | 9.97 | 9.98 |
-| 10 | Security / RBAC | 7.2 | 7.3 | 7.4 | 8.5 | 8.8 | 9.3 | 9.5 | 9.7 |
+| 10 | Security / RBAC | 7.2 | 7.3 | 7.4 | 8.0 | 8.8 | 9.3 | 9.5 | 9.7 |
 | 11 | Deploy / scale / edge | 8.3 | 8.6 | 9.0 | 9.2 | 9.3 | 9.5 | 9.6 | 9.7 |
 | 12 | Ecosystem / marketplace | 5.0 | 5.5 | 6.0 | 8.5 | 8.7 | 9.0 | 9.3 | 9.6 |
 | 13 | Documentation / DX | 9.3 | 9.4 | 9.5 | 9.6 | 9.7 | 9.8 | 9.85 | 9.9 |

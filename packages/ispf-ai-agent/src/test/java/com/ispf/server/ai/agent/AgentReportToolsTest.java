@@ -206,4 +206,25 @@ class AgentReportToolsTest {
         assertEquals(true, result.get("created"));
         verify(reportService).saveTreeVariablesDefinition(eq(path), any());
     }
+
+    @Test
+    void runReportEnforcesObjectReadAndRunsUnderMemberAcl() throws Exception {
+        String path = "root.platform.reports.demo";
+        when(tenantScopeService.isPathVisible(eq(path), any())).thenReturn(true);
+        when(reportService.run(eq(path), any())).thenReturn(Map.of(
+                "path", path,
+                "rows", List.of(),
+                "rowCount", 0,
+                "truncated", false
+        ));
+
+        Map<String, Object> result = tool("run_report").execute(
+                Map.of("path", path, "parameters", Map.of("status", "ready")),
+                new AgentContext("operator", authentication, null)
+        );
+
+        assertEquals("OK", result.get("status"));
+        verify(objectAccessService).requireRead(path, authentication);
+        verify(reportService).run(eq(path), eq(Map.of("status", "ready")));
+    }
 }

@@ -6,6 +6,7 @@ import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import com.ispf.server.tenant.TenantScopeService;
 
 import java.util.ArrayList;
@@ -174,7 +175,11 @@ final class AgentReportTools {
                 if (raw instanceof Map<?, ?> map) {
                     parameters = (Map<String, Object>) map;
                 }
-                Map<String, Object> result = reportService.run(path, parameters);
+                Map<String, Object> finalParameters = parameters;
+                Map<String, Object> result = VariableAclRequestContext.callAsMember(
+                        auth,
+                        () -> reportService.run(path, finalParameters)
+                );
                 return Map.of("status", "OK", "path", path, "result", result);
             }
         };

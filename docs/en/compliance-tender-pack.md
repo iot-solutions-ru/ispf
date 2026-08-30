@@ -104,7 +104,7 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 | Offline / DMZ install | [air-gap-deployment](air-gap-deployment.md) |
 | License / SBOM obligations | [license-compliance](license-compliance.md) |
 | Training (not compliance cert) | [certification](certification.md) |
-| Score honesty | [competitive-scorecard](competitive-scorecard.md) — Security **7.5 PARTIAL** |
+| Score honesty | [competitive-scorecard](competitive-scorecard.md) — Security **8.0 PARTIAL** (frozen matrix; pending full audit) |
 | Roadmap / DoD | [roadmap](roadmap.md#definition-of-done--1010-overall) item 10 |
 
 ---

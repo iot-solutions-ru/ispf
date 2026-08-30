@@ -12,6 +12,7 @@ import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
 import com.ispf.server.report.ReportExportFormat;
+import com.ispf.server.report.ReportService;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import com.ispf.server.application.bundle.BundleDependencyException;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
@@ -19,9 +20,12 @@ import com.ispf.server.application.bundle.BundleManifestValidator;
 import com.ispf.server.application.bundle.BundleValidationResult;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
 import com.ispf.server.license.CommercialLicenseException;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,6 +56,7 @@ public class ApplicationController {
     private final BundleManifestValidator bundleManifestValidator;
     private final ObjectMapper objectMapper;
     private final CommercialBundleLicenseVerifier licenseVerifier;
+    private final ObjectAccessService objectAccessService;
 
     public ApplicationController(
             ApplicationDataService dataService,
@@ -64,7 +69,8 @@ public class ApplicationController {
             ApplicationEventCatalogService eventCatalogService,
             BundleManifestValidator bundleManifestValidator,
             ObjectMapper objectMapper,
-            CommercialBundleLicenseVerifier licenseVerifier
+            CommercialBundleLicenseVerifier licenseVerifier,
+            ObjectAccessService objectAccessService
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -77,6 +83,7 @@ public class ApplicationController {
         this.bundleManifestValidator = bundleManifestValidator;
         this.objectMapper = objectMapper;
         this.licenseVerifier = licenseVerifier;
+        this.objectAccessService = objectAccessService;
     }
 
     @PostMapping("/{appId}/deploy")
@@ -342,13 +349,19 @@ public class ApplicationController {
     public Map<String, Object> runReport(
             @PathVariable String appId,
             @PathVariable String reportId,
-            @RequestBody(required = false) RunReportRequest request
+            @RequestBody(required = false) RunReportRequest request,
+            Authentication authentication
     ) {
         try {
+            String reportPath = ReportService.reportPath(reportId);
+            objectAccessService.requireRead(reportPath, authentication);
             Map<String, Object> parameters = request != null && request.parameters() != null
                     ? request.parameters()
                     : Map.of();
-            return reportService.run(appId, reportId, parameters);
+            return VariableAclRequestContext.callAsMember(
+                    authentication,
+                    () -> reportService.run(appId, reportId, parameters)
+            );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
@@ -359,13 +372,19 @@ public class ApplicationController {
             @PathVariable String appId,
             @PathVariable String reportId,
             @RequestParam(defaultValue = "csv") String format,
-            @RequestParam Map<String, String> queryParams
+            @RequestParam Map<String, String> queryParams,
+            Authentication authentication
     ) {
         try {
+            String reportPath = ReportService.reportPath(reportId);
+            objectAccessService.requireRead(reportPath, authentication);
             Map<String, Object> parameters = new LinkedHashMap<>(queryParams);
             parameters.remove("format");
             ReportExportFormat exportFormat = ReportExportFormat.parse(format);
-            var exported = reportService.export(appId, reportId, exportFormat, parameters);
+            var exported = VariableAclRequestContext.callAsMember(
+                    authentication,
+                    () -> reportService.export(appId, reportId, exportFormat, parameters)
+            );
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + exported.filename() + "\"")
                     .contentType(org.springframework.http.MediaType.parseMediaType(exported.contentType()))
