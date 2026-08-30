@@ -17,19 +17,23 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
-### Security
-
-- Assert and document that platform backup export remains an admin-only,
-  SYSTEM-style privileged snapshot rather than a MEMBER-filtered operator dump.
+## [0.9.191] - 2026-08-30
 
 ### Fixed
 
-- **BL-154 Object Query/function/binding residual** — interactive HTTP and
-  agent function invocation plus binding evaluation now run in `MEMBER` mode;
-  OQ live/historian projections, variable introspection, expands, platform ref,
-  and application-script reads omit variables denied by per-variable
-  `readRoles`; platform ref writes reject denied updates. Background scheduler
-  and binding-engine automation remains `SYSTEM`.
+- **BL-154 Object Query / function / binding residual** — interactive HTTP and
+  agent function invocation plus binding evaluation run in `MEMBER` mode; OQ
+  live/historian projections, variable introspection, expands, platform ref, and
+  application-script reads omit variables denied by `readRoles`; platform ref
+  writes reject denied updates. Background scheduler / binding-engine automation
+  remains `SYSTEM`.
+- Platform backup remains **admin-only** (regression test + docs honesty).
+
+### Changed
+
+- Platform version bump to **0.9.191**; AI context pack refresh.
+- CI nightly no longer runs on every `main` push (schedule + `workflow_dispatch`
+  only) to restore usable gate signal.
 
 ## [0.9.190] - 2026-08-30
 
@@ -109,7 +113,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 - Platform version bump to **0.9.188**; AI context pack refresh for the release.
 
-[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.190...HEAD
+[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.191...HEAD
+[0.9.191]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.190...v0.9.191
 [0.9.190]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.189...v0.9.190
 [0.9.189]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.188...v0.9.189
 [0.9.188]: https://github.com/iot-solutions-ru/ispf/releases/tag/v0.9.188

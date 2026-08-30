@@ -41,9 +41,13 @@ test.skip(true, "ci-flake #1234 — quarantine until 2026-07-20");
 | Workflow | Trigger | Scope |
 | -------- | ------- | ----- |
 | [ci.yml](../../.github/workflows/ci.yml) | PR | pr-fast: unit + build, path filters, no load/e2e |
-| [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) | push `main`, daily cron | Full: load gates, Playwright, cluster ownership |
+| [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) | daily cron, `workflow_dispatch` | Full: load gates, Playwright, cluster ownership |
 | [load-test.yml](../../.github/workflows/load-test.yml) | nightly cron | JVM load gates only |
 | [e2e-live.yml](../../.github/workflows/e2e-live.yml) | weekly + dispatch | Prod smoke (secrets) |
+
+The full nightly workflow no longer runs on `main` pushes. This avoids empty or
+failure-notification spam when successive push runs contend for the shared
+nightly concurrency group; PR gating remains in `ci.yml`.
 
 ## Known hotspots (baseline Jul 2026)
 

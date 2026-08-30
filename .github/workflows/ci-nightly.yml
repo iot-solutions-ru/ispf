@@ -1,8 +1,6 @@
 name: CI nightly (full)
 
 on:
-  push:
-    branches: [main]
   schedule:
     # Daily 02:00 UTC — full regression (S20-01)
     - cron: "0 2 * * *"

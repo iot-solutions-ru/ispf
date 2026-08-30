@@ -9,13 +9,18 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.191] - 2026-08-30
+
 ### Исправлено
 
-- **BL-154: остаток Object Query/function/binding** — интерактивные вызовы
-  функций по HTTP/через AI-агента и вычисление binding выполняются в `MEMBER`;
-  OQ-проекции live/historian, introspection переменных, expand и чтение
-  platform ref пропускают переменные, запрещённые `readRoles`. Фоновая
-  автоматизация планировщика и binding engine остаётся в `SYSTEM`.
+- **BL-154: остаток Object Query/function/binding** — interactive invoke/evaluate
+  в `MEMBER`; OQ omit denied live/historian; ref write / script bridge ACL;
+  backup admin-only regression.
+- CI nightly больше не стартует на каждый push в `main` (только schedule + dispatch).
+
+### Изменено
+
+- Версия платформы **0.9.191**.
 
 ## [0.9.190] - 2026-08-30
 
