@@ -32,6 +32,9 @@ public class WorkflowCronTriggerService {
 
     @Scheduled(fixedDelayString = "${ispf.workflow.cron-poll-ms:60000}")
     public void poll() {
+        if (!objectManager.isInitialized()) {
+            return;
+        }
         try {
             for (PlatformObject child : objectManager.tree().childrenOf("root.platform.workflows")) {
                 if (child.type() != ObjectType.WORKFLOW) {

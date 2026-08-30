@@ -8,6 +8,7 @@ import com.ispf.server.config.AiProperties;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.event.EventJournalStore;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
 import com.ispf.server.persistence.VariableSampleRepository;
@@ -43,6 +44,7 @@ public class PlatformMetricsService {
     private final DataSource dataSource;
     private final DriverRuntimeService driverRuntimeService;
     private final ObjectWebSocketHandler objectWebSocketHandler;
+    private final ObjectManager objectManager;
     private final PlatformAuthSessionStore authSessionStore;
     private final PlatformUserStore userStore;
     private final ApplicationFunctionStore applicationFunctionStore;
@@ -62,6 +64,7 @@ public class PlatformMetricsService {
             DataSource dataSource,
             DriverRuntimeService driverRuntimeService,
             ObjectWebSocketHandler objectWebSocketHandler,
+            ObjectManager objectManager,
             PlatformAuthSessionStore authSessionStore,
             PlatformUserStore userStore,
             ApplicationFunctionStore applicationFunctionStore,
@@ -80,6 +83,7 @@ public class PlatformMetricsService {
         this.dataSource = dataSource;
         this.driverRuntimeService = driverRuntimeService;
         this.objectWebSocketHandler = objectWebSocketHandler;
+        this.objectManager = objectManager;
         this.authSessionStore = authSessionStore;
         this.userStore = userStore;
         this.applicationFunctionStore = applicationFunctionStore;
@@ -151,6 +155,7 @@ public class PlatformMetricsService {
 
     private Map<String, Object> objectTreeMetrics() {
         Map<String, Object> section = new LinkedHashMap<>();
+        section.put("ready", objectManager.isInitialized());
         section.put("objectNodes", objectNodeRepository.count());
         section.put("variables", objectVariableRepository.count());
         section.put("devices", objectNodeRepository.countByType(ObjectType.DEVICE));

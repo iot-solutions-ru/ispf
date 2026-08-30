@@ -52,6 +52,7 @@ Key ISPF metrics (Micrometer):
 | `ispf.workflow_instances.running` | gauge | Active workflow instances |
 | `ispf.drivers.active` / `connected` | gauge | Drivers |
 | `ispf.websocket.clients` | gauge | Open object-tree WebSocket sessions (`websocketClients`) |
+| `ispf.object_tree.ready` | gauge | `1` when `ObjectManager` tree is initialized for API/scheduler work |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
 
 ### Metrics probe (object tree sync)

@@ -391,6 +391,12 @@ public class AutomationTreeService {
         alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
     }
 
+    /** Soft-disable orphan / broken alert rules without a full update payload. */
+    @Transactional
+    public void setAlertRuleEnabled(String path, boolean enabled) {
+        setBoolean(path, "enabled", enabled);
+    }
+
     public void resetAlertRuleRuntimeState(String path) {
         alertRuleRuntimeStore.reset(path);
         alertRuleRuntimeFlusher.flushNow(path);

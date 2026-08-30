@@ -17,6 +17,20 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.201] - 2026-08-30
+
+### Fixed
+
+- **Scheduler idle gates** — platform schedules, process programs, workflow retry,
+  and workflow cron wait for `ObjectManager.isInitialized()` before work.
+- **Orphan alert auto-disable** — missing watch target / ALERT node disables the
+  rule once instead of WARN-spamming every poll tick.
+
+### Changed
+
+- **Platform metrics** — `objectTree.ready` in `/api/v1/platform/metrics` snapshot;
+  docs list Prometheus `ispf.object_tree.ready`.
+
 ## [0.9.200] - 2026-08-30
 
 ### Fixed

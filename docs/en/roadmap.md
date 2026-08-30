@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **ispf-vps jar 0.9.201:** remaining scheduler idle gates; orphan alert auto-disable; `objectTree.ready` in platform metrics. |
 | 2026-08-30 | **ispf-vps jar 0.9.200:** self-diagnostics bootstrap INTEGER zero ternary trap (probe vars + dashboard seed). |
 | 2026-08-30 | **ispf-vps jar 0.9.199:** alert soft-fail + idle gate; periodic binding fireDue orphan prune; Prometheus `ispf.object_tree.ready`. |
 | 2026-08-30 | **ispf-vps jar 0.9.198:** analytics tag catalog waits for `ObjectManager.isInitialized()` before scanning `@bindingRules` (cuts early-boot ObjectNotFound WARN spam). |

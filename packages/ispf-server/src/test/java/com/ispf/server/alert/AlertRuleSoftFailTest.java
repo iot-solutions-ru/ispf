@@ -78,7 +78,7 @@ class AlertRuleSoftFailTest {
     }
 
     @Test
-    void missingWatchTargetIsSoftFailed() {
+    void missingWatchTargetIsSoftFailedAndDisabled() {
         AlertRuleService service = new AlertRuleService(
                 automationTreeService,
                 objectManager,
@@ -97,6 +97,7 @@ class AlertRuleSoftFailTest {
 
         assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
         verify(automationMetricsRecorder, never()).recordAlertEvaluation();
+        verify(automationTreeService).setAlertRuleEnabled(rule.id(), false);
     }
 
     private static AlertRule sampleRule(String id, String objectPath) {

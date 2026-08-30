@@ -65,6 +65,9 @@ public class ProcessProgramRunner {
         if (!clusterProperties.isSchedulerActive()) {
             return;
         }
+        if (!objectManager.isInitialized()) {
+            return;
+        }
         if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
             return;
         }

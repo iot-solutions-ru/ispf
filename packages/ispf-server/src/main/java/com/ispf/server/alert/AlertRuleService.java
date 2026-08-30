@@ -179,7 +179,12 @@ public class AlertRuleService {
         } catch (ObjectNotFoundException ex) {
             // Orphan watch target / missing ALERT node must not abort the periodic poll or
             // variable-change fan-out for remaining rules (same soft-fail shape as SQL bindings).
-            log.warn("Skipping alert rule {}: {}", rule.id(), ex.getMessage());
+            log.warn("Disabling alert rule {} (missing object): {}", rule.id(), ex.getMessage());
+            try {
+                automationTreeService.setAlertRuleEnabled(rule.id(), false);
+            } catch (RuntimeException disableEx) {
+                log.warn("Could not disable alert rule {}: {}", rule.id(), disableEx.getMessage());
+            }
         }
     }
 

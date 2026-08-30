@@ -9,6 +9,17 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.201] - 2026-08-30
+
+### Исправлено
+
+- Idle gate для platform schedule / process program / workflow retry+cron.
+- Orphan alert auto-disable вместо WARN каждый poll.
+
+### Изменено
+
+- `objectTree.ready` в platform metrics; docs для `ispf.object_tree.ready`.
+
 ## [0.9.200] - 2026-08-30
 
 ### Исправлено

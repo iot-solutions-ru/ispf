@@ -37,6 +37,7 @@
 | `ispf.workflow_instances.running` | gauge | Активные workflow instances |
 | `ispf.drivers.active` / `connected` | gauge | Драйверы |
 | `ispf.websocket.clients` | gauge | Открытые object-tree WebSocket-сессии (`websocketClients`) |
+| `ispf.object_tree.ready` | gauge | `1`, когда дерево `ObjectManager` готово для API/scheduler |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
 
 ### Проверка метрик (синхронизация дерева объектов)

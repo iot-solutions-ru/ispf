@@ -1,6 +1,7 @@
 package com.ispf.server.workflow;
 
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.entity.WorkflowRetryScheduleEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.platform.PlatformLeaderLockService;
@@ -30,22 +31,28 @@ public class WorkflowRetryScheduler {
     private final WorkflowService workflowService;
     private final PlatformLeaderLockService leaderLockService;
     private final ClusterProperties clusterProperties;
+    private final ObjectManager objectManager;
 
     public WorkflowRetryScheduler(
             WorkflowRetryService retryService,
             @Lazy WorkflowService workflowService,
             PlatformLeaderLockService leaderLockService,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            ObjectManager objectManager
     ) {
         this.retryService = retryService;
         this.workflowService = workflowService;
         this.leaderLockService = leaderLockService;
         this.clusterProperties = clusterProperties;
+        this.objectManager = objectManager;
     }
 
     @Scheduled(fixedDelayString = "${ispf.workflow.retry-poll-ms:5000}")
     public void poll() {
         if (!clusterProperties.isSchedulerActive()) {
+            return;
+        }
+        if (!objectManager.isInitialized()) {
             return;
         }
         if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {

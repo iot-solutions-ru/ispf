@@ -8,6 +8,7 @@ import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.function.FunctionInvocationScope;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.schedule.ScheduleDueChecker;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.platform.PlatformLeaderLockService;
@@ -34,6 +35,7 @@ public class PlatformSchedulerService {
     private final PlatformLeaderLockService leaderLockService;
     private final ScheduleObjectService scheduleObjectService;
     private final ClusterProperties clusterProperties;
+    private final ObjectManager objectManager;
 
     public PlatformSchedulerService(
             JdbcTemplate jdbcTemplate,
@@ -42,7 +44,8 @@ public class PlatformSchedulerService {
             ObjectMapper objectMapper,
             PlatformLeaderLockService leaderLockService,
             ScheduleObjectService scheduleObjectService,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            ObjectManager objectManager
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.functionService = functionService;
@@ -51,6 +54,7 @@ public class PlatformSchedulerService {
         this.leaderLockService = leaderLockService;
         this.scheduleObjectService = scheduleObjectService;
         this.clusterProperties = clusterProperties;
+        this.objectManager = objectManager;
     }
 
     public void upsert(PlatformSchedule schedule) {
@@ -101,6 +105,9 @@ public class PlatformSchedulerService {
     @Scheduled(fixedDelay = 5000)
     public void tick() {
         if (!clusterProperties.isSchedulerActive()) {
+            return;
+        }
+        if (!objectManager.isInitialized()) {
             return;
         }
         if (!leaderLockService.tryAcquire(SCHEDULER_LOCK, Duration.ofSeconds(30))) {
