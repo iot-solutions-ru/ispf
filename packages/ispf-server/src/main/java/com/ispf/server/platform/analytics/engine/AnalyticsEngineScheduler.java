@@ -3,6 +3,7 @@ package com.ispf.server.platform.analytics.engine;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -36,8 +38,10 @@ public class AnalyticsEngineScheduler {
     private final PlatformLeaderLockService leaderLockService;
     private final ClusterProperties clusterProperties;
     private final AnalyticsProperties analyticsProperties;
+    private final ObjectManager objectManager;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
     private final AtomicReference<ScheduledFuture<?>> wakeTask = new AtomicReference<>();
+    private final AtomicBoolean catalogSyncedAfterReady = new AtomicBoolean(false);
 
     public AnalyticsEngineScheduler(
             AnalyticsEngineService engineService,
@@ -45,7 +49,8 @@ public class AnalyticsEngineScheduler {
             AnalyticsScheduleRegistry scheduleRegistry,
             PlatformLeaderLockService leaderLockService,
             ClusterProperties clusterProperties,
-            AnalyticsProperties analyticsProperties
+            AnalyticsProperties analyticsProperties,
+            ObjectManager objectManager
     ) {
         this.engineService = engineService;
         this.catalogService = catalogService;
@@ -53,23 +58,28 @@ public class AnalyticsEngineScheduler {
         this.leaderLockService = leaderLockService;
         this.clusterProperties = clusterProperties;
         this.analyticsProperties = analyticsProperties;
+        this.objectManager = objectManager;
         taskScheduler.setPoolSize(1);
         taskScheduler.setThreadNamePrefix("analytics-engine-");
         taskScheduler.initialize();
     }
 
+    /**
+     * Runs after {@link com.ispf.server.object.PlatformObjectReadinessGate#markObjectTreeReady}
+     * when possible; if the tree is not ready yet, {@link #ensureCatalogSyncedAfterReady()} rebuilds
+     * once {@link ObjectManager#isInitialized()} becomes true.
+     */
     @EventListener(ApplicationReadyEvent.class)
-    @Order(Ordered.LOWEST_PRECEDENCE - 10)
+    @Order(Ordered.LOWEST_PRECEDENCE)
     public void onReady() {
         if (!engineService.isEnabled()) {
             return;
         }
-        // After binding-rules startup so @bindingRules objects are loadable into the catalog.
-        catalogService.invalidateCatalog();
-        List<AnalyticsTagDefinition> tags = catalogService.listEnabledTags();
-        scheduleRegistry.syncAll(tags);
-        log.info("Analytics engine scheduler ready: {} enabled historian tag(s)", tags.size());
-        reschedule();
+        if (!objectManager.isInitialized()) {
+            log.info("Analytics engine scheduler deferring catalog sync until object tree is ready");
+            return;
+        }
+        rebuildCatalogAndSchedule("ApplicationReady");
     }
 
     public synchronized void reschedule() {
@@ -97,6 +107,10 @@ public class AnalyticsEngineScheduler {
 
     @Scheduled(fixedDelay = 15_000)
     public void leaderFailoverProbe() {
+        if (!objectManager.isInitialized()) {
+            return;
+        }
+        ensureCatalogSyncedAfterReady();
         if (!engineService.isEnabled() || scheduleRegistry.countEnabled() == 0 || isWakeScheduled()) {
             return;
         }
@@ -104,6 +118,11 @@ public class AnalyticsEngineScheduler {
     }
 
     private void runDueAndReschedule() {
+        if (!objectManager.isInitialized()) {
+            reschedule();
+            return;
+        }
+        ensureCatalogSyncedAfterReady();
         if (!engineService.isEnabled() || !clusterProperties.isSchedulerActive()) {
             reschedule();
             return;
@@ -136,6 +155,33 @@ public class AnalyticsEngineScheduler {
             leaderLockService.release(LOCK_NAME);
             reschedule();
         }
+    }
+
+    /**
+     * If ApplicationReady ran before the object tree was marked ready (or catalog stayed empty),
+     * invalidate and rebuild once initialization completes.
+     */
+    private void ensureCatalogSyncedAfterReady() {
+        if (!engineService.isEnabled() || !objectManager.isInitialized()) {
+            return;
+        }
+        if (catalogSyncedAfterReady.get()) {
+            return;
+        }
+        rebuildCatalogAndSchedule("object-tree-ready");
+    }
+
+    private void rebuildCatalogAndSchedule(String reason) {
+        catalogService.invalidateCatalog();
+        List<AnalyticsTagDefinition> tags = catalogService.listEnabledTags();
+        scheduleRegistry.syncAll(tags);
+        catalogSyncedAfterReady.set(true);
+        log.info(
+                "Analytics engine scheduler ready ({}): {} enabled historian tag(s)",
+                reason,
+                tags.size()
+        );
+        reschedule();
     }
 
     private boolean isWakeScheduled() {

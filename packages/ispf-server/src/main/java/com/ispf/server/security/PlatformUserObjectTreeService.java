@@ -13,6 +13,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.tenant.TenantPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -132,7 +133,8 @@ public class PlatformUserObjectTreeService {
 
     @Transactional
     public void syncUser(PlatformUserStore.PlatformUser user) {
-        String path = user.objectPath();
+        PlatformUserStore.PlatformUser effective = migrateLegacyObjectPathIfNeeded(user);
+        String path = effective.objectPath();
         if (path.startsWith(PlatformUserService.USERS_PATH_PREFIX)) {
             ensureSecurityRoot();
             ensureNode(
@@ -144,22 +146,77 @@ public class PlatformUserObjectTreeService {
         ensureEntityNode(
                 path,
                 ObjectType.USER,
-                user.displayName(),
-                "Platform login «" + user.username() + "». Roles and auto-start operator app are edited via Security → Users or the object variables.",
+                effective.displayName(),
+                "Platform login «" + effective.username() + "». Roles and auto-start operator app are edited via Security → Users or the object variables.",
                 "platform-user-v1"
         );
-        setStringVariable(path, "username", user.username(), false);
-        setStringVariable(path, "displayName", user.displayName(), true);
-        setStringVariable(path, "roles", String.join(",", deserializeRoles(user.rolesJson())), true);
-        setBooleanVariable(path, "enabled", user.enabled(), true);
-        setBooleanVariable(path, "autoStartEnabled", user.autoStartEnabled(), true);
-        setStringVariable(path, "autoStartApp", user.autoStartApp() != null ? user.autoStartApp() : "", true);
+        setStringVariable(path, "username", effective.username(), false);
+        setStringVariable(path, "displayName", effective.displayName(), true);
+        setStringVariable(path, "roles", String.join(",", deserializeRoles(effective.rolesJson())), true);
+        setBooleanVariable(path, "enabled", effective.enabled(), true);
+        setBooleanVariable(path, "autoStartEnabled", effective.autoStartEnabled(), true);
+        setStringVariable(path, "autoStartApp", effective.autoStartApp() != null ? effective.autoStartApp() : "", true);
         setStringVariable(
                 path,
                 "timeZone",
-                com.ispf.server.platform.time.PlatformTimeZones.normalizeOrDefault(user.timeZone()),
+                com.ispf.server.platform.time.PlatformTimeZones.normalizeOrDefault(effective.timeZone()),
                 true
         );
+    }
+
+    /**
+     * Legacy installs stored users under {@code root.users.<username>} (or any path under
+     * {@code root.users.}); canonical path is {@link PlatformUserService#USERS_PATH_PREFIX}
+     * {@code username}. Paths already under {@code root.platform.security.users} are unchanged.
+     */
+    static String normalizeLegacyUserObjectPath(String username, String objectPath) {
+        if (username == null || username.isBlank() || objectPath == null || objectPath.isBlank()) {
+            return objectPath;
+        }
+        String legacyExact = PlatformUserService.LEGACY_USERS_PATH_PREFIX + username;
+        if (legacyExact.equals(objectPath)
+                || objectPath.startsWith(PlatformUserService.LEGACY_USERS_PATH_PREFIX)) {
+            return PlatformUserService.USERS_PATH_PREFIX + username;
+        }
+        return objectPath;
+    }
+
+    private PlatformUserStore.PlatformUser migrateLegacyObjectPathIfNeeded(PlatformUserStore.PlatformUser user) {
+        String newPath = normalizeLegacyUserObjectPath(user.username(), user.objectPath());
+        if (newPath == null || newPath.equals(user.objectPath())) {
+            return user;
+        }
+        log.info(
+                "Migrating legacy user object_path for {}: {} → {}",
+                user.username(),
+                user.objectPath(),
+                newPath
+        );
+        PlatformUserStore.PlatformUser migrated = new PlatformUserStore.PlatformUser(
+                user.username(),
+                user.passwordHash(),
+                user.displayName(),
+                user.rolesJson(),
+                newPath,
+                user.enabled(),
+                user.autoStartEnabled(),
+                user.autoStartApp(),
+                user.timeZone(),
+                user.createdAt(),
+                user.updatedAt()
+        );
+        try {
+            userStore.upsert(migrated);
+        } catch (DataIntegrityViolationException ex) {
+            log.warn(
+                    "Could not migrate object_path for {} to {} (unique constraint?): {}",
+                    user.username(),
+                    newPath,
+                    ex.getMessage()
+            );
+            return user;
+        }
+        return userStore.findByUsername(user.username()).orElse(migrated);
     }
 
     private void ensureSecurityRoot() {

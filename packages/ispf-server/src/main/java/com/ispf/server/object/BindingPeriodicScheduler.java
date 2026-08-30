@@ -27,6 +27,7 @@ public class BindingPeriodicScheduler {
     private final BindingRuleEngine bindingRuleEngine;
     private final PlatformLeaderLockService leaderLockService;
     private final ClusterProperties clusterProperties;
+    private final ObjectManager objectManager;
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
     private final AtomicReference<ScheduledFuture<?>> wakeTask = new AtomicReference<>();
 
@@ -34,12 +35,14 @@ public class BindingPeriodicScheduler {
             BindingPeriodicScheduleRegistry registry,
             BindingRuleEngine bindingRuleEngine,
             PlatformLeaderLockService leaderLockService,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            ObjectManager objectManager
     ) {
         this.registry = registry;
         this.bindingRuleEngine = bindingRuleEngine;
         this.leaderLockService = leaderLockService;
         this.clusterProperties = clusterProperties;
+        this.objectManager = objectManager;
         taskScheduler.setPoolSize(1);
         taskScheduler.setThreadNamePrefix("binding-periodic-");
         taskScheduler.initialize();
@@ -79,6 +82,9 @@ public class BindingPeriodicScheduler {
 
     @Scheduled(fixedDelay = 15_000)
     public void leaderFailoverProbe() {
+        if (!objectManager.isInitialized()) {
+            return;
+        }
         if (registry.countEnabled() == 0 || isWakeScheduled()) {
             return;
         }
@@ -86,6 +92,10 @@ public class BindingPeriodicScheduler {
     }
 
     private void runDueAndReschedule() {
+        if (!objectManager.isInitialized()) {
+            reschedule();
+            return;
+        }
         if (!clusterProperties.isSchedulerActive()) {
             reschedule();
             return;

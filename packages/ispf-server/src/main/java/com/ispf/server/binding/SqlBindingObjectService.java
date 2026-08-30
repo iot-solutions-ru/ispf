@@ -3,6 +3,7 @@ package com.ispf.server.binding;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -12,6 +13,8 @@ import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,8 @@ import java.util.Optional;
 
 @Service
 public class SqlBindingObjectService {
+
+    private static final Logger log = LoggerFactory.getLogger(SqlBindingObjectService.class);
 
     public static final String BINDINGS_ROOT = "root.platform.bindings";
 
@@ -218,39 +223,67 @@ public class SqlBindingObjectService {
         return bindings;
     }
 
-    private void executeRefresh(BindingDefinition binding) {
-        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(binding.dataSourcePath());
-        Object[] extracted = new Object[1];
-        dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
-            ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
-            List<Map<String, Object>> rows = jdbc.queryForList(binding.query());
-            if (rows.isEmpty()) {
-                extracted[0] = null;
-                return;
-            }
-            Map<String, Object> row = rows.get(0);
-            String field = binding.valueField() != null && !binding.valueField().isBlank()
-                    ? binding.valueField()
-                    : "value";
-            Object value = row.get(field);
-            if (value == null) {
-                for (Map.Entry<String, Object> entry : row.entrySet()) {
-                    if (entry.getKey().equalsIgnoreCase(field)) {
-                        value = entry.getValue();
-                        break;
+    /** Package-visible for unit tests (missing-target soft-fail). */
+    void executeRefresh(BindingDefinition binding) {
+        try {
+            tenantLocalDataAccessGuard.requireAllowedDataSourcePath(binding.dataSourcePath());
+            Object[] extracted = new Object[1];
+            dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
+                ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
+                List<Map<String, Object>> rows = jdbc.queryForList(binding.query());
+                if (rows.isEmpty()) {
+                    extracted[0] = null;
+                    return;
+                }
+                Map<String, Object> row = rows.get(0);
+                String field = binding.valueField() != null && !binding.valueField().isBlank()
+                        ? binding.valueField()
+                        : "value";
+                Object value = row.get(field);
+                if (value == null) {
+                    for (Map.Entry<String, Object> entry : row.entrySet()) {
+                        if (entry.getKey().equalsIgnoreCase(field)) {
+                            value = entry.getValue();
+                            break;
+                        }
                     }
                 }
+                extracted[0] = value;
+            });
+            Object value = extracted[0];
+            double numeric = value instanceof Number number ? number.doubleValue() : 0.0;
+            objectManager.setSystemVariableValue(
+                    binding.targetObjectPath(),
+                    binding.variable(),
+                    DataRecord.single(DOUBLE_SCHEMA, Map.of("value", numeric))
+            );
+            setString(binding.path(), "lastRefreshedAt", Instant.now().toString());
+        } catch (ObjectNotFoundException ex) {
+            log.warn(
+                    "Skipping SQL binding {}: target object missing ({} / {}): {}",
+                    binding.path(),
+                    binding.targetObjectPath(),
+                    binding.variable(),
+                    ex.getMessage()
+            );
+        } catch (IllegalArgumentException ex) {
+            if (isMissingVariable(ex)) {
+                log.warn(
+                        "Skipping SQL binding {}: target variable missing ({} / {}): {}",
+                        binding.path(),
+                        binding.targetObjectPath(),
+                        binding.variable(),
+                        ex.getMessage()
+                );
+                return;
             }
-            extracted[0] = value;
-        });
-        Object value = extracted[0];
-        double numeric = value instanceof Number number ? number.doubleValue() : 0.0;
-        objectManager.setSystemVariableValue(
-                binding.targetObjectPath(),
-                binding.variable(),
-                DataRecord.single(DOUBLE_SCHEMA, Map.of("value", numeric))
-        );
-        setString(binding.path(), "lastRefreshedAt", Instant.now().toString());
+            throw ex;
+        }
+    }
+
+    static boolean isMissingVariable(IllegalArgumentException ex) {
+        String message = ex.getMessage();
+        return message != null && message.startsWith("Unknown variable:");
     }
 
     private void ensureStructure(String path) {

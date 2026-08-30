@@ -3,6 +3,7 @@ package com.ispf.server.application.binding;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.alert.AlertRuleService;
@@ -13,6 +14,8 @@ import com.ispf.expression.BindingExpressionEvaluator;
 import com.ispf.server.binding.BindingInvokeAuditService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,8 @@ import java.util.UUID;
 @Service
 @Transactional
 public class ApplicationSqlBindingService {
+
+    private static final Logger log = LoggerFactory.getLogger(ApplicationSqlBindingService.class);
 
     private static final DataSchema SINGLE_VALUE_SCHEMA = DataSchema.builder("sqlBindingValue")
             .field("value", FieldType.DOUBLE)
@@ -182,6 +187,17 @@ public class ApplicationSqlBindingService {
             store.markRefreshed(binding.id());
             schemaSession.runWithPlatformCatalog(() ->
                     alertRuleService.processVariableChange(binding.objectPath(), binding.variableName())
+            );
+        } catch (ObjectNotFoundException ex) {
+            success = false;
+            changed = false;
+            error = ex.getMessage();
+            log.warn(
+                    "Skipping application SQL binding {} → {}/{}: {}",
+                    binding.id(),
+                    binding.objectPath(),
+                    binding.variableName(),
+                    ex.getMessage()
             );
         } catch (RuntimeException ex) {
             success = false;

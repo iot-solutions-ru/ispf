@@ -37,6 +37,8 @@ public class PlatformUserService {
     public static final String ROLES_FOLDER = SECURITY_ROOT + ".roles";
     public static final String USERS_PATH_PREFIX = USERS_FOLDER + ".";
     public static final String ROLES_PATH_PREFIX = ROLES_FOLDER + ".";
+    /** Pre-security-folder layout: {@code root.users.<username>}. */
+    public static final String LEGACY_USERS_PATH_PREFIX = "root.users.";
 
     private final PlatformUserStore userStore;
     private final PlatformRoleService roleService;
@@ -316,8 +318,14 @@ public class PlatformUserService {
         }
         PlatformUserStore.PlatformUser updated = userStore.findByUsername(username).orElseThrow();
         objectTreeService.syncUser(updated);
-        if (objectManager.tree().findByPath(existing.objectPath()).isPresent()) {
-            objectManager.updateInfo(existing.objectPath(), resolvedDisplayName, "username=" + username);
+        updated = userStore.findByUsername(username).orElse(updated);
+        if (objectManager.tree().findByPath(updated.objectPath()).isPresent()) {
+            objectManager.updateInfo(updated.objectPath(), resolvedDisplayName, "username=" + username);
+        }
+        String legacyPath = LEGACY_USERS_PATH_PREFIX + updated.username();
+        if (!legacyPath.equals(updated.objectPath())
+                && objectManager.tree().findByPath(legacyPath).isPresent()) {
+            objectManager.delete(legacyPath);
         }
         return toSummary(updated);
     }
@@ -390,6 +398,16 @@ public class PlatformUserService {
         tenantScopeService.invalidateUserCache(username);
         if (objectManager.tree().findByPath(user.objectPath()).isPresent()) {
             objectManager.delete(user.objectPath());
+        }
+        String canonical = PlatformUserObjectTreeService.normalizeLegacyUserObjectPath(user.username(), user.objectPath());
+        if (canonical != null && !canonical.equals(user.objectPath())
+                && objectManager.tree().findByPath(canonical).isPresent()) {
+            objectManager.delete(canonical);
+        }
+        String legacyPath = LEGACY_USERS_PATH_PREFIX + user.username();
+        if (!legacyPath.equals(user.objectPath())
+                && objectManager.tree().findByPath(legacyPath).isPresent()) {
+            objectManager.delete(legacyPath);
         }
     }
 
@@ -515,7 +533,10 @@ public class PlatformUserService {
         if (user.autoStartApp() != null && !user.autoStartApp().isBlank()) {
             summary.put("autoStartApp", user.autoStartApp());
         }
-        summary.put("objectPath", user.objectPath());
+        summary.put("objectPath", PlatformUserObjectTreeService.normalizeLegacyUserObjectPath(
+                user.username(),
+                user.objectPath()
+        ));
         tenantStore.findTenantIdForUser(user.username()).ifPresent(tenantId -> summary.put("tenantId", tenantId));
         summary.put("createdAt", user.createdAt().toString());
         summary.put("updatedAt", user.updatedAt().toString());

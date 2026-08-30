@@ -114,6 +114,18 @@ public class PlatformUserStore {
         );
     }
 
+    public void updateObjectPath(String username, String objectPath) {
+        jdbcTemplate.update("""
+                UPDATE %s
+                SET object_path = ?, updated_at = ?
+                WHERE username = ?
+                """.formatted(usersTable),
+                objectPath,
+                Timestamp.from(Instant.now()),
+                username
+        );
+    }
+
     public Optional<PlatformUser> findByUsername(String username) {
         List<PlatformUser> rows = jdbcTemplate.query(
                 """
