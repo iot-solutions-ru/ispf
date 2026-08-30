@@ -12,6 +12,8 @@ import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.expression.BindingExpressionValidator;
+import com.ispf.expression.ExpressionFormalVerifier;
+import com.ispf.expression.FormalVerificationReport;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.correlator.CorrelatorActionType;
@@ -92,6 +94,7 @@ final class AgentAutomationTools {
                         + "payloadVariable?, enabled?, edgeTrigger?, delaySeconds?, sustainWhileTrue?. "
                         + "Condition evaluates on targetObjectPath; eventName is auto-created and fired on the ALERT rule node. "
                         + "Operator alarmBar objectPathPrefix should be root.platform.alert-rules (or rule path). "
+                        + "CEL conditions are formally verified (unsatisfiable/tautology rejected). "
                         + "Use get_automation_schema for field names.";
             }
 
@@ -148,6 +151,9 @@ final class AgentAutomationTools {
                         );
                     }
 
+                    FormalVerificationReport verification =
+                            ExpressionFormalVerifier.requireSafeConditionOrThrow(conditionExpr);
+
                     String displayName = name.isBlank()
                             ? ObjectTreePort.require(path).displayName()
                             : name;
@@ -175,7 +181,12 @@ final class AgentAutomationTools {
                             optionalString(arguments, "triggerMessage"),
                             optionalString(arguments, "clearEventName")
                     );
-                    return Map.of("status", "OK", "path", path, "alert", alertPreview(updated));
+                    Map<String, Object> ok = new LinkedHashMap<>();
+                    ok.put("status", "OK");
+                    ok.put("path", path);
+                    ok.put("alert", alertPreview(updated));
+                    ok.put("verification", verification);
+                    return ok;
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
                 }
@@ -640,13 +651,14 @@ final class AgentAutomationTools {
                 objectAccessService.requireWrite(path, auth);
                 try {
                     ObjectTreePort.require(path);
-                    // Historian helpers (avg/min/max/вЂ¦) are not plain CEL вЂ” skip reactive CEL compile.
+                    // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
                     if (ruleKind != BindingRuleKind.HISTORIAN) {
                         BindingExpressionValidator.validateOrThrow(expression);
                     }
                     String condition = optionalString(arguments, "condition");
+                    FormalVerificationReport conditionVerification = null;
                     if (condition != null && !condition.isBlank()) {
-                        BindingExpressionValidator.validateOrThrow(condition);
+                        conditionVerification = ExpressionFormalVerifier.requireSafeConditionOrThrow(condition);
                     }
                     BindingActivators activators = buildActivators(arguments, path, ruleKind);
                     com.ispf.core.binding.BindingTarget target = buildTarget(arguments, targetKind, targetVariable);
@@ -678,6 +690,9 @@ final class AgentAutomationTools {
                     ok.put("target", saved.target().variableName());
                     if (saved.windowBucket() != null) {
                         ok.put("windowBucket", saved.windowBucket());
+                    }
+                    if (conditionVerification != null) {
+                        ok.put("conditionVerification", conditionVerification);
                     }
                     return ok;
                 } catch (Exception ex) {

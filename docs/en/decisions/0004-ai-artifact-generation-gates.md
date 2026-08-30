@@ -15,6 +15,8 @@ REQ-FW-40…43 introduce an AI Development Layer for solution developers. Withou
 3. **Mandatory gates before publish:**
    - `validate_bundle` — semantic checks (scripts, SQL guards, events, layout JSON)
    - `dry_run_deploy` — same validation + `wouldApply` plan without DB mutation
+   - **CEL formal verification** (ADR-0055) — boolean alert/binding conditions must be
+     satisfiable and not tautologies before AI apply
 4. **ContextPack is dev-time, not a bundle section** — built from docs/examples (`tools/ai-pack/build.py`), not deployed with apps.
 5. **Platform Studio is a thin admin UI** over existing tools and `POST /api/v1/platform/packages/import`.
 6. **Audit** — `ai_tool_audit` records tool name, actor, request hash, status; no API keys or raw secrets.

@@ -9,6 +9,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.expression.BindingExpressionValidator;
+import com.ispf.expression.ExpressionFormalVerifier;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectTreePort;
@@ -259,7 +260,7 @@ final class AgentPlatformTools {
                     BindingExpressionValidator.validateOrThrow(expression);
                     String condition = optionalString(arguments, "condition");
                     if (condition != null && !condition.isBlank()) {
-                        BindingExpressionValidator.validateOrThrow(condition);
+                        ExpressionFormalVerifier.requireSafeConditionOrThrow(condition);
                     }
                     String targetKind = BindingTargetKind.normalize(stringArg(arguments, "targetKind"));
                     if (BindingTargetKind.EVENT.equals(targetKind) && stringArg(arguments, "eventName").isBlank()) {

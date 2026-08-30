@@ -1,6 +1,9 @@
 package com.ispf.server.api;
 
 import com.ispf.expression.BindingExpressionValidator;
+import com.ispf.expression.ExpressionException;
+import com.ispf.expression.ExpressionFormalVerifier;
+import com.ispf.expression.FormalVerificationReport;
 import com.ispf.server.expression.ExpressionEvaluationService;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -8,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -24,9 +28,22 @@ public class ExpressionController {
     public ValidateResponse validate(@RequestBody ValidateRequest request) {
         try {
             BindingExpressionValidator.validateOrThrow(request.expression());
-            return new ValidateResponse(true, request.expression().trim(), null, List.of());
+            FormalVerificationReport verification = ExpressionFormalVerifier.analyze(request.expression());
+            List<String> warnings = new ArrayList<>(verification.findings());
+            if (verification.blocksConditionApply()) {
+                return new ValidateResponse(
+                        false,
+                        request.expression().trim(),
+                        "Formal verification rejected condition: " + String.join("; ", verification.findings()),
+                        warnings,
+                        verification
+                );
+            }
+            return new ValidateResponse(true, request.expression().trim(), null, warnings, verification);
+        } catch (ExpressionException e) {
+            return new ValidateResponse(false, request.expression(), e.getMessage(), List.of(), null);
         } catch (Exception e) {
-            return new ValidateResponse(false, request.expression(), e.getMessage(), List.of());
+            return new ValidateResponse(false, request.expression(), e.getMessage(), List.of(), null);
         }
     }
 
@@ -56,7 +73,16 @@ public class ExpressionController {
     public record ValidateRequest(@NotBlank String expression) {
     }
 
-    public record ValidateResponse(boolean valid, String expression, String error, List<String> warnings) {
+    public record ValidateResponse(
+            boolean valid,
+            String expression,
+            String error,
+            List<String> warnings,
+            FormalVerificationReport verification
+    ) {
+        public ValidateResponse(boolean valid, String expression, String error, List<String> warnings) {
+            this(valid, expression, error, warnings, null);
+        }
     }
 
     public record EvaluateRequest(

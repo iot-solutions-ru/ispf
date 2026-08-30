@@ -159,7 +159,8 @@ final class AgentAnalyticsTools {
             @Override
             public String description() {
                 return "Validate/evaluate CEL-over-historian expression. Args: expression, objectPath, "
-                        + "optional mode=validate|evaluate (default evaluate).";
+                        + "optional mode=validate|evaluate (default evaluate). "
+                        + "Validate includes formal verification for pure CEL boolean conditions.";
             }
 
             @Override

@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.188",
-  "generatedAt": "2026-08-30T01:18:33.263862+00:00",
+  "generatedAt": "2026-08-30T01:34:59.334492+00:00",
   "platformVersion": "0.9.188",
   "bundleManifest": {
     "fields": [
@@ -3192,6 +3192,12 @@
       "path": "docs/en/decisions/0054-hosted-ui-packs.md",
       "title": "ADR-0054: Hosted UI packs for application solutions",
       "keywords": "adr decision 0054-hosted-ui-packs ADR-0054: Hosted UI packs for application solutions"
+    },
+    {
+      "id": "adr-0055-cel-formal-verification-ai-gate",
+      "path": "docs/en/decisions/0055-cel-formal-verification-ai-gate.md",
+      "title": "ADR-0055: CEL formal verification as AI condition gate",
+      "keywords": "adr decision 0055-cel-formal-verification-ai-gate ADR-0055: CEL formal verification as AI condition gate"
     }
   ],
   "apiSlice": {
@@ -38127,5 +38133,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "95070aba9548912b2d8f3ddfc2d8760ed305f084c841d66fa432d5dd749c6593"
+  "contentSha256": "6940aa0a8769332ba7cca5de8b200248fcd124a06f53a3b94b04e2a6eadbe108"
 }

@@ -244,10 +244,20 @@ public class PlatformAnalyticsController {
         try {
             BindingExpressionValidator.validateOrThrow(expression);
             String normalized = expression == null ? "" : expression.trim();
-            return new AnalyticsExpressionService.ValidateResult(true, normalized, List.of(), List.of());
+            var verification = com.ispf.expression.ExpressionFormalVerifier.analyze(normalized);
+            if (verification.blocksConditionApply()) {
+                return new AnalyticsExpressionService.ValidateResult(
+                        false,
+                        normalized,
+                        List.of(),
+                        List.of("Formal verification rejected condition: " + String.join("; ", verification.findings())),
+                        verification
+                );
+            }
+            return new AnalyticsExpressionService.ValidateResult(true, normalized, List.of(), List.of(), verification);
         } catch (Exception ex) {
             String message = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
-            return new AnalyticsExpressionService.ValidateResult(false, null, List.of(), List.of(message));
+            return new AnalyticsExpressionService.ValidateResult(false, null, List.of(), List.of(message), null);
         }
     }
 
