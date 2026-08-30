@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nightly backend slice (see .github/workflows/ci-nightly.yml job backend-full). Issue #65.
+# Nightly backend slice (see .github/workflows/nightly.yml job backend-full). Issue #65.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"

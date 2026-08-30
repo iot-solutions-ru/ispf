@@ -19,10 +19,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
-- **CI nightly ghost failures on `main` push** — empty 0-job failed runs (workflow
-  registered under path name; schedules stalled since 2026-08-24). Renamed
-  workflow to `nightly.yml` + `push-ack` job; heavy jobs gated
-  `if: event != push`; concurrency group `ci-nightly-v2`.
+- **CI nightly Invalid workflow** — `run` + `uses` were merged on the BL-180
+  upload step (since 2026-08-24), so GitHub rejected the file (0-job failures;
+  schedules stalled). Split the step; workflow file is `nightly.yml` with
+  `push-ack` and heavy jobs gated `if: event != push`.
 
 ### Changed
 

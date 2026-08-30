@@ -16,7 +16,7 @@ OUT_JSON = Path(__file__).resolve().parent / "ci-dashboard.json"
 
 WORKFLOWS = [
     ("ci.yml", "PR pr-fast"),
-    ("ci-nightly.yml", "Nightly full"),
+    ("nightly.yml", "Nightly full"),
     ("load-test.yml", "Load gate"),
     ("cluster-load-test.yml", "Cluster gate"),
     ("e2e-live.yml", "E2E live"),

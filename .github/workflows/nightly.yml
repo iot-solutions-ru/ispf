@@ -320,6 +320,8 @@ jobs:
           bash tools/agent-regression/run-live-generator-oneshot.sh
           node tools/agent-regression/validate-generator-evidence.mjs \
             --results build/agent-regression/live-generator-results.json
+
+      - name: Upload live suite results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

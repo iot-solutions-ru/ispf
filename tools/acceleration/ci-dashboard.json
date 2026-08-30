@@ -11,7 +11,7 @@
       "last_title": "docs(deploy): VPS event-journal max-load bench and prod baseline"
     },
     {
-      "workflow": "ci-nightly.yml",
+      "workflow": "nightly.yml",
       "label": "Nightly full",
       "sample_size": 0,
       "success_rate_pct": null,

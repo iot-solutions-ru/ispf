@@ -71,4 +71,4 @@ When `E2E_BASE_URL` is set, Playwright does not start the dev server. The option
 GitHub Actions:
 
 - **PR (`pr-fast`):** [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) — unit tests, i18n, build (no Playwright load).
-- **Nightly / `main` push:** [`.github/workflows/ci-nightly.yml`](../../../.github/workflows/ci-nightly.yml) — full e2e, preview, JVM load gates.
+- **Nightly / `main` push:** [`.github/workflows/nightly.yml`](../../../.github/workflows/nightly.yml) — full e2e, preview, JVM load gates.
