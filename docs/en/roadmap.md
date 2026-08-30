@@ -1078,7 +1078,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
 | BL-153 | **MFA** | P2 | **Done** — TOTP GA (persisted enroll, admin enforce, login UX). WebAuthn / Keycloak OTP → **BL-194** — [security](security.md) |
-| BL-154 | **Per-variable ACL** | P2 | **Done** — variable R/W + history enforce + UI; event/function `invokeRoles` API + descriptor editor. Trusted-channel follow-up closed: member ACL covers analytics, federation tunnel on-behalf-of, agent tools, and WebSocket paths |
+| BL-154 | **Per-variable ACL** | P2 | **Done** — variable R/W + history enforce + UI; event/function `invokeRoles` API + descriptor editor. Trusted-channel follow-up closed: member ACL covers analytics, federation tunnel + HTTP peer on-behalf-of (channel∩roles), agent tools, WebSocket, Haystack/Brick, and hub fail-closed remote-only proxy vars |
 | BL-155 | **Hard multi-tenancy** | P2 | **Done** (honest) — SaaS `tenant-admin` + logical A≠B path/API; OIDC claim; hard schema provision/drop; **PostgreSQL RLS** on shared object tables (`ispf.tenant.db-row-isolation`, default true); physical schema split still optional — [multi-tenant](multi-tenant.md) |
 | BL-156 | **Audit trail GA** | P2 | **Done** — append audit log, CSV export, SIEM webhook (`ISPF_AUDIT_SIEM_WEBHOOK_URL`) |
 | BL-157 | **Role templates** | P2 | **Done** — custom roles + `operator-readonly` / `mes-supervisor` ISA-95 `scopePathPrefixes` enforced on REST |
@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **BL-154 trusted-channel close:** `VariableMemberAccessService` + `MEMBER` mode on analytics/agent/WS/editor/expression/Haystack/Brick; federation tunnel + HTTP peer `X-ISPF-On-Behalf-Of-*` with channel∩roles (no escalation); hub fail-closed on remote-only proxy vars; G-05 interactive residual closed. Scorecard note only (no frozen rescore). |
 | 2026-08-25 | **ispf-vps jar 0.9.188:** deploy license verify on raw JSON (`sign-bundle.py` OK); `REQUIRE_SIGNED_BUNDLES=true` kept; MES GA 8/8; Flyway V89; web-console admin routing already on `/opt/ispf/web-console`. |
 | 2026-08-25 | **Post-S33 named-site field evidence (ispf-vps):** AI generator HVAC/MES/SCADA oneshots archived under `docs/evidence/ai-generator/` (~19s each, soft budget met); MES `mes-platform-production` GA smoke 8/8 + OEE UUID/`RANDOM_UUID` Postgres compat; VPS hygiene (oil-control KPI bindings off, ice-cream `avgTemperature` writable, `emc` downtime SQL binding off). Journals: AI + MES. **Signed bundles enabled** on demostand (`REQUIRE_SIGNED_BUNDLES=true`, local keypair + jar sign helper); deploy API fix to verify raw JSON `contentSha256` (next jar). HMI: CI `pwa:offline-evidence` journal; 2h field still on-site. |
 | 2026-07-19 | **BL-180 soft evidence path:** `LiveGeneratorEvidence` + `run-live-generator-oneshot.sh` → `live-generator-results.json` (`elapsedMs`, `softBudgetMet`); integrator checklist in [ai-agent](ai-agent.md#bl-180-soft-15-min--integrator-oneshot-field-soak-ready); pin `AGENT_LIVE_GENERATOR_DOMAIN` (default hvac). Lab oneshot ≠ field Done |
