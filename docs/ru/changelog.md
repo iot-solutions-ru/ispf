@@ -9,18 +9,25 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.189] - 2026-08-30
+
 ### Добавлено
 
 - **Формальная верификация CEL** (продуктовый gate, ADR-0055): unsatisfiable / tautology,
   equivalence, runtime-настройки, REST `/expressions/verify` (+ equivalence),
   AI-tool `verify_cel_condition`, enforce на apply алертов/bindings.
+- **Design-time gate для BPMN workflow** — условия sequence flow на `saveBpmn` / activate.
+- **Historian formal rewrite** — `avg`/`live`/… → коррелированные `self.__histN` для SMT.
 - **97 protocol stub-драйверов** отдельными packs (Apache-2.0, STUB) — каталог **162** packs.
+- Корневой Keep a Changelog + это русское зеркало.
 
 ### Изменено
 
 - CEL **0.14.0**; protobuf-java **4.36.0**.
 - Dependabot: Spring Boot 4.1.1, Gradle 9.7.1, web-console npm и др.
+- **`@vitejs/plugin-react` → 6.1.0** (+ `.npmrc` `legacy-peer-deps=true`).
 - Context pack парсит полный каталог драйверов из docs.
+- Версия платформы **0.9.189**.
 
 ### Исправлено
 

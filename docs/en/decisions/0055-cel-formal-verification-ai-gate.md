@@ -28,7 +28,8 @@ CEL-Java 0.14 ships `dev.cel:verifier` (Z3 via `z3-turnkey`).
    - `POST /api/v1/expressions/validate` — compile + formal; returns `warnings` + `verification`
    - `POST /api/v1/expressions/verify` — formal only
    - `POST /api/v1/expressions/verify-equivalence` — prove `left ≡ right`
-   - Analytics / catalog validate include `verification` (historian helpers → skipped)
+   - Analytics / catalog validate include `verification` (historian helpers rewritten to
+     correlated `self.__histN` placeholders for SMT)
 4. **Enforce on apply (same bar for human REST and AI)**
    - `AlertRuleService` (`conditionExpr`, `deactivateExpr`)
    - `BindingRulesController` (rule `condition`)
@@ -38,9 +39,12 @@ CEL-Java 0.14 ships `dev.cel:verifier` (Z3 via `z3-turnkey`).
 
 ### Non-goals (tracked follow-ups)
 
-- SMT axioms for historian helpers (`avg`/`live`) — skipped until modeled
-- Workflow BPMN design-time formal gate (runtime still evaluates CEL)
-- CEL Policy aggregate packs
+- CEL Policy aggregate packs (multi-hit diagnostic policy YAML) — not yet productized
+
+### Follow-ups delivered after initial accept
+
+- Workflow BPMN design-time formal gate on `saveBpmn` / activate (`ACTIVE`)
+- Historian helper formal rewrite (`avg`/`live`/… → correlated `self.__histN`) for boolean templates
 
 ## Consequences
 

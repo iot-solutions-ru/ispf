@@ -3,10 +3,15 @@ package com.ispf.server.expression;
 import com.ispf.expression.ExpressionException;
 import com.ispf.expression.ExpressionFormalVerifier;
 import com.ispf.expression.FormalVerificationReport;
+import com.ispf.expression.HistorianCelFormalRewrite;
 import com.ispf.server.config.ExpressionFormalVerificationProperties;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -34,17 +39,43 @@ public class ExpressionFormalVerificationService {
     }
 
     /**
-     * Analytics / historian path: skip SMT when helpers are present (literals would only
-     * reflect the current sample, not the template).
+     * Analytics / historian path: rewrite {@code avg}/{@code live}/… calls to correlated
+     * {@code self.__histN} placeholders so boolean templates can be SMT-checked without
+     * expanding to the current sample literals.
      */
     public FormalVerificationReport analyzeAnalyticsSource(String expression) {
-        if (expression != null && HISTORIAN_HELPER.matcher(expression).find()) {
+        if (expression == null || expression.isBlank()) {
             return FormalVerificationReport.skipped(
-                    FormalVerificationReport.CODE_SKIPPED_HISTORIAN,
-                    "historian helpers not modeled in SMT yet; formal verify runs on pure CEL conditions"
+                    FormalVerificationReport.CODE_SKIPPED_EMPTY,
+                    "empty expression"
             );
         }
-        return analyze(expression);
+        if (!HISTORIAN_HELPER.matcher(expression).find()) {
+            return analyze(expression);
+        }
+        HistorianCelFormalRewrite.Result rewritten = HistorianCelFormalRewrite.rewrite(expression);
+        FormalVerificationReport report = ExpressionFormalVerifier.analyze(rewritten.rewritten(), options());
+        if (!rewritten.rewrittenAny()) {
+            return report;
+        }
+        Map<String, Object> details = new LinkedHashMap<>();
+        if (report.details() != null) {
+            details.putAll(report.details());
+        }
+        details.put("historianFormalRewrite", rewritten.rewritten());
+        details.put("historianPlaceholders", rewritten.placeholders());
+        List<String> findings = new ArrayList<>(report.findings());
+        findings.add(0, "historian helpers rewritten to placeholders for formal verify: " + rewritten.rewritten());
+        return new FormalVerificationReport(
+                report.status(),
+                report.engine(),
+                report.satisfiable(),
+                report.alwaysTrue(),
+                report.equivalent(),
+                report.codes(),
+                List.copyOf(findings),
+                Map.copyOf(details)
+        );
     }
 
     public FormalVerificationReport verifyEquivalence(String left, String right) {
@@ -63,17 +94,12 @@ public class ExpressionFormalVerificationService {
             );
         }
         if (!properties.isEnabled() || !properties.isEnforceOnApply()) {
-            // Still compile so syntax errors fail loudly.
             com.ispf.expression.BindingExpressionValidator.validateOrThrow(expression);
             return analyze(expression);
         }
         return ExpressionFormalVerifier.requireSafeConditionOrThrow(expression, options());
     }
 
-    /**
-     * Validate-path policy: when enforceOnValidate is true and report blocks, callers
-     * should set valid=false.
-     */
     public boolean shouldBlockOnValidate(FormalVerificationReport report) {
         return properties.isEnabled()
                 && properties.isEnforceOnValidate()

@@ -17,6 +17,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.189] - 2026-08-30
+
 ### Added
 
 - **CEL formal verification (product gate, ADR-0055)** — Z3-backed checks for boolean
@@ -24,9 +26,15 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   (`ispf.expression.formal-verification.*`), REST
   `POST /api/v1/expressions/verify` and `/verify-equivalence`, AI tool
   `verify_cel_condition`, and enforcement on alert/binding apply (human REST + AI).
+- **Workflow BPMN design-time formal gate** — sequence-flow conditions verified on
+  `saveBpmn` and on activate (`ACTIVE`).
+- **Historian helper formal rewrite** — `avg`/`min`/`max`/`last`/`sum`/`live` calls
+  map to correlated `self.__histN` placeholders for SMT (template-level, not sample
+  expansion).
 - **97 protocol catalog stub drivers** as individual `ispf-driver-<id>` packs
   (Apache-2.0, `STUB` maturity, shared `ispf-driver-stub-kit`), bringing the
   documented pack catalog to **162** entries ([drivers](docs/en/drivers.md)).
+- Root **Keep a Changelog** (`CHANGELOG.md`) + Russian summary (`docs/ru/changelog.md`).
 
 ### Changed
 
@@ -36,8 +44,11 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 - Dependabot upgrades on `main`: Spring Boot **4.1.1**, Gradle Wrapper **9.7.1**,
   Jackson, Avro, SMBJ, JSch, Docker Buildx action, and web-console npm bumps
   (antd, framer-motion, testing-library, …).
+- **`@vitejs/plugin-react` → 6.1.0** with `apps/web-console/.npmrc`
+  `legacy-peer-deps=true` (Babel peer conflict with Vite 8 / Rolldown).
 - AI **context pack** generator parses the full Complete/`Полный каталог` driver table
   (maturity + license columns).
+- Platform version bump to **0.9.189**.
 
 ### Fixed
 
@@ -61,5 +72,6 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 - Platform version bump to **0.9.188**; AI context pack refresh for the release.
 
-[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/3f74d483...HEAD
-[0.9.188]: https://github.com/iot-solutions-ru/ispf/commit/3f74d483
+[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.189...HEAD
+[0.9.189]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.188...v0.9.189
+[0.9.188]: https://github.com/iot-solutions-ru/ispf/releases/tag/v0.9.188

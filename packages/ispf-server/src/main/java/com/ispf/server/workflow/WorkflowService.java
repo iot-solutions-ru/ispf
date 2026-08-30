@@ -17,6 +17,7 @@ import com.ispf.plugin.workflow.CallActivityDefinition;
 import com.ispf.plugin.workflow.CallActivityExecutor;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.MessageTaskDefinition;
+import com.ispf.plugin.workflow.SequenceFlowDefinition;
 import com.ispf.plugin.workflow.ServiceTaskDefinition;
 import com.ispf.plugin.workflow.UserTaskDefinition;
 import com.ispf.plugin.workflow.WorkflowActionType;
@@ -26,6 +27,7 @@ import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import jakarta.annotation.PostConstruct;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowDeadLetterEntity;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
@@ -80,6 +82,7 @@ public class WorkflowService {
     private final WorkflowDeadLetterService deadLetterService;
     private final WorkflowWebhookIndex webhookIndex;
     private final WorkflowRetryService retryService;
+    private final ExpressionFormalVerificationService formalVerificationService;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -101,7 +104,8 @@ public class WorkflowService {
             WorkflowAiActionService workflowAiActionService,
             WorkflowDeadLetterService deadLetterService,
             WorkflowWebhookIndex webhookIndex,
-            WorkflowRetryService retryService
+            WorkflowRetryService retryService,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
@@ -123,6 +127,7 @@ public class WorkflowService {
         this.deadLetterService = deadLetterService;
         this.webhookIndex = webhookIndex;
         this.retryService = retryService;
+        this.formalVerificationService = formalVerificationService;
     }
 
     @PostConstruct
@@ -176,7 +181,8 @@ public class WorkflowService {
 
     @Transactional
     public WorkflowView saveBpmn(String path, String bpmnXml) throws WorkflowException {
-        workflowEngine.parse(bpmnXml);
+        BpmnProcess process = workflowEngine.parse(bpmnXml);
+        verifySequenceFlowConditions(process);
         objectManager.setVariableValue(
                 path,
                 "bpmnXml",
@@ -187,6 +193,17 @@ public class WorkflowService {
 
     @Transactional
     public WorkflowView updateStatus(String path, WorkflowLifecycleStatus status) {
+        if (status == WorkflowLifecycleStatus.ACTIVE) {
+            PlatformObject node = objectManager.require(path);
+            String bpmnXml = readString(node, "bpmnXml").orElse("");
+            if (!bpmnXml.isBlank()) {
+                try {
+                    verifySequenceFlowConditions(workflowEngine.parse(bpmnXml));
+                } catch (WorkflowException ex) {
+                    throw new IllegalArgumentException("Cannot activate workflow with invalid BPMN: " + ex.getMessage(), ex);
+                }
+            }
+        }
         objectManager.setVariableValue(
                 path,
                 "status",
@@ -195,6 +212,26 @@ public class WorkflowService {
         triggerIndexRefresh.scheduleFullRebuild();
         webhookIndex.indexPath(path);
         return getWorkflow(path);
+    }
+
+    private void verifySequenceFlowConditions(BpmnProcess process) {
+        for (SequenceFlowDefinition flow : process.sequenceFlows()) {
+            String condition = flow.conditionExpression();
+            if (condition == null || condition.isBlank()) {
+                continue;
+            }
+            try {
+                formalVerificationService.requireSafeConditionForApply(condition.trim());
+            } catch (RuntimeException ex) {
+                throw new IllegalArgumentException(
+                        "Formal verification rejected sequence flow '"
+                                + flow.id()
+                                + "' condition: "
+                                + ex.getMessage(),
+                        ex
+                );
+            }
+        }
     }
 
     @Transactional

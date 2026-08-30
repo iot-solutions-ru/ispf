@@ -239,9 +239,15 @@ def read_text(path: Path, max_chars: int = 12000) -> str:
 
 
 def platform_version() -> str:
+    """Prefer gradle.properties over git tags (tags often lag the platform version)."""
     env = os.environ.get("ISPF_VERSION", "").strip()
     if env:
         return env
+    props = ROOT / "gradle.properties"
+    if props.exists():
+        match = re.search(r"^version=(.+)$", props.read_text(encoding="utf-8"), re.M)
+        if match:
+            return match.group(1).strip()
     try:
         result = subprocess.run(
             ["git", "describe", "--tags", "--abbrev=0"],
@@ -254,11 +260,6 @@ def platform_version() -> str:
             return result.stdout.strip().lstrip("v")
     except OSError:
         pass
-    props = ROOT / "gradle.properties"
-    if props.exists():
-        match = re.search(r"^version=(.+)$", props.read_text(encoding="utf-8"), re.M)
-        if match:
-            return match.group(1).strip()
     return "0.7.8"
 
 
