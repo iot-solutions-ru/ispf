@@ -9,6 +9,17 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.199] - 2026-08-30
+
+### Исправлено
+
+- Alert soft-fail + idle gate до `ObjectManager.isInitialized()`.
+- Periodic binding `fireDue` удаляет stale schedule при ObjectNotFound.
+
+### Добавлено
+
+- Prometheus gauge `ispf.object_tree.ready`.
+
 ## [0.9.198] - 2026-08-30
 
 ### Исправлено

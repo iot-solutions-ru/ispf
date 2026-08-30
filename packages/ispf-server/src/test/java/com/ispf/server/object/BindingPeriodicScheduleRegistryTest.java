@@ -82,6 +82,23 @@ class BindingPeriodicScheduleRegistryTest {
         assertThat(after).isAfter(before);
     }
 
+    @Test
+    void fireDueRemovesScheduleForMissingObject() {
+        String missing = "root.platform.devices.missing-periodic-orphan";
+        registry.syncObject(missing, List.of(periodicRule("rule-orphan", 100)));
+        assertThat(registry.countEnabled()).isEqualTo(1);
+
+        registry.fireDue(Instant.now().plusSeconds(1), bindingRuleEngine);
+
+        assertThat(registry.countEnabled()).isZero();
+        Integer rows = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM platform_binding_periodic_rules WHERE object_path = ?",
+                Integer.class,
+                missing
+        );
+        assertThat(rows).isZero();
+    }
+
     private static BindingRule periodicRule(String id, long periodicMs) {
         return new BindingRule(
                 id,

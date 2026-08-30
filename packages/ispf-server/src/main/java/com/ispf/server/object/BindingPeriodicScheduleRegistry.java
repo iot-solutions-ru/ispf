@@ -2,6 +2,9 @@ package com.ispf.server.object;
 
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
+import com.ispf.core.object.ObjectNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,8 @@ import java.util.Set;
  */
 @Service
 public class BindingPeriodicScheduleRegistry {
+
+    private static final Logger log = LoggerFactory.getLogger(BindingPeriodicScheduleRegistry.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -117,7 +122,33 @@ public class BindingPeriodicScheduleRegistry {
                 Timestamp.from(now)
         );
         for (DueRule dueRule : dueRules) {
-            bindingRuleEngine.onPeriodic(dueRule.objectPath(), dueRule.ruleId());
+            try {
+                bindingRuleEngine.onPeriodic(dueRule.objectPath(), dueRule.ruleId());
+            } catch (ObjectNotFoundException ex) {
+                // Stale schedule rows for deleted objects must not abort the remainder of the tick.
+                log.warn(
+                        "Removing periodic binding schedule for missing object {}.{}: {}",
+                        dueRule.objectPath(),
+                        dueRule.ruleId(),
+                        ex.getMessage()
+                );
+                jdbcTemplate.update(
+                        """
+                                DELETE FROM platform_binding_periodic_rules
+                                WHERE object_path = ? AND rule_id = ?
+                                """,
+                        dueRule.objectPath(),
+                        dueRule.ruleId()
+                );
+                continue;
+            } catch (RuntimeException ex) {
+                log.warn(
+                        "Skipping periodic binding {}.{}: {}",
+                        dueRule.objectPath(),
+                        dueRule.ruleId(),
+                        ex.getMessage()
+                );
+            }
             Instant nextRun = now.plusMillis(dueRule.periodicMs());
             jdbcTemplate.update(
                     """

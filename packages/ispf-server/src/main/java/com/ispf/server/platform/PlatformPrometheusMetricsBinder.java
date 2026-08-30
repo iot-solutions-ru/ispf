@@ -2,6 +2,7 @@ package com.ispf.server.platform;
 
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.event.EventHistoryRecordCounter;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.websocket.ObjectWebSocketHandler;
@@ -29,6 +30,7 @@ public class PlatformPrometheusMetricsBinder {
     private final VariableSampleRepository variableSampleRepository;
     private final DriverRuntimeService driverRuntimeService;
     private final ObjectWebSocketHandler objectWebSocketHandler;
+    private final ObjectManager objectManager;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final DataSource dataSource;
 
@@ -39,6 +41,7 @@ public class PlatformPrometheusMetricsBinder {
             VariableSampleRepository variableSampleRepository,
             DriverRuntimeService driverRuntimeService,
             ObjectWebSocketHandler objectWebSocketHandler,
+            ObjectManager objectManager,
             AutomationMetricsRecorder automationMetricsRecorder,
             DataSource dataSource
     ) {
@@ -48,6 +51,7 @@ public class PlatformPrometheusMetricsBinder {
         this.variableSampleRepository = variableSampleRepository;
         this.driverRuntimeService = driverRuntimeService;
         this.objectWebSocketHandler = objectWebSocketHandler;
+        this.objectManager = objectManager;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.dataSource = dataSource;
     }
@@ -78,6 +82,10 @@ public class PlatformPrometheusMetricsBinder {
 
             Gauge.builder("ispf.websocket.clients", objectWebSocketHandler, ObjectWebSocketHandler::activeSessionCount)
                     .description("Open object-tree WebSocket sessions (websocketClients)")
+                    .register(registry);
+
+            Gauge.builder("ispf.object_tree.ready", objectManager, mgr -> mgr.isInitialized() ? 1.0 : 0.0)
+                    .description("1 when ObjectManager tree is initialized for API/scheduler work")
                     .register(registry);
 
             Gauge.builder("ispf.object_change.queue.size", automationMetricsRecorder,

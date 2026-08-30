@@ -2,6 +2,7 @@ package com.ispf.server.alert;
 
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -24,23 +25,30 @@ public class AlertRulePeriodicScheduler {
     private final AutomationTreeService automationTreeService;
     private final PlatformLeaderLockService leaderLockService;
     private final ClusterProperties clusterProperties;
+    private final ObjectManager objectManager;
     private final Map<String, Instant> lastPolledAt = new ConcurrentHashMap<>();
 
     public AlertRulePeriodicScheduler(
             AlertRuleService alertRuleService,
             AutomationTreeService automationTreeService,
             PlatformLeaderLockService leaderLockService,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            ObjectManager objectManager
     ) {
         this.alertRuleService = alertRuleService;
         this.automationTreeService = automationTreeService;
         this.leaderLockService = leaderLockService;
         this.clusterProperties = clusterProperties;
+        this.objectManager = objectManager;
     }
 
     @Scheduled(fixedDelayString = "${ispf.alert-rule.poll-tick-ms:1000}")
     public void tick() {
         if (!clusterProperties.isSchedulerActive()) {
+            return;
+        }
+        // Object tree loads asynchronously; avoid ObjectNotFound ERROR spam before ready.
+        if (!objectManager.isInitialized()) {
             return;
         }
         if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {

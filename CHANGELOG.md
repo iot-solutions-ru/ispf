@@ -17,6 +17,20 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.199] - 2026-08-30
+
+### Fixed
+
+- **Alert rule soft-fail / idle gate** — missing watch target or ALERT node no longer
+  aborts the periodic poll / variable-change fan-out; scheduler waits for
+  `ObjectManager.isInitialized()`.
+- **Periodic binding fireDue soft-fail** — `ObjectNotFound` removes the stale
+  `platform_binding_periodic_rules` row instead of stopping the tick.
+
+### Added
+
+- **Prometheus** — `ispf.object_tree.ready` gauge (0/1 from `ObjectManager.isInitialized()`).
+
 ## [0.9.198] - 2026-08-30
 
 ### Fixed

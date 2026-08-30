@@ -1,6 +1,7 @@
 package com.ispf.server.alert;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
@@ -173,6 +174,16 @@ public class AlertRuleService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void evaluateRule(AlertRule rule) {
+        try {
+            evaluateRuleInternal(rule);
+        } catch (ObjectNotFoundException ex) {
+            // Orphan watch target / missing ALERT node must not abort the periodic poll or
+            // variable-change fan-out for remaining rules (same soft-fail shape as SQL bindings).
+            log.warn("Skipping alert rule {}: {}", rule.id(), ex.getMessage());
+        }
+    }
+
+    private void evaluateRuleInternal(AlertRule rule) {
         rule = automationTreeService.getAlertRule(rule.id());
         if (!rule.enabled()) {
             return;
