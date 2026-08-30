@@ -96,7 +96,7 @@
 3. **AI (9.0 → 10):** БЛ-177…180 Готово (harness + БЛ-178 52/52). Именованные soft evidence в [`docs/evidence/ai-generator/`](../evidence/ai-generator/): **0.9.186** (24.08.2026) и **re-soak 0.9.191** (30.08.2026) HVAC/MES/SCADA, `softBudgetMet: true`, на re-soak `bundleTrust=signed`. Остаток до 10/10: опциональный многодневный plant journal. Оценка AI заморожена; soft evidence не дают новых оценок или live pass counts.
 4. **Ecosystem (6.5 → 9+):** sync Partner Portal + live partner-hosted catalogs (вне repo); повышение после первого внешнего partner catalog onboarding.
 5. **Historian (7.0 → 9+):** прогнать Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, catalog 50k, CH 1B) — BL-210; затем обновить scorecard до **≥9.5** с датированным sign-off.
-6. **HMI (7.5 → 9+):** FPS gate на live WebSocket mimic; persistence alarm shelving.
+6. **HMI (7.5 → 9+):** live Object WS FPS — dated demostand evidence ([`hmi-fps/2026-08-30-…ui-pump-station`](../evidence/hmi-fps/2026-08-30-ispf-vps-0.9.193-ui-pump-station.json), ~7 el @ 60 FPS median). Остаток: larger live / 500-el unmocked archive. Оценка HMI заморожена до полного audit.
 7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**) — **docs Готово:** [compliance-tender-pack](compliance-tender-pack.md) (канон EN). Остаются: pen-test, optional hard schema **table routing** (logical SaaS + PostgreSQL RLS Done), WebAuthn (BL-194); без заявления о сертификации продукта.
 
 ---

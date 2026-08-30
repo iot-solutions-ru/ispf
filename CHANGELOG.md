@@ -17,6 +17,17 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **HMI live FPS gate** — unmocked demostand path opens a real operator mimic
+  (`E2E_OPERATOR_APP`, default `ui-pump-station`), requires Object WS
+  `VARIABLE_UPDATED`, writes optional evidence JSON (`E2E_LIVE_FPS_EVIDENCE`).
+
+### Evidence
+
+- Demostand **0.9.193** `ui-pump-station` live FPS: median **60**, 479 WS updates
+  (`docs/evidence/hmi-fps/2026-08-30-ispf-vps-0.9.193-ui-pump-station.json`).
+
 ## [0.9.193] - 2026-08-30
 
 ### Fixed / Changed

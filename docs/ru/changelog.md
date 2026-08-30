@@ -9,6 +9,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+### Изменено
+
+- Live FPS gate на реальном operator mimic + evidence demostand 0.9.193.
+
 ## [0.9.193] - 2026-08-30
 
 ### Исправлено / изменено
