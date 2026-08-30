@@ -105,6 +105,37 @@ public record ObjectDto(
         );
     }
 
+    public ObjectDto withVariableNames(List<String> readableVariableNames) {
+        return new ObjectDto(
+                id,
+                path,
+                type,
+                displayName,
+                description,
+                templateId,
+                iconId,
+                createdAt,
+                sortOrder,
+                revision,
+                lastChangedBy,
+                lastChangedAt,
+                readableVariableNames != null ? List.copyOf(readableVariableNames) : List.of(),
+                eventNames,
+                federated,
+                federationPeerId,
+                federationRemotePath,
+                appliedBlueprints,
+                groupRef,
+                groupContextPath,
+                groupMemberMissing,
+                driverStatus,
+                driverConnected,
+                bindingAuditEnabled,
+                functionAuditEnabled,
+                eventJournalEnabled
+        );
+    }
+
     public ObjectDto withDriverRuntime(String driverStatus, Boolean driverConnected) {
         return new ObjectDto(
                 id,

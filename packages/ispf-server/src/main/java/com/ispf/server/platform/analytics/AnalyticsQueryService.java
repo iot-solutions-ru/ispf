@@ -4,6 +4,8 @@ import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.platform.analytics.frames.EventFrameService;
 import com.ispf.server.platform.analytics.frames.EventFrameType;
+import com.ispf.server.security.acl.VariableMemberAccessService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class AnalyticsQueryService {
     private final AnalyticsProperties analyticsProperties;
     private final AnalyticsQueryRateLimiter rateLimiter;
     private final EventFrameService eventFrameService;
+    private final VariableMemberAccessService variableMemberAccessService;
     private final ExecutorService executor = Executors.newFixedThreadPool(4, runnable -> {
         Thread thread = new Thread(runnable, "analytics-query-");
         thread.setDaemon(true);
@@ -43,18 +46,23 @@ public class AnalyticsQueryService {
             VariableHistoryService variableHistoryService,
             AnalyticsProperties analyticsProperties,
             AnalyticsQueryRateLimiter rateLimiter,
-            EventFrameService eventFrameService
+            EventFrameService eventFrameService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.variableHistoryService = variableHistoryService;
         this.analyticsProperties = analyticsProperties;
         this.rateLimiter = rateLimiter;
         this.eventFrameService = eventFrameService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @Transactional(readOnly = true)
-    public AnalyticsQueryResponse query(AnalyticsQueryRequest request) {
+    public AnalyticsQueryResponse query(AnalyticsQueryRequest request, Authentication authentication) {
         rateLimiter.acquire();
         validate(request);
+        for (AnalyticsQueryRequest.AnalyticsQueryTag tag : request.tags()) {
+            variableMemberAccessService.requireRead(tag.path(), tag.variable(), authentication);
+        }
 
         long started = System.nanoTime();
         UUID frameId = request.frameId();

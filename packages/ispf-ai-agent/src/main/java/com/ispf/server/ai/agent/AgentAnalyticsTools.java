@@ -9,6 +9,8 @@ import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogEntry;
 import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.workflow.WorkflowAiActionService;
 
@@ -33,6 +35,7 @@ final class AgentAnalyticsTools {
             VariableHistoryService variableHistoryService,
             WorkflowAiActionService workflowAiActionService,
             ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
             AnalyticsTagCatalogService tagCatalogService,
             AnalyticsQueryService analyticsQueryService,
@@ -41,18 +44,78 @@ final class AgentAnalyticsTools {
         return List.of(
                 listAnalyticsCatalogTool(catalogRegistry),
                 getAnalyticsTagTool(tagCatalogService, objectAccessService),
-                queryAnalyticsTagsTool(analyticsQueryService, objectAccessService),
+                queryAnalyticsTagsTool(analyticsQueryService, variableMemberAccessService),
                 evaluateAnalyticsExpressionTool(expressionService, objectAccessService),
-                detectAnomaliesTool(analysisService, variableHistoryService, objectAccessService, tenantScopeService),
-                comparePeriodsTool(analysisService, variableHistoryService, objectAccessService, tenantScopeService),
+                detectAnomaliesTool(
+                        analysisService,
+                        variableHistoryService,
+                        variableMemberAccessService,
+                        tenantScopeService
+                ),
+                comparePeriodsTool(
+                        analysisService,
+                        variableHistoryService,
+                        variableMemberAccessService,
+                        tenantScopeService
+                ),
                 summarizeTrendTool(
                         analysisService,
                         variableHistoryService,
                         workflowAiActionService,
-                        objectAccessService,
+                        variableMemberAccessService,
                         tenantScopeService
                 )
-        );
+        ).stream().map(AgentAnalyticsTools::asMemberTool).toList();
+    }
+
+    /** Ensure historian/live adapters enforce member ACLs for every interactive analytics tool. */
+    private static PlatformAgentTool asMemberTool(PlatformAgentTool delegate) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return delegate.name();
+            }
+
+            @Override
+            public String description() {
+                return delegate.description();
+            }
+
+            @Override
+            public Map<String, Object> inputSchema() {
+                return delegate.inputSchema();
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) throws Exception {
+                try {
+                    return VariableAclRequestContext.callAsMember(context.authentication(), () -> {
+                        try {
+                            return delegate.execute(arguments, context);
+                        } catch (RuntimeException ex) {
+                            throw ex;
+                        } catch (Exception ex) {
+                            throw new CheckedToolExecutionException(ex);
+                        }
+                    });
+                } catch (CheckedToolExecutionException ex) {
+                    throw ex.checkedCause();
+                }
+            }
+        };
+    }
+
+    private static final class CheckedToolExecutionException extends RuntimeException {
+        private final Exception checkedCause;
+
+        private CheckedToolExecutionException(Exception checkedCause) {
+            super(checkedCause);
+            this.checkedCause = checkedCause;
+        }
+
+        private Exception checkedCause() {
+            return checkedCause;
+        }
     }
 
     private static PlatformAgentTool getAnalyticsTagTool(
@@ -92,7 +155,7 @@ final class AgentAnalyticsTools {
 
     private static PlatformAgentTool queryAnalyticsTagsTool(
             AnalyticsQueryService analyticsQueryService,
-            ObjectAccessService objectAccessService
+            VariableMemberAccessService variableMemberAccessService
     ) {
         return new PlatformAgentTool() {
             @Override
@@ -114,7 +177,7 @@ final class AgentAnalyticsTools {
                     return Map.of("status", "ERROR", "error", "objectPath and variable are required");
                 }
                 try {
-                    objectAccessService.requireRead(objectPath, context.authentication());
+                    variableMemberAccessService.requireRead(objectPath, variable, context.authentication());
                     int hours = intArg(arguments, "hours", 4);
                     Instant to = Instant.now();
                     Instant from = to.minus(Math.max(1, hours), ChronoUnit.HOURS);
@@ -134,7 +197,7 @@ final class AgentAnalyticsTools {
                             agg,
                             48,
                             null
-                    ));
+                    ), context.authentication());
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("status", "OK");
                     result.put("query", response);
@@ -174,10 +237,19 @@ final class AgentAnalyticsTools {
                     objectAccessService.requireRead(objectPath, context.authentication());
                     String mode = stringArg(arguments, "mode");
                     if ("validate".equalsIgnoreCase(mode)) {
-                        var validated = expressionService.validate(expression, objectPath);
+                        var validated = expressionService.validate(
+                                expression,
+                                objectPath,
+                                context.authentication()
+                        );
                         return Map.of("status", "OK", "mode", "validate", "result", validated);
                     }
-                    var evaluated = expressionService.evaluate(expression, objectPath, null);
+                    var evaluated = expressionService.evaluate(
+                            expression,
+                            objectPath,
+                            null,
+                            context.authentication()
+                    );
                     return Map.of("status", "OK", "mode", "evaluate", "result", evaluated);
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
@@ -223,7 +295,7 @@ final class AgentAnalyticsTools {
     private static PlatformAgentTool detectAnomaliesTool(
             AnalyticsAnalysisService analysisService,
             VariableHistoryService variableHistoryService,
-            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         return new PlatformAgentTool() {
@@ -246,7 +318,7 @@ final class AgentAnalyticsTools {
                     return Map.of("status", "ERROR", "error", "objectPath and variable are required");
                 }
                 try {
-                    objectAccessService.requireRead(objectPath, context.authentication());
+                    variableMemberAccessService.requireRead(objectPath, variable, context.authentication());
                     List<Double> series = loadSeries(variableHistoryService, objectPath, variable, intArg(arguments, "hours", 4));
                     double threshold = doubleArg(arguments, "zThreshold", 3.0);
                     Map<String, Object> analysis = analysisService.analyzeSeries(series, threshold);
@@ -261,7 +333,7 @@ final class AgentAnalyticsTools {
     private static PlatformAgentTool comparePeriodsTool(
             AnalyticsAnalysisService analysisService,
             VariableHistoryService variableHistoryService,
-            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         return new PlatformAgentTool() {
@@ -283,7 +355,7 @@ final class AgentAnalyticsTools {
                     return Map.of("status", "ERROR", "error", "objectPath and variable are required");
                 }
                 try {
-                    objectAccessService.requireRead(objectPath, context.authentication());
+                    variableMemberAccessService.requireRead(objectPath, variable, context.authentication());
                     int hours = intArg(arguments, "hoursPerPeriod", 4);
                     Instant end = Instant.now();
                     Instant mid = end.minus(hours, ChronoUnit.HOURS);
@@ -305,7 +377,7 @@ final class AgentAnalyticsTools {
             AnalyticsAnalysisService analysisService,
             VariableHistoryService variableHistoryService,
             WorkflowAiActionService workflowAiActionService,
-            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         return new PlatformAgentTool() {
@@ -328,7 +400,7 @@ final class AgentAnalyticsTools {
                     return Map.of("status", "ERROR", "error", "objectPath and variable are required");
                 }
                 try {
-                    objectAccessService.requireRead(objectPath, context.authentication());
+                    variableMemberAccessService.requireRead(objectPath, variable, context.authentication());
                     List<Double> series = loadSeries(variableHistoryService, objectPath, variable, intArg(arguments, "hours", 4));
                     Map<String, Object> summary = analysisService.analyzeSeries(series, 3.0);
                     String prompt = "Summarize this OT tag trend in 2-4 short sentences for an operator. "

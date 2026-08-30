@@ -7,11 +7,17 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.acl.ObjectAccessService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -19,12 +25,23 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class AnalyticsMultiTagQueryIntegrationTest {
 
+    private static final Authentication ADMIN = UsernamePasswordAuthenticationToken.authenticated(
+            "admin",
+            "n/a",
+            List.of(new SimpleGrantedAuthority("admin"))
+    );
+    private static final Authentication OPERATOR = UsernamePasswordAuthenticationToken.authenticated(
+            "operator",
+            "n/a",
+            List.of(new SimpleGrantedAuthority("operator"))
+    );
     private static final String SENSOR = "root.platform.devices.demo-sensor-01";
     private static final String REMOTE_A = "root.platform.devices.test-analytics-query.remote-a";
     private static final String REMOTE_B = "root.platform.devices.test-analytics-query.remote-b";
@@ -40,6 +57,9 @@ class AnalyticsMultiTagQueryIntegrationTest {
 
     @Autowired
     private VariableHistoryService variableHistoryService;
+
+    @Autowired
+    private ObjectAccessService objectAccessService;
 
     @Test
     void queryAlignsFiveTagsAcrossLocalAndRemoteDevices() {
@@ -74,7 +94,7 @@ class AnalyticsMultiTagQueryIntegrationTest {
                 "avg",
                 100,
                 null
-        ));
+        ), ADMIN);
 
         assertThat(response.series()).hasSize(5);
         assertThat(response.timestamps()).isNotEmpty();
@@ -84,6 +104,45 @@ class AnalyticsMultiTagQueryIntegrationTest {
         assertThat(response.series())
                 .allMatch(series -> series.values().size() == response.timestamps().size());
         assertThat(response.latencyMs()).isLessThan(3_000L);
+    }
+
+    @Test
+    void deniesOperatorWithoutRequiredVariableReadRole() {
+        String variable = "restrictedAnalyticsMetric";
+        objectManager.createVariable(
+                SENSOR,
+                variable,
+                DOUBLE_VALUE,
+                true,
+                true,
+                DataRecord.single(DOUBLE_VALUE, Map.of("value", 0.0)),
+                true,
+                null,
+                List.of("engineer"),
+                List.of()
+        );
+        assertThat(objectAccessService.canRead(SENSOR, OPERATOR)).isTrue();
+
+        Instant to = Instant.now();
+        AnalyticsQueryRequest request = new AnalyticsQueryRequest(
+                List.of(new AnalyticsQueryRequest.AnalyticsQueryTag(
+                        SENSOR,
+                        variable,
+                        "value",
+                        "restricted"
+                )),
+                to.minus(1, ChronoUnit.HOURS),
+                to,
+                "15m",
+                "avg",
+                10,
+                null
+        );
+
+        assertThatThrownBy(() -> analyticsQueryService.query(request, OPERATOR))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())
+                        .isEqualTo(HttpStatus.FORBIDDEN));
     }
 
     private void seed(String path, String variable, double value) {

@@ -2,6 +2,7 @@ package com.ispf.server.platform;
 
 import com.ispf.server.platform.haystack.HaystackFilterParser;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -20,15 +21,18 @@ public class HaystackQueryService {
 
     private final HaystackExportService haystackExportService;
     private final ObjectAccessService objectAccessService;
+    private final VariableMemberAccessService variableMemberAccessService;
     private final TenantScopeService tenantScopeService;
 
     public HaystackQueryService(
             HaystackExportService haystackExportService,
             ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         this.haystackExportService = haystackExportService;
         this.objectAccessService = objectAccessService;
+        this.variableMemberAccessService = variableMemberAccessService;
         this.tenantScopeService = tenantScopeService;
     }
 
@@ -44,6 +48,7 @@ public class HaystackQueryService {
         List<String> requiredMarkers = HaystackFilterParser.parseRequiredMarkers(filter);
         int scanLimit = Math.max(1, Math.min(offset + limit, HaystackExportService.SEARCH_MAX_LIMIT));
         Map<String, Object> raw = haystackExportService.searchByTags(
+                authentication,
                 rootPath,
                 requiredMarkers,
                 entityKind,
@@ -62,6 +67,14 @@ public class HaystackQueryService {
                     continue;
                 }
                 if (!objectAccessService.canRead(objectPath, authentication)) {
+                    continue;
+                }
+            }
+            Object rawVariableName = match.get("variableName");
+            if (authentication != null && rawVariableName != null) {
+                String variableName = rawVariableName.toString();
+                if (!variableName.isBlank()
+                        && !variableMemberAccessService.canRead(objectPath, variableName, authentication)) {
                     continue;
                 }
             }

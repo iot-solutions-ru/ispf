@@ -1,6 +1,7 @@
 package com.ispf.server.tenant;
 
 import com.ispf.server.config.TenantIsolationProperties;
+import com.ispf.server.federation.FederationOnBehalfOfFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,16 @@ public class TenantRlsSecurityConfiguration {
     FilterRegistrationBean<TenantRlsFilter> tenantRlsFilterRegistration(TenantRlsFilter filter) {
         FilterRegistrationBean<TenantRlsFilter> registration = new FilterRegistrationBean<>(filter);
         // Only run inside SecurityFilterChain (after auth filters), not as a servlet filter.
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    FilterRegistrationBean<FederationOnBehalfOfFilter> federationOnBehalfOfFilterRegistration(
+            FederationOnBehalfOfFilter filter
+    ) {
+        FilterRegistrationBean<FederationOnBehalfOfFilter> registration = new FilterRegistrationBean<>(filter);
+        // Delegation requires channel authentication, so only run inside SecurityFilterChain.
         registration.setEnabled(false);
         return registration;
     }

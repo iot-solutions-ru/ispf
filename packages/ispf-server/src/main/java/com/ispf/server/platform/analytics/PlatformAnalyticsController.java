@@ -20,9 +20,11 @@ import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormulaUpdateResponse;
 import com.ispf.server.platform.analytics.formula.BindingFormulaRebindService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -104,8 +107,14 @@ public class PlatformAnalyticsController {
     }
 
     @PostMapping("/derived-tags/refresh")
-    public AnalyticsDerivedTagService.DerivedTagRefreshResult refreshDerivedTag(@RequestParam String devicePath) {
-        return derivedTagService.refreshDevice(devicePath);
+    public AnalyticsDerivedTagService.DerivedTagRefreshResult refreshDerivedTag(
+            @RequestParam String devicePath,
+            Authentication authentication
+    ) {
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> derivedTagService.refreshDevice(devicePath, authentication)
+        );
     }
 
     @GetMapping("/derived-tags/devices")
@@ -130,12 +139,16 @@ public class PlatformAnalyticsController {
     @GetMapping("/tags/evaluate")
     public AnalyticsEngineService.TagProbeResult evaluateTag(
             @RequestParam String path,
-            @RequestParam(required = false) Instant asOf
+            @RequestParam(required = false) Instant asOf,
+            Authentication authentication
     ) {
         if (path == null || path.isBlank()) {
             throw new IllegalArgumentException("path is required");
         }
-        return analyticsEngineService.probeTag(path, asOf);
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> analyticsEngineService.probeTag(path, asOf, authentication)
+        );
     }
 
     /** Ask AI: deterministic summary + LLM narrative for a tag series (ADR-0049). */
@@ -143,12 +156,16 @@ public class PlatformAnalyticsController {
     public Map<String, Object> askTag(
             @RequestParam String objectPath,
             @RequestParam String variable,
-            @RequestParam(required = false, defaultValue = "4") int hours
-    ) throws Exception {
+            @RequestParam(required = false, defaultValue = "4") int hours,
+            Authentication authentication
+    ) {
         if (objectPath == null || objectPath.isBlank() || variable == null || variable.isBlank()) {
             throw new IllegalArgumentException("objectPath and variable are required");
         }
-        return analyticsAskService.askTrend(objectPath, variable, hours);
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> analyticsAskService.askTrend(objectPath, variable, hours, authentication)
+        );
     }
 
     /** Historian query SLA snapshot: p50/p95 latency vs documented SLO (BL-161). */
@@ -170,9 +187,13 @@ public class PlatformAnalyticsController {
     public AnalyticsBackfillService.BackfillResult backfillTag(
             @RequestParam String path,
             @RequestParam Instant from,
-            @RequestParam Instant to
+            @RequestParam Instant to,
+            Authentication authentication
     ) {
-        return backfillService.backfill(path, from, to);
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> backfillService.backfill(path, from, to, authentication)
+        );
     }
 
     /** Rebuild materialized historian rollups for a subscription window (BL-205). */
@@ -183,9 +204,21 @@ public class PlatformAnalyticsController {
             @RequestParam(required = false, defaultValue = "value") String field,
             @RequestParam String bucket,
             @RequestParam Instant from,
-            @RequestParam Instant to
+            @RequestParam Instant to,
+            Authentication authentication
     ) {
-        return rollupMaterializerService.rebuild(path, variable, field, bucket, from, to);
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> rollupMaterializerService.rebuild(
+                        path,
+                        variable,
+                        field,
+                        bucket,
+                        from,
+                        to,
+                        authentication
+                )
+        );
     }
 
     /** Materializer health snapshot for Enterprise L lab gates (BL-210). */
@@ -206,9 +239,15 @@ public class PlatformAnalyticsController {
 
     /** Multi-tag aligned historian aggregate query (BL-206). */
     @PostMapping("/query")
-    public AnalyticsQueryResponse query(@RequestBody AnalyticsQueryRequest request) {
+    public AnalyticsQueryResponse query(
+            @RequestBody AnalyticsQueryRequest request,
+            Authentication authentication
+    ) {
         try {
-            return analyticsQueryService.query(request);
+            return VariableAclRequestContext.callAsMember(
+                    authentication,
+                    () -> analyticsQueryService.query(request, authentication)
+            );
         } catch (AnalyticsQueryRateLimiter.AnalyticsQueryRateLimitException ex) {
             throw new ResponseStatusException(TOO_MANY_REQUESTS, ex.getMessage());
         }
@@ -216,8 +255,18 @@ public class PlatformAnalyticsController {
 
     /** Validate analytics CEL-over-historian expression (BL-211). */
     @PostMapping("/expression/validate")
-    public AnalyticsExpressionService.ValidateResult validateExpression(@RequestBody AnalyticsExpressionRequest request) {
-        return expressionService.validate(request.expression(), request.objectPath());
+    public AnalyticsExpressionService.ValidateResult validateExpression(
+            @RequestBody AnalyticsExpressionRequest request,
+            Authentication authentication
+    ) {
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> expressionService.validate(
+                        request.expression(),
+                        request.objectPath(),
+                        authentication
+                )
+        );
     }
 
     /** Unified Tier A analytics function catalog (BL-212a / ADR-0042). */
@@ -235,13 +284,19 @@ public class PlatformAnalyticsController {
     /** Validate analytics expression by catalog kind/context payload (BL-212a). */
     @PostMapping("/catalog/validate")
     public AnalyticsExpressionService.ValidateResult validateCatalogExpression(
-            @RequestBody AnalyticsCatalogValidateRequest request
+            @RequestBody AnalyticsCatalogValidateRequest request,
+            Authentication authentication
     ) {
-        if ("reactive".equalsIgnoreCase(request.kind())) {
-            return validateReactiveExpression(request.expression());
-        }
-        String objectPath = resolveObjectPath(request.context());
-        return expressionService.validate(request.expression(), objectPath);
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> {
+                    if ("reactive".equalsIgnoreCase(request.kind())) {
+                        return validateReactiveExpression(request.expression());
+                    }
+                    String objectPath = resolveObjectPath(request.context());
+                    return expressionService.validate(request.expression(), objectPath, authentication);
+                }
+        );
     }
 
     private AnalyticsExpressionService.ValidateResult validateReactiveExpression(String expression) {
@@ -329,8 +384,19 @@ public class PlatformAnalyticsController {
 
     /** Evaluate analytics CEL-over-historian expression once (BL-211). */
     @PostMapping("/expression/evaluate")
-    public AnalyticsExpressionService.EvaluateResult evaluateExpression(@RequestBody AnalyticsExpressionRequest request) {
-        return expressionService.evaluate(request.expression(), request.objectPath(), request.asOf());
+    public AnalyticsExpressionService.EvaluateResult evaluateExpression(
+            @RequestBody AnalyticsExpressionRequest request,
+            Authentication authentication
+    ) {
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> expressionService.evaluate(
+                        request.expression(),
+                        request.objectPath(),
+                        request.asOf(),
+                        authentication
+                )
+        );
     }
 
     public record AnalyticsExpressionRequest(
@@ -436,28 +502,48 @@ public class PlatformAnalyticsController {
     @PostMapping("/query/export")
     public ResponseEntity<byte[]> exportQuery(
             @RequestParam String format,
-            @RequestBody AnalyticsQueryRequest request
+            @RequestBody AnalyticsQueryRequest request,
+            Authentication authentication
     ) throws IOException {
         String normalized = AnalyticsQueryExportService.normalizeFormat(format);
         try {
-            return switch (normalized) {
-                case "csv" -> {
-                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                    analyticsQueryExportService.exportCsv(request, buffer);
-                    yield ResponseEntity.ok()
-                            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"analytics-query.csv\"")
-                            .contentType(new MediaType("text", "csv"))
-                            .body(buffer.toByteArray());
-                }
-                case "parquet" -> ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"analytics-query.parquet.jsonl\"")
-                        .header("X-ISPF-Export-Format", "parquet-jsonl")
-                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                        .body(analyticsQueryExportService.exportParquet(request));
-                default -> throw new IllegalArgumentException("Unsupported export format: " + format);
-            };
+            return VariableAclRequestContext.callAsMember(
+                    authentication,
+                    () -> {
+                        try {
+                            return switch (normalized) {
+                                case "csv" -> {
+                                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                                    analyticsQueryExportService.exportCsv(request, buffer, authentication);
+                                    yield ResponseEntity.ok()
+                                            .header(
+                                                    HttpHeaders.CONTENT_DISPOSITION,
+                                                    "attachment; filename=\"analytics-query.csv\""
+                                            )
+                                            .contentType(new MediaType("text", "csv"))
+                                            .body(buffer.toByteArray());
+                                }
+                                case "parquet" -> ResponseEntity.ok()
+                                        .header(
+                                                HttpHeaders.CONTENT_DISPOSITION,
+                                                "attachment; filename=\"analytics-query.parquet.jsonl\""
+                                        )
+                                        .header("X-ISPF-Export-Format", "parquet-jsonl")
+                                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                                        .body(analyticsQueryExportService.exportParquet(request, authentication));
+                                default -> throw new IllegalArgumentException(
+                                        "Unsupported export format: " + format
+                                );
+                            };
+                        } catch (IOException ex) {
+                            throw new UncheckedIOException(ex);
+                        }
+                    }
+            );
         } catch (AnalyticsQueryRateLimiter.AnalyticsQueryRateLimitException ex) {
             throw new ResponseStatusException(TOO_MANY_REQUESTS, ex.getMessage());
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
         }
     }
 }

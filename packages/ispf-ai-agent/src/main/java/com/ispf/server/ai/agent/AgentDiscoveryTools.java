@@ -11,6 +11,7 @@ import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import tools.jackson.databind.ObjectMapper;
 
@@ -32,6 +33,7 @@ final class AgentDiscoveryTools {
     static List<PlatformAgentTool> all(
             ObjectTreePort ObjectTreePort,
             ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
             ApplicationFunctionStore functionStore,
             ApplicationEventCatalogService eventCatalogService,
@@ -42,7 +44,12 @@ final class AgentDiscoveryTools {
                 getFunctionTool(ObjectTreePort, objectAccessService, tenantScopeService, functionStore, objectMapper),
                 listEventCatalogTool(eventCatalogService),
                 getEventSchemaTool(ObjectTreePort, objectAccessService, tenantScopeService, eventCatalogService),
-                describeVariablesTool(ObjectTreePort, objectAccessService, tenantScopeService)
+                describeVariablesTool(
+                        ObjectTreePort,
+                        objectAccessService,
+                        variableMemberAccessService,
+                        tenantScopeService
+                )
         );
     }
 
@@ -304,6 +311,7 @@ final class AgentDiscoveryTools {
     private static PlatformAgentTool describeVariablesTool(
             ObjectTreePort ObjectTreePort,
             ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         return new PlatformAgentTool() {
@@ -333,7 +341,11 @@ final class AgentDiscoveryTools {
                 String nameFilter = stringArg(arguments, "name").toLowerCase(Locale.ROOT);
                 PlatformObject node = ObjectTreePort.require(objectPath);
                 List<Map<String, Object>> variables = new ArrayList<>();
-                for (Variable variable : node.variables().values()) {
+                for (Variable variable : variableMemberAccessService.filterReadable(
+                        objectPath,
+                        node.variables().values(),
+                        auth
+                )) {
                     if (!nameFilter.isBlank() && !variable.name().toLowerCase(Locale.ROOT).contains(nameFilter)) {
                         continue;
                     }

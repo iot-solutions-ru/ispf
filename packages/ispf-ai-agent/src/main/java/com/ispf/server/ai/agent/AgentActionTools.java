@@ -253,9 +253,10 @@ final class AgentActionTools {
                     entityKind = "point";
                 }
                 int limit = intArg(arguments, "limit", SEARCH_DEFAULT_LIMIT);
-                Map<String, Object> raw = haystackExportService.searchByTags(rootPath, tags, entityKind, limit);
-                List<Map<String, Object>> rawMatches = (List<Map<String, Object>>) raw.getOrDefault("matches", List.of());
                 var auth = context.authentication();
+                Map<String, Object> raw =
+                        haystackExportService.searchByTags(auth, rootPath, tags, entityKind, limit);
+                List<Map<String, Object>> rawMatches = (List<Map<String, Object>>) raw.getOrDefault("matches", List.of());
                 List<Map<String, Object>> visible = new ArrayList<>();
                 for (Map<String, Object> match : rawMatches) {
                     if (visible.size() >= SEARCH_MAX_LIMIT) {

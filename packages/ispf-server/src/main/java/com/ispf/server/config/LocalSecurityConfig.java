@@ -1,5 +1,6 @@
 package com.ispf.server.config;
 
+import com.ispf.server.federation.FederationOnBehalfOfFilter;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.tenant.TenantRlsFilter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,6 +24,7 @@ public class LocalSecurityConfig {
             HttpSecurity http,
             IspfSecurityProperties properties,
             PlatformUserService userService,
+            FederationOnBehalfOfFilter onBehalfOfFilter,
             TenantRlsFilter tenantRlsFilter
     ) throws Exception {
         http
@@ -40,8 +42,9 @@ public class LocalSecurityConfig {
                     new LocalRoleHeaderFilter(properties),
                     UsernamePasswordAuthenticationFilter.class
             );
-            // After bearer / role-header auth so SecurityContext is populated.
-            http.addFilterAfter(tenantRlsFilter, LocalRoleHeaderFilter.class);
+            // Delegate only after channel auth; derive tenant RLS from the delegated principal.
+            http.addFilterAfter(onBehalfOfFilter, LocalRoleHeaderFilter.class);
+            http.addFilterAfter(tenantRlsFilter, FederationOnBehalfOfFilter.class);
             http.authorizeHttpRequests(IspfAuthorizationRules::apply);
         } else {
             http.addFilterBefore(tenantRlsFilter, UsernamePasswordAuthenticationFilter.class);

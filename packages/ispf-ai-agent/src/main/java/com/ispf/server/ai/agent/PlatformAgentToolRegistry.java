@@ -45,6 +45,7 @@ import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.OperatorAgentToolPolicy;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.mimic.MimicService;
@@ -99,6 +100,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
             LabBlueprintBootstrap LabBlueprintBootstrap,
             ObjectTreePort ObjectTreePort,
             ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
             ObjectUiIconService objectUiIconService,
             ObjectTemplateService objectTemplateService,
@@ -181,6 +183,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 variableHistoryService,
                 workflowAiActionService,
                 objectAccessService,
+                variableMemberAccessService,
                 tenantScopeService,
                 analyticsTagCatalogService,
                 analyticsQueryService,
@@ -234,6 +237,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         tools.addAll(AgentDiscoveryTools.all(
                 ObjectTreePort,
                 objectAccessService,
+                variableMemberAccessService,
                 tenantScopeService,
                 applicationFunctionStore,
                 eventCatalogService,
@@ -274,8 +278,13 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         tools.addAll(List.of(
                 listObjectsTool(ObjectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
                 getObjectTool(ObjectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
-                listVariablesTool(ObjectTreePort, objectAccessService, tenantScopeService),
-                setVariableTool(ObjectTreePort, objectAccessService, objectMapper),
+                listVariablesTool(
+                        ObjectTreePort,
+                        objectAccessService,
+                        variableMemberAccessService,
+                        tenantScopeService
+                ),
+                setVariableTool(ObjectTreePort, variableMemberAccessService, objectMapper),
                 configureDriverTool(ObjectTreePort, objectAccessService, driverRuntimeService, objectMapper),
                 driverControlTool(objectAccessService, driverRuntimeService),
                 createObjectTool(
@@ -309,7 +318,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         tools.addAll(AgentOperatorTools.all(
                 variableHistoryService,
                 workQueueService,
-                objectAccessService,
+                variableMemberAccessService,
                 tenantScopeService,
                 operatorAgentMemoryService,
                 operatorAppDocumentService
@@ -849,6 +858,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
     private static PlatformAgentTool listVariablesTool(
             ObjectTreePort ObjectTreePort,
             ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
     ) {
         return new PlatformAgentTool() {
@@ -874,7 +884,9 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 }
                 objectAccessService.requireRead(path, auth);
                 PlatformObject node = ObjectTreePort.require(path);
-                List<Map<String, Object>> variables = node.variables().values().stream()
+                List<Map<String, Object>> variables = variableMemberAccessService
+                        .filterReadable(path, node.variables().values(), auth)
+                        .stream()
                         .map(PlatformAgentToolRegistry::variablePreview)
                         .toList();
                 return Map.of("status", "OK", "path", path, "count", variables.size(), "variables", variables);
@@ -896,7 +908,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
 
     private static PlatformAgentTool setVariableTool(
             ObjectTreePort ObjectTreePort,
-            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             ObjectMapper objectMapper
     ) {
         return new PlatformAgentTool() {
@@ -919,10 +931,10 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                     return Map.of("status", "ERROR", "error", "path and name are required");
                 }
                 var auth = context.authentication();
-                objectAccessService.requireWrite(path, auth);
                 PlatformObject node = ObjectTreePort.require(path);
                 Variable existing = node.getVariable(name)
                         .orElseThrow(() -> new IllegalArgumentException("Variable not found: " + name));
+                variableMemberAccessService.requireWrite(existing, path, auth);
                 if (!existing.writable()) {
                     return Map.of("status", "ERROR", "error", "Variable is not writable: " + name);
                 }

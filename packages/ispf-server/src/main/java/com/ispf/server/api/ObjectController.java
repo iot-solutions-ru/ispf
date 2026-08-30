@@ -41,7 +41,9 @@ import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.config.IspfRoles;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantQuotaService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantPaths;
@@ -50,6 +52,8 @@ import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -78,6 +82,8 @@ import java.util.Objects;
 @RequestMapping("/api/v1/objects")
 public class ObjectController {
 
+    private static final Logger log = LoggerFactory.getLogger(ObjectController.class);
+
     private final ObjectManager objectManager;
     private final ObjectTemplateService objectTemplateService;
     private final DashboardService dashboardService;
@@ -89,6 +95,7 @@ public class ObjectController {
     private final DeviceProvisioningService deviceProvisioningService;
     private final AutomationTreeService automationTreeService;
     private final ObjectAccessService objectAccessService;
+    private final VariableMemberAccessService variableMemberAccessService;
     private final TenantScopeService tenantScopeService;
     private final TenantVirtualRootService tenantVirtualRootService;
     private final TenantQuotaService tenantQuotaService;
@@ -116,6 +123,7 @@ public class ObjectController {
             DeviceProvisioningService deviceProvisioningService,
             AutomationTreeService automationTreeService,
             ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
             TenantVirtualRootService tenantVirtualRootService,
             TenantQuotaService tenantQuotaService,
@@ -142,6 +150,7 @@ public class ObjectController {
         this.deviceProvisioningService = deviceProvisioningService;
         this.automationTreeService = automationTreeService;
         this.objectAccessService = objectAccessService;
+        this.variableMemberAccessService = variableMemberAccessService;
         this.tenantScopeService = tenantScopeService;
         this.tenantVirtualRootService = tenantVirtualRootService;
         this.tenantQuotaService = tenantQuotaService;
@@ -331,7 +340,12 @@ public class ObjectController {
         path = canonicalPath(path, authentication);
         objectAccessService.requireRead(path, authentication);
         return tenantVirtualRootService.virtualize(
-                ObjectEditorDto.from(objectManager.require(path), objectUiIconService),
+                ObjectEditorDto.from(
+                        objectManager.require(path),
+                        objectUiIconService,
+                        authentication,
+                        variableMemberAccessService
+                ),
                 authentication
         );
     }
@@ -549,13 +563,39 @@ public class ObjectController {
         var proxy = federationProxyService.resolve(canonical);
         if (proxy.isPresent()) {
             JsonNode json = federationProxyService.proxyVariables(proxy.get());
-            return objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { });
+            return filterProxyVariables(canonical, json, authentication);
         }
         PlatformObject node = objectManager.require(canonical);
-        return node.variables().values().stream()
-                .filter(variable -> objectAccessService.canVariableRead(
-                        canonical, variable.name(), variable.readRoles(), authentication))
+        return variableMemberAccessService
+                .filterReadable(canonical, node.variables().values(), authentication)
+                .stream()
                 .map(VariableDto::from)
+                .toList();
+    }
+
+    private List<VariableDto> filterProxyVariables(
+            String localPath,
+            JsonNode proxyResponse,
+            Authentication authentication
+    ) {
+        List<VariableDto> remoteVariables = objectMapper.convertValue(
+                proxyResponse,
+                new TypeReference<List<VariableDto>>() { }
+        );
+        PlatformObject localNode = objectManager.tree().findByPath(localPath).orElse(null);
+        if (localNode == null) {
+            return List.of();
+        }
+        return remoteVariables.stream()
+                .filter(variable -> variable.name() != null)
+                .filter(variable -> localNode.getVariable(variable.name())
+                        .map(localVariable -> variableMemberAccessService.canRead(
+                                localPath,
+                                localVariable.name(),
+                                authentication
+                        ))
+                        // Remote-only definitions have no local member-role metadata to enforce.
+                        .orElse(false))
                 .toList();
     }
 
@@ -589,12 +629,12 @@ public class ObjectController {
                 var proxy = federationProxyService.resolve(path);
                 if (proxy.isPresent()) {
                     JsonNode json = federationProxyService.proxyVariables(proxy.get());
-                    result.put(responseKey, objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { }));
+                    result.put(responseKey, filterProxyVariables(path, json, authentication));
                 } else {
                     PlatformObject node = objectManager.require(path);
-                    result.put(responseKey, node.variables().values().stream()
-                            .filter(variable -> objectAccessService.canVariableRead(
-                                    path, variable.name(), variable.readRoles(), authentication))
+                    result.put(responseKey, variableMemberAccessService
+                            .filterReadable(path, node.variables().values(), authentication)
+                            .stream()
                             .map(VariableDto::from)
                             .toList());
                 }
@@ -635,6 +675,21 @@ public class ObjectController {
             var proxy = federationProxyService.resolve(path);
             if (proxy.isPresent()) {
                 try {
+                    PlatformObject localNode = objectManager.require(path);
+                    Variable localVariable = localNode.getVariable(name).orElse(null);
+                    if (localVariable != null) {
+                        variableMemberAccessService.requireWrite(localVariable, path, authentication);
+                    } else if (!IspfRoles.isGlobalAdmin(authentication)) {
+                        log.warn(
+                                "Denied proxy variable write for {} on {} because local role metadata is missing",
+                                name,
+                                path
+                        );
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN,
+                                "Proxy variable has no local ACL metadata: " + name
+                        );
+                    }
                     JsonNode json = federationProxyService.proxyVariablePut(
                             proxy.get(),
                             name,
@@ -648,7 +703,7 @@ public class ObjectController {
             PlatformObject node = objectManager.require(path);
             Variable existing = node.getVariable(name)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));
-            objectAccessService.requireVariableWrite(path, name, existing.writeRoles(), authentication);
+            variableMemberAccessService.requireWrite(existing, path, authentication);
             Variable variable = objectManager.setVariableValue(path, name, value);
             if (platformUserService.isSecurityUserPath(path)) {
                 platformUserService.syncVariableFromObject(path, name, value);

@@ -388,7 +388,8 @@ final class AgentPlatformTools {
                 objectAccessService.requireRead(rootPath, auth);
                 try {
                     boolean includePoints = boolArg(arguments, "includePoints", true);
-                    Map<String, Object> export = haystackExportService.exportSubtree(rootPath, includePoints);
+                    Map<String, Object> export =
+                            haystackExportService.exportSubtree(auth, rootPath, includePoints);
                     Map<String, Object> response = new LinkedHashMap<>();
                     response.put("status", "OK");
                     response.put("rootPath", rootPath);

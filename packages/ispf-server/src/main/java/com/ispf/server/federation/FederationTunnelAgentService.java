@@ -6,20 +6,29 @@ import com.ispf.server.agent.AgentStoreForwardService;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.security.IspfSecretCipher;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.tenant.DelegatedTenantAuthenticationDetails;
+import com.ispf.server.tenant.TenantRlsContext;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -294,11 +303,17 @@ public class FederationTunnelAgentService {
         if (id == null) {
             return;
         }
+        int status = HttpStatus.INTERNAL_SERVER_ERROR.value();
+        if (error instanceof ResponseStatusException responseStatusException) {
+            status = responseStatusException.getStatusCode().value();
+        } else if (error instanceof IllegalArgumentException) {
+            status = HttpStatus.BAD_REQUEST.value();
+        }
         try {
             runtime.webSocket.sendText(
                     FederationTunnelProtocol.proxyResponse(
                             id,
-                            500,
+                            status,
                             objectMapper.createObjectNode().put("error", error.getMessage()),
                             objectMapper
                     ),
@@ -357,7 +372,45 @@ public class FederationTunnelAgentService {
         String query = node.path("query").asString(null);
         String body = node.has("body") ? objectMapper.writeValueAsString(node.get("body")) : null;
         log.debug("Agent {} handling tunnel proxy {} {}", agentId, method, path);
-        var result = localProxyService.dispatch(method, path, query, body);
+        Authentication authentication = delegatedAuthentication(node);
+        if (authentication == null && !isAnonymousProbe(method, path)) {
+            JsonNode responseBody = objectMapper.createObjectNode()
+                    .put("error", "Authentication required for tunnel proxy path");
+            runtime.webSocket.sendText(
+                    FederationTunnelProtocol.proxyResponse(
+                            id,
+                            HttpStatus.FORBIDDEN.value(),
+                            responseBody,
+                            objectMapper
+                    ),
+                    true
+            ).join();
+            return;
+        }
+
+        FederationTunnelLocalProxyService.FederationTunnelLocalProxyResult result;
+        try {
+            if (authentication == null) {
+                SecurityContextHolder.clearContext();
+                TenantRlsContext.clear();
+                result = localProxyService.dispatch(method, path, query, body);
+            } else {
+                var securityContext = SecurityContextHolder.createEmptyContext();
+                securityContext.setAuthentication(authentication);
+                SecurityContextHolder.setContext(securityContext);
+                if (authentication.getDetails() instanceof DelegatedTenantAuthenticationDetails details) {
+                    TenantRlsContext.setTenant(details.tenantId());
+                } else {
+                    TenantRlsContext.setBypass();
+                }
+                result = VariableAclRequestContext.callAsMember(
+                        () -> localProxyService.dispatch(method, path, query, body)
+                );
+            }
+        } finally {
+            SecurityContextHolder.clearContext();
+            TenantRlsContext.clear();
+        }
         JsonNode responseBody = result.body();
         if (result.error() != null && responseBody == null) {
             responseBody = objectMapper.createObjectNode().put("error", result.error());
@@ -367,6 +420,36 @@ public class FederationTunnelAgentService {
             log.warn("Agent {} proxy response for {} is {} bytes", agentId, path, responseJson.length());
         }
         runtime.webSocket.sendText(responseJson, true).join();
+    }
+
+    private static Authentication delegatedAuthentication(JsonNode node) {
+        String username = node.path("onBehalfOfUser").asString(null);
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+        var roles = new ArrayList<String>();
+        JsonNode rolesNode = node.get("onBehalfOfRoles");
+        if (rolesNode != null && rolesNode.isArray()) {
+            for (JsonNode roleNode : rolesNode) {
+                roles.add(roleNode.asString(null));
+            }
+        }
+        return FederationDelegatedPrincipal.installFromTrustedChannel(
+                username,
+                roles,
+                node.path("onBehalfOfTenant").asString(null)
+        );
+    }
+
+    private static boolean isAnonymousProbe(String method, String path) {
+        if (!"GET".equalsIgnoreCase(method) || path == null) {
+            return false;
+        }
+        return Set.of(
+                "/api/v1/info",
+                "/api/v1/objects",
+                "/api/v1/objects/by-path"
+        ).contains(path.trim());
     }
 
     private void sendPing(UUID agentId) {

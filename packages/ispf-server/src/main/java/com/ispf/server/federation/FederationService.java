@@ -4,8 +4,10 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.config.FederationSecurityProperties;
 import com.ispf.server.security.OutboundUrlSafety;
+import com.ispf.server.tenant.TenantScopeService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -34,6 +36,7 @@ public class FederationService {
     private final FederationTunnelHubService tunnelHubService;
     private final FederationPeerHealthService peerHealthService;
     private final FederationSecurityProperties federationSecurityProperties;
+    private final TenantScopeService tenantScopeService;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -45,7 +48,8 @@ public class FederationService {
             @Lazy FederationPeerAuthService authService,
             @Lazy FederationTunnelHubService tunnelHubService,
             @Lazy FederationPeerHealthService peerHealthService,
-            FederationSecurityProperties federationSecurityProperties
+            FederationSecurityProperties federationSecurityProperties,
+            TenantScopeService tenantScopeService
     ) {
         this.peerStore = peerStore;
         this.objectMapper = objectMapper;
@@ -54,6 +58,7 @@ public class FederationService {
         this.tunnelHubService = tunnelHubService;
         this.peerHealthService = peerHealthService;
         this.federationSecurityProperties = federationSecurityProperties;
+        this.tenantScopeService = tenantScopeService;
     }
 
     public List<FederationPeer> listPeers() {
@@ -335,7 +340,8 @@ public class FederationService {
                     .timeout(Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")
                     .method(method, HttpRequest.BodyPublishers.ofString(body != null ? body : "{}"));
-            applyAuthorization(builder, current);
+            applyChannelAuth(builder, current);
+            applyOnBehalfOf(builder);
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             if ((response.statusCode() == 401 || response.statusCode() == 403) && allowRefresh
                     && authService.refreshPeerIfUnauthorized(current.id())) {
@@ -367,7 +373,8 @@ public class FederationService {
                     .uri(URI.create(url))
                     .timeout(Duration.ofSeconds(15))
                     .GET();
-            applyAuthorization(builder, current);
+            applyChannelAuth(builder, current);
+            applyOnBehalfOf(builder);
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             if ((response.statusCode() == 401 || response.statusCode() == 403) && allowRefresh
                     && authService.refreshPeerIfUnauthorized(current.id())) {
@@ -402,12 +409,20 @@ public class FederationService {
         }
     }
 
-    private void applyAuthorization(HttpRequest.Builder builder, FederationPeer peer) {
+    private void applyChannelAuth(HttpRequest.Builder builder, FederationPeer peer) {
         if (peer.authToken() != null && !peer.authToken().isBlank()) {
             builder.header("Authorization", "Bearer " + peer.authToken().trim());
             return;
         }
         resolveInboundBearerToken().ifPresent(token -> builder.header("Authorization", "Bearer " + token));
+    }
+
+    private void applyOnBehalfOf(HttpRequest.Builder builder) {
+        FederationDelegatedPrincipal.Snapshot principal = FederationDelegatedPrincipal.capture(
+                SecurityContextHolder.getContext().getAuthentication(),
+                tenantScopeService
+        );
+        FederationDelegatedPrincipal.applyHttpHeaders(builder, principal);
     }
 
     static Optional<String> resolveInboundBearerToken() {

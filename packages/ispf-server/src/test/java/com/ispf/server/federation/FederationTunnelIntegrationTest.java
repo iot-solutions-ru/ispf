@@ -96,6 +96,15 @@ class FederationTunnelIntegrationTest {
 
         String peerId = waitForConnectedTunnelPeer(token, agentId, siteName);
 
+        var anonymousHistory = tunnelHubService.dispatchRaw(
+                UUID.fromString(peerId),
+                "GET",
+                "/api/v1/objects/by-path/variables/history",
+                "path=root.platform.devices.demo-sensor-01&name=temperature",
+                null
+        );
+        assertThat(anonymousHistory.status()).isEqualTo(403);
+
         waitForProxyObject(token, peerId, "devices.demo-sensor-01");
 
         mockMvc.perform(get("/api/v1/federation/tunnels")

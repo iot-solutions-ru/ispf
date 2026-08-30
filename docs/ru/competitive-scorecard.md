@@ -38,6 +38,8 @@
 
 **Post-audit delta (19.07.2026):** AI-assisted разработка **7.0 → 8.5** после полного live suite (БЛ-178: 52/52 @100%), затем **8.5 → 9.0** после БЛ-177/180 multi-app / multi-domain live smoke harness Готово (opt-in `ISPF_LLM_SMOKE`; без выдуманных multi-app/multi-domain live pass counts). Остальные измерения — baseline аудита **0.9.102**.
 
+**Post-audit note (30.08.2026):** Follow-up BL-154 по trusted-channel закрыт (analytics/federation/agent/WS + HTTP on-behalf-of с пересечением ролей; G-05 interactive). Замороженная оценка Security **0.9.102** не пересчитывается — в следующий полный audit.
+
 **Program wave 8 (июль 2026)** ранее заявляла ~9.8/10 по отгруженным BL-артефактам; **аудит кода (0.9.102)** заменяет эту цифру. См. [§ Доказательства аудита кода](#code-audit-evidence-0102) и [§ Разрыв до цели](#gaps-to-target).
 
 ---

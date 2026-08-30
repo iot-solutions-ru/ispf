@@ -139,7 +139,7 @@ class AgentActionToolsTest {
 
     @Test
     void searchHaystackTagsFiltersByAcl() throws Exception {
-        when(haystackExportService.searchByTags(any(), any(), any(), any(Integer.class))).thenReturn(Map.of(
+        when(haystackExportService.searchByTags(any(), any(), any(), any(), any(Integer.class))).thenReturn(Map.of(
                 "tags", List.of("equip", "point", "temp"),
                 "entityKind", "point",
                 "rootPath", "root.platform",

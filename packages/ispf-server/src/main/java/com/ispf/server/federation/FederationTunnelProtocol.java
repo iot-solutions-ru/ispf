@@ -4,6 +4,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.UUID;
 
@@ -63,6 +65,20 @@ public final class FederationTunnelProtocol {
 
     public static String proxyRequest(String id, String method, String path, String query, String body, ObjectMapper mapper)
             throws Exception {
+        return proxyRequest(id, method, path, query, body, null, null, null, mapper);
+    }
+
+    public static String proxyRequest(
+            String id,
+            String method,
+            String path,
+            String query,
+            String body,
+            String onBehalfOfUser,
+            Collection<String> onBehalfOfRoles,
+            String onBehalfOfTenant,
+            ObjectMapper mapper
+    ) throws Exception {
         ObjectNode node = mapper.createObjectNode();
         node.put("type", TYPE_PROXY_REQUEST);
         node.put("id", id);
@@ -73,6 +89,23 @@ public final class FederationTunnelProtocol {
         }
         if (body != null && !body.isBlank()) {
             node.set("body", mapper.readTree(body));
+        }
+        if (onBehalfOfUser != null && !onBehalfOfUser.isBlank()) {
+            node.put("onBehalfOfUser", onBehalfOfUser.trim());
+            var rolesNode = node.putArray("onBehalfOfRoles");
+            if (onBehalfOfRoles != null) {
+                LinkedHashSet<String> normalizedRoles = new LinkedHashSet<>();
+                for (String role : onBehalfOfRoles) {
+                    String normalized = FederationDelegatedPrincipal.normalizeRole(role);
+                    if (normalized != null) {
+                        normalizedRoles.add(normalized);
+                    }
+                }
+                normalizedRoles.forEach(rolesNode::add);
+            }
+            if (onBehalfOfTenant != null && !onBehalfOfTenant.isBlank()) {
+                node.put("onBehalfOfTenant", onBehalfOfTenant.trim());
+            }
         }
         return mapper.writeValueAsString(node);
     }

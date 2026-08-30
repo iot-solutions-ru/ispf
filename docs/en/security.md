@@ -166,7 +166,13 @@ Local login accepts optional `totpCode` on `POST /api/v1/auth/login`. When `requ
 
 Variables can define `readRoles` / `writeRoles` (JSON array of role names). Empty list = inherit object ACL.
 
-Checked in `ObjectAccessService.requireVariableRead/Write` on read/write/**history**/export. Events and functions may set optional `invokeRoles` (empty = object INVOKE only). Web Console: variable ACL editor + event/function `invokeRoles` in the descriptor dialog (**BL-154 Done**). Analytics/federation alternate paths may still bypass member ACL (trusted-channel follow-up).
+Interactive variable-access paths run in `VariableAclRequestContext.MEMBER` mode and enforce `readRoles` / `writeRoles` through `VariableMemberAccessService`. This includes direct read/write/history/export, Haystack/Brick semantic export and query, analytics query/export/expression, agent history and analytics tools, WebSocket delivery, the object editor, expression evaluation, and federated proxy requests made on behalf of a user. Events and functions may set optional `invokeRoles` (empty = object INVOKE only); the Web Console exposes the variable ACL and `invokeRoles` editors (**BL-154 Done**).
+
+For HTTP federation peers, channel authentication uses the peer `authToken` (a static or service-account Bearer), or falls back to the forwarded caller Bearer when no peer token is configured. The hub also sends `X-ISPF-On-Behalf-Of-User`, comma-separated `X-ISPF-On-Behalf-Of-Roles`, and `X-ISPF-On-Behalf-Of-Tenant`. On the peer, `FederationOnBehalfOfFilter` installs the delegated principal with only the intersection of the authenticated channel roles and the claimed on-behalf-of roles before `MEMBER` enforcement. The channel identity is therefore an authorization ceiling, not a way to grant the caller its service-account privileges. Tunnel proxy requests retain the trusted-channel principal installation because the WebSocket channel is already authenticated.
+
+Federated hub reads omit remote-only variables that have no local mirror ACL metadata, and non-admin proxy writes require a local variable definition; global admins retain break-glass write access.
+
+Background schedulers and materializers remain in `SYSTEM` mode and do not apply an end user's member ACL. Federation health probes authenticate only the channel and send no on-behalf-of identity; they cannot return variable values or history.
 
 ## Production recommendations
 

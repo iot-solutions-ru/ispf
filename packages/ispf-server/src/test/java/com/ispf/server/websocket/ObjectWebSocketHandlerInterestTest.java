@@ -8,6 +8,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.NoOpClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class ObjectWebSocketHandlerInterestTest {
     private ObjectWebSocketHandler handler;
     private ObjectWebSocketPathInterestRegistry pathInterestRegistry;
     private ObjectAccessService objectAccessService;
+    private VariableMemberAccessService variableMemberAccessService;
 
     @BeforeEach
     void setUp() {
@@ -41,6 +43,7 @@ class ObjectWebSocketHandlerInterestTest {
         properties.setSendThreads(1);
         pathInterestRegistry = new ObjectWebSocketPathInterestRegistry();
         objectAccessService = mock(ObjectAccessService.class);
+        variableMemberAccessService = mock(VariableMemberAccessService.class);
         handler = new ObjectWebSocketHandler(
                 properties,
                 new ObjectMapper(),
@@ -50,7 +53,8 @@ class ObjectWebSocketHandlerInterestTest {
                 mock(ApplicationEventCatalogService.class),
                 pathInterestRegistry,
                 new NoOpClusterPathInterestStore(),
-                objectAccessService
+                objectAccessService,
+                variableMemberAccessService
         );
         handler.startSendWorkers();
     }
@@ -132,6 +136,7 @@ class ObjectWebSocketHandlerInterestTest {
         );
         when(objectAccessService.canRead(any(), any())).thenReturn(true);
         when(objectAccessService.canRead(eq("root.platform.security.users.admin"), any())).thenReturn(false);
+        when(variableMemberAccessService.canRead(any(), any(), any())).thenReturn(true);
 
         session.sendSubscribe("""
                 {"type":"subscribe","paths":["root.platform"]}
@@ -142,6 +147,58 @@ class ObjectWebSocketHandlerInterestTest {
 
         handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.platform.devices.pump", "speed"));
         assertThat(awaitMessages(session, 1, 2000)).hasSize(1);
+    }
+
+    @Test
+    void subscribeVariablesByPathDropsRestrictedVariables() throws Exception {
+        RecordingSession session = openSession("s-variable-acl");
+        session.attributes.put(
+                WebSocketAuthHandshakeInterceptor.AUTHENTICATION_ATTRIBUTE,
+                authentication("operator")
+        );
+        when(objectAccessService.canRead(eq("root.devices.pump"), any())).thenReturn(true);
+        when(variableMemberAccessService.canRead(eq("root.devices.pump"), eq("speed"), any()))
+                .thenReturn(true);
+        when(variableMemberAccessService.canRead(eq("root.devices.pump"), eq("secret"), any()))
+                .thenReturn(false);
+
+        session.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"],"variablesByPath":{"root.devices.pump":["speed","secret"]}}
+                """);
+
+        assertThat(pathInterestRegistry.hasVariableInterest("root.devices.pump", "speed")).isTrue();
+        assertThat(pathInterestRegistry.hasVariableInterest("root.devices.pump", "secret")).isFalse();
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "secret"));
+        assertThat(awaitMessages(session, 0, 200)).isEmpty();
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "speed"));
+        assertThat(awaitMessages(session, 1, 2000)).hasSize(1);
+    }
+
+    @Test
+    void pathWideSubscriptionFiltersRestrictedVariablesAtDelivery() throws Exception {
+        RecordingSession session = openSession("s-wide-variable-acl");
+        session.attributes.put(
+                WebSocketAuthHandshakeInterceptor.AUTHENTICATION_ATTRIBUTE,
+                authentication("operator")
+        );
+        when(objectAccessService.canRead(eq("root.devices.pump"), any())).thenReturn(true);
+        when(variableMemberAccessService.canRead(eq("root.devices.pump"), eq("secret"), any()))
+                .thenReturn(false);
+        when(variableMemberAccessService.canRead(eq("root.devices.pump"), eq("speed"), any()))
+                .thenReturn(true);
+
+        session.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"]}
+                """);
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "secret"));
+        assertThat(awaitMessages(session, 0, 200)).isEmpty();
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "speed"));
+        assertThat(awaitMessages(session, 1, 2000)).hasSize(1);
+        assertThat(session.messages.getFirst()).contains("\"variableName\":\"speed\"");
     }
 
     private static UsernamePasswordAuthenticationToken authentication(String role) {

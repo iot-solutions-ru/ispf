@@ -13,10 +13,14 @@ import com.ispf.server.history.VariableHistoryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +30,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class AnalyticsEngineIntegrationTest {
 
+    private static final Authentication ADMIN = UsernamePasswordAuthenticationToken.authenticated(
+            "admin",
+            "n/a",
+            List.of(new SimpleGrantedAuthority("admin"))
+    );
     private static final String SENSOR = "root.platform.devices.demo-sensor-01";
 
     @Autowired
@@ -108,7 +117,7 @@ class AnalyticsEngineIntegrationTest {
         );
 
         String tagPath = HistorianTagPaths.encode(SENSOR, ruleId);
-        var probe = engineService.probeTag(tagPath, Instant.now());
+        var probe = engineService.probeTag(tagPath, Instant.now(), ADMIN);
 
         assertThat(probe.status()).isEqualTo("ok");
         assertThat(probe.outputs()).containsKey("probeOutput");

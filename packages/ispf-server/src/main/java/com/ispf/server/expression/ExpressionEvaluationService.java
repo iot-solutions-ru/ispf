@@ -11,6 +11,8 @@ import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.PlatformBindingRegistry;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ServerBindingEvaluationContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -30,15 +32,18 @@ public class ExpressionEvaluationService {
 
     private final ObjectManager objectManager;
     private final ServerBindingEvaluationContext bindingContext;
+    private final VariableMemberAccessService variableMemberAccessService;
     private final BindingExpressionEvaluator bindingEvaluator = new BindingExpressionEvaluator();
     private final ExpressionEngine expressionEngine = new ExpressionEngine();
 
     public ExpressionEvaluationService(
             ObjectManager objectManager,
-            ServerBindingEvaluationContext bindingContext
+            ServerBindingEvaluationContext bindingContext,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.objectManager = objectManager;
         this.bindingContext = bindingContext;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     public EvaluateResult evaluate(String objectPath, String expression, String targetVariable) {
@@ -56,6 +61,17 @@ public class ExpressionEvaluationService {
             String targetVariable,
             List<String> breakpoints,
             String resumeFrom
+    ) {
+        return evaluate(objectPath, expression, targetVariable, breakpoints, resumeFrom, null);
+    }
+
+    public EvaluateResult evaluate(
+            String objectPath,
+            String expression,
+            String targetVariable,
+            List<String> breakpoints,
+            String resumeFrom,
+            Authentication authentication
     ) {
         String trimmed = expression != null ? expression.trim() : "";
         List<EvaluateStep> steps = new ArrayList<>();
@@ -83,6 +99,9 @@ public class ExpressionEvaluationService {
         PlatformObject node;
         try {
             node = objectManager.require(objectPath);
+            if (authentication != null) {
+                node = readableVariablesOnly(node, authentication);
+            }
             steps.add(new EvaluateStep("load-object", "ok", objectPath));
         } catch (Exception e) {
             steps.add(new EvaluateStep("load-object", "error", e.getMessage()));
@@ -217,6 +236,24 @@ public class ExpressionEvaluationService {
             });
         }
         return context;
+    }
+
+    private PlatformObject readableVariablesOnly(PlatformObject node, Authentication authentication) {
+        PlatformObject readable = new PlatformObject(
+                node.id(),
+                node.path(),
+                node.type(),
+                node.displayName(),
+                node.description(),
+                node.templateId().orElse(null),
+                node.sortOrder()
+        );
+        variableMemberAccessService.filterReadable(
+                node.path(),
+                node.variables().values(),
+                authentication
+        ).forEach(readable::addVariable);
+        return readable;
     }
 
     public record EvaluateStep(String phase, String status, Object detail) {

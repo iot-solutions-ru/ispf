@@ -1,7 +1,10 @@
 package com.ispf.server.platform.analytics;
 
+import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.workflow.WorkflowAiActionService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,18 +23,27 @@ public class AnalyticsAskService {
     private final AnalyticsAnalysisService analysisService;
     private final VariableHistoryService variableHistoryService;
     private final WorkflowAiActionService workflowAiActionService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public AnalyticsAskService(
             AnalyticsAnalysisService analysisService,
             VariableHistoryService variableHistoryService,
-            WorkflowAiActionService workflowAiActionService
+            WorkflowAiActionService workflowAiActionService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.analysisService = analysisService;
         this.variableHistoryService = variableHistoryService;
         this.workflowAiActionService = workflowAiActionService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
-    public Map<String, Object> askTrend(String objectPath, String variable, int hours) throws Exception {
+    public Map<String, Object> askTrend(
+            String objectPath,
+            String variable,
+            int hours,
+            Authentication authentication
+    ) {
+        variableMemberAccessService.requireRead(objectPath, variable, authentication);
         Instant end = Instant.now();
         Instant start = end.minus(Math.max(1, hours), ChronoUnit.HOURS);
         List<Double> series = new ArrayList<>();
@@ -40,12 +52,17 @@ public class AnalyticsAskService {
             series.add(sample.value() != null ? sample.value() : Double.NaN);
         }
         Map<String, Object> summary = analysisService.analyzeSeries(series, 3.0);
-        String narrative = workflowAiActionService.llmComplete(
-                "Summarize this OT analytics tag trend in 2-4 short sentences for an operator. Tag="
-                        + objectPath + "/" + variable + " Data=" + summary,
-                "platform-default",
-                30_000
-        );
+        String narrative;
+        try {
+            narrative = workflowAiActionService.llmComplete(
+                    "Summarize this OT analytics tag trend in 2-4 short sentences for an operator. Tag="
+                            + objectPath + "/" + variable + " Data=" + summary,
+                    "platform-default",
+                    30_000
+            );
+        } catch (WorkflowException ex) {
+            throw new IllegalStateException("Analytics trend narrative generation failed", ex);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
         result.put("objectPath", objectPath);

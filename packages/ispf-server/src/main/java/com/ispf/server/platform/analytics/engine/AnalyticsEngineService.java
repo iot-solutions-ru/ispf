@@ -12,6 +12,8 @@ import com.ispf.analytics.engine.LiveVariablePort;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
+import com.ispf.server.security.acl.VariableMemberAccessService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,7 @@ public class AnalyticsEngineService {
     private final AnalyticsDerivedValueWriter derivedValueWriter;
     private final AnalyticsMetricsRecorder metricsRecorder;
     private final AnalyticsTagMetadataService metadataService;
+    private final VariableMemberAccessService variableMemberAccessService;
     private final AnalyticsEngine analyticsEngine;
 
     public AnalyticsEngineService(
@@ -47,7 +50,8 @@ public class AnalyticsEngineService {
             CelExpressionEvaluator celExpressionEvaluator,
             ExpressionAliasEvaluator expressionAliasEvaluator,
             OeeEvaluator oeeEvaluator,
-            AnalyticsExtensionRegistry extensionRegistry
+            AnalyticsExtensionRegistry extensionRegistry,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.analyticsProperties = analyticsProperties;
         this.catalogService = catalogService;
@@ -56,6 +60,7 @@ public class AnalyticsEngineService {
         this.derivedValueWriter = derivedValueWriter;
         this.metricsRecorder = metricsRecorder;
         this.metadataService = metadataService;
+        this.variableMemberAccessService = variableMemberAccessService;
         List<AnalyticsEvaluator> evaluators = new ArrayList<>();
         evaluators.add(celExpressionEvaluator);
         evaluators.add(expressionAliasEvaluator);
@@ -118,12 +123,21 @@ public class AnalyticsEngineService {
      * Dry-run evaluation for inspector probe (does not write outputs or metadata).
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public TagProbeResult probeTag(String tagPath, Instant asOf) {
+    public TagProbeResult probeTag(String tagPath, Instant asOf, Authentication authentication) {
         if (!isEnabled()) {
             throw new IllegalStateException("Analytics engine is disabled");
         }
         AnalyticsTagDefinition tag = catalogService.findTagDefinition(tagPath)
                 .orElseThrow(() -> new IllegalArgumentException("Historian computation not found: " + tagPath));
+        variableMemberAccessService.requireReadAll(
+                authentication,
+                tag.sources().stream()
+                        .map(source -> new VariableMemberAccessService.VariableRef(
+                                source.path(),
+                                source.variable()
+                        ))
+                        .toList()
+        );
         long started = System.nanoTime();
         Instant resolvedAsOf = asOf != null ? asOf : Instant.now();
         try {
