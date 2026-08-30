@@ -9,16 +9,22 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.190] - 2026-08-30
+
 ### Исправлено
 
-- Закрыты обходы ACL переменных через доверенные каналы по BL-154: режим `MEMBER` теперь
-  применяется к запросам, экспорту и выражениям аналитики, федеративному туннелю
-  с `onBehalfOf`, инструментам агента для истории и аналитики, WebSocket-доставке,
-  редактору объектов, вычислению выражений и семантическому export/query Haystack/Brick.
-- Закрыт остаточный риск G-05 для on-behalf-of через федеративный HTTP-пир: хаб
-  передаёт заголовки пользователя, ролей через запятую и tenant, а пир ограничивает
-  делегированные роли пересечением ролей канала и on-behalf-of перед применением
-  `MEMBER`. Проверки состояния остаются только на уровне канала.
+- **BL-154 trusted-channel close** — `MEMBER` ACL на analytics, agent, WebSocket,
+  editor, expression, Haystack/Brick.
+- **Federation tunnel on-behalf-of** — делегированный principal; anonymous
+  value/history запрещены.
+- **HTTP peer on-behalf-of (G-05)** — заголовки `X-ISPF-On-Behalf-Of-*`,
+  пересечение ролей канала ∩ claimed (без escalation).
+- **Hub federated proxy fail-closed** — omit remote-only vars без local ACL;
+  proxy write без local var → 403 (кроме admin).
+
+### Изменено
+
+- Версия платформы **0.9.190**; обновлены security/federation/compliance docs.
 
 ## [0.9.189] - 2026-08-30
 

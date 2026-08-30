@@ -17,16 +17,28 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.190] - 2026-08-30
+
 ### Fixed
 
-- Closed BL-154 per-variable ACL trusted-channel gaps: `MEMBER` enforcement now
-  covers analytics query/export/expression, federation tunnel on-behalf-of
-  requests, agent history and analytics tools, WebSocket delivery, the object
-  editor, expression evaluation, and Haystack/Brick semantic export/query.
-- Closed the G-05 HTTP federation peer on-behalf-of residual: the hub forwards
-  user, comma-separated roles, and tenant headers, while the peer limits delegated
-  roles to the channel ∩ on-behalf-of intersection before `MEMBER` enforcement.
-  Health probes remain channel-only.
+- **BL-154 trusted-channel close** — per-variable ACL (`MEMBER` via
+  `VariableMemberAccessService`) on analytics query/export/expression, agent
+  history/analytics tools, WebSocket delivery, object editor, expression
+  evaluate, and Haystack/Brick semantic export/query.
+- **Federation tunnel on-behalf-of** — edge installs delegated principal;
+  anonymous value/history/invoke denied (health probes stay channel-only).
+- **Federation HTTP peer on-behalf-of (G-05)** — hub sends
+  `X-ISPF-On-Behalf-Of-User` / `Roles` / `Tenant`; peer
+  `FederationOnBehalfOfFilter` applies channel ∩ claimed roles (no privilege
+  escalation) before `MEMBER` enforcement.
+- **Hub federated proxy fail-closed** — omit remote-only variables without local
+  ACL metadata; non-admin proxy write requires local variable definition.
+
+### Changed
+
+- Platform version bump to **0.9.190**; AI context pack refresh for the release.
+- Security / federation / compliance docs and scorecard post-audit note updated
+  (frozen 0.9.102 Security score unchanged until next full audit).
 
 ## [0.9.189] - 2026-08-30
 
@@ -83,6 +95,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 - Platform version bump to **0.9.188**; AI context pack refresh for the release.
 
-[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.189...HEAD
+[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.190...HEAD
+[0.9.190]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.189...v0.9.190
 [0.9.189]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.188...v0.9.189
 [0.9.188]: https://github.com/iot-solutions-ru/ispf/releases/tag/v0.9.188
