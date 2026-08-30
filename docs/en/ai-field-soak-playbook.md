@@ -55,6 +55,7 @@ bash tools/agent-regression/run-vps-field-soak.sh hvac
 ```
 
 Evidence archives to `docs/evidence/ai-generator/YYYY-MM-DD-<site>-<domain>.json`.
+Existing 2026-08-24 archives cover the 0.9.186 demostand; re-run the soak on the current platform version after upgrades before using the evidence to advance a scorecard.
 
 ---
 
