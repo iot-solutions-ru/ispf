@@ -9,6 +9,12 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.200] - 2026-08-30
+
+### Исправлено
+
+- Self-diagnostics bootstrap: INTEGER zero без ternary-promotion в Double.
+
 ## [0.9.199] - 2026-08-30
 
 ### Исправлено

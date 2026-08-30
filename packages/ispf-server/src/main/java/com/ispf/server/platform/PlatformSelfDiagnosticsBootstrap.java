@@ -125,7 +125,15 @@ public class PlatformSelfDiagnosticsBootstrap {
                 continue;
             }
             DataSchema schema = var.floating() ? DOUBLE_VALUE : INTEGER_VALUE;
-            DataRecord zero = DataRecord.single(schema, Map.of("value", var.floating() ? 0.0 : 0));
+            // Do not use a numeric ternary for zeros: Java promotes Integer/Double branches to double,
+            // so INTEGER DataRecord rejects the boxed Double ("value must be integer").
+            Object zeroValue;
+            if (var.floating()) {
+                zeroValue = 0.0;
+            } else {
+                zeroValue = 0;
+            }
+            DataRecord zero = DataRecord.single(schema, Map.of("value", zeroValue));
             try {
                 objectManager.createVariable(
                         path,

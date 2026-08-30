@@ -17,6 +17,14 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.200] - 2026-08-30
+
+### Fixed
+
+- **Self-diagnostics bootstrap** — probe variable zero values no longer use a
+  Java ternary that promotes `0` to `Double` (INTEGER DataRecord rejected;
+  demostand skipped seeding `platform-metrics-probe` vars + dashboard).
+
 ## [0.9.199] - 2026-08-30
 
 ### Fixed
