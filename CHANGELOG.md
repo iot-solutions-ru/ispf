@@ -10,7 +10,8 @@ for the platform version in `gradle.properties` (`0.9.x` pre-1.0).
 bundle changelogs (those live in each package manifest).
 
 **Related history:** [roadmap](docs/en/roadmap.md) (phase journals),
-[ADRs](docs/en/decisions/readme.md), [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases).
+[ADRs](docs/en/decisions/readme.md), [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases)
+(tagged releases may lag `gradle.properties` version bumps).
 
 Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
@@ -60,5 +61,5 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 - Platform version bump to **0.9.188**; AI context pack refresh for the release.
 
-[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.188...HEAD
-[0.9.188]: https://github.com/iot-solutions-ru/ispf/releases/tag/v0.9.188
+[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/3f74d483...HEAD
+[0.9.188]: https://github.com/iot-solutions-ru/ispf/commit/3f74d483
