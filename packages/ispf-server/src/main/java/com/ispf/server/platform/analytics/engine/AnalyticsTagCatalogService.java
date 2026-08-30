@@ -81,12 +81,20 @@ public class AnalyticsTagCatalogService {
 
     @Transactional(readOnly = true)
     public List<AnalyticsTagDefinition> listAllTagDefinitions() {
+        // ObjectManager tree is loaded asynchronously relative to JDBC; scanning @bindingRules
+        // before markInitialized() floods WARN with ObjectNotFound for paths that exist in DB.
+        if (!objectManager.isInitialized()) {
+            return List.of();
+        }
         if (catalogCacheLoaded && !cachedAllTags.isEmpty()) {
             return cachedAllTags;
         }
         synchronized (catalogLock) {
             if (catalogCacheLoaded && !cachedAllTags.isEmpty()) {
                 return cachedAllTags;
+            }
+            if (!objectManager.isInitialized()) {
+                return List.of();
             }
             List<AnalyticsTagDefinition> built = List.copyOf(buildAllTagDefinitions());
             // Never permanently cache an empty catalog — boot/deploy races can see no @bindingRules yet.

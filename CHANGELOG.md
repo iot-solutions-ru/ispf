@@ -17,6 +17,13 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.198] - 2026-08-30
+
+### Fixed
+
+- **Analytics tag catalog boot race** — do not scan `@bindingRules` until
+  `ObjectManager` is initialized (stops early WARN ObjectNotFound spam).
+
 ## [0.9.197] - 2026-08-30
 
 ### Fixed

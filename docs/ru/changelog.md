@@ -9,6 +9,12 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.198] - 2026-08-30
+
+### Исправлено
+
+- Analytics tag catalog не сканирует `@bindingRules` до `ObjectManager.isInitialized()`.
+
 ## [0.9.197] - 2026-08-30
 
 ### Исправлено

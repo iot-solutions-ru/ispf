@@ -62,9 +62,21 @@ class AnalyticsTagCatalogServiceTest {
                 extensionRegistry,
                 jdbcTemplate
         );
+        org.mockito.Mockito.lenient().when(objectManager.isInitialized()).thenReturn(true);
         org.mockito.Mockito.lenient().when(extensionRegistry.registeredFunctions()).thenReturn(List.of());
         org.mockito.Mockito.lenient().when(jdbcTemplate.queryForList(any(String.class), eq(String.class), any()))
                 .thenReturn(List.of(DEVICE_A, DEVICE_B));
+    }
+
+    @Test
+    void skipsCatalogScanUntilObjectManagerInitialized() {
+        when(objectManager.isInitialized()).thenReturn(false);
+
+        assertThat(catalogService.listAllTagDefinitions()).isEmpty();
+
+        verify(jdbcTemplate, org.mockito.Mockito.never())
+                .queryForList(any(String.class), eq(String.class), any());
+        verify(bindingRulesService, org.mockito.Mockito.never()).listRules(any());
     }
 
     @Test
