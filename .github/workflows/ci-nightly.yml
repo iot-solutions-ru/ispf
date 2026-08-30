@@ -1,6 +1,10 @@
 name: CI nightly (full)
 
 on:
+  # Push: lightweight ack only (see job push-ack). Full suite stays schedule/dispatch
+  # so main pushes do not enqueue empty/failed nightly runs in the shared concurrency group.
+  push:
+    branches: [main]
   schedule:
     # Daily 02:00 UTC — full regression (S20-01)
     - cron: "0 2 * * *"
@@ -11,7 +15,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  push-ack:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge push (full nightly is schedule/dispatch only)
+        run: |
+          echo "CI nightly full suite runs on cron (02:00 UTC) and workflow_dispatch."
+          echo "Push to main is acknowledged here so the workflow does not record an empty failure."
+
   backend-full:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -119,6 +133,7 @@ jobs:
         run: ./gradlew --stop || true
 
   web-console-full:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -168,7 +183,7 @@ jobs:
 
   ci-dashboard:
     needs: [backend-full, web-console-full, cluster-ownership]
-    if: always()
+    if: always() && github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -184,6 +199,7 @@ jobs:
           retention-days: 30
 
   cluster-ownership:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -203,6 +219,7 @@ jobs:
             --no-daemon
 
   agent-regression-nightly:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

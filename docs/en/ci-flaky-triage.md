@@ -41,13 +41,14 @@ test.skip(true, "ci-flake #1234 — quarantine until 2026-07-20");
 | Workflow | Trigger | Scope |
 | -------- | ------- | ----- |
 | [ci.yml](../../.github/workflows/ci.yml) | PR | pr-fast: unit + build, path filters, no load/e2e |
-| [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) | daily cron, `workflow_dispatch` | Full: load gates, Playwright, cluster ownership |
+| [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) | daily cron, `workflow_dispatch`; **push → `push-ack` only** | Full suite on schedule/dispatch; push records a green ack so Actions does not show empty failures |
 | [load-test.yml](../../.github/workflows/load-test.yml) | nightly cron | JVM load gates only |
 | [e2e-live.yml](../../.github/workflows/e2e-live.yml) | weekly + dispatch | Prod smoke (secrets) |
 
-The full nightly workflow no longer runs on `main` pushes. This avoids empty or
-failure-notification spam when successive push runs contend for the shared
-nightly concurrency group; PR gating remains in `ci.yml`.
+The full nightly suite does **not** run on every `main` push (heavy jobs are
+`if: github.event_name != 'push'`). A lightweight **`push-ack`** job still runs on
+push so the workflow does not appear as an empty failure in Actions while the
+shared `ci-nightly` concurrency group is idle. PR gating remains in `ci.yml`.
 
 ## Known hotspots (baseline Jul 2026)
 

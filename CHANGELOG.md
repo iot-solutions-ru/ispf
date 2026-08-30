@@ -17,6 +17,12 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI nightly ghost failures on `main` push** — after removing full-suite
+  `on.push`, Actions still recorded empty failed runs; restore a lightweight
+  `push-ack` job and gate heavy nightly jobs with `if: event != push`.
+
 ### Changed
 
 - **HMI live FPS gate** — unmocked demostand path opens a real operator mimic

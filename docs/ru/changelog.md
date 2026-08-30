@@ -9,6 +9,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+### Исправлено
+
+- CI nightly ghost failures на push в `main` — лёгкий `push-ack`, тяжёлые job только schedule/dispatch.
+
 ### Изменено
 
 - Live FPS gate на реальном operator mimic + evidence demostand 0.9.193.
