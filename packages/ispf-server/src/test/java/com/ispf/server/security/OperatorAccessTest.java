@@ -61,7 +61,7 @@ class OperatorAccessTest {
                                   "name": "rbac-test-rule",
                                   "objectPath": "root.platform.devices.demo-sensor-01",
                                   "watchVariable": "temperature",
-                                  "conditionExpr": "true",
+                                  "conditionExpr": "self.temperature[\\"value\\"] > 80.0",
                                   "eventName": "thresholdExceeded",
                                   "enabled": false,
                                   "edgeTrigger": false
