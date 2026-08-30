@@ -15,6 +15,7 @@ import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.platform.HaystackExportService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import com.ispf.server.tenant.TenantScopeService;
 import tools.jackson.databind.ObjectMapper;
 
@@ -87,10 +88,15 @@ final class AgentActionTools {
                     return Map.of("status", "ERROR", "error", "objectPath and functionName are required");
                 }
                 invokeAccessService.requireDirectInvoke(objectPath, functionName, context.authentication());
-                DataRecord output = functionService.invoke(
-                        objectPath,
-                        functionName,
-                        parseInputPayload(arguments)
+                String invokeObjectPath = objectPath;
+                String invokeFunctionName = functionName;
+                DataRecord output = VariableAclRequestContext.callAsMember(
+                        context.authentication(),
+                        () -> functionService.invoke(
+                                invokeObjectPath,
+                                invokeFunctionName,
+                                parseInputPayload(arguments)
+                        )
                 );
                 DataSchema outputSchema = resolveOutputSchema(functionStore, objectMapper, objectPath, functionName);
                 String wireProfile = optionalString(arguments, "wireProfile");
@@ -142,10 +148,15 @@ final class AgentActionTools {
                     return Map.of("status", "ERROR", "error", "objectPath and functionName are required");
                 }
                 invokeAccessService.requireDirectInvoke(objectPath, functionName, context.authentication());
-                DataRecord output = functionService.invoke(
-                        objectPath,
-                        functionName,
-                        parseInputPayload(arguments)
+                String invokeObjectPath = objectPath;
+                String invokeFunctionName = functionName;
+                DataRecord output = VariableAclRequestContext.callAsMember(
+                        context.authentication(),
+                        () -> functionService.invoke(
+                                invokeObjectPath,
+                                invokeFunctionName,
+                                parseInputPayload(arguments)
+                        )
                 );
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("status", "OK");

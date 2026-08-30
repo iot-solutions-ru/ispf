@@ -11,11 +11,15 @@ import com.ispf.core.ref.PlatformRefParser;
 import com.ispf.server.event.EventService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +40,8 @@ class PlatformRefExecutorTest {
     @Mock
     EventService eventService;
     @Mock
+    VariableMemberAccessService variableMemberAccessService;
+    @Mock
     com.ispf.core.object.ObjectTree objectTree;
 
     @Test
@@ -44,7 +50,12 @@ class PlatformRefExecutorTest {
         when(objectManager.tree()).thenReturn(objectTree);
         when(objectTree.findByPath("root.platform.devices.remote")).thenReturn(Optional.of(remote));
 
-        PlatformRefExecutor executor = new PlatformRefExecutor(objectManager, functionService, eventService);
+        PlatformRefExecutor executor = new PlatformRefExecutor(
+                objectManager,
+                functionService,
+                eventService,
+                variableMemberAccessService
+        );
         Optional<Object> value = executor.read(
                 PlatformRefParser.parse("root.platform.devices.remote/temperature"),
                 "root.platform.devices.local"
@@ -55,7 +66,12 @@ class PlatformRefExecutorTest {
 
     @Test
     void firePublishesEvent() {
-        PlatformRefExecutor executor = new PlatformRefExecutor(objectManager, functionService, eventService);
+        PlatformRefExecutor executor = new PlatformRefExecutor(
+                objectManager,
+                functionService,
+                eventService,
+                variableMemberAccessService
+        );
         PlatformRef evt = PlatformRefParser.parse("root.platform.devices.pump/evt/overload");
         executor.fire(evt, "root.platform.devices.local", null);
         verify(eventService).fire(
@@ -63,6 +79,30 @@ class PlatformRefExecutorTest {
                 eq("overload"),
                 nullable(DataRecord.class)
         );
+    }
+
+    @Test
+    void memberReadOmitsVariableDeniedByAcl() {
+        String path = "root.platform.devices.remote";
+        var authentication = UsernamePasswordAuthenticationToken.authenticated(
+                "operator",
+                "n/a",
+                List.of()
+        );
+        when(variableMemberAccessService.canRead(path, "temperature", authentication)).thenReturn(false);
+        PlatformRefExecutor executor = new PlatformRefExecutor(
+                objectManager,
+                functionService,
+                eventService,
+                variableMemberAccessService
+        );
+
+        Optional<Object> value = VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> executor.read(PlatformRefParser.parse(path + "/temperature"), null)
+        );
+
+        assertThat(value).isEmpty();
     }
 
     private static PlatformObject deviceWithTemperature(String path, double temp) {

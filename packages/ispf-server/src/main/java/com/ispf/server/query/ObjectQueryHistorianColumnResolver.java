@@ -3,6 +3,8 @@ package com.ispf.server.query;
 import com.ispf.core.ref.PlatformRef;
 import com.ispf.core.ref.PlatformRefKind;
 import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
@@ -18,14 +20,26 @@ import java.util.Locale;
 public class ObjectQueryHistorianColumnResolver {
 
     private final ObjectProvider<VariableHistoryService> variableHistoryService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
-    public ObjectQueryHistorianColumnResolver(ObjectProvider<VariableHistoryService> variableHistoryService) {
+    public ObjectQueryHistorianColumnResolver(
+            ObjectProvider<VariableHistoryService> variableHistoryService,
+            VariableMemberAccessService variableMemberAccessService
+    ) {
         this.variableHistoryService = variableHistoryService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     public Object resolve(String fn, String window, PlatformRef ref) {
         if (fn == null || fn.isBlank() || ref == null || ref.kind() != PlatformRefKind.VARIABLE) {
             return null;
+        }
+        if (VariableAclRequestContext.isMemberEnforced()) {
+            variableMemberAccessService.requireRead(
+                    ref.object(),
+                    ref.name(),
+                    VariableAclRequestContext.requireAuthentication()
+            );
         }
         VariableHistoryService history = variableHistoryService.getIfAvailable();
         if (history == null) {

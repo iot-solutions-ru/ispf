@@ -2,7 +2,6 @@ package com.ispf.server.object;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.core.object.Variable;
 import com.ispf.core.ref.PlatformRef;
 import com.ispf.core.ref.PlatformRefParser;
 import com.ispf.expression.BindingEvaluationContext;
@@ -95,9 +94,7 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
             try {
                 PlatformRef ref = PlatformRefParser.parseVariableSource(trimmed);
                 if (ref.isCurrentObject()) {
-                    return ruleObject.getVariable(ref.name())
-                            .flatMap(Variable::value)
-                            .map(record -> String.valueOf(record.firstRow().get(ref.field())));
+                    return platformRefExecutor.readLocal(ruleObject, ref).map(String::valueOf);
                 }
                 return readRemoteField(ref.object(), ref.name(), ref.field()).map(String::valueOf);
             } catch (RuntimeException ex) {

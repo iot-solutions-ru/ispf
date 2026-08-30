@@ -9,6 +9,8 @@ import com.ispf.expression.ExpressionException;
 import com.ispf.server.event.EventService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -22,21 +24,27 @@ public class PlatformRefExecutor {
     private final ObjectManager objectManager;
     private final FunctionService functionService;
     private final EventService eventService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public PlatformRefExecutor(
             ObjectManager objectManager,
             FunctionService functionService,
-            EventService eventService
+            EventService eventService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.objectManager = objectManager;
         this.functionService = functionService;
         this.eventService = eventService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     public Optional<Object> read(PlatformRef ref, String ruleObjectPath) {
         PlatformRef resolved = PlatformRefResolver.resolve(ref, ruleObjectPath);
         if (resolved.kind() != PlatformRefKind.VARIABLE) {
             throw new ExpressionException("read() requires variable ref: " + ref);
+        }
+        if (!canRead(resolved)) {
+            return Optional.empty();
         }
         return objectManager.tree().findByPath(resolved.object())
                 .flatMap(node -> node.getVariable(resolved.name()))
@@ -52,6 +60,9 @@ public class PlatformRefExecutor {
                 : ref;
         if (resolved.kind() != PlatformRefKind.VARIABLE) {
             throw new ExpressionException("read() requires variable ref: " + ref);
+        }
+        if (!canRead(resolved)) {
+            return Optional.empty();
         }
         if (!resolved.object().equals(object.path())) {
             return read(ref, object.path());
@@ -108,5 +119,16 @@ public class PlatformRefExecutor {
                     return true;
                 })
                 .orElse(false);
+    }
+
+    private boolean canRead(PlatformRef ref) {
+        if (!VariableAclRequestContext.isMemberEnforced()) {
+            return true;
+        }
+        return variableMemberAccessService.canRead(
+                ref.object(),
+                ref.name(),
+                VariableAclRequestContext.requireAuthentication()
+        );
     }
 }

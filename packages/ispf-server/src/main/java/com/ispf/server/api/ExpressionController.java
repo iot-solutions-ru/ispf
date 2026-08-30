@@ -5,6 +5,7 @@ import com.ispf.expression.ExpressionException;
 import com.ispf.expression.FormalVerificationReport;
 import com.ispf.server.expression.ExpressionEvaluationService;
 import com.ispf.server.expression.ExpressionFormalVerificationService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -74,13 +75,16 @@ public class ExpressionController {
 
     @PostMapping("/evaluate")
     public EvaluateResponse evaluate(@RequestBody EvaluateRequest request, Authentication authentication) {
-        ExpressionEvaluationService.EvaluateResult result = evaluationService.evaluate(
-                request.objectPath(),
-                request.expression(),
-                request.targetVariable(),
-                request.breakpoints() != null ? request.breakpoints() : List.of(),
-                request.resumeFrom(),
-                authentication
+        ExpressionEvaluationService.EvaluateResult result = VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> evaluationService.evaluate(
+                        request.objectPath(),
+                        request.expression(),
+                        request.targetVariable(),
+                        request.breakpoints() != null ? request.breakpoints() : List.of(),
+                        request.resumeFrom(),
+                        authentication
+                )
         );
         return new EvaluateResponse(
                 result.valid(),

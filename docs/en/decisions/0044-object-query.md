@@ -55,6 +55,8 @@ POST /api/v1/objects/by-path/functions/invoke?path={objectPath}&name=run
 - [`ObjectQueryFunctionHandler`](../../../packages/ispf-server/src/main/java/com/ispf/server/function/ObjectQueryFunctionHandler.java) — `@Order(-2)`, returns `rows` (JSON string) + `rowCount`.
 - [`ObjectQueryCatalog`](../../../packages/ispf-server/src/main/java/com/ispf/server/query/ObjectQueryCatalog.java) — folder bootstrap for `root.platform.queries`.
 
+Interactive execution inherits `VariableAclRequestContext.MEMBER` from HTTP/agent function invocation or expression evaluation. In that mode OQ uses per-variable `readRoles`: denied projected live and historian fields are omitted, `source=variables` lists only readable names, and expanding a denied record variable produces no rows. The historian resolver performs `requireRead` before querying storage; OQ scan projection converts that denial to an omitted column for list/query UX, while direct explicit historian access remains a 403. Scheduler and binding-engine background execution keeps the default `SYSTEM` mode.
+
 ### 4. Platform bindings
 
 | Binding | Purpose |

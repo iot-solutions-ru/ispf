@@ -55,6 +55,8 @@ POST /api/v1/objects/by-path/functions/invoke?path={objectPath}&name=run
 - [`ObjectQueryFunctionHandler`](../../../packages/ispf-server/src/main/java/com/ispf/server/function/ObjectQueryFunctionHandler.java) — `@Order(-2)`, возвращает `rows` (JSON string) + `rowCount`.
 - [`ObjectQueryCatalog`](../../../packages/ispf-server/src/main/java/com/ispf/server/query/ObjectQueryCatalog.java) — bootstrap папки `root.platform.queries`.
 
+Интерактивное выполнение наследует `VariableAclRequestContext.MEMBER` от вызова функции по HTTP/через AI-агента или от вычисления выражения. В этом режиме OQ применяет `readRoles` переменных: запрещённые live- и historian-поля проекции пропускаются, `source=variables` перечисляет только доступные имена, а развёртка запрещённой record-переменной не создаёт строк. Historian resolver выполняет `requireRead` до запроса к хранилищу; OQ scan преобразует этот отказ в пропущенную колонку для удобства list/query, а прямой явный доступ к historian остаётся 403. Фоновые планировщики и binding engine сохраняют режим `SYSTEM` по умолчанию.
+
 ### 4. Platform bindings
 
 | Binding | Назначение |

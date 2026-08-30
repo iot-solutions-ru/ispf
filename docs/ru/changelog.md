@@ -9,6 +9,14 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+### Исправлено
+
+- **BL-154: остаток Object Query/function/binding** — интерактивные вызовы
+  функций по HTTP/через AI-агента и вычисление binding выполняются в `MEMBER`;
+  OQ-проекции live/historian, introspection переменных, expand и чтение
+  platform ref пропускают переменные, запрещённые `readRoles`. Фоновая
+  автоматизация планировщика и binding engine остаётся в `SYSTEM`.
+
 ## [0.9.190] - 2026-08-30
 
 ### Исправлено

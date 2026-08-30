@@ -14,12 +14,14 @@ import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.platform.HaystackExportService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import com.ispf.server.tenant.TenantScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -125,14 +128,23 @@ class AgentActionToolsTest {
     @Test
     void invokeBffRequiresInvokeAcl() throws Exception {
         DataSchema schema = new DataSchema("out", List.of());
+        var authentication = UsernamePasswordAuthenticationToken.authenticated(
+                "operator",
+                "n/a",
+                List.of()
+        );
         when(functionService.invoke(anyString(), anyString(), nullable(DataRecordPayloadRequest.class)))
-                .thenReturn(DataRecord.empty(schema));
+                .thenAnswer(ignored -> {
+                    assertTrue(VariableAclRequestContext.isMemberEnforced());
+                    assertSame(authentication, VariableAclRequestContext.requireAuthentication());
+                    return DataRecord.empty(schema);
+                });
 
         PlatformAgentTool invoke = tool("invoke_bff");
         invoke.execute(Map.of(
                 "objectPath", "root.platform.devices.demo-sensor-01",
                 "functionName", "mes_listOrders"
-        ), new AgentContext("admin", null, null));
+        ), new AgentContext("operator", authentication, null));
 
         verify(invokeAccessService).requireDirectInvoke(eq("root.platform.devices.demo-sensor-01"), eq("mes_listOrders"), any());
     }

@@ -5,6 +5,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.ref.PlatformRef;
+import com.ispf.core.ref.PlatformRefKind;
 import com.ispf.core.ref.PlatformRefParser;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.server.object.ObjectManager;
@@ -18,7 +19,11 @@ import com.ispf.server.query.oq.ObjectQueryRefTemplate;
 import com.ispf.server.query.oq.ObjectQueryResult;
 import com.ispf.server.query.oq.ObjectQuerySpec;
 import com.ispf.server.ref.PlatformRefExecutor;
+import com.ispf.server.ref.PlatformRefResolver;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,22 +36,27 @@ import java.util.Set;
 @Service
 public class ObjectQueryService {
 
+    private static final Object OMIT_FIELD = new Object();
+
     private final ObjectManager objectManager;
     private final PlatformRefExecutor platformRefExecutor;
     private final com.ispf.server.query.oq.ObjectQueryJoinResolver joinResolver;
     private final ObjectQueryHistorianColumnResolver historianColumnResolver;
+    private final VariableMemberAccessService variableMemberAccessService;
     private final ExpressionEngine expressionEngine = new ExpressionEngine();
 
     public ObjectQueryService(
             ObjectManager objectManager,
             PlatformRefExecutor platformRefExecutor,
             com.ispf.server.query.oq.ObjectQueryJoinResolver joinResolver,
-            ObjectQueryHistorianColumnResolver historianColumnResolver
+            ObjectQueryHistorianColumnResolver historianColumnResolver,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.objectManager = objectManager;
         this.platformRefExecutor = platformRefExecutor;
         this.joinResolver = joinResolver;
         this.historianColumnResolver = historianColumnResolver;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     public ObjectQueryResult execute(ObjectQuerySpec spec, String ruleObjectPath) {
@@ -67,13 +77,14 @@ public class ObjectQueryService {
             if (!matchesObjectTypes(node, from.objectTypes())) {
                 continue;
             }
-            if (!passesFilter(from.filter(), node)) {
+            PlatformObject queryNode = readableVariablesOnly(node);
+            if (!passesFilter(from.filter(), queryNode)) {
                 continue;
             }
             if (from.expand() != null) {
-                rows.addAll(expandRows(node, from.expand(), drivingAlias, spec, ruleObjectPath));
+                rows.addAll(expandRows(queryNode, from.expand(), drivingAlias, spec, ruleObjectPath));
             } else {
-                rows.add(buildProjectedRow(node, null, drivingAlias, spec, ruleObjectPath));
+                rows.add(buildProjectedRow(queryNode, null, drivingAlias, spec, ruleObjectPath));
             }
         }
         rows = applyHaving(rows, spec.having());
@@ -156,10 +167,17 @@ public class ObjectQueryService {
             projected.put("_rowKey", drivingNode.path());
         }
         for (ObjectQueryFieldSpec field : spec.fieldsOrEmpty()) {
-            projected.put(
-                    field.name(),
-                    resolveFieldValue(field, aliasPaths, recordRow, ruleObjectPath, drivingNode, projected)
+            Object value = resolveFieldValue(
+                    field,
+                    aliasPaths,
+                    recordRow,
+                    ruleObjectPath,
+                    drivingNode,
+                    projected
             );
+            if (value != OMIT_FIELD) {
+                projected.put(field.name(), value);
+            }
         }
         return projected;
     }
@@ -175,26 +193,52 @@ public class ObjectQueryService {
         if (field.historianFn() != null && !field.historianFn().isBlank() && field.ref() != null && !field.ref().isBlank()) {
             String resolvedRef = ObjectQueryRefTemplate.substitute(field.ref(), aliasPaths, recordRow);
             try {
-                PlatformRef ref = PlatformRefParser.parse(resolvedRef);
+                PlatformRef ref = PlatformRefResolver.resolve(
+                        PlatformRefParser.parse(resolvedRef),
+                        ruleObjectPath
+                );
+                if (!canRead(ref)) {
+                    return OMIT_FIELD;
+                }
                 return historianColumnResolver.resolve(field.historianFn(), field.historianWindow(), ref);
+            } catch (ResponseStatusException ex) {
+                if (VariableAclRequestContext.isMemberEnforced()
+                        && ex.getStatusCode().value() == 403) {
+                    return OMIT_FIELD;
+                }
+                return null;
             } catch (RuntimeException ignored) {
                 return null;
             }
         }
         if (field.ref() != null && !field.ref().isBlank()) {
-            if (ObjectQueryRefTemplate.isRowFieldRef(field.ref())) {
+            if (recordRow != null && ObjectQueryRefTemplate.isRowFieldRef(field.ref())) {
                 String rowField = ObjectQueryRefTemplate.rowFieldName(field.ref());
-                return recordRow != null ? recordRow.get(rowField) : null;
+                return recordRow.get(rowField);
             }
             String resolvedRef = ObjectQueryRefTemplate.substitute(field.ref(), aliasPaths, recordRow);
-            return platformRefExecutor.read(PlatformRefParser.parse(resolvedRef), ruleObjectPath).orElse(null);
+            PlatformRef ref = PlatformRefResolver.resolve(
+                    PlatformRefParser.parse(resolvedRef),
+                    ruleObjectPath
+            );
+            if (!canRead(ref)) {
+                return OMIT_FIELD;
+            }
+            return platformRefExecutor.read(ref, ruleObjectPath).orElse(null);
         }
         if (field.expression() != null && !field.expression().isBlank()) {
             Map<String, Object> context = new LinkedHashMap<>(projectedRow);
             if (recordRow != null) {
                 context.put("row", recordRow);
             }
-            return expressionEngine.evaluate(field.expression(), drivingNode, context);
+            try {
+                return expressionEngine.evaluate(field.expression(), drivingNode, context);
+            } catch (RuntimeException ex) {
+                if (VariableAclRequestContext.isMemberEnforced()) {
+                    return OMIT_FIELD;
+                }
+                throw ex;
+            }
         }
         String source = field.source();
         String alias = field.alias() != null && !field.alias().isBlank() ? field.alias() : aliasPaths.keySet().iterator().next();
@@ -219,20 +263,83 @@ public class ObjectQueryService {
             return node.description();
         }
         if ("variables".equalsIgnoreCase(source)) {
-            return node.variables().keySet().stream().sorted().toList();
+            return readableVariableNames(node);
         }
-        return node.getVariable(source)
+        Optional<Variable> variable = node.getVariable(source);
+        if (variable.isPresent() && !canRead(node.path(), variable.get().name())) {
+            return OMIT_FIELD;
+        }
+        return variable
                 .flatMap(Variable::value)
                 .map(record -> record.rowCount() > 0 ? record.firstRow() : Map.of())
                 .orElse(null);
+    }
+
+    private PlatformObject readableVariablesOnly(PlatformObject node) {
+        if (!VariableAclRequestContext.isMemberEnforced()) {
+            return node;
+        }
+        PlatformObject readable = new PlatformObject(
+                node.id(),
+                node.path(),
+                node.type(),
+                node.displayName(),
+                node.description(),
+                node.templateId().orElse(null),
+                node.sortOrder()
+        );
+        variableMemberAccessService.filterReadable(
+                node.path(),
+                node.variables().values(),
+                VariableAclRequestContext.requireAuthentication()
+        ).forEach(readable::addVariable);
+        return readable;
+    }
+
+    private List<String> readableVariableNames(PlatformObject node) {
+        if (!VariableAclRequestContext.isMemberEnforced()) {
+            return node.variables().keySet().stream().sorted().toList();
+        }
+        return variableMemberAccessService.filterReadable(
+                        node.path(),
+                        node.variables().values(),
+                        VariableAclRequestContext.requireAuthentication()
+                ).stream()
+                .map(Variable::name)
+                .sorted()
+                .toList();
+    }
+
+    private boolean canRead(PlatformRef ref) {
+        return ref != null
+                && ref.kind() == PlatformRefKind.VARIABLE
+                && canRead(ref.object(), ref.name());
+    }
+
+    private boolean canRead(String objectPath, String variableName) {
+        if (!VariableAclRequestContext.isMemberEnforced()) {
+            return true;
+        }
+        return variableMemberAccessService.canRead(
+                objectPath,
+                variableName,
+                VariableAclRequestContext.requireAuthentication()
+        );
     }
 
     private boolean passesFilter(String filterExpression, PlatformObject node) {
         if (filterExpression == null || filterExpression.isBlank()) {
             return true;
         }
-        Object result = expressionEngine.evaluate(filterExpression, node);
-        return !(result instanceof Boolean bool) || bool;
+        try {
+            Object result = expressionEngine.evaluate(filterExpression, node);
+            return !(result instanceof Boolean bool) || bool;
+        } catch (RuntimeException ex) {
+            if (VariableAclRequestContext.isMemberEnforced()) {
+                return false;
+            }
+            throw ex;
+        }
     }
 
     private boolean passesExpandFilter(String filterExpression, Map<String, Object> recordRow) {
@@ -320,9 +427,15 @@ public class ObjectQueryService {
             if (row.isEmpty()) {
                 continue;
             }
-            Object result = expressionEngine.evaluate(having, null, row);
-            if (!(result instanceof Boolean bool) || bool) {
-                filtered.add(row);
+            try {
+                Object result = expressionEngine.evaluate(having, null, row);
+                if (!(result instanceof Boolean bool) || bool) {
+                    filtered.add(row);
+                }
+            } catch (RuntimeException ex) {
+                if (!VariableAclRequestContext.isMemberEnforced()) {
+                    throw ex;
+                }
             }
         }
         return filtered;

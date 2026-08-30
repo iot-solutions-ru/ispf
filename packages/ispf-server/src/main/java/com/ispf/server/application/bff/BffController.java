@@ -6,6 +6,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,10 +39,13 @@ public class BffController {
     @PostMapping("/invoke")
     public Map<String, Object> invoke(@RequestBody BffInvokeRequest request, Authentication authentication) {
         invokeAccessService.requireDirectInvoke(request.objectPath(), request.functionName(), authentication);
-        DataRecord output = functionService.invoke(
-                request.objectPath(),
-                request.functionName(),
-                request.input()
+        DataRecord output = VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> functionService.invoke(
+                        request.objectPath(),
+                        request.functionName(),
+                        request.input()
+                )
         );
         return BffWireMapper.toWire(output, request.wireProfile(), resolveOutputSchema(
                 request.objectPath(),
