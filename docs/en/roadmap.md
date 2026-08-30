@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **ispf-vps jar 0.9.193:** shared `parsePrivateKey`; Post-S33 scorecard/CEL/HMI honesty docs shipped with release. |
 | 2026-08-30 | **Post-S33 scorecard honesty + CEL formal docs:** pin demostand **0.9.192**; AI gap residual updated (0.9.191 re-soak Done; multi-day optional); G-03 acknowledges PostgreSQL RLS Done (no physical table-routing claim); ADR-0055 surfaced in expression-language + demostand verify smoke evidence. |
 | 2026-08-30 | **ispf-vps jar 0.9.192:** license PEM env unescape (literal `\\n` → AI apply signing); AI soft re-soak evidence for **0.9.191** HVAC/MES/SCADA archived; Release `v0.9.192`. |
 | 2026-08-30 | **ispf-vps jar 0.9.191:** OQ/function MEMBER ACL residual + backup admin assert; MES GA 8/8; CI nightly push flood removed. |
