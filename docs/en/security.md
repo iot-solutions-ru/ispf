@@ -89,6 +89,7 @@ Rules: `IspfAuthorizationRules.java`.
 | `GET/POST /api/v1/work-queue/**` | ✓ | ✓ | ✓ | |
 | `POST/PUT/PATCH/DELETE` solution config (`/objects`, `/applications`, data-sources, …) | ✓ | ✓ | | |
 | `PUT /api/v1/objects/by-path/acl` | ✓ | | | |
+| `/api/v1/platform/backup/**` | ✓ | | | |
 | `/api/v1/platform/metrics`, `/runtime-settings`, `/update/**`, … | ✓ | | | |
 | `/api/v1/security/**`, `/federation/**`, `/tenants/**` | ✓ | | | |
 | `/api/v1/ai/**` (except `GET /ai/provider`) | ✓ | ✓ | | |
@@ -102,6 +103,8 @@ Rules: `IspfAuthorizationRules.java`.
 **developer** can: all solution configuration (objects, applications, platform SQL tools, `executeQuery`, **AI Studio**), but **not** system settings, security, federation, tenants, license/cluster.
 
 **admin** can: everything above + platform administration.
+
+Platform backup remains admin-only. Its export is a SYSTEM-style privileged snapshot, not a MEMBER-filtered full-tree dump available to operators.
 
 ## Keycloak (development)
 

@@ -89,6 +89,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 | `GET/POST /api/v1/work-queue/**` | ✓ | ✓ | ✓ | |
 | `POST/PUT/PATCH/DELETE` конфигурация решений (`/objects`, `/applications`, data-sources, …) | ✓ | ✓ | | |
 | `PUT /api/v1/objects/by-path/acl` | ✓ | | | |
+| `/api/v1/platform/backup/**` | ✓ | | | |
 | `/api/v1/platform/metrics`, `/runtime-settings`, `/update/**`, … | ✓ | | | |
 | `/api/v1/security/**`, `/federation/**`, `/tenants/**` | ✓ | | | |
 | `/api/v1/ai/**` (кроме `GET /ai/provider`) | ✓ | ✓ | | |
@@ -102,6 +103,8 @@ curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 **разработчик** может: всё для конфигурации решений (объекты, приложения, инструменты платформы SQL, `executeQuery`, **AI Studio**), но **нет** системные настройки, безопасность, федерация, тенанты, лицензия/кластер.
 
 **admin** может: всё выше + платформенное администрирование.
+
+Резервное копирование платформы остаётся доступным только администратору. Экспорт создаёт привилегированный снимок в стиле SYSTEM, а не отфильтрованную в режиме MEMBER полную выгрузку, доступную операторам.
 
 ## Keycloak (разработчик)
 

@@ -17,6 +17,11 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Security
+
+- Assert and document that platform backup export remains an admin-only,
+  SYSTEM-style privileged snapshot rather than a MEMBER-filtered operator dump.
+
 ## [0.9.190] - 2026-08-30
 
 ### Fixed
