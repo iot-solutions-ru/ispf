@@ -6,8 +6,8 @@ import com.ispf.analytics.engine.LiveVariablePort;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
-import com.ispf.expression.ExpressionFormalVerifier;
 import com.ispf.expression.FormalVerificationReport;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.analytics.engine.HistorianCelPreprocessor;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Ad-hoc analytics CEL-over-historian evaluation API (BL-211).
@@ -23,26 +22,24 @@ import java.util.regex.Pattern;
 @Service
 public class AnalyticsExpressionService {
 
-    private static final Pattern HISTORIAN_HELPER = Pattern.compile(
-            "(avg|min|max|last|sum|live)\\s*\\(",
-            Pattern.CASE_INSENSITIVE
-    );
-
     private final ObjectManager objectManager;
     private final ExpressionEngine expressionEngine;
     private final HistorianPort historianPort;
     private final LiveVariablePort liveVariablePort;
+    private final ExpressionFormalVerificationService formalVerificationService;
 
     public AnalyticsExpressionService(
             ObjectManager objectManager,
             ExpressionEngine expressionEngine,
             HistorianPort historianPort,
-            LiveVariablePort liveVariablePort
+            LiveVariablePort liveVariablePort,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         this.objectManager = objectManager;
         this.expressionEngine = expressionEngine;
         this.historianPort = historianPort;
         this.liveVariablePort = liveVariablePort;
+        this.formalVerificationService = formalVerificationService;
     }
 
     public ValidateResult validate(String expression, String objectPath) {
@@ -64,8 +61,8 @@ public class AnalyticsExpressionService {
                     Instant.now()
             );
             expressionEngine.validateCelCompile(expanded);
-            FormalVerificationReport verification = formalVerifyAnalytics(expression);
-            if (verification.blocksConditionApply()) {
+            FormalVerificationReport verification = formalVerificationService.analyzeAnalyticsSource(expression);
+            if (formalVerificationService.shouldBlockOnValidate(verification)) {
                 return new ValidateResult(
                         false,
                         expanded,
@@ -104,20 +101,6 @@ public class AnalyticsExpressionService {
         }
         long latencyMs = (System.nanoTime() - started) / 1_000_000L;
         return new EvaluateResult(value, expanded, latencyMs);
-    }
-
-    /**
-     * Historian helpers ({@code avg}/{@code live}/…) are expanded to literals before CEL;
-     * formal SMT checks on the expanded form would only reflect current samples. Verify the
-     * source expression only when it is pure CEL (no historian helpers).
-     */
-    private static FormalVerificationReport formalVerifyAnalytics(String expression) {
-        if (HISTORIAN_HELPER.matcher(expression).find()) {
-            return FormalVerificationReport.skipped(
-                    "historian helpers not modeled in SMT yet; formal verify runs on pure CEL conditions"
-            );
-        }
-        return ExpressionFormalVerifier.analyze(expression);
     }
 
     private static Double toDouble(Object raw) {

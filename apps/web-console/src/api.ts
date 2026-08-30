@@ -116,10 +116,47 @@ export function updateAuthTimeZone(timeZone: string): Promise<{ username: string
   });
 }
 
-export function validateExpression(expression: string): Promise<{ valid: boolean; expression: string; error: string | null }> {
+export type FormalVerificationReport = {
+  status: "skipped" | "passed" | "failed" | "inconclusive" | "unavailable" | string;
+  engine: string;
+  satisfiable: boolean | null;
+  alwaysTrue: boolean | null;
+  equivalent?: boolean | null;
+  codes?: string[];
+  findings: string[];
+  details?: Record<string, unknown>;
+};
+
+export function validateExpression(expression: string): Promise<{
+  valid: boolean;
+  expression: string;
+  error: string | null;
+  warnings?: string[];
+  verification?: FormalVerificationReport | null;
+}> {
   return request("/api/v1/expressions/validate", {
     method: "POST",
     body: JSON.stringify({ expression }),
+  });
+}
+
+export function verifyCelCondition(expression: string): Promise<{
+  ok: boolean;
+  verification: FormalVerificationReport;
+}> {
+  return request("/api/v1/expressions/verify", {
+    method: "POST",
+    body: JSON.stringify({ expression }),
+  });
+}
+
+export function verifyCelEquivalence(left: string, right: string): Promise<{
+  ok: boolean;
+  verification: FormalVerificationReport;
+}> {
+  return request("/api/v1/expressions/verify-equivalence", {
+    method: "POST",
+    body: JSON.stringify({ left, right }),
   });
 }
 

@@ -5,6 +5,8 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
+import com.ispf.server.config.ExpressionFormalVerificationProperties;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
@@ -67,7 +69,8 @@ class AgentAutomationToolsTest {
                 bindingDependencyIndex,
                 bindingRuleEngine,
                 recipeCatalog,
-                new ObjectMapper()
+                new ObjectMapper(),
+                new ExpressionFormalVerificationService(new ExpressionFormalVerificationProperties())
         );
         context = new AgentContext("admin", null, new AgentRunState());
     }

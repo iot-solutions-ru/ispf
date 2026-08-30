@@ -379,7 +379,16 @@ public final class AgentToolInputSchemas {
         catalog.put("evaluate_analytics_expression", objectSchema(
                 props(
                         "expression", stringProp("Analytics expression"),
-                        "bindings", objectProp("Bindings")
+                        "objectPath", stringProp("Object path for historian context"),
+                        "mode", stringProp("validate|evaluate")
+                ),
+                req("expression"),
+                true
+        ));
+        catalog.put("verify_cel_condition", objectSchema(
+                props(
+                        "expression", stringProp("Boolean CEL condition to formally verify"),
+                        "equivalentTo", stringProp("Optional second expression for equivalence proof")
                 ),
                 req("expression"),
                 true

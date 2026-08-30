@@ -215,6 +215,7 @@ export interface AnalyticsExpressionValidateResult {
   expandedExpression: string | null;
   historianSources: string[];
   errors: string[];
+  verification?: import("../api").FormalVerificationReport | null;
 }
 
 export interface AnalyticsExpressionEvaluateResult {

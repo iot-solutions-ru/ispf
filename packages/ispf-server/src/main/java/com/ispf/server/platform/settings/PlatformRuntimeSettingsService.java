@@ -3,6 +3,7 @@ package com.ispf.server.platform.settings;
 import com.ispf.server.config.BindingProperties;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.config.ExpressionFormalVerificationProperties;
 import com.ispf.server.config.FunctionProperties;
 import com.ispf.server.config.MqttGatewayProperties;
 import com.ispf.server.config.ObjectChangeProperties;
@@ -31,6 +32,7 @@ public class PlatformRuntimeSettingsService {
     private final VariableHistoryProperties variableHistoryProperties;
     private final DriverPackProperties driverPackProperties;
     private final MqttGatewayProperties mqttGatewayProperties;
+    private final ExpressionFormalVerificationProperties expressionFormalVerificationProperties;
     private final ObjectChangeEventBus objectChangeEventBus;
 
     public PlatformRuntimeSettingsService(
@@ -44,6 +46,7 @@ public class PlatformRuntimeSettingsService {
             VariableHistoryProperties variableHistoryProperties,
             DriverPackProperties driverPackProperties,
             MqttGatewayProperties mqttGatewayProperties,
+            ExpressionFormalVerificationProperties expressionFormalVerificationProperties,
             ObjectChangeEventBus objectChangeEventBus
     ) {
         this.environment = environment;
@@ -56,6 +59,7 @@ public class PlatformRuntimeSettingsService {
         this.variableHistoryProperties = variableHistoryProperties;
         this.driverPackProperties = driverPackProperties;
         this.mqttGatewayProperties = mqttGatewayProperties;
+        this.expressionFormalVerificationProperties = expressionFormalVerificationProperties;
         this.objectChangeEventBus = objectChangeEventBus;
     }
 
@@ -256,6 +260,18 @@ public class PlatformRuntimeSettingsService {
                     bindingProperties.getAudit().setEnabled(Boolean.parseBoolean(value));
             case "binding.async-coalesce-enabled" ->
                     bindingProperties.setAsyncCoalesceEnabled(Boolean.parseBoolean(value));
+            case "expression.formal-verification.enabled" ->
+                    expressionFormalVerificationProperties.setEnabled(Boolean.parseBoolean(value));
+            case "expression.formal-verification.timeout-seconds" ->
+                    expressionFormalVerificationProperties.setTimeoutSeconds(Integer.parseInt(value));
+            case "expression.formal-verification.enforce-on-apply" ->
+                    expressionFormalVerificationProperties.setEnforceOnApply(Boolean.parseBoolean(value));
+            case "expression.formal-verification.enforce-on-validate" ->
+                    expressionFormalVerificationProperties.setEnforceOnValidate(Boolean.parseBoolean(value));
+            case "expression.formal-verification.reject-unsatisfiable" ->
+                    expressionFormalVerificationProperties.setRejectUnsatisfiable(Boolean.parseBoolean(value));
+            case "expression.formal-verification.reject-tautology" ->
+                    expressionFormalVerificationProperties.setRejectTautology(Boolean.parseBoolean(value));
             case "mqtt-gateway.ingress-dispatch-coalesce" ->
                     mqttGatewayProperties.setIngressDispatchCoalesceEnabled(Boolean.parseBoolean(value));
             case "event-journal.cassandra.partition-batch" ->

@@ -1,43 +1,59 @@
-# ADR-0055: CEL formal verification as AI condition gate
+# ADR-0055: CEL formal verification as product AI/condition gate
 
 ## Status
 
-Accepted (2026-08-30)
+Accepted (2026-08-30) — **product** (not experimental MVP)
 
 ## Context
 
-ISPF is positioned as an **AI-first** OT platform (ADR-0004/0005). LLM tools already
-create alert conditions, binding conditions, and analytics CEL. Compile-only validation
-catches syntax errors but not logical dead ends (`temp > 100 && temp < 50`) or tautologies
-(`true || …`) that would spam operators or never fire.
+ISPF is AI-first (ADR-0004/0005/0051). LLM tools and humans both author boolean CEL for
+alerts, bindings, and platform context rules. Compile-only validation misses logical
+failures (dead conditions, tautologies) and cannot prove safe refactors.
 
-CEL-Java 0.14 ships `dev.cel:verifier` (Z3 via `z3-turnkey`) with satisfiability,
-validity, and equivalence proofs.
+CEL-Java 0.14 ships `dev.cel:verifier` (Z3 via `z3-turnkey`).
 
 ## Decision
 
-1. Add `dev.cel:verifier:0.14.0` to `ispf-expression`.
-2. Expose `ExpressionFormalVerifier` / `FormalVerificationReport` for boolean CEL with
-   ISPF roots (`self`/`parent`/`context`/`input` as `dyn`).
-3. **Hard gate** on AI apply paths for boolean conditions:
-   - `configure_alert.conditionExpr`
-   - `create_binding_rule.condition`
-   - `POST /api/v1/expressions/validate` (reactive)
-   - analytics/catalog validate when expression is pure CEL boolean (no historian helpers)
-4. Reject **unsatisfiable** and **always-true** conditions (`status=failed`).
-5. Historian helpers (`avg`/`live`/…) are **skipped** for SMT until modeled — expanded
-   literals would only reflect the current sample, not the expression template.
+### Product surface
+
+1. **Library** (`ispf-expression`): `ExpressionFormalVerifier` + `FormalVerificationReport`
+   with stable `codes` (`UNSATISFIABLE`, `TAUTOLOGY`, `EQUIVALENT`, …) for UI i18n / AI.
+2. **Runtime service** (`ExpressionFormalVerificationService`) +
+   `ispf.expression.formal-verification.*` settings (hot-reloadable via platform runtime settings):
+   - `enabled` (default true)
+   - `timeout-seconds` (default 2)
+   - `enforce-on-apply` / `enforce-on-validate` (default true)
+   - `reject-unsatisfiable` / `reject-tautology` (default true)
+3. **APIs**
+   - `POST /api/v1/expressions/validate` — compile + formal; returns `warnings` + `verification`
+   - `POST /api/v1/expressions/verify` — formal only
+   - `POST /api/v1/expressions/verify-equivalence` — prove `left ≡ right`
+   - Analytics / catalog validate include `verification` (historian helpers → skipped)
+4. **Enforce on apply (same bar for human REST and AI)**
+   - `AlertRuleService` (`conditionExpr`, `deactivateExpr`)
+   - `BindingRulesController` (rule `condition`)
+   - AI: `configure_alert`, `create_binding_rule`, `configure_platform_context_rule`
+5. **AI tool** `verify_cel_condition` (read-only; operator allowlist) — analyze or equivalence.
+6. **Web console** surfaces formal findings on CEL validate (alerts / bindings).
+
+### Non-goals (tracked follow-ups)
+
+- SMT axioms for historian helpers (`avg`/`live`) — skipped until modeled
+- Workflow BPMN design-time formal gate (runtime still evaluates CEL)
+- CEL Policy aggregate packs
 
 ## Consequences
 
-- AI agents receive structured `verification` findings and cannot apply dead/tautology alerts.
-- Extra ~2s soft timeout per verify; Z3 natives come from `tools.aqua:z3-turnkey`.
-- Equivalence checks and policy aggregate remain follow-ups (refactor safety, multi-hit packs).
+- Dead/tautology conditions cannot be saved or AI-applied when enforce flags are on.
+- Equivalence unlocks safe AI refactors (`verify_cel_condition` + `equivalentTo`).
+- Z3 natives via `tools.aqua:z3-turnkey`; soft timeout avoids hanging validate UX.
+- Operators can soften or disable the gate via runtime settings without rebuild.
 
 ## Alternatives considered
 
 | Alternative | Rejected because |
 |-------------|------------------|
-| Soft warnings only | AI would still deploy broken alerts |
-| Verify expanded historian CEL | Misleading — proves current samples, not the template |
-| Wait for typed `self.*` schemas | DYN already catches contradictions useful for AI MVP |
+| Soft warnings only | AI/product still ship broken alerts |
+| AI-only gate | Human REST would bypass; inconsistent product |
+| Verify expanded historian CEL | Proves current samples, not the template |
+| Wait for typed `self.*` schemas | DYN already catches contradictions useful in production |

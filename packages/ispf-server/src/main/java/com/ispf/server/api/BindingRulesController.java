@@ -4,6 +4,7 @@ import com.ispf.core.binding.BindingRule;
 import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.api.support.ObjectCollaborationSupport;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
@@ -37,6 +38,7 @@ public class BindingRulesController {
     private final BindingRulesService bindingRulesService;
     private final BindingDependencyIndex dependencyIndex;
     private final BindingRuleEngine bindingRuleEngine;
+    private final ExpressionFormalVerificationService formalVerificationService;
 
     public BindingRulesController(
             ObjectManager objectManager,
@@ -44,7 +46,8 @@ public class BindingRulesController {
             ObjectEditLeaseService editLeaseService,
             BindingRulesService bindingRulesService,
             BindingDependencyIndex dependencyIndex,
-            BindingRuleEngine bindingRuleEngine
+            BindingRuleEngine bindingRuleEngine,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         this.objectManager = objectManager;
         this.objectAccessService = objectAccessService;
@@ -52,6 +55,7 @@ public class BindingRulesController {
         this.bindingRulesService = bindingRulesService;
         this.dependencyIndex = dependencyIndex;
         this.bindingRuleEngine = bindingRuleEngine;
+        this.formalVerificationService = formalVerificationService;
     }
 
     @GetMapping("/by-path/binding-rules")
@@ -75,7 +79,7 @@ public class BindingRulesController {
                     BindingExpressionValidator.validateOrThrow(rule.expression());
                 }
                 if (rule.condition() != null && !rule.condition().isBlank()) {
-                    BindingExpressionValidator.validateOrThrow(rule.condition());
+                    formalVerificationService.requireSafeConditionForApply(rule.condition());
                 }
             }
             List<BindingRule> saved = bindingRulesService.saveRules(path, rules);

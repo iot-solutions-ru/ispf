@@ -139,7 +139,8 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
             WorkflowAiActionService workflowAiActionService,
             com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService analyticsTagCatalogService,
             com.ispf.server.platform.analytics.AnalyticsQueryService analyticsQueryService,
-            com.ispf.server.platform.analytics.AnalyticsExpressionService analyticsExpressionService
+            com.ispf.server.platform.analytics.AnalyticsExpressionService analyticsExpressionService,
+            com.ispf.server.expression.ExpressionFormalVerificationService formalVerificationService
     ) {
         this.objectMapper = objectMapper;
         this.operatorAgentToolPolicy = operatorAgentToolPolicy;
@@ -204,7 +205,8 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 haystackExportService,
                 ObjectTreePort,
                 objectAccessService,
-                tenantScopeService
+                tenantScopeService,
+                formalVerificationService
         ));
         tools.addAll(AgentFunctionTools.all(
                 ObjectTreePort,
@@ -259,7 +261,8 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 bindingDependencyIndex,
                 bindingRuleEngine,
                 agentRecipeCatalog,
-                objectMapper
+                objectMapper,
+                formalVerificationService
         ));
         tools.addAll(AgentDeployPlaybookTools.all(
                 objectMapper,

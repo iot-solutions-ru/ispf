@@ -242,6 +242,12 @@ final class PlatformRuntimeSettingsCatalog {
             def("ai", "ai.agent-max-history-turns", "ISPF_AI_AGENT_MAX_HISTORY_TURNS", "ispf.ai.agent-max-history-turns", PlatformRuntimeSettingType.INTEGER, "50", false, false),
             def("ai", "mcp.enabled", "ISPF_MCP_ENABLED", "ispf.mcp.enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
             def("ai", "mcp.stdio-enabled", "ISPF_MCP_STDIO_ENABLED", "ispf.mcp.stdio-enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
+            def("ai", "expression.formal-verification.enabled", "ISPF_EXPRESSION_FORMAL_VERIFICATION_ENABLED", "ispf.expression.formal-verification.enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
+            def("ai", "expression.formal-verification.timeout-seconds", "ISPF_EXPRESSION_FORMAL_VERIFICATION_TIMEOUT_SECONDS", "ispf.expression.formal-verification.timeout-seconds", PlatformRuntimeSettingType.INTEGER, "2", false, true),
+            def("ai", "expression.formal-verification.enforce-on-apply", "ISPF_EXPRESSION_FORMAL_VERIFICATION_ENFORCE_ON_APPLY", "ispf.expression.formal-verification.enforce-on-apply", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
+            def("ai", "expression.formal-verification.enforce-on-validate", "ISPF_EXPRESSION_FORMAL_VERIFICATION_ENFORCE_ON_VALIDATE", "ispf.expression.formal-verification.enforce-on-validate", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
+            def("ai", "expression.formal-verification.reject-unsatisfiable", "ISPF_EXPRESSION_FORMAL_VERIFICATION_REJECT_UNSATISFIABLE", "ispf.expression.formal-verification.reject-unsatisfiable", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
+            def("ai", "expression.formal-verification.reject-tautology", "ISPF_EXPRESSION_FORMAL_VERIFICATION_REJECT_TAUTOLOGY", "ispf.expression.formal-verification.reject-tautology", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),
 
             def("platform", "update.check-enabled", "ISPF_UPDATE_CHECK_ENABLED", "ispf.platform.update.check-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("platform", "update.apply-enabled", "ISPF_UPDATE_APPLY_ENABLED", "ispf.platform.update.apply-enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),

@@ -8,7 +8,7 @@ Platform-side development infrastructure for solution developers. AI reads curat
 
 **Target approach:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
 
-See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), and [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) (prevention over heuristic guards).
+See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) (prevention over heuristic guards), and [0055-cel-formal-verification-ai-gate](decisions/0055-cel-formal-verification-ai-gate.md) (CEL formal verification product gate).
 
 ---
 
@@ -213,7 +213,8 @@ Platform tools (Java handlers, ACL-aware):
 | `get_dashboard_layout` | Read layout JSON from dashboard path or built-in template |
 | `set_dashboard_layout` | Replace layout from JSON or template (`snmp-host-monitoring`, `virtual-cluster-overview`, …) |
 | `add_dashboard_widget` | Append one widget to `layout.widgets[]` |
-| `configure_alert` | Create/update ALERT rule (CEL condition → event) |
+| `configure_alert` | Create/update ALERT rule (CEL condition → event; formal verification gate) |
+| `verify_cel_condition` | Formal verify boolean CEL (Z3); optional `equivalentTo` for refactor proof |
 | `configure_correlator` | Create/update event correlator |
 | `configure_operator_ui` | Operator HMI default dashboard + menu |
 | `create_variable` | New variable with PlatformRef binding (prefer SINGLETON hub for app logic) |

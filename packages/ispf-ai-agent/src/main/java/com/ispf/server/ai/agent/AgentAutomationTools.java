@@ -12,10 +12,10 @@ import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.expression.BindingExpressionValidator;
-import com.ispf.expression.ExpressionFormalVerifier;
 import com.ispf.expression.FormalVerificationReport;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.correlator.CorrelatorActionType;
 import com.ispf.server.correlator.CorrelatorPatternType;
 import com.ispf.server.correlator.EventCorrelator;
@@ -52,10 +52,17 @@ final class AgentAutomationTools {
             BindingDependencyIndex bindingDependencyIndex,
             BindingRuleEngine bindingRuleEngine,
             AgentRecipeCatalog recipeCatalog,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         return List.of(
-                configureAlertTool(automationTreeService, ObjectTreePort, objectAccessService, tenantScopeService),
+                configureAlertTool(
+                        automationTreeService,
+                        ObjectTreePort,
+                        objectAccessService,
+                        tenantScopeService,
+                        formalVerificationService
+                ),
                 configureCorrelatorTool(automationTreeService, ObjectTreePort, objectAccessService, tenantScopeService),
                 listAutomationTool(automationTreeService, objectAccessService, tenantScopeService),
                 getAutomationSchemaTool(recipeCatalog),
@@ -67,18 +74,55 @@ final class AgentAutomationTools {
                         tenantScopeService,
                         bindingRulesService,
                         bindingDependencyIndex,
-                        bindingRuleEngine
+                        bindingRuleEngine,
+                        formalVerificationService
                 ),
+                verifyCelConditionTool(formalVerificationService),
                 configureVariableHistoryTool(ObjectTreePort, objectAccessService, tenantScopeService),
                 configureOperatorUiTool(operatorAppUiService)
         );
+    }
+
+    private static PlatformAgentTool verifyCelConditionTool(ExpressionFormalVerificationService formalVerificationService) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "verify_cel_condition";
+            }
+
+            @Override
+            public String description() {
+                return "Formally verify a boolean CEL condition (Z3). Args: expression (required), "
+                        + "optional equivalentTo (second expression for equivalence proof). "
+                        + "Returns verification{status,codes,findings,satisfiable,alwaysTrue,equivalent}. "
+                        + "Use before configure_alert / create_binding_rule to catch dead or tautology conditions.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String expression = stringArg(arguments, "expression");
+                if (expression.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "expression is required");
+                }
+                String equivalentTo = optionalString(arguments, "equivalentTo");
+                FormalVerificationReport report = equivalentTo != null && !equivalentTo.isBlank()
+                        ? formalVerificationService.verifyEquivalence(expression, equivalentTo)
+                        : formalVerificationService.analyze(expression);
+                Map<String, Object> ok = new LinkedHashMap<>();
+                ok.put("status", report.blocksConditionApply() ? "REJECTED" : "OK");
+                ok.put("ok", !report.blocksConditionApply());
+                ok.put("verification", report);
+                return ok;
+            }
+        };
     }
 
     private static PlatformAgentTool configureAlertTool(
             AutomationTreeService automationTreeService,
             ObjectTreePort ObjectTreePort,
             ObjectAccessService objectAccessService,
-            TenantScopeService tenantScopeService
+            TenantScopeService tenantScopeService,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         return new PlatformAgentTool() {
             @Override
@@ -152,7 +196,7 @@ final class AgentAutomationTools {
                     }
 
                     FormalVerificationReport verification =
-                            ExpressionFormalVerifier.requireSafeConditionOrThrow(conditionExpr);
+                            formalVerificationService.requireSafeConditionForApply(conditionExpr);
 
                     String displayName = name.isBlank()
                             ? ObjectTreePort.require(path).displayName()
@@ -594,7 +638,8 @@ final class AgentAutomationTools {
             TenantScopeService tenantScopeService,
             BindingRulesService bindingRulesService,
             BindingDependencyIndex bindingDependencyIndex,
-            BindingRuleEngine bindingRuleEngine
+            BindingRuleEngine bindingRuleEngine,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         return new PlatformAgentTool() {
             @Override
@@ -658,7 +703,7 @@ final class AgentAutomationTools {
                     String condition = optionalString(arguments, "condition");
                     FormalVerificationReport conditionVerification = null;
                     if (condition != null && !condition.isBlank()) {
-                        conditionVerification = ExpressionFormalVerifier.requireSafeConditionOrThrow(condition);
+                        conditionVerification = formalVerificationService.requireSafeConditionForApply(condition);
                     }
                     BindingActivators activators = buildActivators(arguments, path, ruleKind);
                     com.ispf.core.binding.BindingTarget target = buildTarget(arguments, targetKind, targetVariable);

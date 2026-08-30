@@ -6,6 +6,7 @@ import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.event.EventService;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.notification.NotificationDispatchService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
@@ -31,6 +32,7 @@ public class AlertRuleService {
     private final AutomationTreeService automationTreeService;
     private final ObjectManager objectManager;
     private final ExpressionEngine expressionEngine;
+    private final ExpressionFormalVerificationService formalVerificationService;
     private final EventService eventService;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final NotificationDispatchService notificationDispatchService;
@@ -41,6 +43,7 @@ public class AlertRuleService {
             AutomationTreeService automationTreeService,
             ObjectManager objectManager,
             ExpressionEngine expressionEngine,
+            ExpressionFormalVerificationService formalVerificationService,
             EventService eventService,
             AutomationMetricsRecorder automationMetricsRecorder,
             NotificationDispatchService notificationDispatchService,
@@ -50,6 +53,7 @@ public class AlertRuleService {
         this.automationTreeService = automationTreeService;
         this.objectManager = objectManager;
         this.expressionEngine = expressionEngine;
+        this.formalVerificationService = formalVerificationService;
         this.eventService = eventService;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.notificationDispatchService = notificationDispatchService;
@@ -443,7 +447,7 @@ public class AlertRuleService {
         return rule.anomalyModelId() != null && !rule.anomalyModelId().isBlank();
     }
 
-    /** Validate target object exists and CEL expressions compile. Events live on the ALERT node. */
+    /** Validate target object exists and CEL expressions compile + formal-verify. Events live on the ALERT node. */
     private void validateTargetAndExpressions(
             String targetObjectPath,
             String conditionExpr,
@@ -455,10 +459,10 @@ public class AlertRuleService {
             if (conditionExpr == null || conditionExpr.isBlank()) {
                 throw new IllegalArgumentException("conditionExpr is required when anomalyModelId is empty");
             }
-            expressionEngine.compile(conditionExpr);
+            formalVerificationService.requireSafeConditionForApply(conditionExpr);
         }
         if (deactivateExpr != null && !deactivateExpr.isBlank()) {
-            expressionEngine.compile(deactivateExpr);
+            formalVerificationService.requireSafeConditionForApply(deactivateExpr);
         }
     }
 

@@ -31,6 +31,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.IspfRedisProperties.class,
         com.ispf.server.config.MqttGatewayProperties.class,
         com.ispf.server.config.BindingProperties.class,
+        com.ispf.server.config.ExpressionFormalVerificationProperties.class,
         com.ispf.server.config.FunctionProperties.class,
         com.ispf.server.config.BootstrapProperties.class,
         com.ispf.server.config.NotificationProperties.class,

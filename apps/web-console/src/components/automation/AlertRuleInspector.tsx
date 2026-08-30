@@ -104,7 +104,14 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
 
   const validateMutation = useMutation({
     mutationFn: () => validateExpression(form.conditionExpr),
-    onSuccess: (result) => setExprError(result.valid ? null : result.error ?? "CEL invalid"),
+    onSuccess: (result) => {
+      if (result.valid) {
+        setExprError(null);
+        return;
+      }
+      const finding = result.verification?.findings?.[0];
+      setExprError(result.error ?? finding ?? "CEL invalid");
+    },
   });
 
   if (inspectorQueryLoading(variablesQuery)) {

@@ -1,6 +1,7 @@
 package com.ispf.server.platform.analytics;
 
 import com.ispf.expression.BindingExpressionValidator;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.history.HistorianQueryMetricsRecorder;
 import com.ispf.server.config.VariableHistorySloProperties;
 import com.ispf.server.config.AnalyticsSloProperties;
@@ -59,6 +60,7 @@ public class PlatformAnalyticsController {
     private final AnalyticsEngineService analyticsEngineService;
     private final AnalyticsCatalogService analyticsCatalogService;
     private final AnalyticsExpressionService expressionService;
+    private final ExpressionFormalVerificationService formalVerificationService;
     private final AnalyticsFormulaService formulaService;
     private final BindingFormulaRebindService bindingFormulaRebindService;
     private final AnalyticsAskService analyticsAskService;
@@ -77,6 +79,7 @@ public class PlatformAnalyticsController {
             AnalyticsEngineService analyticsEngineService,
             AnalyticsCatalogService analyticsCatalogService,
             AnalyticsExpressionService expressionService,
+            ExpressionFormalVerificationService formalVerificationService,
             AnalyticsFormulaService formulaService,
             BindingFormulaRebindService bindingFormulaRebindService,
             AnalyticsAskService analyticsAskService
@@ -94,6 +97,7 @@ public class PlatformAnalyticsController {
         this.analyticsEngineService = analyticsEngineService;
         this.analyticsCatalogService = analyticsCatalogService;
         this.expressionService = expressionService;
+        this.formalVerificationService = formalVerificationService;
         this.formulaService = formulaService;
         this.bindingFormulaRebindService = bindingFormulaRebindService;
         this.analyticsAskService = analyticsAskService;
@@ -240,12 +244,12 @@ public class PlatformAnalyticsController {
         return expressionService.validate(request.expression(), objectPath);
     }
 
-    private static AnalyticsExpressionService.ValidateResult validateReactiveExpression(String expression) {
+    private AnalyticsExpressionService.ValidateResult validateReactiveExpression(String expression) {
         try {
             BindingExpressionValidator.validateOrThrow(expression);
             String normalized = expression == null ? "" : expression.trim();
-            var verification = com.ispf.expression.ExpressionFormalVerifier.analyze(normalized);
-            if (verification.blocksConditionApply()) {
+            var verification = formalVerificationService.analyze(normalized);
+            if (formalVerificationService.shouldBlockOnValidate(verification)) {
                 return new AnalyticsExpressionService.ValidateResult(
                         false,
                         normalized,

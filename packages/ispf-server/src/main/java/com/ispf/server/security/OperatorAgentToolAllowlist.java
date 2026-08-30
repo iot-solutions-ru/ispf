@@ -37,6 +37,7 @@ public final class OperatorAgentToolAllowlist {
             "get_analytics_tag",
             "query_analytics_tags",
             "evaluate_analytics_expression",
+            "verify_cel_condition",
             "detect_anomalies",
             "compare_periods",
             "summarize_trend",

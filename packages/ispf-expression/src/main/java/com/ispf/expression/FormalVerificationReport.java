@@ -4,16 +4,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Result of CEL formal verification (Z3-backed {@code dev.cel:verifier}).
+ * Product-facing CEL formal verification report (Z3 via {@code dev.cel:verifier}).
  *
- * <p>Used as an AI safety gate: catch unsatisfiable / always-true boolean
- * conditions before bindings, alerts, and workflow rules are applied.
+ * <p>{@link #codes()} are stable machine tokens for UI i18n / AI tools;
+ * {@link #findings()} remain human-readable English summaries.
  */
 public record FormalVerificationReport(
         String status,
         String engine,
         Boolean satisfiable,
         Boolean alwaysTrue,
+        Boolean equivalent,
+        List<String> codes,
         List<String> findings,
         Map<String, Object> details
 ) {
@@ -23,14 +25,42 @@ public record FormalVerificationReport(
     public static final String STATUS_INCONCLUSIVE = "inconclusive";
     public static final String STATUS_UNAVAILABLE = "unavailable";
 
-    public static FormalVerificationReport skipped(String reason) {
+    public static final String CODE_UNSATISFIABLE = "UNSATISFIABLE";
+    public static final String CODE_TAUTOLOGY = "TAUTOLOGY";
+    public static final String CODE_SATISFIABLE = "SATISFIABLE";
+    public static final String CODE_NOT_TAUTOLOGY = "NOT_TAUTOLOGY";
+    public static final String CODE_EQUIVALENT = "EQUIVALENT";
+    public static final String CODE_NOT_EQUIVALENT = "NOT_EQUIVALENT";
+    public static final String CODE_INCONCLUSIVE = "INCONCLUSIVE";
+    public static final String CODE_SKIPPED_DISABLED = "SKIPPED_DISABLED";
+    public static final String CODE_SKIPPED_EMPTY = "SKIPPED_EMPTY";
+    public static final String CODE_SKIPPED_PLATFORM_BINDING = "SKIPPED_PLATFORM_BINDING";
+    public static final String CODE_SKIPPED_NON_BOOLEAN = "SKIPPED_NON_BOOLEAN";
+    public static final String CODE_SKIPPED_HISTORIAN = "SKIPPED_HISTORIAN_HELPERS";
+    public static final String CODE_UNAVAILABLE = "UNAVAILABLE";
+    public static final String CODE_PASSED = "PASSED";
+
+    public FormalVerificationReport(
+            String status,
+            String engine,
+            Boolean satisfiable,
+            Boolean alwaysTrue,
+            List<String> findings,
+            Map<String, Object> details
+    ) {
+        this(status, engine, satisfiable, alwaysTrue, null, List.of(), findings, details);
+    }
+
+    public static FormalVerificationReport skipped(String code, String reason) {
         return new FormalVerificationReport(
                 STATUS_SKIPPED,
                 ExpressionFormalVerifier.ENGINE_ID,
                 null,
                 null,
+                null,
+                List.of(code),
                 List.of(reason),
-                Map.of("reason", reason)
+                Map.of("reason", reason, "code", code)
         );
     }
 
@@ -40,13 +70,19 @@ public record FormalVerificationReport(
                 ExpressionFormalVerifier.ENGINE_ID,
                 null,
                 null,
+                null,
+                List.of(CODE_UNAVAILABLE),
                 List.of(reason),
                 Map.of("reason", reason)
         );
     }
 
-    /** True when the expression must not be applied as a boolean condition. */
+    /** True when the expression must not be applied as a boolean condition under hard gate. */
     public boolean blocksConditionApply() {
         return STATUS_FAILED.equals(status);
+    }
+
+    public boolean hasCode(String code) {
+        return codes != null && codes.contains(code);
     }
 }

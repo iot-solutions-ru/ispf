@@ -9,7 +9,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.expression.BindingExpressionValidator;
-import com.ispf.expression.ExpressionFormalVerifier;
+import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectTreePort;
@@ -41,7 +41,8 @@ final class AgentPlatformTools {
             HaystackExportService haystackExportService,
             ObjectTreePort ObjectTreePort,
             ObjectAccessService objectAccessService,
-            TenantScopeService tenantScopeService
+            TenantScopeService tenantScopeService,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         return List.of(
                 listPlatformSchedulesTool(scheduleObjectService, ObjectTreePort, objectAccessService, tenantScopeService),
@@ -53,7 +54,8 @@ final class AgentPlatformTools {
                         bindingRuleEngine,
                         ObjectTreePort,
                         objectAccessService,
-                        tenantScopeService
+                        tenantScopeService,
+                        formalVerificationService
                 ),
                 resolveTimezoneTool(timeZoneResolver, objectAccessService, tenantScopeService),
                 exportHaystackTool(haystackExportService, objectAccessService, tenantScopeService)
@@ -224,7 +226,8 @@ final class AgentPlatformTools {
             BindingRuleEngine bindingRuleEngine,
             ObjectTreePort ObjectTreePort,
             ObjectAccessService objectAccessService,
-            TenantScopeService tenantScopeService
+            TenantScopeService tenantScopeService,
+            ExpressionFormalVerificationService formalVerificationService
     ) {
         return new PlatformAgentTool() {
             @Override
@@ -260,7 +263,7 @@ final class AgentPlatformTools {
                     BindingExpressionValidator.validateOrThrow(expression);
                     String condition = optionalString(arguments, "condition");
                     if (condition != null && !condition.isBlank()) {
-                        ExpressionFormalVerifier.requireSafeConditionOrThrow(condition);
+                        formalVerificationService.requireSafeConditionForApply(condition);
                     }
                     String targetKind = BindingTargetKind.normalize(stringArg(arguments, "targetKind"));
                     if (BindingTargetKind.EVENT.equals(targetKind) && stringArg(arguments, "eventName").isBlank()) {
