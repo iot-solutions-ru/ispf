@@ -112,10 +112,11 @@ class ObjectControllerFederatedVariableAclTest {
         tree.register(localNode);
         when(objectManager.tree()).thenReturn(tree);
         when(variableMemberAccessService.canRead(LOCAL_PATH, "mirrored", OPERATOR)).thenReturn(true);
-        when(federationProxyService.proxyVariables(TARGET)).thenReturn(objectMapper.valueToTree(List.of(
+        var proxyResponse = objectMapper.valueToTree(List.of(
                 variableDto("mirrored"),
                 variableDto("remoteOnly")
-        )));
+        ));
+        when(federationProxyService.proxyVariables(TARGET)).thenReturn(proxyResponse);
 
         List<VariableDto> result = controller.listVariables(LOCAL_PATH, OPERATOR);
 
