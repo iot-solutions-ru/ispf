@@ -9,6 +9,22 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.192] - 2026-08-30
+
+### Исправлено
+
+- **PEM в EnvironmentFile** — signing/verify терпят литеральные `\n`
+  (AI apply 503 `Illegal base64 character 5c`); VPS enable script пишет
+  single-line PEM.
+
+### Evidence
+
+- Soft re-soak demostand **0.9.191** HVAC/MES/SCADA (~19s, signed).
+
+### Изменено
+
+- Версия платформы **0.9.192**.
+
 ## [0.9.191] - 2026-08-30
 
 ### Исправлено

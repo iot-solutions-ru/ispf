@@ -25,17 +25,29 @@ public final class LicensePublicKeySupport {
     private LicensePublicKeySupport() {
     }
 
+    /**
+     * Expand literal {@code \n}/{@code \r} sequences that survive env-file loading
+     * (systemd {@code EnvironmentFile}, some dotenv writers) into real newlines.
+     */
+    public static String unescapePemNewlines(String pem) {
+        if (pem == null || pem.isEmpty()) {
+            return "";
+        }
+        return pem.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n");
+    }
+
     public static List<PublicKey> parsePublicKeys(String pemConfig) {
         if (pemConfig == null || pemConfig.isBlank()) {
             return List.of();
         }
+        String normalizedConfig = unescapePemNewlines(pemConfig);
         List<PublicKey> keys = new ArrayList<>();
-        Matcher matcher = PEM_BLOCK.matcher(pemConfig);
+        Matcher matcher = PEM_BLOCK.matcher(normalizedConfig);
         while (matcher.find()) {
             keys.add(decodePublicKey(matcher.group(1)));
         }
         if (keys.isEmpty()) {
-            keys.add(decodePublicKey(normalizeSinglePem(pemConfig)));
+            keys.add(decodePublicKey(normalizeSinglePem(normalizedConfig)));
         }
         return List.copyOf(keys);
     }

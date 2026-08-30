@@ -17,6 +17,24 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.192] - 2026-08-30
+
+### Fixed
+
+- **License PEM env loading** — signing/verify tolerate literal `\n` sequences
+  left by systemd `EnvironmentFile` / dotenv (was `Illegal base64 character 5c`
+  on AI live `apply:true`). Demostand enable script writes single-line PEMs.
+
+### Evidence
+
+- BL-180 soft re-soak on demostand **0.9.191**: HVAC/MES/SCADA
+  `functionalOk` + `softBudgetMet` (~19s each), `bundleTrust=signed`
+  (`docs/evidence/ai-generator/2026-08-30-ispf-vps-0.9.191-*`).
+
+### Changed
+
+- Platform version bump to **0.9.192**.
+
 ## [0.9.191] - 2026-08-30
 
 ### Fixed

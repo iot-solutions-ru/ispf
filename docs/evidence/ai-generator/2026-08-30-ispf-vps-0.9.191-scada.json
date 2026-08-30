@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-30T05:54:30.293641Z",
+  "runStartedAt": "2026-08-30T05:54:08.997011Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "scada",
+      "status": "OK",
+      "elapsedMs": 19288,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-scada-plant-with-one-pump-5qia",
+      "hubPath": "root.platform.devices.describe-a-scada-plant-with-one-pump-5qia-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-scada-plant-with-one-pump-5qia-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-scada-plant-with-one-pump-5qia-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "signed",
+      "operatorUiHttp": "200"
+    }
+  ]
+}

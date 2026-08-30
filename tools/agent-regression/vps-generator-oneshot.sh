@@ -105,7 +105,7 @@ elapsed_ms = int((time.monotonic() - started) * 1000)
 print(f"elapsedMs={elapsed_ms}")
 print(json.dumps({k: gen.get(k) for k in ("status", "mode", "appId", "hubPath", "bundleTrust") if k in gen})[:500])
 
-functional_ok = (
+functional_ok = bool(
     gen.get("mode") == "live"
     and gen.get("appId")
     and gen.get("hubPath")

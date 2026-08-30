@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-30T05:53:47.145873Z",
+  "runStartedAt": "2026-08-30T05:53:25.986229Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "hvac",
+      "status": "OK",
+      "elapsedMs": 18747,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-building-hvac-plant-with-4tkf",
+      "hubPath": "root.platform.devices.describe-a-building-hvac-plant-with-4tkf-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-building-hvac-plant-with-4tkf-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-building-hvac-plant-with-4tkf-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "signed",
+      "operatorUiHttp": "200"
+    }
+  ]
+}

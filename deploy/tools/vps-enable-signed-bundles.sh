@@ -72,15 +72,23 @@ import sys
 from pathlib import Path
 
 env_path, pub_path, priv_path = map(Path, sys.argv[1:4])
-pub = pub_path.read_text().strip().replace("\n", "\\n")
-priv = priv_path.read_text().strip().replace("\n", "\\n")
+def oneline_pem(pem: str) -> str:
+    # systemd EnvironmentFile does not unescape \n inside quotes; keep a single
+    # line with spaces so Java Base64 decode (whitespace-stripped) still works.
+    lines = [ln.strip() for ln in pem.strip().splitlines() if ln.strip()]
+    if len(lines) < 3:
+        raise SystemExit("invalid PEM (need header/body/footer)")
+    return f"{lines[0]} {''.join(lines[1:-1])} {lines[-1]}"
+
+pub = oneline_pem(pub_path.read_text())
+priv = oneline_pem(priv_path.read_text())
 text = env_path.read_text() if env_path.exists() else ""
 
 def upsert(text: str, key: str, value: str) -> str:
     line = f'{key}="{value}"'
     pat = re.compile(rf'^{re.escape(key)}=.*$', re.M)
     if pat.search(text):
-        return pat.sub(line, text)
+        return pat.sub(lambda _m: line, text)
     if text and not text.endswith("\n"):
         text += "\n"
     return text + line + "\n"

@@ -76,7 +76,8 @@ public class CommercialBundleLicenseSigner {
     }
 
     private static PrivateKey loadPrivateKey(String pem) throws Exception {
-        String normalized = pem
+        // systemd EnvironmentFile / dotenv often keep literal \n instead of real newlines
+        String normalized = LicensePublicKeySupport.unescapePemNewlines(pem)
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replace("-----BEGIN RSA PRIVATE KEY-----", "")

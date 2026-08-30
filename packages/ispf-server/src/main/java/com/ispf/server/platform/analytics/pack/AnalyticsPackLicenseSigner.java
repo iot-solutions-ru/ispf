@@ -107,7 +107,7 @@ public class AnalyticsPackLicenseSigner {
     }
 
     private static PrivateKey loadPrivateKey(String pem) throws Exception {
-        String normalized = pem
+        String normalized = com.ispf.server.license.LicensePublicKeySupport.unescapePemNewlines(pem)
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replace("-----BEGIN RSA PRIVATE KEY-----", "")

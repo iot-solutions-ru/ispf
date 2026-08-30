@@ -36,6 +36,26 @@ class LicensePublicKeySupportTest {
         );
     }
 
+    @Test
+    void acceptsSignatureWhenPublicKeyPemUsesLiteralEscapedNewlines() throws Exception {
+        KeyPair keyPair = LicenseTestSupport.generateRsaKeyPair();
+        String payload = "{\"tier\":\"enterprise\"}";
+        String signature = sign(payload, keyPair);
+        String escapedPem = LicenseTestSupport.toPemPublicKey(keyPair).replace("\n", "\\n");
+
+        assertDoesNotThrow(() -> LicensePublicKeySupport.verifyRsaSha256(payload, signature, escapedPem));
+    }
+
+    @Test
+    void unescapePemNewlinesExpandsLiteralEscapes() {
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "-----BEGIN PUBLIC KEY-----\nABC\n-----END PUBLIC KEY-----",
+                LicensePublicKeySupport.unescapePemNewlines(
+                        "-----BEGIN PUBLIC KEY-----\\nABC\\n-----END PUBLIC KEY-----"
+                )
+        );
+    }
+
     private static String sign(String payload, KeyPair keyPair) throws Exception {
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(keyPair.getPrivate());
