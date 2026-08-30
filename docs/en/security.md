@@ -170,6 +170,8 @@ Interactive variable-access paths run in `VariableAclRequestContext.MEMBER` mode
 
 For HTTP federation peers, channel authentication uses the peer `authToken` (a static or service-account Bearer), or falls back to the forwarded caller Bearer when no peer token is configured. The hub also sends `X-ISPF-On-Behalf-Of-User`, comma-separated `X-ISPF-On-Behalf-Of-Roles`, and `X-ISPF-On-Behalf-Of-Tenant`. On the peer, `FederationOnBehalfOfFilter` installs the delegated principal with only the intersection of the authenticated channel roles and the claimed on-behalf-of roles before `MEMBER` enforcement. The channel identity is therefore an authorization ceiling, not a way to grant the caller its service-account privileges. Tunnel proxy requests retain the trusted-channel principal installation because the WebSocket channel is already authenticated.
 
+Federated hub reads omit remote-only variables that have no local mirror ACL metadata, and non-admin proxy writes require a local variable definition; global admins retain break-glass write access.
+
 Background schedulers and materializers remain in `SYSTEM` mode and do not apply an end user's member ACL. Federation health probes authenticate only the channel and send no on-behalf-of identity; they cannot return variable values or history.
 
 ## Production recommendations

@@ -41,6 +41,7 @@ import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.config.IspfRoles;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantQuotaService;
@@ -583,7 +584,7 @@ public class ObjectController {
         );
         PlatformObject localNode = objectManager.tree().findByPath(localPath).orElse(null);
         if (localNode == null) {
-            return remoteVariables;
+            return List.of();
         }
         return remoteVariables.stream()
                 .filter(variable -> variable.name() != null)
@@ -594,7 +595,7 @@ public class ObjectController {
                                 authentication
                         ))
                         // Remote-only definitions have no local member-role metadata to enforce.
-                        .orElse(true))
+                        .orElse(false))
                 .toList();
     }
 
@@ -678,11 +679,15 @@ public class ObjectController {
                     Variable localVariable = localNode.getVariable(name).orElse(null);
                     if (localVariable != null) {
                         variableMemberAccessService.requireWrite(localVariable, path, authentication);
-                    } else {
+                    } else if (!IspfRoles.isGlobalAdmin(authentication)) {
                         log.warn(
-                                "Proxy variable {} on {} has no local role metadata; inheriting object WRITE ACL",
+                                "Denied proxy variable write for {} on {} because local role metadata is missing",
                                 name,
                                 path
+                        );
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN,
+                                "Proxy variable has no local ACL metadata: " + name
                         );
                     }
                     JsonNode json = federationProxyService.proxyVariablePut(
