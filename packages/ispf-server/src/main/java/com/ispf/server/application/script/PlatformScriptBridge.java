@@ -16,6 +16,8 @@ import com.ispf.server.query.ObjectQueryService;
 import com.ispf.server.query.oq.ObjectQueryResult;
 import com.ispf.server.query.oq.ObjectQuerySpec;
 import com.ispf.server.query.oq.ObjectQuerySpecParser;
+import com.ispf.server.security.acl.VariableAclRequestContext;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -44,6 +46,7 @@ public class PlatformScriptBridge {
     private final ObjectQuerySpecParser objectQuerySpecParser;
     private final ObjectQueryService objectQueryService;
     private final ObjectQueryPatchService objectQueryPatchService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public PlatformScriptBridge(
             ObjectMapper objectMapper,
@@ -52,7 +55,8 @@ public class PlatformScriptBridge {
             BlueprintApplicationService blueprintApplicationService,
             ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap,
             @Lazy ObjectQueryService objectQueryService,
-            @Lazy ObjectQueryPatchService objectQueryPatchService
+            @Lazy ObjectQueryPatchService objectQueryPatchService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.objectMapper = objectMapper;
         this.objectManager = objectManager;
@@ -62,6 +66,7 @@ public class PlatformScriptBridge {
         this.objectQuerySpecParser = new ObjectQuerySpecParser(objectMapper);
         this.objectQueryService = objectQueryService;
         this.objectQueryPatchService = objectQueryPatchService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     public List<Map<String, Object>> queryRows(String specJson, String callerObjectPath) {
@@ -119,6 +124,14 @@ public class PlatformScriptBridge {
         }
         if (variableName == null || variableName.isBlank()) {
             throw new IllegalArgumentException("readVariable variable is required");
+        }
+        if (VariableAclRequestContext.isMemberEnforced()
+                && !variableMemberAccessService.canRead(
+                        objectPath,
+                        variableName,
+                        VariableAclRequestContext.requireAuthentication()
+                )) {
+            return null;
         }
         PlatformObject node = objectManager.require(objectPath);
         Variable variable = node.getVariable(variableName)

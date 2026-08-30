@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -25,9 +27,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -103,6 +108,34 @@ class PlatformRefExecutorTest {
         );
 
         assertThat(value).isEmpty();
+    }
+
+    @Test
+    void memberWriteRejectsVariableDeniedByAcl() {
+        String path = "root.platform.devices.remote";
+        var authentication = UsernamePasswordAuthenticationToken.authenticated(
+                "operator",
+                "n/a",
+                List.of()
+        );
+        var denial = new ResponseStatusException(HttpStatus.FORBIDDEN, "denied");
+        doThrow(denial)
+                .when(variableMemberAccessService)
+                .requireWrite(path, "temperature", authentication);
+        PlatformRefExecutor executor = new PlatformRefExecutor(
+                objectManager,
+                functionService,
+                eventService,
+                variableMemberAccessService
+        );
+
+        assertThatThrownBy(() -> VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> executor.write(PlatformRefParser.parse(path + "/temperature"), 43.0, null)
+        )).isSameAs(denial);
+
+        verify(variableMemberAccessService).requireWrite(path, "temperature", authentication);
+        verifyNoInteractions(objectManager);
     }
 
     private static PlatformObject deviceWithTemperature(String path, double temp) {

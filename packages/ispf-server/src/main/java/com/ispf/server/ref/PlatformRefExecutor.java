@@ -104,6 +104,13 @@ public class PlatformRefExecutor {
         if (resolved.kind() != PlatformRefKind.VARIABLE) {
             throw new ExpressionException("write() requires variable ref: " + ref);
         }
+        if (VariableAclRequestContext.isMemberEnforced()) {
+            variableMemberAccessService.requireWrite(
+                    resolved.object(),
+                    resolved.name(),
+                    VariableAclRequestContext.requireAuthentication()
+            );
+        }
         return objectManager.tree().findByPath(resolved.object())
                 .flatMap(node -> node.getVariable(resolved.name()))
                 .map(variable -> {

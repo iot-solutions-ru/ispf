@@ -8,10 +8,12 @@ import com.ispf.server.bootstrap.DemoFixtureBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.RuntimeTelemetryCoalescer;
+import com.ispf.server.security.acl.VariableAclRequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -34,8 +36,13 @@ class PlatformScriptBridgeTest {
     @Autowired
     private ObjectManager objectManager;
 
+    private String aclObjectPath;
+
     @AfterEach
     void cleanup() {
+        if (aclObjectPath != null) {
+            objectManager.tree().findByPath(aclObjectPath).ifPresent(node -> objectManager.delete(aclObjectPath));
+        }
         objectManager.tree().findByPath(INSTANCE_PATH).ifPresent(node -> objectManager.delete(INSTANCE_PATH));
     }
 
@@ -98,6 +105,49 @@ class PlatformScriptBridgeTest {
                 """, "root.platform.queries.script-test");
         assertThat(rows).hasSize(1);
         assertThat(String.valueOf(rows.getFirst().get("path"))).isEqualTo("root.platform.devices.demo-sensor-01");
+    }
+
+    @Test
+    void memberReadVariableOmitsValueDeniedByAcl() {
+        String name = "script-bridge-acl-" + System.nanoTime();
+        aclObjectPath = "root.platform.devices." + name;
+        objectManager.create(
+                "root.platform.devices",
+                name,
+                ObjectType.DEVICE,
+                "Script bridge ACL test",
+                "",
+                null
+        );
+        DataSchema schema = DataSchema.builder("secret")
+                .field("value", FieldType.STRING)
+                .build();
+        objectManager.createVariable(
+                aclObjectPath,
+                "secret",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", "restricted-script-value")),
+                false,
+                null,
+                List.of("engineer"),
+                List.of()
+        );
+        var authentication = UsernamePasswordAuthenticationToken.authenticated(
+                "operator",
+                "n/a",
+                List.of()
+        );
+
+        String memberValue = VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> bridge.readVariableField(aclObjectPath, "secret", "value")
+        );
+
+        assertThat(memberValue).isNull();
+        assertThat(bridge.readVariableField(aclObjectPath, "secret", "value"))
+                .isEqualTo("restricted-script-value");
     }
 
     @Test

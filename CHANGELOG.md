@@ -26,9 +26,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 - **BL-154 Object Query/function/binding residual** — interactive HTTP and
   agent function invocation plus binding evaluation now run in `MEMBER` mode;
-  OQ live/historian projections, variable introspection, expands, and platform
-  ref reads omit variables denied by per-variable `readRoles`. Background
-  scheduler and binding-engine automation remains `SYSTEM`.
+  OQ live/historian projections, variable introspection, expands, platform ref,
+  and application-script reads omit variables denied by per-variable
+  `readRoles`; platform ref writes reject denied updates. Background scheduler
+  and binding-engine automation remains `SYSTEM`.
 
 ## [0.9.190] - 2026-08-30
 
