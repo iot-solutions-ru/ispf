@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **CI nightly push-ack:** empty failed nightly runs on every `main` push fixed — lightweight `push-ack` job; full suite remains schedule/`workflow_dispatch` only. |
 | 2026-08-30 | **HMI live FPS (demostand 0.9.193):** hardened `E2E_LIVE_FPS` against real `ui-pump-station` mimic; median 60 FPS + 479 Object WS `VARIABLE_UPDATED`; evidence `docs/evidence/hmi-fps/`. HMI 2h offline field soak still deferred. |
 | 2026-08-30 | **ispf-vps jar 0.9.193:** shared `parsePrivateKey`; Post-S33 scorecard/CEL/HMI honesty docs shipped with release. |
 | 2026-08-30 | **Post-S33 scorecard honesty + CEL formal docs:** pin demostand **0.9.192**; AI gap residual updated (0.9.191 re-soak Done; multi-day optional); G-03 acknowledges PostgreSQL RLS Done (no physical table-routing claim); ADR-0055 surfaced in expression-language + demostand verify smoke evidence. |
