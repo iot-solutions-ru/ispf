@@ -28,6 +28,11 @@ final class LicenseTestSupport {
         return "-----BEGIN PUBLIC KEY-----\n" + base64 + "\n-----END PUBLIC KEY-----";
     }
 
+    static String toPemPrivateKey(KeyPair keyPair) {
+        String base64 = Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded());
+        return "-----BEGIN PRIVATE KEY-----\n" + base64 + "\n-----END PRIVATE KEY-----";
+    }
+
     static Map<String, Object> signedLicense(
             ObjectMapper objectMapper,
             Object manifestWithoutLicense,

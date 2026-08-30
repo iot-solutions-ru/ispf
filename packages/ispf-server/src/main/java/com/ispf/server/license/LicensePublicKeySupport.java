@@ -2,8 +2,10 @@ package com.ispf.server.license;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -82,6 +84,30 @@ public final class LicensePublicKeySupport {
         throw lastFailure != null
                 ? lastFailure
                 : new CommercialLicenseException("License signature invalid");
+    }
+
+    /**
+     * Load a PKCS#8 (or RSA) private key PEM, including env-file literal {@code \n} forms
+     * and single-line PEMs with spaces.
+     */
+    public static PrivateKey parsePrivateKey(String pem) {
+        if (pem == null || pem.isBlank()) {
+            throw new CommercialLicenseException("Signing private key PEM is blank");
+        }
+        try {
+            String normalized = unescapePemNewlines(pem)
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replace("-----BEGIN RSA PRIVATE KEY-----", "")
+                    .replace("-----END RSA PRIVATE KEY-----", "")
+                    .replaceAll("\\s", "");
+            byte[] decoded = Base64.getDecoder().decode(normalized);
+            return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(decoded));
+        } catch (CommercialLicenseException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new CommercialLicenseException("Invalid RSA private key PEM: " + ex.getMessage());
+        }
     }
 
     private static PublicKey decodePublicKey(String base64Body) {

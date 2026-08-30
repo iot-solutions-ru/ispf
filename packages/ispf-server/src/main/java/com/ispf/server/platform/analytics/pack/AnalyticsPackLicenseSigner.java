@@ -6,6 +6,7 @@ import com.ispf.server.driver.pack.DriverPackLicenseVerifier;
 import com.ispf.server.license.BundleManifestCanonicalizer;
 import com.ispf.server.license.CommercialLicenseException;
 import com.ispf.server.license.InstallationIdService;
+import com.ispf.server.license.LicensePublicKeySupport;
 import com.ispf.server.platform.update.PlatformVersionSupport;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -13,11 +14,8 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyFactory;
 import java.security.MessageDigest;
-import java.security.PrivateKey;
 import java.security.Signature;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -75,7 +73,7 @@ public class AnalyticsPackLicenseSigner {
         try {
             String payload = BundleManifestCanonicalizer.canonicalJson(claims);
             Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(loadPrivateKey(properties.getSigningPrivateKeyPem()));
+            signature.initSign(LicensePublicKeySupport.parsePrivateKey(properties.getSigningPrivateKeyPem()));
             signature.update(payload.getBytes(StandardCharsets.UTF_8));
             Map<String, Object> license = new LinkedHashMap<>(claims);
             license.put("signature", Base64.getEncoder().encodeToString(signature.sign()));
@@ -104,16 +102,5 @@ public class AnalyticsPackLicenseSigner {
         } catch (Exception ex) {
             throw new CommercialLicenseException("Failed to hash analytics pack JAR: " + ex.getMessage());
         }
-    }
-
-    private static PrivateKey loadPrivateKey(String pem) throws Exception {
-        String normalized = com.ispf.server.license.LicensePublicKeySupport.unescapePemNewlines(pem)
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replace("-----BEGIN RSA PRIVATE KEY-----", "")
-                .replace("-----END RSA PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
-        byte[] decoded = Base64.getDecoder().decode(normalized);
-        return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(decoded));
     }
 }

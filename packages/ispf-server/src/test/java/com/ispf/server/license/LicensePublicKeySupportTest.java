@@ -56,6 +56,26 @@ class LicensePublicKeySupportTest {
         );
     }
 
+    @Test
+    void parsePrivateKeyAcceptsLiteralEscapedNewlinesAndRoundTrips() throws Exception {
+        KeyPair keyPair = LicenseTestSupport.generateRsaKeyPair();
+        String escapedPem = LicenseTestSupport.toPemPrivateKey(keyPair).replace("\n", "\\n");
+        var privateKey = LicensePublicKeySupport.parsePrivateKey(escapedPem);
+
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initSign(privateKey);
+        signature.update("ispf-pem-roundtrip".getBytes(StandardCharsets.UTF_8));
+        String sig = Base64.getEncoder().encodeToString(signature.sign());
+
+        assertDoesNotThrow(() ->
+                LicensePublicKeySupport.verifyRsaSha256(
+                        "ispf-pem-roundtrip",
+                        sig,
+                        LicenseTestSupport.toPemPublicKey(keyPair)
+                )
+        );
+    }
+
     private static String sign(String payload, KeyPair keyPair) throws Exception {
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(keyPair.getPrivate());

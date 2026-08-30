@@ -17,10 +17,20 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.193] - 2026-08-30
+
+### Fixed / Changed
+
+- **License PEM** — shared `LicensePublicKeySupport.parsePrivateKey` for bundle + analytics-pack signing (literal `\n` / single-line forms); round-trip unit test.
+
 ### Documentation
 
-- Post-S33 **scorecard / tender honesty**: demostand pin **0.9.192**; AI soft re-soak residual closed at **0.9.191**; G-03 / multi-tenant wording matches PostgreSQL RLS Done; ADR-0055 formal CEL in expression-language (+ demostand verify smoke evidence).
-- Security / tender G-08: MFA + tenancy/RLS pointers in [security.md](docs/en/security.md); HMI offline CI baseline reaffirmed on 0.9.192 (`pwa:offline-evidence`).
+- Post-S33 scorecard / tender honesty (pin **0.9.192**, AI re-soak **0.9.191**, G-03 RLS, ADR-0055 expression-language + verify smoke).
+- Security tenancy/RLS + G-08; HMI offline CI baseline reaffirm.
+
+### Changed
+
+- Platform version bump to **0.9.193**.
 
 ## [0.9.192] - 2026-08-30
 
@@ -136,7 +146,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 - Platform version bump to **0.9.188**; AI context pack refresh for the release.
 
-[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.192...HEAD
+[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.193...HEAD
+[0.9.193]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.192...v0.9.193
 [0.9.192]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.191...v0.9.192
 [0.9.191]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.190...v0.9.191
 [0.9.190]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.189...v0.9.190
