@@ -12,6 +12,10 @@ rights described in [CLA.md](CLA.md) (dual licensing / commercial relicensing).
 2. Do not commit industry-specific Java, customer bundles, or secrets.
 3. Do not commit local scratch (`tmp*`, `*.log`, `packages.zip`, `web-console-hotfix.zip`, `apps/web-console/tmp-bpmn-*`).
 4. See [docs/en/plugins.md](docs/en/plugins.md) and [docs/en/license.md](docs/en/license.md) for boundaries.
+5. For user-visible platform changes, add a bullet under **`[Unreleased]`** in
+   [CHANGELOG.md](CHANGELOG.md) (Keep a Changelog). Move that section into a versioned
+   heading when bumping `gradle.properties` `version=`. Russian summary:
+   [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## Driver changes
 

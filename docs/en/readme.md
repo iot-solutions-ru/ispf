@@ -34,7 +34,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | **Deploying / operating** | [Deployment](deployment.md) · [Security](security.md) · [Observability](observability.md) |
 | **Contributing to the core** | [Getting started — Contribute](getting-started.md#contribute-local-dev--qa) · [Testing](testing.md) · [ADR index](decisions/readme.md) |
 
-**Status vs commercial platforms:** [Competitive scorecard](competitive-scorecard.md) (code-verified). Long backlog: [Roadmap](roadmap.md).
+**Status vs commercial platforms:** [Competitive scorecard](competitive-scorecard.md) (code-verified). Long backlog: [Roadmap](roadmap.md). Platform release notes: [CHANGELOG.md](../../CHANGELOG.md).
 
 **Doc status tags:** [doc-status.md](doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
 

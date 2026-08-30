@@ -6,6 +6,7 @@ Website: [ispf.ai](https://ispf.ai) · Repo: [github.com/iot-solutions-ru/ispf](
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-English%20%7C%20Русский-0A7EA4)](docs/README.md)
+[![Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange)](CHANGELOG.md)
 [![Stack](https://img.shields.io/badge/stack-Spring%20Boot%204%20%2B%20React%2019-informational)](docs/en/architecture.md)
 
 Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as separate products. **ISPF** puts them on a hierarchical **object tree**: a device, dashboard, alert rule, correlator, and BPMN workflow are all nodes with the same API.
@@ -148,5 +149,7 @@ Driver packs and application bundles may use separate terms. Details: [license](
 ## Contributing & feedback
 
 Issues and PRs welcome — especially driver/HMI bugs, docs fixes, and real-plant pilot feedback.
+
+Notable product changes go in **[CHANGELOG.md](CHANGELOG.md)** (`[Unreleased]` until the next version bump). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 If ISPF helps your project, a GitHub ★ helps others discover it. For OT / integrator discussions, open an issue with your stack (protocols, historian size, HMI constraints).

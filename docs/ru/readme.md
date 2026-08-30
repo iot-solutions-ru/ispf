@@ -34,7 +34,7 @@
 | **Внедряю / эксплуатирую** | [Развёртывание](deployment.md) · [Безопасность](security.md) · [Наблюдаемость](observability.md) |
 | **Контрибьючу в ядро** | [Быстрый старт — Contribute](getting-started.md#контрибут-локальный-dev--qa) · [Тестирование](testing.md) · [ADR](decisions/readme.md) |
 
-**Статус vs коммерческие платформы:** [Competitive scorecard](competitive-scorecard.md). Бэклог: [Roadmap](roadmap.md).
+**Статус vs коммерческие платформы:** [Competitive scorecard](competitive-scorecard.md). Бэклог: [Roadmap](roadmap.md). Журнал изменений платформы: [changelog.md](changelog.md) (канон: [CHANGELOG.md](../../CHANGELOG.md)).
 
 **Теги статуса документов:** [doc-status.md](doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
 
