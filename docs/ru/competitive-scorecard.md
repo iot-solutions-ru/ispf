@@ -11,7 +11,7 @@
 | Pin | Смысл |
 |-----|--------|
 | **0.9.102** | Последний **полный code audit** этой матрицы (июль 2026). Оценки и evidence ниже зафиксированы на этом аудите. |
-| **0.9.105+** | Типичная метка текущего `main` / prod demostand в roadmap и deploy. **Не** пересчитанная матрица. |
+| **0.9.192** | Текущий `main` / demostand на 2026-08-30. **Не** пересчитанная матрица — ship notes и post-audit deltas без полного rescore. |
 
 **Актуальный столбец:** **Проверено по коду** — доказательства из `main` на baseline аудита **0.9.102**.
 
@@ -38,7 +38,7 @@
 
 **Post-audit delta (19.07.2026):** AI-assisted разработка **7.0 → 8.5** после полного live suite (БЛ-178: 52/52 @100%), затем **8.5 → 9.0** после БЛ-177/180 multi-app / multi-domain live smoke harness Готово (opt-in `ISPF_LLM_SMOKE`; без выдуманных multi-app/multi-domain live pass counts). Остальные измерения — baseline аудита **0.9.102**.
 
-**Post-audit note (30.08.2026):** Follow-up BL-154 по trusted-channel закрыт (analytics/federation/agent/WS + HTTP on-behalf-of с пересечением ролей; G-05 interactive). Замороженная оценка Security **0.9.102** не пересчитывается — в следующий полный audit.
+**Post-audit note (30.08.2026):** Follow-up BL-154 (trusted-channel + OQ residual, 0.9.190/191) закрыт; PostgreSQL RLS на shared tables **Done** при `db-row-isolation=true`; PEM env unescape (0.9.192). Замороженная оценка Security **0.9.102** не пересчитывается — в следующий полный audit. Остаются: optional hard schema table routing, WebAuthn (BL-194), pen-test.
 
 **Program wave 8 (июль 2026)** ранее заявляла ~9.8/10 по отгруженным BL-артефактам; **аудит кода (0.9.102)** заменяет эту цифру. См. [§ Доказательства аудита кода](#code-audit-evidence-0102) и [§ Разрыв до цели](#gaps-to-target).
 
@@ -72,7 +72,7 @@
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES — marketplace product (`mes-platform`, vendor IoT Solutions); база не сидит `root.platform.mes`. Bundle JSON/SQL/script BFF; нет отдельного MES-модуля |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
 | 9 | AI-assisted dev | 9.0 | **REAL** | БЛ-178 полный live suite **52/52 @100%** (`build/agent-regression/live-suite-results.json`, `mode=full`, ~2026-07-18/19); БЛ-177 multi-app `AgentLiveDeploySmokeTest` matrix (`mes-platform`, `building-hvac`, `platform-primitive`); БЛ-180 multi-domain `AiSolutionGeneratorLiveSmokeTest` (HVAC/MES/SCADA, `composition=primitives`); draft fallback `mode=draft` (не stub); live smoke требуют `ISPF_LLM_SMOKE=true` |
-| 10 | Security / RBAC | 8.0 | **PARTIAL** | TOTP MFA GA **Done** (BL-153); per-var/event/function ACL **Done** (BL-154); audit SIEM + role scopes **Done** (BL-156/157); hard tenancy schema+OIDC REAL, A≠B open (BL-155); WebAuthn → BL-194 |
+| 10 | Security / RBAC | 8.0 | **PARTIAL** | TOTP MFA GA **Done** (BL-153); per-var/event/function ACL **Done** (BL-154) incl. trusted-channel + OQ residual (2026-08-30, pending full audit rescore); audit SIEM + role scopes **Done** (BL-156/157); SaaS tenant-admin + logical A≠B **Done** (BL-155); PostgreSQL RLS **Done** на shared tables; hard schema table routing optional; WebAuthn → BL-194 |
 | 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | Federation MoM usable path **REAL** (BL-188); Helm lint/template + ARM edge compose **Готово** (BL-186/187); нет CI load proof для cluster / 10+ peer scale |
 | 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA **Готово** (BL-183 — multi-endpoint + CI catalog gate); partner directory + enroll `"source": "db"` (BL-184); symbol packs BL-185 Done; Partner Portal sync всё ещё external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADR; в коде заглушки помечены честно |
@@ -93,11 +93,11 @@
 
 1. **OT drivers (7.0 → 9+):** честность матрицы **закрыта (БЛ-191)**; остаётся field pilot sign-off + DNP3 write / полный DA после **именованной полевой задачи** (БЛ-140 Частичный).
 2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites. Genealogy lite (**БЛ-193**) отгружен в `mes-platform` (seed-граф + Operator report).
-3. **AI (9.0 → 10):** БЛ-177…180 Готово (harness + БЛ-178 52/52). **Именованные oneshot-прогоны от 24.08.2026 архивированы** в [`docs/evidence/ai-generator/`](../evidence/ai-generator/): demostand **0.9.186**, HVAC/MES/SCADA, `softBudgetMet: true`. Остаток до 10/10: повторный soak на текущей версии платформы (**0.9.190**) и, опционально, многодневный journal. Оценка AI остаётся замороженной; эти soft evidence не дают новых оценок или live pass counts.
+3. **AI (9.0 → 10):** БЛ-177…180 Готово (harness + БЛ-178 52/52). Именованные soft evidence в [`docs/evidence/ai-generator/`](../evidence/ai-generator/): **0.9.186** (24.08.2026) и **re-soak 0.9.191** (30.08.2026) HVAC/MES/SCADA, `softBudgetMet: true`, на re-soak `bundleTrust=signed`. Остаток до 10/10: опциональный многодневный plant journal. Оценка AI заморожена; soft evidence не дают новых оценок или live pass counts.
 4. **Ecosystem (6.5 → 9+):** sync Partner Portal + live partner-hosted catalogs (вне repo); повышение после первого внешнего partner catalog onboarding.
 5. **Historian (7.0 → 9+):** прогнать Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, catalog 50k, CH 1B) — BL-210; затем обновить scorecard до **≥9.5** с датированным sign-off.
 6. **HMI (7.5 → 9+):** FPS gate на live WebSocket mimic; persistence alarm shelving.
-7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**) — **docs Готово:** [compliance-tender-pack](compliance-tender-pack.md) (канон EN). Остаются: pen-test, audit-trail GA (SIEM), hard tenancy A≠B; без заявления о сертификации продукта.
+7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**) — **docs Готово:** [compliance-tender-pack](compliance-tender-pack.md) (канон EN). Остаются: pen-test, optional hard schema **table routing** (logical SaaS + PostgreSQL RLS Done), WebAuthn (BL-194); без заявления о сертификации продукта.
 
 ---
 

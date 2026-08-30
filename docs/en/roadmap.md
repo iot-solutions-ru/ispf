@@ -1638,7 +1638,7 @@ Aligned with [execution policy](#execution-policy--quality-over-features) and [d
 | **S31** | Jul–Aug 2026 | BL-177/178 **Done** (52/52 live suite; multi-app smoke harness; live needs `ISPF_LLM_SMOKE`) |
 | **S32** | Aug 2026 | BL-180 **Done** (multi-domain live apply harness HVAC/MES/SCADA); BL-179 continuity Done |
 | **S33** | Sep 2026 | **BL-193** genealogy lite |
-| **Post-S33** | ongoing | Quality path: AI generator oneshot evidence (`run-live-generator-oneshot.sh` / `live-generator-results.json`) + named-site field soak; field MES/HMI evidence; scorecard honesty — **not** new feature waves |
+| **Post-S33** | ongoing | Quality path: AI generator oneshot evidence **Done** for demostand 0.9.186 + **0.9.191 re-soak** (HVAC/MES/SCADA soft &lt;15 min); optional multi-day plant journal still open; field MES/HMI (2h offline) evidence; scorecard honesty — **not** new feature waves |
 
 Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPMN/DMN expansion.
 
@@ -1674,6 +1674,8 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **Post-S33 scorecard honesty + CEL formal docs:** pin demostand **0.9.192**; AI gap residual updated (0.9.191 re-soak Done; multi-day optional); G-03 acknowledges PostgreSQL RLS Done (no physical table-routing claim); ADR-0055 surfaced in expression-language + demostand verify smoke evidence. |
+| 2026-08-30 | **ispf-vps jar 0.9.192:** license PEM env unescape (literal `\\n` → AI apply signing); AI soft re-soak evidence for **0.9.191** HVAC/MES/SCADA archived; Release `v0.9.192`. |
 | 2026-08-30 | **ispf-vps jar 0.9.191:** OQ/function MEMBER ACL residual + backup admin assert; MES GA 8/8; CI nightly push flood removed. |
 | 2026-08-30 | **ispf-vps 0.9.190 deployed:** GitHub Release jar/UI staged and SHA-256 verified on the host; previous jar backup retained; `ispf-server` updated through `apply-platform-update.sh`; public info endpoint confirmed 0.9.190; fresh MES GA smoke 8/8. AI generator soft re-soak remains pending LLM secrets. |
 | 2026-08-30 | **BL-154 trusted-channel close:** `VariableMemberAccessService` + `MEMBER` mode on analytics/agent/WS/editor/expression/Haystack/Brick; federation tunnel + HTTP peer `X-ISPF-On-Behalf-Of-*` with channel∩roles (no escalation); hub fail-closed on remote-only proxy vars; G-05 interactive residual closed. Scorecard note only (no frozen rescore). |

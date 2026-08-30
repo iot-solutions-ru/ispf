@@ -13,9 +13,27 @@
 | Рецепты historian | [analytics-historian-cookbook](analytics-historian-cookbook.md) |
 | Пакеты формул / catalog API | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
 | Живой каталог | `GET /api/v1/platform/analytics/catalog` |
-| Валидация | `POST /api/v1/expressions/validate` |
+| Валидация (compile + formal) | `POST /api/v1/expressions/validate` |
+| Formal verify | `POST /api/v1/expressions/verify` · `…/verify-equivalence` |
+| Решение | [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md) |
 
-**Источник истины в коде:** `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` + `HistorianCelPreprocessor`, Google CEL через `ExpressionEngine`.
+**Источник истины в коде:** `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` + `HistorianCelPreprocessor`, Google CEL через `ExpressionEngine`, formal gate через `ExpressionFormalVerifier` / `ExpressionFormalVerificationService` (CEL verifier + Z3).
+
+---
+
+## Formal verification (ADR-0055)
+
+Булев CEL в алертах, bindings, platform context, BPMN design-time и AI-инструментах проверяется **CEL verifier 0.14** (Z3). По умолчанию reject unsatisfiable/tautology на apply/validate (`ispf.expression.formal-verification.*`).
+
+| API | Роль |
+| --- | ---- |
+| `POST /api/v1/expressions/validate` | Compile + formal; `verification`; enforce может дать `valid=false` |
+| `POST /api/v1/expressions/verify` | Только formal |
+| `POST /api/v1/expressions/verify-equivalence` | Доказать `left ≡ right` |
+
+Коды findings: `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY`, … — [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md). Smoke demostand 0.9.192: [`docs/evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json`](../evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json).
+
+**Non-goal:** CEL Policy aggregate packs — не продуктовая поверхность.
 
 ---
 

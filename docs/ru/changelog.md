@@ -9,6 +9,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+### Документация
+
+- Post-S33 scorecard/tender honesty (pin 0.9.192, AI re-soak 0.9.191, G-03 RLS, ADR-0055 в expression-language).
+
 ## [0.9.192] - 2026-08-30
 
 ### Исправлено

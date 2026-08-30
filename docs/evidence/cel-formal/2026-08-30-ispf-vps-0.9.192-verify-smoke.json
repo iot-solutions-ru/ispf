@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-08-30T06:04:54.663588Z",
+  "source": "demostand-expressions-verify-smoke",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "platformVersion": "0.9.192",
+  "cases": [
+    {
+      "label": "tautology-verify",
+      "http": 200,
+      "ok": false,
+      "codes": [
+        "SATISFIABLE",
+        "TAUTOLOGY"
+      ],
+      "status": "failed",
+      "alwaysTrue": true,
+      "satisfiable": true
+    },
+    {
+      "label": "unsat-verify",
+      "http": 200,
+      "ok": false,
+      "codes": [
+        "UNSATISFIABLE",
+        "NOT_TAUTOLOGY"
+      ],
+      "status": "failed",
+      "alwaysTrue": false,
+      "satisfiable": false
+    },
+    {
+      "label": "normal-validate",
+      "http": 200,
+      "ok": true,
+      "codes": [
+        "SATISFIABLE",
+        "NOT_TAUTOLOGY"
+      ],
+      "status": "passed",
+      "alwaysTrue": false,
+      "satisfiable": true
+    }
+  ]
+}

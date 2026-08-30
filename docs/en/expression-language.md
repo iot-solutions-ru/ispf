@@ -13,9 +13,27 @@ This page is the **full language reference** for writing expressions in ISPF: bi
 | Historian recipes | [analytics-historian-cookbook](analytics-historian-cookbook.md) |
 | Formula packs / catalog API | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
 | Live catalog | `GET /api/v1/platform/analytics/catalog` |
-| Validate | `POST /api/v1/expressions/validate` |
+| Validate (compile + formal) | `POST /api/v1/expressions/validate` |
+| Formal verify | `POST /api/v1/expressions/verify` · `…/verify-equivalence` |
+| Design decision | [ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md) |
 
-**Source of truth in code:** `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` + `HistorianCelPreprocessor` (`ispf-analytics-*`), Google CEL via `ExpressionEngine`.
+**Source of truth in code:** `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` + `HistorianCelPreprocessor` (`ispf-analytics-*`), Google CEL via `ExpressionEngine`, formal gate via `ExpressionFormalVerifier` / `ExpressionFormalVerificationService` (CEL verifier + Z3).
+
+---
+
+## Formal verification (ADR-0055)
+
+Boolean CEL used in alerts, bindings, platform context rules, BPMN design-time gates, and AI tools is checked with **CEL verifier 0.14** (Z3). Defaults reject unsatisfiable and tautology conditions on apply/validate (`ispf.expression.formal-verification.*`).
+
+| API | Role |
+| --- | ---- |
+| `POST /api/v1/expressions/validate` | Compile + formal; returns `verification` + may set `valid=false` when enforce rejects |
+| `POST /api/v1/expressions/verify` | Formal only |
+| `POST /api/v1/expressions/verify-equivalence` | Prove `left ≡ right` |
+
+Stable finding `codes` (for UI / AI): `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY`, `NOT_TAUTOLOGY`, `EQUIVALENT`, … — see [ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md). Historian helpers in boolean templates rewrite to correlated `self.__histN` placeholders before SMT. Demostand smoke (0.9.192): [`docs/evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json`](../evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json).
+
+**Non-goal:** CEL Policy aggregate packs (multi-hit diagnostic YAML) — not productized.
 
 ---
 
