@@ -263,19 +263,39 @@ def platform_version() -> str:
 
 
 def parse_driver_catalog(drivers_md: str) -> list[dict]:
+    """Parse the complete per-driverId catalog table from drivers.md.
+
+    Prefers the full pack table (Module + Maturity + License + description) under
+    "Complete driverId catalog" / "Полный каталог". Falls back to the legacy
+    3-column table / whole-file scan when those section markers are absent.
+    """
     catalog: list[dict] = []
     lines = drivers_md.splitlines()
     start = -1
     for i, line in enumerate(lines):
-        if ("Full list of" in line or "Полный список" in line) and "DriverCatalog" in line:
+        lower = line.lower()
+        if (
+            ("complete" in lower and "driverid" in lower and "catalog" in lower)
+            or ("полный каталог" in lower and "driverid" in lower)
+            or (("full list of" in lower or "полный список" in lower) and "drivercatalog" in lower)
+            or ("registered driver catalog" in lower)
+            or ("зарегистрированный каталог" in lower)
+        ):
             start = i
             break
     if start < 0:
         start = 0
     in_table = False
+    header_cols: list[str] = []
     for line in lines[start:]:
         stripped = line.strip()
-        if stripped.startswith("| `driverId`"):
+        if stripped.startswith("| `driverId`") or stripped.startswith("| `driverid`"):
+            header_cols = [p.strip().strip("`").lower() for p in stripped.strip("|").split("|")]
+            # Skip maturity/candidate summary tables that lack a Module column.
+            if "module" not in header_cols and "модуль" not in header_cols:
+                in_table = False
+                header_cols = []
+                continue
             in_table = True
             continue
         if not in_table:
@@ -292,14 +312,29 @@ def parse_driver_catalog(drivers_md: str) -> list[dict]:
         driver_id = parts[0].strip("`")
         if driver_id in {"", "driverId"}:
             continue
-        catalog.append(
-            {
-                "driverId": driver_id,
-                "module": parts[1].strip("`"),
-                "description": parts[2],
-                "keywords": f"{driver_id} {parts[2]}",
-            }
-        )
+        # New catalog: id | module | maturity | license | description
+        # Legacy catalog: id | module | description
+        if len(parts) >= 5:
+            module = parts[1].strip("`")
+            description = parts[4]
+            maturity = parts[2]
+            license_name = parts[3]
+        else:
+            module = parts[1].strip("`")
+            description = parts[2]
+            maturity = ""
+            license_name = ""
+        entry = {
+            "driverId": driver_id,
+            "module": module,
+            "description": description,
+            "keywords": f"{driver_id} {description}",
+        }
+        if maturity:
+            entry["maturity"] = maturity
+        if license_name:
+            entry["license"] = license_name
+        catalog.append(entry)
     return catalog
 
 

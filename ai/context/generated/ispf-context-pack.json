@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.188",
-  "generatedAt": "2026-08-29T13:05:29.694033+00:00",
+  "generatedAt": "2026-08-30T01:18:33.263862+00:00",
   "platformVersion": "0.9.188",
   "bundleManifest": {
     "fields": [
@@ -343,400 +343,1300 @@
   ],
   "driverCatalog": [
     {
-      "driverId": "virtual",
-      "module": "ispf-driver-virtual",
-      "description": "Simulator",
-      "keywords": "virtual Simulator"
+      "driverId": "amqp",
+      "module": "ispf-driver-amqp",
+      "description": "AMQP 0-9-1 / 1.0 broker stub",
+      "keywords": "amqp AMQP 0-9-1 / 1.0 broker stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "mqtt",
-      "module": "ispf-driver-mqtt",
-      "description": "MQTT subscribe",
-      "keywords": "mqtt MQTT subscribe"
+      "driverId": "ansi-c12",
+      "module": "ispf-driver-ansi-c12",
+      "description": "ANSI C12.18/C12.22 meter stub",
+      "keywords": "ansi-c12 ANSI C12.18/C12.22 meter stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "modbus-tcp",
-      "module": "ispf-driver-modbus",
-      "description": "Modbus TCP",
-      "keywords": "modbus-tcp Modbus TCP"
+      "driverId": "application",
+      "module": "ispf-driver-application",
+      "description": "Local shell/script execution mapped to variables",
+      "keywords": "application Local shell/script execution mapped to variables",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "modbus-rtu",
-      "module": "ispf-driver-modbus-rtu",
-      "description": "Modbus RTU serial",
-      "keywords": "modbus-rtu Modbus RTU serial"
+      "driverId": "as-interface",
+      "module": "ispf-driver-as-interface",
+      "description": "AS-Interface master/gateway stub",
+      "keywords": "as-interface AS-Interface master/gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "modbus-udp",
-      "module": "ispf-driver-modbus-udp",
-      "description": "Modbus UDP",
-      "keywords": "modbus-udp Modbus UDP"
+      "driverId": "asterisk",
+      "module": "ispf-driver-asterisk",
+      "description": "Asterisk Manager Interface (AMI) commands",
+      "keywords": "asterisk Asterisk Manager Interface (AMI) commands",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "snmp",
-      "module": "ispf-driver-snmp",
-      "description": "SNMP v1/v2c/v3",
-      "keywords": "snmp SNMP v1/v2c/v3"
+      "driverId": "aws-iot-core",
+      "module": "ispf-driver-aws-iot-core",
+      "description": "AWS IoT Core MQTT/HTTP stub",
+      "keywords": "aws-iot-core AWS IoT Core MQTT/HTTP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "http",
-      "module": "ispf-driver-http",
-      "description": "HTTP/HTTPS client",
-      "keywords": "http HTTP/HTTPS client"
+      "driverId": "azure-iot-hub",
+      "module": "ispf-driver-azure-iot-hub",
+      "description": "Azure IoT Hub device/service stub",
+      "keywords": "azure-iot-hub Azure IoT Hub device/service stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "bacnet",
+      "module": "ispf-driver-bacnet",
+      "description": "BACnet/IP client (clean-room codec)",
+      "keywords": "bacnet BACnet/IP client (clean-room codec)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "bacnet-mstp",
+      "module": "ispf-driver-bacnet-mstp",
+      "description": "BACnet MS/TP serial stub (BACnet/IP pack is separate)",
+      "keywords": "bacnet-mstp BACnet MS/TP serial stub (BACnet/IP pack is separate)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "barcode-scanner",
+      "module": "ispf-driver-barcode-scanner",
+      "description": "Barcode/QR TCP/serial scanner stub",
+      "keywords": "barcode-scanner Barcode/QR TCP/serial scanner stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "beckhoff-ads",
+      "module": "ispf-driver-beckhoff-ads",
+      "description": "Beckhoff TwinCAT ADS/AMS stub",
+      "keywords": "beckhoff-ads Beckhoff TwinCAT ADS/AMS stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "bluetooth-le",
+      "module": "ispf-driver-bluetooth-le",
+      "description": "Bluetooth Low Energy gateway stub",
+      "keywords": "bluetooth-le Bluetooth Low Energy gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "camera-ai",
+      "module": "ispf-driver-camera-ai",
+      "description": "Edge vision/AI inference endpoint stub",
+      "keywords": "camera-ai Edge vision/AI inference endpoint stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "canbus-gateway",
+      "module": "ispf-driver-canbus-gateway",
+      "description": "Generic CAN/CAN-FD TCP gateway stub",
+      "keywords": "canbus-gateway Generic CAN/CAN-FD TCP gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "canopen",
+      "module": "ispf-driver-canopen",
+      "description": "CANopen / CAN gateway stub",
+      "keywords": "canopen CANopen / CAN gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "cc-link",
+      "module": "ispf-driver-cc-link",
+      "description": "Mitsubishi CC-Link field network stub",
+      "keywords": "cc-link Mitsubishi CC-Link field network stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "cc-link-ie",
+      "module": "ispf-driver-cc-link-ie",
+      "description": "Mitsubishi CC-Link IE Field/Control stub",
+      "keywords": "cc-link-ie Mitsubishi CC-Link IE Field/Control stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "coap",
+      "module": "ispf-driver-coap",
+      "description": "CoAP GET client (read-only)",
+      "keywords": "coap CoAP GET client (read-only)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "codesys",
+      "module": "ispf-driver-codesys",
+      "description": "CODESYS gateway / PLCHandler stub",
+      "keywords": "codesys CODESYS gateway / PLCHandler stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "controlnet",
+      "module": "ispf-driver-controlnet",
+      "description": "ODVA ControlNet gateway stub",
+      "keywords": "controlnet ODVA ControlNet gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "corba",
+      "module": "ispf-driver-corba",
+      "description": "CORBA IIOP TCP reachability shell (no ORB in modern JDK)",
+      "keywords": "corba CORBA IIOP TCP reachability shell (no ORB in modern JDK)",
+      "maturity": "BETA",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "cwmp",
+      "module": "ispf-driver-cwmp",
+      "description": "TR-069/CWMP Inform + Get/SetParameterValues",
+      "keywords": "cwmp TR-069/CWMP Inform + Get/SetParameterValues",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "dali",
+      "module": "ispf-driver-dali",
+      "description": "DALI lighting gateway stub",
+      "keywords": "dali DALI lighting gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "delta-dvp",
+      "module": "ispf-driver-delta-dvp",
+      "description": "Delta DVP / AS series PLC stub",
+      "keywords": "delta-dvp Delta DVP / AS series PLC stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "device-net",
+      "module": "ispf-driver-device-net",
+      "description": "ODVA DeviceNet gateway stub",
+      "keywords": "device-net ODVA DeviceNet gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "dhcp",
+      "module": "ispf-driver-dhcp",
+      "description": "DHCP discover probe",
+      "keywords": "dhcp DHCP discover probe",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "dlms",
+      "module": "ispf-driver-dlms",
+      "description": "DLMS/COSEM meter master (TCP WRAPPER)",
+      "keywords": "dlms DLMS/COSEM meter master (TCP WRAPPER)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "dnp3",
+      "module": "ispf-driver-dnp3",
+      "description": "DNP3 TCP master — class poll/read (write not implemented)",
+      "keywords": "dnp3 DNP3 TCP master — class poll/read (write not implemented)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "eebus",
+      "module": "ispf-driver-eebus",
+      "description": "EEBUS / SHIP energy management stub",
+      "keywords": "eebus EEBUS / SHIP energy management stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "email",
       "module": "ispf-driver-email",
-      "description": "Email via HTTP relay",
-      "keywords": "email Email via HTTP relay"
+      "description": "Outbound email via HTTP relay gateway",
+      "keywords": "email Outbound email via HTTP relay gateway",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "sms",
-      "module": "ispf-driver-sms",
-      "description": "SMS via HTTP relay",
-      "keywords": "sms SMS via HTTP relay"
+      "driverId": "enocean",
+      "module": "ispf-driver-enocean",
+      "description": "EnOcean ESP3 / USB gateway stub",
+      "keywords": "enocean EnOcean ESP3 / USB gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "webhook",
-      "module": "ispf-driver-webhook",
-      "description": "Webhook POST JSON",
-      "keywords": "webhook Webhook POST JSON"
+      "driverId": "ethercat",
+      "module": "ispf-driver-ethercat",
+      "description": "EtherCAT master/gateway stub",
+      "keywords": "ethercat EtherCAT master/gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ethernet-ip",
+      "module": "ispf-driver-ethernet-ip",
+      "description": "EtherNet/IP CIP UCMM Read/Write Tag (Allen-Bradley class)",
+      "keywords": "ethernet-ip EtherNet/IP CIP UCMM Read/Write Tag (Allen-Bradley class)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ethernet-powerlink",
+      "module": "ispf-driver-ethernet-powerlink",
+      "description": "Ethernet POWERLINK stub",
+      "keywords": "ethernet-powerlink Ethernet POWERLINK stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "fanuc-focas",
+      "module": "ispf-driver-fanuc-focas",
+      "description": "Fanuc FOCAS CNC stub",
+      "keywords": "fanuc-focas Fanuc FOCAS CNC stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "fatek",
+      "module": "ispf-driver-fatek",
+      "description": "Fatek FACON protocol stub",
+      "keywords": "fatek Fatek FACON protocol stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "file",
+      "module": "ispf-driver-file",
+      "description": "Local file metadata/content poll",
+      "keywords": "file Local file metadata/content poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "flexible",
+      "module": "ispf-driver-flexible",
+      "description": "Flexible TCP/UDP custom framing poller",
+      "keywords": "flexible Flexible TCP/UDP custom framing poller",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "folder",
+      "module": "ispf-driver-folder",
+      "description": "Local directory listing poll",
+      "keywords": "folder Local directory listing poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "foundation-fieldbus",
+      "module": "ispf-driver-foundation-fieldbus",
+      "description": "Foundation Fieldbus H1/HSE stub",
+      "keywords": "foundation-fieldbus Foundation Fieldbus H1/HSE stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "fuji-sph",
+      "module": "ispf-driver-fuji-sph",
+      "description": "Fuji Electric SPH / MICREX stub",
+      "keywords": "fuji-sph Fuji Electric SPH / MICREX stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ge-srtp",
+      "module": "ispf-driver-ge-srtp",
+      "description": "Emerson/GE Fanuc SRTP stub",
+      "keywords": "ge-srtp Emerson/GE Fanuc SRTP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "genicam",
+      "module": "ispf-driver-genicam",
+      "description": "GenICam / GigE Vision stub",
+      "keywords": "genicam GenICam / GigE Vision stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "gps-tracker",
+      "module": "ispf-driver-gps-tracker",
+      "description": "GPS/M2M TCP tracker listener",
+      "keywords": "gps-tracker GPS/M2M TCP tracker listener",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "graph-db",
+      "module": "ispf-driver-graph-db",
+      "description": "Graph DB query (Neo4j / Gremlin)",
+      "keywords": "graph-db Graph DB query (Neo4j / Gremlin)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "graphql",
+      "module": "ispf-driver-graphql",
+      "description": "GraphQL HTTP stub",
+      "keywords": "graphql GraphQL HTTP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "grpc",
+      "module": "ispf-driver-grpc",
+      "description": "Generic gRPC telemetry stub",
+      "keywords": "grpc Generic gRPC telemetry stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "hart-ip",
+      "module": "ispf-driver-hart-ip",
+      "description": "HART-IP (UDP/TCP) stub",
+      "keywords": "hart-ip HART-IP (UDP/TCP) stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "hart-serial",
+      "module": "ispf-driver-hart-serial",
+      "description": "HART FSK serial/modem stub",
+      "keywords": "hart-serial HART FSK serial/modem stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "haystack",
       "module": "ispf-driver-haystack",
       "description": "Project Haystack HTTP JSON client",
-      "keywords": "haystack Project Haystack HTTP JSON client"
+      "keywords": "haystack Project Haystack HTTP JSON client",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "hitachi-hidic",
+      "module": "ispf-driver-hitachi-hidic",
+      "description": "Hitachi HIDIC / EH-150 stub",
+      "keywords": "hitachi-hidic Hitachi HIDIC / EH-150 stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "http",
+      "module": "ispf-driver-http",
+      "description": "HTTP/HTTPS client poll (GET/POST JSON/text)",
+      "keywords": "http HTTP/HTTPS client poll (GET/POST JSON/text)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "http-server",
       "module": "ispf-driver-http-server",
-      "description": "Embedded HTTP server",
-      "keywords": "http-server Embedded HTTP server"
+      "description": "Embedded HTTP server endpoint for inbound requests",
+      "keywords": "http-server Embedded HTTP server endpoint for inbound requests",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "icmp",
       "module": "ispf-driver-icmp",
-      "description": "Ping",
-      "keywords": "icmp Ping"
+      "description": "ICMP ping reachability / RTT probe",
+      "keywords": "icmp ICMP ping reachability / RTT probe",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "ssh",
-      "module": "ispf-driver-ssh",
-      "description": "SSH command",
-      "keywords": "ssh SSH command"
+      "driverId": "idec-microsmart",
+      "module": "ispf-driver-idec-microsmart",
+      "description": "IDEC MicroSmart FC6A stub",
+      "keywords": "idec-microsmart IDEC MicroSmart FC6A stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "coap",
-      "module": "ispf-driver-coap",
-      "description": "CoAP GET",
-      "keywords": "coap CoAP GET"
+      "driverId": "iec101",
+      "module": "ispf-driver-iec101",
+      "description": "IEC 60870-5-101 serial/TCP stub",
+      "keywords": "iec101 IEC 60870-5-101 serial/TCP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "opcua",
-      "module": "ispf-driver-opcua",
-      "description": "OPC UA client (Milo)",
-      "keywords": "opcua OPC UA client (Milo)"
-    },
-    {
-      "driverId": "opcua-server",
-      "module": "ispf-driver-opcua-server",
-      "description": "OPC UA server (Milo)",
-      "keywords": "opcua-server OPC UA server (Milo)"
-    },
-    {
-      "driverId": "opc-da",
-      "module": "ispf-driver-opc-da",
-      "description": "OPC DA (DCOM/native bridge)",
-      "keywords": "opc-da OPC DA (DCOM/native bridge)"
-    },
-    {
-      "driverId": "opc-bridge",
-      "module": "ispf-driver-opc-bridge",
-      "description": "OPC/LON bridge TCP",
-      "keywords": "opc-bridge OPC/LON bridge TCP"
-    },
-    {
-      "driverId": "s7",
-      "module": "ispf-driver-s7",
-      "description": "Siemens S7",
-      "keywords": "s7 Siemens S7"
+      "driverId": "iec103",
+      "module": "ispf-driver-iec103",
+      "description": "IEC 60870-5-103 protection stub",
+      "keywords": "iec103 IEC 60870-5-103 protection stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "iec104",
       "module": "ispf-driver-iec104",
-      "description": "IEC 104 client",
-      "keywords": "iec104 IEC 104 client"
+      "description": "IEC 60870-5-104 client (telecontrol)",
+      "keywords": "iec104 IEC 60870-5-104 client (telecontrol)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "iec104-server",
       "module": "ispf-driver-iec104-server",
-      "description": "IEC 104 server/slave",
-      "keywords": "iec104-server IEC 104 server/slave"
+      "description": "IEC 60870-5-104 server/slave",
+      "keywords": "iec104-server IEC 60870-5-104 server/slave",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "bacnet",
-      "module": "ispf-driver-bacnet",
-      "description": "BACnet/IP",
-      "keywords": "bacnet BACnet/IP"
+      "driverId": "iec61850",
+      "module": "ispf-driver-iec61850",
+      "description": "IEC 61850 MMS client stub",
+      "keywords": "iec61850 IEC 61850 MMS client stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "dnp3",
-      "module": "ispf-driver-dnp3",
-      "description": "DNP3 TCP master (Class 0/1/2/3 poll)",
-      "keywords": "dnp3 DNP3 TCP master (Class 0/1/2/3 poll)"
+      "driverId": "iec61850-goose",
+      "module": "ispf-driver-iec61850-goose",
+      "description": "IEC 61850 GOOSE subscriber stub",
+      "keywords": "iec61850-goose IEC 61850 GOOSE subscriber stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "ethernet-ip",
-      "module": "ispf-driver-ethernet-ip",
-      "description": "EtherNet/IP CIP UCMM Read/Write Tag",
-      "keywords": "ethernet-ip EtherNet/IP CIP UCMM Read/Write Tag"
+      "driverId": "iec61850-sv",
+      "module": "ispf-driver-iec61850-sv",
+      "description": "IEC 61850 Sampled Values stub",
+      "keywords": "iec61850-sv IEC 61850 Sampled Values stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "dlms",
-      "module": "ispf-driver-dlms",
-      "description": "DLMS/COSEM master (Gurux read/write)",
-      "keywords": "dlms DLMS/COSEM master (Gurux read/write)"
+      "driverId": "iec62056",
+      "module": "ispf-driver-iec62056",
+      "description": "IEC 62056 DLMS companion / push stub (beyond existing DLMS pack)",
+      "keywords": "iec62056 IEC 62056 DLMS companion / push stub (beyond existing DLMS pack)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
-      "driverId": "jmx",
-      "module": "ispf-driver-jmx",
-      "description": "JMX local/remote",
-      "keywords": "jmx JMX local/remote"
-    },
-    {
-      "driverId": "jdbc",
-      "module": "ispf-driver-jdbc",
-      "description": "SQL JDBC",
-      "keywords": "jdbc SQL JDBC"
-    },
-    {
-      "driverId": "odbc",
-      "module": "ispf-driver-odbc",
-      "description": "ODBC via JDBC bridge JAR",
-      "keywords": "odbc ODBC via JDBC bridge JAR"
-    },
-    {
-      "driverId": "file",
-      "module": "ispf-driver-file",
-      "description": "File metadata/content",
-      "keywords": "file File metadata/content"
-    },
-    {
-      "driverId": "folder",
-      "module": "ispf-driver-folder",
-      "description": "Directory listing",
-      "keywords": "folder Directory listing"
-    },
-    {
-      "driverId": "application",
-      "module": "ispf-driver-application",
-      "description": "Shell/script",
-      "keywords": "application Shell/script"
-    },
-    {
-      "driverId": "message-stream",
-      "module": "ispf-driver-message-stream",
-      "description": "TCP/UDP stream",
-      "keywords": "message-stream TCP/UDP stream"
-    },
-    {
-      "driverId": "nmea",
-      "module": "ispf-driver-nmea",
-      "description": "NMEA 0183",
-      "keywords": "nmea NMEA 0183"
-    },
-    {
-      "driverId": "telnet",
-      "module": "ispf-driver-telnet",
-      "description": "Telnet",
-      "keywords": "telnet Telnet"
-    },
-    {
-      "driverId": "soap",
-      "module": "ispf-driver-soap",
-      "description": "SOAP",
-      "keywords": "soap SOAP"
-    },
-    {
-      "driverId": "ip-host",
-      "module": "ispf-driver-ip-host",
-      "description": "PING, HTTP, TCP, DNS, SMTP, FTP",
-      "keywords": "ip-host PING, HTTP, TCP, DNS, SMTP, FTP"
-    },
-    {
-      "driverId": "ldap",
-      "module": "ispf-driver-ldap",
-      "description": "LDAP search",
-      "keywords": "ldap LDAP search"
-    },
-    {
-      "driverId": "dhcp",
-      "module": "ispf-driver-dhcp",
-      "description": "DHCP discover",
-      "keywords": "dhcp DHCP discover"
+      "driverId": "ieee2030-5",
+      "module": "ispf-driver-ieee2030-5",
+      "description": "IEEE 2030.5 (SEP2) stub",
+      "keywords": "ieee2030-5 IEEE 2030.5 (SEP2) stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "imap",
       "module": "ispf-driver-imap",
-      "description": "IMAP mailbox",
-      "keywords": "imap IMAP mailbox"
-    },
-    {
-      "driverId": "pop3",
-      "module": "ispf-driver-pop3",
-      "description": "POP3 mailbox",
-      "keywords": "pop3 POP3 mailbox"
-    },
-    {
-      "driverId": "radius",
-      "module": "ispf-driver-radius",
-      "description": "RADIUS auth check",
-      "keywords": "radius RADIUS auth check"
-    },
-    {
-      "driverId": "ipmi",
-      "module": "ispf-driver-ipmi",
-      "description": "IPMI LAN",
-      "keywords": "ipmi IPMI LAN"
-    },
-    {
-      "driverId": "wmi",
-      "module": "ispf-driver-wmi",
-      "description": "WMI (PowerShell, Windows)",
-      "keywords": "wmi WMI (PowerShell, Windows)"
-    },
-    {
-      "driverId": "kafka",
-      "module": "ispf-driver-kafka",
-      "description": "Kafka",
-      "keywords": "kafka Kafka"
-    },
-    {
-      "driverId": "jms",
-      "module": "ispf-driver-jms",
-      "description": "JMS (ActiveMQ)",
-      "keywords": "jms JMS (ActiveMQ)"
-    },
-    {
-      "driverId": "cwmp",
-      "module": "ispf-driver-cwmp",
-      "description": "TR-069 Inform client",
-      "keywords": "cwmp TR-069 Inform client"
-    },
-    {
-      "driverId": "web-transaction",
-      "module": "ispf-driver-web-transaction",
-      "description": "Multi-step HTTP",
-      "keywords": "web-transaction Multi-step HTTP"
-    },
-    {
-      "driverId": "graph-db",
-      "module": "ispf-driver-graph-db",
-      "description": "Neo4j / Gremlin",
-      "keywords": "graph-db Neo4j / Gremlin"
-    },
-    {
-      "driverId": "vmware",
-      "module": "ispf-driver-vmware",
-      "description": "vSphere SOAP (Login + RetrieveProperties)",
-      "keywords": "vmware vSphere SOAP (Login + RetrieveProperties)"
-    },
-    {
-      "driverId": "smi-s",
-      "module": "ispf-driver-smis",
-      "description": "SMI-S CIM-XML",
-      "keywords": "smi-s SMI-S CIM-XML"
-    },
-    {
-      "driverId": "gps-tracker",
-      "module": "ispf-driver-gps-tracker",
-      "description": "GPS/M2M TCP server",
-      "keywords": "gps-tracker GPS/M2M TCP server"
-    },
-    {
-      "driverId": "flexible",
-      "module": "ispf-driver-flexible",
-      "description": "Flexible TCP/UDP",
-      "keywords": "flexible Flexible TCP/UDP"
-    },
-    {
-      "driverId": "mbus",
-      "module": "ispf-driver-mbus",
-      "description": "M-Bus",
-      "keywords": "mbus M-Bus"
-    },
-    {
-      "driverId": "modem-at",
-      "module": "ispf-driver-modem-at",
-      "description": "GSM AT commands",
-      "keywords": "modem-at GSM AT commands"
-    },
-    {
-      "driverId": "omron-fins",
-      "module": "ispf-driver-omron-fins",
-      "description": "Omron FINS",
-      "keywords": "omron-fins Omron FINS"
-    },
-    {
-      "driverId": "asterisk",
-      "module": "ispf-driver-asterisk",
-      "description": "Asterisk AMI",
-      "keywords": "asterisk Asterisk AMI"
-    },
-    {
-      "driverId": "sip",
-      "module": "ispf-driver-sip",
-      "description": "SIP OPTIONS/REGISTER",
-      "keywords": "sip SIP OPTIONS/REGISTER"
-    },
-    {
-      "driverId": "xmpp",
-      "module": "ispf-driver-xmpp",
-      "description": "XMPP (Smack)",
-      "keywords": "xmpp XMPP (Smack)"
-    },
-    {
-      "driverId": "smpp",
-      "module": "ispf-driver-smpp",
-      "description": "SMPP",
-      "keywords": "smpp SMPP"
-    },
-    {
-      "driverId": "smb",
-      "module": "ispf-driver-smb",
-      "description": "SMB/CIFS",
-      "keywords": "smb SMB/CIFS"
-    },
-    {
-      "driverId": "corba",
-      "module": "ispf-driver-corba",
-      "description": "CORBA IIOP TCP stub",
-      "keywords": "corba CORBA IIOP TCP stub"
-    },
-    {
-      "driverId": "sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, … (97 ids)",
-      "module": "ispf-driver-<id>` each",
-      "description": "Protocol catalog **STUB** packs (Apache-2.0) — regenerate via `python tools/driver-stubs/generate-protocol-stubs.py`",
-      "keywords": "sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, … (97 ids) Protocol catalog **STUB** packs (Apache-2.0) — regenerate via `python tools/driver-stubs/generate-protocol-stubs.py`"
-    },
-    {
-      "driverId": "ingress-syslog",
-      "module": "ispf-driver-ingress-syslog",
-      "description": "Syslog UDP listener (raw capture)",
-      "keywords": "ingress-syslog Syslog UDP listener (raw capture)"
-    },
-    {
-      "driverId": "ingress-snmp-trap",
-      "module": "ispf-driver-ingress-snmp-trap",
-      "description": "SNMP trap UDP listener (raw capture)",
-      "keywords": "ingress-snmp-trap SNMP trap UDP listener (raw capture)"
+      "description": "IMAP mailbox poll",
+      "keywords": "imap IMAP mailbox poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
     },
     {
       "driverId": "ingress-sflow",
       "module": "ispf-driver-ingress-sflow",
-      "description": "sFlow v5 UDP listener (raw capture)",
-      "keywords": "ingress-sflow sFlow v5 UDP listener (raw capture)"
+      "description": "sFlow v5 UDP listener (raw capture ingress)",
+      "keywords": "ingress-sflow sFlow v5 UDP listener (raw capture ingress)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ingress-snmp-trap",
+      "module": "ispf-driver-ingress-snmp-trap",
+      "description": "SNMP trap UDP listener (raw capture ingress)",
+      "keywords": "ingress-snmp-trap SNMP trap UDP listener (raw capture ingress)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ingress-syslog",
+      "module": "ispf-driver-ingress-syslog",
+      "description": "Syslog UDP listener (raw capture ingress)",
+      "keywords": "ingress-syslog Syslog UDP listener (raw capture ingress)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "interbus",
+      "module": "ispf-driver-interbus",
+      "description": "INTERBUS fieldbus gateway stub",
+      "keywords": "interbus INTERBUS fieldbus gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "io-link",
+      "module": "ispf-driver-io-link",
+      "description": "IO-Link master REST/MQTT bridge stub",
+      "keywords": "io-link IO-Link master REST/MQTT bridge stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ip-host",
+      "module": "ispf-driver-ip-host",
+      "description": "Multi-check host probe (PING/HTTP/TCP/DNS/SMTP/FTP)",
+      "keywords": "ip-host Multi-check host probe (PING/HTTP/TCP/DNS/SMTP/FTP)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ipmi",
+      "module": "ispf-driver-ipmi",
+      "description": "IPMI LAN BMC probe",
+      "keywords": "ipmi IPMI LAN BMC probe",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "isa100",
+      "module": "ispf-driver-isa100",
+      "description": "ISA100 wireless gateway stub",
+      "keywords": "isa100 ISA100 wireless gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "j1939",
+      "module": "ispf-driver-j1939",
+      "description": "SAE J1939 vehicle network stub",
+      "keywords": "j1939 SAE J1939 vehicle network stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "jdbc",
+      "module": "ispf-driver-jdbc",
+      "description": "SQL JDBC SELECT poll",
+      "keywords": "jdbc SQL JDBC SELECT poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "jms",
+      "module": "ispf-driver-jms",
+      "description": "JMS client (ActiveMQ-class)",
+      "keywords": "jms JMS client (ActiveMQ-class)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "jmx",
+      "module": "ispf-driver-jmx",
+      "description": "JMX local/remote MBean attribute poll",
+      "keywords": "jmx JMX local/remote MBean attribute poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "kafka",
+      "module": "ispf-driver-kafka",
+      "description": "Apache Kafka consumer/poll",
+      "keywords": "kafka Apache Kafka consumer/poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "keyence-hostlink",
+      "module": "ispf-driver-keyence-hostlink",
+      "description": "Keyence PLC Host Link / KV stub",
+      "keywords": "keyence-hostlink Keyence PLC Host Link / KV stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "knx",
+      "module": "ispf-driver-knx",
+      "description": "KNX/IP tunneling/routing stub",
+      "keywords": "knx KNX/IP tunneling/routing stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "knx-tp",
+      "module": "ispf-driver-knx-tp",
+      "description": "KNX Twisted Pair interface stub",
+      "keywords": "knx-tp KNX Twisted Pair interface stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ldap",
+      "module": "ispf-driver-ldap",
+      "description": "LDAP search probe",
+      "keywords": "ldap LDAP search probe",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "lonworks",
+      "module": "ispf-driver-lonworks",
+      "description": "LonWorks/LonTalk IP stub",
+      "keywords": "lonworks LonWorks/LonTalk IP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "lorawan",
+      "module": "ispf-driver-lorawan",
+      "description": "LoRaWAN network/application server gateway stub",
+      "keywords": "lorawan LoRaWAN network/application server gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ls-xgt",
+      "module": "ispf-driver-ls-xgt",
+      "description": "LS Electric XGT FEnet stub",
+      "keywords": "ls-xgt LS Electric XGT FEnet stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "lwm2m",
+      "module": "ispf-driver-lwm2m",
+      "description": "OMA LwM2M client/server stub",
+      "keywords": "lwm2m OMA LwM2M client/server stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "matter",
+      "module": "ispf-driver-matter",
+      "description": "Matter / CHIP controller stub",
+      "keywords": "matter Matter / CHIP controller stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "mbus",
+      "module": "ispf-driver-mbus",
+      "description": "M-Bus meter protocol (read-only v0.1)",
+      "keywords": "mbus M-Bus meter protocol (read-only v0.1)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "message-stream",
+      "module": "ispf-driver-message-stream",
+      "description": "Generic TCP/UDP message stream framing",
+      "keywords": "message-stream Generic TCP/UDP message stream framing",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "mitsubishi-melsec",
+      "module": "ispf-driver-mitsubishi-melsec",
+      "description": "Mitsubishi MELSEC communication stub (MC Protocol / SLMP path planned)",
+      "keywords": "mitsubishi-melsec Mitsubishi MELSEC communication stub (MC Protocol / SLMP path planned)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "mitsubishi-slmp",
+      "module": "ispf-driver-mitsubishi-slmp",
+      "description": "Mitsubishi SLMP (Seamless Message Protocol) stub",
+      "keywords": "mitsubishi-slmp Mitsubishi SLMP (Seamless Message Protocol) stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "modbus-rtu",
+      "module": "ispf-driver-modbus-rtu",
+      "description": "Modbus RTU master over serial",
+      "keywords": "modbus-rtu Modbus RTU master over serial",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "modbus-tcp",
+      "module": "ispf-driver-modbus",
+      "description": "Modbus TCP master (FC read/write holding/input/coils)",
+      "keywords": "modbus-tcp Modbus TCP master (FC read/write holding/input/coils)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "modbus-udp",
+      "module": "ispf-driver-modbus-udp",
+      "description": "Modbus UDP master",
+      "keywords": "modbus-udp Modbus UDP master",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "modem-at",
+      "module": "ispf-driver-modem-at",
+      "description": "GSM/cellular modem AT commands over TCP/serial",
+      "keywords": "modem-at GSM/cellular modem AT commands over TCP/serial",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "mqtt",
+      "module": "ispf-driver-mqtt",
+      "description": "MQTT client: subscribe topics and optional publish/write",
+      "keywords": "mqtt MQTT client: subscribe topics and optional publish/write",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "mqtt-sn",
+      "module": "ispf-driver-mqtt-sn",
+      "description": "MQTT For Sensor Networks stub",
+      "keywords": "mqtt-sn MQTT For Sensor Networks stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "mtconnect",
+      "module": "ispf-driver-mtconnect",
+      "description": "MTConnect agent HTTP stub",
+      "keywords": "mtconnect MTConnect agent HTTP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "nats",
+      "module": "ispf-driver-nats",
+      "description": "NATS messaging stub (cluster messaging is separate)",
+      "keywords": "nats NATS messaging stub (cluster messaging is separate)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "nmea",
+      "module": "ispf-driver-nmea",
+      "description": "NMEA 0183 GNSS/sensor sentence parse",
+      "keywords": "nmea NMEA 0183 GNSS/sensor sentence parse",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ocpp",
+      "module": "ispf-driver-ocpp",
+      "description": "Open Charge Point Protocol (CSMS) stub",
+      "keywords": "ocpp Open Charge Point Protocol (CSMS) stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "odata",
+      "module": "ispf-driver-odata",
+      "description": "OData v4 REST stub",
+      "keywords": "odata OData v4 REST stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "odbc",
+      "module": "ispf-driver-odbc",
+      "description": "ODBC via external JDBC bridge JAR (SQL read)",
+      "keywords": "odbc ODBC via external JDBC bridge JAR (SQL read)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "omron-fins",
+      "module": "ispf-driver-omron-fins",
+      "description": "Omron FINS PLC (read-only v0.1)",
+      "keywords": "omron-fins Omron FINS PLC (read-only v0.1)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "onvif",
+      "module": "ispf-driver-onvif",
+      "description": "ONVIF Profile S/T device stub",
+      "keywords": "onvif ONVIF Profile S/T device stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "opc-ae",
+      "module": "ispf-driver-opc-ae",
+      "description": "OPC Classic A&E stub (DCOM/bridge required)",
+      "keywords": "opc-ae OPC Classic A&E stub (DCOM/bridge required)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "opc-bridge",
+      "module": "ispf-driver-opc-bridge",
+      "description": "OPC/LON TCP bridge connectivity shell",
+      "keywords": "opc-bridge OPC/LON TCP bridge connectivity shell",
+      "maturity": "BETA",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "opc-da",
+      "module": "ispf-driver-opc-da",
+      "description": "OPC Classic DA connectivity shell (needs Windows DCOM/bridge)",
+      "keywords": "opc-da OPC Classic DA connectivity shell (needs Windows DCOM/bridge)",
+      "maturity": "BETA",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "opc-hda",
+      "module": "ispf-driver-opc-hda",
+      "description": "OPC Classic HDA stub (DCOM/bridge required)",
+      "keywords": "opc-hda OPC Classic HDA stub (DCOM/bridge required)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "opcua",
+      "module": "ispf-driver-opcua",
+      "description": "OPC UA client (Eclipse Milo): poll/subscribe/write/browse",
+      "keywords": "opcua OPC UA client (Eclipse Milo): poll/subscribe/write/browse",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "opcua-pubsub",
+      "module": "ispf-driver-opcua-pubsub",
+      "description": "OPC UA PubSub (UDP/MQTT) stub — connectivity shell only",
+      "keywords": "opcua-pubsub OPC UA PubSub (UDP/MQTT) stub — connectivity shell only",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "opcua-server",
+      "module": "ispf-driver-opcua-server",
+      "description": "OPC UA server (Eclipse Milo) exposing ISPF variables",
+      "keywords": "opcua-server OPC UA server (Eclipse Milo) exposing ISPF variables",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "openadr",
+      "module": "ispf-driver-openadr",
+      "description": "OpenADR 2.0b VTN/VEN stub",
+      "keywords": "openadr OpenADR 2.0b VTN/VEN stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "panasonic-mewto",
+      "module": "ispf-driver-panasonic-mewto",
+      "description": "Panasonic MEWTOCOL-COM/DAT stub",
+      "keywords": "panasonic-mewto Panasonic MEWTOCOL-COM/DAT stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "plcnext",
+      "module": "ispf-driver-plcnext",
+      "description": "Phoenix Contact PLCnext Engineer/RSC stub",
+      "keywords": "plcnext Phoenix Contact PLCnext Engineer/RSC stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "pop3",
+      "module": "ispf-driver-pop3",
+      "description": "POP3 mailbox poll",
+      "keywords": "pop3 POP3 mailbox poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "profibus",
+      "module": "ispf-driver-profibus",
+      "description": "PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required)",
+      "keywords": "profibus PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "profibus-pa",
+      "module": "ispf-driver-profibus-pa",
+      "description": "PROFIBUS PA instrument network stub",
+      "keywords": "profibus-pa PROFIBUS PA instrument network stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "profinet",
+      "module": "ispf-driver-profinet",
+      "description": "PROFINET IO controller/device stub (DCP/RPC not implemented)",
+      "keywords": "profinet PROFINET IO controller/device stub (DCP/RPC not implemented)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "pulsar",
+      "module": "ispf-driver-pulsar",
+      "description": "Apache Pulsar client stub",
+      "keywords": "pulsar Apache Pulsar client stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "radius",
+      "module": "ispf-driver-radius",
+      "description": "RADIUS authentication check",
+      "keywords": "radius RADIUS authentication check",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "redis",
+      "module": "ispf-driver-redis",
+      "description": "Redis key/stream telemetry stub",
+      "keywords": "redis Redis key/stream telemetry stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "rockwell-csp",
+      "module": "ispf-driver-rockwell-csp",
+      "description": "Allen-Bradley CSP (legacy Ethernet) stub",
+      "keywords": "rockwell-csp Allen-Bradley CSP (legacy Ethernet) stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "rockwell-df1",
+      "module": "ispf-driver-rockwell-df1",
+      "description": "Allen-Bradley DF1 serial/TCP bridge stub",
+      "keywords": "rockwell-df1 Allen-Bradley DF1 serial/TCP bridge stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "rtsp",
+      "module": "ispf-driver-rtsp",
+      "description": "RTSP media/metadata stub",
+      "keywords": "rtsp RTSP media/metadata stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "s7",
+      "module": "ispf-driver-s7",
+      "description": "Siemens S7 ISO-on-TCP PLC read/write",
+      "keywords": "s7 Siemens S7 ISO-on-TCP PLC read/write",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "schneider-umac",
+      "module": "ispf-driver-schneider-umac",
+      "description": "Schneider Electric Unity/Modicon advanced services stub (beyond Modbus)",
+      "keywords": "schneider-umac Schneider Electric Unity/Modicon advanced services stub (beyond Modbus)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "scpi",
+      "module": "ispf-driver-scpi",
+      "description": "IEEE 488.2 SCPI instrument stub",
+      "keywords": "scpi IEEE 488.2 SCPI instrument stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "secs-gem",
+      "module": "ispf-driver-secs-gem",
+      "description": "SEMI SECS-I/HSMS/GEM stub",
+      "keywords": "secs-gem SEMI SECS-I/HSMS/GEM stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "sigfox",
+      "module": "ispf-driver-sigfox",
+      "description": "Sigfox backend callback stub",
+      "keywords": "sigfox Sigfox backend callback stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "sip",
+      "module": "ispf-driver-sip",
+      "description": "SIP OPTIONS/REGISTER reachability probe",
+      "keywords": "sip SIP OPTIONS/REGISTER reachability probe",
+      "maturity": "PRODUCTION",
+      "license": "LicenseRef-NIST-PublicDomain"
+    },
+    {
+      "driverId": "smb",
+      "module": "ispf-driver-smb",
+      "description": "SMB/CIFS file share access",
+      "keywords": "smb SMB/CIFS file share access",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "smi-s",
+      "module": "ispf-driver-smis",
+      "description": "SMI-S storage CIM-XML poll",
+      "keywords": "smi-s SMI-S storage CIM-XML poll",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "smpp",
+      "module": "ispf-driver-smpp",
+      "description": "SMPP SMSC client",
+      "keywords": "smpp SMPP SMSC client",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "sms",
+      "module": "ispf-driver-sms",
+      "description": "Outbound SMS via HTTP relay gateway",
+      "keywords": "sms Outbound SMS via HTTP relay gateway",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "snmp",
+      "module": "ispf-driver-snmp",
+      "description": "SNMP v1/v2c/v3 GET/SET poll client",
+      "keywords": "snmp SNMP v1/v2c/v3 GET/SET poll client",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "soap",
+      "module": "ispf-driver-soap",
+      "description": "SOAP HTTP client",
+      "keywords": "soap SOAP HTTP client",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "someip",
+      "module": "ispf-driver-someip",
+      "description": "AUTOSAR SOME/IP stub",
+      "keywords": "someip AUTOSAR SOME/IP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "sparkplug-b",
+      "module": "ispf-driver-sparkplug-b",
+      "description": "MQTT Sparkplug B host/edge stub (MQTT session + Sparkplug payload parsing not implemented)",
+      "keywords": "sparkplug-b MQTT Sparkplug B host/edge stub (MQTT session + Sparkplug payload parsing not implemented)",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "ssh",
+      "module": "ispf-driver-ssh",
+      "description": "SSH remote command execution (JSch)",
+      "keywords": "ssh SSH remote command execution (JSch)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "telnet",
+      "module": "ispf-driver-telnet",
+      "description": "Telnet remote command session",
+      "keywords": "telnet Telnet remote command session",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "thread",
+      "module": "ispf-driver-thread",
+      "description": "Thread Border Router stub",
+      "keywords": "thread Thread Border Router stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "toshiba-t-series",
+      "module": "ispf-driver-toshiba-t-series",
+      "description": "Toshiba T-series PLC stub",
+      "keywords": "toshiba-t-series Toshiba T-series PLC stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "uds",
+      "module": "ispf-driver-uds",
+      "description": "Unified Diagnostic Services over DoIP stub",
+      "keywords": "uds Unified Diagnostic Services over DoIP stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "unitronics",
+      "module": "ispf-driver-unitronics",
+      "description": "Unitronics PCOM stub",
+      "keywords": "unitronics Unitronics PCOM stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "virtual",
+      "module": "ispf-driver-virtual",
+      "description": "Simulator / virtual device profiles for demos and tests",
+      "keywords": "virtual Simulator / virtual device profiles for demos and tests",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "visa",
+      "module": "ispf-driver-visa",
+      "description": "IVI/VISA instrument resource stub",
+      "keywords": "visa IVI/VISA instrument resource stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "vmware",
+      "module": "ispf-driver-vmware",
+      "description": "VMware vSphere SOAP (Login + RetrieveProperties)",
+      "keywords": "vmware VMware vSphere SOAP (Login + RetrieveProperties)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "wago",
+      "module": "ispf-driver-wago",
+      "description": "WAGO PFC / e!COCKPIT stub",
+      "keywords": "wago WAGO PFC / e!COCKPIT stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "weather-station",
+      "module": "ispf-driver-weather-station",
+      "description": "Davis/Vaisala-class weather station stub",
+      "keywords": "weather-station Davis/Vaisala-class weather station stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "web-transaction",
+      "module": "ispf-driver-web-transaction",
+      "description": "Multi-step HTTP transaction script",
+      "keywords": "web-transaction Multi-step HTTP transaction script",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "webhook",
+      "module": "ispf-driver-webhook",
+      "description": "Outbound webhook POST JSON notifications",
+      "keywords": "webhook Outbound webhook POST JSON notifications",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "websocket",
+      "module": "ispf-driver-websocket",
+      "description": "Generic WebSocket telemetry stub",
+      "keywords": "websocket Generic WebSocket telemetry stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "weighbridge",
+      "module": "ispf-driver-weighbridge",
+      "description": "Truck scale / weighbridge protocol stub",
+      "keywords": "weighbridge Truck scale / weighbridge protocol stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "wirelesshart",
+      "module": "ispf-driver-wirelesshart",
+      "description": "WirelessHART gateway stub",
+      "keywords": "wirelesshart WirelessHART gateway stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "wisun",
+      "module": "ispf-driver-wisun",
+      "description": "Wi-SUN FAN border router stub",
+      "keywords": "wisun Wi-SUN FAN border router stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "wmbus",
+      "module": "ispf-driver-wmbus",
+      "description": "Wireless M-Bus (OMS) stub",
+      "keywords": "wmbus Wireless M-Bus (OMS) stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "wmi",
+      "module": "ispf-driver-wmi",
+      "description": "Windows WMI via PowerShell (Windows only)",
+      "keywords": "wmi Windows WMI via PowerShell (Windows only)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "xmpp",
+      "module": "ispf-driver-xmpp",
+      "description": "XMPP messaging client (Smack)",
+      "keywords": "xmpp XMPP messaging client (Smack)",
+      "maturity": "PRODUCTION",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "yaskawa-memobus",
+      "module": "ispf-driver-yaskawa-memobus",
+      "description": "Yaskawa Memobus/Modbus-family PLC stub",
+      "keywords": "yaskawa-memobus Yaskawa Memobus/Modbus-family PLC stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "zigbee",
+      "module": "ispf-driver-zigbee",
+      "description": "Zigbee coordinator / ZCL stub",
+      "keywords": "zigbee Zigbee coordinator / ZCL stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
+    },
+    {
+      "driverId": "zwave",
+      "module": "ispf-driver-zwave",
+      "description": "Z-Wave controller stub",
+      "keywords": "zwave Z-Wave controller stub",
+      "maturity": "STUB",
+      "license": "Apache-2.0"
     }
   ],
   "exampleSummaries": [
@@ -37227,5 +38127,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "ad17ccddebe9c04d6d7a0e74fa803bd56178c434a3d2d3b47e21d356e36932e8"
+  "contentSha256": "95070aba9548912b2d8f3ddfc2d8760ed305f084c841d66fa432d5dd749c6593"
 }
