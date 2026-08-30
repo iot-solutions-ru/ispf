@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-08-30T06:32:16.361Z",
+  "source": "quality-gates.spec.ts live operator mimic",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "appId": "ui-pump-station",
+  "dashboard": null,
+  "elementCount": 7,
+  "softBudgetFps": 30,
+  "fpsMedian": 60,
+  "fpsMin": 60,
+  "samples": [
+    60,
+    60,
+    60.76
+  ],
+  "wsVariableUpdatedCount": 479,
+  "functionalOk": true
+}

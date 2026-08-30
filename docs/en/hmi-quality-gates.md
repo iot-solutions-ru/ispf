@@ -15,7 +15,7 @@ See [acceleration-program](acceleration-program.md) · [roadmap § S21](roadmap.
 | axe critical | `npm run test:quality` | 0 critical | nightly |
 | Mimic FPS (stress) | `npm run test:quality` | ≥55 fps @ 500 el — **BL-152 Done acceptance** | nightly |
 | Mimic FPS (WS update path) | `npm run test:quality` | WS floor (`MIMIC_MIN_FPS_WS`, default 35) while pumping `VARIABLE_UPDATED` | nightly |
-| Mimic FPS (unmocked live) | `E2E_LIVE_FPS=1` + creds | Optional evidence only — **not** claimed ≥60 without a dated run | on-demand |
+| Mimic FPS (unmocked live) | `E2E_LIVE_FPS=1` + creds + `E2E_OPERATOR_APP` | Soft floor `MIMIC_MIN_FPS_LIVE` (default 30) on a **real** operator mimic with Object WS `VARIABLE_UPDATED` — dated evidence under [`docs/evidence/hmi-fps/`](../evidence/hmi-fps/); **not** a 500-el live claim | on-demand |
 | PWA offline config (BL-151) | `npm run pwa:offline-evidence` | SW 8h TTL + dashboard/mimic cache + reconnect helper | nightly |
 | PWA offline field soak | [hmi-offline-field-soak.md](hmi-offline-field-soak.md) | 2h min / 8h stretch on wall or tablet | on-site |
 
@@ -53,7 +53,7 @@ Stress document builder: `e2e/fixtures/stressMimic.ts`. Playwright measures min 
 | SCADA symbol library | Done | [scada-symbol-library](scada-symbol-library.md), `customSvg.test.ts` |
 | Mimic 60 fps @ tank-farm | Done | CI stress proxy: 120 symbols @ ≥55 fps (`stressMimic.ts`); full tank-farm diagram same render path |
 | Mimic FPS @ 500 el (WS update path) | Done | CI pumps `ispf-object-ws-message` VARIABLE_UPDATED; floor `MIMIC_MIN_FPS_WS` (default 35) |
-| Mimic FPS @ 500 el (unmocked live API) | Ops note | Suite present; no dated ≥60 evidence — do not claim |
+| Mimic FPS @ 500 el (unmocked live API) | Partial | Live demostand path gated (`E2E_OPERATOR_APP`, real WS). Dated evidence: [`hmi-fps/2026-08-30-…ui-pump-station`](../evidence/hmi-fps/2026-08-30-ispf-vps-0.9.193-ui-pump-station.json) (~7 el @ 60 FPS median). **No** 500-el unmocked dated claim yet |
 | Lighthouse operator dashboard | Done (CI) | a11y floor 90; ≥95 ops stretch only |
 
 ## Profiling

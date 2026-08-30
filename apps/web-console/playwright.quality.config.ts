@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 /** HMI quality gates: a11y (axe) + mimic FPS profiling (S21). */
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:5173";
 const liveMode = Boolean(process.env.E2E_BASE_URL);
+const liveFps = process.env.E2E_LIVE_FPS === "1";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -12,7 +13,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
-  timeout: 90_000,
+  timeout: liveFps ? 180_000 : 90_000,
   use: {
     baseURL,
     locale: "en-US",

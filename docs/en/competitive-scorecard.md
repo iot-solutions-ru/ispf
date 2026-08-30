@@ -96,7 +96,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 3. **AI (9.0 → 10):** BL-177…180 Done (harness + BL-178 52/52). Named-site soft evidence archived under [`docs/evidence/ai-generator/`](../evidence/ai-generator/): **0.9.186** (2026-08-24) and **0.9.191 re-soak** (2026-08-30) for HVAC/MES/SCADA, all `softBudgetMet: true`, `bundleTrust=signed` on the re-soak. Residual for 10/10: optional multi-day plant journal (not oneshot re-runs). Keep the AI score frozen; do not invent live pass counts from soft-evidence archives.
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + live partner-hosted catalogs (out of repo); raise after first external partner catalog onboarding.
 5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
-6. **HMI (7.5 → 9+):** FPS gate on live WebSocket mimic path (alarm shelving persistence closed — BL-158).
+6. **HMI (7.5 → 9+):** live Object WS FPS path has dated demostand evidence ([`hmi-fps/2026-08-30-…ui-pump-station`](../evidence/hmi-fps/2026-08-30-ispf-vps-0.9.193-ui-pump-station.json), ~7 el @ 60 FPS median). Residual toward 9+: larger live diagrams / 500-el unmocked archive; alarm shelving persistence already closed (BL-158). Keep HMI score frozen until next full audit.
 7. **Compliance:** IEC 62443 / GAMP-lite tender pack (**BL-192**) — **docs Done:** [compliance-tender-pack](compliance-tender-pack.md). Remaining gaps: pen-test report, optional hard schema **table routing** (logical SaaS + PostgreSQL RLS Done), WebAuthn (BL-194), no product certification claim. SIEM audit webhook shipped (BL-156).
 
 ---
