@@ -44,6 +44,19 @@ subprojects {
     dependencies {
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
+
+    // Keep protobuf runtime ahead of CEL / OTel gencode (runtime must be >= gencode).
+    // Without this, CEL 0.14+ can fail with ProtobufRuntimeVersionException when an older
+    // transitive protobuf-java (e.g. 4.34.x from Micrometer/OTel) wins resolution.
+    configurations.configureEach {
+        resolutionStrategy {
+            force(
+                "com.google.protobuf:protobuf-java:4.36.0",
+                "com.google.protobuf:protobuf-java-util:4.36.0",
+                "com.google.protobuf:protobuf-javalite:4.36.0",
+            )
+        }
+    }
 }
 
 // Cross-subproject test serialization removed (issue #65 long-term). Server tests use forkEvery=1

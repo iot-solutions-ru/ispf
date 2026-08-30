@@ -3,6 +3,9 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+// Override Spring Boot BOM pin (4.35.1) so runtime stays >= CEL 0.14 gencode and is current.
+extra["protobuf-java.version"] = "4.36.0"
+
 configurations.all {
     exclude(group = "org.slf4j", module = "slf4j-reload4j")
     exclude(group = "ch.qos.reload4j", module = "reload4j")

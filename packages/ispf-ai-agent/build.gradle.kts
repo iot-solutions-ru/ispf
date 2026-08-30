@@ -2,6 +2,9 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+// Keep in sync with ispf-server / root protobuf force (CEL 0.14+ gencode).
+extra["protobuf-java.version"] = "4.36.0"
+
 dependencyManagement {
     imports {
         mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.1")

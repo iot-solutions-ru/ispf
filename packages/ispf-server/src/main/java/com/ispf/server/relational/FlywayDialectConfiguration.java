@@ -19,8 +19,8 @@ public class FlywayDialectConfiguration {
         return configuration -> {
             RelationalDialect dialect = relationalDialectDetector.resolve(dataSource);
             configuration.locations(dialect.flywayLocations());
-            // V86 RLS is PostgreSQL-only; H2 also loads the postgresql pack.
-            // Wrap the migration body in placeholders so H2 treats it as a block comment.
+            // PostgreSQL-only bodies (V86 RLS, V89 random_uuid, …): H2 also loads the
+            // postgresql pack, so wrap those sections in placeholders → block comments on H2.
             Map<String, String> placeholders = new HashMap<>();
             if (dialect.kind() == RelationalDbKind.H2) {
                 placeholders.put("rls_block_start", "/*");
