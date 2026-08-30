@@ -45,7 +45,7 @@ cd apps/web-console
 npm ci && npm run build && npm run pwa:offline-evidence
 ```
 
-Nightly: same command in `ci-nightly.yml` `web-console-full` job.
+Nightly: same command in `nightly.yml` `web-console-full` job.
 
 Playwright: `e2e/pwa-android.spec.ts` (preview + SW registration; not a literal 2h soak).
 

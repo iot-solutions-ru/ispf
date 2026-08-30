@@ -34,7 +34,7 @@ Env overrides: `LH_MIN_PERFORMANCE`, `LH_MIN_ACCESSIBILITY`, `LH_MIN_ACCESSIBILI
 | Profile | Elements | FPS floor | Env |
 | ------- | -------- | --------- | --- |
 | Local / acceptance (BL-152 **Done**) | 500 | ≥55 | default `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
-| Nightly GHA soft floor | 300 | ≥15 (static + WS) | `ci-nightly.yml`: `MIMIC_STRESS_ELEMENTS=300`, `MIMIC_MIN_FPS=15`, `MIMIC_MIN_FPS_WS=15` — shared runners; not a product claim of ≥55 on GHA |
+| Nightly GHA soft floor | 300 | ≥15 (static + WS) | `nightly.yml`: `MIMIC_STRESS_ELEMENTS=300`, `MIMIC_MIN_FPS=15`, `MIMIC_MIN_FPS_WS=15` — shared runners; not a product claim of ≥55 on GHA |
 | Stretch (ops, not acceptance) | 500 | ≥60 | `MIMIC_MIN_FPS=60` + unmocked `E2E_LIVE_FPS=1` when evidence exists |
 | Legacy S21 proxy | 120 | ≥55 | `MIMIC_STRESS_ELEMENTS=120` |
 | Tank-farm manual | full diagram | ≥60 | Chrome Performance on operator mimic |

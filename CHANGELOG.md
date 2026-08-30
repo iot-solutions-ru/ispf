@@ -19,9 +19,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
-- **CI nightly ghost failures on `main` push** — after removing full-suite
-  `on.push`, Actions still recorded empty failed runs; restore a lightweight
-  `push-ack` job and gate heavy nightly jobs with `if: event != push`.
+- **CI nightly ghost failures on `main` push** — empty 0-job failed runs (workflow
+  registered under path name; schedules stalled since 2026-08-24). Renamed
+  workflow to `nightly.yml` + `push-ack` job; heavy jobs gated
+  `if: event != push`; concurrency group `ci-nightly-v2`.
 
 ### Changed
 

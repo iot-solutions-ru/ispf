@@ -43,7 +43,7 @@ test.skip(true, "ci-flake #1234 — quarantine until 2026-07-20");
 | Рабочий процесс | Триггер | Область применения |
 | -------- | ------- | ----- |
 | [ci.yml](../../.github/workflows/ci.yml) | PR | pr-fast: модуль + сборка, фильтры путей, без загрузки/e2e |
-| [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) | ежедневный cron, `workflow_dispatch`; **push → только `push-ack`** | Полный suite на schedule/dispatch; push даёт зелёный ack без empty failure |
+| [nightly.yml](../../.github/workflows/nightly.yml) | ежедневный cron, `workflow_dispatch`; **push → только `push-ack`** | Полный suite на schedule/dispatch; push даёт зелёный ack без empty failure |
 | [load-test.yml](../../.github/workflows/load-test.yml) | ночной хрон | Только загрузочные шлюзы JVM |
 | [e2e-live.yml](../../.github/workflows/e2e-live.yml) | еженедельно + рассылка | Прод дым (секреты) |
 

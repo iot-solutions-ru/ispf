@@ -176,7 +176,7 @@ Tunnel and store-forward ITs poll async connect/replay; budgets live in `Federat
 | `BUFFER_DRAIN_TIMEOUT_SECONDS` | 90 | 120 | `FederationStoreForwardIntegrationTest` |
 | `CONNECT_RETRY_INTERVAL_MS` | 5000 | 5000 | tunnel connect retry |
 
-Tests marked `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — no parallel run with other IT classes. Nightly gate: [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) job **Federation integration gate (S27)**. On timeout failure triage per [ci-flaky-triage](ci-flaky-triage.md) (P1 if &lt;1×/week).
+Tests marked `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — no parallel run with other IT classes. Nightly gate: [nightly.yml](../../.github/workflows/nightly.yml) job **Federation integration gate (S27)**. On timeout failure triage per [ci-flaky-triage](ci-flaky-triage.md) (P1 if &lt;1×/week).
 
 **Ops checklist:**
 

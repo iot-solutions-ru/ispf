@@ -11,7 +11,7 @@ Generated: `2026-07-04T23:58:16Z` · [Acceleration program](acceleration-program
 | Рабочий процесс | Роль | Успех | Средняя стена | Последний |
 | -------- | ---- | ------- | -------- | ---- |
 | `ci.yml` | PR pr-fast | 15.8% (19) | 30.4 min | failure |
-| `ci-nightly.yml` | Nightly full | — (0) | — | — |
+| `nightly.yml` | Nightly full | — (0) | — | — |
 | `load-test.yml` | Load gate | 50.0% (2) | 4.1 min | failure |
 | `cluster-load-test.yml` | Cluster gate | — (0) | — | — |
 | `e2e-live.yml` | E2E live | 0.0% (20) | 0.0 min | failure |

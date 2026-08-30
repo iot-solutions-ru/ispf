@@ -176,7 +176,7 @@ Tunnel and store-forward ITs poll async connect/replay; budgets live in `Federat
 | `BUFFER_DRAIN_TIMEOUT_SECONDS` | 90 | 120 | `FederationStoreForwardIntegrationTest` |
 | `CONNECT_RETRY_INTERVAL_MS` | 5000 | 5000 | tunnel connect retry |
 
-Тесты с пометкой `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — отсутствие параллельного выполнения с другими ИТ-классами. Nightly gates: [ci-nightly.yml](../../.github/workflows/ci-nightly.yml) задание **Federation integration gates (S27)**. При сбое тайм-аута сортировка выполняется согласно [ci-flaky-triage](ci-flaky-triage.md) (P1, если &lt;1×/неделя).
+Тесты с пометкой `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — отсутствие параллельного выполнения с другими ИТ-классами. Nightly gates: [nightly.yml](../../.github/workflows/nightly.yml) задание **Federation integration gates (S27)**. При сбое тайм-аута сортировка выполняется согласно [ci-flaky-triage](ci-flaky-triage.md) (P1, если &lt;1×/неделя).
 
 **Контрольный список операций:**
 

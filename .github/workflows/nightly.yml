@@ -11,18 +11,21 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ci-nightly
+  # Bump suffix if the group ever wedges (empty failed runs with 0 jobs).
+  group: ci-nightly-v2
   cancel-in-progress: false
 
 jobs:
   push-ack:
-    if: github.event_name == 'push'
+    # Always defined so push events get at least one runnable job. On schedule/
+    # dispatch this is a no-op echo before the full suite.
     runs-on: ubuntu-latest
     steps:
-      - name: Acknowledge push (full nightly is schedule/dispatch only)
+      - name: Nightly trigger note
         run: |
-          echo "CI nightly full suite runs on cron (02:00 UTC) and workflow_dispatch."
-          echo "Push to main is acknowledged here so the workflow does not record an empty failure."
+          echo "event=${{ github.event_name }}"
+          echo "Full nightly suite jobs run when event is schedule or workflow_dispatch."
+          echo "On push, only this ack job runs (heavy jobs are gated)."
 
   backend-full:
     if: github.event_name != 'push'

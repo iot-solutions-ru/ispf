@@ -188,7 +188,7 @@ Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run b
 | Full server tests | `./gradlew :packages:ispf-server:test` (no `skipLoad`) |
 | Everything | `./gradlew build` (slow — avoid daily) |
 
-**Test tiers (issue #65):** PR-fast skips `@Tag("load")` and `@Tag("federation")`; nightly runs them (`tools/ci/nightly.sh`, [ci-nightly.yml](../../.github/workflows/ci-nightly.yml)). Subproject tests run in parallel locally; serialize with `-Dispf.test.serializeSubprojects=true`. CI splits **driver packs** (`testDevDriverPacks` / job `driver-packs`) from **platform backend** (`testPrFast` / job `backend`); packs may be cached (`ISPF_DRIVER_PACKS_PREBUILT=true` on cache hit). Protocol loopback stays in [driver-interop.yml](../../.github/workflows/driver-interop.yml).
+**Test tiers (issue #65):** PR-fast skips `@Tag("load")` and `@Tag("federation")`; nightly runs them (`tools/ci/nightly.sh`, [nightly.yml](../../.github/workflows/nightly.yml)). Subproject tests run in parallel locally; serialize with `-Dispf.test.serializeSubprojects=true`. CI splits **driver packs** (`testDevDriverPacks` / job `driver-packs`) from **platform backend** (`testPrFast` / job `backend`); packs may be cached (`ISPF_DRIVER_PACKS_PREBUILT=true` on cache hit). Protocol loopback stays in [driver-interop.yml](../../.github/workflows/driver-interop.yml).
 
 Optional: [gradle.properties.example](../../gradle.properties.example) for more Gradle workers.
 
