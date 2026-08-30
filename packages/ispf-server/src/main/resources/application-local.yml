@@ -18,6 +18,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          # Placeholder so Boot still wires a JwtDecoder bean; local auth uses platform tokens.
+          # WebSocket handshake must not hard-fail when this host is unreachable (see
+          # WebSocketAuthHandshakeInterceptor.authenticateJwt).
           issuer-uri: https://example.invalid/realms/ispf
 
 management:

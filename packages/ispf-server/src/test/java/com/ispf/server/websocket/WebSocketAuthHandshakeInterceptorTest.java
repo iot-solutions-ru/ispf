@@ -84,21 +84,75 @@ class WebSocketAuthHandshakeInterceptorTest {
     void prodProfileStillAcceptsJwt() {
         when(platformAuthenticatorProvider.getIfAvailable()).thenReturn(null);
         when(jwtDecoderProvider.getIfAvailable()).thenReturn(jwtDecoder);
-        Jwt jwt = Jwt.withTokenValue("tok")
+        String jwtToken = "header.payload.sig";
+        Jwt jwt = Jwt.withTokenValue(jwtToken)
                 .header("alg", "none")
                 .claim("preferred_username", "kc-user")
                 .claim("realm_access", Map.of("roles", List.of("operator")))
                 .build();
-        when(jwtDecoder.decode("tok")).thenReturn(jwt);
+        when(jwtDecoder.decode(jwtToken)).thenReturn(jwt);
 
         Map<String, Object> attributes = new HashMap<>();
-        boolean accepted = interceptor.beforeHandshake(request("Bearer tok"), response(), mock(WebSocketHandler.class), attributes);
+        boolean accepted = interceptor.beforeHandshake(request("Bearer " + jwtToken), response(), mock(WebSocketHandler.class), attributes);
 
         assertThat(accepted).isTrue();
         assertThat(attributes.get("username")).isEqualTo("kc-user");
         assertThat(attributes.get("roles")).isEqualTo(List.of("operator"));
         assertThat(attributes.get(WebSocketAuthHandshakeInterceptor.AUTHENTICATION_ATTRIBUTE))
                 .isInstanceOf(Authentication.class);
+    }
+
+    @Test
+    void jwtDecoderResolutionFailureDoesNotFailHandshakeHard() {
+        // Local demostand: platform token rejected (expired/unknown), then JWT path would hit
+        // SupplierJwtDecoder → UnknownHostException for issuer example.invalid.
+        when(platformAuthenticatorProvider.getIfAvailable()).thenReturn(platformTokenAuthenticator);
+        when(platformTokenAuthenticator.authenticate("header.payload.sig")).thenReturn(Optional.empty());
+        when(jwtDecoderProvider.getIfAvailable()).thenReturn(jwtDecoder);
+        when(jwtDecoder.decode("header.payload.sig")).thenThrow(
+                new IllegalStateException("Failed to lazily resolve the supplied JwtDecoder instance",
+                        new java.net.UnknownHostException("example.invalid"))
+        );
+
+        Map<String, Object> attributes = new HashMap<>();
+        boolean accepted = interceptor.beforeHandshake(
+                request("Bearer header.payload.sig"),
+                response(),
+                mock(WebSocketHandler.class),
+                attributes
+        );
+
+        assertThat(accepted).isFalse();
+        assertThat(attributes).isEmpty();
+    }
+
+    @Test
+    void opaquePlatformTokenSkipsBrokenJwtDecoder() {
+        when(platformAuthenticatorProvider.getIfAvailable()).thenReturn(platformTokenAuthenticator);
+        when(platformTokenAuthenticator.authenticate("deadbeefcafe")).thenReturn(Optional.empty());
+        // JwtDecoder must not be consulted for opaque tokens (would DNS-fail on example.invalid).
+        when(jwtDecoderProvider.getIfAvailable()).thenReturn(jwtDecoder);
+
+        Map<String, Object> attributes = new HashMap<>();
+        boolean accepted = interceptor.beforeHandshake(
+                request("Bearer deadbeefcafe"),
+                response(),
+                mock(WebSocketHandler.class),
+                attributes
+        );
+
+        assertThat(accepted).isFalse();
+        assertThat(attributes).isEmpty();
+        org.mockito.Mockito.verify(jwtDecoder, org.mockito.Mockito.never()).decode(anyString());
+    }
+
+    @Test
+    void looksLikeJwtRequiresThreeSegments() {
+        assertThat(WebSocketAuthHandshakeInterceptor.looksLikeJwt("a.b.c")).isTrue();
+        assertThat(WebSocketAuthHandshakeInterceptor.looksLikeJwt("deadbeef")).isFalse();
+        assertThat(WebSocketAuthHandshakeInterceptor.looksLikeJwt("a.b")).isFalse();
+        assertThat(WebSocketAuthHandshakeInterceptor.looksLikeJwt("a.b.c.d")).isFalse();
+        assertThat(WebSocketAuthHandshakeInterceptor.looksLikeJwt(null)).isFalse();
     }
 
     private static ServletServerHttpRequest request(String authorization) {

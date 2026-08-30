@@ -9,12 +9,15 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.194] - 2026-08-30
+
 ### Исправлено
 
+- **WebSocket `/ws/objects`** — local `JwtDecoder`/`example.invalid` больше не роняет handshake (500 + log spam); opaque platform tokens не идут в JWT decode.
+
+### Ранее Unreleased
+
 - CI nightly ghost failures на push в `main` — лёгкий `push-ack`, тяжёлые job только schedule/dispatch.
-
-### Изменено
-
 - Live FPS gate на реальном operator mimic + evidence demostand 0.9.193.
 
 ## [0.9.193] - 2026-08-30

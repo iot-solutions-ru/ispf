@@ -103,6 +103,11 @@ public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
     }
 
     private boolean authenticateJwt(String token, Map<String, Object> attributes) {
+        // Platform session tokens are opaque (UUID hex). Skip JWT decode so a broken / unreachable
+        // issuer-uri (local placeholder example.invalid) never runs DNS or fails the handshake.
+        if (!looksLikeJwt(token)) {
+            return false;
+        }
         JwtDecoder decoder = jwtDecoder.getIfAvailable();
         if (decoder == null) {
             return false;
@@ -139,7 +144,28 @@ public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
             return true;
         } catch (JwtException ex) {
             return false;
+        } catch (RuntimeException ex) {
+            // SupplierJwtDecoder wraps issuer discovery failures (UnknownHostException for
+            // example.invalid, timeouts, etc.) in IllegalStateException — not JwtException.
+            // Must not become HandshakeFailureException / HTTP 500 log spam on /ws/objects.
+            return false;
         }
+    }
+
+    /** Compact JWT serialization has three base64url segments separated by two dots. */
+    static boolean looksLikeJwt(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        int first = token.indexOf('.');
+        if (first <= 0) {
+            return false;
+        }
+        int second = token.indexOf('.', first + 1);
+        if (second <= first + 1 || second == token.length() - 1) {
+            return false;
+        }
+        return token.indexOf('.', second + 1) < 0;
     }
 
     private static void putAuthentication(Map<String, Object> attributes, String username, Collection<String> roles) {
