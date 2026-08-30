@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-30 | **ispf-vps jar 0.9.191:** OQ/function MEMBER ACL residual + backup admin assert; MES GA 8/8; CI nightly push flood removed. |
 | 2026-08-30 | **ispf-vps 0.9.190 deployed:** GitHub Release jar/UI staged and SHA-256 verified on the host; previous jar backup retained; `ispf-server` updated through `apply-platform-update.sh`; public info endpoint confirmed 0.9.190; fresh MES GA smoke 8/8. AI generator soft re-soak remains pending LLM secrets. |
 | 2026-08-30 | **BL-154 trusted-channel close:** `VariableMemberAccessService` + `MEMBER` mode on analytics/agent/WS/editor/expression/Haystack/Brick; federation tunnel + HTTP peer `X-ISPF-On-Behalf-Of-*` with channel∩roles (no escalation); hub fail-closed on remote-only proxy vars; G-05 interactive residual closed. Scorecard note only (no frozen rescore). |
 | 2026-08-25 | **ispf-vps jar 0.9.188:** deploy license verify on raw JSON (`sign-bundle.py` OK); `REQUIRE_SIGNED_BUNDLES=true` kept; MES GA 8/8; Flyway V89; web-console admin routing already on `/opt/ispf/web-console`. |
