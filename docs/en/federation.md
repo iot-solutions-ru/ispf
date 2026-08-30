@@ -205,9 +205,17 @@ If peer serves same hierarchy but console passes relative path:
 
 ## Cross-instance authorization
 
-Peer stores `authToken` (service account on remote ISPF). Token not returned in list API (`hasAuthToken: true/false`).
+An HTTP peer stores `authToken` as its channel Bearer; in `SERVICE_ACCOUNT` mode this is the refreshed service-account Bearer for the remote ISPF. The token is not returned in the list API (`hasAuthToken: true/false`).
 
-If `authToken` unset, outbound peer requests use current user's Bearer (convenient for loopback on `127.0.0.1` with RBAC). For background jobs without HTTP context token on peer is required.
+If `authToken` is unset, outbound peer requests use the current user's Bearer (convenient for loopback on `127.0.0.1` with RBAC). Background jobs have no request Bearer to forward, so they require a peer token.
+
+### Delegated end-user ACL
+
+For an interactive HTTP proxy request, the hub authenticates the channel with the peer `authToken` or service-account Bearer. If no peer token is configured, it forwards the caller's Bearer as the channel credential. Independently, it sends the caller identity in `X-ISPF-On-Behalf-Of-User`, the caller's comma-separated roles in `X-ISPF-On-Behalf-Of-Roles`, and the tenant in `X-ISPF-On-Behalf-Of-Tenant`.
+
+The remote `FederationOnBehalfOfFilter` installs a delegated principal whose roles are the intersection of the authenticated channel roles and the on-behalf-of roles. Remote variable and member access then runs in `VariableAclRequestContext.MEMBER` mode. A service-account channel can therefore limit delegated access but cannot elevate the caller to service-account privileges.
+
+Tunnel proxy requests continue to install the forwarded principal as a trusted-channel principal: the WebSocket channel was already authenticated before messages were accepted. Federation health probes authenticate only the channel and carry no on-behalf-of headers. Background `SYSTEM` automation remains outside end-user member ACL enforcement.
 
 ### Web Console
 

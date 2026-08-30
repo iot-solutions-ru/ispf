@@ -1,5 +1,6 @@
 package com.ispf.server.config;
 
+import com.ispf.server.federation.FederationOnBehalfOfFilter;
 import com.ispf.server.tenant.TenantRlsFilter;
 import com.ispf.server.websocket.WebSocketAuthSupport;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -36,6 +37,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthenticationConverter,
+            FederationOnBehalfOfFilter onBehalfOfFilter,
             TenantRlsFilter tenantRlsFilter
     ) throws Exception {
         http
@@ -45,8 +47,9 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .bearerTokenResolver(bearerTokenResolver())
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-                // After JWT bearer auth so SecurityContext is populated.
-                .addFilterAfter(tenantRlsFilter, BearerTokenAuthenticationFilter.class);
+                // Delegate after JWT channel auth; derive tenant RLS from the delegated principal.
+                .addFilterAfter(onBehalfOfFilter, BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(tenantRlsFilter, FederationOnBehalfOfFilter.class);
 
         return http.build();
     }

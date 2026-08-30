@@ -23,6 +23,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   covers analytics query/export/expression, federation tunnel on-behalf-of
   requests, agent history and analytics tools, WebSocket delivery, the object
   editor, expression evaluation, and Haystack/Brick semantic export/query.
+- Closed the G-05 HTTP federation peer on-behalf-of residual: the hub forwards
+  user, comma-separated roles, and tenant headers, while the peer limits delegated
+  roles to the channel ∩ on-behalf-of intersection before `MEMBER` enforcement.
+  Health probes remain channel-only.
 
 ## [0.9.189] - 2026-08-30
 

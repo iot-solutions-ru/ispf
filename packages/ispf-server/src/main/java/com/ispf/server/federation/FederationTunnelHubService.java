@@ -4,15 +4,12 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
-import com.ispf.server.config.IspfRoles;
 import com.ispf.server.tenant.TenantScopeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -122,7 +119,10 @@ public class FederationTunnelHubService {
         CompletableFuture<FederationTunnelProxyResult> future = new CompletableFuture<>();
         pending.put(requestId, future);
         long startedAt = System.nanoTime();
-        DelegatedPrincipal principal = delegatedPrincipal();
+        FederationDelegatedPrincipal.Snapshot principal = FederationDelegatedPrincipal.capture(
+                SecurityContextHolder.getContext().getAuthentication(),
+                tenantScopeService
+        );
         try {
             session.sendMessage(new TextMessage(
                     FederationTunnelProtocol.proxyRequest(
@@ -259,25 +259,6 @@ public class FederationTunnelHubService {
     static FederationPeer peer(WebSocketSession session) {
         Object raw = session.getAttributes().get("peer");
         return raw instanceof FederationPeer federationPeer ? federationPeer : null;
-    }
-
-    private DelegatedPrincipal delegatedPrincipal() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken
-                || authentication.getName() == null
-                || authentication.getName().isBlank()) {
-            return null;
-        }
-        return new DelegatedPrincipal(
-                authentication.getName(),
-                IspfRoles.extractRoles(authentication).stream().sorted().toList(),
-                tenantScopeService.resolveTenantId(authentication).orElse(null)
-        );
-    }
-
-    private record DelegatedPrincipal(String username, java.util.List<String> roles, String tenantId) {
     }
 
     public record FederationTunnelProxyResult(int status, JsonNode body, String error) {

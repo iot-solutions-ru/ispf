@@ -96,7 +96,7 @@ public final class FederationTunnelProtocol {
             if (onBehalfOfRoles != null) {
                 LinkedHashSet<String> normalizedRoles = new LinkedHashSet<>();
                 for (String role : onBehalfOfRoles) {
-                    String normalized = normalizeRole(role);
+                    String normalized = FederationDelegatedPrincipal.normalizeRole(role);
                     if (normalized != null) {
                         normalizedRoles.add(normalized);
                     }
@@ -108,17 +108,6 @@ public final class FederationTunnelProtocol {
             }
         }
         return mapper.writeValueAsString(node);
-    }
-
-    private static String normalizeRole(String role) {
-        if (role == null || role.isBlank()) {
-            return null;
-        }
-        String normalized = role.trim();
-        if (normalized.startsWith("ROLE_")) {
-            normalized = normalized.substring("ROLE_".length());
-        }
-        return normalized.isBlank() ? null : normalized;
     }
 
     public static String proxyResponse(String id, int status, JsonNode body, ObjectMapper mapper) throws Exception {

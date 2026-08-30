@@ -16,9 +16,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,7 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -429,40 +427,18 @@ public class FederationTunnelAgentService {
         if (username == null || username.isBlank()) {
             return null;
         }
-        Set<String> roles = new LinkedHashSet<>();
+        var roles = new ArrayList<String>();
         JsonNode rolesNode = node.get("onBehalfOfRoles");
         if (rolesNode != null && rolesNode.isArray()) {
             for (JsonNode roleNode : rolesNode) {
-                String role = normalizeRole(roleNode.asString(null));
-                if (role != null) {
-                    roles.add(role);
-                }
+                roles.add(roleNode.asString(null));
             }
         }
-        var authorities = roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .toList();
-        var authentication = new UsernamePasswordAuthenticationToken(
-                username.trim(),
-                "N/A",
-                authorities
+        return FederationDelegatedPrincipal.installFromTrustedChannel(
+                username,
+                roles,
+                node.path("onBehalfOfTenant").asString(null)
         );
-        String tenantId = node.path("onBehalfOfTenant").asString(null);
-        if (tenantId != null && !tenantId.isBlank()) {
-            authentication.setDetails(new DelegatedTenantAuthenticationDetails(tenantId));
-        }
-        return authentication;
-    }
-
-    private static String normalizeRole(String role) {
-        if (role == null || role.isBlank()) {
-            return null;
-        }
-        String normalized = role.trim();
-        if (normalized.startsWith("ROLE_")) {
-            normalized = normalized.substring("ROLE_".length());
-        }
-        return normalized.isBlank() ? null : normalized;
     }
 
     private static boolean isAnonymousProbe(String method, String path) {
