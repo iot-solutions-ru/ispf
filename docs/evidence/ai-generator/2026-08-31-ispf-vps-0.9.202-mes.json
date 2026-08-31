@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-31T07:04:09.488608Z",
+  "runStartedAt": "2026-08-31T07:03:48.750409Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "mes",
+      "status": "OK",
+      "elapsedMs": 18834,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-factory-mes-cell-with-one-i5pn",
+      "hubPath": "root.platform.devices.describe-a-factory-mes-cell-with-one-i5pn-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-factory-mes-cell-with-one-i5pn-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-factory-mes-cell-with-one-i5pn-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "signed",
+      "operatorUiHttp": "200"
+    }
+  ]
+}

@@ -9,6 +9,17 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.203] - 2026-08-31
+
+### Исправлено
+
+- Workflow trigger index prune после ObjectNotFound.
+- SQL binding orphan auto-disable (tree + app).
+
+### Docs
+
+- Scorecard pin 0.9.202; CEL + AI re-soak evidence.
+
 ## [0.9.202] - 2026-08-31
 
 ### Исправлено

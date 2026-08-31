@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,7 +42,7 @@ class SqlBindingObjectServiceMissingTargetTest {
     JdbcTemplate jdbcTemplate;
 
     @Test
-    void missingTargetObjectIsSoftFailed() {
+    void missingTargetObjectIsSoftFailedAndDisabledOnce() {
         SqlBindingObjectService service = newService();
         SqlBindingObjectService.BindingDefinition binding = sampleBinding();
 
@@ -58,7 +59,12 @@ class SqlBindingObjectServiceMissingTargetTest {
                 .setSystemVariableValue(eq("root.missing.target"), eq("metric"), any(DataRecord.class));
 
         assertThatCode(() -> service.executeRefresh(binding)).doesNotThrowAnyException();
-        verify(objectManager).setSystemVariableValue(eq("root.missing.target"), eq("metric"), any(DataRecord.class));
+        assertThatCode(() -> service.executeRefresh(binding)).doesNotThrowAnyException();
+
+        verify(objectManager, times(1))
+                .setSystemVariableValue(eq("root.missing.target"), eq("metric"), any(DataRecord.class));
+        verify(objectManager, times(1))
+                .setVariableValue(eq(binding.path()), eq("enabled"), any(DataRecord.class));
     }
 
     @Test

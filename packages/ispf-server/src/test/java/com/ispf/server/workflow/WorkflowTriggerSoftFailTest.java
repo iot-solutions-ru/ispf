@@ -129,6 +129,7 @@ class WorkflowTriggerSoftFailTest {
 
         verify(objectManager).require(STALE_WORKFLOW);
         verify(objectManager).require(ACTIVE_WORKFLOW);
+        verify(eventTriggerIndex).removeWorkflow(STALE_WORKFLOW);
     }
 
     @Test
@@ -145,6 +146,7 @@ class WorkflowTriggerSoftFailTest {
 
         verify(objectManager).require(STALE_WORKFLOW);
         verify(objectManager).require(eq(ACTIVE_WORKFLOW));
+        verify(eventTriggerIndex).removeWorkflow(STALE_WORKFLOW);
     }
 
     private PlatformObject workflowNode(WorkflowLifecycleStatus status) {

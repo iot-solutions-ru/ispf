@@ -2,6 +2,10 @@
 
 | File | Site | Result |
 | ---- | ---- | ------ |
+| [2026-08-31-ispf-vps-0.9.202-hvac.json](./2026-08-31-ispf-vps-0.9.202-hvac.json) | ispf.iot-solutions.ru @ **0.9.202** | `functionalOk=true`, `softBudgetMet=true`, **20.4s**, signed |
+| [2026-08-31-ispf-vps-0.9.202-mes.json](./2026-08-31-ispf-vps-0.9.202-mes.json) | ispf.iot-solutions.ru @ **0.9.202** | `functionalOk=true`, `softBudgetMet=true`, **18.8s**, signed |
+| [2026-08-31-ispf-vps-0.9.202-scada.json](./2026-08-31-ispf-vps-0.9.202-scada.json) | ispf.iot-solutions.ru @ **0.9.202** | `functionalOk=true`, `softBudgetMet=true`, **18.8s**, signed |
+| [2026-08-31-ispf-vps-0.9.202-journal.md](./2026-08-31-ispf-vps-0.9.202-journal.md) | ispf.iot-solutions.ru | Named-site journal — HVAC/MES/SCADA on 0.9.202 |
 | [2026-08-30-ispf-vps-0.9.191-hvac.json](./2026-08-30-ispf-vps-0.9.191-hvac.json) | ispf.iot-solutions.ru @ **0.9.191** | `functionalOk=true`, `softBudgetMet=true`, **18.7s**, signed |
 | [2026-08-30-ispf-vps-0.9.191-mes.json](./2026-08-30-ispf-vps-0.9.191-mes.json) | ispf.iot-solutions.ru @ **0.9.191** | `functionalOk=true`, `softBudgetMet=true`, **19.4s**, signed |
 | [2026-08-30-ispf-vps-0.9.191-scada.json](./2026-08-30-ispf-vps-0.9.191-scada.json) | ispf.iot-solutions.ru @ **0.9.191** | `functionalOk=true`, `softBudgetMet=true`, **19.3s**, signed |

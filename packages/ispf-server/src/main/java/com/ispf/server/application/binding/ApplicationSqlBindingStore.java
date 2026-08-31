@@ -166,6 +166,15 @@ public class ApplicationSqlBindingStore {
         );
     }
 
+    /** Soft-disable a single binding (e.g. orphan target after refresh ObjectNotFoundException). */
+    public void setEnabled(UUID id, boolean enabled) {
+        jdbcTemplate.update(
+                "UPDATE %s SET enabled = ? WHERE id = ?".formatted(bindingsTable),
+                enabled,
+                id
+        );
+    }
+
     /**
      * Disable scheduled/app bindings whose target object path is {@code path} or under it.
      * Used when tree nodes are deleted so refresh ticks do not chase missing targets.

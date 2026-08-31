@@ -17,6 +17,20 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.203] - 2026-08-31
+
+### Fixed
+
+- **Workflow trigger index prune** — stale workflow paths removed from
+  `WorkflowEventTriggerIndex` after ObjectNotFound soft-fail (C2 follow-on).
+- **SQL binding orphan auto-disable** — missing target disables tree/app SQL
+  bindings once (H4 parity with alert orphan disable-once).
+
+### Docs
+
+- Scorecard demostand pin **0.9.202**; CEL verify + AI HVAC/MES/SCADA soft re-soak
+  evidence archived for 0.9.202.
+
 ## [0.9.202] - 2026-08-31
 
 ### Fixed

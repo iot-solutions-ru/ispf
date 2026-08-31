@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-08-31T06:58:37.251665Z",
+  "source": "demostand-expressions-verify-smoke",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "platformVersion": "0.9.202",
+  "cases": [
+    {
+      "label": "tautology-verify",
+      "http": 200,
+      "ok": false,
+      "codes": [
+        "SATISFIABLE",
+        "TAUTOLOGY"
+      ],
+      "status": "failed",
+      "alwaysTrue": true,
+      "satisfiable": true,
+      "equivalent": null
+    },
+    {
+      "label": "unsat-verify",
+      "http": 200,
+      "ok": false,
+      "codes": [
+        "UNSATISFIABLE",
+        "NOT_TAUTOLOGY"
+      ],
+      "status": "failed",
+      "alwaysTrue": false,
+      "satisfiable": false,
+      "equivalent": null
+    },
+    {
+      "label": "normal-validate",
+      "http": 200,
+      "ok": true,
+      "codes": [
+        "SATISFIABLE",
+        "NOT_TAUTOLOGY"
+      ],
+      "status": "passed",
+      "alwaysTrue": false,
+      "satisfiable": true,
+      "equivalent": null
+    },
+    {
+      "label": "equivalence-verify",
+      "http": 200,
+      "ok": true,
+      "codes": [
+        "EQUIVALENT"
+      ],
+      "status": "passed",
+      "alwaysTrue": null,
+      "satisfiable": null,
+      "equivalent": true
+    }
+  ],
+  "note": "Archive only after a live demostand run. Existing dated evidence: docs/evidence/cel-formal/2026-08-30-ispf-vps-0.9.192-verify-smoke.json; demostand 0.9.195 available for re-run."
+}

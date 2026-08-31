@@ -861,6 +861,7 @@ public class WorkflowService {
                 node = objectManager.require(workflowPath);
             } catch (ObjectNotFoundException ex) {
                 log.warn("Skipping variable trigger for missing workflow {}: {}", workflowPath, ex.getMessage());
+                eventTriggerIndex.removeWorkflow(workflowPath);
                 continue;
             }
             if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
@@ -889,6 +890,7 @@ public class WorkflowService {
                 node = objectManager.require(workflowPath);
             } catch (ObjectNotFoundException ex) {
                 log.warn("Skipping event trigger for missing workflow {}: {}", workflowPath, ex.getMessage());
+                eventTriggerIndex.removeWorkflow(workflowPath);
                 continue;
             }
             if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {

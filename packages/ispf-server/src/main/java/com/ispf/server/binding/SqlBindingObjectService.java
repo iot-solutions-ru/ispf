@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class SqlBindingObjectService {
@@ -30,6 +32,9 @@ public class SqlBindingObjectService {
     private static final Logger log = LoggerFactory.getLogger(SqlBindingObjectService.class);
 
     public static final String BINDINGS_ROOT = "root.platform.bindings";
+
+    /** Binding paths already soft-disabled after a missing target; skip refresh for JVM lifetime. */
+    private final Set<String> disabledOrphanBindingPaths = ConcurrentHashMap.newKeySet();
 
     private static final DataSchema STRING_SCHEMA = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
@@ -254,6 +259,9 @@ public class SqlBindingObjectService {
 
     /** Package-visible for unit tests (missing-target soft-fail). */
     void executeRefresh(BindingDefinition binding) {
+        if (disabledOrphanBindingPaths.contains(binding.path())) {
+            return;
+        }
         try {
             tenantLocalDataAccessGuard.requireAllowedDataSourcePath(binding.dataSourcePath());
             Object[] extracted = new Object[1];
@@ -288,13 +296,21 @@ public class SqlBindingObjectService {
             );
             setString(binding.path(), "lastRefreshedAt", Instant.now().toString());
         } catch (ObjectNotFoundException ex) {
-            log.warn(
-                    "Skipping SQL binding {}: target object missing ({} / {}): {}",
-                    binding.path(),
-                    binding.targetObjectPath(),
-                    binding.variable(),
-                    ex.getMessage()
-            );
+            // Orphan target must not abort the refresh fan-out for remaining bindings (H4 parity).
+            if (disabledOrphanBindingPaths.add(binding.path())) {
+                log.warn(
+                        "Disabling SQL binding {} (missing target {} / {}): {}",
+                        binding.path(),
+                        binding.targetObjectPath(),
+                        binding.variable(),
+                        ex.getMessage()
+                );
+                try {
+                    setBoolean(binding.path(), "enabled", false);
+                } catch (RuntimeException disableEx) {
+                    log.warn("Could not disable SQL binding {}: {}", binding.path(), disableEx.getMessage());
+                }
+            }
         } catch (IllegalArgumentException ex) {
             if (isMissingVariable(ex)) {
                 log.warn(

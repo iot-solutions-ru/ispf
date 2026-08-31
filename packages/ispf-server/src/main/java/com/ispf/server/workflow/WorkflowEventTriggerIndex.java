@@ -78,12 +78,48 @@ public class WorkflowEventTriggerIndex {
         snapshot = EMPTY;
     }
 
+    /**
+     * Drop a workflow path from all in-memory trigger maps (e.g. after soft-fail on a deleted workflow).
+     * Copy-on-write under the same lock as {@link #rebuild()} / {@link #invalidate()}.
+     */
+    public synchronized void removeWorkflow(String workflowPath) {
+        if (workflowPath == null || workflowPath.isBlank()) {
+            return;
+        }
+        Snapshot current = snapshot;
+        Map<String, List<String>> events = withoutPath(current.eventWorkflowPathsByTarget(), workflowPath);
+        Map<String, List<String>> variables = withoutPath(current.variableWorkflowPathsByTarget(), workflowPath);
+        if (events == current.eventWorkflowPathsByTarget() && variables == current.variableWorkflowPathsByTarget()) {
+            return;
+        }
+        snapshot = new Snapshot(events, variables);
+        touchIndexed();
+    }
+
     public List<String> findEventWorkflows(String objectPath, String eventName) {
         return snapshot.eventWorkflowPathsByTarget().getOrDefault(eventKey(objectPath, eventName), List.of());
     }
 
     public List<String> findVariableWorkflows(String objectPath, String variableName) {
         return snapshot.variableWorkflowPathsByTarget().getOrDefault(variableKey(objectPath, variableName), List.of());
+    }
+
+    private static Map<String, List<String>> withoutPath(Map<String, List<String>> source, String workflowPath) {
+        Map<String, List<String>> filtered = HashMap.newHashMap(source.size());
+        boolean changed = false;
+        for (Map.Entry<String, List<String>> entry : source.entrySet()) {
+            List<String> paths = entry.getValue();
+            if (!paths.contains(workflowPath)) {
+                filtered.put(entry.getKey(), paths);
+                continue;
+            }
+            changed = true;
+            List<String> kept = paths.stream().filter(p -> !p.equals(workflowPath)).toList();
+            if (!kept.isEmpty()) {
+                filtered.put(entry.getKey(), List.copyOf(kept));
+            }
+        }
+        return changed ? Collections.unmodifiableMap(filtered) : source;
     }
 
     static String eventKey(String objectPath, String eventName) {

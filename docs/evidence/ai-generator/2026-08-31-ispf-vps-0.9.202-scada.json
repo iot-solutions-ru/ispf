@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-31T07:04:30.378066Z",
+  "runStartedAt": "2026-08-31T07:04:09.700483Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "scada",
+      "status": "OK",
+      "elapsedMs": 18798,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-scada-plant-with-one-pump-ilw3",
+      "hubPath": "root.platform.devices.describe-a-scada-plant-with-one-pump-ilw3-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-scada-plant-with-one-pump-ilw3-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-scada-plant-with-one-pump-ilw3-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "signed",
+      "operatorUiHttp": "200"
+    }
+  ]
+}

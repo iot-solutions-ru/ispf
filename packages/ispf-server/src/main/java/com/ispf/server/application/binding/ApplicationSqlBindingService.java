@@ -23,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Transactional
@@ -34,6 +36,9 @@ public class ApplicationSqlBindingService {
     private static final DataSchema SINGLE_VALUE_SCHEMA = DataSchema.builder("sqlBindingValue")
             .field("value", FieldType.DOUBLE)
             .build();
+
+    /** Binding ids already soft-disabled after a missing target; skip refresh for JVM lifetime. */
+    private final Set<String> disabledOrphanBindingIds = ConcurrentHashMap.newKeySet();
 
     private final ApplicationSqlBindingStore store;
     private final ApplicationSchemaSession schemaSession;
@@ -146,6 +151,9 @@ public class ApplicationSqlBindingService {
     }
 
     private void executeRefresh(ApplicationSqlBindingStore.SqlBinding binding, String triggerKind) {
+        if (disabledOrphanBindingIds.contains(binding.id().toString())) {
+            return;
+        }
         long start = System.nanoTime();
         boolean success = true;
         boolean changed = false;
@@ -192,13 +200,21 @@ public class ApplicationSqlBindingService {
             success = false;
             changed = false;
             error = ex.getMessage();
-            log.warn(
-                    "Skipping application SQL binding {} → {}/{}: {}",
-                    binding.id(),
-                    binding.objectPath(),
-                    binding.variableName(),
-                    ex.getMessage()
-            );
+            // Orphan target must not abort the refresh fan-out for remaining bindings (H4 parity).
+            if (disabledOrphanBindingIds.add(binding.id().toString())) {
+                log.warn(
+                        "Disabling application SQL binding {} (missing target {} / {}): {}",
+                        binding.id(),
+                        binding.objectPath(),
+                        binding.variableName(),
+                        ex.getMessage()
+                );
+                try {
+                    store.setEnabled(binding.id(), false);
+                } catch (RuntimeException disableEx) {
+                    log.warn("Could not disable application SQL binding {}: {}", binding.id(), disableEx.getMessage());
+                }
+            }
         } catch (RuntimeException ex) {
             success = false;
             changed = false;

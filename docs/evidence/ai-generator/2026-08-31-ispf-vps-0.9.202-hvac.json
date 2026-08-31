@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-31T07:03:34.978008Z",
+  "runStartedAt": "2026-08-31T07:03:11.951549Z",
+  "source": "vps-generator-oneshot.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "softBudgetMs": 900000,
+  "softBudgetMet": true,
+  "functionalOk": true,
+  "domains": [
+    {
+      "domain": "hvac",
+      "status": "OK",
+      "elapsedMs": 20367,
+      "softBudgetMs": 900000,
+      "softBudgetMet": true,
+      "appId": "describe-a-building-hvac-plant-with-hdwt",
+      "hubPath": "root.platform.devices.describe-a-building-hvac-plant-with-hdwt-hub",
+      "dashboardPath": "root.platform.dashboards.describe-a-building-hvac-plant-with-hdwt-overview",
+      "alertPath": "root.platform.alert-rules.describe-a-building-hvac-plant-with-hdwt-monitor",
+      "mode": "live",
+      "composition": "primitives",
+      "bundleTrust": "signed",
+      "operatorUiHttp": "200"
+    }
+  ]
+}

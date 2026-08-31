@@ -9,7 +9,7 @@ Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
 | Pin | Meaning |
 |-----|---------|
 | **0.9.102** | Last **full code audit** of this scorecard (July 2026). Scores and evidence tables below are frozen to that audit. |
-| **0.9.197** | Current `main` / demostand as of 2026-08-30 (binding hygiene + agent UTF-8 + WS prometheus). **Not** a re-scored matrix. |
+| **0.9.202** | Current `main` / demostand as of 2026-08-31 (audit bugfix C1–C2/H2–H8 + idle gates; MES GA 8/8 + CEL verify re-smoke). **Not** a re-scored matrix. |
 
 **Current column:** **Code verified** — evidence from `main` source and tests at audit baseline **0.9.102**.
 
@@ -93,7 +93,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 
 1. **OT drivers (7.0 → 9+):** matrix honesty **closed (BL-191)**; remaining gap is field pilot sign-offs + DNP3 write / full DA stacks after **named field driver task** (BL-140 Partial).
 2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** deferred); production MES sites. Marketplace lab Done: BL-164…168, BL-170, BL-193 on `mes-platform` v1.3.0 (typed seeds + Operator/BFF dashboards). Score stays **6.5** until field site + live ERP.
-3. **AI (9.0 → 10):** BL-177…180 Done (harness + BL-178 52/52). Named-site soft evidence archived under [`docs/evidence/ai-generator/`](../evidence/ai-generator/): **0.9.186** (2026-08-24) and **0.9.191 re-soak** (2026-08-30) for HVAC/MES/SCADA, all `softBudgetMet: true`, `bundleTrust=signed` on the re-soak. Residual for 10/10: optional multi-day plant journal (not oneshot re-runs). Keep the AI score frozen; do not invent live pass counts from soft-evidence archives.
+3. **AI (9.0 → 10):** BL-177…180 Done (harness + BL-178 52/52). Named-site soft evidence archived under [`docs/evidence/ai-generator/`](../evidence/ai-generator/): **0.9.186**, **0.9.191**, and **0.9.202 re-soak** (2026-08-31) for HVAC/MES/SCADA, all `softBudgetMet: true`, `bundleTrust=signed`. Residual for 10/10: optional multi-day plant journal (not oneshot re-runs). Keep the AI score frozen; do not invent live pass counts from soft-evidence archives.
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + live partner-hosted catalogs (out of repo); raise after first external partner catalog onboarding.
 5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
 6. **HMI (7.5 → 9+):** live Object WS FPS path has dated demostand evidence ([`hmi-fps/2026-08-30-…ui-pump-station`](../evidence/hmi-fps/2026-08-30-ispf-vps-0.9.193-ui-pump-station.json), ~7 el @ 60 FPS median). Residual toward 9+: larger live diagrams / 500-el unmocked archive; alarm shelving persistence already closed (BL-158). Keep HMI score frozen until next full audit.

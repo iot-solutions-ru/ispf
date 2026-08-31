@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +72,7 @@ class ApplicationSqlBindingServiceMissingTargetTest {
     }
 
     @Test
-    void missingTargetObjectDoesNotRethrowAfterAudit() {
+    void missingTargetObjectDoesNotRethrowAfterAuditAndDisablesOnce() {
         UUID id = UUID.randomUUID();
         ApplicationSqlBindingStore.SqlBinding binding = new ApplicationSqlBindingStore.SqlBinding(
                 id,
@@ -108,8 +109,9 @@ class ApplicationSqlBindingServiceMissingTargetTest {
         when(entityMapper.auditDiff(isNull(), any())).thenReturn("{}");
 
         assertThatCode(() -> service.refreshBinding(binding)).doesNotThrowAnyException();
+        assertThatCode(() -> service.refreshBinding(binding)).doesNotThrowAnyException();
 
-        verify(bindingAuditService).recordSql(
+        verify(bindingAuditService, times(1)).recordSql(
                 eq("root.missing.target"),
                 eq(id.toString()),
                 eq("value"),
@@ -121,5 +123,8 @@ class ApplicationSqlBindingServiceMissingTargetTest {
                 any()
         );
         verify(store, never()).markRefreshed(any());
+        verify(store, times(1)).setEnabled(id, false);
+        verify(objectManager, times(1))
+                .setSystemVariableValue(eq("root.missing.target"), eq("value"), any());
     }
 }
