@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-08-31T07:08:31.923785Z",
+  "source": "mes-platform-ga-smoke.sh",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "hubPath": "root.platform.devices.mes-platform-production-hub",
+  "functionalOk": true,
+  "checks": [
+    {
+      "name": "mes_platform_listLines",
+      "ok": true,
+      "detail": {
+        "rows": 1
+      }
+    },
+    {
+      "name": "mes_oee_getKpi",
+      "ok": true,
+      "detail": {
+        "oeePct": 85
+      }
+    },
+    {
+      "name": "mes_dispatch_confirmWorkOrder",
+      "ok": true,
+      "detail": {
+        "confirmed": true
+      }
+    },
+    {
+      "name": "mes_quality_listSpcSamples",
+      "ok": true,
+      "detail": {
+        "rows": 3
+      }
+    },
+    {
+      "name": "mes_batch_runPhase",
+      "ok": true,
+      "detail": {
+        "phase": "react"
+      }
+    },
+    {
+      "name": "mes_erp_enqueueOutbox",
+      "ok": true,
+      "detail": {
+        "idempotencyKey": "WORK_ORDER:WO-LINE-A01-SMOKE-1788160110"
+      }
+    },
+    {
+      "name": "mes_erp_pollOutbox",
+      "ok": true,
+      "detail": {
+        "rows": 1
+      }
+    },
+    {
+      "name": "operator_ui",
+      "ok": true,
+      "detail": {
+        "http": 200
+      }
+    }
+  ]
+}
