@@ -4,6 +4,7 @@ import com.ispf.server.cluster.NatsEventBridge;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.Variable;
@@ -855,7 +856,13 @@ public class WorkflowService {
     @Transactional
     public void handleVariableTrigger(String objectPath, String variableName) {
         for (String workflowPath : eventTriggerIndex.findVariableWorkflows(objectPath, variableName)) {
-            PlatformObject node = objectManager.require(workflowPath);
+            PlatformObject node;
+            try {
+                node = objectManager.require(workflowPath);
+            } catch (ObjectNotFoundException ex) {
+                log.warn("Skipping variable trigger for missing workflow {}: {}", workflowPath, ex.getMessage());
+                continue;
+            }
             if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
                 continue;
             }
@@ -877,7 +884,13 @@ public class WorkflowService {
     @Transactional
     public void handleEventTrigger(String objectPath, String eventName) {
         for (String workflowPath : eventTriggerIndex.findEventWorkflows(objectPath, eventName)) {
-            PlatformObject node = objectManager.require(workflowPath);
+            PlatformObject node;
+            try {
+                node = objectManager.require(workflowPath);
+            } catch (ObjectNotFoundException ex) {
+                log.warn("Skipping event trigger for missing workflow {}: {}", workflowPath, ex.getMessage());
+                continue;
+            }
             if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
                 continue;
             }

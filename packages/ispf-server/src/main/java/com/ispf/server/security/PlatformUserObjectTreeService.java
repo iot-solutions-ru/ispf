@@ -392,6 +392,7 @@ public class PlatformUserObjectTreeService {
             return objectMapper.readValue(json, new TypeReference<>() {
             });
         } catch (Exception ex) {
+            log.warn("Corrupt roles JSON for object-tree user roles: {}", json, ex);
             return List.of();
         }
     }

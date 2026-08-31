@@ -1,8 +1,8 @@
 package com.ispf.server.operator;
 
+import com.ispf.server.object.PlatformObjectReadinessGate;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +16,7 @@ public class OperatorAppObjectTreeStartupSync {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(Ordered.LOWEST_PRECEDENCE)
+    @Order(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER)
     public void syncOperatorAppsIntoObjectTree() {
         treeService.syncAll();
     }

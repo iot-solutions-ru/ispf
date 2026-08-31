@@ -5,9 +5,12 @@ import com.ispf.analytics.engine.AnalyticsEvaluationResult;
 import com.ispf.analytics.engine.AnalyticsSourceRef;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.analytics.engine.HistorianTagPaths;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.driver.DriverPointMappingParser;
 import com.ispf.server.object.ObjectManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
@@ -25,6 +28,8 @@ import java.util.Set;
  */
 @Service
 public class AnalyticsTagMetadataService {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsTagMetadataService.class);
 
     public static final String QUALITY_OK = "ok";
     public static final String QUALITY_UNCERTAIN = "uncertain";
@@ -66,7 +71,13 @@ public class AnalyticsTagMetadataService {
         AnalyticsDagBuilder.AnalyticsTagAdjacency adjacency = AnalyticsDagBuilder.adjacency(tags);
         Map<String, String> qualityByPath = new LinkedHashMap<>();
         for (AnalyticsTagDefinition tag : tags) {
-            PlatformObject node = objectManager.require(tag.objectPath());
+            PlatformObject node;
+            try {
+                node = objectManager.require(tag.objectPath());
+            } catch (ObjectNotFoundException ex) {
+                log.warn("Skipping analytics tag {} (missing object): {}", tag.tagPath(), ex.getMessage());
+                continue;
+            }
             String quality = historianRuleMetaService.readRuleMeta(node, tag.ruleId()).quality();
             if (!tag.enabled()) {
                 quality = QUALITY_DISABLED;

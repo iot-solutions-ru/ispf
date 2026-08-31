@@ -149,6 +149,9 @@ public class AnalyticsEngineScheduler {
                             dueTags.size(),
                             ex.getMessage()
                     );
+                    for (AnalyticsTagDefinition tag : dueTags) {
+                        scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, ex.getMessage());
+                    }
                 }
             }
         } finally {

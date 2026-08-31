@@ -1,5 +1,6 @@
 package com.ispf.server.automation;
 
+import com.ispf.server.object.PlatformObjectReadinessGate;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -15,7 +16,7 @@ public class AutomationRuleIndexStartup {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(org.springframework.core.Ordered.LOWEST_PRECEDENCE)
+    @Order(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER)
     public void rebuildAfterTreeLoaded() {
         ruleIndex.rebuild();
     }

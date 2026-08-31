@@ -3,6 +3,7 @@ package com.ispf.server.ai.agent;
 import com.ispf.server.application.data.PlatformSqlCatalog;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -153,6 +154,7 @@ public class AgentSessionRepository {
         );
     }
 
+    @Transactional
     public void saveTurn(AgentSession session, AgentTurn turn) {
         update(session);
         int sortOrder = session.turns().size() - 1;

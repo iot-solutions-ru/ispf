@@ -9,6 +9,18 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.202] - 2026-08-31
+
+### Исправлено
+
+- Analytics scheduler retry loop; workflow trigger soft-fail; binding schedule advance;
+  orphan alert disable-once; process program / analytics quality soft-fail; boot order H8;
+  metrics probe + derived-tag idle gates.
+
+### Изменено
+
+- Corrupt roles JSON → WARN log; agent saveTurn @Transactional; platform scheduler fail log.
+
 ## [0.9.201] - 2026-08-30
 
 ### Исправлено

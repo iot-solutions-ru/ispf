@@ -2,6 +2,7 @@ package com.ispf.server.platform.analytics;
 
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import com.ispf.server.platform.analytics.engine.AnalyticsEngineService;
 import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
@@ -27,6 +28,7 @@ public class AnalyticsDerivedTagRunner {
     private final AnalyticsClusterWorkloadService analyticsClusterWorkloadService;
     private final PlatformLeaderLockService leaderLockService;
     private final ClusterProperties clusterProperties;
+    private final ObjectManager objectManager;
 
     public AnalyticsDerivedTagRunner(
             AnalyticsEngineService engineService,
@@ -34,7 +36,8 @@ public class AnalyticsDerivedTagRunner {
             AnalyticsProperties analyticsProperties,
             AnalyticsClusterWorkloadService analyticsClusterWorkloadService,
             PlatformLeaderLockService leaderLockService,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            ObjectManager objectManager
     ) {
         this.engineService = engineService;
         this.engineScheduler = engineScheduler;
@@ -42,11 +45,15 @@ public class AnalyticsDerivedTagRunner {
         this.analyticsClusterWorkloadService = analyticsClusterWorkloadService;
         this.leaderLockService = leaderLockService;
         this.clusterProperties = clusterProperties;
+        this.objectManager = objectManager;
     }
 
     @Scheduled(fixedDelayString = "${ispf.analytics.derived-tag-tick-ms:60000}")
     public void tick() {
         if (!analyticsProperties.derivedTagEnabled() || !engineService.isEnabled()) {
+            return;
+        }
+        if (!objectManager.isInitialized()) {
             return;
         }
         if (!analyticsClusterWorkloadService.isAnalyticsWorkloadActive()) {

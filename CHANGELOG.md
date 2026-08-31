@@ -17,6 +17,30 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.202] - 2026-08-31
+
+### Fixed
+
+- **Analytics scheduler retry loop (C1)** — failed due-tag evaluation now `markRan`
+  with error instead of staying perpetually due.
+- **Workflow trigger soft-fail (C2)** — stale trigger index entries no longer abort
+  sibling variable/event workflow fan-out.
+- **Periodic binding schedule advance (H3)** — `RuntimeException` no longer advances
+  `next_run_at` (matches ObjectNotFound orphan path).
+- **Orphan alert disable-once (H4)** — in-memory guard stops 1 Hz WARN spam when
+  disable succeeds or fails after first missing-target hit.
+- **Process program ObjectNotFound (H7)** — missing target logs WARN + records cycle.
+- **Analytics quality propagation (H6)** — per-tag soft-fail on missing objects.
+- **Boot startup order (H8)** — driver auto-start and index rebuilds run after
+  `PlatformObjectReadinessGate.markObjectTreeReady` (safe order constants).
+- **Metrics probe / derived-tag idle gates** — no tree writes before initialized.
+
+### Changed
+
+- **Corrupt roles JSON (H2)** — `deserializeRoles` paths log WARN (behavior unchanged).
+- **Agent session turns (H5)** — `@Transactional` on `AgentSessionRepository.saveTurn`.
+- **Platform scheduler failures** — tree/legacy schedule action errors now log WARN.
+
 ## [0.9.201] - 2026-08-30
 
 ### Fixed

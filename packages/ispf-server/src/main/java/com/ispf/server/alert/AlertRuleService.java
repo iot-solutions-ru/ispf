@@ -24,11 +24,16 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AlertRuleService {
 
     private static final Logger log = LoggerFactory.getLogger(AlertRuleService.class);
+
+    /** Rule ids already soft-disabled after a missing watch/ALERT target; skip re-evaluation for JVM lifetime. */
+    private final Set<String> disabledOrphanRuleIds = ConcurrentHashMap.newKeySet();
 
     private final AutomationTreeService automationTreeService;
     private final ObjectManager objectManager;
@@ -174,16 +179,21 @@ public class AlertRuleService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void evaluateRule(AlertRule rule) {
+        if (disabledOrphanRuleIds.contains(rule.id())) {
+            return;
+        }
         try {
             evaluateRuleInternal(rule);
         } catch (ObjectNotFoundException ex) {
             // Orphan watch target / missing ALERT node must not abort the periodic poll or
             // variable-change fan-out for remaining rules (same soft-fail shape as SQL bindings).
-            log.warn("Disabling alert rule {} (missing object): {}", rule.id(), ex.getMessage());
-            try {
-                automationTreeService.setAlertRuleEnabled(rule.id(), false);
-            } catch (RuntimeException disableEx) {
-                log.warn("Could not disable alert rule {}: {}", rule.id(), disableEx.getMessage());
+            if (disabledOrphanRuleIds.add(rule.id())) {
+                log.warn("Disabling alert rule {} (missing object): {}", rule.id(), ex.getMessage());
+                try {
+                    automationTreeService.setAlertRuleEnabled(rule.id(), false);
+                } catch (RuntimeException disableEx) {
+                    log.warn("Could not disable alert rule {}: {}", rule.id(), disableEx.getMessage());
+                }
             }
         }
     }

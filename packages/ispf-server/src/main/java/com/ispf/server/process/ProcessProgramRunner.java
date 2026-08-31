@@ -3,12 +3,15 @@ package com.ispf.server.process;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.expression.ExpressionEvaluationService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +26,8 @@ import java.util.Map;
  */
 @Component
 public class ProcessProgramRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessProgramRunner.class);
 
     private static final String LOCK_NAME = "process_program_runner";
     private static final Duration LOCK_TTL = Duration.ofSeconds(30);
@@ -117,6 +122,9 @@ public class ProcessProgramRunner {
                 writeOutput(contextPath, program.outputVariable().trim(), result.result());
             }
             processProgramObjectService.recordCycle(program.path(), now, null, output);
+        } catch (ObjectNotFoundException ex) {
+            log.warn("Process program {} missing object: {}", program.path(), ex.getMessage());
+            processProgramObjectService.recordCycle(program.path(), now, ex.getMessage());
         } catch (Exception ex) {
             processProgramObjectService.recordCycle(program.path(), now, ex.getMessage());
         }

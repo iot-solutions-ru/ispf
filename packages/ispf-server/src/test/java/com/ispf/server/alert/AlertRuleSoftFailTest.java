@@ -22,6 +22,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -98,6 +99,31 @@ class AlertRuleSoftFailTest {
         assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
         verify(automationMetricsRecorder, never()).recordAlertEvaluation();
         verify(automationTreeService).setAlertRuleEnabled(rule.id(), false);
+    }
+
+    @Test
+    void missingWatchTargetWarnAndDisableOncePerRuleId() {
+        AlertRuleService service = new AlertRuleService(
+                automationTreeService,
+                objectManager,
+                expressionEngine,
+                formalVerificationService,
+                eventService,
+                automationMetricsRecorder,
+                notificationDispatchService,
+                alarmShelfService,
+                anomalyAlertRuleEvaluator
+        );
+        AlertRule rule = sampleRule("root.automation.alert-rules.orphan-twice", "root.missing.target");
+        when(automationTreeService.getAlertRule(rule.id())).thenReturn(rule);
+        when(objectManager.require(rule.objectPath()))
+                .thenThrow(new ObjectNotFoundException(rule.objectPath()));
+
+        assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
+        assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
+
+        verify(automationTreeService, times(1)).setAlertRuleEnabled(rule.id(), false);
+        verify(automationTreeService, times(1)).getAlertRule(rule.id());
     }
 
     private static AlertRule sampleRule(String id, String objectPath) {

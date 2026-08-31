@@ -18,6 +18,11 @@ public class PlatformObjectReadinessGate {
 
     private static final Logger log = LoggerFactory.getLogger(PlatformObjectReadinessGate.class);
 
+    /** Runs before post-ready startup listeners (driver auto-start, index rebuilds). */
+    public static final int OBJECT_TREE_READY_ORDER = Ordered.LOWEST_PRECEDENCE - 1;
+    /** One step after {@link #OBJECT_TREE_READY_ORDER}; safe alternative to {@code Ordered.LOWEST_PRECEDENCE + 1} (int overflow). */
+    public static final int AFTER_OBJECT_TREE_READY_ORDER = OBJECT_TREE_READY_ORDER + 1;
+
     private final ObjectManager objectManager;
     private final ClusterPlatformBootstrapService clusterBootstrapService;
     private final BootstrapProperties bootstrapProperties;
@@ -47,7 +52,7 @@ public class PlatformObjectReadinessGate {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(Ordered.LOWEST_PRECEDENCE)
+    @Order(OBJECT_TREE_READY_ORDER)
     public void markObjectTreeReady() {
         if (clusterBootstrapService.isClusterActive() && clusterBootstrapService.isFixtureBootstrapLeader()) {
             clusterBootstrapService.releaseFixtureBootstrapLock();

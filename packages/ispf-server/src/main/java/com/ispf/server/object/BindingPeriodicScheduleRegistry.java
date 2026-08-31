@@ -148,6 +148,7 @@ public class BindingPeriodicScheduleRegistry {
                         dueRule.ruleId(),
                         ex.getMessage()
                 );
+                continue;
             }
             Instant nextRun = now.plusMillis(dueRule.periodicMs());
             jdbcTemplate.update(

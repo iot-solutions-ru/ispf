@@ -12,6 +12,8 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.schedule.ScheduleDueChecker;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.platform.PlatformLeaderLockService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,8 @@ import java.util.Map;
 
 @Service
 public class PlatformSchedulerService {
+
+    private static final Logger log = LoggerFactory.getLogger(PlatformSchedulerService.class);
 
     private static final String SCHEDULER_LOCK = "platform_scheduler";
 
@@ -141,6 +145,7 @@ public class PlatformSchedulerService {
                 executeAction(schedule.actionType(), schedule.actionJson());
                 scheduleObjectService.recordTick(schedule.path(), now, null);
             } catch (Exception ex) {
+                log.warn("Platform tree schedule {} failed: {}", schedule.path(), ex.getMessage());
                 scheduleObjectService.recordTick(schedule.path(), now, ex.getMessage());
             }
         }
@@ -166,6 +171,7 @@ public class PlatformSchedulerService {
                         scheduleId
                 );
             } catch (Exception ex) {
+                log.warn("Platform legacy schedule {} failed: {}", scheduleId, ex.getMessage());
                 jdbcTemplate.update(
                         "UPDATE platform_schedules SET last_tick_at = ?, last_error = ? WHERE schedule_id = ?",
                         Timestamp.from(now),

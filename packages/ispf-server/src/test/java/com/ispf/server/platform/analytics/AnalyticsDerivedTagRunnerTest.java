@@ -2,6 +2,7 @@ package com.ispf.server.platform.analytics;
 
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import com.ispf.server.platform.analytics.engine.AnalyticsEngineService;
 import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
@@ -32,6 +33,8 @@ class AnalyticsDerivedTagRunnerTest {
     private PlatformLeaderLockService leaderLockService;
     @Mock
     private ClusterProperties clusterProperties;
+    @Mock
+    private ObjectManager objectManager;
 
     private AnalyticsDerivedTagRunner runner;
 
@@ -43,8 +46,10 @@ class AnalyticsDerivedTagRunnerTest {
                 analyticsProperties,
                 analyticsClusterWorkloadService,
                 leaderLockService,
-                clusterProperties
+                clusterProperties,
+                objectManager
         );
+        org.mockito.Mockito.lenient().when(objectManager.isInitialized()).thenReturn(true);
     }
 
     @Test

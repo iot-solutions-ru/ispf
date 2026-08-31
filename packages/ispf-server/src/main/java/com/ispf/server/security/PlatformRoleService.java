@@ -5,6 +5,8 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.tenant.TenantScopeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ import java.util.Optional;
 
 @Service
 public class PlatformRoleService {
+
+    private static final Logger log = LoggerFactory.getLogger(PlatformRoleService.class);
 
     public static final String OPERATOR_READONLY = "operator-readonly";
     public static final String MES_SUPERVISOR = "mes-supervisor";
@@ -253,6 +257,7 @@ public class PlatformRoleService {
             return objectMapper.readValue(json, new TypeReference<>() {
             });
         } catch (Exception ex) {
+            log.warn("Corrupt roles JSON for role assignment check: {}", json, ex);
             return List.of();
         }
     }

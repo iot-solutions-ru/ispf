@@ -10,10 +10,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -97,6 +100,37 @@ class BindingPeriodicScheduleRegistryTest {
                 missing
         );
         assertThat(rows).isZero();
+    }
+
+    @Test
+    void fireDueDoesNotAdvanceScheduleOnRuntimeException() {
+        registry.syncObject(DEVICE, List.of(periodicRule("rule-runtime-skip", 100)));
+        Instant before = registry.nextWakeAt();
+        assertThat(before).isNotNull();
+        Timestamp lastRunBefore = jdbcTemplate.queryForObject(
+                "SELECT last_run_at FROM platform_binding_periodic_rules WHERE object_path = ? AND rule_id = ?",
+                Timestamp.class,
+                DEVICE,
+                "rule-runtime-skip"
+        );
+
+        BindingRuleEngine flakyEngine = mock(BindingRuleEngine.class);
+        doThrow(new RuntimeException("engine failure"))
+                .when(flakyEngine)
+                .onPeriodic(DEVICE, "rule-runtime-skip");
+
+        registry.fireDue(Instant.now().plusSeconds(1), flakyEngine);
+
+        Instant after = registry.nextWakeAt();
+        assertThat(after).isEqualTo(before);
+        Timestamp lastRunAfter = jdbcTemplate.queryForObject(
+                "SELECT last_run_at FROM platform_binding_periodic_rules WHERE object_path = ? AND rule_id = ?",
+                Timestamp.class,
+                DEVICE,
+                "rule-runtime-skip"
+        );
+        assertThat(lastRunAfter).isEqualTo(lastRunBefore);
+        assertThat(registry.countEnabled()).isEqualTo(1);
     }
 
     private static BindingRule periodicRule(String id, long periodicMs) {

@@ -52,7 +52,7 @@ public class PlatformMetricsProbeService {
 
     @EventListener(ApplicationReadyEvent.class)
     void bootstrap() {
-        if (!shouldSync()) {
+        if (!shouldSync() || !objectManager.isInitialized()) {
             return;
         }
         if (!probeDeviceExists()) {
@@ -89,6 +89,9 @@ public class PlatformMetricsProbeService {
 
     @Scheduled(fixedDelayString = "${ispf.platform-metrics-probe.interval-ms:5000}")
     void poll() {
+        if (!objectManager.isInitialized()) {
+            return;
+        }
         if (!shouldSync() || !probeDeviceExists()) {
             return;
         }

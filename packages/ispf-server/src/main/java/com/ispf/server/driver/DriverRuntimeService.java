@@ -23,6 +23,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.ispf.server.object.PlatformObjectReadinessGate;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
@@ -136,7 +137,7 @@ public class DriverRuntimeService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(Ordered.LOWEST_PRECEDENCE)
+    @Order(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER)
     public void startConfiguredDrivers() {
         if (!driverPackProperties.isAutoStartOnBoot()) {
             log.info("Driver auto-start on boot disabled (ispf.driver.auto-start-on-boot=false)");
