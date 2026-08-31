@@ -9,6 +9,16 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.204] - 2026-08-31
+
+### Исправлено
+
+- Periodic binding disable после N consecutive failures (default 5).
+
+### Docs
+
+- HMI live FPS re-smoke demostand 0.9.203 (60 FPS, 517 WS updates).
+
 ## [0.9.203] - 2026-08-31
 
 ### Исправлено

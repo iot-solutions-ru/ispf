@@ -11,7 +11,7 @@
 | Pin | Смысл |
 |-----|--------|
 | **0.9.102** | Последний **полный code audit** этой матрицы (июль 2026). Оценки и evidence ниже зафиксированы на этом аудите. |
-| **0.9.202** | Текущий `main` / demostand на 2026-08-31 (audit bugfix C1–C2/H2–H8 + idle gates; MES GA 8/8 + CEL verify). **Не** пересчитанная матрица. |
+| **0.9.204** | Текущий `main` / demostand на 2026-08-31 (periodic binding N-fail disable; HMI FPS re-smoke @ 0.9.203). **Не** пересчитанная матрица. |
 
 **Актуальный столбец:** **Проверено по коду** — доказательства из `main` на baseline аудита **0.9.102**.
 
@@ -96,7 +96,7 @@
 3. **AI (9.0 → 10):** БЛ-177…180 Готово (harness + БЛ-178 52/52). Именованные soft evidence в [`docs/evidence/ai-generator/`](../evidence/ai-generator/): **0.9.186**, **0.9.191**, и **re-soak 0.9.202** (31.08.2026) HVAC/MES/SCADA, `softBudgetMet: true`, `bundleTrust=signed`. Остаток до 10/10: опциональный многодневный plant journal. Оценка AI заморожена; soft evidence не дают новых оценок или live pass counts.
 4. **Ecosystem (6.5 → 9+):** sync Partner Portal + live partner-hosted catalogs (вне repo); повышение после первого внешнего partner catalog onboarding.
 5. **Historian (7.0 → 9+):** прогнать Enterprise L lab gates (`deploy/local/tools/analytics-scale-gate.sh`, catalog 50k, CH 1B) — BL-210; затем обновить scorecard до **≥9.5** с датированным sign-off.
-6. **HMI (7.5 → 9+):** live Object WS FPS — dated demostand evidence ([`hmi-fps/2026-08-30-…ui-pump-station`](../evidence/hmi-fps/2026-08-30-ispf-vps-0.9.193-ui-pump-station.json), ~7 el @ 60 FPS median). Остаток: larger live / 500-el unmocked archive. Оценка HMI заморожена до полного audit.
+6. **HMI (7.5 → 9+):** live Object WS FPS — dated demostand evidence ([`hmi-fps/2026-08-31-…ui-pump-station`](../evidence/hmi-fps/2026-08-31-ispf-vps-0.9.203-ui-pump-station.json) @ **0.9.203**, ~7 el @ 60 FPS median / 517 WS). Остаток: larger live / 500-el unmocked archive. Оценка HMI заморожена до полного audit.
 7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**) — **docs Готово:** [compliance-tender-pack](compliance-tender-pack.md) (канон EN). Остаются: pen-test, optional hard schema **table routing** (logical SaaS + PostgreSQL RLS Done), WebAuthn (BL-194); без заявления о сертификации продукта.
 
 ---

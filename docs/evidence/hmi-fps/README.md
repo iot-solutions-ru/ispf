@@ -2,6 +2,7 @@
 
 | File | Site | Result |
 | ---- | ---- | ------ |
+| [2026-08-31-ispf-vps-0.9.203-ui-pump-station.json](./2026-08-31-ispf-vps-0.9.203-ui-pump-station.json) | ispf.iot-solutions.ru @ **0.9.203** | `ui-pump-station` (~7 el), median **60 FPS**, **517** real `VARIABLE_UPDATED` WS events |
 | [2026-08-30-ispf-vps-0.9.193-ui-pump-station.json](./2026-08-30-ispf-vps-0.9.193-ui-pump-station.json) | ispf.iot-solutions.ru @ **0.9.193** | `ui-pump-station` facility mimic (~7 el), median **60 FPS**, **479** real `VARIABLE_UPDATED` WS events during sample |
 
 ## How to re-run

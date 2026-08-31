@@ -132,4 +132,24 @@ public record BindingRule(
                 formulaAppId
         );
     }
+
+    public BindingRule withEnabled(boolean nextEnabled) {
+        return new BindingRule(
+                id,
+                name,
+                nextEnabled,
+                order,
+                kind,
+                activators,
+                condition,
+                expression,
+                target,
+                windowBucket,
+                rollupBuckets,
+                formulaRef,
+                formulaParams,
+                formulaScope,
+                formulaAppId
+        );
+    }
 }

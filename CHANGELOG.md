@@ -17,6 +17,19 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.204] - 2026-08-31
+
+### Fixed
+
+- **Periodic binding consecutive failures** — after N RuntimeExceptions (default 5,
+  `ispf.binding.periodic.max-consecutive-failures`) delete schedule row, skip in-JVM,
+  and persist `enabled=false` on `@bindingRules` when possible.
+
+### Docs
+
+- HMI live FPS re-smoke on demostand **0.9.203**: `ui-pump-station` median 60 FPS,
+  517 Object WS `VARIABLE_UPDATED` (`docs/evidence/hmi-fps/`).
+
 ## [0.9.203] - 2026-08-31
 
 ### Fixed

@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-08-31 | **ispf-vps jar 0.9.204:** periodic binding disable-after-N failures; HMI live FPS evidence @ 0.9.203 (60 FPS / 517 WS). |
 | 2026-08-31 | **ispf-vps jar 0.9.203:** workflow trigger index prune; SQL binding orphan auto-disable; CEL/AI evidence for 0.9.202. |
 | 2026-08-31 | **ispf-vps jar 0.9.202:** audit bugfix batch — analytics retry loop, workflow trigger soft-fail, binding/alert/process/analytics soft-fail, boot order, probe gates, roles JSON warn, agent TX. |
 | 2026-08-30 | **ispf-vps jar 0.9.201:** remaining scheduler idle gates; orphan alert auto-disable; `objectTree.ready` in platform metrics. |
