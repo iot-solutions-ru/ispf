@@ -17,6 +17,21 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.205] - 2026-09-01
+
+### Fixed
+
+- **Bundle deploy honesty (H1-lite)** — deploy status is `OK` / `PARTIAL` / `FAILED`
+  (no silent force-`OK`); marketplace install and AI `deploy_step_import` preserve
+  that status; failed/partial imports do not mark the playbook step complete.
+- **Active snapshot only on clean deploy** — `recordDeployment` runs after
+  `syncApplicationTree`; PARTIAL/FAILED attempts are audited with
+  `is_active=false` and do not clear the previous `findActive()` row.
+
+### Docs
+
+- Scorecard demostand pin **0.9.205**.
+
 ## [0.9.204] - 2026-08-31
 
 ### Fixed

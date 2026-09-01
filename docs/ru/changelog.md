@@ -9,6 +9,18 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.205] - 2026-09-01
+
+### Исправлено
+
+- H1-lite: честный статус deploy (`OK`/`PARTIAL`/`FAILED`); marketplace и AI
+  playbook больше не форсят `OK`; active snapshot только после успешного
+  `syncApplicationTree`.
+
+### Docs
+
+- Scorecard pin demostand **0.9.205**.
+
 ## [0.9.204] - 2026-08-31
 
 ### Исправлено

@@ -202,32 +202,66 @@ public class ApplicationBundleDeployService {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("appId", appId);
         response.put("version", manifest.version());
-        response.put("status", errors.isEmpty() ? "OK" : "PARTIAL");
         response.put("applied", applied);
         response.put("skipped", skipped);
         response.put("errors", errors);
+        response.put("dataSourcePath", dataSourcePath);
+        response.put("objectTree", "tree-first");
+        String applicationPath = applicationTreePath(appId);
+        response.put("applicationPath", applicationPath);
+
+        // Tree sync can add errors; snapshot must be recorded only after the full outcome is known
+        // so a post-activate sync failure cannot leave a bad deploy as findActive().
+        syncApplicationTree(appId, displayName, manifest, applied, errors, response);
 
         try {
             String manifestJson = objectMapper.writeValueAsString(manifest);
             String operatorManifestJson = manifest.operatorManifest() != null
                     ? objectMapper.writeValueAsString(manifest.operatorManifest())
                     : null;
-            snapshotStore.recordDeployment(appId, manifest.version(), manifestJson, operatorManifestJson);
-            response.put("snapshot", "recorded");
+            boolean activateSnapshot = shouldActivateDeploySnapshot(errors);
+            snapshotStore.recordDeployment(
+                    appId,
+                    manifest.version(),
+                    manifestJson,
+                    operatorManifestJson,
+                    activateSnapshot
+            );
+            response.put("snapshot", activateSnapshot ? "recorded-active" : "recorded-inactive");
+            response.put("snapshotActive", activateSnapshot);
         } catch (Exception ex) {
             errors.add("snapshot: " + ex.getMessage());
-            response.put("status", "PARTIAL");
-            response.put("errors", errors);
+            response.put("snapshot", "failed");
+            response.put("snapshotActive", false);
         }
 
-        response.put("dataSourcePath", dataSourcePath);
-        response.put("objectTree", "tree-first");
-        String applicationPath = applicationTreePath(appId);
-        response.put("applicationPath", applicationPath);
-
-        syncApplicationTree(appId, displayName, manifest, applied, errors, response);
+        response.put("status", finalizeDeployStatus(applied, errors));
+        response.put("errors", errors);
+        response.put("failedSteps", List.copyOf(errors));
+        response.put("applied", applied);
 
         return response;
+    }
+
+    /**
+     * Honest deploy outcome: OK when no errors; FAILED when nothing applied; otherwise PARTIAL.
+     */
+    static String finalizeDeployStatus(List<String> applied, List<String> errors) {
+        if (errors == null || errors.isEmpty()) {
+            return "OK";
+        }
+        if (applied == null || applied.isEmpty()) {
+            return "FAILED";
+        }
+        return "PARTIAL";
+    }
+
+    /**
+     * Activate findActive() only for fully successful deploys (no soft-step or sync errors).
+     * PARTIAL/FAILED attempts are still audited with {@code is_active=false}.
+     */
+    static boolean shouldActivateDeploySnapshot(List<String> errors) {
+        return errors == null || errors.isEmpty();
     }
 
     public Map<String, Object> createBundleObjects(String appId) {
@@ -364,8 +398,9 @@ public class ApplicationBundleDeployService {
             response.put("applied", applied);
         } catch (Exception ex) {
             errors.add("applicationSync: " + ex.getMessage());
-            response.put("status", errors.isEmpty() ? "OK" : "PARTIAL");
+            response.put("status", finalizeDeployStatus(applied, errors));
             response.put("errors", errors);
+            response.put("failedSteps", List.copyOf(errors));
             response.put("applied", applied);
         }
     }
