@@ -9,6 +9,14 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.207] - 2026-09-01
+
+### Исправлено
+
+- Разбиение SQL по `;` в однострочных batch-миграциях (quoted literals).
+- H2-совместимые типы в `lab-mqtt-temperature` и `mini-tec`.
+- Bundle suite: import только при strict `OK`.
+
 ## [0.9.206] - 2026-09-01
 
 ### Исправлено

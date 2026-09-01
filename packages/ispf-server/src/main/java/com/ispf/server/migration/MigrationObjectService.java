@@ -258,21 +258,7 @@ public class MigrationObjectService {
     }
 
     private static List<String> splitStatements(String sql) {
-        List<String> statements = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        for (String line : sql.split("\n")) {
-            if (line.trim().endsWith(";")) {
-                current.append(line, 0, line.lastIndexOf(';')).append('\n');
-                statements.add(current.toString().trim());
-                current.setLength(0);
-            } else {
-                current.append(line).append('\n');
-            }
-        }
-        if (current.length() > 0) {
-            statements.add(current.toString().trim());
-        }
-        return statements;
+        return SqlStatementSplitter.split(sql);
     }
 
     private void setString(String path, String variable, String value) {

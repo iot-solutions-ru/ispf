@@ -16,8 +16,8 @@ class AgentBundleDeployImportSuccessTest {
     }
 
     @Test
-    void deployImportSucceededAcceptsPartialWithApplied() {
-        assertTrue(AgentBundleDeploySuiteTest.deployImportSucceeded(Map.of(
+    void deployImportSucceededRejectsPartialEvenWithApplied() {
+        assertFalse(AgentBundleDeploySuiteTest.deployImportSucceeded(Map.of(
                 "status", "PARTIAL",
                 "applied", List.of("register"),
                 "errors", List.of("migrations: TIMESTAMPTZ")

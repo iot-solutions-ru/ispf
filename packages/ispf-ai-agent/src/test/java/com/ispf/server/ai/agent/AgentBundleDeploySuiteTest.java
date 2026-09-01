@@ -221,21 +221,10 @@ class AgentBundleDeploySuiteTest {
     }
 
     /**
-     * H1-lite import success: OK, or PARTIAL when tree artifacts applied (H2 CI soft-fails
-     * on Postgres-only migration SQL such as TIMESTAMPTZ / multi-statement batches).
+     * H1-lite import success: strict OK after H2-compatible migrations and statement splitting.
      */
     static boolean deployImportSucceeded(Map<String, Object> step) {
-        if (step == null) {
-            return false;
-        }
-        String status = String.valueOf(step.get("status"));
-        if ("OK".equals(status)) {
-            return true;
-        }
-        if ("PARTIAL".equals(status) && step.get("applied") instanceof List<?> applied && !applied.isEmpty()) {
-            return true;
-        }
-        return false;
+        return step != null && "OK".equals(String.valueOf(step.get("status")));
     }
 
     private static boolean hasUsableDashboards(Object dashboardsRaw) {

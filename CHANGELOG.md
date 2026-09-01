@@ -17,6 +17,16 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.207] - 2026-09-01
+
+### Fixed
+
+- **SQL statement splitting** — migration and seed scripts split on `;` within single-line
+  batches (respects quoted literals); fixes H2 CI failures on multi-statement bundle SQL.
+- **Example bundle H2 compatibility** — `lab-mqtt-temperature` and `mini-tec` migrations use
+  `DOUBLE` / `TIMESTAMP` instead of Postgres-only types.
+- **Bundle deploy suite** — import step requires strict `OK` status again (no PARTIAL soft-pass).
+
 ## [0.9.206] - 2026-09-01
 
 ### Fixed
