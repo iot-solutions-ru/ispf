@@ -17,6 +17,10 @@ Changelog отдельных application bundles — в манифестах п�
 - H2-совместимые типы в `lab-mqtt-temperature` и `mini-tec`.
 - Bundle suite: import только при strict `OK`.
 
+### Docs
+
+- Scorecard pin demostand **0.9.207**.
+
 ## [0.9.206] - 2026-09-01
 
 ### Исправлено

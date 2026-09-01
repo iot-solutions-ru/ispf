@@ -9,7 +9,8 @@ Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
 | Pin | Meaning |
 |-----|---------|
 | **0.9.102** | Last **full code audit** of this scorecard (July 2026). Scores and evidence tables below are frozen to that audit. |
-| **0.9.206** | Current `main` / demostand as of 2026-09-01 (migration scope + H1-full compensating cleanup). **Not** a re-scored matrix. |
+| **0.9.207** | Current `main` / demostand as of 2026-09-01 (H2 migration splitting + bundle SQL compat). **Not** a re-scored matrix. |
+| **0.9.206** | Prior demostand pin (migration scope + H1-full compensating cleanup). **Not** a re-scored matrix. |
 
 **Current column:** **Code verified** — evidence from `main` source and tests at audit baseline **0.9.102**.
 

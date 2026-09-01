@@ -27,6 +27,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   `DOUBLE` / `TIMESTAMP` instead of Postgres-only types.
 - **Bundle deploy suite** — import step requires strict `OK` status again (no PARTIAL soft-pass).
 
+### Docs
+
+- Scorecard demostand pin **0.9.207**.
+
 ## [0.9.206] - 2026-09-01
 
 ### Fixed
