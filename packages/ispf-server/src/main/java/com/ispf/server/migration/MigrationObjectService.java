@@ -75,9 +75,18 @@ public class MigrationObjectService {
 
     @Transactional
     public List<String> applyPending(String version) {
+        return applyPending(version, null);
+    }
+
+    /**
+     * Apply pending migrations matching {@code version} and, when provided, {@code dataSourcePath}.
+     * Without a data-source filter, all platform migrations for the version run (legacy behaviour).
+     */
+    @Transactional
+    public List<String> applyPending(String version, String dataSourcePath) {
         List<String> applied = new ArrayList<>();
         for (MigrationDefinition migration : listAll()) {
-            if (version != null && !version.isBlank() && !version.equals(migration.version())) {
+            if (!matchesPendingFilter(migration, version, dataSourcePath)) {
                 continue;
             }
             if (isApplied(migration)) {
@@ -87,6 +96,20 @@ public class MigrationObjectService {
             applied.add(migration.scriptId());
         }
         return applied;
+    }
+
+    static boolean matchesPendingFilter(MigrationDefinition migration, String version, String dataSourcePath) {
+        if (migration == null) {
+            return false;
+        }
+        if (version != null && !version.isBlank() && !version.equals(migration.version())) {
+            return false;
+        }
+        if (dataSourcePath != null && !dataSourcePath.isBlank()
+                && !dataSourcePath.equals(migration.dataSourcePath())) {
+            return false;
+        }
+        return true;
     }
 
     @Transactional(readOnly = true)

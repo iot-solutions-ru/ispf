@@ -17,6 +17,20 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.206] - 2026-09-01
+
+### Fixed
+
+- **Migration applyPending scope** — bundle deploy applies pending migrations for the
+  target data source only (fixes cross-app pollution when versions collide on H2 CI).
+- **Compensating cleanup (H1-full)** — failed/partial deploys that do not activate a
+  snapshot best-effort remove manifest tree paths (first install) or bundle visual
+  groups only (when a prior active snapshot exists).
+
+### Docs
+
+- Scorecard demostand pin **0.9.206**.
+
 ## [0.9.205] - 2026-09-01
 
 ### Fixed

@@ -76,4 +76,13 @@ class ApplicationBundleDeployServiceHonestyTest {
                 List.of("register: boom")
         ));
     }
+
+    @Test
+    void shouldCompensateWhenSnapshotWouldNotActivate() {
+        assertTrue(ApplicationBundleDeployService.shouldCompensateFailedDeploy(
+                List.of("migrations: boom")
+        ));
+        assertFalse(ApplicationBundleDeployService.shouldCompensateFailedDeploy(List.of()));
+        assertFalse(ApplicationBundleDeployService.shouldCompensateFailedDeploy(null));
+    }
 }

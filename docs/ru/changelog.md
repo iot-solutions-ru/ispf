@@ -9,6 +9,17 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.206] - 2026-09-01
+
+### Исправлено
+
+- Migration applyPending scoped по dataSource (без cross-app pollution).
+- H1-full: compensating cleanup при FAILED/PARTIAL без active snapshot.
+
+### Docs
+
+- Scorecard pin demostand **0.9.206**.
+
 ## [0.9.205] - 2026-09-01
 
 ### Исправлено

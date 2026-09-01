@@ -192,7 +192,10 @@ public class ApplicationBundleDeployService {
                             script.sql()
                     ));
                 }
-                List<String> appliedMigrations = migrationObjectService.applyPending(manifest.version());
+                List<String> appliedMigrations = migrationObjectService.applyPending(
+                        manifest.version(),
+                        dataSourcePath
+                );
                 applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
             } catch (Exception ex) {
                 errors.add("migrations: " + ex.getMessage());
@@ -240,7 +243,49 @@ public class ApplicationBundleDeployService {
         response.put("failedSteps", List.copyOf(errors));
         response.put("applied", applied);
 
+        if (shouldCompensateFailedDeploy(errors)) {
+            List<String> compensated = compensateFailedDeploy(appId, manifest);
+            if (!compensated.isEmpty()) {
+                response.put("compensated", compensated);
+            }
+        }
+
         return response;
+    }
+
+    /**
+     * Best-effort rollback of tree artifacts when deploy did not activate a snapshot.
+     * First install: remove manifest-managed paths. Upgrade with prior active snapshot:
+     * visual groups only (do not delete paths owned by the previous version).
+     */
+    private List<String> compensateFailedDeploy(String appId, BundleManifest manifest) {
+        List<String> compensated = new ArrayList<>();
+        try {
+            if (snapshotStore.findActive(appId).isPresent()) {
+                bundleVisualGroupService.removeAllBundleGroups(appId);
+                compensated.add("visualGroups:removed");
+                return compensated;
+            }
+            for (String path : BundleVisualGroupService.managedRemovalPaths(appId, manifest)) {
+                try {
+                    if (objectManager.tree().findByPath(path).isPresent()) {
+                        objectManager.delete(path);
+                        compensated.add("removed:" + path);
+                    }
+                } catch (Exception ex) {
+                    compensated.add("removeFailed:" + path + ": " + ex.getMessage());
+                }
+            }
+            bundleVisualGroupService.removeAllBundleGroups(appId);
+            compensated.add("visualGroups:removed");
+        } catch (Exception ex) {
+            compensated.add("compensate: " + ex.getMessage());
+        }
+        return compensated;
+    }
+
+    static boolean shouldCompensateFailedDeploy(List<String> errors) {
+        return !shouldActivateDeploySnapshot(errors);
     }
 
     /**

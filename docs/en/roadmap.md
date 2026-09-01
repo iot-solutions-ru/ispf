@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-09-01 | **ispf-vps jar 0.9.206:** migration applyPending dataSource scope; H1-full compensating cleanup on failed/partial deploy. |
 | 2026-09-01 | **ispf-vps jar 0.9.205:** H1-lite bundle deploy honesty — PARTIAL/FAILED preserved; active snapshot only after sync; marketplace/AI playbook stop force-OK. |
 | 2026-08-31 | **ispf-vps jar 0.9.204:** periodic binding disable-after-N failures; HMI live FPS evidence @ 0.9.203 (60 FPS / 517 WS). |
 | 2026-08-31 | **ispf-vps jar 0.9.203:** workflow trigger index prune; SQL binding orphan auto-disable; CEL/AI evidence for 0.9.202. |
