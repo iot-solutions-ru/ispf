@@ -17,6 +17,49 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+## [0.9.207] - 2026-09-01
+
+### Fixed
+
+- **SQL statement splitting** — migration and seed scripts split on `;` within single-line
+  batches (respects quoted literals); fixes H2 CI failures on multi-statement bundle SQL.
+- **Example bundle H2 compatibility** — `lab-mqtt-temperature` and `mini-tec` migrations use
+  `DOUBLE` / `TIMESTAMP` instead of Postgres-only types.
+- **Bundle deploy suite** — import step requires strict `OK` status again (no PARTIAL soft-pass).
+
+### Docs
+
+- Scorecard demostand pin **0.9.207**.
+
+## [0.9.206] - 2026-09-01
+
+### Fixed
+
+- **Migration applyPending scope** — bundle deploy applies pending migrations for the
+  target data source only (fixes cross-app pollution when versions collide on H2 CI).
+- **Compensating cleanup (H1-full)** — failed/partial deploys that do not activate a
+  snapshot best-effort remove manifest tree paths (first install) or bundle visual
+  groups only (when a prior active snapshot exists).
+
+### Docs
+
+- Scorecard demostand pin **0.9.206**.
+
+## [0.9.205] - 2026-09-01
+
+### Fixed
+
+- **Bundle deploy honesty (H1-lite)** — deploy status is `OK` / `PARTIAL` / `FAILED`
+  (no silent force-`OK`); marketplace install and AI `deploy_step_import` preserve
+  that status; failed/partial imports do not mark the playbook step complete.
+- **Active snapshot only on clean deploy** — `recordDeployment` runs after
+  `syncApplicationTree`; PARTIAL/FAILED attempts are audited with
+  `is_active=false` and do not clear the previous `findActive()` row.
+
+### Docs
+
+- Scorecard demostand pin **0.9.205**.
+
 ## [0.9.204] - 2026-08-31
 
 ### Fixed

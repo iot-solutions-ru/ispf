@@ -352,10 +352,12 @@ final class AgentDeployPlaybookTools {
                     );
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
-                Map<String, Object> result = bundleDeployService.deploy(appId, parsed);
-                context.runState().markCompletedPlanStep("deploy:import");
+                Map<String, Object> result = new LinkedHashMap<>(bundleDeployService.deploy(appId, parsed));
                 result.put("playbookStep", "import");
-                result.put("status", "OK");
+                // preserve deploy status; only markCompletedPlanStep if status is OK
+                if ("OK".equals(result.get("status"))) {
+                    context.runState().markCompletedPlanStep("deploy:import");
+                }
                 return result;
             }
         };

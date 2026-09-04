@@ -113,7 +113,8 @@ public class MarketplaceLocalBundleService {
         Map<String, Object> deployResult = bundleDeployService.deploy(appId, manifest);
 
         Map<String, Object> result = new LinkedHashMap<>(deployResult);
-        result.put("status", "OK");
+        Object deployStatus = deployResult.getOrDefault("status", "OK");
+        result.put("status", deployStatus);
         result.put("source", "local-marketplace");
         result.put("bundleId", bundleId);
         result.put("slug", listing.get("slug"));

@@ -140,22 +140,7 @@ public class ApplicationDataService {
     }
 
     private static List<String> splitStatements(String sql) {
-        List<String> statements = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        for (String line : sql.split("\n")) {
-            String trimmed = line.trim();
-            if (trimmed.endsWith(";")) {
-                current.append(line, 0, line.lastIndexOf(';')).append('\n');
-                statements.add(current.toString().trim());
-                current.setLength(0);
-            } else {
-                current.append(line).append('\n');
-            }
-        }
-        if (current.length() > 0) {
-            statements.add(current.toString().trim());
-        }
-        return statements;
+        return com.ispf.server.migration.SqlStatementSplitter.split(sql);
     }
 
     public record MigrationScript(String id, String sql) {

@@ -9,6 +9,41 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [0.9.207] - 2026-09-01
+
+### Исправлено
+
+- Разбиение SQL по `;` в однострочных batch-миграциях (quoted literals).
+- H2-совместимые типы в `lab-mqtt-temperature` и `mini-tec`.
+- Bundle suite: import только при strict `OK`.
+
+### Docs
+
+- Scorecard pin demostand **0.9.207**.
+
+## [0.9.206] - 2026-09-01
+
+### Исправлено
+
+- Migration applyPending scoped по dataSource (без cross-app pollution).
+- H1-full: compensating cleanup при FAILED/PARTIAL без active snapshot.
+
+### Docs
+
+- Scorecard pin demostand **0.9.206**.
+
+## [0.9.205] - 2026-09-01
+
+### Исправлено
+
+- H1-lite: честный статус deploy (`OK`/`PARTIAL`/`FAILED`); marketplace и AI
+  playbook больше не форсят `OK`; active snapshot только после успешного
+  `syncApplicationTree`.
+
+### Docs
+
+- Scorecard pin demostand **0.9.205**.
+
 ## [0.9.204] - 2026-08-31
 
 ### Исправлено

@@ -29,10 +29,29 @@ public class ApplicationBundleSnapshotStore {
             String manifestJson,
             String operatorManifestJson
     ) {
-        jdbcTemplate.update(
-                "UPDATE %s SET is_active = FALSE WHERE app_id = ?".formatted(deploymentsTable),
-                appId
-        );
+        recordDeployment(appId, bundleVersion, manifestJson, operatorManifestJson, true);
+    }
+
+    /**
+     * Persist a deployment attempt.
+     *
+     * @param active when true, deactivate other versions and mark this row active (successful deploy);
+     *               when false, INSERT/UPDATE this version with {@code is_active=FALSE} without
+     *               clearing the currently active row (failed/partial audit trail).
+     */
+    public void recordDeployment(
+            String appId,
+            String bundleVersion,
+            String manifestJson,
+            String operatorManifestJson,
+            boolean active
+    ) {
+        if (active) {
+            jdbcTemplate.update(
+                    "UPDATE %s SET is_active = FALSE WHERE app_id = ?".formatted(deploymentsTable),
+                    appId
+            );
+        }
 
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM %s
@@ -46,12 +65,13 @@ public class ApplicationBundleSnapshotStore {
         if (count != null && count > 0) {
             jdbcTemplate.update("""
                     UPDATE %s
-                    SET manifest_json = ?, operator_manifest_json = ?, deployed_at = ?, is_active = TRUE
+                    SET manifest_json = ?, operator_manifest_json = ?, deployed_at = ?, is_active = ?
                     WHERE app_id = ? AND bundle_version = ?
                     """.formatted(deploymentsTable),
                     manifestJson,
                     operatorManifestJson,
                     Timestamp.from(Instant.now()),
+                    active,
                     appId,
                     bundleVersion
             );
@@ -61,14 +81,15 @@ public class ApplicationBundleSnapshotStore {
         jdbcTemplate.update("""
                 INSERT INTO %s (
                     id, app_id, bundle_version, manifest_json, operator_manifest_json, deployed_at, is_active
-                ) VALUES (?, ?, ?, ?, ?, ?, TRUE)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """.formatted(deploymentsTable),
                 UUID.randomUUID(),
                 appId,
                 bundleVersion,
                 manifestJson,
                 operatorManifestJson,
-                Timestamp.from(Instant.now())
+                Timestamp.from(Instant.now()),
+                active
         );
     }
 

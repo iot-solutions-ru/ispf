@@ -1154,7 +1154,7 @@ class ApplicationPlatformApiTest {
                                 }
                                 """.formatted(DEMO_DEVICE)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.snapshot").value("recorded"));
+                .andExpect(jsonPath("$.snapshot").value("recorded-active"));
 
         mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
                         .contentType(MediaType.APPLICATION_JSON)

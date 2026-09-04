@@ -59,17 +59,10 @@ class PlatformMetricsApiTest {
     }
 
     @Test
-    void diagnosticsMetricsProbeOffByDefaultAndToggleable() throws Exception {
+    void diagnosticsMetricsProbeEnabledByDefaultAndToggleable() throws Exception {
         String token = adminToken();
         mockMvc.perform(get("/api/v1/platform/diagnostics/metrics-probe")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.enabled").value(false));
-
-        mockMvc.perform(put("/api/v1/platform/diagnostics/metrics-probe")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"enabled\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(true));
 
@@ -79,6 +72,13 @@ class PlatformMetricsApiTest {
                         .content("{\"enabled\":false}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(false));
+
+        mockMvc.perform(put("/api/v1/platform/diagnostics/metrics-probe")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(true));
     }
 
     @Test

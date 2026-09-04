@@ -192,7 +192,10 @@ public class ApplicationBundleDeployService {
                             script.sql()
                     ));
                 }
-                List<String> appliedMigrations = migrationObjectService.applyPending(manifest.version());
+                List<String> appliedMigrations = migrationObjectService.applyPending(
+                        manifest.version(),
+                        dataSourcePath
+                );
                 applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
             } catch (Exception ex) {
                 errors.add("migrations: " + ex.getMessage());
@@ -202,32 +205,108 @@ public class ApplicationBundleDeployService {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("appId", appId);
         response.put("version", manifest.version());
-        response.put("status", errors.isEmpty() ? "OK" : "PARTIAL");
         response.put("applied", applied);
         response.put("skipped", skipped);
         response.put("errors", errors);
+        response.put("dataSourcePath", dataSourcePath);
+        response.put("objectTree", "tree-first");
+        String applicationPath = applicationTreePath(appId);
+        response.put("applicationPath", applicationPath);
+
+        // Tree sync can add errors; snapshot must be recorded only after the full outcome is known
+        // so a post-activate sync failure cannot leave a bad deploy as findActive().
+        syncApplicationTree(appId, displayName, manifest, applied, errors, response);
 
         try {
             String manifestJson = objectMapper.writeValueAsString(manifest);
             String operatorManifestJson = manifest.operatorManifest() != null
                     ? objectMapper.writeValueAsString(manifest.operatorManifest())
                     : null;
-            snapshotStore.recordDeployment(appId, manifest.version(), manifestJson, operatorManifestJson);
-            response.put("snapshot", "recorded");
+            boolean activateSnapshot = shouldActivateDeploySnapshot(errors);
+            snapshotStore.recordDeployment(
+                    appId,
+                    manifest.version(),
+                    manifestJson,
+                    operatorManifestJson,
+                    activateSnapshot
+            );
+            response.put("snapshot", activateSnapshot ? "recorded-active" : "recorded-inactive");
+            response.put("snapshotActive", activateSnapshot);
         } catch (Exception ex) {
             errors.add("snapshot: " + ex.getMessage());
-            response.put("status", "PARTIAL");
-            response.put("errors", errors);
+            response.put("snapshot", "failed");
+            response.put("snapshotActive", false);
         }
 
-        response.put("dataSourcePath", dataSourcePath);
-        response.put("objectTree", "tree-first");
-        String applicationPath = applicationTreePath(appId);
-        response.put("applicationPath", applicationPath);
+        response.put("status", finalizeDeployStatus(applied, errors));
+        response.put("errors", errors);
+        response.put("failedSteps", List.copyOf(errors));
+        response.put("applied", applied);
 
-        syncApplicationTree(appId, displayName, manifest, applied, errors, response);
+        if (shouldCompensateFailedDeploy(errors)) {
+            List<String> compensated = compensateFailedDeploy(appId, manifest);
+            if (!compensated.isEmpty()) {
+                response.put("compensated", compensated);
+            }
+        }
 
         return response;
+    }
+
+    /**
+     * Best-effort rollback of tree artifacts when deploy did not activate a snapshot.
+     * First install: remove manifest-managed paths. Upgrade with prior active snapshot:
+     * visual groups only (do not delete paths owned by the previous version).
+     */
+    private List<String> compensateFailedDeploy(String appId, BundleManifest manifest) {
+        List<String> compensated = new ArrayList<>();
+        try {
+            if (snapshotStore.findActive(appId).isPresent()) {
+                bundleVisualGroupService.removeAllBundleGroups(appId);
+                compensated.add("visualGroups:removed");
+                return compensated;
+            }
+            for (String path : BundleVisualGroupService.managedRemovalPaths(appId, manifest)) {
+                try {
+                    if (objectManager.tree().findByPath(path).isPresent()) {
+                        objectManager.delete(path);
+                        compensated.add("removed:" + path);
+                    }
+                } catch (Exception ex) {
+                    compensated.add("removeFailed:" + path + ": " + ex.getMessage());
+                }
+            }
+            bundleVisualGroupService.removeAllBundleGroups(appId);
+            compensated.add("visualGroups:removed");
+        } catch (Exception ex) {
+            compensated.add("compensate: " + ex.getMessage());
+        }
+        return compensated;
+    }
+
+    static boolean shouldCompensateFailedDeploy(List<String> errors) {
+        return !shouldActivateDeploySnapshot(errors);
+    }
+
+    /**
+     * Honest deploy outcome: OK when no errors; FAILED when nothing applied; otherwise PARTIAL.
+     */
+    static String finalizeDeployStatus(List<String> applied, List<String> errors) {
+        if (errors == null || errors.isEmpty()) {
+            return "OK";
+        }
+        if (applied == null || applied.isEmpty()) {
+            return "FAILED";
+        }
+        return "PARTIAL";
+    }
+
+    /**
+     * Activate findActive() only for fully successful deploys (no soft-step or sync errors).
+     * PARTIAL/FAILED attempts are still audited with {@code is_active=false}.
+     */
+    static boolean shouldActivateDeploySnapshot(List<String> errors) {
+        return errors == null || errors.isEmpty();
     }
 
     public Map<String, Object> createBundleObjects(String appId) {
@@ -364,8 +443,9 @@ public class ApplicationBundleDeployService {
             response.put("applied", applied);
         } catch (Exception ex) {
             errors.add("applicationSync: " + ex.getMessage());
-            response.put("status", errors.isEmpty() ? "OK" : "PARTIAL");
+            response.put("status", finalizeDeployStatus(applied, errors));
             response.put("errors", errors);
+            response.put("failedSteps", List.copyOf(errors));
             response.put("applied", applied);
         }
     }
