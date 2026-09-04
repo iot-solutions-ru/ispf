@@ -17,6 +17,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 - CI pr-fast: workers.max=2, forkEvery=5 (override `ISPF_TEST_FORK_EVERY`).
 
+### Docs
+
+- HMI live FPS @ 0.9.207: ui-pump-station 60 FPS + unmocked 500-el (~47 FPS).
+
 ## [0.9.207] - 2026-09-01
 
 ### Исправлено

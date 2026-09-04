@@ -28,6 +28,12 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 - **CI pr-fast backend** — `org.gradle.workers.max=2`; SpringBootTest `forkEvery` default **5**
   in CI (was 1; override `ISPF_TEST_FORK_EVERY`) to cut ~1h wall time while keeping JVM isolation.
 
+### Docs
+
+- **HMI live FPS** — demostand **0.9.207** re-smoke (`ui-pump-station` 60 FPS) and first
+  **unmocked 500-el** archive (`hmi-stress-500`, ~47 FPS soft floor 20); seed script
+  `tools/hmi/seed-stress-mimic-500.sh`.
+
 ## [0.9.207] - 2026-09-01
 
 ### Fixed

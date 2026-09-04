@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-09-04T12:08:18.000Z",
+  "source": "quality-gates.spec.ts live operator mimic",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "platformVersion": "0.9.207",
+  "appId": "hmi-stress-500",
+  "dashboard": "root.platform.dashboards.hmi-stress-500",
+  "mimicPath": "root.platform.mimics.hmi-stress-500",
+  "elementCount": 500,
+  "boundVariables": [
+    "root.platform.devices.ui-pump-1/sineWave",
+    "root.platform.devices.ui-pump-2/sineWave"
+  ],
+  "softBudgetFps": 20,
+  "fpsMedian": 47.29,
+  "fpsMin": 47.11,
+  "samples": [47.11, 47.29, 47.74],
+  "wsVariableUpdatedCount": 1,
+  "functionalOk": true,
+  "note": "First unmocked demostand 500-el live FPS archive. Soft floor 20 FPS (not Phase-26 mocked 55/60 gate). WS count is low because 500 elements share two sineWave tags; proves live Object WS path under large DOM. Seed: tools/hmi/seed-stress-mimic-500.sh"
+}
