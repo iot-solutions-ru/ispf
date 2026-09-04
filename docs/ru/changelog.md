@@ -9,6 +9,14 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+### Исправлено
+
+- `vps-single-rollout.sh` снова в git; пустой grep контейнеров не валит rollout.
+
+### Изменено
+
+- CI pr-fast: workers.max=2, forkEvery=5 (override `ISPF_TEST_FORK_EVERY`).
+
 ## [0.9.207] - 2026-09-01
 
 ### Исправлено

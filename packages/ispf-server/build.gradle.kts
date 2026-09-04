@@ -151,8 +151,10 @@ tasks.named<Test>("test") {
     systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     maxHeapSize = "10g"
     // Many @SpringBootTest classes in one JVM can pollute shared async shutdown (CI flakes).
+    // forkEvery=1 is safest but ~1h wall on GHA; default 5 is a compromise (override via ISPF_TEST_FORK_EVERY).
     if (System.getenv("CI") != null) {
-        forkEvery = 1
+        val forkEveryProp = System.getenv("ISPF_TEST_FORK_EVERY") ?: "5"
+        forkEvery = forkEveryProp.toInt().coerceAtLeast(1)
         systemProperty("spring.test.context.cache.maxSize", "1")
     }
     useJUnitPlatform {

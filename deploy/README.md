@@ -15,6 +15,7 @@
 | [`cluster-quickstart.sh`](cluster-quickstart.sh) | Multi-replica cluster compose |
 | [`health-check.sh`](health-check.sh) | Post-deploy smoke |
 | [`vps-hardening.sh`](vps-hardening.sh) | Disk guardian, ClickHouse log TTL, journald limits (VPS) |
+| [`vps-single-rollout.sh`](vps-single-rollout.sh) | Jar + UI on single-node compose; safe when no stale cluster containers |
 | [`air-gap-pack.sh`](air-gap-pack.sh) / [`air-gap-apply.sh`](air-gap-apply.sh) | Offline bundle |
 
 ## Universal `deploy/tools/`
