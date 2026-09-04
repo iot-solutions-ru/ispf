@@ -1,0 +1,262 @@
+{
+  "generatedAt": "2026-09-04T14:20:56.997Z",
+  "source": "apps/web-console/scripts/pwa-offline-field-soak.mjs",
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "platformVersionProbe": "0.9.207",
+  "appId": "ui-pump-station",
+  "soakMinutes": 120,
+  "sampleEverySec": 300,
+  "startedAt": "2026-09-04T12:20:34.995Z",
+  "endedAt": "2026-09-04T14:20:56.997Z",
+  "functionalOk": true,
+  "reconnectOk": true,
+  "sampleCount": 27,
+  "samples": [
+    {
+      "at": "2026-09-04T12:20:45.804Z",
+      "label": "online-warm",
+      "shellVisible": true,
+      "bannerVisible": false,
+      "whiteScreen": false,
+      "online": true,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:20:47.824Z",
+      "label": "offline-t0",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:25:47.827Z",
+      "label": "offline-t1",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:30:47.832Z",
+      "label": "offline-t2",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:35:47.835Z",
+      "label": "offline-t3",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:40:47.838Z",
+      "label": "offline-t4",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:45:47.843Z",
+      "label": "offline-t5",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:50:47.846Z",
+      "label": "offline-t6",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T12:55:47.850Z",
+      "label": "offline-t7",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:00:47.855Z",
+      "label": "offline-t8",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:05:47.860Z",
+      "label": "offline-t9",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:10:47.862Z",
+      "label": "offline-t10",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:15:47.867Z",
+      "label": "offline-t11",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:20:47.869Z",
+      "label": "offline-t12",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:25:47.874Z",
+      "label": "offline-t13",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:30:47.877Z",
+      "label": "offline-t14",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:35:47.881Z",
+      "label": "offline-t15",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:40:47.886Z",
+      "label": "offline-t16",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:45:47.889Z",
+      "label": "offline-t17",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:50:47.894Z",
+      "label": "offline-t18",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T13:55:47.897Z",
+      "label": "offline-t19",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T14:00:47.901Z",
+      "label": "offline-t20",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T14:05:47.905Z",
+      "label": "offline-t21",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T14:10:47.909Z",
+      "label": "offline-t22",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T14:15:47.913Z",
+      "label": "offline-t23",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T14:20:47.826Z",
+      "label": "offline-t24",
+      "shellVisible": true,
+      "bannerVisible": true,
+      "whiteScreen": false,
+      "online": false,
+      "title": "ISPF Admin Console"
+    },
+    {
+      "at": "2026-09-04T14:20:56.942Z",
+      "label": "reconnect",
+      "shellVisible": true,
+      "bannerVisible": false,
+      "whiteScreen": false,
+      "online": true,
+      "title": "ISPF Admin Console"
+    }
+  ],
+  "method": "playwright-cdp-offline",
+  "honesty": "CDP Network.offline against hosted demostand operator UI — not on-site tablet airplane mode. Complements CI pwa:offline-evidence.",
+  "error": null
+}

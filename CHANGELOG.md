@@ -19,20 +19,18 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
-- **`deploy/vps-single-rollout.sh`** — restored to git (was gitignored); empty cluster-container
-  `grep` no longer aborts under `pipefail` after jar/UI install; compose detection prefers a
-  working `docker compose -f … config`.
+- **Marketplace `mqtt-temperature` migrations** — aligned with `examples/lab-mqtt-temperature`
+  H2-compatible SQL (`DOUBLE` / `TIMESTAMP` / PK syntax).
 
-### Changed
+### Added
 
-- **CI pr-fast backend** — `org.gradle.workers.max=2`; SpringBootTest `forkEvery` default **5**
-  in CI (was 1; override `ISPF_TEST_FORK_EVERY`) to cut ~1h wall time while keeping JVM isolation.
+- **HMI offline lab soak** — `npm run pwa:offline-field-soak` (Playwright CDP offline, configurable
+  duration; demostand **2 h** evidence archived for Post-S33).
 
 ### Docs
 
-- **HMI live FPS** — demostand **0.9.207** re-smoke (`ui-pump-station` 60 FPS) and first
-  **unmocked 500-el** archive (`hmi-stress-500`, ~47 FPS soft floor 20); seed script
-  `tools/hmi/seed-stress-mimic-500.sh`.
+- Historian JVM scale gate archive (`docs/evidence/historian-scale/`); Enterprise L still lab-only.
+- HMI offline 2h lab journal + JSON under `docs/evidence/hmi-offline/`.
 
 ## [0.9.207] - 2026-09-01
 
