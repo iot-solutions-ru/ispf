@@ -53,7 +53,7 @@ Stress document builder: `e2e/fixtures/stressMimic.ts`. Playwright measures min 
 | SCADA symbol library | Done | [scada-symbol-library](scada-symbol-library.md), `customSvg.test.ts` |
 | Mimic 60 fps @ tank-farm | Done | CI stress proxy: 120 symbols @ ≥55 fps (`stressMimic.ts`); full tank-farm diagram same render path |
 | Mimic FPS @ 500 el (WS update path) | Done | CI pumps `ispf-object-ws-message` VARIABLE_UPDATED; floor `MIMIC_MIN_FPS_WS` (default 35) |
-| Mimic FPS @ 500 el (unmocked live API) | Partial | Live demostand path gated (`E2E_OPERATOR_APP`, real WS). Dated evidence: [`hmi-fps/2026-08-30-…ui-pump-station`](../evidence/hmi-fps/2026-08-30-ispf-vps-0.9.193-ui-pump-station.json) (~7 el @ 60 FPS median). **No** 500-el unmocked dated claim yet |
+| Mimic FPS @ 500 el (unmocked live API) | Partial | Live demostand path gated (`E2E_OPERATOR_APP`, real WS). Dated evidence: [`hmi-fps/2026-09-04-…hmi-stress-500`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-hmi-stress-500.json) (**500 el** @ ~47 FPS median, soft floor 20) plus facility [`…ui-pump-station`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-ui-pump-station.json) (~7 el @ 60 FPS). Seed: `tools/hmi/seed-stress-mimic-500.sh` |
 | Lighthouse operator dashboard | Done (CI) | a11y floor 90; ≥95 ops stretch only |
 
 ## Profiling
