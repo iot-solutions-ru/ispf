@@ -154,7 +154,7 @@ tasks.named<Test>("test") {
     // forkEvery=1 is safest but ~1h wall on GHA; default 5 is a compromise (override via ISPF_TEST_FORK_EVERY).
     if (System.getenv("CI") != null) {
         val forkEveryProp = System.getenv("ISPF_TEST_FORK_EVERY") ?: "5"
-        forkEvery = forkEveryProp.toInt().coerceAtLeast(1)
+        forkEvery = forkEveryProp.toLong().coerceAtLeast(1L)
         systemProperty("spring.test.context.cache.maxSize", "1")
     }
     useJUnitPlatform {
