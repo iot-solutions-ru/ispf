@@ -17,6 +17,17 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`deploy/vps-single-rollout.sh`** — restored to git (was gitignored); empty cluster-container
+  `grep` no longer aborts under `pipefail` after jar/UI install; compose detection prefers a
+  working `docker compose -f … config`.
+
+### Changed
+
+- **CI pr-fast backend** — `org.gradle.workers.max=2`; SpringBootTest `forkEvery` default **5**
+  in CI (was 1; override `ISPF_TEST_FORK_EVERY`) to cut ~1h wall time while keeping JVM isolation.
+
 ## [0.9.207] - 2026-09-01
 
 ### Fixed

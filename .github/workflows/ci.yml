@@ -140,11 +140,13 @@ jobs:
       - name: Test core platform modules (skip load)
         env:
           ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
+          # Soften SpringBootTest JVM churn vs forkEvery=1 (~1h); raise to 1 if flakes return.
+          ISPF_TEST_FORK_EVERY: "5"
         run: >
           ./gradlew
           testPrFast
           --no-daemon
-          -Dorg.gradle.workers.max=1
+          -Dorg.gradle.workers.max=2
           -Dispf.test.skipLoad=true
           -Dispf.test.skipFederation=true
           -Dispf.driver.packs=dev
@@ -215,6 +217,9 @@ jobs:
 
       - name: Helm lint + template smoke (BL-186)
         run: bash deploy/helm/ispf/validate.sh
+
+      - name: vps-single-rollout pipefail smoke
+        run: bash deploy/tools/single-rollout-pipefail-smoke.sh
 
   agent-regression:
     runs-on: ubuntu-latest
