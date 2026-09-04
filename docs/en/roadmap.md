@@ -1674,6 +1674,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 
 | Date | Change |
 | ---- | --------- |
+| 2026-09-04 | **HMI offline lab 2h (demostand 0.9.207):** CDP offline soak PASS (`ui-pump-station`, 27 samples); marketplace mqtt-temperature H2 SQL sync; historian JVM scale gate archived (Enterprise L still lab). |
 | 2026-09-04 | **HMI live FPS (demostand 0.9.207):** `ui-pump-station` 60 FPS / 471 WS; first unmocked **500-el** archive (`hmi-stress-500`, ~47 FPS soft floor 20). |
 | 2026-09-04 | **CI/deploy:** restore `vps-single-rollout.sh` (pipefail-safe); pr-fast `forkEvery=5` (~39m backend vs ~1h13m). |
 | 2026-09-01 | **ispf-vps jar 0.9.207:** SqlStatementSplitter; H2-compatible example bundle SQL; bundle suite strict OK. |

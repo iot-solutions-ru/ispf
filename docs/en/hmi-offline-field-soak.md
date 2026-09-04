@@ -13,8 +13,24 @@ See [operator-pwa-android-smoke.md](operator-pwa-android-smoke.md) · [hmi-quali
 | Tier | Duration | When |
 | ---- | -------- | ---- |
 | **CI evidence** | seconds | `npm run pwa:offline-evidence` — config/TTL check |
-| **Field minimum** | **2 h** | Roadmap Wave 2 — video wall / mini-TEC |
+| **Lab automated** | **2 h** (CDP offline) | `npm run pwa:offline-field-soak` against demostand — shell/banner samples |
+| **Field minimum** | **2 h** | Roadmap Wave 2 — tablet / video wall airplane mode |
 | **Stretch** | **8 h** | Matches Workbox + localStorage TTL |
+
+### Lab automated soak
+
+```bash
+cd apps/web-console
+E2E_BASE_URL=https://ispf.iot-solutions.ru \
+E2E_USERNAME=admin E2E_PASSWORD=admin \
+E2E_OPERATOR_APP=ui-pump-station \
+HMI_OFFLINE_SOAK_MINUTES=120 \
+HMI_OFFLINE_SAMPLE_EVERY_SEC=300 \
+HMI_OFFLINE_SOAK_EVIDENCE=../../docs/evidence/hmi-offline/YYYY-MM-DD-ispf-vps-offline-2h.json \
+  npm run pwa:offline-field-soak
+```
+
+Honesty: Playwright CDP `Network.offline` on the hosted operator UI — not on-site tablet airplane mode. Still proves no white-screen / shell loss over 2 h and reconnect. On-site tablet remains the field sign-off tier.
 
 ---
 

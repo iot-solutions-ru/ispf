@@ -11,15 +11,15 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
-- `vps-single-rollout.sh` снова в git; пустой grep контейнеров не валит rollout.
+- Marketplace `mqtt-temperature`: H2-совместимый SQL как в lab bundle.
 
-### Изменено
+### Добавлено
 
-- CI pr-fast: workers.max=2, forkEvery=5 (override `ISPF_TEST_FORK_EVERY`).
+- `npm run pwa:offline-field-soak` — lab 2h CDP offline soak.
 
 ### Docs
 
-- HMI live FPS @ 0.9.207: ui-pump-station 60 FPS + unmocked 500-el (~47 FPS).
+- Historian JVM scale gate archive; Enterprise L по-прежнему lab-only.
 
 ## [0.9.207] - 2026-09-01
 
