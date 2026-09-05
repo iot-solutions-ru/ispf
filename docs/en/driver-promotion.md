@@ -37,6 +37,27 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `yaskawa-memobus` | STUB | **PRODUCTION** | Modbus-TCP FC3/FC6 holding registers; `YaskawaMemobusDeviceDriverTest` (fake Modbus TCP); points `HR:100` / `100`; `POLL` + `WRITE` |
 | `sparkplug-b` | STUB | **PRODUCTION** | MQTT (Paho) + minimal Sparkplug B protobuf Payload/Metric codec; host subscribe NBIRTH/DBIRTH/DDATA; DCMD write; `SparkplugBDeviceDriverTest` (Moquette); `POLL` + `WRITE` |
 
+
+## Status (September 2026, OT Trust Wave 3 clean-room promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------|
+| `beckhoff-ads` | STUB | **PRODUCTION** | AMS/TCP AdsRead/AdsWrite IG:IO; loopback fake ADS |
+| `mitsubishi-melsec` | STUB | **PRODUCTION** | MC/SLMP 3E D-register R/W; loopback |
+| `iec62056` | STUB | **PRODUCTION** | IEC 62056-21 Mode C TCP readout (not DLMS APDU) |
+| `ieee2030-5` | STUB | **PRODUCTION** | SEP2 HTTP GET subset |
+| `mqtt-sn` | STUB | **PRODUCTION** | MQTT-SN 1.2 UDP CONNECT/PUBLISH/SUBSCRIBE subset |
+| `nats` | STUB | **PRODUCTION** | NATS text INFO/CONNECT/SUB/PUB subset |
+| `pulsar` | STUB | **PRODUCTION** | Lab TCP text framing (honest non-binary subset) |
+| `onvif` | STUB | **PRODUCTION** | Device WSDL GetDeviceInformation subset |
+| `mtconnect` | STUB | **PRODUCTION** | Agent HTTP streams poll |
+| `knx` | STUB | **PRODUCTION** | KNXnet/IP Tunneling group value R/W |
+| `lwm2m` | STUB | **PRODUCTION** | CoAP GET resource read subset |
+| `websocket` | STUB | **PRODUCTION** | RFC6455 client text frames |
+| `graphql` | STUB | **PRODUCTION** | HTTP GraphQL query/mutation |
+
+**License policy:** Apache-2.0 clean-room / JDK sockets only. Deferred high-risk stacks (`profinet`, `ethercat`, `iec61850*`, proprietary CNC). `visa`/`scpi`/`knx-tp` remain STUB until loopback green.
+
 ## Status (July 2026, driver batch C promotion)
 
 | driverId | Was | Now | Note |

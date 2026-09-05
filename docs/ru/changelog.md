@@ -23,6 +23,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust Wave 3** — 13 clean-room кодеков → PRODUCTION (ADS/MELSEC/MQTT-SN/NATS/KNX/…); без GPL и проприетарных SDK.
 - **OT Trust — поднятие готовности всех 162 паков** — stub-kit **v0.2** (TCP probe + memory loopback) +
   contract-тесты на каталог STUB → метка аудита **`STUB_LAB`** (без фейкового PRODUCTION);
   `tools/driver-stubs/raise-stub-readiness.py`.

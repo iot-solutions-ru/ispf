@@ -56,7 +56,7 @@ WRITE_IMPL_RE = re.compile(
 WRITE_STUB_MSG_RE = re.compile(
     r"not implemented|unsupported operation|write not supported|"
     r"\bis read-only\b|read-only driver|driver is read-only|read-only in v\d|"
-    r"read-only stub",
+    r"read-only stub|readout-only|get-only|poll-only|writepoint is not supported",
     re.IGNORECASE,
 )
 STUB_JAVADOC_RE = re.compile(r"\b(stub|placeholder)\b", re.IGNORECASE)

@@ -14,10 +14,6 @@ stubs:
     name: OPC UA PubSub
     description: OPC UA PubSub (UDP/MQTT) stub — connectivity shell only
     port: 4840
-  - id: beckhoff-ads
-    name: Beckhoff ADS
-    description: Beckhoff TwinCAT ADS/AMS stub
-    port: 48898
   - id: profinet
     name: PROFINET IO
     description: PROFINET IO controller/device stub (DCP/RPC not implemented)
@@ -50,11 +46,6 @@ stubs:
     name: CODESYS Gateway
     description: CODESYS gateway / PLCHandler stub
     port: 1217
-  - id: mitsubishi-melsec
-    name: Mitsubishi MELSEC
-    description: Mitsubishi MELSEC communication stub (MC Protocol / SLMP path planned)
-    port: 5007
-  # mitsubishi-slmp promoted Wave 2 → PRODUCTION (packages/ispf-driver-mitsubishi-slmp)
   - id: ge-srtp
     name: GE SRTP
     description: Emerson/GE Fanuc SRTP stub
@@ -160,10 +151,6 @@ stubs:
     name: Fanuc FOCAS
     description: Fanuc FOCAS CNC stub
     port: 8193
-  - id: mtconnect
-    name: MTConnect
-    description: MTConnect agent HTTP stub
-    port: 5000
   - id: opc-ae
     name: OPC Alarms and Events
     description: OPC Classic A&E stub (DCOM/bridge required)
@@ -194,10 +181,6 @@ stubs:
     name: IEC 60870-5-103
     description: IEC 60870-5-103 protection stub
     port: 2404
-  - id: iec62056
-    name: IEC 62056
-    description: IEC 62056 DLMS companion / push stub (beyond existing DLMS pack)
-    port: 4059
   - id: ansi-c12
     name: ANSI C12
     description: ANSI C12.18/C12.22 meter stub
@@ -205,10 +188,6 @@ stubs:
   - id: openadr
     name: OpenADR
     description: OpenADR 2.0b VTN/VEN stub
-    port: 443
-  - id: ieee2030-5
-    name: IEEE 2030.5
-    description: IEEE 2030.5 (SEP2) stub
     port: 443
   - id: wisun
     name: Wi-SUN
@@ -242,10 +221,6 @@ stubs:
     port: 5094
 
   # —— Building / HVAC ——
-  - id: knx
-    name: KNX/IP
-    description: KNX/IP tunneling/routing stub
-    port: 3671
   - id: knx-tp
     name: KNX TP
     description: KNX Twisted Pair interface stub
@@ -304,24 +279,12 @@ stubs:
     name: Bluetooth LE
     description: Bluetooth Low Energy gateway stub
     port: 9999
-  - id: mqtt-sn
-    name: MQTT-SN
-    description: MQTT For Sensor Networks stub
-    port: 1883
-  - id: lwm2m
-    name: LwM2M
-    description: OMA LwM2M client/server stub
-    port: 5683
   - id: sigfox
     name: Sigfox
     description: Sigfox backend callback stub
     port: 443
 
   # —— Vision / identity / shop-floor ——
-  - id: onvif
-    name: ONVIF
-    description: ONVIF Profile S/T device stub
-    port: 80
   - id: rtsp
     name: RTSP
     description: RTSP media/metadata stub
@@ -368,18 +331,6 @@ stubs:
     name: AMQP
     description: AMQP 0-9-1 / 1.0 broker stub
     port: 5672
-  - id: nats
-    name: NATS
-    description: NATS messaging stub (cluster messaging is separate)
-    port: 4222
-  - id: pulsar
-    name: Apache Pulsar
-    description: Apache Pulsar client stub
-    port: 6650
-  - id: websocket
-    name: WebSocket
-    description: Generic WebSocket telemetry stub
-    port: 8080
   - id: grpc
     name: gRPC
     description: Generic gRPC telemetry stub
@@ -388,11 +339,6 @@ stubs:
     name: OData
     description: OData v4 REST stub
     port: 80
-  - id: graphql
-    name: GraphQL
-    description: GraphQL HTTP stub
-    port: 80
-  # redis promoted Wave 2 → PRODUCTION (packages/ispf-driver-redis)
   - id: weather-station
     name: Weather station
     description: Davis/Vaisala-class weather station stub

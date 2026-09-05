@@ -36,6 +36,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **OT Trust Wave 3 — 13 clean-room codec promotions** — `beckhoff-ads`, `mitsubishi-melsec`, `iec62056`, `ieee2030-5`, `mqtt-sn`, `nats`, `pulsar` (lab framing), `onvif`, `mtconnect`, `knx`, `lwm2m`, `websocket`, `graphql` → PRODUCTION with loopback tests; Apache-2.0 / JDK-only; high-risk stacks untouched; evidence `docs/evidence/ot-trust/2026-09-05-wave3-codec-promotion.md`.
 - **OT Trust — raise readiness for all 162 packs** — stub-kit **v0.2** (lab loopback write) +
   contract tests for catalog stubs → audit label **`STUB_LAB`** (honest: still no protocol codec);
   `tools/driver-stubs/raise-stub-readiness.py`; WRITE_UNDERCLAIM false-positives for ingress read-only drivers fixed.

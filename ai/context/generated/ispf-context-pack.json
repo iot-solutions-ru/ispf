@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.207",
-  "generatedAt": "2026-09-05T09:00:45.506711+00:00",
+  "generatedAt": "2026-09-05T09:52:22.113990+00:00",
   "platformVersion": "0.9.207",
   "bundleManifest": {
     "fields": [
@@ -38157,5 +38157,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "23f43f5b16d23a0317e827788368a5b287dac8eff58cfd6161534f384f5fac2e"
+  "contentSha256": "d67dcd77cac38d8fbed5f567745438936561db54ad84df517ca9e7f1954c9a20"
 }

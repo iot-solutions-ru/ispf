@@ -9,6 +9,7 @@
 | Kickoff | [2026-09-05-wave1-kickoff.md](2026-09-05-wave1-kickoff.md) |
 | Lab day-1 dry-run | [2026-09-05-lab-modbus-day1.md](2026-09-05-lab-modbus-day1.md) |
 | **Full catalog (162)** | [driver-readiness.md](driver-readiness.md) · [driver-readiness.json](driver-readiness.json) |
+| Wave 3 codec promotions | [2026-09-05-wave3-codec-promotion.md](2026-09-05-wave3-codec-promotion.md) — +13 PRODUCTION clean-room |
 | Stub readiness ladder | [2026-09-05-raise-all-driver-readiness.md](2026-09-05-raise-all-driver-readiness.md) — stub-kit **v0.2** + **97×** pack contracts → **`STUB_LAB`** (still ≠ PRODUCTION) |
 | Pilot journal template | [pilot-soak-journal.template.md](pilot-soak-journal.template.md) |
 
