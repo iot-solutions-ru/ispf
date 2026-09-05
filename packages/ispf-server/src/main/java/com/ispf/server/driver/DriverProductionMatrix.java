@@ -268,7 +268,7 @@ final class DriverProductionMatrix {
             entry("mbus", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-mbus", "com.ispf.driver.mbus.MbusDeviceDriverTest"),
                     "ispf-driver-mbus"),
-            entry("smpp", DriverMaturity.PRODUCTION, POLL_ONLY,
+            entry("smpp", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-smpp", "com.ispf.driver.smpp.SmppDeviceDriverTest"),
                     "ispf-driver-smpp"),
             entry("xmpp", DriverMaturity.PRODUCTION, POLL_ONLY,
@@ -276,7 +276,20 @@ final class DriverProductionMatrix {
                     "ispf-driver-xmpp"),
             entry("ipmi", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-ipmi", "com.ispf.driver.ipmi.IpmiDeviceDriverTest"),
-                    "ispf-driver-ipmi")
+                    "ispf-driver-ipmi"),
+            // Notification / file packs previously default-BETA while docs claimed PRODUCTION (OT Trust audit).
+            entry("email", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-email", "com.ispf.driver.email.EmailDeviceDriverTest"),
+                    "ispf-driver-email"),
+            entry("sms", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-sms", "com.ispf.driver.sms.SmsDeviceDriverTest"),
+                    "ispf-driver-sms"),
+            entry("webhook", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-webhook", "com.ispf.driver.webhook.WebhookDeviceDriverTest"),
+                    "ispf-driver-webhook"),
+            entry("smb", DriverMaturity.PRODUCTION, POLL_ONLY,
+                    testPath("ispf-driver-smb", "com.ispf.driver.smb.SmbPointTest"),
+                    "ispf-driver-smb")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

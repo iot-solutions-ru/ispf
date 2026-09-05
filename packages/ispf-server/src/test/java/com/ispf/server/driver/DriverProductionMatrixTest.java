@@ -134,7 +134,10 @@ class DriverProductionMatrixTest {
     /** ADR-0057 / Wave 1: known write-capable packs must not under-claim WRITE. */
     @Test
     void wave1WriteCapableDriversDeclareWrite() {
-        for (String driverId : new String[] { "modbus-tcp", "mqtt", "opcua", "http", "snmp", "ethernet-ip" }) {
+        for (String driverId : new String[] {
+            "modbus-tcp", "mqtt", "opcua", "http", "snmp", "ethernet-ip",
+            "smpp", "email", "sms", "webhook", "bacnet"
+        }) {
             assertTrue(
                     DriverProductionMatrix.resolveCapabilities(driverId).contains(WRITE),
                     driverId + " must declare WRITE (ADR-0057 honesty)"

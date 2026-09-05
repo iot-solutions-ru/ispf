@@ -21,6 +21,8 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust — аудит всех 162 драйверов** — `tools/driver-readiness-audit.py`, отчёт
+  `docs/evidence/ot-trust/driver-readiness.md` (honesty: matrix ↔ packs).
 - **OT Trust Wave 1 hardening** — writable Modbus fixture; FC6/FC16 smoke; writePoint gate; lab day-1 journal.
 - **OT Trust Wave 1** — снят парк P-OT; ADR-0057 (DNP3 PRODUCTION poll-only); evidence `docs/evidence/ot-trust/`.
 - G-01 pen-test prep: [pen-test-scope.md](pen-test-scope.md); ADR-0056 WebAuthn/IdP MFA (BL-194 Proposed).

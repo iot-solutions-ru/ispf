@@ -23,7 +23,7 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **58** drivers at **PRODUCTION** (including `cwmp` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **97** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0 TCP reachability shells). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **62** drivers at **PRODUCTION** (including `cwmp` / notification packs `email`/`sms`/`webhook` / `smb` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **97** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0 TCP reachability shells). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
 
 > **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); protocol catalog stubs (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, …) are **STUB** until demand-driven promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 

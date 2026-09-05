@@ -202,6 +202,13 @@ jobs:
           distribution: temurin
           java-version: "25"
 
+      - name: Full catalog readiness audit (162 packs)
+        run: |
+          python3 tools/driver-readiness-audit.py \
+            --md docs/evidence/ot-trust/driver-readiness.md \
+            --json docs/evidence/ot-trust/driver-readiness.json \
+            --fail-on-findings
+
       - name: Verify PRODUCTION↔interop matrix gate (BL-85 / BL-140)
         run: >
           ./gradlew
@@ -209,3 +216,13 @@ jobs:
           --tests com.ispf.server.driver.DriverInteropWorkflowGateTest
           --tests com.ispf.server.driver.DriverProductionMatrixTest
           --no-daemon
+
+      - name: Upload driver readiness report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: driver-readiness-audit
+          path: |
+            docs/evidence/ot-trust/driver-readiness.md
+            docs/evidence/ot-trust/driver-readiness.json
+          if-no-files-found: warn

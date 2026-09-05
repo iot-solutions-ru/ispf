@@ -1,0 +1,4763 @@
+{
+  "summary": {
+    "generatedAt": "2026-09-05T07:52:46Z",
+    "catalogSize": 162,
+    "expectedCatalogSize": 162,
+    "byMaturity": {
+      "STUB": 97,
+      "PRODUCTION": 62,
+      "BETA": 3
+    },
+    "byReadiness": {
+      "STUB": 97,
+      "READY_LAB": 62,
+      "PARTIAL": 1,
+      "SHELL_BETA": 2
+    },
+    "bySource": {
+      "stub-list": 97,
+      "matrix": 65
+    },
+    "failCount": 0,
+    "warnCount": 3,
+    "top20": [
+      "virtual",
+      "mqtt",
+      "modbus-tcp",
+      "modbus-rtu",
+      "modbus-udp",
+      "opcua",
+      "opcua-server",
+      "snmp",
+      "bacnet",
+      "s7",
+      "http",
+      "flexible",
+      "iec104",
+      "iec104-server",
+      "dnp3",
+      "dlms",
+      "ethernet-ip",
+      "opc-da",
+      "opc-bridge",
+      "gps-tracker"
+    ],
+    "top10": [
+      "virtual",
+      "mqtt",
+      "modbus-tcp",
+      "opcua",
+      "snmp",
+      "bacnet",
+      "s7",
+      "http",
+      "flexible",
+      "modbus-rtu"
+    ],
+    "matrixEntries": 65,
+    "stubIds": 97,
+    "interopWorkflowModules": [
+      "ispf-driver-bacnet",
+      "ispf-driver-dlms",
+      "ispf-driver-dnp3",
+      "ispf-driver-ethernet-ip",
+      "ispf-driver-flexible",
+      "ispf-driver-gps-tracker",
+      "ispf-driver-http",
+      "ispf-driver-iec104",
+      "ispf-driver-iec104-server",
+      "ispf-driver-modbus",
+      "ispf-driver-modbus-rtu",
+      "ispf-driver-modbus-udp",
+      "ispf-driver-mqtt",
+      "ispf-driver-opc-bridge",
+      "ispf-driver-opc-da",
+      "ispf-driver-opcua",
+      "ispf-driver-opcua-server",
+      "ispf-driver-s7",
+      "ispf-driver-snmp",
+      "ispf-driver-virtual"
+    ],
+    "honesty": "Lab/matrix readiness only — not field certification for 162 drivers"
+  },
+  "drivers": [
+    {
+      "driver_id": "amqp",
+      "pack_id": "ispf-driver-amqp",
+      "driver_class": "com.ispf.driver.amqp.AmqpDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-amqp/src/main/java/com/ispf/driver/amqp/AmqpDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ansi-c12",
+      "pack_id": "ispf-driver-ansi-c12",
+      "driver_class": "com.ispf.driver.ansic12.AnsiC12DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ansi-c12/src/main/java/com/ispf/driver/ansic12/AnsiC12DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "application",
+      "pack_id": "ispf-driver-application",
+      "driver_class": "com.ispf.driver.application.ApplicationDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-application/src/main/java/com/ispf/driver/application/ApplicationDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-application/src/test/java/com/ispf/driver/application/ApplicationDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-application",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "as-interface",
+      "pack_id": "ispf-driver-as-interface",
+      "driver_class": "com.ispf.driver.asinterface.AsInterfaceDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-as-interface/src/main/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "asterisk",
+      "pack_id": "ispf-driver-asterisk",
+      "driver_class": "com.ispf.driver.asterisk.AsteriskDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-asterisk/src/main/java/com/ispf/driver/asterisk/AsteriskDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-asterisk/src/test/java/com/ispf/driver/asterisk/AsteriskDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-asterisk",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "aws-iot-core",
+      "pack_id": "ispf-driver-aws-iot-core",
+      "driver_class": "com.ispf.driver.awsiotcore.AwsIotCoreDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-aws-iot-core/src/main/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "azure-iot-hub",
+      "pack_id": "ispf-driver-azure-iot-hub",
+      "driver_class": "com.ispf.driver.azureiothub.AzureIotHubDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-azure-iot-hub/src/main/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "bacnet",
+      "pack_id": "ispf-driver-bacnet",
+      "driver_class": "com.ispf.driver.bacnet.BacnetDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-bacnet/src/main/java/com/ispf/driver/bacnet/BacnetDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-bacnet/src/test/java/com/ispf/driver/bacnet/BacnetDeviceDriverNetworkTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-bacnet",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "bacnet-mstp",
+      "pack_id": "ispf-driver-bacnet-mstp",
+      "driver_class": "com.ispf.driver.bacnetmstp.BacnetMstpDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-bacnet-mstp/src/main/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "barcode-scanner",
+      "pack_id": "ispf-driver-barcode-scanner",
+      "driver_class": "com.ispf.driver.barcodescanner.BarcodeScannerDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-barcode-scanner/src/main/java/com/ispf/driver/barcodescanner/BarcodeScannerDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "beckhoff-ads",
+      "pack_id": "ispf-driver-beckhoff-ads",
+      "driver_class": "com.ispf.driver.beckhoffads.BeckhoffAdsDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-beckhoff-ads/src/main/java/com/ispf/driver/beckhoffads/BeckhoffAdsDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "bluetooth-le",
+      "pack_id": "ispf-driver-bluetooth-le",
+      "driver_class": "com.ispf.driver.bluetoothle.BluetoothLeDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-bluetooth-le/src/main/java/com/ispf/driver/bluetoothle/BluetoothLeDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "camera-ai",
+      "pack_id": "ispf-driver-camera-ai",
+      "driver_class": "com.ispf.driver.cameraai.CameraAiDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-camera-ai/src/main/java/com/ispf/driver/cameraai/CameraAiDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "canbus-gateway",
+      "pack_id": "ispf-driver-canbus-gateway",
+      "driver_class": "com.ispf.driver.canbusgateway.CanbusGatewayDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-canbus-gateway/src/main/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "canopen",
+      "pack_id": "ispf-driver-canopen",
+      "driver_class": "com.ispf.driver.canopen.CanopenDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-canopen/src/main/java/com/ispf/driver/canopen/CanopenDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "cc-link",
+      "pack_id": "ispf-driver-cc-link",
+      "driver_class": "com.ispf.driver.cclink.CcLinkDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-cc-link/src/main/java/com/ispf/driver/cclink/CcLinkDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "cc-link-ie",
+      "pack_id": "ispf-driver-cc-link-ie",
+      "driver_class": "com.ispf.driver.cclinkie.CcLinkIeDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-cc-link-ie/src/main/java/com/ispf/driver/cclinkie/CcLinkIeDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "coap",
+      "pack_id": "ispf-driver-coap",
+      "driver_class": "com.ispf.driver.coap.CoapDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-coap/src/main/java/com/ispf/driver/coap/CoapDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-coap/src/test/java/com/ispf/driver/coap/CoapDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-coap",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "codesys",
+      "pack_id": "ispf-driver-codesys",
+      "driver_class": "com.ispf.driver.codesys.CodesysDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-codesys/src/main/java/com/ispf/driver/codesys/CodesysDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "controlnet",
+      "pack_id": "ispf-driver-controlnet",
+      "driver_class": "com.ispf.driver.controlnet.ControlnetDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-controlnet/src/main/java/com/ispf/driver/controlnet/ControlnetDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "corba",
+      "pack_id": "ispf-driver-corba",
+      "driver_class": "com.ispf.driver.corba.CorbaDeviceDriver",
+      "maturity": "BETA",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-corba/src/main/java/com/ispf/driver/corba/CorbaDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-corba/src/test/java/com/ispf/driver/corba/CorbaDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
+      "findings": []
+    },
+    {
+      "driver_id": "cwmp",
+      "pack_id": "ispf-driver-cwmp",
+      "driver_class": "com.ispf.driver.cwmp.CwmpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-cwmp/src/main/java/com/ispf/driver/cwmp/CwmpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-cwmp/src/test/java/com/ispf/driver/cwmp/CwmpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-cwmp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "dali",
+      "pack_id": "ispf-driver-dali",
+      "driver_class": "com.ispf.driver.dali.DaliDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-dali/src/main/java/com/ispf/driver/dali/DaliDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "delta-dvp",
+      "pack_id": "ispf-driver-delta-dvp",
+      "driver_class": "com.ispf.driver.deltadvp.DeltaDvpDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-delta-dvp/src/main/java/com/ispf/driver/deltadvp/DeltaDvpDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "device-net",
+      "pack_id": "ispf-driver-device-net",
+      "driver_class": "com.ispf.driver.devicenet.DeviceNetDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-device-net/src/main/java/com/ispf/driver/devicenet/DeviceNetDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "dhcp",
+      "pack_id": "ispf-driver-dhcp",
+      "driver_class": "com.ispf.driver.dhcp.DhcpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-dhcp/src/main/java/com/ispf/driver/dhcp/DhcpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-dhcp/src/test/java/com/ispf/driver/dhcp/DhcpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-dhcp",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "dlms",
+      "pack_id": "ispf-driver-dlms",
+      "driver_class": "com.ispf.driver.dlms.DlmsDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-dlms/src/main/java/com/ispf/driver/dlms/DlmsDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-dlms/src/test/java/com/ispf/driver/dlms/DlmsDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-dlms",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "dnp3",
+      "pack_id": "ispf-driver-dnp3",
+      "driver_class": "com.ispf.driver.dnp3.Dnp3DeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-dnp3/src/main/java/com/ispf/driver/dnp3/Dnp3DeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-dnp3/src/test/java/com/ispf/driver/dnp3/Dnp3DeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-dnp3",
+      "interop_in_workflow": true,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "eebus",
+      "pack_id": "ispf-driver-eebus",
+      "driver_class": "com.ispf.driver.eebus.EebusDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-eebus/src/main/java/com/ispf/driver/eebus/EebusDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "email",
+      "pack_id": "ispf-driver-email",
+      "driver_class": "com.ispf.driver.email.EmailDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-email/src/main/java/com/ispf/driver/email/EmailDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-email/src/test/java/com/ispf/driver/email/EmailDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-email",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "enocean",
+      "pack_id": "ispf-driver-enocean",
+      "driver_class": "com.ispf.driver.enocean.EnoceanDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-enocean/src/main/java/com/ispf/driver/enocean/EnoceanDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ethercat",
+      "pack_id": "ispf-driver-ethercat",
+      "driver_class": "com.ispf.driver.ethercat.EthercatDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ethercat/src/main/java/com/ispf/driver/ethercat/EthercatDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ethernet-ip",
+      "pack_id": "ispf-driver-ethernet-ip",
+      "driver_class": "com.ispf.driver.ethernetip.EthernetIpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE",
+        "QUALITY"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ethernet-ip/src/main/java/com/ispf/driver/ethernetip/EthernetIpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ethernet-ip/src/test/java/com/ispf/driver/ethernetip/EthernetIpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ethernet-ip",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "ethernet-powerlink",
+      "pack_id": "ispf-driver-ethernet-powerlink",
+      "driver_class": "com.ispf.driver.ethernetpowerlink.EthernetPowerlinkDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ethernet-powerlink/src/main/java/com/ispf/driver/ethernetpowerlink/EthernetPowerlinkDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "fanuc-focas",
+      "pack_id": "ispf-driver-fanuc-focas",
+      "driver_class": "com.ispf.driver.fanucfocas.FanucFocasDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-fanuc-focas/src/main/java/com/ispf/driver/fanucfocas/FanucFocasDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "fatek",
+      "pack_id": "ispf-driver-fatek",
+      "driver_class": "com.ispf.driver.fatek.FatekDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-fatek/src/main/java/com/ispf/driver/fatek/FatekDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "file",
+      "pack_id": "ispf-driver-file",
+      "driver_class": "com.ispf.driver.file.FileDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-file/src/main/java/com/ispf/driver/file/FileDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-file/src/test/java/com/ispf/driver/file/FileDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-file",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "flexible",
+      "pack_id": "ispf-driver-flexible",
+      "driver_class": "com.ispf.driver.flexible.FlexibleDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-flexible/src/main/java/com/ispf/driver/flexible/FlexibleDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-flexible/src/test/java/com/ispf/driver/flexible/FlexiblePointTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-flexible",
+      "interop_in_workflow": true,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "folder",
+      "pack_id": "ispf-driver-folder",
+      "driver_class": "com.ispf.driver.folder.FolderDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-folder/src/main/java/com/ispf/driver/folder/FolderDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-folder/src/test/java/com/ispf/driver/folder/FolderDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-folder",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "foundation-fieldbus",
+      "pack_id": "ispf-driver-foundation-fieldbus",
+      "driver_class": "com.ispf.driver.foundationfieldbus.FoundationFieldbusDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-foundation-fieldbus/src/main/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "fuji-sph",
+      "pack_id": "ispf-driver-fuji-sph",
+      "driver_class": "com.ispf.driver.fujisph.FujiSphDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-fuji-sph/src/main/java/com/ispf/driver/fujisph/FujiSphDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ge-srtp",
+      "pack_id": "ispf-driver-ge-srtp",
+      "driver_class": "com.ispf.driver.gesrtp.GeSrtpDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ge-srtp/src/main/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "genicam",
+      "pack_id": "ispf-driver-genicam",
+      "driver_class": "com.ispf.driver.genicam.GenicamDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-genicam/src/main/java/com/ispf/driver/genicam/GenicamDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "gps-tracker",
+      "pack_id": "ispf-driver-gps-tracker",
+      "driver_class": "com.ispf.driver.gpstracker.GpsTrackerDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-gps-tracker/src/main/java/com/ispf/driver/gpstracker/GpsTrackerDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-gps-tracker/src/test/java/com/ispf/driver/gpstracker/GpsTrackerPointTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-gps-tracker",
+      "interop_in_workflow": true,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "graph-db",
+      "pack_id": "ispf-driver-graph-db",
+      "driver_class": "com.ispf.driver.graphdb.GraphDbDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-graph-db/src/main/java/com/ispf/driver/graphdb/GraphDbDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-graph-db/src/test/java/com/ispf/driver/graphdb/GraphDbDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-graph-db",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "graphql",
+      "pack_id": "ispf-driver-graphql",
+      "driver_class": "com.ispf.driver.graphql.GraphqlDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-graphql/src/main/java/com/ispf/driver/graphql/GraphqlDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "grpc",
+      "pack_id": "ispf-driver-grpc",
+      "driver_class": "com.ispf.driver.grpc.GrpcDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-grpc/src/main/java/com/ispf/driver/grpc/GrpcDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "hart-ip",
+      "pack_id": "ispf-driver-hart-ip",
+      "driver_class": "com.ispf.driver.hartip.HartIpDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-hart-ip/src/main/java/com/ispf/driver/hartip/HartIpDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "hart-serial",
+      "pack_id": "ispf-driver-hart-serial",
+      "driver_class": "com.ispf.driver.hartserial.HartSerialDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-hart-serial/src/main/java/com/ispf/driver/hartserial/HartSerialDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "haystack",
+      "pack_id": "ispf-driver-haystack",
+      "driver_class": "com.ispf.driver.haystack.HaystackDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-haystack/src/main/java/com/ispf/driver/haystack/HaystackDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-haystack/src/test/java/com/ispf/driver/haystack/HaystackDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-haystack",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "hitachi-hidic",
+      "pack_id": "ispf-driver-hitachi-hidic",
+      "driver_class": "com.ispf.driver.hitachihidic.HitachiHidicDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-hitachi-hidic/src/main/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "http",
+      "pack_id": "ispf-driver-http",
+      "driver_class": "com.ispf.driver.http.HttpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-http/src/main/java/com/ispf/driver/http/HttpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-http/src/test/java/com/ispf/driver/http/HttpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-http",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "http-server",
+      "pack_id": "ispf-driver-http-server",
+      "driver_class": "com.ispf.driver.httpserver.HttpServerDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-http-server/src/main/java/com/ispf/driver/httpserver/HttpServerDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-http-server/src/test/java/com/ispf/driver/httpserver/HttpServerDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-http-server",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "icmp",
+      "pack_id": "ispf-driver-icmp",
+      "driver_class": "com.ispf.driver.icmp.IcmpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-icmp/src/main/java/com/ispf/driver/icmp/IcmpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-icmp/src/test/java/com/ispf/driver/icmp/IcmpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-icmp",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "idec-microsmart",
+      "pack_id": "ispf-driver-idec-microsmart",
+      "driver_class": "com.ispf.driver.idecmicrosmart.IdecMicrosmartDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-idec-microsmart/src/main/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "iec101",
+      "pack_id": "ispf-driver-iec101",
+      "driver_class": "com.ispf.driver.iec101.Iec101DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec101/src/main/java/com/ispf/driver/iec101/Iec101DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "iec103",
+      "pack_id": "ispf-driver-iec103",
+      "driver_class": "com.ispf.driver.iec103.Iec103DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec103/src/main/java/com/ispf/driver/iec103/Iec103DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "iec104",
+      "pack_id": "ispf-driver-iec104",
+      "driver_class": "com.ispf.driver.iec104.Iec104DeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec104/src/main/java/com/ispf/driver/iec104/Iec104DeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-iec104/src/test/java/com/ispf/driver/iec104/Iec104DeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-iec104",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "iec104-server",
+      "pack_id": "ispf-driver-iec104-server",
+      "driver_class": "com.ispf.driver.iec104server.Iec104ServerDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE",
+        "QUALITY"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec104-server/src/main/java/com/ispf/driver/iec104server/Iec104ServerDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-iec104-server/src/test/java/com/ispf/driver/iec104server/Iec104ServerDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-iec104-server",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "iec61850",
+      "pack_id": "ispf-driver-iec61850",
+      "driver_class": "com.ispf.driver.iec61850.Iec61850DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec61850/src/main/java/com/ispf/driver/iec61850/Iec61850DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "iec61850-goose",
+      "pack_id": "ispf-driver-iec61850-goose",
+      "driver_class": "com.ispf.driver.iec61850goose.Iec61850GooseDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec61850-goose/src/main/java/com/ispf/driver/iec61850goose/Iec61850GooseDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "iec61850-sv",
+      "pack_id": "ispf-driver-iec61850-sv",
+      "driver_class": "com.ispf.driver.iec61850sv.Iec61850SvDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec61850-sv/src/main/java/com/ispf/driver/iec61850sv/Iec61850SvDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "iec62056",
+      "pack_id": "ispf-driver-iec62056",
+      "driver_class": "com.ispf.driver.iec62056.Iec62056DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-iec62056/src/main/java/com/ispf/driver/iec62056/Iec62056DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ieee2030-5",
+      "pack_id": "ispf-driver-ieee2030-5",
+      "driver_class": "com.ispf.driver.ieee20305.Ieee20305DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ieee2030-5/src/main/java/com/ispf/driver/ieee20305/Ieee20305DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "imap",
+      "pack_id": "ispf-driver-imap",
+      "driver_class": "com.ispf.driver.imap.ImapDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-imap/src/main/java/com/ispf/driver/imap/ImapDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-imap/src/test/java/com/ispf/driver/imap/ImapDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-imap",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "ingress-sflow",
+      "pack_id": "ispf-driver-ingress-sflow",
+      "driver_class": "com.ispf.driver.ingress.sflow.SflowIngressDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ingress-sflow/src/main/java/com/ispf/driver/ingress/sflow/SflowIngressDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ingress-sflow/src/test/java/com/ispf/driver/ingress/sflow/SflowIngressDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ingress-sflow",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": [
+        {
+          "severity": "WARN",
+          "code": "WRITE_UNDERCLAIM",
+          "message": "writePoint looks real but matrix has no WRITE"
+        }
+      ]
+    },
+    {
+      "driver_id": "ingress-snmp-trap",
+      "pack_id": "ispf-driver-ingress-snmp-trap",
+      "driver_class": "com.ispf.driver.ingress.snmptrap.SnmpTrapIngressDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ingress-snmp-trap/src/main/java/com/ispf/driver/ingress/snmptrap/SnmpTrapIngressDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ingress-snmp-trap/src/test/java/com/ispf/driver/ingress/snmptrap/SnmpTrapIngressDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ingress-snmp-trap",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": [
+        {
+          "severity": "WARN",
+          "code": "WRITE_UNDERCLAIM",
+          "message": "writePoint looks real but matrix has no WRITE"
+        }
+      ]
+    },
+    {
+      "driver_id": "ingress-syslog",
+      "pack_id": "ispf-driver-ingress-syslog",
+      "driver_class": "com.ispf.driver.ingress.syslog.SyslogIngressDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ingress-syslog/src/main/java/com/ispf/driver/ingress/syslog/SyslogIngressDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ingress-syslog/src/test/java/com/ispf/driver/ingress/syslog/SyslogIngressDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ingress-syslog",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": [
+        {
+          "severity": "WARN",
+          "code": "WRITE_UNDERCLAIM",
+          "message": "writePoint looks real but matrix has no WRITE"
+        }
+      ]
+    },
+    {
+      "driver_id": "interbus",
+      "pack_id": "ispf-driver-interbus",
+      "driver_class": "com.ispf.driver.interbus.InterbusDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-interbus/src/main/java/com/ispf/driver/interbus/InterbusDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "io-link",
+      "pack_id": "ispf-driver-io-link",
+      "driver_class": "com.ispf.driver.iolink.IoLinkDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-io-link/src/main/java/com/ispf/driver/iolink/IoLinkDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ip-host",
+      "pack_id": "ispf-driver-ip-host",
+      "driver_class": "com.ispf.driver.iphost.IpHostDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ip-host/src/main/java/com/ispf/driver/iphost/IpHostDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ip-host/src/test/java/com/ispf/driver/iphost/IpHostDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ip-host",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "ipmi",
+      "pack_id": "ispf-driver-ipmi",
+      "driver_class": "com.ispf.driver.ipmi.IpmiDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ipmi/src/main/java/com/ispf/driver/ipmi/IpmiDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ipmi/src/test/java/com/ispf/driver/ipmi/IpmiDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ipmi",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "isa100",
+      "pack_id": "ispf-driver-isa100",
+      "driver_class": "com.ispf.driver.isa100.Isa100DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-isa100/src/main/java/com/ispf/driver/isa100/Isa100DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "j1939",
+      "pack_id": "ispf-driver-j1939",
+      "driver_class": "com.ispf.driver.j1939.J1939DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-j1939/src/main/java/com/ispf/driver/j1939/J1939DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "jdbc",
+      "pack_id": "ispf-driver-jdbc",
+      "driver_class": "com.ispf.driver.jdbc.JdbcDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-jdbc/src/main/java/com/ispf/driver/jdbc/JdbcDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-jdbc/src/test/java/com/ispf/driver/jdbc/JdbcDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-jdbc",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "jms",
+      "pack_id": "ispf-driver-jms",
+      "driver_class": "com.ispf.driver.jms.JmsDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-jms/src/main/java/com/ispf/driver/jms/JmsDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-jms/src/test/java/com/ispf/driver/jms/JmsDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-jms",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "jmx",
+      "pack_id": "ispf-driver-jmx",
+      "driver_class": "com.ispf.driver.jmx.JmxDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-jmx/src/main/java/com/ispf/driver/jmx/JmxDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-jmx/src/test/java/com/ispf/driver/jmx/JmxDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-jmx",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "kafka",
+      "pack_id": "ispf-driver-kafka",
+      "driver_class": "com.ispf.driver.kafka.KafkaDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-kafka/src/main/java/com/ispf/driver/kafka/KafkaDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-kafka/src/test/java/com/ispf/driver/kafka/KafkaDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-kafka",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "keyence-hostlink",
+      "pack_id": "ispf-driver-keyence-hostlink",
+      "driver_class": "com.ispf.driver.keyencehostlink.KeyenceHostlinkDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-keyence-hostlink/src/main/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "knx",
+      "pack_id": "ispf-driver-knx",
+      "driver_class": "com.ispf.driver.knx.KnxDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-knx/src/main/java/com/ispf/driver/knx/KnxDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "knx-tp",
+      "pack_id": "ispf-driver-knx-tp",
+      "driver_class": "com.ispf.driver.knxtp.KnxTpDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-knx-tp/src/main/java/com/ispf/driver/knxtp/KnxTpDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ldap",
+      "pack_id": "ispf-driver-ldap",
+      "driver_class": "com.ispf.driver.ldap.LdapDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ldap/src/main/java/com/ispf/driver/ldap/LdapDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ldap/src/test/java/com/ispf/driver/ldap/LdapDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ldap",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "lonworks",
+      "pack_id": "ispf-driver-lonworks",
+      "driver_class": "com.ispf.driver.lonworks.LonworksDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-lonworks/src/main/java/com/ispf/driver/lonworks/LonworksDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "lorawan",
+      "pack_id": "ispf-driver-lorawan",
+      "driver_class": "com.ispf.driver.lorawan.LorawanDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-lorawan/src/main/java/com/ispf/driver/lorawan/LorawanDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ls-xgt",
+      "pack_id": "ispf-driver-ls-xgt",
+      "driver_class": "com.ispf.driver.lsxgt.LsXgtDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ls-xgt/src/main/java/com/ispf/driver/lsxgt/LsXgtDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "lwm2m",
+      "pack_id": "ispf-driver-lwm2m",
+      "driver_class": "com.ispf.driver.lwm2m.Lwm2mDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-lwm2m/src/main/java/com/ispf/driver/lwm2m/Lwm2mDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "matter",
+      "pack_id": "ispf-driver-matter",
+      "driver_class": "com.ispf.driver.matter.MatterDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-matter/src/main/java/com/ispf/driver/matter/MatterDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "mbus",
+      "pack_id": "ispf-driver-mbus",
+      "driver_class": "com.ispf.driver.mbus.MbusDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-mbus/src/main/java/com/ispf/driver/mbus/MbusDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-mbus/src/test/java/com/ispf/driver/mbus/MbusDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-mbus",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "message-stream",
+      "pack_id": "ispf-driver-message-stream",
+      "driver_class": "com.ispf.driver.messagestream.MessageStreamDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-message-stream/src/main/java/com/ispf/driver/messagestream/MessageStreamDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-message-stream/src/test/java/com/ispf/driver/messagestream/MessageStreamDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-message-stream",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "mitsubishi-melsec",
+      "pack_id": "ispf-driver-mitsubishi-melsec",
+      "driver_class": "com.ispf.driver.mitsubishimelsec.MitsubishiMelsecDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-mitsubishi-melsec/src/main/java/com/ispf/driver/mitsubishimelsec/MitsubishiMelsecDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "mitsubishi-slmp",
+      "pack_id": "ispf-driver-mitsubishi-slmp",
+      "driver_class": "com.ispf.driver.mitsubishislmp.MitsubishiSlmpDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-mitsubishi-slmp/src/main/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "modbus-rtu",
+      "pack_id": "ispf-driver-modbus-rtu",
+      "driver_class": "com.ispf.driver.modbusrtu.ModbusRtuDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-modbus-rtu/src/main/java/com/ispf/driver/modbusrtu/ModbusRtuDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-modbus-rtu/src/test/java/com/ispf/driver/modbusrtu/ModbusRtuDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-modbus-rtu",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "modbus-tcp",
+      "pack_id": "ispf-driver-modbus",
+      "driver_class": "com.ispf.driver.modbus.ModbusTcpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-modbus/src/main/java/com/ispf/driver/modbus/ModbusTcpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-modbus/src/test/java/com/ispf/driver/modbus/ModbusTcpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-modbus",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "modbus-udp",
+      "pack_id": "ispf-driver-modbus-udp",
+      "driver_class": "com.ispf.driver.modbusudp.ModbusUdpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-modbus-udp/src/main/java/com/ispf/driver/modbusudp/ModbusUdpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-modbus/src/test/java/com/ispf/driver/modbus/ModbusTcpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-modbus-udp",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "modem-at",
+      "pack_id": "ispf-driver-modem-at",
+      "driver_class": "com.ispf.driver.modemat.ModemAtDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-modem-at/src/main/java/com/ispf/driver/modemat/ModemAtDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-modem-at/src/test/java/com/ispf/driver/modemat/ModemAtDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-modem-at",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "mqtt",
+      "pack_id": "ispf-driver-mqtt",
+      "driver_class": "com.ispf.driver.mqtt.MqttDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-mqtt/src/main/java/com/ispf/driver/mqtt/MqttDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-mqtt/src/test/java/com/ispf/driver/mqtt/MqttDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-mqtt",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "mqtt-sn",
+      "pack_id": "ispf-driver-mqtt-sn",
+      "driver_class": "com.ispf.driver.mqttsn.MqttSnDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-mqtt-sn/src/main/java/com/ispf/driver/mqttsn/MqttSnDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "mtconnect",
+      "pack_id": "ispf-driver-mtconnect",
+      "driver_class": "com.ispf.driver.mtconnect.MtconnectDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-mtconnect/src/main/java/com/ispf/driver/mtconnect/MtconnectDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "nats",
+      "pack_id": "ispf-driver-nats",
+      "driver_class": "com.ispf.driver.nats.NatsDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-nats/src/main/java/com/ispf/driver/nats/NatsDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "nmea",
+      "pack_id": "ispf-driver-nmea",
+      "driver_class": "com.ispf.driver.nmea.NmeaDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-nmea/src/main/java/com/ispf/driver/nmea/NmeaDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-nmea/src/test/java/com/ispf/driver/nmea/NmeaDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-nmea",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "ocpp",
+      "pack_id": "ispf-driver-ocpp",
+      "driver_class": "com.ispf.driver.ocpp.OcppDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ocpp/src/main/java/com/ispf/driver/ocpp/OcppDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "odata",
+      "pack_id": "ispf-driver-odata",
+      "driver_class": "com.ispf.driver.odata.OdataDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-odata/src/main/java/com/ispf/driver/odata/OdataDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "odbc",
+      "pack_id": "ispf-driver-odbc",
+      "driver_class": "com.ispf.driver.odbc.OdbcDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-odbc/src/main/java/com/ispf/driver/odbc/OdbcDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-odbc/src/test/java/com/ispf/driver/odbc/OdbcDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-odbc",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "omron-fins",
+      "pack_id": "ispf-driver-omron-fins",
+      "driver_class": "com.ispf.driver.omronfins.OmronFinsDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-omron-fins/src/main/java/com/ispf/driver/omronfins/OmronFinsDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-omron-fins/src/test/java/com/ispf/driver/omronfins/OmronFinsDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-omron-fins",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "onvif",
+      "pack_id": "ispf-driver-onvif",
+      "driver_class": "com.ispf.driver.onvif.OnvifDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-onvif/src/main/java/com/ispf/driver/onvif/OnvifDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "opc-ae",
+      "pack_id": "ispf-driver-opc-ae",
+      "driver_class": "com.ispf.driver.opcae.OpcAeDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-opc-ae/src/main/java/com/ispf/driver/opcae/OpcAeDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "opc-bridge",
+      "pack_id": "ispf-driver-opc-bridge",
+      "driver_class": "com.ispf.driver.opcbridge.OpcBridgeDeviceDriver",
+      "maturity": "BETA",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-opc-bridge/src/main/java/com/ispf/driver/opcbridge/OpcBridgeDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-opc-bridge/src/test/java/com/ispf/driver/opcbridge/OpcBridgeDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-opc-bridge",
+      "interop_in_workflow": true,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": null,
+      "readiness": "SHELL_BETA",
+      "findings": []
+    },
+    {
+      "driver_id": "opc-da",
+      "pack_id": "ispf-driver-opc-da",
+      "driver_class": "com.ispf.driver.opcda.OpcDaDeviceDriver",
+      "maturity": "BETA",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-opc-da/src/main/java/com/ispf/driver/opcda/OpcDaDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-opc-da/src/test/java/com/ispf/driver/opcda/OpcDaDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-opc-da",
+      "interop_in_workflow": true,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": null,
+      "readiness": "SHELL_BETA",
+      "findings": []
+    },
+    {
+      "driver_id": "opc-hda",
+      "pack_id": "ispf-driver-opc-hda",
+      "driver_class": "com.ispf.driver.opchda.OpcHdaDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-opc-hda/src/main/java/com/ispf/driver/opchda/OpcHdaDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "opcua",
+      "pack_id": "ispf-driver-opcua",
+      "driver_class": "com.ispf.driver.opcua.OpcUaDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "SUBSCRIBE",
+        "WRITE",
+        "DISCOVERY",
+        "QUALITY",
+        "OBSERVED_AT"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-opcua/src/main/java/com/ispf/driver/opcua/OpcUaDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-opcua/src/test/java/com/ispf/driver/opcua/OpcUaDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-opcua",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "opcua-pubsub",
+      "pack_id": "ispf-driver-opcua-pubsub",
+      "driver_class": "com.ispf.driver.opcuapubsub.OpcuaPubsubDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-opcua-pubsub/src/main/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "opcua-server",
+      "pack_id": "ispf-driver-opcua-server",
+      "driver_class": "com.ispf.driver.opcuaserver.OpcUaServerDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE",
+        "QUALITY"
+      ],
+      "top10": false,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-opcua-server/src/main/java/com/ispf/driver/opcuaserver/OpcUaServerDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-opcua-server/src/test/java/com/ispf/driver/opcuaserver/OpcUaServerDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-opcua-server",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "openadr",
+      "pack_id": "ispf-driver-openadr",
+      "driver_class": "com.ispf.driver.openadr.OpenadrDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-openadr/src/main/java/com/ispf/driver/openadr/OpenadrDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "panasonic-mewto",
+      "pack_id": "ispf-driver-panasonic-mewto",
+      "driver_class": "com.ispf.driver.panasonicmewto.PanasonicMewtoDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-panasonic-mewto/src/main/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "plcnext",
+      "pack_id": "ispf-driver-plcnext",
+      "driver_class": "com.ispf.driver.plcnext.PlcnextDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-plcnext/src/main/java/com/ispf/driver/plcnext/PlcnextDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "pop3",
+      "pack_id": "ispf-driver-pop3",
+      "driver_class": "com.ispf.driver.pop3.Pop3DeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-pop3/src/main/java/com/ispf/driver/pop3/Pop3DeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-pop3/src/test/java/com/ispf/driver/pop3/Pop3DeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-pop3",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "profibus",
+      "pack_id": "ispf-driver-profibus",
+      "driver_class": "com.ispf.driver.profibus.ProfibusDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-profibus/src/main/java/com/ispf/driver/profibus/ProfibusDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "profibus-pa",
+      "pack_id": "ispf-driver-profibus-pa",
+      "driver_class": "com.ispf.driver.profibuspa.ProfibusPaDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-profibus-pa/src/main/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "profinet",
+      "pack_id": "ispf-driver-profinet",
+      "driver_class": "com.ispf.driver.profinet.ProfinetDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-profinet/src/main/java/com/ispf/driver/profinet/ProfinetDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "pulsar",
+      "pack_id": "ispf-driver-pulsar",
+      "driver_class": "com.ispf.driver.pulsar.PulsarDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-pulsar/src/main/java/com/ispf/driver/pulsar/PulsarDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "radius",
+      "pack_id": "ispf-driver-radius",
+      "driver_class": "com.ispf.driver.radius.RadiusDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-radius/src/main/java/com/ispf/driver/radius/RadiusDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-radius/src/test/java/com/ispf/driver/radius/RadiusDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-radius",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "redis",
+      "pack_id": "ispf-driver-redis",
+      "driver_class": "com.ispf.driver.redis.RedisDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-redis/src/main/java/com/ispf/driver/redis/RedisDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "rockwell-csp",
+      "pack_id": "ispf-driver-rockwell-csp",
+      "driver_class": "com.ispf.driver.rockwellcsp.RockwellCspDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-rockwell-csp/src/main/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "rockwell-df1",
+      "pack_id": "ispf-driver-rockwell-df1",
+      "driver_class": "com.ispf.driver.rockwelldf1.RockwellDf1DeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-rockwell-df1/src/main/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "rtsp",
+      "pack_id": "ispf-driver-rtsp",
+      "driver_class": "com.ispf.driver.rtsp.RtspDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-rtsp/src/main/java/com/ispf/driver/rtsp/RtspDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "s7",
+      "pack_id": "ispf-driver-s7",
+      "driver_class": "com.ispf.driver.s7.S7DeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-s7/src/main/java/com/ispf/driver/s7/S7DeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-s7/src/test/java/com/ispf/driver/s7/S7DeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-s7",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "schneider-umac",
+      "pack_id": "ispf-driver-schneider-umac",
+      "driver_class": "com.ispf.driver.schneiderumac.SchneiderUmacDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-schneider-umac/src/main/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "scpi",
+      "pack_id": "ispf-driver-scpi",
+      "driver_class": "com.ispf.driver.scpi.ScpiDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-scpi/src/main/java/com/ispf/driver/scpi/ScpiDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "secs-gem",
+      "pack_id": "ispf-driver-secs-gem",
+      "driver_class": "com.ispf.driver.secsgem.SecsGemDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-secs-gem/src/main/java/com/ispf/driver/secsgem/SecsGemDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "sigfox",
+      "pack_id": "ispf-driver-sigfox",
+      "driver_class": "com.ispf.driver.sigfox.SigfoxDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-sigfox/src/main/java/com/ispf/driver/sigfox/SigfoxDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "sip",
+      "pack_id": "ispf-driver-sip",
+      "driver_class": "com.ispf.driver.sip.SipDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-sip/src/main/java/com/ispf/driver/sip/SipDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-sip/src/test/java/com/ispf/driver/sip/SipDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-sip",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "smb",
+      "pack_id": "ispf-driver-smb",
+      "driver_class": "com.ispf.driver.smb.SmbDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-smb/src/main/java/com/ispf/driver/smb/SmbDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-smb/src/test/java/com/ispf/driver/smb/SmbPointTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-smb",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "smi-s",
+      "pack_id": "ispf-driver-smis",
+      "driver_class": "com.ispf.driver.smis.SmisDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-smis/src/main/java/com/ispf/driver/smis/SmisDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-smis/src/test/java/com/ispf/driver/smis/SmisDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-smis",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "smpp",
+      "pack_id": "ispf-driver-smpp",
+      "driver_class": "com.ispf.driver.smpp.SmppDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-smpp/src/main/java/com/ispf/driver/smpp/SmppDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-smpp/src/test/java/com/ispf/driver/smpp/SmppDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-smpp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "sms",
+      "pack_id": "ispf-driver-sms",
+      "driver_class": "com.ispf.driver.sms.SmsDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-sms/src/main/java/com/ispf/driver/sms/SmsDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-sms/src/test/java/com/ispf/driver/sms/SmsDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-sms",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "snmp",
+      "pack_id": "ispf-driver-snmp",
+      "driver_class": "com.ispf.driver.snmp.SnmpDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-snmp/src/main/java/com/ispf/driver/snmp/SnmpDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-snmp/src/test/java/com/ispf/driver/snmp/SnmpDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-snmp",
+      "interop_in_workflow": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "soap",
+      "pack_id": "ispf-driver-soap",
+      "driver_class": "com.ispf.driver.soap.SoapDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-soap/src/main/java/com/ispf/driver/soap/SoapDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-soap/src/test/java/com/ispf/driver/soap/SoapDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-soap",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "someip",
+      "pack_id": "ispf-driver-someip",
+      "driver_class": "com.ispf.driver.someip.SomeipDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-someip/src/main/java/com/ispf/driver/someip/SomeipDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "sparkplug-b",
+      "pack_id": "ispf-driver-sparkplug-b",
+      "driver_class": "com.ispf.driver.sparkplugb.SparkplugBDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-sparkplug-b/src/main/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "ssh",
+      "pack_id": "ispf-driver-ssh",
+      "driver_class": "com.ispf.driver.ssh.SshDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-ssh/src/main/java/com/ispf/driver/ssh/SshDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-ssh/src/test/java/com/ispf/driver/ssh/SshDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-ssh",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "telnet",
+      "pack_id": "ispf-driver-telnet",
+      "driver_class": "com.ispf.driver.telnet.TelnetDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-telnet/src/main/java/com/ispf/driver/telnet/TelnetDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-telnet/src/test/java/com/ispf/driver/telnet/TelnetDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-telnet",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "thread",
+      "pack_id": "ispf-driver-thread",
+      "driver_class": "com.ispf.driver.thread.ThreadDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-thread/src/main/java/com/ispf/driver/thread/ThreadDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "toshiba-t-series",
+      "pack_id": "ispf-driver-toshiba-t-series",
+      "driver_class": "com.ispf.driver.toshibatseries.ToshibaTSeriesDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-toshiba-t-series/src/main/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "uds",
+      "pack_id": "ispf-driver-uds",
+      "driver_class": "com.ispf.driver.uds.UdsDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-uds/src/main/java/com/ispf/driver/uds/UdsDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "unitronics",
+      "pack_id": "ispf-driver-unitronics",
+      "driver_class": "com.ispf.driver.unitronics.UnitronicsDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-unitronics/src/main/java/com/ispf/driver/unitronics/UnitronicsDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "virtual",
+      "pack_id": "ispf-driver-virtual",
+      "driver_class": "com.ispf.driver.virtual.VirtualDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "QUALITY"
+      ],
+      "top10": true,
+      "top20": true,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-virtual/src/main/java/com/ispf/driver/virtual/VirtualDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-virtual/src/test/java/com/ispf/driver/virtual/VirtualUnifiedProfileTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-virtual",
+      "interop_in_workflow": true,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "visa",
+      "pack_id": "ispf-driver-visa",
+      "driver_class": "com.ispf.driver.visa.VisaDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-visa/src/main/java/com/ispf/driver/visa/VisaDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "vmware",
+      "pack_id": "ispf-driver-vmware",
+      "driver_class": "com.ispf.driver.vmware.VmwareDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-vmware/src/main/java/com/ispf/driver/vmware/VmwareDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-vmware/src/test/java/com/ispf/driver/vmware/VmwareDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-vmware",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "wago",
+      "pack_id": "ispf-driver-wago",
+      "driver_class": "com.ispf.driver.wago.WagoDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-wago/src/main/java/com/ispf/driver/wago/WagoDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "weather-station",
+      "pack_id": "ispf-driver-weather-station",
+      "driver_class": "com.ispf.driver.weatherstation.WeatherStationDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-weather-station/src/main/java/com/ispf/driver/weatherstation/WeatherStationDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "web-transaction",
+      "pack_id": "ispf-driver-web-transaction",
+      "driver_class": "com.ispf.driver.webtransaction.WebTransactionDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-web-transaction/src/main/java/com/ispf/driver/webtransaction/WebTransactionDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-web-transaction/src/test/java/com/ispf/driver/webtransaction/WebTransactionDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-web-transaction",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "webhook",
+      "pack_id": "ispf-driver-webhook",
+      "driver_class": "com.ispf.driver.webhook.WebhookDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-webhook/src/main/java/com/ispf/driver/webhook/WebhookDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-webhook/src/test/java/com/ispf/driver/webhook/WebhookDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-webhook",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "websocket",
+      "pack_id": "ispf-driver-websocket",
+      "driver_class": "com.ispf.driver.websocket.WebsocketDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-websocket/src/main/java/com/ispf/driver/websocket/WebsocketDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "weighbridge",
+      "pack_id": "ispf-driver-weighbridge",
+      "driver_class": "com.ispf.driver.weighbridge.WeighbridgeDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-weighbridge/src/main/java/com/ispf/driver/weighbridge/WeighbridgeDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "wirelesshart",
+      "pack_id": "ispf-driver-wirelesshart",
+      "driver_class": "com.ispf.driver.wirelesshart.WirelesshartDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-wirelesshart/src/main/java/com/ispf/driver/wirelesshart/WirelesshartDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "wisun",
+      "pack_id": "ispf-driver-wisun",
+      "driver_class": "com.ispf.driver.wisun.WisunDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-wisun/src/main/java/com/ispf/driver/wisun/WisunDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "wmbus",
+      "pack_id": "ispf-driver-wmbus",
+      "driver_class": "com.ispf.driver.wmbus.WmbusDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-wmbus/src/main/java/com/ispf/driver/wmbus/WmbusDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "wmi",
+      "pack_id": "ispf-driver-wmi",
+      "driver_class": "com.ispf.driver.wmi.WmiDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-wmi/src/main/java/com/ispf/driver/wmi/WmiDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-wmi/src/test/java/com/ispf/driver/wmi/WmiDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-wmi",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "xmpp",
+      "pack_id": "ispf-driver-xmpp",
+      "driver_class": "com.ispf.driver.xmpp.XmppDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-xmpp/src/main/java/com/ispf/driver/xmpp/XmppDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "loopback_path": "packages/ispf-driver-xmpp/src/test/java/com/ispf/driver/xmpp/XmppDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-xmpp",
+      "interop_in_workflow": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
+      "driver_id": "yaskawa-memobus",
+      "pack_id": "ispf-driver-yaskawa-memobus",
+      "driver_class": "com.ispf.driver.yaskawamemobus.YaskawaMemobusDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-yaskawa-memobus/src/main/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "zigbee",
+      "pack_id": "ispf-driver-zigbee",
+      "driver_class": "com.ispf.driver.zigbee.ZigbeeDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-zigbee/src/main/java/com/ispf/driver/zigbee/ZigbeeDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    },
+    {
+      "driver_id": "zwave",
+      "pack_id": "ispf-driver-zwave",
+      "driver_class": "com.ispf.driver.zwave.ZwaveDeviceDriver",
+      "maturity": "STUB",
+      "source": "stub-list",
+      "capabilities": [
+        "POLL"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-zwave/src/main/java/com/ispf/driver/zwave/ZwaveDeviceDriver.java",
+      "extends_protocol_stub": true,
+      "loopback_path": "",
+      "loopback_ok": null,
+      "interop_module": "",
+      "interop_in_workflow": null,
+      "write_claimed": false,
+      "write_looks_stub": null,
+      "production_javadoc_stub": null,
+      "readiness": "STUB",
+      "findings": [
+        {
+          "severity": "INFO",
+          "code": "STUB_CATALOG",
+          "message": "protocol catalog stub — TCP reachability until promoted"
+        }
+      ]
+    }
+  ]
+}
