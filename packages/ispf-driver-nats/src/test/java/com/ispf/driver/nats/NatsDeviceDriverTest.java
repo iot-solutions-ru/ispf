@@ -87,7 +87,7 @@ class NatsDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "20.1")
         ));
-        assertEquals("20.1", natsServer.get("sensors.temp"));
+        assertEquals("20.1", awaitServerValue(natsServer, "sensors.temp", "20.1", 2000));
         assertEquals("20.1", object.variables.get("temperature").firstRow().get("value"));
 
         // retained value still available on re-read
@@ -122,6 +122,20 @@ class NatsDeviceDriverTest {
 
         DriverException error = assertThrows(DriverException.class, driver::connect);
         assertTrue(error.getMessage().contains("NATS connect failed"));
+    }
+
+
+    private static String awaitServerValue(FakeNatsServer server, String subject, String expected, long timeoutMs)
+            throws InterruptedException {
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+        while (System.nanoTime() < deadline) {
+            String value = server.get(subject);
+            if (expected.equals(value)) {
+                return value;
+            }
+            Thread.sleep(10);
+        }
+        return server.get(subject);
     }
 
     private static final class FakeNatsServer implements AutoCloseable {

@@ -96,6 +96,7 @@ public class MqttSnDeviceDriver implements DeviceDriver {
     private volatile byte[] pendingBody;
     private volatile Integer pendingTopicId;
     private volatile Byte pendingReturnCode;
+    private volatile String pendingTopicName;
 
     @Override
     public DriverMetadata metadata() {
@@ -224,15 +225,12 @@ public class MqttSnDeviceDriver implements DeviceDriver {
     private int subscribe(String topic) throws DriverException {
         int msgId = nextMsgId();
         byte[] frame = encodeSubscribe(topic, msgId);
-        expect(MSG_SUBACK, msgId, () -> send(frame));
+        expect(MSG_SUBACK, msgId, topic, () -> send(frame));
         if (pendingReturnCode == null || pendingReturnCode != RC_ACCEPTED) {
             throw new DriverException("MQTT-SN SUBACK rejected for topic " + topic);
         }
         int topicId = pendingTopicId == null ? 0 : pendingTopicId;
-        if (topicId > 0) {
-            topicIds.put(topic, topicId);
-            topicNames.put(topicId, topic);
-        }
+        rememberTopic(topic, topicId);
         return topicId;
     }
 
@@ -243,7 +241,7 @@ public class MqttSnDeviceDriver implements DeviceDriver {
         }
         int msgId = nextMsgId();
         byte[] frame = encodeRegister(topic, msgId);
-        expect(MSG_REGACK, msgId, () -> send(frame));
+        expect(MSG_REGACK, msgId, topic, () -> send(frame));
         if (pendingReturnCode == null || pendingReturnCode != RC_ACCEPTED) {
             throw new DriverException("MQTT-SN REGACK rejected for topic " + topic);
         }
@@ -251,9 +249,20 @@ public class MqttSnDeviceDriver implements DeviceDriver {
         if (topicId <= 0) {
             throw new DriverException("MQTT-SN REGACK missing topic id for " + topic);
         }
+        rememberTopic(topic, topicId);
+        return topicId;
+    }
+
+    private void rememberTopic(String topic, int topicId) {
+        if (topic == null || topicId <= 0) {
+            return;
+        }
         topicIds.put(topic, topicId);
         topicNames.put(topicId, topic);
-        return topicId;
+        String orphan = lastPayloads.remove("topicId:" + topicId);
+        if (orphan != null) {
+            lastPayloads.put(topic, orphan);
+        }
     }
 
     private void publish(int topicId, String payload) throws DriverException {
@@ -271,11 +280,28 @@ public class MqttSnDeviceDriver implements DeviceDriver {
         try {
             while (true) {
                 String value = lastPayloads.get(topic);
+                if (value == null) {
+                    Integer topicId = topicIds.get(topic);
+                    if (topicId != null) {
+                        value = lastPayloads.get("topicId:" + topicId);
+                        if (value != null) {
+                            lastPayloads.put(topic, value);
+                        }
+                    }
+                }
                 if (value != null) {
                     return value;
                 }
                 long remaining = deadline - System.nanoTime();
                 if (remaining <= 0) {
+                    Integer topicId = topicIds.get(topic);
+                    if (topicId != null) {
+                        String orphan = lastPayloads.get("topicId:" + topicId);
+                        if (orphan != null) {
+                            lastPayloads.put(topic, orphan);
+                            return orphan;
+                        }
+                    }
                     return lastPayloads.getOrDefault(topic, "");
                 }
                 try {
@@ -291,11 +317,16 @@ public class MqttSnDeviceDriver implements DeviceDriver {
     }
 
     private void expect(byte msgType, int msgId, IORunnable sendAction) throws DriverException {
+        expect(msgType, msgId, null, sendAction);
+    }
+
+    private void expect(byte msgType, int msgId, String topicName, IORunnable sendAction) throws DriverException {
         lock.lock();
         try {
             clearPendingUnlocked();
             pendingType = msgType;
             pendingMsgId = msgId;
+            pendingTopicName = topicName;
             try {
                 sendAction.run();
             } catch (IOException e) {
@@ -374,7 +405,11 @@ public class MqttSnDeviceDriver implements DeviceDriver {
                 pendingTopicId = body.getShort() & 0xFFFF;
                 int msgId = body.getShort() & 0xFFFF;
                 pendingReturnCode = body.get();
-                return pendingMsgId != null && pendingMsgId == msgId;
+                boolean matched = pendingMsgId != null && pendingMsgId == msgId;
+                if (matched && msg.type == MSG_REGACK) {
+                    rememberTopic(pendingTopicName, pendingTopicId);
+                }
+                return matched;
             }
             case MSG_SUBACK -> {
                 if (body.remaining() < 6) {
@@ -384,7 +419,11 @@ public class MqttSnDeviceDriver implements DeviceDriver {
                 pendingTopicId = body.getShort() & 0xFFFF;
                 int msgId = body.getShort() & 0xFFFF;
                 pendingReturnCode = body.get();
-                return pendingMsgId != null && pendingMsgId == msgId;
+                boolean matched = pendingMsgId != null && pendingMsgId == msgId;
+                if (matched) {
+                    rememberTopic(pendingTopicName, pendingTopicId);
+                }
+                return matched;
             }
             default -> {
                 return false;
@@ -403,17 +442,25 @@ public class MqttSnDeviceDriver implements DeviceDriver {
         byte[] data = new byte[buf.remaining()];
         buf.get(data);
         String payload = new String(data, StandardCharsets.UTF_8);
-        String topic = topicNames.get(topicId);
-        if (topic == null) {
-            topic = "topicId:" + topicId;
-        }
         lock.lock();
         try {
+            String topic = topicNames.get(topicId);
+            if (topic == null && pendingTopicName != null && pendingTopicId != null && pendingTopicId == topicId) {
+                topic = pendingTopicName;
+                rememberTopic(topic, topicId);
+            }
+            if (topic == null) {
+                topic = "topicId:" + topicId;
+            }
             lastPayloads.put(topic, payload);
+            if (!topic.startsWith("topicId:")) {
+                lastPayloads.put("topicId:" + topicId, payload);
+            }
             signal.signalAll();
         } finally {
             lock.unlock();
         }
+        String topic = topicNames.getOrDefault(topicId, "topicId:" + topicId);
         for (Map.Entry<String, String> entry : pointTopics.entrySet()) {
             if (topic.equals(entry.getValue())) {
                 driverObject.updateVariable(entry.getKey(), DataRecord.single(VALUE_SCHEMA, Map.of(
@@ -452,6 +499,7 @@ public class MqttSnDeviceDriver implements DeviceDriver {
         pendingBody = null;
         pendingTopicId = null;
         pendingReturnCode = null;
+        pendingTopicName = null;
     }
 
     static byte[] encodeConnect(String clientId, short durationSeconds) {
