@@ -55,7 +55,8 @@ WRITE_IMPL_RE = re.compile(
 )
 WRITE_STUB_MSG_RE = re.compile(
     r"not implemented|unsupported operation|write not supported|"
-    r"is read-only in|read-only driver|driver is read-only|read-only in v\d",
+    r"\bis read-only\b|read-only driver|driver is read-only|read-only in v\d|"
+    r"read-only stub",
     re.IGNORECASE,
 )
 STUB_JAVADOC_RE = re.compile(r"\b(stub|placeholder)\b", re.IGNORECASE)
@@ -86,6 +87,8 @@ class DriverRow:
     source_ok: bool = False
     source_path: str = ""
     extends_protocol_stub: bool = False
+    pack_contract_test: bool = False
+    pack_contract_test_path: str = ""
     loopback_path: str = ""
     loopback_ok: bool | None = None
     interop_module: str = ""
@@ -103,6 +106,14 @@ def load_packs() -> dict[str, dict]:
 
 def load_stub_ids() -> set[str]:
     return set(json.loads(STUB_JSON.read_text(encoding="utf-8"))["driverIds"])
+
+
+def find_pack_contract_test(pack_id: str) -> Path | None:
+    test_root = ROOT / "packages" / pack_id / "src" / "test" / "java"
+    if not test_root.is_dir():
+        return None
+    tests = sorted(test_root.rglob("*Test.java"))
+    return tests[0] if tests else None
 
 
 def parse_matrix(java_text: str) -> tuple[list[str], list[str], dict[str, dict]]:
@@ -165,8 +176,23 @@ def class_path(pack_id: str, driver_class: str) -> Path:
 
 
 def write_window(source: str) -> str:
+    """Return only the writePoint method body (avoid matching .submit/.send in neighbors)."""
     idx = source.find("void writePoint")
-    return "" if idx < 0 else source[idx : idx + 1200]
+    if idx < 0:
+        return ""
+    brace = source.find("{", idx)
+    if brace < 0:
+        return source[idx : idx + 200]
+    depth = 0
+    for i in range(brace, min(len(source), brace + 4000)):
+        ch = source[i]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return source[idx : i + 1]
+    return source[idx : brace + 800]
 
 
 def detect_write_stub(window: str) -> bool:
@@ -202,6 +228,8 @@ def classify(row: DriverRow) -> str:
     if any(f.severity == "FAIL" for f in row.findings):
         return "BLOCKED"
     if row.maturity == "STUB":
+        if row.extends_protocol_stub and row.pack_contract_test:
+            return "STUB_LAB"
         return "STUB"
     if row.maturity == "BETA" and row.top20:
         return "SHELL_BETA"
@@ -270,6 +298,14 @@ def audit() -> tuple[list[DriverRow], dict]:
             javadoc = CLASS_JAVADOC_RE.search(text)
             if javadoc and row.maturity == "PRODUCTION":
                 row.production_javadoc_stub = bool(STUB_JAVADOC_RE.search(javadoc.group(1)))
+
+        contract = find_pack_contract_test(pack_id)
+        if contract is not None:
+            row.pack_contract_test = True
+            row.pack_contract_test_path = str(contract.relative_to(ROOT))
+            if row.maturity == "STUB":
+                row.loopback_path = row.pack_contract_test_path
+                row.loopback_ok = True
 
         if not row.pack_dir_ok:
             row.findings.append(Finding("FAIL", "PACK_DIR_MISSING", f"packages/{pack_id} missing"))
@@ -368,13 +404,22 @@ def audit() -> tuple[list[DriverRow], dict]:
                 )
 
         if row.maturity == "STUB":
-            row.findings.append(
-                Finding(
-                    "INFO",
-                    "STUB_CATALOG",
-                    "protocol catalog stub — TCP reachability until promoted",
+            if row.pack_contract_test:
+                row.findings.append(
+                    Finding(
+                        "INFO",
+                        "STUB_LAB",
+                        "protocol catalog stub with pack contract test (lab loopback ≠ codec)",
+                    )
                 )
-            )
+            else:
+                row.findings.append(
+                    Finding(
+                        "WARN",
+                        "STUB_NO_CONTRACT",
+                        "protocol catalog stub without pack contract test — run raise-stub-readiness.py",
+                    )
+                )
 
         row.readiness = classify(row)
         rows.append(row)
@@ -438,7 +483,8 @@ def render_md(rows: list[DriverRow], summary: dict) -> str:
         "| `READY_LAB` | PRODUCTION + source + loopback; no FAIL (lab ≠ field) |",
         "| `SHELL_BETA` | Top-20 BETA shell |",
         "| `PARTIAL` | BETA / incomplete |",
-        "| `STUB` | Protocol catalog stub |",
+        "| `STUB_LAB` | Protocol stub + pack contract test (loopback; still no codec) |",
+        "| `STUB` | Protocol catalog stub without pack contract test |",
         "| `BLOCKED` | Honesty FAIL |",
         "",
         "## FAIL findings",

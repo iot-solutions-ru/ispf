@@ -23,9 +23,9 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **62** drivers at **PRODUCTION** (including `cwmp` / notification packs `email`/`sms`/`webhook` / `smb` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **97** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0 TCP reachability shells). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
+In `DriverProductionMatrix` — **62** drivers at **PRODUCTION** (including `cwmp` / notification packs `email`/`sms`/`webhook` / `smb` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **97** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0). Stub-kit **v0.2** adds TCP probe + memory loopback write; pack contract tests raise audit readiness to **`STUB_LAB`** (still ≠ PRODUCTION / ≠ field). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); protocol catalog stubs (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, …) are **STUB** until demand-driven promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); protocol catalog stubs (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, …) stay **STUB** / audit **`STUB_LAB`** until demand-driven codec promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
@@ -505,7 +505,7 @@ Current STUB/BETA candidates:
 |------------|----------|------|
 | `corba` | BETA | CORBA IIOP TCP shell — needs a third-party ORB |
 | `opc-da`, `opc-bridge` | BETA | Classic OPC shells — prefer `opcua` or external DA→UA |
-| Protocol catalog (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, …) | STUB | Generated one pack per id from `tools/driver-stubs/protocol-stubs.yaml` (shared base `ispf-driver-stub-kit`) |
+| Protocol catalog (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, …) | STUB (`STUB_LAB` audit) | Generated one pack per id from `tools/driver-stubs/protocol-stubs.yaml` (shared base `ispf-driver-stub-kit` v0.2 + pack contract tests via `raise-stub-readiness.py`) |
 | `vmware` | PRODUCTION | vSphere SOAP: Login + RetrieveProperties |
 | `smi-s` | PRODUCTION | SMI-S CIM-XML parse |
 
@@ -691,7 +691,7 @@ Detailed configs for base drivers — in the sections below. Others follow the s
 | `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
 | `corba` | IIOP TCP | JDK CORBA removed; use bridge |
-| Protocol catalog stubs | TCP reachability only | Demand-driven codec in dedicated pack |
+| Protocol catalog stubs | STUB_LAB (TCP probe + memory loopback + pack contract test) | Demand-driven codec in dedicated pack → PRODUCTION |
 | `wmi` | PowerShell | Windows only |
 
 ### Examples (brief)

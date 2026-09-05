@@ -32,6 +32,9 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **OT Trust — raise readiness for all 162 packs** — stub-kit **v0.2** (lab loopback write) +
+  contract tests for all **97** catalog stubs → audit label **`STUB_LAB`** (honest: still no protocol codec);
+  `tools/driver-stubs/raise-stub-readiness.py`; WRITE_UNDERCLAIM false-positives for ingress read-only drivers fixed.
 - **OT Trust — full 162-driver readiness audit** — `tools/driver-readiness-audit.py` + report
   [`docs/evidence/ot-trust/driver-readiness.md`](docs/evidence/ot-trust/driver-readiness.md)
   (matrix honesty: promote `email`/`sms`/`webhook`/`smb`, claim `smpp` WRITE; CI gate on interop workflow).

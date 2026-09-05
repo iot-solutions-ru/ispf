@@ -1,6 +1,6 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T07:52:46Z",
+    "generatedAt": "2026-09-05T08:12:02Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
@@ -9,7 +9,7 @@
       "BETA": 3
     },
     "byReadiness": {
-      "STUB": 97,
+      "STUB_LAB": 97,
       "READY_LAB": 62,
       "PARTIAL": 1,
       "SHELL_BETA": 2
@@ -19,7 +19,7 @@
       "matrix": 65
     },
     "failCount": 0,
-    "warnCount": 3,
+    "warnCount": 0,
     "top20": [
       "virtual",
       "mqtt",
@@ -96,19 +96,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-amqp/src/main/java/com/ispf/driver/amqp/AmqpDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-amqp/src/test/java/com/ispf/driver/amqp/AmqpDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-amqp/src/test/java/com/ispf/driver/amqp/AmqpDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -127,19 +129,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ansi-c12/src/main/java/com/ispf/driver/ansic12/AnsiC12DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ansi-c12/src/test/java/com/ispf/driver/ansic12/AnsiC12DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-ansi-c12/src/test/java/com/ispf/driver/ansic12/AnsiC12DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -158,6 +162,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-application/src/main/java/com/ispf/driver/application/ApplicationDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-application/src/test/java/com/ispf/driver/application/ApplicationDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-application/src/test/java/com/ispf/driver/application/ApplicationDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-application",
@@ -183,19 +189,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-as-interface/src/main/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-as-interface/src/test/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-as-interface/src/test/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -214,6 +222,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-asterisk/src/main/java/com/ispf/driver/asterisk/AsteriskDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-asterisk/src/test/java/com/ispf/driver/asterisk/AsteriskDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-asterisk/src/test/java/com/ispf/driver/asterisk/AsteriskDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-asterisk",
@@ -239,19 +249,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-aws-iot-core/src/main/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-aws-iot-core/src/test/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-aws-iot-core/src/test/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -270,19 +282,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-azure-iot-hub/src/main/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-azure-iot-hub/src/test/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-azure-iot-hub/src/test/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -302,6 +316,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-bacnet/src/main/java/com/ispf/driver/bacnet/BacnetDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-bacnet/src/test/java/com/ispf/driver/bacnet/BacnetDeviceDriverNetworkTest.java",
       "loopback_path": "packages/ispf-driver-bacnet/src/test/java/com/ispf/driver/bacnet/BacnetDeviceDriverNetworkTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-bacnet",
@@ -327,19 +343,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-bacnet-mstp/src/main/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-bacnet-mstp/src/test/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-bacnet-mstp/src/test/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -358,19 +376,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-barcode-scanner/src/main/java/com/ispf/driver/barcodescanner/BarcodeScannerDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-barcode-scanner/src/test/java/com/ispf/driver/barcodescanner/BarcodeScannerDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-barcode-scanner/src/test/java/com/ispf/driver/barcodescanner/BarcodeScannerDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -389,19 +409,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-beckhoff-ads/src/main/java/com/ispf/driver/beckhoffads/BeckhoffAdsDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-beckhoff-ads/src/test/java/com/ispf/driver/beckhoffads/BeckhoffAdsDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-beckhoff-ads/src/test/java/com/ispf/driver/beckhoffads/BeckhoffAdsDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -420,19 +442,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-bluetooth-le/src/main/java/com/ispf/driver/bluetoothle/BluetoothLeDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-bluetooth-le/src/test/java/com/ispf/driver/bluetoothle/BluetoothLeDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-bluetooth-le/src/test/java/com/ispf/driver/bluetoothle/BluetoothLeDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -451,19 +475,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-camera-ai/src/main/java/com/ispf/driver/cameraai/CameraAiDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-camera-ai/src/test/java/com/ispf/driver/cameraai/CameraAiDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-camera-ai/src/test/java/com/ispf/driver/cameraai/CameraAiDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -482,19 +508,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-canbus-gateway/src/main/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-canbus-gateway/src/test/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-canbus-gateway/src/test/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -513,19 +541,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-canopen/src/main/java/com/ispf/driver/canopen/CanopenDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-canopen/src/test/java/com/ispf/driver/canopen/CanopenDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-canopen/src/test/java/com/ispf/driver/canopen/CanopenDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -544,19 +574,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-cc-link/src/main/java/com/ispf/driver/cclink/CcLinkDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-cc-link/src/test/java/com/ispf/driver/cclink/CcLinkDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-cc-link/src/test/java/com/ispf/driver/cclink/CcLinkDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -575,19 +607,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-cc-link-ie/src/main/java/com/ispf/driver/cclinkie/CcLinkIeDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-cc-link-ie/src/test/java/com/ispf/driver/cclinkie/CcLinkIeDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-cc-link-ie/src/test/java/com/ispf/driver/cclinkie/CcLinkIeDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -606,6 +640,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-coap/src/main/java/com/ispf/driver/coap/CoapDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-coap/src/test/java/com/ispf/driver/coap/CoapDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-coap/src/test/java/com/ispf/driver/coap/CoapDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-coap",
@@ -631,19 +667,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-codesys/src/main/java/com/ispf/driver/codesys/CodesysDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-codesys/src/test/java/com/ispf/driver/codesys/CodesysDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-codesys/src/test/java/com/ispf/driver/codesys/CodesysDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -662,19 +700,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-controlnet/src/main/java/com/ispf/driver/controlnet/ControlnetDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-controlnet/src/test/java/com/ispf/driver/controlnet/ControlnetDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-controlnet/src/test/java/com/ispf/driver/controlnet/ControlnetDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -693,6 +733,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-corba/src/main/java/com/ispf/driver/corba/CorbaDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-corba/src/test/java/com/ispf/driver/corba/CorbaDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-corba/src/test/java/com/ispf/driver/corba/CorbaDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "",
@@ -719,6 +761,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-cwmp/src/main/java/com/ispf/driver/cwmp/CwmpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-cwmp/src/test/java/com/ispf/driver/cwmp/CwmpDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-cwmp/src/test/java/com/ispf/driver/cwmp/CwmpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-cwmp",
@@ -744,19 +788,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-dali/src/main/java/com/ispf/driver/dali/DaliDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-dali/src/test/java/com/ispf/driver/dali/DaliDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-dali/src/test/java/com/ispf/driver/dali/DaliDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -775,19 +821,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-delta-dvp/src/main/java/com/ispf/driver/deltadvp/DeltaDvpDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-delta-dvp/src/test/java/com/ispf/driver/deltadvp/DeltaDvpDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-delta-dvp/src/test/java/com/ispf/driver/deltadvp/DeltaDvpDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -806,19 +854,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-device-net/src/main/java/com/ispf/driver/devicenet/DeviceNetDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-device-net/src/test/java/com/ispf/driver/devicenet/DeviceNetDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-device-net/src/test/java/com/ispf/driver/devicenet/DeviceNetDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -837,6 +887,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-dhcp/src/main/java/com/ispf/driver/dhcp/DhcpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-dhcp/src/test/java/com/ispf/driver/dhcp/DhcpDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-dhcp/src/test/java/com/ispf/driver/dhcp/DhcpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-dhcp",
@@ -863,6 +915,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-dlms/src/main/java/com/ispf/driver/dlms/DlmsDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-dlms/src/test/java/com/ispf/driver/dlms/DlmsDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-dlms/src/test/java/com/ispf/driver/dlms/DlmsDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-dlms",
@@ -888,6 +942,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-dnp3/src/main/java/com/ispf/driver/dnp3/Dnp3DeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-dnp3/src/test/java/com/ispf/driver/dnp3/Dnp3DeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-dnp3/src/test/java/com/ispf/driver/dnp3/Dnp3DeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-dnp3",
@@ -913,19 +969,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-eebus/src/main/java/com/ispf/driver/eebus/EebusDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-eebus/src/test/java/com/ispf/driver/eebus/EebusDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-eebus/src/test/java/com/ispf/driver/eebus/EebusDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -945,6 +1003,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-email/src/main/java/com/ispf/driver/email/EmailDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-email/src/test/java/com/ispf/driver/email/EmailDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-email/src/test/java/com/ispf/driver/email/EmailDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-email",
@@ -970,19 +1030,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-enocean/src/main/java/com/ispf/driver/enocean/EnoceanDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-enocean/src/test/java/com/ispf/driver/enocean/EnoceanDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-enocean/src/test/java/com/ispf/driver/enocean/EnoceanDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1001,19 +1063,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ethercat/src/main/java/com/ispf/driver/ethercat/EthercatDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ethercat/src/test/java/com/ispf/driver/ethercat/EthercatDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-ethercat/src/test/java/com/ispf/driver/ethercat/EthercatDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1034,6 +1098,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ethernet-ip/src/main/java/com/ispf/driver/ethernetip/EthernetIpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ethernet-ip/src/test/java/com/ispf/driver/ethernetip/EthernetIpDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ethernet-ip/src/test/java/com/ispf/driver/ethernetip/EthernetIpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ethernet-ip",
@@ -1059,19 +1125,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ethernet-powerlink/src/main/java/com/ispf/driver/ethernetpowerlink/EthernetPowerlinkDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ethernet-powerlink/src/test/java/com/ispf/driver/ethernetpowerlink/EthernetPowerlinkDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-ethernet-powerlink/src/test/java/com/ispf/driver/ethernetpowerlink/EthernetPowerlinkDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1090,19 +1158,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-fanuc-focas/src/main/java/com/ispf/driver/fanucfocas/FanucFocasDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-fanuc-focas/src/test/java/com/ispf/driver/fanucfocas/FanucFocasDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-fanuc-focas/src/test/java/com/ispf/driver/fanucfocas/FanucFocasDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1121,19 +1191,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-fatek/src/main/java/com/ispf/driver/fatek/FatekDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-fatek/src/test/java/com/ispf/driver/fatek/FatekDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-fatek/src/test/java/com/ispf/driver/fatek/FatekDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1152,6 +1224,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-file/src/main/java/com/ispf/driver/file/FileDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-file/src/test/java/com/ispf/driver/file/FileDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-file/src/test/java/com/ispf/driver/file/FileDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-file",
@@ -1177,6 +1251,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-flexible/src/main/java/com/ispf/driver/flexible/FlexibleDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-flexible/src/test/java/com/ispf/driver/flexible/FlexChecksumTest.java",
       "loopback_path": "packages/ispf-driver-flexible/src/test/java/com/ispf/driver/flexible/FlexiblePointTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-flexible",
@@ -1202,6 +1278,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-folder/src/main/java/com/ispf/driver/folder/FolderDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-folder/src/test/java/com/ispf/driver/folder/FolderDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-folder/src/test/java/com/ispf/driver/folder/FolderDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-folder",
@@ -1227,19 +1305,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-foundation-fieldbus/src/main/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-foundation-fieldbus/src/test/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-foundation-fieldbus/src/test/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1258,19 +1338,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-fuji-sph/src/main/java/com/ispf/driver/fujisph/FujiSphDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-fuji-sph/src/test/java/com/ispf/driver/fujisph/FujiSphDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-fuji-sph/src/test/java/com/ispf/driver/fujisph/FujiSphDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1289,19 +1371,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ge-srtp/src/main/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ge-srtp/src/test/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-ge-srtp/src/test/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1320,19 +1404,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-genicam/src/main/java/com/ispf/driver/genicam/GenicamDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-genicam/src/test/java/com/ispf/driver/genicam/GenicamDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-genicam/src/test/java/com/ispf/driver/genicam/GenicamDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1351,6 +1437,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-gps-tracker/src/main/java/com/ispf/driver/gpstracker/GpsTrackerDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-gps-tracker/src/test/java/com/ispf/driver/gpstracker/GpsTrackerDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-gps-tracker/src/test/java/com/ispf/driver/gpstracker/GpsTrackerPointTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-gps-tracker",
@@ -1376,6 +1464,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-graph-db/src/main/java/com/ispf/driver/graphdb/GraphDbDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-graph-db/src/test/java/com/ispf/driver/graphdb/GraphDbDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-graph-db/src/test/java/com/ispf/driver/graphdb/GraphDbDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-graph-db",
@@ -1401,19 +1491,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-graphql/src/main/java/com/ispf/driver/graphql/GraphqlDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-graphql/src/test/java/com/ispf/driver/graphql/GraphqlDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-graphql/src/test/java/com/ispf/driver/graphql/GraphqlDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1432,19 +1524,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-grpc/src/main/java/com/ispf/driver/grpc/GrpcDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-grpc/src/test/java/com/ispf/driver/grpc/GrpcDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-grpc/src/test/java/com/ispf/driver/grpc/GrpcDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1463,19 +1557,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-hart-ip/src/main/java/com/ispf/driver/hartip/HartIpDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-hart-ip/src/test/java/com/ispf/driver/hartip/HartIpDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-hart-ip/src/test/java/com/ispf/driver/hartip/HartIpDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1494,19 +1590,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-hart-serial/src/main/java/com/ispf/driver/hartserial/HartSerialDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-hart-serial/src/test/java/com/ispf/driver/hartserial/HartSerialDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-hart-serial/src/test/java/com/ispf/driver/hartserial/HartSerialDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1525,6 +1623,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-haystack/src/main/java/com/ispf/driver/haystack/HaystackDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-haystack/src/test/java/com/ispf/driver/haystack/HaystackDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-haystack/src/test/java/com/ispf/driver/haystack/HaystackDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-haystack",
@@ -1550,19 +1650,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-hitachi-hidic/src/main/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-hitachi-hidic/src/test/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-hitachi-hidic/src/test/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1582,6 +1684,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-http/src/main/java/com/ispf/driver/http/HttpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-http/src/test/java/com/ispf/driver/http/HttpDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-http/src/test/java/com/ispf/driver/http/HttpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-http",
@@ -1607,6 +1711,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-http-server/src/main/java/com/ispf/driver/httpserver/HttpServerDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-http-server/src/test/java/com/ispf/driver/httpserver/HttpServerDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-http-server/src/test/java/com/ispf/driver/httpserver/HttpServerDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-http-server",
@@ -1632,6 +1738,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-icmp/src/main/java/com/ispf/driver/icmp/IcmpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-icmp/src/test/java/com/ispf/driver/icmp/IcmpDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-icmp/src/test/java/com/ispf/driver/icmp/IcmpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-icmp",
@@ -1657,19 +1765,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-idec-microsmart/src/main/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-idec-microsmart/src/test/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-idec-microsmart/src/test/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1688,19 +1798,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec101/src/main/java/com/ispf/driver/iec101/Iec101DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec101/src/test/java/com/ispf/driver/iec101/Iec101DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-iec101/src/test/java/com/ispf/driver/iec101/Iec101DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1719,19 +1831,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec103/src/main/java/com/ispf/driver/iec103/Iec103DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec103/src/test/java/com/ispf/driver/iec103/Iec103DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-iec103/src/test/java/com/ispf/driver/iec103/Iec103DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1751,6 +1865,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec104/src/main/java/com/ispf/driver/iec104/Iec104DeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec104/src/test/java/com/ispf/driver/iec104/Iec104DeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-iec104/src/test/java/com/ispf/driver/iec104/Iec104DeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-iec104",
@@ -1778,6 +1894,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec104-server/src/main/java/com/ispf/driver/iec104server/Iec104ServerDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec104-server/src/test/java/com/ispf/driver/iec104server/Iec104ServerDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-iec104-server/src/test/java/com/ispf/driver/iec104server/Iec104ServerDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-iec104-server",
@@ -1803,19 +1921,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec61850/src/main/java/com/ispf/driver/iec61850/Iec61850DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec61850/src/test/java/com/ispf/driver/iec61850/Iec61850DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-iec61850/src/test/java/com/ispf/driver/iec61850/Iec61850DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1834,19 +1954,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec61850-goose/src/main/java/com/ispf/driver/iec61850goose/Iec61850GooseDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec61850-goose/src/test/java/com/ispf/driver/iec61850goose/Iec61850GooseDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-iec61850-goose/src/test/java/com/ispf/driver/iec61850goose/Iec61850GooseDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1865,19 +1987,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec61850-sv/src/main/java/com/ispf/driver/iec61850sv/Iec61850SvDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec61850-sv/src/test/java/com/ispf/driver/iec61850sv/Iec61850SvDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-iec61850-sv/src/test/java/com/ispf/driver/iec61850sv/Iec61850SvDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1896,19 +2020,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec62056/src/main/java/com/ispf/driver/iec62056/Iec62056DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-iec62056/src/test/java/com/ispf/driver/iec62056/Iec62056DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-iec62056/src/test/java/com/ispf/driver/iec62056/Iec62056DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1927,19 +2053,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ieee2030-5/src/main/java/com/ispf/driver/ieee20305/Ieee20305DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ieee2030-5/src/test/java/com/ispf/driver/ieee20305/Ieee20305DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-ieee2030-5/src/test/java/com/ispf/driver/ieee20305/Ieee20305DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -1958,6 +2086,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-imap/src/main/java/com/ispf/driver/imap/ImapDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-imap/src/test/java/com/ispf/driver/imap/ImapDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-imap/src/test/java/com/ispf/driver/imap/ImapDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-imap",
@@ -1983,21 +2113,17 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ingress-sflow/src/main/java/com/ispf/driver/ingress/sflow/SflowIngressDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ingress-sflow/src/test/java/com/ispf/driver/ingress/sflow/SflowIngressDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ingress-sflow/src/test/java/com/ispf/driver/ingress/sflow/SflowIngressDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ingress-sflow",
       "interop_in_workflow": false,
       "write_claimed": false,
-      "write_looks_stub": false,
+      "write_looks_stub": true,
       "production_javadoc_stub": false,
       "readiness": "READY_LAB",
-      "findings": [
-        {
-          "severity": "WARN",
-          "code": "WRITE_UNDERCLAIM",
-          "message": "writePoint looks real but matrix has no WRITE"
-        }
-      ]
+      "findings": []
     },
     {
       "driver_id": "ingress-snmp-trap",
@@ -2014,21 +2140,17 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ingress-snmp-trap/src/main/java/com/ispf/driver/ingress/snmptrap/SnmpTrapIngressDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ingress-snmp-trap/src/test/java/com/ispf/driver/ingress/snmptrap/SnmpTrapIngressDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ingress-snmp-trap/src/test/java/com/ispf/driver/ingress/snmptrap/SnmpTrapIngressDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ingress-snmp-trap",
       "interop_in_workflow": false,
       "write_claimed": false,
-      "write_looks_stub": false,
+      "write_looks_stub": true,
       "production_javadoc_stub": false,
       "readiness": "READY_LAB",
-      "findings": [
-        {
-          "severity": "WARN",
-          "code": "WRITE_UNDERCLAIM",
-          "message": "writePoint looks real but matrix has no WRITE"
-        }
-      ]
+      "findings": []
     },
     {
       "driver_id": "ingress-syslog",
@@ -2045,21 +2167,17 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ingress-syslog/src/main/java/com/ispf/driver/ingress/syslog/SyslogIngressDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ingress-syslog/src/test/java/com/ispf/driver/ingress/syslog/SyslogIngressDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ingress-syslog/src/test/java/com/ispf/driver/ingress/syslog/SyslogIngressDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ingress-syslog",
       "interop_in_workflow": false,
       "write_claimed": false,
-      "write_looks_stub": false,
+      "write_looks_stub": true,
       "production_javadoc_stub": false,
       "readiness": "READY_LAB",
-      "findings": [
-        {
-          "severity": "WARN",
-          "code": "WRITE_UNDERCLAIM",
-          "message": "writePoint looks real but matrix has no WRITE"
-        }
-      ]
+      "findings": []
     },
     {
       "driver_id": "interbus",
@@ -2076,19 +2194,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-interbus/src/main/java/com/ispf/driver/interbus/InterbusDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-interbus/src/test/java/com/ispf/driver/interbus/InterbusDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-interbus/src/test/java/com/ispf/driver/interbus/InterbusDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2107,19 +2227,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-io-link/src/main/java/com/ispf/driver/iolink/IoLinkDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-io-link/src/test/java/com/ispf/driver/iolink/IoLinkDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-io-link/src/test/java/com/ispf/driver/iolink/IoLinkDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2138,6 +2260,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ip-host/src/main/java/com/ispf/driver/iphost/IpHostDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ip-host/src/test/java/com/ispf/driver/iphost/IpHostDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ip-host/src/test/java/com/ispf/driver/iphost/IpHostDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ip-host",
@@ -2163,6 +2287,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ipmi/src/main/java/com/ispf/driver/ipmi/IpmiDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ipmi/src/test/java/com/ispf/driver/ipmi/IpmiDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ipmi/src/test/java/com/ispf/driver/ipmi/IpmiDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ipmi",
@@ -2188,19 +2314,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-isa100/src/main/java/com/ispf/driver/isa100/Isa100DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-isa100/src/test/java/com/ispf/driver/isa100/Isa100DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-isa100/src/test/java/com/ispf/driver/isa100/Isa100DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2219,19 +2347,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-j1939/src/main/java/com/ispf/driver/j1939/J1939DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-j1939/src/test/java/com/ispf/driver/j1939/J1939DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-j1939/src/test/java/com/ispf/driver/j1939/J1939DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2250,6 +2380,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-jdbc/src/main/java/com/ispf/driver/jdbc/JdbcDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-jdbc/src/test/java/com/ispf/driver/jdbc/JdbcDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-jdbc/src/test/java/com/ispf/driver/jdbc/JdbcDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-jdbc",
@@ -2275,6 +2407,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-jms/src/main/java/com/ispf/driver/jms/JmsDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-jms/src/test/java/com/ispf/driver/jms/JmsDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-jms/src/test/java/com/ispf/driver/jms/JmsDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-jms",
@@ -2300,6 +2434,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-jmx/src/main/java/com/ispf/driver/jmx/JmxDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-jmx/src/test/java/com/ispf/driver/jmx/JmxDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-jmx/src/test/java/com/ispf/driver/jmx/JmxDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-jmx",
@@ -2325,6 +2461,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-kafka/src/main/java/com/ispf/driver/kafka/KafkaDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-kafka/src/test/java/com/ispf/driver/kafka/KafkaDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-kafka/src/test/java/com/ispf/driver/kafka/KafkaDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-kafka",
@@ -2350,19 +2488,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-keyence-hostlink/src/main/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-keyence-hostlink/src/test/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-keyence-hostlink/src/test/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2381,19 +2521,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-knx/src/main/java/com/ispf/driver/knx/KnxDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-knx/src/test/java/com/ispf/driver/knx/KnxDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-knx/src/test/java/com/ispf/driver/knx/KnxDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2412,19 +2554,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-knx-tp/src/main/java/com/ispf/driver/knxtp/KnxTpDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-knx-tp/src/test/java/com/ispf/driver/knxtp/KnxTpDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-knx-tp/src/test/java/com/ispf/driver/knxtp/KnxTpDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2443,6 +2587,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ldap/src/main/java/com/ispf/driver/ldap/LdapDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ldap/src/test/java/com/ispf/driver/ldap/LdapDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ldap/src/test/java/com/ispf/driver/ldap/LdapDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ldap",
@@ -2468,19 +2614,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-lonworks/src/main/java/com/ispf/driver/lonworks/LonworksDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-lonworks/src/test/java/com/ispf/driver/lonworks/LonworksDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-lonworks/src/test/java/com/ispf/driver/lonworks/LonworksDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2499,19 +2647,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-lorawan/src/main/java/com/ispf/driver/lorawan/LorawanDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-lorawan/src/test/java/com/ispf/driver/lorawan/LorawanDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-lorawan/src/test/java/com/ispf/driver/lorawan/LorawanDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2530,19 +2680,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ls-xgt/src/main/java/com/ispf/driver/lsxgt/LsXgtDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ls-xgt/src/test/java/com/ispf/driver/lsxgt/LsXgtDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-ls-xgt/src/test/java/com/ispf/driver/lsxgt/LsXgtDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2561,19 +2713,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-lwm2m/src/main/java/com/ispf/driver/lwm2m/Lwm2mDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-lwm2m/src/test/java/com/ispf/driver/lwm2m/Lwm2mDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-lwm2m/src/test/java/com/ispf/driver/lwm2m/Lwm2mDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2592,19 +2746,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-matter/src/main/java/com/ispf/driver/matter/MatterDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-matter/src/test/java/com/ispf/driver/matter/MatterDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-matter/src/test/java/com/ispf/driver/matter/MatterDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2623,6 +2779,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-mbus/src/main/java/com/ispf/driver/mbus/MbusDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-mbus/src/test/java/com/ispf/driver/mbus/MbusDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-mbus/src/test/java/com/ispf/driver/mbus/MbusDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-mbus",
@@ -2648,6 +2806,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-message-stream/src/main/java/com/ispf/driver/messagestream/MessageStreamDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-message-stream/src/test/java/com/ispf/driver/messagestream/MessageStreamDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-message-stream/src/test/java/com/ispf/driver/messagestream/MessageStreamDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-message-stream",
@@ -2673,19 +2833,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-mitsubishi-melsec/src/main/java/com/ispf/driver/mitsubishimelsec/MitsubishiMelsecDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-mitsubishi-melsec/src/test/java/com/ispf/driver/mitsubishimelsec/MitsubishiMelsecDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-mitsubishi-melsec/src/test/java/com/ispf/driver/mitsubishimelsec/MitsubishiMelsecDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2704,19 +2866,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-mitsubishi-slmp/src/main/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-mitsubishi-slmp/src/test/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-mitsubishi-slmp/src/test/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2736,6 +2900,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-modbus-rtu/src/main/java/com/ispf/driver/modbusrtu/ModbusRtuDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-modbus-rtu/src/test/java/com/ispf/driver/modbusrtu/ModbusPointTest.java",
       "loopback_path": "packages/ispf-driver-modbus-rtu/src/test/java/com/ispf/driver/modbusrtu/ModbusRtuDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-modbus-rtu",
@@ -2762,6 +2928,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-modbus/src/main/java/com/ispf/driver/modbus/ModbusTcpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-modbus/src/test/java/com/ispf/driver/modbus/ModbusPointTest.java",
       "loopback_path": "packages/ispf-driver-modbus/src/test/java/com/ispf/driver/modbus/ModbusTcpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-modbus",
@@ -2788,6 +2956,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-modbus-udp/src/main/java/com/ispf/driver/modbusudp/ModbusUdpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-modbus-udp/src/test/java/com/ispf/driver/modbusudp/ModbusPointTest.java",
       "loopback_path": "packages/ispf-driver-modbus/src/test/java/com/ispf/driver/modbus/ModbusTcpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-modbus-udp",
@@ -2813,6 +2983,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-modem-at/src/main/java/com/ispf/driver/modemat/ModemAtDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-modem-at/src/test/java/com/ispf/driver/modemat/ModemAtDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-modem-at/src/test/java/com/ispf/driver/modemat/ModemAtDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-modem-at",
@@ -2839,6 +3011,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-mqtt/src/main/java/com/ispf/driver/mqtt/MqttDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-mqtt/src/test/java/com/ispf/driver/mqtt/MqttDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-mqtt/src/test/java/com/ispf/driver/mqtt/MqttDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-mqtt",
@@ -2864,19 +3038,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-mqtt-sn/src/main/java/com/ispf/driver/mqttsn/MqttSnDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-mqtt-sn/src/test/java/com/ispf/driver/mqttsn/MqttSnDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-mqtt-sn/src/test/java/com/ispf/driver/mqttsn/MqttSnDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2895,19 +3071,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-mtconnect/src/main/java/com/ispf/driver/mtconnect/MtconnectDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-mtconnect/src/test/java/com/ispf/driver/mtconnect/MtconnectDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-mtconnect/src/test/java/com/ispf/driver/mtconnect/MtconnectDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2926,19 +3104,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-nats/src/main/java/com/ispf/driver/nats/NatsDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-nats/src/test/java/com/ispf/driver/nats/NatsDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-nats/src/test/java/com/ispf/driver/nats/NatsDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -2957,6 +3137,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-nmea/src/main/java/com/ispf/driver/nmea/NmeaDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-nmea/src/test/java/com/ispf/driver/nmea/NmeaDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-nmea/src/test/java/com/ispf/driver/nmea/NmeaDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-nmea",
@@ -2982,19 +3164,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ocpp/src/main/java/com/ispf/driver/ocpp/OcppDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ocpp/src/test/java/com/ispf/driver/ocpp/OcppDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-ocpp/src/test/java/com/ispf/driver/ocpp/OcppDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3013,19 +3197,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-odata/src/main/java/com/ispf/driver/odata/OdataDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-odata/src/test/java/com/ispf/driver/odata/OdataDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-odata/src/test/java/com/ispf/driver/odata/OdataDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3044,6 +3230,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-odbc/src/main/java/com/ispf/driver/odbc/OdbcDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-odbc/src/test/java/com/ispf/driver/odbc/OdbcDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-odbc/src/test/java/com/ispf/driver/odbc/OdbcDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-odbc",
@@ -3069,6 +3257,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-omron-fins/src/main/java/com/ispf/driver/omronfins/OmronFinsDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-omron-fins/src/test/java/com/ispf/driver/omronfins/OmronFinsDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-omron-fins/src/test/java/com/ispf/driver/omronfins/OmronFinsDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-omron-fins",
@@ -3094,19 +3284,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-onvif/src/main/java/com/ispf/driver/onvif/OnvifDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-onvif/src/test/java/com/ispf/driver/onvif/OnvifDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-onvif/src/test/java/com/ispf/driver/onvif/OnvifDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3125,19 +3317,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-opc-ae/src/main/java/com/ispf/driver/opcae/OpcAeDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-opc-ae/src/test/java/com/ispf/driver/opcae/OpcAeDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-opc-ae/src/test/java/com/ispf/driver/opcae/OpcAeDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3156,6 +3350,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-opc-bridge/src/main/java/com/ispf/driver/opcbridge/OpcBridgeDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-opc-bridge/src/test/java/com/ispf/driver/opcbridge/OpcBridgeDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-opc-bridge/src/test/java/com/ispf/driver/opcbridge/OpcBridgeDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-opc-bridge",
@@ -3181,6 +3377,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-opc-da/src/main/java/com/ispf/driver/opcda/OpcDaDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-opc-da/src/test/java/com/ispf/driver/opcda/OpcDaDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-opc-da/src/test/java/com/ispf/driver/opcda/OpcDaDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-opc-da",
@@ -3206,19 +3404,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-opc-hda/src/main/java/com/ispf/driver/opchda/OpcHdaDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-opc-hda/src/test/java/com/ispf/driver/opchda/OpcHdaDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-opc-hda/src/test/java/com/ispf/driver/opchda/OpcHdaDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3242,6 +3442,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-opcua/src/main/java/com/ispf/driver/opcua/OpcUaDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-opcua/src/test/java/com/ispf/driver/opcua/OpcUaDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-opcua/src/test/java/com/ispf/driver/opcua/OpcUaDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-opcua",
@@ -3267,19 +3469,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-opcua-pubsub/src/main/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-opcua-pubsub/src/test/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-opcua-pubsub/src/test/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3300,6 +3504,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-opcua-server/src/main/java/com/ispf/driver/opcuaserver/OpcUaServerDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-opcua-server/src/test/java/com/ispf/driver/opcuaserver/OpcUaServerDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-opcua-server/src/test/java/com/ispf/driver/opcuaserver/OpcUaServerDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-opcua-server",
@@ -3325,19 +3531,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-openadr/src/main/java/com/ispf/driver/openadr/OpenadrDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-openadr/src/test/java/com/ispf/driver/openadr/OpenadrDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-openadr/src/test/java/com/ispf/driver/openadr/OpenadrDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3356,19 +3564,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-panasonic-mewto/src/main/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-panasonic-mewto/src/test/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-panasonic-mewto/src/test/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3387,19 +3597,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-plcnext/src/main/java/com/ispf/driver/plcnext/PlcnextDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-plcnext/src/test/java/com/ispf/driver/plcnext/PlcnextDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-plcnext/src/test/java/com/ispf/driver/plcnext/PlcnextDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3418,6 +3630,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-pop3/src/main/java/com/ispf/driver/pop3/Pop3DeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-pop3/src/test/java/com/ispf/driver/pop3/Pop3DeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-pop3/src/test/java/com/ispf/driver/pop3/Pop3DeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-pop3",
@@ -3443,19 +3657,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-profibus/src/main/java/com/ispf/driver/profibus/ProfibusDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-profibus/src/test/java/com/ispf/driver/profibus/ProfibusDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-profibus/src/test/java/com/ispf/driver/profibus/ProfibusDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3474,19 +3690,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-profibus-pa/src/main/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-profibus-pa/src/test/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-profibus-pa/src/test/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3505,19 +3723,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-profinet/src/main/java/com/ispf/driver/profinet/ProfinetDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-profinet/src/test/java/com/ispf/driver/profinet/ProfinetDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-profinet/src/test/java/com/ispf/driver/profinet/ProfinetDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3536,19 +3756,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-pulsar/src/main/java/com/ispf/driver/pulsar/PulsarDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-pulsar/src/test/java/com/ispf/driver/pulsar/PulsarDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-pulsar/src/test/java/com/ispf/driver/pulsar/PulsarDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3567,6 +3789,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-radius/src/main/java/com/ispf/driver/radius/RadiusDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-radius/src/test/java/com/ispf/driver/radius/RadiusDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-radius/src/test/java/com/ispf/driver/radius/RadiusDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-radius",
@@ -3592,19 +3816,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-redis/src/main/java/com/ispf/driver/redis/RedisDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-redis/src/test/java/com/ispf/driver/redis/RedisDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-redis/src/test/java/com/ispf/driver/redis/RedisDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3623,19 +3849,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-rockwell-csp/src/main/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-rockwell-csp/src/test/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-rockwell-csp/src/test/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3654,19 +3882,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-rockwell-df1/src/main/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-rockwell-df1/src/test/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-rockwell-df1/src/test/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3685,19 +3915,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-rtsp/src/main/java/com/ispf/driver/rtsp/RtspDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-rtsp/src/test/java/com/ispf/driver/rtsp/RtspDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-rtsp/src/test/java/com/ispf/driver/rtsp/RtspDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3717,6 +3949,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-s7/src/main/java/com/ispf/driver/s7/S7DeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-s7/src/test/java/com/ispf/driver/s7/S7DeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-s7/src/test/java/com/ispf/driver/s7/S7DeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-s7",
@@ -3742,19 +3976,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-schneider-umac/src/main/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-schneider-umac/src/test/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-schneider-umac/src/test/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3773,19 +4009,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-scpi/src/main/java/com/ispf/driver/scpi/ScpiDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-scpi/src/test/java/com/ispf/driver/scpi/ScpiDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-scpi/src/test/java/com/ispf/driver/scpi/ScpiDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3804,19 +4042,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-secs-gem/src/main/java/com/ispf/driver/secsgem/SecsGemDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-secs-gem/src/test/java/com/ispf/driver/secsgem/SecsGemDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-secs-gem/src/test/java/com/ispf/driver/secsgem/SecsGemDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3835,19 +4075,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-sigfox/src/main/java/com/ispf/driver/sigfox/SigfoxDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-sigfox/src/test/java/com/ispf/driver/sigfox/SigfoxDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-sigfox/src/test/java/com/ispf/driver/sigfox/SigfoxDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -3866,6 +4108,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-sip/src/main/java/com/ispf/driver/sip/SipDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-sip/src/test/java/com/ispf/driver/sip/SipDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-sip/src/test/java/com/ispf/driver/sip/SipDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-sip",
@@ -3891,6 +4135,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-smb/src/main/java/com/ispf/driver/smb/SmbDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-smb/src/test/java/com/ispf/driver/smb/SmbPointTest.java",
       "loopback_path": "packages/ispf-driver-smb/src/test/java/com/ispf/driver/smb/SmbPointTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-smb",
@@ -3916,6 +4162,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-smis/src/main/java/com/ispf/driver/smis/SmisDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-smis/src/test/java/com/ispf/driver/smis/SmisDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-smis/src/test/java/com/ispf/driver/smis/SmisDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-smis",
@@ -3942,6 +4190,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-smpp/src/main/java/com/ispf/driver/smpp/SmppDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-smpp/src/test/java/com/ispf/driver/smpp/SmppDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-smpp/src/test/java/com/ispf/driver/smpp/SmppDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-smpp",
@@ -3968,6 +4218,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-sms/src/main/java/com/ispf/driver/sms/SmsDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-sms/src/test/java/com/ispf/driver/sms/SmsDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-sms/src/test/java/com/ispf/driver/sms/SmsDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-sms",
@@ -3994,6 +4246,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-snmp/src/main/java/com/ispf/driver/snmp/SnmpDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-snmp/src/test/java/com/ispf/driver/snmp/SnmpDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-snmp/src/test/java/com/ispf/driver/snmp/SnmpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-snmp",
@@ -4019,6 +4273,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-soap/src/main/java/com/ispf/driver/soap/SoapDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-soap/src/test/java/com/ispf/driver/soap/SoapDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-soap/src/test/java/com/ispf/driver/soap/SoapDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-soap",
@@ -4044,19 +4300,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-someip/src/main/java/com/ispf/driver/someip/SomeipDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-someip/src/test/java/com/ispf/driver/someip/SomeipDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-someip/src/test/java/com/ispf/driver/someip/SomeipDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4075,19 +4333,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-sparkplug-b/src/main/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-sparkplug-b/src/test/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-sparkplug-b/src/test/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4107,6 +4367,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-ssh/src/main/java/com/ispf/driver/ssh/SshDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-ssh/src/test/java/com/ispf/driver/ssh/SshDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-ssh/src/test/java/com/ispf/driver/ssh/SshDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-ssh",
@@ -4132,6 +4394,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-telnet/src/main/java/com/ispf/driver/telnet/TelnetDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-telnet/src/test/java/com/ispf/driver/telnet/TelnetDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-telnet/src/test/java/com/ispf/driver/telnet/TelnetDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-telnet",
@@ -4157,19 +4421,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-thread/src/main/java/com/ispf/driver/thread/ThreadDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-thread/src/test/java/com/ispf/driver/thread/ThreadDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-thread/src/test/java/com/ispf/driver/thread/ThreadDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4188,19 +4454,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-toshiba-t-series/src/main/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-toshiba-t-series/src/test/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-toshiba-t-series/src/test/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4219,19 +4487,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-uds/src/main/java/com/ispf/driver/uds/UdsDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-uds/src/test/java/com/ispf/driver/uds/UdsDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-uds/src/test/java/com/ispf/driver/uds/UdsDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4250,19 +4520,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-unitronics/src/main/java/com/ispf/driver/unitronics/UnitronicsDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-unitronics/src/test/java/com/ispf/driver/unitronics/UnitronicsDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-unitronics/src/test/java/com/ispf/driver/unitronics/UnitronicsDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4282,6 +4554,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-virtual/src/main/java/com/ispf/driver/virtual/VirtualDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-virtual/src/test/java/com/ispf/driver/virtual/VirtualDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-virtual/src/test/java/com/ispf/driver/virtual/VirtualUnifiedProfileTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-virtual",
@@ -4307,19 +4581,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-visa/src/main/java/com/ispf/driver/visa/VisaDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-visa/src/test/java/com/ispf/driver/visa/VisaDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-visa/src/test/java/com/ispf/driver/visa/VisaDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4338,6 +4614,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-vmware/src/main/java/com/ispf/driver/vmware/VmwareDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-vmware/src/test/java/com/ispf/driver/vmware/VmwareDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-vmware/src/test/java/com/ispf/driver/vmware/VmwareDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-vmware",
@@ -4363,19 +4641,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-wago/src/main/java/com/ispf/driver/wago/WagoDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-wago/src/test/java/com/ispf/driver/wago/WagoDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-wago/src/test/java/com/ispf/driver/wago/WagoDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4394,19 +4674,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-weather-station/src/main/java/com/ispf/driver/weatherstation/WeatherStationDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-weather-station/src/test/java/com/ispf/driver/weatherstation/WeatherStationDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-weather-station/src/test/java/com/ispf/driver/weatherstation/WeatherStationDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4425,6 +4707,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-web-transaction/src/main/java/com/ispf/driver/webtransaction/WebTransactionDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-web-transaction/src/test/java/com/ispf/driver/webtransaction/WebTransactionDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-web-transaction/src/test/java/com/ispf/driver/webtransaction/WebTransactionDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-web-transaction",
@@ -4451,6 +4735,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-webhook/src/main/java/com/ispf/driver/webhook/WebhookDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-webhook/src/test/java/com/ispf/driver/webhook/WebhookDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-webhook/src/test/java/com/ispf/driver/webhook/WebhookDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-webhook",
@@ -4476,19 +4762,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-websocket/src/main/java/com/ispf/driver/websocket/WebsocketDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-websocket/src/test/java/com/ispf/driver/websocket/WebsocketDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-websocket/src/test/java/com/ispf/driver/websocket/WebsocketDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4507,19 +4795,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-weighbridge/src/main/java/com/ispf/driver/weighbridge/WeighbridgeDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-weighbridge/src/test/java/com/ispf/driver/weighbridge/WeighbridgeDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-weighbridge/src/test/java/com/ispf/driver/weighbridge/WeighbridgeDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4538,19 +4828,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-wirelesshart/src/main/java/com/ispf/driver/wirelesshart/WirelesshartDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-wirelesshart/src/test/java/com/ispf/driver/wirelesshart/WirelesshartDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-wirelesshart/src/test/java/com/ispf/driver/wirelesshart/WirelesshartDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4569,19 +4861,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-wisun/src/main/java/com/ispf/driver/wisun/WisunDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-wisun/src/test/java/com/ispf/driver/wisun/WisunDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-wisun/src/test/java/com/ispf/driver/wisun/WisunDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4600,19 +4894,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-wmbus/src/main/java/com/ispf/driver/wmbus/WmbusDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-wmbus/src/test/java/com/ispf/driver/wmbus/WmbusDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-wmbus/src/test/java/com/ispf/driver/wmbus/WmbusDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4631,6 +4927,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-wmi/src/main/java/com/ispf/driver/wmi/WmiDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-wmi/src/test/java/com/ispf/driver/wmi/WmiDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-wmi/src/test/java/com/ispf/driver/wmi/WmiDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-wmi",
@@ -4656,6 +4954,8 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-xmpp/src/main/java/com/ispf/driver/xmpp/XmppDeviceDriver.java",
       "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-xmpp/src/test/java/com/ispf/driver/xmpp/XmppDeviceDriverTest.java",
       "loopback_path": "packages/ispf-driver-xmpp/src/test/java/com/ispf/driver/xmpp/XmppDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-xmpp",
@@ -4681,19 +4981,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-yaskawa-memobus/src/main/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-yaskawa-memobus/src/test/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-yaskawa-memobus/src/test/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4712,19 +5014,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-zigbee/src/main/java/com/ispf/driver/zigbee/ZigbeeDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-zigbee/src/test/java/com/ispf/driver/zigbee/ZigbeeDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-zigbee/src/test/java/com/ispf/driver/zigbee/ZigbeeDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     },
@@ -4743,19 +5047,21 @@
       "source_ok": true,
       "source_path": "packages/ispf-driver-zwave/src/main/java/com/ispf/driver/zwave/ZwaveDeviceDriver.java",
       "extends_protocol_stub": true,
-      "loopback_path": "",
-      "loopback_ok": null,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-zwave/src/test/java/com/ispf/driver/zwave/ZwaveDeviceDriverContractTest.java",
+      "loopback_path": "packages/ispf-driver-zwave/src/test/java/com/ispf/driver/zwave/ZwaveDeviceDriverContractTest.java",
+      "loopback_ok": true,
       "interop_module": "",
       "interop_in_workflow": null,
       "write_claimed": false,
       "write_looks_stub": null,
       "production_javadoc_stub": null,
-      "readiness": "STUB",
+      "readiness": "STUB_LAB",
       "findings": [
         {
           "severity": "INFO",
-          "code": "STUB_CATALOG",
-          "message": "protocol catalog stub — TCP reachability until promoted"
+          "code": "STUB_LAB",
+          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
         }
       ]
     }

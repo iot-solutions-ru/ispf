@@ -21,6 +21,9 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust — поднятие готовности всех 162 паков** — stub-kit **v0.2** (TCP probe + memory loopback) +
+  contract-тесты на все **97** STUB → метка аудита **`STUB_LAB`** (без фейкового PRODUCTION);
+  `tools/driver-stubs/raise-stub-readiness.py`.
 - **OT Trust — аудит всех 162 драйверов** — `tools/driver-readiness-audit.py`, отчёт
   `docs/evidence/ot-trust/driver-readiness.md` (honesty: matrix ↔ packs).
 - **OT Trust Wave 1 hardening** — writable Modbus fixture; FC6/FC16 smoke; writePoint gate; lab day-1 journal.

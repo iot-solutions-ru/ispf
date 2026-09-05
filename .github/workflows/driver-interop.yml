@@ -209,6 +209,9 @@ jobs:
             --json docs/evidence/ot-trust/driver-readiness.json \
             --fail-on-findings
 
+      - name: Stub-kit lab contract (STUB_LAB base)
+        run: ./gradlew :packages:ispf-driver-stub-kit:test --no-daemon
+
       - name: Verify PRODUCTION↔interop matrix gate (BL-85 / BL-140)
         run: >
           ./gradlew
