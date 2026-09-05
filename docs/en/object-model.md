@@ -279,3 +279,7 @@ Platform config: `ispf.variable-history` in `application.yml` (`enabled`, `min-i
 Charts (`useTrendSeries`) load history from the server and append live points via WebSocket/polling.
 
 Detailed roadmap: [variable-history](variable-history.md).
+
+## IP note (AggreGate-class platforms)
+
+ISPF’s object tree (variables / functions / events + bindings) sits in the same *product class* as platforms such as AggreGate. High-level inspiration of that industry pattern is acknowledged; implementation, APIs, and docs are independent. For patent/copyright FTO work with counsel see [fto-aggregate-context-model](fto-aggregate-context-model.md).

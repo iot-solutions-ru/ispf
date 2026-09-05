@@ -279,3 +279,7 @@ Content-Type: application/json
 Графики (`useTrendSeries`) загружают историю с сервера и дополняют live-точками через WebSocket/polling.
 
 Подробный roadmap: [variable-history](variable-history.md).
+
+## IP-заметка (платформы класса AggreGate)
+
+Дерево объектов ISPF (переменные / функции / события + bindings) относится к тому же *классу продуктов*, что и платформы вроде AggreGate. Высокоуровневое вдохновение индустриальным паттерном признаётся; реализация, API и docs — независимые. Для FTO с counsel см. [fto-aggregate-context-model](fto-aggregate-context-model.md).

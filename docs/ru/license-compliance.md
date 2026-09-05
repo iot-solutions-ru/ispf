@@ -49,3 +49,4 @@ node tools/license-audit/generate-sbom.mjs
 - [sbom-legal-review](sbom-legal-review.md)
 - [licensed-driver-packs](licensed-driver-packs.md)
 - [commercial-licensing](commercial-licensing.md)
+- [fto-aggregate-context-model](fto-aggregate-context-model.md) — FTO-memo vs модель объектов AggreGate

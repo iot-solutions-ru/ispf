@@ -68,3 +68,4 @@ Spreadsheet Band1 templates use **Apache POI only**. YARG / JasperReports / docx
 - [sbom-legal-review](sbom-legal-review.md)
 - [licensed-driver-packs](licensed-driver-packs.md)
 - [commercial-licensing](commercial-licensing.md)
+- [fto-aggregate-context-model](fto-aggregate-context-model.md) — FTO memo vs AggreGate object model
