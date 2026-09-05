@@ -38,6 +38,19 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `sparkplug-b` | STUB | **PRODUCTION** | MQTT (Paho) + minimal Sparkplug B protobuf Payload/Metric codec; host subscribe NBIRTH/DBIRTH/DDATA; DCMD write; `SparkplugBDeviceDriverTest` (Moquette); `POLL` + `WRITE` |
 
 
+
+## Status (September 2026, OT Trust Wave 3b)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------|
+| `ocpp` | STUB | **PRODUCTION** | OCPP 1.6 JSON-lines TCP lab subset |
+| `odata` | STUB | **PRODUCTION** | OData JSON v4 HTTP subset |
+| `grpc` | STUB | **PRODUCTION** | Honest gRPC-JSON lab (not wire gRPC) |
+| `openadr` | STUB | **PRODUCTION** | OpenADR 2.0b VEN poll subset |
+| `scpi` | STUB | **PRODUCTION** | SCPI over TCP |
+| `visa` | STUB | **PRODUCTION** | SOCKET-only SCPI-over-TCP (not NI-VISA) |
+| `knx-tp` | STUB | **PRODUCTION** | KNXnet/IP Routing (“TP via IP”) |
+
 ## Status (September 2026, OT Trust Wave 3 clean-room promotion)
 
 | driverId | Was | Now | Note |
