@@ -42,6 +42,15 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 
 
 
+
+## Status (September 2026, OT Trust Wave 6 start)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `enocean` | STUB | **PRODUCTION** | ESP3 TCP gateway ASCII lab |
+| `sigfox` | STUB | **PRODUCTION** | Backend callback HTTP/1.1 lab |
+| `genicam` | STUB | **PRODUCTION** | GenICam feature GET/SET TCP lab |
+
 ## Status (September 2026, OT Trust Wave 5 start)
 
 | driverId | was | now | notes |

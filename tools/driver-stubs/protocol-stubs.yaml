@@ -181,10 +181,7 @@ stubs:
     name: Wireless M-Bus
     description: Wireless M-Bus (OMS) stub
     port: 10000
-  - id: enocean
-    name: EnOcean
-    description: EnOcean ESP3 / USB gateway stub
-    port: 54321
+  # enocean promoted Wave 6 → PRODUCTION (packages/ispf-driver-enocean)
   # dali promoted Wave 5 → PRODUCTION (packages/ispf-driver-dali)
   - id: eebus
     name: EEBUS
@@ -216,17 +213,11 @@ stubs:
     name: Bluetooth LE
     description: Bluetooth Low Energy gateway stub
     port: 9999
-  - id: sigfox
-    name: Sigfox
-    description: Sigfox backend callback stub
-    port: 443
+  # sigfox promoted Wave 6 → PRODUCTION (packages/ispf-driver-sigfox)
 
   # —— Vision / identity / shop-floor ——
   # rtsp promoted Wave 4 → PRODUCTION (packages/ispf-driver-rtsp)
-  - id: genicam
-    name: GenICam
-    description: GenICam / GigE Vision stub
-    port: 3956
+  # genicam promoted Wave 6 → PRODUCTION (packages/ispf-driver-genicam)
   # barcode-scanner promoted Wave 4 → PRODUCTION (packages/ispf-driver-barcode-scanner)
   # weighbridge promoted Wave 4 → PRODUCTION (packages/ispf-driver-weighbridge)
   # secs-gem promoted Wave 5 → PRODUCTION (packages/ispf-driver-secs-gem)

@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T10:40:57Z`  
+> Generated: `2026-09-05T10:45:34Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **115** · Stub list: **47**  
+> Matrix ENTRIES: **118** · Stub list: **44**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=112, `STUB`=47 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=112, `SHELL_BETA`=2, `STUB_LAB`=47 |
-| Source | `matrix`=115, `stub-list`=47 |
+| Maturity | `BETA`=3, `PRODUCTION`=115, `STUB`=44 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=115, `SHELL_BETA`=2, `STUB_LAB`=44 |
+| Source | `matrix`=118, `stub-list`=44 |
 
 ### Readiness legend
 
@@ -92,7 +92,7 @@ _None._
 | `dnp3` | `ispf-driver-dnp3` | PRODUCTION | matrix | `READY_LAB` | — |
 | `eebus` | `ispf-driver-eebus` | STUB | stub-list | `STUB_LAB` | — |
 | `email` | `ispf-driver-email` | PRODUCTION | matrix | `READY_LAB` | — |
-| `enocean` | `ispf-driver-enocean` | STUB | stub-list | `STUB_LAB` | — |
+| `enocean` | `ispf-driver-enocean` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ethercat` | `ispf-driver-ethercat` | STUB | stub-list | `STUB_LAB` | — |
 | `ethernet-ip` | `ispf-driver-ethernet-ip` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | STUB | stub-list | `STUB_LAB` | — |
@@ -104,7 +104,7 @@ _None._
 | `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | STUB | stub-list | `STUB_LAB` | — |
 | `fuji-sph` | `ispf-driver-fuji-sph` | STUB | stub-list | `STUB_LAB` | — |
 | `ge-srtp` | `ispf-driver-ge-srtp` | PRODUCTION | matrix | `READY_LAB` | — |
-| `genicam` | `ispf-driver-genicam` | STUB | stub-list | `STUB_LAB` | — |
+| `genicam` | `ispf-driver-genicam` | PRODUCTION | matrix | `READY_LAB` | — |
 | `gps-tracker` | `ispf-driver-gps-tracker` | PRODUCTION | matrix | `READY_LAB` | — |
 | `graph-db` | `ispf-driver-graph-db` | PRODUCTION | matrix | `READY_LAB` | — |
 | `graphql` | `ispf-driver-graphql` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -191,7 +191,7 @@ _None._
 | `schneider-umac` | `ispf-driver-schneider-umac` | STUB | stub-list | `STUB_LAB` | — |
 | `scpi` | `ispf-driver-scpi` | PRODUCTION | matrix | `READY_LAB` | — |
 | `secs-gem` | `ispf-driver-secs-gem` | PRODUCTION | matrix | `READY_LAB` | — |
-| `sigfox` | `ispf-driver-sigfox` | STUB | stub-list | `STUB_LAB` | — |
+| `sigfox` | `ispf-driver-sigfox` | PRODUCTION | matrix | `READY_LAB` | — |
 | `sip` | `ispf-driver-sip` | PRODUCTION | matrix | `READY_LAB` | — |
 | `smb` | `ispf-driver-smb` | PRODUCTION | matrix | `READY_LAB` | — |
 | `smi-s` | `ispf-driver-smis` | PRODUCTION | matrix | `READY_LAB` | — |

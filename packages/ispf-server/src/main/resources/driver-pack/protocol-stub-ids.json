@@ -37,16 +37,13 @@
     "lonworks",
     "bacnet-mstp",
     "wmbus",
-    "enocean",
     "eebus",
     "lorawan",
     "zigbee",
     "matter",
     "zwave",
     "thread",
-    "bluetooth-le",
-    "sigfox",
-    "genicam"
+    "bluetooth-le"
   ],
   "licenseType": "Apache-2.0"
 }

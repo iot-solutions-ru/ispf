@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:40:57Z",
+    "generatedAt": "2026-09-05T10:45:34Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 112,
-      "STUB": 47,
+      "PRODUCTION": 115,
+      "STUB": 44,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 112,
-      "STUB_LAB": 47,
+      "READY_LAB": 115,
+      "STUB_LAB": 44,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 115,
-      "stub-list": 47
+      "matrix": 118,
+      "stub-list": 44
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 115,
-    "stubIds": 47,
+    "matrixEntries": 118,
+    "stubIds": 44,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -964,34 +964,29 @@
       "driver_id": "enocean",
       "pack_id": "ispf-driver-enocean",
       "driver_class": "com.ispf.driver.enocean.EnoceanDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-enocean/src/main/java/com/ispf/driver/enocean/EnoceanDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-enocean/src/test/java/com/ispf/driver/enocean/EnoceanDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-enocean/src/test/java/com/ispf/driver/enocean/EnoceanDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-enocean/src/test/java/com/ispf/driver/enocean/EnoceanDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-enocean/src/test/java/com/ispf/driver/enocean/EnoceanDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-enocean",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "ethercat",
@@ -1328,34 +1323,29 @@
       "driver_id": "genicam",
       "pack_id": "ispf-driver-genicam",
       "driver_class": "com.ispf.driver.genicam.GenicamDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-genicam/src/main/java/com/ispf/driver/genicam/GenicamDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-genicam/src/test/java/com/ispf/driver/genicam/GenicamDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-genicam/src/test/java/com/ispf/driver/genicam/GenicamDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-genicam/src/test/java/com/ispf/driver/genicam/GenicamDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-genicam/src/test/java/com/ispf/driver/genicam/GenicamDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-genicam",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "gps-tracker",
@@ -3850,34 +3840,29 @@
       "driver_id": "sigfox",
       "pack_id": "ispf-driver-sigfox",
       "driver_class": "com.ispf.driver.sigfox.SigfoxDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-sigfox/src/main/java/com/ispf/driver/sigfox/SigfoxDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-sigfox/src/test/java/com/ispf/driver/sigfox/SigfoxDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-sigfox/src/test/java/com/ispf/driver/sigfox/SigfoxDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-sigfox/src/test/java/com/ispf/driver/sigfox/SigfoxDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-sigfox/src/test/java/com/ispf/driver/sigfox/SigfoxDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-sigfox",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "sip",

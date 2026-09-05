@@ -443,7 +443,16 @@ final class DriverProductionMatrix {
                     "ispf-driver-iec103"),
             entry("secs-gem", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-secs-gem", "com.ispf.driver.secsgem.SecsGemDeviceDriverTest"),
-                    "ispf-driver-secs-gem")
+                    "ispf-driver-secs-gem"),
+            entry("enocean", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-enocean", "com.ispf.driver.enocean.EnoceanDeviceDriverTest"),
+                    "ispf-driver-enocean"),
+            entry("sigfox", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-sigfox", "com.ispf.driver.sigfox.SigfoxDeviceDriverTest"),
+                    "ispf-driver-sigfox"),
+            entry("genicam", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-genicam", "com.ispf.driver.genicam.GenicamDeviceDriverTest"),
+                    "ispf-driver-genicam")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */
