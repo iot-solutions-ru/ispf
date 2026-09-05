@@ -163,7 +163,7 @@ Docker Compose поднимает Keycloak на порт **8180**.
 Локальный логин принимает опциональный `totpCode` в `POST /api/v1/auth/login`. При `required-for-admin=true` для роли admin нужен enrolled secret и валидный код.
 
 **REAL сейчас (BL-153 Готово — TOTP GA):** персистентные enrollments (`mfa_enrollments`), проверка TOTP, enforcement для admin, UI enrollment + поле TOTP на логине.  
-**Follow-up (BL-194 Планируется):** WebAuthn / passkeys; Keycloak OTP как основной IdP MFA.
+**Follow-up (BL-194 Планируется):** WebAuthn / passkeys; Keycloak OTP как основной IdP MFA — ADR [0056](../en/decisions/0056-webauthn-idp-mfa.md). Подготовка pen-test: [pen-test-scope.md](pen-test-scope.md) (G-01).
 
 ## ACL для каждой переменной
 
