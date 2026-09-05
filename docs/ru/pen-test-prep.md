@@ -1,16 +1,16 @@
 # Подготовка к pen-test (G-01, углублённо)
 
 > **Статус:** runbook подготовки — **не** отчёт о пройденном assessment.  
-> SOW / RoE: [pen-test-scope.md](pen-test-scope.md) · Кейсы (EN): [../en/pen-test-cases.md](../en/pen-test-cases.md) · Prep (EN): [../en/pen-test-prep.md](../en/pen-test-prep.md)
+> SOW: [pen-test-scope.md](pen-test-scope.md) · RoE (EN): [../en/pen-test-roe.md](../en/pen-test-roe.md) · Опросник вендора (EN): [../en/pen-test-questionnaire.md](../en/pen-test-questionnaire.md) · Кейсы (EN): [../en/pen-test-cases.md](../en/pen-test-cases.md) · Prep (EN): [../en/pen-test-prep.md](../en/pen-test-prep.md)
 
 ## Зачем
 
-Зафиксировать версию, роли, allow-list и шаблоны evidence **до** старта подрядчика, чтобы findings были воспроизводимы.
+Зафиксировать версию, роли, allow-list, severity SLA и шаблоны evidence **до** старта подрядчика, чтобы findings были воспроизводимы.
 
 ## Шаги оператора
 
-1. Подписать SOW с [pen-test-scope.md](pen-test-scope.md).  
-2. Снять preflight (без паролей):
+1. Отобрать фирму по [опроснику](../en/pen-test-questionnaire.md); подписать SOW с [pen-test-scope.md](pen-test-scope.md) + [RoE](../en/pen-test-roe.md).  
+2. Снять preflight (без паролей; читает info/health/auth/config + статусы OpenAPI + security headers):
 
 ```bash
 bash tools/security/pen-test-preflight.sh https://TARGET --out /tmp/preflight.json
@@ -18,8 +18,9 @@ bash tools/security/pen-test-preflight.sh https://TARGET --out /tmp/preflight.js
 
 3. Заполнить [`inventory.template.md`](../evidence/security-pentest/inventory.template.md) (секреты только в vault).  
 4. Выдать минимальный набор учёток: admin / operator / viewer / tenant-A / tenant-B.  
-5. Отдать assessor каталог кейсов [pen-test-cases.md](../en/pen-test-cases.md) + OpenAPI.  
-6. После отчёта: remediation → retest → редакция в `docs/evidence/security-pentest/`.
+5. Отдать assessor каталог кейсов [pen-test-cases.md](../en/pen-test-cases.md), матрицу [`case-results.template.md`](../evidence/security-pentest/case-results.template.md) + OpenAPI (если опубликован).  
+6. Провести kickoff по agenda в RoE §8.  
+7. После отчёта: remediation → retest → редакция по [`evidence-index.template.md`](../evidence/security-pentest/evidence-index.template.md) в `docs/evidence/security-pentest/`.
 
 Пока нет датированного отчёта + retest — в тендерах только **Gap (G-01)**.
 

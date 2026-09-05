@@ -56,6 +56,8 @@ Suggested **reference environments** (operator-provided; credentials out of band
 4. **Disclosure:** 24h for Critical, 5 business days for High; coordinate public CVE only after patch availability.
 5. **Stop conditions:** suspected safety impact, ransomware-class behavior, or shared-tenant collateral → halt and call operator contact.
 
+**Deeper RoE** (severity rubric, retention, kickoff agenda, activity classes): [pen-test-roe.md](pen-test-roe.md).
+
 ---
 
 ## Suggested methodology
@@ -87,9 +89,13 @@ Until those exist, scorecard / tender language must say **Gap (G-01)** — not �
 
 ## Deeper prep
 
-Operator freeze / accounts / kickoff: [pen-test-prep.md](pen-test-prep.md)  
-Assessor case catalog: [pen-test-cases.md](pen-test-cases.md)  
-Preflight: `bash tools/security/pen-test-preflight.sh https://HOST --out preflight.json`
+| Doc | Role |
+|-----|------|
+| [pen-test-prep.md](pen-test-prep.md) | Operator freeze / accounts / kickoff checklist |
+| [pen-test-roe.md](pen-test-roe.md) | Full RoE + severity + stop conditions |
+| [pen-test-questionnaire.md](pen-test-questionnaire.md) | Vendor / RFP questionnaire |
+| [pen-test-cases.md](pen-test-cases.md) | Assessor case catalog |
+| Preflight | `bash tools/security/pen-test-preflight.sh https://HOST --out preflight.json` |
 
 ## Related
 

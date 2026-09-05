@@ -32,7 +32,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
-- **G-01 pen-test prep (deeper)** — operator [pen-test-prep.md](docs/en/pen-test-prep.md), case catalog [pen-test-cases.md](docs/en/pen-test-cases.md), inventory/findings templates, `tools/security/pen-test-preflight.sh` (read-only version pin).
+- **G-01 pen-test prep (deeper+)** — RoE [pen-test-roe.md](docs/en/pen-test-roe.md), vendor questionnaire, expanded case catalog (+ audit/export), case-results/evidence-index templates, preflight with OpenAPI status + security-header capture; operator [pen-test-prep.md](docs/en/pen-test-prep.md).
 - **G-01 pen-test SOW** — [pen-test-scope.md](docs/en/pen-test-scope.md); evidence folder `docs/evidence/security-pentest/`.
 - **ADR-0056** — WebAuthn / IdP OTP MFA follow-up (BL-194) **Proposed** (implementation still parked).
 - **Parked backlog board** — [docs/en/parked-backlog.md](docs/en/parked-backlog.md) (OT Trust / live ERP / WebAuthn / pen-test / field tablet stay parked; Enterprise L lab PASS noted).

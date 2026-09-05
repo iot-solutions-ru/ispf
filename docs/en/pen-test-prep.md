@@ -2,6 +2,8 @@
 
 > **Status:** Prep runbook — **not** a passed assessment.  
 > Legal / SOW surface: [pen-test-scope.md](pen-test-scope.md).  
+> RoE addendum: [pen-test-roe.md](pen-test-roe.md).  
+> Vendor RFP: [pen-test-questionnaire.md](pen-test-questionnaire.md).  
 > Case catalog: [pen-test-cases.md](pen-test-cases.md).  
 > Gap: [compliance-tender-pack.md](compliance-tender-pack.md) **G-01**.
 
@@ -20,14 +22,15 @@ Use this page **before** a hired firm starts. Goal: freeze version, accounts, al
 | MFA flags | `ISPF_MFA_ENABLED`, `ISPF_MFA_REQUIRED_FOR_ADMIN` | inventory sheet |
 | Tenancy mode | see [multi-tenant.md](multi-tenant.md) | inventory sheet |
 | Historian store | JDBC vs ClickHouse flags | inventory sheet |
+| TLS / security headers | preflight `headers` block | inventory sheet |
 
-Preflight script (lab/demostand, read-only):
+Preflight script (lab/demostand, **read-only**, no credentials):
 
 ```bash
-bash tools/security/pen-test-preflight.sh https://TARGET_HOST
+bash tools/security/pen-test-preflight.sh https://TARGET_HOST --out /tmp/preflight.json
 ```
 
-Writes a JSON stub under `/tmp` (or `--out`); copy redacted output into `docs/evidence/security-pentest/preflight-YYYY-MM-DD.json` **after** engagement kickoff (no passwords).
+Copy redacted output into `docs/evidence/security-pentest/<engagement>/preflight.json` **after** kickoff (no passwords). Exit code non-zero if `/api/v1/info` is not HTTP 200.
 
 ---
 
@@ -58,30 +61,34 @@ Template: [`docs/evidence/security-pentest/inventory.template.md`](../evidence/s
 | Private lab (`192.168.100.10` class) | Grey-box, fuzz, plugin upload tests | Touching unrelated GPU/vLLM stacks without owner OK |
 | Disposable staging | Full destructive suite | Promoting findings as “prod passed” |
 
-Document jump host / VPN in the inventory sheet; keep credentials in operator vault.
+Default demostand RPS: see [pen-test-roe.md](pen-test-roe.md) §3. Document jump host / VPN in the inventory sheet; keep credentials in operator vault.
 
 ---
 
 ## 4. Kickoff checklist (T-1 day)
 
-- [ ] SOW signed with [pen-test-scope.md](pen-test-scope.md) attached  
+- [ ] Firm selected using [pen-test-questionnaire.md](pen-test-questionnaire.md)  
+- [ ] SOW signed with [pen-test-scope.md](pen-test-scope.md) + [pen-test-roe.md](pen-test-roe.md) attached  
 - [ ] Written authorization email with allow-list hosts + windows  
-- [ ] Version pin recorded (`/api/v1/info` + image digest)  
+- [ ] Version pin recorded (preflight JSON + image digest)  
 - [ ] Accounts issued + MFA policy stated  
-- [ ] OpenAPI / Swagger link or export handed over  
+- [ ] OpenAPI / Swagger link or export handed over (if published)  
 - [ ] Contacts: security owner, infra on-call, stop-condition phone  
 - [ ] Rate-limit / WAF expectations agreed  
+- [ ] Severity rubric acknowledged ([pen-test-roe.md](pen-test-roe.md) §5)  
 - [ ] Findings template shared: [`findings.template.md`](../evidence/security-pentest/findings.template.md)  
-- [ ] Case list acknowledged: [pen-test-cases.md](pen-test-cases.md)  
+- [ ] Case list + results matrix: [pen-test-cases.md](pen-test-cases.md) · [`case-results.template.md`](../evidence/security-pentest/case-results.template.md)  
+- [ ] Kickoff agenda run ([pen-test-roe.md](pen-test-roe.md) §8)  
 
 ---
 
 ## 5. During engagement
 
-1. Assessor works the [case catalog](pen-test-cases.md); mark Pass / Fail / N/A / Skip.  
-2. Critical → notify within **24h** (scope RoE).  
+1. Assessor works the [case catalog](pen-test-cases.md); mark Pass / Fail / N/A / Skip in the results matrix.  
+2. Critical → notify within **24h** (RoE).  
 3. Do not patch silently mid-test without noting build change (breaks freeze).  
-4. If build must change: new preflight JSON + note in findings log.
+4. If build must change: new preflight JSON + note in findings log.  
+5. Honor stop conditions in [pen-test-roe.md](pen-test-roe.md) §7.
 
 ---
 
@@ -92,7 +99,7 @@ Document jump host / VPN in the inventory sheet; keep credentials in operator va
 | 1 | Full report (PDF/MD) with CVSS |
 | 2 | Remediation tickets with owners/dates |
 | 3 | Retest letter |
-| 4 | Redacted pack under `docs/evidence/security-pentest/YYYY-MM-DD-*/` |
+| 4 | Redacted pack using [`evidence-index.template.md`](../evidence/security-pentest/evidence-index.template.md) under `docs/evidence/security-pentest/YYYY-MM-DD-*/` |
 | 5 | Update G-01 row in compliance pack + scorecard honesty note |
 
 Until steps 1–3 exist: language stays **Gap (G-01)**.
@@ -101,7 +108,7 @@ Until steps 1–3 exist: language stays **Gap (G-01)**.
 
 ## 7. Related
 
-- [pen-test-scope.md](pen-test-scope.md) · [pen-test-cases.md](pen-test-cases.md) · [security.md](security.md)  
+- [pen-test-scope.md](pen-test-scope.md) · [pen-test-roe.md](pen-test-roe.md) · [pen-test-questionnaire.md](pen-test-questionnaire.md) · [pen-test-cases.md](pen-test-cases.md) · [security.md](security.md)  
 - [parked-backlog.md](parked-backlog.md) **P-PENTEST**  
 - ADR [0056](decisions/0056-webauthn-idp-mfa.md) (MFA follow-up; not a substitute for pen-test)
 

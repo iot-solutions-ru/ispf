@@ -21,6 +21,8 @@ Legend: **AuthZ** authorization · **AuthN** authentication · **Iso** tenancy �
 | A-06 | AuthN | MFA bypass attempts (empty totp, replay, skew) fail | Skip if MFA off |
 | A-07 | AuthN | OIDC: `/api/v1/auth/config` reflects mode; auth-code/PKCE path cannot be forced to implicit insecure flow | Skip if local-only |
 | A-08 | AuthN | Session fixation / token in URL query not accepted | Console + API |
+| A-09 | AuthN | Password change / reset flows (if enabled) require re-auth or token binding; no account takeover via predictable tokens | Skip if feature off |
+| A-10 | AuthN | Concurrent sessions: logout of one session does not leave stale admin capabilities undocumented | Document expected behavior |
 
 ---
 
@@ -35,6 +37,7 @@ Legend: **AuthZ** authorization · **AuthN** authentication · **Iso** tenancy �
 | B-05 | AuthZ | Event/function `invokeRoles` denied for unauthorized role | |
 | B-06 | AuthZ | Unauthenticated access to `/api/v1/objects` fails | |
 | B-07 | AuthZ | IDOR: object path of another user’s private tree not readable by guessing path | |
+| B-08 | AuthZ | Audit log / security-user admin APIs denied for non-admin | |
 
 ---
 
@@ -93,10 +96,11 @@ Legend: **AuthZ** authorization · **AuthN** authentication · **Iso** tenancy �
 | G-04c | Cfg | Driver pack upload rejects unsigned/malicious zip when signing enforced | Skip if feature off |
 | G-05c | Inj | SQL/NoSQL injection on search and history filters | |
 | G-06c | Cfg | Security headers baseline (CSP/frame-ancestors) — informational for SPA | |
+| G-07c | Cfg | Error bodies do not leak stack traces / JDBC URLs / secrets on demostand prod profile | |
 
 ---
 
-## H — Abuse / resilience (lab only)
+## H — Abuse / resilience (lab / staging only)
 
 | ID | Class | Case | Notes / hints |
 |----|-------|------|----------------|
@@ -106,15 +110,28 @@ Legend: **AuthZ** authorization · **AuthN** authentication · **Iso** tenancy �
 
 ---
 
+## I — Audit & export surfaces
+
+| ID | Class | Case | Notes / hints |
+|----|-------|------|----------------|
+| I-01 | AuthZ | Audit export requires appropriate role; viewer denied | |
+| I-02 | Iso | Audit export cannot pull foreign-tenant events when tenancy on | Overlaps C-03 |
+| I-03 | Cfg | Bulk export / backup endpoints (if present) are authz-gated and not world-readable | Skip if absent |
+
+---
+
 ## Coverage map (quick)
 
 | Surface in scope doc | Primary cases |
 |----------------------|---------------|
-| HTTP API | A-*, B-*, C-*, F-*, G-* |
+| HTTP API | A-*, B-*, C-*, F-*, G-*, I-* |
 | Web Console | D-* |
 | WebSocket | E-* |
 | Historian / CH | F-* |
-| OIDC / MFA | A-05…A-07 |
+| OIDC / MFA | A-05…A-07, A-09 |
 | Pack upload | G-04c, H-03 |
+| Audit / export | I-*, B-08 |
+
+Results matrix template: [`case-results.template.md`](../evidence/security-pentest/case-results.template.md).
 
 RU summary: [pen-test-prep.md](../ru/pen-test-prep.md) (cases stay EN-canonical for assessors).

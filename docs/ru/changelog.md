@@ -21,7 +21,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
-- G-01 pen-test prep (углублённо): [pen-test-prep.md](pen-test-prep.md), кейсы EN, preflight-скрипт; SOW [pen-test-scope.md](pen-test-scope.md); ADR-0056 WebAuthn/IdP MFA (BL-194 Proposed).
+- G-01 pen-test prep (углублённо+): RoE/опросник EN, расширенные кейсы, шаблоны case-results/evidence-index, preflight (OpenAPI status + headers); [pen-test-prep.md](pen-test-prep.md); SOW [pen-test-scope.md](pen-test-scope.md); ADR-0056 WebAuthn/IdP MFA (BL-194 Proposed).
 - Доска parked: [parked-backlog.md](parked-backlog.md); Enterprise L lab PASS (50k / 1B / multi-tag) в `docs/evidence/historian-scale/`.
 - Enterprise L playbook → `tools/historian-scale/`; Historian JVM archive.
 
