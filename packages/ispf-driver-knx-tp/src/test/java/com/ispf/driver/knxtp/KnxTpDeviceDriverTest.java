@@ -164,7 +164,7 @@ class KnxTpDeviceDriverTest {
             int apci = ((frame[base + 5] & 0xFF) << 8) | (frame[base + 6] & 0xFF);
             int apciType = apci & 0x03C0;
             if (apciType == KnxTpDeviceDriver.APCI_GROUP_WRITE) {
-                int value = lengthField <= 1 ? (frame[base + 6] & 0x3F) : (frame[base + 7] & 0xFF);
+                int value = lengthField <= 2 ? (frame[base + 6] & 0x3F) : (frame[base + 7] & 0xFF);
                 values.put(ga, value & 0xFF);
                 return;
             }

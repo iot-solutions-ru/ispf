@@ -208,26 +208,22 @@ public class KnxTpDeviceDriver implements DeviceDriver {
 
     static byte[] buildCemi(byte messageCode, int groupAddress, int apci, byte[] data) {
         int dataLen = data == null ? 0 : data.length;
-        // length field = APCI bytes (2) + data bytes - 1  => for read (no data): 1; for write 1 byte: 3
-        int lengthField = dataLen == 0 ? 1 : (1 + dataLen);
-        ByteBuffer cemi = ByteBuffer.allocate(9 + lengthField);
+        // APDU = 2-byte APCI (+ optional data). Length octet = APDU size.
+        int apduLen = 2 + dataLen;
+        ByteBuffer cemi = ByteBuffer.allocate(9 + apduLen);
         cemi.put(messageCode);
         cemi.put((byte) 0x00);
         cemi.put((byte) 0xBC);
         cemi.put((byte) 0xE0);
-        cemi.putShort((short) 0); // source filled by caller path via separate helper when needed
+        cemi.putShort((short) 0);
         cemi.putShort((short) (groupAddress & 0xFFFF));
-        cemi.put((byte) (lengthField & 0xFF));
+        cemi.put((byte) (apduLen & 0xFF));
         cemi.put((byte) ((apci >> 8) & 0xFF));
         cemi.put((byte) (apci & 0xFF));
         if (data != null) {
             cemi.put(data);
         }
-        byte[] out = cemi.array();
-        // patch source address at offset 4..5
-        out[4] = (byte) ((0 >> 8) & 0xFF);
-        out[5] = (byte) (0 & 0xFF);
-        return out;
+        return cemi.array();
     }
 
     byte[] buildCemiWithSource(byte messageCode, int groupAddress, int apci, byte[] data) {
@@ -273,8 +269,8 @@ public class KnxTpDeviceDriver implements DeviceDriver {
         int addInfo = frame[cemiOffset + 1] & 0xFF;
         int base = cemiOffset + 2 + addInfo;
         int lengthField = frame[base + 4] & 0xFF;
-        if (lengthField <= 1) {
-            // 6-bit data in low APCI nibble — treat as 0 when absent
+        if (lengthField <= 2) {
+            // no data octet — 6-bit payload may sit in low APCI bits
             return frame[base + 6] & 0x3F;
         }
         return frame[base + 7] & 0xFF;
