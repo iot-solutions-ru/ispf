@@ -11,6 +11,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static com.ispf.server.driver.DriverProductionMatrix.Capability.POLL;
+import static com.ispf.server.driver.DriverProductionMatrix.Capability.WRITE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -126,6 +128,66 @@ class DriverProductionMatrixTest {
                     DriverProductionMatrix.resolveCapabilities(driverId).contains(DriverProductionMatrix.Capability.OBSERVED_AT),
                     driverId
             );
+        }
+    }
+
+    /** ADR-0057 / Wave 1: known write-capable packs must not under-claim WRITE. */
+    @Test
+    void wave1WriteCapableDriversDeclareWrite() {
+        for (String driverId : new String[] {
+            "modbus-tcp", "mqtt", "opcua", "http", "snmp", "ethernet-ip",
+            "smpp", "email", "sms", "webhook", "bacnet"
+        }) {
+            assertTrue(
+                    DriverProductionMatrix.resolveCapabilities(driverId).contains(WRITE),
+                    driverId + " must declare WRITE (ADR-0057 honesty)"
+            );
+        }
+        assertTrue(DriverProductionMatrix.resolveCapabilities("dnp3").contains(POLL));
+        assertFalse(
+                DriverProductionMatrix.resolveCapabilities("dnp3").contains(WRITE),
+                "dnp3 stays POLL_ONLY until write is implemented"
+        );
+        assertEquals(DriverMaturity.PRODUCTION, DriverProductionMatrix.resolveMaturity("dnp3"));
+        assertEquals(DriverMaturity.BETA, DriverProductionMatrix.resolveMaturity("opc-da"));
+        assertEquals(DriverMaturity.BETA, DriverProductionMatrix.resolveMaturity("opc-bridge"));
+    }
+
+    /**
+     * Wave 1 honesty: curated WRITE drivers must not ship a stub {@code writePoint};
+     * curated POLL_ONLY drivers must keep an explicit not-implemented write.
+     */
+    @Test
+    void wave1WritePointSourceMatchesDeclaredCapabilities() throws IOException {
+        assertWritePointMentionsNotImplemented("dnp3", true);
+        assertWritePointMentionsNotImplemented("gps-tracker", true);
+        assertWritePointMentionsNotImplemented("modbus-tcp", false);
+        assertWritePointMentionsNotImplemented("http", false);
+        assertWritePointMentionsNotImplemented("ethernet-ip", false);
+        assertWritePointMentionsNotImplemented("snmp", false);
+    }
+
+    private static void assertWritePointMentionsNotImplemented(String driverId, boolean expectStub)
+            throws IOException {
+        DriverProductionMatrix.Entry entry = DriverProductionMatrix.entry(driverId).orElseThrow();
+        Path source = resolveDeviceDriverSource(entry);
+        assertNotNull(source, driverId + " DeviceDriver source");
+        String text = Files.readString(source);
+        int idx = text.indexOf("void writePoint");
+        assertTrue(idx >= 0, driverId + " missing writePoint method");
+        String window = text.substring(idx, Math.min(text.length(), idx + 700));
+        boolean looksStub = Pattern.compile(
+                        "not implemented|unsupported operation|read-only",
+                        Pattern.CASE_INSENSITIVE
+                )
+                .matcher(window)
+                .find();
+        if (expectStub) {
+            assertTrue(looksStub, driverId + " POLL_ONLY writePoint should document not-implemented");
+            assertFalse(entry.capabilities().contains(WRITE), driverId + " must not claim WRITE");
+        } else {
+            assertFalse(looksStub, driverId + " WRITE driver writePoint must not be a stub throw");
+            assertTrue(entry.capabilities().contains(WRITE), driverId + " must claim WRITE");
         }
     }
 

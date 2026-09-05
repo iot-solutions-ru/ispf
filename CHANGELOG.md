@@ -24,17 +24,31 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **OT Trust Wave 3b** — +7 clean-room codecs: `ocpp`, `odata`, `grpc` (JSON-lab), `openadr`, `scpi`, `visa` (SOCKET-only), `knx-tp`.
 - **Enterprise L catalog tooling** (tracked under `tools/historian-scale/`): seed 50k
   history-enabled devices, `GET /api/v1/platform/analytics/history-enabled-count`, and
   analytics-scale gate counting **history-enabled variables** (not binding-rule `/tags`).
 - **HMI offline lab soak** — `npm run pwa:offline-field-soak` (Playwright CDP offline, configurable
   duration; demostand **2 h** evidence archived for Post-S33).
+- **OT Trust Wave 2 codec promotion** — `redis`, `mitsubishi-slmp`, `yaskawa-memobus`, `sparkplug-b`
+  promoted STUB → **PRODUCTION** with real codecs + in-process loopback tests (fake RESP / SLMP 3E /
+  Modbus TCP / Moquette+Sparkplug protobuf); matrix `POLL_WRITE`; evidence
+  [`docs/evidence/ot-trust/2026-09-05-wave2-codec-promotion.md`](docs/evidence/ot-trust/2026-09-05-wave2-codec-promotion.md).
 
 ### Docs
 
+- **OT Trust Wave 3 — 13 clean-room codec promotions** — `beckhoff-ads`, `mitsubishi-melsec`, `iec62056`, `ieee2030-5`, `mqtt-sn`, `nats`, `pulsar` (lab framing), `onvif`, `mtconnect`, `knx`, `lwm2m`, `websocket`, `graphql` → PRODUCTION with loopback tests; Apache-2.0 / JDK-only; high-risk stacks untouched; evidence `docs/evidence/ot-trust/2026-09-05-wave3-codec-promotion.md`.
+- **OT Trust — raise readiness for all 162 packs** — stub-kit **v0.2** (lab loopback write) +
+  contract tests for catalog stubs → audit label **`STUB_LAB`** (honest: still no protocol codec);
+  `tools/driver-stubs/raise-stub-readiness.py`; WRITE_UNDERCLAIM false-positives for ingress read-only drivers fixed.
+- **OT Trust — full 162-driver readiness audit** — `tools/driver-readiness-audit.py` + report
+  [`docs/evidence/ot-trust/driver-readiness.md`](docs/evidence/ot-trust/driver-readiness.md)
+  (matrix honesty: promote `email`/`sms`/`webhook`/`smb`, claim `smpp` WRITE; CI gate on interop workflow).
+- **OT Trust Wave 1 hardening** — writable Modbus lab fixture (`deploy/driver-interop/modbus/server.py`) replaces `oitc/modbus-server` (FC6 reset in CI); smoke covers FC6+FC16 + optional OPC UA write; writePoint↔capability source gate; lab day-1 journal.
+- **OT Trust Wave 1 kickoff** — unpark P-OT; [ADR-0057](docs/en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md) (DNP3 PRODUCTION poll-only); `http` WRITE in production matrix; evidence `docs/evidence/ot-trust/`.
 - **G-01 pen-test prep** — [pen-test-scope.md](docs/en/pen-test-scope.md) SOW / rules of engagement; evidence folder stub `docs/evidence/security-pentest/`.
 - **ADR-0056** — WebAuthn / IdP OTP MFA follow-up (BL-194) **Proposed** (implementation still parked).
-- **Parked backlog board** — [docs/en/parked-backlog.md](docs/en/parked-backlog.md) (OT Trust / live ERP / WebAuthn / pen-test / field tablet stay parked; Enterprise L lab PASS noted).
+- **Parked backlog board** — [docs/en/parked-backlog.md](docs/en/parked-backlog.md) (OT Trust Wave 1 **in progress**; live ERP / WebAuthn / pen-test / field tablet stay parked; Enterprise L lab PASS noted).
 - **Enterprise L lab evidence** (2026-09-05, `192.168.100.10`): 50k history-enabled + ≥1B CH rows + multi-tag p95≈49 ms — `docs/evidence/historian-scale/`.
 - Enterprise L playbook paths restored to `tools/historian-scale/` (seed/count/gates).
 - Historian JVM scale gate archive (`docs/evidence/historian-scale/`).

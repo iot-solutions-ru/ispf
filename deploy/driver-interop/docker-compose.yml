@@ -17,13 +17,29 @@ services:
       start_period: 5s
 
   modbus-tcp:
-    # No in-container healthcheck: image port/layout varies; host TCP wait is in
-    # deploy/tools/driver-interop-smoke.sh.
-    image: oitc/modbus-server:latest
+    # Writable holding-register fixture (FC3/FC6/FC16). Replaces oitc/modbus-server
+    # which reset the TCP session on FC6 in CI (OT Trust Wave 1 / B1).
+    image: python:3.12-alpine
     container_name: ispf-interop-modbus-tcp
     restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./modbus/server.py:/app/server.py:ro
+    command: ["python", "-u", "/app/server.py", "--host", "0.0.0.0", "--port", "502"]
     ports:
       - "127.0.0.1:502:502"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1',502),2); s.close()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
 
   opcua:
     # Microsoft OPC PLC (.NET). SecurityPolicy.None + anonymous via --autoaccept/--sph.

@@ -33,8 +33,26 @@ jobs:
             exit 1
           fi
 
+      - name: Install asyncua for OPC UA write smoke (Wave 1 / B1)
+        run: python3 -m pip install --user 'asyncua>=1.0.0'
+
+      - name: Self-test Modbus fixture (no docker)
+        run: |
+          chmod +x deploy/tools/driver-interop-smoke.sh
+          deploy/tools/driver-interop-smoke.sh --self-test-modbus
+
       - name: Smoke MQTT / Modbus / OPC UA endpoints
+        env:
+          ISPF_INTEROP_OPCUA_WRITE: "1"
         run: deploy/tools/driver-interop-smoke.sh
+
+      - name: Upload fixture smoke summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: driver-interop-fixture-smoke
+          path: build/driver-interop/fixture-smoke-summary.md
+          if-no-files-found: warn
 
       - name: Tear down fixtures
         if: always()
@@ -184,6 +202,16 @@ jobs:
           distribution: temurin
           java-version: "25"
 
+      - name: Full catalog readiness audit (162 packs)
+        run: |
+          python3 tools/driver-readiness-audit.py \
+            --md docs/evidence/ot-trust/driver-readiness.md \
+            --json docs/evidence/ot-trust/driver-readiness.json \
+            --fail-on-findings
+
+      - name: Stub-kit lab contract (STUB_LAB base)
+        run: ./gradlew :packages:ispf-driver-stub-kit:test --no-daemon
+
       - name: Verify PRODUCTION↔interop matrix gate (BL-85 / BL-140)
         run: >
           ./gradlew
@@ -191,3 +219,13 @@ jobs:
           --tests com.ispf.server.driver.DriverInteropWorkflowGateTest
           --tests com.ispf.server.driver.DriverProductionMatrixTest
           --no-daemon
+
+      - name: Upload driver readiness report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: driver-readiness-audit
+          path: |
+            docs/evidence/ot-trust/driver-readiness.md
+            docs/evidence/ot-trust/driver-readiness.json
+          if-no-files-found: warn

@@ -10,12 +10,17 @@ import com.ispf.driver.DriverMetadata;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Shared TCP reachability shell for protocol catalog stubs (maturity {@code STUB}).
+ * Shared lab shell for protocol catalog stubs (maturity {@code STUB}).
+ * <p>
+ * Provides TCP reachability probe on read and an in-memory write loopback for
+ * console / CI contract tests. Does <strong>not</strong> implement a protocol codec —
+ * do not claim {@code PRODUCTION} until a real stack lands.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — no third-party protocol stacks.
  */
@@ -24,6 +29,7 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
     protected static final DataSchema STUB_SCHEMA = DataSchema.builder("protocolStubResult")
             .field("connected", FieldType.BOOLEAN)
             .field("value", FieldType.STRING)
+            .field("mode", FieldType.STRING)
             .field("limitation", FieldType.STRING)
             .build();
 
@@ -35,7 +41,7 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port;
     private int timeoutMs = 5000;
-    private final Map<String, String> points = new ConcurrentHashMap<>();
+    private final Map<String, String> writtenValues = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
     protected ProtocolStubDeviceDriver(
@@ -46,11 +52,12 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
     ) {
         this.defaultPort = defaultPort;
         this.port = defaultPort;
-        this.limitation = description + " — connectivity stub only (no protocol codec)";
+        this.limitation = description
+                + " — lab stub (TCP probe + memory loopback write; no protocol codec)";
         this.metadata = new DriverMetadata(
                 driverId,
                 displayName,
-                "0.1.0",
+                "0.2.0",
                 this.limitation,
                 "ISPF",
                 Map.of(
@@ -60,7 +67,7 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
                         "pollIntervalMs", "30000"
                 ),
                 DriverMaturity.STUB,
-                Set.of("read")
+                Set.of("read", "write")
         );
     }
 
@@ -75,6 +82,7 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
         this.host = "127.0.0.1";
         this.port = defaultPort;
         this.timeoutMs = 5000;
+        writtenValues.clear();
         driverObject.configuration().forEach(this::applyConfig);
     }
 
@@ -103,7 +111,7 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
     @Override
     public final void disconnect() {
         connected = false;
-        points.clear();
+        writtenValues.clear();
     }
 
     @Override
@@ -116,14 +124,16 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverException("Not connected");
         }
-        points.clear();
         boolean reachable = tcpConnect(host, port);
-        String value = reachable ? "endpoint-open" : "endpoint-closed";
+        String probeValue = reachable ? "endpoint-open" : "endpoint-closed";
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
-            points.put(entry.getKey(), entry.getValue() == null ? "connected" : entry.getValue());
-            driverObject.updateVariable(entry.getKey(), DataRecord.single(STUB_SCHEMA, Map.of(
-                    "connected", reachable,
-                    "value", value,
+            String pointId = entry.getKey();
+            String written = writtenValues.get(pointId);
+            boolean loopback = written != null;
+            driverObject.updateVariable(pointId, DataRecord.single(STUB_SCHEMA, Map.of(
+                    "connected", reachable || loopback,
+                    "value", loopback ? written : probeValue,
+                    "mode", loopback ? "loopback" : "probe",
                     "limitation", limitation
             )));
         }
@@ -131,7 +141,41 @@ public abstract class ProtocolStubDeviceDriver implements DeviceDriver {
 
     @Override
     public final void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException(metadata.id() + " driver is read-only stub in v0.1");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        if (pointId == null || pointId.isBlank()) {
+            throw new DriverException("pointId is required");
+        }
+        String stored = extractWritableValue(value);
+        writtenValues.put(pointId, stored);
+        driverObject.updateVariable(pointId, DataRecord.single(STUB_SCHEMA, Map.of(
+                "connected", true,
+                "value", stored,
+                "mode", "loopback",
+                "limitation", limitation
+        )));
+        driverObject.log(
+                DriverLogLevel.INFO,
+                metadata.id() + " lab loopback write " + pointId + "=" + stored
+        );
+    }
+
+    private static String extractWritableValue(DataRecord value) {
+        if (value == null || value.rowCount() == 0) {
+            return "";
+        }
+        Map<String, Object> row = value.firstRow();
+        for (String key : List.of("value", "payload", "data", "text")) {
+            Object candidate = row.get(key);
+            if (candidate != null) {
+                return String.valueOf(candidate);
+            }
+        }
+        if (row.size() == 1) {
+            return String.valueOf(row.values().iterator().next());
+        }
+        return row.toString();
     }
 
     private boolean tcpConnect(String targetHost, int targetPort) {

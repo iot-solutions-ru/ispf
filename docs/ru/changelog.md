@@ -18,9 +18,19 @@ Changelog отдельных application bundles — в манифестах п�
 - Enterprise L tooling в `tools/historian-scale/`: seed/count history-enabled,
   `GET /history-enabled-count`, gate считает переменные (не `/tags` binding rules).
 - `npm run pwa:offline-field-soak` — lab 2h CDP offline soak.
+- **OT Trust Wave 2** — `redis`, `mitsubishi-slmp`, `yaskawa-memobus`, `sparkplug-b`: STUB → **PRODUCTION**
+  (реальные кодеки + loopback-тесты); evidence `docs/evidence/ot-trust/2026-09-05-wave2-codec-promotion.md`.
 
 ### Docs
 
+- **OT Trust Wave 3** — 13 clean-room кодеков → PRODUCTION (ADS/MELSEC/MQTT-SN/NATS/KNX/…); без GPL и проприетарных SDK.
+- **OT Trust — поднятие готовности всех 162 паков** — stub-kit **v0.2** (TCP probe + memory loopback) +
+  contract-тесты на каталог STUB → метка аудита **`STUB_LAB`** (без фейкового PRODUCTION);
+  `tools/driver-stubs/raise-stub-readiness.py`.
+- **OT Trust — аудит всех 162 драйверов** — `tools/driver-readiness-audit.py`, отчёт
+  `docs/evidence/ot-trust/driver-readiness.md` (honesty: matrix ↔ packs).
+- **OT Trust Wave 1 hardening** — writable Modbus fixture; FC6/FC16 smoke; writePoint gate; lab day-1 journal.
+- **OT Trust Wave 1** — снят парк P-OT; ADR-0057 (DNP3 PRODUCTION poll-only); evidence `docs/evidence/ot-trust/`.
 - G-01 pen-test prep: [pen-test-scope.md](pen-test-scope.md); ADR-0056 WebAuthn/IdP MFA (BL-194 Proposed).
 - Доска parked: [parked-backlog.md](parked-backlog.md); Enterprise L lab PASS (50k / 1B / multi-tag) в `docs/evidence/historian-scale/`.
 - Enterprise L playbook → `tools/historian-scale/`; Historian JVM archive.
