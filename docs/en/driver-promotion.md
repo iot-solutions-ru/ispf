@@ -47,6 +47,8 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `barcode-scanner` | STUB | **PRODUCTION** | TCP newline barcode/QR last-scan + TRIGGER/BEEP |
 | `weighbridge` | STUB | **PRODUCTION** | ASCII `W` poll / ZERO/TARE lab dialect |
 | `weather-station` | STUB | **PRODUCTION** | `GET FIELD` / `GET ALL` text lab (read-only) |
+| `delta-dvp` | STUB | **PRODUCTION** | Modbus-TCP FC3/FC6 lab for Delta DVP/AS |
+| `ls-xgt` | STUB | **PRODUCTION** | XGT-lab binary (LSIS-XGT header subset; not certified FEnet) |
 
 **License policy:** Apache-2.0 clean-room / JDK sockets only. Lab readiness ≠ field certification.
 

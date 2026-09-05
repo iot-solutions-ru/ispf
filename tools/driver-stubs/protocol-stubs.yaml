@@ -59,18 +59,12 @@ stubs:
     description: Panasonic MEWTOCOL-COM/DAT stub
     port: 9094
   # yaskawa-memobus promoted Wave 2 → PRODUCTION (packages/ispf-driver-yaskawa-memobus)
-  - id: delta-dvp
-    name: Delta DVP
-    description: Delta DVP / AS series PLC stub
-    port: 502
+  # delta-dvp promoted Wave 4 → PRODUCTION (packages/ispf-driver-delta-dvp)
   - id: fatek
     name: Fatek FACON
     description: Fatek FACON protocol stub
     port: 500
-  - id: ls-xgt
-    name: LS XGT
-    description: LS Electric XGT FEnet stub
-    port: 2004
+  # ls-xgt promoted Wave 4 → PRODUCTION (packages/ispf-driver-ls-xgt)
   - id: fuji-sph
     name: Fuji SPH
     description: Fuji Electric SPH / MICREX stub

@@ -24,3 +24,6 @@ Promoted clean-room lab codecs (JDK sockets, Apache-2.0):
   :packages:ispf-driver-weighbridge:test \
   :packages:ispf-driver-weather-station:test
 ```
+
+| delta-dvp | ispf-driver-delta-dvp | read+write |
+| ls-xgt | ispf-driver-ls-xgt | read+write |

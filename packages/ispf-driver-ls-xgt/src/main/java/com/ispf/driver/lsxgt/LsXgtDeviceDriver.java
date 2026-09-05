@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class LsXgtDeviceDriver implements DeviceDriver {
 
-    static final byte[] MAGIC = "LSIS-XGT\0".getBytes(StandardCharsets.US_ASCII);
+    static final byte[] MAGIC = "LSIS-XGT\0\0".getBytes(StandardCharsets.US_ASCII); // 10-byte company header
     static final int HEADER_LEN = 20;
     static final byte CMD_READ = 0x01;
     static final byte CMD_WRITE = 0x02;

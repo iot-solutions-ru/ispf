@@ -374,7 +374,13 @@ final class DriverProductionMatrix {
                     "ispf-driver-weighbridge"),
             entry("weather-station", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-weather-station", "com.ispf.driver.weatherstation.WeatherStationDeviceDriverTest"),
-                    "ispf-driver-weather-station")
+                    "ispf-driver-weather-station"),
+            entry("delta-dvp", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-delta-dvp", "com.ispf.driver.deltadvp.DeltaDvpDeviceDriverTest"),
+                    "ispf-driver-delta-dvp"),
+            entry("ls-xgt", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-ls-xgt", "com.ispf.driver.lsxgt.LsXgtDeviceDriverTest"),
+                    "ispf-driver-ls-xgt")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T09:55:16Z`  
+> Generated: `2026-09-05T10:25:26Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **89** · Stub list: **73**  
+> Matrix ENTRIES: **94** · Stub list: **68**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=86, `STUB`=73 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=86, `SHELL_BETA`=2, `STUB_LAB`=73 |
-| Source | `matrix`=89, `stub-list`=73 |
+| Maturity | `BETA`=3, `PRODUCTION`=91, `STUB`=68 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=91, `SHELL_BETA`=2, `STUB_LAB`=68 |
+| Source | `matrix`=94, `stub-list`=68 |
 
 ### Readiness legend
 
@@ -71,7 +71,7 @@ _None._
 | `azure-iot-hub` | `ispf-driver-azure-iot-hub` | STUB | stub-list | `STUB_LAB` | — |
 | `bacnet` | `ispf-driver-bacnet` | PRODUCTION | matrix | `READY_LAB` | — |
 | `bacnet-mstp` | `ispf-driver-bacnet-mstp` | STUB | stub-list | `STUB_LAB` | — |
-| `barcode-scanner` | `ispf-driver-barcode-scanner` | STUB | stub-list | `STUB_LAB` | — |
+| `barcode-scanner` | `ispf-driver-barcode-scanner` | PRODUCTION | matrix | `READY_LAB` | — |
 | `beckhoff-ads` | `ispf-driver-beckhoff-ads` | PRODUCTION | matrix | `READY_LAB` | — |
 | `bluetooth-le` | `ispf-driver-bluetooth-le` | STUB | stub-list | `STUB_LAB` | — |
 | `camera-ai` | `ispf-driver-camera-ai` | STUB | stub-list | `STUB_LAB` | — |
@@ -85,7 +85,7 @@ _None._
 | `corba` | `ispf-driver-corba` | BETA | matrix | `PARTIAL` | — |
 | `cwmp` | `ispf-driver-cwmp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dali` | `ispf-driver-dali` | STUB | stub-list | `STUB_LAB` | — |
-| `delta-dvp` | `ispf-driver-delta-dvp` | STUB | stub-list | `STUB_LAB` | — |
+| `delta-dvp` | `ispf-driver-delta-dvp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `device-net` | `ispf-driver-device-net` | STUB | stub-list | `STUB_LAB` | — |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -146,7 +146,7 @@ _None._
 | `ldap` | `ispf-driver-ldap` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lonworks` | `ispf-driver-lonworks` | STUB | stub-list | `STUB_LAB` | — |
 | `lorawan` | `ispf-driver-lorawan` | STUB | stub-list | `STUB_LAB` | — |
-| `ls-xgt` | `ispf-driver-ls-xgt` | STUB | stub-list | `STUB_LAB` | — |
+| `ls-xgt` | `ispf-driver-ls-xgt` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lwm2m` | `ispf-driver-lwm2m` | PRODUCTION | matrix | `READY_LAB` | — |
 | `matter` | `ispf-driver-matter` | STUB | stub-list | `STUB_LAB` | — |
 | `mbus` | `ispf-driver-mbus` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -211,11 +211,11 @@ _None._
 | `visa` | `ispf-driver-visa` | PRODUCTION | matrix | `READY_LAB` | — |
 | `vmware` | `ispf-driver-vmware` | PRODUCTION | matrix | `READY_LAB` | — |
 | `wago` | `ispf-driver-wago` | STUB | stub-list | `STUB_LAB` | — |
-| `weather-station` | `ispf-driver-weather-station` | STUB | stub-list | `STUB_LAB` | — |
+| `weather-station` | `ispf-driver-weather-station` | PRODUCTION | matrix | `READY_LAB` | — |
 | `web-transaction` | `ispf-driver-web-transaction` | PRODUCTION | matrix | `READY_LAB` | — |
 | `webhook` | `ispf-driver-webhook` | PRODUCTION | matrix | `READY_LAB` | — |
 | `websocket` | `ispf-driver-websocket` | PRODUCTION | matrix | `READY_LAB` | — |
-| `weighbridge` | `ispf-driver-weighbridge` | STUB | stub-list | `STUB_LAB` | — |
+| `weighbridge` | `ispf-driver-weighbridge` | PRODUCTION | matrix | `READY_LAB` | — |
 | `wirelesshart` | `ispf-driver-wirelesshart` | STUB | stub-list | `STUB_LAB` | — |
 | `wisun` | `ispf-driver-wisun` | STUB | stub-list | `STUB_LAB` | — |
 | `wmbus` | `ispf-driver-wmbus` | STUB | stub-list | `STUB_LAB` | — |
