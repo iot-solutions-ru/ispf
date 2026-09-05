@@ -56,10 +56,11 @@ record IoLinkPoint(int port, Channel channel) {
     }
 
     String display() {
-        return switch (channel) {
+        String token = switch (channel) {
             case PORT -> "port:" + port;
             case PDIN -> "port:" + port + ":pdin";
             case PDOUT -> "port:" + port + ":pdout";
-        }.toLowerCase(Locale.ROOT);
+        };
+        return token.toLowerCase(Locale.ROOT);
     }
 }
