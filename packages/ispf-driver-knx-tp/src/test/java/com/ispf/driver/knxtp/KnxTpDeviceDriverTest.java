@@ -159,12 +159,12 @@ class KnxTpDeviceDriverTest {
             int cemiOffset = 6;
             int addInfo = frame[cemiOffset + 1] & 0xFF;
             int base = cemiOffset + 2 + addInfo;
-            int ga = ((frame[base + 2] & 0xFF) << 8) | (frame[base + 3] & 0xFF);
-            int lengthField = frame[base + 4] & 0xFF;
-            int apci = ((frame[base + 5] & 0xFF) << 8) | (frame[base + 6] & 0xFF);
+            int ga = ((frame[base + 4] & 0xFF) << 8) | (frame[base + 5] & 0xFF);
+            int lengthField = frame[base + 6] & 0xFF;
+            int apci = ((frame[base + 7] & 0xFF) << 8) | (frame[base + 8] & 0xFF);
             int apciType = apci & 0x03C0;
             if (apciType == KnxTpDeviceDriver.APCI_GROUP_WRITE) {
-                int value = lengthField <= 2 ? (frame[base + 6] & 0x3F) : (frame[base + 7] & 0xFF);
+                int value = lengthField <= 2 ? (frame[base + 8] & 0x3F) : (frame[base + 9] & 0xFF);
                 values.put(ga, value & 0xFF);
                 return;
             }

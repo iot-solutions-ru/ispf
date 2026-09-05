@@ -234,7 +234,7 @@ public class KnxTpDeviceDriver implements DeviceDriver {
     }
 
     static boolean matchesResponse(byte[] frame, int expectedGa, int expectedApci) {
-        if (frame.length < 6 + 10) {
+        if (frame.length < 6 + 11) {
             return false;
         }
         int service = ((frame[2] & 0xFF) << 8) | (frame[3] & 0xFF);
@@ -247,19 +247,20 @@ public class KnxTpDeviceDriver implements DeviceDriver {
             return false;
         }
         int addInfo = frame[cemiOffset + 1] & 0xFF;
+        // ctrl1, ctrl2, src(2), dest(2), length, apci(2)[+data]
         int base = cemiOffset + 2 + addInfo;
-        if (frame.length < base + 8) {
+        if (frame.length < base + 9) {
             return false;
         }
-        int ga = ((frame[base + 2] & 0xFF) << 8) | (frame[base + 3] & 0xFF);
+        int ga = ((frame[base + 4] & 0xFF) << 8) | (frame[base + 5] & 0xFF);
         if (ga != (expectedGa & 0xFFFF)) {
             return false;
         }
-        int lengthField = frame[base + 4] & 0xFF;
-        if (lengthField < 1 || frame.length < base + 5 + lengthField) {
+        int lengthField = frame[base + 6] & 0xFF;
+        if (lengthField < 1 || frame.length < base + 7 + lengthField) {
             return false;
         }
-        int apci = ((frame[base + 5] & 0xFF) << 8) | (frame[base + 6] & 0xFF);
+        int apci = ((frame[base + 7] & 0xFF) << 8) | (frame[base + 8] & 0xFF);
         apci &= 0x03C0; // APCI bits
         return apci == (expectedApci & 0x03C0);
     }
@@ -268,12 +269,12 @@ public class KnxTpDeviceDriver implements DeviceDriver {
         int cemiOffset = 6;
         int addInfo = frame[cemiOffset + 1] & 0xFF;
         int base = cemiOffset + 2 + addInfo;
-        int lengthField = frame[base + 4] & 0xFF;
+        int lengthField = frame[base + 6] & 0xFF;
         if (lengthField <= 2) {
             // no data octet — 6-bit payload may sit in low APCI bits
-            return frame[base + 6] & 0x3F;
+            return frame[base + 8] & 0x3F;
         }
-        return frame[base + 7] & 0xFF;
+        return frame[base + 9] & 0xFF;
     }
 
     static int parseIndividualAddress(String text) {
