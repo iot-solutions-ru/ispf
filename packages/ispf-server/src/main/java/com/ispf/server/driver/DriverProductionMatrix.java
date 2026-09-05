@@ -422,7 +422,22 @@ final class DriverProductionMatrix {
                     "ispf-driver-j1939"),
             entry("codesys", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-codesys", "com.ispf.driver.codesys.CodesysDeviceDriverTest"),
-                    "ispf-driver-codesys")
+                    "ispf-driver-codesys"),
+            entry("wago", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-wago", "com.ispf.driver.wago.WagoDeviceDriverTest"),
+                    "ispf-driver-wago"),
+            entry("idec-microsmart", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-idec-microsmart", "com.ispf.driver.idecmicrosmart.IdecMicrosmartDeviceDriverTest"),
+                    "ispf-driver-idec-microsmart"),
+            entry("unitronics", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-unitronics", "com.ispf.driver.unitronics.UnitronicsDeviceDriverTest"),
+                    "ispf-driver-unitronics"),
+            entry("ge-srtp", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-ge-srtp", "com.ispf.driver.gesrtp.GeSrtpDeviceDriverTest"),
+                    "ispf-driver-ge-srtp"),
+            entry("rockwell-df1", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-rockwell-df1", "com.ispf.driver.rockwelldf1.RockwellDf1DeviceDriverTest"),
+                    "ispf-driver-rockwell-df1")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

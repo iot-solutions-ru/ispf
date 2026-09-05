@@ -1,18 +1,18 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T10:37:22Z`  
+> Generated: `2026-09-05T10:40:01Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **108** · Stub list: **54**  
-> Findings: FAIL **0** · WARN **0**  
+> Matrix ENTRIES: **113** · Stub list: **49**  
+> Findings: FAIL **3** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
 ## Summary
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=105, `STUB`=54 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=105, `SHELL_BETA`=2, `STUB_LAB`=54 |
-| Source | `matrix`=108, `stub-list`=54 |
+| Maturity | `BETA`=3, `PRODUCTION`=110, `STUB`=49 |
+| Readiness | `BLOCKED`=3, `PARTIAL`=1, `READY_LAB`=107, `SHELL_BETA`=2, `STUB_LAB`=49 |
+| Source | `matrix`=113, `stub-list`=49 |
 
 ### Readiness legend
 
@@ -27,7 +27,11 @@
 
 ## FAIL findings
 
-_None._
+| driverId | code | detail |
+|----------|------|--------|
+| `idec-microsmart` | `PRODUCTION_STUB_JAVADOC` | PRODUCTION class javadoc contains stub/placeholder |
+| `unitronics` | `PRODUCTION_STUB_JAVADOC` | PRODUCTION class javadoc contains stub/placeholder |
+| `wago` | `PRODUCTION_STUB_JAVADOC` | PRODUCTION class javadoc contains stub/placeholder |
 
 ## WARN findings
 
@@ -103,7 +107,7 @@ _None._
 | `folder` | `ispf-driver-folder` | PRODUCTION | matrix | `READY_LAB` | — |
 | `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | STUB | stub-list | `STUB_LAB` | — |
 | `fuji-sph` | `ispf-driver-fuji-sph` | STUB | stub-list | `STUB_LAB` | — |
-| `ge-srtp` | `ispf-driver-ge-srtp` | STUB | stub-list | `STUB_LAB` | — |
+| `ge-srtp` | `ispf-driver-ge-srtp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `genicam` | `ispf-driver-genicam` | STUB | stub-list | `STUB_LAB` | — |
 | `gps-tracker` | `ispf-driver-gps-tracker` | PRODUCTION | matrix | `READY_LAB` | — |
 | `graph-db` | `ispf-driver-graph-db` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -116,7 +120,7 @@ _None._
 | `http` | `ispf-driver-http` | PRODUCTION | matrix | `READY_LAB` | — |
 | `http-server` | `ispf-driver-http-server` | PRODUCTION | matrix | `READY_LAB` | — |
 | `icmp` | `ispf-driver-icmp` | PRODUCTION | matrix | `READY_LAB` | — |
-| `idec-microsmart` | `ispf-driver-idec-microsmart` | STUB | stub-list | `STUB_LAB` | — |
+| `idec-microsmart` | `ispf-driver-idec-microsmart` | PRODUCTION | matrix | `BLOCKED` | PRODUCTION_STUB_JAVADOC |
 | `iec101` | `ispf-driver-iec101` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec103` | `ispf-driver-iec103` | STUB | stub-list | `STUB_LAB` | — |
 | `iec104` | `ispf-driver-iec104` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -185,7 +189,7 @@ _None._
 | `radius` | `ispf-driver-radius` | PRODUCTION | matrix | `READY_LAB` | — |
 | `redis` | `ispf-driver-redis` | PRODUCTION | matrix | `READY_LAB` | — |
 | `rockwell-csp` | `ispf-driver-rockwell-csp` | STUB | stub-list | `STUB_LAB` | — |
-| `rockwell-df1` | `ispf-driver-rockwell-df1` | STUB | stub-list | `STUB_LAB` | — |
+| `rockwell-df1` | `ispf-driver-rockwell-df1` | PRODUCTION | matrix | `READY_LAB` | — |
 | `rtsp` | `ispf-driver-rtsp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `s7` | `ispf-driver-s7` | PRODUCTION | matrix | `READY_LAB` | — |
 | `schneider-umac` | `ispf-driver-schneider-umac` | STUB | stub-list | `STUB_LAB` | — |
@@ -206,11 +210,11 @@ _None._
 | `thread` | `ispf-driver-thread` | STUB | stub-list | `STUB_LAB` | — |
 | `toshiba-t-series` | `ispf-driver-toshiba-t-series` | STUB | stub-list | `STUB_LAB` | — |
 | `uds` | `ispf-driver-uds` | STUB | stub-list | `STUB_LAB` | — |
-| `unitronics` | `ispf-driver-unitronics` | STUB | stub-list | `STUB_LAB` | — |
+| `unitronics` | `ispf-driver-unitronics` | PRODUCTION | matrix | `BLOCKED` | PRODUCTION_STUB_JAVADOC |
 | `virtual` | `ispf-driver-virtual` | PRODUCTION | matrix | `READY_LAB` | — |
 | `visa` | `ispf-driver-visa` | PRODUCTION | matrix | `READY_LAB` | — |
 | `vmware` | `ispf-driver-vmware` | PRODUCTION | matrix | `READY_LAB` | — |
-| `wago` | `ispf-driver-wago` | STUB | stub-list | `STUB_LAB` | — |
+| `wago` | `ispf-driver-wago` | PRODUCTION | matrix | `BLOCKED` | PRODUCTION_STUB_JAVADOC |
 | `weather-station` | `ispf-driver-weather-station` | PRODUCTION | matrix | `READY_LAB` | — |
 | `web-transaction` | `ispf-driver-web-transaction` | PRODUCTION | matrix | `READY_LAB` | — |
 | `webhook` | `ispf-driver-webhook` | PRODUCTION | matrix | `READY_LAB` | — |

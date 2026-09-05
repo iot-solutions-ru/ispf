@@ -43,10 +43,7 @@ stubs:
     description: Phoenix Contact PLCnext Engineer/RSC stub
     port: 41100
   # codesys promoted Wave 5 → PRODUCTION (packages/ispf-driver-codesys)
-  - id: ge-srtp
-    name: GE SRTP
-    description: Emerson/GE Fanuc SRTP stub
-    port: 18245
+  # ge-srtp promoted Wave 5 → PRODUCTION (packages/ispf-driver-ge-srtp)
   # keyence-hostlink promoted Wave 4 → PRODUCTION (packages/ispf-driver-keyence-hostlink)
   # panasonic-mewto promoted Wave 4 → PRODUCTION (packages/ispf-driver-panasonic-mewto)
   # yaskawa-memobus promoted Wave 2 → PRODUCTION (packages/ispf-driver-yaskawa-memobus)
@@ -65,26 +62,14 @@ stubs:
     name: Toshiba T-series
     description: Toshiba T-series PLC stub
     port: 9600
-  - id: idec-microsmart
-    name: IDEC MicroSmart
-    description: IDEC MicroSmart FC6A stub
-    port: 10000
-  - id: unitronics
-    name: Unitronics
-    description: Unitronics PCOM stub
-    port: 20256
-  - id: wago
-    name: WAGO
-    description: WAGO PFC / e!COCKPIT stub
-    port: 2455
+  # idec-microsmart promoted Wave 5 → PRODUCTION (packages/ispf-driver-idec-microsmart)
+  # unitronics promoted Wave 5 → PRODUCTION (packages/ispf-driver-unitronics)
+  # wago promoted Wave 5 → PRODUCTION (packages/ispf-driver-wago)
   - id: schneider-umac
     name: Schneider Unity/Modicon
     description: Schneider Electric Unity/Modicon advanced services stub (beyond Modbus)
     port: 502
-  - id: rockwell-df1
-    name: Rockwell DF1
-    description: Allen-Bradley DF1 serial/TCP bridge stub
-    port: 2222
+  # rockwell-df1 promoted Wave 5 → PRODUCTION (packages/ispf-driver-rockwell-df1)
   - id: rockwell-csp
     name: Rockwell CSP
     description: Allen-Bradley CSP (legacy Ethernet) stub

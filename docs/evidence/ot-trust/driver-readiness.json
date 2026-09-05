@@ -1,24 +1,25 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:37:22Z",
+    "generatedAt": "2026-09-05T10:40:01Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 105,
-      "STUB": 54,
+      "PRODUCTION": 110,
+      "STUB": 49,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 105,
-      "STUB_LAB": 54,
+      "READY_LAB": 107,
+      "STUB_LAB": 49,
       "PARTIAL": 1,
+      "BLOCKED": 3,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 108,
-      "stub-list": 54
+      "matrix": 113,
+      "stub-list": 49
     },
-    "failCount": 0,
+    "failCount": 3,
     "warnCount": 0,
     "top20": [
       "virtual",
@@ -54,8 +55,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 108,
-    "stubIds": 54,
+    "matrixEntries": 113,
+    "stubIds": 49,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -1300,34 +1301,29 @@
       "driver_id": "ge-srtp",
       "pack_id": "ispf-driver-ge-srtp",
       "driver_class": "com.ispf.driver.gesrtp.GeSrtpDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-ge-srtp/src/main/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-ge-srtp/src/test/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-ge-srtp/src/test/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-ge-srtp/src/test/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-ge-srtp/src/test/java/com/ispf/driver/gesrtp/GeSrtpDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-ge-srtp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "genicam",
@@ -1684,32 +1680,33 @@
       "driver_id": "idec-microsmart",
       "pack_id": "ispf-driver-idec-microsmart",
       "driver_class": "com.ispf.driver.idecmicrosmart.IdecMicrosmartDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-idec-microsmart/src/main/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-idec-microsmart/src/test/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-idec-microsmart/src/test/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-idec-microsmart/src/test/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-idec-microsmart/src/test/java/com/ispf/driver/idecmicrosmart/IdecMicrosmartDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
+      "interop_module": "ispf-driver-idec-microsmart",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": true,
+      "readiness": "BLOCKED",
       "findings": [
         {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
+          "severity": "FAIL",
+          "code": "PRODUCTION_STUB_JAVADOC",
+          "message": "PRODUCTION class javadoc contains stub/placeholder"
         }
       ]
     },
@@ -3692,34 +3689,29 @@
       "driver_id": "rockwell-df1",
       "pack_id": "ispf-driver-rockwell-df1",
       "driver_class": "com.ispf.driver.rockwelldf1.RockwellDf1DeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-rockwell-df1/src/main/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-rockwell-df1/src/test/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-rockwell-df1/src/test/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-rockwell-df1/src/test/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-rockwell-df1/src/test/java/com/ispf/driver/rockwelldf1/RockwellDf1DeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-rockwell-df1",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "rtsp",
@@ -4315,32 +4307,33 @@
       "driver_id": "unitronics",
       "pack_id": "ispf-driver-unitronics",
       "driver_class": "com.ispf.driver.unitronics.UnitronicsDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-unitronics/src/main/java/com/ispf/driver/unitronics/UnitronicsDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-unitronics/src/test/java/com/ispf/driver/unitronics/UnitronicsDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-unitronics/src/test/java/com/ispf/driver/unitronics/UnitronicsDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-unitronics/src/test/java/com/ispf/driver/unitronics/UnitronicsDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-unitronics/src/test/java/com/ispf/driver/unitronics/UnitronicsDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
+      "interop_module": "ispf-driver-unitronics",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": true,
+      "readiness": "BLOCKED",
       "findings": [
         {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
+          "severity": "FAIL",
+          "code": "PRODUCTION_STUB_JAVADOC",
+          "message": "PRODUCTION class javadoc contains stub/placeholder"
         }
       ]
     },
@@ -4431,32 +4424,33 @@
       "driver_id": "wago",
       "pack_id": "ispf-driver-wago",
       "driver_class": "com.ispf.driver.wago.WagoDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-wago/src/main/java/com/ispf/driver/wago/WagoDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-wago/src/test/java/com/ispf/driver/wago/WagoDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-wago/src/test/java/com/ispf/driver/wago/WagoDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-wago/src/test/java/com/ispf/driver/wago/WagoDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-wago/src/test/java/com/ispf/driver/wago/WagoDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
+      "interop_module": "ispf-driver-wago",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": true,
+      "readiness": "BLOCKED",
       "findings": [
         {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
+          "severity": "FAIL",
+          "code": "PRODUCTION_STUB_JAVADOC",
+          "message": "PRODUCTION class javadoc contains stub/placeholder"
         }
       ]
     },

@@ -51,6 +51,11 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `canbus-gateway` | STUB | **PRODUCTION** | CAN TCP gateway GET/TX ASCII lab |
 | `j1939` | STUB | **PRODUCTION** | J1939-over-TCP gateway lab |
 | `codesys` | STUB | **PRODUCTION** | CODESYS text gateway lab |
+| `wago` | STUB | **PRODUCTION** | Modbus-TCP FC3/FC6 lab |
+| `idec-microsmart` | STUB | **PRODUCTION** | Host Link ASCII lab |
+| `unitronics` | STUB | **PRODUCTION** | PCOM ASCII lab |
+| `ge-srtp` | STUB | **PRODUCTION** | GE SRTP mailbox lab |
+| `rockwell-df1` | STUB | **PRODUCTION** | DF1 protected binary TCP-bridge lab |
 
 ## Status (September 2026, OT Trust Wave 4 batch)
 

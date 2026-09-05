@@ -95,8 +95,8 @@ class RockwellDf1DeviceDriverTest {
         assertEquals("42", object.variables.get("n").firstRow().get("value"));
 
         driver.writePoint("f", DataRecord.single(
-                DataSchema.builder("v").field("value", FieldType.FLOAT).build(),
-                Map.of("value", 9.25f)
+                DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
+                Map.of("value", 9.25)
         ));
         assertEquals(9.25f, server.getFloat("F8:1"), 0.001f);
     }

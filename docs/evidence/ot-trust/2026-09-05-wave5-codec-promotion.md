@@ -17,3 +17,9 @@ Apache-2.0 JDK clean-room; high-risk fieldbus/radio/CNC left stubbed.
 
 | j1939 | ispf-driver-j1939 | TCP PGN gateway lab |
 | codesys | ispf-driver-codesys | text GET/SET gateway lab |
+| wago | ispf-driver-wago | Modbus-TCP lab |
+| idec-microsmart | ispf-driver-idec-microsmart | Host Link ASCII lab |
+| unitronics | ispf-driver-unitronics | PCOM ASCII lab |
+| ge-srtp | ispf-driver-ge-srtp | SRTP lab |
+| rockwell-df1 | ispf-driver-rockwell-df1 | DF1 TCP-bridge lab |
+

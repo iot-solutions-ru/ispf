@@ -152,7 +152,7 @@ final class RockwellDf1Frame {
     }
 
     static ParsedPdu parsePdu(byte[] pdu) {
-        if (pdu.length < 7) {
+        if (pdu.length < 6) {
             throw new IllegalArgumentException("DF1 PDU too short");
         }
         int dst = pdu[0] & 0xFF;
@@ -160,8 +160,20 @@ final class RockwellDf1Frame {
         byte cmd = pdu[2];
         byte sts = pdu[3];
         int tns = (pdu[4] & 0xFF) | ((pdu[5] & 0xFF) << 8);
-        byte fnc = pdu.length > 6 ? pdu[6] : 0;
-        byte[] payload = pdu.length > 7 ? java.util.Arrays.copyOfRange(pdu, 7, pdu.length) : new byte[0];
+        boolean reply = (cmd & 0x40) != 0;
+        byte fnc;
+        byte[] payload;
+        if (reply) {
+            // Replies carry no FNC; typed-read data starts immediately after TNS.
+            fnc = 0;
+            payload = pdu.length > 6 ? java.util.Arrays.copyOfRange(pdu, 6, pdu.length) : new byte[0];
+        } else {
+            if (pdu.length < 7) {
+                throw new IllegalArgumentException("DF1 request PDU too short");
+            }
+            fnc = pdu[6];
+            payload = pdu.length > 7 ? java.util.Arrays.copyOfRange(pdu, 7, pdu.length) : new byte[0];
+        }
         return new ParsedPdu(dst, src, cmd, sts, tns, fnc, payload);
     }
 
