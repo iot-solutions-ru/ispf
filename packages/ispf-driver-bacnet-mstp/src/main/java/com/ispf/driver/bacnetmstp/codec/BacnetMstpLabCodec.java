@@ -2,7 +2,6 @@ package com.ispf.driver.bacnetmstp.codec;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * BVLC-less BACnet APDU lab codec framed over TCP for an MS/TP gateway lab.
@@ -258,9 +257,5 @@ public final class BacnetMstpLabCodec {
     }
 
     public record SimpleAck(int invokeId, int serviceChoice) implements Message {
-    }
-
-    public static byte[] stripToPayload(byte[] frame) {
-        return Arrays.copyOf(frame, frame.length);
     }
 }
