@@ -30,10 +30,17 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 - **HMI offline lab soak** — `npm run pwa:offline-field-soak` (Playwright CDP offline, configurable
   duration; demostand **2 h** evidence archived for Post-S33).
 
+### Added
+
+- **OT Trust Wave 2 codec promotion** — `redis`, `mitsubishi-slmp`, `yaskawa-memobus`, `sparkplug-b`
+  promoted STUB → **PRODUCTION** with real codecs + in-process loopback tests (fake RESP / SLMP 3E /
+  Modbus TCP / Moquette+Sparkplug protobuf); matrix `POLL_WRITE`; evidence
+  [`docs/evidence/ot-trust/2026-09-05-wave2-codec-promotion.md`](docs/evidence/ot-trust/2026-09-05-wave2-codec-promotion.md).
+
 ### Docs
 
 - **OT Trust — raise readiness for all 162 packs** — stub-kit **v0.2** (lab loopback write) +
-  contract tests for all **97** catalog stubs → audit label **`STUB_LAB`** (honest: still no protocol codec);
+  contract tests for catalog stubs → audit label **`STUB_LAB`** (honest: still no protocol codec);
   `tools/driver-stubs/raise-stub-readiness.py`; WRITE_UNDERCLAIM false-positives for ingress read-only drivers fixed.
 - **OT Trust — full 162-driver readiness audit** — `tools/driver-readiness-audit.py` + report
   [`docs/evidence/ot-trust/driver-readiness.md`](docs/evidence/ot-trust/driver-readiness.md)

@@ -1,6 +1,5 @@
 {
   "driverIds": [
-    "sparkplug-b",
     "opcua-pubsub",
     "beckhoff-ads",
     "profinet",
@@ -12,11 +11,9 @@
     "plcnext",
     "codesys",
     "mitsubishi-melsec",
-    "mitsubishi-slmp",
     "ge-srtp",
     "keyence-hostlink",
     "panasonic-mewto",
-    "yaskawa-memobus",
     "delta-dvp",
     "fatek",
     "ls-xgt",
@@ -95,7 +92,6 @@
     "grpc",
     "odata",
     "graphql",
-    "redis",
     "weather-station"
   ],
   "licenseType": "Apache-2.0"

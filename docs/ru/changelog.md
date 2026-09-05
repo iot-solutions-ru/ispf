@@ -19,10 +19,15 @@ Changelog отдельных application bundles — в манифестах п�
   `GET /history-enabled-count`, gate считает переменные (не `/tags` binding rules).
 - `npm run pwa:offline-field-soak` — lab 2h CDP offline soak.
 
+### Добавлено
+
+- **OT Trust Wave 2** — `redis`, `mitsubishi-slmp`, `yaskawa-memobus`, `sparkplug-b`: STUB → **PRODUCTION**
+  (реальные кодеки + loopback-тесты); evidence `docs/evidence/ot-trust/2026-09-05-wave2-codec-promotion.md`.
+
 ### Docs
 
 - **OT Trust — поднятие готовности всех 162 паков** — stub-kit **v0.2** (TCP probe + memory loopback) +
-  contract-тесты на все **97** STUB → метка аудита **`STUB_LAB`** (без фейкового PRODUCTION);
+  contract-тесты на каталог STUB → метка аудита **`STUB_LAB`** (без фейкового PRODUCTION);
   `tools/driver-stubs/raise-stub-readiness.py`.
 - **OT Trust — аудит всех 162 драйверов** — `tools/driver-readiness-audit.py`, отчёт
   `docs/evidence/ot-trust/driver-readiness.md` (honesty: matrix ↔ packs).

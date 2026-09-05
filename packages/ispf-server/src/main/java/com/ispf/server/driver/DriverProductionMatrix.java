@@ -289,7 +289,20 @@ final class DriverProductionMatrix {
                     "ispf-driver-webhook"),
             entry("smb", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-smb", "com.ispf.driver.smb.SmbPointTest"),
-                    "ispf-driver-smb")
+                    "ispf-driver-smb"),
+            // OT Trust Wave 2 — honest codec promotions (loopback tests, no stub javadoc).
+            entry("redis", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-redis", "com.ispf.driver.redis.RedisDeviceDriverTest"),
+                    "ispf-driver-redis"),
+            entry("mitsubishi-slmp", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-mitsubishi-slmp", "com.ispf.driver.mitsubishislmp.MitsubishiSlmpDeviceDriverTest"),
+                    "ispf-driver-mitsubishi-slmp"),
+            entry("yaskawa-memobus", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-yaskawa-memobus", "com.ispf.driver.yaskawamemobus.YaskawaMemobusDeviceDriverTest"),
+                    "ispf-driver-yaskawa-memobus"),
+            entry("sparkplug-b", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-sparkplug-b", "com.ispf.driver.sparkplugb.SparkplugBDeviceDriverTest"),
+                    "ispf-driver-sparkplug-b")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

@@ -28,6 +28,15 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
 
+## Status (September 2026, OT Trust Wave 2 codec promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------------|
+| `redis` | STUB | **PRODUCTION** | RESP GET/SET over TCP; `RedisDeviceDriverTest` (in-process fake RESP server); `POLL` + `WRITE` |
+| `mitsubishi-slmp` | STUB | **PRODUCTION** | SLMP 3E binary device-read/write for D registers; `MitsubishiSlmpDeviceDriverTest` (fake SLMP server); points `D100` / `D:100:1`; `POLL` + `WRITE` |
+| `yaskawa-memobus` | STUB | **PRODUCTION** | Modbus-TCP FC3/FC6 holding registers; `YaskawaMemobusDeviceDriverTest` (fake Modbus TCP); points `HR:100` / `100`; `POLL` + `WRITE` |
+| `sparkplug-b` | STUB | **PRODUCTION** | MQTT (Paho) + minimal Sparkplug B protobuf Payload/Metric codec; host subscribe NBIRTH/DBIRTH/DDATA; DCMD write; `SparkplugBDeviceDriverTest` (Moquette); `POLL` + `WRITE` |
+
 ## Status (July 2026, driver batch C promotion)
 
 | driverId | Was | Now | Note |

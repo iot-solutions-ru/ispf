@@ -9,10 +9,7 @@
 
 stubs:
   # —— Industrial Ethernet / PLC ——
-  - id: sparkplug-b
-    name: MQTT Sparkplug B
-    description: MQTT Sparkplug B host/edge stub (MQTT session + Sparkplug payload parsing not implemented)
-    port: 1883
+  # sparkplug-b promoted Wave 2 → PRODUCTION (packages/ispf-driver-sparkplug-b)
   - id: opcua-pubsub
     name: OPC UA PubSub
     description: OPC UA PubSub (UDP/MQTT) stub — connectivity shell only
@@ -57,10 +54,7 @@ stubs:
     name: Mitsubishi MELSEC
     description: Mitsubishi MELSEC communication stub (MC Protocol / SLMP path planned)
     port: 5007
-  - id: mitsubishi-slmp
-    name: Mitsubishi SLMP
-    description: Mitsubishi SLMP (Seamless Message Protocol) stub
-    port: 5007
+  # mitsubishi-slmp promoted Wave 2 → PRODUCTION (packages/ispf-driver-mitsubishi-slmp)
   - id: ge-srtp
     name: GE SRTP
     description: Emerson/GE Fanuc SRTP stub
@@ -73,10 +67,7 @@ stubs:
     name: Panasonic MEWTOCOL
     description: Panasonic MEWTOCOL-COM/DAT stub
     port: 9094
-  - id: yaskawa-memobus
-    name: Yaskawa Memobus
-    description: Yaskawa Memobus/Modbus-family PLC stub
-    port: 502
+  # yaskawa-memobus promoted Wave 2 → PRODUCTION (packages/ispf-driver-yaskawa-memobus)
   - id: delta-dvp
     name: Delta DVP
     description: Delta DVP / AS series PLC stub
@@ -401,10 +392,7 @@ stubs:
     name: GraphQL
     description: GraphQL HTTP stub
     port: 80
-  - id: redis
-    name: Redis
-    description: Redis key/stream telemetry stub
-    port: 6379
+  # redis promoted Wave 2 → PRODUCTION (packages/ispf-driver-redis)
   - id: weather-station
     name: Weather station
     description: Davis/Vaisala-class weather station stub
