@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T09:52:44Z",
+    "generatedAt": "2026-09-05T09:55:16Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "STUB": 80,
-      "PRODUCTION": 79,
+      "STUB": 73,
+      "PRODUCTION": 86,
       "BETA": 3
     },
     "byReadiness": {
-      "STUB_LAB": 80,
-      "READY_LAB": 79,
+      "STUB_LAB": 73,
+      "READY_LAB": 86,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "stub-list": 80,
-      "matrix": 82
+      "stub-list": 73,
+      "matrix": 89
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 82,
-    "stubIds": 80,
+    "matrixEntries": 89,
+    "stubIds": 73,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -1502,35 +1502,30 @@
     {
       "driver_id": "grpc",
       "pack_id": "ispf-driver-grpc",
-      "driver_class": "com.ispf.driver.grpc.GrpcDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "driver_class": "com.ispf.driver.grpc.GrpcJsonDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
-      "source_path": "packages/ispf-driver-grpc/src/main/java/com/ispf/driver/grpc/GrpcDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "source_path": "packages/ispf-driver-grpc/src/main/java/com/ispf/driver/grpc/GrpcJsonDeviceDriver.java",
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-grpc/src/test/java/com/ispf/driver/grpc/GrpcDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-grpc/src/test/java/com/ispf/driver/grpc/GrpcDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-grpc/src/test/java/com/ispf/driver/grpc/GrpcJsonDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-grpc/src/test/java/com/ispf/driver/grpc/GrpcJsonDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-grpc",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "hart-ip",
@@ -2516,34 +2511,29 @@
       "driver_id": "knx-tp",
       "pack_id": "ispf-driver-knx-tp",
       "driver_class": "com.ispf.driver.knxtp.KnxTpDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-knx-tp/src/main/java/com/ispf/driver/knxtp/KnxTpDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-knx-tp/src/test/java/com/ispf/driver/knxtp/KnxTpDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-knx-tp/src/test/java/com/ispf/driver/knxtp/KnxTpDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-knx-tp/src/test/java/com/ispf/driver/knxtp/KnxTpDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-knx-tp/src/test/java/com/ispf/driver/knxtp/KnxTpDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-knx-tp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "ldap",
@@ -3094,67 +3084,57 @@
       "driver_id": "ocpp",
       "pack_id": "ispf-driver-ocpp",
       "driver_class": "com.ispf.driver.ocpp.OcppDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-ocpp/src/main/java/com/ispf/driver/ocpp/OcppDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-ocpp/src/test/java/com/ispf/driver/ocpp/OcppDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-ocpp/src/test/java/com/ispf/driver/ocpp/OcppDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-ocpp/src/test/java/com/ispf/driver/ocpp/OcppDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-ocpp/src/test/java/com/ispf/driver/ocpp/OcppDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-ocpp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "odata",
       "pack_id": "ispf-driver-odata",
       "driver_class": "com.ispf.driver.odata.OdataDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-odata/src/main/java/com/ispf/driver/odata/OdataDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-odata/src/test/java/com/ispf/driver/odata/OdataDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-odata/src/test/java/com/ispf/driver/odata/OdataDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-odata/src/test/java/com/ispf/driver/odata/OdataDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-odata/src/test/java/com/ispf/driver/odata/OdataDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-odata",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "odbc",
@@ -3456,34 +3436,29 @@
       "driver_id": "openadr",
       "pack_id": "ispf-driver-openadr",
       "driver_class": "com.ispf.driver.openadr.OpenadrDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-openadr/src/main/java/com/ispf/driver/openadr/OpenadrDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-openadr/src/test/java/com/ispf/driver/openadr/OpenadrDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-openadr/src/test/java/com/ispf/driver/openadr/OpenadrDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-openadr/src/test/java/com/ispf/driver/openadr/OpenadrDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-openadr/src/test/java/com/ispf/driver/openadr/OpenadrDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-openadr",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "panasonic-mewto",
@@ -3924,34 +3899,29 @@
       "driver_id": "scpi",
       "pack_id": "ispf-driver-scpi",
       "driver_class": "com.ispf.driver.scpi.ScpiDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-scpi/src/main/java/com/ispf/driver/scpi/ScpiDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-scpi/src/test/java/com/ispf/driver/scpi/ScpiDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-scpi/src/test/java/com/ispf/driver/scpi/ScpiDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-scpi/src/test/java/com/ispf/driver/scpi/ScpiDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-scpi/src/test/java/com/ispf/driver/scpi/ScpiDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-scpi",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "secs-gem",
@@ -4491,34 +4461,29 @@
       "driver_id": "visa",
       "pack_id": "ispf-driver-visa",
       "driver_class": "com.ispf.driver.visa.VisaDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-visa/src/main/java/com/ispf/driver/visa/VisaDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-visa/src/test/java/com/ispf/driver/visa/VisaDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-visa/src/test/java/com/ispf/driver/visa/VisaDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-visa/src/test/java/com/ispf/driver/visa/VisaDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-visa/src/test/java/com/ispf/driver/visa/VisaDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-visa",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "vmware",

@@ -24,6 +24,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **OT Trust Wave 3b** — +7 clean-room codecs: `ocpp`, `odata`, `grpc` (JSON-lab), `openadr`, `scpi`, `visa` (SOCKET-only), `knx-tp`.
 - **Enterprise L catalog tooling** (tracked under `tools/historian-scale/`): seed 50k
   history-enabled devices, `GET /api/v1/platform/analytics/history-enabled-count`, and
   analytics-scale gate counting **history-enabled variables** (not binding-rule `/tags`).

@@ -342,7 +342,29 @@ final class DriverProductionMatrix {
                     "ispf-driver-websocket"),
             entry("graphql", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-graphql", "com.ispf.driver.graphql.GraphqlDeviceDriverTest"),
-                    "ispf-driver-graphql")
+                    "ispf-driver-graphql"),
+            // OT Trust Wave 3b — remaining clean-room codecs from parallel agents.
+            entry("ocpp", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-ocpp", "com.ispf.driver.ocpp.OcppDeviceDriverTest"),
+                    "ispf-driver-ocpp"),
+            entry("odata", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-odata", "com.ispf.driver.odata.OdataDeviceDriverTest"),
+                    "ispf-driver-odata"),
+            entry("grpc", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-grpc", "com.ispf.driver.grpc.GrpcJsonDeviceDriverTest"),
+                    "ispf-driver-grpc"),
+            entry("openadr", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-openadr", "com.ispf.driver.openadr.OpenadrDeviceDriverTest"),
+                    "ispf-driver-openadr"),
+            entry("scpi", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-scpi", "com.ispf.driver.scpi.ScpiDeviceDriverTest"),
+                    "ispf-driver-scpi"),
+            entry("visa", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-visa", "com.ispf.driver.visa.VisaDeviceDriverTest"),
+                    "ispf-driver-visa"),
+            entry("knx-tp", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-knx-tp", "com.ispf.driver.knxtp.KnxTpDeviceDriverTest"),
+                    "ispf-driver-knx-tp")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

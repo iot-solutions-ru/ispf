@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T09:52:44Z`  
+> Generated: `2026-09-05T09:55:16Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **82** · Stub list: **80**  
+> Matrix ENTRIES: **89** · Stub list: **73**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=79, `STUB`=80 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=79, `SHELL_BETA`=2, `STUB_LAB`=80 |
-| Source | `matrix`=82, `stub-list`=80 |
+| Maturity | `BETA`=3, `PRODUCTION`=86, `STUB`=73 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=86, `SHELL_BETA`=2, `STUB_LAB`=73 |
+| Source | `matrix`=89, `stub-list`=73 |
 
 ### Readiness legend
 
@@ -108,7 +108,7 @@ _None._
 | `gps-tracker` | `ispf-driver-gps-tracker` | PRODUCTION | matrix | `READY_LAB` | — |
 | `graph-db` | `ispf-driver-graph-db` | PRODUCTION | matrix | `READY_LAB` | — |
 | `graphql` | `ispf-driver-graphql` | PRODUCTION | matrix | `READY_LAB` | — |
-| `grpc` | `ispf-driver-grpc` | STUB | stub-list | `STUB_LAB` | — |
+| `grpc` | `ispf-driver-grpc` | PRODUCTION | matrix | `READY_LAB` | — |
 | `hart-ip` | `ispf-driver-hart-ip` | STUB | stub-list | `STUB_LAB` | — |
 | `hart-serial` | `ispf-driver-hart-serial` | STUB | stub-list | `STUB_LAB` | — |
 | `haystack` | `ispf-driver-haystack` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -142,7 +142,7 @@ _None._
 | `kafka` | `ispf-driver-kafka` | PRODUCTION | matrix | `READY_LAB` | — |
 | `keyence-hostlink` | `ispf-driver-keyence-hostlink` | STUB | stub-list | `STUB_LAB` | — |
 | `knx` | `ispf-driver-knx` | PRODUCTION | matrix | `READY_LAB` | — |
-| `knx-tp` | `ispf-driver-knx-tp` | STUB | stub-list | `STUB_LAB` | — |
+| `knx-tp` | `ispf-driver-knx-tp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ldap` | `ispf-driver-ldap` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lonworks` | `ispf-driver-lonworks` | STUB | stub-list | `STUB_LAB` | — |
 | `lorawan` | `ispf-driver-lorawan` | STUB | stub-list | `STUB_LAB` | — |
@@ -162,8 +162,8 @@ _None._
 | `mtconnect` | `ispf-driver-mtconnect` | PRODUCTION | matrix | `READY_LAB` | — |
 | `nats` | `ispf-driver-nats` | PRODUCTION | matrix | `READY_LAB` | — |
 | `nmea` | `ispf-driver-nmea` | PRODUCTION | matrix | `READY_LAB` | — |
-| `ocpp` | `ispf-driver-ocpp` | STUB | stub-list | `STUB_LAB` | — |
-| `odata` | `ispf-driver-odata` | STUB | stub-list | `STUB_LAB` | — |
+| `ocpp` | `ispf-driver-ocpp` | PRODUCTION | matrix | `READY_LAB` | — |
+| `odata` | `ispf-driver-odata` | PRODUCTION | matrix | `READY_LAB` | — |
 | `odbc` | `ispf-driver-odbc` | PRODUCTION | matrix | `READY_LAB` | — |
 | `omron-fins` | `ispf-driver-omron-fins` | PRODUCTION | matrix | `READY_LAB` | — |
 | `onvif` | `ispf-driver-onvif` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -174,7 +174,7 @@ _None._
 | `opcua` | `ispf-driver-opcua` | PRODUCTION | matrix | `READY_LAB` | — |
 | `opcua-pubsub` | `ispf-driver-opcua-pubsub` | STUB | stub-list | `STUB_LAB` | — |
 | `opcua-server` | `ispf-driver-opcua-server` | PRODUCTION | matrix | `READY_LAB` | — |
-| `openadr` | `ispf-driver-openadr` | STUB | stub-list | `STUB_LAB` | — |
+| `openadr` | `ispf-driver-openadr` | PRODUCTION | matrix | `READY_LAB` | — |
 | `panasonic-mewto` | `ispf-driver-panasonic-mewto` | STUB | stub-list | `STUB_LAB` | — |
 | `plcnext` | `ispf-driver-plcnext` | STUB | stub-list | `STUB_LAB` | — |
 | `pop3` | `ispf-driver-pop3` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -189,7 +189,7 @@ _None._
 | `rtsp` | `ispf-driver-rtsp` | STUB | stub-list | `STUB_LAB` | — |
 | `s7` | `ispf-driver-s7` | PRODUCTION | matrix | `READY_LAB` | — |
 | `schneider-umac` | `ispf-driver-schneider-umac` | STUB | stub-list | `STUB_LAB` | — |
-| `scpi` | `ispf-driver-scpi` | STUB | stub-list | `STUB_LAB` | — |
+| `scpi` | `ispf-driver-scpi` | PRODUCTION | matrix | `READY_LAB` | — |
 | `secs-gem` | `ispf-driver-secs-gem` | STUB | stub-list | `STUB_LAB` | — |
 | `sigfox` | `ispf-driver-sigfox` | STUB | stub-list | `STUB_LAB` | — |
 | `sip` | `ispf-driver-sip` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -208,7 +208,7 @@ _None._
 | `uds` | `ispf-driver-uds` | STUB | stub-list | `STUB_LAB` | — |
 | `unitronics` | `ispf-driver-unitronics` | STUB | stub-list | `STUB_LAB` | — |
 | `virtual` | `ispf-driver-virtual` | PRODUCTION | matrix | `READY_LAB` | — |
-| `visa` | `ispf-driver-visa` | STUB | stub-list | `STUB_LAB` | — |
+| `visa` | `ispf-driver-visa` | PRODUCTION | matrix | `READY_LAB` | — |
 | `vmware` | `ispf-driver-vmware` | PRODUCTION | matrix | `READY_LAB` | — |
 | `wago` | `ispf-driver-wago` | STUB | stub-list | `STUB_LAB` | — |
 | `weather-station` | `ispf-driver-weather-station` | STUB | stub-list | `STUB_LAB` | — |

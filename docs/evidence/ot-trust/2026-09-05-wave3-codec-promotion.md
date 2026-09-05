@@ -22,13 +22,24 @@
 | websocket | POLL+WRITE | RFC6455 text frames |
 | graphql | POLL+WRITE | HTTP GraphQL query/mutation |
 
-## Explicitly deferred (still STUB / failing soak)
+## Wave 3b follow-up (+7)
 
-- `visa`, `scpi`, `knx-tp` — codecs drafted but loopback tests still red; kept STUB until green.
-- `ocpp`, `odata`, `openadr`, `grpc` — incomplete in merge; deferred.
+| driverId | Caps | Notes |
+|----------|------|-------|
+| ocpp | POLL+WRITE | OCPP 1.6 JSON-lines TCP lab CSMS subset |
+| odata | POLL+WRITE | OData JSON v4 HTTP subset |
+| grpc | POLL+WRITE | Honest **gRPC-JSON lab** (not wire gRPC) |
+| openadr | POLL+WRITE | OpenADR 2.0b VEN poll subset |
+| scpi | POLL+WRITE | IEEE 488.2 SCPI over TCP |
+| visa | POLL+WRITE | SOCKET-only SCPI-over-TCP (not NI-VISA) |
+| knx-tp | POLL+WRITE | KNXnet/IP Routing cEMI (“TP via IP”) |
+
+## Explicitly deferred (still STUB / high-risk)
+
 - High patent/license risk left untouched: `profinet`, `ethercat`, `iec61850*`, `fanuc-focas`, `lorawan`, classic fieldbus.
 
 ## Catalog after Wave 3
 
 - Matrix PRODUCTION grows by +13 (Wave 2 had +4).
-- Stub catalog 93 → 80.
+- Stub catalog 93 → 73 after Wave 3b.
+- Matrix PRODUCTION 66 → 86 (Wave2+3+3b).

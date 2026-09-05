@@ -185,10 +185,6 @@ stubs:
     name: ANSI C12
     description: ANSI C12.18/C12.22 meter stub
     port: 1153
-  - id: openadr
-    name: OpenADR
-    description: OpenADR 2.0b VTN/VEN stub
-    port: 443
   - id: wisun
     name: Wi-SUN
     description: Wi-SUN FAN border router stub
@@ -221,10 +217,6 @@ stubs:
     port: 5094
 
   # —— Building / HVAC ——
-  - id: knx-tp
-    name: KNX TP
-    description: KNX Twisted Pair interface stub
-    port: 3671
   - id: lonworks
     name: LonWorks
     description: LonWorks/LonTalk IP stub
@@ -245,10 +237,6 @@ stubs:
     name: DALI
     description: DALI lighting gateway stub
     port: 4001
-  - id: ocpp
-    name: OCPP
-    description: Open Charge Point Protocol (CSMS) stub
-    port: 9000
   - id: eebus
     name: EEBUS
     description: EEBUS / SHIP energy management stub
@@ -301,14 +289,6 @@ stubs:
     name: Weighbridge
     description: Truck scale / weighbridge protocol stub
     port: 4001
-  - id: scpi
-    name: SCPI
-    description: IEEE 488.2 SCPI instrument stub
-    port: 5025
-  - id: visa
-    name: VISA
-    description: IVI/VISA instrument resource stub
-    port: 5025
   - id: secs-gem
     name: SECS/GEM
     description: SEMI SECS-I/HSMS/GEM stub
@@ -331,14 +311,6 @@ stubs:
     name: AMQP
     description: AMQP 0-9-1 / 1.0 broker stub
     port: 5672
-  - id: grpc
-    name: gRPC
-    description: Generic gRPC telemetry stub
-    port: 50051
-  - id: odata
-    name: OData
-    description: OData v4 REST stub
-    port: 80
   - id: weather-station
     name: Weather station
     description: Davis/Vaisala-class weather station stub

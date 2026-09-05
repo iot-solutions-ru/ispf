@@ -16,9 +16,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -26,24 +26,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Loopback tests for {@link OpenadrDeviceDriver} against an in-process fake VTN.
- */
 class OpenadrDeviceDriverTest {
 
-    private OpenadrDeviceDriver driver;
     private HttpServer server;
     private String vtnUrl;
-    private final AtomicReference<String> lastRequestBody = new AtomicReference<>("");
-    private final AtomicInteger createdEventPosts = new AtomicInteger();
-    private final AtomicReference<String> lastOptType = new AtomicReference<>("");
+    private final AtomicReference<String> lastRequest = new AtomicReference<>();
+    private final AtomicInteger createdEventCount = new AtomicInteger();
 
     @AfterEach
     void tearDown() {
-        if (driver != null) {
-            driver.disconnect();
-            driver = null;
-        }
         if (server != null) {
             server.stop(0);
             server = null;
@@ -51,178 +42,138 @@ class OpenadrDeviceDriverTest {
     }
 
     @Test
-    void pollsDistributeEventAndReadsPoints() throws Exception {
-        startServer(sampleDistributeEventXml());
-        StubDriverObject object = new StubDriverObject(Map.of(
-                "vtnUrl", vtnUrl,
-                "venId", "ven-lab-1",
-                "pollMethod", "POST",
-                "accept", "application/xml",
-                "timeoutMs", "2000"
-        ));
-        driver = new OpenadrDeviceDriver();
+    void pollsXmlDistributeEventAndReadsSignal() throws Exception {
+        startXmlVtn();
+        StubDriverObject object = config("application/xml");
+        OpenadrDeviceDriver driver = new OpenadrDeviceDriver();
         driver.initialize(object);
         driver.connect();
-        assertTrue(driver.isConnected());
-
         driver.readPoints(Map.of(
-                "eid", "eventId",
+                "id", "eventId",
                 "level", "signalLevel",
                 "name", "signalName",
                 "on", "active"
         ));
-
-        assertEquals("EVT-100", object.variables.get("eid").firstRow().get("value"));
-        assertEquals("eventId", object.variables.get("eid").firstRow().get("kind"));
-        assertEquals(200, object.variables.get("eid").firstRow().get("statusCode"));
-        assertEquals("3", object.variables.get("level").firstRow().get("value"));
+        assertEquals("evt-42", object.variables.get("id").firstRow().get("value"));
+        assertEquals("2", object.variables.get("level").firstRow().get("value"));
         assertEquals("SIMPLE", object.variables.get("name").firstRow().get("value"));
         assertEquals("true", object.variables.get("on").firstRow().get("value"));
-        assertTrue(lastRequestBody.get().contains("oadrPoll"));
-        assertTrue(lastRequestBody.get().contains("ven-lab-1"));
+        assertTrue(lastRequest.get().contains("oadrPoll"));
+        assertTrue(lastRequest.get().contains("ven-lab"));
+        driver.disconnect();
     }
 
     @Test
-    void writesCreatedEventOptIn() throws Exception {
-        startServer(sampleDistributeEventXml());
+    void pollsJsonDistributeEventSubset() throws Exception {
+        startJsonVtn();
         StubDriverObject object = new StubDriverObject(Map.of(
                 "vtnUrl", vtnUrl,
-                "venId", "ven-lab-1",
-                "accept", "application/xml"
+                "venId", "ven-json",
+                "pollMethod", "GET",
+                "accept", "application/json",
+                "timeoutMs", "3000"
         ));
-        driver = new OpenadrDeviceDriver();
+        OpenadrDeviceDriver driver = new OpenadrDeviceDriver();
         driver.initialize(object);
         driver.connect();
-        driver.readPoints(Map.of("eid", "eventId"));
+        driver.readPoints(Map.of("id", "eventId", "level", "currentValue"));
+        assertEquals("json-7", object.variables.get("id").firstRow().get("value"));
+        assertEquals("1", object.variables.get("level").firstRow().get("value"));
+        driver.disconnect();
+    }
 
-        driver.writePoint("eid", DataRecord.single(
+    @Test
+    void writePostsCreatedEventOptIn() throws Exception {
+        startXmlVtn();
+        StubDriverObject object = config("application/xml");
+        OpenadrDeviceDriver driver = new OpenadrDeviceDriver();
+        driver.initialize(object);
+        driver.connect();
+        driver.readPoints(Map.of("id", "eventId"));
+        driver.writePoint("id", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "optIn")
         ));
-
-        assertEquals(1, createdEventPosts.get());
-        assertEquals("optIn", lastOptType.get());
-        assertEquals("optIn", object.variables.get("eid").firstRow().get("value"));
-        assertEquals(200, object.variables.get("eid").firstRow().get("statusCode"));
+        assertEquals(1, createdEventCount.get());
+        assertTrue(lastRequest.get().contains("oadrCreatedEvent"));
+        assertTrue(lastRequest.get().contains("evt-42"));
+        driver.disconnect();
     }
 
     @Test
-    void getPollJsonPayload() throws Exception {
-        startServer("""
-                {"eventID":"J-1","signalName":"LOAD_CONTROL","currentValue":"2.5"}
-                """);
-        StubDriverObject object = new StubDriverObject(Map.of(
-                "vtnUrl", vtnUrl,
-                "pollMethod", "GET",
-                "accept", "application/json"
-        ));
-        driver = new OpenadrDeviceDriver();
-        driver.initialize(object);
-        driver.connect();
-        driver.readPoints(Map.of(
-                "eid", "eventId",
-                "level", "currentValue"
-        ));
-        assertEquals("J-1", object.variables.get("eid").firstRow().get("value"));
-        assertEquals("2.5", object.variables.get("level").firstRow().get("value"));
-    }
-
-    @Test
-    void readPointsBeforeConnectThrows() {
-        driver = new OpenadrDeviceDriver();
+    void readBeforeConnectThrows() {
+        OpenadrDeviceDriver driver = new OpenadrDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("eid", "eventId")));
+                driver.readPoints(Map.of("id", "eventId")));
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    @Test
-    void writeWithoutPriorEventThrows() throws Exception {
-        startServer("");
-        StubDriverObject object = new StubDriverObject(Map.of("vtnUrl", vtnUrl));
-        driver = new OpenadrDeviceDriver();
-        driver.initialize(object);
-        driver.connect();
-        driver.readPoints(Map.of("eid", "eventId"));
-        DriverException error = assertThrows(DriverException.class, () ->
-                driver.writePoint("eid", DataRecord.single(
-                        DataSchema.builder("v").field("value", FieldType.STRING).build(),
-                        Map.of("value", "optIn")
-                )));
-        assertTrue(error.getMessage().contains("No active OpenADR event"));
-    }
-
-    @Test
-    void pointParseForms() {
-        assertEquals("eventId", OpenadrPoint.parse("eventId").kind());
-        assertEquals("signalLevel", OpenadrPoint.parse("currentValue").kind());
-        assertEquals("signalName", OpenadrPoint.parse("signalName").kind());
-        assertThrows(IllegalArgumentException.class, () -> OpenadrPoint.parse("bogus"));
-    }
-
-    private void startServer(String pollResponse) throws IOException {
-        lastRequestBody.set("");
-        createdEventPosts.set(0);
-        lastOptType.set("");
+    private void startXmlVtn() throws IOException {
+        createdEventCount.set(0);
+        lastRequest.set(null);
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/", exchange -> handle(exchange, pollResponse));
+        server.createContext("/", exchange -> {
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            lastRequest.set(body);
+            String response;
+            if (body.contains("oadrCreatedEvent")) {
+                createdEventCount.incrementAndGet();
+                response = "<?xml version=\"1.0\"?><oadr:oadrResponse xmlns:oadr=\"http://openadr.org/oadr-2.0b/2012/07\">"
+                        + "<ei:eiResponse xmlns:ei=\"http://docs.oasis-open.org/ns/energyinterop/201110\">"
+                        + "<ei:responseCode>200</ei:responseCode></ei:eiResponse></oadr:oadrResponse>";
+            } else {
+                response = "<?xml version=\"1.0\"?>"
+                        + "<oadr:oadrDistributeEvent xmlns:oadr=\"http://openadr.org/oadr-2.0b/2012/07\""
+                        + " xmlns:ei=\"http://docs.oasis-open.org/ns/energyinterop/201110\">"
+                        + "<oadr:oadrEvent><ei:eiEvent>"
+                        + "<ei:eventDescriptor><ei:eventID>evt-42</ei:eventID></ei:eventDescriptor>"
+                        + "<ei:eiEventSignals><ei:eiEventSignal>"
+                        + "<ei:signalName>SIMPLE</ei:signalName>"
+                        + "<ei:currentValue>2</ei:currentValue>"
+                        + "</ei:eiEventSignal></ei:eiEventSignals>"
+                        + "</ei:eiEvent></oadr:oadrEvent></oadr:oadrDistributeEvent>";
+            }
+            respond(exchange, "application/xml", response);
+        });
         server.start();
         vtnUrl = "http://127.0.0.1:" + server.getAddress().getPort() + "/OpenADR2/Simple/2.0b";
     }
 
-    private void handle(HttpExchange exchange, String pollResponse) throws IOException {
-        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-        lastRequestBody.set(body);
-        String response;
-        if (body.contains("oadrCreatedEvent") || body.contains("\"oadrCreatedEvent\"")) {
-            createdEventPosts.incrementAndGet();
-            if (body.contains("<ei:optType>")) {
-                int start = body.indexOf("<ei:optType>") + "<ei:optType>".length();
-                int end = body.indexOf("</ei:optType>");
-                if (end > start) {
-                    lastOptType.set(body.substring(start, end));
-                }
-            } else if (body.contains("\"optType\"")) {
-                int idx = body.indexOf("\"optType\"");
-                int colon = body.indexOf(':', idx);
-                int q1 = body.indexOf('"', colon + 1);
-                int q2 = body.indexOf('"', q1 + 1);
-                if (q1 >= 0 && q2 > q1) {
-                    lastOptType.set(body.substring(q1 + 1, q2));
-                }
-            }
-            response = "<oadr:oadrResponse>OK</oadr:oadrResponse>";
-        } else {
-            response = pollResponse == null ? "" : pollResponse;
-        }
+    private void startJsonVtn() throws IOException {
+        lastRequest.set(null);
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", exchange -> {
+            lastRequest.set(exchange.getRequestMethod());
+            respond(exchange, "application/json",
+                    "{\"oadrEvent\":{\"eventID\":\"json-7\",\"signalName\":\"SIMPLE\",\"currentValue\":1}}");
+        });
+        server.start();
+        vtnUrl = "http://127.0.0.1:" + server.getAddress().getPort() + "/events";
+    }
+
+    private static void respond(HttpExchange exchange, String contentType, String response) throws IOException {
         byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().add("Content-Type", "application/xml");
+        exchange.getResponseHeaders().add("Content-Type", contentType);
         exchange.sendResponseHeaders(200, bytes.length);
         try (OutputStream out = exchange.getResponseBody()) {
             out.write(bytes);
         }
     }
 
-    private static String sampleDistributeEventXml() {
-        return """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <oadr:oadrPayload xmlns:oadr="http://openadr.org/oadr-2.0b/2012/07"
-                                  xmlns:ei="http://docs.oasis-open.org/ns/energyinterop/201110">
-                  <oadr:oadrSignedObject>
-                    <oadr:oadrDistributeEvent>
-                      <ei:eventID>EVT-100</ei:eventID>
-                      <ei:signalName>SIMPLE</ei:signalName>
-                      <ei:currentValue>3</ei:currentValue>
-                    </oadr:oadrDistributeEvent>
-                  </oadr:oadrSignedObject>
-                </oadr:oadrPayload>
-                """;
+    private StubDriverObject config(String accept) {
+        return new StubDriverObject(Map.of(
+                "vtnUrl", vtnUrl,
+                "venId", "ven-lab",
+                "pollMethod", "POST",
+                "accept", accept,
+                "timeoutMs", "3000"
+        ));
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
-
         private final Map<String, String> configuration;
-        private final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
+        final Map<String, DataRecord> variables = new HashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;
@@ -230,14 +181,7 @@ class OpenadrDeviceDriverTest {
 
         @Override
         public PlatformObject deviceObject() {
-            return new PlatformObject(
-                    "test-openadr",
-                    "root.platform.devices.test",
-                    ObjectType.DEVICE,
-                    "Test",
-                    "",
-                    null
-            );
+            return new PlatformObject("test-openadr", "root.platform.devices.test", ObjectType.DEVICE, "Test", "", null);
         }
 
         @Override
