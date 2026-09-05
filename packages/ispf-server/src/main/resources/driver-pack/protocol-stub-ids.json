@@ -3,22 +3,11 @@
     "profinet",
     "profibus",
     "ethercat",
-    "ethernet-powerlink",
-    "cc-link",
-    "cc-link-ie",
     "fanuc-focas",
     "iec61850",
     "iec61850-goose",
     "iec61850-sv",
-    "wisun",
-    "wirelesshart",
-    "isa100",
-    "lorawan",
-    "zigbee",
-    "matter",
-    "zwave",
-    "thread",
-    "bluetooth-le"
+    "matter"
   ],
   "licenseType": "Apache-2.0"
 }

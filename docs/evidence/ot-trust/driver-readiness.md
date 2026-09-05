@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T15:48:46Z`  
+> Generated: `2026-09-05T17:07:16Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **143** · Stub list: **19**  
+> Matrix ENTRIES: **154** · Stub list: **8**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=140, `STUB`=19 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=140, `SHELL_BETA`=2, `STUB_LAB`=19 |
-| Source | `matrix`=143, `stub-list`=19 |
+| Maturity | `BETA`=3, `PRODUCTION`=151, `STUB`=8 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=151, `SHELL_BETA`=2, `STUB_LAB`=8 |
+| Source | `matrix`=154, `stub-list`=8 |
 
 ### Readiness legend
 
@@ -73,12 +73,12 @@ _None._
 | `bacnet-mstp` | `ispf-driver-bacnet-mstp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `barcode-scanner` | `ispf-driver-barcode-scanner` | PRODUCTION | matrix | `READY_LAB` | — |
 | `beckhoff-ads` | `ispf-driver-beckhoff-ads` | PRODUCTION | matrix | `READY_LAB` | — |
-| `bluetooth-le` | `ispf-driver-bluetooth-le` | STUB | stub-list | `STUB_LAB` | — |
+| `bluetooth-le` | `ispf-driver-bluetooth-le` | PRODUCTION | matrix | `READY_LAB` | — |
 | `camera-ai` | `ispf-driver-camera-ai` | PRODUCTION | matrix | `READY_LAB` | — |
 | `canbus-gateway` | `ispf-driver-canbus-gateway` | PRODUCTION | matrix | `READY_LAB` | — |
 | `canopen` | `ispf-driver-canopen` | PRODUCTION | matrix | `READY_LAB` | — |
-| `cc-link` | `ispf-driver-cc-link` | STUB | stub-list | `STUB_LAB` | — |
-| `cc-link-ie` | `ispf-driver-cc-link-ie` | STUB | stub-list | `STUB_LAB` | — |
+| `cc-link` | `ispf-driver-cc-link` | PRODUCTION | matrix | `READY_LAB` | — |
+| `cc-link-ie` | `ispf-driver-cc-link-ie` | PRODUCTION | matrix | `READY_LAB` | — |
 | `coap` | `ispf-driver-coap` | PRODUCTION | matrix | `READY_LAB` | — |
 | `codesys` | `ispf-driver-codesys` | PRODUCTION | matrix | `READY_LAB` | — |
 | `controlnet` | `ispf-driver-controlnet` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -95,7 +95,7 @@ _None._
 | `enocean` | `ispf-driver-enocean` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ethercat` | `ispf-driver-ethercat` | STUB | stub-list | `STUB_LAB` | — |
 | `ethernet-ip` | `ispf-driver-ethernet-ip` | PRODUCTION | matrix | `READY_LAB` | — |
-| `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | STUB | stub-list | `STUB_LAB` | — |
+| `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | PRODUCTION | matrix | `READY_LAB` | — |
 | `fanuc-focas` | `ispf-driver-fanuc-focas` | STUB | stub-list | `STUB_LAB` | — |
 | `fatek` | `ispf-driver-fatek` | PRODUCTION | matrix | `READY_LAB` | — |
 | `file` | `ispf-driver-file` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -134,7 +134,7 @@ _None._
 | `io-link` | `ispf-driver-io-link` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ip-host` | `ispf-driver-ip-host` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ipmi` | `ispf-driver-ipmi` | PRODUCTION | matrix | `READY_LAB` | — |
-| `isa100` | `ispf-driver-isa100` | STUB | stub-list | `STUB_LAB` | — |
+| `isa100` | `ispf-driver-isa100` | PRODUCTION | matrix | `READY_LAB` | — |
 | `j1939` | `ispf-driver-j1939` | PRODUCTION | matrix | `READY_LAB` | — |
 | `jdbc` | `ispf-driver-jdbc` | PRODUCTION | matrix | `READY_LAB` | — |
 | `jms` | `ispf-driver-jms` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -145,7 +145,7 @@ _None._
 | `knx-tp` | `ispf-driver-knx-tp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ldap` | `ispf-driver-ldap` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lonworks` | `ispf-driver-lonworks` | PRODUCTION | matrix | `READY_LAB` | — |
-| `lorawan` | `ispf-driver-lorawan` | STUB | stub-list | `STUB_LAB` | — |
+| `lorawan` | `ispf-driver-lorawan` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ls-xgt` | `ispf-driver-ls-xgt` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lwm2m` | `ispf-driver-lwm2m` | PRODUCTION | matrix | `READY_LAB` | — |
 | `matter` | `ispf-driver-matter` | STUB | stub-list | `STUB_LAB` | — |
@@ -203,7 +203,7 @@ _None._
 | `sparkplug-b` | `ispf-driver-sparkplug-b` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ssh` | `ispf-driver-ssh` | PRODUCTION | matrix | `READY_LAB` | — |
 | `telnet` | `ispf-driver-telnet` | PRODUCTION | matrix | `READY_LAB` | — |
-| `thread` | `ispf-driver-thread` | STUB | stub-list | `STUB_LAB` | — |
+| `thread` | `ispf-driver-thread` | PRODUCTION | matrix | `READY_LAB` | — |
 | `toshiba-t-series` | `ispf-driver-toshiba-t-series` | PRODUCTION | matrix | `READY_LAB` | — |
 | `uds` | `ispf-driver-uds` | PRODUCTION | matrix | `READY_LAB` | — |
 | `unitronics` | `ispf-driver-unitronics` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -216,14 +216,14 @@ _None._
 | `webhook` | `ispf-driver-webhook` | PRODUCTION | matrix | `READY_LAB` | — |
 | `websocket` | `ispf-driver-websocket` | PRODUCTION | matrix | `READY_LAB` | — |
 | `weighbridge` | `ispf-driver-weighbridge` | PRODUCTION | matrix | `READY_LAB` | — |
-| `wirelesshart` | `ispf-driver-wirelesshart` | STUB | stub-list | `STUB_LAB` | — |
-| `wisun` | `ispf-driver-wisun` | STUB | stub-list | `STUB_LAB` | — |
+| `wirelesshart` | `ispf-driver-wirelesshart` | PRODUCTION | matrix | `READY_LAB` | — |
+| `wisun` | `ispf-driver-wisun` | PRODUCTION | matrix | `READY_LAB` | — |
 | `wmbus` | `ispf-driver-wmbus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `wmi` | `ispf-driver-wmi` | PRODUCTION | matrix | `READY_LAB` | — |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | PRODUCTION | matrix | `READY_LAB` | — |
-| `zigbee` | `ispf-driver-zigbee` | STUB | stub-list | `STUB_LAB` | — |
-| `zwave` | `ispf-driver-zwave` | STUB | stub-list | `STUB_LAB` | — |
+| `zigbee` | `ispf-driver-zigbee` | PRODUCTION | matrix | `READY_LAB` | — |
+| `zwave` | `ispf-driver-zwave` | PRODUCTION | matrix | `READY_LAB` | — |
 
 ## How to re-run
 

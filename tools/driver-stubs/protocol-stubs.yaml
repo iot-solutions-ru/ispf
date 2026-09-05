@@ -23,18 +23,9 @@ stubs:
     name: EtherCAT
     description: EtherCAT master/gateway stub
     port: 34980
-  - id: ethernet-powerlink
-    name: Ethernet POWERLINK
-    description: Ethernet POWERLINK stub
-    port: 34980
-  - id: cc-link
-    name: CC-Link
-    description: Mitsubishi CC-Link field network stub
-    port: 5001
-  - id: cc-link-ie
-    name: CC-Link IE
-    description: Mitsubishi CC-Link IE Field/Control stub
-    port: 5001
+  # ethernet-powerlink promoted Wave 10 → PRODUCTION (packages/ispf-driver-ethernet-powerlink)
+  # cc-link promoted Wave 10 → PRODUCTION (packages/ispf-driver-cc-link)
+  # cc-link-ie promoted Wave 10 → PRODUCTION (packages/ispf-driver-cc-link-ie)
   # plcnext promoted Wave 6 → PRODUCTION (packages/ispf-driver-plcnext)
   # codesys promoted Wave 5 → PRODUCTION (packages/ispf-driver-codesys)
   # ge-srtp promoted Wave 5 → PRODUCTION (packages/ispf-driver-ge-srtp)
@@ -86,24 +77,15 @@ stubs:
   # iec101 promoted Wave 4 → PRODUCTION (packages/ispf-driver-iec101)
   # iec103 promoted Wave 5 → PRODUCTION (packages/ispf-driver-iec103)
   # ansi-c12 promoted Wave 4 → PRODUCTION (packages/ispf-driver-ansi-c12)
-  - id: wisun
-    name: Wi-SUN
-    description: Wi-SUN FAN border router stub
-    port: 5683
+  # wisun promoted Wave 10 → PRODUCTION (packages/ispf-driver-wisun)
 
   # —— Process / field instruments ——
   # hart-ip promoted Wave 6 → PRODUCTION (packages/ispf-driver-hart-ip)
   # hart-serial promoted Wave 7 → PRODUCTION (packages/ispf-driver-hart-serial)
   # foundation-fieldbus promoted Wave 9 → PRODUCTION (packages/ispf-driver-foundation-fieldbus)
   # profibus-pa promoted Wave 9 → PRODUCTION (packages/ispf-driver-profibus-pa)
-  - id: wirelesshart
-    name: WirelessHART
-    description: WirelessHART gateway stub
-    port: 5094
-  - id: isa100
-    name: ISA100.11a
-    description: ISA100 wireless gateway stub
-    port: 5094
+  # wirelesshart promoted Wave 10 → PRODUCTION (packages/ispf-driver-wirelesshart)
+  # isa100 promoted Wave 10 → PRODUCTION (packages/ispf-driver-isa100)
 
   # —— Building / HVAC ——
   # lonworks promoted Wave 7 → PRODUCTION (packages/ispf-driver-lonworks)
@@ -114,30 +96,15 @@ stubs:
   # eebus promoted Wave 8 → PRODUCTION (packages/ispf-driver-eebus)
 
   # —— IoT / LPWAN / RF ——
-  - id: lorawan
-    name: LoRaWAN
-    description: LoRaWAN network/application server gateway stub
-    port: 1700
-  - id: zigbee
-    name: Zigbee
-    description: Zigbee coordinator / ZCL stub
-    port: 17754
+  # lorawan promoted Wave 10 → PRODUCTION (packages/ispf-driver-lorawan)
+  # zigbee promoted Wave 10 → PRODUCTION (packages/ispf-driver-zigbee)
   - id: matter
     name: Matter
     description: Matter / CHIP controller stub
     port: 5540
-  - id: zwave
-    name: Z-Wave
-    description: Z-Wave controller stub
-    port: 3000
-  - id: thread
-    name: Thread
-    description: Thread Border Router stub
-    port: 8081
-  - id: bluetooth-le
-    name: Bluetooth LE
-    description: Bluetooth Low Energy gateway stub
-    port: 9999
+  # zwave promoted Wave 10 → PRODUCTION (packages/ispf-driver-zwave)
+  # thread promoted Wave 10 → PRODUCTION (packages/ispf-driver-thread)
+  # bluetooth-le promoted Wave 10 → PRODUCTION (packages/ispf-driver-bluetooth-le)
   # sigfox promoted Wave 6 → PRODUCTION (packages/ispf-driver-sigfox)
 
   # —— Vision / identity / shop-floor ——
