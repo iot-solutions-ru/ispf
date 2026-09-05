@@ -15,11 +15,13 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- Enterprise L tooling в `tools/historian-scale/`: seed/count history-enabled,
+  `GET /history-enabled-count`, gate считает переменные (не `/tags` binding rules).
 - `npm run pwa:offline-field-soak` — lab 2h CDP offline soak.
 
 ### Docs
 
-- Historian JVM scale gate archive; Enterprise L по-прежнему lab-only.
+- Enterprise L playbook → `tools/historian-scale/`; Historian JVM archive; L всё ещё lab-only.
 
 ## [0.9.207] - 2026-09-01
 

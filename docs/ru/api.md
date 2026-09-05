@@ -223,6 +223,7 @@ Content-Type: application/json
 |--------|------|-------|-------------|
 | GET | `/api/v1/platform/analytics/templates` | operator+ | Список шаблонов аналитики |
 | GET | `/api/v1/platform/analytics/tags?path=` | operator+ | Список развёрнутых analytics tags (каталог, lineage) |
+| GET | `/api/v1/platform/analytics/history-enabled-count?pathPrefix=` | operator+ | Число history-enabled переменных под префиксом (Enterprise L; не binding-rule tags) |
 | GET | `/api/v1/platform/analytics/tags/by-path?path=` | operator+ | Запись каталога analytics tag |
 | POST | `/api/v1/platform/analytics/templates/apply` | admin | Применить шаблон к устройству |
 | POST | `/api/v1/platform/analytics/query` | operator+ | Согласованный агрегирующий запрос по нескольким тегам |

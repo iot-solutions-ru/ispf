@@ -24,11 +24,15 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Enterprise L catalog tooling** (tracked under `tools/historian-scale/`): seed 50k
+  history-enabled devices, `GET /api/v1/platform/analytics/history-enabled-count`, and
+  analytics-scale gate counting **history-enabled variables** (not binding-rule `/tags`).
 - **HMI offline lab soak** — `npm run pwa:offline-field-soak` (Playwright CDP offline, configurable
   duration; demostand **2 h** evidence archived for Post-S33).
 
 ### Docs
 
+- Enterprise L playbook paths restored to `tools/historian-scale/` (seed/count/gates).
 - Historian JVM scale gate archive (`docs/evidence/historian-scale/`); Enterprise L still lab-only.
 - HMI offline 2h lab journal + JSON under `docs/evidence/hmi-offline/`.
 

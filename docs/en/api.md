@@ -223,6 +223,7 @@ Content-Type: application/json
 |--------|------|-------|-------------|
 | GET | `/api/v1/platform/analytics/templates` | operator+ | List analytics templates |
 | GET | `/api/v1/platform/analytics/tags?path=` | operator+ | List deployed analytics tags (catalog, lineage) |
+| GET | `/api/v1/platform/analytics/history-enabled-count?pathPrefix=` | operator+ | Count history-enabled variables under prefix (Enterprise L catalog gate; not binding-rule tags) |
 | GET | `/api/v1/platform/analytics/tags/by-path?path=` | operator+ | Analytics tag catalog entry |
 | POST | `/api/v1/platform/analytics/templates/apply` | admin | Apply template to device |
 | POST | `/api/v1/platform/analytics/query` | operator+ | Multi-tag aligned aggregate query |
