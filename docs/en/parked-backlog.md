@@ -12,7 +12,7 @@
 | P-ERP | Live ERP connector (BL-169) | **Parked** | Named 1C/SAP integration | Sandbox / simulate catalog may exist; **live** round-trip is not claimed. |
 | P-BPMN | BPMN/DMN depth beyond ADR-0047 | **Parked** | Named customer blocker + ADR | Freeze holds. |
 | P-WEBAUTHN | WebAuthn / passkeys (BL-194) | **Parked (Planned)** | Tender / customer MFA requirement | TOTP MFA GA remains the shipped path. |
-| P-PENTEST | Third-party pen-test report (G-01) | **Parked** | Hired assessment + scope | Prep: [compliance-tender-pack.md](compliance-tender-pack.md). Docs ≠ cert. |
+| P-PENTEST | Third-party pen-test report (G-01) | **Parked** (prep deepened) | Hired assessment + dated report + retest | SOW [pen-test-scope.md](pen-test-scope.md); operator [pen-test-prep.md](pen-test-prep.md); cases [pen-test-cases.md](pen-test-cases.md); preflight `tools/security/pen-test-preflight.sh`. Docs ≠ cert. |
 
 ## Lab access (operators)
 

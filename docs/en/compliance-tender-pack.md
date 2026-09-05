@@ -81,7 +81,7 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 
 | ID | Topic | Today | Gap | Owner BL / doc |
 | -- | ----- | ----- | --- | -------------- |
-| G-01 | **Independent pen-test** | Hardening guidance + unit/API tests + **SOW prep** [pen-test-scope.md](pen-test-scope.md) | No published third-party pen-test report; Phase 27 metric “pentest pass” **not met** | Hired assessment using [pen-test-scope.md](pen-test-scope.md); archive redacted report under `docs/evidence/security-pentest/` |
+| G-01 | **Independent pen-test** | Hardening guidance + unit/API tests + **SOW prep** [pen-test-scope.md](pen-test-scope.md) + operator [pen-test-prep.md](pen-test-prep.md) + [pen-test-cases.md](pen-test-cases.md) | No published third-party pen-test report; Phase 27 metric “pentest pass” **not met** | Hired assessment using scope/prep/cases; archive redacted report under `docs/evidence/security-pentest/` |
 | G-02 | **Audit trail GA** | Append audit + CSV export + SIEM webhook (`ISPF_AUDIT_SIEM_WEBHOOK_URL`) | Retention/WORM not productized; not a full GxP audit package | [BL-156](roadmap.md#phase-27--enterprise-security) **Done**; [collaboration](collaboration.md); [ai-development](ai-development.md) |
 | G-03 | **Hard multi-tenancy** | Logical SaaS A≠B + `tenant-admin` **Done**; hard mode schema provision/drop + OIDC claim; **PostgreSQL RLS** on shared platform object tables **Done** when `ispf.tenant.db-row-isolation=true` | Physical per-tenant **table routing** still optional; H2 does not enforce RLS — **do not claim** physical schema isolation or H2 row isolation | [BL-155](roadmap.md#phase-27--enterprise-security); [multi-tenant](multi-tenant.md) |
 | G-04 | **MFA completeness** | Persisted TOTP + `required-for-admin` + login UX **Exists** (BL-153 Done) | WebAuthn / Keycloak OTP → BL-194; default MFA off | [BL-153](roadmap.md#phase-27--enterprise-security); [security](security.md); ADR [0056](decisions/0056-webauthn-idp-mfa.md) |
@@ -105,7 +105,7 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 | License / SBOM obligations | [license-compliance](license-compliance.md) |
 | Training (not compliance cert) | [certification](certification.md) |
 | Score honesty | [competitive-scorecard](competitive-scorecard.md) — Security **8.0 PARTIAL** (frozen matrix; pending full audit) |
-| Pen-test SOW prep (G-01) | [pen-test-scope.md](pen-test-scope.md) |
+| Pen-test SOW prep (G-01) | [pen-test-scope.md](pen-test-scope.md) · [pen-test-prep.md](pen-test-prep.md) · [pen-test-cases.md](pen-test-cases.md) |
 | WebAuthn / IdP MFA plan (G-04 / BL-194) | ADR [0056](decisions/0056-webauthn-idp-mfa.md) |
 | Roadmap / DoD | [roadmap](roadmap.md#definition-of-done--1010-overall) item 10 |
 

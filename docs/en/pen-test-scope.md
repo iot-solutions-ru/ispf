@@ -85,12 +85,18 @@ Until those exist, scorecard / tender language must say **Gap (G-01)** — not �
 
 ---
 
+## Deeper prep
+
+Operator freeze / accounts / kickoff: [pen-test-prep.md](pen-test-prep.md)  
+Assessor case catalog: [pen-test-cases.md](pen-test-cases.md)  
+Preflight: `bash tools/security/pen-test-preflight.sh https://HOST --out preflight.json`
+
 ## Related
 
 - [compliance-tender-pack.md](compliance-tender-pack.md) — gap register  
 - [security.md](security.md) — MFA, ACL, hardening flags  
 - [multi-tenant.md](multi-tenant.md) — isolation modes  
-- [parked-backlog.md](parked-backlog.md) — **P-PENTEST** (board may land via docs PR)  
+- [parked-backlog.md](parked-backlog.md) — **P-PENTEST**  
 - ADR [0056 — WebAuthn / IdP MFA](decisions/0056-webauthn-idp-mfa.md) — MFA follow-up (BL-194)
 
-RU: [pen-test-scope.md](../ru/pen-test-scope.md)
+RU: [pen-test-scope.md](../ru/pen-test-scope.md) · [pen-test-prep.md](../ru/pen-test-prep.md)
