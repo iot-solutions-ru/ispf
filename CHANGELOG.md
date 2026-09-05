@@ -32,8 +32,14 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+<<<<<<< HEAD
 - Enterprise L playbook paths restored to `tools/historian-scale/` (seed/count/gates).
 - Historian JVM scale gate archive (`docs/evidence/historian-scale/`); Enterprise L still lab-only.
+=======
+- **Parked backlog board** — [docs/en/parked-backlog.md](docs/en/parked-backlog.md) (OT Trust / live ERP / WebAuthn / pen-test / field tablet stay parked; Enterprise L lab PASS noted).
+- **Enterprise L lab evidence** (2026-09-05, `192.168.100.10`): 50k history-enabled + ≥1B CH rows + multi-tag p95≈49 ms — `docs/evidence/historian-scale/`.
+- Historian JVM scale gate archive (`docs/evidence/historian-scale/`).
+>>>>>>> 56a84787 (docs(parked): Enterprise L lab PASS + parked backlog board)
 - HMI offline 2h lab journal + JSON under `docs/evidence/hmi-offline/`.
 
 ## [0.9.207] - 2026-09-01

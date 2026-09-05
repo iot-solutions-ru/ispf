@@ -51,7 +51,7 @@ VPS deploy — on request only (see [deployment](deployment.md) / [demostands](d
 
 1. **Harden first** — bugs, flaky gates, stub honesty, operator/integrator runbooks, residual soaks (AI soft &lt;15 min, field MES/HMI) beat new BL IDs.
 2. **No silent scope growth** — new BPMN element types, DMN, or engine swap require a **new ADR** (see [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)); subset freeze stays until then.
-3. **Parked stays parked** — Phase 25 OT Trust and live ERP (BL-169) resume only with a named field/integration task (same bar as [ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy)).
+3. **Parked stays parked** — Phase 25 OT Trust and live ERP (BL-169) resume only with a named field/integration task (same bar as [ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy)). Status board: [parked-backlog.md](parked-backlog.md).
 4. **New BL / phase rows** — only for customer blocker, compliance gate, or closing an honesty gap — not for competitive checklist width.
 
 This policy does **not** cancel the 10/10 Definition of Done; it changes **order of attack**: usable depth on what exists before more surface.
