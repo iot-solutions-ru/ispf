@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T10:54:48Z`  
+> Generated: `2026-09-05T11:04:57Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **130** · Stub list: **32**  
+> Matrix ENTRIES: **135** · Stub list: **27**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=127, `STUB`=32 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=127, `SHELL_BETA`=2, `STUB_LAB`=32 |
-| Source | `matrix`=130, `stub-list`=32 |
+| Maturity | `BETA`=3, `PRODUCTION`=132, `STUB`=27 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=132, `SHELL_BETA`=2, `STUB_LAB`=27 |
+| Source | `matrix`=135, `stub-list`=27 |
 
 ### Readiness legend
 
@@ -65,7 +65,7 @@ _None._
 | `amqp` | `ispf-driver-amqp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ansi-c12` | `ispf-driver-ansi-c12` | PRODUCTION | matrix | `READY_LAB` | — |
 | `application` | `ispf-driver-application` | PRODUCTION | matrix | `READY_LAB` | — |
-| `as-interface` | `ispf-driver-as-interface` | STUB | stub-list | `STUB_LAB` | — |
+| `as-interface` | `ispf-driver-as-interface` | PRODUCTION | matrix | `READY_LAB` | — |
 | `asterisk` | `ispf-driver-asterisk` | PRODUCTION | matrix | `READY_LAB` | — |
 | `aws-iot-core` | `ispf-driver-aws-iot-core` | PRODUCTION | matrix | `READY_LAB` | — |
 | `azure-iot-hub` | `ispf-driver-azure-iot-hub` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -110,7 +110,7 @@ _None._
 | `graphql` | `ispf-driver-graphql` | PRODUCTION | matrix | `READY_LAB` | — |
 | `grpc` | `ispf-driver-grpc` | PRODUCTION | matrix | `READY_LAB` | — |
 | `hart-ip` | `ispf-driver-hart-ip` | PRODUCTION | matrix | `READY_LAB` | — |
-| `hart-serial` | `ispf-driver-hart-serial` | STUB | stub-list | `STUB_LAB` | — |
+| `hart-serial` | `ispf-driver-hart-serial` | PRODUCTION | matrix | `READY_LAB` | — |
 | `haystack` | `ispf-driver-haystack` | PRODUCTION | matrix | `READY_LAB` | — |
 | `hitachi-hidic` | `ispf-driver-hitachi-hidic` | PRODUCTION | matrix | `READY_LAB` | — |
 | `http` | `ispf-driver-http` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -130,8 +130,8 @@ _None._
 | `ingress-sflow` | `ispf-driver-ingress-sflow` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ingress-syslog` | `ispf-driver-ingress-syslog` | PRODUCTION | matrix | `READY_LAB` | — |
-| `interbus` | `ispf-driver-interbus` | STUB | stub-list | `STUB_LAB` | — |
-| `io-link` | `ispf-driver-io-link` | STUB | stub-list | `STUB_LAB` | — |
+| `interbus` | `ispf-driver-interbus` | PRODUCTION | matrix | `READY_LAB` | — |
+| `io-link` | `ispf-driver-io-link` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ip-host` | `ispf-driver-ip-host` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ipmi` | `ispf-driver-ipmi` | PRODUCTION | matrix | `READY_LAB` | — |
 | `isa100` | `ispf-driver-isa100` | STUB | stub-list | `STUB_LAB` | — |
@@ -144,7 +144,7 @@ _None._
 | `knx` | `ispf-driver-knx` | PRODUCTION | matrix | `READY_LAB` | — |
 | `knx-tp` | `ispf-driver-knx-tp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ldap` | `ispf-driver-ldap` | PRODUCTION | matrix | `READY_LAB` | — |
-| `lonworks` | `ispf-driver-lonworks` | STUB | stub-list | `STUB_LAB` | — |
+| `lonworks` | `ispf-driver-lonworks` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lorawan` | `ispf-driver-lorawan` | STUB | stub-list | `STUB_LAB` | — |
 | `ls-xgt` | `ispf-driver-ls-xgt` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lwm2m` | `ispf-driver-lwm2m` | PRODUCTION | matrix | `READY_LAB` | — |

@@ -128,7 +128,7 @@ public class HartSerialDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         throw new DriverException(
-                "HART serial-gateway lab driver rejects writes (PV / universal command pass-through only)");
+                "HART serial-gateway lab: write not supported (PV / universal command pass-through only)");
     }
 
     private void ensureConnected() throws DriverException {

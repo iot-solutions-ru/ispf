@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:54:48Z",
+    "generatedAt": "2026-09-05T11:04:57Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 127,
-      "STUB": 32,
+      "PRODUCTION": 132,
+      "STUB": 27,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 127,
-      "STUB_LAB": 32,
+      "READY_LAB": 132,
+      "STUB_LAB": 27,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 130,
-      "stub-list": 32
+      "matrix": 135,
+      "stub-list": 27
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 130,
-    "stubIds": 32,
+    "matrixEntries": 135,
+    "stubIds": 27,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -168,34 +168,29 @@
       "driver_id": "as-interface",
       "pack_id": "ispf-driver-as-interface",
       "driver_class": "com.ispf.driver.asinterface.AsInterfaceDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-as-interface/src/main/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-as-interface/src/test/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-as-interface/src/test/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-as-interface/src/test/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-as-interface/src/test/java/com/ispf/driver/asinterface/AsInterfaceDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-as-interface",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "asterisk",
@@ -1473,8 +1468,8 @@
       "driver_id": "hart-serial",
       "pack_id": "ispf-driver-hart-serial",
       "driver_class": "com.ispf.driver.hartserial.HartSerialDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
         "POLL"
       ],
@@ -1483,24 +1478,18 @@
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-hart-serial/src/main/java/com/ispf/driver/hartserial/HartSerialDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-hart-serial/src/test/java/com/ispf/driver/hartserial/HartSerialDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-hart-serial/src/test/java/com/ispf/driver/hartserial/HartSerialDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-hart-serial/src/test/java/com/ispf/driver/hartserial/HartSerialDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-hart-serial/src/test/java/com/ispf/driver/hartserial/HartSerialDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
+      "interop_module": "ispf-driver-hart-serial",
+      "interop_in_workflow": false,
       "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "haystack",
@@ -2045,67 +2034,57 @@
       "driver_id": "interbus",
       "pack_id": "ispf-driver-interbus",
       "driver_class": "com.ispf.driver.interbus.InterbusDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-interbus/src/main/java/com/ispf/driver/interbus/InterbusDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-interbus/src/test/java/com/ispf/driver/interbus/InterbusDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-interbus/src/test/java/com/ispf/driver/interbus/InterbusDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-interbus/src/test/java/com/ispf/driver/interbus/InterbusDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-interbus/src/test/java/com/ispf/driver/interbus/InterbusDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-interbus",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "io-link",
       "pack_id": "ispf-driver-io-link",
       "driver_class": "com.ispf.driver.iolink.IoLinkDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-io-link/src/main/java/com/ispf/driver/iolink/IoLinkDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-io-link/src/test/java/com/ispf/driver/iolink/IoLinkDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-io-link/src/test/java/com/ispf/driver/iolink/IoLinkDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-io-link/src/test/java/com/ispf/driver/iolink/IoLinkDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-io-link/src/test/java/com/ispf/driver/iolink/IoLinkDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-io-link",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "ip-host",
@@ -2445,34 +2424,29 @@
       "driver_id": "lonworks",
       "pack_id": "ispf-driver-lonworks",
       "driver_class": "com.ispf.driver.lonworks.LonworksDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-lonworks/src/main/java/com/ispf/driver/lonworks/LonworksDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-lonworks/src/test/java/com/ispf/driver/lonworks/LonworksDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-lonworks/src/test/java/com/ispf/driver/lonworks/LonworksDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-lonworks/src/test/java/com/ispf/driver/lonworks/LonworksDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-lonworks/src/test/java/com/ispf/driver/lonworks/LonworksDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-lonworks",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "lorawan",

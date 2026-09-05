@@ -488,7 +488,22 @@ final class DriverProductionMatrix {
                     "ispf-driver-bacnet-mstp"),
             entry("wmbus", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-wmbus", "com.ispf.driver.wmbus.WmbusDeviceDriverTest"),
-                    "ispf-driver-wmbus")
+                    "ispf-driver-wmbus"),
+            entry("hart-serial", DriverMaturity.PRODUCTION, POLL_ONLY,
+                    testPath("ispf-driver-hart-serial", "com.ispf.driver.hartserial.HartSerialDeviceDriverTest"),
+                    "ispf-driver-hart-serial"),
+            entry("lonworks", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-lonworks", "com.ispf.driver.lonworks.LonworksDeviceDriverTest"),
+                    "ispf-driver-lonworks"),
+            entry("as-interface", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-as-interface", "com.ispf.driver.asinterface.AsInterfaceDeviceDriverTest"),
+                    "ispf-driver-as-interface"),
+            entry("io-link", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-io-link", "com.ispf.driver.iolink.IoLinkDeviceDriverTest"),
+                    "ispf-driver-io-link"),
+            entry("interbus", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-interbus", "com.ispf.driver.interbus.InterbusDeviceDriverTest"),
+                    "ispf-driver-interbus")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

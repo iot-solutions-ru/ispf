@@ -64,18 +64,9 @@ stubs:
     name: ControlNet
     description: ODVA ControlNet gateway stub
     port: 2222
-  - id: interbus
-    name: INTERBUS
-    description: INTERBUS fieldbus gateway stub
-    port: 502
-  - id: as-interface
-    name: AS-Interface
-    description: AS-Interface master/gateway stub
-    port: 9600
-  - id: io-link
-    name: IO-Link
-    description: IO-Link master REST/MQTT bridge stub
-    port: 8080
+  # interbus promoted Wave 7 → PRODUCTION (packages/ispf-driver-interbus)
+  # as-interface promoted Wave 7 → PRODUCTION (packages/ispf-driver-as-interface)
+  # io-link promoted Wave 7 → PRODUCTION (packages/ispf-driver-io-link)
   # canopen promoted Wave 6 → PRODUCTION (packages/ispf-driver-canopen)
   # canbus-gateway promoted Wave 5 → PRODUCTION (packages/ispf-driver-canbus-gateway)
   # j1939 promoted Wave 5 → PRODUCTION (packages/ispf-driver-j1939)
@@ -117,10 +108,7 @@ stubs:
 
   # —— Process / field instruments ——
   # hart-ip promoted Wave 6 → PRODUCTION (packages/ispf-driver-hart-ip)
-  - id: hart-serial
-    name: HART serial
-    description: HART FSK serial/modem stub
-    port: 5094
+  # hart-serial promoted Wave 7 → PRODUCTION (packages/ispf-driver-hart-serial)
   - id: foundation-fieldbus
     name: Foundation Fieldbus
     description: Foundation Fieldbus H1/HSE stub
@@ -139,10 +127,7 @@ stubs:
     port: 5094
 
   # —— Building / HVAC ——
-  - id: lonworks
-    name: LonWorks
-    description: LonWorks/LonTalk IP stub
-    port: 1628
+  # lonworks promoted Wave 7 → PRODUCTION (packages/ispf-driver-lonworks)
   # bacnet-mstp promoted Wave 6 → PRODUCTION (packages/ispf-driver-bacnet-mstp)
   # wmbus promoted Wave 6 → PRODUCTION (packages/ispf-driver-wmbus)
   # enocean promoted Wave 6 → PRODUCTION (packages/ispf-driver-enocean)
