@@ -14,7 +14,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +25,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * LS Electric XGT FEnet <strong>lab subset</strong> driver — binary framing over TCP (default port 2004).
  * <p>
  * This is an honest <strong>XGT-lab</strong> codec, not a certified LS FEnet stack. Frames use the
- * publicly known company-header magic {@code LSIS-XGT\0} plus a simplified application body
- * (invoke id, command, device type, address, count, optional payload). Proprietary FEnet command
- * layouts beyond this subset are intentionally omitted.
+ * publicly known company-header magic {@code LSIS-XGT} + two NUL pads (10 bytes) plus a simplified
+ * application body (invoke id, command, device type, address, count, optional payload). Proprietary
+ * FEnet command layouts beyond this subset are intentionally omitted.
  * <p>
  * Frame (little-endian multi-byte fields):
  * <pre>
- *   0..9   magic "LSIS-XGT\0" (10 bytes)
+ *   0..9   magic "LSIS-XGT\\0\\0" (10 bytes)
  *   10..11 invokeId (uint16 LE)
  *   12     command: 0x01 READ, 0x02 WRITE
  *   13     deviceType: 0x01 DW, 0x02 MW, 0x03 MX
@@ -45,7 +44,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class LsXgtDeviceDriver implements DeviceDriver {
 
-    static final byte[] MAGIC = "LSIS-XGT\0".getBytes(StandardCharsets.US_ASCII);
+    /** Public company-id style magic: {@code LSIS-XGT} + two NUL pads (10 bytes). */
+    static final byte[] MAGIC = new byte[] {
+            'L', 'S', 'I', 'S', '-', 'X', 'G', 'T', 0, 0
+    };
     static final int HEADER_LEN = 20;
     static final byte CMD_READ = 0x01;
     static final byte CMD_WRITE = 0x02;
