@@ -49,6 +49,8 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `camera-ai` | STUB | **PRODUCTION** | HTTP/1.1 inference lab GET/POST |
 | `dali` | STUB | **PRODUCTION** | DALI gateway ASCII QUERY/SET lab |
 | `canbus-gateway` | STUB | **PRODUCTION** | CAN TCP gateway GET/TX ASCII lab |
+| `j1939` | STUB | **PRODUCTION** | J1939-over-TCP gateway lab |
+| `codesys` | STUB | **PRODUCTION** | CODESYS text gateway lab |
 
 ## Status (September 2026, OT Trust Wave 4 batch)
 

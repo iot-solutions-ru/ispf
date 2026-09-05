@@ -42,10 +42,7 @@ stubs:
     name: PLCnext
     description: Phoenix Contact PLCnext Engineer/RSC stub
     port: 41100
-  - id: codesys
-    name: CODESYS Gateway
-    description: CODESYS gateway / PLCHandler stub
-    port: 1217
+  # codesys promoted Wave 5 → PRODUCTION (packages/ispf-driver-codesys)
   - id: ge-srtp
     name: GE SRTP
     description: Emerson/GE Fanuc SRTP stub
@@ -117,10 +114,7 @@ stubs:
     description: CANopen / CAN gateway stub
     port: 11898
   # canbus-gateway promoted Wave 5 → PRODUCTION (packages/ispf-driver-canbus-gateway)
-  - id: j1939
-    name: SAE J1939
-    description: SAE J1939 vehicle network stub
-    port: 29536
+  # j1939 promoted Wave 5 → PRODUCTION (packages/ispf-driver-j1939)
   - id: uds
     name: UDS (ISO 14229)
     description: Unified Diagnostic Services over DoIP stub

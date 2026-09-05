@@ -14,3 +14,6 @@ Parallel agents still promoting GE SRTP, DF1, WAGO/IDEC/Unitronics, IEC103/SECS-
 
 ## Policy
 Apache-2.0 JDK clean-room; high-risk fieldbus/radio/CNC left stubbed.
+
+| j1939 | ispf-driver-j1939 | TCP PGN gateway lab |
+| codesys | ispf-driver-codesys | text GET/SET gateway lab |

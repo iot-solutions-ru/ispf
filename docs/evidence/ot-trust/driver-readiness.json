@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:35:24Z",
+    "generatedAt": "2026-09-05T10:37:22Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 103,
-      "STUB": 56,
+      "PRODUCTION": 105,
+      "STUB": 54,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 103,
-      "STUB_LAB": 56,
+      "READY_LAB": 105,
+      "STUB_LAB": 54,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 106,
-      "stub-list": 56
+      "matrix": 108,
+      "stub-list": 54
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 106,
-    "stubIds": 56,
+    "matrixEntries": 108,
+    "stubIds": 54,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -616,34 +616,29 @@
       "driver_id": "codesys",
       "pack_id": "ispf-driver-codesys",
       "driver_class": "com.ispf.driver.codesys.CodesysDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-codesys/src/main/java/com/ispf/driver/codesys/CodesysDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-codesys/src/test/java/com/ispf/driver/codesys/CodesysDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-codesys/src/test/java/com/ispf/driver/codesys/CodesysDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-codesys/src/test/java/com/ispf/driver/codesys/CodesysDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-codesys/src/test/java/com/ispf/driver/codesys/CodesysDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-codesys",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "controlnet",
@@ -2254,34 +2249,29 @@
       "driver_id": "j1939",
       "pack_id": "ispf-driver-j1939",
       "driver_class": "com.ispf.driver.j1939.J1939DeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-j1939/src/main/java/com/ispf/driver/j1939/J1939DeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-j1939/src/test/java/com/ispf/driver/j1939/J1939DeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-j1939/src/test/java/com/ispf/driver/j1939/J1939DeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-j1939/src/test/java/com/ispf/driver/j1939/J1939DeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-j1939/src/test/java/com/ispf/driver/j1939/J1939DeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-j1939",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "jdbc",

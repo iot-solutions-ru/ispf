@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T10:35:24Z`  
+> Generated: `2026-09-05T10:37:22Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **106** · Stub list: **56**  
+> Matrix ENTRIES: **108** · Stub list: **54**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=103, `STUB`=56 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=103, `SHELL_BETA`=2, `STUB_LAB`=56 |
-| Source | `matrix`=106, `stub-list`=56 |
+| Maturity | `BETA`=3, `PRODUCTION`=105, `STUB`=54 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=105, `SHELL_BETA`=2, `STUB_LAB`=54 |
+| Source | `matrix`=108, `stub-list`=54 |
 
 ### Readiness legend
 
@@ -80,7 +80,7 @@ _None._
 | `cc-link` | `ispf-driver-cc-link` | STUB | stub-list | `STUB_LAB` | — |
 | `cc-link-ie` | `ispf-driver-cc-link-ie` | STUB | stub-list | `STUB_LAB` | — |
 | `coap` | `ispf-driver-coap` | PRODUCTION | matrix | `READY_LAB` | — |
-| `codesys` | `ispf-driver-codesys` | STUB | stub-list | `STUB_LAB` | — |
+| `codesys` | `ispf-driver-codesys` | PRODUCTION | matrix | `READY_LAB` | — |
 | `controlnet` | `ispf-driver-controlnet` | STUB | stub-list | `STUB_LAB` | — |
 | `corba` | `ispf-driver-corba` | BETA | matrix | `PARTIAL` | — |
 | `cwmp` | `ispf-driver-cwmp` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -135,7 +135,7 @@ _None._
 | `ip-host` | `ispf-driver-ip-host` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ipmi` | `ispf-driver-ipmi` | PRODUCTION | matrix | `READY_LAB` | — |
 | `isa100` | `ispf-driver-isa100` | STUB | stub-list | `STUB_LAB` | — |
-| `j1939` | `ispf-driver-j1939` | STUB | stub-list | `STUB_LAB` | — |
+| `j1939` | `ispf-driver-j1939` | PRODUCTION | matrix | `READY_LAB` | — |
 | `jdbc` | `ispf-driver-jdbc` | PRODUCTION | matrix | `READY_LAB` | — |
 | `jms` | `ispf-driver-jms` | PRODUCTION | matrix | `READY_LAB` | — |
 | `jmx` | `ispf-driver-jmx` | PRODUCTION | matrix | `READY_LAB` | — |

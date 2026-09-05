@@ -416,7 +416,13 @@ final class DriverProductionMatrix {
                     "ispf-driver-dali"),
             entry("canbus-gateway", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-canbus-gateway", "com.ispf.driver.canbusgateway.CanbusGatewayDeviceDriverTest"),
-                    "ispf-driver-canbus-gateway")
+                    "ispf-driver-canbus-gateway"),
+            entry("j1939", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-j1939", "com.ispf.driver.j1939.J1939DeviceDriverTest"),
+                    "ispf-driver-j1939"),
+            entry("codesys", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-codesys", "com.ispf.driver.codesys.CodesysDeviceDriverTest"),
+                    "ispf-driver-codesys")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */
