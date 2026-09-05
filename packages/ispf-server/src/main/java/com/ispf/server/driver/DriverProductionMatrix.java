@@ -512,7 +512,22 @@ final class DriverProductionMatrix {
                     "ispf-driver-opc-hda"),
             entry("eebus", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-eebus", "com.ispf.driver.eebus.EebusDeviceDriverTest"),
-                    "ispf-driver-eebus")
+                    "ispf-driver-eebus"),
+            entry("foundation-fieldbus", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-foundation-fieldbus", "com.ispf.driver.foundationfieldbus.FoundationFieldbusDeviceDriverTest"),
+                    "ispf-driver-foundation-fieldbus"),
+            entry("profibus-pa", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-profibus-pa", "com.ispf.driver.profibuspa.ProfibusPaDeviceDriverTest"),
+                    "ispf-driver-profibus-pa"),
+            entry("opcua-pubsub", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-opcua-pubsub", "com.ispf.driver.opcuapubsub.OpcuaPubsubDeviceDriverTest"),
+                    "ispf-driver-opcua-pubsub"),
+            entry("device-net", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-device-net", "com.ispf.driver.devicenet.DeviceNetDeviceDriverTest"),
+                    "ispf-driver-device-net"),
+            entry("controlnet", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-controlnet", "com.ispf.driver.controlnet.ControlnetDeviceDriverTest"),
+                    "ispf-driver-controlnet")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

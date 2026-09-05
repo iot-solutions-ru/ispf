@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T11:11:00Z",
+    "generatedAt": "2026-09-05T15:48:46Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 135,
-      "STUB": 24,
+      "PRODUCTION": 140,
+      "STUB": 19,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 135,
-      "STUB_LAB": 24,
+      "READY_LAB": 140,
+      "STUB_LAB": 19,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 138,
-      "stub-list": 24
+      "matrix": 143,
+      "stub-list": 19
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 138,
-    "stubIds": 24,
+    "matrixEntries": 143,
+    "stubIds": 19,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -629,34 +629,29 @@
       "driver_id": "controlnet",
       "pack_id": "ispf-driver-controlnet",
       "driver_class": "com.ispf.driver.controlnet.ControlnetDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-controlnet/src/main/java/com/ispf/driver/controlnet/ControlnetDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-controlnet/src/test/java/com/ispf/driver/controlnet/ControlnetDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-controlnet/src/test/java/com/ispf/driver/controlnet/ControlnetDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-controlnet/src/test/java/com/ispf/driver/controlnet/ControlnetDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-controlnet/src/test/java/com/ispf/driver/controlnet/ControlnetDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-controlnet",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "corba",
@@ -773,34 +768,29 @@
       "driver_id": "device-net",
       "pack_id": "ispf-driver-device-net",
       "driver_class": "com.ispf.driver.devicenet.DeviceNetDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-device-net/src/main/java/com/ispf/driver/devicenet/DeviceNetDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-device-net/src/test/java/com/ispf/driver/devicenet/DeviceNetDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-device-net/src/test/java/com/ispf/driver/devicenet/DeviceNetDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-device-net/src/test/java/com/ispf/driver/devicenet/DeviceNetDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-device-net/src/test/java/com/ispf/driver/devicenet/DeviceNetDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-device-net",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "dhcp",
@@ -1209,34 +1199,29 @@
       "driver_id": "foundation-fieldbus",
       "pack_id": "ispf-driver-foundation-fieldbus",
       "driver_class": "com.ispf.driver.foundationfieldbus.FoundationFieldbusDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-foundation-fieldbus/src/main/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-foundation-fieldbus/src/test/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-foundation-fieldbus/src/test/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-foundation-fieldbus/src/test/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-foundation-fieldbus/src/test/java/com/ispf/driver/foundationfieldbus/FoundationFieldbusDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-foundation-fieldbus",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "fuji-sph",
@@ -3207,34 +3192,29 @@
       "driver_id": "opcua-pubsub",
       "pack_id": "ispf-driver-opcua-pubsub",
       "driver_class": "com.ispf.driver.opcuapubsub.OpcuaPubsubDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-opcua-pubsub/src/main/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-opcua-pubsub/src/test/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-opcua-pubsub/src/test/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-opcua-pubsub/src/test/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-opcua-pubsub/src/test/java/com/ispf/driver/opcuapubsub/OpcuaPubsubDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-opcua-pubsub",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "opcua-server",
@@ -3413,34 +3393,29 @@
       "driver_id": "profibus-pa",
       "pack_id": "ispf-driver-profibus-pa",
       "driver_class": "com.ispf.driver.profibuspa.ProfibusPaDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-profibus-pa/src/main/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-profibus-pa/src/test/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-profibus-pa/src/test/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-profibus-pa/src/test/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-profibus-pa/src/test/java/com/ispf/driver/profibuspa/ProfibusPaDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-profibus-pa",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "profinet",

@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T11:11:00Z`  
+> Generated: `2026-09-05T15:48:46Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **138** · Stub list: **24**  
+> Matrix ENTRIES: **143** · Stub list: **19**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=135, `STUB`=24 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=135, `SHELL_BETA`=2, `STUB_LAB`=24 |
-| Source | `matrix`=138, `stub-list`=24 |
+| Maturity | `BETA`=3, `PRODUCTION`=140, `STUB`=19 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=140, `SHELL_BETA`=2, `STUB_LAB`=19 |
+| Source | `matrix`=143, `stub-list`=19 |
 
 ### Readiness legend
 
@@ -81,12 +81,12 @@ _None._
 | `cc-link-ie` | `ispf-driver-cc-link-ie` | STUB | stub-list | `STUB_LAB` | — |
 | `coap` | `ispf-driver-coap` | PRODUCTION | matrix | `READY_LAB` | — |
 | `codesys` | `ispf-driver-codesys` | PRODUCTION | matrix | `READY_LAB` | — |
-| `controlnet` | `ispf-driver-controlnet` | STUB | stub-list | `STUB_LAB` | — |
+| `controlnet` | `ispf-driver-controlnet` | PRODUCTION | matrix | `READY_LAB` | — |
 | `corba` | `ispf-driver-corba` | BETA | matrix | `PARTIAL` | — |
 | `cwmp` | `ispf-driver-cwmp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dali` | `ispf-driver-dali` | PRODUCTION | matrix | `READY_LAB` | — |
 | `delta-dvp` | `ispf-driver-delta-dvp` | PRODUCTION | matrix | `READY_LAB` | — |
-| `device-net` | `ispf-driver-device-net` | STUB | stub-list | `STUB_LAB` | — |
+| `device-net` | `ispf-driver-device-net` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dnp3` | `ispf-driver-dnp3` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -101,7 +101,7 @@ _None._
 | `file` | `ispf-driver-file` | PRODUCTION | matrix | `READY_LAB` | — |
 | `flexible` | `ispf-driver-flexible` | PRODUCTION | matrix | `READY_LAB` | — |
 | `folder` | `ispf-driver-folder` | PRODUCTION | matrix | `READY_LAB` | — |
-| `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | STUB | stub-list | `STUB_LAB` | — |
+| `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `fuji-sph` | `ispf-driver-fuji-sph` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ge-srtp` | `ispf-driver-ge-srtp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `genicam` | `ispf-driver-genicam` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -172,14 +172,14 @@ _None._
 | `opc-da` | `ispf-driver-opc-da` | BETA | matrix | `SHELL_BETA` | — |
 | `opc-hda` | `ispf-driver-opc-hda` | PRODUCTION | matrix | `READY_LAB` | — |
 | `opcua` | `ispf-driver-opcua` | PRODUCTION | matrix | `READY_LAB` | — |
-| `opcua-pubsub` | `ispf-driver-opcua-pubsub` | STUB | stub-list | `STUB_LAB` | — |
+| `opcua-pubsub` | `ispf-driver-opcua-pubsub` | PRODUCTION | matrix | `READY_LAB` | — |
 | `opcua-server` | `ispf-driver-opcua-server` | PRODUCTION | matrix | `READY_LAB` | — |
 | `openadr` | `ispf-driver-openadr` | PRODUCTION | matrix | `READY_LAB` | — |
 | `panasonic-mewto` | `ispf-driver-panasonic-mewto` | PRODUCTION | matrix | `READY_LAB` | — |
 | `plcnext` | `ispf-driver-plcnext` | PRODUCTION | matrix | `READY_LAB` | — |
 | `pop3` | `ispf-driver-pop3` | PRODUCTION | matrix | `READY_LAB` | — |
 | `profibus` | `ispf-driver-profibus` | STUB | stub-list | `STUB_LAB` | — |
-| `profibus-pa` | `ispf-driver-profibus-pa` | STUB | stub-list | `STUB_LAB` | — |
+| `profibus-pa` | `ispf-driver-profibus-pa` | PRODUCTION | matrix | `READY_LAB` | — |
 | `profinet` | `ispf-driver-profinet` | STUB | stub-list | `STUB_LAB` | — |
 | `pulsar` | `ispf-driver-pulsar` | PRODUCTION | matrix | `READY_LAB` | — |
 | `radius` | `ispf-driver-radius` | PRODUCTION | matrix | `READY_LAB` | — |

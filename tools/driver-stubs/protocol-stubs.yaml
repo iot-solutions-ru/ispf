@@ -10,10 +10,7 @@
 stubs:
   # —— Industrial Ethernet / PLC ——
   # sparkplug-b promoted Wave 2 → PRODUCTION (packages/ispf-driver-sparkplug-b)
-  - id: opcua-pubsub
-    name: OPC UA PubSub
-    description: OPC UA PubSub (UDP/MQTT) stub — connectivity shell only
-    port: 4840
+  # opcua-pubsub promoted Wave 9 → PRODUCTION (packages/ispf-driver-opcua-pubsub)
   - id: profinet
     name: PROFINET IO
     description: PROFINET IO controller/device stub (DCP/RPC not implemented)
@@ -56,14 +53,8 @@ stubs:
   # schneider-umac promoted Wave 6 → PRODUCTION (packages/ispf-driver-schneider-umac)
   # rockwell-df1 promoted Wave 5 → PRODUCTION (packages/ispf-driver-rockwell-df1)
   # rockwell-csp promoted Wave 6 → PRODUCTION (packages/ispf-driver-rockwell-csp)
-  - id: device-net
-    name: DeviceNet
-    description: ODVA DeviceNet gateway stub
-    port: 44818
-  - id: controlnet
-    name: ControlNet
-    description: ODVA ControlNet gateway stub
-    port: 2222
+  # device-net promoted Wave 9 → PRODUCTION (packages/ispf-driver-device-net)
+  # controlnet promoted Wave 9 → PRODUCTION (packages/ispf-driver-controlnet)
   # interbus promoted Wave 7 → PRODUCTION (packages/ispf-driver-interbus)
   # as-interface promoted Wave 7 → PRODUCTION (packages/ispf-driver-as-interface)
   # io-link promoted Wave 7 → PRODUCTION (packages/ispf-driver-io-link)
@@ -103,14 +94,8 @@ stubs:
   # —— Process / field instruments ——
   # hart-ip promoted Wave 6 → PRODUCTION (packages/ispf-driver-hart-ip)
   # hart-serial promoted Wave 7 → PRODUCTION (packages/ispf-driver-hart-serial)
-  - id: foundation-fieldbus
-    name: Foundation Fieldbus
-    description: Foundation Fieldbus H1/HSE stub
-    port: 1089
-  - id: profibus-pa
-    name: PROFIBUS PA
-    description: PROFIBUS PA instrument network stub
-    port: 9600
+  # foundation-fieldbus promoted Wave 9 → PRODUCTION (packages/ispf-driver-foundation-fieldbus)
+  # profibus-pa promoted Wave 9 → PRODUCTION (packages/ispf-driver-profibus-pa)
   - id: wirelesshart
     name: WirelessHART
     description: WirelessHART gateway stub
