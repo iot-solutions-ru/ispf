@@ -73,7 +73,12 @@ class KnxTpDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.INTEGER).build(),
                 Map.of("value", 0x11)
         ));
-        assertEquals(0x11, peer.get(KnxTpPoint.parse("1/2/3").groupAddress()));
+        int ga = KnxTpPoint.parse("1/2/3").groupAddress();
+        long deadline = System.currentTimeMillis() + 2000;
+        while (peer.get(ga) != 0x11 && System.currentTimeMillis() < deadline) {
+            Thread.sleep(10);
+        }
+        assertEquals(0x11, peer.get(ga));
         assertEquals("17", object.variables.get("light").firstRow().get("value"));
     }
 
