@@ -21,7 +21,12 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+<<<<<<< HEAD
 - Enterprise L playbook → `tools/historian-scale/`; Historian JVM archive; L всё ещё lab-only.
+=======
+- Доска parked: [parked-backlog.md](parked-backlog.md); Enterprise L lab PASS (50k / 1B / multi-tag) в `docs/evidence/historian-scale/`.
+- Historian JVM scale gate archive.
+>>>>>>> 56a84787 (docs(parked): Enterprise L lab PASS + parked backlog board)
 
 ## [0.9.207] - 2026-09-01
 

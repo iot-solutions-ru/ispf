@@ -51,7 +51,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 
 1. **Сначала hardening** — баги, flaky gates, честность stub, runbook’и оператора/интегратора, остаточные soak (AI soft &lt;15 min, полевой MES/HMI) важнее новых ID БЛ.
 2. **Без тихого роста scope** — новые типы элементов BPMN, DMN или смена движка требуют **нового ADR** (см. [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)); freeze subset действует до этого.
-3. **Отложенное остаётся отложенным** — фаза 25 OT Trust и живой ERP (БЛ-169) возобновляются только при именованной полевой/интеграционной задаче (та же планка, что [ready-for-field](../en/field-pilot-playbook.md#ready-for-field-gate-policy)).
+3. **Отложенное остаётся отложенным** — фаза 25 OT Trust и живой ERP (БЛ-169) возобновляются только при именованной полевой/интеграционной задаче (та же планка, что [ready-for-field](../en/field-pilot-playbook.md#ready-for-field-gate-policy)). Доска статусов: [parked-backlog.md](parked-backlog.md).
 4. **Новые строки БЛ / фазы** — только blocker заказчика, compliance-гейт или закрытие пробела честности — не ширина конкурентного чеклиста.
 
 Политика **не** отменяет Definition of Done 10/10; меняет **порядок атаки**: пригодная глубина уже существующего раньше новой поверхности.
