@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Modbus-TCP-compatible lab driver for WAGO PFC controllers — holding register read (FC3)
  * and single-register write (FC6). Default TCP port {@code 502} (standard Modbus TCP).
- * Catalog / stub YAML may list {@code 2455}; override {@code port} when a non-standard
+ * Catalog YAML may list {@code 2455}; override {@code port} when a non-standard
  * listener is used. Both ports are valid configuration — this pack defaults to 502.
  * <p>
  * This is <strong>not</strong> a CODESYS proprietary / e!COCKPIT binary stack. Many WAGO PFC

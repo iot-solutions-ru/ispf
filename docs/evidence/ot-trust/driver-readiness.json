@@ -1,6 +1,6 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:40:01Z",
+    "generatedAt": "2026-09-05T10:40:18Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
@@ -9,17 +9,16 @@
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 107,
+      "READY_LAB": 110,
       "STUB_LAB": 49,
       "PARTIAL": 1,
-      "BLOCKED": 3,
       "SHELL_BETA": 2
     },
     "bySource": {
       "matrix": 113,
       "stub-list": 49
     },
-    "failCount": 3,
+    "failCount": 0,
     "warnCount": 0,
     "top20": [
       "virtual",
@@ -1700,15 +1699,9 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": true,
-      "readiness": "BLOCKED",
-      "findings": [
-        {
-          "severity": "FAIL",
-          "code": "PRODUCTION_STUB_JAVADOC",
-          "message": "PRODUCTION class javadoc contains stub/placeholder"
-        }
-      ]
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "iec101",
@@ -4327,15 +4320,9 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": true,
-      "readiness": "BLOCKED",
-      "findings": [
-        {
-          "severity": "FAIL",
-          "code": "PRODUCTION_STUB_JAVADOC",
-          "message": "PRODUCTION class javadoc contains stub/placeholder"
-        }
-      ]
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "virtual",
@@ -4444,15 +4431,9 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": true,
-      "readiness": "BLOCKED",
-      "findings": [
-        {
-          "severity": "FAIL",
-          "code": "PRODUCTION_STUB_JAVADOC",
-          "message": "PRODUCTION class javadoc contains stub/placeholder"
-        }
-      ]
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "weather-station",

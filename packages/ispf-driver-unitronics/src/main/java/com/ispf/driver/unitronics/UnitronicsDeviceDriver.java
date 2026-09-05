@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
  *   <li>Write MB: {@code /01WMB0.1XX}</li>
  * </ul>
  * Point mapping: {@code MI100}, {@code MB0}. Full {@code /…} frames may be sent as-is
- * (FCS recomputed when a trailing {@code **} placeholder is present).
+ * (FCS recomputed when a trailing {@code **} marker is present).
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; no UniLogic SDK / PLC4X.
  */
