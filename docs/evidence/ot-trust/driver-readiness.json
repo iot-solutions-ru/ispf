@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:40:18Z",
+    "generatedAt": "2026-09-05T10:40:57Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 110,
-      "STUB": 49,
+      "PRODUCTION": 112,
+      "STUB": 47,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 110,
-      "STUB_LAB": 49,
+      "READY_LAB": 112,
+      "STUB_LAB": 47,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 113,
-      "stub-list": 49
+      "matrix": 115,
+      "stub-list": 47
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 113,
-    "stubIds": 49,
+    "matrixEntries": 115,
+    "stubIds": 47,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -1735,34 +1735,29 @@
       "driver_id": "iec103",
       "pack_id": "ispf-driver-iec103",
       "driver_class": "com.ispf.driver.iec103.Iec103DeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec103/src/main/java/com/ispf/driver/iec103/Iec103DeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-iec103/src/test/java/com/ispf/driver/iec103/Iec103DeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-iec103/src/test/java/com/ispf/driver/iec103/Iec103DeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-iec103/src/test/java/com/ispf/driver/iec103/Iec103DeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-iec103/src/test/java/com/ispf/driver/iec103/Iec103DeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-iec103",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "iec104",
@@ -3827,34 +3822,29 @@
       "driver_id": "secs-gem",
       "pack_id": "ispf-driver-secs-gem",
       "driver_class": "com.ispf.driver.secsgem.SecsGemDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-secs-gem/src/main/java/com/ispf/driver/secsgem/SecsGemDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-secs-gem/src/test/java/com/ispf/driver/secsgem/SecsGemDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-secs-gem/src/test/java/com/ispf/driver/secsgem/SecsGemDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-secs-gem/src/test/java/com/ispf/driver/secsgem/SecsGemDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-secs-gem/src/test/java/com/ispf/driver/secsgem/SecsGemDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-secs-gem",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "sigfox",

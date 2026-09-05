@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T10:40:18Z`  
+> Generated: `2026-09-05T10:40:57Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **113** · Stub list: **49**  
+> Matrix ENTRIES: **115** · Stub list: **47**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=110, `STUB`=49 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=110, `SHELL_BETA`=2, `STUB_LAB`=49 |
-| Source | `matrix`=113, `stub-list`=49 |
+| Maturity | `BETA`=3, `PRODUCTION`=112, `STUB`=47 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=112, `SHELL_BETA`=2, `STUB_LAB`=47 |
+| Source | `matrix`=115, `stub-list`=47 |
 
 ### Readiness legend
 
@@ -118,7 +118,7 @@ _None._
 | `icmp` | `ispf-driver-icmp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `idec-microsmart` | `ispf-driver-idec-microsmart` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec101` | `ispf-driver-iec101` | PRODUCTION | matrix | `READY_LAB` | — |
-| `iec103` | `ispf-driver-iec103` | STUB | stub-list | `STUB_LAB` | — |
+| `iec103` | `ispf-driver-iec103` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec104` | `ispf-driver-iec104` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec104-server` | `ispf-driver-iec104-server` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec61850` | `ispf-driver-iec61850` | STUB | stub-list | `STUB_LAB` | — |
@@ -190,7 +190,7 @@ _None._
 | `s7` | `ispf-driver-s7` | PRODUCTION | matrix | `READY_LAB` | — |
 | `schneider-umac` | `ispf-driver-schneider-umac` | STUB | stub-list | `STUB_LAB` | — |
 | `scpi` | `ispf-driver-scpi` | PRODUCTION | matrix | `READY_LAB` | — |
-| `secs-gem` | `ispf-driver-secs-gem` | STUB | stub-list | `STUB_LAB` | — |
+| `secs-gem` | `ispf-driver-secs-gem` | PRODUCTION | matrix | `READY_LAB` | — |
 | `sigfox` | `ispf-driver-sigfox` | STUB | stub-list | `STUB_LAB` | — |
 | `sip` | `ispf-driver-sip` | PRODUCTION | matrix | `READY_LAB` | — |
 | `smb` | `ispf-driver-smb` | PRODUCTION | matrix | `READY_LAB` | — |

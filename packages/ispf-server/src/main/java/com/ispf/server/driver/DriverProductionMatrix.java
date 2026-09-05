@@ -437,7 +437,13 @@ final class DriverProductionMatrix {
                     "ispf-driver-ge-srtp"),
             entry("rockwell-df1", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-rockwell-df1", "com.ispf.driver.rockwelldf1.RockwellDf1DeviceDriverTest"),
-                    "ispf-driver-rockwell-df1")
+                    "ispf-driver-rockwell-df1"),
+            entry("iec103", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-iec103", "com.ispf.driver.iec103.Iec103DeviceDriverTest"),
+                    "ispf-driver-iec103"),
+            entry("secs-gem", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-secs-gem", "com.ispf.driver.secsgem.SecsGemDeviceDriverTest"),
+                    "ispf-driver-secs-gem")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

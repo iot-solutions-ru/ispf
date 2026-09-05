@@ -135,10 +135,7 @@ stubs:
     description: IEC 61850 Sampled Values stub
     port: 102
   # iec101 promoted Wave 4 → PRODUCTION (packages/ispf-driver-iec101)
-  - id: iec103
-    name: IEC 60870-5-103
-    description: IEC 60870-5-103 protection stub
-    port: 2404
+  # iec103 promoted Wave 5 → PRODUCTION (packages/ispf-driver-iec103)
   # ansi-c12 promoted Wave 4 → PRODUCTION (packages/ispf-driver-ansi-c12)
   - id: wisun
     name: Wi-SUN
@@ -232,10 +229,7 @@ stubs:
     port: 3956
   # barcode-scanner promoted Wave 4 → PRODUCTION (packages/ispf-driver-barcode-scanner)
   # weighbridge promoted Wave 4 → PRODUCTION (packages/ispf-driver-weighbridge)
-  - id: secs-gem
-    name: SECS/GEM
-    description: SEMI SECS-I/HSMS/GEM stub
-    port: 5000
+  # secs-gem promoted Wave 5 → PRODUCTION (packages/ispf-driver-secs-gem)
   # camera-ai promoted Wave 5 → PRODUCTION (packages/ispf-driver-camera-ai)
 
   # —— Cloud / messaging bridges ——

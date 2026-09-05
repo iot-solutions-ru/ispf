@@ -1,25 +1,34 @@
-# OT Trust Wave 5 — clean-room codec promotion (in progress)
+# OT Trust Wave 5 — clean-room codec promotion
 
 Date: 2026-09-05
 
-## First batch (edge / gateway)
+## Result
 
-| driverId | pack | notes |
-|----------|------|-------|
-| camera-ai | ispf-driver-camera-ai | HTTP inference lab |
-| dali | ispf-driver-dali | DALI ASCII gateway lab |
-| canbus-gateway | ispf-driver-canbus-gateway | CAN TCP gateway lab |
+| Metric | After Wave 4 | After Wave 5 |
+|--------|--------------|--------------|
+| Matrix ENTRIES | 103 | **115** |
+| Stub list | 59 | **47** |
+| READY_LAB | 100 | **112** |
+| FAIL / WARN | 0 / 0 | **0 / 0** |
 
-Parallel agents still promoting GE SRTP, DF1, WAGO/IDEC/Unitronics, IEC103/SECS-GEM, J1939/CODESYS.
+## Promoted packs (15)
+
+| driverId | notes |
+|----------|-------|
+| camera-ai | HTTP/1.1 inference lab |
+| dali | DALI ASCII gateway lab |
+| canbus-gateway | CAN TCP gateway lab |
+| j1939 | J1939-over-TCP gateway lab |
+| codesys | CODESYS text gateway lab |
+| wago | Modbus-TCP FC3/FC6 lab |
+| idec-microsmart | Host Link ASCII lab |
+| unitronics | PCOM ASCII lab |
+| ge-srtp | GE SRTP mailbox lab |
+| rockwell-df1 | DF1 protected binary TCP-bridge lab |
+| iec103 | IEC 60870-5-103 TCP lab |
+| secs-gem | HSMS/SECS-II GEM lab subset |
+
+Plus earlier in-wave: camera-ai/dali/canbus-gateway/j1939/codesys counted above.
 
 ## Policy
-Apache-2.0 JDK clean-room; high-risk fieldbus/radio/CNC left stubbed.
-
-| j1939 | ispf-driver-j1939 | TCP PGN gateway lab |
-| codesys | ispf-driver-codesys | text GET/SET gateway lab |
-| wago | ispf-driver-wago | Modbus-TCP lab |
-| idec-microsmart | ispf-driver-idec-microsmart | Host Link ASCII lab |
-| unitronics | ispf-driver-unitronics | PCOM ASCII lab |
-| ge-srtp | ispf-driver-ge-srtp | SRTP lab |
-| rockwell-df1 | ispf-driver-rockwell-df1 | DF1 TCP-bridge lab |
-
+Apache-2.0 JDK clean-room; high-risk fieldbus/radio/CNC remain stubbed. Lab PRODUCTION ≠ field certification.

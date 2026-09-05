@@ -27,7 +27,6 @@
     "iec61850",
     "iec61850-goose",
     "iec61850-sv",
-    "iec103",
     "wisun",
     "hart-ip",
     "hart-serial",
@@ -47,8 +46,7 @@
     "thread",
     "bluetooth-le",
     "sigfox",
-    "genicam",
-    "secs-gem"
+    "genicam"
   ],
   "licenseType": "Apache-2.0"
 }

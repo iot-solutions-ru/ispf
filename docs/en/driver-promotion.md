@@ -56,6 +56,8 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `unitronics` | STUB | **PRODUCTION** | PCOM ASCII lab |
 | `ge-srtp` | STUB | **PRODUCTION** | GE SRTP mailbox lab |
 | `rockwell-df1` | STUB | **PRODUCTION** | DF1 protected binary TCP-bridge lab |
+| `iec103` | STUB | **PRODUCTION** | IEC 60870-5-103 TCP lab |
+| `secs-gem` | STUB | **PRODUCTION** | HSMS/SECS-II GEM lab subset |
 
 ## Status (September 2026, OT Trust Wave 4 batch)
 
