@@ -2,7 +2,9 @@
 
 **Target:** 5k–50k+ history-enabled tags, dedicated `analytics` replicas, ClickHouse cluster as warm read plane, **1B+** `variable_samples` rows for enterprise historian gate.
 
-> **Lab scripts** (`seed-analytics-scale-catalog.py`, `*-gate.sh`) live in **`deploy/local/`** (gitignored). Copy [`deploy/local/README.example.md`](../../deploy/local/README.example.md) on first clone.
+> **Lab scripts** live in git under [`tools/historian-scale/`](../../tools/historian-scale/)
+> (`seed-analytics-scale-catalog.py`, `analytics-scale-gate.sh`, `run-enterprise-l-gates.sh`).
+> Optional workstation copies may still exist under gitignored `deploy/local/`.
 
 ## Topology
 
@@ -30,13 +32,23 @@ Documented lab spec (8 vCPU ClickHouse node, 32 GB RAM, NVMe):
 ### 1. Seed 50k history-enabled tags
 
 ```bash
-python deploy/local/tools/seed-analytics-scale-catalog.py \
+python3 tools/historian-scale/seed-analytics-scale-catalog.py \
   --base-url http://127.0.0.1:8080 \
   --tags 50000 \
-  --batch 200
+  --batch 200 \
+  --workers 12
 ```
 
-For dry-run on laptop use `--tags 1000` first.
+For dry-run on laptop use `--tags 1000` first. **Do not seed 50k on the shared demostand**
+without intent (purge with `--fresh` after small smokes).
+
+Verify count (history-enabled variables — **not** `/platform/analytics/tags`):
+
+```bash
+python3 tools/historian-scale/count-history-enabled.py \
+  --base-url http://127.0.0.1:8080 \
+  --path-prefix root.platform.devices.analytics-scale-lab
+```
 
 ### 2. ClickHouse row count gate
 
@@ -63,7 +75,7 @@ Or run the full orchestrator (scale + materializer lag; historian optional):
 
 ```bash
 export ISPF_ANALYTICS_BENCH_SKIP_MATERIALIZER_GATE=false
-bash deploy/local/tools/run-enterprise-l-gates.sh
+bash tools/historian-scale/run-enterprise-l-gates.sh
 ```
 
 ### 4. JVM regression gate (CI)
@@ -88,10 +100,10 @@ Enterprise L proves **AF-capable** tier (derived tags, DAG engine, OLAP rollups,
 
 ## Sign-off checklist
 
-- [ ] Seed 50k tags (`seed-analytics-scale-catalog.py --tags 50000`)
+- [ ] Seed 50k tags (`python3 tools/historian-scale/seed-analytics-scale-catalog.py --tags 50000`)
 - [ ] ClickHouse ≥ 1B `variable_samples` rows
 - [ ] `ISPF_ANALYTICS_MATERIALIZER_ENABLED=true` on analytics replica; materializer lag < 5 min
-- [ ] Run gates: `bash deploy/local/tools/run-enterprise-l-gates.sh` with `ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_MATERIALIZER_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false`
+- [ ] Run gates: `bash tools/historian-scale/run-enterprise-l-gates.sh` with `ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false`
 - [ ] JVM gate: `AnalyticsMultiTagQueryLoadTest` in CI (nightly `load-test.yml`)
 
 - [ ] `build/analytics-scale/analytics-scale-gate.md` — all gates **PASS**

@@ -93,6 +93,22 @@ class AnalyticsTagCatalogServiceTest {
     }
 
     @Test
+    void countsHistoryEnabledVariablesUnderPathPrefix() {
+        when(jdbcTemplate.queryForObject(any(String.class), eq(Long.class), eq(DEVICE_A), eq(DEVICE_A + ".%")))
+                .thenReturn(42L);
+
+        assertThat(catalogService.countHistoryEnabledVariables(DEVICE_A)).isEqualTo(42L);
+    }
+
+    @Test
+    void countsAllHistoryEnabledVariablesWhenPrefixBlank() {
+        when(jdbcTemplate.queryForObject(any(String.class), eq(Long.class))).thenReturn(7L);
+
+        assertThat(catalogService.countHistoryEnabledVariables("")).isEqualTo(7L);
+        assertThat(catalogService.countHistoryEnabledVariables(null)).isEqualTo(7L);
+    }
+
+    @Test
     void objectPathsQueryJoinsObjectNodesToSkipOrphans() {
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
         when(jdbcTemplate.queryForList(sqlCaptor.capture(), eq(String.class), any()))

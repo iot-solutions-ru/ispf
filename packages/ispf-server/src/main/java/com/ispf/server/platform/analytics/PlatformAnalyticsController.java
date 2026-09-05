@@ -122,6 +122,22 @@ public class PlatformAnalyticsController {
         return derivedTagService.listDerivedDevicePaths();
     }
 
+    /**
+     * Count history-enabled variables under a path prefix (Enterprise L / BL-210 catalog gate).
+     * Distinct from {@code /tags}, which lists analytics binding-rule tags.
+     */
+    @GetMapping("/history-enabled-count")
+    public Map<String, Object> historyEnabledCount(
+            @RequestParam(required = false) String pathPrefix
+    ) {
+        long count = tagCatalogService.countHistoryEnabledVariables(pathPrefix);
+        return Map.of(
+                "count", count,
+                "pathPrefix", pathPrefix == null ? "" : pathPrefix,
+                "mode", "history-enabled"
+        );
+    }
+
     /** List deployed analytics tags with lineage and impact metadata (BL-209). */
     @GetMapping("/tags")
     public Map<String, Object> listTags(@RequestParam(required = false) String path) {

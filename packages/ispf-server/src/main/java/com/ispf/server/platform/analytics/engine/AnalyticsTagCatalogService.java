@@ -159,6 +159,36 @@ public class AnalyticsTagCatalogService {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    /**
+     * Count history-enabled object variables under {@code pathPrefix} (exact path or descendants).
+     * Used by Enterprise L catalog gate — distinct from analytics binding-rule tags
+     * ({@link #listCatalogEntries}).
+     */
+    @Transactional(readOnly = true)
+    public long countHistoryEnabledVariables(String pathPrefix) {
+        if (pathPrefix == null || pathPrefix.isBlank()) {
+            Long all = jdbcTemplate.queryForObject(
+                    """
+                            SELECT COUNT(*) FROM object_variables
+                            WHERE history_enabled = true
+                            """,
+                    Long.class
+            );
+            return all == null ? 0L : all;
+        }
+        Long count = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(*) FROM object_variables
+                        WHERE history_enabled = true
+                          AND (object_path = ? OR object_path LIKE ?)
+                        """,
+                Long.class,
+                pathPrefix,
+                pathPrefix + ".%"
+        );
+        return count == null ? 0L : count;
+    }
+
     @Transactional(readOnly = true)
     public List<AnalyticsTagCatalogEntry> listCatalogEntries(String pathPrefix) {
         List<AnalyticsTagDefinition> definitions = listAllTagDefinitions();
