@@ -1,9 +1,10 @@
-> **Language:** Canonical English. Russian edition: [ru/fto-object-tree-model.md](../ru/fto-object-tree-model.md).
+> **Audience:** Internal only (maintainers / counsel). **Not a public product document.**  
+> **Language:** Canonical English. Russian: [fto-object-tree-model.ru.md](fto-object-tree-model.ru.md).
 
 # FTO memo — object-tree model (variables / functions / events / bindings)
 
 > **Status:** Internal — Engineering IP inventory for counsel. **Not legal advice.**  
-> **Hub:** [doc-status.md](doc-status.md) · Related: [license-compliance](license-compliance.md), [object-model](object-model.md), [bindings](bindings.md).
+> **Distribution:** Do **not** link from public hubs, website, customer packs, or marketing. Keep competitor-specific workpapers outside the public tree.
 
 ## Purpose
 
@@ -35,15 +36,15 @@ Some vendors market subsets of this pattern as proprietary or “patented.” Ma
 
 ## ISPF side (what we ship)
 
-Canonical docs: [object-model](object-model.md), [bindings](bindings.md), [application-principles](application-principles.md).
+Canonical docs: [object-model](../en/object-model.md), [bindings](../en/bindings.md), [application-principles](../en/application-principles.md).
 
 | Concept | ISPF realization |
 |---------|------------------|
 | Hierarchy | Dot-path **object tree** (`root.platform…`) |
 | Node contents | **Variables**, **Functions**, **Events** (+ blueprints / instance types) |
 | Typed values | `DataSchema` / `DataRecord` (fields + rows) |
-| Logic | Declarative **`@bindingRules`** + **CEL** ([bindings](bindings.md)) |
-| Device vs logic | Hard rule: orchestration / twin logic is **not** `ObjectType.DEVICE` ([AGENTS.md](../../AGENTS.md), [application-principles](application-principles.md)) |
+| Logic | Declarative **`@bindingRules`** + **CEL** ([bindings](../en/bindings.md)) |
+| Device vs logic | Hard rule: orchestration / twin logic is **not** `ObjectType.DEVICE` ([AGENTS.md](../../AGENTS.md), [application-principles](../en/application-principles.md)) |
 | Drivers | Separate **driver packs**, Apache-2.0 clean-room codecs where former GPL stacks existed |
 | License | Platform **AGPL-3.0** + optional Enterprise dual-license |
 
@@ -100,7 +101,7 @@ Use these to argue that V/F/E-on-a-tree is a **long-standing industrial pattern*
 ### D. Contract / Enterprise EULA
 
 - [ ] Enterprise EULA: no IP warranty broader than counsel approves; optional FTO schedule for named jurisdictions.
-- [ ] Bundle/driver SKUs stay on separate EULAs ([commercial-licensing](commercial-licensing.md)).
+- [ ] Bundle/driver SKUs stay on separate EULAs ([commercial-licensing](../en/commercial-licensing.md)).
 
 ## Safe engineering / docs practice
 
@@ -121,9 +122,9 @@ Short written opinion covering:
 
 ## Related
 
-- [license-compliance](license-compliance.md)
-- [object-model](object-model.md)
-- [bindings](bindings.md)
-- [pid-symbols-legal](pid-symbols-legal.md)
-- [russian-software-registry](russian-software-registry.md)
+- [license-compliance](../en/license-compliance.md)
+- [object-model](../en/object-model.md)
+- [bindings](../en/bindings.md)
+- [pid-symbols-legal](../en/pid-symbols-legal.md)
+- [russian-software-registry](../en/russian-software-registry.md)
 - [CLA.md](../../CLA.md)

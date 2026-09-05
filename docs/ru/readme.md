@@ -182,7 +182,6 @@
 | [Лицензия](license.md) | Stable | **AGPL v3** + dual-license |
 | [Commercial licensing](commercial-licensing.md) | Stable | Enterprise |
 | [License compliance](license-compliance.md) | Stable | Чеклист обязательств |
-| [FTO-memo — модель object tree](fto-object-tree-model.md) | Internal | Чеклист FTO для counsel по object-tree / V/F/E / bindings |
 | [Compliance tender pack](compliance-tender-pack.md) | Stable | БЛ-192 тендерный annex (не сертификация) |
 | [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
 | [Аудит документации](documentation-audit.md) | Internal | Структура, ссылки |

@@ -279,7 +279,3 @@ Content-Type: application/json
 Графики (`useTrendSeries`) загружают историю с сервера и дополняют live-точками через WebSocket/polling.
 
 Подробный roadmap: [variable-history](variable-history.md).
-
-## IP-заметка (класс object-tree платформ)
-
-Дерево объектов ISPF (переменные / функции / события + bindings) относится к известному *классу IIoT / SCADA middleware* (иерархия узлов со свойствами, операциями, уведомлениями и декларативными привязками). Реализация, API и docs — независимые. Для FTO с counsel см. [fto-object-tree-model](fto-object-tree-model.md).

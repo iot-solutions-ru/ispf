@@ -68,4 +68,3 @@ Spreadsheet Band1 templates use **Apache POI only**. YARG / JasperReports / docx
 - [sbom-legal-review](sbom-legal-review.md)
 - [licensed-driver-packs](licensed-driver-packs.md)
 - [commercial-licensing](commercial-licensing.md)
-- [fto-object-tree-model](fto-object-tree-model.md) — FTO memo for object-tree / V/F/E / bindings class

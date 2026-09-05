@@ -279,7 +279,3 @@ Platform config: `ispf.variable-history` in `application.yml` (`enabled`, `min-i
 Charts (`useTrendSeries`) load history from the server and append live points via WebSocket/polling.
 
 Detailed roadmap: [variable-history](variable-history.md).
-
-## IP note (object-tree platform class)
-
-ISPF’s object tree (variables / functions / events + bindings) sits in a well-known *IIoT / SCADA middleware class* (hierarchical nodes with properties, operations, notifications, and declarative bindings). Implementation, APIs, and docs are independent. For patent/copyright FTO work with counsel see [fto-object-tree-model](fto-object-tree-model.md).

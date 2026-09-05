@@ -1,9 +1,10 @@
-> **Язык:** русская версия. Канонический английский: [en/fto-object-tree-model.md](../en/fto-object-tree-model.md).
+> **Аудитория:** только внутреннее использование (maintainers / counsel). **Не публичный продуктовый документ.**  
+> **Язык:** русская версия. Английский: [fto-object-tree-model.en.md](fto-object-tree-model.en.md).
 
 # FTO-memo — модель дерева объектов (переменные / функции / события / bindings)
 
 > **Статус:** Internal — инженерная IP-инвентаризация для counsel. **Не юридическая консультация.**  
-> **Хаб:** [doc-status.md](doc-status.md) · Связанные: [license-compliance](license-compliance.md), [object-model](object-model.md), [bindings](bindings.md).
+> **Распространение:** **Не** ссылаться из публичных хабов, сайта, customer packs и маркетинга. Именованные сравнения с вендорами — вне публичного дерева.
 
 ## Цель
 
@@ -35,15 +36,15 @@
 
 ## Сторона ISPF (что поставляем)
 
-Канонические docs: [object-model](object-model.md), [bindings](bindings.md), [application-principles](application-principles.md).
+Канонические docs: [object-model](../ru/object-model.md), [bindings](../ru/bindings.md), [application-principles](../ru/application-principles.md).
 
 | Концепция | Реализация ISPF |
 |-----------|-----------------|
 | Иерархия | Dot-path **object tree** (`root.platform…`) |
 | Содержимое узла | **Variables**, **Functions**, **Events** (+ blueprints / instance types) |
 | Типизированные значения | `DataSchema` / `DataRecord` (fields + rows) |
-| Логика | Декларативные **`@bindingRules`** + **CEL** ([bindings](bindings.md)) |
-| Device vs logic | Жёсткое правило: оркестрация / twin-логика — **не** `ObjectType.DEVICE` ([AGENTS.md](../../AGENTS.md), [application-principles](application-principles.md)) |
+| Логика | Декларативные **`@bindingRules`** + **CEL** ([bindings](../ru/bindings.md)) |
+| Device vs logic | Жёсткое правило: оркестрация / twin-логика — **не** `ObjectType.DEVICE` ([AGENTS.md](../../AGENTS.md), [application-principles](../ru/application-principles.md)) |
 | Драйверы | Отдельные **driver packs**, Apache-2.0 clean-room кодеки там, где раньше были GPL-стеки |
 | Лицензия | Платформа **AGPL-3.0** + опциональный Enterprise dual-license |
 
@@ -100,7 +101,7 @@
 ### D. Договор / Enterprise EULA
 
 - [ ] Enterprise EULA: IP-warranty не шире, чем одобрит counsel; опционально FTO-приложение по юрисдикциям.
-- [ ] Bundle/driver SKU — на отдельных EULA ([commercial-licensing](commercial-licensing.md)).
+- [ ] Bundle/driver SKU — на отдельных EULA ([commercial-licensing](../ru/commercial-licensing.md)).
 
 ## Безопасная инженерная / docs-практика
 
@@ -121,9 +122,9 @@
 
 ## Связанные документы
 
-- [license-compliance](license-compliance.md)
-- [object-model](object-model.md)
-- [bindings](bindings.md)
-- [pid-symbols-legal](pid-symbols-legal.md)
-- [russian-software-registry](russian-software-registry.md)
+- [license-compliance](../ru/license-compliance.md)
+- [object-model](../ru/object-model.md)
+- [bindings](../ru/bindings.md)
+- [pid-symbols-legal](../ru/pid-symbols-legal.md)
+- [russian-software-registry](../ru/russian-software-registry.md)
 - [CLA.md](../../CLA.md)

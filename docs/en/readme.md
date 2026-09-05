@@ -184,7 +184,6 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 | [License](license.md) | Stable | **AGPL v3** + dual-license |
 | [Commercial licensing](commercial-licensing.md) | Stable | Enterprise terms |
 | [License compliance](license-compliance.md) | Stable | Obligations checklist |
-| [FTO memo — object-tree model](fto-object-tree-model.md) | Internal | Counsel FTO checklist for object-tree / V/F/E / bindings |
 | [Compliance tender pack](compliance-tender-pack.md) | Stable | BL-192 tender annex (not certification) |
 | [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
 | [Documentation audit](documentation-audit.md) | Internal | Structure, naming, link audit |
