@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:27:00Z",
+    "generatedAt": "2026-09-05T10:35:24Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 100,
-      "STUB": 59,
+      "PRODUCTION": 103,
+      "STUB": 56,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 100,
-      "STUB_LAB": 59,
+      "READY_LAB": 103,
+      "STUB_LAB": 56,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 103,
-      "stub-list": 59
+      "matrix": 106,
+      "stub-list": 56
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 103,
-    "stubIds": 59,
+    "matrixEntries": 106,
+    "stubIds": 56,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -434,67 +434,57 @@
       "driver_id": "camera-ai",
       "pack_id": "ispf-driver-camera-ai",
       "driver_class": "com.ispf.driver.cameraai.CameraAiDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-camera-ai/src/main/java/com/ispf/driver/cameraai/CameraAiDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-camera-ai/src/test/java/com/ispf/driver/cameraai/CameraAiDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-camera-ai/src/test/java/com/ispf/driver/cameraai/CameraAiDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-camera-ai/src/test/java/com/ispf/driver/cameraai/CameraAiDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-camera-ai/src/test/java/com/ispf/driver/cameraai/CameraAiDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-camera-ai",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "canbus-gateway",
       "pack_id": "ispf-driver-canbus-gateway",
       "driver_class": "com.ispf.driver.canbusgateway.CanbusGatewayDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-canbus-gateway/src/main/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-canbus-gateway/src/test/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-canbus-gateway/src/test/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-canbus-gateway/src/test/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-canbus-gateway/src/test/java/com/ispf/driver/canbusgateway/CanbusGatewayDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-canbus-gateway",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "canopen",
@@ -747,34 +737,29 @@
       "driver_id": "dali",
       "pack_id": "ispf-driver-dali",
       "driver_class": "com.ispf.driver.dali.DaliDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-dali/src/main/java/com/ispf/driver/dali/DaliDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-dali/src/test/java/com/ispf/driver/dali/DaliDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-dali/src/test/java/com/ispf/driver/dali/DaliDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-dali/src/test/java/com/ispf/driver/dali/DaliDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-dali/src/test/java/com/ispf/driver/dali/DaliDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-dali",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "delta-dvp",

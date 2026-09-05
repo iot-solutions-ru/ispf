@@ -407,7 +407,16 @@ final class DriverProductionMatrix {
                     "ispf-driver-rtsp"),
             entry("amqp", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-amqp", "com.ispf.driver.amqp.AmqpDeviceDriverTest"),
-                    "ispf-driver-amqp")
+                    "ispf-driver-amqp"),
+            entry("camera-ai", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-camera-ai", "com.ispf.driver.cameraai.CameraAiDeviceDriverTest"),
+                    "ispf-driver-camera-ai"),
+            entry("dali", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-dali", "com.ispf.driver.dali.DaliDeviceDriverTest"),
+                    "ispf-driver-dali"),
+            entry("canbus-gateway", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-canbus-gateway", "com.ispf.driver.canbusgateway.CanbusGatewayDeviceDriverTest"),
+                    "ispf-driver-canbus-gateway")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

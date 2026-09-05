@@ -25,7 +25,6 @@
     "as-interface",
     "io-link",
     "canopen",
-    "canbus-gateway",
     "j1939",
     "uds",
     "someip",
@@ -47,7 +46,6 @@
     "bacnet-mstp",
     "wmbus",
     "enocean",
-    "dali",
     "eebus",
     "lorawan",
     "zigbee",
@@ -57,8 +55,7 @@
     "bluetooth-le",
     "sigfox",
     "genicam",
-    "secs-gem",
-    "camera-ai"
+    "secs-gem"
   ],
   "licenseType": "Apache-2.0"
 }

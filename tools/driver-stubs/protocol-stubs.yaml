@@ -116,10 +116,7 @@ stubs:
     name: CANopen
     description: CANopen / CAN gateway stub
     port: 11898
-  - id: canbus-gateway
-    name: CAN bus gateway
-    description: Generic CAN/CAN-FD TCP gateway stub
-    port: 29536
+  # canbus-gateway promoted Wave 5 → PRODUCTION (packages/ispf-driver-canbus-gateway)
   - id: j1939
     name: SAE J1939
     description: SAE J1939 vehicle network stub
@@ -212,10 +209,7 @@ stubs:
     name: EnOcean
     description: EnOcean ESP3 / USB gateway stub
     port: 54321
-  - id: dali
-    name: DALI
-    description: DALI lighting gateway stub
-    port: 4001
+  # dali promoted Wave 5 → PRODUCTION (packages/ispf-driver-dali)
   - id: eebus
     name: EEBUS
     description: EEBUS / SHIP energy management stub
@@ -263,10 +257,7 @@ stubs:
     name: SECS/GEM
     description: SEMI SECS-I/HSMS/GEM stub
     port: 5000
-  - id: camera-ai
-    name: Camera AI edge
-    description: Edge vision/AI inference endpoint stub
-    port: 8080
+  # camera-ai promoted Wave 5 → PRODUCTION (packages/ispf-driver-camera-ai)
 
   # —— Cloud / messaging bridges ——
   # azure-iot-hub promoted Wave 4 → PRODUCTION (packages/ispf-driver-azure-iot-hub)

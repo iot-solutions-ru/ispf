@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T10:27:00Z`  
+> Generated: `2026-09-05T10:35:24Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **103** · Stub list: **59**  
+> Matrix ENTRIES: **106** · Stub list: **56**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=100, `STUB`=59 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=100, `SHELL_BETA`=2, `STUB_LAB`=59 |
-| Source | `matrix`=103, `stub-list`=59 |
+| Maturity | `BETA`=3, `PRODUCTION`=103, `STUB`=56 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=103, `SHELL_BETA`=2, `STUB_LAB`=56 |
+| Source | `matrix`=106, `stub-list`=56 |
 
 ### Readiness legend
 
@@ -74,8 +74,8 @@ _None._
 | `barcode-scanner` | `ispf-driver-barcode-scanner` | PRODUCTION | matrix | `READY_LAB` | — |
 | `beckhoff-ads` | `ispf-driver-beckhoff-ads` | PRODUCTION | matrix | `READY_LAB` | — |
 | `bluetooth-le` | `ispf-driver-bluetooth-le` | STUB | stub-list | `STUB_LAB` | — |
-| `camera-ai` | `ispf-driver-camera-ai` | STUB | stub-list | `STUB_LAB` | — |
-| `canbus-gateway` | `ispf-driver-canbus-gateway` | STUB | stub-list | `STUB_LAB` | — |
+| `camera-ai` | `ispf-driver-camera-ai` | PRODUCTION | matrix | `READY_LAB` | — |
+| `canbus-gateway` | `ispf-driver-canbus-gateway` | PRODUCTION | matrix | `READY_LAB` | — |
 | `canopen` | `ispf-driver-canopen` | STUB | stub-list | `STUB_LAB` | — |
 | `cc-link` | `ispf-driver-cc-link` | STUB | stub-list | `STUB_LAB` | — |
 | `cc-link-ie` | `ispf-driver-cc-link-ie` | STUB | stub-list | `STUB_LAB` | — |
@@ -84,7 +84,7 @@ _None._
 | `controlnet` | `ispf-driver-controlnet` | STUB | stub-list | `STUB_LAB` | — |
 | `corba` | `ispf-driver-corba` | BETA | matrix | `PARTIAL` | — |
 | `cwmp` | `ispf-driver-cwmp` | PRODUCTION | matrix | `READY_LAB` | — |
-| `dali` | `ispf-driver-dali` | STUB | stub-list | `STUB_LAB` | — |
+| `dali` | `ispf-driver-dali` | PRODUCTION | matrix | `READY_LAB` | — |
 | `delta-dvp` | `ispf-driver-delta-dvp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `device-net` | `ispf-driver-device-net` | STUB | stub-list | `STUB_LAB` | — |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | matrix | `READY_LAB` | — |

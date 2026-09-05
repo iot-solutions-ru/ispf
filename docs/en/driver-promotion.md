@@ -41,6 +41,15 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 
 
 
+
+## Status (September 2026, OT Trust Wave 5 start)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `camera-ai` | STUB | **PRODUCTION** | HTTP/1.1 inference lab GET/POST |
+| `dali` | STUB | **PRODUCTION** | DALI gateway ASCII QUERY/SET lab |
+| `canbus-gateway` | STUB | **PRODUCTION** | CAN TCP gateway GET/TX ASCII lab |
+
 ## Status (September 2026, OT Trust Wave 4 batch)
 
 | driverId | was | now | notes |
