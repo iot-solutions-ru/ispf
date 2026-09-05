@@ -280,6 +280,6 @@ Content-Type: application/json
 
 Подробный roadmap: [variable-history](variable-history.md).
 
-## IP-заметка (платформы класса AggreGate)
+## IP-заметка (класс object-tree платформ)
 
-Дерево объектов ISPF (переменные / функции / события + bindings) относится к тому же *классу продуктов*, что и платформы вроде AggreGate. Высокоуровневое вдохновение индустриальным паттерном признаётся; реализация, API и docs — независимые. Для FTO с counsel см. [fto-aggregate-context-model](fto-aggregate-context-model.md).
+Дерево объектов ISPF (переменные / функции / события + bindings) относится к известному *классу IIoT / SCADA middleware* (иерархия узлов со свойствами, операциями, уведомлениями и декларативными привязками). Реализация, API и docs — независимые. Для FTO с counsel см. [fto-object-tree-model](fto-object-tree-model.md).

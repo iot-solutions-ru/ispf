@@ -280,6 +280,6 @@ Charts (`useTrendSeries`) load history from the server and append live points vi
 
 Detailed roadmap: [variable-history](variable-history.md).
 
-## IP note (AggreGate-class platforms)
+## IP note (object-tree platform class)
 
-ISPF’s object tree (variables / functions / events + bindings) sits in the same *product class* as platforms such as AggreGate. High-level inspiration of that industry pattern is acknowledged; implementation, APIs, and docs are independent. For patent/copyright FTO work with counsel see [fto-aggregate-context-model](fto-aggregate-context-model.md).
+ISPF’s object tree (variables / functions / events + bindings) sits in a well-known *IIoT / SCADA middleware class* (hierarchical nodes with properties, operations, notifications, and declarative bindings). Implementation, APIs, and docs are independent. For patent/copyright FTO work with counsel see [fto-object-tree-model](fto-object-tree-model.md).
