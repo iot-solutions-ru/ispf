@@ -81,10 +81,10 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 
 | ID | Topic | Today | Gap | Owner BL / doc |
 | -- | ----- | ----- | --- | -------------- |
-| G-01 | **Independent pen-test** | Hardening guidance + unit/API tests | No published third-party pen-test report; Phase 27 metric “pentest pass” **not met** | Phase 27 metric; customer or hired assessment |
+| G-01 | **Independent pen-test** | Hardening guidance + unit/API tests + **SOW prep** [pen-test-scope.md](pen-test-scope.md) | No published third-party pen-test report; Phase 27 metric “pentest pass” **not met** | Hired assessment using [pen-test-scope.md](pen-test-scope.md); archive redacted report under `docs/evidence/security-pentest/` |
 | G-02 | **Audit trail GA** | Append audit + CSV export + SIEM webhook (`ISPF_AUDIT_SIEM_WEBHOOK_URL`) | Retention/WORM not productized; not a full GxP audit package | [BL-156](roadmap.md#phase-27--enterprise-security) **Done**; [collaboration](collaboration.md); [ai-development](ai-development.md) |
 | G-03 | **Hard multi-tenancy** | Logical SaaS A≠B + `tenant-admin` **Done**; hard mode schema provision/drop + OIDC claim; **PostgreSQL RLS** on shared platform object tables **Done** when `ispf.tenant.db-row-isolation=true` | Physical per-tenant **table routing** still optional; H2 does not enforce RLS — **do not claim** physical schema isolation or H2 row isolation | [BL-155](roadmap.md#phase-27--enterprise-security); [multi-tenant](multi-tenant.md) |
-| G-04 | **MFA completeness** | Persisted TOTP + `required-for-admin` + login UX **Exists** (BL-153 Done) | WebAuthn / Keycloak OTP → BL-194; default MFA off | [BL-153](roadmap.md#phase-27--enterprise-security); [security](security.md) |
+| G-04 | **MFA completeness** | Persisted TOTP + `required-for-admin` + login UX **Exists** (BL-153 Done) | WebAuthn / Keycloak OTP → BL-194; default MFA off | [BL-153](roadmap.md#phase-27--enterprise-security); [security](security.md); ADR [0056](decisions/0056-webauthn-idp-mfa.md) |
 | G-05 | **Per-variable / custom roles** | Variable roles + history ACL + event/function `invokeRoles` API/UI + ISA-95 template scopes on REST; interactive analytics, agent, WebSocket/editor, Object Query/function/binding evaluation, expression, and federation HTTP/tunnel on-behalf-of paths enforce `MEMBER` ACL | **Closed / Exists for interactive paths.** OQ omits denied live/historian columns and expanded rows; HTTP and agent function invocation carries MEMBER context into nested queries. HTTP federation peers limit delegated roles to channel ∩ on-behalf-of roles, preventing service-account privilege escalation. Health probes remain channel-only with no variable values/history, and scheduler/binding-engine `SYSTEM` automation still does not apply end-user ACL | [BL-154](roadmap.md#phase-27--enterprise-security) **Done**, [BL-157](roadmap.md#phase-27--enterprise-security) **Done** |
 | G-06 | **IEC 62443 certification** | This lite mapping | No accredited 62443 product certificate | Out of scope for BL-192 docs; future if sponsored |
 | G-07 | **GAMP / CSV package** | This checklist + engineering docs | No supplier IQ/OQ templates or validated-state claim | Customer validation; [certification](certification.md) training only |
@@ -105,6 +105,8 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 | License / SBOM obligations | [license-compliance](license-compliance.md) |
 | Training (not compliance cert) | [certification](certification.md) |
 | Score honesty | [competitive-scorecard](competitive-scorecard.md) — Security **8.0 PARTIAL** (frozen matrix; pending full audit) |
+| Pen-test SOW prep (G-01) | [pen-test-scope.md](pen-test-scope.md) |
+| WebAuthn / IdP MFA plan (G-04 / BL-194) | ADR [0056](decisions/0056-webauthn-idp-mfa.md) |
 | Roadmap / DoD | [roadmap](roadmap.md#definition-of-done--1010-overall) item 10 |
 
 ---
