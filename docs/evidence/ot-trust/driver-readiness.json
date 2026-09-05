@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:45:34Z",
+    "generatedAt": "2026-09-05T10:48:08Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 115,
-      "STUB": 44,
+      "PRODUCTION": 121,
+      "STUB": 38,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 115,
-      "STUB_LAB": 44,
+      "READY_LAB": 121,
+      "STUB_LAB": 38,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 118,
-      "stub-list": 44
+      "matrix": 124,
+      "stub-list": 38
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 118,
-    "stubIds": 44,
+    "matrixEntries": 124,
+    "stubIds": 38,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -1262,34 +1262,29 @@
       "driver_id": "fuji-sph",
       "pack_id": "ispf-driver-fuji-sph",
       "driver_class": "com.ispf.driver.fujisph.FujiSphDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-fuji-sph/src/main/java/com/ispf/driver/fujisph/FujiSphDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-fuji-sph/src/test/java/com/ispf/driver/fujisph/FujiSphDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-fuji-sph/src/test/java/com/ispf/driver/fujisph/FujiSphDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-fuji-sph/src/test/java/com/ispf/driver/fujisph/FujiSphDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-fuji-sph/src/test/java/com/ispf/driver/fujisph/FujiSphDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-fuji-sph",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "ge-srtp",
@@ -1554,34 +1549,29 @@
       "driver_id": "hitachi-hidic",
       "pack_id": "ispf-driver-hitachi-hidic",
       "driver_class": "com.ispf.driver.hitachihidic.HitachiHidicDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-hitachi-hidic/src/main/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-hitachi-hidic/src/test/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-hitachi-hidic/src/test/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-hitachi-hidic/src/test/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-hitachi-hidic/src/test/java/com/ispf/driver/hitachihidic/HitachiHidicDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-hitachi-hidic",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "http",
@@ -3392,34 +3382,29 @@
       "driver_id": "plcnext",
       "pack_id": "ispf-driver-plcnext",
       "driver_class": "com.ispf.driver.plcnext.PlcnextDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-plcnext/src/main/java/com/ispf/driver/plcnext/PlcnextDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-plcnext/src/test/java/com/ispf/driver/plcnext/PlcnextDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-plcnext/src/test/java/com/ispf/driver/plcnext/PlcnextDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-plcnext/src/test/java/com/ispf/driver/plcnext/PlcnextDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-plcnext/src/test/java/com/ispf/driver/plcnext/PlcnextDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-plcnext",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "pop3",
@@ -3634,34 +3619,29 @@
       "driver_id": "rockwell-csp",
       "pack_id": "ispf-driver-rockwell-csp",
       "driver_class": "com.ispf.driver.rockwellcsp.RockwellCspDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-rockwell-csp/src/main/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-rockwell-csp/src/test/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-rockwell-csp/src/test/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-rockwell-csp/src/test/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-rockwell-csp/src/test/java/com/ispf/driver/rockwellcsp/RockwellCspDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-rockwell-csp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "rockwell-df1",
@@ -3751,34 +3731,29 @@
       "driver_id": "schneider-umac",
       "pack_id": "ispf-driver-schneider-umac",
       "driver_class": "com.ispf.driver.schneiderumac.SchneiderUmacDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-schneider-umac/src/main/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-schneider-umac/src/test/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-schneider-umac/src/test/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-schneider-umac/src/test/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-schneider-umac/src/test/java/com/ispf/driver/schneiderumac/SchneiderUmacDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-schneider-umac",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "scpi",
@@ -4209,34 +4184,29 @@
       "driver_id": "toshiba-t-series",
       "pack_id": "ispf-driver-toshiba-t-series",
       "driver_class": "com.ispf.driver.toshibatseries.ToshibaTSeriesDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-toshiba-t-series/src/main/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-toshiba-t-series/src/test/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-toshiba-t-series/src/test/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-toshiba-t-series/src/test/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-toshiba-t-series/src/test/java/com/ispf/driver/toshibatseries/ToshibaTSeriesDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-toshiba-t-series",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "uds",

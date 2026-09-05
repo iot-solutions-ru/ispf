@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  *   <li>Read response data: {@code @SSRD} + 4-digit hex + FCS + {@code *}</li>
  * </ul>
  * Point mapping (lab subset): {@code D100}, {@code M0}, {@code R0}. Full {@code @…*} frames may be
- * sent as-is (FCS recomputed when a trailing {@code **} placeholder is present).
+ * sent as-is (FCS recomputed when a trailing {@code **} marker is present).
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; no Fuji SDK / PLC4X / GPL stacks.
  */

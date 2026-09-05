@@ -452,7 +452,25 @@ final class DriverProductionMatrix {
                     "ispf-driver-sigfox"),
             entry("genicam", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-genicam", "com.ispf.driver.genicam.GenicamDeviceDriverTest"),
-                    "ispf-driver-genicam")
+                    "ispf-driver-genicam"),
+            entry("rockwell-csp", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-rockwell-csp", "com.ispf.driver.rockwellcsp.RockwellCspDeviceDriverTest"),
+                    "ispf-driver-rockwell-csp"),
+            entry("plcnext", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-plcnext", "com.ispf.driver.plcnext.PlcnextDeviceDriverTest"),
+                    "ispf-driver-plcnext"),
+            entry("schneider-umac", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-schneider-umac", "com.ispf.driver.schneiderumac.SchneiderUmacDeviceDriverTest"),
+                    "ispf-driver-schneider-umac"),
+            entry("fuji-sph", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-fuji-sph", "com.ispf.driver.fujisph.FujiSphDeviceDriverTest"),
+                    "ispf-driver-fuji-sph"),
+            entry("hitachi-hidic", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-hitachi-hidic", "com.ispf.driver.hitachihidic.HitachiHidicDeviceDriverTest"),
+                    "ispf-driver-hitachi-hidic"),
+            entry("toshiba-t-series", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-toshiba-t-series", "com.ispf.driver.toshibatseries.ToshibaTSeriesDeviceDriverTest"),
+                    "ispf-driver-toshiba-t-series")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

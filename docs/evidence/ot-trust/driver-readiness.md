@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T10:45:34Z`  
+> Generated: `2026-09-05T10:48:08Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **118** · Stub list: **44**  
+> Matrix ENTRIES: **124** · Stub list: **38**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=115, `STUB`=44 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=115, `SHELL_BETA`=2, `STUB_LAB`=44 |
-| Source | `matrix`=118, `stub-list`=44 |
+| Maturity | `BETA`=3, `PRODUCTION`=121, `STUB`=38 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=121, `SHELL_BETA`=2, `STUB_LAB`=38 |
+| Source | `matrix`=124, `stub-list`=38 |
 
 ### Readiness legend
 
@@ -102,7 +102,7 @@ _None._
 | `flexible` | `ispf-driver-flexible` | PRODUCTION | matrix | `READY_LAB` | — |
 | `folder` | `ispf-driver-folder` | PRODUCTION | matrix | `READY_LAB` | — |
 | `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | STUB | stub-list | `STUB_LAB` | — |
-| `fuji-sph` | `ispf-driver-fuji-sph` | STUB | stub-list | `STUB_LAB` | — |
+| `fuji-sph` | `ispf-driver-fuji-sph` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ge-srtp` | `ispf-driver-ge-srtp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `genicam` | `ispf-driver-genicam` | PRODUCTION | matrix | `READY_LAB` | — |
 | `gps-tracker` | `ispf-driver-gps-tracker` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -112,7 +112,7 @@ _None._
 | `hart-ip` | `ispf-driver-hart-ip` | STUB | stub-list | `STUB_LAB` | — |
 | `hart-serial` | `ispf-driver-hart-serial` | STUB | stub-list | `STUB_LAB` | — |
 | `haystack` | `ispf-driver-haystack` | PRODUCTION | matrix | `READY_LAB` | — |
-| `hitachi-hidic` | `ispf-driver-hitachi-hidic` | STUB | stub-list | `STUB_LAB` | — |
+| `hitachi-hidic` | `ispf-driver-hitachi-hidic` | PRODUCTION | matrix | `READY_LAB` | — |
 | `http` | `ispf-driver-http` | PRODUCTION | matrix | `READY_LAB` | — |
 | `http-server` | `ispf-driver-http-server` | PRODUCTION | matrix | `READY_LAB` | — |
 | `icmp` | `ispf-driver-icmp` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -176,7 +176,7 @@ _None._
 | `opcua-server` | `ispf-driver-opcua-server` | PRODUCTION | matrix | `READY_LAB` | — |
 | `openadr` | `ispf-driver-openadr` | PRODUCTION | matrix | `READY_LAB` | — |
 | `panasonic-mewto` | `ispf-driver-panasonic-mewto` | PRODUCTION | matrix | `READY_LAB` | — |
-| `plcnext` | `ispf-driver-plcnext` | STUB | stub-list | `STUB_LAB` | — |
+| `plcnext` | `ispf-driver-plcnext` | PRODUCTION | matrix | `READY_LAB` | — |
 | `pop3` | `ispf-driver-pop3` | PRODUCTION | matrix | `READY_LAB` | — |
 | `profibus` | `ispf-driver-profibus` | STUB | stub-list | `STUB_LAB` | — |
 | `profibus-pa` | `ispf-driver-profibus-pa` | STUB | stub-list | `STUB_LAB` | — |
@@ -184,11 +184,11 @@ _None._
 | `pulsar` | `ispf-driver-pulsar` | PRODUCTION | matrix | `READY_LAB` | — |
 | `radius` | `ispf-driver-radius` | PRODUCTION | matrix | `READY_LAB` | — |
 | `redis` | `ispf-driver-redis` | PRODUCTION | matrix | `READY_LAB` | — |
-| `rockwell-csp` | `ispf-driver-rockwell-csp` | STUB | stub-list | `STUB_LAB` | — |
+| `rockwell-csp` | `ispf-driver-rockwell-csp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `rockwell-df1` | `ispf-driver-rockwell-df1` | PRODUCTION | matrix | `READY_LAB` | — |
 | `rtsp` | `ispf-driver-rtsp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `s7` | `ispf-driver-s7` | PRODUCTION | matrix | `READY_LAB` | — |
-| `schneider-umac` | `ispf-driver-schneider-umac` | STUB | stub-list | `STUB_LAB` | — |
+| `schneider-umac` | `ispf-driver-schneider-umac` | PRODUCTION | matrix | `READY_LAB` | — |
 | `scpi` | `ispf-driver-scpi` | PRODUCTION | matrix | `READY_LAB` | — |
 | `secs-gem` | `ispf-driver-secs-gem` | PRODUCTION | matrix | `READY_LAB` | — |
 | `sigfox` | `ispf-driver-sigfox` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -204,7 +204,7 @@ _None._
 | `ssh` | `ispf-driver-ssh` | PRODUCTION | matrix | `READY_LAB` | — |
 | `telnet` | `ispf-driver-telnet` | PRODUCTION | matrix | `READY_LAB` | — |
 | `thread` | `ispf-driver-thread` | STUB | stub-list | `STUB_LAB` | — |
-| `toshiba-t-series` | `ispf-driver-toshiba-t-series` | STUB | stub-list | `STUB_LAB` | — |
+| `toshiba-t-series` | `ispf-driver-toshiba-t-series` | PRODUCTION | matrix | `READY_LAB` | — |
 | `uds` | `ispf-driver-uds` | STUB | stub-list | `STUB_LAB` | — |
 | `unitronics` | `ispf-driver-unitronics` | PRODUCTION | matrix | `READY_LAB` | — |
 | `virtual` | `ispf-driver-virtual` | PRODUCTION | matrix | `READY_LAB` | — |

@@ -38,10 +38,7 @@ stubs:
     name: CC-Link IE
     description: Mitsubishi CC-Link IE Field/Control stub
     port: 5001
-  - id: plcnext
-    name: PLCnext
-    description: Phoenix Contact PLCnext Engineer/RSC stub
-    port: 41100
+  # plcnext promoted Wave 6 → PRODUCTION (packages/ispf-driver-plcnext)
   # codesys promoted Wave 5 → PRODUCTION (packages/ispf-driver-codesys)
   # ge-srtp promoted Wave 5 → PRODUCTION (packages/ispf-driver-ge-srtp)
   # keyence-hostlink promoted Wave 4 → PRODUCTION (packages/ispf-driver-keyence-hostlink)
@@ -50,30 +47,15 @@ stubs:
   # delta-dvp promoted Wave 4 → PRODUCTION (packages/ispf-driver-delta-dvp)
   # fatek promoted Wave 4 → PRODUCTION (packages/ispf-driver-fatek)
   # ls-xgt promoted Wave 4 → PRODUCTION (packages/ispf-driver-ls-xgt)
-  - id: fuji-sph
-    name: Fuji SPH
-    description: Fuji Electric SPH / MICREX stub
-    port: 507
-  - id: hitachi-hidic
-    name: Hitachi HIDIC
-    description: Hitachi HIDIC / EH-150 stub
-    port: 3000
-  - id: toshiba-t-series
-    name: Toshiba T-series
-    description: Toshiba T-series PLC stub
-    port: 9600
+  # fuji-sph promoted Wave 6 → PRODUCTION (packages/ispf-driver-fuji-sph)
+  # hitachi-hidic promoted Wave 6 → PRODUCTION (packages/ispf-driver-hitachi-hidic)
+  # toshiba-t-series promoted Wave 6 → PRODUCTION (packages/ispf-driver-toshiba-t-series)
   # idec-microsmart promoted Wave 5 → PRODUCTION (packages/ispf-driver-idec-microsmart)
   # unitronics promoted Wave 5 → PRODUCTION (packages/ispf-driver-unitronics)
   # wago promoted Wave 5 → PRODUCTION (packages/ispf-driver-wago)
-  - id: schneider-umac
-    name: Schneider Unity/Modicon
-    description: Schneider Electric Unity/Modicon advanced services stub (beyond Modbus)
-    port: 502
+  # schneider-umac promoted Wave 6 → PRODUCTION (packages/ispf-driver-schneider-umac)
   # rockwell-df1 promoted Wave 5 → PRODUCTION (packages/ispf-driver-rockwell-df1)
-  - id: rockwell-csp
-    name: Rockwell CSP
-    description: Allen-Bradley CSP (legacy Ethernet) stub
-    port: 2222
+  # rockwell-csp promoted Wave 6 → PRODUCTION (packages/ispf-driver-rockwell-csp)
   - id: device-net
     name: DeviceNet
     description: ODVA DeviceNet gateway stub

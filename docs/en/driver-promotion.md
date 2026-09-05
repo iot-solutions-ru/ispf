@@ -50,6 +50,12 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `enocean` | STUB | **PRODUCTION** | ESP3 TCP gateway ASCII lab |
 | `sigfox` | STUB | **PRODUCTION** | Backend callback HTTP/1.1 lab |
 | `genicam` | STUB | **PRODUCTION** | GenICam feature GET/SET TCP lab |
+| `rockwell-csp` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `plcnext` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `schneider-umac` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `fuji-sph` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `hitachi-hidic` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `toshiba-t-series` | STUB | **PRODUCTION** | Wave 6 PLC lab |
 
 ## Status (September 2026, OT Trust Wave 5 start)
 
