@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -164,6 +165,7 @@ class SomeipDeviceDriverTest {
         });
         private final Map<String, byte[]> values = new ConcurrentHashMap<>();
         private final AtomicReference<byte[]> lastWrite = new AtomicReference<>();
+        private final CountDownLatch ready = new CountDownLatch(1);
 
         private FakeSomeipServer(boolean tcp) throws IOException {
             this.tcp = tcp;
@@ -208,12 +210,16 @@ class SomeipDeviceDriverTest {
             return lastWrite.get() != null;
         }
 
-        void start() {
+        void start() throws InterruptedException {
             if (tcp) {
-                executor.submit(this::tcpAcceptLoop);
+                executor.submit(() -> { ready.countDown(); tcpAcceptLoop(); });
             } else {
-                executor.submit(this::udpLoop);
+                executor.submit(() -> { ready.countDown(); udpLoop(); });
             }
+            if (!ready.await(2, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("fake SOME/IP server failed to start");
+            }
+            Thread.sleep(20);
         }
 
         private void tcpAcceptLoop() {

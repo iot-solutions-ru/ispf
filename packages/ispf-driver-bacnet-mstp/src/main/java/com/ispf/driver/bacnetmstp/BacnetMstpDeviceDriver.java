@@ -132,11 +132,12 @@ public class BacnetMstpDeviceDriver implements DeviceDriver {
             throw new DriverException("Unknown point: " + pointId);
         }
         if (!point.objectType().writable) {
-            throw new DriverException("BACnet MS/TP lab object is read-only: " + point.objectType());
+            throw new DriverException(
+                    "BACnet MS/TP lab rejects writes for object type: " + point.objectType());
         }
         float numeric = (float) extractNumeric(value);
         try {
-            session.writePresentValue(point.encodedObjectId(), numeric);
+            session.writeValue(point.encodedObjectId(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
             throw new DriverException("BACnet MS/TP lab write failed for " + pointId, e);

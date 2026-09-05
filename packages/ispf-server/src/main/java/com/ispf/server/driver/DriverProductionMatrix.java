@@ -470,7 +470,25 @@ final class DriverProductionMatrix {
                     "ispf-driver-hitachi-hidic"),
             entry("toshiba-t-series", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-toshiba-t-series", "com.ispf.driver.toshibatseries.ToshibaTSeriesDeviceDriverTest"),
-                    "ispf-driver-toshiba-t-series")
+                    "ispf-driver-toshiba-t-series"),
+            entry("canopen", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-canopen", "com.ispf.driver.canopen.CanopenDeviceDriverTest"),
+                    "ispf-driver-canopen"),
+            entry("uds", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-uds", "com.ispf.driver.uds.UdsDeviceDriverTest"),
+                    "ispf-driver-uds"),
+            entry("someip", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-someip", "com.ispf.driver.someip.SomeipDeviceDriverTest"),
+                    "ispf-driver-someip"),
+            entry("hart-ip", DriverMaturity.PRODUCTION, POLL_ONLY,
+                    testPath("ispf-driver-hart-ip", "com.ispf.driver.hartip.HartIpDeviceDriverTest"),
+                    "ispf-driver-hart-ip"),
+            entry("bacnet-mstp", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-bacnet-mstp", "com.ispf.driver.bacnetmstp.BacnetMstpDeviceDriverTest"),
+                    "ispf-driver-bacnet-mstp"),
+            entry("wmbus", DriverMaturity.PRODUCTION, POLL_ONLY,
+                    testPath("ispf-driver-wmbus", "com.ispf.driver.wmbus.WmbusDeviceDriverTest"),
+                    "ispf-driver-wmbus")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

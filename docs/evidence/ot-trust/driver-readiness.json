@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:48:08Z",
+    "generatedAt": "2026-09-05T10:54:48Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 121,
-      "STUB": 38,
+      "PRODUCTION": 127,
+      "STUB": 32,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 121,
-      "STUB_LAB": 38,
+      "READY_LAB": 127,
+      "STUB_LAB": 32,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 124,
-      "stub-list": 38
+      "matrix": 130,
+      "stub-list": 32
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 124,
-    "stubIds": 38,
+    "matrixEntries": 130,
+    "stubIds": 32,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -312,34 +312,29 @@
       "driver_id": "bacnet-mstp",
       "pack_id": "ispf-driver-bacnet-mstp",
       "driver_class": "com.ispf.driver.bacnetmstp.BacnetMstpDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-bacnet-mstp/src/main/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-bacnet-mstp/src/test/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-bacnet-mstp/src/test/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-bacnet-mstp/src/test/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-bacnet-mstp/src/test/java/com/ispf/driver/bacnetmstp/BacnetMstpDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-bacnet-mstp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "barcode-scanner",
@@ -490,34 +485,29 @@
       "driver_id": "canopen",
       "pack_id": "ispf-driver-canopen",
       "driver_class": "com.ispf.driver.canopen.CanopenDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-canopen/src/main/java/com/ispf/driver/canopen/CanopenDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-canopen/src/test/java/com/ispf/driver/canopen/CanopenDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-canopen/src/test/java/com/ispf/driver/canopen/CanopenDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-canopen/src/test/java/com/ispf/driver/canopen/CanopenDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-canopen/src/test/java/com/ispf/driver/canopen/CanopenDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-canopen",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "cc-link",
@@ -1456,8 +1446,8 @@
       "driver_id": "hart-ip",
       "pack_id": "ispf-driver-hart-ip",
       "driver_class": "com.ispf.driver.hartip.HartIpDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
         "POLL"
       ],
@@ -1466,24 +1456,18 @@
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-hart-ip/src/main/java/com/ispf/driver/hartip/HartIpDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-hart-ip/src/test/java/com/ispf/driver/hartip/HartIpDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-hart-ip/src/test/java/com/ispf/driver/hartip/HartIpDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-hart-ip/src/test/java/com/ispf/driver/hartip/HartIpDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-hart-ip/src/test/java/com/ispf/driver/hartip/HartIpDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
+      "interop_module": "ispf-driver-hart-ip",
+      "interop_in_workflow": false,
       "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "hart-serial",
@@ -4035,34 +4019,29 @@
       "driver_id": "someip",
       "pack_id": "ispf-driver-someip",
       "driver_class": "com.ispf.driver.someip.SomeipDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-someip/src/main/java/com/ispf/driver/someip/SomeipDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-someip/src/test/java/com/ispf/driver/someip/SomeipDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-someip/src/test/java/com/ispf/driver/someip/SomeipDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-someip/src/test/java/com/ispf/driver/someip/SomeipDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-someip/src/test/java/com/ispf/driver/someip/SomeipDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-someip",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "sparkplug-b",
@@ -4212,34 +4191,29 @@
       "driver_id": "uds",
       "pack_id": "ispf-driver-uds",
       "driver_class": "com.ispf.driver.uds.UdsDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-uds/src/main/java/com/ispf/driver/uds/UdsDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-uds/src/test/java/com/ispf/driver/uds/UdsDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-uds/src/test/java/com/ispf/driver/uds/UdsDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-uds/src/test/java/com/ispf/driver/uds/UdsDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-uds/src/test/java/com/ispf/driver/uds/UdsDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-uds",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "unitronics",
@@ -4588,8 +4562,8 @@
       "driver_id": "wmbus",
       "pack_id": "ispf-driver-wmbus",
       "driver_class": "com.ispf.driver.wmbus.WmbusDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
         "POLL"
       ],
@@ -4598,24 +4572,18 @@
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-wmbus/src/main/java/com/ispf/driver/wmbus/WmbusDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-wmbus/src/test/java/com/ispf/driver/wmbus/WmbusDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-wmbus/src/test/java/com/ispf/driver/wmbus/WmbusDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-wmbus/src/test/java/com/ispf/driver/wmbus/WmbusDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-wmbus/src/test/java/com/ispf/driver/wmbus/WmbusDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
+      "interop_module": "ispf-driver-wmbus",
+      "interop_in_workflow": false,
       "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "write_looks_stub": true,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "wmi",

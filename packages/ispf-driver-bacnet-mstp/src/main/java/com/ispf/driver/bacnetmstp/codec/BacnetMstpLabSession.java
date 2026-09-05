@@ -37,7 +37,7 @@ public final class BacnetMstpLabSession implements AutoCloseable {
         throw new IOException("BACnet MS/TP lab expected ReadProperty ACK");
     }
 
-    public void writePresentValue(int encodedObjectId, float value) throws IOException {
+    public void writeValue(int encodedObjectId, float value) throws IOException {
         int id = invokeId.getAndIncrement() & 0xFF;
         writeFully(BacnetMstpLabCodec.encodeWriteProperty(id, encodedObjectId, BacnetMstpLabCodec.PRESENT_VALUE, value));
         BacnetMstpLabCodec.Message message = BacnetMstpLabCodec.decode(readFrame());

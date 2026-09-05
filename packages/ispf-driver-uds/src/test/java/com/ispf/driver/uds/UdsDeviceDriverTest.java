@@ -257,7 +257,7 @@ class UdsDeviceDriverTest {
             int sid = uds[0] & 0xFF;
             if (sid == UdsDeviceDriver.SID_DIAGNOSTIC_SESSION_CONTROL) {
                 sessionActive = true;
-                return new byte[]{(byte) 0x50, uds[1], 0x00, 0x32, 0x01, 0xF4};
+                return new byte[]{(byte) 0x50, uds[1], 0x00, 0x32, 0x01, (byte) 0xF4};
             }
             if (sid == UdsDeviceDriver.SID_READ_DATA_BY_IDENTIFIER) {
                 int did = ((uds[1] & 0xFF) << 8) | (uds[2] & 0xFF);

@@ -124,7 +124,7 @@ class BacnetMstpDeviceDriverTest {
                         DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
                         Map.of("value", 9.0)
                 )));
-        assertTrue(error.getMessage().toLowerCase().contains("read-only"));
+        assertTrue(error.getMessage().toLowerCase().contains("rejects writes"));
     }
 
     private static int objectId(int type, int instance) {

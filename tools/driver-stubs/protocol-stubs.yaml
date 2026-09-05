@@ -76,20 +76,11 @@ stubs:
     name: IO-Link
     description: IO-Link master REST/MQTT bridge stub
     port: 8080
-  - id: canopen
-    name: CANopen
-    description: CANopen / CAN gateway stub
-    port: 11898
+  # canopen promoted Wave 6 → PRODUCTION (packages/ispf-driver-canopen)
   # canbus-gateway promoted Wave 5 → PRODUCTION (packages/ispf-driver-canbus-gateway)
   # j1939 promoted Wave 5 → PRODUCTION (packages/ispf-driver-j1939)
-  - id: uds
-    name: UDS (ISO 14229)
-    description: Unified Diagnostic Services over DoIP stub
-    port: 13400
-  - id: someip
-    name: SOME/IP
-    description: AUTOSAR SOME/IP stub
-    port: 30490
+  # uds promoted Wave 6 → PRODUCTION (packages/ispf-driver-uds)
+  # someip promoted Wave 6 → PRODUCTION (packages/ispf-driver-someip)
   - id: fanuc-focas
     name: Fanuc FOCAS
     description: Fanuc FOCAS CNC stub
@@ -125,10 +116,7 @@ stubs:
     port: 5683
 
   # —— Process / field instruments ——
-  - id: hart-ip
-    name: HART-IP
-    description: HART-IP (UDP/TCP) stub
-    port: 5094
+  # hart-ip promoted Wave 6 → PRODUCTION (packages/ispf-driver-hart-ip)
   - id: hart-serial
     name: HART serial
     description: HART FSK serial/modem stub
@@ -155,14 +143,8 @@ stubs:
     name: LonWorks
     description: LonWorks/LonTalk IP stub
     port: 1628
-  - id: bacnet-mstp
-    name: BACnet MS/TP
-    description: BACnet MS/TP serial stub (BACnet/IP pack is separate)
-    port: 47808
-  - id: wmbus
-    name: Wireless M-Bus
-    description: Wireless M-Bus (OMS) stub
-    port: 10000
+  # bacnet-mstp promoted Wave 6 → PRODUCTION (packages/ispf-driver-bacnet-mstp)
+  # wmbus promoted Wave 6 → PRODUCTION (packages/ispf-driver-wmbus)
   # enocean promoted Wave 6 → PRODUCTION (packages/ispf-driver-enocean)
   # dali promoted Wave 5 → PRODUCTION (packages/ispf-driver-dali)
   - id: eebus
