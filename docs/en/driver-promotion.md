@@ -40,6 +40,21 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 
 
 
+
+## Status (September 2026, OT Trust Wave 4 batch)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `keyence-hostlink` | STUB | **PRODUCTION** | Keyence Host Link ASCII lab |
+| `panasonic-mewto` | STUB | **PRODUCTION** | MEWTOCOL-COM ASCII lab |
+| `fatek` | STUB | **PRODUCTION** | Fatek FACON ASCII lab |
+| `azure-iot-hub` | STUB | **PRODUCTION** | MQTT 3.1.1 lab + Azure topic conventions (not Azure SDK) |
+| `aws-iot-core` | STUB | **PRODUCTION** | MQTT 3.1.1 lab + AWS topic conventions (not AWS SDK) |
+| `iec101` | STUB | **PRODUCTION** | IEC 60870-5-101 TCP lab subset |
+| `ansi-c12` | STUB | **PRODUCTION** | ANSI C12.18/22 table-read lab subset |
+| `rtsp` | STUB | **PRODUCTION** | RTSP OPTIONS/DESCRIBE/TEARDOWN lab |
+| `amqp` | STUB | **PRODUCTION** | AMQP 0-9-1 lab subset (not full broker) |
+
 ## Status (September 2026, OT Trust Wave 4 edge)
 
 | driverId | was | now | notes |

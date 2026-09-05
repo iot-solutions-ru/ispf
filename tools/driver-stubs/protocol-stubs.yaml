@@ -50,20 +50,11 @@ stubs:
     name: GE SRTP
     description: Emerson/GE Fanuc SRTP stub
     port: 18245
-  - id: keyence-hostlink
-    name: Keyence Host Link
-    description: Keyence PLC Host Link / KV stub
-    port: 8501
-  - id: panasonic-mewto
-    name: Panasonic MEWTOCOL
-    description: Panasonic MEWTOCOL-COM/DAT stub
-    port: 9094
+  # keyence-hostlink promoted Wave 4 → PRODUCTION (packages/ispf-driver-keyence-hostlink)
+  # panasonic-mewto promoted Wave 4 → PRODUCTION (packages/ispf-driver-panasonic-mewto)
   # yaskawa-memobus promoted Wave 2 → PRODUCTION (packages/ispf-driver-yaskawa-memobus)
   # delta-dvp promoted Wave 4 → PRODUCTION (packages/ispf-driver-delta-dvp)
-  - id: fatek
-    name: Fatek FACON
-    description: Fatek FACON protocol stub
-    port: 500
+  # fatek promoted Wave 4 → PRODUCTION (packages/ispf-driver-fatek)
   # ls-xgt promoted Wave 4 → PRODUCTION (packages/ispf-driver-ls-xgt)
   - id: fuji-sph
     name: Fuji SPH
@@ -167,18 +158,12 @@ stubs:
     name: IEC 61850 Sampled Values
     description: IEC 61850 Sampled Values stub
     port: 102
-  - id: iec101
-    name: IEC 60870-5-101
-    description: IEC 60870-5-101 serial/TCP stub
-    port: 2404
+  # iec101 promoted Wave 4 → PRODUCTION (packages/ispf-driver-iec101)
   - id: iec103
     name: IEC 60870-5-103
     description: IEC 60870-5-103 protection stub
     port: 2404
-  - id: ansi-c12
-    name: ANSI C12
-    description: ANSI C12.18/C12.22 meter stub
-    port: 1153
+  # ansi-c12 promoted Wave 4 → PRODUCTION (packages/ispf-driver-ansi-c12)
   - id: wisun
     name: Wi-SUN
     description: Wi-SUN FAN border router stub
@@ -267,10 +252,7 @@ stubs:
     port: 443
 
   # —— Vision / identity / shop-floor ——
-  - id: rtsp
-    name: RTSP
-    description: RTSP media/metadata stub
-    port: 554
+  # rtsp promoted Wave 4 → PRODUCTION (packages/ispf-driver-rtsp)
   - id: genicam
     name: GenICam
     description: GenICam / GigE Vision stub
@@ -287,16 +269,7 @@ stubs:
     port: 8080
 
   # —— Cloud / messaging bridges ——
-  - id: azure-iot-hub
-    name: Azure IoT Hub
-    description: Azure IoT Hub device/service stub
-    port: 8883
-  - id: aws-iot-core
-    name: AWS IoT Core
-    description: AWS IoT Core MQTT/HTTP stub
-    port: 8883
-  - id: amqp
-    name: AMQP
-    description: AMQP 0-9-1 / 1.0 broker stub
-    port: 5672
+  # azure-iot-hub promoted Wave 4 → PRODUCTION (packages/ispf-driver-azure-iot-hub)
+  # aws-iot-core promoted Wave 4 → PRODUCTION (packages/ispf-driver-aws-iot-core)
+  # amqp promoted Wave 4 → PRODUCTION (packages/ispf-driver-amqp)
   # weather-station promoted Wave 4 → PRODUCTION (packages/ispf-driver-weather-station)

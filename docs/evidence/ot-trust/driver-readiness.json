@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T10:25:26Z",
+    "generatedAt": "2026-09-05T10:27:00Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "STUB": 68,
-      "PRODUCTION": 91,
+      "PRODUCTION": 100,
+      "STUB": 59,
       "BETA": 3
     },
     "byReadiness": {
-      "STUB_LAB": 68,
-      "READY_LAB": 91,
+      "READY_LAB": 100,
+      "STUB_LAB": 59,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "stub-list": 68,
-      "matrix": 94
+      "matrix": 103,
+      "stub-list": 59
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 94,
-    "stubIds": 68,
+    "matrixEntries": 103,
+    "stubIds": 59,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -85,67 +85,57 @@
       "driver_id": "amqp",
       "pack_id": "ispf-driver-amqp",
       "driver_class": "com.ispf.driver.amqp.AmqpDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-amqp/src/main/java/com/ispf/driver/amqp/AmqpDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-amqp/src/test/java/com/ispf/driver/amqp/AmqpDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-amqp/src/test/java/com/ispf/driver/amqp/AmqpDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-amqp/src/test/java/com/ispf/driver/amqp/AmqpDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-amqp/src/test/java/com/ispf/driver/amqp/AmqpDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-amqp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "ansi-c12",
       "pack_id": "ispf-driver-ansi-c12",
       "driver_class": "com.ispf.driver.ansic12.AnsiC12DeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-ansi-c12/src/main/java/com/ispf/driver/ansic12/AnsiC12DeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-ansi-c12/src/test/java/com/ispf/driver/ansic12/AnsiC12DeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-ansi-c12/src/test/java/com/ispf/driver/ansic12/AnsiC12DeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-ansi-c12/src/test/java/com/ispf/driver/ansic12/AnsiC12DeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-ansi-c12/src/test/java/com/ispf/driver/ansic12/AnsiC12DeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-ansi-c12",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "application",
@@ -238,67 +228,57 @@
       "driver_id": "aws-iot-core",
       "pack_id": "ispf-driver-aws-iot-core",
       "driver_class": "com.ispf.driver.awsiotcore.AwsIotCoreDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-aws-iot-core/src/main/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-aws-iot-core/src/test/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-aws-iot-core/src/test/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-aws-iot-core/src/test/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-aws-iot-core/src/test/java/com/ispf/driver/awsiotcore/AwsIotCoreDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-aws-iot-core",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "azure-iot-hub",
       "pack_id": "ispf-driver-azure-iot-hub",
       "driver_class": "com.ispf.driver.azureiothub.AzureIotHubDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-azure-iot-hub/src/main/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-azure-iot-hub/src/test/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-azure-iot-hub/src/test/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-azure-iot-hub/src/test/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-azure-iot-hub/src/test/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-azure-iot-hub",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "bacnet",
@@ -1165,34 +1145,29 @@
       "driver_id": "fatek",
       "pack_id": "ispf-driver-fatek",
       "driver_class": "com.ispf.driver.fatek.FatekDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-fatek/src/main/java/com/ispf/driver/fatek/FatekDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-fatek/src/test/java/com/ispf/driver/fatek/FatekDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-fatek/src/test/java/com/ispf/driver/fatek/FatekDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-fatek/src/test/java/com/ispf/driver/fatek/FatekDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-fatek/src/test/java/com/ispf/driver/fatek/FatekDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-fatek",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "file",
@@ -1762,34 +1737,29 @@
       "driver_id": "iec101",
       "pack_id": "ispf-driver-iec101",
       "driver_class": "com.ispf.driver.iec101.Iec101DeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-iec101/src/main/java/com/ispf/driver/iec101/Iec101DeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-iec101/src/test/java/com/ispf/driver/iec101/Iec101DeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-iec101/src/test/java/com/ispf/driver/iec101/Iec101DeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-iec101/src/test/java/com/ispf/driver/iec101/Iec101DeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-iec101/src/test/java/com/ispf/driver/iec101/Iec101DeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-iec101",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "iec103",
@@ -2440,34 +2410,29 @@
       "driver_id": "keyence-hostlink",
       "pack_id": "ispf-driver-keyence-hostlink",
       "driver_class": "com.ispf.driver.keyencehostlink.KeyenceHostlinkDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-keyence-hostlink/src/main/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-keyence-hostlink/src/test/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-keyence-hostlink/src/test/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-keyence-hostlink/src/test/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-keyence-hostlink/src/test/java/com/ispf/driver/keyencehostlink/KeyenceHostlinkDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-keyence-hostlink",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "knx",
@@ -3449,34 +3414,29 @@
       "driver_id": "panasonic-mewto",
       "pack_id": "ispf-driver-panasonic-mewto",
       "driver_class": "com.ispf.driver.panasonicmewto.PanasonicMewtoDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-panasonic-mewto/src/main/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-panasonic-mewto/src/test/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-panasonic-mewto/src/test/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-panasonic-mewto/src/test/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-panasonic-mewto/src/test/java/com/ispf/driver/panasonicmewto/PanasonicMewtoDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-panasonic-mewto",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "plcnext",
@@ -3790,34 +3750,29 @@
       "driver_id": "rtsp",
       "pack_id": "ispf-driver-rtsp",
       "driver_class": "com.ispf.driver.rtsp.RtspDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-rtsp/src/main/java/com/ispf/driver/rtsp/RtspDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-rtsp/src/test/java/com/ispf/driver/rtsp/RtspDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-rtsp/src/test/java/com/ispf/driver/rtsp/RtspDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-rtsp/src/test/java/com/ispf/driver/rtsp/RtspDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-rtsp/src/test/java/com/ispf/driver/rtsp/RtspDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-rtsp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "s7",

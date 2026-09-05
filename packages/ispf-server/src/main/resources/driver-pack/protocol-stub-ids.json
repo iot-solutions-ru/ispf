@@ -10,9 +10,6 @@
     "plcnext",
     "codesys",
     "ge-srtp",
-    "keyence-hostlink",
-    "panasonic-mewto",
-    "fatek",
     "fuji-sph",
     "hitachi-hidic",
     "toshiba-t-series",
@@ -38,9 +35,7 @@
     "iec61850",
     "iec61850-goose",
     "iec61850-sv",
-    "iec101",
     "iec103",
-    "ansi-c12",
     "wisun",
     "hart-ip",
     "hart-serial",
@@ -61,13 +56,9 @@
     "thread",
     "bluetooth-le",
     "sigfox",
-    "rtsp",
     "genicam",
     "secs-gem",
-    "camera-ai",
-    "azure-iot-hub",
-    "aws-iot-core",
-    "amqp"
+    "camera-ai"
   ],
   "licenseType": "Apache-2.0"
 }
