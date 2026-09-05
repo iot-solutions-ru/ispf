@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * Frame (little-endian multi-byte fields):
  * <pre>
- *   0..9   magic "LSIS-XGT\\0\\0" (10 bytes)
+ *   0..9   magic LSIS-XGT + two NUL bytes (10 bytes)
  *   10..11 invokeId (uint16 LE)
  *   12     command: 0x01 READ, 0x02 WRITE
  *   13     deviceType: 0x01 DW, 0x02 MW, 0x03 MX
