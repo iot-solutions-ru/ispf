@@ -289,8 +289,9 @@ public class SomeipDeviceDriver implements DeviceDriver {
             throw new IllegalArgumentException(
                     "Unsupported SOME/IP mapping (expected 0x1234:0x0001): " + mapping);
         }
-        int service = parseIntFlexible(matcher.group(1));
-        int method = parseIntFlexible(matcher.group(2));
+        // Service/method IDs are hexadecimal even when written without a 0x prefix.
+        int service = Integer.parseInt(matcher.group(1), 16);
+        int method = Integer.parseInt(matcher.group(2), 16);
         if (service < 0 || service > 0xFFFF || method < 0 || method > 0xFFFF) {
             throw new IllegalArgumentException("SOME/IP service/method out of range: " + mapping);
         }
