@@ -1474,9 +1474,9 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 
 | # | Task | Owner | Files / tests | Done when |
 | - | ---- | ----- | ------------- | --------- |
-| B1 | Extend smoke script: **FC16 / MQTT publish / OPC UA write** round-trip | Dev | `deploy/tools/driver-interop-smoke.sh` | Exit 0 on compose up |
-| B2 | CI workflow publishes `build/driver-interop/interop-summary.md` artifact | DevOps | `.github/workflows/driver-interop.yml` | Artifact on main |
-| B3 | Document read-only vs write drivers in interop lab | Docs | `driver-interop-lab.md` | Table matches post-BL-191 matrix |
+| B1 | Extend smoke: **FC16 / MQTT publish / OPC UA write** round-trip | Dev | `deploy/tools/driver-interop-smoke.sh` + writable `modbus/server.py` | Exit 0 on compose up (**hardening on #144**) |
+| B2 | CI workflow publishes fixture smoke summary artifact | DevOps | `.github/workflows/driver-interop.yml` | Artifact on PR/main |
+| B3 | Document read-only vs write drivers in interop lab | Docs | `driver-interop-lab.md` | Table matches post-BL-191 matrix (**updated**) |
 | B4 | Local gate before pilot: `docker compose … up` + `driver-interop-smoke.sh` in integrator runbook | Integrator | [field-pilot-playbook](field-pilot-playbook.md) §1 dry-run | Checklist linked |
 
 #### Workstream C — BL-140 pilot #1 (Modbus plant)

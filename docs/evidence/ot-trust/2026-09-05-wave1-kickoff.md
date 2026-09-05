@@ -22,9 +22,11 @@
 - [x] Unpark **P-OT** → In progress  
 - [x] A1 decision recorded (ADR-0057)  
 - [x] Align `http` WRITE in matrix  
-- [ ] B1 smoke: Modbus FC6 write round-trip against docker fixture  
-- [ ] B2 upload interop summary artifact in CI  
-- [ ] C1–C3 lab Modbus dry-run journal (day 1)  
+- [x] B1 smoke: Modbus FC6/FC16 write round-trip against **writable** docker fixture  
+- [x] B1 smoke: MQTT round-trip + optional OPC UA write (`asyncua`)  
+- [x] B2 upload interop summary artifact in CI  
+- [x] Wave 1 writePoint↔capability source gate  
+- [ ] C1–C3 lab Modbus dry-run journal green in CI (day 1 drafted)  
 - [ ] Customer site named (optional for lab track)
 
 ## Honesty

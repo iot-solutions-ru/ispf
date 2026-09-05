@@ -7,6 +7,7 @@
 | **In progress** | Wave 1 kicked off 2026-09-05 (named task) |
 | Decision | [ADR-0057](../../en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md) — DNP3 PRODUCTION poll-only |
 | Kickoff | [2026-09-05-wave1-kickoff.md](2026-09-05-wave1-kickoff.md) |
+| Lab day-1 dry-run | [2026-09-05-lab-modbus-day1.md](2026-09-05-lab-modbus-day1.md) |
 | Pilot journal template | [pilot-soak-journal.template.md](pilot-soak-journal.template.md) |
 
 ## Unpark criteria met

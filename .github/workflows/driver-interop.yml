@@ -33,7 +33,17 @@ jobs:
             exit 1
           fi
 
+      - name: Install asyncua for OPC UA write smoke (Wave 1 / B1)
+        run: python3 -m pip install --user 'asyncua>=1.0.0'
+
+      - name: Self-test Modbus fixture (no docker)
+        run: |
+          chmod +x deploy/tools/driver-interop-smoke.sh
+          deploy/tools/driver-interop-smoke.sh --self-test-modbus
+
       - name: Smoke MQTT / Modbus / OPC UA endpoints
+        env:
+          ISPF_INTEROP_OPCUA_WRITE: "1"
         run: deploy/tools/driver-interop-smoke.sh
 
       - name: Upload fixture smoke summary

@@ -113,7 +113,7 @@ docker compose -f deploy/driver-interop/docker-compose.yml down
 | Service | Image | Host endpoint | ISPF driver |
 | ------- | ----- | ------------- | ----------- |
 | MQTT | `eclipse-mosquitto:2.0` | `tcp://127.0.0.1:1883` | `mqtt` — `brokerUrl` |
-| Modbus TCP | `oitc/modbus-server` | `127.0.0.1:502` | `modbus-tcp` — `host` / `port` |
+| Modbus TCP | `python:3.12-alpine` + `modbus/server.py` (FC3/FC6/FC16) | `127.0.0.1:502` | `modbus-tcp` — `host` / `port` |
 | OPC UA | `mcr.microsoft.com/iotedge/opc-plc` | `opc.tcp://127.0.0.1:4840` | `opcua` — `endpointUrl` |
 
 OPC UA simulator uses **SecurityPolicy.None** and anonymous auth (lab only). For an ISPF-native server endpoint, use the embedded `opcua-server` driver on the same port only when the container is stopped.
@@ -125,10 +125,16 @@ Mosquitto config: `deploy/driver-interop/mosquitto/mosquitto.conf` (anonymous, n
 After `docker compose up -d`:
 
 ```bash
+# optional OPC UA write client
+python3 -m pip install --user 'asyncua>=1.0.0'
 bash deploy/tools/driver-interop-smoke.sh
+# offline unit check of Modbus fixture logic
+bash deploy/tools/driver-interop-smoke.sh --self-test-modbus
 ```
 
-Script waits for TCP on `1883` / `502` / `4840`, performs MQTT round-trip (via `docker exec` in `ispf-interop-mosquitto` or host `mosquitto_pub`), writes `build/driver-interop/fixture-smoke-summary.md`.
+Script waits for TCP on `1883` / `502` / `4840`, runs MQTT round-trip, **Modbus FC6+FC16 write/read**, optional OPC UA write (`ISPF_INTEROP_OPCUA_WRITE=1`), writes `build/driver-interop/fixture-smoke-summary.md`.
+
+> **Honesty:** `oitc/modbus-server` was **removed** from the lab compose — it reset connections on FC6 in CI. The in-repo Python fixture is the writable source of truth for Wave 1 B1.
 
 Manual check:
 

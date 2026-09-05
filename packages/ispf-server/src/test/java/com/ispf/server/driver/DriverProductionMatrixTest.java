@@ -150,6 +150,44 @@ class DriverProductionMatrixTest {
         assertEquals(DriverMaturity.BETA, DriverProductionMatrix.resolveMaturity("opc-bridge"));
     }
 
+    /**
+     * Wave 1 honesty: curated WRITE drivers must not ship a stub {@code writePoint};
+     * curated POLL_ONLY drivers must keep an explicit not-implemented write.
+     */
+    @Test
+    void wave1WritePointSourceMatchesDeclaredCapabilities() throws IOException {
+        assertWritePointMentionsNotImplemented("dnp3", true);
+        assertWritePointMentionsNotImplemented("gps-tracker", true);
+        assertWritePointMentionsNotImplemented("modbus-tcp", false);
+        assertWritePointMentionsNotImplemented("http", false);
+        assertWritePointMentionsNotImplemented("ethernet-ip", false);
+        assertWritePointMentionsNotImplemented("snmp", false);
+    }
+
+    private static void assertWritePointMentionsNotImplemented(String driverId, boolean expectStub)
+            throws IOException {
+        DriverProductionMatrix.Entry entry = DriverProductionMatrix.entry(driverId).orElseThrow();
+        Path source = resolveDeviceDriverSource(entry);
+        assertNotNull(source, driverId + " DeviceDriver source");
+        String text = Files.readString(source);
+        int idx = text.indexOf("void writePoint");
+        assertTrue(idx >= 0, driverId + " missing writePoint method");
+        String window = text.substring(idx, Math.min(text.length(), idx + 700));
+        boolean looksStub = Pattern.compile(
+                        "not implemented|unsupported operation|read-only",
+                        Pattern.CASE_INSENSITIVE
+                )
+                .matcher(window)
+                .find();
+        if (expectStub) {
+            assertTrue(looksStub, driverId + " POLL_ONLY writePoint should document not-implemented");
+            assertFalse(entry.capabilities().contains(WRITE), driverId + " must not claim WRITE");
+        } else {
+            assertFalse(looksStub, driverId + " WRITE driver writePoint must not be a stub throw");
+            assertTrue(entry.capabilities().contains(WRITE), driverId + " must claim WRITE");
+        }
+    }
+
     @Test
     void top10IndustrialDriversLinkedToInteropMatrix() {
         for (String driverId : DriverProductionMatrix.TOP_10_INDUSTRIAL) {
