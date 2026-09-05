@@ -18,9 +18,6 @@ Changelog отдельных application bundles — в манифестах п�
 - Enterprise L tooling в `tools/historian-scale/`: seed/count history-enabled,
   `GET /history-enabled-count`, gate считает переменные (не `/tags` binding rules).
 - `npm run pwa:offline-field-soak` — lab 2h CDP offline soak.
-
-### Добавлено
-
 - **OT Trust Wave 2** — `redis`, `mitsubishi-slmp`, `yaskawa-memobus`, `sparkplug-b`: STUB → **PRODUCTION**
   (реальные кодеки + loopback-тесты); evidence `docs/evidence/ot-trust/2026-09-05-wave2-codec-promotion.md`.
 

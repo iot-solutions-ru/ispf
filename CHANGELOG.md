@@ -29,9 +29,6 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   analytics-scale gate counting **history-enabled variables** (not binding-rule `/tags`).
 - **HMI offline lab soak** — `npm run pwa:offline-field-soak` (Playwright CDP offline, configurable
   duration; demostand **2 h** evidence archived for Post-S33).
-
-### Added
-
 - **OT Trust Wave 2 codec promotion** — `redis`, `mitsubishi-slmp`, `yaskawa-memobus`, `sparkplug-b`
   promoted STUB → **PRODUCTION** with real codecs + in-process loopback tests (fake RESP / SLMP 3E /
   Modbus TCP / Moquette+Sparkplug protobuf); matrix `POLL_WRITE`; evidence

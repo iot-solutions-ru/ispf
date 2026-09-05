@@ -175,7 +175,7 @@ public class MitsubishiSlmpDeviceDriver implements DeviceDriver {
 
     private byte[] buildAccessBody(short command, MitsubishiSlmpPoint point, int[] writeWords) {
         int dataWords = writeWords == null ? 0 : writeWords.length;
-        ByteBuffer body = ByteBuffer.allocate(10 + dataWords * 2).order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuffer body = ByteBuffer.allocate(12 + dataWords * 2).order(ByteOrder.LITTLE_ENDIAN);
         body.putShort((short) monitoringTimer);
         body.putShort(command);
         body.putShort(SUBCOMMAND);

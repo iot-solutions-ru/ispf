@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T08:12:02Z",
+    "generatedAt": "2026-09-05T09:00:55Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "STUB": 97,
-      "PRODUCTION": 62,
+      "STUB": 93,
+      "PRODUCTION": 66,
       "BETA": 3
     },
     "byReadiness": {
-      "STUB_LAB": 97,
-      "READY_LAB": 62,
+      "STUB_LAB": 93,
+      "READY_LAB": 66,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "stub-list": 97,
-      "matrix": 65
+      "stub-list": 93,
+      "matrix": 69
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 65,
-    "stubIds": 97,
+    "matrixEntries": 69,
+    "stubIds": 93,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -2855,34 +2855,29 @@
       "driver_id": "mitsubishi-slmp",
       "pack_id": "ispf-driver-mitsubishi-slmp",
       "driver_class": "com.ispf.driver.mitsubishislmp.MitsubishiSlmpDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-mitsubishi-slmp/src/main/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-mitsubishi-slmp/src/test/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-mitsubishi-slmp/src/test/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-mitsubishi-slmp/src/test/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-mitsubishi-slmp/src/test/java/com/ispf/driver/mitsubishislmp/MitsubishiSlmpDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-mitsubishi-slmp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "modbus-rtu",
@@ -3805,34 +3800,29 @@
       "driver_id": "redis",
       "pack_id": "ispf-driver-redis",
       "driver_class": "com.ispf.driver.redis.RedisDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-redis/src/main/java/com/ispf/driver/redis/RedisDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-redis/src/test/java/com/ispf/driver/redis/RedisDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-redis/src/test/java/com/ispf/driver/redis/RedisDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-redis/src/test/java/com/ispf/driver/redis/RedisDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-redis/src/test/java/com/ispf/driver/redis/RedisDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-redis",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "rockwell-csp",
@@ -4322,34 +4312,29 @@
       "driver_id": "sparkplug-b",
       "pack_id": "ispf-driver-sparkplug-b",
       "driver_class": "com.ispf.driver.sparkplugb.SparkplugBDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-sparkplug-b/src/main/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-sparkplug-b/src/test/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-sparkplug-b/src/test/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-sparkplug-b/src/test/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-sparkplug-b/src/test/java/com/ispf/driver/sparkplugb/SparkplugBDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-sparkplug-b",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "ssh",
@@ -4970,34 +4955,29 @@
       "driver_id": "yaskawa-memobus",
       "pack_id": "ispf-driver-yaskawa-memobus",
       "driver_class": "com.ispf.driver.yaskawamemobus.YaskawaMemobusDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-yaskawa-memobus/src/main/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-yaskawa-memobus/src/test/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-yaskawa-memobus/src/test/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-yaskawa-memobus/src/test/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-yaskawa-memobus/src/test/java/com/ispf/driver/yaskawamemobus/YaskawaMemobusDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-yaskawa-memobus",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "zigbee",

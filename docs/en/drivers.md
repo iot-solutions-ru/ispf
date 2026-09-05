@@ -493,7 +493,7 @@ The `capabilities` field — string set from `DriverProductionMatrix` (ADR-0022)
 
 ### Stub promotion (demand-driven)
 
-58 core `driverId` values are in the production matrix; **97** additional protocol-catalog stubs ship as individual `ispf-driver-<id>` packs (**STUB**, TCP reachability only, **Apache-2.0**). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
+58 core `driverId` values are in the production matrix; **93** additional protocol-catalog stubs ship as individual `ispf-driver-<id>` packs (**STUB**, TCP reachability only, **Apache-2.0**). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
 
 1. The app team describes the scenario (device, point mapping, acceptance test).
 2. A platform PR adds protocol logic (replace the stub class in `ispf-driver-<id>`).

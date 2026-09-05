@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T08:12:02Z`  
+> Generated: `2026-09-05T09:00:55Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **65** · Stub list: **97**  
+> Matrix ENTRIES: **69** · Stub list: **93**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=62, `STUB`=97 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=62, `SHELL_BETA`=2, `STUB_LAB`=97 |
-| Source | `matrix`=65, `stub-list`=97 |
+| Maturity | `BETA`=3, `PRODUCTION`=66, `STUB`=93 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=66, `SHELL_BETA`=2, `STUB_LAB`=93 |
+| Source | `matrix`=69, `stub-list`=93 |
 
 ### Readiness legend
 
@@ -152,7 +152,7 @@ _None._
 | `mbus` | `ispf-driver-mbus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `message-stream` | `ispf-driver-message-stream` | PRODUCTION | matrix | `READY_LAB` | — |
 | `mitsubishi-melsec` | `ispf-driver-mitsubishi-melsec` | STUB | stub-list | `STUB_LAB` | — |
-| `mitsubishi-slmp` | `ispf-driver-mitsubishi-slmp` | STUB | stub-list | `STUB_LAB` | — |
+| `mitsubishi-slmp` | `ispf-driver-mitsubishi-slmp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `modbus-rtu` | `ispf-driver-modbus-rtu` | PRODUCTION | matrix | `READY_LAB` | — |
 | `modbus-tcp` | `ispf-driver-modbus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `modbus-udp` | `ispf-driver-modbus-udp` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -183,7 +183,7 @@ _None._
 | `profinet` | `ispf-driver-profinet` | STUB | stub-list | `STUB_LAB` | — |
 | `pulsar` | `ispf-driver-pulsar` | STUB | stub-list | `STUB_LAB` | — |
 | `radius` | `ispf-driver-radius` | PRODUCTION | matrix | `READY_LAB` | — |
-| `redis` | `ispf-driver-redis` | STUB | stub-list | `STUB_LAB` | — |
+| `redis` | `ispf-driver-redis` | PRODUCTION | matrix | `READY_LAB` | — |
 | `rockwell-csp` | `ispf-driver-rockwell-csp` | STUB | stub-list | `STUB_LAB` | — |
 | `rockwell-df1` | `ispf-driver-rockwell-df1` | STUB | stub-list | `STUB_LAB` | — |
 | `rtsp` | `ispf-driver-rtsp` | STUB | stub-list | `STUB_LAB` | — |
@@ -200,7 +200,7 @@ _None._
 | `snmp` | `ispf-driver-snmp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `soap` | `ispf-driver-soap` | PRODUCTION | matrix | `READY_LAB` | — |
 | `someip` | `ispf-driver-someip` | STUB | stub-list | `STUB_LAB` | — |
-| `sparkplug-b` | `ispf-driver-sparkplug-b` | STUB | stub-list | `STUB_LAB` | — |
+| `sparkplug-b` | `ispf-driver-sparkplug-b` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ssh` | `ispf-driver-ssh` | PRODUCTION | matrix | `READY_LAB` | — |
 | `telnet` | `ispf-driver-telnet` | PRODUCTION | matrix | `READY_LAB` | — |
 | `thread` | `ispf-driver-thread` | STUB | stub-list | `STUB_LAB` | — |
@@ -221,7 +221,7 @@ _None._
 | `wmbus` | `ispf-driver-wmbus` | STUB | stub-list | `STUB_LAB` | — |
 | `wmi` | `ispf-driver-wmi` | PRODUCTION | matrix | `READY_LAB` | — |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | matrix | `READY_LAB` | — |
-| `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | STUB | stub-list | `STUB_LAB` | — |
+| `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `zigbee` | `ispf-driver-zigbee` | STUB | stub-list | `STUB_LAB` | — |
 | `zwave` | `ispf-driver-zwave` | STUB | stub-list | `STUB_LAB` | — |
 

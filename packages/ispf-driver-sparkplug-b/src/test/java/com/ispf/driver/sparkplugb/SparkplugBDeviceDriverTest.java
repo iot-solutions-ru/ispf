@@ -148,6 +148,8 @@ class SparkplugBDeviceDriverTest {
         props.setProperty("host", "127.0.0.1");
         props.setProperty("port", String.valueOf(port));
         props.setProperty("allow_anonymous", "true");
+        props.setProperty("persistence_enabled", "false");
+        props.setProperty("data_path", System.getProperty("java.io.tmpdir") + "/ispf-sparkplug-moquette-" + port);
         IConfig config = new MemoryConfig(props);
         broker = new Server();
         broker.startServer(config);
