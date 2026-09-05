@@ -23,9 +23,9 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **66** drivers at **PRODUCTION** (including Wave 2 `redis` / `mitsubishi-slmp` / `yaskawa-memobus` / `sparkplug-b`, plus `cwmp` / notification packs `email`/`sms`/`webhook` / `smb` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **93** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0). Stub-kit **v0.2** adds TCP probe + memory loopback write; remaining stub packs raise audit readiness to **`STUB_LAB`** (still ≠ PRODUCTION / ≠ field). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
+In `DriverProductionMatrix` — **79** drivers at **PRODUCTION** (Wave 2 + Wave 3 clean-room codecs; includes `cwmp` / notification packs `email`/`sms`/`webhook` / `smb` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **80** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0). Stub-kit **v0.2** adds TCP probe + memory loopback write; remaining stubs stay audit **`STUB_LAB`** (still ≠ PRODUCTION / ≠ field). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); remaining protocol catalog stubs (`iec61850`, `profinet`, `beckhoff-ads`, …) stay **STUB** / audit **`STUB_LAB`** until demand-driven codec promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); remaining high-risk / unfinished catalog stubs (`iec61850`, `profinet`, `visa`, `scpi`, …) stay **STUB** / audit **`STUB_LAB`** until demand-driven codec promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
@@ -505,7 +505,7 @@ Current STUB/BETA candidates:
 |------------|----------|------|
 | `corba` | BETA | CORBA IIOP TCP shell — needs a third-party ORB |
 | `opc-da`, `opc-bridge` | BETA | Classic OPC shells — prefer `opcua` or external DA→UA |
-| Protocol catalog (`iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, …) | STUB (`STUB_LAB` audit) | Remaining stubs from `tools/driver-stubs/protocol-stubs.yaml` (shared base `ispf-driver-stub-kit` v0.2); Wave 2 promoted `redis` / `mitsubishi-slmp` / `yaskawa-memobus` / `sparkplug-b` → PRODUCTION |
+| Protocol catalog (`iec61850`, `profinet`, `lorawan`, `visa`, …) | STUB (`STUB_LAB` audit) | Remaining stubs from `tools/driver-stubs/protocol-stubs.yaml`; Waves 2–3 promoted redis/SLMP/Memobus/Sparkplug + ADS/MELSEC/MQTT-SN/NATS/KNX/… → PRODUCTION |
 | `vmware` | PRODUCTION | vSphere SOAP: Login + RetrieveProperties |
 | `smi-s` | PRODUCTION | SMI-S CIM-XML parse |
 
