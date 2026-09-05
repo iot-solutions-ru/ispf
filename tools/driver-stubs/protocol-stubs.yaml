@@ -281,14 +281,8 @@ stubs:
     name: GenICam
     description: GenICam / GigE Vision stub
     port: 3956
-  - id: barcode-scanner
-    name: Barcode scanner
-    description: Barcode/QR TCP/serial scanner stub
-    port: 9001
-  - id: weighbridge
-    name: Weighbridge
-    description: Truck scale / weighbridge protocol stub
-    port: 4001
+  # barcode-scanner promoted Wave 4 → PRODUCTION (packages/ispf-driver-barcode-scanner)
+  # weighbridge promoted Wave 4 → PRODUCTION (packages/ispf-driver-weighbridge)
   - id: secs-gem
     name: SECS/GEM
     description: SEMI SECS-I/HSMS/GEM stub
@@ -311,7 +305,4 @@ stubs:
     name: AMQP
     description: AMQP 0-9-1 / 1.0 broker stub
     port: 5672
-  - id: weather-station
-    name: Weather station
-    description: Davis/Vaisala-class weather station stub
-    port: 22222
+  # weather-station promoted Wave 4 → PRODUCTION (packages/ispf-driver-weather-station)

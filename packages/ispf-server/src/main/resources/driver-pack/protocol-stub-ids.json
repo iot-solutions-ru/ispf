@@ -65,14 +65,11 @@
     "sigfox",
     "rtsp",
     "genicam",
-    "barcode-scanner",
-    "weighbridge",
     "secs-gem",
     "camera-ai",
     "azure-iot-hub",
     "aws-iot-core",
-    "amqp",
-    "weather-station"
+    "amqp"
   ],
   "licenseType": "Apache-2.0"
 }

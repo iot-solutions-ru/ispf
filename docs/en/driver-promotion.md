@@ -39,6 +39,17 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 
 
 
+
+## Status (September 2026, OT Trust Wave 4 edge)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `barcode-scanner` | STUB | **PRODUCTION** | TCP newline barcode/QR last-scan + TRIGGER/BEEP |
+| `weighbridge` | STUB | **PRODUCTION** | ASCII `W` poll / ZERO/TARE lab dialect |
+| `weather-station` | STUB | **PRODUCTION** | `GET FIELD` / `GET ALL` text lab (read-only) |
+
+**License policy:** Apache-2.0 clean-room / JDK sockets only. Lab readiness ≠ field certification.
+
 ## Status (September 2026, OT Trust Wave 3b)
 
 | driverId | Was | Now | Note |

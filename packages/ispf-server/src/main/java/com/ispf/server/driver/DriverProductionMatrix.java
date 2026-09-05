@@ -364,7 +364,17 @@ final class DriverProductionMatrix {
                     "ispf-driver-visa"),
             entry("knx-tp", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-knx-tp", "com.ispf.driver.knxtp.KnxTpDeviceDriverTest"),
-                    "ispf-driver-knx-tp")
+                    "ispf-driver-knx-tp"),
+            // OT Trust Wave 4 — clean-room edge I/O codecs.
+            entry("barcode-scanner", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-barcode-scanner", "com.ispf.driver.barcodescanner.BarcodeScannerDeviceDriverTest"),
+                    "ispf-driver-barcode-scanner"),
+            entry("weighbridge", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-weighbridge", "com.ispf.driver.weighbridge.WeighbridgeDeviceDriverTest"),
+                    "ispf-driver-weighbridge"),
+            entry("weather-station", DriverMaturity.PRODUCTION, POLL_ONLY,
+                    testPath("ispf-driver-weather-station", "com.ispf.driver.weatherstation.WeatherStationDeviceDriverTest"),
+                    "ispf-driver-weather-station")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */
