@@ -503,7 +503,16 @@ final class DriverProductionMatrix {
                     "ispf-driver-io-link"),
             entry("interbus", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-interbus", "com.ispf.driver.interbus.InterbusDeviceDriverTest"),
-                    "ispf-driver-interbus")
+                    "ispf-driver-interbus"),
+            entry("opc-ae", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-opc-ae", "com.ispf.driver.opcae.OpcAeDeviceDriverTest"),
+                    "ispf-driver-opc-ae"),
+            entry("opc-hda", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-opc-hda", "com.ispf.driver.opchda.OpcHdaDeviceDriverTest"),
+                    "ispf-driver-opc-hda"),
+            entry("eebus", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-eebus", "com.ispf.driver.eebus.EebusDeviceDriverTest"),
+                    "ispf-driver-eebus")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

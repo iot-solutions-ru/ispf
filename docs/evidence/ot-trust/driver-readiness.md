@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T11:04:57Z`  
+> Generated: `2026-09-05T11:11:00Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **135** · Stub list: **27**  
+> Matrix ENTRIES: **138** · Stub list: **24**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=132, `STUB`=27 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=132, `SHELL_BETA`=2, `STUB_LAB`=27 |
-| Source | `matrix`=135, `stub-list`=27 |
+| Maturity | `BETA`=3, `PRODUCTION`=135, `STUB`=24 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=135, `SHELL_BETA`=2, `STUB_LAB`=24 |
+| Source | `matrix`=138, `stub-list`=24 |
 
 ### Readiness legend
 
@@ -90,7 +90,7 @@ _None._
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | matrix | `READY_LAB` | — |
 | `dnp3` | `ispf-driver-dnp3` | PRODUCTION | matrix | `READY_LAB` | — |
-| `eebus` | `ispf-driver-eebus` | STUB | stub-list | `STUB_LAB` | — |
+| `eebus` | `ispf-driver-eebus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `email` | `ispf-driver-email` | PRODUCTION | matrix | `READY_LAB` | — |
 | `enocean` | `ispf-driver-enocean` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ethercat` | `ispf-driver-ethercat` | STUB | stub-list | `STUB_LAB` | — |
@@ -167,10 +167,10 @@ _None._
 | `odbc` | `ispf-driver-odbc` | PRODUCTION | matrix | `READY_LAB` | — |
 | `omron-fins` | `ispf-driver-omron-fins` | PRODUCTION | matrix | `READY_LAB` | — |
 | `onvif` | `ispf-driver-onvif` | PRODUCTION | matrix | `READY_LAB` | — |
-| `opc-ae` | `ispf-driver-opc-ae` | STUB | stub-list | `STUB_LAB` | — |
+| `opc-ae` | `ispf-driver-opc-ae` | PRODUCTION | matrix | `READY_LAB` | — |
 | `opc-bridge` | `ispf-driver-opc-bridge` | BETA | matrix | `SHELL_BETA` | — |
 | `opc-da` | `ispf-driver-opc-da` | BETA | matrix | `SHELL_BETA` | — |
-| `opc-hda` | `ispf-driver-opc-hda` | STUB | stub-list | `STUB_LAB` | — |
+| `opc-hda` | `ispf-driver-opc-hda` | PRODUCTION | matrix | `READY_LAB` | — |
 | `opcua` | `ispf-driver-opcua` | PRODUCTION | matrix | `READY_LAB` | — |
 | `opcua-pubsub` | `ispf-driver-opcua-pubsub` | STUB | stub-list | `STUB_LAB` | — |
 | `opcua-server` | `ispf-driver-opcua-server` | PRODUCTION | matrix | `READY_LAB` | — |

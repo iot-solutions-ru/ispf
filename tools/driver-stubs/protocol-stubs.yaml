@@ -76,14 +76,8 @@ stubs:
     name: Fanuc FOCAS
     description: Fanuc FOCAS CNC stub
     port: 8193
-  - id: opc-ae
-    name: OPC Alarms and Events
-    description: OPC Classic A&E stub (DCOM/bridge required)
-    port: 135
-  - id: opc-hda
-    name: OPC Historical Data Access
-    description: OPC Classic HDA stub (DCOM/bridge required)
-    port: 135
+  # opc-ae promoted Wave 8 → PRODUCTION (packages/ispf-driver-opc-ae)
+  # opc-hda promoted Wave 8 → PRODUCTION (packages/ispf-driver-opc-hda)
 
   # —— Energy / utility ——
   - id: iec61850
@@ -132,10 +126,7 @@ stubs:
   # wmbus promoted Wave 6 → PRODUCTION (packages/ispf-driver-wmbus)
   # enocean promoted Wave 6 → PRODUCTION (packages/ispf-driver-enocean)
   # dali promoted Wave 5 → PRODUCTION (packages/ispf-driver-dali)
-  - id: eebus
-    name: EEBUS
-    description: EEBUS / SHIP energy management stub
-    port: 4712
+  # eebus promoted Wave 8 → PRODUCTION (packages/ispf-driver-eebus)
 
   # —— IoT / LPWAN / RF ——
   - id: lorawan

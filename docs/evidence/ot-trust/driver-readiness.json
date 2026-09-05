@@ -1,22 +1,22 @@
 {
   "summary": {
-    "generatedAt": "2026-09-05T11:04:57Z",
+    "generatedAt": "2026-09-05T11:11:00Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 132,
-      "STUB": 27,
+      "PRODUCTION": 135,
+      "STUB": 24,
       "BETA": 3
     },
     "byReadiness": {
-      "READY_LAB": 132,
-      "STUB_LAB": 27,
+      "READY_LAB": 135,
+      "STUB_LAB": 24,
       "PARTIAL": 1,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 135,
-      "stub-list": 27
+      "matrix": 138,
+      "stub-list": 24
     },
     "failCount": 0,
     "warnCount": 0,
@@ -54,8 +54,8 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 135,
-    "stubIds": 27,
+    "matrixEntries": 138,
+    "stubIds": 24,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
       "ispf-driver-dlms",
@@ -888,34 +888,29 @@
       "driver_id": "eebus",
       "pack_id": "ispf-driver-eebus",
       "driver_class": "com.ispf.driver.eebus.EebusDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-eebus/src/main/java/com/ispf/driver/eebus/EebusDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-eebus/src/test/java/com/ispf/driver/eebus/EebusDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-eebus/src/test/java/com/ispf/driver/eebus/EebusDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-eebus/src/test/java/com/ispf/driver/eebus/EebusDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-eebus/src/test/java/com/ispf/driver/eebus/EebusDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-eebus",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "email",
@@ -3070,34 +3065,29 @@
       "driver_id": "opc-ae",
       "pack_id": "ispf-driver-opc-ae",
       "driver_class": "com.ispf.driver.opcae.OpcAeDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-opc-ae/src/main/java/com/ispf/driver/opcae/OpcAeDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-opc-ae/src/test/java/com/ispf/driver/opcae/OpcAeDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-opc-ae/src/test/java/com/ispf/driver/opcae/OpcAeDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-opc-ae/src/test/java/com/ispf/driver/opcae/OpcAeDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-opc-ae/src/test/java/com/ispf/driver/opcae/OpcAeDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-opc-ae",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "opc-bridge",
@@ -3157,34 +3147,29 @@
       "driver_id": "opc-hda",
       "pack_id": "ispf-driver-opc-hda",
       "driver_class": "com.ispf.driver.opchda.OpcHdaDeviceDriver",
-      "maturity": "STUB",
-      "source": "stub-list",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": false,
       "pack_dir_ok": true,
       "source_ok": true,
       "source_path": "packages/ispf-driver-opc-hda/src/main/java/com/ispf/driver/opchda/OpcHdaDeviceDriver.java",
-      "extends_protocol_stub": true,
+      "extends_protocol_stub": false,
       "pack_contract_test": true,
-      "pack_contract_test_path": "packages/ispf-driver-opc-hda/src/test/java/com/ispf/driver/opchda/OpcHdaDeviceDriverContractTest.java",
-      "loopback_path": "packages/ispf-driver-opc-hda/src/test/java/com/ispf/driver/opchda/OpcHdaDeviceDriverContractTest.java",
+      "pack_contract_test_path": "packages/ispf-driver-opc-hda/src/test/java/com/ispf/driver/opchda/OpcHdaDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-opc-hda/src/test/java/com/ispf/driver/opchda/OpcHdaDeviceDriverTest.java",
       "loopback_ok": true,
-      "interop_module": "",
-      "interop_in_workflow": null,
-      "write_claimed": false,
-      "write_looks_stub": null,
-      "production_javadoc_stub": null,
-      "readiness": "STUB_LAB",
-      "findings": [
-        {
-          "severity": "INFO",
-          "code": "STUB_LAB",
-          "message": "protocol catalog stub with pack contract test (lab loopback ≠ codec)"
-        }
-      ]
+      "interop_module": "ispf-driver-opc-hda",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
     },
     {
       "driver_id": "opcua",
