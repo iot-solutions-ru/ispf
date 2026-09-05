@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Point mapping is the SCPI query or command (for example {@code *IDN?}, {@code MEAS:VOLT:DC?},
  * {@code VOLT}). Reads send the mapped query and capture one response line. Writes send a set
  * command built from the mapping and the record {@code value} field (see {@link #writePoint}).
+ * Opens one TCP session on {@link #connect()} and reuses it until {@link #disconnect()}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; no proprietary instrument stacks.
  */
@@ -55,6 +56,7 @@ public class ScpiDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 5025;
     private int timeoutMs = 3000;
+    private Socket socket;
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -83,19 +85,30 @@ public class ScpiDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
-        connected = true;
-        driverObject.log(DriverLogLevel.INFO, "SCPI ready for " + host + ":" + port);
+        try {
+            Socket next = new Socket();
+            next.connect(new InetSocketAddress(host, port), timeoutMs);
+            next.setSoTimeout(timeoutMs);
+            next.setTcpNoDelay(true);
+            socket = next;
+            connected = true;
+            driverObject.log(DriverLogLevel.INFO, "SCPI connected to " + host + ":" + port);
+        } catch (IOException e) {
+            closeSocket();
+            throw new DriverException("SCPI connect failed for " + host + ":" + port, e);
+        }
     }
 
     @Override
     public void disconnect() {
         connected = false;
         points.clear();
+        closeSocket();
     }
 
     @Override
     public boolean isConnected() {
-        return connected;
+        return connected && socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     @Override
@@ -110,7 +123,8 @@ public class ScpiDeviceDriver implements DeviceDriver {
                     ? pointId
                     : entry.getValue().trim();
             points.put(pointId, command);
-            String response = query(command);
+            // Poll mappings ending in '?' are queried; non-query mappings are registered for writes only.
+            String response = isQuery(command) ? query(command) : "";
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", response == null ? "" : response,
                     "command", command
@@ -165,30 +179,33 @@ public class ScpiDeviceDriver implements DeviceDriver {
         return command != null && command.trim().endsWith("?");
     }
 
-    private String query(String command) throws DriverException {
-        try (Socket socket = openSocket()) {
-            OutputStream out = socket.getOutputStream();
-            InputStream in = socket.getInputStream();
-            writeLine(out, command);
-            return readLine(in);
+    private synchronized String query(String command) throws DriverException {
+        try {
+            writeLine(socket.getOutputStream(), command);
+            return readLine(socket.getInputStream());
         } catch (IOException e) {
             throw new DriverException("SCPI query failed for " + host + ":" + port + " (" + command + ")", e);
         }
     }
 
-    private void send(String command) throws DriverException {
-        try (Socket socket = openSocket()) {
+    private synchronized void send(String command) throws DriverException {
+        try {
             writeLine(socket.getOutputStream(), command);
         } catch (IOException e) {
             throw new DriverException("SCPI write failed for " + host + ":" + port + " (" + command + ")", e);
         }
     }
 
-    private Socket openSocket() throws IOException {
-        Socket socket = new Socket();
-        socket.connect(new InetSocketAddress(host, port), timeoutMs);
-        socket.setSoTimeout(timeoutMs);
-        return socket;
+    private void closeSocket() {
+        Socket current = socket;
+        socket = null;
+        if (current != null) {
+            try {
+                current.close();
+            } catch (IOException ignored) {
+                // disconnect is best-effort
+            }
+        }
     }
 
     static void writeLine(OutputStream out, String command) throws IOException {

@@ -79,10 +79,10 @@ class VisaDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "9.9")
         ));
-        assertEquals("9.9", instrument.voltage());
 
         driver.readPoints(Map.of("volt", "MEAS:VOLT:DC?"));
         assertEquals("9.9", object.variables.get("volt").firstRow().get("value"));
+        assertEquals("9.9", instrument.voltage());
     }
 
     @Test
@@ -203,19 +203,21 @@ class VisaDeviceDriverTest {
             try (socket) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
-                String command = VisaDeviceDriver.readLine(in);
-                String upper = command.toUpperCase(Locale.ROOT);
-                if (upper.equals("*IDN?")) {
-                    write(out, "ISPF,FakeSocketInstrument,1.0,SOCKET");
-                } else if (upper.equals("MEAS:VOLT:DC?")) {
-                    write(out, voltage.get());
-                } else if (upper.startsWith("VOLT ") || upper.startsWith("MEAS:VOLT:DC ")) {
-                    String[] parts = command.split("\\s+", 2);
-                    if (parts.length == 2) {
-                        voltage.set(parts[1].trim());
+                while (true) {
+                    String command = VisaDeviceDriver.readLine(in);
+                    String upper = command.toUpperCase(Locale.ROOT);
+                    if (upper.equals("*IDN?")) {
+                        write(out, "ISPF,FakeSocketInstrument,1.0,SOCKET");
+                    } else if (upper.equals("MEAS:VOLT:DC?")) {
+                        write(out, voltage.get());
+                    } else if (upper.startsWith("VOLT ") || upper.startsWith("MEAS:VOLT:DC ")) {
+                        String[] parts = command.split("\s+", 2);
+                        if (parts.length == 2) {
+                            voltage.set(parts[1].trim());
+                        }
+                    } else if (upper.endsWith("?")) {
+                        write(out, "");
                     }
-                } else if (upper.endsWith("?")) {
-                    write(out, "");
                 }
             } catch (IOException ignored) {
                 // reset

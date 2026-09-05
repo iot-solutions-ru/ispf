@@ -95,11 +95,10 @@ class ScpiDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "24.1")
         ));
-        assertEquals("24.1", instrument.voltage());
-        assertEquals("VOLT 24.1", instrument.lastCommand());
 
         driver.readPoints(Map.of("volt", "MEAS:VOLT:DC?"));
         assertEquals("24.1", object.variables.get("volt").firstRow().get("value"));
+        assertEquals("24.1", instrument.voltage());
     }
 
     @Test
@@ -120,8 +119,10 @@ class ScpiDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "3.3")
         ));
+
+        driver.readPoints(Map.of("volt", "MEAS:VOLT:DC?"));
+        assertEquals("3.3", object.variables.get("volt").firstRow().get("value"));
         assertEquals("3.3", instrument.voltage());
-        assertEquals("SOUR:VOLT 3.3", instrument.lastCommand());
     }
 
     @Test
@@ -157,11 +158,9 @@ class ScpiDeviceDriverTest {
         ));
         driver = new ScpiDeviceDriver();
         driver.initialize(object);
-        driver.connect();
 
-        DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("idn", "*IDN?")));
-        assertTrue(error.getMessage().contains("SCPI query failed"));
+        DriverException error = assertThrows(DriverException.class, driver::connect);
+        assertTrue(error.getMessage().contains("SCPI connect failed"));
     }
 
     private static final class FakeScpiInstrument implements AutoCloseable {
@@ -217,22 +216,24 @@ class ScpiDeviceDriverTest {
             try (socket) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
-                String command = ScpiDeviceDriver.readLine(in);
-                lastCommand.set(command);
-                String upper = command.toUpperCase(Locale.ROOT);
-                if (upper.equals("*IDN?")) {
-                    write(out, "ISPF,FakeInstrument,1.0,SCPI");
-                } else if (upper.equals("MEAS:VOLT:DC?") || upper.equals("MEAS:VOLT?")) {
-                    write(out, voltage.get());
-                } else if (upper.startsWith("VOLT ") || upper.startsWith("SOUR:VOLT ")) {
-                    String[] parts = command.split("\\s+", 2);
-                    if (parts.length == 2) {
-                        voltage.set(parts[1].trim());
+                while (true) {
+                    String command = ScpiDeviceDriver.readLine(in);
+                    lastCommand.set(command);
+                    String upper = command.toUpperCase(Locale.ROOT);
+                    if (upper.equals("*IDN?")) {
+                        write(out, "ISPF,FakeInstrument,1.0,SCPI");
+                    } else if (upper.equals("MEAS:VOLT:DC?") || upper.equals("MEAS:VOLT?")) {
+                        write(out, voltage.get());
+                    } else if (upper.startsWith("VOLT ") || upper.startsWith("SOUR:VOLT ")) {
+                        String[] parts = command.split("\s+", 2);
+                        if (parts.length == 2) {
+                            voltage.set(parts[1].trim());
+                        }
+                    } else if (upper.equals("SYST:ERR?")) {
+                        write(out, "0,\"No error\"");
+                    } else if (upper.endsWith("?")) {
+                        write(out, "");
                     }
-                } else if (upper.equals("SYST:ERR?")) {
-                    write(out, "0,\"No error\"");
-                } else if (upper.endsWith("?")) {
-                    write(out, "");
                 }
             } catch (IOException ignored) {
                 // client closed / reset

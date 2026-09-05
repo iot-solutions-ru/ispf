@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
  * IEEE 488.2-style ASCII (SCPI) traffic.
  * <p>
  * Point mapping is the SCPI query or set command (same semantics as the ISPF SCPI driver).
+ * Opens one TCP session on {@link #connect()} and reuses it until {@link #disconnect()}.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class VisaDeviceDriver implements DeviceDriver {
@@ -70,6 +71,7 @@ public class VisaDeviceDriver implements DeviceDriver {
     private int port = 5025;
     private int timeoutMs = 3000;
     private boolean resourceConfigured;
+    private Socket socket;
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -107,20 +109,31 @@ public class VisaDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         applySocketResource(resource);
-        connected = true;
-        driverObject.log(DriverLogLevel.INFO,
-                "VISA-style SOCKET ready for " + resource + " (" + host + ":" + port + ")");
+        try {
+            Socket next = new Socket();
+            next.connect(new InetSocketAddress(host, port), timeoutMs);
+            next.setSoTimeout(timeoutMs);
+            next.setTcpNoDelay(true);
+            socket = next;
+            connected = true;
+            driverObject.log(DriverLogLevel.INFO,
+                    "VISA-style SOCKET connected " + resource + " (" + host + ":" + port + ")");
+        } catch (IOException e) {
+            closeSocket();
+            throw new DriverException("SOCKET connect failed for " + resource, e);
+        }
     }
 
     @Override
     public void disconnect() {
         connected = false;
         points.clear();
+        closeSocket();
     }
 
     @Override
     public boolean isConnected() {
-        return connected;
+        return connected && socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     @Override
@@ -135,7 +148,7 @@ public class VisaDeviceDriver implements DeviceDriver {
                     ? pointId
                     : entry.getValue().trim();
             points.put(pointId, command);
-            String response = query(command);
+            String response = isQuery(command) ? query(command) : "";
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", response == null ? "" : response,
                     "command", command,
@@ -216,20 +229,18 @@ public class VisaDeviceDriver implements DeviceDriver {
         return command != null && command.trim().endsWith("?");
     }
 
-    private String query(String command) throws DriverException {
-        try (Socket socket = openSocket()) {
-            OutputStream out = socket.getOutputStream();
-            InputStream in = socket.getInputStream();
-            writeLine(out, command);
-            return readLine(in);
+    private synchronized String query(String command) throws DriverException {
+        try {
+            writeLine(socket.getOutputStream(), command);
+            return readLine(socket.getInputStream());
         } catch (IOException e) {
             throw new DriverException(
                     "SOCKET SCPI query failed for " + resource + " (" + command + ")", e);
         }
     }
 
-    private void send(String command) throws DriverException {
-        try (Socket socket = openSocket()) {
+    private synchronized void send(String command) throws DriverException {
+        try {
             writeLine(socket.getOutputStream(), command);
         } catch (IOException e) {
             throw new DriverException(
@@ -237,11 +248,16 @@ public class VisaDeviceDriver implements DeviceDriver {
         }
     }
 
-    private Socket openSocket() throws IOException {
-        Socket socket = new Socket();
-        socket.connect(new InetSocketAddress(host, port), timeoutMs);
-        socket.setSoTimeout(timeoutMs);
-        return socket;
+    private void closeSocket() {
+        Socket current = socket;
+        socket = null;
+        if (current != null) {
+            try {
+                current.close();
+            } catch (IOException ignored) {
+                // disconnect is best-effort
+            }
+        }
     }
 
     static void writeLine(OutputStream out, String command) throws IOException {
