@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.207",
-  "generatedAt": "2026-09-04T12:21:33.775215+00:00",
+  "generatedAt": "2026-09-05T07:24:07.014003+00:00",
   "platformVersion": "0.9.207",
   "bundleManifest": {
     "fields": [
@@ -2588,10 +2588,22 @@
       "keywords": "ot-automation-excellence-tutorials OT Automation Excellence — tutorials"
     },
     {
+      "id": "parked-backlog",
+      "path": "docs/en/parked-backlog.md",
+      "title": "Parked backlog board (Post-S33)",
+      "keywords": "parked-backlog Parked backlog board (Post-S33)"
+    },
+    {
       "id": "partner-program",
       "path": "docs/en/partner-program.md",
       "title": "Partner program (BL-184)",
       "keywords": "partner-program Partner program (BL-184)"
+    },
+    {
+      "id": "pen-test-scope",
+      "path": "docs/en/pen-test-scope.md",
+      "title": "Independent pen-test scope (G-01 prep)",
+      "keywords": "pen-test-scope Independent pen-test scope (G-01 prep)"
     },
     {
       "id": "pid-symbols-legal",
@@ -3198,6 +3210,18 @@
       "path": "docs/en/decisions/0055-cel-formal-verification-ai-gate.md",
       "title": "ADR-0055: CEL formal verification as product AI/condition gate",
       "keywords": "adr decision 0055-cel-formal-verification-ai-gate ADR-0055: CEL formal verification as product AI/condition gate"
+    },
+    {
+      "id": "adr-0056-webauthn-idp-mfa",
+      "path": "docs/en/decisions/0056-webauthn-idp-mfa.md",
+      "title": "ADR-0056: WebAuthn / IdP OTP as MFA follow-up (BL-194)",
+      "keywords": "adr decision 0056-webauthn-idp-mfa ADR-0056: WebAuthn / IdP OTP as MFA follow-up (BL-194)"
+    },
+    {
+      "id": "adr-0057-ot-trust-wave1-dnp3-poll-only",
+      "path": "docs/en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md",
+      "title": "ADR-0057: OT Trust Wave 1 — DNP3 stays PRODUCTION poll-only",
+      "keywords": "adr decision 0057-ot-trust-wave1-dnp3-poll-only ADR-0057: OT Trust Wave 1 — DNP3 stays PRODUCTION poll-only"
     }
   ],
   "apiSlice": {
@@ -38133,5 +38157,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "d733876ab4abe8247054dca25ca7c348fc94b3830fc60c5215bc1473a8925490"
+  "contentSha256": "7f694cbb6bae38be5303c397279490b90e3ee491238a0857ac91cdc0820b579b"
 }

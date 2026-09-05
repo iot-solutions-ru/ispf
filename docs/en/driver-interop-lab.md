@@ -80,7 +80,9 @@ Drivers with `WRITE` in the matrix cover write path in loopback tests:
 | `dlms` | Gurux SET |
 | `mqtt` | publish path |
 
-Read-only production drivers (`dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — integrity poll / session check without write round-trip; promotion write path — separate BL per [driver-promotion](driver-promotion.md).
+Read-only / poll-only **PRODUCTION** drivers (no WRITE in matrix): `dnp3`, `gps-tracker`, plus other POLL_ONLY rows in `DriverProductionMatrix`.  
+**BETA shells** (not PRODUCTION): `opc-da`, `opc-bridge`.  
+**WRITE declared** (do not list as read-only): `ethernet-ip`, `snmp`, `http` (ADR-0057), Modbus/MQTT/OPC UA/S7/… — see matrix + [driver-promotion](driver-promotion.md).
 
 ## Docker fixtures (BL-141)
 

@@ -36,6 +36,14 @@ jobs:
       - name: Smoke MQTT / Modbus / OPC UA endpoints
         run: deploy/tools/driver-interop-smoke.sh
 
+      - name: Upload fixture smoke summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: driver-interop-fixture-smoke
+          path: build/driver-interop/fixture-smoke-summary.md
+          if-no-files-found: warn
+
       - name: Tear down fixtures
         if: always()
         run: docker compose -f deploy/driver-interop/docker-compose.yml down -v

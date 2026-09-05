@@ -102,8 +102,8 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
 | `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
-| `dnp3` | PRODUCTION (poll only) | **BETA** (BL-191) | Class 0/1/2/3 poll; **write not implemented** |
-| `ethernet-ip` | PRODUCTION | **BETA** (BL-191) | CIP session registration + tag path placeholder |
+| `dnp3` | PRODUCTION (poll only) | **PRODUCTION** (poll only) | Class 0/1/2/3 poll; **write not implemented** — ADR-0057 keeps PRODUCTION+POLL_ONLY (not BETA) |
+| `ethernet-ip` | PRODUCTION | **PRODUCTION** | CIP session + tag read/write — do **not** mark BETA |
 | `opc-da` | PRODUCTION (shell) | **BETA** (BL-191) | Connectivity shell + parser tests — not full DA |
 | `opc-bridge` | PRODUCTION (shell) | **BETA** (BL-191) | Bridge point mapping + parser tests |
 

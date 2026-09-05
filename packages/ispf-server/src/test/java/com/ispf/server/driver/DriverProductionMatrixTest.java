@@ -11,6 +11,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static com.ispf.server.driver.DriverProductionMatrix.Capability.POLL;
+import static com.ispf.server.driver.DriverProductionMatrix.Capability.WRITE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -127,6 +129,25 @@ class DriverProductionMatrixTest {
                     driverId
             );
         }
+    }
+
+    /** ADR-0057 / Wave 1: known write-capable packs must not under-claim WRITE. */
+    @Test
+    void wave1WriteCapableDriversDeclareWrite() {
+        for (String driverId : new String[] { "modbus-tcp", "mqtt", "opcua", "http", "snmp", "ethernet-ip" }) {
+            assertTrue(
+                    DriverProductionMatrix.resolveCapabilities(driverId).contains(WRITE),
+                    driverId + " must declare WRITE (ADR-0057 honesty)"
+            );
+        }
+        assertTrue(DriverProductionMatrix.resolveCapabilities("dnp3").contains(POLL));
+        assertFalse(
+                DriverProductionMatrix.resolveCapabilities("dnp3").contains(WRITE),
+                "dnp3 stays POLL_ONLY until write is implemented"
+        );
+        assertEquals(DriverMaturity.PRODUCTION, DriverProductionMatrix.resolveMaturity("dnp3"));
+        assertEquals(DriverMaturity.BETA, DriverProductionMatrix.resolveMaturity("opc-da"));
+        assertEquals(DriverMaturity.BETA, DriverProductionMatrix.resolveMaturity("opc-bridge"));
     }
 
     @Test

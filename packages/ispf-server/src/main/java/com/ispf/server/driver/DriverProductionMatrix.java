@@ -122,7 +122,7 @@ final class DriverProductionMatrix {
             entry("snmp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-snmp", "com.ispf.driver.snmp.SnmpDeviceDriverTest"),
                     "ispf-driver-snmp"),
-            entry("http", DriverMaturity.PRODUCTION, POLL_ONLY,
+            entry("http", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-http", "com.ispf.driver.http.HttpDeviceDriverTest"),
                     "ispf-driver-http"),
             entry("bacnet", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,

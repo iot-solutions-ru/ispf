@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # BL-141: smoke OT docker fixtures (MQTT, Modbus TCP, OPC UA) before driver interop CI.
+# Wave 1 / B1: also exercises Modbus FC6 write + FC3 read-back when python3 is available.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -90,6 +91,60 @@ mqtt_roundtrip() {
   return 0
 }
 
+# Wave 1 / B1: Modbus TCP FC6 write + FC3 read-back (stdlib Python; no pymodbus).
+modbus_write_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "modbus-write-roundtrip" pass "skipped (no python3; tcp ok)"
+    return 0
+  fi
+  if MODBUS_HOST="$MODBUS_HOST" MODBUS_PORT="$MODBUS_PORT" python3 - <<'PY'
+import os, socket, struct
+
+host = os.environ.get("MODBUS_HOST", "127.0.0.1")
+port = int(os.environ.get("MODBUS_PORT", "502"))
+unit = 1
+addr = 0
+value = 0xA5A5
+tid = 1
+
+def txn(func: int, pdu: bytes) -> bytes:
+    global tid
+    tid = (tid + 1) & 0xFFFF
+    mbap = struct.pack(">HHHB", tid, 0, len(pdu) + 1, unit)
+    with socket.create_connection((host, port), timeout=5) as s:
+        s.sendall(mbap + pdu)
+        hdr = s.recv(7)
+        if len(hdr) < 7:
+            raise RuntimeError(f"short mbap {hdr!r}")
+        _, _, length, _ = struct.unpack(">HHHB", hdr)
+        body = b""
+        need = length - 1
+        while len(body) < need:
+            chunk = s.recv(need - len(body))
+            if not chunk:
+                break
+            body += chunk
+    if not body or body[0] == func + 0x80:
+        raise RuntimeError(f"modbus exception func={func:#x} body={body!r}")
+    return body
+
+txn(6, struct.pack(">BHH", 6, addr, value))
+body = txn(3, struct.pack(">BHH", 3, addr, 1))
+if len(body) < 4 or body[0] != 3:
+    raise RuntimeError(f"unexpected read body {body!r}")
+got = struct.unpack(">H", body[2:4])[0]
+if got != value:
+    raise RuntimeError(f"readback {got:#x} != wrote {value:#x}")
+print(f"fc6/fc3 ok reg={addr} value={value:#x}")
+PY
+  then
+    record "modbus-write-roundtrip" pass "FC6/FC3 holding[0]"
+    return 0
+  fi
+  record "modbus-write-roundtrip" fail "FC6/FC3 against ${MODBUS_HOST}:${MODBUS_PORT}"
+  return 1
+}
+
 {
   echo "# Driver interop fixture smoke (BL-141)"
   echo
@@ -107,6 +162,7 @@ wait_for_tcp "$OPCUA_HOST" "$OPCUA_PORT" "opcua-tcp" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
+  modbus_write_roundtrip || FAILED=1
 fi
 
 {
