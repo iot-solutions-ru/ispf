@@ -21,6 +21,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust Wave 1** — снят парк P-OT; ADR-0057 (DNP3 PRODUCTION poll-only); evidence `docs/evidence/ot-trust/`.
 - G-01 pen-test prep: [pen-test-scope.md](pen-test-scope.md); ADR-0056 WebAuthn/IdP MFA (BL-194 Proposed).
 - Доска parked: [parked-backlog.md](parked-backlog.md); Enterprise L lab PASS (50k / 1B / multi-tag) в `docs/evidence/historian-scale/`.
 - Enterprise L playbook → `tools/historian-scale/`; Historian JVM archive.
