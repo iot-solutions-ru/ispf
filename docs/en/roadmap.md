@@ -96,7 +96,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 
 | Phase | Theme | Done highlights | Still open (typical) |
 | ----- | ----- | --------------- | -------------------- |
-| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak; deepen TOP-20 docker fixtures (**11/20**: mqtt/modbus-tcp/modbus-udp/opcua/snmp/http/bacnet/iec104/ethernet-ip/dlms/dnp3) |
+| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak; deepen TOP-20 docker fixtures (**12/20**: mqtt/modbus-tcp/modbus-udp/opcua/snmp/http/bacnet/iec104/ethernet-ip/dlms/dnp3/s7) |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
@@ -1713,6 +1713,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
+| 2026-09-06 | **OT Trust BL-141 fixture depth:** S7 SoftPlc peer → compose/smoke **12/20** (after DNP3 **11/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** DNP3 integrity-poll peer → compose/smoke **11/20** (after Modbus UDP **10/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** Modbus UDP MBAP peer → compose/smoke **10/20** (after DLMS **9/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** DLMS WRAPPER peer → compose/smoke **9/20** (after EtherNet/IP **8/20**). Lab ≠ field Done. |

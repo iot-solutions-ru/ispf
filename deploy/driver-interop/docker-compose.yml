@@ -1,5 +1,5 @@
 # BL-141: OT driver interop lab fixtures (Modbus TCP/UDP, MQTT, OPC UA, SNMP, HTTP,
-# BACnet, IEC 104, EtherNet/IP, DLMS, DNP3). Bind to loopback only — do not expose publicly.
+# BACnet, IEC 104, EtherNet/IP, DLMS, DNP3, S7 SoftPlc). Bind to loopback only.
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0
@@ -260,3 +260,16 @@ services:
       timeout: 3s
       retries: 12
       start_period: 2s
+
+  s7:
+    # SoftPlc (Snap7) lab peer for TOP-20 s7. Not a Siemens PLC / field cert.
+    # ISO-on-TCP :102 (rack 0 / slot 2) + REST :8080. Demodata DB1 REAL @ offset 80.
+    # No in-container healthcheck (image may be shell-light); host smoke waits TCP+API.
+    image: fbarresi/softplc:latest-linux
+    container_name: ispf-interop-s7
+    restart: unless-stopped
+    environment:
+      DATA_PATH: /demodata
+    ports:
+      - "127.0.0.1:102:102"
+      - "127.0.0.1:8080:8080"

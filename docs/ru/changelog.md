@@ -23,6 +23,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust BL-141 S7 SoftPlc fixture** — SoftPlc ISO-on-TCP `:102` + REST DB1 REAL @80 (compose **12/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-s7-fixture.md`.
 - **OT Trust BL-141 DNP3 fixture** — stdlib TCP outstation + integrity-poll smoke (compose **11/20**, poll-only ADR-0057). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-dnp3-fixture.md`.
 - **OT Trust BL-141 Modbus UDP fixture** — stdlib MBAP-over-UDP peer + FC6/FC16→FC3 smoke (compose **10/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-modbus-udp-fixture.md`.
 - **OT Trust BL-141 DLMS fixture** — stdlib TCP WRAPPER peer + SET/GET smoke (compose **9/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-dlms-fixture.md`.
