@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.207",
-  "generatedAt": "2026-09-05T10:53:29.979787+00:00",
+  "generatedAt": "2026-09-06T02:16:04.077084+00:00",
   "platformVersion": "0.9.207",
   "bundleManifest": {
     "fields": [
@@ -2598,6 +2598,30 @@
       "path": "docs/en/partner-program.md",
       "title": "Partner program (BL-184)",
       "keywords": "partner-program Partner program (BL-184)"
+    },
+    {
+      "id": "pen-test-cases",
+      "path": "docs/en/pen-test-cases.md",
+      "title": "Pen-test case catalog (G-01)",
+      "keywords": "pen-test-cases Pen-test case catalog (G-01)"
+    },
+    {
+      "id": "pen-test-prep",
+      "path": "docs/en/pen-test-prep.md",
+      "title": "Pen-test operator prep (G-01 deeper)",
+      "keywords": "pen-test-prep Pen-test operator prep (G-01 deeper)"
+    },
+    {
+      "id": "pen-test-questionnaire",
+      "path": "docs/en/pen-test-questionnaire.md",
+      "title": "Pen-test vendor questionnaire (G-01)",
+      "keywords": "pen-test-questionnaire Pen-test vendor questionnaire (G-01)"
+    },
+    {
+      "id": "pen-test-roe",
+      "path": "docs/en/pen-test-roe.md",
+      "title": "Pen-test rules of engagement (G-01 deeper)",
+      "keywords": "pen-test-roe Pen-test rules of engagement (G-01 deeper)"
     },
     {
       "id": "pen-test-scope",
@@ -38157,5 +38181,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "f9bec8e11a98dc33bb393c4ce234fdd2cc43062aa08891cf720d41e5feec0297"
+  "contentSha256": "4aa748fb45041610fff6d64f453cc239c5fbdd0da3c5138c6ce099c1fd0e2209"
 }

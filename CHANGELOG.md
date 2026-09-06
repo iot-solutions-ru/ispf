@@ -46,7 +46,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   (matrix honesty: promote `email`/`sms`/`webhook`/`smb`, claim `smpp` WRITE; CI gate on interop workflow).
 - **OT Trust Wave 1 hardening** — writable Modbus lab fixture (`deploy/driver-interop/modbus/server.py`) replaces `oitc/modbus-server` (FC6 reset in CI); smoke covers FC6+FC16 + optional OPC UA write; writePoint↔capability source gate; lab day-1 journal.
 - **OT Trust Wave 1 kickoff** — unpark P-OT; [ADR-0057](docs/en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md) (DNP3 PRODUCTION poll-only); `http` WRITE in production matrix; evidence `docs/evidence/ot-trust/`.
-- **G-01 pen-test prep** — [pen-test-scope.md](docs/en/pen-test-scope.md) SOW / rules of engagement; evidence folder stub `docs/evidence/security-pentest/`.
+- **G-01 pen-test prep (deeper+)** — RoE [pen-test-roe.md](docs/en/pen-test-roe.md), vendor questionnaire, expanded case catalog (+ audit/export), case-results/evidence-index templates, preflight with OpenAPI status + security-header capture; operator [pen-test-prep.md](docs/en/pen-test-prep.md).
+- **G-01 pen-test SOW** — [pen-test-scope.md](docs/en/pen-test-scope.md); evidence folder `docs/evidence/security-pentest/`.
 - **ADR-0056** — WebAuthn / IdP OTP MFA follow-up (BL-194) **Proposed** (implementation still parked).
 - **Parked backlog board** — [docs/en/parked-backlog.md](docs/en/parked-backlog.md) (OT Trust Wave 1 **in progress**; live ERP / WebAuthn / pen-test / field tablet stay parked; Enterprise L lab PASS noted).
 - **Enterprise L lab evidence** (2026-09-05, `192.168.100.10`): 50k history-enabled + ≥1B CH rows + multi-tag p95≈49 ms — `docs/evidence/historian-scale/`.

@@ -31,7 +31,7 @@ Changelog отдельных application bundles — в манифестах п�
   `docs/evidence/ot-trust/driver-readiness.md` (honesty: matrix ↔ packs).
 - **OT Trust Wave 1 hardening** — writable Modbus fixture; FC6/FC16 smoke; writePoint gate; lab day-1 journal.
 - **OT Trust Wave 1** — снят парк P-OT; ADR-0057 (DNP3 PRODUCTION poll-only); evidence `docs/evidence/ot-trust/`.
-- G-01 pen-test prep: [pen-test-scope.md](pen-test-scope.md); ADR-0056 WebAuthn/IdP MFA (BL-194 Proposed).
+- G-01 pen-test prep (углублённо+): RoE/опросник EN, расширенные кейсы, шаблоны case-results/evidence-index, preflight (OpenAPI status + headers); [pen-test-prep.md](pen-test-prep.md); SOW [pen-test-scope.md](pen-test-scope.md); ADR-0056 WebAuthn/IdP MFA (BL-194 Proposed).
 - Доска parked: [parked-backlog.md](parked-backlog.md); Enterprise L lab PASS (50k / 1B / multi-tag) в `docs/evidence/historian-scale/`.
 - Enterprise L playbook → `tools/historian-scale/`; Historian JVM archive.
 
