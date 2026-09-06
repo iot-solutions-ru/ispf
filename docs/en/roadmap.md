@@ -96,7 +96,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 
 | Phase | Theme | Done highlights | Still open (typical) |
 | ----- | ----- | --------------- | -------------------- |
-| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **Wave 1 in progress** | BL-140 field pilots / edge soak (lab track started) |
+| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak; deepen TOP-20 docker fixtures (mqtt/modbus/opcua only today) |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
@@ -1030,11 +1030,11 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 ## Phase 25 — OT Trust
 
-> **Deferred (2026-07-14):** not in the active 90-day plan. Keep matrix/playbook work only when a **named field driver task** appears. Execution checklist remains under [Wave 1 backlog](#s31-wave-1-execution-backlog) (parked).
+> **Lab catalog closed (2026-09-06):** Waves 1–11 → **162/162** matrix entries, **0** protocol stubs (#144). **Field trust still open** (BL-140 plant pilots). Do not claim OT **10/10** from lab codecs alone. Evidence: [`docs/evidence/ot-trust/`](../evidence/ot-trust/).
 
 **Goal:** OT/IT connectivity **10/10** — production-grade drivers, interop lab, edge agents, DDK.
 
-**Gap today:** 58 `driverId` entries in catalog, ~13 `PRODUCTION` in [DriverProductionMatrix](../../packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
+**Gap today:** lab/matrix **READY_LAB** for most packs (incl. clean-room gateway subsets); TOP-20 still has `opc-da`/`opc-bridge` **BETA**; docker interop fixtures cover only **mqtt / modbus-tcp / opcua**; field pilots + soak journals missing. See [post-merge inventory](../evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md).
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
@@ -1713,6 +1713,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
+| 2026-09-06 | **OT Trust lab catalog closed:** Waves 1–11 → **162/162**, stubs **0** (#144). Post-merge honesty + TOP-20 fixture inventory (compose **3/20**). Field Done / OT 10/10 still open — deepen BL-141 + plant soaks. |
 | 2026-09-05 | **OT Trust Wave 1 kicked off:** P-OT → In progress; ADR-0057 (DNP3 PRODUCTION poll-only); `http` matrix WRITE honesty; Modbus FC6 smoke; evidence under `docs/evidence/ot-trust/` |
 | 2026-07-19 | **BL-191 OT matrix honesty Done (corrected):** `opc-da` / `opc-bridge` → BETA + CI stub gate; DNP3 remains PRODUCTION poll-only (write gap); ethernet-ip remains PRODUCTION with WRITE — see ADR-0057 |
 | 2026-07-17 | **BL-185 Symbol marketplace Done:** filesystem symbol packs + scada API + mimic palette; local HVAC demo install; remote free zip via MarketplaceService |

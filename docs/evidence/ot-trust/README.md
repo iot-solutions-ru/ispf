@@ -1,20 +1,25 @@
-# OT Trust evidence (Phase 25 / Wave 1)
+# OT Trust evidence (Phase 25)
 
-> Honesty: this folder tracks **process evidence**, not a completed field certification.
+> Honesty: this folder tracks **process evidence**, not a completed field certification.  
+> Lab/matrix readiness ≠ competitive OT **10/10** and ≠ BL-140 plant Done.
 
 | Status | Note |
 |--------|------|
-| **In progress** | Wave 1 kicked off 2026-09-05 (named task) |
+| **Catalog closed (lab)** | Waves **1–11** merged — stub list **0**, audit **162 / 162**, FAIL/WARN **0** ([#144](https://github.com/iot-solutions-ru/ispf/pull/144)) |
+| **Field trust** | Still open — needs named plant + soak journals |
 | Decision | [ADR-0057](../../en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md) — DNP3 PRODUCTION poll-only |
+| Post-merge honesty | [2026-09-06-post-merge-lab-vs-field.md](2026-09-06-post-merge-lab-vs-field.md) — lab ≠ field; TOP-20 fixture gaps |
 | Kickoff | [2026-09-05-wave1-kickoff.md](2026-09-05-wave1-kickoff.md) |
 | Lab day-1 dry-run | [2026-09-05-lab-modbus-day1.md](2026-09-05-lab-modbus-day1.md) |
 | **Full catalog (162)** | [driver-readiness.md](driver-readiness.md) · [driver-readiness.json](driver-readiness.json) |
-| Wave 3 codec promotions | [2026-09-05-wave3-codec-promotion.md](2026-09-05-wave3-codec-promotion.md) — +13 PRODUCTION clean-room |
-| Stub readiness ladder | [2026-09-05-raise-all-driver-readiness.md](2026-09-05-raise-all-driver-readiness.md) — stub-kit **v0.2** + **97×** pack contracts → **`STUB_LAB`** (still ≠ PRODUCTION) |
+| Wave promotions | `2026-09-05-wave2…10-*.md`, [2026-09-06-wave11-codec-promotion.md](2026-09-06-wave11-codec-promotion.md) |
+| Stub readiness ladder (historical) | [2026-09-05-raise-all-driver-readiness.md](2026-09-05-raise-all-driver-readiness.md) — then Waves cleared stubs → PRODUCTION labs |
 | Pilot journal template | [pilot-soak-journal.template.md](pilot-soak-journal.template.md) |
 
-## Unpark criteria met
+## Unpark / progress
 
-Operator named task: **start OT Trust Wave 1** (matrix honesty residual + Modbus lab pilot track). Customer plant still optional; lab Modbus fixtures count for C1–C3 dry-run only.
+Operator named task started **OT Trust Wave 1** (2026-09-05). Catalog codec promotions through Wave 11 closed the **stub width** track.
+
+Customer plant still optional; docker fixtures (`deploy/driver-interop`) count for BL-141 lab depth only. Prefer deepening TOP-20 compose/smoke coverage over new protocol packs.
 
 Do **not** claim competitive-scorecard OT **10/10** until BL-140 field pilots + soak journals exist.

@@ -23,6 +23,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust post-merge honesty** — после Waves 1–11 / каталог **162/162** (#144): lab ≠ field; inventory TOP-20 docker fixtures (3/20); дальше глубина BL-141 + plant soaks. Evidence `docs/evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md`.
 - **OT Trust Wave 3** — 13 clean-room кодеков → PRODUCTION (ADS/MELSEC/MQTT-SN/NATS/KNX/…); без GPL и проприетарных SDK.
 - **OT Trust — поднятие готовности всех 162 паков** — stub-kit **v0.2** (TCP probe + memory loopback) +
   contract-тесты на каталог STUB → метка аудита **`STUB_LAB`** (без фейкового PRODUCTION);
