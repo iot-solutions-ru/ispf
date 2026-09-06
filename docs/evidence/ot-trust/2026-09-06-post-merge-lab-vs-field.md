@@ -41,7 +41,7 @@ Legend:
 | `virtual` | PRODUCTION | `READY_LAB` | n | ✓ | — | — (in-process only) |
 | `mqtt` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ mosquitto | ✓ pub/sub |
 | `modbus-tcp` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ writable lab | ✓ FC6/FC16 + FC3 |
-| `modbus-rtu` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
+| `modbus-rtu` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ RTU ADU over TCP | ✓ FC6/FC16+FC3 |
 | `modbus-udp` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ stdlib UDP MBAP | ✓ FC6/FC16+FC3 |
 | `opcua` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ opc-plc | ✓ TCP + optional write |
 | `opcua-server` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
@@ -64,8 +64,8 @@ Legend:
 | Layer | Covered | Gap |
 |-------|---------|-----|
 | Gradle / loopback interop modules in CI | **20 / 20** | — |
-| Docker compose fixtures | **12 / 20** (`mqtt`, `modbus-tcp`, `modbus-udp`, `opcua`, `snmp`, `http`, `bacnet`, `iec104`, `ethernet-ip`, `dlms`, `dnp3`, `s7`) | 8 without compose peer |
-| Fixture smoke script | **12 / 20** | same gap |
+| Docker compose fixtures | **13 / 20** (`mqtt`, `modbus-tcp`, `modbus-udp`, `modbus-rtu`, `opcua`, `snmp`, `http`, `bacnet`, `iec104`, `ethernet-ip`, `dlms`, `dnp3`, `s7`) | 7 without compose peer |
+| Fixture smoke script | **13 / 20** | same gap |
 
 `virtual` / `flexible` are intentionally in-process (no external peer required).
 
@@ -75,7 +75,7 @@ Preferred order after catalog close — deepen BL-141 fixtures, do **not** inven
 
 1. ~~**SNMP**~~ — done (stdlib agent + GET/SET smoke) — see [2026-09-06-bl141-snmp-http-fixtures.md](2026-09-06-bl141-snmp-http-fixtures.md)
 2. ~~**HTTP**~~ — done (writable JSON gauge + PUT/GET smoke)
-3. ~~**BACnet**~~ / ~~**IEC 104**~~ / ~~**EtherNet/IP**~~ / ~~**DLMS**~~ / ~~**Modbus UDP**~~ / ~~**DNP3**~~ / ~~**S7**~~ — done — see [S7 SoftPlc fixture](2026-09-06-bl141-s7-fixture.md); next **modbus-rtu** (PTY) / **gps-tracker**
+3. ~~**BACnet**~~ / ~~**IEC 104**~~ / ~~**EtherNet/IP**~~ / ~~**DLMS**~~ / ~~**Modbus UDP**~~ / ~~**DNP3**~~ / ~~**S7**~~ / ~~**Modbus RTU**~~ — done — see [Modbus RTU fixture](2026-09-06-bl141-modbus-rtu-fixture.md); next **gps-tracker**
 4. Plant pilots + soak journals ([pilot-soak-journal.template.md](pilot-soak-journal.template.md)) for BL-140 field Done  
 
 Until (4), P-OT stays **In progress** for *field* trust — lab catalog width is closed.
