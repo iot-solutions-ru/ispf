@@ -12,6 +12,7 @@
 # - DLMS WRAPPER SET/GET double round-trip (REGISTER 1.0.1.8.0.255 attr 2)
 # - DNP3 integrity poll (read-only AI0/BI0/CTR0 — ADR-0057 poll-only)
 # - S7 SoftPlc REST seed/verify DB1 REAL @ offset 80 (ISO-on-TCP :102 peer)
+# - Modbus RTU ADU (unit+PDU+CRC16) over TCP lab bridge FC6/FC16→FC3 (not RS-485)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -24,6 +25,8 @@ MODBUS_HOST="${ISPF_INTEROP_MODBUS_HOST:-127.0.0.1}"
 MODBUS_PORT="${ISPF_INTEROP_MODBUS_PORT:-502}"
 MODBUS_UDP_HOST="${ISPF_INTEROP_MODBUS_UDP_HOST:-127.0.0.1}"
 MODBUS_UDP_PORT="${ISPF_INTEROP_MODBUS_UDP_PORT:-502}"
+MODBUS_RTU_HOST="${ISPF_INTEROP_MODBUS_RTU_HOST:-127.0.0.1}"
+MODBUS_RTU_PORT="${ISPF_INTEROP_MODBUS_RTU_PORT:-5020}"
 OPCUA_HOST="${ISPF_INTEROP_OPCUA_HOST:-127.0.0.1}"
 OPCUA_PORT="${ISPF_INTEROP_OPCUA_PORT:-4840}"
 SNMP_HOST="${ISPF_INTEROP_SNMP_HOST:-127.0.0.1}"
@@ -198,6 +201,34 @@ PY
   return 1
 }
 
+wait_for_modbus_rtu() {
+  local host="$1"
+  local port="$2"
+  local label="$3"
+  local deadline=$((SECONDS + WAIT_SEC))
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "$label" pass "skipped wait (no python3)"
+    return 0
+  fi
+  while ((SECONDS < deadline)); do
+    if MODBUS_RTU_HOST="$host" MODBUS_RTU_PORT="$port" python3 - <<'PY'
+import os, sys
+sys.path.insert(0, "deploy/driver-interop/modbus")
+from server import rtu_probe
+host = os.environ.get("MODBUS_RTU_HOST", "127.0.0.1")
+port = int(os.environ.get("MODBUS_RTU_PORT", "5020"))
+rtu_probe(host, port)
+PY
+    then
+      record "$label" pass "tcp://${host}:${port} RTU ADU FC3 seed"
+      return 0
+    fi
+    sleep 2
+  done
+  record "$label" fail "timeout after ${WAIT_SEC}s (tcp://${host}:${port} RTU)"
+  return 1
+}
+
 mqtt_roundtrip() {
   local topic="ispf/lab/smoke-$(date +%s)"
   local payload="ok"
@@ -324,6 +355,43 @@ PY
     return 0
   fi
   record "modbus-udp-write-roundtrip" fail "against udp://${MODBUS_UDP_HOST}:${MODBUS_UDP_PORT}"
+  return 1
+}
+
+modbus_rtu_write_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "modbus-rtu-write-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if MODBUS_RTU_HOST="$MODBUS_RTU_HOST" MODBUS_RTU_PORT="$MODBUS_RTU_PORT" python3 - <<'PY'
+import os, struct, sys
+sys.path.insert(0, "deploy/driver-interop/modbus")
+from server import rtu_exchange
+
+host = os.environ.get("MODBUS_RTU_HOST", "127.0.0.1")
+port = int(os.environ.get("MODBUS_RTU_PORT", "5020"))
+unit = 1
+
+# FC6 single
+rtu_exchange(host, port, unit, struct.pack(">BHH", 6, 0, 0xA5A5))
+pdu = rtu_exchange(host, port, unit, struct.pack(">BHH", 3, 0, 1))
+got = struct.unpack(">H", pdu[2:4])[0]
+if got != 0xA5A5:
+    raise RuntimeError(f"fc6 readback {got:#x}")
+
+# FC16 multi
+rtu_exchange(host, port, unit, struct.pack(">BHHBHH", 16, 2, 2, 4, 0x1111, 0x2222))
+pdu = rtu_exchange(host, port, unit, struct.pack(">BHH", 3, 2, 2))
+a, b = struct.unpack(">HH", pdu[2:6])
+if (a, b) != (0x1111, 0x2222):
+    raise RuntimeError(f"fc16 readback {(a, b)}")
+print("rtu fc6+fc16/fc3 ok")
+PY
+  then
+    record "modbus-rtu-write-roundtrip" pass "FC6+FC16/FC3 RTU ADU over TCP"
+    return 0
+  fi
+  record "modbus-rtu-write-roundtrip" fail "against tcp://${MODBUS_RTU_HOST}:${MODBUS_RTU_PORT} (RTU)"
   return 1
 }
 
@@ -632,6 +700,11 @@ if [[ "${1:-}" == "--self-test-modbus-udp" ]]; then
   exit $?
 fi
 
+if [[ "${1:-}" == "--self-test-modbus-rtu" ]]; then
+  python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test-rtu
+  exit $?
+fi
+
 if [[ "${1:-}" == "--self-test-snmp" ]]; then
   python3 "$ROOT/deploy/driver-interop/snmp/agent.py" --self-test
   exit $?
@@ -686,6 +759,7 @@ FAILED=0
 wait_for_tcp "$MQTT_HOST" "$MQTT_PORT" "mqtt-tcp" || FAILED=1
 wait_for_tcp "$MODBUS_HOST" "$MODBUS_PORT" "modbus-tcp" || FAILED=1
 wait_for_modbus_udp "$MODBUS_UDP_HOST" "$MODBUS_UDP_PORT" "modbus-udp" || FAILED=1
+wait_for_modbus_rtu "$MODBUS_RTU_HOST" "$MODBUS_RTU_PORT" "modbus-rtu" || FAILED=1
 wait_for_tcp "$OPCUA_HOST" "$OPCUA_PORT" "opcua-tcp" || FAILED=1
 wait_for_snmp "$SNMP_HOST" "$SNMP_PORT" "snmp-udp" || FAILED=1
 wait_for_tcp "$HTTP_HOST" "$HTTP_PORT" "http-tcp" || FAILED=1
@@ -701,6 +775,7 @@ if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
   modbus_write_roundtrip || FAILED=1
   modbus_udp_write_roundtrip || FAILED=1
+  modbus_rtu_write_roundtrip || FAILED=1
   opcua_write_roundtrip || FAILED=1
   snmp_write_roundtrip || FAILED=1
   http_write_roundtrip || FAILED=1
