@@ -26,7 +26,7 @@ jobs:
           if ! docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait; then
             echo "::error::docker compose --wait failed"
             docker compose -f deploy/driver-interop/docker-compose.yml ps -a || true
-            for c in ispf-interop-mosquitto ispf-interop-modbus-tcp ispf-interop-modbus-udp ispf-interop-modbus-rtu ispf-interop-opcua ispf-interop-snmp ispf-interop-http ispf-interop-bacnet ispf-interop-iec104 ispf-interop-ethernet-ip ispf-interop-dlms ispf-interop-dnp3 ispf-interop-s7; do
+            for c in ispf-interop-mosquitto ispf-interop-modbus-tcp ispf-interop-modbus-udp ispf-interop-modbus-rtu ispf-interop-opcua ispf-interop-snmp ispf-interop-http ispf-interop-bacnet ispf-interop-iec104 ispf-interop-ethernet-ip ispf-interop-dlms ispf-interop-dnp3 ispf-interop-s7 ispf-interop-gps-tracker; do
               echo "===== logs: $c ====="
               docker logs "$c" 2>&1 | tail -n 200 || true
             done
@@ -36,7 +36,7 @@ jobs:
       - name: Install asyncua for OPC UA write smoke (Wave 1 / B1)
         run: python3 -m pip install --user 'asyncua>=1.0.0'
 
-      - name: Self-test Modbus TCP/UDP/RTU / SNMP / HTTP / BACnet / IEC104 / EtherNet-IP / DLMS / DNP3 / S7 fixtures (no docker)
+      - name: Self-test Modbus TCP/UDP/RTU / SNMP / HTTP / BACnet / IEC104 / EtherNet-IP / DLMS / DNP3 / S7 / GPS fixtures (no docker)
         run: |
           chmod +x deploy/tools/driver-interop-smoke.sh
           deploy/tools/driver-interop-smoke.sh --self-test-modbus
@@ -50,8 +50,9 @@ jobs:
           deploy/tools/driver-interop-smoke.sh --self-test-dlms
           deploy/tools/driver-interop-smoke.sh --self-test-dnp3
           deploy/tools/driver-interop-smoke.sh --self-test-s7
+          deploy/tools/driver-interop-smoke.sh --self-test-gps-tracker
 
-      - name: Smoke MQTT / Modbus TCP+UDP+RTU / OPC UA / SNMP / HTTP / BACnet / IEC104 / EtherNet-IP / DLMS / DNP3 / S7 endpoints
+      - name: Smoke MQTT / Modbus TCP+UDP+RTU / OPC UA / SNMP / HTTP / BACnet / IEC104 / EtherNet-IP / DLMS / DNP3 / S7 / GPS endpoints
         env:
           ISPF_INTEROP_OPCUA_WRITE: "1"
         run: deploy/tools/driver-interop-smoke.sh

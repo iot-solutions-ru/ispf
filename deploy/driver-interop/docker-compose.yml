@@ -1,5 +1,5 @@
 # BL-141: OT driver interop lab fixtures (Modbus TCP/UDP/RTU, MQTT, OPC UA, SNMP, HTTP,
-# BACnet, IEC 104, EtherNet/IP, DLMS, DNP3, S7 SoftPlc). Bind to loopback only.
+# BACnet, IEC 104, EtherNet/IP, DLMS, DNP3, S7 SoftPlc, GPS tracker). Bind to loopback only.
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0
@@ -294,6 +294,33 @@ services:
           "python",
           "-c",
           "import sys; sys.path.insert(0,'.'); from server import rtu_probe; rtu_probe('127.0.0.1',5020)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
+
+  gps-tracker:
+    # Lab stand-in for TOP-20 gps-tracker listen path (line-oriented NMEA over TCP).
+    # Java driver is the real listener; this fixture mirrors accept/read-line + /last API.
+    # Not a GNSS modem / field tracker. Host :5005 (NMEA) + :5006 (HTTP status).
+    image: python:3.12-alpine
+    container_name: ispf-interop-gps-tracker
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./gps-tracker/server.py:/app/server.py:ro
+    command: ["python", "-u", "/app/server.py", "--host", "0.0.0.0", "--port", "5005", "--api-port", "5006"]
+    ports:
+      - "127.0.0.1:5005:5005"
+      - "127.0.0.1:5006:5006"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5006/health', timeout=2)",
         ]
       interval: 5s
       timeout: 3s
