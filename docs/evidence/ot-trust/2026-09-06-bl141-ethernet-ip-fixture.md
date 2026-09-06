@@ -29,7 +29,7 @@ deploy/tools/driver-interop-smoke.sh --self-test-ethernet-ip
 
 ## Deferred / next
 
-- **DLMS** — WRAPPER subset peer when ready
+- ~~**DLMS**~~ — done — see [2026-09-06-bl141-dlms-fixture.md](2026-09-06-bl141-dlms-fixture.md)
 - **S7** — needs external soft PLC (not stdlib)
 - **DNP3** — poll-only (ADR-0057); lower write-smoke value
 - Plant soaks for BL-140 field Done

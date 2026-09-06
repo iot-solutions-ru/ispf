@@ -23,6 +23,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust BL-141 DLMS fixture** — stdlib TCP WRAPPER peer + SET/GET smoke (compose **9/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-dlms-fixture.md`.
 - **OT Trust BL-141 EtherNet/IP fixture** — stdlib CIP UCMM peer + Write/Read Tag smoke (compose **8/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-ethernet-ip-fixture.md`.
 - **OT Trust BL-141 IEC 104 fixture** — stdlib IEC 60870-5-104 TCP outstation + smoke (compose **7/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-iec104-fixture.md`.
 - **OT Trust BL-141 BACnet fixture** — stdlib BACnet/IP UDP lab agent + Read/WriteProperty smoke (compose **6/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-bacnet-fixture.md`.
