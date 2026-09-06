@@ -7,6 +7,7 @@
 # - HTTP GET/PUT JSON gauge round-trip
 # - BACnet ReadProperty/WriteProperty round-trip (analog-value:1 present-value)
 # - IEC 104 C_SE_NC_1 / C_RD_NA_1 float round-trip (IOA 3001)
+# - EtherNet/IP CIP Write Tag / Read Tag DINT round-trip (Program:MainProgram.Counter)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -27,6 +28,8 @@ BACNET_HOST="${ISPF_INTEROP_BACNET_HOST:-127.0.0.1}"
 BACNET_PORT="${ISPF_INTEROP_BACNET_PORT:-47808}"
 IEC104_HOST="${ISPF_INTEROP_IEC104_HOST:-127.0.0.1}"
 IEC104_PORT="${ISPF_INTEROP_IEC104_PORT:-2404}"
+EIP_HOST="${ISPF_INTEROP_EIP_HOST:-127.0.0.1}"
+EIP_PORT="${ISPF_INTEROP_EIP_PORT:-44818}"
 WAIT_SEC="${ISPF_INTEROP_SMOKE_WAIT_SEC:-120}"
 MOSQUITTO_CONTAINER="${ISPF_INTEROP_MOSQUITTO_CONTAINER:-ispf-interop-mosquitto}"
 OPCUA_WRITE="${ISPF_INTEROP_OPCUA_WRITE:-1}"
@@ -404,6 +407,33 @@ PY
   return 1
 }
 
+eip_write_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "eip-write-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if EIP_HOST="$EIP_HOST" EIP_PORT="$EIP_PORT" python3 - <<'PY'
+import os, random, sys
+sys.path.insert(0, "deploy/driver-interop/ethernet-ip")
+from server import eip_read_tag, eip_write_tag
+
+host = os.environ.get("EIP_HOST", "127.0.0.1")
+port = int(os.environ.get("EIP_PORT", "44818"))
+value = random.randint(1, 2_000_000_000)
+eip_write_tag(host, port, value)
+got = eip_read_tag(host, port)
+if got != value:
+    raise RuntimeError(f"eip readback {got} != {value}")
+print(f"eip write/read ok value={value}")
+PY
+  then
+    record "eip-write-roundtrip" pass "CIP Write/Read Tag DINT"
+    return 0
+  fi
+  record "eip-write-roundtrip" fail "against tcp://${EIP_HOST}:${EIP_PORT}"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test-modbus" ]]; then
   python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test
   exit $?
@@ -429,6 +459,11 @@ if [[ "${1:-}" == "--self-test-iec104" ]]; then
   exit $?
 fi
 
+if [[ "${1:-}" == "--self-test-ethernet-ip" ]]; then
+  python3 "$ROOT/deploy/driver-interop/ethernet-ip/server.py" --self-test
+  exit $?
+fi
+
 {
   echo "# Driver interop fixture smoke (BL-141 / OT Trust)"
   echo
@@ -447,6 +482,7 @@ wait_for_snmp "$SNMP_HOST" "$SNMP_PORT" "snmp-udp" || FAILED=1
 wait_for_tcp "$HTTP_HOST" "$HTTP_PORT" "http-tcp" || FAILED=1
 wait_for_bacnet "$BACNET_HOST" "$BACNET_PORT" "bacnet-udp" || FAILED=1
 wait_for_tcp "$IEC104_HOST" "$IEC104_PORT" "iec104-tcp" || FAILED=1
+wait_for_tcp "$EIP_HOST" "$EIP_PORT" "ethernet-ip-tcp" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
@@ -456,6 +492,7 @@ if [[ "$FAILED" -eq 0 ]]; then
   http_write_roundtrip || FAILED=1
   bacnet_write_roundtrip || FAILED=1
   iec104_write_roundtrip || FAILED=1
+  eip_write_roundtrip || FAILED=1
 fi
 
 {
