@@ -1,5 +1,5 @@
-# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA, SNMP, HTTP, BACnet, IEC 104).
-# Bind to loopback only — do not expose on public interfaces.
+# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA, SNMP, HTTP,
+# BACnet, IEC 104, EtherNet/IP). Bind to loopback only — do not expose publicly.
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0
@@ -155,6 +155,31 @@ services:
           "python",
           "-c",
           "import socket; s=socket.create_connection(('127.0.0.1',2404),2); s.close()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
+
+  ethernet-ip:
+    # Minimal EtherNet/IP CIP UCMM peer (stdlib). Not a production EIP stack.
+    # Tag Program:MainProgram.Counter (DINT), seed 12345678. Port 44818.
+    image: python:3.12-alpine
+    container_name: ispf-interop-ethernet-ip
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./ethernet-ip/server.py:/app/server.py:ro
+    command: ["python", "-u", "/app/server.py", "--host", "0.0.0.0", "--port", "44818"]
+    ports:
+      - "127.0.0.1:44818:44818"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1',44818),2); s.close()",
         ]
       interval: 5s
       timeout: 3s

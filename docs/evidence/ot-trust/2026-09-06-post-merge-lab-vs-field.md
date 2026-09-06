@@ -54,7 +54,7 @@ Legend:
 | `iec104-server` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
 | `dnp3` | PRODUCTION | `READY_LAB` | n | ✓ | — | — (poll-only, ADR-0057) |
 | `dlms` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
-| `ethernet-ip` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
+| `ethernet-ip` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ stdlib CIP UCMM | ✓ Write/Read Tag DINT |
 | `opc-da` | BETA | `SHELL_BETA` | n | ✓ | — | — |
 | `opc-bridge` | BETA | `SHELL_BETA` | n | ✓ | — | — |
 | `gps-tracker` | PRODUCTION | `READY_LAB` | n | ✓ | — | — |
@@ -64,8 +64,8 @@ Legend:
 | Layer | Covered | Gap |
 |-------|---------|-----|
 | Gradle / loopback interop modules in CI | **20 / 20** | — |
-| Docker compose fixtures | **7 / 20** (`mqtt`, `modbus-tcp`, `opcua`, `snmp`, `http`, `bacnet`, `iec104`) | 13 without compose peer |
-| Fixture smoke script | **7 / 20** | same gap |
+| Docker compose fixtures | **8 / 20** (`mqtt`, `modbus-tcp`, `opcua`, `snmp`, `http`, `bacnet`, `iec104`, `ethernet-ip`) | 12 without compose peer |
+| Fixture smoke script | **8 / 20** | same gap |
 
 `virtual` / `flexible` are intentionally in-process (no external peer required).
 
@@ -75,7 +75,7 @@ Preferred order after catalog close — deepen BL-141 fixtures, do **not** inven
 
 1. ~~**SNMP**~~ — done (stdlib agent + GET/SET smoke) — see [2026-09-06-bl141-snmp-http-fixtures.md](2026-09-06-bl141-snmp-http-fixtures.md)
 2. ~~**HTTP**~~ — done (writable JSON gauge + PUT/GET smoke)
-3. ~~**BACnet**~~ — done — see [2026-09-06-bl141-bacnet-fixture.md](2026-09-06-bl141-bacnet-fixture.md); ~~**IEC 104**~~ done — see [2026-09-06-bl141-iec104-fixture.md](2026-09-06-bl141-iec104-fixture.md); next **S7** (external soft PLC) / **DNP3** / **DLMS** / **EtherNet/IP**
+3. ~~**BACnet**~~ / ~~**IEC 104**~~ / ~~**EtherNet/IP**~~ — done — see [ethernet-ip fixture](2026-09-06-bl141-ethernet-ip-fixture.md); next **DLMS** / **S7** (external soft PLC) / **DNP3**
 4. Plant pilots + soak journals ([pilot-soak-journal.template.md](pilot-soak-journal.template.md)) for BL-140 field Done  
 
 Until (4), P-OT stays **In progress** for *field* trust — lab catalog width is closed.
