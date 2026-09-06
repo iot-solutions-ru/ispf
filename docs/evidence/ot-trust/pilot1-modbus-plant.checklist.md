@@ -79,8 +79,8 @@ Do **not** promote scorecard OT connectivity from this checklist alone.
 | 2 | Read ≥50 tags | ☑ | `hrCount=50` |
 | 3 | Write acknowledged | ☑ | write `hr00=1234` + read-back |
 | 4 | Historian samples on top 5 | ☑ | historyEnabled on hr00–hr04 |
-| 5 | HMI / mimic live | ☐ | deferred (API path day 1) |
-| 6 | Stale badge after disconnect (C5) | ☐ | during soak |
+| 5 | HMI / mimic live | ☐ | deferred (API path; optional polish) |
+| 6 | Stale / disconnect (C5) | ☑ | driver `ERROR`/`Not connected` then recover — [c5 note](2026-09-06-bl140-pilot1-c5-disconnect.md) |
 
 ---
 
@@ -99,9 +99,10 @@ Use [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md).
 
 | Step | Result | Evidence |
 |------|--------|----------|
-| Disconnect PLC/path once during soak | ☐ | |
-| Stale alarm / operator badge fires | ☐ | |
-| Reconnect restores GOOD within SLA | ☐ | |
+| Disconnect PLC/path once during soak | ☑ | stopped peer `:1502` |
+| Stale / error observed on driver | ☑ | `status=ERROR`, `connected=false`, `lastError=Not connected` |
+| Reconnect restores RUNNING | ☑ | peer start + runtime start |
+| Operator HMI stale badge | ☐ | optional polish (API/driver path evidenced) |
 
 ---
 
@@ -123,9 +124,9 @@ Use [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md).
 | B4 lab dry-run documented | **Done** | |
 | C1 site intake | **Done** | `lab-ot-vlan-192.168.100` |
 | C2 device config | **Done** | 50 tags RUNNING |
-| C3 validation §1 | **Mostly done** | HMI + C5 open |
-| C4 soak journal | **In progress** | Day 1 logged |
-| C5 stale exercise | Open | |
+| C3 validation §1 | **Done** (HMI optional) | C5 closed at driver layer |
+| C4 soak journal | **In progress** | Day 1 logged; daily timer 06:00 MSK |
+| C5 stale exercise | **Done** | [c5 evidence](2026-09-06-bl140-pilot1-c5-disconnect.md) |
 | C6 sign-off | Blocked on day 7 | |
 
 ---

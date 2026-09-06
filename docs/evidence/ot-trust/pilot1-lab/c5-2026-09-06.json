@@ -1,0 +1,318 @@
+{
+  "utc": "2026-09-06T18:52:34Z",
+  "devicePath": "root.platform.devices.pilot1-modbus.plant",
+  "steps": [
+    {
+      "step": "baseline",
+      "status": {
+        "devicePath": "root.platform.devices.pilot1-modbus.plant",
+        "driverId": "modbus-tcp",
+        "status": "RUNNING",
+        "connected": true,
+        "pollIntervalMs": 1000,
+        "lastError": null,
+        "telemetryPublishMode": "FULL",
+        "telemetryCoalesceMs": 0
+      },
+      "hr00": {
+        "name": "hr00",
+        "value": {
+          "schema": {
+            "name": "modbusRegister",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              },
+              {
+                "name": "raw",
+                "type": "LONG",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "rows": [
+            {
+              "value": 0.0,
+              "raw": 0
+            }
+          ]
+        },
+        "updatedAt": "2026-09-06T18:52:35.106845856Z",
+        "historyEnabled": true
+      }
+    },
+    {
+      "step": "peer_stopped",
+      "peer_active": "inactive"
+    },
+    {
+      "step": "while_disconnected",
+      "samples": [
+        {
+          "t": 0,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        },
+        {
+          "t": 2,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        },
+        {
+          "t": 4,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        },
+        {
+          "t": 6,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        },
+        {
+          "t": 8,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        },
+        {
+          "t": 10,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        },
+        {
+          "t": 12,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        },
+        {
+          "t": 14,
+          "status": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          },
+          "poll": {
+            "devicePath": "root.platform.devices.pilot1-modbus.plant",
+            "driverId": "modbus-tcp",
+            "status": "ERROR",
+            "connected": false,
+            "pollIntervalMs": 1000,
+            "lastError": "Not connected",
+            "telemetryPublishMode": "FULL",
+            "telemetryCoalesceMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "step": "peer_started",
+      "peer_active": "active"
+    },
+    {
+      "step": "after_reconnect",
+      "start": {
+        "devicePath": "root.platform.devices.pilot1-modbus.plant",
+        "driverId": "modbus-tcp",
+        "status": "RUNNING",
+        "connected": true,
+        "pollIntervalMs": 1000,
+        "lastError": null,
+        "telemetryPublishMode": "FULL",
+        "telemetryCoalesceMs": 0
+      },
+      "status": {
+        "devicePath": "root.platform.devices.pilot1-modbus.plant",
+        "driverId": "modbus-tcp",
+        "status": "RUNNING",
+        "connected": true,
+        "pollIntervalMs": 1000,
+        "lastError": null,
+        "telemetryPublishMode": "FULL",
+        "telemetryCoalesceMs": 0
+      },
+      "poll": {
+        "devicePath": "root.platform.devices.pilot1-modbus.plant",
+        "driverId": "modbus-tcp",
+        "status": "RUNNING",
+        "connected": true,
+        "pollIntervalMs": 1000,
+        "lastError": null,
+        "telemetryPublishMode": "FULL",
+        "telemetryCoalesceMs": 0
+      },
+      "hr00": {
+        "name": "hr00",
+        "value": {
+          "schema": {
+            "name": "modbusRegister",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              },
+              {
+                "name": "raw",
+                "type": "LONG",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "rows": [
+            {
+              "value": 0.0,
+              "raw": 0
+            }
+          ]
+        },
+        "updatedAt": "2026-09-06T18:53:01.705046640Z",
+        "historyEnabled": true
+      }
+    }
+  ],
+  "c5": {
+    "disconnectObserved": true,
+    "reconnectRunning": true,
+    "pass": true
+  }
+}
