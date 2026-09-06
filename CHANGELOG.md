@@ -37,6 +37,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **OT Trust BL-140 Pilot #1 kickoff** — Modbus plant field-prep pack: C1–C6 checklist + site intake, empty soak journal instance, playbook links. **C1 named site still open** (not ready-for-field / not field Done). Evidence [`docs/evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md`](docs/evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md).
 - **OT Trust BL-141 GPS tracker fixture** — NMEA TCP listener stand-in + feed→`/last` smoke (compose peers **14/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-gps-tracker-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-gps-tracker-fixture.md).
 - **OT Trust BL-141 Modbus RTU fixture** — RTU ADU (unit+PDU+CRC16) over TCP lab bridge + FC6/FC16→FC3 smoke (compose peers **13/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-modbus-rtu-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-modbus-rtu-fixture.md).
 - **OT Trust BL-141 S7 SoftPlc fixture** — `fbarresi/softplc` ISO-on-TCP `:102` + REST seed/verify DB1 REAL @80 (compose peers **12/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-s7-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-s7-fixture.md).

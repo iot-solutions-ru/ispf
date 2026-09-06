@@ -76,6 +76,6 @@ Preferred order after catalog close — deepen BL-141 fixtures, do **not** inven
 1. ~~**SNMP**~~ — done (stdlib agent + GET/SET smoke) — see [2026-09-06-bl141-snmp-http-fixtures.md](2026-09-06-bl141-snmp-http-fixtures.md)
 2. ~~**HTTP**~~ — done (writable JSON gauge + PUT/GET smoke)
 3. ~~**BACnet**~~ / ~~**IEC 104**~~ / ~~**EtherNet/IP**~~ / ~~**DLMS**~~ / ~~**Modbus UDP**~~ / ~~**DNP3**~~ / ~~**S7**~~ / ~~**Modbus RTU**~~ / ~~**GPS tracker**~~ — done — see [GPS tracker fixture](2026-09-06-bl141-gps-tracker-fixture.md); remaining gaps are in-process / server-is-driver / SHELL_BETA
-4. Plant pilots + soak journals ([pilot-soak-journal.template.md](pilot-soak-journal.template.md)) for BL-140 field Done  
+4. Plant pilots + soak journals for BL-140 field Done — **kickoff pack started:** [Pilot #1](2026-09-06-bl140-pilot1-kickoff.md) (checklist + journal shell); **C1 named site still open**
 
-Until (4), P-OT stays **In progress** for *field* trust — lab catalog width is closed.
+Until (4) completes with a named plant + 7-day soak + OT sign-off, P-OT stays **In progress** for *field* trust — lab catalog width is closed.

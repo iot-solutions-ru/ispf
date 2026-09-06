@@ -14,6 +14,18 @@
 
 До этого статус **playbook-ready**: есть lab dry-run, чеклисты и шаблон sign-off; **полевой soak и promotion evidence не заявляются**.
 
+### Kickoff-пакет Pilot #1 (Modbus)
+
+Рабочие артефакты рекомендованного первого пилота (Workstream C):
+
+| Артефакт | Путь |
+| -------- | ---- |
+| Evidence | [2026-09-06-bl140-pilot1-kickoff.md](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md) |
+| Чеклист C1–C6 + intake площадки | [pilot1-modbus-plant.checklist.md](../evidence/ot-trust/pilot1-modbus-plant.checklist.md) |
+| Экземпляр soak-журнала | [pilot1-modbus-plant.journal.md](../evidence/ot-trust/pilot1-modbus-plant.journal.md) |
+
+**C1 (именованная площадка) ещё открыт** — до заполнения сценарий остаётся **playbook-ready**, не ready-for-field.
+
 ---
 
 ## Пилотная матрица
@@ -189,7 +201,7 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 
 | Сценарий | Лабораторный пробный прогон | Контрольный список полей | Шаблон подписания | Полевой статус |
 | -------- | :---------: | :-------------: | :---------------: | :--------------: |
-| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 | ✅ below | Playbook-ready |
+| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 + [чеклист Pilot #1](../evidence/ot-trust/pilot1-modbus-plant.checklist.md) | ✅ below | Playbook-ready (C1 площадка открыта) |
 | MQTT-парк | ✅ Mosquitto + тесты драйверов | ✅ §2 | ✅ ниже | Playbook-ready |
 | Линия OPC UA | ✅ opcua + тесты opcua-сервера | ✅ §3 | ✅ ниже | Playbook-ready |
 
