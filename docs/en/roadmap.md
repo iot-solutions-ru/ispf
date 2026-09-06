@@ -1713,6 +1713,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
+| 2026-09-06 | **OT Trust BL-141 fixture depth:** EtherNet/IP CIP UCMM peer → compose/smoke **8/20** (after IEC104 **7/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust lab catalog closed:** Waves 1–11 → **162/162**, stubs **0** (#144). Post-merge honesty + TOP-20 fixture inventory (compose **3/20**). Field Done / OT 10/10 still open — deepen BL-141 + plant soaks. |
 | 2026-09-05 | **OT Trust Wave 1 kicked off:** P-OT → In progress; ADR-0057 (DNP3 PRODUCTION poll-only); `http` matrix WRITE honesty; Modbus FC6 smoke; evidence under `docs/evidence/ot-trust/` |
 | 2026-07-19 | **BL-191 OT matrix honesty Done (corrected):** `opc-da` / `opc-bridge` → BETA + CI stub gate; DNP3 remains PRODUCTION poll-only (write gap); ethernet-ip remains PRODUCTION with WRITE — see ADR-0057 |
