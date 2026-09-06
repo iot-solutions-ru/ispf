@@ -30,7 +30,7 @@ deploy/tools/driver-interop-smoke.sh --self-test-modbus-udp
 
 ## Deferred / next
 
-- **DNP3** — poll-only (ADR-0057); integrity-poll smoke only
+- ~~**DNP3**~~ — done — see [2026-09-06-bl141-dnp3-fixture.md](2026-09-06-bl141-dnp3-fixture.md)
 - **S7** — needs external soft PLC (not stdlib)
 - **modbus-rtu** — needs PTY/serial pair
 - Plant soaks for BL-140 field Done
