@@ -13,6 +13,7 @@
 # - DNP3 integrity poll (read-only AI0/BI0/CTR0 — ADR-0057 poll-only)
 # - S7 SoftPlc REST seed/verify DB1 REAL @ offset 80 (ISO-on-TCP :102 peer)
 # - Modbus RTU ADU (unit+PDU+CRC16) over TCP lab bridge FC6/FC16→FC3 (not RS-485)
+# - GPS tracker NMEA TCP feed into lab listener stand-in (/last API)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -27,6 +28,9 @@ MODBUS_UDP_HOST="${ISPF_INTEROP_MODBUS_UDP_HOST:-127.0.0.1}"
 MODBUS_UDP_PORT="${ISPF_INTEROP_MODBUS_UDP_PORT:-502}"
 MODBUS_RTU_HOST="${ISPF_INTEROP_MODBUS_RTU_HOST:-127.0.0.1}"
 MODBUS_RTU_PORT="${ISPF_INTEROP_MODBUS_RTU_PORT:-5020}"
+GPS_FEED_HOST="${ISPF_INTEROP_GPS_FEED_HOST:-127.0.0.1}"
+GPS_FEED_PORT="${ISPF_INTEROP_GPS_FEED_PORT:-5005}"
+GPS_API="${ISPF_INTEROP_GPS_API:-http://127.0.0.1:5006}"
 OPCUA_HOST="${ISPF_INTEROP_OPCUA_HOST:-127.0.0.1}"
 OPCUA_PORT="${ISPF_INTEROP_OPCUA_PORT:-4840}"
 SNMP_HOST="${ISPF_INTEROP_SNMP_HOST:-127.0.0.1}"
@@ -226,6 +230,31 @@ PY
     sleep 2
   done
   record "$label" fail "timeout after ${WAIT_SEC}s (tcp://${host}:${port} RTU)"
+  return 1
+}
+
+
+wait_for_gps_tracker() {
+  local api="$1"
+  local label="$2"
+  local deadline=$((SECONDS + WAIT_SEC))
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "$label" pass "skipped wait (no python3)"
+    return 0
+  fi
+  while ((SECONDS < deadline)); do
+    if GPS_API="$api" python3 - <<'PY'
+import os, urllib.request
+api = os.environ.get("GPS_API", "http://127.0.0.1:5006")
+urllib.request.urlopen(api.rstrip("/") + "/health", timeout=2)
+PY
+    then
+      record "$label" pass "${api}/health"
+      return 0
+    fi
+    sleep 2
+  done
+  record "$label" fail "timeout after ${WAIT_SEC}s (${api})"
   return 1
 }
 
@@ -690,6 +719,41 @@ PY
   return 1
 }
 
+
+gps_tracker_nmea_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "gps-tracker-nmea-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if GPS_FEED_HOST="$GPS_FEED_HOST" GPS_FEED_PORT="$GPS_FEED_PORT" GPS_API="$GPS_API" python3 - <<'PY'
+import os, sys
+sys.path.insert(0, "deploy/driver-interop/gps-tracker")
+from server import SEED_NMEA, feed_nmea, probe_api
+
+host = os.environ.get("GPS_FEED_HOST", "127.0.0.1")
+port = int(os.environ.get("GPS_FEED_PORT", "5005"))
+api = os.environ.get("GPS_API", "http://127.0.0.1:5006")
+feed_nmea(host, port, SEED_NMEA)
+import time
+deadline = time.time() + 10
+snap = {}
+while time.time() < deadline:
+    snap = probe_api(api)
+    if snap.get("lastLine") == SEED_NMEA:
+        break
+    time.sleep(0.1)
+if snap.get("lastLine") != SEED_NMEA:
+    raise RuntimeError(f"gps lastLine mismatch: {snap!r}")
+print(f"gps nmea feed ok line={SEED_NMEA[:24]}...")
+PY
+  then
+    record "gps-tracker-nmea-roundtrip" pass "NMEA line → /last"
+    return 0
+  fi
+  record "gps-tracker-nmea-roundtrip" fail "against tcp://${GPS_FEED_HOST}:${GPS_FEED_PORT} / ${GPS_API}"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test-modbus" ]]; then
   python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test
   exit $?
@@ -745,6 +809,11 @@ if [[ "${1:-}" == "--self-test-s7" ]]; then
   exit $?
 fi
 
+if [[ "${1:-}" == "--self-test-gps-tracker" ]]; then
+  python3 "$ROOT/deploy/driver-interop/gps-tracker/server.py" --self-test
+  exit $?
+fi
+
 {
   echo "# Driver interop fixture smoke (BL-141 / OT Trust)"
   echo
@@ -770,6 +839,8 @@ wait_for_tcp "$DLMS_HOST" "$DLMS_PORT" "dlms-tcp" || FAILED=1
 wait_for_tcp "$DNP3_HOST" "$DNP3_PORT" "dnp3-tcp" || FAILED=1
 wait_for_tcp "$S7_HOST" "$S7_PORT" "s7-tcp" || FAILED=1
 wait_for_s7_api "$S7_API" "s7-api" || FAILED=1
+wait_for_tcp "$GPS_FEED_HOST" "$GPS_FEED_PORT" "gps-tracker-tcp" || FAILED=1
+wait_for_gps_tracker "$GPS_API" "gps-tracker-api" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
@@ -785,6 +856,7 @@ if [[ "$FAILED" -eq 0 ]]; then
   dlms_write_roundtrip || FAILED=1
   dnp3_integrity_poll || FAILED=1
   s7_db_real_roundtrip || FAILED=1
+  gps_tracker_nmea_roundtrip || FAILED=1
 fi
 
 {

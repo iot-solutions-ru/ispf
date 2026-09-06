@@ -36,6 +36,6 @@ deploy/tools/driver-interop-smoke.sh --self-test-modbus-rtu
 
 ## Deferred / next
 
-- **gps-tracker** — driver is the TCP listener (awkward peer shape)
+- ~~**gps-tracker**~~ — done — see [2026-09-06-bl141-gps-tracker-fixture.md](2026-09-06-bl141-gps-tracker-fixture.md)
 - Optional later: socat PTY pair bind-mounted for j2mod serial smoke
 - Plant soaks for BL-140 field Done
