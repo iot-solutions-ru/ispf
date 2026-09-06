@@ -16,6 +16,7 @@ docs/
   en/           # Canonical English (kebab-case filenames)
   ru/           # Russian editions (proofread, mirror structure)
   assets/       # Screenshots for the root README / launch
+  internal/     # Maintainers/counsel only — not public product docs
 ```
 
 ADR: [en/decisions/](en/decisions/) · [ru/decisions/](ru/decisions/)
