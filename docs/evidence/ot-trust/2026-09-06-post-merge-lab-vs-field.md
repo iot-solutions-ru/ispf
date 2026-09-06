@@ -42,7 +42,7 @@ Legend:
 | `mqtt` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ mosquitto | ✓ pub/sub |
 | `modbus-tcp` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ writable lab | ✓ FC6/FC16 + FC3 |
 | `modbus-rtu` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
-| `modbus-udp` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
+| `modbus-udp` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ stdlib UDP MBAP | ✓ FC6/FC16+FC3 |
 | `opcua` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ opc-plc | ✓ TCP + optional write |
 | `opcua-server` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
 | `snmp` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ stdlib agent | ✓ GET/SET |
@@ -64,8 +64,8 @@ Legend:
 | Layer | Covered | Gap |
 |-------|---------|-----|
 | Gradle / loopback interop modules in CI | **20 / 20** | — |
-| Docker compose fixtures | **9 / 20** (`mqtt`, `modbus-tcp`, `opcua`, `snmp`, `http`, `bacnet`, `iec104`, `ethernet-ip`, `dlms`) | 11 without compose peer |
-| Fixture smoke script | **9 / 20** | same gap |
+| Docker compose fixtures | **10 / 20** (`mqtt`, `modbus-tcp`, `modbus-udp`, `opcua`, `snmp`, `http`, `bacnet`, `iec104`, `ethernet-ip`, `dlms`) | 10 without compose peer |
+| Fixture smoke script | **10 / 20** | same gap |
 
 `virtual` / `flexible` are intentionally in-process (no external peer required).
 
@@ -75,7 +75,7 @@ Preferred order after catalog close — deepen BL-141 fixtures, do **not** inven
 
 1. ~~**SNMP**~~ — done (stdlib agent + GET/SET smoke) — see [2026-09-06-bl141-snmp-http-fixtures.md](2026-09-06-bl141-snmp-http-fixtures.md)
 2. ~~**HTTP**~~ — done (writable JSON gauge + PUT/GET smoke)
-3. ~~**BACnet**~~ / ~~**IEC 104**~~ / ~~**EtherNet/IP**~~ / ~~**DLMS**~~ — done — see [dlms fixture](2026-09-06-bl141-dlms-fixture.md); next **S7** (external soft PLC) / **DNP3**
+3. ~~**BACnet**~~ / ~~**IEC 104**~~ / ~~**EtherNet/IP**~~ / ~~**DLMS**~~ / ~~**Modbus UDP**~~ — done — see [modbus-udp fixture](2026-09-06-bl141-modbus-udp-fixture.md); next **DNP3** (poll-only) / **S7** (external soft PLC)
 4. Plant pilots + soak journals ([pilot-soak-journal.template.md](pilot-soak-journal.template.md)) for BL-140 field Done  
 
 Until (4), P-OT stays **In progress** for *field* trust — lab catalog width is closed.
