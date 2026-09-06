@@ -11,6 +11,7 @@
 # - EtherNet/IP CIP Write Tag / Read Tag DINT round-trip (Program:MainProgram.Counter)
 # - DLMS WRAPPER SET/GET double round-trip (REGISTER 1.0.1.8.0.255 attr 2)
 # - DNP3 integrity poll (read-only AI0/BI0/CTR0 — ADR-0057 poll-only)
+# - S7 SoftPlc REST seed/verify DB1 REAL @ offset 80 (ISO-on-TCP :102 peer)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -39,6 +40,9 @@ DLMS_HOST="${ISPF_INTEROP_DLMS_HOST:-127.0.0.1}"
 DLMS_PORT="${ISPF_INTEROP_DLMS_PORT:-4059}"
 DNP3_HOST="${ISPF_INTEROP_DNP3_HOST:-127.0.0.1}"
 DNP3_PORT="${ISPF_INTEROP_DNP3_PORT:-20000}"
+S7_HOST="${ISPF_INTEROP_S7_HOST:-127.0.0.1}"
+S7_PORT="${ISPF_INTEROP_S7_PORT:-102}"
+S7_API="${ISPF_INTEROP_S7_API:-http://127.0.0.1:8080}"
 WAIT_SEC="${ISPF_INTEROP_SMOKE_WAIT_SEC:-120}"
 MOSQUITTO_CONTAINER="${ISPF_INTEROP_MOSQUITTO_CONTAINER:-ispf-interop-mosquitto}"
 OPCUA_WRITE="${ISPF_INTEROP_OPCUA_WRITE:-1}"
@@ -138,6 +142,31 @@ PY
     sleep 2
   done
   record "$label" fail "timeout after ${WAIT_SEC}s (udp://${host}:${port})"
+  return 1
+}
+
+wait_for_s7_api() {
+  local api="$1"
+  local label="$2"
+  local deadline=$((SECONDS + WAIT_SEC))
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "$label" pass "skipped wait (no python3)"
+    return 0
+  fi
+  while ((SECONDS < deadline)); do
+    if S7_API="$api" python3 - <<'PY'
+import os, sys
+sys.path.insert(0, "deploy/driver-interop/s7")
+from probe import probe_api
+probe_api(os.environ.get("S7_API", "http://127.0.0.1:8080"))
+PY
+    then
+      record "$label" pass "${api} /api/datablocks"
+      return 0
+    fi
+    sleep 2
+  done
+  record "$label" fail "timeout after ${WAIT_SEC}s (${api})"
   return 1
 }
 
@@ -567,6 +596,32 @@ PY
   return 1
 }
 
+s7_db_real_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "s7-db-real-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if S7_API="$S7_API" python3 - <<'PY'
+import os, random, sys
+sys.path.insert(0, "deploy/driver-interop/s7")
+from probe import read_real, write_real
+
+api = os.environ.get("S7_API", "http://127.0.0.1:8080")
+value = round(random.uniform(1.0, 90.0), 2)
+write_real(api, value)
+got = read_real(api)
+if abs(got - value) > 1e-4:
+    raise RuntimeError(f"s7 readback {got} != {value}")
+print(f"s7 softplc rest write/read ok value={value}")
+PY
+  then
+    record "s7-db-real-roundtrip" pass "SoftPlc REST DB1 REAL @80"
+    return 0
+  fi
+  record "s7-db-real-roundtrip" fail "against ${S7_API}"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test-modbus" ]]; then
   python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test
   exit $?
@@ -612,6 +667,11 @@ if [[ "${1:-}" == "--self-test-dnp3" ]]; then
   exit $?
 fi
 
+if [[ "${1:-}" == "--self-test-s7" ]]; then
+  python3 "$ROOT/deploy/driver-interop/s7/probe.py" --self-test
+  exit $?
+fi
+
 {
   echo "# Driver interop fixture smoke (BL-141 / OT Trust)"
   echo
@@ -634,6 +694,8 @@ wait_for_tcp "$IEC104_HOST" "$IEC104_PORT" "iec104-tcp" || FAILED=1
 wait_for_tcp "$EIP_HOST" "$EIP_PORT" "ethernet-ip-tcp" || FAILED=1
 wait_for_tcp "$DLMS_HOST" "$DLMS_PORT" "dlms-tcp" || FAILED=1
 wait_for_tcp "$DNP3_HOST" "$DNP3_PORT" "dnp3-tcp" || FAILED=1
+wait_for_tcp "$S7_HOST" "$S7_PORT" "s7-tcp" || FAILED=1
+wait_for_s7_api "$S7_API" "s7-api" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
@@ -647,6 +709,7 @@ if [[ "$FAILED" -eq 0 ]]; then
   eip_write_roundtrip || FAILED=1
   dlms_write_roundtrip || FAILED=1
   dnp3_integrity_poll || FAILED=1
+  s7_db_real_roundtrip || FAILED=1
 fi
 
 {
