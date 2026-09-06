@@ -1,4 +1,4 @@
-# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA, SNMP, HTTP,
+# BL-141: OT driver interop lab fixtures (Modbus TCP/UDP, MQTT, OPC UA, SNMP, HTTP,
 # BACnet, IEC 104, EtherNet/IP, DLMS). Bind to loopback only — do not expose publicly.
 services:
   mosquitto:
@@ -35,6 +35,31 @@ services:
           "python",
           "-c",
           "import socket; s=socket.create_connection(('127.0.0.1',502),2); s.close()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
+
+  modbus-udp:
+    # Same stdlib fixture as modbus-tcp, UDP transport (MBAP+PDU datagrams).
+    # Seed holdings [0x1111,0x2222,0x3333]. Host port 502/udp (alongside TCP 502).
+    image: python:3.12-alpine
+    container_name: ispf-interop-modbus-udp
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./modbus/server.py:/app/server.py:ro
+    command: ["python", "-u", "/app/server.py", "--host", "0.0.0.0", "--port", "502", "--udp"]
+    ports:
+      - "127.0.0.1:502:502/udp"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys; sys.path.insert(0,'.'); from server import udp_probe; udp_probe('127.0.0.1',502)",
         ]
       interval: 5s
       timeout: 3s
