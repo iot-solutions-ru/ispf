@@ -1713,6 +1713,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
+| 2026-09-06 | **OT Trust BL-140 Pilot #1 kickoff:** Modbus plant checklist C1–C6 + soak journal shell ([kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md)). **C1 named site still open** — not ready-for-field / not field Done / not OT 10/10. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** GPS tracker NMEA listener stand-in → compose/smoke **14/20** (after Modbus RTU **13/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** Modbus RTU ADU-over-TCP peer → compose/smoke **13/20** (after S7 **12/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** S7 SoftPlc peer → compose/smoke **12/20** (after DNP3 **11/20**). Lab ≠ field Done. |
