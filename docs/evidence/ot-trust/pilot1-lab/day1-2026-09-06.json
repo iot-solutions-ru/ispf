@@ -1,0 +1,295 @@
+{
+  "utc": "2026-09-06T18:38:38Z",
+  "site": "lab-ot-vlan-192.168.100",
+  "devicePath": "root.platform.devices.pilot1-modbus.plant",
+  "driverStatus": {
+    "devicePath": "root.platform.devices.pilot1-modbus.plant",
+    "driverId": "modbus-tcp",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "pollStatus": {
+    "devicePath": "root.platform.devices.pilot1-modbus.plant",
+    "driverId": "modbus-tcp",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "hrCount": 50,
+  "sampleBeforeWrite": {
+    "hr00": {
+      "value": 0.0,
+      "raw": 0
+    },
+    "hr01": {
+      "value": 10.0,
+      "raw": 10
+    },
+    "hr49": {
+      "value": 490.0,
+      "raw": 490
+    }
+  },
+  "write": {
+    "url": "http://127.0.0.1:8080/api/v1/drivers/runtime/write?devicePath=root.platform.devices.pilot1-modbus.plant&pointId=hr00",
+    "status": 200,
+    "body": {
+      "devicePath": "root.platform.devices.pilot1-modbus.plant",
+      "driverId": "modbus-tcp",
+      "status": "RUNNING",
+      "connected": true,
+      "pollIntervalMs": 1000,
+      "lastError": null,
+      "telemetryPublishMode": "FULL",
+      "telemetryCoalesceMs": 0
+    }
+  },
+  "history": [
+    {
+      "name": "hr00",
+      "status": 200,
+      "body": {
+        "name": "hr00",
+        "value": {
+          "schema": {
+            "name": "modbusRegister",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              },
+              {
+                "name": "raw",
+                "type": "LONG",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "rows": [
+            {
+              "value": 1234.0,
+              "raw": 1234
+            }
+          ]
+        },
+        "readable": true,
+        "writable": false,
+        "updatedAt": "2026-09-06T18:38:34.131862016Z",
+        "historyEnabled": true,
+        "historyRetentionDays": 30,
+        "historySampleMode": "CHANGES_ONLY",
+        "includePreviousValueInEvent": false,
+        "storageMode": "PERSISTENT",
+        "telemetryPublishMode": null,
+        "readRoles": [],
+        "writeRoles": []
+      }
+    },
+    {
+      "name": "hr01",
+      "status": 200,
+      "body": {
+        "name": "hr01",
+        "value": {
+          "schema": {
+            "name": "modbusRegister",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              },
+              {
+                "name": "raw",
+                "type": "LONG",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "rows": [
+            {
+              "value": 10.0,
+              "raw": 10
+            }
+          ]
+        },
+        "readable": true,
+        "writable": false,
+        "updatedAt": "2026-09-06T18:38:34.761566032Z",
+        "historyEnabled": true,
+        "historyRetentionDays": 30,
+        "historySampleMode": "CHANGES_ONLY",
+        "includePreviousValueInEvent": false,
+        "storageMode": "PERSISTENT",
+        "telemetryPublishMode": null,
+        "readRoles": [],
+        "writeRoles": []
+      }
+    },
+    {
+      "name": "hr02",
+      "status": 200,
+      "body": {
+        "name": "hr02",
+        "value": {
+          "schema": {
+            "name": "modbusRegister",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              },
+              {
+                "name": "raw",
+                "type": "LONG",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "rows": [
+            {
+              "value": 20.0,
+              "raw": 20
+            }
+          ]
+        },
+        "readable": true,
+        "writable": false,
+        "updatedAt": "2026-09-06T18:38:34.761750208Z",
+        "historyEnabled": true,
+        "historyRetentionDays": 30,
+        "historySampleMode": "CHANGES_ONLY",
+        "includePreviousValueInEvent": false,
+        "storageMode": "PERSISTENT",
+        "telemetryPublishMode": null,
+        "readRoles": [],
+        "writeRoles": []
+      }
+    },
+    {
+      "name": "hr03",
+      "status": 200,
+      "body": {
+        "name": "hr03",
+        "value": {
+          "schema": {
+            "name": "modbusRegister",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              },
+              {
+                "name": "raw",
+                "type": "LONG",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "rows": [
+            {
+              "value": 30.0,
+              "raw": 30
+            }
+          ]
+        },
+        "readable": true,
+        "writable": false,
+        "updatedAt": "2026-09-06T18:38:35.765248240Z",
+        "historyEnabled": true,
+        "historyRetentionDays": 30,
+        "historySampleMode": "CHANGES_ONLY",
+        "includePreviousValueInEvent": false,
+        "storageMode": "PERSISTENT",
+        "telemetryPublishMode": null,
+        "readRoles": [],
+        "writeRoles": []
+      }
+    },
+    {
+      "name": "hr04",
+      "status": 200,
+      "body": {
+        "name": "hr04",
+        "value": {
+          "schema": {
+            "name": "modbusRegister",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              },
+              {
+                "name": "raw",
+                "type": "LONG",
+                "description": "",
+                "nullable": true,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "rows": [
+            {
+              "value": 40.0,
+              "raw": 40
+            }
+          ]
+        },
+        "readable": true,
+        "writable": false,
+        "updatedAt": "2026-09-06T18:38:35.765265664Z",
+        "historyEnabled": true,
+        "historyRetentionDays": 30,
+        "historySampleMode": "CHANGES_ONLY",
+        "includePreviousValueInEvent": false,
+        "storageMode": "PERSISTENT",
+        "telemetryPublishMode": null,
+        "readRoles": [],
+        "writeRoles": []
+      }
+    }
+  ],
+  "sampleAfter": {
+    "hr00": {
+      "value": 1234.0,
+      "raw": 1234
+    },
+    "hr01": {
+      "value": 10.0,
+      "raw": 10
+    },
+    "hr49": {
+      "value": 490.0,
+      "raw": 490
+    }
+  }
+}

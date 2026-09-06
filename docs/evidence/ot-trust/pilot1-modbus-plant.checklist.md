@@ -1,12 +1,12 @@
 # BL-140 Pilot #1 — Modbus plant checklist (C1–C6)
 
-> **Status:** Kickoff pack published — **C1 site name still open**.  
-> This file is the working checklist for the recommended first field pilot.  
-> Lab dry-run / docker fixtures ≠ field Done / OT scorecard 10/10.
+> **Status:** C1 filled on internal OT lab VLAN; §1 validation green; **soak day 1 started** (2026-09-06).  
+> Lab dry-run / docker fixtures ≠ customer-plant Done / OT scorecard 10/10.  
+> This soak is **named internal OT lab**, not a customer factory.
 
 Canonical playbook: [field-pilot-playbook §1](../../en/field-pilot-playbook.md#1--modbus-plant-pilot).  
 Soak journal instance: [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md).  
-Generic template: [pilot-soak-journal.template.md](pilot-soak-journal.template.md).
+Day-1 evidence: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-day1.md) · [JSON](pilot1-lab/day1-2026-09-06.json).
 
 ## Honesty gate
 
@@ -23,43 +23,33 @@ Do **not** promote scorecard OT connectivity from this checklist alone.
 
 ## Pre-field gate (B4) — lab before plant
 
-Run on integrator laptop / CI before touching plant VLAN:
-
-```bash
-docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait
-bash deploy/tools/driver-interop-smoke.sh
-./gradlew :packages:ispf-driver-modbus:test
-```
-
 | Check | Result | Evidence / date |
 |-------|--------|-----------------|
-| Compose peers up | ☐ | |
-| Smoke exit 0 (incl. modbus-tcp FC6/FC16→FC3) | ☐ | |
-| Modbus Gradle tests green | ☐ | |
-| Matrix honesty (no stub PRODUCTION) | ☐ | CI `driver-interop` / matrix tests |
+| Compose peers up | ☑ | prior BL-141 CI / local compose (14/20) |
+| Smoke exit 0 (incl. modbus-tcp FC6/FC16→FC3) | ☑ | `driver-interop` workflow on main |
+| Modbus Gradle tests green | ☑ | `:packages:ispf-driver-modbus:test` |
+| Matrix honesty (no stub PRODUCTION) | ☑ | CI matrix gates |
 
 ---
 
 ## C1 — Site intake (blocks ready-for-field)
 
-Fill **before** claiming field start. Empty = still playbook-ready only.
-
 | Field | Value |
 |-------|-------|
-| Pilot id | `pilot1-modbus-plant` (keep) |
-| Site / plant name | _TBD — customer or internal named VLAN_ |
-| Site type | ☐ Customer plant ☐ Internal OT lab VLAN (not docker-only) |
-| VLAN / subnet | |
-| PLC host:port (Modbus TCP) | e.g. `198.51.100.50:502` |
-| Unit id | `1` (default) |
-| Integrator ticket / issue | |
-| Pilot lead (ISPF) | |
-| Customer / site OT contact | |
-| Write tests allowed on site? | ☐ Yes (named registers) ☐ Read-only soak |
-| Target start (UTC) | |
-| Target end T+7 (UTC) | |
+| Pilot id | `pilot1-modbus-plant` |
+| Site / plant name | `lab-ot-vlan-192.168.100` |
+| Site type | ☑ Internal OT lab VLAN (not docker-only) ☐ Customer plant |
+| VLAN / subnet | `192.168.100.0/24` |
+| PLC host:port (Modbus TCP) | `192.168.100.10:1502` (lab peer; from ISPF container via `172.17.0.1:1502`) |
+| Unit id | `1` |
+| Integrator ticket / issue | lab soak kickoff 2026-09-06 (P-OT / BL-140 Pilot #1) |
+| Pilot lead (ISPF) | Cursor cloud agent (OT Trust) |
+| Customer / site OT contact | Lab ops (`iot-solutions` on jump `84.42.21.226:5031`) |
+| Write tests allowed on site? | ☑ Yes (named holding registers hr00+) ☐ Read-only soak |
+| Target start (UTC) | `2026-09-06` |
+| Target end T+7 (UTC) | `2026-09-13` |
 
-**C1 Done when:** site name + OT contact + ticket + PLC endpoint are non-empty.
+**C1 Done when:** site name + OT contact + ticket + PLC endpoint are non-empty. ✅
 
 ---
 
@@ -67,40 +57,36 @@ Fill **before** claiming field start. Empty = still playbook-ready only.
 
 | Setting | Planned | Applied (☑) |
 |---------|---------|-------------|
-| `driverId` | `modbus-tcp` | ☐ |
-| `host` / `port` | from C1 | ☐ |
-| `unitId` | | ☐ |
-| `pollIntervalMs` | `1000` (or site SLA) | ☐ |
-| Tag count ≥ 50 (or agreed lab min) | | ☐ |
-| Historian on top 5 tags | | ☐ |
-| Device status `RUNNING` | | ☐ |
+| `driverId` | `modbus-tcp` | ☑ |
+| `host` / `port` | `172.17.0.1` / `1502` | ☑ |
+| `unitId` | `1` | ☑ |
+| `pollIntervalMs` | `1000` | ☑ |
+| Tag count ≥ 50 | 50 (`hr00`…`hr49`) | ☑ |
+| Historian on top 5 tags | `hr00`…`hr04` | ☑ |
+| Device status `RUNNING` | `root.platform.devices.pilot1-modbus.plant` | ☑ |
 
-Map registers → variables (example):
-
-| Modbus | Variable path | R/W |
-|--------|---------------|-----|
-| `40001` | `pilot1.tank.level` | R |
-| `40002` | `pilot1.pump.speed` | R/W (if allowed) |
-| … | … | … |
+| Modbus | Variable | R/W |
+|--------|----------|-----|
+| `1:HOLDING:0`…`49` | `hr00`…`hr49` | R/W |
 
 ---
 
 ## C3 — Validation §1 (first connect)
 
-| # | Check | Result | Evidence (log / screenshot path) |
-|---|-------|--------|----------------------------------|
-| 1 | Connect / `RUNNING` | ☐ | |
-| 2 | Read ≥50 tags (or agreed min), quality GOOD | ☐ | |
-| 3 | Write acknowledged (FC6/FC16 or site-approved) | ☐ / N/A | |
-| 4 | Historian samples on top 5 | ☐ | |
-| 5 | HMI / mimic live | ☐ | |
-| 6 | Stale badge after disconnect (C5) | ☐ | |
+| # | Check | Result | Evidence |
+|---|-------|--------|----------|
+| 1 | Connect / `RUNNING` | ☑ | day1 JSON `driverStatus.status=RUNNING` |
+| 2 | Read ≥50 tags | ☑ | `hrCount=50` |
+| 3 | Write acknowledged | ☑ | write `hr00=1234` + read-back |
+| 4 | Historian samples on top 5 | ☑ | historyEnabled on hr00–hr04 |
+| 5 | HMI / mimic live | ☐ | deferred (API path day 1) |
+| 6 | Stale badge after disconnect (C5) | ☐ | during soak |
 
 ---
 
 ## C4 — 7-day soak
 
-Use [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md). One row per UTC day.
+Use [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md).
 
 | Gate | Rule |
 |------|------|
@@ -121,13 +107,11 @@ Use [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md). One row pe
 
 ## C6 — Sign-off
 
-Copy [field-pilot-playbook — Pilot sign-off](../../en/field-pilot-playbook.md#pilot-sign-off-template-bl-140). Attach filled form to ticket + journal.
-
 | Artifact | Linked? |
 |----------|---------|
-| Journal (7 days) | ☐ |
+| Journal (7 days) | ☐ day 1 only |
 | Sign-off form | ☐ |
-| Interop / smoke summary (lab pre-gate) | ☐ |
+| Interop / smoke summary (lab pre-gate) | ☑ BL-141 |
 | Scorecard note (only after field Done) | ☐ — do not update OT 10/10 early |
 
 ---
@@ -136,18 +120,18 @@ Copy [field-pilot-playbook — Pilot sign-off](../../en/field-pilot-playbook.md#
 
 | Task | Status | Notes |
 |------|--------|-------|
-| B4 lab dry-run documented | **Ready** | Commands above; peers 14/20 compose |
-| C1 site intake | **Open** | Blocks ready-for-field |
-| C2 device config | Blocked on C1 | |
-| C3 validation §1 | Blocked on C1 | |
-| C4 soak journal shell | **Ready** | Instance file created; days empty |
-| C5 stale exercise | Blocked on C1 | |
-| C6 sign-off template | **Ready** | In playbook |
+| B4 lab dry-run documented | **Done** | |
+| C1 site intake | **Done** | `lab-ot-vlan-192.168.100` |
+| C2 device config | **Done** | 50 tags RUNNING |
+| C3 validation §1 | **Mostly done** | HMI + C5 open |
+| C4 soak journal | **In progress** | Day 1 logged |
+| C5 stale exercise | Open | |
+| C6 sign-off | Blocked on day 7 | |
 
 ---
 
 ## Related
 
-- [2026-09-06-bl140-pilot1-kickoff.md](2026-09-06-bl140-pilot1-kickoff.md) — evidence note for this pack
-- [2026-09-05-lab-modbus-day1.md](2026-09-05-lab-modbus-day1.md) — lab-only day-1 (not plant)
+- [2026-09-06-bl140-pilot1-kickoff.md](2026-09-06-bl140-pilot1-kickoff.md)
+- [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-day1.md)
 - [post-merge lab vs field](2026-09-06-post-merge-lab-vs-field.md)

@@ -184,6 +184,13 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {
+        // Prefer binding configuration() (driverConfigJson keys). Fall back to device variables
+        // for older packs / manual host/port variables used in lab soaks.
+        String fromBinding = driverObject.configuration().get(name);
+        if (fromBinding != null && !fromBinding.isBlank()) {
+            consumer.accept(fromBinding.trim());
+            return;
+        }
         driverObject.getVariable(name).ifPresent(record -> {
             Object raw = record.firstRow().get("raw");
             if (raw == null) {
