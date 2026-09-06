@@ -37,6 +37,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **OT Trust BL-141 DNP3 fixture** — stdlib TCP outstation + integrity-poll smoke (compose peers **11/20**, poll-only ADR-0057). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-dnp3-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-dnp3-fixture.md).
 - **OT Trust BL-141 Modbus UDP fixture** — stdlib MBAP-over-UDP peer + FC6/FC16→FC3 smoke (compose peers **10/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-modbus-udp-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-modbus-udp-fixture.md).
 - **OT Trust BL-141 DLMS fixture** — stdlib TCP WRAPPER peer + SET/GET REGISTER smoke (compose peers **9/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-dlms-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-dlms-fixture.md).
 - **OT Trust BL-141 EtherNet/IP fixture** — stdlib CIP UCMM peer + Write/Read Tag DINT smoke (compose peers **8/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-ethernet-ip-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-ethernet-ip-fixture.md).

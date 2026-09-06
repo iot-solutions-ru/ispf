@@ -1,5 +1,5 @@
 # BL-141: OT driver interop lab fixtures (Modbus TCP/UDP, MQTT, OPC UA, SNMP, HTTP,
-# BACnet, IEC 104, EtherNet/IP, DLMS). Bind to loopback only — do not expose publicly.
+# BACnet, IEC 104, EtherNet/IP, DLMS, DNP3). Bind to loopback only — do not expose publicly.
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0
@@ -230,6 +230,31 @@ services:
           "python",
           "-c",
           "import socket; s=socket.create_connection(('127.0.0.1',4059),2); s.close()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
+
+  dnp3:
+    # Minimal DNP3 TCP outstation (stdlib ISPF subset). Poll-only — ADR-0057.
+    # Master=1, outstation=1024; seed AI0=12.34 / BI0=true / CTR0=999. Port 20000.
+    image: python:3.12-alpine
+    container_name: ispf-interop-dnp3
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./dnp3/server.py:/app/server.py:ro
+    command: ["python", "-u", "/app/server.py", "--host", "0.0.0.0", "--port", "20000"]
+    ports:
+      - "127.0.0.1:20000:20000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1',20000),2); s.close()",
         ]
       interval: 5s
       timeout: 3s

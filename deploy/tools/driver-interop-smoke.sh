@@ -10,6 +10,7 @@
 # - IEC 104 C_SE_NC_1 / C_RD_NA_1 float round-trip (IOA 3001)
 # - EtherNet/IP CIP Write Tag / Read Tag DINT round-trip (Program:MainProgram.Counter)
 # - DLMS WRAPPER SET/GET double round-trip (REGISTER 1.0.1.8.0.255 attr 2)
+# - DNP3 integrity poll (read-only AI0/BI0/CTR0 — ADR-0057 poll-only)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -36,6 +37,8 @@ EIP_HOST="${ISPF_INTEROP_EIP_HOST:-127.0.0.1}"
 EIP_PORT="${ISPF_INTEROP_EIP_PORT:-44818}"
 DLMS_HOST="${ISPF_INTEROP_DLMS_HOST:-127.0.0.1}"
 DLMS_PORT="${ISPF_INTEROP_DLMS_PORT:-4059}"
+DNP3_HOST="${ISPF_INTEROP_DNP3_HOST:-127.0.0.1}"
+DNP3_PORT="${ISPF_INTEROP_DNP3_PORT:-20000}"
 WAIT_SEC="${ISPF_INTEROP_SMOKE_WAIT_SEC:-120}"
 MOSQUITTO_CONTAINER="${ISPF_INTEROP_MOSQUITTO_CONTAINER:-ispf-interop-mosquitto}"
 OPCUA_WRITE="${ISPF_INTEROP_OPCUA_WRITE:-1}"
@@ -532,6 +535,38 @@ PY
   return 1
 }
 
+dnp3_integrity_poll() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "dnp3-integrity-poll" pass "skipped (no python3)"
+    return 0
+  fi
+  if DNP3_HOST="$DNP3_HOST" DNP3_PORT="$DNP3_PORT" python3 - <<'PY'
+import os, sys
+sys.path.insert(0, "deploy/driver-interop/dnp3")
+from server import SEED_AI0, SEED_BI0, SEED_CTR0, dnp3_integrity_poll
+
+host = os.environ.get("DNP3_HOST", "127.0.0.1")
+port = int(os.environ.get("DNP3_PORT", "20000"))
+values = dnp3_integrity_poll(host, port)
+ai = float(values["ANALOG_INPUT:0"])
+bi = values["BINARY_INPUT:0"]
+ctr = int(values["COUNTER:0"])
+if abs(ai - SEED_AI0) > 1e-9:
+    raise RuntimeError(f"AI0 {ai} != {SEED_AI0}")
+if bi is not True:
+    raise RuntimeError(f"BI0 {bi!r} != True")
+if ctr != SEED_CTR0:
+    raise RuntimeError(f"CTR0 {ctr} != {SEED_CTR0}")
+print(f"dnp3 integrity poll ok AI0={ai} BI0={bi} CTR0={ctr}")
+PY
+  then
+    record "dnp3-integrity-poll" pass "Class 0/1/2/3 static points (poll-only)"
+    return 0
+  fi
+  record "dnp3-integrity-poll" fail "against tcp://${DNP3_HOST}:${DNP3_PORT}"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test-modbus" ]]; then
   python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test
   exit $?
@@ -572,6 +607,11 @@ if [[ "${1:-}" == "--self-test-dlms" ]]; then
   exit $?
 fi
 
+if [[ "${1:-}" == "--self-test-dnp3" ]]; then
+  python3 "$ROOT/deploy/driver-interop/dnp3/server.py" --self-test
+  exit $?
+fi
+
 {
   echo "# Driver interop fixture smoke (BL-141 / OT Trust)"
   echo
@@ -593,6 +633,7 @@ wait_for_bacnet "$BACNET_HOST" "$BACNET_PORT" "bacnet-udp" || FAILED=1
 wait_for_tcp "$IEC104_HOST" "$IEC104_PORT" "iec104-tcp" || FAILED=1
 wait_for_tcp "$EIP_HOST" "$EIP_PORT" "ethernet-ip-tcp" || FAILED=1
 wait_for_tcp "$DLMS_HOST" "$DLMS_PORT" "dlms-tcp" || FAILED=1
+wait_for_tcp "$DNP3_HOST" "$DNP3_PORT" "dnp3-tcp" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
@@ -605,6 +646,7 @@ if [[ "$FAILED" -eq 0 ]]; then
   iec104_write_roundtrip || FAILED=1
   eip_write_roundtrip || FAILED=1
   dlms_write_roundtrip || FAILED=1
+  dnp3_integrity_poll || FAILED=1
 fi
 
 {
