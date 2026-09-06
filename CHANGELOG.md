@@ -37,6 +37,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **OT Trust BL-141 fixture depth** — SNMP + HTTP lab docker fixtures + smoke (compose peers **5/20**); stdlib agents; self-tests without docker. Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-snmp-http-fixtures.md`](docs/evidence/ot-trust/2026-09-06-bl141-snmp-http-fixtures.md).
 - **OT Trust post-merge honesty** — after Waves 1–11 / catalog **162/162** (#144): lab ≠ field certification; TOP-20 docker fixture/smoke inventory (3/20 compose peers); next depth = BL-141 fixtures + plant soaks, not more stubs. Evidence [`docs/evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md`](docs/evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md).
 - **OT Trust Wave 3 — 13 clean-room codec promotions** — `beckhoff-ads`, `mitsubishi-melsec`, `iec62056`, `ieee2030-5`, `mqtt-sn`, `nats`, `pulsar` (lab framing), `onvif`, `mtconnect`, `knx`, `lwm2m`, `websocket`, `graphql` → PRODUCTION with loopback tests; Apache-2.0 / JDK-only; high-risk stacks untouched; evidence `docs/evidence/ot-trust/2026-09-05-wave3-codec-promotion.md`.
 - **OT Trust — raise readiness for all 162 packs** — stub-kit **v0.2** (lab loopback write) +

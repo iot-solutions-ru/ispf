@@ -1,4 +1,4 @@
-# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA).
+# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA, SNMP, HTTP).
 # Bind to loopback only — do not expose on public interfaces.
 services:
   mosquitto:
@@ -61,3 +61,52 @@ services:
       - --fr=1
     ports:
       - "127.0.0.1:4840:4840"
+
+  snmp:
+    # Minimal SNMPv2c GET/SET lab agent (stdlib). Not a production snmpd.
+    # Writable OID: 1.3.6.1.4.1.99999.1.1.0 (Integer32). Community: public.
+    image: python:3.12-alpine
+    container_name: ispf-interop-snmp
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./snmp/agent.py:/app/agent.py:ro
+    command: ["python", "-u", "/app/agent.py", "--host", "0.0.0.0", "--port", "161"]
+    ports:
+      - "127.0.0.1:161:161/udp"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys; sys.path.insert(0,'.'); from agent import snmp_get, OID_LAB_GAUGE; snmp_get('127.0.0.1',161,OID_LAB_GAUGE)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
+
+  http:
+    # Writable JSON gauge fixture for HTTP driver smoke (GET/PUT /points/gauge).
+    image: python:3.12-alpine
+    container_name: ispf-interop-http
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./http/server.py:/app/server.py:ro
+    command: ["python", "-u", "/app/server.py", "--host", "0.0.0.0", "--port", "8089"]
+    ports:
+      - "127.0.0.1:8089:8089"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8089/health', timeout=2)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s

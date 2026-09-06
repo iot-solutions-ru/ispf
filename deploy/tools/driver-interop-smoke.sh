@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# BL-141 / OT Trust Wave 1 (B1): smoke OT docker fixtures before driver interop CI.
+# BL-141 / OT Trust Wave 1 (B1) + post-merge fixture depth:
 # - MQTT pub/sub round-trip
 # - Modbus TCP FC6 + FC16 write with FC3 read-back (writable lab fixture)
 # - Optional OPC UA write when asyncua is installed (ISPF_INTEROP_OPCUA_WRITE=1 default on)
+# - SNMP GET/SET round-trip (lab Integer32 OID)
+# - HTTP GET/PUT JSON gauge round-trip
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -15,6 +17,10 @@ MODBUS_HOST="${ISPF_INTEROP_MODBUS_HOST:-127.0.0.1}"
 MODBUS_PORT="${ISPF_INTEROP_MODBUS_PORT:-502}"
 OPCUA_HOST="${ISPF_INTEROP_OPCUA_HOST:-127.0.0.1}"
 OPCUA_PORT="${ISPF_INTEROP_OPCUA_PORT:-4840}"
+SNMP_HOST="${ISPF_INTEROP_SNMP_HOST:-127.0.0.1}"
+SNMP_PORT="${ISPF_INTEROP_SNMP_PORT:-161}"
+HTTP_HOST="${ISPF_INTEROP_HTTP_HOST:-127.0.0.1}"
+HTTP_PORT="${ISPF_INTEROP_HTTP_PORT:-8089}"
 WAIT_SEC="${ISPF_INTEROP_SMOKE_WAIT_SEC:-120}"
 MOSQUITTO_CONTAINER="${ISPF_INTEROP_MOSQUITTO_CONTAINER:-ispf-interop-mosquitto}"
 OPCUA_WRITE="${ISPF_INTEROP_OPCUA_WRITE:-1}"
@@ -57,6 +63,34 @@ wait_for_tcp() {
     sleep 2
   done
   record "$label" fail "timeout after ${WAIT_SEC}s (tcp://${host}:${port})"
+  return 1
+}
+
+wait_for_snmp() {
+  local host="$1"
+  local port="$2"
+  local label="$3"
+  local deadline=$((SECONDS + WAIT_SEC))
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "$label" pass "skipped wait (no python3)"
+    return 0
+  fi
+  while ((SECONDS < deadline)); do
+    if SNMP_HOST="$host" SNMP_PORT="$port" python3 - <<'PY'
+import os, sys
+sys.path.insert(0, "deploy/driver-interop/snmp")
+from agent import OID_LAB_GAUGE, snmp_get
+host = os.environ.get("SNMP_HOST", "127.0.0.1")
+port = int(os.environ.get("SNMP_PORT", "161"))
+assert snmp_get(host, port, OID_LAB_GAUGE) == 42
+PY
+    then
+      record "$label" pass "udp://${host}:${port} GET lab OID"
+      return 0
+    fi
+    sleep 2
+  done
+  record "$label" fail "timeout after ${WAIT_SEC}s (udp://${host}:${port})"
   return 1
 }
 
@@ -215,13 +249,89 @@ PY
   return 0
 }
 
+snmp_write_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "snmp-write-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if SNMP_HOST="$SNMP_HOST" SNMP_PORT="$SNMP_PORT" python3 - <<'PY'
+import os, random, sys
+sys.path.insert(0, "deploy/driver-interop/snmp")
+from agent import OID_LAB_GAUGE, snmp_get, snmp_set
+
+host = os.environ.get("SNMP_HOST", "127.0.0.1")
+port = int(os.environ.get("SNMP_PORT", "161"))
+value = random.randint(1, 60000)
+snmp_set(host, port, OID_LAB_GAUGE, value)
+got = snmp_get(host, port, OID_LAB_GAUGE)
+if got != value:
+    raise RuntimeError(f"snmp readback {got} != {value}")
+print(f"snmp set/get ok value={value}")
+PY
+  then
+    record "snmp-write-roundtrip" pass "GET/SET lab OID"
+    return 0
+  fi
+  record "snmp-write-roundtrip" fail "against udp://${SNMP_HOST}:${SNMP_PORT}"
+  return 1
+}
+
+http_write_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "http-write-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if HTTP_HOST="$HTTP_HOST" HTTP_PORT="$HTTP_PORT" python3 - <<'PY'
+import json, os, random, urllib.request
+
+host = os.environ.get("HTTP_HOST", "127.0.0.1")
+port = int(os.environ.get("HTTP_PORT", "8089"))
+base = f"http://{host}:{port}"
+value = random.randint(1, 60000)
+
+with urllib.request.urlopen(f"{base}/health", timeout=5) as resp:
+    assert json.load(resp)["ok"] is True
+
+req = urllib.request.Request(
+    f"{base}/points/gauge",
+    data=json.dumps({"value": value}).encode("utf-8"),
+    headers={"Content-Type": "application/json"},
+    method="PUT",
+)
+with urllib.request.urlopen(req, timeout=5) as resp:
+    assert json.load(resp)["value"] == value
+
+with urllib.request.urlopen(f"{base}/points/gauge", timeout=5) as resp:
+    got = json.load(resp)["value"]
+if got != value:
+    raise RuntimeError(f"http readback {got} != {value}")
+print(f"http put/get ok value={value}")
+PY
+  then
+    record "http-write-roundtrip" pass "PUT/GET /points/gauge"
+    return 0
+  fi
+  record "http-write-roundtrip" fail "against http://${HTTP_HOST}:${HTTP_PORT}"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test-modbus" ]]; then
   python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test
   exit $?
 fi
 
+if [[ "${1:-}" == "--self-test-snmp" ]]; then
+  python3 "$ROOT/deploy/driver-interop/snmp/agent.py" --self-test
+  exit $?
+fi
+
+if [[ "${1:-}" == "--self-test-http" ]]; then
+  python3 "$ROOT/deploy/driver-interop/http/server.py" --self-test
+  exit $?
+fi
+
 {
-  echo "# Driver interop fixture smoke (BL-141 / OT Trust Wave 1)"
+  echo "# Driver interop fixture smoke (BL-141 / OT Trust)"
   echo
   echo "Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   echo
@@ -234,11 +344,15 @@ FAILED=0
 wait_for_tcp "$MQTT_HOST" "$MQTT_PORT" "mqtt-tcp" || FAILED=1
 wait_for_tcp "$MODBUS_HOST" "$MODBUS_PORT" "modbus-tcp" || FAILED=1
 wait_for_tcp "$OPCUA_HOST" "$OPCUA_PORT" "opcua-tcp" || FAILED=1
+wait_for_snmp "$SNMP_HOST" "$SNMP_PORT" "snmp-udp" || FAILED=1
+wait_for_tcp "$HTTP_HOST" "$HTTP_PORT" "http-tcp" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
   modbus_write_roundtrip || FAILED=1
   opcua_write_roundtrip || FAILED=1
+  snmp_write_roundtrip || FAILED=1
+  http_write_roundtrip || FAILED=1
 fi
 
 {

@@ -45,10 +45,10 @@ Legend:
 | `modbus-udp` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
 | `opcua` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ opc-plc | ✓ TCP + optional write |
 | `opcua-server` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
-| `snmp` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
+| `snmp` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ stdlib agent | ✓ GET/SET |
 | `bacnet` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
 | `s7` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
-| `http` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
+| `http` | PRODUCTION | `READY_LAB` | Y | ✓ | ✓ JSON gauge | ✓ PUT/GET |
 | `flexible` | PRODUCTION | `READY_LAB` | n | ✓ | — | — (in-process only) |
 | `iec104` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
 | `iec104-server` | PRODUCTION | `READY_LAB` | Y | ✓ | — | — |
@@ -64,8 +64,8 @@ Legend:
 | Layer | Covered | Gap |
 |-------|---------|-----|
 | Gradle / loopback interop modules in CI | **20 / 20** | — |
-| Docker compose fixtures | **3 / 20** (`mqtt`, `modbus-tcp`, `opcua`) | 17 without compose peer |
-| Fixture smoke script | **3 / 20** | same gap |
+| Docker compose fixtures | **5 / 20** (`mqtt`, `modbus-tcp`, `opcua`, `snmp`, `http`) | 15 without compose peer |
+| Fixture smoke script | **5 / 20** | same gap |
 
 `virtual` / `flexible` are intentionally in-process (no external peer required).
 
@@ -73,9 +73,9 @@ Legend:
 
 Preferred order after catalog close — deepen BL-141 fixtures, do **not** invent more stub promotions:
 
-1. **SNMP** — snmpd (or equivalent) compose + GET/SET smoke  
-2. **HTTP** — tiny writable JSON fixture + GET/PUT smoke  
-3. **BACnet** / **S7** / **IEC 104** / **DNP3** / **DLMS** / **EtherNet/IP** — one docker peer each when a stable OSS fixture exists  
+1. ~~**SNMP**~~ — done (stdlib agent + GET/SET smoke) — see [2026-09-06-bl141-snmp-http-fixtures.md](2026-09-06-bl141-snmp-http-fixtures.md)
+2. ~~**HTTP**~~ — done (writable JSON gauge + PUT/GET smoke)
+3. **BACnet** / **S7** / **IEC 104** / **DNP3** / **DLMS** / **EtherNet/IP** — one docker peer each when a stable OSS fixture exists
 4. Plant pilots + soak journals ([pilot-soak-journal.template.md](pilot-soak-journal.template.md)) for BL-140 field Done  
 
 Until (4), P-OT stays **In progress** for *field* trust — lab catalog width is closed.
