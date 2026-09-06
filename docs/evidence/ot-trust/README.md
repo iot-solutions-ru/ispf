@@ -9,7 +9,7 @@
 | **Field trust** | Still open — needs named plant + soak journals |
 | Decision | [ADR-0057](../../en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md) — DNP3 PRODUCTION poll-only |
 | Post-merge honesty | [2026-09-06-post-merge-lab-vs-field.md](2026-09-06-post-merge-lab-vs-field.md) — lab ≠ field; TOP-20 fixture gaps |
-| BL-141 fixture depth | [2026-09-06-bl141-snmp-http-fixtures.md](2026-09-06-bl141-snmp-http-fixtures.md) — +SNMP/+HTTP; [2026-09-06-bl141-bacnet-fixture.md](2026-09-06-bl141-bacnet-fixture.md) — +BACnet; [2026-09-06-bl141-iec104-fixture.md](2026-09-06-bl141-iec104-fixture.md) — +IEC104; [2026-09-06-bl141-ethernet-ip-fixture.md](2026-09-06-bl141-ethernet-ip-fixture.md) — +EtherNet/IP (**8/20**) |
+| BL-141 fixture depth | [2026-09-06-bl141-snmp-http-fixtures.md](2026-09-06-bl141-snmp-http-fixtures.md) — +SNMP/+HTTP; [2026-09-06-bl141-bacnet-fixture.md](2026-09-06-bl141-bacnet-fixture.md) — +BACnet; [2026-09-06-bl141-iec104-fixture.md](2026-09-06-bl141-iec104-fixture.md) — +IEC104; [2026-09-06-bl141-ethernet-ip-fixture.md](2026-09-06-bl141-ethernet-ip-fixture.md) — +EtherNet/IP; [2026-09-06-bl141-dlms-fixture.md](2026-09-06-bl141-dlms-fixture.md) — +DLMS (**9/20**) |
 | Kickoff | [2026-09-05-wave1-kickoff.md](2026-09-05-wave1-kickoff.md) |
 | Lab day-1 dry-run | [2026-09-05-lab-modbus-day1.md](2026-09-05-lab-modbus-day1.md) |
 | **Full catalog (162)** | [driver-readiness.md](driver-readiness.md) · [driver-readiness.json](driver-readiness.json) |
