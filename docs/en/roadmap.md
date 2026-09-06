@@ -96,7 +96,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 
 | Phase | Theme | Done highlights | Still open (typical) |
 | ----- | ----- | --------------- | -------------------- |
-| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done** | BL-140 field pilots / edge soak (parked) |
+| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **Wave 1 in progress** | BL-140 field pilots / edge soak (lab track started) |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
@@ -996,7 +996,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | **P1** | MES productization | BL-164…168, BL-170, BL-193 **Done** (marketplace lab); field sites still open; **not** live ERP |
 | **P2** | Historian + Security + compliance | BL-159…162, BL-155, BL-192 |
 | **Deferred** | Live ERP L4 connector | BL-169: real 1C **or** SAP — parked |
-| **Partial** | OT trust | BL-191 honesty **Done**; BL-140 pilots still parked — [Wave 1 backlog](#s31-wave-1-execution-backlog) |
+| **Partial** | OT trust | BL-191 honesty **Done** (corrected scope); Wave 1 **in progress** — [Wave 1 backlog](#s31-wave-1-execution-backlog); BL-140 field pilots still open |
 
 ---
 
@@ -1313,7 +1313,7 @@ New backlog from IoT/SCADA/MES/ERP gap audit (2026-07-09). Elevates honesty and 
 
 | ID | Phase | Task | Priority | Acceptance |
 | -- | ----- | ---- | -------- | ---------- |
-| **BL-191** | 25 | **OT PRODUCTION matrix honesty** | **Done** | `opc-da` / `opc-bridge` / `ethernet-ip` / `dnp3` → **BETA** (POLL_ONLY); scorecard OT integrity updated; `productionDriversMustNotBeDocumentedStubs` CI gate — **honesty closed 2026-07-19** (`writePoint` not in scope) |
+| **BL-191** | 25 | **OT PRODUCTION matrix honesty** | **Done** (honesty scope) | Shells `opc-da` / `opc-bridge` → **BETA**; CI stub-javadoc gate; **no false WRITE** on DNP3. **Not** “all four → BETA”: `dnp3` stays **PRODUCTION + POLL_ONLY**, `ethernet-ip` stays **PRODUCTION + WRITE** ([ADR-0057](decisions/0057-ot-trust-wave1-dnp3-poll-only.md)). Wave 1 residual: interop write smoke + Modbus lab pilot |
 | **BL-192** | 27 / 32 | **Compliance tender pack** | **Done** | IEC 62443 mapping lite + GAMP-lite checklist + gap register (pen-test, audit trail, hard tenancy) — [compliance-tender-pack](compliance-tender-pack.md); linked from DoD / scorecard. **Not** a product certification |
 | **BL-193** | 29 | **MES genealogy / traceability lite** | **Done** | Lot ↔ material ↔ work-order ↔ quality record graph query + operator report on `mes-platform` (BFF `mes_genealogy_*`, reports, Genealogy dashboard); seed lot `BATCH-LINE-A01-001`; test `MesGenealogyLiteIntegrationTest`; [mes.md](mes.md). Extends BL-167 beyond SPC. **Not** live ERP (BL-169) |
 | **BL-194** | 27 | **WebAuthn / IdP OTP MFA** | Planned | Passkeys / WebAuthn enrollment + login; Keycloak OTP as primary IdP MFA path. Split from BL-153 (TOTP GA **Done**) — [security](security.md) |
@@ -1415,9 +1415,9 @@ All must hold:
 
 Build **usable slices** end-to-end before breadth. Each wave ends with a **named scenario** a customer could run.
 
-#### Wave 1 — OT trust you can deploy (Phase 25 + BL-191) — **Deferred**
+#### Wave 1 — OT trust you can deploy (Phase 25 + BL-191) — **In progress** (2026-09-05)
 
-> Parked 2026-07-14. Do not schedule Wave 1 work in the active 90 days unless a named field driver task appears.
+> Unparked with named task: Wave 1 kickoff (matrix honesty residual + Modbus lab pilot). Customer plant optional until named; lab fixtures count for dry-run only. Evidence: `docs/evidence/ot-trust/`.
 
 | Usable outcome | Evidence | BL |
 | -------------- | -------- | -- |
@@ -1474,9 +1474,9 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 
 | # | Task | Owner | Files / tests | Done when |
 | - | ---- | ----- | ------------- | --------- |
-| B1 | Extend smoke script: **FC16 / MQTT publish / OPC UA write** round-trip | Dev | `deploy/tools/driver-interop-smoke.sh` | Exit 0 on compose up |
-| B2 | CI workflow publishes `build/driver-interop/interop-summary.md` artifact | DevOps | `.github/workflows/driver-interop.yml` | Artifact on main |
-| B3 | Document read-only vs write drivers in interop lab | Docs | `driver-interop-lab.md` | Table matches post-BL-191 matrix |
+| B1 | Extend smoke: **FC16 / MQTT publish / OPC UA write** round-trip | Dev | `deploy/tools/driver-interop-smoke.sh` + writable `modbus/server.py` | Exit 0 on compose up (**hardening on #144**) |
+| B2 | CI workflow publishes fixture smoke summary artifact | DevOps | `.github/workflows/driver-interop.yml` | Artifact on PR/main |
+| B3 | Document read-only vs write drivers in interop lab | Docs | `driver-interop-lab.md` | Table matches post-BL-191 matrix (**updated**) |
 | B4 | Local gate before pilot: `docker compose … up` + `driver-interop-smoke.sh` in integrator runbook | Integrator | [field-pilot-playbook](field-pilot-playbook.md) §1 dry-run | Checklist linked |
 
 #### Workstream C — BL-140 pilot #1 (Modbus plant)
@@ -1713,7 +1713,8 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
-| 2026-07-19 | **BL-191 OT matrix honesty Done:** `opc-da` / `opc-bridge` / `ethernet-ip` / `dnp3` downgraded PRODUCTION→BETA; CI `productionDriversMustNotBeDocumentedStubs`; scorecard OT integrity issue closed (`writePoint` still open, not in BL-191 scope) |
+| 2026-09-05 | **OT Trust Wave 1 kicked off:** P-OT → In progress; ADR-0057 (DNP3 PRODUCTION poll-only); `http` matrix WRITE honesty; Modbus FC6 smoke; evidence under `docs/evidence/ot-trust/` |
+| 2026-07-19 | **BL-191 OT matrix honesty Done (corrected):** `opc-da` / `opc-bridge` → BETA + CI stub gate; DNP3 remains PRODUCTION poll-only (write gap); ethernet-ip remains PRODUCTION with WRITE — see ADR-0057 |
 | 2026-07-17 | **BL-185 Symbol marketplace Done:** filesystem symbol packs + scada API + mimic palette; local HVAC demo install; remote free zip via MarketplaceService |
 | 2026-07-17 | **BL-182 Context pack v2 Done:** readiness gap index searchable + live platform overlay on `/tools/context-pack`; admin refresh; MCP `competitive-gap-index` / `live-platform` |
 | 2026-07-17 | **BL-181 Agent observability v2 Done:** AI Studio tool cost/latency table; admin `/agent/metrics/tools`; transient tool auto-retry + LLM action parse retry |

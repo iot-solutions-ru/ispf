@@ -1,0 +1,20 @@
+# OT Trust evidence (Phase 25 / Wave 1)
+
+> Honesty: this folder tracks **process evidence**, not a completed field certification.
+
+| Status | Note |
+|--------|------|
+| **In progress** | Wave 1 kicked off 2026-09-05 (named task) |
+| Decision | [ADR-0057](../../en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md) — DNP3 PRODUCTION poll-only |
+| Kickoff | [2026-09-05-wave1-kickoff.md](2026-09-05-wave1-kickoff.md) |
+| Lab day-1 dry-run | [2026-09-05-lab-modbus-day1.md](2026-09-05-lab-modbus-day1.md) |
+| **Full catalog (162)** | [driver-readiness.md](driver-readiness.md) · [driver-readiness.json](driver-readiness.json) |
+| Wave 3 codec promotions | [2026-09-05-wave3-codec-promotion.md](2026-09-05-wave3-codec-promotion.md) — +13 PRODUCTION clean-room |
+| Stub readiness ladder | [2026-09-05-raise-all-driver-readiness.md](2026-09-05-raise-all-driver-readiness.md) — stub-kit **v0.2** + **97×** pack contracts → **`STUB_LAB`** (still ≠ PRODUCTION) |
+| Pilot journal template | [pilot-soak-journal.template.md](pilot-soak-journal.template.md) |
+
+## Unpark criteria met
+
+Operator named task: **start OT Trust Wave 1** (matrix honesty residual + Modbus lab pilot track). Customer plant still optional; lab Modbus fixtures count for C1–C3 dry-run only.
+
+Do **not** claim competitive-scorecard OT **10/10** until BL-140 field pilots + soak journals exist.

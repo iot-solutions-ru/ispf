@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProtocolStubDeviceDriverTest {
 
     @Test
-    void stubIsMarkedStubAndReadOnly() throws Exception {
+    void stubIsMarkedStubAndSupportsLabLoopbackWrite() throws Exception {
         ProtocolStubDeviceDriver driver = new ProtocolStubDeviceDriver(
                 "unit-test-stub",
                 "Unit Test Stub Driver",
@@ -30,6 +31,8 @@ class ProtocolStubDeviceDriverTest {
         ) {};
         assertEquals("unit-test-stub", driver.metadata().id());
         assertEquals(DriverMaturity.STUB, driver.metadata().maturity());
+        assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        assertEquals("0.2.0", driver.metadata().version());
 
         StubDriverObject driverObject = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
@@ -40,14 +43,52 @@ class ProtocolStubDeviceDriverTest {
         driver.connect();
         driver.readPoints(Map.of("status", "connected"));
         assertEquals(false, driverObject.variables.get("status").firstRow().get("connected"));
+        assertEquals("probe", driverObject.variables.get("status").firstRow().get("mode"));
 
-        DriverException error = assertThrows(DriverException.class, () ->
-                driver.writePoint("status", DataRecord.single(
-                        DataSchema.builder("value").field("value", FieldType.STRING).build(),
-                        Map.of("value", "1")
-                )));
-        assertTrue(error.getMessage().contains("read-only"));
+        driver.writePoint("status", DataRecord.single(
+                DataSchema.builder("value").field("value", FieldType.STRING).build(),
+                Map.of("value", "42")
+        ));
+        assertEquals("42", driverObject.variables.get("status").firstRow().get("value"));
+        assertEquals("loopback", driverObject.variables.get("status").firstRow().get("mode"));
+
+        driver.readPoints(Map.of("status", "connected"));
+        assertEquals("42", driverObject.variables.get("status").firstRow().get("value"));
+        assertEquals("loopback", driverObject.variables.get("status").firstRow().get("mode"));
+
+        assertThrows(DriverException.class, () -> driver.writePoint(" ", DataRecord.single(
+                DataSchema.builder("value").field("value", FieldType.STRING).build(),
+                Map.of("value", "x")
+        )));
         driver.disconnect();
+        assertThrows(DriverException.class, () -> driver.readPoints(Map.of("status", "connected")));
+    }
+
+    @Test
+    void disconnectClearsLoopbackState() throws Exception {
+        ProtocolStubDeviceDriver driver = new ProtocolStubDeviceDriver(
+                "unit-test-stub-2",
+                "Unit Test Stub Driver 2",
+                "Unit test connectivity stub",
+                1
+        ) {};
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", "1",
+                "timeoutMs", "200"
+        ));
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.writePoint("p1", DataRecord.single(
+                DataSchema.builder("value").field("value", FieldType.STRING).build(),
+                Map.of("value", "keep")
+        ));
+        driver.disconnect();
+        driver.connect();
+        driver.readPoints(Map.of("p1", "connected"));
+        assertEquals("probe", driverObject.variables.get("p1").firstRow().get("mode"));
+        assertTrue(String.valueOf(driverObject.variables.get("p1").firstRow().get("value"))
+                .startsWith("endpoint-"));
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {

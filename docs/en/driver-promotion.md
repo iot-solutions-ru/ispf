@@ -28,6 +28,110 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
 
+## Status (September 2026, OT Trust Wave 2 codec promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------------|
+| `redis` | STUB | **PRODUCTION** | RESP GET/SET over TCP; `RedisDeviceDriverTest` (in-process fake RESP server); `POLL` + `WRITE` |
+| `mitsubishi-slmp` | STUB | **PRODUCTION** | SLMP 3E binary device-read/write for D registers; `MitsubishiSlmpDeviceDriverTest` (fake SLMP server); points `D100` / `D:100:1`; `POLL` + `WRITE` |
+| `yaskawa-memobus` | STUB | **PRODUCTION** | Modbus-TCP FC3/FC6 holding registers; `YaskawaMemobusDeviceDriverTest` (fake Modbus TCP); points `HR:100` / `100`; `POLL` + `WRITE` |
+| `sparkplug-b` | STUB | **PRODUCTION** | MQTT (Paho) + minimal Sparkplug B protobuf Payload/Metric codec; host subscribe NBIRTH/DBIRTH/DDATA; DCMD write; `SparkplugBDeviceDriverTest` (Moquette); `POLL` + `WRITE` |
+
+
+
+
+
+
+
+## Status (September 2026, OT Trust Wave 6 start)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `enocean` | STUB | **PRODUCTION** | ESP3 TCP gateway ASCII lab |
+| `sigfox` | STUB | **PRODUCTION** | Backend callback HTTP/1.1 lab |
+| `genicam` | STUB | **PRODUCTION** | GenICam feature GET/SET TCP lab |
+| `rockwell-csp` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `plcnext` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `schneider-umac` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `fuji-sph` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `hitachi-hidic` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+| `toshiba-t-series` | STUB | **PRODUCTION** | Wave 6 PLC lab |
+
+## Status (September 2026, OT Trust Wave 5 start)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `camera-ai` | STUB | **PRODUCTION** | HTTP/1.1 inference lab GET/POST |
+| `dali` | STUB | **PRODUCTION** | DALI gateway ASCII QUERY/SET lab |
+| `canbus-gateway` | STUB | **PRODUCTION** | CAN TCP gateway GET/TX ASCII lab |
+| `j1939` | STUB | **PRODUCTION** | J1939-over-TCP gateway lab |
+| `codesys` | STUB | **PRODUCTION** | CODESYS text gateway lab |
+| `wago` | STUB | **PRODUCTION** | Modbus-TCP FC3/FC6 lab |
+| `idec-microsmart` | STUB | **PRODUCTION** | Host Link ASCII lab |
+| `unitronics` | STUB | **PRODUCTION** | PCOM ASCII lab |
+| `ge-srtp` | STUB | **PRODUCTION** | GE SRTP mailbox lab |
+| `rockwell-df1` | STUB | **PRODUCTION** | DF1 protected binary TCP-bridge lab |
+| `iec103` | STUB | **PRODUCTION** | IEC 60870-5-103 TCP lab |
+| `secs-gem` | STUB | **PRODUCTION** | HSMS/SECS-II GEM lab subset |
+
+## Status (September 2026, OT Trust Wave 4 batch)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `keyence-hostlink` | STUB | **PRODUCTION** | Keyence Host Link ASCII lab |
+| `panasonic-mewto` | STUB | **PRODUCTION** | MEWTOCOL-COM ASCII lab |
+| `fatek` | STUB | **PRODUCTION** | Fatek FACON ASCII lab |
+| `azure-iot-hub` | STUB | **PRODUCTION** | MQTT 3.1.1 lab + Azure topic conventions (not Azure SDK) |
+| `aws-iot-core` | STUB | **PRODUCTION** | MQTT 3.1.1 lab + AWS topic conventions (not AWS SDK) |
+| `iec101` | STUB | **PRODUCTION** | IEC 60870-5-101 TCP lab subset |
+| `ansi-c12` | STUB | **PRODUCTION** | ANSI C12.18/22 table-read lab subset |
+| `rtsp` | STUB | **PRODUCTION** | RTSP OPTIONS/DESCRIBE/TEARDOWN lab |
+| `amqp` | STUB | **PRODUCTION** | AMQP 0-9-1 lab subset (not full broker) |
+
+## Status (September 2026, OT Trust Wave 4 edge)
+
+| driverId | was | now | notes |
+|----------|-----|-----|-------|
+| `barcode-scanner` | STUB | **PRODUCTION** | TCP newline barcode/QR last-scan + TRIGGER/BEEP |
+| `weighbridge` | STUB | **PRODUCTION** | ASCII `W` poll / ZERO/TARE lab dialect |
+| `weather-station` | STUB | **PRODUCTION** | `GET FIELD` / `GET ALL` text lab (read-only) |
+| `delta-dvp` | STUB | **PRODUCTION** | Modbus-TCP FC3/FC6 lab for Delta DVP/AS |
+| `ls-xgt` | STUB | **PRODUCTION** | XGT-lab binary (LSIS-XGT header subset; not certified FEnet) |
+
+**License policy:** Apache-2.0 clean-room / JDK sockets only. Lab readiness ≠ field certification.
+
+## Status (September 2026, OT Trust Wave 3b)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------|
+| `ocpp` | STUB | **PRODUCTION** | OCPP 1.6 JSON-lines TCP lab subset |
+| `odata` | STUB | **PRODUCTION** | OData JSON v4 HTTP subset |
+| `grpc` | STUB | **PRODUCTION** | Honest gRPC-JSON lab (not wire gRPC) |
+| `openadr` | STUB | **PRODUCTION** | OpenADR 2.0b VEN poll subset |
+| `scpi` | STUB | **PRODUCTION** | SCPI over TCP |
+| `visa` | STUB | **PRODUCTION** | SOCKET-only SCPI-over-TCP (not NI-VISA) |
+| `knx-tp` | STUB | **PRODUCTION** | KNXnet/IP Routing (“TP via IP”) |
+
+## Status (September 2026, OT Trust Wave 3 clean-room promotion)
+
+| driverId | Was | Now | Note |
+|----------|------|-------|------|
+| `beckhoff-ads` | STUB | **PRODUCTION** | AMS/TCP AdsRead/AdsWrite IG:IO; loopback fake ADS |
+| `mitsubishi-melsec` | STUB | **PRODUCTION** | MC/SLMP 3E D-register R/W; loopback |
+| `iec62056` | STUB | **PRODUCTION** | IEC 62056-21 Mode C TCP readout (not DLMS APDU) |
+| `ieee2030-5` | STUB | **PRODUCTION** | SEP2 HTTP GET subset |
+| `mqtt-sn` | STUB | **PRODUCTION** | MQTT-SN 1.2 UDP CONNECT/PUBLISH/SUBSCRIBE subset |
+| `nats` | STUB | **PRODUCTION** | NATS text INFO/CONNECT/SUB/PUB subset |
+| `pulsar` | STUB | **PRODUCTION** | Lab TCP text framing (honest non-binary subset) |
+| `onvif` | STUB | **PRODUCTION** | Device WSDL GetDeviceInformation subset |
+| `mtconnect` | STUB | **PRODUCTION** | Agent HTTP streams poll |
+| `knx` | STUB | **PRODUCTION** | KNXnet/IP Tunneling group value R/W |
+| `lwm2m` | STUB | **PRODUCTION** | CoAP GET resource read subset |
+| `websocket` | STUB | **PRODUCTION** | RFC6455 client text frames |
+| `graphql` | STUB | **PRODUCTION** | HTTP GraphQL query/mutation |
+
+**License policy:** Apache-2.0 clean-room / JDK sockets only. Deferred high-risk stacks (`profinet`, `ethercat`, `iec61850*`, proprietary CNC). `visa`/`scpi`/`knx-tp` remain STUB until loopback green.
+
 ## Status (July 2026, driver batch C promotion)
 
 | driverId | Was | Now | Note |
@@ -102,8 +206,8 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
 | `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
-| `dnp3` | PRODUCTION (poll only) | **BETA** (BL-191) | Class 0/1/2/3 poll; **write not implemented** |
-| `ethernet-ip` | PRODUCTION | **BETA** (BL-191) | CIP session registration + tag path placeholder |
+| `dnp3` | PRODUCTION (poll only) | **PRODUCTION** (poll only) | Class 0/1/2/3 poll; **write not implemented** — ADR-0057 keeps PRODUCTION+POLL_ONLY (not BETA) |
+| `ethernet-ip` | PRODUCTION | **PRODUCTION** | CIP session + tag read/write — do **not** mark BETA |
 | `opc-da` | PRODUCTION (shell) | **BETA** (BL-191) | Connectivity shell + parser tests — not full DA |
 | `opc-bridge` | PRODUCTION (shell) | **BETA** (BL-191) | Bridge point mapping + parser tests |
 

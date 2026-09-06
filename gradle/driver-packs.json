@@ -322,7 +322,7 @@
     "packId": "ispf-driver-graphql"
   },
   "ispf-driver-grpc": {
-    "driverClass": "com.ispf.driver.grpc.GrpcDeviceDriver",
+    "driverClass": "com.ispf.driver.grpc.GrpcJsonDeviceDriver",
     "driverId": "grpc",
     "jarFile": "ispf-driver-grpc.jar",
     "licenseType": "Apache-2.0",

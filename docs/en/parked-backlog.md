@@ -8,7 +8,7 @@
 | P-ENT-L | Enterprise L (50k history tags + 1B CH + multi-tag SLO) | **Lab PASS** (2026-09-05) | Scorecard Historian rescore on full audit | Evidence: [`docs/evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md). Synthetic CH fill; tooling PR for `history-enabled-count` may still be merging. |
 | P-HMI-8H | HMI offline stretch **8 h** (lab CDP) | **In progress** | Dated JSON + journal under `docs/evidence/hmi-offline/` | Lab CDP (`pwa:offline-field-soak`, 480 min) started 2026-09-05 against demostand. **Not** on-site tablet airplane mode. |
 | P-HMI-FIELD | On-site tablet / airplane-mode soak (2h min / 8h stretch) | **Parked** | Named site + tablet + journal | Playbook: [hmi-offline-field-soak.md](hmi-offline-field-soak.md). |
-| P-OT | Phase 25 OT Trust field pilots (BL-140…) | **Parked** | Named driver + plant task | Wave 1 checklist remains under roadmap; BL-191 matrix honesty Done. |
+| P-OT | Phase 25 OT Trust field pilots (BL-140…) | **In progress** (Wave 1 kickoff 2026-09-05) | Named driver + plant task *(lab Modbus track started)* | ADR-0057: DNP3 stays PRODUCTION poll-only; `http` WRITE aligned; evidence `docs/evidence/ot-trust/`. Field Done still needs soak journals. |
 | P-ERP | Live ERP connector (BL-169) | **Parked** | Named 1C/SAP integration | Sandbox / simulate catalog may exist; **live** round-trip is not claimed. |
 | P-BPMN | BPMN/DMN depth beyond ADR-0047 | **Parked** | Named customer blocker + ADR | Freeze holds. |
 | P-WEBAUTHN | WebAuthn / passkeys (BL-194) | **Parked (Planned)** | Tender / customer MFA requirement | TOTP MFA GA remains the shipped path. |

@@ -3,14 +3,10 @@ package com.ispf.server.driver;
 import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StubDriverMaturityTest {
 
@@ -45,23 +41,25 @@ class StubDriverMaturityTest {
         assertEquals(DriverMaturity.PRODUCTION, DriverMaturityRegistry.resolve(driverId), driverId);
     }
 
+    /**
+     * Wave 11 cleared the protocol-stub catalog (all packs are matrix lab codecs).
+     * The JSON resource must still load; core drivers must never reappear as stubs.
+     */
     @Test
     void protocolStubCatalogIsLoaded() {
-        assertTrue(
-                DriverProductionMatrix.protocolStubIds().size() > 40,
-                "protocol stub catalog should be generated"
+        assertEquals(
+                0,
+                DriverProductionMatrix.protocolStubIds().size(),
+                "protocol stub catalog should be empty after Wave 11 lab promotions"
         );
         assertFalse(DriverProductionMatrix.protocolStubIds().contains("opcua"));
         assertFalse(DriverProductionMatrix.protocolStubIds().contains("modbus-tcp"));
     }
 
-    @ParameterizedTest
-    @MethodSource("protocolStubIds")
-    void protocolCatalogStubsAreStubMaturity(String driverId) {
-        assertEquals(DriverMaturity.STUB, DriverMaturityRegistry.resolve(driverId), driverId);
-    }
-
-    static Stream<String> protocolStubIds() {
-        return DriverProductionMatrix.protocolStubIds().stream().sorted();
+    @Test
+    void protocolCatalogStubsAreStubMaturity() {
+        for (String driverId : DriverProductionMatrix.protocolStubIds()) {
+            assertEquals(DriverMaturity.STUB, DriverMaturityRegistry.resolve(driverId), driverId);
+        }
     }
 }

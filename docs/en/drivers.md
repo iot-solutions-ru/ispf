@@ -23,9 +23,9 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-In `DriverProductionMatrix` — **58** drivers at **PRODUCTION** (including `cwmp` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **97** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0 TCP reachability shells). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+In `DriverProductionMatrix` — **86** drivers at **PRODUCTION** (Wave 2 + Wave 3 clean-room codecs; includes `cwmp` / notification packs `email`/`sms`/`webhook` / `smb` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), plus **73** individual catalog **STUB** packs (`ispf-driver-<id>`, Apache-2.0). Stub-kit **v0.2** adds TCP probe + memory loopback write; remaining stubs stay audit **`STUB_LAB`** (still ≠ PRODUCTION / ≠ field). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); protocol catalog stubs (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, …) are **STUB** until demand-driven promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA**/**STUB** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests); remaining high-risk / unfinished catalog stubs (`iec61850`, `profinet`, `visa`, `scpi`, …) stay **STUB** / audit **`STUB_LAB`** until demand-driven codec promotion. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
@@ -493,7 +493,7 @@ The `capabilities` field — string set from `DriverProductionMatrix` (ADR-0022)
 
 ### Stub promotion (demand-driven)
 
-58 core `driverId` values are in the production matrix; **97** additional protocol-catalog stubs ship as individual `ispf-driver-<id>` packs (**STUB**, TCP reachability only, **Apache-2.0**). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
+58 core `driverId` values are in the production matrix; **93** additional protocol-catalog stubs ship as individual `ispf-driver-<id>` packs (**STUB**, TCP reachability only, **Apache-2.0**). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):
 
 1. The app team describes the scenario (device, point mapping, acceptance test).
 2. A platform PR adds protocol logic (replace the stub class in `ispf-driver-<id>`).
@@ -505,7 +505,7 @@ Current STUB/BETA candidates:
 |------------|----------|------|
 | `corba` | BETA | CORBA IIOP TCP shell — needs a third-party ORB |
 | `opc-da`, `opc-bridge` | BETA | Classic OPC shells — prefer `opcua` or external DA→UA |
-| Protocol catalog (`sparkplug-b`, `iec61850`, `profinet`, `beckhoff-ads`, `knx`, `lorawan`, …) | STUB | Generated one pack per id from `tools/driver-stubs/protocol-stubs.yaml` (shared base `ispf-driver-stub-kit`) |
+| Protocol catalog (`iec61850`, `profinet`, `lorawan`, `visa`, …) | STUB (`STUB_LAB` audit) | Remaining stubs from `tools/driver-stubs/protocol-stubs.yaml`; Waves 2–3 promoted redis/SLMP/Memobus/Sparkplug + ADS/MELSEC/MQTT-SN/NATS/KNX/… → PRODUCTION |
 | `vmware` | PRODUCTION | vSphere SOAP: Login + RetrieveProperties |
 | `smi-s` | PRODUCTION | SMI-S CIM-XML parse |
 
@@ -609,7 +609,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `mbus` | `ispf-driver-mbus` | PRODUCTION | Apache-2.0 | M-Bus meter protocol (read-only v0.1) |
 | `message-stream` | `ispf-driver-message-stream` | PRODUCTION | Apache-2.0 | Generic TCP/UDP message stream framing |
 | `mitsubishi-melsec` | `ispf-driver-mitsubishi-melsec` | STUB | Apache-2.0 | Mitsubishi MELSEC communication stub (MC Protocol / SLMP path planned) |
-| `mitsubishi-slmp` | `ispf-driver-mitsubishi-slmp` | STUB | Apache-2.0 | Mitsubishi SLMP (Seamless Message Protocol) stub |
+| `mitsubishi-slmp` | `ispf-driver-mitsubishi-slmp` | PRODUCTION | Apache-2.0 | SLMP 3E binary D-register read/write (points `D100` / `D:100:1`) |
 | `modbus-rtu` | `ispf-driver-modbus-rtu` | PRODUCTION | Apache-2.0 | Modbus RTU master over serial |
 | `modbus-tcp` | `ispf-driver-modbus` | PRODUCTION | Apache-2.0 | Modbus TCP master (FC read/write holding/input/coils) |
 | `modbus-udp` | `ispf-driver-modbus-udp` | PRODUCTION | Apache-2.0 | Modbus UDP master |
@@ -640,7 +640,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `profinet` | `ispf-driver-profinet` | STUB | Apache-2.0 | PROFINET IO controller/device stub (DCP/RPC not implemented) |
 | `pulsar` | `ispf-driver-pulsar` | STUB | Apache-2.0 | Apache Pulsar client stub |
 | `radius` | `ispf-driver-radius` | PRODUCTION | Apache-2.0 | RADIUS authentication check |
-| `redis` | `ispf-driver-redis` | STUB | Apache-2.0 | Redis key/stream telemetry stub |
+| `redis` | `ispf-driver-redis` | PRODUCTION | Apache-2.0 | Redis RESP GET/SET key/value telemetry |
 | `rockwell-csp` | `ispf-driver-rockwell-csp` | STUB | Apache-2.0 | Allen-Bradley CSP (legacy Ethernet) stub |
 | `rockwell-df1` | `ispf-driver-rockwell-df1` | STUB | Apache-2.0 | Allen-Bradley DF1 serial/TCP bridge stub |
 | `rtsp` | `ispf-driver-rtsp` | STUB | Apache-2.0 | RTSP media/metadata stub |
@@ -657,7 +657,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `snmp` | `ispf-driver-snmp` | PRODUCTION | Apache-2.0 | SNMP v1/v2c/v3 GET/SET poll client |
 | `soap` | `ispf-driver-soap` | PRODUCTION | Apache-2.0 | SOAP HTTP client |
 | `someip` | `ispf-driver-someip` | STUB | Apache-2.0 | AUTOSAR SOME/IP stub |
-| `sparkplug-b` | `ispf-driver-sparkplug-b` | STUB | Apache-2.0 | MQTT Sparkplug B host/edge stub (MQTT session + Sparkplug payload parsing not implemented) |
+| `sparkplug-b` | `ispf-driver-sparkplug-b` | PRODUCTION | Apache-2.0 | Sparkplug B host (MQTT + protobuf metrics; DCMD write) |
 | `ssh` | `ispf-driver-ssh` | PRODUCTION | Apache-2.0 | SSH remote command execution (JSch) |
 | `telnet` | `ispf-driver-telnet` | PRODUCTION | Apache-2.0 | Telnet remote command session |
 | `thread` | `ispf-driver-thread` | STUB | Apache-2.0 | Thread Border Router stub |
@@ -678,7 +678,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `wmbus` | `ispf-driver-wmbus` | STUB | Apache-2.0 | Wireless M-Bus (OMS) stub |
 | `wmi` | `ispf-driver-wmi` | PRODUCTION | Apache-2.0 | Windows WMI via PowerShell (Windows only) |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | Apache-2.0 | XMPP messaging client (Smack) |
-| `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | STUB | Apache-2.0 | Yaskawa Memobus/Modbus-family PLC stub |
+| `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | PRODUCTION | Apache-2.0 | Memobus Modbus-TCP FC3/FC6 holding registers (`HR:100` / `100`) |
 | `zigbee` | `ispf-driver-zigbee` | STUB | Apache-2.0 | Zigbee coordinator / ZCL stub |
 | `zwave` | `ispf-driver-zwave` | STUB | Apache-2.0 | Z-Wave controller stub |
 
@@ -691,7 +691,7 @@ Detailed configs for base drivers — in the sections below. Others follow the s
 | `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
 | `corba` | IIOP TCP | JDK CORBA removed; use bridge |
-| Protocol catalog stubs | TCP reachability only | Demand-driven codec in dedicated pack |
+| Protocol catalog stubs | STUB_LAB (TCP probe + memory loopback + pack contract test) | Demand-driven codec in dedicated pack → PRODUCTION |
 | `wmi` | PowerShell | Windows only |
 
 ### Examples (brief)
