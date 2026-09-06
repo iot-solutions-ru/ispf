@@ -163,7 +163,7 @@ When MFA is enabled, authenticated users can:
 Local login accepts optional `totpCode` on `POST /api/v1/auth/login`. When `required-for-admin=true`, admin-role logins require an enrolled secret and a valid code.
 
 **REAL today (BL-153 Done — TOTP GA):** persisted enrollments (`mfa_enrollments`), TOTP verify, admin enforcement, Security console enrollment UI + login TOTP field.  
-**Follow-up (BL-194 Planned):** WebAuthn / passkeys; Keycloak OTP as the primary IdP MFA path — intent locked in ADR [0056](decisions/0056-webauthn-idp-mfa.md) (**Proposed**, implementation parked until a named tender/customer MFA task). Pen-test prep: [pen-test-scope.md](pen-test-scope.md) (G-01).
+**Follow-up (BL-194 Planned):** WebAuthn / passkeys; Keycloak OTP as the primary IdP MFA path — intent locked in ADR [0056](decisions/0056-webauthn-idp-mfa.md) (**Proposed**, implementation parked until a named tender/customer MFA task). Pen-test prep (G-01): [pen-test-scope.md](pen-test-scope.md) · [pen-test-prep.md](pen-test-prep.md) · [pen-test-roe.md](pen-test-roe.md).
 
 ## Per-variable ACL
 

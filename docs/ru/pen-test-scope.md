@@ -29,10 +29,19 @@
 
 ## Правила
 
-Письменный допуск; лимиты RPS; без выноса PII; disclosure Critical ≤24h / High ≤5 раб. дней; stop при safety-риске.
+Письменный допуск; лимиты RPS; без выноса PII; disclosure Critical ≤24h / High ≤5 раб. дней; stop при safety-риске.  
+Полный RoE (severity, retention, kickoff): [pen-test-roe.md](../en/pen-test-roe.md).
 
 ## Deliverables для закрытия G-01
 
 Отчёт + retest; желательно `docs/evidence/security-pentest/` (редакция). Иначе в тендере — **Gap (G-01)**.
+
+## Углублённая подготовка
+
+- Runbook оператора: [pen-test-prep.md](pen-test-prep.md)
+- RoE (EN): [pen-test-roe.md](../en/pen-test-roe.md)
+- Опросник вендора (EN): [pen-test-questionnaire.md](../en/pen-test-questionnaire.md)
+- Каталог кейсов (EN): [pen-test-cases.md](../en/pen-test-cases.md)
+- Preflight: `bash tools/security/pen-test-preflight.sh https://HOST --out preflight.json`
 
 EN: [pen-test-scope.md](../en/pen-test-scope.md) · ADR [0056](../en/decisions/0056-webauthn-idp-mfa.md)
