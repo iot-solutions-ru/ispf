@@ -6,6 +6,7 @@
 # - SNMP GET/SET round-trip (lab Integer32 OID)
 # - HTTP GET/PUT JSON gauge round-trip
 # - BACnet ReadProperty/WriteProperty round-trip (analog-value:1 present-value)
+# - IEC 104 C_SE_NC_1 / C_RD_NA_1 float round-trip (IOA 3001)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -24,6 +25,8 @@ HTTP_HOST="${ISPF_INTEROP_HTTP_HOST:-127.0.0.1}"
 HTTP_PORT="${ISPF_INTEROP_HTTP_PORT:-8089}"
 BACNET_HOST="${ISPF_INTEROP_BACNET_HOST:-127.0.0.1}"
 BACNET_PORT="${ISPF_INTEROP_BACNET_PORT:-47808}"
+IEC104_HOST="${ISPF_INTEROP_IEC104_HOST:-127.0.0.1}"
+IEC104_PORT="${ISPF_INTEROP_IEC104_PORT:-2404}"
 WAIT_SEC="${ISPF_INTEROP_SMOKE_WAIT_SEC:-120}"
 MOSQUITTO_CONTAINER="${ISPF_INTEROP_MOSQUITTO_CONTAINER:-ispf-interop-mosquitto}"
 OPCUA_WRITE="${ISPF_INTEROP_OPCUA_WRITE:-1}"
@@ -374,6 +377,33 @@ PY
   return 1
 }
 
+iec104_write_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "iec104-write-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if IEC104_HOST="$IEC104_HOST" IEC104_PORT="$IEC104_PORT" python3 - <<'PY'
+import os, random, sys
+sys.path.insert(0, "deploy/driver-interop/iec104")
+from server import iec104_read_float, iec104_write_float
+
+host = os.environ.get("IEC104_HOST", "127.0.0.1")
+port = int(os.environ.get("IEC104_PORT", "2404"))
+value = round(random.uniform(1.0, 90.0), 2)
+iec104_write_float(host, port, value)
+got = iec104_read_float(host, port)
+if abs(got - value) > 0.01:
+    raise RuntimeError(f"iec104 readback {got} != {value}")
+print(f"iec104 write/read ok value={value}")
+PY
+  then
+    record "iec104-write-roundtrip" pass "C_SE_NC_1/C_RD_NA_1 IOA 3001"
+    return 0
+  fi
+  record "iec104-write-roundtrip" fail "against tcp://${IEC104_HOST}:${IEC104_PORT}"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test-modbus" ]]; then
   python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test
   exit $?
@@ -394,6 +424,11 @@ if [[ "${1:-}" == "--self-test-bacnet" ]]; then
   exit $?
 fi
 
+if [[ "${1:-}" == "--self-test-iec104" ]]; then
+  python3 "$ROOT/deploy/driver-interop/iec104/server.py" --self-test
+  exit $?
+fi
+
 {
   echo "# Driver interop fixture smoke (BL-141 / OT Trust)"
   echo
@@ -411,6 +446,7 @@ wait_for_tcp "$OPCUA_HOST" "$OPCUA_PORT" "opcua-tcp" || FAILED=1
 wait_for_snmp "$SNMP_HOST" "$SNMP_PORT" "snmp-udp" || FAILED=1
 wait_for_tcp "$HTTP_HOST" "$HTTP_PORT" "http-tcp" || FAILED=1
 wait_for_bacnet "$BACNET_HOST" "$BACNET_PORT" "bacnet-udp" || FAILED=1
+wait_for_tcp "$IEC104_HOST" "$IEC104_PORT" "iec104-tcp" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
@@ -419,6 +455,7 @@ if [[ "$FAILED" -eq 0 ]]; then
   snmp_write_roundtrip || FAILED=1
   http_write_roundtrip || FAILED=1
   bacnet_write_roundtrip || FAILED=1
+  iec104_write_roundtrip || FAILED=1
 fi
 
 {
