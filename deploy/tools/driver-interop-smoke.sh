@@ -5,6 +5,7 @@
 # - Optional OPC UA write when asyncua is installed (ISPF_INTEROP_OPCUA_WRITE=1 default on)
 # - SNMP GET/SET round-trip (lab Integer32 OID)
 # - HTTP GET/PUT JSON gauge round-trip
+# - BACnet ReadProperty/WriteProperty round-trip (analog-value:1 present-value)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -21,6 +22,8 @@ SNMP_HOST="${ISPF_INTEROP_SNMP_HOST:-127.0.0.1}"
 SNMP_PORT="${ISPF_INTEROP_SNMP_PORT:-161}"
 HTTP_HOST="${ISPF_INTEROP_HTTP_HOST:-127.0.0.1}"
 HTTP_PORT="${ISPF_INTEROP_HTTP_PORT:-8089}"
+BACNET_HOST="${ISPF_INTEROP_BACNET_HOST:-127.0.0.1}"
+BACNET_PORT="${ISPF_INTEROP_BACNET_PORT:-47808}"
 WAIT_SEC="${ISPF_INTEROP_SMOKE_WAIT_SEC:-120}"
 MOSQUITTO_CONTAINER="${ISPF_INTEROP_MOSQUITTO_CONTAINER:-ispf-interop-mosquitto}"
 OPCUA_WRITE="${ISPF_INTEROP_OPCUA_WRITE:-1}"
@@ -86,6 +89,35 @@ assert snmp_get(host, port, OID_LAB_GAUGE) == 42
 PY
     then
       record "$label" pass "udp://${host}:${port} GET lab OID"
+      return 0
+    fi
+    sleep 2
+  done
+  record "$label" fail "timeout after ${WAIT_SEC}s (udp://${host}:${port})"
+  return 1
+}
+
+wait_for_bacnet() {
+  local host="$1"
+  local port="$2"
+  local label="$3"
+  local deadline=$((SECONDS + WAIT_SEC))
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "$label" pass "skipped wait (no python3)"
+    return 0
+  fi
+  while ((SECONDS < deadline)); do
+    if BACNET_HOST="$host" BACNET_PORT="$port" python3 - <<'PY'
+import os, sys
+sys.path.insert(0, "deploy/driver-interop/bacnet")
+from agent import DEFAULT_VALUE, bacnet_read
+host = os.environ.get("BACNET_HOST", "127.0.0.1")
+port = int(os.environ.get("BACNET_PORT", "47808"))
+got = bacnet_read(host, port)
+assert abs(got - DEFAULT_VALUE) < 0.01, got
+PY
+    then
+      record "$label" pass "udp://${host}:${port} ReadProperty AV:1"
       return 0
     fi
     sleep 2
@@ -315,6 +347,33 @@ PY
   return 1
 }
 
+bacnet_write_roundtrip() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    record "bacnet-write-roundtrip" pass "skipped (no python3)"
+    return 0
+  fi
+  if BACNET_HOST="$BACNET_HOST" BACNET_PORT="$BACNET_PORT" python3 - <<'PY'
+import os, random, sys
+sys.path.insert(0, "deploy/driver-interop/bacnet")
+from agent import bacnet_read, bacnet_write
+
+host = os.environ.get("BACNET_HOST", "127.0.0.1")
+port = int(os.environ.get("BACNET_PORT", "47808"))
+value = round(random.uniform(1.0, 90.0), 2)
+bacnet_write(host, port, value)
+got = bacnet_read(host, port, invoke_id=3)
+if abs(got - value) > 0.01:
+    raise RuntimeError(f"bacnet readback {got} != {value}")
+print(f"bacnet write/read ok value={value}")
+PY
+  then
+    record "bacnet-write-roundtrip" pass "WriteProperty/ReadProperty AV:1"
+    return 0
+  fi
+  record "bacnet-write-roundtrip" fail "against udp://${BACNET_HOST}:${BACNET_PORT}"
+  return 1
+}
+
 if [[ "${1:-}" == "--self-test-modbus" ]]; then
   python3 "$ROOT/deploy/driver-interop/modbus/server.py" --self-test
   exit $?
@@ -327,6 +386,11 @@ fi
 
 if [[ "${1:-}" == "--self-test-http" ]]; then
   python3 "$ROOT/deploy/driver-interop/http/server.py" --self-test
+  exit $?
+fi
+
+if [[ "${1:-}" == "--self-test-bacnet" ]]; then
+  python3 "$ROOT/deploy/driver-interop/bacnet/agent.py" --self-test
   exit $?
 fi
 
@@ -346,6 +410,7 @@ wait_for_tcp "$MODBUS_HOST" "$MODBUS_PORT" "modbus-tcp" || FAILED=1
 wait_for_tcp "$OPCUA_HOST" "$OPCUA_PORT" "opcua-tcp" || FAILED=1
 wait_for_snmp "$SNMP_HOST" "$SNMP_PORT" "snmp-udp" || FAILED=1
 wait_for_tcp "$HTTP_HOST" "$HTTP_PORT" "http-tcp" || FAILED=1
+wait_for_bacnet "$BACNET_HOST" "$BACNET_PORT" "bacnet-udp" || FAILED=1
 
 if [[ "$FAILED" -eq 0 ]]; then
   mqtt_roundtrip || FAILED=1
@@ -353,6 +418,7 @@ if [[ "$FAILED" -eq 0 ]]; then
   opcua_write_roundtrip || FAILED=1
   snmp_write_roundtrip || FAILED=1
   http_write_roundtrip || FAILED=1
+  bacnet_write_roundtrip || FAILED=1
 fi
 
 {

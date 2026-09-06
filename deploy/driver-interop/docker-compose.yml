@@ -1,4 +1,4 @@
-# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA, SNMP, HTTP).
+# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA, SNMP, HTTP, BACnet).
 # Bind to loopback only — do not expose on public interfaces.
 services:
   mosquitto:
@@ -105,6 +105,31 @@ services:
           "python",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8089/health', timeout=2)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
+
+  bacnet:
+    # Minimal BACnet/IP UDP lab agent (stdlib). Not a production BACnet stack.
+    # Device 1001; writable analog-value:1 present-value (REAL). Port 47808/udp.
+    image: python:3.12-alpine
+    container_name: ispf-interop-bacnet
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./bacnet/agent.py:/app/agent.py:ro
+    command: ["python", "-u", "/app/agent.py", "--host", "0.0.0.0", "--port", "47808"]
+    ports:
+      - "127.0.0.1:47808:47808/udp"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys; sys.path.insert(0,'.'); from agent import bacnet_read; bacnet_read('127.0.0.1',47808)",
         ]
       interval: 5s
       timeout: 3s

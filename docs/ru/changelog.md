@@ -23,6 +23,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust BL-141 BACnet fixture** — stdlib BACnet/IP UDP lab agent + Read/WriteProperty smoke (compose **6/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-bacnet-fixture.md`.
 - **OT Trust BL-141 fixture depth** — SNMP + HTTP lab docker fixtures + smoke (compose **5/20**); stdlib agents; self-test без docker. Evidence `docs/evidence/ot-trust/2026-09-06-bl141-snmp-http-fixtures.md`.
 - **OT Trust post-merge honesty** — после Waves 1–11 / каталог **162/162** (#144): lab ≠ field; inventory TOP-20 docker fixtures; дальше глубина BL-141 + plant soaks. Evidence `docs/evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md`.
 - **OT Trust Wave 3** — 13 clean-room кодеков → PRODUCTION (ADS/MELSEC/MQTT-SN/NATS/KNX/…); без GPL и проприетарных SDK.
