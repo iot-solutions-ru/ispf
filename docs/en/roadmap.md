@@ -96,7 +96,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 
 | Phase | Theme | Done highlights | Still open (typical) |
 | ----- | ----- | --------------- | -------------------- |
-| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak — [Pilot #1 kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md) (C1 site open); TOP-20 docker fixtures (**14/20**) |
+| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak — [Pilot #1 lab day 1](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md) on `lab-ot-vlan-192.168.100` (soak days 2–7 open); TOP-20 docker fixtures (**14/20**) |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
@@ -1034,7 +1034,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 **Goal:** OT/IT connectivity **10/10** — production-grade drivers, interop lab, edge agents, DDK.
 
-**Gap today:** lab/matrix **READY_LAB** for most packs (incl. clean-room gateway subsets); TOP-20 still has `opc-da`/`opc-bridge` **BETA**; docker interop fixtures cover **14/20** compose peers (intentional gaps: in-process / server-is-driver / SHELL_BETA); **BL-140 field** — Pilot #1 kickoff pack ready, **named site (C1) still open**. See [post-merge inventory](../evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md) and [Pilot #1 kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md).
+**Gap today:** lab/matrix **READY_LAB** for most packs (incl. clean-room gateway subsets); TOP-20 still has `opc-da`/`opc-bridge` **BETA**; docker interop fixtures cover **14/20** compose peers (intentional gaps: in-process / server-is-driver / SHELL_BETA); **BL-140 field** — Pilot #1 named lab site `lab-ot-vlan-192.168.100`, [day 1](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md) §1 green, soak days 2–7 open. See [post-merge inventory](../evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md).
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
@@ -1224,7 +1224,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Phase | Name | P | Status |
 | -- | ----- | -------- | - | ------ |
-| BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Partial** (matrix + playbooks + [Pilot #1 kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md); **ready-for-field** only after named site C1 + soak) |
+| BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Partial** (matrix + playbooks + [Pilot #1 day 1](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md) on named lab VLAN; field Done after 7-day soak + sign-off) |
 | BL-141 | 25 | Driver interop lab | P0 | **Done** (Docker + CI smoke) |
 | BL-142 | 25 | Event→variable at driver | P1 | Partial (MQTT driver path REAL; Kafka IT broken / no server IT — parked) |
 | BL-143 | 25 | OPC UA server GA | P1 | Partial |
@@ -1431,7 +1431,7 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 
 ### S31 execution backlog — Wave 1 (parked) {#s31-wave-1-execution-backlog}
 
-> **Status: field track active (2026-09-06)** — Lab honesty (A) + interop depth (B) + catalog waves closed on `main`. **Workstream C** is the open gate: [Pilot #1 kickoff pack](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md) published; **C1 named site still required** before ready-for-field. Same policy as [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy).
+> **Status: field track active (2026-09-06)** — Lab honesty (A) + interop depth (B) + catalog waves closed on `main`. **Workstream C:** [Pilot #1](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md) C1 filled on `lab-ot-vlan-192.168.100`, §1 green, soak day 1 logged; days 2–7 + C5 + sign-off remain. Same policy as [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy).
 
 **Sprint goal (usable):** OT engineer trusts the driver matrix; **one Modbus plant pilot** is running with a daily soak journal — not «BL-191 closed» without code + pilot evidence.
 
@@ -1713,7 +1713,8 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
-| 2026-09-06 | **OT Trust BL-140 Pilot #1 kickoff:** Modbus plant checklist C1–C6 + soak journal shell ([kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md)). **C1 named site still open** — not ready-for-field / not field Done / not OT 10/10. |
+| 2026-09-06 | **OT Trust BL-140 Pilot #1 lab day 1:** site `lab-ot-vlan-192.168.100`; Modbus peer `:1502`; 50-tag device RUNNING; write+historian §1; soak journal day 1 ([evidence](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md)). Not field Done / not OT 10/10. |
+| 2026-09-06 | **OT Trust BL-140 Pilot #1 kickoff:** Modbus plant checklist C1–C6 + soak journal shell ([kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md)). |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** GPS tracker NMEA listener stand-in → compose/smoke **14/20** (after Modbus RTU **13/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** Modbus RTU ADU-over-TCP peer → compose/smoke **13/20** (after S7 **12/20**). Lab ≠ field Done. |
 | 2026-09-06 | **OT Trust BL-141 fixture depth:** S7 SoftPlc peer → compose/smoke **12/20** (after DNP3 **11/20**). Lab ≠ field Done. |

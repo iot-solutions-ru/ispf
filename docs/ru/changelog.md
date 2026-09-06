@@ -12,6 +12,7 @@ Changelog отдельных application bundles — в манифестах п�
 ### Исправлено
 
 - Marketplace `mqtt-temperature`: H2-совместимый SQL как в lab bundle.
+- Modbus TCP/UDP/RTU `readConfig`: сначала `configuration()`, затем переменные устройства (fix bind host/port из `driverConfigJson`).
 
 ### Добавлено
 
@@ -23,7 +24,8 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
-- **OT Trust BL-140 Pilot #1 kickoff** — полевой prep-пакет Modbus: чеклист C1–C6 + intake площадки, пустой soak-журнал; **C1 ещё открыт** (не ready-for-field / не field Done). Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md`.
+- **OT Trust BL-140 Pilot #1 lab day 1** — площадка `lab-ot-vlan-192.168.100`; Modbus peer `:1502`; 50 тегов RUNNING; write+historian; journal day 1. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md`.
+- **OT Trust BL-140 Pilot #1 kickoff** — полевой prep-пакет Modbus: чеклист C1–C6 + intake площадки, soak-журнал. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md`.
 - **OT Trust BL-141 GPS tracker fixture** — NMEA TCP listener stand-in + feed→`/last` smoke (compose **14/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-gps-tracker-fixture.md`.
 - **OT Trust BL-141 Modbus RTU fixture** — RTU ADU over TCP + FC6/FC16→FC3 smoke (compose **13/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-modbus-rtu-fixture.md`.
 - **OT Trust BL-141 S7 SoftPlc fixture** — SoftPlc ISO-on-TCP `:102` + REST DB1 REAL @80 (compose **12/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-s7-fixture.md`.
