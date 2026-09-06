@@ -37,6 +37,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **OT Trust BL-141 IEC 104 fixture** — stdlib IEC 60870-5-104 TCP outstation + C_SE_NC_1/C_RD_NA_1 smoke (compose peers **7/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-iec104-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-iec104-fixture.md).
 - **OT Trust BL-141 BACnet fixture** — stdlib BACnet/IP UDP lab agent + Read/WriteProperty smoke (compose peers **6/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-bacnet-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-bacnet-fixture.md).
 - **OT Trust BL-141 fixture depth** — SNMP + HTTP lab docker fixtures + smoke (compose peers **5/20**); stdlib agents; self-tests without docker. Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-snmp-http-fixtures.md`](docs/evidence/ot-trust/2026-09-06-bl141-snmp-http-fixtures.md).
 - **OT Trust post-merge honesty** — after Waves 1–11 / catalog **162/162** (#144): lab ≠ field certification; TOP-20 docker fixture/smoke inventory (3/20 compose peers); next depth = BL-141 fixtures + plant soaks, not more stubs. Evidence [`docs/evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md`](docs/evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md).
