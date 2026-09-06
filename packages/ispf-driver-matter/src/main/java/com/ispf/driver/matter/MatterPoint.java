@@ -2,7 +2,6 @@ package com.ispf.driver.matter;
 
 import com.ispf.driver.DriverException;
 
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
