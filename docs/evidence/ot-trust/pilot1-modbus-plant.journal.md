@@ -30,13 +30,13 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | Write acknowledged | ☑ | `hr00` → 1234 |
 | Historian on top tags | ☑ | hr00–hr04 |
 | HMI / mimic updates | ☐ | deferred |
-| Stale after disconnect | ☐ | C5 pending |
+| Stale after disconnect | ☑ | [C5](2026-09-06-bl140-pilot1-c5-disconnect.md) — ERROR then recover |
 
 ## Daily log
 
 | Day | Date (UTC) | Tags online | Incidents (P0/P1) | Historian OK | Write OK | HMI live | Notes |
 | --- | ---------- | ----------- | ----------------- | ------------ | -------- | -------- | ----- |
-| 1 | 2026-09-06 | 50 | none | ☑ | ☑ | ☐ | Peer `:1502` + ISPF RUNNING; evidence JSON archived |
+| 1 | 2026-09-06 | 50 | none | ☑ | ☑ | ☐ | Peer `:1502` RUNNING; C5 disconnect pass; soak-check timer armed ([day1](pilot1-lab/day1-2026-09-06.json), [c5](pilot1-lab/c5-2026-09-06.json), [soak](pilot1-lab/soak-day1-2026-09-06.json)) |
 | 2 | | | | ☐ | ☐ | ☐ | |
 | 3 | | | | ☐ | ☐ | ☐ | |
 | 4 | | | | ☐ | ☐ | ☐ | |
@@ -53,4 +53,5 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | Sign-off form | [playbook template](../../en/field-pilot-playbook.md#pilot-sign-off-template-bl-140) |
 | Lab pre-gate smoke | BL-141 compose peers / CI |
 | Day-1 evidence | [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-day1.md) |
+| C5 disconnect | [2026-09-06-bl140-pilot1-c5-disconnect.md](2026-09-06-bl140-pilot1-c5-disconnect.md) |
 | Customer ticket | n/a (internal lab) |

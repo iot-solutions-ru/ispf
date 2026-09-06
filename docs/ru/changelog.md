@@ -24,6 +24,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **OT Trust BL-140 Pilot #1 C5 + daily soak check** — disconnect/reconnect на lab VLAN; `tools/ot-trust/pilot1-modbus-soak-check.py` + timer 06:00 MSK. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md`.
 - **OT Trust BL-140 Pilot #1 lab day 1** — площадка `lab-ot-vlan-192.168.100`; Modbus peer `:1502`; 50 тегов RUNNING; write+historian; journal day 1. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md`.
 - **OT Trust BL-140 Pilot #1 kickoff** — полевой prep-пакет Modbus: чеклист C1–C6 + intake площадки, soak-журнал. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md`.
 - **OT Trust BL-141 GPS tracker fixture** — NMEA TCP listener stand-in + feed→`/last` smoke (compose **14/20**). Evidence `docs/evidence/ot-trust/2026-09-06-bl141-gps-tracker-fixture.md`.

@@ -40,6 +40,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **OT Trust BL-140 Pilot #1 C5 + daily soak check** — disconnect/reconnect on `lab-ot-vlan-192.168.100` (`ERROR`/`Not connected` → `RUNNING`); `tools/ot-trust/pilot1-modbus-soak-check.py` + lab systemd timer 06:00 MSK. Not field Done / not OT 10/10. Evidence [`docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md`](docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md).
 - **OT Trust BL-140 Pilot #1 lab day 1** — named site `lab-ot-vlan-192.168.100`; Modbus peer `:1502`; ISPF device 50 tags RUNNING; write+historian §1 green; soak journal day 1. Not field Done / not OT 10/10. Evidence [`docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md`](docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md).
 - **OT Trust BL-140 Pilot #1 kickoff** — Modbus plant field-prep pack: C1–C6 checklist + site intake, empty soak journal instance, playbook links. Evidence [`docs/evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md`](docs/evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md).
 - **OT Trust BL-141 GPS tracker fixture** — NMEA TCP listener stand-in + feed→`/last` smoke (compose peers **14/20**). Evidence [`docs/evidence/ot-trust/2026-09-06-bl141-gps-tracker-fixture.md`](docs/evidence/ot-trust/2026-09-06-bl141-gps-tracker-fixture.md).
