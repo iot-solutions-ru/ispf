@@ -12,6 +12,18 @@ Prerequisites: ISPF ≥ 0.9.32, [driver-interop-lab](driver-interop-lab.md) gree
 
 Until then, status is **playbook-ready**: lab dry-run scripts, checklists, and sign-off templates exist; **no field soak or promotion evidence** is claimed.
 
+### Pilot #1 kickoff pack (Modbus)
+
+Working artifacts for the recommended first plant pilot (Workstream C):
+
+| Artifact | Path |
+| -------- | ---- |
+| Evidence note | [2026-09-06-bl140-pilot1-kickoff.md](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md) |
+| C1–C6 checklist + site intake | [pilot1-modbus-plant.checklist.md](../evidence/ot-trust/pilot1-modbus-plant.checklist.md) |
+| Soak journal instance | [pilot1-modbus-plant.journal.md](../evidence/ot-trust/pilot1-modbus-plant.journal.md) |
+
+**C1 (named site) is still open** — until filled, this scenario stays **playbook-ready**, not ready-for-field.
+
 ---
 
 ## Pilot matrix
@@ -187,7 +199,7 @@ Daily log for the **7-day soak** (BL-140 field evidence). Copy the table into th
 
 | Scenario | Lab dry-run | Field checklist | Sign-off template | Field status |
 | -------- | :---------: | :-------------: | :---------------: | :------------: |
-| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 | ✅ below | Playbook-ready |
+| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 + [Pilot #1 checklist](../evidence/ot-trust/pilot1-modbus-plant.checklist.md) | ✅ below | Playbook-ready (C1 site open) |
 | MQTT fleet | ✅ Mosquitto + driver tests | ✅ §2 | ✅ below | Playbook-ready |
 | OPC UA line | ✅ opcua + opcua-server tests | ✅ §3 | ✅ below | Playbook-ready |
 

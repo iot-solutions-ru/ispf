@@ -96,7 +96,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 
 | Phase | Theme | Done highlights | Still open (typical) |
 | ----- | ----- | --------------- | -------------------- |
-| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak; deepen TOP-20 docker fixtures (**14/20**: mqtt/modbus-tcp/modbus-udp/modbus-rtu/opcua/snmp/http/bacnet/iec104/ethernet-ip/dlms/dnp3/s7/gps-tracker) |
+| **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak — [Pilot #1 kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md) (C1 site open); TOP-20 docker fixtures (**14/20**) |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
@@ -1034,7 +1034,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 **Goal:** OT/IT connectivity **10/10** — production-grade drivers, interop lab, edge agents, DDK.
 
-**Gap today:** lab/matrix **READY_LAB** for most packs (incl. clean-room gateway subsets); TOP-20 still has `opc-da`/`opc-bridge` **BETA**; docker interop fixtures cover only **mqtt / modbus-tcp / opcua**; field pilots + soak journals missing. See [post-merge inventory](../evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md).
+**Gap today:** lab/matrix **READY_LAB** for most packs (incl. clean-room gateway subsets); TOP-20 still has `opc-da`/`opc-bridge` **BETA**; docker interop fixtures cover **14/20** compose peers (intentional gaps: in-process / server-is-driver / SHELL_BETA); **BL-140 field** — Pilot #1 kickoff pack ready, **named site (C1) still open**. See [post-merge inventory](../evidence/ot-trust/2026-09-06-post-merge-lab-vs-field.md) and [Pilot #1 kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md).
 
 | ID | Task | Priority | Acceptance |
 | -- | ------ | --------- | ---------- |
@@ -1224,7 +1224,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 | ID | Phase | Name | P | Status |
 | -- | ----- | -------- | - | ------ |
-| BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Partial** (matrix + playbooks; **ready-for-field** only after named field driver task) |
+| BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Partial** (matrix + playbooks + [Pilot #1 kickoff](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md); **ready-for-field** only after named site C1 + soak) |
 | BL-141 | 25 | Driver interop lab | P0 | **Done** (Docker + CI smoke) |
 | BL-142 | 25 | Event→variable at driver | P1 | Partial (MQTT driver path REAL; Kafka IT broken / no server IT — parked) |
 | BL-143 | 25 | OPC UA server GA | P1 | Partial |
@@ -1431,7 +1431,7 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 
 ### S31 execution backlog — Wave 1 (parked) {#s31-wave-1-execution-backlog}
 
-> **Status: deferred (2026-07-14)** — OT Trust removed from the active roadmap window. Checklist kept for when a **named field driver implementation task** exists (customer/site + protocol + integrator ticket). Same policy as [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy). **Active S31** is AI Autopilot (BL-177…), not this backlog.
+> **Status: field track active (2026-09-06)** — Lab honesty (A) + interop depth (B) + catalog waves closed on `main`. **Workstream C** is the open gate: [Pilot #1 kickoff pack](../evidence/ot-trust/2026-09-06-bl140-pilot1-kickoff.md) published; **C1 named site still required** before ready-for-field. Same policy as [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy).
 
 **Sprint goal (usable):** OT engineer trusts the driver matrix; **one Modbus plant pilot** is running with a daily soak journal — not «BL-191 closed» without code + pilot evidence.
 
