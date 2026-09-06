@@ -560,7 +560,31 @@ final class DriverProductionMatrix {
                     "ispf-driver-cc-link-ie"),
             entry("ethernet-powerlink", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-ethernet-powerlink", "com.ispf.driver.ethernetpowerlink.EthernetPowerlinkDeviceDriverTest"),
-                    "ispf-driver-ethernet-powerlink")
+                    "ispf-driver-ethernet-powerlink"),
+            entry("profinet", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-profinet", "com.ispf.driver.profinet.ProfinetDeviceDriverTest"),
+                    "ispf-driver-profinet"),
+            entry("profibus", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-profibus", "com.ispf.driver.profibus.ProfibusDeviceDriverTest"),
+                    "ispf-driver-profibus"),
+            entry("ethercat", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-ethercat", "com.ispf.driver.ethercat.EthercatDeviceDriverTest"),
+                    "ispf-driver-ethercat"),
+            entry("iec61850", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-iec61850", "com.ispf.driver.iec61850.Iec61850DeviceDriverTest"),
+                    "ispf-driver-iec61850"),
+            entry("iec61850-goose", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-iec61850-goose", "com.ispf.driver.iec61850goose.Iec61850GooseDeviceDriverTest"),
+                    "ispf-driver-iec61850-goose"),
+            entry("iec61850-sv", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-iec61850-sv", "com.ispf.driver.iec61850sv.Iec61850SvDeviceDriverTest"),
+                    "ispf-driver-iec61850-sv"),
+            entry("fanuc-focas", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-fanuc-focas", "com.ispf.driver.fanucfocas.FanucFocasDeviceDriverTest"),
+                    "ispf-driver-fanuc-focas"),
+            entry("matter", DriverMaturity.PRODUCTION, POLL_WRITE,
+                    testPath("ispf-driver-matter", "com.ispf.driver.matter.MatterDeviceDriverTest"),
+                    "ispf-driver-matter")
     );
 
     /** Protocol catalog stubs from {@code ispf-driver-protocol-stubs} (BL protocol-stub pack). */

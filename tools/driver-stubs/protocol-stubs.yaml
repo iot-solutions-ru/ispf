@@ -11,18 +11,9 @@ stubs:
   # —— Industrial Ethernet / PLC ——
   # sparkplug-b promoted Wave 2 → PRODUCTION (packages/ispf-driver-sparkplug-b)
   # opcua-pubsub promoted Wave 9 → PRODUCTION (packages/ispf-driver-opcua-pubsub)
-  - id: profinet
-    name: PROFINET IO
-    description: PROFINET IO controller/device stub (DCP/RPC not implemented)
-    port: 34964
-  - id: profibus
-    name: PROFIBUS
-    description: PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required)
-    port: 9600
-  - id: ethercat
-    name: EtherCAT
-    description: EtherCAT master/gateway stub
-    port: 34980
+  # profinet promoted Wave 11 → PRODUCTION (packages/ispf-driver-profinet)
+  # profibus promoted Wave 11 → PRODUCTION (packages/ispf-driver-profibus)
+  # ethercat promoted Wave 11 → PRODUCTION (packages/ispf-driver-ethercat)
   # ethernet-powerlink promoted Wave 10 → PRODUCTION (packages/ispf-driver-ethernet-powerlink)
   # cc-link promoted Wave 10 → PRODUCTION (packages/ispf-driver-cc-link)
   # cc-link-ie promoted Wave 10 → PRODUCTION (packages/ispf-driver-cc-link-ie)
@@ -54,26 +45,14 @@ stubs:
   # j1939 promoted Wave 5 → PRODUCTION (packages/ispf-driver-j1939)
   # uds promoted Wave 6 → PRODUCTION (packages/ispf-driver-uds)
   # someip promoted Wave 6 → PRODUCTION (packages/ispf-driver-someip)
-  - id: fanuc-focas
-    name: Fanuc FOCAS
-    description: Fanuc FOCAS CNC stub
-    port: 8193
+  # fanuc-focas promoted Wave 11 → PRODUCTION (packages/ispf-driver-fanuc-focas)
   # opc-ae promoted Wave 8 → PRODUCTION (packages/ispf-driver-opc-ae)
   # opc-hda promoted Wave 8 → PRODUCTION (packages/ispf-driver-opc-hda)
 
   # —— Energy / utility ——
-  - id: iec61850
-    name: IEC 61850 MMS
-    description: IEC 61850 MMS client stub
-    port: 102
-  - id: iec61850-goose
-    name: IEC 61850 GOOSE
-    description: IEC 61850 GOOSE subscriber stub
-    port: 102
-  - id: iec61850-sv
-    name: IEC 61850 Sampled Values
-    description: IEC 61850 Sampled Values stub
-    port: 102
+  # iec61850 promoted Wave 11 → PRODUCTION (packages/ispf-driver-iec61850)
+  # iec61850-goose promoted Wave 11 → PRODUCTION (packages/ispf-driver-iec61850-goose)
+  # iec61850-sv promoted Wave 11 → PRODUCTION (packages/ispf-driver-iec61850-sv)
   # iec101 promoted Wave 4 → PRODUCTION (packages/ispf-driver-iec101)
   # iec103 promoted Wave 5 → PRODUCTION (packages/ispf-driver-iec103)
   # ansi-c12 promoted Wave 4 → PRODUCTION (packages/ispf-driver-ansi-c12)
@@ -98,10 +77,7 @@ stubs:
   # —— IoT / LPWAN / RF ——
   # lorawan promoted Wave 10 → PRODUCTION (packages/ispf-driver-lorawan)
   # zigbee promoted Wave 10 → PRODUCTION (packages/ispf-driver-zigbee)
-  - id: matter
-    name: Matter
-    description: Matter / CHIP controller stub
-    port: 5540
+  # matter promoted Wave 11 → PRODUCTION (packages/ispf-driver-matter)
   # zwave promoted Wave 10 → PRODUCTION (packages/ispf-driver-zwave)
   # thread promoted Wave 10 → PRODUCTION (packages/ispf-driver-thread)
   # bluetooth-le promoted Wave 10 → PRODUCTION (packages/ispf-driver-bluetooth-le)

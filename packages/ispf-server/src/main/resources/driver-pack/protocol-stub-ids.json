@@ -1,13 +1,4 @@
 {
-  "driverIds": [
-    "profinet",
-    "profibus",
-    "ethercat",
-    "fanuc-focas",
-    "iec61850",
-    "iec61850-goose",
-    "iec61850-sv",
-    "matter"
-  ],
+  "driverIds": [],
   "licenseType": "Apache-2.0"
 }

@@ -1,8 +1,8 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-05T17:07:16Z`  
+> Generated: `2026-09-06T01:22:03Z`  
 > Catalog: **162** / expected **162**  
-> Matrix ENTRIES: **154** · Stub list: **8**  
+> Matrix ENTRIES: **162** · Stub list: **0**  
 > Findings: FAIL **0** · WARN **0**  
 > Honesty: Lab/matrix readiness only — not field certification for 162 drivers
 
@@ -10,9 +10,9 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=151, `STUB`=8 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=151, `SHELL_BETA`=2, `STUB_LAB`=8 |
-| Source | `matrix`=154, `stub-list`=8 |
+| Maturity | `BETA`=3, `PRODUCTION`=159 |
+| Readiness | `PARTIAL`=1, `READY_LAB`=159, `SHELL_BETA`=2 |
+| Source | `matrix`=162 |
 
 ### Readiness legend
 
@@ -93,10 +93,10 @@ _None._
 | `eebus` | `ispf-driver-eebus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `email` | `ispf-driver-email` | PRODUCTION | matrix | `READY_LAB` | — |
 | `enocean` | `ispf-driver-enocean` | PRODUCTION | matrix | `READY_LAB` | — |
-| `ethercat` | `ispf-driver-ethercat` | STUB | stub-list | `STUB_LAB` | — |
+| `ethercat` | `ispf-driver-ethercat` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ethernet-ip` | `ispf-driver-ethernet-ip` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | PRODUCTION | matrix | `READY_LAB` | — |
-| `fanuc-focas` | `ispf-driver-fanuc-focas` | STUB | stub-list | `STUB_LAB` | — |
+| `fanuc-focas` | `ispf-driver-fanuc-focas` | PRODUCTION | matrix | `READY_LAB` | — |
 | `fatek` | `ispf-driver-fatek` | PRODUCTION | matrix | `READY_LAB` | — |
 | `file` | `ispf-driver-file` | PRODUCTION | matrix | `READY_LAB` | — |
 | `flexible` | `ispf-driver-flexible` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -121,9 +121,9 @@ _None._
 | `iec103` | `ispf-driver-iec103` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec104` | `ispf-driver-iec104` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec104-server` | `ispf-driver-iec104-server` | PRODUCTION | matrix | `READY_LAB` | — |
-| `iec61850` | `ispf-driver-iec61850` | STUB | stub-list | `STUB_LAB` | — |
-| `iec61850-goose` | `ispf-driver-iec61850-goose` | STUB | stub-list | `STUB_LAB` | — |
-| `iec61850-sv` | `ispf-driver-iec61850-sv` | STUB | stub-list | `STUB_LAB` | — |
+| `iec61850` | `ispf-driver-iec61850` | PRODUCTION | matrix | `READY_LAB` | — |
+| `iec61850-goose` | `ispf-driver-iec61850-goose` | PRODUCTION | matrix | `READY_LAB` | — |
+| `iec61850-sv` | `ispf-driver-iec61850-sv` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec62056` | `ispf-driver-iec62056` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ieee2030-5` | `ispf-driver-ieee2030-5` | PRODUCTION | matrix | `READY_LAB` | — |
 | `imap` | `ispf-driver-imap` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -148,7 +148,7 @@ _None._
 | `lorawan` | `ispf-driver-lorawan` | PRODUCTION | matrix | `READY_LAB` | — |
 | `ls-xgt` | `ispf-driver-ls-xgt` | PRODUCTION | matrix | `READY_LAB` | — |
 | `lwm2m` | `ispf-driver-lwm2m` | PRODUCTION | matrix | `READY_LAB` | — |
-| `matter` | `ispf-driver-matter` | STUB | stub-list | `STUB_LAB` | — |
+| `matter` | `ispf-driver-matter` | PRODUCTION | matrix | `READY_LAB` | — |
 | `mbus` | `ispf-driver-mbus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `message-stream` | `ispf-driver-message-stream` | PRODUCTION | matrix | `READY_LAB` | — |
 | `mitsubishi-melsec` | `ispf-driver-mitsubishi-melsec` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -178,9 +178,9 @@ _None._
 | `panasonic-mewto` | `ispf-driver-panasonic-mewto` | PRODUCTION | matrix | `READY_LAB` | — |
 | `plcnext` | `ispf-driver-plcnext` | PRODUCTION | matrix | `READY_LAB` | — |
 | `pop3` | `ispf-driver-pop3` | PRODUCTION | matrix | `READY_LAB` | — |
-| `profibus` | `ispf-driver-profibus` | STUB | stub-list | `STUB_LAB` | — |
+| `profibus` | `ispf-driver-profibus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `profibus-pa` | `ispf-driver-profibus-pa` | PRODUCTION | matrix | `READY_LAB` | — |
-| `profinet` | `ispf-driver-profinet` | STUB | stub-list | `STUB_LAB` | — |
+| `profinet` | `ispf-driver-profinet` | PRODUCTION | matrix | `READY_LAB` | — |
 | `pulsar` | `ispf-driver-pulsar` | PRODUCTION | matrix | `READY_LAB` | — |
 | `radius` | `ispf-driver-radius` | PRODUCTION | matrix | `READY_LAB` | — |
 | `redis` | `ispf-driver-redis` | PRODUCTION | matrix | `READY_LAB` | — |
