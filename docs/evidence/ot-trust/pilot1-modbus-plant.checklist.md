@@ -110,7 +110,7 @@ Use [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md).
 
 | Artifact | Linked? |
 |----------|---------|
-| Journal (7 days) | ☐ day 1 only |
+| Journal (7 days) | ☐ days 1–2 logged |
 | Sign-off form | ☐ |
 | Interop / smoke summary (lab pre-gate) | ☑ BL-141 |
 | Scorecard note (only after field Done) | ☐ — do not update OT 10/10 early |
@@ -125,7 +125,7 @@ Use [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md).
 | C1 site intake | **Done** | `lab-ot-vlan-192.168.100` |
 | C2 device config | **Done** | 50 tags RUNNING |
 | C3 validation §1 | **Done** (HMI optional) | C5 closed at driver layer |
-| C4 soak journal | **In progress** | Day 1 logged; daily timer 06:00 MSK |
+| C4 soak journal | **In progress** | Days 1–2 logged; daily timer 06:00 MSK |
 | C5 stale exercise | **Done** | [c5 evidence](2026-09-06-bl140-pilot1-c5-disconnect.md) |
 | C6 sign-off | Blocked on day 7 | |
 

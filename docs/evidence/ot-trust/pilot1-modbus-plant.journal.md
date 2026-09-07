@@ -37,7 +37,7 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | Day | Date (UTC) | Tags online | Incidents (P0/P1) | Historian OK | Write OK | HMI live | Notes |
 | --- | ---------- | ----------- | ----------------- | ------------ | -------- | -------- | ----- |
 | 1 | 2026-09-06 | 50 | none | ☑ | ☑ | ☐ | Peer `:1502` RUNNING; C5 disconnect pass; soak-check timer armed ([day1](pilot1-lab/day1-2026-09-06.json), [c5](pilot1-lab/c5-2026-09-06.json), [soak](pilot1-lab/soak-day1-2026-09-06.json)) |
-| 2 | | | | ☐ | ☐ | ☐ | |
+| 2 | 2026-09-07 | 50 | none | ☑ | ☑ | ☐ | Auto soak-check 06:00 MSK pass — [day2](2026-09-07-bl140-pilot1-day2.md) · [JSON](pilot1-lab/soak-day2-2026-09-07.json) |
 | 3 | | | | ☐ | ☐ | ☐ | |
 | 4 | | | | ☐ | ☐ | ☐ | |
 | 5 | | | | ☐ | ☐ | ☐ | |
@@ -53,5 +53,6 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | Sign-off form | [playbook template](../../en/field-pilot-playbook.md#pilot-sign-off-template-bl-140) |
 | Lab pre-gate smoke | BL-141 compose peers / CI |
 | Day-1 evidence | [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-day1.md) |
+| Day-2 soak | [2026-09-07-bl140-pilot1-day2.md](2026-09-07-bl140-pilot1-day2.md) |
 | C5 disconnect | [2026-09-06-bl140-pilot1-c5-disconnect.md](2026-09-06-bl140-pilot1-c5-disconnect.md) |
 | Customer ticket | n/a (internal lab) |
