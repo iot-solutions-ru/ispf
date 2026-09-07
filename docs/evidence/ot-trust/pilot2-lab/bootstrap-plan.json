@@ -1,0 +1,21 @@
+{
+  "utc": "2026-09-07T19:11:50Z",
+  "baseUrl": "http://127.0.0.1:8080",
+  "parentPath": "root.platform.devices.pilot2-mqtt",
+  "devicePath": "root.platform.devices.pilot2-mqtt.fleet",
+  "brokerUrl": "tcp://172.17.0.1:1883",
+  "topicPrefix": "ispf/pilot2/fleet/",
+  "points": {
+    "dev00": "ispf/pilot2/fleet/dev00/telemetry",
+    "dev01": "ispf/pilot2/fleet/dev01/telemetry",
+    "dev02": "ispf/pilot2/fleet/dev02/telemetry",
+    "dev03": "ispf/pilot2/fleet/dev03/telemetry",
+    "dev04": "ispf/pilot2/fleet/dev04/telemetry",
+    "dev05": "ispf/pilot2/fleet/dev05/telemetry",
+    "dev06": "ispf/pilot2/fleet/dev06/telemetry",
+    "dev07": "ispf/pilot2/fleet/dev07/telemetry",
+    "dev08": "ispf/pilot2/fleet/dev08/telemetry",
+    "dev09": "ispf/pilot2/fleet/dev09/telemetry"
+  },
+  "dryRun": true
+}
