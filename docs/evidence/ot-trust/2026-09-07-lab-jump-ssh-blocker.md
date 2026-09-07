@@ -1,19 +1,38 @@
-# Lab access blocker — jump SSH (2026-09-07)
+# Lab jump SSH — key expected, private key missing on this agent VM
+
+Date: 2026-09-07
+
+## Canonical auth (repo)
+
+| Item | Value |
+|------|-------|
+| Jump | `84.42.21.226:5031` user `iot-solutions` |
+| Identity (docs / `.env.example`) | `~/.ssh/lab_ed25519` (`ISPF_LAB_SSH_IDENTITY_FILE`) |
+| One-time install | `python deploy/local/tools/lab-ssh-install-key.py` with `ISPF_LAB_PASSWORD` |
+
+## What this agent found
+
+| Check | Result |
+|-------|--------|
+| `~/.ssh/lab_ed25519` on boot | **Absent** (only `known_hosts*` from prior sessions) |
+| Password via `SSHPASS` | **Rejected** |
+| Key auth | **Denied** — no matching private key on disk / agent |
+
+## Action taken on this VM (ephemeral)
+
+Regenerated a **new** local key for this cloud agent (not the historical workstation key):
 
 | Field | Value |
 |-------|-------|
-| Jump | `84.42.21.226:5031` user `iot-solutions` |
-| Lab | `192.168.100.10` (passwordless from jump when jump auth works) |
-| Symptom | `Permission denied` on password auth from cloud agent (`SSHPASS` env present, length 17) |
-| Impact | Cannot pull Pilot #1 day 3+ evidence live; cannot bootstrap Pilot #2 MQTT on lab Mosquitto from this agent |
-| Not affected | Pilot #1 daily timer on lab (if still armed); demostand HTTPS API; repo docs/tools |
+| Path | `~/.ssh/lab_ed25519` (gitignored / not committed) |
+| Pubkey | `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ65KeCzo1dvWseVriOAkMD3+OaBArhHOMiomF/qDXKc cursor-cloud-agent-lab@ispf` |
+| Fingerprint | `SHA256:AGURk2soPxlNQ3zdFu9bGU1CpyN34KAfv68kZbynezg` |
+| Installed on jump? | **No** — password install failed |
 
-## Mitigation
+## What ops / user need to do (pick one)
 
-1. Ops: rotate / re-inject jump password into agent secrets (do **not** commit).
-2. Until then: keep parallel tracks (HMI-8H close, Pilot #2 kickoff pack, soak pull helper).
-3. Re-run: `./tools/ot-trust/pull-pilot-soak-evidence.sh` after credentials work.
+1. **Restore the old private key** into this agent (Cursor secret → `~/.ssh/lab_ed25519`) if the historical pubkey is already in jump `authorized_keys`.
+2. **Or** append the **new** pubkey above to `iot-solutions@84.42.21.226` `~/.ssh/authorized_keys` (and optionally to `192.168.100.10`).
+3. **Or** temporarily set a working `ISPF_LAB_PASSWORD` / `SSHPASS` so the agent can run `ssh-copy-id` once.
 
-## Honesty
-
-This note is an **access** residual, not an OT protocol failure. Do not mark Pilot #1 soak failed solely because the agent cannot SSH today.
+Until then: Pilot #1 lab timer may still run on-box; agent cannot pull soak / bootstrap Pilot #2 MQTT from jump.

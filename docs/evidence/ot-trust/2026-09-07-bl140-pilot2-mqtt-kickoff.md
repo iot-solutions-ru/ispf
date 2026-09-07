@@ -36,7 +36,7 @@ Pilot #1 timer (`ispf-pilot1-soak-check.timer`, 06:00 MSK) keeps running. This p
 
 ## Next operator action
 
-1. Refresh jump SSH credentials (`84.42.21.226:5031` → `192.168.100.10`).
+1. Restore `~/.ssh/lab_ed25519` on the agent **or** append the new agent pubkey from [jump SSH blocker](2026-09-07-lab-jump-ssh-blocker.md) to jump `authorized_keys`.
 2. Ensure Mosquitto up (`lab-loadgen-compose` / `~/ispf/lab-loadgen-compose.yml`).
 3. Run `pilot2-mqtt-lab-bootstrap.py` against lab ISPF; fill C2/C3.
 4. Arm daily soak check; start journal day 1.

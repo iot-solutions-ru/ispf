@@ -104,5 +104,5 @@ Playbook sign-off template — only after days 1–7 + no open P0.
 
 | Date | Blocker | Mitigation |
 |------|---------|------------|
-| 2026-09-07 | Jump SSH password rejected from cloud agent (`SSHPASS` env) | Ops rotate / re-inject credentials; keep Pilot #1 timer running; this pack stays ready |
+| 2026-09-07 | Jump: expected `~/.ssh/lab_ed25519` missing on agent VM; password also rejected | Restore private key or install new pubkey — [blocker](2026-09-07-lab-jump-ssh-blocker.md) |
 | 2026-09-07 | Agent VM docker overlay mount failed | Cannot stand local mosquitto peer here; rely on lab / CI |
