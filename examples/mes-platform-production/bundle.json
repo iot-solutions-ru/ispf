@@ -588,7 +588,7 @@
       },
       "source": {
         "type": "script",
-        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT id::text AS outbox_id, entity_type, entity_id, idempotency_key FROM mes_erp_outbox WHERE status = 'pending' ORDER BY created_at LIMIT 50\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'sent', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"sent\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT id::text AS outbox_id, entity_type, entity_id, idempotency_key FROM mes_erp_outbox WHERE status = 'pending' ORDER BY created_at LIMIT 50\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'simulated', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"simulated\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
       }
     }
   ],

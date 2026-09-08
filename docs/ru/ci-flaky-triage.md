@@ -59,6 +59,7 @@ push, чтобы workflow не выглядел как empty failure в Actions.
 | Нагрузочные тесты в PR | Медленный + H2/Flyway в Windows | Перенесено на ночной режим (S20-01) |
 | Предварительный просмотр Playwrightа | Время просмотра в мобильной версии | Только ночью |
 | Туннель Федерации ИТ | Тайм-аут подключения WS/очистки буфера на медленных бегунах | `@Isolated`, бюджеты в `FederationIntegrationTestSupport` (S27); каждую ночь, если &gt;2×/неделю |
+| Federation store-forward IT | Buffer count ≠5 после disconnect (гонка reconnect / CONNECTED до `linkedPeerId`) | Ждать `linkedPeerId`; poll до `DISCONNECTED`; не auto-reconnect при намеренном `DISCONNECTED` (2026-09-08) |
 | `VariableHistoryAsyncWriterTest` | Mockito `ArgumentsAreDifferent` / `TooManyActualInvocations` при гонке flush 1+1 vs batch=2 | Проверять **суммы** persisted/flushed (≥2), а не один вызов `recordVariableHistoryFlushed(2)` (2026-09-08) |
 
 ## Метрики

@@ -469,7 +469,17 @@ public class FederationTunnelAgentService {
         if (agent == null || !agent.enabled()) {
             return;
         }
-        scheduler.schedule(() -> connectNow(agentId), delaySeconds, TimeUnit.SECONDS);
+        scheduler.schedule(() -> {
+            FederationOutboundAgent current = agentStore.findById(agentId).orElse(null);
+            if (current == null || !current.enabled()) {
+                return;
+            }
+            // Intentional offline (API disconnect / operator stop) must not auto-revive.
+            if (current.tunnelStatus() == FederationTunnelStatus.DISCONNECTED) {
+                return;
+            }
+            connectNow(agentId);
+        }, delaySeconds, TimeUnit.SECONDS);
     }
 
     private URI buildUri(FederationOutboundAgent agent) {
