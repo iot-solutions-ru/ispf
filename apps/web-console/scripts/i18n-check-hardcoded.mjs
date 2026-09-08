@@ -86,6 +86,24 @@ function looksLikeUiText(text) {
   if (/^(true|false|null|undefined)$/i.test(value)) {
     return false;
   }
+  // Duration chips / cron-ish tokens (15m, 30m, 1h) — not prose.
+  if (/^\d+[smhdw]$/i.test(value)) {
+    return false;
+  }
+  // Asset / route paths in placeholders.
+  if (/^\/[\w./@*-]+$/.test(value)) {
+    return false;
+  }
+  // Script-editor placeholders (${input.id}) and SQL examples — technical, not copy.
+  if (/^\$\{[^}]+\}$/.test(value) || /^SELECT\b/i.test(value)) {
+    return false;
+  }
+  // JSX_TEXT false positives from TS generics / ternaries:
+  // `Record<…> | undefined): Record` → "| undefined): Record"
+  // `(editable && series.points.length < 2` → "(editable && series.points.length"
+  if (/^[|()=:;&,.\s]/.test(value)) {
+    return false;
+  }
   if (/^[a-z][a-zA-Z0-9_-]*$/.test(value) && !CYRILLIC.test(value)) {
     return false;
   }
@@ -97,8 +115,12 @@ function looksLikeUiText(text) {
   if (/^[a-z][\w.-]*$/.test(value) && !CYRILLIC.test(value)) {
     return false;
   }
-  // Code expressions (identifiers, member access, calls, generics) are not user copy.
-  if (/^\w[\w\s().,<>[\]{}|:;'"&|=!?/-]*$/.test(value) && /[.()[\]<>{}&|]/.test(value) && !CYRILLIC.test(value)) {
+  // Code expressions (identifiers, member access, calls, generics, leading paren).
+  if (
+    /^[(]?\w[\w\s().,<>[\]{}|:;'"&|=!?/-]*$/.test(value) &&
+    /[.()[\]<>{}&|]/.test(value) &&
+    !CYRILLIC.test(value)
+  ) {
     return false;
   }
   if (!/[A-Za-z\u0400-\u04FF]/.test(value)) {
