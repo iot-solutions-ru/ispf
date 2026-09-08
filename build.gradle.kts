@@ -51,9 +51,9 @@ subprojects {
     configurations.configureEach {
         resolutionStrategy {
             force(
-                "com.google.protobuf:protobuf-java:4.36.0",
-                "com.google.protobuf:protobuf-java-util:4.36.0",
-                "com.google.protobuf:protobuf-javalite:4.36.0",
+                "com.google.protobuf:protobuf-java:4.36.1",
+                "com.google.protobuf:protobuf-java-util:4.36.1",
+                "com.google.protobuf:protobuf-javalite:4.36.1",
             )
         }
     }
