@@ -377,7 +377,7 @@ const SCRIPTS = {
   ogp_export1cBatch: {
     steps: [
       { type: "selectMany", var: "pending", sql: "SELECT id::text AS id, event_id::text AS event_id, payload_json FROM integration_outbox WHERE status = 'pending' ORDER BY created_at LIMIT 50" },
-      { type: "exec", sql: "UPDATE integration_outbox SET status = 'sent', exported_at = NOW() WHERE status = 'pending'" },
+      { type: "exec", sql: "UPDATE integration_outbox SET status = 'simulated', exported_at = NOW() WHERE status = 'pending'" },
       { type: "return", fields: { error_code: "OK", error_message: "", exported: "${pending}" } },
     ],
   },

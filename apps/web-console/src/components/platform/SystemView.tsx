@@ -74,14 +74,14 @@ export default function SystemView() {
       surface: "system",
       priority: 55,
       detail: {
-        screenTitle: "System (Система)",
+        screenTitle: t("title"),
         systemTab: tab,
         availableSystemTabs: [...SYSTEM_TAB_IDS],
         screenHint: tabHints[tab] ?? `System console tab: ${tab}`,
         helpIntents: ["explainScreen", "gatherLiveData", "draftConfig", "createEntity"],
       },
     };
-  }, [tab]);
+  }, [tab, t]);
   usePublishAdminFocus("system-view", systemFocus, true);
 
   return (

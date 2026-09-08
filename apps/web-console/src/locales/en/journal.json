@@ -30,5 +30,6 @@
   "details.output": "Output",
   "details.before": "Before",
   "details.after": "After",
-  "details.correlation": "Correlation ID"
+  "details.correlation": "Correlation ID",
+  "changeHistory.revision": "Rev"
 }

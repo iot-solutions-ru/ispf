@@ -156,12 +156,6 @@
     "text": "Required value missing"
   },
   {
-    "file": "components/journal/ObjectChangeHistoryPanel.tsx",
-    "line": 158,
-    "kind": "jsx-text",
-    "text": "Rev"
-  },
-  {
     "file": "components/objectEditor/HaystackMetadataPanel.tsx",
     "line": 194,
     "kind": "ui-attr",
@@ -186,21 +180,9 @@
     "text": "fireAlarm, gasLeak"
   },
   {
-    "file": "components/platform/SystemView.tsx",
-    "line": 77,
-    "kind": "cyrillic",
-    "text": "screenTitle: \"System (Система)\","
-  },
-  {
     "file": "context/AdminFocusContext.tsx",
     "line": 177,
     "kind": "jsx-text",
     "text": "| undefined): Record"
-  },
-  {
-    "file": "utils/agent/agentChatMarkdown.tsx",
-    "line": 19,
-    "kind": "cyrillic",
-    "text": "normalized = normalized.replace(/(?<=[^\\n])\\s+(?=\\*\\*Пример)/gi, \"\\n\\n\");"
   }
 ]

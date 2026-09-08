@@ -42,3 +42,7 @@ Copy-Item examples/mes-ogp-events/bundle.json packages/ispf-server/src/test/reso
 ## Related docs
 
 - [REFERENCE_MES_OGP_EVENTS_WALKTHROUGH.md](../../docs/en/reference-mes-ogp-events-walkthrough.md)
+
+## Honesty
+
+`integration_outbox` poll marks rows **`simulated`** (stub export) — not live 1C/ERP delivery.
