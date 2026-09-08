@@ -1,24 +1,66 @@
 # Dependabot version updates (weekly). Touch this file to re-run update jobs.
+# Groups keep patch/minor noise down; majors stay as individual PRs for review.
 version: 2
 updates:
   - package-ecosystem: gradle
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 20
+    open-pull-requests-limit: 10
     # YARG XlsxFormatter needs docx4j 8.3.x; majors break template validation (ADR-0053).
     ignore:
       - dependency-name: "org.docx4j:docx4j-JAXB-ReferenceImpl"
         update-types: ["version-update:semver-major"]
+    groups:
+      parquet:
+        patterns:
+          - "org.apache.parquet:*"
+        update-types:
+          - "minor"
+          - "patch"
+      protobuf:
+        patterns:
+          - "com.google.protobuf:*"
+        update-types:
+          - "minor"
+          - "patch"
+      gradle-minor-patch:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "org.apache.parquet:*"
+          - "com.google.protobuf:*"
+          - "org.docx4j:*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: npm
     directory: /apps/web-console
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    groups:
+      web-console-dev-minor-patch:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      web-console-prod-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
