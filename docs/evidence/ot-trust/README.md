@@ -25,6 +25,7 @@
 | **BL-140 Pilot #2 MQTT day 1** | [2026-09-08-bl140-pilot2-mqtt-day1.md](2026-09-08-bl140-pilot2-mqtt-day1.md) · [JSON](pilot2-lab/day1-2026-09-08.json) · [C5](pilot2-lab/c5-2026-09-08.json) |
 | **BL-140 Pilot #3 OPC UA day 1** | [2026-09-08-bl140-pilot3-opcua-day1.md](2026-09-08-bl140-pilot3-opcua-day1.md) · [checklist](pilot3-opcua-line.checklist.md) · [journal](pilot3-opcua-line.journal.md) · [JSON](pilot3-lab/day1-2026-09-08.json) |
 | Parallel timers | [2026-09-08-bl140-parallel-timers.md](2026-09-08-bl140-parallel-timers.md) — 06:00 / 06:05 / 06:10 MSK |
+| Lab mid-check (evening) | [2026-09-08-lab-midcheck.md](2026-09-08-lab-midcheck.md) — P1–P3 RUNNING; next pull **2026-09-09** |
 | Lab jump SSH | [2026-09-07-lab-jump-ssh-blocker.md](2026-09-07-lab-jump-ssh-blocker.md) — **resolved** 2026-09-08 (key auth) |
 | Daily soak check | [`tools/ot-trust/pilot1-modbus-soak-check.py`](../../tools/ot-trust/pilot1-modbus-soak-check.py) (lab timer 06:00 MSK) |
 | MQTT soak / bootstrap | [`pilot2-mqtt-soak-check.py`](../../tools/ot-trust/pilot2-mqtt-soak-check.py) · [`pilot2-mqtt-lab-bootstrap.py`](../../tools/ot-trust/pilot2-mqtt-lab-bootstrap.py) |

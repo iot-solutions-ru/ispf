@@ -1,11 +1,5 @@
 [
   {
-    "file": "components/dashboard/SvgWidgetInteractiveEditor.tsx",
-    "line": 119,
-    "kind": "ui-attr",
-    "text": "/itm-assets/m11/main_topology.svg"
-  },
-  {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
     "line": 1214,
     "kind": "ui-attr",
@@ -43,99 +37,15 @@
   },
   {
     "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1910,
-    "kind": "ui-attr",
-    "text": "/lab-assets/button.svg"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
     "line": 2203,
     "kind": "ui-attr",
     "text": "HTML"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 928,
-    "kind": "jsx-text",
-    "text": "15m"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 929,
-    "kind": "jsx-text",
-    "text": "30m"
-  },
-  {
-    "file": "components/dashboard/widgets/CarouselWidgetView.tsx",
-    "line": 53,
-    "kind": "jsx-text",
-    "text": "= 0 && editorIndex"
-  },
-  {
-    "file": "components/dashboard/widgets/ChartRadarWidgetView.tsx",
-    "line": 41,
-    "kind": "jsx-text",
-    "text": "(editable && series.rows.length"
-  },
-  {
-    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 112,
-    "kind": "jsx-text",
-    "text": "(editable && series.points.length"
-  },
-  {
-    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 116,
-    "kind": "jsx-text",
-    "text": "(editable && isRangeChart && series.rangePoints.length"
-  },
-  {
-    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 122,
-    "kind": "jsx-text",
-    "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
     "line": 377,
     "kind": "ui-attr",
     "text": "literal or ${input.name}"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 405,
-    "kind": "ui-attr",
-    "text": "${input.raw}"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 458,
-    "kind": "ui-attr",
-    "text": "${input.id}"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 469,
-    "kind": "ui-attr",
-    "text": "${instancePath}"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 487,
-    "kind": "ui-attr",
-    "text": "SELECT id FROM orders WHERE id = ?"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 493,
-    "kind": "ui-attr",
-    "text": "${input.orderId}"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 503,
-    "kind": "ui-attr",
-    "text": "${rows}"
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
@@ -162,27 +72,9 @@
     "text": "@site.equip"
   },
   {
-    "file": "components/operator/ManifestActionForm.tsx",
-    "line": 25,
-    "kind": "jsx-text",
-    "text": "| Record"
-  },
-  {
-    "file": "components/operator/ManifestScreen.tsx",
-    "line": 47,
-    "kind": "jsx-text",
-    "text": "| Record"
-  },
-  {
     "file": "components/operator/OperatorAlarmBarEditor.tsx",
     "line": 161,
     "kind": "ui-attr",
     "text": "fireAlarm, gasLeak"
-  },
-  {
-    "file": "context/AdminFocusContext.tsx",
-    "line": 177,
-    "kind": "jsx-text",
-    "text": "| undefined): Record"
   }
 ]
