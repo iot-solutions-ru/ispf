@@ -56,11 +56,11 @@ dependencies {
     implementation("org.apache.poi:poi-ooxml:5.5.1")
     implementation("org.apache.poi:poi:5.5.1")
 
-    implementation("org.apache.parquet:parquet-avro:1.18.0") {
+    implementation("org.apache.parquet:parquet-avro:1.18.1") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
     }
-    implementation("org.apache.parquet:parquet-hadoop:1.18.0") {
+    implementation("org.apache.parquet:parquet-hadoop:1.18.1") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
     }
