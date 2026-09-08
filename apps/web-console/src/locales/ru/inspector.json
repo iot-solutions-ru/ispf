@@ -487,6 +487,7 @@
   "scriptSteps.field.equals": "Ожидаемое значение",
   "scriptSteps.field.errorCode": "код_ошибки",
   "scriptSteps.field.errorMessage": "error_message",
+  "scriptSteps.placeholder.requiredValueMissing": "Обязательное значение отсутствует",
   "scriptSteps.field.expectNotNull": "Ожидать not null",
   "scriptSteps.field.expression": "Выражение",
   "scriptSteps.field.extractFields": "Поля JSON",
