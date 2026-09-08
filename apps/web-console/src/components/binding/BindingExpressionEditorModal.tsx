@@ -298,9 +298,19 @@ export default function BindingExpressionEditorModal({
                     ? focusContext.ruleId.trim()
                     : "";
                 const prompt = expr
-                  ? rule
-                    ? `Объясни текущее CEL-выражение правила «${rule}»:\n\`\`\`\n${expr}\n\`\`\`\nЧто оно вычисляет и как связано с self / target?`
-                    : `Объясни текущее CEL-выражение в редакторе:\n\`\`\`\n${expr}\n\`\`\`\nЧто оно вычисляет?`
+                  ? [
+                      t(
+                        rule
+                          ? "ai:copilot.suggest.explainRule"
+                          : "ai:copilot.suggest.explainExpression",
+                      ),
+                      t(
+                        rule ? "ai:copilot.contextCelRule" : "ai:copilot.contextCelEditor",
+                        rule
+                          ? { ruleId: rule, expression: expr }
+                          : { expression: expr },
+                      ),
+                    ].join("\n\n")
                   : undefined;
                 adminFocus.requestOpenCopilot(prompt);
               }}

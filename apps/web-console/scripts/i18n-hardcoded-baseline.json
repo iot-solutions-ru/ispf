@@ -1,17 +1,5 @@
 [
   {
-    "file": "components/binding/BindingExpressionEditorModal.tsx",
-    "line": 302,
-    "kind": "cyrillic",
-    "text": "? `Объясни текущее CEL-выражение правила «${rule}»:\\n\\`\\`\\`\\n${expr}\\n\\`\\`\\`\\nЧто оно вычисляет и как связано с self / t"
-  },
-  {
-    "file": "components/binding/BindingExpressionEditorModal.tsx",
-    "line": 303,
-    "kind": "cyrillic",
-    "text": ": `Объясни текущее CEL-выражение в редакторе:\\n\\`\\`\\`\\n${expr}\\n\\`\\`\\`\\nЧто оно вычисляет?`"
-  },
-  {
     "file": "components/dashboard/SvgWidgetInteractiveEditor.tsx",
     "line": 119,
     "kind": "ui-attr",
@@ -106,48 +94,6 @@
     "line": 122,
     "kind": "jsx-text",
     "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
-  },
-  {
-    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
-    "line": 257,
-    "kind": "cyrillic",
-    "text": "return <p className=\"hint\">Укажите behaviorsJson и bindingsJson (как у SCADA-символа).</p>;"
-  },
-  {
-    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
-    "line": 266,
-    "kind": "cyrillic",
-    "text": "return <p className=\"hint\">Загрузка SVG…</p>;"
-  },
-  {
-    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
-    "line": 269,
-    "kind": "cyrillic",
-    "text": "return <p className=\"hint\">SVG не загружен.</p>;"
-  },
-  {
-    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
-    "line": 309,
-    "kind": "cyrillic",
-    "text": "<i className=\"topology-svg-dot online\" /> Узел online"
-  },
-  {
-    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
-    "line": 312,
-    "kind": "cyrillic",
-    "text": "<i className=\"topology-svg-dot offline\" /> Узел offline"
-  },
-  {
-    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
-    "line": 315,
-    "kind": "cyrillic",
-    "text": "<i className=\"topology-svg-dot link-up\" /> Линк up"
-  },
-  {
-    "file": "components/dashboard/widgets/SvgInteractiveBody.tsx",
-    "line": 318,
-    "kind": "cyrillic",
-    "text": "<i className=\"topology-svg-dot link-down\" /> Линк down"
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",

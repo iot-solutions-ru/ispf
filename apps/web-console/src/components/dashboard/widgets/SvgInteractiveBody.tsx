@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   applySvgBehaviorsToRoot,
   prepareSvgInner,
@@ -51,6 +52,7 @@ export default function SvgInteractiveBody({
   editable,
   title,
 }: SvgInteractiveBodyProps) {
+  const { t } = useTranslation("widgets");
   const session = useDashboardContext();
   const viewportRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<SVGGElement>(null);
@@ -254,7 +256,7 @@ export default function SvgInteractiveBody({
   const waitingForBase = !baseSvgInner && (svgQuery.isLoading || Boolean(resolvedSvgUrl && !config?.svgInner));
 
   if (!config) {
-    return <p className="hint">Укажите behaviorsJson и bindingsJson (как у SCADA-символа).</p>;
+    return <p className="hint">{t("view.svgInteractive.needConfig")}</p>;
   }
   if (variablesBatch.isError) {
     return <p className="function-widget-msg error">{String(variablesBatch.error)}</p>;
@@ -263,10 +265,10 @@ export default function SvgInteractiveBody({
     return <p className="function-widget-msg error">{String(svgQuery.error)}</p>;
   }
   if (waitingForBase) {
-    return <p className="hint">Загрузка SVG…</p>;
+    return <p className="hint">{t("view.svgInteractive.loading")}</p>;
   }
   if (!baseSvgInner) {
-    return <p className="hint">SVG не загружен.</p>;
+    return <p className="hint">{t("view.svgInteractive.notLoaded")}</p>;
   }
 
   return (
@@ -306,16 +308,16 @@ export default function SvgInteractiveBody({
       {legend ? (
         <div className="topology-svg-legend" aria-hidden>
           <span>
-            <i className="topology-svg-dot online" /> Узел online
+            <i className="topology-svg-dot online" /> {t("view.svgInteractive.legend.nodeOnline")}
           </span>
           <span>
-            <i className="topology-svg-dot offline" /> Узел offline
+            <i className="topology-svg-dot offline" /> {t("view.svgInteractive.legend.nodeOffline")}
           </span>
           <span>
-            <i className="topology-svg-dot link-up" /> Линк up
+            <i className="topology-svg-dot link-up" /> {t("view.svgInteractive.legend.linkUp")}
           </span>
           <span>
-            <i className="topology-svg-dot link-down" /> Линк down
+            <i className="topology-svg-dot link-down" /> {t("view.svgInteractive.legend.linkDown")}
           </span>
         </div>
       ) : null}
