@@ -30,5 +30,6 @@
   "loadMore": "Mehr laden",
   "mode.history": "Verlauf",
   "mode.live": "Lebe",
-  "modeLabel": "Journalmodus"
+  "modeLabel": "Journalmodus",
+  "changeHistory.revision": "Rev"
 }

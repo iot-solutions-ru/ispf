@@ -155,7 +155,7 @@ export default function ObjectChangeHistoryPanel({
               <th>{t("common:table.type")}</th>
               <th>{t("common:field.field")}</th>
               <th>{t("common:field.actor")}</th>
-              <th>Rev</th>
+              <th>{t("changeHistory.revision")}</th>
               <th className="journal-audit-diff-col" aria-label={t("changeHistory.diff")} />
             </tr>
           </thead>

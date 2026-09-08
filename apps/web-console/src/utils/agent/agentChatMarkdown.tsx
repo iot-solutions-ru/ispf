@@ -16,7 +16,8 @@ export function normalizeAgentMarkdown(text: string): string {
   }
   normalized = normalized.replace(/(?<=[^\n])\s+(?=\d+[\.)]\s)/g, "\n");
   normalized = normalized.replace(/:\s+(\d+[\.)]\s)/g, ":\n$1");
-  normalized = normalized.replace(/(?<=[^\n])\s+(?=\*\*Пример)/gi, "\n\n");
+  // Match legacy RU agent replies that start a section with **Пример
+  normalized = normalized.replace(/(?<=[^\n])\s+(?=\*\*\u041F\u0440\u0438\u043C\u0435\u0440)/gi, "\n\n");
   return normalized;
 }
 

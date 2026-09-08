@@ -30,5 +30,6 @@
   "loadMore": "Загрузить ещё",
   "mode.history": "История",
   "mode.live": "Онлайн",
-  "modeLabel": "Режим журнала"
+  "modeLabel": "Режим журнала",
+  "changeHistory.revision": "Ревизия"
 }

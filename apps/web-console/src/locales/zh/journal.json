@@ -30,5 +30,6 @@
   "loadMore": "加载更多",
   "mode.history": "历史",
   "mode.live": "实时",
-  "modeLabel": "日志视图模式"
+  "modeLabel": "日志视图模式",
+  "changeHistory.revision": "修订"
 }
