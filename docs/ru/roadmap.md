@@ -1221,7 +1221,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | -- | ----- | -------- | - | ------ |
 | БЛ-140 | 25 | Топ-20 промышленного производства | P0 | **Частичный** (матрица + playbooks; **ready-for-field** только после именованной полевой задачи на драйвер) |
 | БЛ-141 | 25 | Лаборатория взаимодействия драйверов | P0 | **Готово** (Docker + CI дым) |
-| БЛ-142 | 25 | Событие→переменная в драйвере | Р1 | Частичный (MQTT path REAL; Kafka driver + server IT зелёные / нет server IT — parked) |
+| БЛ-142 | 25 | Событие→переменная в драйвере | Р1 | **Готово** — MQTT + Kafka driver loopback + server IT (`MqttDriverRuntimeIntegrationTest`, `KafkaDriverRuntimeIntegrationTest`) |
 | БЛ-143 | 25 | OPC UA-сервер GA | Р1 | Частичный |
 | БЛ-144 | 25 | Драйвер ДДК | Р1 | Частичный |
 | БЛ-145 | 25 | Агент края GA | Р1 | Частичный (дисковый буфер; выдержка 30 дней) |
@@ -1609,7 +1609,7 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 | 19.07.2026 | **Фаза 32 ecosystem partials закрыты:** БЛ-183 Готово (CI `marketplace-catalog` + честные partner multi-endpoint); БЛ-186 Готово (Helm lint/template); БЛ-187 Готово (ARM compose/validate); БЛ-188 Готово usable MoM path (не 10+ peer soak); БЛ-190 Готово curriculum paths |
 | 19.07.2026 | **БЛ-177 / БЛ-180 → Готово:** multi-app `AgentLiveDeploySmokeTest` matrix + multi-domain `AiSolutionGeneratorLiveSmokeTest` harness в repo; live runs требуют `ISPF_LLM_SMOKE=true` (без выдуманных multi-app/multi-domain live pass counts). БЛ-178 остаётся **Готово** 52/52 @100%. Scorecard AI **8.5 → 9.0** |
 | 19.07.2026 | **Фаза 26 HMI:** БЛ-147/148/149/150/151 **Готово**; БЛ-152 **Готово** — честный acceptance CI 500 el ≥55 FPS + WS path (**не** unmocked ≥60); LH≥95 = ops stretch |
-| 19.07.2026 | **Фаза 27 security (честно):** БЛ-153 **Готово** TOTP GA (WebAuthn → **БЛ-194**); БЛ-154 **Готово** vars+history+invokeRoles API/UI; БЛ-155 **Готово** — SaaS `tenant-admin` + logical A≠B (hard schema table routing опционален). OT parked: БЛ-140/143–145; БЛ-142 Partial (MQTT REAL, Kafka IT открыт) |
+| 19.07.2026 | **Фаза 27 security (честно):** БЛ-153 **Готово** TOTP GA (WebAuthn → **БЛ-194**); БЛ-154 **Готово** vars+history+invokeRoles API/UI; БЛ-155 **Готово** — SaaS `tenant-admin` + logical A≠B (hard schema table routing опционален). OT parked: БЛ-140/143–145; БЛ-142 **Готово** (MQTT + Kafka driver + server IT) |
 | 19.07.2026 | **БЛ-183 honesty (superseded):** ранее п. 11–12 Частично; закрыто записью Phase 32 ecosystem выше |
 | 19.07.2026 | **БЛ-178 Готово:** полный live suite `AGENT_LIVE_SUITE_MODE=full` через `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI остаётся в режиме platform |
 | 19.07.2026 | **БЛ-206 Готово (реестр):** Multi-tag Analytics Query API уже в коде — `POST .../analytics/query`, export, chart multi-series (мастер-таблица Планируется → Готово) |
