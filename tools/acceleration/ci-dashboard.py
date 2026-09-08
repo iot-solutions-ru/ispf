@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT_MD = ROOT / "docs" / "CI_DASHBOARD.md"
+OUT_MD = ROOT / "docs" / "en" / "ci-dashboard.md"
+OUT_MD_RU = ROOT / "docs" / "ru" / "ci-dashboard.md"
 OUT_JSON = Path(__file__).resolve().parent / "ci-dashboard.json"
 
 WORKFLOWS = [
@@ -77,7 +78,7 @@ def render_markdown(report: dict) -> str:
     lines = [
         "# CI dashboard",
         "",
-        f"Generated: `{report['generated_at']}` · [Acceleration program](ACCELERATION_PROGRAM.md)",
+        f"Generated: `{report['generated_at']}` · [Acceleration program](acceleration-program.md)",
         "",
         "> Auto-updated by `python tools/acceleration/ci-dashboard.py` (S20-06).",
         "",
@@ -117,13 +118,61 @@ def render_markdown(report: dict) -> str:
     return "\n".join(lines)
 
 
+def render_markdown_ru(report: dict) -> str:
+    lines = [
+        "> **Язык:** русская версия (вычитка). Канонический английский: [en/ci-dashboard.md](../en/ci-dashboard.md).",
+        "",
+        "# Панель управления CI",
+        "",
+        f"Generated: `{report['generated_at']}` · [Acceleration program](acceleration-program.md)",
+        "",
+        "> Auto-updated by `python tools/acceleration/ci-dashboard.py` (S20-06).",
+        "",
+        "## Состояние рабочего процесса (последние 20 запусков)",
+        "",
+        "| Рабочий процесс | Роль | Успех | Средняя стена | Последний |",
+        "| -------- | ---- | ------- | -------- | ---- |",
+    ]
+    for row in report["workflows"]:
+        success = f"{row['success_rate_pct']}%" if row["success_rate_pct"] is not None else "—"
+        avg = f"{row['avg_wall_min']} min" if row["avg_wall_min"] is not None else "—"
+        last = row["last_conclusion"] or "—"
+        lines.append(
+            f"| `{row['workflow']}` | {row['label']} | {success} ({row['sample_size']}) | {avg} | {last} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Цели (ускорение)",
+            "",
+            "| KPI | Target |",
+            "| --- | ------ |",
+            "| PR pr-fast wall | ≤25 min |",
+            "| CI success rate (14d) | ≥95% |",
+            "| Nightly full | green 7/7 days |",
+            "",
+            "## Commands",
+            "",
+            "```bash",
+            "python tools/acceleration/ci-dashboard.py",
+            "python tools/acceleration/collect-baseline.py",
+            "gh run list --workflow=ci.yml --limit 10",
+            "```",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def main() -> int:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     workflows = [summarize_workflow(name, label) for name, label in WORKFLOWS]
     report = {"generated_at": now, "workflows": workflows}
     OUT_JSON.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     OUT_MD.write_text(render_markdown(report), encoding="utf-8")
+    OUT_MD_RU.write_text(render_markdown_ru(report), encoding="utf-8")
     print(f"Wrote {OUT_MD}")
+    print(f"Wrote {OUT_MD_RU}")
     print(f"Wrote {OUT_JSON}")
 
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")

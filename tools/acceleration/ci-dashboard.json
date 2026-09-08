@@ -1,59 +1,59 @@
 {
-  "generated_at": "2026-07-04T23:58:16Z",
+  "generated_at": "2026-09-08T08:14:35Z",
   "workflows": [
     {
       "workflow": "ci.yml",
       "label": "PR pr-fast",
-      "sample_size": 19,
-      "success_rate_pct": 15.8,
-      "avg_wall_min": 30.4,
-      "last_conclusion": "failure",
-      "last_title": "docs(deploy): VPS event-journal max-load bench and prod baseline"
+      "sample_size": 20,
+      "success_rate_pct": 90.0,
+      "avg_wall_min": 7.1,
+      "last_conclusion": "success",
+      "last_title": "chore(deps): bump react-map-gl from 8.1.2 to 8.1.3 in /apps/web-console"
     },
     {
       "workflow": "nightly.yml",
       "label": "Nightly full",
-      "sample_size": 0,
-      "success_rate_pct": null,
-      "avg_wall_min": null,
-      "last_conclusion": null,
-      "last_title": null
+      "sample_size": 20,
+      "success_rate_pct": 50.0,
+      "avg_wall_min": 5.2,
+      "last_conclusion": "success",
+      "last_title": "docs/feat(ot/hmi): P-HMI-8H Lab PASS + Pilots #1\u2013#3 parallel OT evidence"
     },
     {
       "workflow": "load-test.yml",
       "label": "Load gate",
-      "sample_size": 2,
-      "success_rate_pct": 50.0,
-      "avg_wall_min": 4.1,
-      "last_conclusion": "failure",
+      "sample_size": 20,
+      "success_rate_pct": 80.0,
+      "avg_wall_min": 5.0,
+      "last_conclusion": "success",
       "last_title": "Load test gate"
     },
     {
       "workflow": "cluster-load-test.yml",
       "label": "Cluster gate",
-      "sample_size": 0,
-      "success_rate_pct": null,
-      "avg_wall_min": null,
-      "last_conclusion": null,
-      "last_title": null
+      "sample_size": 7,
+      "success_rate_pct": 100.0,
+      "avg_wall_min": 3.5,
+      "last_conclusion": "success",
+      "last_title": "Cluster load test gate"
     },
     {
       "workflow": "e2e-live.yml",
       "label": "E2E live",
-      "sample_size": 20,
-      "success_rate_pct": 0.0,
+      "sample_size": 18,
+      "success_rate_pct": 38.9,
       "avg_wall_min": 0.0,
-      "last_conclusion": "failure",
-      "last_title": "feat(server): cluster HA, storage auto-schema, and lab deploy tooling"
+      "last_conclusion": "success",
+      "last_title": "E2E live"
     },
     {
       "workflow": "driver-interop.yml",
       "label": "Driver interop",
-      "sample_size": 12,
-      "success_rate_pct": 100.0,
-      "avg_wall_min": 3.3,
+      "sample_size": 20,
+      "success_rate_pct": 95.0,
+      "avg_wall_min": 6.6,
       "last_conclusion": "success",
-      "last_title": "fix(server): rebase PR #23 \u0432\u0402\u201d deps, SQL guard, transactional fixes"
+      "last_title": "chore(deps): bump actions/upload-artifact from 4.6.2 to 7.0.1"
     }
   ]
 }

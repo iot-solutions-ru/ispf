@@ -50,13 +50,14 @@ The full nightly suite does **not** run on every `main` push (heavy jobs are
 push so the workflow does not appear as an empty failure in Actions while the
 shared `ci-nightly` concurrency group is idle. PR gating remains in `ci.yml`.
 
-## Known hotspots (baseline Jul 2026)
+## Known hotspots (baseline Jul 2026 / updated 2026-09-08)
 
 | Area | Symptom | Mitigation |
 | ---- | ------- | ---------- |
 | Load tests in PR | Slow + H2/Flyway flakes on Windows | Moved to nightly (S20-01) |
 | Playwright preview | Mobile viewport timing | Nightly only |
 | Federation tunnel IT | WS connect / buffer drain timeout on slow runners | `@Isolated`, budgets in `FederationIntegrationTestSupport` (S27); nightly if &gt;2×/week |
+| `VariableHistoryAsyncWriterTest` | Mockito `ArgumentsAreDifferent` / `TooManyActualInvocations` on flush metrics when worker races `enqueue` 1+1 vs batch-of-2 | Assert **totals** persisted/flushed (≥2), not a single `recordVariableHistoryFlushed(2)` / `times(1)` call (2026-09-08) |
 
 ## Metrics
 

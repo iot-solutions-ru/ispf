@@ -1,6 +1,6 @@
 # CI dashboard
 
-Generated: `2026-07-04T23:58:16Z` · [Acceleration program](acceleration-program.md)
+Generated: `2026-09-08T08:14:35Z` · [Acceleration program](acceleration-program.md)
 
 > Auto-updated by `python tools/acceleration/ci-dashboard.py` (S20-06).
 
@@ -8,12 +8,12 @@ Generated: `2026-07-04T23:58:16Z` · [Acceleration program](acceleration-program
 
 | Workflow | Role | Success | Avg wall | Last |
 | -------- | ---- | ------- | -------- | ---- |
-| `ci.yml` | PR pr-fast | 15.8% (19) | 30.4 min | failure |
-| `nightly.yml` | Nightly full | — (0) | — | — |
-| `load-test.yml` | Load gate | 50.0% (2) | 4.1 min | failure |
-| `cluster-load-test.yml` | Cluster gate | — (0) | — | — |
-| `e2e-live.yml` | E2E live | 0.0% (20) | 0.0 min | failure |
-| `driver-interop.yml` | Driver interop | 100.0% (12) | 3.3 min | success |
+| `ci.yml` | PR pr-fast | 90.0% (20) | 7.1 min | success |
+| `nightly.yml` | Nightly full | 50.0% (20) | 5.2 min | success |
+| `load-test.yml` | Load gate | 80.0% (20) | 5.0 min | success |
+| `cluster-load-test.yml` | Cluster gate | 100.0% (7) | 3.5 min | success |
+| `e2e-live.yml` | E2E live | 38.9% (18) | 0.0 min | success |
+| `driver-interop.yml` | Driver interop | 95.0% (20) | 6.6 min | success |
 
 ## Targets (acceleration)
 

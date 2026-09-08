@@ -52,13 +52,14 @@ test.skip(true, "ci-flake #1234 — quarantine until 2026-07-20");
 push, чтобы workflow не выглядел как empty failure в Actions. Проверка PR —
 по-прежнему в `ci.yml`.
 
-## Известные горячие точки (базовый показатель на июль 2026 г.)
+## Известные горячие точки (базовый показатель на июль 2026 г. / обновлено 2026-09-08)
 
 | Площадь | Симптом | смягчение последствий |
 | ---- | ------- | ---------- |
 | Нагрузочные тесты в PR | Медленный + H2/Flyway в Windows | Перенесено на ночной режим (S20-01) |
 | Предварительный просмотр Playwrightа | Время просмотра в мобильной версии | Только ночью |
 | Туннель Федерации ИТ | Тайм-аут подключения WS/очистки буфера на медленных бегунах | `@Isolated`, бюджеты в `FederationIntegrationTestSupport` (S27); каждую ночь, если &gt;2×/неделю |
+| `VariableHistoryAsyncWriterTest` | Mockito `ArgumentsAreDifferent` / `TooManyActualInvocations` при гонке flush 1+1 vs batch=2 | Проверять **суммы** persisted/flushed (≥2), а не один вызов `recordVariableHistoryFlushed(2)` (2026-09-08) |
 
 ## Метрики
 
