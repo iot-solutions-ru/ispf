@@ -1348,7 +1348,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | - | ------- | --------- |
 | 1 | **Доказательство REAL** — runtime + автотест + воспроизводимый runbook | `mode: stub`, `source: stub`, in-memory-only GA |
 | 2 | **Подпись человека** на hot path | Self-certified Done без журнала оператора/ОТ/интегратора |
-| 3 | **Live gates** там, где заявлено live-поведение | Mocked WebSocket FPS, schema-only agent CI, ERP outbox с `sent` без ERP |
+| 3 | **Live gates** там, где заявлено live-поведение | Mocked WebSocket FPS, schema-only agent CI, ERP outbox с претензией на live delivery без ERP |
 | 4 | **Честная зрелость** — PRODUCTION = код | `opc-da` stub в PRODUCTION-матрице (БЛ-191) |
 | 5 | **Повторяемость третьей стороной** — runbook ≤ задокументированного времени | Демо только на ноутбуке мейнтейнера |
 | 6 | **Field или lab SLO**, не один ручной прогон | Скриншот без CI-регрессии |
