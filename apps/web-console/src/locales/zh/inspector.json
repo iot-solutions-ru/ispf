@@ -487,6 +487,7 @@
   "scriptSteps.field.equals": "期望值",
   "scriptSteps.field.errorCode": "错误代码",
   "scriptSteps.field.errorMessage": "错误消息",
+  "scriptSteps.placeholder.requiredValueMissing": "缺少必填值",
   "scriptSteps.field.expectNotNull": "期望不为空",
   "scriptSteps.field.expression": "表达",
   "scriptSteps.field.extractFields": "JSON 字段",

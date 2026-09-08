@@ -55,7 +55,7 @@ Hub object (BFF): `root.platform.devices.ogp-mes-hub`
 
 1. Каждое зарегистрированное событие (кроме кодов с `exclude_from_1c`) ставит JSON в очередь `integration_outbox`.
 2. Schedule `ogp-1c-export` или workflow `ogp-export-1c` запускает `ogp_export1cBatch`.
-3. Dev: строки помечаются `sent` без внешнего HTTP (mock URL в `app_setting`).
+3. Dev: строки помечаются `simulated` без внешнего HTTP (stub export — не live 1C/ERP).
 
 ## Operator dashboards (стандартные виджеты)
 

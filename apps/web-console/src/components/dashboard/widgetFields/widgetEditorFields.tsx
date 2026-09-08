@@ -1225,10 +1225,10 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               }
             >
               <option value="">—</option>
-              <option value="DEVICE">DEVICE</option>
-              <option value="FOLDER">FOLDER</option>
-              <option value="DASHBOARD">DASHBOARD</option>
-              <option value="CUSTOM">CUSTOM</option>
+              <option value="DEVICE">{t("common:objectType.DEVICE")}</option>
+              <option value="FOLDER">{t("common:objectType.FOLDER")}</option>
+              <option value="DASHBOARD">{t("common:objectType.DASHBOARD")}</option>
+              <option value="CUSTOM">{t("common:objectType.CUSTOM")}</option>
             </select>
           </label>
           <ObjectTableColumnsEditor
@@ -1901,7 +1901,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
     case "svg-widget":
       return (
         <>
-          <Section title="SVG" />
+          <Section title={t("type.svgWidget")} />
           <WidgetMediaUploadField
             label="svgUrl"
             value={widget.svgUrl ?? ""}
@@ -2200,7 +2200,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
     case "html-snippet":
       return (
         <>
-          <Section title="HTML" />
+          <Section title={t("type.htmlSnippet")} />
           <label className="full">
             htmlJson
             <textarea

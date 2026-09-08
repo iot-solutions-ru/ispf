@@ -6,42 +6,6 @@
     "text": "gpu-*"
   },
   {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1228,
-    "kind": "jsx-text",
-    "text": "DEVICE"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1229,
-    "kind": "jsx-text",
-    "text": "FOLDER"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1230,
-    "kind": "jsx-text",
-    "text": "DASHBOARD"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1231,
-    "kind": "jsx-text",
-    "text": "CUSTOM"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 1904,
-    "kind": "ui-attr",
-    "text": "SVG"
-  },
-  {
-    "file": "components/dashboard/widgetFields/widgetEditorFields.tsx",
-    "line": 2203,
-    "kind": "ui-attr",
-    "text": "HTML"
-  },
-  {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
     "line": 377,
     "kind": "ui-attr",
@@ -58,12 +22,6 @@
     "line": 567,
     "kind": "ui-attr",
     "text": "NOT_FOUND"
-  },
-  {
-    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
-    "line": 573,
-    "kind": "ui-attr",
-    "text": "Required value missing"
   },
   {
     "file": "components/objectEditor/HaystackMetadataPanel.tsx",

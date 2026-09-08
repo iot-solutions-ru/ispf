@@ -972,7 +972,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | Sev | Domain | Gap | Vs market | Evidence | BL |
 | --- | ------ | --- | --------- | -------- | -- |
 | **Closed (honesty)** | IoT / OT | Matrix honesty (BL-191) | Kepware / Ignition | Shells/poll-only → BETA; DNP3 write still open as capability gap | [BL-191](#bl-191193--domain-audit-follow-ups) **Done**; BL-140 field |
-| **Blocker** | ERP L4 | Outbox marks `sent` without real ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (deferred from 90-day plan) |
+| **Blocker** | ERP L4 | Outbox marks `simulated` without live ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (deferred from 90-day plan) |
 | **High** | AI | Field soak / soft &lt;15 min | Differentiated AI agent path | BL-177…180 **Done** (harness); BL-178 full live 52/52 @100%; residual: field soak + soft duration budget | BL-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-187 Done (compose+validate); BL-145 Partial (30d soak) | BL-145, 187 |
 | High | SCADA | Offline PWA / HMI CI gates | Ignition Perspective | BL-151 Done; BL-152 Done (500@≥55 CI + WS path; do **not** claim unmocked ≥60; LH operator ≥95 = ops stretch, CI floor 90) | BL-151, 152 Done |
@@ -1555,7 +1555,7 @@ Week 1: A1–A7 + B1–B2 + C1–C3. Week 2: B3–B4 + C4–C6 + D1 if capacity.
 
 **Scenario:** `mes-platform-production` — work order → operator confirm → quality record → ERP outbox **visible in ERP test system**.
 
-**Not Done if:** `mes_erp_pollOutbox` marks sent without ERP; MES only `MesPlatformGaSmokeTest`; historian SLA not in CI.
+**Not Done if:** `mes_erp_pollOutbox` only marks `simulated` (no live ERP); MES only `MesPlatformGaSmokeTest`; historian SLA not in CI.
 
 #### Wave 4 — Moat + scale (Phase 31 + 33 + 32)
 
@@ -1596,7 +1596,7 @@ CEP, process programs, BPMN subprocess (BL-171…176) ship **after** operator + 
 | Pattern | Example in codebase / process |
 | ------- | ------------------------------ |
 | Stub marked production | `OpcDaDeviceDriver`, PRODUCTION matrix |
-| Fake ERP sync | Outbox `sent` without connector |
+| Fake ERP sync | Outbox `simulated` without live connector |
 | Fake AI regression | Using deprecated `nightly-stub-results.json` as ≥95% proof |
 | Fake partner program | Claiming Partner Portal GA while only DB directory exists; or claiming `source: stub` after BL-184 `source=db` |
 | Mocked operator perf | e2e with mocked WebSocket for FPS |

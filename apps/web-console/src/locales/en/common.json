@@ -95,5 +95,9 @@
   "objectPath.browseTree": "Browse tree",
   "modal.select": "Select",
   "modal.advancedSettings": "Advanced settings",
-  "objectType.BLUEPRINT": "Blueprint"
+  "objectType.BLUEPRINT": "Blueprint",
+  "objectType.DEVICE": "Device",
+  "objectType.FOLDER": "Folder",
+  "objectType.DASHBOARD": "Dashboard",
+  "objectType.CUSTOM": "Custom"
 }

@@ -638,6 +638,7 @@
   "scriptSteps.field.equals": "Expected value",
   "scriptSteps.field.errorCode": "error_code",
   "scriptSteps.field.errorMessage": "error_message",
+  "scriptSteps.placeholder.requiredValueMissing": "Required value missing",
   "scriptSteps.field.condition": "Condition",
   "scriptSteps.field.compareValue": "Compare to",
   "scriptSteps.field.threshold": "Threshold",

@@ -973,7 +973,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | Sev | Домен | Пробел | Vs рынок | Доказательство | БЛ |
 | --- | ----- | ------ | -------- | -------------- | -- |
 | **Blocker** | IoT / OT | PRODUCTION-матрица: `opc-da` stub, DNP3 без write | Kepware / Ignition | `OpcDaDeviceDriver` stub помечен PRODUCTION | [БЛ-191](#бл-191193--аудит-доменов-follow-up), БЛ-140 |
-| **Blocker** | ERP L4 | Outbox помечает `sent` без реального ERP | B2MML / 1C / SAP IDoc | Только stub-коннектор | **БЛ-169** (снят с 90-дневного плана) |
+| **Blocker** | ERP L4 | Outbox помечает `simulated` без live ERP | B2MML / 1C / SAP IDoc | Только stub-коннектор | **БЛ-169** (снят с 90-дневного плана) |
 | **High** | AI | Field soak / soft &lt;15 min | Собственный AI-ров | БЛ-177…180 **Готово** (harness); БЛ-178 полный live 52/52 @100%; остаток: field soak + soft duration budget | БЛ-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30д | Ignition Edge | БЛ-187 Готово (compose+validate); БЛ-145 Частичный (30д soak) | БЛ-145, 187 |
 | High | SCADA | Offline PWA / HMI CI gates | Ignition Perspective | БЛ-151 Готово; БЛ-152 Готово (500@≥55 CI + WS; **не** заявлять unmocked ≥60; LH≥95 = ops stretch, CI floor 90) | БЛ-151, 152 Готово |
@@ -1482,7 +1482,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Сценарий:** `mes-platform-production` — work order → confirm → quality → outbox **виден в тестовой ERP**.
 
-**Не Done если:** `pollOutbox` помечает sent без ERP; только `MesPlatformGaSmokeTest`; SLA historian не в CI.
+**Не Done если:** `pollOutbox` только помечает `simulated` (без live ERP); только `MesPlatformGaSmokeTest`; SLA historian не в CI.
 
 #### Волна 4 — Ров + масштаб (Фазы 31 + 33 + 32)
 
@@ -1523,7 +1523,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | Паттерн | Пример |
 | ------- | ------ |
 | Stub = PRODUCTION | `OpcDaDeviceDriver`, матрица |
-| Фейковый ERP | Outbox `sent` без коннектора |
+| Фейковый ERP | Outbox `simulated` без live-коннектора |
 | Фейковая AI regression | Использование устаревшего `nightly-stub-results.json` как proof ≥95% |
 | Фейковые партнёры | Claim Partner Portal GA при только DB directory; или claim `source: stub` после BL-184 `source=db` |
 | Фейковый alarm shelf | in-memory |

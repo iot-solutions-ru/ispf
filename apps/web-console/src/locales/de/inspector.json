@@ -487,6 +487,7 @@
   "scriptSteps.field.equals": "Erwarteter Wert",
   "scriptSteps.field.errorCode": "Fehlercode",
   "scriptSteps.field.errorMessage": "error_message",
+  "scriptSteps.placeholder.requiredValueMissing": "Erforderlicher Wert fehlt",
   "scriptSteps.field.expectNotNull": "Erwarten Sie nicht null",
   "scriptSteps.field.expression": "Ausdruck",
   "scriptSteps.field.extractFields": "JSON-Felder",

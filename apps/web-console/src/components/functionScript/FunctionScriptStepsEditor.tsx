@@ -570,7 +570,7 @@ function StepFields({
             label={t("scriptSteps.field.errorMessage")}
             value={String(step.error_message ?? step.message ?? "")}
             onChange={(next) => onPatch({ error_message: next, message: undefined })}
-            placeholder="Required value missing"
+            placeholder={t("scriptSteps.placeholder.requiredValueMissing")}
           />
         </>
       )}
