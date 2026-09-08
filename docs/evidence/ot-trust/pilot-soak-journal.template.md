@@ -2,7 +2,9 @@
 
 Phase 25 / BL-140. One table per pilot. See [field-pilot-playbook](../../en/field-pilot-playbook.md).
 
-**Pilot #1 (Modbus plant) instance:** [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md) · [checklist](pilot1-modbus-plant.checklist.md).
+**Pilot #1 (Modbus plant) instance:** [pilot1-modbus-plant.journal.md](pilot1-modbus-plant.journal.md) · [checklist](pilot1-modbus-plant.checklist.md).  
+**Pilot #2 (MQTT fleet) instance:** [pilot2-mqtt-fleet.journal.md](pilot2-mqtt-fleet.journal.md) · [checklist](pilot2-mqtt-fleet.checklist.md).  
+**Pilot #3 (OPC UA line) instance:** [pilot3-opcua-line.journal.md](pilot3-opcua-line.journal.md) · [checklist](pilot3-opcua-line.checklist.md).
 
 ## Header
 

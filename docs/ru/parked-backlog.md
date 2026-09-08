@@ -6,9 +6,9 @@
 | ID | Тема | Статус | Критерий снятия | Заметка |
 |----|------|--------|-----------------|---------|
 | P-ENT-L | Enterprise L (50k history + 1B CH + multi-tag SLO) | **Lab PASS** (2026-09-05) | Rescore Historian на полном audit | Evidence: [`docs/evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md) |
-| P-HMI-8H | HMI offline **8 h** (lab CDP) | **В работе** | JSON + journal в `docs/evidence/hmi-offline/` | CDP soak 480 мин на demostand с 2026-09-05. Это **не** планшет / airplane mode. |
+| P-HMI-8H | HMI offline **8 h** (lab CDP) | **Lab PASS** (2026-09-05) | Rescore HMI на полном audit | Evidence: [`hmi-offline/2026-09-05-…offline-8h`](../evidence/hmi-offline/2026-09-05-ispf-vps-0.9.207-offline-8h.json) · [journal](../evidence/hmi-offline/2026-09-05-ispf-vps-0.9.207-journal-8h.md). Только CDP — **не** планшет. |
 | P-HMI-FIELD | Полевой планшет / airplane mode | **Отложено** | Площадка + journal | [hmi-offline-field-soak.md](../en/hmi-offline-field-soak.md) |
-| P-OT | Фаза 25 OT Trust (BL-140…) | **В работе** (Pilot #1 soak days 1–2 + C5; дни 3–7 открыты) | 7-day soak + OT sign-off для field Done | Lab-каталог **162/162**, stubs **0** (#144). Docker **14/20**. **BL-140 Pilot #1** site=`lab-ot-vlan-192.168.100`: [day 1](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md) · [day 2](../evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md) · [C5](../evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md) · [journal](../evidence/ot-trust/pilot1-modbus-plant.journal.md). Timer 06:00 MSK. Не OT 10/10. |
+| P-OT | Фаза 25 OT Trust (BL-140…) | **В работе** (P1 days 1–3; P2 MQTT day 1; P3 OPC UA day 1; timers) | 7-day soak + OT sign-off | [P1 day3](../evidence/ot-trust/2026-09-08-bl140-pilot1-day3.md) · [P2 day1](../evidence/ot-trust/2026-09-08-bl140-pilot2-mqtt-day1.md) · [P3 day1](../evidence/ot-trust/2026-09-08-bl140-pilot3-opcua-day1.md). Не OT 10/10. |
 | P-ERP | Живой ERP (BL-169) | **Отложено** | Именованная интеграция 1C/SAP | Sandbox ≠ live |
 | P-BPMN | Глубина BPMN/DMN сверх ADR-0047 | **Отложено** | Blocker заказчика + ADR | Freeze |
 | P-WEBAUTHN | WebAuthn (BL-194) | **Отложено (Planned)** | Требование тендера / MFA | TOTP GA уже есть |

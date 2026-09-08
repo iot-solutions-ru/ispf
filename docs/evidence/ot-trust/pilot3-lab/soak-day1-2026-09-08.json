@@ -1,0 +1,49 @@
+{
+  "utc": "2026-09-08T05:36:28Z",
+  "date": "2026-09-08",
+  "day": 1,
+  "site": "lab-ot-vlan-192.168.100",
+  "clientPath": "root.platform.devices.pilot3-opcua.line",
+  "serverPath": "root.platform.devices.pilot3-opcua.server",
+  "clientStatus": {
+    "devicePath": "root.platform.devices.pilot3-opcua.line",
+    "driverId": "opcua",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "serverStatus": {
+    "devicePath": "root.platform.devices.pilot3-opcua.server",
+    "driverId": "opcua-server",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "tagCount": 12,
+  "samples": {
+    "tag00": {
+      "value": "97",
+      "quality": "GOOD"
+    },
+    "tag09": {
+      "value": "73",
+      "quality": "GOOD"
+    },
+    "lineSpeed": {
+      "value": "63",
+      "quality": "GOOD"
+    },
+    "cellTemp": {
+      "value": "70",
+      "quality": "GOOD"
+    }
+  },
+  "pass": true,
+  "incidents": []
+}

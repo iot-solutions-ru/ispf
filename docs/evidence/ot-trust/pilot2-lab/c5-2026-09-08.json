@@ -1,0 +1,18 @@
+{
+  "brokerStop": {
+    "status": "ERROR",
+    "connected": false,
+    "lastError": "Not connected"
+  },
+  "afterRestartDriver": {
+    "devicePath": "root.platform.devices.pilot2-mqtt.fleet",
+    "driverId": "mqtt",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "note": "Broker stop -> ERROR/Not connected; mosquitto start + driver restart -> RUNNING"
+}
