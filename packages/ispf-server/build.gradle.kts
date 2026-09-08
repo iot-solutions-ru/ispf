@@ -5,6 +5,8 @@ plugins {
 
 // Override Spring Boot BOM pin (4.35.1) so runtime stays >= CEL 0.14 gencode and is current.
 extra["protobuf-java.version"] = "4.36.0"
+// Align EmbeddedKafka 4.3.1 with kafka_2.13 (Boot BOM otherwise forces 4.2.1 → CompressionType CNFE).
+extra["kafka.version"] = "4.3.1"
 
 configurations.all {
     exclude(group = "org.slf4j", module = "slf4j-reload4j")
@@ -80,6 +82,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.mockito:mockito-core")
+    // Embedded Kafka for BL-142 KafkaDriverRuntimeIntegrationTest (matches ispf-driver-kafka).
+    testImplementation("org.apache.kafka:kafka-clients:4.3.1")
+    testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
+    testRuntimeOnly("org.scala-lang:scala-library:2.13.15")
     testRuntimeOnly("com.h2database:h2")
 }
 

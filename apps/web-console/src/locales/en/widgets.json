@@ -445,5 +445,12 @@
   "view.multiPenTrend.noDataExport": "No data to export",
   "view.wizardBack": "Back",
   "view.wizardNext": "Next →",
-  "view.loadingReport": "Loading…"
+  "view.loadingReport": "Loading…",
+  "view.svgInteractive.needConfig": "Set behaviorsJson and bindingsJson (same as a SCADA symbol).",
+  "view.svgInteractive.loading": "Loading SVG…",
+  "view.svgInteractive.notLoaded": "SVG not loaded.",
+  "view.svgInteractive.legend.nodeOnline": "Node online",
+  "view.svgInteractive.legend.nodeOffline": "Node offline",
+  "view.svgInteractive.legend.linkUp": "Link up",
+  "view.svgInteractive.legend.linkDown": "Link down"
 }

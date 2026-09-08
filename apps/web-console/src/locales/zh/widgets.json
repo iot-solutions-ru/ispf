@@ -445,5 +445,12 @@
   "view.wizardStepTitle": "步骤 {{id}} – {{label}}",
   "view.wizardSteps": "表格步骤",
   "view.workflowStarted": "Workflow started",
-  "view.workflowWaiting": "Workflow waiting for operator — see overview"
+  "view.workflowWaiting": "Workflow waiting for operator — see overview",
+  "view.svgInteractive.needConfig": "请设置 behaviorsJson 与 bindingsJson（与 SCADA 符号相同）。",
+  "view.svgInteractive.loading": "正在加载 SVG…",
+  "view.svgInteractive.notLoaded": "SVG 未加载。",
+  "view.svgInteractive.legend.nodeOnline": "节点在线",
+  "view.svgInteractive.legend.nodeOffline": "节点离线",
+  "view.svgInteractive.legend.linkUp": "链路 up",
+  "view.svgInteractive.legend.linkDown": "链路 down"
 }

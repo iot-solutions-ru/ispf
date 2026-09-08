@@ -83,6 +83,7 @@ val driverPackProjects = subprojects.filter {
 val devDriverPackProjectNames = listOf(
     "ispf-driver-virtual",
     "ispf-driver-mqtt",
+    "ispf-driver-kafka",
     "ispf-driver-modbus",
     "ispf-driver-http",
     "ispf-driver-email",
