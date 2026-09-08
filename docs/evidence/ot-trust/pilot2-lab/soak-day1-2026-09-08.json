@@ -1,0 +1,60 @@
+{
+  "utc": "2026-09-08T03:23:35Z",
+  "date": "2026-09-08",
+  "day": 1,
+  "site": "lab-ot-vlan-192.168.100",
+  "baseUrl": "http://127.0.0.1:8080",
+  "devicePath": "root.platform.devices.pilot2-mqtt.fleet",
+  "brokerUrl": "tcp://192.168.100.10:1883",
+  "driverStatus": {
+    "devicePath": "root.platform.devices.pilot2-mqtt.fleet",
+    "driverId": "mqtt",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "tagCount": 10,
+  "historyEnabledCount": 5,
+  "samples": {
+    "dev00": {
+      "raw": "day1-00"
+    },
+    "dev01": {
+      "raw": "day1-01"
+    },
+    "dev09": {
+      "raw": "day1-09"
+    }
+  },
+  "burst": {
+    "count": 100,
+    "ok": true
+  },
+  "c5": {
+    "brokerStop": {
+      "status": "ERROR",
+      "connected": false,
+      "lastError": "Not connected"
+    },
+    "afterRestartDriver": {
+      "devicePath": "root.platform.devices.pilot2-mqtt.fleet",
+      "driverId": "mqtt",
+      "status": "RUNNING",
+      "connected": true,
+      "pollIntervalMs": 1000,
+      "lastError": null,
+      "telemetryPublishMode": "FULL",
+      "telemetryCoalesceMs": 0
+    },
+    "note": "Broker stop -> ERROR/Not connected; mosquitto start + driver restart -> RUNNING"
+  },
+  "write": {
+    "pointId": "dev00",
+    "httpStatus": 200
+  },
+  "pass": true,
+  "incidents": []
+}

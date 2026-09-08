@@ -27,8 +27,8 @@ from typing import Any
 
 DEFAULT_PARENT = "root.platform.devices.pilot2-mqtt"
 DEFAULT_DEVICE = "root.platform.devices.pilot2-mqtt.fleet"
-DEFAULT_BROKER = "tcp://172.17.0.1:1883"
-DEFAULT_PREFIX = "ispf/pilot2/fleet/"
+DEFAULT_BROKER = "tcp://192.168.100.10:1883"
+DEFAULT_PREFIX = ""
 
 
 def api(base: str, token: str, method: str, path: str, body: Any = None) -> Any:
@@ -119,44 +119,33 @@ def configure_mqtt(
     topic_prefix: str,
     points: dict[str, str],
 ) -> Any:
+    # API expects pointMappings as Record<string,string> (not an array / not "points").
+    # pollIntervalMs must be >0 so the runtime scheduler can call readPoints (subscribe).
     payload = {
         "driverId": "mqtt",
         "configuration": {
             "brokerUrl": broker_url,
             "topicPrefix": topic_prefix,
         },
-        "pointMappings": [{"variableName": k, "pointId": v} for k, v in points.items()],
-        "pollIntervalMs": 0,
+        "pointMappings": points,
+        "pollIntervalMs": 1000,
+        "autoStart": True,
     }
-    # Some builds use pointId map differently; try configure then set mappings via points field.
-    try:
-        return api(
-            base,
-            token,
-            "PUT",
-            f"/api/v1/drivers/runtime/configure?devicePath={device}",
-            payload,
-        )
-    except urllib.error.HTTPError:
-        # Alternate shape used by older consoles
-        alt = {
-            "driverId": "mqtt",
-            "configuration": payload["configuration"],
-            "points": points,
-            "pollIntervalMs": 0,
-        }
-        return api(
-            base,
-            token,
-            "PUT",
-            f"/api/v1/drivers/runtime/configure?devicePath={device}",
-            alt,
-        )
+    return api(
+        base,
+        token,
+        "PUT",
+        f"/api/v1/drivers/runtime/configure?devicePath={device}",
+        payload,
+    )
+
+
+def stop(base: str, token: str, device: str) -> Any:
+    return api(base, token, "POST", f"/api/v1/drivers/runtime/stop?devicePath={device}")
 
 
 def start(base: str, token: str, device: str) -> Any:
     return api(base, token, "POST", f"/api/v1/drivers/runtime/start?devicePath={device}")
-
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
@@ -165,7 +154,11 @@ def main() -> int:
     p.add_argument("--password", default=os.environ.get("ISPF_PASSWORD", os.environ.get("ISPF_PASS", "admin")))
     p.add_argument("--parent-path", default=DEFAULT_PARENT)
     p.add_argument("--device-path", default=DEFAULT_DEVICE)
-    p.add_argument("--broker-url", default=os.environ.get("ISPF_MQTT_BROKER_URL", DEFAULT_BROKER))
+    p.add_argument(
+        "--broker-url",
+        default=os.environ.get("ISPF_MQTT_BROKER_URL", "tcp://192.168.100.10:1883"),
+        help="From ISPF container on this lab use tcp://192.168.100.10:1883 (not 172.17.0.1)",
+    )
     p.add_argument("--topic-prefix", default=DEFAULT_PREFIX)
     p.add_argument("--count", type=int, default=10, help="Number of fleet topics/variables")
     p.add_argument("--dry-run", action="store_true")
@@ -173,7 +166,7 @@ def main() -> int:
     args = p.parse_args()
 
     points = {
-        f"dev{i:02d}": f"{args.topic_prefix}dev{i:02d}/telemetry" for i in range(args.count)
+        f"dev{i:02d}": f"ispf/pilot2/fleet/dev{i:02d}/telemetry" for i in range(args.count)
     }
     plan = {
         "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -200,11 +193,17 @@ def main() -> int:
         return 2
 
     try:
-        ensure_folder(args.base_url, token, args.parent_path, "Pilot2 MQTT")
+        # Parent may be DEVICE (lab API rejects FOLDER); nested DEVICE still works.
+        ensure_device(args.base_url, token, args.parent_path, "Pilot2 MQTT")
         ensure_device(args.base_url, token, args.device_path, "Pilot2 MQTT fleet")
         status = configure_mqtt(
             args.base_url, token, args.device_path, args.broker_url, args.topic_prefix, points
         )
+        # Configure persists binding only — restart so ActiveDriver reloads mappings / subscribe.
+        try:
+            stop(args.base_url, token, args.device_path)
+        except Exception:
+            pass
         started = start(args.base_url, token, args.device_path)
     except urllib.error.HTTPError as e:
         print(f"FAIL api HTTP {e.code}: {e.read()[:500]!r}", file=sys.stderr)
