@@ -1,0 +1,88 @@
+{
+  "utc": "2026-09-08T05:35:48Z",
+  "date": "2026-09-08",
+  "day": 1,
+  "site": "lab-ot-vlan-192.168.100",
+  "mode": "opcua-server <-> opcua loopback inside ispf-enterprise-l",
+  "serverPath": "root.platform.devices.pilot3-opcua.server",
+  "clientPath": "root.platform.devices.pilot3-opcua.line",
+  "endpoint": "opc.tcp://127.0.0.1:4840/ispf",
+  "serverStatus": {
+    "devicePath": "root.platform.devices.pilot3-opcua.server",
+    "driverId": "opcua-server",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "clientStatus": {
+    "devicePath": "root.platform.devices.pilot3-opcua.line",
+    "driverId": "opcua",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "tagCount": 12,
+  "samples": {
+    "cellTemp": {
+      "value": "70",
+      "quality": "GOOD"
+    },
+    "lineSpeed": {
+      "value": "63",
+      "quality": "GOOD"
+    },
+    "tag00": {
+      "value": "97",
+      "quality": "GOOD"
+    },
+    "tag01": {
+      "value": "21",
+      "quality": "GOOD"
+    },
+    "tag02": {
+      "value": "67",
+      "quality": "GOOD"
+    },
+    "tag03": {
+      "value": "83",
+      "quality": "GOOD"
+    }
+  },
+  "browse": {
+    "IspfVariables": [
+      "LineSpeed",
+      "CellTemp",
+      "Tag00.."
+    ]
+  },
+  "writeBack": true,
+  "c5": {
+    "devicePath": "root.platform.devices.pilot3-opcua.line",
+    "driverId": "opcua",
+    "status": "ERROR",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": "OPC UA read failed at NodeId{ns=2, id=CellTemp}",
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "c5Recover": {
+    "devicePath": "root.platform.devices.pilot3-opcua.line",
+    "driverId": "opcua",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "honesty": "Same-host UA loopback (no external opc-plc image; mcr.microsoft.com DNS failed on lab). Not customer plant. Not OT 10/10.",
+  "pass": true,
+  "incidents": []
+}
