@@ -1394,7 +1394,7 @@ Product is **10/10** when **all** of the following hold simultaneously:
 | - | --------- | ------- |
 | 1 | **REAL evidence** — runtime path + automated test + reproducible runbook | `mode: stub`, `source: stub`, in-memory-only GA |
 | 2 | **Human sign-off** on the hot path | Self-certified Done without operator/OT/integrator journal |
-| 3 | **Live gates** where the feature claims live behaviour | Mocked WebSocket FPS, schema-only agent CI, ERP outbox that marks `sent` without ERP |
+| 3 | **Live gates** where the feature claims live behaviour | Mocked WebSocket FPS, schema-only agent CI, ERP outbox claiming live delivery without ERP |
 | 4 | **Honest maturity** — PRODUCTION label matches code | **Met (BL-191)** — shells/poll-only → BETA; CI stub gate |
 | 5 | **Third-party repeatability** — runbook ≤ documented time | Demo only works on maintainer laptop |
 | 6 | **Field or lab SLO**, not single manual run | One-off screenshot; no CI regression |

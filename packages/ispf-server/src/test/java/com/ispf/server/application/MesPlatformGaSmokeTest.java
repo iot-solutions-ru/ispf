@@ -213,7 +213,7 @@ class MesPlatformGaSmokeTest {
                 .path("result")
                 .path("rows");
         assertTrue(
-                pollRows.size() == 0 || (pollRows.size() == 1 && "sent".equals(pollRows.get(0).path("status").asText())),
+                pollRows.size() == 0 || (pollRows.size() == 1 && "simulated".equals(pollRows.get(0).path("status").asText())),
                 "ERP outbox poll returns sent row or empty when schedule already drained queue (BL-169)");
     }
 }

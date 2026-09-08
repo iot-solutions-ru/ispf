@@ -83,10 +83,10 @@ Idempotent SAP / 1C sync stub — [erp-outbox.json](../../examples/mes-platform/
 
 | Field | Purpose |
 |-------|---------|
-| `mes_erp_outbox` table | `pending` → `sent` (stub connector) |
+| `mes_erp_outbox` table | `pending` → `simulated` (stub connector — **not** live SAP/1C) |
 | `idempotency_key` | `${entityType}:${entityId}` |
 | `mes_erp_enqueueOutbox` | Insert-if-absent enqueue |
-| `mes_erp_pollOutbox` | Poll pending rows, mark `sent` |
+| `mes_erp_pollOutbox` | Poll pending rows, mark `simulated` (no ERP HTTP) |
 | Schedule `mes-erp-outbox-poll` | `invoke_function` every 5s — **enabled** in `mes-platform-production` (disabled in skeleton bundle) |
 
 ---

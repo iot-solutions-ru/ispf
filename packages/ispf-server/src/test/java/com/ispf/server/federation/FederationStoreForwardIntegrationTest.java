@@ -79,7 +79,7 @@ class FederationStoreForwardIntegrationTest {
         waitForConnected(token, agentId);
 
         tunnelAgentService.disconnect(agentUuid);
-        Thread.sleep(500);
+        waitForDisconnected(token, agentId);
 
         for (int i = 0; i < 5; i++) {
             eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(
@@ -168,7 +168,12 @@ class FederationStoreForwardIntegrationTest {
                     nextConnectRetryAt = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(
                             FederationIntegrationTestSupport.CONNECT_RETRY_INTERVAL_MS);
                 }
-                if ("CONNECTED".equals(lastStatus)) {
+                JsonNode linkedPeerId = agent.get("linkedPeerId");
+                // CONNECTED alone can race ahead of handleRegistered (linkedPeerId).
+                if ("CONNECTED".equals(lastStatus)
+                        && linkedPeerId != null
+                        && !linkedPeerId.isNull()
+                        && !linkedPeerId.asString("").isBlank()) {
                     return;
                 }
             }
@@ -176,6 +181,30 @@ class FederationStoreForwardIntegrationTest {
         }
         throw new IllegalStateException(
                 "Timed out waiting for outbound agent connect: " + agentId + " (lastStatus=" + lastStatus + ")");
+    }
+
+    private void waitForDisconnected(String token, String agentId) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        String lastStatus = null;
+        while (System.nanoTime() < deadline) {
+            MvcResult agentsResult = mockMvc.perform(get("/api/v1/federation/outbound/agents")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andReturn();
+            JsonNode agents = objectMapper.readTree(agentsResult.getResponse().getContentAsString());
+            for (JsonNode agent : agents) {
+                if (!agentId.equals(agent.path("id").asString(null))) {
+                    continue;
+                }
+                lastStatus = agent.path("tunnelStatus").asString(null);
+                if ("DISCONNECTED".equals(lastStatus)) {
+                    return;
+                }
+            }
+            Thread.sleep(100);
+        }
+        throw new IllegalStateException(
+                "Timed out waiting for outbound agent disconnect: " + agentId + " (lastStatus=" + lastStatus + ")");
     }
 
     private String ensureQuietDevice(String deviceName) {

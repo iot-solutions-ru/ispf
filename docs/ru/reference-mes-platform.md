@@ -83,10 +83,10 @@
 
 | Field | Purpose |
 |-------|---------|
-| `mes_erp_outbox` table | `pending` → `sent` (stub connector) |
+| `mes_erp_outbox` table | `pending` → `simulated` (stub connector — **не** live SAP/1C) |
 | `idempotency_key` | `${entityType}:${entityId}` |
 | `mes_erp_enqueueOutbox` | Insert-if-absent enqueue |
-| `mes_erp_pollOutbox` | Poll pending rows, mark `sent` |
+| `mes_erp_pollOutbox` | Poll pending rows, mark `simulated` (без ERP HTTP) |
 | Schedule `mes-erp-outbox-poll` | `invoke_function` каждые 5 с — **enabled** в `mes-platform-production` (disabled в skeleton bundle) |
 
 ---
