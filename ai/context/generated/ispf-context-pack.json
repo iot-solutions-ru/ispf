@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.207",
-  "generatedAt": "2026-09-08T09:16:46.700389+00:00",
+  "generatedAt": "2026-09-06T02:16:04.077084+00:00",
   "platformVersion": "0.9.207",
   "bundleManifest": {
     "fields": [
@@ -2334,12 +2334,6 @@
       "path": "docs/en/demostands.md",
       "title": "ISPF deployment profiles",
       "keywords": "demostands ISPF deployment profiles"
-    },
-    {
-      "id": "dependabot-triage-2026-09-08",
-      "path": "docs/en/dependabot-triage-2026-09-08.md",
-      "title": "Dependabot triage (2026-09-08)",
-      "keywords": "dependabot-triage-2026-09-08 Dependabot triage (2026-09-08)"
     },
     {
       "id": "deployment",
@@ -38187,5 +38181,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "8e85cfd46bfef737d9841d05cb45ba5c2d1e569521441b5947e2373aac845fef"
+  "contentSha256": "4aa748fb45041610fff6d64f453cc239c5fbdd0da3c5138c6ce099c1fd0e2209"
 }
