@@ -31,7 +31,8 @@ import OperatorShellGate from "./shell/OperatorShellGate";
 import type { EditorTab, ObjectType } from "./types";
 import { resolveEditorObjectType, isSpecializedEditorObject } from "./utils/object/editorObject";
 import { buildObjectTree } from "./utils/tree/tree";
-import { objectTreeKey, type TreeRowSelection } from "./utils/tree/treeRowKey";
+import { filterLoadedObjectsForQuery, OBJECT_SEARCH_MIN_CHARS } from "./utils/tree/treeSearch";
+import { type TreeRowSelection } from "./utils/tree/treeRowKey";
 import { readSelectedPath, writeSelectedPath } from "./utils/tree/treeExpanded";
 import {
   clearInvalidAdminPathFromUrl,
@@ -40,6 +41,7 @@ import {
 } from "./utils/platform/adminRouting";
 import { useObjectWebSocket, useFederatedPathSubscription } from "./hooks/useObjectWebSocket";
 import { useLazyObjectTree } from "./hooks/useLazyObjectTree";
+import { useObjectTreeSearch } from "./hooks/useObjectTreeSearch";
 import { useMobileLayout } from "./hooks/useMobileLayout";
 import ObjectPropertiesEditor from "./components/objectEditor/ObjectPropertiesEditor";
 import ObjectTree from "./components/objectEditor/ObjectTree";
@@ -283,6 +285,8 @@ function AppShell() {
   const info = useQuery({ queryKey: ["info"], queryFn: fetchPlatformInfo });
   const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll, treeLoadError } =
     useLazyObjectTree(Boolean(session));
+  const objectSearch = useObjectTreeSearch(treeFilter, Boolean(session));
+  const fullTreeSearch = treeFilter.trim().length >= OBJECT_SEARCH_MIN_CHARS;
 
   useEffect(() => {
     if (!selectedPath || !objectList.length) {
@@ -328,34 +332,15 @@ function AppShell() {
     if (!treeFilter.trim()) {
       return lazyTree;
     }
-    let list = objectList;
-    const q = treeFilter.toLowerCase();
-    const included = new Set<string>();
-    const addAncestors = (path: string) => {
-      let p: string | null = path;
-      while (p) {
-        included.add(p);
-        const dot = p.lastIndexOf(".");
-        p = dot === -1 ? null : p.slice(0, dot);
-      }
-    };
-    for (const c of list) {
-      if (c.path.toLowerCase().includes(q) || c.displayName.toLowerCase().includes(q)) {
-        addAncestors(c.path);
-        if (c.groupContextPath) {
-          addAncestors(c.groupContextPath);
-        }
-        included.add(objectTreeKey(c));
-      }
+    if (fullTreeSearch && objectSearch.data?.objects) {
+      return buildObjectTree(objectSearch.data.objects);
     }
-    list = list.filter(
-      (c) =>
-        included.has(c.path)
-        || included.has(objectTreeKey(c))
-        || (c.groupContextPath != null && included.has(c.groupContextPath)),
-    );
-    return buildObjectTree(list);
-  }, [objectList, lazyTree, treeFilter]);
+    return buildObjectTree(filterLoadedObjectsForQuery(objectList, treeFilter));
+  }, [objectList, lazyTree, treeFilter, fullTreeSearch, objectSearch.data]);
+
+  const treeObjects = fullTreeSearch && objectSearch.data?.objects
+    ? objectSearch.data.objects
+    : objectList;
 
   const selectPathInExplorer = (path: string) => {
     setSelectedPath(path);
@@ -801,20 +786,34 @@ function AppShell() {
               </div>
               <input
                 type="search"
-                placeholder={t("common:action.search")}
+                placeholder={t("shell:admin.treeSearchPlaceholder")}
                 value={treeFilter}
                 onChange={(e) => setTreeFilter(e.target.value)}
+                aria-describedby="object-tree-search-hint"
               />
             </div>
+            <p id="object-tree-search-hint" className="sidebar-msg">
+              {treeFilter.trim().length > 0 && treeFilter.trim().length < OBJECT_SEARCH_MIN_CHARS
+                ? t("shell:admin.treeSearchNeedChars")
+                : fullTreeSearch && objectSearch.data?.truncated
+                  ? t("shell:admin.treeSearchTruncated", { count: objectSearch.data.matchCount })
+                  : t("shell:admin.treeSearchHint")}
+            </p>
             <div className="sidebar-body">
               {treeLoadError && <p className="sidebar-msg error">{treeLoadError}</p>}
+              {fullTreeSearch && objectSearch.isError && (
+                <p className="sidebar-msg error">{t("shell:admin.treeSearchFailed")}</p>
+              )}
               {!treeLoadError && objectList.length === 0 && (
+                <p className="sidebar-msg">{t("shell:admin.treeLoading")}</p>
+              )}
+              {fullTreeSearch && objectSearch.isFetching && tree.length === 0 && (
                 <p className="sidebar-msg">{t("shell:admin.treeLoading")}</p>
               )}
               {!treeLoadError && tree.length > 0 && (
                 <ObjectTree
                   nodes={tree}
-                  objects={objectList}
+                  objects={treeObjects}
                   selectedPath={selectedPath}
                   selectedKeys={selectedKeys}
                   onRowSelect={handleTreeRowSelect}
@@ -822,14 +821,14 @@ function AppShell() {
                   onOpenOperatorApp={openOperatorAppFromPath}
                   canReorder={canConfigure && !treeFilter.trim()}
                   onReorder={handleTreeReorder}
-                  onLoadChildren={handleTreeLoadChildren}
+                  onLoadChildren={fullTreeSearch ? undefined : handleTreeLoadChildren}
                   onVisibleRowKeysChange={setVisibleRowKeys}
                   bulkActions={
                     canConfigure
                       ? {
                           visibleRowKeys,
                           selectedKeys,
-                          objects: objectList,
+                          objects: treeObjects,
                           onSelectionChange: setSelectedKeys,
                           onDeleted: () => void invalidateAll(),
                           onMembersChanged: () => void invalidateAll(),

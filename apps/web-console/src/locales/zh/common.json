@@ -88,6 +88,7 @@
   "modal.select": "选择",
   "objectPath.browseTree": "浏览树",
   "objectPath.filterHint": "可选类型：{{types}}",
+  "objectPath.searchHint": "搜索覆盖整棵树，不仅限于已打开的文件夹。",
   "objectPath.placeholder": "根.平台...",
   "objectType.BLUEPRINT": "蓝图",
   "objectType.DEVICE": "设备",
