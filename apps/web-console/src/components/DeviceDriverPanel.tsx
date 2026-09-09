@@ -21,6 +21,7 @@ import {
   COMMON_HAYSTACK_MARKER_TAGS,
 } from "../utils/object/haystackMappingHints";
 import { pollDriver, browseDriverNodes } from "../api/drivers";
+import SnmpMibPanel from "./SnmpMibPanel";
 
 const { TextArea } = Input;
 
@@ -568,6 +569,16 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
             </div>
             {formError && <Alert type="error" showIcon message={formError} />}
           </form>
+          {driverId === "snmp" && (
+            <SnmpMibPanel
+              devicePath={devicePath}
+              canManage={canManage}
+              onImported={() => {
+                void queryClient.invalidateQueries({ queryKey: ["variables", devicePath] });
+                void statusQuery.refetch();
+              }}
+            />
+          )}
         </>
       ) : (
         <p className="hint">{t("common:hint.adminOnly")}</p>

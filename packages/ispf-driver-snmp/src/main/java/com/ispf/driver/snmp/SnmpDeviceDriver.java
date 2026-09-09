@@ -2,9 +2,12 @@ package com.ispf.driver.snmp;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPointCatalog;
 import com.ispf.driver.DriverPollTimestamps;
+import com.ispf.driver.snmp.mib.SnmpMibCatalogSupport;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
@@ -45,8 +48,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * SNMP driver (v1/v2c/v3) — polls OIDs and maps values to ISPF object variables.
  * <p>
  * Point mapping: {@code oid}, {@code oid:VALUE_KIND}, or {@code oid:VALUE_KIND:optional}.
+ * Shared MIB library via {@link DriverPointCatalog} (global for all SNMP devices).
  */
-public class SnmpDeviceDriver implements DeviceDriver {
+public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPointCatalog {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "snmp",
@@ -399,5 +403,37 @@ public class SnmpDeviceDriver implements DeviceDriver {
             case SnmpConstants.version3 -> "3";
             default -> "2c";
         };
+    }
+
+    @Override
+    public List<DriverDiscovery.Node> browseChildren(String parentNodeId) throws DriverException {
+        return browseCatalog(parentNodeId).stream()
+                .map(n -> new DriverDiscovery.Node(n.nodeId(), n.displayName(), n.nodeClass()))
+                .toList();
+    }
+
+    @Override
+    public List<ArtifactInfo> listArtifacts() throws DriverException {
+        return SnmpMibCatalogSupport.listArtifacts();
+    }
+
+    @Override
+    public ArtifactInfo importArtifact(String fileName, byte[] content) throws DriverException {
+        return SnmpMibCatalogSupport.importArtifact(fileName, content);
+    }
+
+    @Override
+    public void deleteArtifact(String name) throws DriverException {
+        SnmpMibCatalogSupport.deleteArtifact(name);
+    }
+
+    @Override
+    public List<CatalogNode> browseCatalog(String parentNodeId) throws DriverException {
+        return SnmpMibCatalogSupport.browse(parentNodeId);
+    }
+
+    @Override
+    public List<PointProposal> proposePoints(List<PointSelection> selections) throws DriverException {
+        return SnmpMibCatalogSupport.propose(selections);
     }
 }
