@@ -17,7 +17,7 @@ Production matrix: `DriverProductionMatrix` row `opcua-server` — maturity **PR
 |---------|---------|-------------|
 | URL | `opc.tcp://localhost:4840/ispf` | Built from `bindPort` + fixed path `/ispf` |
 | Transport | `TCP_UASC_UABINARY` | Milo binary protocol |
-| Security | `SecurityPolicy.None` | Lab / interop only |
+| Security | `None` (default) or `Sign` / `SignAndEncrypt` | Lab may keep `None`. Production: set `securityPolicy` + `pkiDir` and exchange `application.cer` |
 | Auth | Anonymous or username | Username validator accepts any credentials |
 | Application URI | `urn:ispf:driver:opcua-server` | Milo application identity |
 | Namespace URI | `urn:ispf:opcua:server` | Custom namespace index (default **2**) |
@@ -46,6 +46,9 @@ Objects
 | `namespace` | `2` | Namespace index for bare identifiers |
 | `timeoutMs` | `5000` | Server startup/shutdown timeout |
 | `endpointPath` | `/ispf` | Documented in metadata; not user-overridable in v0.1 |
+| `securityPolicy` | `None` | `None` or a Milo policy (`Basic256Sha256`, …). Non-`None` requires `pkiDir`. |
+| `securityMode` | `None` when policy is `None`; otherwise `SignAndEncrypt` | `None`, `Sign`, or `SignAndEncrypt` |
+| `pkiDir` | (empty; temp dir when `None`) | PKCS12 identity + trust list. Required when `securityPolicy` is not `None`. Copy the client `application.cer` into `pkiDir/trusted/certs`. |
 
 Point mapping: OPC UA `NodeId` string, e.g. `ns=2;s=Temperature`, or bare `Temperature` (uses configured namespace).
 
@@ -81,7 +84,7 @@ Covers:
 ./gradlew :packages:ispf-driver-opcua:test
 ```
 
-`OpcUaDeviceDriverTest` starts in-process `OpcUaServerDeviceDriver`, then exercises client browse, write, and subscribe against `opc.tcp://localhost:{port}/ispf`.
+`OpcUaDeviceDriverTest` starts in-process `OpcUaServerDeviceDriver`, then exercises client browse, write, subscribe, and `Basic256Sha256` / `SignAndEncrypt` against `opc.tcp://localhost:{port}/ispf`.
 
 ### Top-20 interop report
 
@@ -110,10 +113,11 @@ See also [drivers](drivers.md) § opcua client and [driver-interop-lab](driver-i
 ## Limitations (v0.1)
 
 - String values only (no typed Variant mapping)
-- SecurityPolicy None — not suitable for untrusted networks
+- Default remains SecurityPolicy None (lab). Sign / SignAndEncrypt need a persistent `pkiDir` and mutual trust of `application.cer`. GetEndpoints uses `/ispf/discovery` with SecurityPolicy None (OPC UA convention).
+- Username token still accepts any credentials (application identity is the channel security)
 - No REST browse for server devices (use OPC UA browse on wire)
 - External subscribe notifications depend on Milo server monitoring callbacks (write-back to ISPF variables is covered by BL-143 integration test)
-- Ephemeral self-signed certificate regenerated on each connect
+- Self-signed identity is created once under `pkiDir` (`identity.p12`); a missing `pkiDir` with `None` still uses an ephemeral temp directory
 
 ## Related files
 

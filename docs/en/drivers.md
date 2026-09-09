@@ -30,7 +30,7 @@ In `DriverProductionMatrix` — **86** drivers at **PRODUCTION** (Wave 2 + Wave 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
 | `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | see interop lab |
-| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab; OPC UA often SecurityPolicy None in lab |
+| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab; OPC UA lab default is SecurityPolicy None |
 | `iec104`, `dlms`, `gps-tracker` | PRODUCTION | see interop lab |
 | `cwmp` | PRODUCTION | outside top-20; Inform + Get/SetParameterValues |
 | `dnp3` | PRODUCTION | **Poll/read only** — `writePoint` not implemented |
@@ -719,14 +719,17 @@ Config:
 | `timeoutMs` | `5000` | Connect/read/write timeout |
 | `pollIntervalMs` | `1000` | Scheduler poll interval |
 | `readMode` | `poll` | `poll` — synchronous read; `subscribe` — ManagedSubscription push with poll fallback on error |
+| `securityPolicy` | `None` | `None` (lab default) or a Milo policy name/URI (`Basic256Sha256`, `Aes128_Sha256_RsaOaep`, `Aes256_Sha256_RsaPss`, …). Non-`None` requires `pkiDir`. |
+| `securityMode` | `None` when policy is `None`; otherwise `SignAndEncrypt` | `None`, `Sign`, or `SignAndEncrypt`. `None` is allowed only with `securityPolicy=None`. |
+| `pkiDir` | (empty) | Directory for PKCS12 identity (`identity.p12`), exported `application.cer`, and Milo trust list. Required when `securityPolicy` is not `None`. |
 
 **Browse / discovery:** `GET /api/v1/drivers/runtime/browse?devicePath=…&nodeId=` (optional). Driver implements `DriverDiscovery`; Web Console inspector — "Browse OPC UA" on connected device.
 
-**Security (v0.2):** production deployments should use Sign/SignAndEncrypt with client certificate and trust store. Current driver connects with **SecurityPolicy None** only (lab/loopback).
+**Security:** production should use `Sign` or `SignAndEncrypt` (default for any non-`None` policy) with mutual trust. Copy each peer's `application.cer` into the other `pkiDir/trusted/certs` (or call `DefaultTrustListManager.addTrustedCertificate`) before connect. Lab/loopback may keep `securityPolicy=None`. The driver does **not** use an insecure certificate validator.
 
 **ITM / plant OPC path (BL-229):** prefer this `opcua` driver for monitoring and write-back. Classic `opc-da` / `opc-bridge` remain **BETA** connectivity shells — for DA-only plant assets use an external DA→UA gateway (e.g. Kepware) and attach ISPF via `opcua`.
 
-Maturity: **production**. Loopback tests: `OpcUaDeviceDriverTest` (browse, write, `readMode=subscribe`).
+Maturity: **production**. Loopback tests: `OpcUaDeviceDriverTest` (browse, write, `readMode=subscribe`, `Basic256Sha256` / `SignAndEncrypt`).
 
 ### s7 (`ispf-driver-s7`)
 

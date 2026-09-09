@@ -30,7 +30,7 @@
 | `driverId` | Зрелость (реестр) | Примечания / interop |
 | ---------- | ------------------- | --------------- |
 | `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | см. interop lab |
-| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab; OPC UA в lab часто SecurityPolicy None |
+| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab; OPC UA в lab по умолчанию SecurityPolicy None |
 | `iec104`, `dlms`, `gps-tracker` | PRODUCTION | см. interop lab |
 | `cwmp` | PRODUCTION | вне top-20; Inform + Get/SetParameterValues |
 | `dnp3` | PRODUCTION | **Только poll/read** — `writePoint` не реализован |
@@ -677,12 +677,15 @@ Write (`writePoint`): Milo `writeValue` на Value attribute; тип Variant п�
 | `timeoutMs` | `5000` | Таймаут connect/read/write |
 | `pollIntervalMs` | `1000` | Интервал poll планировщика |
 | `readMode` | `poll` | `poll` — синхронное чтение; `subscribe` — push через ManagedSubscription с fallback на poll при ошибке |
+| `securityPolicy` | `None` | `None` (lab по умолчанию) или имя/URI политики Milo (`Basic256Sha256`, `Aes128_Sha256_RsaOaep`, `Aes256_Sha256_RsaPss`, …). Для значения не `None` нужен `pkiDir`. |
+| `securityMode` | `None` при политике `None`; иначе `SignAndEncrypt` | `None`, `Sign` или `SignAndEncrypt`. `None` допустим только вместе с `securityPolicy=None`. |
+| `pkiDir` | (пусто) | Каталог PKCS12-идентичности (`identity.p12`), экспорта `application.cer` и trust list Milo. Обязателен, если `securityPolicy` не `None`. |
 
 **Browse / discovery:** `GET /api/v1/drivers/runtime/browse?devicePath=…&nodeId=` (опционально). Драйвер реализует `DriverDiscovery`; инспектор Web Console — «Browse OPC UA» на подключённом устройстве.
 
-**Security (v0.2):** в production-развёртываниях следует использовать Sign/SignAndEncrypt с клиентским сертификатом и trust store. Текущий драйвер подключается только с **SecurityPolicy None** (lab/loopback).
+**Security:** в production используйте `Sign` или `SignAndEncrypt` (режим по умолчанию для любой политики кроме `None`) с взаимным доверием. Скопируйте `application.cer` каждой стороны в `pkiDir/trusted/certs` другой (или вызовите `DefaultTrustListManager.addTrustedCertificate`) до connect. Lab/loopback может оставить `securityPolicy=None`. Драйвер **не** использует небезопасный валидатор сертификатов.
 
-Зрелость: **production**. Loopback-тесты: `OpcUaDeviceDriverTest` (browse, write, `readMode=subscribe`).
+Зрелость: **production**. Loopback-тесты: `OpcUaDeviceDriverTest` (browse, write, `readMode=subscribe`, `Basic256Sha256` / `SignAndEncrypt`).
 
 ### s7 (`ispf-driver-s7`)
 
