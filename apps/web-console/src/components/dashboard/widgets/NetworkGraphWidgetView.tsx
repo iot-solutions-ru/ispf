@@ -15,6 +15,13 @@ import {
   parseNetworkGraphData,
   toCytoscapeElements,
 } from "../../../utils/analytics/networkGraphData";
+import {
+  elementsWithPreservedPositions,
+  networkGraphApplyMode,
+  shouldFitNetworkGraphOnApply,
+  shouldFitNetworkGraphOnResize,
+  type NetworkGraphNodePosition,
+} from "../../../utils/analytics/networkGraphLayout";
 import { useThemeColors } from "../../../utils/ui/themeColors";
 
 interface NetworkGraphWidgetViewProps {
@@ -88,6 +95,9 @@ export default function NetworkGraphWidgetView({
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
+  const positionsRef = useRef<Record<string, NetworkGraphNodePosition>>({});
+  const hasLaidOutRef = useRef(false);
+  const layoutNameRef = useRef<NetworkGraphLayout | null>(null);
 
   const fieldConfig: NetworkGraphFieldConfig = useMemo(
     () => ({
@@ -154,7 +164,9 @@ export default function NetworkGraphWidgetView({
 
     const resizeObserver = new ResizeObserver(() => {
       cy.resize();
-      cy.fit(undefined, 24);
+      if (shouldFitNetworkGraphOnResize(Boolean(editable))) {
+        cy.fit(undefined, 24);
+      }
     });
     resizeObserver.observe(container);
 
@@ -162,6 +174,7 @@ export default function NetworkGraphWidgetView({
       resizeObserver.disconnect();
       cy.destroy();
       cyRef.current = null;
+      hasLaidOutRef.current = false;
     };
   }, [editable, cytoscapeStyle]);
 
@@ -169,21 +182,47 @@ export default function NetworkGraphWidgetView({
     const cy = cyRef.current;
     if (!cy) return;
 
+    const layoutChanged = layoutNameRef.current !== null && layoutNameRef.current !== layout;
+    layoutNameRef.current = layout;
+    const applyMode = networkGraphApplyMode({
+      editable: Boolean(editable),
+      hasLaidOut: hasLaidOutRef.current,
+      layoutChanged,
+    });
+    const positioned =
+      applyMode === "preserve"
+        ? elementsWithPreservedPositions(elements, positionsRef.current)
+        : elements;
+
     cy.batch(() => {
       cy.elements().remove();
-      if (elements.length > 0) {
-        cy.add(elements);
+      if (positioned.length > 0) {
+        cy.add(positioned);
       }
     });
 
     if (elements.length === 0) {
+      hasLaidOutRef.current = false;
+      positionsRef.current = {};
       return;
     }
 
-    const layoutRun = cy.layout(layoutOptions(layout));
-    layoutRun.run();
-    cy.fit(undefined, 24);
-  }, [elements, layout]);
+    if (applyMode === "layout") {
+      cy.layout(layoutOptions(layout)).run();
+      hasLaidOutRef.current = true;
+    }
+
+    if (shouldFitNetworkGraphOnApply(applyMode)) {
+      cy.fit(undefined, 24);
+    }
+
+    const nextPositions: Record<string, NetworkGraphNodePosition> = {};
+    cy.nodes().forEach((node) => {
+      const position = node.position();
+      nextPositions[node.id()] = { x: position.x, y: position.y };
+    });
+    positionsRef.current = nextPositions;
+  }, [editable, elements, layout]);
 
   return (
     <DashWidgetShell
