@@ -1,5 +1,6 @@
 package com.ispf.plugin.blueprint;
 
+import com.ispf.core.object.BlueprintContribution;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -80,8 +82,123 @@ public class BlueprintEngine {
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
         mergeBlueprintChain(model, target, model.parameters(), warnings);
         target.addAppliedBlueprintId(model.id());
+        target.putBlueprintContribution(model.id(), contributionFromModel(model));
         BlueprintAttachment attachment = recordAttachment(model, targetPath);
         return new BlueprintApplyResult(attachment, warnings);
+    }
+
+    /**
+     * Removes owned contributions of a blueprint from the target object (ADR-0058).
+     * Binding rules must be removed by the server-side merger using {@link BlueprintDetachResult#removedBindingRuleIds()}.
+     */
+    public BlueprintDetachResult detachBlueprint(String blueprintId, String targetPath) {
+        BlueprintDefinition model = registry.requireById(blueprintId);
+        PlatformObject target = objectTree.require(targetPath);
+        if (!target.appliedBlueprintIds().contains(blueprintId)
+                && target.blueprintContribution(blueprintId).isEmpty()) {
+            return new BlueprintDetachResult(
+                    blueprintId, targetPath, List.of(), List.of(), List.of(), List.of(), List.of(), false
+            );
+        }
+
+        List<String> removedVars = new ArrayList<>();
+        List<String> removedEvents = new ArrayList<>();
+        List<String> removedFunctions = new ArrayList<>();
+        List<String> removedBindings = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+
+        Optional<BlueprintContribution> owned = target.blueprintContribution(blueprintId);
+        if (owned.isPresent()) {
+            BlueprintContribution contribution = owned.get();
+            for (String name : contribution.variables()) {
+                Optional<String> owner = target.ownerOfVariable(name);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("variable:" + name);
+                    continue;
+                }
+                if (target.getVariable(name).isPresent()) {
+                    target.removeVariable(name);
+                    removedVars.add(name);
+                }
+            }
+            for (String name : contribution.events()) {
+                Optional<String> owner = target.ownerOfEvent(name);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("event:" + name);
+                    continue;
+                }
+                if (target.events().containsKey(name)) {
+                    target.removeEvent(name);
+                    removedEvents.add(name);
+                }
+            }
+            for (String name : contribution.functions()) {
+                Optional<String> owner = target.ownerOfFunction(name);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("function:" + name);
+                    continue;
+                }
+                if (target.functions().containsKey(name)) {
+                    target.removeFunction(name);
+                    removedFunctions.add(name);
+                }
+            }
+            for (String ruleId : contribution.bindingRuleIds()) {
+                Optional<String> owner = target.ownerOfBindingRule(ruleId);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("binding:" + ruleId);
+                    continue;
+                }
+                removedBindings.add(ruleId);
+            }
+        } else {
+            // Legacy apply (no ownership manifest): never hard-delete by model name —
+            // only drop attachment / appliedBlueprintIds. Callers can re-apply then detach.
+            BlueprintContribution fromModel = contributionFromModel(model);
+            for (String name : fromModel.variables()) {
+                skipped.add("variable:" + name + ":no-ownership");
+            }
+            for (String name : fromModel.events()) {
+                skipped.add("event:" + name + ":no-ownership");
+            }
+            for (String name : fromModel.functions()) {
+                skipped.add("function:" + name + ":no-ownership");
+            }
+            for (String ruleId : fromModel.bindingRuleIds()) {
+                skipped.add("binding:" + ruleId + ":no-ownership");
+            }
+        }
+
+        target.removeAppliedBlueprintId(blueprintId);
+        target.removeBlueprintContribution(blueprintId);
+        attachments.removeIf(a -> a.blueprintId().equals(blueprintId) && a.objectPath().equals(targetPath));
+        return new BlueprintDetachResult(
+                blueprintId,
+                targetPath,
+                removedVars,
+                removedEvents,
+                removedFunctions,
+                removedBindings,
+                skipped,
+                true
+        );
+    }
+
+    public static BlueprintContribution contributionFromModel(BlueprintDefinition model) {
+        List<String> vars = model.variables().stream().map(BlueprintVariableDefinition::name).toList();
+        List<String> events = model.events().stream().map(EventDescriptor::name).toList();
+        List<String> functions = model.functions().stream().map(FunctionDescriptor::name).toList();
+        List<String> bindings = model.bindingRules().stream().map(BlueprintBindingRule::id).toList();
+        return new BlueprintContribution(vars, events, functions, bindings);
+    }
+
+    /** Public suitability check for reevaluation (ADR-0058). */
+    public boolean isSuitable(BlueprintDefinition model, PlatformObject target) {
+        return isSuitableForAutoApply(model, target);
+    }
+
+    public boolean isObjectTypeMatch(BlueprintDefinition model, PlatformObject target) {
+        return isObjectTypeCompatible(model, target);
     }
 
     /**
@@ -150,6 +267,7 @@ public class BlueprintEngine {
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
         mergeBlueprintChain(model, instance, parameters, warnings);
         instance.addAppliedBlueprintId(model.id());
+        instance.putBlueprintContribution(model.id(), contributionFromModel(model));
 
         BlueprintAttachment attachment = recordAttachment(model, fullPath);
         return new BlueprintApplyResult(attachment, warnings);
@@ -179,6 +297,7 @@ public class BlueprintEngine {
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
         mergeBlueprintChain(model, instance, model.parameters(), warnings);
         instance.addAppliedBlueprintId(model.id());
+        instance.putBlueprintContribution(model.id(), contributionFromModel(model));
         recordAttachment(model, instancePath);
         return instance;
     }

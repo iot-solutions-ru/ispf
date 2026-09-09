@@ -53,6 +53,19 @@ On `POST /objects` with `autoApplyMixinBlueprints=true` (default) `BlueprintEngi
 
 See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
+### Opt-in reevaluation (ADR-0058)
+
+MIXIN may enable **reevaluation** (`reevaluation.enabled` + triggers). Default off → sticky ADR-0018 behavior.
+
+| Trigger (v1) | When |
+|--------------|------|
+| `OBJECT_CREATED` | New object appears (`ObjectChangeType.CREATED`) |
+| `SERVER_READY` | After tree + attachment restore on startup |
+
+On each pass: CEL true → **attach** (if not applied); CEL false → **detach** owned contributions (variables/events/functions/bindings this mixin still owns). Ownership is stored in `blueprintContributions` on the object. Detach without a contribution manifest (legacy apply) only clears attachment / `appliedBlueprintIds` — it does **not** hard-delete by model names.
+
+APIs: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.
+
 ### Applicability condition (CEL)
 
 Field `suitabilityExpression` in `BlueprintDefinition` — in Web Console: *Applicability condition (CEL)*.

@@ -23,6 +23,7 @@ public class PlatformObject {
     private volatile String description;
     private final String templateId;
     private final List<String> appliedBlueprintIds = new CopyOnWriteArrayList<>();
+    private final Map<String, BlueprintContribution> blueprintContributions = new ConcurrentHashMap<>();
     private volatile int sortOrder;
     private volatile boolean bindingAuditEnabled;
     private volatile boolean functionAuditEnabled;
@@ -143,6 +144,162 @@ public class PlatformObject {
         }
         if (!appliedBlueprintIds.contains(modelId)) {
             appliedBlueprintIds.add(modelId);
+        }
+    }
+
+    public void removeAppliedBlueprintId(String modelId) {
+        if (modelId == null || modelId.isBlank()) {
+            return;
+        }
+        appliedBlueprintIds.remove(modelId);
+    }
+
+    public Map<String, BlueprintContribution> blueprintContributions() {
+        return Map.copyOf(blueprintContributions);
+    }
+
+    public void setBlueprintContributions(Map<String, BlueprintContribution> contributions) {
+        blueprintContributions.clear();
+        if (contributions != null) {
+            contributions.forEach((id, contrib) -> {
+                if (id != null && !id.isBlank() && contrib != null) {
+                    blueprintContributions.put(id, contrib);
+                }
+            });
+        }
+    }
+
+    public Optional<BlueprintContribution> blueprintContribution(String blueprintId) {
+        return Optional.ofNullable(blueprintContributions.get(blueprintId));
+    }
+
+    public void putBlueprintContribution(String blueprintId, BlueprintContribution contribution) {
+        if (blueprintId == null || blueprintId.isBlank() || contribution == null) {
+            return;
+        }
+        // Last-apply wins: drop claimed names from other owners.
+        for (String var : contribution.variables()) {
+            relinquishVariable(blueprintId, var);
+        }
+        for (String event : contribution.events()) {
+            relinquishEvent(blueprintId, event);
+        }
+        for (String fn : contribution.functions()) {
+            relinquishFunction(blueprintId, fn);
+        }
+        for (String ruleId : contribution.bindingRuleIds()) {
+            relinquishBindingRule(blueprintId, ruleId);
+        }
+        blueprintContributions.put(blueprintId, contribution);
+    }
+
+    public void removeBlueprintContribution(String blueprintId) {
+        if (blueprintId != null) {
+            blueprintContributions.remove(blueprintId);
+        }
+    }
+
+    public Optional<String> ownerOfVariable(String variableName) {
+        if (variableName == null) {
+            return Optional.empty();
+        }
+        for (Map.Entry<String, BlueprintContribution> e : blueprintContributions.entrySet()) {
+            if (e.getValue().variables().contains(variableName)) {
+                return Optional.of(e.getKey());
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<String> ownerOfEvent(String eventName) {
+        if (eventName == null) {
+            return Optional.empty();
+        }
+        for (Map.Entry<String, BlueprintContribution> e : blueprintContributions.entrySet()) {
+            if (e.getValue().events().contains(eventName)) {
+                return Optional.of(e.getKey());
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<String> ownerOfFunction(String functionName) {
+        if (functionName == null) {
+            return Optional.empty();
+        }
+        for (Map.Entry<String, BlueprintContribution> e : blueprintContributions.entrySet()) {
+            if (e.getValue().functions().contains(functionName)) {
+                return Optional.of(e.getKey());
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<String> ownerOfBindingRule(String ruleId) {
+        if (ruleId == null) {
+            return Optional.empty();
+        }
+        for (Map.Entry<String, BlueprintContribution> e : blueprintContributions.entrySet()) {
+            if (e.getValue().bindingRuleIds().contains(ruleId)) {
+                return Optional.of(e.getKey());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private void relinquishVariable(String keepOwner, String variableName) {
+        for (Map.Entry<String, BlueprintContribution> e : List.copyOf(blueprintContributions.entrySet())) {
+            if (e.getKey().equals(keepOwner)) {
+                continue;
+            }
+            if (e.getValue().variables().contains(variableName)) {
+                List<String> vars = e.getValue().variables().stream().filter(v -> !v.equals(variableName)).toList();
+                blueprintContributions.put(e.getKey(), new BlueprintContribution(
+                        vars, e.getValue().events(), e.getValue().functions(), e.getValue().bindingRuleIds()
+                ));
+            }
+        }
+    }
+
+    private void relinquishEvent(String keepOwner, String eventName) {
+        for (Map.Entry<String, BlueprintContribution> e : List.copyOf(blueprintContributions.entrySet())) {
+            if (e.getKey().equals(keepOwner)) {
+                continue;
+            }
+            if (e.getValue().events().contains(eventName)) {
+                List<String> events = e.getValue().events().stream().filter(v -> !v.equals(eventName)).toList();
+                blueprintContributions.put(e.getKey(), new BlueprintContribution(
+                        e.getValue().variables(), events, e.getValue().functions(), e.getValue().bindingRuleIds()
+                ));
+            }
+        }
+    }
+
+    private void relinquishFunction(String keepOwner, String functionName) {
+        for (Map.Entry<String, BlueprintContribution> e : List.copyOf(blueprintContributions.entrySet())) {
+            if (e.getKey().equals(keepOwner)) {
+                continue;
+            }
+            if (e.getValue().functions().contains(functionName)) {
+                List<String> functions = e.getValue().functions().stream().filter(v -> !v.equals(functionName)).toList();
+                blueprintContributions.put(e.getKey(), new BlueprintContribution(
+                        e.getValue().variables(), e.getValue().events(), functions, e.getValue().bindingRuleIds()
+                ));
+            }
+        }
+    }
+
+    private void relinquishBindingRule(String keepOwner, String ruleId) {
+        for (Map.Entry<String, BlueprintContribution> e : List.copyOf(blueprintContributions.entrySet())) {
+            if (e.getKey().equals(keepOwner)) {
+                continue;
+            }
+            if (e.getValue().bindingRuleIds().contains(ruleId)) {
+                List<String> rules = e.getValue().bindingRuleIds().stream().filter(v -> !v.equals(ruleId)).toList();
+                blueprintContributions.put(e.getKey(), new BlueprintContribution(
+                        e.getValue().variables(), e.getValue().events(), e.getValue().functions(), rules
+                ));
+            }
         }
     }
 

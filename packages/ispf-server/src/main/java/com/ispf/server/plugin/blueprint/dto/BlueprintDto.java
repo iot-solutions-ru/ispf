@@ -6,8 +6,10 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.plugin.blueprint.BlueprintAttachment;
 import com.ispf.plugin.blueprint.BlueprintBindingRule;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintReevaluation;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
+import com.ispf.plugin.blueprint.MixinReevaluationTrigger;
 
 import java.time.Instant;
 import java.util.List;
@@ -20,6 +22,7 @@ public record BlueprintDto(
         BlueprintType type,
         ObjectType targetObjectType,
         String suitabilityExpression,
+        BlueprintReevaluationDto reevaluation,
         String objectPath,
         List<BlueprintVariableDefinition> variables,
         List<EventDescriptor> events,
@@ -37,6 +40,7 @@ public record BlueprintDto(
                 model.type(),
                 model.targetObjectType(),
                 model.suitabilityExpression(),
+                BlueprintReevaluationDto.from(model.reevaluation()),
                 model.catalogObjectPath(),
                 model.variables(),
                 model.events(),
@@ -46,5 +50,29 @@ public record BlueprintDto(
                 model.createdAt(),
                 model.updatedAt()
         );
+    }
+
+    public record BlueprintReevaluationDto(boolean enabled, List<String> triggers) {
+        public static BlueprintReevaluationDto from(BlueprintReevaluation reevaluation) {
+            BlueprintReevaluation cfg = reevaluation != null ? reevaluation : BlueprintReevaluation.DISABLED;
+            return new BlueprintReevaluationDto(
+                    cfg.enabled(),
+                    cfg.triggers().stream().map(Enum::name).toList()
+            );
+        }
+
+        public BlueprintReevaluation toModel() {
+            if (!enabled) {
+                return BlueprintReevaluation.DISABLED;
+            }
+            MixinReevaluationTrigger[] parsed = triggers == null
+                    ? new MixinReevaluationTrigger[0]
+                    : triggers.stream()
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> MixinReevaluationTrigger.valueOf(s.toUpperCase()))
+                    .toArray(MixinReevaluationTrigger[]::new);
+            return BlueprintReevaluation.of(true, parsed);
+        }
     }
 }

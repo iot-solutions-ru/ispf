@@ -11,7 +11,9 @@ import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import com.ispf.server.plugin.blueprint.BlueprintApplicationRunner;
 import com.ispf.server.plugin.blueprint.BlueprintBootstrap;
 import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
+import com.ispf.server.plugin.blueprint.MixinReevaluationService;
 import com.ispf.server.plugin.blueprint.SystemIntrinsicBlueprintMigration;
+import com.ispf.server.plugin.blueprint.WatchMixinIndex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +50,10 @@ class ObjectTreeBootstrapFacadeTest {
     @Mock
     private ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService;
     @Mock
+    private ObjectProvider<WatchMixinIndex> watchMixinIndex;
+    @Mock
+    private ObjectProvider<MixinReevaluationService> mixinReevaluationService;
+    @Mock
     private ObjectNodeRepository nodeRepository;
     @Mock
     private ObjectVariableRepository variableRepository;
@@ -73,6 +79,8 @@ class ObjectTreeBootstrapFacadeTest {
                 platformReferenceBlueprintBootstrap,
                 mesBlueprintBootstrap,
                 clusterBootstrapService,
+                watchMixinIndex,
+                mixinReevaluationService,
                 nodeRepository,
                 variableRepository
         );

@@ -37,7 +37,8 @@ public class BlueprintPluginConfig {
             BlueprintEngine blueprintEngine,
             BlueprintPersistenceService blueprintPersistence,
             BlueprintApplicationService blueprintApplicationService,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            WatchMixinIndex watchMixinIndex
     ) {
         return new TypedBlueprintFacade(
                 BlueprintType.MIXIN,
@@ -45,7 +46,8 @@ public class BlueprintPluginConfig {
                 blueprintEngine,
                 blueprintPersistence,
                 blueprintApplicationService,
-                objectManager
+                objectManager,
+                watchMixinIndex
         );
     }
 
@@ -55,7 +57,8 @@ public class BlueprintPluginConfig {
             BlueprintEngine blueprintEngine,
             BlueprintPersistenceService blueprintPersistence,
             BlueprintApplicationService blueprintApplicationService,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            WatchMixinIndex watchMixinIndex
     ) {
         return new TypedBlueprintFacade(
                 BlueprintType.INSTANCE,
@@ -63,7 +66,8 @@ public class BlueprintPluginConfig {
                 blueprintEngine,
                 blueprintPersistence,
                 blueprintApplicationService,
-                objectManager
+                objectManager,
+                watchMixinIndex
         );
     }
 
@@ -73,7 +77,8 @@ public class BlueprintPluginConfig {
             BlueprintEngine blueprintEngine,
             BlueprintPersistenceService blueprintPersistence,
             BlueprintApplicationService blueprintApplicationService,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            WatchMixinIndex watchMixinIndex
     ) {
         return new TypedBlueprintFacade(
                 BlueprintType.SINGLETON,
@@ -81,7 +86,8 @@ public class BlueprintPluginConfig {
                 blueprintEngine,
                 blueprintPersistence,
                 blueprintApplicationService,
-                objectManager
+                objectManager,
+                watchMixinIndex
         );
     }
 }

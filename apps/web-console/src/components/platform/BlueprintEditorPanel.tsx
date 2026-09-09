@@ -68,6 +68,13 @@ function ModelDetail({
   const queryClient = useQueryClient();
   const [description, setDescription] = useState(model.description);
   const [suitability, setSuitability] = useState(model.suitabilityExpression);
+  const [reevalEnabled, setReevalEnabled] = useState(Boolean(model.reevaluation?.enabled));
+  const [reevalOnCreated, setReevalOnCreated] = useState(
+    !model.reevaluation?.enabled || (model.reevaluation?.triggers ?? []).includes("OBJECT_CREATED")
+  );
+  const [reevalOnReady, setReevalOnReady] = useState(
+    !model.reevaluation?.enabled || (model.reevaluation?.triggers ?? []).includes("SERVER_READY")
+  );
   const [applyPath, setApplyPath] = useState("");
   const [theirsBlueprintId, settheirsBlueprintId] = useState("");
   const [parentPath, setParentPath] = useState("root.platform.devices");
@@ -104,15 +111,23 @@ function ModelDetail({
   const definitionDirty = variablesDirty || bindingsDirty || eventsDirty || functionsDirty;
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      updateBlueprint(model.id, {
+    mutationFn: () => {
+      const triggers: string[] = [];
+      if (reevalOnCreated) triggers.push("OBJECT_CREATED");
+      if (reevalOnReady) triggers.push("SERVER_READY");
+      return updateBlueprint(model.id, {
         description,
         suitabilityExpression: suitability,
+        reevaluation:
+          model.type === "MIXIN"
+            ? { enabled: reevalEnabled, triggers: reevalEnabled ? triggers : [] }
+            : undefined,
         variables,
         bindings,
         events,
         functions,
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["BLUEPRINT", model.name] });
       queryClient.invalidateQueries({ queryKey: ["blueprints"] });
@@ -354,6 +369,42 @@ function ModelDetail({
               placeholder={t("inspector:blueprint.applicabilityPlaceholder")}
             />
           </label>
+          {model.type === "MIXIN" && (
+            <fieldset className="model-reevaluation" disabled={isBuiltin}>
+              <legend>{t("inspector:blueprint.reevaluationLegend", "Reevaluation (opt-in)")}</legend>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={reevalEnabled}
+                  onChange={(e) => setReevalEnabled(e.target.checked)}
+                />
+                {t(
+                  "inspector:blueprint.reevaluationEnable",
+                  "Watch suitability; detach owned contributions when CEL is false"
+                )}
+              </label>
+              {reevalEnabled && (
+                <>
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={reevalOnCreated}
+                      onChange={(e) => setReevalOnCreated(e.target.checked)}
+                    />
+                    OBJECT_CREATED
+                  </label>
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={reevalOnReady}
+                      onChange={(e) => setReevalOnReady(e.target.checked)}
+                    />
+                    SERVER_READY
+                  </label>
+                </>
+              )}
+            </fieldset>
+          )}
           {!isBuiltin && (
             <Button htmlType="submit" type="primary" disabled={saveMutation.isPending}>
               {t("inspector:blueprint.saveMetadata")}

@@ -147,6 +147,7 @@ public class ObjectTreeLoadSyncService {
                 entity.getLastChangedAt()
         );
         node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
+        node.setBlueprintContributions(mapper.readBlueprintContributions(entity.getBlueprintContributionsJson()));
         for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
             node.addEvent(event);
         }
@@ -192,6 +193,7 @@ public class ObjectTreeLoadSyncService {
         node.setLastChangedBy(entity.getLastChangedBy());
         node.setLastChangedAt(entity.getLastChangedAt());
         node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
+        node.setBlueprintContributions(mapper.readBlueprintContributions(entity.getBlueprintContributionsJson()));
         node.setBindingAuditEnabled(entity.isBindingAuditEnabled());
         node.setFunctionAuditEnabled(entity.isFunctionAuditEnabled());
         node.setEventJournalEnabled(entity.isEventJournalEnabled());

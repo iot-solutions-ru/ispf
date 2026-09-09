@@ -13,11 +13,13 @@ import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.dto.BlueprintAttachmentDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintDetachResultDto;
 import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,6 +35,7 @@ public class TypedBlueprintFacade {
     private final BlueprintPersistenceService blueprintPersistence;
     private final BlueprintApplicationService blueprintApplicationService;
     private final ObjectManager objectManager;
+    private final WatchMixinIndex watchMixinIndex;
 
     public TypedBlueprintFacade(
             BlueprintType blueprintType,
@@ -42,12 +45,26 @@ public class TypedBlueprintFacade {
             BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager
     ) {
+        this(blueprintType, blueprintRegistry, blueprintEngine, blueprintPersistence,
+                blueprintApplicationService, objectManager, null);
+    }
+
+    public TypedBlueprintFacade(
+            BlueprintType blueprintType,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
+            BlueprintPersistenceService blueprintPersistence,
+            BlueprintApplicationService blueprintApplicationService,
+            ObjectManager objectManager,
+            WatchMixinIndex watchMixinIndex
+    ) {
         this.blueprintType = blueprintType;
         this.blueprintRegistry = blueprintRegistry;
         this.blueprintEngine = blueprintEngine;
         this.blueprintPersistence = blueprintPersistence;
         this.blueprintApplicationService = blueprintApplicationService;
         this.objectManager = objectManager;
+        this.watchMixinIndex = watchMixinIndex;
     }
 
     public List<BlueprintDto> list() {
@@ -80,6 +97,7 @@ public class TypedBlueprintFacade {
     public BlueprintDto create(CreatePayload request) {
         validateCreate(request);
         Instant now = Instant.now();
+        Map<String, String> parameters = mergeReevaluation(request.parameters(), request.reevaluation());
         BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 request.name(),
@@ -91,13 +109,14 @@ public class TypedBlueprintFacade {
                 request.events(),
                 request.functions(),
                 request.bindings(),
-                request.parameters(),
+                parameters,
                 now,
                 now
         );
         try {
             BlueprintDefinition created = blueprintEngine.createBlueprint(model);
             blueprintPersistence.persist(created, false);
+            rebuildWatchIndex();
             return BlueprintDto.from(created);
         } catch (BlueprintException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
@@ -106,6 +125,12 @@ public class TypedBlueprintFacade {
 
     public BlueprintDto update(String id, UpdatePayload request) {
         BlueprintDefinition existing = requireTyped(id);
+        Map<String, String> parameters = request.parameters() != null
+                ? request.parameters()
+                : existing.parameters();
+        if (request.reevaluation() != null) {
+            parameters = mergeReevaluation(parameters, request.reevaluation());
+        }
         BlueprintDefinition updated = new BlueprintDefinition(
                 existing.id(),
                 request.name() != null ? request.name() : existing.name(),
@@ -117,13 +142,14 @@ public class TypedBlueprintFacade {
                 request.events() != null ? request.events() : existing.events(),
                 request.functions() != null ? request.functions() : existing.functions(),
                 request.bindings() != null ? request.bindings() : existing.bindings(),
-                request.parameters() != null ? request.parameters() : existing.parameters(),
+                parameters,
                 existing.createdAt(),
                 Instant.now()
         );
         BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
         blueprintPersistence.persist(saved, false);
         objectManager.persistNodeTree(saved.catalogObjectPath());
+        rebuildWatchIndex();
         return BlueprintDto.from(saved);
     }
 
@@ -131,6 +157,7 @@ public class TypedBlueprintFacade {
         requireTyped(id);
         blueprintEngine.deleteBlueprint(id);
         blueprintPersistence.delete(id);
+        rebuildWatchIndex();
     }
 
     public BlueprintAttachmentDto apply(String id, String objectPath) {
@@ -140,6 +167,32 @@ public class TypedBlueprintFacade {
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    public BlueprintDetachResultDto detach(String id, String objectPath) {
+        requireTyped(id);
+        try {
+            return BlueprintDetachResultDto.from(blueprintApplicationService.detachBlueprintWithRules(id, objectPath));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    private void rebuildWatchIndex() {
+        if (watchMixinIndex != null) {
+            watchMixinIndex.rebuild();
+        }
+    }
+
+    private static Map<String, String> mergeReevaluation(
+            Map<String, String> parameters,
+            BlueprintDto.BlueprintReevaluationDto reevaluation
+    ) {
+        Map<String, String> params = new LinkedHashMap<>(parameters != null ? parameters : Map.of());
+        if (reevaluation != null) {
+            reevaluation.toModel().writeTo(params);
+        }
+        return params;
     }
 
     public ObjectDto instantiate(String id, InstantiatePayload request) {
@@ -200,6 +253,7 @@ public class TypedBlueprintFacade {
             String description,
             ObjectType targetObjectType,
             String suitabilityExpression,
+            BlueprintDto.BlueprintReevaluationDto reevaluation,
             List<BlueprintVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
@@ -213,6 +267,7 @@ public class TypedBlueprintFacade {
             String description,
             ObjectType targetObjectType,
             String suitabilityExpression,
+            BlueprintDto.BlueprintReevaluationDto reevaluation,
             List<BlueprintVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,

@@ -671,5 +671,7 @@
   "visualGroup.loadingMembers": "Mitglieder werden geladen…",
   "visualGroup.missing": "(fehlt) {{path}}",
   "visualGroup.removeSelected": "Auswahl entfernen",
-  "visualGroup.searchPlaceholder": "Suche nach Name oder Pfad…"
+  "visualGroup.searchPlaceholder": "Suche nach Name oder Pfad…",
+  "blueprint.reevaluationLegend": "Neubewertung (opt-in)",
+  "blueprint.reevaluationEnable": "Eignung beobachten; owned Beiträge trennen wenn CEL falsch"
 }

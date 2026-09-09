@@ -67,6 +67,8 @@
   "blueprint.adminOnly": "Редактирование blueprints доступно только admin.",
   "blueprint.applicabilityCel": "Условие применимости (CEL)",
   "blueprint.applicabilityPlaceholder": "пусто = по targetObjectType",
+  "blueprint.reevaluationLegend": "Повторная оценка (opt-in)",
+  "blueprint.reevaluationEnable": "Следить за пригодностью; снимать свой вклад, если CEL стал false",
   "blueprint.apply": "Применить",
   "blueprint.applyHint": "Apply — влить переменные, события и bindings в существующий объект (MIXIN).",
   "blueprint.applyPathPlaceholder": "objectPath, напр. root.platform.devices.my-sensor",
