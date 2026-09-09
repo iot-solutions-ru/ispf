@@ -11,11 +11,11 @@ All Batch A / Batch B patches and the carefully reviewed majors below were squas
 
 Grouping in `.github/dependabot.yml` (parquet / protobuf / npm minor-patch / GHA minor-patch) applies to **future** Dependabot runs.
 
-## Still open — hold
+## Landed later
 
-| PR | Update | Why |
-|----|--------|-----|
-| [#177](https://github.com/iot-solutions-ru/ispf/pull/177) | `vitest` **4→5** | Major test-runner; treat as deliberate upgrade (CI may be green — still on hold until a named owner window) |
+| PR | Update | Notes |
+|----|--------|-------|
+| vitest **4→5** | Intentional remake: local `vitest run` **524/524**; Node 22 + Vite 8 meet Vitest 5 floor. Dependabot [#177](https://github.com/iot-solutions-ru/ispf/pull/177) closed after merge. |
 
 ## Noise reduction (already on main)
 
