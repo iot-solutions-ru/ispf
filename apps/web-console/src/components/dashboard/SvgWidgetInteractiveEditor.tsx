@@ -1,8 +1,8 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SvgWidget } from "../../types/dashboard";
 import type { MimicBinding, MimicBindingSlot, MimicSymbolBehavior } from "../../types/scadaMimic";
-import { parseSvgUpload, sanitizeSvgMarkup } from "../../scada/customSvg";
+import { isSvgUploadTooComplexError, parseSvgUpload, sanitizeSvgMarkup, SVG_UPLOAD_MAX_CHARS, SVG_UPLOAD_MAX_ELEMENTS } from "../../scada/customSvg";
 import {
   readSvgWidgetBehaviors,
   readSvgWidgetBindings,
@@ -39,6 +39,7 @@ function commit(
 export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidgetInteractiveEditorProps) {
   const { t } = useTranslation(["scada", "widgets"]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const behaviors = useMemo(() => readSvgWidgetBehaviors(widget), [widget.behaviorsJson, widget.topologyJson]);
   const bindings = useMemo(() => readSvgWidgetBindings(widget), [widget.bindingsJson, widget.topologyJson]);
@@ -71,12 +72,27 @@ export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidget
 
   const handleSvgUpload = async (file: File) => {
     const text = await file.text();
-    const parsed = parseSvgUpload(text);
-    pushState({
-      svgInner: parsed.svg,
-      viewBox: parsed.viewBox,
-    });
-    update({ svgUrl: undefined });
+    try {
+      const parsed = parseSvgUpload(text);
+      setUploadError(null);
+      pushState({
+        svgInner: parsed.svg,
+        viewBox: parsed.viewBox,
+      });
+      update({ svgUrl: undefined });
+    } catch (err) {
+      if (isSvgUploadTooComplexError(err)) {
+        setUploadError(
+          t("props.customSvgTooComplex", {
+            ns: "scada",
+            maxKb: Math.round(SVG_UPLOAD_MAX_CHARS / 1024),
+            maxElements: SVG_UPLOAD_MAX_ELEMENTS,
+          })
+        );
+        return;
+      }
+      throw err;
+    }
   };
 
   const updateBinding = (key: string, patch: Partial<MimicBinding>) => {
@@ -134,6 +150,7 @@ export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidget
       <button type="button" className="scada-btn-ghost scada-btn-block" onClick={() => fileRef.current?.click()}>
         {t("props.customSvgUpload", { ns: "scada" })}
       </button>
+      {uploadError ? <p className="scada-props-hint scada-props-hint-compact" role="alert">{uploadError}</p> : null}
 
       <label className="scada-form-field">
         <span className="scada-form-label">svgInnerJson</span>

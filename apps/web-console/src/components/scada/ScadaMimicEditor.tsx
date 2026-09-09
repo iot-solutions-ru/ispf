@@ -4,7 +4,7 @@ import { Button, Input, Segmented, Space, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, MimicLayer, ScadaMimicDocument } from "../../types/scadaMimic";
 import { useMimicHistory } from "../../hooks/useMimicHistory";
-import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload } from "../../scada/customSvg";
+import { DEFAULT_CUSTOM_SVG_INNER, isSvgUploadTooComplexError, parseSvgUpload, SVG_UPLOAD_MAX_CHARS, SVG_UPLOAD_MAX_ELEMENTS } from "../../scada/customSvg";
 import {
   convertDocumentToLibrarySymbols,
   documentHasBuiltinSymbols,
@@ -99,6 +99,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [connectFrom, setConnectFrom] = useState<{ elementId: string; port: string } | null>(null);
   const [importText, setImportText] = useState("");
+  const [svgUploadError, setSvgUploadError] = useState<string | null>(null);
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [activeLayerId, setActiveLayerId] = useState(DEFAULT_LAYER_ID);
   const documentRef = useRef(document);
@@ -402,24 +403,38 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     (file: File) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const parsed = parseSvgUpload(String(reader.result ?? ""));
-        const id = createMimicId("csym");
-        const def: MimicCustomSymbol = {
-          id,
-          name: file.name.replace(/\.svg$/i, "") || t("props.customSvgDefaultName"),
-          svg: parsed.svg,
-          width: parsed.width,
-          height: parsed.height,
-          viewBox: parsed.viewBox,
-          ports: parsed.ports,
-          inUserLibrary: true,
-        };
-        updateDocument((doc) => ({
-          ...doc,
-          customSymbols: [...(doc.customSymbols ?? []), def],
-        }));
-        setPlaceSymbolId(`custom:${id}`);
-        setTool("place");
+        try {
+          const parsed = parseSvgUpload(String(reader.result ?? ""));
+          setSvgUploadError(null);
+          const id = createMimicId("csym");
+          const def: MimicCustomSymbol = {
+            id,
+            name: file.name.replace(/\.svg$/i, "") || t("props.customSvgDefaultName"),
+            svg: parsed.svg,
+            width: parsed.width,
+            height: parsed.height,
+            viewBox: parsed.viewBox,
+            ports: parsed.ports,
+            inUserLibrary: true,
+          };
+          updateDocument((doc) => ({
+            ...doc,
+            customSymbols: [...(doc.customSymbols ?? []), def],
+          }));
+          setPlaceSymbolId(`custom:${id}`);
+          setTool("place");
+        } catch (err) {
+          if (isSvgUploadTooComplexError(err)) {
+            setSvgUploadError(
+              t("props.customSvgTooComplex", {
+                maxKb: Math.round(SVG_UPLOAD_MAX_CHARS / 1024),
+                maxElements: SVG_UPLOAD_MAX_ELEMENTS,
+              })
+            );
+            return;
+          }
+          throw err;
+        }
       };
       reader.readAsText(file);
     },
@@ -841,6 +856,11 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
             </Button>
           </Space>
         </header>
+        {svgUploadError ? (
+          <p className="scada-props-hint scada-props-hint-compact" role="alert">
+            {svgUploadError}
+          </p>
+        ) : null}
         <div className="scada-mimic-editor-body">
           <aside className="scada-mimic-editor-sidebar scada-editor-panel">
             <SymbolPalette

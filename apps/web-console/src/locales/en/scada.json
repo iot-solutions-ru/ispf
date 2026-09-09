@@ -91,6 +91,7 @@
   "props.customSvgWidth": "Width",
   "props.customSvgHeight": "Height",
   "props.customSvgUpload": "Upload SVG file",
+  "props.customSvgTooComplex": "This SVG is too large or detailed to import (max {{maxKb}} KB or {{maxElements}} elements).",
   "props.customSvgSaveLibrary": "Save to library",
   "props.customSvgDefaultName": "Custom symbol",
   "props.customSvgLibraryRef": "From library: {{name}}",

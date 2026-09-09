@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SymbolBehaviorsEditor from "./SymbolBehaviorsEditor";
 import type { MimicBindingSlot, MimicCustomSymbol, MimicElement, MimicSymbolBehavior } from "../../types/scadaMimic";
-import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload, sanitizeSvgMarkup } from "../../scada/customSvg";
+import { DEFAULT_CUSTOM_SVG_INNER, isSvgUploadTooComplexError, parseSvgUpload, sanitizeSvgMarkup, SVG_UPLOAD_MAX_CHARS, SVG_UPLOAD_MAX_ELEMENTS } from "../../scada/customSvg";
 import { convertElementToLibrarySymbol, convertPackToLibrarySymbol, isBuiltinSymbolId, isPackSymbolId } from "../../scada/convertBuiltinToLibrary";
 import { createMimicId } from "../../scada/document";
 
@@ -60,6 +60,7 @@ export default function CustomSvgEditor({
   const baseSvg = useMemo(() => resolveBaseSvg(element, libraryDef), [element.props?.svg, libraryDef]);
   const [draftSvg, setDraftSvg] = useState(baseSvg);
   const [dirty, setDirty] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     setDraftSvg(baseSvg);
@@ -143,9 +144,23 @@ export default function CustomSvgEditor({
   const handleUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const parsed = parseSvgUpload(String(reader.result ?? ""));
-      setDraftSvg(parsed.svg);
-      applySvg(parsed);
+      try {
+        const parsed = parseSvgUpload(String(reader.result ?? ""));
+        setUploadError(null);
+        setDraftSvg(parsed.svg);
+        applySvg(parsed);
+      } catch (err) {
+        if (isSvgUploadTooComplexError(err)) {
+          setUploadError(
+            t("props.customSvgTooComplex", {
+              maxKb: Math.round(SVG_UPLOAD_MAX_CHARS / 1024),
+              maxElements: SVG_UPLOAD_MAX_ELEMENTS,
+            })
+          );
+          return;
+        }
+        throw err;
+      }
     };
     reader.readAsText(file);
   };
@@ -296,6 +311,7 @@ export default function CustomSvgEditor({
       <button type="button" className="scada-btn-ghost scada-btn-block" onClick={() => fileRef.current?.click()}>
         {t("props.customSvgUpload")}
       </button>
+      {uploadError ? <p className="scada-props-hint scada-props-hint-compact" role="alert">{uploadError}</p> : null}
 
       {element.symbolId === "custom.svg" && (
         <button type="button" className="scada-btn-ghost scada-btn-block" onClick={handleSaveToLibrary}>

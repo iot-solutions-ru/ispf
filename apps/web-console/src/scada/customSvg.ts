@@ -64,9 +64,36 @@ function parseViewBox(viewBox: string | null | undefined): { w: number; h: numbe
   return { w, h, viewBox: parts.join(" ") };
 }
 
+export const SVG_UPLOAD_MAX_CHARS = 512 * 1024;
+export const SVG_UPLOAD_MAX_ELEMENTS = 2000;
+
+export class SvgUploadTooComplexError extends Error {
+  readonly code = "SVG_TOO_COMPLEX" as const;
+
+  constructor(
+    readonly kind: "chars" | "elements",
+    readonly actual: number,
+    readonly limit: number
+  ) {
+    super(`SVG upload exceeds ${kind} limit (${actual} > ${limit})`);
+    this.name = "SvgUploadTooComplexError";
+  }
+}
+
+export function isSvgUploadTooComplexError(err: unknown): err is SvgUploadTooComplexError {
+  return err instanceof SvgUploadTooComplexError;
+}
+
+function countSvgElements(svgEl: Element): number {
+  return svgEl.querySelectorAll("*").length;
+}
+
 /** Parse uploaded SVG file or fragment into storable custom symbol fields. */
 export function parseSvgUpload(raw: string): Pick<MimicCustomSymbol, "svg" | "width" | "height" | "viewBox" | "ports"> {
   const trimmed = raw.trim();
+  if (trimmed.length > SVG_UPLOAD_MAX_CHARS) {
+    throw new SvgUploadTooComplexError("chars", trimmed.length, SVG_UPLOAD_MAX_CHARS);
+  }
   const doc = new DOMParser().parseFromString(trimmed, "image/svg+xml");
   const svgEl = doc.querySelector("svg");
   if (!svgEl) {
@@ -74,6 +101,11 @@ export function parseSvgUpload(raw: string): Pick<MimicCustomSymbol, "svg" | "wi
     const w = 64;
     const h = 64;
     return { svg: inner || DEFAULT_CUSTOM_SVG_INNER, width: w, height: h, viewBox: `0 0 ${w} ${h}`, ports: defaultEdgePorts(w, h) };
+  }
+
+  const elementCount = countSvgElements(svgEl);
+  if (elementCount > SVG_UPLOAD_MAX_ELEMENTS) {
+    throw new SvgUploadTooComplexError("elements", elementCount, SVG_UPLOAD_MAX_ELEMENTS);
   }
 
   const vb = parseViewBox(svgEl.getAttribute("viewBox"));
