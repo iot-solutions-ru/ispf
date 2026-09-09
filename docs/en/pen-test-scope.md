@@ -95,6 +95,7 @@ Until those exist, scorecard / tender language must say **Gap (G-01)** â€” not â
 | [pen-test-roe.md](pen-test-roe.md) | Full RoE + severity + stop conditions |
 | [pen-test-questionnaire.md](pen-test-questionnaire.md) | Vendor / RFP questionnaire |
 | [pen-test-cases.md](pen-test-cases.md) | Assessor case catalog |
+| [pen-test-vendor-pack.md](pen-test-vendor-pack.md) | **Single pack to send a hired firm** (RFP/SOW cover) |
 | Preflight | `bash tools/security/pen-test-preflight.sh https://HOST --out preflight.json` |
 
 ## Related
