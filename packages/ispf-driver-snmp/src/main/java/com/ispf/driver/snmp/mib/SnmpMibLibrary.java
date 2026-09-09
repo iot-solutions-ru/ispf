@@ -264,8 +264,12 @@ public final class SnmpMibLibrary {
         if (fileName == null || fileName.isBlank()) {
             throw new IOException("MIB file name is required");
         }
-        String base = Path.of(fileName).getFileName().toString().trim();
-        if (base.isBlank() || base.contains("..")) {
+        String trimmed = fileName.trim();
+        if (trimmed.contains("..") || trimmed.contains("/") || trimmed.contains("\\") || trimmed.contains(":")) {
+            throw new IOException("Invalid MIB file name");
+        }
+        String base = Path.of(trimmed).getFileName().toString().trim();
+        if (base.isBlank() || !base.equals(trimmed)) {
             throw new IOException("Invalid MIB file name");
         }
         String lower = base.toLowerCase(Locale.ROOT);

@@ -148,4 +148,31 @@ class SnmpMibParserTest {
         assertEquals("ifInOctets_2", proposals.getFirst().variableName());
         assertEquals("1.3.6.1.2.1.2.2.1.10.2:INTEGER", proposals.getFirst().pointAddress());
     }
+
+    @Test
+    void importRejectsOversizedContent() {
+        byte[] huge = new byte[SnmpMibLibrary.MAX_MIB_BYTES + 1];
+        var ex = org.junit.jupiter.api.Assertions.assertThrows(
+                java.io.IOException.class,
+                () -> SnmpMibLibrary.get().importFile("too-big.mib", huge)
+        );
+        assertTrue(ex.getMessage().contains("exceeds"));
+    }
+
+    @Test
+    void sanitizeRejectsPathTraversal() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                java.io.IOException.class,
+                () -> SnmpMibLibrary.sanitizeFileName("../evil.mib")
+        );
+        org.junit.jupiter.api.Assertions.assertThrows(
+                java.io.IOException.class,
+                () -> SnmpMibLibrary.sanitizeFileName("subdir/ok.mib")
+        );
+        try {
+            assertEquals("ok.mib", SnmpMibLibrary.sanitizeFileName("ok.mib"));
+        } catch (java.io.IOException e) {
+            throw new AssertionError(e);
+        }
+    }
 }
