@@ -29,6 +29,8 @@
   "action.revert": "还原",
   "action.run": "运行",
   "action.running": "正在运行...",
+  "action.undo": "撤销",
+  "action.redo": "重做",
   "action.save": "保存",
   "action.saveError": "保存失败",
   "action.saved": "已保存",

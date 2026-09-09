@@ -29,6 +29,8 @@
   "action.revert": "Zurücksetzen",
   "action.run": "Lauf",
   "action.running": "Laufen…",
+  "action.undo": "Rückgängig",
+  "action.redo": "Wiederholen",
   "action.save": "Speichern",
   "action.saveError": "Speichern fehlgeschlagen",
   "action.saved": "Gespeichert",

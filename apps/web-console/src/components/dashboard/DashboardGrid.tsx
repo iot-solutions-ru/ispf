@@ -190,7 +190,6 @@ export default function DashboardGrid({
     dragRef.current = null;
     editorRef.current?.setDraggingWidgetId(null);
     editorRef.current?.setDropTargetSlotKey(null);
-    document.body.classList.remove("dashboard-grid-dragging");
   }, [nested]);
 
   useEffect(() => {
@@ -266,7 +265,6 @@ export default function DashboardGrid({
       originW: widget.w,
       originH: widget.h,
     };
-    document.body.classList.add("dashboard-grid-dragging");
     editor?.setDraggingWidgetId(widget.id);
     onSelectWidget?.(widget.id);
   };
@@ -284,7 +282,7 @@ export default function DashboardGrid({
   return (
     <div
       ref={containerRef}
-      className={`dashboard-grid-host${layout.theme ? ` dashboard-theme-${layout.theme}` : ""}${editable ? " editable" : ""}${nested ? " dashboard-grid-host--nested" : ""}${embeddedModal ? " dashboard-grid-host--modal" : ""}`}
+      className={`dashboard-grid-host${layout.theme ? ` dashboard-theme-${layout.theme}` : ""}${editable ? " editable" : ""}${nested ? " dashboard-grid-host--nested" : ""}${embeddedModal ? " dashboard-grid-host--modal" : ""}${editor?.draggingWidgetId ? " dashboard-grid-dragging" : ""}`}
       {...(!nested ? { "data-slot-key": "root" } : {})}
     >
       <div
