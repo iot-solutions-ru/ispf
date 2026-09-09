@@ -35,7 +35,7 @@
   "editor.falseLabel": "Label false",
   "editor.historyRange": "History period (historyRange)",
   "editor.historyBucket": "Historian bucket (historyBucket)",
-  "editor.historyBucketHint": "auto picks bucket from range (live → 1m). Used by aggregate mode and multi-tag charts.",
+  "editor.historyBucketHint": "auto picks a rollup granule from the range (5m / 1h / 8h; live → 1m). Used by aggregate mode and multi-tag charts.",
   "editor.sampleMode": "Telemetry sampling (sampleMode)",
   "editor.sampleModeAuto": "auto (aggregate if historized, else coalesce)",
   "editor.sampleModeAggregate": "aggregate (avg per bucket)",

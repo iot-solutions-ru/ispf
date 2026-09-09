@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,8 +44,7 @@ public class HistorianRollupQueryService {
         if (!isRollupQueryEnabled()) {
             return Optional.empty();
         }
-        long rangeDays = Duration.between(from, to).toDays();
-        if (rangeDays < analyticsProperties.rollupMinQueryRangeDays()) {
+        if (!rangeLongEnoughForRollup(from, to)) {
             return Optional.empty();
         }
         if (!subscriptionIndex.isSubscribed(objectPath, variableName, fieldName, bucket)) {
@@ -65,6 +63,23 @@ public class HistorianRollupQueryService {
             return Optional.empty();
         }
         return Optional.of(new RollupQueryResult(buckets, "rollup"));
+    }
+
+    /**
+     * Sliding 7d chart windows are often a few seconds short of 7×24h, and
+     * {@link Duration#toDays()} truncates — those queries must still hit granules.
+     */
+    boolean rangeLongEnoughForRollup(Instant from, Instant to) {
+        Duration range = Duration.between(from, to);
+        if (range.isNegative() || range.isZero()) {
+            return false;
+        }
+        int minDays = Math.max(0, analyticsProperties.rollupMinQueryRangeDays());
+        Duration minRange = Duration.ofDays(minDays).minus(Duration.ofHours(12));
+        if (minRange.isNegative()) {
+            minRange = Duration.ZERO;
+        }
+        return range.compareTo(minRange) >= 0;
     }
 
     public record RollupQueryResult(

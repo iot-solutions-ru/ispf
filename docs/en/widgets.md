@@ -157,7 +157,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | `variableName` | **Required** for line/area/bar/range/candlestick. Variable needs `historyEnabled: true` |
 | `chartStyle` | `line` \| `area` (not for bubble/radar) |
 | `chartType` | `line`, `area`, `bar`, `candlestick`, `bubble`, `radar`, `range` |
-| `historyRange` | `live` (sliding window), `1h`, `6h`, `24h`, `7d`, `all` |
+| `historyRange` | `live` (sliding window), `1h`, `6h`, `24h`, `7d`, `all`. Auto buckets follow historian rollups: 5m / 1h / 8h. |
 | `maxPoints` | Max points (~120 default) |
 | `color` | Line color |
 | `decimals`, `unit`, `unitField` | Axis/label format |
