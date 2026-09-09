@@ -10,101 +10,108 @@
 
 | Pin | Смысл |
 |-----|--------|
-| **0.9.102** | Последний **полный code audit** этой матрицы (июль 2026). Оценки и evidence ниже зафиксированы на этом аудите. |
-| **0.9.207** | Текущий `main` / demostand на 2026-09-01 (H2 migration splitting + bundle SQL). **Не** пересчитанная матрица. |
-| **0.9.206** | Предыдущий pin (migration scope + H1-full cleanup). **Не** пересчитанная матрица. |
+| **0.9.207** | **Полный competitive audit 2026-09-09** — оценки и evidence ниже. Lab evidence учтены; field/OT/MES honesty сохранена. |
+| **0.9.102** | Предыдущий полный code audit (июль 2026). Исторический baseline; заменён этим аудитом. |
+| **0.9.206** | Предыдущий demostand pin. **Не** scored matrix. |
 
-**Актуальный столбец:** **Проверено по коду** — доказательства из `main` на baseline аудита **0.9.102**.
+**Актуальный столбец:** **Проверено по коду** — доказательства из `main`, тестов и датированных lab-архивов на pin **0.9.207** (2026-09-09).
 
 Шкала **1–10** относительно лучших в классе: Ignition, Kepware/KEPServerEX, OSIsoft PI, Siemens Opcenter, Tulip, зрелые IIoT-платформы с контекстным деревом.
 
-| # | Измерение | Baseline (фаза 24) | **Проверено по коду (0.9.102)** | Цель | Фаза / BL |
+| # | Измерение | Baseline (фаза 24) | **Проверено по коду (0.9.207)** | Цель | Фаза / BL |
 |---|-----------|:-------------------:|:-------------------------------:|:------:|------------|
 | 1 | Единая модель данных (дерево объектов) | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#этап-25--ot-trust), [roadmap](roadmap.md#этап-29--платформа-mes), [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-164…168, BL-173 |
-| 2 | SCADA / HMI / мнемосхемы | 7.0 | **7.5** | **10** | [roadmap](roadmap.md#этап-26--совершенство-hmi) — BL-146…152 |
-| 3 | OT/IT connectivity (drivers.md) | 6.0 | **6.5** | **10** | [roadmap](roadmap.md#этап-25--ot-trust) — BL-140…145 |
-| 4 | Historian / time-series | 7.0 | **7.0** | **10** | [roadmap](roadmap.md#фаза-28--историк-в-масштабе) — BL-159…163; [roadmap](roadmap.md#фаза-33--аналитическая-платформа-af-capable) БЛ-200…210 |
+| 2 | SCADA / HMI / мнемосхемы | 7.0 | **8.0** | **10** | [roadmap](roadmap.md#этап-26--совершенство-hmi) — BL-146…152 |
+| 3 | OT/IT connectivity (drivers.md) | 6.0 | **7.0** | **10** | [roadmap](roadmap.md#этап-25--ot-trust) — BL-140…145; BL-191 honesty Done |
+| 4 | Historian / time-series | 7.0 | **9.5** | **10** | [roadmap](roadmap.md#фаза-28--историк-в-масштабе) — BL-159…163; [roadmap](roadmap.md#фаза-33--аналитическая-платформа-af-capable) БЛ-200…210 |
 | 5 | Automation / alarms | 7.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-27--безопасность-предприятия), [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-153…157, BL-171…174 |
 | 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [roadmap](roadmap.md#этап-30--глубина-автоматизации) — BL-176 |
 | 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [roadmap](roadmap.md#этап-29--платформа-mes) — BL-164…170 |
 | 8 | Скорость low-code | 8.0 | **8.0** | **10** | [roadmap](roadmap.md#этап-26--совершенство-hmi), [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-146…152, BL-177…180 |
 | 9 | AI-assisted разработка | 9.0 | **9.0** | **10** | [roadmap](roadmap.md#фаза-31--автопилот-ии) — BL-177…182 |
-| 10 | Security / RBAC / мультитенантность | 6.5 | **8.0** | **10** | [roadmap](roadmap.md#этап-27--безопасность-предприятия) — BL-153…157 |
-| 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [roadmap](roadmap.md#этап-25--ot-trust), [roadmap](roadmap.md#фаза-28--историк-в-масштабе), [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-144…145, BL-186…187 |
-| 12 | Экосистема / маркетплейс | 4.0 | **5.0** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-183…185 |
+| 10 | Security / RBAC / мультитенантность | 6.5 | **8.5** | **10** | [roadmap](roadmap.md#этап-27--безопасность-предприятия) — BL-153…157 |
+| 11 | Deploy / scale / edge | 8.0 | **7.5** | **10** | [roadmap](roadmap.md#этап-25--ot-trust), [roadmap](roadmap.md#фаза-28--историк-в-масштабе), [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-144…145, BL-186…187 |
+| 12 | Экосистема / маркетплейс | 4.0 | **6.5** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-183…185 |
 | 13 | Documentation / DX | 9.0 | **8.5** | **10** | [roadmap](roadmap.md#этап-32--экосистема-и-рынок) — BL-189, BL-190 |
 | 14 | Stack modernity | 9.0 | **9.5** | **10** | maintain — Spring Boot 4, React 19, NATS, опция ClickHouse |
 
-**Итого (проверено по коду): ~7.6/10** — простое среднее по 14 измерениям.
+**Итого (проверено по коду): ~8.0/10** — простое среднее по 14 измерениям (сумма 112.0 / 14).
 
-**Post-audit delta (19.07.2026):** AI-assisted разработка **7.0 → 8.5** после полного live suite (БЛ-178: 52/52 @100%), затем **8.5 → 9.0** после БЛ-177/180 multi-app / multi-domain live smoke harness Готово (opt-in `ISPF_LLM_SMOKE`; без выдуманных multi-app/multi-domain live pass counts). Остальные измерения — baseline аудита **0.9.102**.
+### Audit 2026-09-09 — delta vs 0.9.102
 
-**Post-audit note (30.08.2026):** Follow-up BL-154 (trusted-channel + OQ residual, 0.9.190/191) закрыт; PostgreSQL RLS на shared tables **Done** при `db-row-isolation=true`; PEM env unescape (0.9.192). Замороженная оценка Security **0.9.102** не пересчитывается — в следующий полный audit. Остаются: optional hard schema table routing, WebAuthn (BL-194), pen-test.
+| # | Измерение | 0.9.102 | **0.9.207** | Почему |
+|---|-----------|:-------:|:-----------:|--------|
+| 2 | SCADA / HMI | 7.5 | **8.0** | Live FPS + unmocked 500-el; lab CDP **2h + 8h** (**P-HMI-8H**). Не 9+: **P-HMI-FIELD** parked. |
+| 4 | Historian | 7.0 | **9.5** | Enterprise L **Lab PASS** 2026-09-05. Honesty: synthetic CH fill; demostand — маленький сайт. |
+| 10 | Security / RBAC | 8.0 | **8.5** | Trusted-channel + PostgreSQL RLS. Не 9+: **G-01** pen-test open; WebAuthn parked. |
+| 11 | Deploy / scale / edge | 7.0 | **7.5** | Fold Phase 32 Helm/ARM/MoM. |
+| 12 | Ecosystem / marketplace | 5.0 | **6.5** | Fold Marketplace GA + CI catalog gate. |
+| 3 | OT/IT | 7.0 | **7.0** | Lab pilots in progress — **не** field Done / не OT 10/10. |
 
-**Program wave 8 (июль 2026)** ранее заявляла ~9.8/10 по отгруженным BL-артефактам; **аудит кода (0.9.102)** заменяет эту цифру. См. [§ Доказательства аудита кода](#code-audit-evidence-0102) и [§ Разрыв до цели](#gaps-to-target).
+Program wave 8 (~9.8) по-прежнему **отозвана**.
 
 ---
 
 ## Definition of done (10/10 overall)
 
-Из [roadmap](roadmap.md) (Фазы 25–33 / DoD). Статус на **0.9.102**:
+Из [roadmap](roadmap.md) (Фазы 25–33 / DoD). Статус на **0.9.207**:
 
 | Критерий | Статус |
 |----------|--------|
-| Все **14 измерений ≥9.5**, ни одно ≤8 (BL-189) | **Не выполнено** — среднее ~7.6; максимум 9.5 (stack modernity) |
-| Agent regression **≥95% green** с live LLM (BL-178) | **Выполнено** — полный live suite `AGENT_LIVE_SUITE_MODE=full` через `run-live-suite.sh`: **52/52 @100%** (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI по-прежнему режим **platform**. `nightly-stub-results.json` **устарел** (не proof) |
-| Marketplace GA checklist complete (BL-183) | **Выполнено** — browse/install/sign/version + честные partner multi-endpoint (11) + CI catalog gate (12); BL-184/185 Done; Partner Portal external |
+| Все **14 измерений ≥9.5**, ни одно ≤8 (BL-189) | **Не выполнено** — среднее ~8.0; остаются dims ≤8 (OT, alarms, BPMN, MES, deploy, ecosystem) |
+| Agent regression **≥95% green** с live LLM (BL-178) | **Выполнено** — полный live suite **52/52 @100%**. Nightly CI — режим **platform**. |
+| Marketplace GA checklist complete (BL-183) | **Выполнено** — Partner Portal external |
 | Competitive scorecard published per release (BL-189) | **Выполнено** — этот документ |
 
 ---
 
-## Доказательства аудита кода (0.9.102)
+## Доказательства аудита кода (0.9.207)
 
-Классы доказательств: **REAL** (runtime + тесты), **PARTIAL** (ядро работает, известные пробелы), **STUB** (явная заглушка в коде).
+Классы доказательств: **REAL** (runtime + тесты / датированный lab), **PARTIAL** (ядро работает, известные пробелы), **STUB** (явная заглушка в коде).
 
 | # | Измерение | Оценка | Вердикт | Ключевые доказательства |
 |---|-----------|:-----:|---------|-------------------------|
-| 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators в `EventCorrelatorService` |
-| 2 | SCADA / HMI | 7.5 | **REAL** | `ispf-pid-v1` manifest `totalSymbols: 218`; `ScadaMimicEditor.tsx`; video wall в `dashboardLayoutPresets.ts`; e2e FPS в `quality-gates.spec.ts` (mocked operator API) |
-| 3 | OT/IT drivers | 7.0 | **PARTIAL** | 58 `PRODUCTION` в `DriverProductionMatrix` (честность BL-191; партии A+B1+B2+B3+C, включая sip, radius, ldap, jmx, dhcp, ingress-*, iec104-server, omron-fins, mbus, smpp, xmpp, ipmi, wmi, odbc, ethernet-ip UCMM CIP, vmware SOAP, smi-s CIM-XML); Milo OPC UA, j2mod, S7, BACnet/IP clean-room codec — реальные; `opc-da` / `opc-bridge` / `corba` честно **BETA** (оболочки); DNP3 `writePoint` по-прежнему throws |
-| 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC по умолчанию; lab gates BL-210 + JVM multi-tag gate **определены** (`analytics-scale-gate.sh`); оценка **≥9.5** после Enterprise L lab sign-off |
-| 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; alarm shelving approval **persisted** (BL-158) |
-| 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; не полная BPMN 2.0 |
-| 7 | MES / ISA-95 | 6.5 | **PARTIAL** | MES — marketplace product (`mes-platform`, vendor IoT Solutions); база не сидит `root.platform.mes`. Bundle JSON/SQL/script BFF; нет отдельного MES-модуля |
-| 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
-| 9 | AI-assisted dev | 9.0 | **REAL** | БЛ-178 полный live suite **52/52 @100%** (`build/agent-regression/live-suite-results.json`, `mode=full`, ~2026-07-18/19); БЛ-177 multi-app `AgentLiveDeploySmokeTest` matrix (`mes-platform`, `building-hvac`, `platform-primitive`); БЛ-180 multi-domain `AiSolutionGeneratorLiveSmokeTest` (HVAC/MES/SCADA, `composition=primitives`); draft fallback `mode=draft` (не stub); live smoke требуют `ISPF_LLM_SMOKE=true` |
-| 10 | Security / RBAC | 8.0 | **PARTIAL** | TOTP MFA GA **Done** (BL-153); per-var/event/function ACL **Done** (BL-154) incl. trusted-channel + OQ residual (2026-08-30, pending full audit rescore); audit SIEM + role scopes **Done** (BL-156/157); SaaS tenant-admin + logical A≠B **Done** (BL-155); PostgreSQL RLS **Done** на shared tables; hard schema table routing optional; WebAuthn → BL-194 |
-| 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | Federation MoM usable path **REAL** (BL-188); Helm lint/template + ARM edge compose **Готово** (BL-186/187); нет CI load proof для cluster / 10+ peer scale |
-| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA **Готово** (BL-183 — multi-endpoint + CI catalog gate); partner directory + enroll `"source": "db"` (BL-184); symbol packs BL-185 Done; Partner Portal sync всё ещё external |
-| 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADR; в коде заглушки помечены честно |
-| 14 | Stack modernity | 9.5 | **REAL** | Spring Boot 4, React 19, опция ClickHouse в `gradle.properties` / `application.yml` |
+| 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; correlators в `EventCorrelatorService` |
+| 2 | SCADA / HMI | 8.0 | **PARTIAL** | 218 PID symbols; demostand FPS + 500-el unmocked; lab offline 2h/8h CDP. Остаток: on-site tablet (**P-HMI-FIELD**) |
+| 3 | OT/IT drivers | 7.0 | **PARTIAL** | Catalog 162/162 lab; BL-140 pilots in progress ([ot-trust](../evidence/ot-trust/)); lab ≠ plant; DNP3 write open |
+| 4 | Historian | 9.5 | **REAL (lab SLO)** | Enterprise L lab 2026-09-05 ([evidence](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)). Honesty: synthetic CH fill |
+| 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators; shelving persisted (BL-158) |
+| 6 | Workflow / BPMN | 7.5 | **REAL** | SubProcess/Message tests; не полная BPMN 2.0; **P-BPMN** parked |
+| 7 | MES / ISA-95 | 6.5 | **PARTIAL** | Marketplace MES; ERP stub **`simulated`**; **P-ERP** parked |
+| 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy, spreadsheets |
+| 9 | AI-assisted dev | 9.0 | **REAL** | BL-178 52/52; soft evidence не поднимает оценку |
+| 10 | Security / RBAC | 8.5 | **PARTIAL** | MFA/ACL/RLS Done; **G-01** pen-test open; WebAuthn parked |
+| 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | MoM + Helm + ARM; нет CI cluster load proof |
+| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA; Partner Portal sync external |
+| 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADR + evidence folders |
+| 14 | Stack modernity | 9.5 | **REAL** | Spring Boot 4, React 19, ClickHouse option |
 
 ### Известные проблемы целостности кода (исправить до повышения OT-оценки)
 
 | Проблема | Где |
 |----------|-----|
-| DNP3 poll-only (BETA) — `writePoint` не реализован | `Dnp3DeviceDriver.writePoint()` — maturity честный; write открыт |
-| Partner Portal external | `PartnerProgramService` persists directory/enroll (`source=db`); portal sync вне repo |
+| DNP3 poll-only (BETA) — `writePoint` не реализован | `Dnp3DeviceDriver.writePoint()` |
+| Partner Portal external | portal sync вне repo |
+| OT field pilots incomplete | [ot-trust](../evidence/ot-trust/) — lab soak ≠ customer sign-off |
 
 ---
 
 ## Разрыв до цели
 
-Приоритетные исправления для движения **проверено по коду** к 10/10 (не маркетинг). Полный аудит доменов: [roadmap.md § Аудит доменов](roadmap.md#аудит-доменов--iot--scada--mes--erp-09072026).
-
-1. **OT drivers (7.0 → 9+):** честность матрицы **закрыта (БЛ-191)**; остаётся field pilot sign-off + DNP3 write / полный DA после **именованной полевой задачи** (БЛ-140 Частичный).
-2. **ERP L4 / MES (6.5 → 9+):** живой коннектор 1C или SAP (**БЛ-169** P0); production MES sites. Genealogy lite (**БЛ-193**) отгружен в `mes-platform` (seed-граф + Operator report).
-3. **AI (9.0 → 10):** БЛ-177…180 Готово (harness + БЛ-178 52/52). Именованные soft evidence в [`docs/evidence/ai-generator/`](../evidence/ai-generator/): **0.9.186**, **0.9.191**, и **re-soak 0.9.202** (31.08.2026) HVAC/MES/SCADA, `softBudgetMet: true`, `bundleTrust=signed`. Остаток до 10/10: опциональный многодневный plant journal. Оценка AI заморожена; soft evidence не дают новых оценок или live pass counts.
-4. **Ecosystem (6.5 → 9+):** sync Partner Portal + live partner-hosted catalogs (вне repo); повышение после первого внешнего partner catalog onboarding.
-5. **Historian (7.0 → 9+):** JVM scale gates **PASS** ([`historian-scale/2026-09-04-jvm-…`](../evidence/historian-scale/2026-09-04-jvm-analytics-scale-gate.md)). **Lab sign-off 2026-09-05** на `192.168.100.10`: 50k history-enabled + ≥1B CH + multi-tag p95≈49 ms ([evidence](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)). Замороженная оценка остаётся **7.0** до полного competitive audit (далее ожидание **≥9.5**). Demostand — маленький сайт, не L-каталог.
-6. **HMI (7.5 → 9+):** live Object WS FPS — demostand evidence ([`hmi-fps/2026-09-04-…ui-pump-station`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-ui-pump-station.json) @ **0.9.207**, ~7 el @ 60 FPS / 471 WS) + первый **unmocked 500-el** ([`hmi-fps/2026-09-04-…hmi-stress-500`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-hmi-stress-500.json), median ~47 FPS, soft floor 20). Lab **2h** + **8h** offline soak ([`hmi-offline/2026-09-04-…offline-2h`](../evidence/hmi-offline/2026-09-04-ispf-vps-0.9.207-offline-2h.json), [`…offline-8h`](../evidence/hmi-offline/2026-09-05-ispf-vps-0.9.207-offline-8h.json), CDP). Остаток: on-site tablet (**P-HMI-FIELD**). Оценка HMI заморожена до полного audit.
-7. **Compliance:** tender pack IEC 62443 / GAMP-lite (**БЛ-192**) — **docs Готово:** [compliance-tender-pack](compliance-tender-pack.md) (канон EN). Остаются: pen-test, optional hard schema **table routing** (logical SaaS + PostgreSQL RLS Done), WebAuthn (BL-194); без заявления о сертификации продукта.
+1. **OT drivers (7.0 → 9+):** field pilot sign-off + DNP3 write; lab ≠ OT 10/10.
+2. **ERP L4 / MES (6.5 → 9+):** live 1C/SAP (**BL-169** / **P-ERP**); production MES sites.
+3. **AI (9.0 → 10):** optional multi-day plant journal.
+4. **Ecosystem (6.5 → 9+):** Partner Portal + external partner catalog.
+5. **Historian (9.5 → 10):** non-synthetic / customer L ops honesty.
+6. **HMI (8.0 → 9+):** on-site tablet (**P-HMI-FIELD**); ≥60 FPS @ 500-el.
+7. **Security (8.5 → 9+):** hired pen-test + retest (**G-01**); WebAuthn if needed.
+8. **Compliance:** tender pack docs Done; без заявления о сертификации продукта.
 
 ---
 
 ## История program wave (отгруженные артефакты)
 
-Исторические **program**-оценки отражали скорость delivery BL; это **не** конкурентная готовность. Сохранено для археологии релизов.
+Исторические **program**-оценки отражали скорость delivery BL; это **не** конкурентная готовность.
 
 <details>
 <summary>Столбцы wave 1–8 (заменены «проверено по коду»)</summary>
@@ -134,7 +141,9 @@ Wave 8 program mean ~9.8 — **отозвано** после аудита код
 
 ## Процесс обновления
 
-1. После каждого release tag — повторный **аудит кода**: матрица drivers, grep stub (`source.*stub`, `mode.*stub`), CI gates, integration tests.
-2. Обновить столбец **Проверено по коду** в этом файле; зафиксировать delta в release notes.
-3. Program wave columns (если используются) — только shipment BL, **не** замена code verified.
-4. Связывать доказательства с тестами и путями в `packages/`, а не только с roadmap.
+1. После каждого release tag — повторный **аудит кода**: матрица drivers, grep stub, CI gates, integration tests, датированные `docs/evidence/`.
+2. Обновить столбец **Проверено по коду** здесь **и** в EN-каноне; delta в release notes / History roadmap.
+3. Program wave columns — только shipment BL, **не** замена code verified.
+4. Связывать доказательства с тестами, путями в `packages/` и evidence JSON/MD.
+5. Lab PASS из [parked-backlog](parked-backlog.md) входят в scorecard только на **именованном полном audit**.
+6. После правок матрицы: `python tools/ai-pack/build.py` (обновить `competitiveGapIndex`).

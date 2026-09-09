@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.207",
-  "generatedAt": "2026-09-09T05:57:07.265570+00:00",
+  "generatedAt": "2026-09-09T08:27:02.239534+00:00",
   "platformVersion": "0.9.207",
   "bundleManifest": {
     "fields": [
@@ -214,9 +214,9 @@
       "rank": 2,
       "dimension": "SCADA / HMI / mimics",
       "baseline": 7.0,
-      "current": 7.5,
+      "current": 8.0,
       "target": 10.0,
-      "gap": 2.5,
+      "gap": 2.0,
       "phaseRef": "[roadmap](roadmap.md#phase-26--hmi-excellence) — BL-146…152",
       "keywords": "SCADA / HMI / mimics competitive gap scorecard"
     },
@@ -234,9 +234,9 @@
       "rank": 4,
       "dimension": "Historian / time-series",
       "baseline": 7.0,
-      "current": 7.0,
+      "current": 9.5,
       "target": 10.0,
-      "gap": 3.0,
+      "gap": 0.5,
       "phaseRef": "[roadmap](roadmap.md#phase-28--historian-at-scale) — BL-159…163; [roadmap](roadmap.md#phase-33--analytics-platform-af-capable) BL-200…210",
       "keywords": "Historian / time-series competitive gap scorecard"
     },
@@ -294,9 +294,9 @@
       "rank": 10,
       "dimension": "Security / RBAC / tenancy",
       "baseline": 6.5,
-      "current": 8.0,
+      "current": 8.5,
       "target": 10.0,
-      "gap": 2.0,
+      "gap": 1.5,
       "phaseRef": "[roadmap](roadmap.md#phase-27--enterprise-security) — BL-153…157",
       "keywords": "Security / RBAC / tenancy competitive gap scorecard"
     },
@@ -304,9 +304,9 @@
       "rank": 11,
       "dimension": "Deploy / scale / edge",
       "baseline": 8.0,
-      "current": 7.0,
+      "current": 7.5,
       "target": 10.0,
-      "gap": 3.0,
+      "gap": 2.5,
       "phaseRef": "[roadmap](roadmap.md#phase-25--ot-trust), [roadmap](roadmap.md#phase-28--historian-at-scale), [roadmap](roadmap.md#phase-32--ecosystem--market) — BL-144…145, BL-186…187",
       "keywords": "Deploy / scale / edge competitive gap scorecard"
     },
@@ -314,9 +314,9 @@
       "rank": 12,
       "dimension": "Ecosystem / marketplace",
       "baseline": 4.0,
-      "current": 5.0,
+      "current": 6.5,
       "target": 10.0,
-      "gap": 5.0,
+      "gap": 3.5,
       "phaseRef": "[roadmap](roadmap.md#phase-32--ecosystem--market) — BL-183…185",
       "keywords": "Ecosystem / marketplace competitive gap scorecard"
     },
@@ -38187,5 +38187,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "3d3cebdd750e001bd909f28611924f6bf79cab027fb02cc9b00eef123e653ff3"
+  "contentSha256": "05bafb27261530a230f2720cc6f66347d7e3b9d1b3760e23aa0d29cf07e45a8c"
 }

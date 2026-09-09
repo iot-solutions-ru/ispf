@@ -62,7 +62,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 
 ## Ретроспектива — что сделано и где мы {#retrospective}
 
-**На 19.07.2026** · prod **0.9.105** (`ispf.example.invalid`) · оценка по коду **~7,6/10** ([competitive-scorecard](competitive-scorecard.md)).
+**На 09.09.2026** · platform **0.9.207** · оценка по коду **~8,0/10** ([competitive-scorecard](competitive-scorecard.md)).
 
 ### Эпохи (закрыто → активно)
 
@@ -109,7 +109,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 
 ### Готовность подсистем (наследие Фазы 23)
 
-См. [§ Готовность подсистемы](#готовность-подсистемы) — в основном 90–100% для закрытых подсистем. Эта таблица **не** заменяет competitive scorecard (~7,6/10).
+См. [§ Готовность подсистемы](#готовность-подсистемы) — в основном 90–100% для закрытых подсистем. Эта таблица **не** заменяет competitive scorecard (~8,0/10).
 
 ### Куда смотреть дальше
 
@@ -895,7 +895,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | --- | --- |
 | **Baseline** | Фаза 24 закрыта, `main`, июль 2026 |
 | **Обновлено** | 09.07.2026 (единый roadmap; аудит доменов; Фаза 33 analytics) |
-| **Оценка продукта** | Проверено по коду **~7,6/10** — [competitive-scorecard](competitive-scorecard.md) |
+| **Оценка продукта** | Проверено по коду **~8,0/10** — [competitive-scorecard](competitive-scorecard.md) |
 | **Цель** | 10/10 — см. [Определение готовности](#определение-готовности--1010-всего) |
 
 ### Сводка фаз 25–33
@@ -909,26 +909,26 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 ## Конкурентный показатель (базовый уровень → проверенный код → целевой показатель)
 
 Шкала 1–10 относительно ведущих коммерческих платформ Ignition/Kepware/PI/Opcenter/Tulip/зрелого context tree IIoT.  
-**Проверено по коду** — данные из `main` источника/тестов (0.9.102). Полная матрица: [competitive-scorecard](competitive-scorecard.md).
+**Проверено по коду** — данные из `main` + датированные lab-архивы (**0.9.207**, полный audit 2026-09-09). Полная матрица: [competitive-scorecard](competitive-scorecard.md).
 
 | Измерение | Базовый уровень | **Проверено по коду** | Цель | Фаза |
 | --------- | :------: | :---------------: | :----: | ----- |
 | Единая модель данных | 9.0 | **8,5** | **10** | 25, 29, 30 |
-| SCADA/HMI/мемосхемы | 7.0 | **7,5** | **10** | 26 |
-| Подключение OT/IT (драйверы) | 6.0 | **6,5** | **10** | 25 |
-| Историк / временной ряд | 7.0 | **7.0** | **10** | 28 |
+| SCADA/HMI/мемосхемы | 7.0 | **8,0** | **10** | 26 |
+| Подключение OT/IT (драйверы) | 6.0 | **7,0** | **10** | 25 |
+| Историк / временной ряд | 7.0 | **9,5** | **10** | 28 |
 | Автоматизация / сигнализации | 7,5 | **7,5** | **10** | 27, 30 |
 | Рабочий процесс / BPMN | 6,5 | **7,5** | **10** | 30 |
 | MES / ISA-95 | 5,5 | **6,5** | **10** | 29 |
 | Низкая скорость | 8.0 | **8,0** | **10** | 26, 31 |
 | AI-assisted разработка | 9.0 | **9,0** | **10** | 31 |
-| Безопасность / RBAC / мультитенантность | 6,5 | **7,5** | **10** | 27 |
-| Развертывание/масштабирование/периферия | 8.0 | **7.0** | **10** | 25, 28, 32 |
-| Экосистема / маркетплейс | 4.0 | **5,0** | **10** | 32 |
+| Безопасность / RBAC / мультитенантность | 6,5 | **8,5** | **10** | 27 |
+| Развертывание/масштабирование/периферия | 8.0 | **7,5** | **10** | 25, 28, 32 |
+| Экосистема / маркетплейс | 4.0 | **6,5** | **10** | 32 |
 | Документация / DX | 9.0 | **8,5** | **10** | 32 |
 | Современность стека | 9.0 | **9,5** | **10** | поддерживать |
 
-**В целом (проверено по коду): ~7,6/10** — см. [competitive-scorecard](competitive-scorecard.md) (AI **9.0** после БЛ-177…180).
+**В целом (проверено по коду): ~8,0/10** — см. [competitive-scorecard](competitive-scorecard.md).
 
 ---
 
@@ -955,7 +955,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ## Аудит доменов — IoT / SCADA / MES / ERP (09.07.2026)
 
-Аудит домена относительно ведущих платформ (Kepware, Ignition, PI, Opcenter, Tulip). **Проверено по коду ~7,6/10** ([competitive-scorecard](competitive-scorecard.md)); prod **0.9.105**. Оценка: сильная application platform; до лидерства не хватает **промышленной глубины** (честный OT, живой ERP, полевой MES, field soak) — не ещё одного слоя фич.
+Аудит домена относительно ведущих платформ (Kepware, Ignition, PI, Opcenter, Tulip). **Проверено по коду ~8,0/10** ([competitive-scorecard](competitive-scorecard.md)); platform **0.9.207**. Оценка: сильная application platform; до лидерства не хватает **промышленной глубины** (честный OT field, живой ERP, полевой MES, field HMI soak) — не ещё одного слоя фич.
 
 **Стратегия:** ISPF — **не** полный ERP (SAP/1C). Цель Level 4 — надёжные коннекторы ISA-95. Полный MES класса Opcenter — **не** «всё в ядре»: первоклассные MES-объекты + сертифицированные bundles + 1–2 живых цеха. Ров — скорость решений (AI + low-code) при OT-доверии уровня Kepware.
 
@@ -1268,7 +1268,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-186 | 32 | K8s Helm chart | П2 | **Готово** — `deploy/helm/ispf` lint/template smoke + [deployment](deployment.md); CI `helm-chart` |
 | БЛ-187 | 32 | Краевой профиль ARM | П2 | **Готово** — `deploy/edge/arm64/` compose + README + `validate.sh`; [demostands](demostands.md) |
 | БЛ-188 | 32 | Менеджер-менеджеров | P3 | **Готово (usable path)** — чеклист хаба + operator peer picker; **не** load-proven 10+ peers — [federation](federation.md) |
-| БЛ-189 | 32 | Конкурентная система показателей | P3 | **Готово** (опубликовано; проверено по коду ~7,6/10) |
+| БЛ-189 | 32 | Конкурентная система показателей | P3 | **Готово** (опубликовано; проверено по коду ~8,0/10) |
 | БЛ-190 | 32 | Пути сертификации | P3 | **Готово** — curriculum Solution developer + Platform admin + `examples/certification/` — [certification](certification.md) |
 | БЛ-191 | 25 | Честность OT-матрицы | **Отложено** | Планируется (parked — не в 90-дневном P0) |
 | БЛ-192 | 27/32 | Compliance tender pack | П2 | **Готово** — [compliance-tender-pack](compliance-tender-pack.md) |
@@ -1330,7 +1330,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 5. **Безопасность** — MFA + список управления доступом для каждой переменной + опция strict tenant isolation (BL-153…155)
 6. **HMI** — mimic на 500 эл при 60 кадрах в секунду, автономное PWA 8 часов (BL-151, BL-152)
 7. **Маркетплейс** — более 10 подписанных пакетов, 3 внешних партнера (BL-183, BL-184)
-8. **Оценочная карта** — все 14 измерений ≥9,5, ни одного ≤8 (BL-189) — **не выполнено** (проверено по коду ~7,6/10; см. [competitive-scorecard](competitive-scorecard.md))
+8. **Оценочная карта** — все 14 измерений ≥9,5, ни одного ≤8 (BL-189) — **не выполнено** (проверено по коду ~8,0/10; см. [competitive-scorecard](competitive-scorecard.md))
 9. **Честность OT** — ноль stub-драйверов с меткой PRODUCTION (БЛ-191)
 10. **Compliance pack** — опубликованы docs IEC 62443 / GAMP-lite (БЛ-192) — **выполнено** как documentation pack: [compliance-tender-pack](compliance-tender-pack.md) (честный Exists/Partial/Gap; **не** IEC/GAMP-сертификация и не pen-test)
 
