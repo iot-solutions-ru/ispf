@@ -40,7 +40,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 ```
 
-Веб-консоль: экран входа; сессия хранится в `localStorage`. В профиле `dev`/prod — **Код авторизации OIDC + PKCE** через Keycloak (кнопка «Войти через Keycloak»). Конфигурация: `GET /api/v1/auth/config`. Админ руководят пользователями в дереве `root.platform.security.users`.
+Веб-консоль: экран входа; сессия хранится в `sessionStorage` (одноразовая миграция из устаревшего `localStorage`). В профиле `dev`/prod — **Код авторизации OIDC + PKCE** через Keycloak (кнопка «Войти через Keycloak»). Конфигурация: `GET /api/v1/auth/config`. Админ руководят пользователями в дереве `root.platform.security.users`.
 
 **Автозапуск приложения:** у пользователя можно включить `autoStartEnabled` и указать `autoStartApp` (id оператора приложения, список — `GET /api/v1/operator-apps`). После входа в веб-консоль открывается оператор-приложение вместо админ-консоли.
 
@@ -78,7 +78,8 @@ curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 |----------|:-----:|:---------:|:--------:|:------:|
 | `GET /api/v1/info` | ✓ | ✓ | ✓ | ✓ |
 | `POST /api/v1/auth/login` | | | | ✓ |
-| `GET /api/v1/auth/me` | ✓ | ✓ | ✓ | |
+| `POST /api/v1/auth/logout` | | | | ✓ |
+| `GET /api/v1/auth/me` | ✓ | ✓ | ✓ | ✓ |
 | `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ |
 | `WS /ws/**` | ✓ | ✓ | ✓ | ✓ |
 | `GET /api/v1/**` | ✓ | ✓ | ✓ | |

@@ -11,11 +11,13 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Auth logout AuthZ: `POST /api/v1/auth/logout` снова `permitAll` (операторы могут отзывать Bearer).
 - Marketplace `mqtt-temperature`: H2-совместимый SQL как в lab bundle.
 - Modbus TCP/UDP/RTU `readConfig`: сначала `configuration()`, затем переменные устройства (fix bind host/port из `driverConfigJson`).
 
 ### Добавлено
 
+- Внутренний engineering security review 2026-09-09 (defensive; **≠ G-01**).
 - Enterprise L tooling в `tools/historian-scale/`: seed/count history-enabled,
   `GET /history-enabled-count`, gate считает переменные (не `/tags` binding rules).
 - `npm run pwa:offline-field-soak` — lab 2h CDP offline soak.
