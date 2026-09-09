@@ -23,6 +23,8 @@
   "filter.eventName": "Event",
   "filter.fieldPlaceholder": "Feldname…",
   "filter.level": "Stufe",
+  "filter.cel": "CEL",
+  "filter.celPlaceholder": "payload.eventName == \"alarmActive\"",
   "filter.searchPlaceholder": "Pfad oder Name suchen…",
   "filter.objectPathPlaceholder": "root.platform.devices…",
   "liveHint": "Aktuelle Einträge werden automatisch aktualisiert",

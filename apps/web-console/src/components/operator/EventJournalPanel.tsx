@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchEventJournalStatus, fetchEvents } from "../../api";
@@ -69,6 +69,13 @@ export default function EventJournalPanel({
   const [eventNameFilter, setEventNameFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
+  const [celDraft, setCelDraft] = useState("");
+  const [celExpr, setCelExpr] = useState("");
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setCelExpr(celDraft.trim()), 500);
+    return () => window.clearTimeout(id);
+  }, [celDraft]);
 
   const objectPath = fixedObjectPath ?? (filterPath.trim() || undefined);
   const statusObjectPath = operatorScoped
@@ -93,15 +100,18 @@ export default function EventJournalPanel({
       operatorScoped ? operatorJournalPath ?? "scoped" : null,
       fetchLimit,
       mode,
+      celExpr,
     ],
     queryFn: () => {
+      const options = celExpr ? { expr: celExpr } : undefined;
       if (operatorScoped) {
         return fetchEvents(
           operatorJournalPath,
           Math.max(fetchLimit, mode === "live" ? 80 : fetchLimit),
+          options,
         );
       }
-      return fetchEvents(objectPath, fetchLimit);
+      return fetchEvents(objectPath, fetchLimit, options);
     },
     // Always poll/fetch: RecentEventCache still serves live events when durable journal is off.
     // Gating on journal-status.enabled froze the list after the first paint.
@@ -295,7 +305,7 @@ export default function EventJournalPanel({
         ) : undefined
       }
       filters={
-        (mode === "history" || (showFilters && !fixedObjectPath)) ? (
+        (mode === "history" || showFilters) ? (
           <div className="journal-filters form-grid">
             {showFilters && !fixedObjectPath && (
               <label>
@@ -304,6 +314,17 @@ export default function EventJournalPanel({
                   value={filterPath}
                   onChange={(e) => setFilterPath(e.target.value)}
                   placeholder={t("eventJournal.filterPlaceholder")}
+                />
+              </label>
+            )}
+            {(showFilters || mode === "history") && (
+              <label>
+                {t("journal:filter.cel")}
+                <input
+                  value={celDraft}
+                  onChange={(e) => setCelDraft(e.target.value)}
+                  placeholder={t("journal:filter.celPlaceholder")}
+                  spellCheck={false}
                 />
               </label>
             )}

@@ -7,6 +7,8 @@
   "loadError": "Failed to load journal",
   "empty": "No entries yet",
   "filter.all": "All",
+  "filter.cel": "CEL",
+  "filter.celPlaceholder": "payload.eventName == \"alarmActive\"",
   "filter.searchPlaceholder": "Search path or name…",
   "filter.objectPathPlaceholder": "root.platform.devices…",
   "filter.eventName": "Event",

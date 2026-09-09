@@ -639,7 +639,7 @@
 |------|----------|
 | `objectPathPrefix` | Фильтр по префиксу пути |
 | `eventNamesJson` | `["thresholdExceeded", …]` |
-| `payloadFilterExpr` | Клиентский фильтр payload |
+| `payloadFilterExpr` | Mini-DSL на клиенте или CEL по `payload` через `GET /events?expr=` |
 | `maxItems` | Лимит строк |
 
 ---
