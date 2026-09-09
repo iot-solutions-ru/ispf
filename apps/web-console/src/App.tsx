@@ -15,7 +15,7 @@ import {
   setStoredSession,
   type AuthSession,
 } from "./auth/session";
-import { SESSION_INVALID_EVENT, validateStoredSession } from "./auth/validateSession";
+import { SESSION_INVALID_EVENT, SESSION_UPDATED_EVENT, validateStoredSession } from "./auth/validateSession";
 import {
   clearOidcCallbackParams,
   completeOidcLogin,
@@ -203,9 +203,7 @@ function AppShell() {
       if (cancelled) {
         return;
       }
-      if (!valid) {
-        setSession(null);
-      }
+      setSession(valid);
       setAuthBootstrapping(false);
     });
     return () => {
@@ -215,9 +213,36 @@ function AppShell() {
 
   useEffect(() => {
     const onSessionInvalid = () => setSession(null);
+    const onSessionUpdated = () => setSession(getStoredSession());
     window.addEventListener(SESSION_INVALID_EVENT, onSessionInvalid);
-    return () => window.removeEventListener(SESSION_INVALID_EVENT, onSessionInvalid);
+    window.addEventListener(SESSION_UPDATED_EVENT, onSessionUpdated);
+    return () => {
+      window.removeEventListener(SESSION_INVALID_EVENT, onSessionInvalid);
+      window.removeEventListener(SESSION_UPDATED_EVENT, onSessionUpdated);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!session?.token) {
+      return;
+    }
+    const refresh = () => {
+      void validateStoredSession().then((valid) => {
+        setSession(valid);
+      });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        refresh();
+      }
+    };
+    const intervalId = window.setInterval(refresh, 30_000);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [session?.token]);
 
   const operatorAppsQuery = useQuery({
     queryKey: ["operator-apps"],

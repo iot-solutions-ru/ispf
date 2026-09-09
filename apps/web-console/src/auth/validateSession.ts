@@ -3,6 +3,7 @@ import { fetchWithIngressFallback, resetIngressRouteCache } from "../utils/ingre
 import {
   clearStoredSession,
   getStoredSession,
+  setStoredSession,
   type AuthSession,
 } from "./session";
 
@@ -55,8 +56,28 @@ export async function validateStoredSession(): Promise<AuthSession | null> {
       invalidateStoredSession();
       return null;
     }
-    return session;
+    const nextRoles = Array.isArray(me.roles) ? me.roles : session.roles;
+    const nextUsername = me.principal?.trim() ? me.principal.trim() : session.username;
+    if (sameStringList(session.roles, nextRoles) && session.username === nextUsername) {
+      return session;
+    }
+    const next: AuthSession = {
+      ...session,
+      username: nextUsername,
+      roles: nextRoles,
+    };
+    setStoredSession(next);
+    return next;
   } catch {
     return session;
   }
+}
+
+function sameStringList(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  const a = [...left].sort();
+  const b = [...right].sort();
+  return a.every((value, index) => value === b[index]);
 }
