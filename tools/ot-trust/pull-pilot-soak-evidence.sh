@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pull Pilot #1 (and optional Pilot #2) soak evidence from the OT lab host via jump.
+# Pull Pilot #1 / #2 / #3 soak evidence from the OT lab host via jump.
 #
 # Prefer key auth (canonical): ~/.ssh/lab_ed25519
 # Fallback: SSHPASS password (one-time / legacy)
@@ -19,8 +19,10 @@ IDENTITY="${IDENTITY/#\~/$HOME}"
 DAY="${DAY:-}"
 OUT_PILOT1="${OUT_PILOT1:-docs/evidence/ot-trust/pilot1-lab}"
 OUT_PILOT2="${OUT_PILOT2:-docs/evidence/ot-trust/pilot2-lab}"
+OUT_PILOT3="${OUT_PILOT3:-docs/evidence/ot-trust/pilot3-lab}"
 REMOTE_PILOT1="${REMOTE_PILOT1:-/home/iot-solutions/ispf/pilot1-modbus/evidence}"
 REMOTE_PILOT2="${REMOTE_PILOT2:-/home/iot-solutions/ispf/pilot2-mqtt/evidence}"
+REMOTE_PILOT3="${REMOTE_PILOT3:-/home/iot-solutions/ispf/pilot3-opcua/evidence}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -64,7 +66,7 @@ if ! jump_ssh "ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes ${LAB_US
   exit 3
 fi
 
-mkdir -p "$OUT_PILOT1" "$OUT_PILOT2"
+mkdir -p "$OUT_PILOT1" "$OUT_PILOT2" "$OUT_PILOT3"
 
 pull_glob() {
   local remote_dir="$1"
@@ -82,12 +84,15 @@ pull_glob() {
 if [[ -n "$DAY" ]]; then
   pull_glob "$REMOTE_PILOT1" "$OUT_PILOT1" "soak-day${DAY}-*.json"
   pull_glob "$REMOTE_PILOT2" "$OUT_PILOT2" "soak-day${DAY}-*.json"
+  pull_glob "$REMOTE_PILOT3" "$OUT_PILOT3" "soak-day${DAY}-*.json"
 else
   pull_glob "$REMOTE_PILOT1" "$OUT_PILOT1" "soak-*.json"
   pull_glob "$REMOTE_PILOT2" "$OUT_PILOT2" "soak-*.json"
+  pull_glob "$REMOTE_PILOT3" "$OUT_PILOT3" "soak-*.json"
 fi
 
 pull_glob "$REMOTE_PILOT1" "$OUT_PILOT1" "soak-latest.json"
 pull_glob "$REMOTE_PILOT2" "$OUT_PILOT2" "soak-latest.json"
+pull_glob "$REMOTE_PILOT3" "$OUT_PILOT3" "soak-latest.json"
 
-echo "Done. Review ${OUT_PILOT1} / ${OUT_PILOT2} and append journals."
+echo "Done. Review ${OUT_PILOT1} / ${OUT_PILOT2} / ${OUT_PILOT3} and append journals."
