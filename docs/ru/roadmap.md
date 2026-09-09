@@ -1602,6 +1602,7 @@ Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP
 
 | Дата | Изменение |
 | ---- | --------- |
+| 09.09.2026 | **Полный competitive audit (0.9.207):** scorecard **~7,6 → ~8,0/10**. HMI **8.0**, Historian **9.5**, Security **8.5**; Deploy **7.5** / Ecosystem **6.5**. OT/MES/AI/BPMN без изменений (lab ≠ field; G-01 open). [competitive-scorecard](competitive-scorecard.md). |
 | 25.08.2026 | **ispf-vps jar 0.9.188:** verify license по raw JSON (`sign-bundle.py` OK); signed gate ON; MES GA 8/8; Flyway V89. |
 | 25.08.2026 | **Post-S33 named-site field evidence (ispf-vps):** AI generator HVAC/MES/SCADA oneshots в `docs/evidence/ai-generator/` (~19s, soft budget); MES `mes-platform-production` GA smoke 8/8 + Postgres UUID/`RANDOM_UUID` compat; hygiene VPS (oil-control KPI off, `avgTemperature` writable, emc SQL bindings off). Journals AI+MES. **Signed bundles ON** на demostand; fix deploy verify raw JSON (следующий jar). HMI: CI evidence journal; 2h field — на объекте. |
 | 19.07.2026 | **BL-180 soft evidence path:** `LiveGeneratorEvidence` + `run-live-generator-oneshot.sh` → `live-generator-results.json`; чеклист интегратора в [ai-agent](ai-agent.md); pin `AGENT_LIVE_GENERATOR_DOMAIN` (default hvac). Lab oneshot ≠ field Done |
