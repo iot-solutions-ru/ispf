@@ -47,7 +47,16 @@ public class BindingRulesStartupRunner {
             return;
         }
         var paths = objectManager.tree().all().stream().map(node -> node.path()).toList();
-        dependencyIndex.rebuildAll(paths);
+        // Clear first, then rebuild per path so a missing object (cluster RAM/DB race after
+        // markInitialized) cannot abort ApplicationReadyEvent and fail the whole context.
+        dependencyIndex.rebuildAll(List.of());
+        for (String path : paths) {
+            try {
+                dependencyIndex.rebuild(path);
+            } catch (ObjectNotFoundException ex) {
+                log.debug("Skip binding dependency rebuild for missing object {}: {}", path, ex.getMessage());
+            }
+        }
         periodicScheduleRegistry.clearAll();
         for (String path : periodicScheduleRegistry.objectPathsWithBindingRules()) {
             // Historian periodicMs is owned by AnalyticsEngineScheduler — never index it here.

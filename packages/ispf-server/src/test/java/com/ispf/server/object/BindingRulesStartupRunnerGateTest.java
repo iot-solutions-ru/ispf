@@ -11,6 +11,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -69,5 +71,20 @@ class BindingRulesStartupRunnerGateTest {
         verify(periodicScheduleRegistry).clearAll();
         verify(periodicScheduler).reschedule();
         verify(periodicScheduleRegistry, never()).syncObject(any(), any());
+    }
+
+    @Test
+    void initializeContinuesWhenDependencyRebuildMissesAnObject() {
+        when(objectManager.isInitialized()).thenReturn(true);
+        when(objectManager.tree()).thenReturn(new ObjectTree());
+        when(periodicScheduleRegistry.objectPathsWithBindingRules()).thenReturn(List.of());
+        doThrow(new ObjectNotFoundException("root")).when(dependencyIndex).rebuild(anyString());
+
+        runner.initializeBindingRules();
+
+        verify(dependencyIndex).rebuildAll(List.of());
+        verify(dependencyIndex).rebuild("root");
+        verify(periodicScheduleRegistry).clearAll();
+        verify(periodicScheduler).reschedule();
     }
 }
