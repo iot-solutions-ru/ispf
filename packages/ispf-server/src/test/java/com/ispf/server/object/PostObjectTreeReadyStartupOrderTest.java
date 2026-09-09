@@ -25,6 +25,8 @@ class PostObjectTreeReadyStartupOrderTest {
                 .isEqualTo(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER);
         assertThat(orderValue(AutomationRuleIndexStartup.class, "rebuildAfterTreeLoaded"))
                 .isEqualTo(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER);
+        assertThat(orderValue(BindingRulesStartupRunner.class, "initializeBindingRules"))
+                .isEqualTo(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER);
 
         assertThat(readyOrder).isLessThan(orderValue(DriverRuntimeService.class, "startConfiguredDrivers"));
     }
