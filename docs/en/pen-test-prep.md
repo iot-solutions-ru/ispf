@@ -9,6 +9,8 @@
 
 Use this page **before** a hired firm starts. Goal: freeze version, accounts, allow-list, and evidence paths so findings map to a reproducible build.
 
+**Send the firm:** [pen-test-vendor-pack.md](pen-test-vendor-pack.md) (cover + attachment list + lab pin).
+
 ---
 
 ## 1. Freeze the target

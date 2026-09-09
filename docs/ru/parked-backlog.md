@@ -12,7 +12,7 @@
 | P-ERP | Живой ERP (BL-169) | **Отложено** | Именованная интеграция 1C/SAP | Sandbox ≠ live |
 | P-BPMN | Глубина BPMN/DMN сверх ADR-0047 | **Отложено** | Blocker заказчика + ADR | Freeze |
 | P-WEBAUTHN | WebAuthn (BL-194) | **Отложено (Planned)** | Требование тендера / MFA | TOTP GA уже есть |
-| P-PENTEST | Сторонний pen-test (G-01) | **Отложено** (prep углублён+) | Контракт + отчёт + retest | [pen-test-scope.md](pen-test-scope.md), RoE/RFP EN, [pen-test-prep.md](pen-test-prep.md), кейсы EN [pen-test-cases.md](../en/pen-test-cases.md), `tools/security/pen-test-preflight.sh` |
+| P-PENTEST | Сторонний pen-test (G-01) | **Отложено** (vendor-pack готов) | Контракт + отчёт + retest | **Отправить:** [pen-test-vendor-pack.md](pen-test-vendor-pack.md). Scope/RoE/RFP EN; [pen-test-prep.md](pen-test-prep.md); lab pin [2026-09-09](../evidence/security-pentest/2026-09-09-lab-192.168.100.10-preflight.md). Docs ≠ cert. |
 
 ## Lab (операторы)
 
