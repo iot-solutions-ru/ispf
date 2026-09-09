@@ -135,6 +135,7 @@
   "props.customSvgResetOverride": "清除实例覆盖",
   "props.customSvgSaveLibrary": "保存到库",
   "props.customSvgUpload": "上传 SVG 文件",
+  "props.customSvgTooComplex": "此 SVG 过大或过细，无法导入（最多 {{maxKb}} KB 或 {{maxElements}} 个元素）。",
   "props.customSvgWidth": "宽度",
   "props.delete": "删除",
   "props.elements": "元素",

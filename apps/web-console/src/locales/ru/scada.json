@@ -135,6 +135,7 @@
   "props.customSvgResetOverride": "Сбросить переопределение",
   "props.customSvgSaveLibrary": "Сохранить в библиотеку",
   "props.customSvgUpload": "Загрузить SVG-файл",
+  "props.customSvgTooComplex": "SVG слишком большой или детальный для импорта (макс. {{maxKb}} КБ или {{maxElements}} элементов).",
   "props.customSvgWidth": "Ширина",
   "props.delete": "Удалить",
   "props.elements": "Элементы",

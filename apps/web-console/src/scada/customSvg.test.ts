@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload, sanitizeSvgMarkup } from "./customSvg";
+import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload, sanitizeSvgMarkup, SVG_UPLOAD_MAX_CHARS, SVG_UPLOAD_MAX_ELEMENTS, SvgUploadTooComplexError } from "./customSvg";
 
 describe("customSvg upload pipeline (BL-94)", () => {
   it("strips script tags and event handlers", () => {
@@ -79,5 +79,16 @@ describe("customSvg upload pipeline (BL-94)", () => {
   it("uses default inner when upload empty", () => {
     const parsed = parseSvgUpload("   ");
     expect(parsed.svg).toBe(DEFAULT_CUSTOM_SVG_INNER);
+  });
+
+  it("rejects oversized SVG before parsing", () => {
+    const huge = `<svg>${"a".repeat(SVG_UPLOAD_MAX_CHARS)}</svg>`;
+    expect(() => parseSvgUpload(huge)).toThrow(SvgUploadTooComplexError);
+  });
+
+  it("rejects SVG with too many elements", () => {
+    const inner = Array.from({ length: SVG_UPLOAD_MAX_ELEMENTS + 1 }, () => '<rect width="1" height="1"/>').join("");
+    const raw = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">${inner}</svg>`;
+    expect(() => parseSvgUpload(raw)).toThrow(SvgUploadTooComplexError);
   });
 });

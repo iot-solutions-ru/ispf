@@ -135,6 +135,7 @@
   "props.customSvgResetOverride": "Instanzüberschreibung löschen",
   "props.customSvgSaveLibrary": "In der Bibliothek speichern",
   "props.customSvgUpload": "SVG-Datei hochladen",
+  "props.customSvgTooComplex": "Dieses SVG ist zu groß oder zu detailliert (max. {{maxKb}} KB oder {{maxElements}} Elemente).",
   "props.customSvgWidth": "Breite",
   "props.delete": "Löschen",
   "props.elements": "Elemente",
