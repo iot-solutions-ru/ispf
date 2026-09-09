@@ -1,9 +1,12 @@
 package com.ispf.server.api;
 
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.dashboard.DashboardContextConstants;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.federation.FederationProxyService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,15 +21,18 @@ public class DashboardController {
     private final DashboardService dashboardService;
     private final FederationProxyService federationProxyService;
     private final ObjectMapper objectMapper;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public DashboardController(
             DashboardService dashboardService,
             FederationProxyService federationProxyService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.dashboardService = dashboardService;
         this.federationProxyService = federationProxyService;
         this.objectMapper = objectMapper;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @GetMapping("/by-path")
@@ -44,8 +50,10 @@ public class DashboardController {
     @PutMapping("/by-path/context")
     public DashboardService.DashboardContextView saveContext(
             @RequestParam String path,
-            @RequestBody SaveContextRequest request
+            @RequestBody SaveContextRequest request,
+            Authentication authentication
     ) {
+        variableMemberAccessService.requireWrite(path, DashboardContextConstants.VARIABLE, authentication);
         return dashboardService.saveContext(path, request.context(), request.updatedBy());
     }
 
@@ -69,8 +77,10 @@ public class DashboardController {
     @PutMapping("/by-path/layout")
     public DashboardService.DashboardView saveLayout(
             @RequestParam String path,
-            @RequestBody SaveLayoutRequest request
+            @RequestBody SaveLayoutRequest request,
+            Authentication authentication
     ) {
+        variableMemberAccessService.requireWrite(path, "layout", authentication);
         String template = request.template() != null ? request.template().trim() : "";
         if (!template.isBlank()) {
             if (federationProxyService.resolve(path).isPresent()) {
@@ -89,8 +99,10 @@ public class DashboardController {
     @PutMapping("/by-path/title")
     public DashboardService.DashboardView saveTitle(
             @RequestParam String path,
-            @RequestBody SaveTitleRequest request
+            @RequestBody SaveTitleRequest request,
+            Authentication authentication
     ) {
+        variableMemberAccessService.requireWrite(path, "title", authentication);
         return federationProxyService.resolve(path)
                 .map(target -> federationProxyService.proxyDashboardSaveTitle(target, request.title()))
                 .orElseGet(() -> dashboardService.updateTitle(path, request.title()));
