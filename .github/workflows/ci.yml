@@ -233,6 +233,9 @@ jobs:
       - name: Validate agent-regression scenario schemas (BL-178)
         run: node tools/agent-regression/validate-scenarios.mjs
 
+      - name: Context-pack outbox honesty (simulated ≠ sent)
+        run: bash tools/ai-pack/check-outbox-honesty.sh
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 

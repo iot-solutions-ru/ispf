@@ -94,8 +94,27 @@ function looksLikeUiText(text) {
   if (/^\/[\w./@*-]+$/.test(value)) {
     return false;
   }
+  // Glob-ish technical samples (gpu-*, *.svg names without prose).
+  if (/^[\w@./${}-]+\*$/.test(value) || /^\*[\w@./${}-]+$/.test(value)) {
+    return false;
+  }
   // Script-editor placeholders (${input.id}) and SQL examples — technical, not copy.
   if (/^\$\{[^}]+\}$/.test(value) || /^SELECT\b/i.test(value)) {
+    return false;
+  }
+  // Placeholder snippets that mix literal + ${…} (e.g. "literal or ${input.name}").
+  if (/\$\{[^}]+\}/.test(value) && !CYRILLIC.test(value) && value.length < 80) {
+    return false;
+  }
+  // SCREAMING_SNAKE / ALLCAPS status or error-code samples (RUNNING, NOT_FOUND).
+  if (/^[A-Z][A-Z0-9_]*$/.test(value)) {
+    return false;
+  }
+  // Haystack / tag-list editor samples (@site.equip, fireAlarm, gasLeak).
+  if (/^@[\w.]+$/.test(value)) {
+    return false;
+  }
+  if (/^[A-Za-z][\w]*(\s*,\s*[A-Za-z][\w]*)+$/.test(value) && !/\s{2,}/.test(value)) {
     return false;
   }
   // JSX_TEXT false positives from TS generics / ternaries:

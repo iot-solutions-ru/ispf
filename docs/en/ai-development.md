@@ -42,7 +42,7 @@ python tools/ai-pack/build.py
 Outputs:
 
 - `ai/context/generated/ispf-context-pack.json`
-- `packages/ispf-server/src/main/resources/ai/context-pack.json`
+- `packages/ispf-ai-agent/src/main/resources/ai/context-pack.json`
 
 Pack includes bundle schema fields, script steps, widget types, API doc slices, reference examples, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (index of all `docs/*.md`), **docChunks** for scored search, and **competitiveGapIndex** (readiness gap index from [competitive-scorecard](competitive-scorecard.md) — BL-182).
 
