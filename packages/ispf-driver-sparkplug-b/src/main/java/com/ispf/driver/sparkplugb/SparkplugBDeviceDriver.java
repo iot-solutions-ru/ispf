@@ -20,7 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * MQTT Sparkplug B host driver — subscribes to NBIRTH/DBIRTH/DDATA and maps metrics to variables.
+ * MQTT Sparkplug B host driver — MQTT 3.1.1 (Paho mqttv3) subscribe NBIRTH/DBIRTH/DDATA and maps metrics to variables.
  * <p>
  * Point mapping is the Sparkplug metric name. {@code writePoint} publishes a DCMD payload with that
  * metric. Clean-room ISPF code, Apache-2.0 — Eclipse Paho MQTT client + minimal protobuf codec.
@@ -38,7 +38,7 @@ public class SparkplugBDeviceDriver implements DeviceDriver {
             "sparkplug-b",
             "MQTT Sparkplug B Driver",
             "0.1.0",
-            "Sparkplug B host: MQTT subscribe NBIRTH/DBIRTH/DDATA, DCMD write, metric name mapping",
+            "Sparkplug B host: MQTT 3.1.1 subscribe NBIRTH/DBIRTH/DDATA, DCMD write, metric name mapping",
             "ISPF",
             Map.of(
                     "brokerUrl", "tcp://localhost:1883",
