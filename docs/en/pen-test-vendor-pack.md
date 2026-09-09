@@ -117,6 +117,7 @@ Copy tables from [pen-test-questionnaire.md](pen-test-questionnaire.md) sections
 | Claim | Allowed? |
 |-------|----------|
 | “Vendor pack / SOW prep ready” | **Yes** (this page) |
+| “Internal engineering review done” | **Yes** — [2026-09-09-engineering-review](../evidence/security-pentest/2026-09-09-engineering-review/) (defensive only) |
 | “Independent pen-test passed” | **No** until dated report + retest under `docs/evidence/security-pentest/` |
 | Scorecard Security ≥9 / G-01 closed | **No** on pack alone (current code-verified Security **8.5 PARTIAL**) |
 

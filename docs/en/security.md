@@ -40,7 +40,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 ```
 
-Web Console: login screen; session stored in `localStorage`. In `dev`/prod profile — **OIDC authorization code + PKCE** via Keycloak (**Sign in with Keycloak**). Configuration: `GET /api/v1/auth/config`. Admins manage users in tree `root.platform.security.users`.
+Web Console: login screen; session stored in `sessionStorage` (one-time migration from legacy `localStorage`). In `dev`/prod profile — **OIDC authorization code + PKCE** via Keycloak (**Sign in with Keycloak**). Configuration: `GET /api/v1/auth/config`. Admins manage users in tree `root.platform.security.users`.
 
 **App auto-start:** a user can enable `autoStartEnabled` and set `autoStartApp` (operator app id, list — `GET /api/v1/operator-apps`). After Web Console login, the operator app opens instead of the admin console.
 
@@ -78,7 +78,8 @@ Rules: `IspfAuthorizationRules.java`.
 |----------|:-----:|:---------:|:--------:|:------:|
 | `GET /api/v1/info` | ✓ | ✓ | ✓ | ✓ |
 | `POST /api/v1/auth/login` | | | | ✓ |
-| `GET /api/v1/auth/me` | ✓ | ✓ | ✓ | |
+| `POST /api/v1/auth/logout` | | | | ✓ |
+| `GET /api/v1/auth/me` | ✓ | ✓ | ✓ | ✓ |
 | `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ |
 | `WS /ws/**` | ✓ | ✓ | ✓ | ✓ |
 | `GET /api/v1/**` | ✓ | ✓ | ✓ | |

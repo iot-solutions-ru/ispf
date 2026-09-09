@@ -2636,6 +2636,12 @@
       "keywords": "pen-test-scope Independent pen-test scope (G-01 prep)"
     },
     {
+      "id": "pen-test-vendor-pack",
+      "path": "docs/en/pen-test-vendor-pack.md",
+      "title": "Vendor engagement pack — ISPF pen-test (G-01)",
+      "keywords": "pen-test-vendor-pack Vendor engagement pack — ISPF pen-test (G-01)"
+    },
+    {
       "id": "pid-symbols-legal",
       "path": "docs/en/pid-symbols-legal.md",
       "title": "P&ID symbol pack — legal status",
@@ -38193,5 +38199,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "964973c27194b770146c0f55efedfef7e71d67cbaf28114f48e541334bde9361"
+  "contentSha256": "d7c541a086c6ec612369775af0dad972da458f63fb0533a4789600b8d2f07080"
 }

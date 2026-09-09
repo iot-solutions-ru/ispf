@@ -19,6 +19,9 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Auth logout AuthZ** — `POST /api/v1/auth/logout` is `permitAll` again so operators
+  (and idempotent no-token calls) can revoke opaque Bearer sessions; was incorrectly
+  CONFIG-gated. Evidence: [`docs/evidence/security-pentest/2026-09-09-engineering-review/`](docs/evidence/security-pentest/2026-09-09-engineering-review/).
 - **Marketplace `mqtt-temperature` migrations** — aligned with `examples/lab-mqtt-temperature`
   H2-compatible SQL (`DOUBLE` / `TIMESTAMP` / PK syntax).
 - **Modbus TCP/UDP/RTU `readConfig`** — prefer `DriverObject.configuration()` (keys from
@@ -27,6 +30,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Internal engineering security review (2026-09-09)** — defensive lab surface checks +
+  AuthN/AuthZ/ACL/tenant/MFA code review; **not** a hired pen-test and **does not** close G-01.
 - **OT Trust Wave 3b** — +7 clean-room codecs: `ocpp`, `odata`, `grpc` (JSON-lab), `openadr`, `scpi`, `visa` (SOCKET-only), `knx-tp`.
 - **Enterprise L catalog tooling** (tracked under `tools/historian-scale/`): seed 50k
   history-enabled devices, `GET /api/v1/platform/analytics/history-enabled-count`, and

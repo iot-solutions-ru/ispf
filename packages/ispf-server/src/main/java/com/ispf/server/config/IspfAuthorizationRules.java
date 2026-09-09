@@ -17,6 +17,7 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(
                 "/api/v1/info",
                 "/api/v1/auth/login",
+                "/api/v1/auth/logout",
                 "/api/v1/auth/config",
                 "/api/v1/auth/me",
                 "/actuator/health",

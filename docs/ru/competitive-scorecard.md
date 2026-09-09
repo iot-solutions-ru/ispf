@@ -104,7 +104,7 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 4. **Ecosystem (6.5 → 9+):** Partner Portal + external partner catalog.
 5. **Historian (9.5 → 10):** non-synthetic / customer L ops honesty.
 6. **HMI (8.0 → 9+):** on-site tablet (**P-HMI-FIELD**); ≥60 FPS @ 500-el.
-7. **Security (8.5 → 9+):** hired pen-test + retest (**G-01**); WebAuthn if needed.
+7. **Security (8.5 → 9+):** hired pen-test + retest (**G-01**); WebAuthn if needed. Internal engineering review ≠ cert.
 8. **Compliance:** tender pack docs Done; без заявления о сертификации продукта.
 
 ---

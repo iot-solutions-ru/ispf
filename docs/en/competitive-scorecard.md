@@ -105,7 +105,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + first external partner-hosted catalog.
 5. **Historian (9.5 → 10):** lab L gate met; residual is non-synthetic / demostand-scale honesty and ops playbooks for real customer L sites.
 6. **HMI (8.0 → 9+):** on-site tablet / airplane-mode soak (**P-HMI-FIELD**); unmocked ≥60 FPS at 500-el still open.
-7. **Security (8.5 → 9+):** dated third-party pen-test + retest letter (**G-01**); optional hard schema table routing; WebAuthn if tender requires (BL-194). Prep/preflight under [`security-pentest/`](../evidence/security-pentest/) ≠ cert.
+7. **Security (8.5 → 9+):** dated third-party pen-test + retest letter (**G-01**); optional hard schema table routing; WebAuthn if tender requires (BL-194). Prep/preflight and [internal engineering review](../evidence/security-pentest/2026-09-09-engineering-review/) under [`security-pentest/`](../evidence/security-pentest/) ≠ cert.
 8. **Compliance:** [compliance-tender-pack](compliance-tender-pack.md) docs Done (BL-192); no product certification claim.
 
 ---
