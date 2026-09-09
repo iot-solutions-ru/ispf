@@ -16,15 +16,18 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
     private final BindingRuleEngine bindingRuleEngine;
     private final BindingDependencyIndex dependencyIndex;
     private final ObjectChangeProperties objectChangeProperties;
+    private final ObjectManager objectManager;
 
     public BindingPropagationAsyncHandler(
             BindingRuleEngine bindingRuleEngine,
             BindingDependencyIndex dependencyIndex,
-            ObjectChangeProperties objectChangeProperties
+            ObjectChangeProperties objectChangeProperties,
+            ObjectManager objectManager
     ) {
         this.bindingRuleEngine = bindingRuleEngine;
         this.dependencyIndex = dependencyIndex;
         this.objectChangeProperties = objectChangeProperties;
+        this.objectManager = objectManager;
     }
 
     @Override
@@ -39,6 +42,9 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
 
     @Override
     public void handle(ObjectChangeEvent event) {
+        if (!objectManager.isInitialized()) {
+            return;
+        }
         if (event.replicaIngress()) {
             return;
         }
