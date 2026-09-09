@@ -40,7 +40,7 @@ python tools/ai-pack/build.py
 Выходы:
 
 - `ai/context/generated/ispf-context-pack.json`
-- `packages/ispf-server/src/main/resources/ai/context-pack.json`
+- `packages/ispf-ai-agent/src/main/resources/ai/context-pack.json`
 
 Пакет включает поля схемы пакета, шаги сценария, типы виджетов, фрагменты документации API, справочные примеры, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (индекс всех `docs/*.md`), **docChunks** для оцениваемого поиска и **competitiveGapIndex** (индекс readiness gaps — BL-182).
 

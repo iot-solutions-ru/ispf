@@ -24,7 +24,7 @@
 - [ ] `bash deploy/tools/mes-platform-production-deploy.sh` green on site
 - [ ] Operator dashboards Dispatch / OEE / Quality usable by shift lead
 - [ ] Work order instantiate → dispatch → complete without admin console edits
-- [ ] ERP outbox: honest stub (`sent` ≠ live ERP unless BL-169 scope)
+- [ ] ERP outbox: honest stub (`simulated` ≠ live ERP unless BL-169 scope)
 - [ ] 7 full days without open P0
 
 **Status:** _lab-only \| field-soak \| production-reference_
