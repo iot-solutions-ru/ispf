@@ -1,14 +1,16 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboard } from "../../../api";
-import type { SubDashboardWidget } from "../../../types/dashboard";
+import type { DashboardLayout, SubDashboardWidget } from "../../../types/dashboard";
 import { resolveDashboardLayout } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { resolveContextPath } from "../dashboardUtils";
+import { DashboardProvider, useDashboardContext } from "../DashboardContext";
 import { useWidgetSession } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import DashboardGrid from "../DashboardGrid";
+import { subDashboardSharesParentContext } from "./subDashboardContext";
 
 const MAX_SUB_DASHBOARD_DEPTH = 2;
 
@@ -92,14 +94,50 @@ export default function SubDashboardWidgetView({
         ) : embedded.error ? (
           <p className="hint">{t("view.subDashboardLoadError")}</p>
         ) : (
-          <DashboardGrid
+          <NestedSubDashboardGrid
+            widget={widget}
             layout={layout}
             refreshIntervalMs={nestedRefresh}
-            editable={false}
-            subDashboardDepth={depth + 1}
+            depth={depth}
           />
         )}
       </div>
     </DashWidgetShell>
+  );
+}
+
+function NestedSubDashboardGrid({
+  widget,
+  layout,
+  refreshIntervalMs,
+  depth,
+}: {
+  widget: SubDashboardWidget;
+  layout: DashboardLayout;
+  refreshIntervalMs: number;
+  depth: number;
+}): ReactNode {
+  const parent = useDashboardContext();
+  const grid = (
+    <DashboardGrid
+      layout={layout}
+      refreshIntervalMs={refreshIntervalMs}
+      editable={false}
+      subDashboardDepth={depth + 1}
+    />
+  );
+  if (subDashboardSharesParentContext(widget.inheritContext)) {
+    return grid;
+  }
+  return (
+    <DashboardProvider
+      operatorMode={parent.operatorMode}
+      embeddedModal={parent.embeddedModal}
+      closeDashboardModal={parent.closeDashboardModal}
+      onNavigateDashboard={parent.navigateToDashboard}
+      onOpenDashboardModal={parent.openDashboardModal}
+    >
+      {grid}
+    </DashboardProvider>
   );
 }
