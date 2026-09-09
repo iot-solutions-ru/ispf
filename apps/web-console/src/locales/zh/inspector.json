@@ -660,5 +660,7 @@
   "visualGroup.loadingMembers": "正在加载成员…",
   "visualGroup.missing": "（缺失）{{path}}",
   "visualGroup.removeSelected": "移除所选",
-  "visualGroup.searchPlaceholder": "按名称或路径搜索…"
+  "visualGroup.searchPlaceholder": "按名称或路径搜索…",
+  "blueprint.reevaluationLegend": "重新评估（可选）",
+  "blueprint.reevaluationEnable": "监视适用性；CEL 为假时分离自有贡献"
 }

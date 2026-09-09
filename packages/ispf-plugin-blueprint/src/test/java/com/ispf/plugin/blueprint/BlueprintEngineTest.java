@@ -584,4 +584,52 @@ class BlueprintEngineTest {
         assertThat(device.getVariable("shared")).isPresent();
         assertThat(device.ownerOfVariable("shared")).contains(second.id());
     }
+
+    @Test
+    void legacyDetachWithoutOwnershipSkipsHardDelete() {
+        DataSchema schema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
+        BlueprintDefinition model = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "legacy-mixin",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(BlueprintVariableDefinition.of(
+                        "legacyVar", "legacy", "telemetry", schema, true, true,
+                        DataRecord.single(schema, Map.of("value", "x"))
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(model);
+        PlatformObject device = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.devices.host-legacy",
+                ObjectType.DEVICE,
+                "host-legacy",
+                null,
+                null
+        );
+        objectTree.register(device);
+        device.addVariable(new Variable(
+                "legacyVar",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", "x"))
+        ));
+        device.addAppliedBlueprintId(model.id());
+
+        BlueprintDetachResult detach = engine.detachBlueprint(model.id(), device.path());
+        assertThat(detach.detached()).isTrue();
+        assertThat(detach.removedVariables()).isEmpty();
+        assertThat(detach.skippedNames()).anyMatch(s -> s.contains("legacyVar") && s.contains("no-ownership"));
+        assertThat(device.getVariable("legacyVar")).isPresent();
+        assertThat(device.appliedBlueprintIds()).doesNotContain(model.id());
+    }
 }

@@ -101,55 +101,72 @@ public class BlueprintEngine {
             );
         }
 
-        BlueprintContribution contribution = target.blueprintContribution(blueprintId)
-                .orElseGet(() -> contributionFromModel(model));
-
         List<String> removedVars = new ArrayList<>();
         List<String> removedEvents = new ArrayList<>();
         List<String> removedFunctions = new ArrayList<>();
         List<String> removedBindings = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
 
-        for (String name : contribution.variables()) {
-            Optional<String> owner = target.ownerOfVariable(name);
-            if (owner.isPresent() && !owner.get().equals(blueprintId)) {
-                skipped.add("variable:" + name);
-                continue;
+        Optional<BlueprintContribution> owned = target.blueprintContribution(blueprintId);
+        if (owned.isPresent()) {
+            BlueprintContribution contribution = owned.get();
+            for (String name : contribution.variables()) {
+                Optional<String> owner = target.ownerOfVariable(name);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("variable:" + name);
+                    continue;
+                }
+                if (target.getVariable(name).isPresent()) {
+                    target.removeVariable(name);
+                    removedVars.add(name);
+                }
             }
-            if (target.getVariable(name).isPresent()) {
-                target.removeVariable(name);
-                removedVars.add(name);
+            for (String name : contribution.events()) {
+                Optional<String> owner = target.ownerOfEvent(name);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("event:" + name);
+                    continue;
+                }
+                if (target.events().containsKey(name)) {
+                    target.removeEvent(name);
+                    removedEvents.add(name);
+                }
             }
-        }
-        for (String name : contribution.events()) {
-            Optional<String> owner = target.ownerOfEvent(name);
-            if (owner.isPresent() && !owner.get().equals(blueprintId)) {
-                skipped.add("event:" + name);
-                continue;
+            for (String name : contribution.functions()) {
+                Optional<String> owner = target.ownerOfFunction(name);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("function:" + name);
+                    continue;
+                }
+                if (target.functions().containsKey(name)) {
+                    target.removeFunction(name);
+                    removedFunctions.add(name);
+                }
             }
-            if (target.events().containsKey(name)) {
-                target.removeEvent(name);
-                removedEvents.add(name);
+            for (String ruleId : contribution.bindingRuleIds()) {
+                Optional<String> owner = target.ownerOfBindingRule(ruleId);
+                if (owner.isPresent() && !owner.get().equals(blueprintId)) {
+                    skipped.add("binding:" + ruleId);
+                    continue;
+                }
+                removedBindings.add(ruleId);
             }
-        }
-        for (String name : contribution.functions()) {
-            Optional<String> owner = target.ownerOfFunction(name);
-            if (owner.isPresent() && !owner.get().equals(blueprintId)) {
-                skipped.add("function:" + name);
-                continue;
+        } else {
+            // Legacy apply (no ownership manifest): never hard-delete by model name —
+            // only drop attachment / appliedBlueprintIds. Callers can re-apply then detach.
+            BlueprintContribution fromModel = contributionFromModel(model);
+            for (String name : fromModel.variables()) {
+                skipped.add("variable:" + name + ":no-ownership");
             }
-            if (target.functions().containsKey(name)) {
-                target.removeFunction(name);
-                removedFunctions.add(name);
+            for (String name : fromModel.events()) {
+                skipped.add("event:" + name + ":no-ownership");
             }
-        }
-        for (String ruleId : contribution.bindingRuleIds()) {
-            Optional<String> owner = target.ownerOfBindingRule(ruleId);
-            if (owner.isPresent() && !owner.get().equals(blueprintId)) {
-                skipped.add("binding:" + ruleId);
-                continue;
+            for (String name : fromModel.functions()) {
+                skipped.add("function:" + name + ":no-ownership");
             }
-            removedBindings.add(ruleId);
+            for (String ruleId : fromModel.bindingRuleIds()) {
+                skipped.add("binding:" + ruleId + ":no-ownership");
+            }
         }
 
         target.removeAppliedBlueprintId(blueprintId);

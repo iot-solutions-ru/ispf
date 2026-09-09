@@ -62,7 +62,7 @@ MIXIN may enable **reevaluation** (`reevaluation.enabled` + triggers). Default o
 | `OBJECT_CREATED` | New object appears (`ObjectChangeType.CREATED`) |
 | `SERVER_READY` | After tree + attachment restore on startup |
 
-On each pass: CEL true → **attach** (if not applied); CEL false → **detach** owned contributions (variables/events/functions/bindings this mixin still owns). Ownership is stored in `blueprintContributions` on the object.
+On each pass: CEL true → **attach** (if not applied); CEL false → **detach** owned contributions (variables/events/functions/bindings this mixin still owns). Ownership is stored in `blueprintContributions` on the object. Detach without a contribution manifest (legacy apply) only clears attachment / `appliedBlueprintIds` — it does **not** hard-delete by model names.
 
 APIs: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.
 

@@ -40,7 +40,7 @@ Each object persists `blueprintContributions`: map `blueprintId → { variables,
 
 - **Attach** claims contributed names for this id (last-apply wins: name removed from previous owner’s list).
 - **Detach** hard-deletes a name only if this id is still the owner; otherwise skip + warn.
-- Missing manifest (legacy apply): fall back to model-declared names; delete a variable only if no other contribution claims it.
+- Missing manifest (legacy apply): **do not hard-delete** variables/events/functions by model name — only clear `appliedBlueprintIds` / attachment; names are reported as skipped (`*:no-ownership`). Re-apply once to establish ownership, then detach.
 - Do not detach INSTANCE `templateId` structure, system-intrinsic embeds, or driver schema from `ensureDeviceDriverStructure`.
 - Historian purge is out of scope for v1.
 

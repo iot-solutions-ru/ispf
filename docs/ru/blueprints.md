@@ -62,7 +62,7 @@ MIXIN может включить **reevaluation** (`reevaluation.enabled` + tri
 | `OBJECT_CREATED` | Появление объекта |
 | `SERVER_READY` | После restore дерева на старте |
 
-CEL true → **attach**; CEL false → **detach** вклада, которым mixin всё ещё владеет (`blueprintContributions`).
+CEL true → **attach**; CEL false → **detach** вклада, которым mixin всё ещё владеет (`blueprintContributions`). Без манифеста (legacy apply) detach только снимает attachment / `appliedBlueprintIds`, **не** hard-delete по именам модели.
 
 API: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.
 

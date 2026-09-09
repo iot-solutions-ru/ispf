@@ -29,7 +29,7 @@ Watch-mixin на каждом проходе: CEL true → attach если ещ�
 
 ### 3. Ownership (1B)
 
-Манифест `blueprintContributions` на объекте. Detach удаляет имя только если mixin всё ещё владелец. Legacy без манифеста — fallback по объявлению модели. Historian purge — вне v1.
+Манифест `blueprintContributions` на объекте. Detach удаляет имя только если mixin всё ещё владелец. Legacy без манифеста — **не** hard-delete по именам модели (только снять applied/attachment; re-apply → detach). Historian purge — вне v1.
 
 ### 4. Runtime
 
