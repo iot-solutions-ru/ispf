@@ -34,6 +34,11 @@ export interface BlueprintBindingRule {
   formulaAppId?: string | null;
 }
 
+export interface BlueprintReevaluation {
+  enabled: boolean;
+  triggers: string[];
+}
+
 export interface BlueprintDto {
   id: string;
   name: string;
@@ -41,6 +46,7 @@ export interface BlueprintDto {
   type: BlueprintType;
   targetObjectType: ObjectType;
   suitabilityExpression: string;
+  reevaluation?: BlueprintReevaluation | null;
   objectPath: string;
   variables: BlueprintVariableDefinition[];
   events: EventDescriptor[];
@@ -74,6 +80,7 @@ export interface CreateBlueprintPayload {
   type?: BlueprintType;
   targetObjectType?: ObjectType;
   suitabilityExpression?: string;
+  reevaluation?: BlueprintReevaluation | null;
   variables?: BlueprintVariableDefinition[];
   events?: EventDescriptor[];
   functions?: FunctionDescriptor[];
@@ -87,6 +94,7 @@ export interface UpdateBlueprintPayload {
   type?: BlueprintType;
   targetObjectType?: ObjectType;
   suitabilityExpression?: string;
+  reevaluation?: BlueprintReevaluation | null;
   variables?: BlueprintVariableDefinition[];
   events?: EventDescriptor[];
   functions?: FunctionDescriptor[];

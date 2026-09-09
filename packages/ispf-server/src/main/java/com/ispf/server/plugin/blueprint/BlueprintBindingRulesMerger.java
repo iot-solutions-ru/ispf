@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class BlueprintBindingRulesMerger {
@@ -66,6 +67,18 @@ public class BlueprintBindingRulesMerger {
         if (evaluateRules) {
             bindingRuleEngine.runRulesForObject(objectPath);
         }
+    }
+
+    public void removeBlueprintRules(String objectPath, List<String> bindingRuleIds) {
+        if (bindingRuleIds == null || bindingRuleIds.isEmpty()) {
+            return;
+        }
+        Set<String> remove = Set.copyOf(bindingRuleIds);
+        List<BindingRule> remaining = bindingRulesService.listRules(objectPath).stream()
+                .filter(rule -> !remove.contains(rule.id()))
+                .toList();
+        bindingRulesService.saveRules(objectPath, remaining);
+        dependencyIndex.rebuild(objectPath);
     }
 
     public void evaluateRulesForObject(String objectPath) {

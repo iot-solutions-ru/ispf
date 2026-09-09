@@ -281,6 +281,12 @@ public class ObjectManager {
         variableService.deleteVariable(path, name);
     }
 
+    /** Deletes DB row for a variable already removed from the in-memory tree (ADR-0058 detach). */
+    @Transactional
+    public void purgeVariablePersistence(String path, String name) {
+        variableRepository.deleteByObjectPathAndName(path, name);
+    }
+
     @Transactional
     public Variable createVariable(
             String path,

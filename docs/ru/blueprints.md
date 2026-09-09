@@ -53,6 +53,19 @@
 
 См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
 
+### Opt-in reevaluation (ADR-0058)
+
+MIXIN может включить **reevaluation** (`reevaluation.enabled` + triggers). По умолчанию выкл. — поведение ADR-0018.
+
+| Триггер (v1) | Когда |
+|--------------|-------|
+| `OBJECT_CREATED` | Появление объекта |
+| `SERVER_READY` | После restore дерева на старте |
+
+CEL true → **attach**; CEL false → **detach** вклада, которым mixin всё ещё владеет (`blueprintContributions`).
+
+API: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.
+
 ### Условие применимости (CEL)
 
 Поле `suitabilityExpression` в `BlueprintDefinition` — в Web Console: *Applicability condition (CEL)*.

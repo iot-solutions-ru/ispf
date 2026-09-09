@@ -70,6 +70,32 @@ public record BlueprintDefinition(
         return "true".equalsIgnoreCase(parameters.getOrDefault(SystemIntrinsicBlueprints.PARAM_SYSTEM_INTRINSIC, "false"));
     }
 
+    /** Opt-in MIXIN reevaluation config (ADR-0058); stored in {@link #parameters()}. */
+    public BlueprintReevaluation reevaluation() {
+        return BlueprintReevaluation.fromParameters(parameters);
+    }
+
+    public BlueprintDefinition withReevaluation(BlueprintReevaluation reevaluation) {
+        Map<String, String> params = new LinkedHashMap<>(parameters);
+        BlueprintReevaluation cfg = reevaluation != null ? reevaluation : BlueprintReevaluation.DISABLED;
+        cfg.writeTo(params);
+        return new BlueprintDefinition(
+                id,
+                name,
+                description,
+                type,
+                targetObjectType,
+                suitabilityExpression,
+                variables,
+                events,
+                functions,
+                bindingRules,
+                params,
+                createdAt,
+                Instant.now()
+        );
+    }
+
     public BlueprintDefinition withSystemIntrinsicFlag() {
         if (systemIntrinsic()) {
             return this;

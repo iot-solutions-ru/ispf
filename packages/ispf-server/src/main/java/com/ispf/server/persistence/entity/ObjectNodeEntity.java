@@ -36,6 +36,9 @@ public class ObjectNodeEntity {
     @Column(name = "applied_blueprint_ids", columnDefinition = "TEXT")
     private String appliedBlueprintIdsJson;
 
+    @Column(name = "blueprint_contributions", columnDefinition = "TEXT")
+    private String blueprintContributionsJson;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -116,6 +119,14 @@ public class ObjectNodeEntity {
 
     public void setappliedBlueprintIdsJson(String appliedBlueprintIdsJson) {
         this.appliedBlueprintIdsJson = appliedBlueprintIdsJson;
+    }
+
+    public String getBlueprintContributionsJson() {
+        return blueprintContributionsJson;
+    }
+
+    public void setBlueprintContributionsJson(String blueprintContributionsJson) {
+        this.blueprintContributionsJson = blueprintContributionsJson;
     }
 
     public Instant getCreatedAt() {

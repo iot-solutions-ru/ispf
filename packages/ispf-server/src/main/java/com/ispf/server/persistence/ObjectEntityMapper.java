@@ -1,7 +1,9 @@
 package com.ispf.server.persistence;
 
 import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.object.BlueprintContribution;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
@@ -14,7 +16,9 @@ import com.ispf.server.persistence.entity.ObjectNodeEntity;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class ObjectEntityMapper {
@@ -40,6 +44,7 @@ public class ObjectEntityMapper {
         entity.setDescription(node.description());
         entity.setTemplateId(node.templateId().orElse(null));
         entity.setappliedBlueprintIdsJson(writeappliedBlueprintIds(node.appliedBlueprintIds()));
+        entity.setBlueprintContributionsJson(writeBlueprintContributions(node.blueprintContributions()));
         entity.setCreatedAt(node.createdAt());
         entity.setSortOrder(node.sortOrder());
         entity.setEventsJson(writeJson(node.events().values().toArray(new EventDescriptor[0])));
@@ -197,6 +202,29 @@ public class ObjectEntityMapper {
             return null;
         }
         return writeJson(modelIds.toArray(new String[0]));
+    }
+
+    public Map<String, BlueprintContribution> readBlueprintContributions(String json) {
+        if (json == null || json.isBlank()) {
+            return Map.of();
+        }
+        try {
+            Map<String, BlueprintContribution> parsed = objectMapper.readValue(
+                    json,
+                    new TypeReference<LinkedHashMap<String, BlueprintContribution>>() {
+                    }
+            );
+            return parsed != null ? parsed : Map.of();
+        } catch (JacksonException e) {
+            return Map.of();
+        }
+    }
+
+    public String writeBlueprintContributions(Map<String, BlueprintContribution> contributions) {
+        if (contributions == null || contributions.isEmpty()) {
+            return null;
+        }
+        return writeJson(contributions);
     }
 
     private String writeJson(Object value) {

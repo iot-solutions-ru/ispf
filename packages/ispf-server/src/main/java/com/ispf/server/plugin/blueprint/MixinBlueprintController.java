@@ -1,11 +1,11 @@
 package com.ispf.server.plugin.blueprint;
 
-import com.ispf.plugin.blueprint.BlueprintType;
-import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.plugin.blueprint.dto.BlueprintAttachmentDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintDetachResultDto;
 import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,16 +17,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/mixin-blueprints")
 public class MixinBlueprintController {
 
     private final TypedBlueprintFacade facade;
+    private final MixinReevaluationService mixinReevaluationService;
 
-    public MixinBlueprintController(TypedBlueprintFacade mixinBlueprintFacade) {
+    public MixinBlueprintController(
+            @Qualifier("mixinBlueprintFacade") TypedBlueprintFacade mixinBlueprintFacade,
+            MixinReevaluationService mixinReevaluationService
+    ) {
         this.facade = mixinBlueprintFacade;
+        this.mixinReevaluationService = mixinReevaluationService;
     }
 
     @GetMapping
@@ -65,5 +69,27 @@ public class MixinBlueprintController {
             @RequestParam @NotBlank String objectPath
     ) {
         return facade.apply(id, objectPath);
+    }
+
+    @PostMapping("/{id}/detach")
+    public BlueprintDetachResultDto detach(
+            @PathVariable String id,
+            @RequestParam @NotBlank String objectPath
+    ) {
+        return facade.detach(id, objectPath);
+    }
+
+    @PostMapping("/{id}/reevaluate")
+    public List<MixinReevaluationService.ReevaluationOutcome> reevaluate(
+            @PathVariable String id,
+            @RequestParam(required = false) String objectPath
+    ) {
+        facade.get(id);
+        if (objectPath != null && !objectPath.isBlank()) {
+            return mixinReevaluationService.reevaluateObject(objectPath).stream()
+                    .filter(o -> id.equals(o.blueprintId()))
+                    .toList();
+        }
+        return mixinReevaluationService.reevaluateAllFor(id);
     }
 }

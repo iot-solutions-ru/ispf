@@ -478,4 +478,110 @@ class BlueprintEngineTest {
         assertThat(device.getVariable("temperature")).isPresent();
         assertThat(device.getVariable("vendorId")).isPresent();
     }
+
+    @Test
+    void applyRecordsOwnershipAndDetachRemovesOwnedVariables() {
+        DataSchema schema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
+        BlueprintDefinition model = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "owned-mixin",
+                "Owned mixin",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(BlueprintVariableDefinition.of(
+                        "sysName", "name", "telemetry", schema, true, true,
+                        DataRecord.single(schema, Map.of("value", ""))
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(model);
+        PlatformObject device = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.devices.host-1",
+                ObjectType.DEVICE,
+                "host-1",
+                null,
+                null
+        );
+        objectTree.register(device);
+
+        engine.applyBlueprint(model.id(), device.path());
+        assertThat(device.blueprintContribution(model.id())).isPresent();
+        assertThat(device.ownerOfVariable("sysName")).contains(model.id());
+
+        BlueprintDetachResult detach = engine.detachBlueprint(model.id(), device.path());
+        assertThat(detach.detached()).isTrue();
+        assertThat(detach.removedVariables()).contains("sysName");
+        assertThat(device.getVariable("sysName")).isEmpty();
+        assertThat(device.appliedBlueprintIds()).doesNotContain(model.id());
+    }
+
+    @Test
+    void detachSkipsVariableStolenByLaterMixin() {
+        DataSchema schema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
+        BlueprintDefinition first = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "first-mixin",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(BlueprintVariableDefinition.of(
+                        "shared", "shared", "telemetry", schema, true, true,
+                        DataRecord.single(schema, Map.of("value", "a"))
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        BlueprintDefinition second = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "second-mixin",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(BlueprintVariableDefinition.of(
+                        "shared", "shared", "telemetry", schema, true, true,
+                        DataRecord.single(schema, Map.of("value", "b"))
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(first);
+        engine.createBlueprint(second);
+        PlatformObject device = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.devices.host-2",
+                ObjectType.DEVICE,
+                "host-2",
+                null,
+                null
+        );
+        objectTree.register(device);
+
+        engine.applyBlueprint(first.id(), device.path());
+        engine.applyBlueprint(second.id(), device.path());
+        assertThat(device.ownerOfVariable("shared")).contains(second.id());
+        assertThat(device.blueprintContribution(first.id()).orElseThrow().variables()).doesNotContain("shared");
+
+        BlueprintDetachResult detach = engine.detachBlueprint(first.id(), device.path());
+        assertThat(detach.detached()).isTrue();
+        assertThat(detach.removedVariables()).doesNotContain("shared");
+        assertThat(device.getVariable("shared")).isPresent();
+        assertThat(device.ownerOfVariable("shared")).contains(second.id());
+    }
 }

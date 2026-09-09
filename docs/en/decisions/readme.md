@@ -105,6 +105,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0055-cel-formal-verification-ai-gate](0055-cel-formal-verification-ai-gate.md) | CEL formal verification as AI condition gate — **Accepted** |
 | [0056-webauthn-idp-mfa](0056-webauthn-idp-mfa.md) | WebAuthn / IdP OTP MFA follow-up (BL-194) — **Proposed** |
 | [0057-ot-trust-wave1-dnp3-poll-only](0057-ot-trust-wave1-dnp3-poll-only.md) | OT Trust Wave 1 — DNP3 stays PRODUCTION poll-only — **Accepted** |
+| [0058-mixin-reevaluation-and-detach](0058-mixin-reevaluation-and-detach.md) | MIXIN opt-in reevaluation + ownership-aware detach — **Accepted** |
 
 ## Topic chains (read in order)
 

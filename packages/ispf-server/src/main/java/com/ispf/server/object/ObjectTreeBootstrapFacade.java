@@ -13,7 +13,9 @@ import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import com.ispf.server.plugin.blueprint.BlueprintApplicationRunner;
 import com.ispf.server.plugin.blueprint.BlueprintBootstrap;
 import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
+import com.ispf.server.plugin.blueprint.MixinReevaluationService;
 import com.ispf.server.plugin.blueprint.SystemIntrinsicBlueprintMigration;
+import com.ispf.server.plugin.blueprint.WatchMixinIndex;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +39,8 @@ public class ObjectTreeBootstrapFacade {
     private final ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap;
     private final ObjectProvider<MesBlueprintBootstrap> mesBlueprintBootstrap;
     private final ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService;
+    private final ObjectProvider<WatchMixinIndex> watchMixinIndex;
+    private final ObjectProvider<MixinReevaluationService> mixinReevaluationService;
     private final ObjectNodeRepository nodeRepository;
     private final ObjectVariableRepository variableRepository;
 
@@ -51,6 +55,8 @@ public class ObjectTreeBootstrapFacade {
             ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap,
             ObjectProvider<MesBlueprintBootstrap> mesBlueprintBootstrap,
             ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService,
+            ObjectProvider<WatchMixinIndex> watchMixinIndex,
+            ObjectProvider<MixinReevaluationService> mixinReevaluationService,
             ObjectNodeRepository nodeRepository,
             ObjectVariableRepository variableRepository
     ) {
@@ -64,6 +70,8 @@ public class ObjectTreeBootstrapFacade {
         this.platformReferenceBlueprintBootstrap = platformReferenceBlueprintBootstrap;
         this.mesBlueprintBootstrap = mesBlueprintBootstrap;
         this.clusterBootstrapService = clusterBootstrapService;
+        this.watchMixinIndex = watchMixinIndex;
+        this.mixinReevaluationService = mixinReevaluationService;
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
     }
@@ -95,6 +103,8 @@ public class ObjectTreeBootstrapFacade {
         runner.syncAllBlueprintBackedVariableMetadata();
         runner.restoreAttachments();
         runner.ensureDashboardDemoRules();
+        watchMixinIndex.ifAvailable(WatchMixinIndex::rebuild);
+        mixinReevaluationService.ifAvailable(MixinReevaluationService::onServerReady);
     }
 
     boolean shouldApplyFixtureBlueprints() {

@@ -3,6 +3,7 @@ package com.ispf.server.plugin.blueprint;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.blueprint.BlueprintApplyResult;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintDetachResult;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintException;
 import com.ispf.plugin.blueprint.BlueprintMergeWarning;
@@ -106,6 +107,23 @@ public class BlueprintApplicationService {
             objectManager.persistNodeTree(objectPath);
         }
         return results;
+    }
+
+    @Transactional
+    public BlueprintDetachResult detachBlueprintWithRules(String blueprintId, String objectPath) {
+        try {
+            BlueprintDetachResult result = blueprintEngine.detachBlueprint(blueprintId, objectPath);
+            if (result.detached()) {
+                bindingRulesMerger.removeBlueprintRules(objectPath, result.removedBindingRuleIds());
+                for (String variableName : result.removedVariables()) {
+                    objectManager.purgeVariablePersistence(objectPath, variableName);
+                }
+                objectManager.persistNodeTree(objectPath);
+            }
+            return result;
+        } catch (BlueprintException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
     }
 
     public void restoreAttachments() {
