@@ -60,7 +60,7 @@ This policy does **not** cancel the 10/10 Definition of Done; it changes **order
 
 ## Retrospective — what shipped and where we are {#retrospective}
 
-**As of 2026-07-19** · prod **0.9.105** (`ispf.example.invalid`) · code-verified score **~7.6/10** ([competitive-scorecard](competitive-scorecard.md)).
+**As of 2026-09-09** · platform **0.9.207** · code-verified score **~8.0/10** ([competitive-scorecard](competitive-scorecard.md)).
 
 ### Eras (closed → active)
 
@@ -108,7 +108,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 
 ### Subsystem readiness (legacy Phase 23 view)
 
-See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for closed-era subsystems. That table does **not** replace the competitive scorecard (~7.6/10).
+See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for closed-era subsystems. That table does **not** replace the competitive scorecard (~8.0/10).
 
 ### Where to look next
 
@@ -894,7 +894,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | --- | --- |
 | **Baseline** | Phase 24 closed, `main`, July 2026 |
 | **Updated** | 2026-07-09 (unified roadmap; domain gap audit; Phase 33 analytics) |
-| **Product score** | Code verified **~7.6/10** — [competitive-scorecard](competitive-scorecard.md) |
+| **Product score** | Code verified **~8.0/10** — [competitive-scorecard](competitive-scorecard.md) |
 | **Target** | 10/10 — see [Definition of Done](#definition-of-done--1010-overall) |
 
 ### Phases 25–33 summary
@@ -908,26 +908,26 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 ## Competitive scorecard (baseline → code verified → target)
 
 Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI / Opcenter / Tulip / mature context-tree IIoT).  
-**Code verified** — evidence from `main` source/tests (0.9.102). Full matrix: [competitive-scorecard](competitive-scorecard.md).
+**Code verified** — evidence from `main` source/tests + dated lab archives (**0.9.207**, full audit 2026-09-09). Full matrix: [competitive-scorecard](competitive-scorecard.md).
 
 | Dimension | Baseline | **Code verified** | Target | Phase |
 | --------- | :------: | :---------------: | :----: | ----- |
 | Unified data model | 9.0 | **8.5** | **10** | 25, 29, 30 |
-| SCADA / HMI / mimics | 7.0 | **7.5** | **10** | 26 |
-| OT/IT connectivity (drivers) | 6.0 | **6.5** | **10** | 25 |
-| Historian / time-series | 7.0 | **7.0** | **10** | 28 |
+| SCADA / HMI / mimics | 7.0 | **8.0** | **10** | 26 |
+| OT/IT connectivity (drivers) | 6.0 | **7.0** | **10** | 25 |
+| Historian / time-series | 7.0 | **9.5** | **10** | 28 |
 | Automation / alarms | 7.5 | **7.5** | **10** | 27, 30 |
 | Workflow / BPMN | 6.5 | **7.5** | **10** | 30 |
 | MES / ISA-95 | 5.5 | **6.5** | **10** | 29 |
 | Low-code velocity | 8.0 | **8.0** | **10** | 26, 31 |
 | AI-assisted development | 9.0 | **9.0** | **10** | 31 |
-| Security / RBAC / tenancy | 6.5 | **7.5** | **10** | 27 |
-| Deploy / scale / edge | 8.0 | **7.0** | **10** | 25, 28, 32 |
-| Ecosystem / marketplace | 4.0 | **5.0** | **10** | 32 |
+| Security / RBAC / tenancy | 6.5 | **8.5** | **10** | 27 |
+| Deploy / scale / edge | 8.0 | **7.5** | **10** | 25, 28, 32 |
+| Ecosystem / marketplace | 4.0 | **6.5** | **10** | 32 |
 | Documentation / DX | 9.0 | **8.5** | **10** | 32 |
 | Stack modernity | 9.0 | **9.5** | **10** | maintain |
 
-**Overall (code verified): ~7.6/10** — see [competitive-scorecard](competitive-scorecard.md) for full evidence (AI **9.0** after BL-177…180).
+**Overall (code verified): ~8.0/10** — see [competitive-scorecard](competitive-scorecard.md) for full evidence.
 
 ---
 
@@ -954,7 +954,7 @@ Default: [quality over features](#execution-policy--quality-over-features) — h
 
 ## Domain gap audit — IoT / SCADA / MES / ERP (2026-07-09)
 
-Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.6/10** ([competitive-scorecard](competitive-scorecard.md)); prod **0.9.105**. Assessment: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, field soak) — not more surface features.
+Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~8.0/10** ([competitive-scorecard](competitive-scorecard.md)); platform **0.9.207**. Assessment: strong application platform; gap to leadership is **industrial depth** (honest OT field, live ERP, field MES, field HMI soak) — not more surface features.
 
 **Strategy:** ISPF is **not** a full ERP (SAP/1C). Level 4 goal = reliable ISA-95 connectors. Full Opcenter-class MES is **not** "everything in core" — first-class MES objects + certified bundles + 1–2 live plants. Moat = solution velocity (AI + low-code) with Kepware-class OT trust.
 
@@ -1273,7 +1273,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-186 | 32 | K8s Helm chart | P2 | **Done** — `deploy/helm/ispf` lint/template smoke + [deployment](deployment.md) install notes; CI `helm-chart` |
 | BL-187 | 32 | ARM edge profile | P2 | **Done** — `deploy/edge/arm64/` compose + README + `validate.sh`; [demostands](demostands.md) |
 | BL-188 | 32 | Manager-of-managers | P3 | **Done (usable path)** — hub checklist + operator peer picker; **not** 10+ peer load-proven — [federation](federation.md) |
-| BL-189 | 32 | Competitive scorecard | P3 | **Done** (published; code verified ~7.6/10) |
+| BL-189 | 32 | Competitive scorecard | P3 | **Done** (published; code verified ~8.0/10 @ 0.9.207 audit 2026-09-09) |
 | BL-190 | 32 | Certification paths | P3 | **Done** — solution developer + platform admin curriculum + `examples/certification/` banks — [certification](certification.md) |
 | BL-191 | 25 | OT matrix honesty | **Done** | Matrix honesty closed — shells/poll-only → BETA; CI stub gate |
 | BL-192 | 27/32 | Compliance tender pack | P2 | **Done** — [compliance-tender-pack](compliance-tender-pack.md) |
@@ -1376,7 +1376,7 @@ Product is **10/10** when **all** of the following hold simultaneously:
 5. **Security** — MFA + per-variable ACL + hard tenancy option (BL-153…155)
 6. **HMI** — mimic 500 el CI ≥55 FPS (**Done**), offline PWA 8h (BL-151, BL-152); stretch live ≥60 = ops
 7. **Marketplace** — 10+ signed bundles, 3 external partners (BL-183, BL-184)
-8. **Scorecard** — all 14 dimensions ≥9.5, none ≤8 (BL-189) — **not met** (code verified ~7.6/10; see [competitive-scorecard](competitive-scorecard.md))
+8. **Scorecard** — all 14 dimensions ≥9.5, none ≤8 (BL-189) — **not met** (code verified ~8.0/10; see [competitive-scorecard](competitive-scorecard.md))
 9. **OT honesty** — zero stub drivers labeled PRODUCTION (BL-191)
 10. **Compliance pack** — IEC 62443 / GAMP-lite docs published (BL-192) — **met** as documentation pack: [compliance-tender-pack](compliance-tender-pack.md) (honest Exists/Partial/Gap; **not** IEC/GAMP certification or pen-test pass)
 
@@ -1713,6 +1713,7 @@ Parked: OT [Wave 1 backlog](#s31-wave-1-execution-backlog); live ERP BL-169; BPM
 | 2026-07-19 | **BL-158 Alarm shelving Done:** `alarm_shelf_requests` JPA persistence replaces in-memory `AlarmShelfApprovalService` stub; approval queue survives restart |
 | 2026-07-19 | **BL-178 Done:** full live suite `AGENT_LIVE_SUITE_MODE=full` via `run-live-suite.sh` — **52/52 @100%** (`build/agent-regression/live-suite-results.json`, generatedAt ~2026-07-18T22:34Z); nightly CI remains platform mode |
 | 2026-07-19 | **BL-206 Done (registry):** Multi-tag Analytics Query API already shipped — `POST .../analytics/query`, export, chart multi-series (master table Planned → Done) |
+| 2026-09-09 | **Full competitive audit (0.9.207):** scorecard **~7.6 → ~8.0/10**. Raised HMI **8.0**, Historian **9.5** (Enterprise L lab), Security **8.5**; folded Deploy **7.5** / Ecosystem **6.5**. OT/MES/AI/BPMN **unchanged** (lab pilots ≠ field; simulated ERP ≠ live; G-01 pen-test open). Matrix: [competitive-scorecard](competitive-scorecard.md). |
 | 2026-09-08 | **OT parallel deepen:** Mosquitto restart policy + Pilot #2/#3 daily timers (06:05/06:10 MSK). **Pilot #3 OPC UA** lab day 1 — same-host `opcua-server`↔`opcua` loopback, 12 tags, write-back, C5; fixed signed opcua packs on lab ([evidence](../evidence/ot-trust/2026-09-08-bl140-pilot3-opcua-day1.md)). External opc-plc image pull still blocked (DNS). Not OT 10/10. |
 | 2026-09-08 | **Parallel OT progress:** Jump SSH key auth restored (`lab_ed25519`). **Pilot #1 soak day 3** pass ([evidence](../evidence/ot-trust/2026-09-08-bl140-pilot1-day3.md)). **Pilot #2 MQTT** lab day 1 + C5 green — 10 topics, historian top 5 ([evidence](../evidence/ot-trust/2026-09-08-bl140-pilot2-mqtt-day1.md)). Not field Done / not OT 10/10. |
 | 2026-09-07 | **Parallel tracks (soak wait avoided):** **P-HMI-8H Lab PASS** — CDP 8h offline on demostand 0.9.207 ([evidence](../evidence/hmi-offline/2026-09-05-ispf-vps-0.9.207-journal-8h.md)); **P-HMI-FIELD** still parked. **BL-140 Pilot #2 MQTT** kickoff pack ([evidence](../evidence/ot-trust/2026-09-07-bl140-pilot2-mqtt-kickoff.md)) + soak/bootstrap/pull tools; day-1 blocked on [jump SSH](../evidence/ot-trust/2026-09-07-lab-jump-ssh-blocker.md). Pilot #1 days 3–7 still open. Not OT 10/10. |

@@ -104,7 +104,7 @@ Open items that tenders often treat as blockers. Track engineering work under Ph
 | Offline / DMZ install | [air-gap-deployment](air-gap-deployment.md) |
 | License / SBOM obligations | [license-compliance](license-compliance.md) |
 | Training (not compliance cert) | [certification](certification.md) |
-| Score honesty | [competitive-scorecard](competitive-scorecard.md) — Security **8.0 PARTIAL** (frozen matrix; pending full audit) |
+| Score honesty | [competitive-scorecard](competitive-scorecard.md) — Security **8.5 PARTIAL** (audit 2026-09-09; **G-01** pen-test still open) |
 | Pen-test SOW prep (G-01) | [pen-test-scope.md](pen-test-scope.md) · [pen-test-roe.md](pen-test-roe.md) · [pen-test-questionnaire.md](pen-test-questionnaire.md) · [pen-test-prep.md](pen-test-prep.md) · [pen-test-cases.md](pen-test-cases.md) |
 | WebAuthn / IdP MFA plan (G-04 / BL-194) | ADR [0056](decisions/0056-webauthn-idp-mfa.md) |
 | Roadmap / DoD | [roadmap](roadmap.md#definition-of-done--1010-overall) item 10 |
