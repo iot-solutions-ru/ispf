@@ -23,7 +23,13 @@ vi.mock("../../api", async (importOriginal) => {
 vi.mock("./DashboardGrid", () => ({
   default: () => <div data-testid="grid-stub" />,
 }));
-vi.mock("./WidgetPalette", () => ({ default: () => null }));
+vi.mock("./WidgetPalette", () => ({
+  default: ({ onAdd }: { onAdd: (type: string) => void }) => (
+    <button type="button" onClick={() => onAdd("value")}>
+      Add value widget
+    </button>
+  ),
+}));
 vi.mock("./DashboardSettingsPanel", () => ({ default: () => null }));
 vi.mock("./DashboardRulesPanel", () => ({ default: () => null }));
 vi.mock("./WidgetEditorPanel", () => ({ default: () => null }));
@@ -106,5 +112,35 @@ describe("DashboardBuilder", () => {
     await waitFor(() => expect(api.saveDashboardTitle).toHaveBeenCalled());
     expect(api.saveDashboardTitle).toHaveBeenCalledWith(PATH, "Renamed");
     expect(api.saveDashboardLayout).toHaveBeenCalledWith(PATH, expect.any(String));
+  });
+
+  it("does not put editor chrome on document.body", async () => {
+    const user = userEvent.setup();
+    const { render } = await import("@testing-library/react");
+    render(renderBuilder());
+
+    await screen.findByText("Demo Board");
+    await user.click(screen.getByRole("button", { name: "Editor" }));
+
+    expect(document.body.classList.contains("dashboard-editor-fullscreen")).toBe(false);
+    expect(document.body.classList.contains("dashboard-grid-dragging")).toBe(false);
+  });
+
+  it("undoes an added widget with Ctrl+Z", async () => {
+    const user = userEvent.setup();
+    const { render } = await import("@testing-library/react");
+    render(renderBuilder());
+
+    await screen.findByText("Demo Board");
+    await user.click(screen.getByRole("button", { name: "Editor" }));
+
+    const undo = screen.getByRole("button", { name: "Undo" });
+    expect(undo).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Add value widget" }));
+    expect(undo).toBeEnabled();
+
+    await user.click(undo);
+    expect(undo).toBeDisabled();
   });
 });

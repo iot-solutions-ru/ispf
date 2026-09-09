@@ -30,15 +30,12 @@
   height: auto;
 }
 
-body.dashboard-editor-fullscreen {
-  overflow: hidden;
-}
-
 .dashboard-shell--editor-fullscreen {
   position: fixed;
   inset: 0;
   z-index: 140;
   background: var(--bg);
+  overflow: hidden;
 }
 
 .dashboard-shell--video-wall-2x2,
@@ -405,7 +402,7 @@ body.dashboard-editor-fullscreen {
   cursor: grab;
 }
 
-body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item {
+.dashboard-grid-host.dashboard-grid-dragging.editable .dashboard-grid-item {
   cursor: grabbing;
   user-select: none;
 }

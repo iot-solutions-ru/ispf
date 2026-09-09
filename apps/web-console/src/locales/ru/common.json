@@ -29,6 +29,8 @@
   "action.revert": "Отменить",
   "action.run": "Беги",
   "action.running": "Бег…",
+  "action.undo": "Отменить",
+  "action.redo": "Повторить",
   "action.save": "Сохранить",
   "action.saveError": "Сохранить не удалось",
   "action.saved": "Сохранено",

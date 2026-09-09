@@ -3,6 +3,8 @@
   "error.invalidPathSegment": "Use only Latin letters, digits, underscores, or hyphens.",
   "error.invalidNamedIdentifier": "Use only Latin letters, digits, dots, underscores, or hyphens.",
   "brand.ispf": "ISPF",
+  "action.undo": "Undo",
+  "action.redo": "Redo",
   "action.save": "Save",
   "action.saving": "Saving…",
   "action.saved": "Saved",

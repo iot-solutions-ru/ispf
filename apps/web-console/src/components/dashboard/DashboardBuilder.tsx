@@ -51,6 +51,7 @@ import {
 import { applyLayoutPreset, isVideoWallPreset } from "./dashboardLayoutPresets";
 import { widgetDataBinding } from "./widgetEditorBinding";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
+import { useMimicHistory } from "../../hooks/useMimicHistory";
 import type { AdminClientFocus } from "../../context/AdminFocusContext";
 import PathBreadcrumb from "../ui/PathBreadcrumb";
 
@@ -111,7 +112,18 @@ export default function DashboardBuilder({
   const { t } = useTranslation(["dashboard", "common"]);
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"view" | "edit">(operatorMode ? "view" : "view");
-  const [draftLayout, setDraftLayout] = useState<DashboardLayout | null>(null);
+  const {
+    present: draftLayout,
+    setPresent: setDraftPresent,
+    reset: resetDraftLayout,
+    undo: undoLayout,
+    redo: redoLayout,
+    canUndo: canUndoLayout,
+    canRedo: canRedoLayout,
+  } = useMimicHistory<DashboardLayout | null>(null);
+  const commitLayout = useCallback((next: DashboardLayout) => {
+    setDraftPresent(next);
+  }, [setDraftPresent]);
   const [draftTitle, setDraftTitle] = useState<string | null>(null);
   const [draftRefreshMs, setDraftRefreshMs] = useState<number | null>(null);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
@@ -250,12 +262,12 @@ export default function DashboardBuilder({
   }, [layout.layoutPreset, onLayoutPresetChange]);
 
   useEffect(() => {
-    setDraftLayout(null);
+    resetDraftLayout(null);
     setDraftTitle(null);
     setDraftRefreshMs(null);
     setSelectedWidgetId(null);
     setEditorSidePanel("widget");
-  }, [path]);
+  }, [path, resetDraftLayout]);
 
   const title = draftTitle ?? dashboard.data?.title ?? path;
   const refreshIntervalMs =
@@ -392,7 +404,7 @@ export default function DashboardBuilder({
         layoutJson,
       };
       queryClient.setQueryData(["dashboard", path], merged);
-      setDraftLayout(null);
+      resetDraftLayout(null);
       setDraftTitle(null);
       setDraftRefreshMs(null);
       queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
@@ -410,7 +422,7 @@ export default function DashboardBuilder({
       visible: true,
     };
     const next = setChildrenAtSlot(layout, slot, [...siblings, widget]);
-    setDraftLayout(next);
+    commitLayout(next);
     setSelectedWidgetId(widget.id);
     setEditorSidePanel("widget");
     setMode("edit");
@@ -424,40 +436,40 @@ export default function DashboardBuilder({
   };
 
   const updateWidgets = (widgets: DashboardWidget[]) => {
-    setDraftLayout(setChildrenAtSlot(layout, { kind: "root" }, widgets));
+    commitLayout(setChildrenAtSlot(layout, { kind: "root" }, widgets));
   };
 
   const updateWidget = (widget: DashboardWidget) => {
-    setDraftLayout(updateWidgetInLayout(layout, widget));
+    commitLayout(updateWidgetInLayout(layout, widget));
   };
 
   const setChildrenAtSlotDraft = (slot: import("./widgetLayoutTree").WidgetSlotRef, children: DashboardWidget[]) => {
-    setDraftLayout(setChildrenAtSlot(layout, slot, children));
+    commitLayout(setChildrenAtSlot(layout, slot, children));
   };
 
   const reparentToSlot = (widgetId: string, slot: import("./widgetLayoutTree").WidgetSlotRef) => {
-    setDraftLayout(reparentWidgetToSlot(layout, widgetId, slot));
+    commitLayout(reparentWidgetToSlot(layout, widgetId, slot));
     setSelectedWidgetId(widgetId);
   };
 
   const updateLayoutSettings = (patch: Partial<DashboardLayout>) => {
-    setDraftLayout({ ...layout, ...patch });
+    commitLayout({ ...layout, ...patch });
   };
 
   const handleApplyLayoutPreset = useCallback(
     (preset: DashboardLayoutPreset) => {
-      setDraftLayout(applyLayoutPreset(preset, layout));
+      commitLayout(applyLayoutPreset(preset, layout));
       setMode("edit");
       setEditorSidePanel("settings");
     },
-    [layout]
+    [commitLayout, layout]
   );
 
   const applyLayoutTemplateMutation = useMutation({
     mutationFn: (template: string) => applyDashboardLayoutTemplate(path, template),
     onSuccess: (data) => {
       queryClient.setQueryData(["dashboard", path], data);
-      setDraftLayout(null);
+      resetDraftLayout(null);
       setDraftTitle(null);
       setDraftRefreshMs(null);
       queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
@@ -468,14 +480,12 @@ export default function DashboardBuilder({
     const widgetId = selectedWidgetIdRef.current;
     if (!widgetId) return;
     const base = layoutRef.current;
-    setDraftLayout(removeWidgetFromLayout(base, widgetId).layout);
+    commitLayout(removeWidgetFromLayout(base, widgetId).layout);
     setSelectedWidgetId(null);
-  }, []);
+  }, [commitLayout]);
 
   const handleLayoutChange = (widgets: DashboardWidget[]) => {
-    setDraftLayout((current) =>
-      setChildrenAtSlot(current ?? layout, { kind: "root" }, widgets)
-    );
+    commitLayout(setChildrenAtSlot(layoutRef.current, { kind: "root" }, widgets));
   };
 
   const isEditorWorkspace = !operatorMode && mode === "edit";
@@ -540,21 +550,26 @@ export default function DashboardBuilder({
   );
 
   useEffect(() => {
-    if (!isEditorWorkspace) {
-      return;
-    }
-    document.body.classList.add("dashboard-editor-fullscreen");
-    return () => {
-      document.body.classList.remove("dashboard-editor-fullscreen");
-    };
-  }, [isEditorWorkspace]);
-
-  useEffect(() => {
     if (!isEditorWorkspace) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Delete") return;
       if (isKeyboardEditableTarget(event.target)) return;
+      const withModifier = event.ctrlKey || event.metaKey;
+      if (withModifier && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        if (event.shiftKey) {
+          redoLayout();
+        } else {
+          undoLayout();
+        }
+        return;
+      }
+      if (withModifier && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        redoLayout();
+        return;
+      }
+      if (event.key !== "Delete") return;
       if (!selectedWidgetIdRef.current) return;
       event.preventDefault();
       deleteWidget();
@@ -562,7 +577,7 @@ export default function DashboardBuilder({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [deleteWidget, isEditorWorkspace]);
+  }, [deleteWidget, isEditorWorkspace, redoLayout, undoLayout]);
 
   if (dashboard.isLoading) {
     return <div className="dashboard-shell loading">{t("loading")}</div>;
@@ -656,6 +671,24 @@ export default function DashboardBuilder({
             >
               {t("mode.edit")}
             </Button>
+            {mode === "edit" && (
+              <>
+                <Button
+                  disabled={!canUndoLayout}
+                  onClick={undoLayout}
+                  title={`${t("common:action.undo")} (Ctrl+Z)`}
+                >
+                  {t("common:action.undo")}
+                </Button>
+                <Button
+                  disabled={!canRedoLayout}
+                  onClick={redoLayout}
+                  title={`${t("common:action.redo")} (Ctrl+Y)`}
+                >
+                  {t("common:action.redo")}
+                </Button>
+              </>
+            )}
             <Button onClick={() => setShowJson((v) => !v)}>
               {t("json")}
             </Button>
@@ -848,7 +881,7 @@ export default function DashboardBuilder({
         <HaystackBindDialog
           layout={layout}
           onApply={(nextLayout) => {
-            setDraftLayout(nextLayout);
+            commitLayout(nextLayout);
             setMode("edit");
           }}
           onClose={() => setShowHaystackBind(false)}
