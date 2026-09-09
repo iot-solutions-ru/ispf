@@ -1,7 +1,7 @@
 {
-  "contextPackVersion": "ispf-0.9.207",
-  "generatedAt": "2026-09-09T05:57:07.265570+00:00",
-  "platformVersion": "0.9.207",
+  "contextPackVersion": "ispf-0.9.208",
+  "generatedAt": "2026-09-09T10:20:14.910370+00:00",
+  "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
       "version",
@@ -214,9 +214,9 @@
       "rank": 2,
       "dimension": "SCADA / HMI / mimics",
       "baseline": 7.0,
-      "current": 7.5,
+      "current": 8.0,
       "target": 10.0,
-      "gap": 2.5,
+      "gap": 2.0,
       "phaseRef": "[roadmap](roadmap.md#phase-26--hmi-excellence) — BL-146…152",
       "keywords": "SCADA / HMI / mimics competitive gap scorecard"
     },
@@ -234,9 +234,9 @@
       "rank": 4,
       "dimension": "Historian / time-series",
       "baseline": 7.0,
-      "current": 7.0,
+      "current": 9.5,
       "target": 10.0,
-      "gap": 3.0,
+      "gap": 0.5,
       "phaseRef": "[roadmap](roadmap.md#phase-28--historian-at-scale) — BL-159…163; [roadmap](roadmap.md#phase-33--analytics-platform-af-capable) BL-200…210",
       "keywords": "Historian / time-series competitive gap scorecard"
     },
@@ -294,9 +294,9 @@
       "rank": 10,
       "dimension": "Security / RBAC / tenancy",
       "baseline": 6.5,
-      "current": 8.0,
+      "current": 8.5,
       "target": 10.0,
-      "gap": 2.0,
+      "gap": 1.5,
       "phaseRef": "[roadmap](roadmap.md#phase-27--enterprise-security) — BL-153…157",
       "keywords": "Security / RBAC / tenancy competitive gap scorecard"
     },
@@ -304,9 +304,9 @@
       "rank": 11,
       "dimension": "Deploy / scale / edge",
       "baseline": 8.0,
-      "current": 7.0,
+      "current": 7.5,
       "target": 10.0,
-      "gap": 3.0,
+      "gap": 2.5,
       "phaseRef": "[roadmap](roadmap.md#phase-25--ot-trust), [roadmap](roadmap.md#phase-28--historian-at-scale), [roadmap](roadmap.md#phase-32--ecosystem--market) — BL-144…145, BL-186…187",
       "keywords": "Deploy / scale / edge competitive gap scorecard"
     },
@@ -314,9 +314,9 @@
       "rank": 12,
       "dimension": "Ecosystem / marketplace",
       "baseline": 4.0,
-      "current": 5.0,
+      "current": 6.5,
       "target": 10.0,
-      "gap": 5.0,
+      "gap": 3.5,
       "phaseRef": "[roadmap](roadmap.md#phase-32--ecosystem--market) — BL-183…185",
       "keywords": "Ecosystem / marketplace competitive gap scorecard"
     },
@@ -1957,7 +1957,7 @@
       "title": "Object blueprints",
       "topic": "blueprints",
       "keywords": "blueprints Object blueprints blueprints",
-      "text": "> **Language:** Canonical English. Russian edition: [ru/blueprints.md](../ru/blueprints.md).\n\n# Blueprints plugin\n\n> **Status:** Stable — Models / templates. Hub: [doc-status.md](doc-status.md).\n\nModule `ispf-plugin-blueprint` — **blueprint** system (object structure templates). One engine, three kinds in the tree and API.\n\n## Three model kinds (`BlueprintType`)\n\n![Instance Types blueprints catalog](../assets/ispf-blueprints.png)\n\n| Type | Catalog | Behavior |\n|-----|---------|-----------|\n| `MIXIN` | `root.platform.mixin-blueprints` | Optional mixins — variables/events/functions **merge into** existing object |\n| `INSTANCE` | `root.platform.instance-types` | **Object type** template — create instances via instantiate |\n| `SINGLETON` | `root.platform.singleton-blueprints` | Unique live node under the catalog (`root.platform.singleton-blueprints.*`) — blueprint **and** application logic on the same object |\n\n**Where application logic lives:**\n\n| Role | Blueprint kind | Rule |\n|------|----------------|------|\n| Unique orchestrator (one per solution/cluster) | **SINGLETON** | Prefer `root.platform.singleton-blueprints.{name}` + `ensure_singleton_instance` |\n| Digital twin with per-twin logic (many) | **INSTANCE** | `instantiate_instance_type`; each instance holds twin logic |\n| Telemetry endpoint | — | **DEVICE** only |\n\n**Hard rule:** the logic-bearing object must **not** be `ObjectType.DEVICE`. A cluster may place a non-DEVICE hub under the `devices` tree with DEVICE children — that **path layout is an implementation choice**; the hub’s **type** is not. See [application-principles](application-principles.md) § Logic objects vs DEVICE.\n\n**Intrinsic schemas** (1:1 with `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) live in the registry for bootstrap but **do not appear** in the mixin-blueprints catalog and **are not used** in `appliedBlueprintIds`. Structure is embedded in the instance via `*ObjectService.ensureStructure()`.\n\nSee [0011-model-type-semantics](decisions/0011-model-type-semantics.md).\n\n### Object linkage\n\n- `templateId` — primary model (INSTANCE/SINGLETON)\n- `appliedBlueprintIds` — JSON array of all applied model ids (persisted)\n- On merge name collision: **last wins + warning** (not error)\n\n### Automatic MIXIN apply\n\nOn `POST /objects` with `autoApplyMixinBlueprints=true` (default) `BlueprintEngine.applyMixinBlueprints()` runs.\n\n**Auto-apply conditions** (all required):\n\n1. `BlueprintType.MIXIN`, not system\n2. `targetObjectType` matches object type\n3. **`suitabilityExpression` (applicability condition, CEL) is not empty** and evaluates to `true`\n4. Model not already in `appliedBlueprintIds`\n\n**Empty CEL** → model **never** auto-applies. For unconditional mixin use explicit apply: `templateId` on create, `POST /api/v1/mixin-blueprints/{id}/apply`, companion models in bundle.\n\n**Explicit apply** (template/API): only `targetObjectType`; CEL optional — if set, must be `true`.\n\nSee [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).\n\n### Applicability condition (CEL)\n\nField `suitabilityExpression` in `BlueprintDefinition` — in Web Console: *Applicability condition (CEL)*.\n\n| Value | Auto-apply | Explicit apply |\n|----------|------------|-------------|\n| empty | no | yes (by object type) |\n| `true` | to all `targetObjectType` objects | yes |\n| `self.flag.value == true` | only when true | yes, if CEL true |\n\nExpression evaluated via `ExpressionEngine` with `self` = target object variables.\n\n## Three-tier models\n\n| Tier | Source | When in registry |\n|---------|----------|------------------|\n| **System-intrinsic** | `ModelBootstrap` | Always; not in mixin-blueprints catalog |\n| **Platform built-in** | `ModelBootstrap` | Always (`dashboard-v1`, `alert-rule-v1`, …) |\n| **Fixtures** | `FixtureModelBootstrap` | Only `ispf.bootstrap.fixtures-enabled=true` |\n| **Solution** | `bundle.json` → `models[]` | On bundle deploy |\n\n**System intrinsic** (schema embedded in instance, no `appliedBlueprintIds`): `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1`, `alert-rule-v1`, `correlator-v1`, `dashboard-v1`, `report-v1`, `workflow-v1`.\n\n**Fixtures** (demo/lab, not core): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Config: `ispf.bootstrap.fixtures-enabled` (default `true`).\n\nSee [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).\n\n## API\n\n| Method | Path | Description |\n|--------|------|----------|\n| GET/POST/… | `/api/v1/mixin-blueprints` | MIXIN facades |\n| GET/POST/… | `/api/v1/instance-types` | INSTANCE facades (+ `?platformType=` for create dialog) |\n| GET/POST/… | `/api/v1/singleton-blueprints` | SINGLETON facades |\n| GET/POST/… | `/api/v1/blueprints` | Legacy unified API (compatibility) |\n\n## Model composition (`BlueprintDefinition`)\n\n- Variables (`ModelVariableDefinition`) — schema, default, group, readable/writable\n- Events (`EventDescriptor`)\n- Functions (`FunctionDescriptor`)\n- Binding rules (`ModelBindingRule`) — see [bindings](bindings.md)\n- Metadata: name, description, `ObjectType`, `BlueprintType`\n\n## Engine\n\n| Class | Purpose |\n|-------|------------|\n| `ModelRegistry` | In-memory model catalog |\n| `BlueprintEngine` | CRUD, apply, instantiate, fromObject, `applyRelativeModels` (CEL-gated) |\n| `ModelBootstrap` | Platform built-in + system-intrinsic models |\n| `FixtureModelBootstrap` | Demo/lab fixture models (`fixtures-enabled`) |\n| `ModelPersistenceService` | Persist user models in `blueprint_definitions` (REQ-PF-07) |\n\nUser models (non-`builtin`) load from DB on server start after `ensureBuiltInModels()`.\n\n## API (unified)\n\n| Method | Path | Description |\n|--------|------|----------|\n| GET | `/api/v1/blueprints` | List |\n| GET | `/api/v1/blueprints/{id}` | By ID |\n| GET | `/api/v1/blueprints/by-name/{name}` | By name |\n| POST | `/api/v1/blueprints` | Create |\n| PUT | `/api/v1/blueprints/{id}` |"
+      "text": "> **Language:** Canonical English. Russian edition: [ru/blueprints.md](../ru/blueprints.md).\n\n# Blueprints plugin\n\n> **Status:** Stable — Models / templates. Hub: [doc-status.md](doc-status.md).\n\nModule `ispf-plugin-blueprint` — **blueprint** system (object structure templates). One engine, three kinds in the tree and API.\n\n## Three model kinds (`BlueprintType`)\n\n![Instance Types blueprints catalog](../assets/ispf-blueprints.png)\n\n| Type | Catalog | Behavior |\n|-----|---------|-----------|\n| `MIXIN` | `root.platform.mixin-blueprints` | Optional mixins — variables/events/functions **merge into** existing object |\n| `INSTANCE` | `root.platform.instance-types` | **Object type** template — create instances via instantiate |\n| `SINGLETON` | `root.platform.singleton-blueprints` | Unique live node under the catalog (`root.platform.singleton-blueprints.*`) — blueprint **and** application logic on the same object |\n\n**Where application logic lives:**\n\n| Role | Blueprint kind | Rule |\n|------|----------------|------|\n| Unique orchestrator (one per solution/cluster) | **SINGLETON** | Prefer `root.platform.singleton-blueprints.{name}` + `ensure_singleton_instance` |\n| Digital twin with per-twin logic (many) | **INSTANCE** | `instantiate_instance_type`; each instance holds twin logic |\n| Telemetry endpoint | — | **DEVICE** only |\n\n**Hard rule:** the logic-bearing object must **not** be `ObjectType.DEVICE`. A cluster may place a non-DEVICE hub under the `devices` tree with DEVICE children — that **path layout is an implementation choice**; the hub’s **type** is not. See [application-principles](application-principles.md) § Logic objects vs DEVICE.\n\n**Intrinsic schemas** (1:1 with `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) live in the registry for bootstrap but **do not appear** in the mixin-blueprints catalog and **are not used** in `appliedBlueprintIds`. Structure is embedded in the instance via `*ObjectService.ensureStructure()`.\n\nSee [0011-model-type-semantics](decisions/0011-model-type-semantics.md).\n\n### Object linkage\n\n- `templateId` — primary model (INSTANCE/SINGLETON)\n- `appliedBlueprintIds` — JSON array of all applied model ids (persisted)\n- On merge name collision: **last wins + warning** (not error)\n\n### Automatic MIXIN apply\n\nOn `POST /objects` with `autoApplyMixinBlueprints=true` (default) `BlueprintEngine.applyMixinBlueprints()` runs.\n\n**Auto-apply conditions** (all required):\n\n1. `BlueprintType.MIXIN`, not system\n2. `targetObjectType` matches object type\n3. **`suitabilityExpression` (applicability condition, CEL) is not empty** and evaluates to `true`\n4. Model not already in `appliedBlueprintIds`\n\n**Empty CEL** → model **never** auto-applies. For unconditional mixin use explicit apply: `templateId` on create, `POST /api/v1/mixin-blueprints/{id}/apply`, companion models in bundle.\n\n**Explicit apply** (template/API): only `targetObjectType`; CEL optional — if set, must be `true`.\n\nSee [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).\n\n### Opt-in reevaluation (ADR-0058)\n\nMIXIN may enable **reevaluation** (`reevaluation.enabled` + triggers). Default off → sticky ADR-0018 behavior.\n\n| Trigger (v1) | When |\n|--------------|------|\n| `OBJECT_CREATED` | New object appears (`ObjectChangeType.CREATED`) |\n| `SERVER_READY` | After tree + attachment restore on startup |\n\nOn each pass: CEL true → **attach** (if not applied); CEL false → **detach** owned contributions (variables/events/functions/bindings this mixin still owns). Ownership is stored in `blueprintContributions` on the object.\n\nAPIs: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.\n\n### Applicability condition (CEL)\n\nField `suitabilityExpression` in `BlueprintDefinition` — in Web Console: *Applicability condition (CEL)*.\n\n| Value | Auto-apply | Explicit apply |\n|----------|------------|-------------|\n| empty | no | yes (by object type) |\n| `true` | to all `targetObjectType` objects | yes |\n| `self.flag.value == true` | only when true | yes, if CEL true |\n\nExpression evaluated via `ExpressionEngine` with `self` = target object variables.\n\n## Three-tier models\n\n| Tier | Source | When in registry |\n|---------|----------|------------------|\n| **System-intrinsic** | `ModelBootstrap` | Always; not in mixin-blueprints catalog |\n| **Platform built-in** | `ModelBootstrap` | Always (`dashboard-v1`, `alert-rule-v1`, …) |\n| **Fixtures** | `FixtureModelBootstrap` | Only `ispf.bootstrap.fixtures-enabled=true` |\n| **Solution** | `bundle.json` → `models[]` | On bundle deploy |\n\n**System intrinsic** (schema embedded in instance, no `appliedBlueprintIds`): `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1`, `alert-rule-v1`, `correlator-v1`, `dashboard-v1`, `report-v1`, `workflow-v1`.\n\n**Fixtures** (demo/lab, not core): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Config: `ispf.bootstrap.fixtures-enabled` (default `true`).\n\nSee [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).\n\n## API\n\n| Method | Path | Description |\n|--------|------|----------|\n| GET/POST/… | `/api/v1/mixin-blueprints` | MIXIN facades |\n| GET/POST/… | `/api/v1/instance-types` | INSTANCE facades (+ `?platformType=` for create dialog) |\n| GET/POST/… | `/api/v1/singleton-blueprints` | SINGLETON facades |\n| GET/POST/… | `/api/v1/blueprints` | Legacy unified API (compatibility) |\n\n## Model composition (`BlueprintDefinition`)\n\n- Variables (`ModelVariableDefinition`) — schema, default, group, readable/writable\n- Events (`EventDescriptor`)\n- Functions (`FunctionDescriptor`)\n- Binding rules (`ModelBindingRule`) — see [bindings](bindings.md)\n- Metadata: name, description, `ObjectType`, `BlueprintType`\n\n## Engine\n\n| Class | Purpose |\n|-------|------------|\n| `ModelRegistry` | In-memory model catalog |\n| `BlueprintEngine` | CRUD, appl"
     },
     {
       "id": "drivers",
@@ -3252,6 +3252,12 @@
       "path": "docs/en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md",
       "title": "ADR-0057: OT Trust Wave 1 — DNP3 stays PRODUCTION poll-only",
       "keywords": "adr decision 0057-ot-trust-wave1-dnp3-poll-only ADR-0057: OT Trust Wave 1 — DNP3 stays PRODUCTION poll-only"
+    },
+    {
+      "id": "adr-0058-mixin-reevaluation-and-detach",
+      "path": "docs/en/decisions/0058-mixin-reevaluation-and-detach.md",
+      "title": "ADR-0058: MIXIN reevaluation and ownership-aware detach",
+      "keywords": "adr decision 0058-mixin-reevaluation-and-detach ADR-0058: MIXIN reevaluation and ownership-aware detach"
     }
   ],
   "apiSlice": {
@@ -38187,5 +38193,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "3d3cebdd750e001bd909f28611924f6bf79cab027fb02cc9b00eef123e653ff3"
+  "contentSha256": "964973c27194b770146c0f55efedfef7e71d67cbaf28114f48e541334bde9361"
 }

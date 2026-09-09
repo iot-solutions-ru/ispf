@@ -12,6 +12,7 @@ import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantVirtualRootService;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -85,6 +88,116 @@ public class DriverRuntimeController {
             Authentication authentication
     ) {
         return driverRuntimeService.browseDriverChildren(requirePathAccess(devicePath, authentication), nodeId);
+    }
+
+    @GetMapping("/catalog/artifacts")
+    public List<com.ispf.driver.DriverPointCatalog.ArtifactInfo> listCatalogArtifacts(
+            @RequestParam(defaultValue = "snmp") String driverId,
+            Authentication authentication
+    ) {
+        requireAuthenticated(authentication);
+        return driverRuntimeService.listDriverArtifacts(driverId);
+    }
+
+    @PostMapping("/catalog/artifacts")
+    public com.ispf.driver.DriverPointCatalog.ArtifactInfo importCatalogArtifact(
+            @RequestParam(defaultValue = "snmp") String driverId,
+            @RequestBody CatalogArtifactUploadRequest request,
+            Authentication authentication
+    ) {
+        requireAuthenticated(authentication);
+        if (request == null || request.fileName() == null || request.fileName().isBlank()) {
+            throw new IllegalArgumentException("fileName is required");
+        }
+        byte[] content = decodeArtifactContent(request);
+        if (content.length > 2 * 1024 * 1024) {
+            throw new IllegalArgumentException("Artifact content exceeds 2 MiB");
+        }
+        return driverRuntimeService.importDriverArtifact(driverId, request.fileName(), content);
+    }
+
+    @DeleteMapping("/catalog/artifacts")
+    public Map<String, Object> deleteCatalogArtifact(
+            @RequestParam(defaultValue = "snmp") String driverId,
+            @RequestParam String name,
+            Authentication authentication
+    ) {
+        requireAuthenticated(authentication);
+        driverRuntimeService.deleteDriverArtifact(driverId, name);
+        return Map.of("deleted", true, "name", name);
+    }
+
+    @GetMapping("/catalog/browse")
+    public List<com.ispf.driver.DriverPointCatalog.CatalogNode> browseCatalog(
+            @RequestParam(defaultValue = "snmp") String driverId,
+            @RequestParam(required = false) String nodeId,
+            Authentication authentication
+    ) {
+        requireAuthenticated(authentication);
+        return driverRuntimeService.browseDriverCatalog(driverId, nodeId);
+    }
+
+    @PostMapping("/catalog/propose")
+    public List<com.ispf.driver.DriverPointCatalog.PointProposal> proposeCatalogPoints(
+            @RequestParam(defaultValue = "snmp") String driverId,
+            @RequestBody ProposePointsRequest request,
+            Authentication authentication
+    ) {
+        requireAuthenticated(authentication);
+        List<com.ispf.driver.DriverPointCatalog.PointSelection> selections =
+                request != null && request.selections() != null ? request.selections() : List.of();
+        return driverRuntimeService.proposeDriverPoints(driverId, selections);
+    }
+
+    @PostMapping("/catalog/import-points")
+    public DriverRuntimeService.ImportPointsResult importCatalogPoints(
+            @RequestParam String devicePath,
+            @RequestParam(defaultValue = "snmp") String driverId,
+            @RequestBody ImportPointsRequest request,
+            Authentication authentication
+    ) {
+        String canonical = requirePathAccess(devicePath, authentication);
+        List<com.ispf.driver.DriverPointCatalog.PointProposal> proposals;
+        if (request != null && request.proposals() != null && !request.proposals().isEmpty()) {
+            proposals = request.proposals();
+        } else {
+            List<com.ispf.driver.DriverPointCatalog.PointSelection> selections =
+                    request != null && request.selections() != null ? request.selections() : List.of();
+            proposals = driverRuntimeService.proposeDriverPoints(driverId, selections);
+        }
+        return driverRuntimeService.importDriverPoints(canonical, proposals);
+    }
+
+    public record CatalogArtifactUploadRequest(String fileName, String contentBase64, String contentText) {
+    }
+
+    public record ProposePointsRequest(List<com.ispf.driver.DriverPointCatalog.PointSelection> selections) {
+    }
+
+    public record ImportPointsRequest(
+            List<com.ispf.driver.DriverPointCatalog.PointSelection> selections,
+            List<com.ispf.driver.DriverPointCatalog.PointProposal> proposals
+    ) {
+    }
+
+    private static byte[] decodeArtifactContent(CatalogArtifactUploadRequest request) {
+        if (request.contentText() != null && !request.contentText().isBlank()) {
+            return request.contentText().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (request.contentBase64() == null || request.contentBase64().isBlank()) {
+            throw new IllegalArgumentException("contentText or contentBase64 is required");
+        }
+        try {
+            return Base64.getDecoder().decode(request.contentBase64().trim());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid contentBase64", e);
+        }
+    }
+
+    private static void requireAuthenticated(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalArgumentException("Authentication required");
+        }
     }
 
     @PostMapping("/write")

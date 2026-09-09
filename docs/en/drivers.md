@@ -274,6 +274,13 @@ Config: `serialPort`, `baudRate`, `dataBits`, `stopBits`, `parity`, `timeoutMs`,
 
 SNMP4J, v1/v2c/v3 GET/SET (v3: USM MD5/SHA + DES/AES128).
 
+**MIB library (driver capability):** upload `.mib` into a **shared** catalog for driver `snmp`
+(`${ISPF_DRIVER_PACKS_DIR}/snmp/mibs` or `ISPF_SNMP_MIBS_DIR`). All SNMP devices browse the same
+library; selecting OBJECT-TYPEs creates variables + `driverPointMappingsJson` **only on the current
+device**. Scalars get `.0`; table columns need an explicit index (no live WALK in v1). Lightweight
+SMIv2 OBJECT-TYPE parser lives in the driver pack — not a platform MIB service.
+API: `/api/v1/drivers/runtime/catalog/*`.
+
 Point format: `oid`, `oid:VALUE_KIND` (`STRING`, `INTEGER`, …), or `oid:VALUE_KIND:optional` — the last variant does not abort poll when the OID is missing (for example `hrProcessorLoad` on a Windows SNMP agent).
 
 Loopback test: `SnmpDeviceDriverTest` + in-process `SnmpLoopbackAgent` (GET/SET v2c).
