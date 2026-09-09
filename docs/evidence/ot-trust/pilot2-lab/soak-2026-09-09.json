@@ -1,0 +1,32 @@
+{
+  "utc": "2026-09-09T03:05:04Z",
+  "date": "2026-09-09",
+  "day": null,
+  "site": "lab-ot-vlan-192.168.100",
+  "baseUrl": "http://127.0.0.1:8080",
+  "devicePath": "root.platform.devices.pilot2-mqtt.fleet",
+  "driverStatus": {
+    "devicePath": "root.platform.devices.pilot2-mqtt.fleet",
+    "driverId": "mqtt",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 1000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  },
+  "tagCount": 10,
+  "samples": {
+    "dev00": {
+      "raw": "ok-00"
+    },
+    "dev01": {
+      "raw": "ok-01"
+    },
+    "dev09": {
+      "raw": "ok-09"
+    }
+  },
+  "pass": true,
+  "incidents": []
+}

@@ -32,7 +32,7 @@ Day-1: [2026-09-08-bl140-pilot3-opcua-day1.md](2026-09-08-bl140-pilot3-opcua-day
 | Day | Date (UTC) | Tags online | Incidents | Historian OK | Write OK | Notes |
 | --- | ---------- | ----------- | --------- | ------------ | -------- | ----- |
 | 1 | 2026-09-08 | 12 | none | ☑ | ☑ | Loopback UA; packs resignatured — [day1](2026-09-08-bl140-pilot3-opcua-day1.md) |
-| 2 | | | | ☐ | ☐ | |
+| 2 | 2026-09-09 | 12 | none | ☑ | ☑ | Auto soak-check 06:10 MSK pass — [day2](2026-09-09-bl140-pilot3-opcua-day2.md) · [JSON](pilot3-lab/soak-day2-2026-09-09.json) |
 | 3 | | | | ☐ | ☐ | |
 | 4 | | | | ☐ | ☐ | |
 | 5 | | | | ☐ | ☐ | |

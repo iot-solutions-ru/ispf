@@ -39,7 +39,7 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | 1 | 2026-09-06 | 50 | none | ☑ | ☑ | ☐ | Peer `:1502` RUNNING; C5 disconnect pass; soak-check timer armed ([day1](pilot1-lab/day1-2026-09-06.json), [c5](pilot1-lab/c5-2026-09-06.json), [soak](pilot1-lab/soak-day1-2026-09-06.json)) |
 | 2 | 2026-09-07 | 50 | none | ☑ | ☑ | ☐ | Auto soak-check 06:00 MSK pass — [day2](2026-09-07-bl140-pilot1-day2.md) · [JSON](pilot1-lab/soak-day2-2026-09-07.json) |
 | 3 | 2026-09-08 | 50 | none | ☑ | ☑ | ☐ | Auto soak-check 06:00 MSK pass — [day3](2026-09-08-bl140-pilot1-day3.md) · [JSON](pilot1-lab/soak-day3-2026-09-08.json) |
-| 4 | | | | ☐ | ☐ | ☐ | |
+| 4 | 2026-09-09 | 50 | none | ☑ | ☑ | ☐ | Auto soak-check 06:00 MSK pass — [day4](2026-09-09-bl140-pilot1-day4.md) · [JSON](pilot1-lab/soak-day4-2026-09-09.json) |
 | 5 | | | | ☐ | ☐ | ☐ | |
 | 6 | | | | ☐ | ☐ | ☐ | |
 | 7 | | | | ☐ | ☐ | ☐ | Sign-off ready? |
@@ -54,5 +54,7 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | Lab pre-gate smoke | BL-141 compose peers / CI |
 | Day-1 evidence | [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-day1.md) |
 | Day-2 soak | [2026-09-07-bl140-pilot1-day2.md](2026-09-07-bl140-pilot1-day2.md) |
+| Day-3 soak | [2026-09-08-bl140-pilot1-day3.md](2026-09-08-bl140-pilot1-day3.md) |
+| Day-4 soak | [2026-09-09-bl140-pilot1-day4.md](2026-09-09-bl140-pilot1-day4.md) |
 | C5 disconnect | [2026-09-06-bl140-pilot1-c5-disconnect.md](2026-09-06-bl140-pilot1-c5-disconnect.md) |
 | Customer ticket | n/a (internal lab) |

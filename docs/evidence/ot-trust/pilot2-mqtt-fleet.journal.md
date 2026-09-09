@@ -38,7 +38,7 @@ Day-1: [2026-09-08-bl140-pilot2-mqtt-day1.md](2026-09-08-bl140-pilot2-mqtt-day1.
 | Day | Date (UTC) | Topics online | Incidents (P0/P1) | Historian OK | Write OK | Notes |
 | --- | ---------- | ------------- | ----------------- | ------------ | -------- | ----- |
 | 1 | 2026-09-08 | 10 | none | ☑ | ☑ | Mosquitto + device green; C5 pass — [day1](2026-09-08-bl140-pilot2-mqtt-day1.md) · [JSON](pilot2-lab/day1-2026-09-08.json) |
-| 2 | | | | ☐ | ☐ | |
+| 2 | 2026-09-09 | 10 | none | ☑ | ☑ | Auto soak-check 06:05 MSK pass — [day2](2026-09-09-bl140-pilot2-mqtt-day2.md) · [JSON](pilot2-lab/soak-day2-2026-09-09.json) |
 | 3 | | | | ☐ | ☐ | |
 | 4 | | | | ☐ | ☐ | |
 | 5 | | | | ☐ | ☐ | |
