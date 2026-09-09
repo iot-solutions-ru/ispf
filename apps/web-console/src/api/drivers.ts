@@ -72,6 +72,88 @@ export function browseDriverNodes(
   return request(`/api/v1/drivers/runtime/browse?${params}`);
 }
 
+export type DriverCatalogArtifact = {
+  name: string;
+  moduleName: string;
+  sizeBytes: number;
+  status: string;
+};
+
+export type DriverCatalogNode = {
+  nodeId: string;
+  displayName: string;
+  nodeClass: string;
+  oid: string;
+  syntax: string;
+  maxAccess: string;
+  units: string;
+  description: string;
+  selectable: boolean;
+};
+
+export type DriverPointSelection = {
+  nodeId: string;
+  index?: string;
+};
+
+export type DriverImportPointsResult = {
+  createdVariables: number;
+  updatedMappings: number;
+  variableNames: string[];
+};
+
+export function listDriverCatalogArtifacts(
+  driverId = "snmp",
+): Promise<DriverCatalogArtifact[]> {
+  const params = new URLSearchParams({ driverId });
+  return request(`/api/v1/drivers/runtime/catalog/artifacts?${params}`);
+}
+
+export function importDriverCatalogArtifact(
+  fileName: string,
+  contentText: string,
+  driverId = "snmp",
+): Promise<DriverCatalogArtifact> {
+  const params = new URLSearchParams({ driverId });
+  return request(`/api/v1/drivers/runtime/catalog/artifacts?${params}`, {
+    method: "POST",
+    body: JSON.stringify({ fileName, contentText }),
+  });
+}
+
+export function deleteDriverCatalogArtifact(
+  name: string,
+  driverId = "snmp",
+): Promise<{ deleted: boolean; name: string }> {
+  const params = new URLSearchParams({ driverId, name });
+  return request(`/api/v1/drivers/runtime/catalog/artifacts?${params}`, {
+    method: "DELETE",
+  });
+}
+
+export function browseDriverCatalog(
+  nodeId?: string,
+  driverId = "snmp",
+): Promise<DriverCatalogNode[]> {
+  const params = new URLSearchParams({ driverId });
+  if (nodeId) {
+    params.set("nodeId", nodeId);
+  }
+  return request(`/api/v1/drivers/runtime/catalog/browse?${params}`);
+}
+
+export function importDriverCatalogPoints(
+  devicePath: string,
+  selections: DriverPointSelection[],
+  driverId = "snmp",
+): Promise<DriverImportPointsResult> {
+  const params = new URLSearchParams({ devicePath, driverId });
+  return request(`/api/v1/drivers/runtime/catalog/import-points?${params}`, {
+    method: "POST",
+    body: JSON.stringify({ selections }),
+  });
+}
+
 export function writeDriverPoint(
   devicePath: string,
   pointId: string,

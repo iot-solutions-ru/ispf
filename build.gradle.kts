@@ -197,11 +197,19 @@ tasks.register<Exec>("buildContextPack") {
     group = "ai"
     description = "Regenerate ai/context-pack.json from docs and examples (FW-41); runs before server bootJar"
     val python = listOf("python3", "python").firstOrNull { cmd ->
-        providers.exec {
-            commandLine("sh", "-c", "command -v $cmd")
-            isIgnoreExitValue = true
-        }.result.get().exitValue == 0
-    } ?: "python3"
+        try {
+            providers.exec {
+                if (org.gradle.internal.os.OperatingSystem.current().isWindows) {
+                    commandLine("cmd", "/c", "where $cmd")
+                } else {
+                    commandLine("sh", "-c", "command -v $cmd")
+                }
+                isIgnoreExitValue = true
+            }.result.get().exitValue == 0
+        } catch (_: Exception) {
+            false
+        }
+    } ?: if (org.gradle.internal.os.OperatingSystem.current().isWindows) "python" else "python3"
     commandLine(python, contextPackScript.asFile.absolutePath)
     environment("ISPF_VERSION", version.toString())
     inputs.file(contextPackScript)

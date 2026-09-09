@@ -273,6 +273,13 @@ Write: `HOLDING` (FC6), `COIL` (FC5); `INPUT`/`DISCRETE` — только чте
 
 SNMP4J, v1/v2c/v3 GET/SET (v3: USM MD5/SHA + DES/AES128).
 
+**Библиотека MIB (capability драйвера):** загрузка `.mib` в **общую** библиотеку драйвера `snmp`
+(`${ISPF_DRIVER_PACKS_DIR}/snmp/mibs` или `ISPF_SNMP_MIBS_DIR`). Все SNMP-устройства видят одну
+библиотеку; выбор OBJECT-TYPE создаёт переменные и `driverPointMappingsJson` **только на текущем
+устройстве**. У скаляров добавляется `.0`; для колонок таблиц нужен явный индекс (live WALK в v1 нет).
+Лёгкий SMIv2-парсер OBJECT-TYPE — в driver pack, не сервис платформы.
+API: `/api/v1/drivers/runtime/catalog/*`.
+
 Формат точки: `oid`, `oid:VALUE_KIND` (`STRING`, `INTEGER`, …), или `oid:VALUE_KIND:optional` — последний вариант не прерывает poll при отсутствии OID (например `hrProcessorLoad` на Windows SNMP agent).
 
 Loopback-тест: `SnmpDeviceDriverTest` + in-process `SnmpLoopbackAgent` (GET/SET v2c).
