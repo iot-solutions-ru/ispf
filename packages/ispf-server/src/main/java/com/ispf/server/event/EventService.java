@@ -259,6 +259,25 @@ public class EventService {
         );
     }
 
+    /**
+     * Deletes persisted journal rows (and matching in-memory cache entries) older than {@code olderThan}
+     * in one store statement.
+     */
+    public long purgeJournal(Instant olderThan, String objectPath) {
+        if (olderThan == null) {
+            throw new IllegalArgumentException("olderThan is required");
+        }
+        if (objectPath != null && !objectPath.isBlank()) {
+            String path = objectPath.trim();
+            if (path.indexOf('%') >= 0 || path.indexOf('_') >= 0 || path.indexOf('\'') >= 0 || path.indexOf(';') >= 0) {
+                throw new IllegalArgumentException("Invalid objectPath");
+            }
+        }
+        long deleted = eventJournalStore.deleteOlderThan(olderThan, objectPath);
+        recentEventCache.purgeOlderThan(olderThan, objectPath);
+        return deleted;
+    }
+
     private boolean shouldPersistJournal(String objectPath) {
         return eventJournalProperties.isEnabled() && objectManager.isEventJournalEnabled(objectPath);
     }

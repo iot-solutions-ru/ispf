@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { fetchEventJournalStatus, fetchEvents } from "../../api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchEventJournalStatus, fetchEvents, purgeEventJournal } from "../../api";
 import {
   OPERATOR_SIDEBAR_EVENTS_QUERY_KEY,
   useOperatorSidebarRefresh,
@@ -57,6 +57,7 @@ export default function EventJournalPanel({
   publishAdminFocus = false,
 }: EventJournalPanelProps) {
   const { t } = useTranslation(["operator", "runtime", "journal", "common"]);
+  const queryClient = useQueryClient();
   const operatorScoped = Boolean(appId && ui);
   const operatorJournalPath = ui?.eventJournalObjectPath?.trim() || undefined;
   const [mode, setMode] = usePersistentTab<JournalViewMode>(
@@ -107,6 +108,18 @@ export default function EventJournalPanel({
     // Gating on journal-status.enabled froze the list after the first paint.
     refetchInterval: mode === "live" ? (operatorScoped ? 5000 : 8000) : false,
     staleTime: mode === "live" ? 0 : 30_000,
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: () =>
+      purgeEventJournal({
+        olderThan: new Date().toISOString(),
+        objectPath: objectPath,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["events"] });
+      await queryClient.invalidateQueries({ queryKey: ["event-journal-status"] });
+    },
   });
 
   const rawItems = useMemo(() => {
@@ -253,6 +266,8 @@ export default function EventJournalPanel({
     && !events.isLoading
     && !events.error;
 
+  const canPurgeHistory = publishAdminFocus && mode === "history" && !events.isLoading && !purgeMutation.isPending;
+
   return (
     <JournalViewShell
       title={t("eventJournal.title")}
@@ -283,15 +298,38 @@ export default function EventJournalPanel({
       exportFilenameBase={exportFilenameBase}
       exportRows={exportRows}
       actions={
-        canClearLive ? (
-          <button
-            type="button"
-            className="btn small"
-            title={t("eventJournal.clearHint")}
-            onClick={clearVisible}
-          >
-            {t("eventJournal.clear")}
-          </button>
+        canPurgeHistory || canClearLive ? (
+          <>
+            {canPurgeHistory ? (
+              <button
+                type="button"
+                className="btn small"
+                title={t("eventJournal.purgeHint")}
+                disabled={purgeMutation.isPending}
+                onClick={() => {
+                  const pathNote = objectPath
+                    ? t("eventJournal.purgeConfirmPath", { path: objectPath })
+                    : t("eventJournal.purgeConfirmAll");
+                  if (!window.confirm(t("eventJournal.purgeConfirm", { scope: pathNote }))) {
+                    return;
+                  }
+                  purgeMutation.mutate();
+                }}
+              >
+                {t("eventJournal.purge")}
+              </button>
+            ) : null}
+            {canClearLive ? (
+              <button
+                type="button"
+                className="btn small"
+                title={t("eventJournal.clearHint")}
+                onClick={clearVisible}
+              >
+                {t("eventJournal.clear")}
+              </button>
+            ) : null}
+          </>
         ) : undefined
       }
       filters={

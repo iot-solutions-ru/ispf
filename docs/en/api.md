@@ -155,6 +155,7 @@ See also: [applications](applications.md), [reports](reports.md), [plugins](plug
 |--------|------|-------|-------------|
 | GET | `/api/v1/events` | operator+ | Journal (`objectPath`, `limit` ≤ 200) |
 | POST | `/api/v1/events/fire` | operator+ | Publish event |
+| POST | `/api/v1/events/journal/purge` | admin (tenant-admin if `objectPath` is in scope) | One-statement delete of persisted rows older than `olderThan`. Body: `{ "olderThan": "<ISO-8601>", "objectPath": "<optional>" }`. Cassandra/Scylla returns 409 (TTL only). |
 
 ### Fire event
 

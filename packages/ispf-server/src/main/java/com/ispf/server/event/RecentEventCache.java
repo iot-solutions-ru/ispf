@@ -4,6 +4,7 @@ import com.ispf.core.object.ObjectEvent;
 import com.ispf.server.config.EventJournalProperties;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +53,41 @@ public class RecentEventCache {
         synchronized (lock) {
             return collect(limit, objectPath);
         }
+    }
+
+    public void purgeOlderThan(Instant cutoff, String objectPath) {
+        if (!isEnabled() || cutoff == null || ring.length == 0) {
+            return;
+        }
+        synchronized (lock) {
+            List<ObjectEvent> kept = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                int index = (head - size + i + ring.length) % ring.length;
+                ObjectEvent event = ring[index];
+                if (event == null) {
+                    continue;
+                }
+                if (matchesPath(event.objectPath(), objectPath) && event.timestamp().isBefore(cutoff)) {
+                    continue;
+                }
+                kept.add(event);
+            }
+            java.util.Arrays.fill(ring, null);
+            head = 0;
+            size = 0;
+            for (ObjectEvent event : kept) {
+                ring[head] = event;
+                head = (head + 1) % ring.length;
+                size++;
+            }
+        }
+    }
+
+    private static boolean matchesPath(String eventPath, String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return true;
+        }
+        return objectPath.equals(eventPath) || eventPath.startsWith(objectPath + ".");
     }
 
     public Optional<ObjectEvent> findLatest(String objectPath, String eventName) {

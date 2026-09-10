@@ -174,7 +174,37 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
 
     @Override
     public void purgeOlderThan(Instant cutoff) {
-        // Retention handled by MergeTree TTL.
+        deleteOlderThan(cutoff, null);
+    }
+
+    @Override
+    public long deleteOlderThan(Instant cutoff, String objectPath) {
+        String cutoffText = CH_DATETIME.format(cutoff);
+        String where = "occurred_at < parseDateTime64BestEffort('" + cutoffText + "')";
+        if (objectPath != null && !objectPath.isBlank()) {
+            String escaped = objectPath.replace("\\", "\\\\").replace("'", "\\'");
+            where += " AND (object_path = '" + escaped + "' OR startsWith(object_path, '" + escaped + ".'))";
+        }
+        long matching = countMatching(where);
+        executeStatement("ALTER TABLE " + qualifiedTable() + " DELETE WHERE " + where);
+        recordCounter.recordDeleted(Math.max(0, matching));
+        return matching;
+    }
+
+    private long countMatching(String where) {
+        String body = postQuery(
+                "SELECT count() AS cnt FROM " + qualifiedTable() + " WHERE " + where + " FORMAT JSONEachRow",
+                Map.of()
+        );
+        if (body == null || body.isBlank()) {
+            return 0L;
+        }
+        try {
+            JsonNode node = objectMapper.readTree(body.lines().findFirst().orElse("{}"));
+            return node.path("cnt").asLong(0);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to parse ClickHouse purge count", ex);
+        }
     }
 
     @Override
