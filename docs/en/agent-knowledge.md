@@ -37,7 +37,7 @@ Forbidden: platform Flyway for app tables, hardcoded BFF routes, domain Java in 
 | SHIP | Bundle | Rows **C**, **D**, **E** (import), **F**, **H** |
 | PROMOTE | Change set | [collaboration](collaboration.md) § change-sets — not a greenfield bootstrap path |
 
-A–H below are **tooling detail** under AUTHOR/SHIP. Resolve the layer in P7 first, then pick a row.
+A–I below are **tooling detail** under AUTHOR/SHIP. Resolve the layer in P7 first, then pick a row.
 
 | # | Approach | Layer | When to use | Delivery | Operator UI |
 |---|----------|-------|-------------|----------|-------------|
@@ -49,6 +49,7 @@ A–H below are **tooling detail** under AUTHOR/SHIP. Resolve the layer in P7 fi
 | **F** | **Reference example** | SHIP | Training, MES/lab baseline | `get_example_bundle` -> adapt -> import | from example manifest |
 | **G** | **Platform HMI only** | AUTHOR | Monitoring only, no app schema | dashboards + binding rules on tree | built-in `platform` operator app |
 | **H** | **Commercial bundle** | SHIP | Licensed solution | signed bundle + license gate | same as C |
+| **I** | **Hosted UI pack (external IDE)** | AUTHOR+SHIP | Product React UI, unlimited components | Vite SPA zip (`artifactKind: ui-pack`) + bundle BFF | `/apps/<appId>/` Open app UI |
 
 ### Decision tree (short — mirrors P7)
 
@@ -56,6 +57,9 @@ A–H below are **tooling detail** under AUTHOR/SHIP. Resolve the layer in P7 fi
 Need isolated app SQL and/or repeatable release?
   |- YES -> SHIP: C/D/E/F/H (+ migrations[] when SQL)
   `- NO  -> AUTHOR: A/B/G (tree-only; SHAPE via blueprints for typed objects)
+
+Need unlimited React / branded operator SPA?
+  `- YES -> AUTHOR+SHIP row **I**: external IDE + ui-pack ([external-ide](external-ide.md)); widget kit is fallback
 
 Typed object structure (variables/events/functions)?
   `- SHAPE -> blueprint apply / models[] — not hand-duplicated each time
@@ -391,6 +395,16 @@ Docs: [commercial-licensing](commercial-licensing.md), [0003-commercial-bundle-l
 
 ---
 
+## I. Hosted UI pack (external AI IDE)
+
+**Core idea:** product operator UI is a **React SPA** built in Cursor/VS Code (unlimited components), hosted by the platform at `/apps/<appId>/`. Logic stays on the tree (BFF script functions, SQL schema, CEL, alerts). Do not merge industry pages into `apps/web-console`.
+
+Typical sequence: OpenAPI of `functionName` → Vite `base: '/apps/<appId>/'` → `POST /bff/invoke` → `operatorUi.spaNav` + `uiPack` in bundle → zip + `ui-pack.json` → marketplace/`ISPF_UI_PACKS_DIR`.
+
+How-to: [external-ide](external-ide.md). Runtime: [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md). MCP: [ai-development](ai-development.md). Dogfood: `examples/oil-control-ui`, `examples/farmtwin-ui`.
+
+---
+
 ## Where to express logic (do not duplicate)
 
 | Task | Mechanism | Doc |
@@ -404,6 +418,7 @@ Docs: [commercial-licensing](commercial-licensing.md), [0003-commercial-bundle-l
 | SQL -> variable polling | `sqlBinding` / `bindings[]` | [applications](applications.md) |
 | Device telemetry | Driver + point mappings | [drivers](drivers.md) |
 | HMI table | Dashboard widget `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
+| Product React operator UI | Hosted ui-pack + `/bff/invoke` | [external-ide](external-ide.md) |
 | Mimic / P&ID | `MIMIC` object + `scada-mimic` widget | [scada](scada.md) |
 | Legacy mini-DSL in widget | **Deprecated** -> Platform rules | [platform-logic](platform-logic.md) § legacy |
 
@@ -431,6 +446,7 @@ Use `search_context` with `topic` or keywords from this table.
 | [product](product.md) | product | Product overview, scenarios |
 | [application-principles](application-principles.md) | application-principles | P1-P10 set, target approach, anti-patterns |
 | [solution-developer-guide](solution-developer-guide.md) | solution, applications | Solution lifecycle, 6 steps |
+| [external-ide](external-ide.md) | external-ide, ui-pack, cursor, hosted-ui | External AI IDE, SPA, MCP, ui-pack |
 | [solution-developer-public-api](solution-developer-public-api.md) | public-api, bundle | Stable manifest contract |
 | [applications](applications.md) | applications, bff, bundle | REQ-PF: deploy, functions, SQL, schedules |
 | [glossary](glossary.md) | glossary | Terms |
@@ -533,7 +549,8 @@ Use `search_context` with `topic` or keywords from this table.
 |-------|------|
 | `application-principles` | Target approach, P1-P10, P7 creation stack |
 | `poka-yoke` | ADR-0051: constraints over guards; schemas before native FC |
-| `agent-knowledge` | AUTHOR/SHIP variants A-H under P7, docs map |
+| `agent-knowledge` | AUTHOR/SHIP variants A-I under P7, docs map |
+| `external-ide` | Hosted SPA in Cursor/VS Code, ui-pack, BFF |
 | `applications` | Bundle, BFF, migrations, functions |
 | `public-api` | Manifest contract |
 | `solution` | Solution developer lifecycle |

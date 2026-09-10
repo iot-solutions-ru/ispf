@@ -104,6 +104,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - [0002-dogfooding-gate](0002-dogfooding-gate.md)
 - [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md)
 - [marketplace](../marketplace.md)
+- [external-ide](../external-ide.md) — Cursor / VS Code how-to (SPA, MCP, pack zip)
 - [applications](../applications.md)
 - [operator-apps](../operator-apps.md)
 - Oil Control bundle PR: https://github.com/iot-solutions-ru/ispf/pull/64

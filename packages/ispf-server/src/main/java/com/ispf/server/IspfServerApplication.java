@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.AuditProperties.class,
         com.ispf.server.config.AlarmShelfProperties.class,
         com.ispf.server.config.PlatformUpdateProperties.class,
+        com.ispf.server.config.PlatformRestartProperties.class,
         com.ispf.server.config.CommercialLicenseProperties.class,
         com.ispf.server.config.AiProperties.class,
         com.ispf.server.config.McpProperties.class,

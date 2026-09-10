@@ -41,7 +41,7 @@ public final class IspfAuthorizationRules {
                         "/api/v1/platform/storage/**",
                         "/api/v1/platform/reports/**", "/api/v1/platform/mcp/**",
                         "/api/v1/platform/backup/**",
-                        "/api/v1/platform/runtime-settings")
+                        "/api/v1/platform/runtime-settings", "/api/v1/platform/runtime-settings/**")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers(HttpMethod.GET, "/api/v1/ai/provider")

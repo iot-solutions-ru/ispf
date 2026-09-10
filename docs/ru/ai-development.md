@@ -325,7 +325,7 @@ Example: `{"method":"resources/read","params":{"uri":"contextpack://script-steps
 }
 ```
 
-См. [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md).
+См. [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md). **Сборка продуктового SPA в Cursor** (BFF, Vite `base`, zip ui-pack, анти-паттерны): [external-ide](external-ide.md).
 
 ---
 
@@ -429,4 +429,5 @@ Commercial bundles: sign **after** AI edits (`contentSha256` covers manifest bod
 - [plugins](plugins.md) — внешний поставщик LLM (например, драйверы)
 - [applications](applications.md) — развернуть API
 - [dashboards](dashboards.md) — реестр виджетов для сгенерированных дашбордов.
+- [external-ide](external-ide.md) — Cursor / VS Code: hosted SPA + MCP + ui-pack
 - [ROADMAP.md § Часть B (FW-40…48)](roadmap.md)

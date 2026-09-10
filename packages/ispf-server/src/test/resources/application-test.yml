@@ -49,6 +49,8 @@ ispf:
   redis:
     enabled: false
   platform:
+    restart:
+      enabled: false
     update:
       check-enabled: false
       apply-enabled: false

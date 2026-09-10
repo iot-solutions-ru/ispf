@@ -18,6 +18,9 @@ Role matrix: [security](security.md).
 | GET | `/api/v1/platform/haystack/export` | operator+ | Haystack grid export for a subtree (`rootPath`, `includePoints`) |
 | GET | `/api/v1/platform/haystack/search` | operator+ | AND tag search (`tags`, `rootPath`, `entityKind`, `limit`) |
 | GET | `/api/v1/platform/haystack/query` | operator+ | Haystack filter query (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — see [0023-haystack-query-runtime](decisions/0023-haystack-query-runtime.md) |
+| GET | `/api/v1/platform/runtime-settings` | admin | Effective runtime settings (file overrides beat env) |
+| PATCH | `/api/v1/platform/runtime-settings` | admin | Write override file; live keys apply immediately, others need restart |
+| POST | `/api/v1/platform/runtime-settings/restart` | admin | Schedule process restart (`systemd` unit or JVM exit) |
 | GET | `/api/v1/platform/update/status` | admin | Check for updates from GitHub Releases |
 | POST | `/api/v1/platform/update/check` | admin | Force release check |
 | POST | `/api/v1/platform/update/apply` | admin | Download release and restart server (VPS, `apply-enabled=true`) |

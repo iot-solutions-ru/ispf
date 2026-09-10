@@ -22,6 +22,7 @@ Stable boundary between **platform** (ISPF core) and **solution** (your bundle).
 | Dashboards / workflows | Object tree + REST | Layout JSON, BPMN XML |
 | Automation | Alert rules, correlators in tree | CEL, correlator patterns |
 | Operator UI | `operatorUi` / `dashboards[]` in bundle | `GET .../operator-ui` |
+| Hosted SPA | `artifactKind: ui-pack`, `operatorUi.spaNav` / `uiPack` | Vite `base: '/apps/<appId>/'`; [external-ide](external-ide.md) |
 | Reports | Tree-first `root.platform.reports.*` | SQL + optional YARG |
 | WebSocket | `/ws/objects` — `subscribe`, `subscribe_events` | Token query param; see [messaging](messaging.md) |
 | Event catalog | `events[]` in bundle, `GET .../events` | Roles for WS subscribe (FW-31) |
@@ -34,6 +35,7 @@ Stable boundary between **platform** (ISPF core) and **solution** (your bundle).
 | Action | Why |
 |--------|-----|
 | Java in `packages/ispf-server/` | [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) |
+| Industry React in `apps/web-console/` | Hosted ui-pack ([external-ide](external-ide.md), [0054](decisions/0054-hosted-ui-packs.md)) |
 | Platform Flyway for app tables | App schema only via migrate API |
 | Domain-specific BFF routes | Only `/api/v1/bff/invoke` |
 | Fork platform server for one customer | Bundle deploy + config |
@@ -73,5 +75,6 @@ Manifest field `version` is **semver** (`MAJOR.MINOR.PATCH`). Comparison for `re
 - [applications](applications.md) — full deploy API
 - [messaging](messaging.md) — async vs sync, NATS subjects, WS events
 - [ai-development](ai-development.md) — AI layer (FW-40…43), admin tools
+- [external-ide](external-ide.md) — Cursor / hosted SPA / ui-pack
 - [api](api.md) — REST reference
 - [plugins](plugins.md) — `main` boundaries

@@ -140,8 +140,8 @@ FEATURE_INDEX = [
     {
         "id": "agent-knowledge",
         "title": "Agent knowledge index",
-        "description": "AUTHOR/SHIP variants A-H under application-principles P7; full doc map for internal agent",
-        "keywords": "agent knowledge application create bundle tree-first operator AUTHOR SHIP",
+        "description": "AUTHOR/SHIP variants A-I under application-principles P7; full doc map for internal agent",
+        "keywords": "agent knowledge application create bundle tree-first operator AUTHOR SHIP ui-pack cursor",
         "docRef": "AGENT_KNOWLEDGE.md",
     },
     {
@@ -162,8 +162,15 @@ FEATURE_INDEX = [
         "id": "solution-guide",
         "title": "Solution developer guide",
         "description": "Lifecycle: register, migrate, functions, bundle, operator UI",
-        "keywords": "solution developer lifecycle terminal",
+        "keywords": "solution developer lifecycle terminal ui-pack hosted SPA",
         "docRef": "SOLUTION_DEVELOPER_GUIDE.md",
+    },
+    {
+        "id": "external-ide",
+        "title": "External AI IDE and hosted application UI",
+        "description": "Cursor/VS Code: MCP, BFF invoke, Vite base /apps/<appId>/, ui-pack zip; no industry React in web-console",
+        "keywords": "cursor vscode mcp ui-pack hosted spa bff external ide vite",
+        "docRef": "external-ide.md",
     },
     {
         "id": "bff",

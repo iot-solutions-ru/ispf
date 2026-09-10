@@ -25,12 +25,12 @@
 | Я… | Дальше |
 |----|--------|
 | **Пробую продукт** | [Быстрый старт](getting-started.md) → [Руководство оператора](operator-guide.md) |
-| **Делаю решение / bundle** | [Разработчик решений](solution-developer-guide.md) · [Приложения](applications.md) · [Принципы](application-principles.md) |
+| **Делаю решение / bundle** | [Разработчик решений](solution-developer-guide.md) · [Приложения](applications.md) · [Принципы](application-principles.md) · [Внешняя AI IDE](external-ide.md) |
 | **Подключаю OT / драйверы** | [Драйверы](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
 | **Собираю HMI / SCADA** | [Дашборды](dashboards.md) · [SCADA](scada.md) · [Виджеты](widgets.md) |
 | **Пишу выражения / CEL** | [Язык выражений](expression-language.md) · [Привязки](bindings.md) |
 | **Автоматизирую тревоги / BPMN** | [Автоматизация](automation.md) · [Workflows](workflows.md) · [OT Automation туториалы](ot-automation-excellence-tutorials.md) |
-| **Использую ИИ-студию / агента** | [AI development](ai-development.md) · [AI agent](ai-agent.md) |
+| **Использую ИИ-студию / агента** | [AI development](ai-development.md) · [AI agent](ai-agent.md) · [Внешняя AI IDE](external-ide.md) |
 | **Внедряю / эксплуатирую** | [Развёртывание](deployment.md) · [Безопасность](security.md) · [Наблюдаемость](observability.md) |
 | **Контрибьючу в ядро** | [Быстрый старт — Contribute](getting-started.md#контрибут-локальный-dev--qa) · [Тестирование](testing.md) · [ADR](decisions/readme.md) |
 
@@ -56,6 +56,7 @@
 | [Обзор продукта](product.md) | Stable | Возможности, сценарии, карта документации |
 | [Руководство оператора](operator-guide.md) | Stable | HMI, work queue, события |
 | [Руководство разработчика решений](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
+| [Внешняя AI IDE](external-ide.md) | Stable | Cursor/VS Code: hosted SPA + MCP + ui-pack |
 | [Принципы приложений](application-principles.md) | Stable | P1–P10; стек творения P7 (AUTHOR/SHAPE/SHIP/PROMOTE) |
 | [ADR-0051 poka-yoke](decisions/0051-poka-yoke-constraints-over-guards.md) | Accepted | Constraints вместо гвардов; сначала схемы tools |
 | [Публичный API](solution-developer-public-api.md) | Stable | Граница platform ↔ bundle |
