@@ -9,11 +9,15 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.opcuaserver.OpcUaServerDeviceDriver;
+import com.ispf.driver.opcuaserver.OpcUaServerInterop;
+import com.ispf.driver.opcuaserver.OpcUaServerPki;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +117,57 @@ class OpcUaDeviceDriverTest {
     }
 
     @Test
+    void signAndEncryptLoopbackWrite() throws Exception {
+        Path root = Files.createTempDirectory("opcua-sign");
+        Path serverPkiDir = root.resolve("server");
+        Path clientPkiDir = root.resolve("client");
+        try (OpcUaServerPki serverId = OpcUaServerPki.loadOrCreate(
+                serverPkiDir, "ISPF OPC UA Server", OpcUaServerInterop.APPLICATION_URI);
+             OpcUaClientPki clientId = OpcUaClientPki.loadOrCreate(
+                     clientPkiDir, "ISPF OPC UA Driver", "urn:ispf:driver:opcua")) {
+            serverId.trustList().addTrustedCertificate(clientId.certificate());
+            clientId.trustList().addTrustedCertificate(serverId.certificate());
+        }
+
+        int port = freePort();
+        serverDriver = startServer(port, Map.of(
+                "securityPolicy", "Basic256Sha256",
+                "securityMode", "SignAndEncrypt",
+                "pkiDir", serverPkiDir.toString()
+        ));
+        String nodeId = serverNodeId(serverDriver, NODE);
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "endpointUrl", endpointUrl(port),
+                "timeoutMs", "15000",
+                "securityPolicy", "Basic256Sha256",
+                "securityMode", "SignAndEncrypt",
+                "pkiDir", clientPkiDir.toString()
+        ));
+        OpcUaDeviceDriver client = new OpcUaDeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+        client.readPoints(Map.of("temp", nodeId));
+
+        client.writePoint("temp", DataRecord.single(VALUE_SCHEMA, Map.of("value", "42.5")));
+
+        assertEquals("42.5", clientObject.variables.get("temp").firstRow().get("value"));
+        client.disconnect();
+    }
+
+    @Test
+    void secureConnectRequiresPkiDir() {
+        OpcUaDeviceDriver client = new OpcUaDeviceDriver();
+        client.initialize(new StubDriverObject(Map.of(
+                "endpointUrl", "opc.tcp://127.0.0.1:4840/ispf",
+                "securityPolicy", "Basic256Sha256"
+        )));
+
+        DriverException error = assertThrows(DriverException.class, client::connect);
+        assertTrue(error.getMessage().contains("pkiDir"));
+    }
+
+    @Test
     void writePointUpdatesServerNodeAndVariable() throws Exception {
         int port = freePort();
         serverDriver = startServer(port);
@@ -163,11 +218,16 @@ class OpcUaDeviceDriverTest {
     }
 
     private OpcUaServerDeviceDriver startServer(int port) throws Exception {
-        StubDriverObject serverObject = new StubDriverObject(Map.of(
-                "bindPort", String.valueOf(port),
-                "namespace", String.valueOf(NAMESPACE),
-                "timeoutMs", "10000"
-        ));
+        return startServer(port, Map.of());
+    }
+
+    private OpcUaServerDeviceDriver startServer(int port, Map<String, String> extra) throws Exception {
+        Map<String, String> configuration = new HashMap<>();
+        configuration.put("bindPort", String.valueOf(port));
+        configuration.put("namespace", String.valueOf(NAMESPACE));
+        configuration.put("timeoutMs", "10000");
+        configuration.putAll(extra);
+        StubDriverObject serverObject = new StubDriverObject(configuration);
         OpcUaServerDeviceDriver driver = new OpcUaServerDeviceDriver();
         driver.initialize(serverObject);
         driver.connect();

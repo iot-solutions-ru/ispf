@@ -14,9 +14,7 @@ import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.driver.ingress.DriverIngressFifoExecutor;
 import com.ispf.driver.ingress.IngressElasticSettings;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
-import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
@@ -50,12 +48,14 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
             "opcua",
             "OPC UA Driver",
             "0.1.0",
-            "Polls and writes OPC UA servers (SecurityPolicy None) and maps node values to ISPF variables",
+            "Polls and writes OPC UA servers (None / Sign / SignAndEncrypt) and maps node values to ISPF variables",
             "ISPF",
             Map.of(
                     "endpointUrl", "opc.tcp://localhost:4840",
                     "timeoutMs", "5000",
-                    "pollIntervalMs", "1000"
+                    "pollIntervalMs", "1000",
+                    "securityPolicy", "None",
+                    "securityMode", "None"
             )
     );
 
@@ -71,6 +71,11 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     private String endpointUrl = "opc.tcp://localhost:4840";
     private int timeoutMs = 5000;
     private String readMode = "poll";
+    private String securityPolicyRaw = "None";
+    private String securityModeRaw = "";
+    private String pkiDir = "";
+    private OpcUaSecuritySettings security = OpcUaSecuritySettings.none();
+    private OpcUaClientPki pki;
     private final Map<String, OpcUaPoint> points = new ConcurrentHashMap<>();
     private ManagedSubscription subscription;
     private DriverIngressBuffer<String, PointRead> ingressBuffer;
@@ -89,6 +94,10 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
         readConfig("endpointUrl", value -> endpointUrl = value);
         readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
         readConfig("readMode", value -> readMode = value.trim());
+        readConfig("securityPolicy", value -> securityPolicyRaw = value.trim());
+        readConfig("securityMode", value -> securityModeRaw = value.trim());
+        readConfig("pkiDir", value -> pkiDir = value.trim());
+        refreshSecurity();
     }
 
     private void applyConfig(String key, String value) {
@@ -99,9 +108,16 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
             case "endpointUrl" -> endpointUrl = value;
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value);
             case "readMode" -> readMode = value.trim();
+            case "securityPolicy" -> securityPolicyRaw = value.trim();
+            case "securityMode" -> securityModeRaw = value.trim();
+            case "pkiDir" -> pkiDir = value.trim();
             default -> {
             }
         }
+    }
+
+    private void refreshSecurity() {
+        security = OpcUaSecuritySettings.parse(securityPolicyRaw, securityModeRaw, pkiDir);
     }
 
     @Override
@@ -109,7 +125,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
         if (isConnected()) {
             return browseWithClient(parentNodeId);
         }
-        return OpcUaBrowseSupport.browseChildren(endpointUrl, parentNodeId, timeoutMs).stream()
+        return OpcUaBrowseSupport.browseChildren(endpointUrl, parentNodeId, timeoutMs, security).stream()
                 .map(node -> new DriverDiscovery.Node(node.nodeId(), node.displayName(), node.nodeClass()))
                 .toList();
     }
@@ -118,19 +134,27 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     public void connect() throws DriverException {
         releaseClient();
         try {
-            client = OpcUaClient.create(
-                    endpointUrl,
-                    endpoints -> endpoints.stream()
-                            .filter(endpoint -> SecurityPolicy.None.getUri().equals(endpoint.getSecurityPolicyUri()))
-                            .findFirst(),
-                    configBuilder -> configBuilder
-                            .setApplicationName(LocalizedText.english("ISPF OPC UA Driver"))
-                            .setApplicationUri("urn:ispf:driver:opcua")
-                            .build()
-            );
+            refreshSecurity();
+            if (security.secure()) {
+                if (security.pkiDir().isBlank()) {
+                    throw new DriverException("pkiDir is required when securityPolicy is not None");
+                }
+                pki = OpcUaClientPki.loadOrCreate(
+                        java.nio.file.Path.of(security.pkiDir()),
+                        "ISPF OPC UA Driver",
+                        "urn:ispf:driver:opcua"
+                );
+            }
+            client = OpcUaClients.create(endpointUrl, security, pki, "ISPF OPC UA Driver");
             client.connect().get(timeoutMs, TimeUnit.MILLISECONDS);
             connected = true;
-            driverObject.log(DriverLogLevel.INFO, "Connected to OPC UA " + endpointUrl);
+            driverObject.log(DriverLogLevel.INFO,
+                    "Connected to OPC UA " + endpointUrl
+                            + " (" + security.policy().name() + " / " + security.mode() + ")");
+        } catch (DriverException e) {
+            connected = false;
+            releaseClient();
+            throw e;
         } catch (Exception e) {
             connected = false;
             releaseClient();
@@ -154,6 +178,10 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
                 // best effort
             }
             client = null;
+        }
+        if (pki != null) {
+            pki.close();
+            pki = null;
         }
     }
 
