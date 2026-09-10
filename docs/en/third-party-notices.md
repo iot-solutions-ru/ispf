@@ -69,7 +69,7 @@ Inventory source: `packages/**/build.gradle.kts`, `:packages:ispf-server:runtime
 | `ispf-driver-radius` | ISPF RADIUS PAP client | Apache-2.0 | Clean-room |
 | `ispf-driver-mbus` | ISPF M-Bus TCP | Apache-2.0 | Clean-room |
 | `ispf-driver-modbus*` | `j2mod` | Apache-2.0 | |
-| `ispf-driver-mqtt` | Eclipse Paho | EPL / EDL | Eclipse notice |
+| `ispf-driver-mqtt` | Eclipse Paho mqttv3 (MQTT 3.1.1) | EPL / EDL | Eclipse notice |
 | `ispf-driver-opcua*` | Eclipse Milo | EPL-2.0 | Eclipse notice |
 | `ispf-driver-coap` | Eclipse Californium | EPL/EDL | Eclipse notice |
 | `ispf-driver-sip` | JAIN SIP RI | Public Domain (NIST) | |

@@ -25,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * MQTT device driver — subscribes to topics and maps payloads to object variables.
+ * MQTT 3.1.1 device driver (Eclipse Paho mqttv3) — subscribes to topics and maps payloads to object variables.
+ * MQTT 5 is a non-goal for this pack.
  * <p>
  * Callbacks enqueue into a bounded ingress lane so Paho I/O threads never block on variable
  * updates under flood load. {@code EVENT_JOURNAL_ONLY} and {@code ingressCoalesceEnabled=false}
@@ -37,7 +38,7 @@ public class MqttDeviceDriver implements DeviceDriver {
             "mqtt",
             "MQTT Driver",
             "0.1.0",
-            "Connects to MQTT brokers and maps topic payloads to ISPF variables",
+            "Connects to MQTT 3.1.1 brokers (Paho mqttv3) and maps topic payloads to ISPF variables",
             "ISPF",
             Map.of(
                     "brokerUrl", "tcp://localhost:1883",

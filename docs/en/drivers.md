@@ -236,13 +236,17 @@ Recommended model: `virtual-unified-v1` (or thinner `virtual-lab-v1` for waves).
 
 ### mqtt (`ispf-driver-mqtt`)
 
-Eclipse Paho, topic subscription.
+Eclipse Paho `org.eclipse.paho.client.mqttv3` — MQTT **3.1.1** only.
+
+MQTT 5 (user properties, session expiry interval, reason codes, topic aliases, shared subscriptions) is a **non-goal** for this driver until a dedicated MQTT 5 client is chosen. Brokers that require MQTT 5-only features will not interoperate.
 
 Config: `brokerUrl`, `topicPrefix`, `clientId`, credentials.
 
 Point mapping: `variableName → mqttTopicSuffix`.
 
 Loopback test: `MqttDeviceDriverTest` (embedded moquette broker, subscribe + publish write).
+
+`sparkplug-b` uses the same Paho mqttv3 session (MQTT 3.1.1) plus a Sparkplug B protobuf codec.
 
 ### modbus-tcp (`ispf-driver-modbus`)
 
@@ -621,7 +625,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `modbus-tcp` | `ispf-driver-modbus` | PRODUCTION | Apache-2.0 | Modbus TCP master (FC read/write holding/input/coils) |
 | `modbus-udp` | `ispf-driver-modbus-udp` | PRODUCTION | Apache-2.0 | Modbus UDP master |
 | `modem-at` | `ispf-driver-modem-at` | PRODUCTION | Apache-2.0 | GSM/cellular modem AT commands over TCP/serial |
-| `mqtt` | `ispf-driver-mqtt` | PRODUCTION | Apache-2.0 | MQTT client: subscribe topics and optional publish/write |
+| `mqtt` | `ispf-driver-mqtt` | PRODUCTION | Apache-2.0 | MQTT 3.1.1 client (Paho mqttv3): subscribe topics and optional publish/write |
 | `mqtt-sn` | `ispf-driver-mqtt-sn` | STUB | Apache-2.0 | MQTT For Sensor Networks stub |
 | `mtconnect` | `ispf-driver-mtconnect` | STUB | Apache-2.0 | MTConnect agent HTTP stub |
 | `nats` | `ispf-driver-nats` | STUB | Apache-2.0 | NATS messaging stub (cluster messaging is separate) |
@@ -664,7 +668,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `snmp` | `ispf-driver-snmp` | PRODUCTION | Apache-2.0 | SNMP v1/v2c/v3 GET/SET poll client |
 | `soap` | `ispf-driver-soap` | PRODUCTION | Apache-2.0 | SOAP HTTP client |
 | `someip` | `ispf-driver-someip` | STUB | Apache-2.0 | AUTOSAR SOME/IP stub |
-| `sparkplug-b` | `ispf-driver-sparkplug-b` | PRODUCTION | Apache-2.0 | Sparkplug B host (MQTT + protobuf metrics; DCMD write) |
+| `sparkplug-b` | `ispf-driver-sparkplug-b` | PRODUCTION | Apache-2.0 | Sparkplug B host (MQTT 3.1.1 + protobuf metrics; DCMD write) |
 | `ssh` | `ispf-driver-ssh` | PRODUCTION | Apache-2.0 | SSH remote command execution (JSch) |
 | `telnet` | `ispf-driver-telnet` | PRODUCTION | Apache-2.0 | Telnet remote command session |
 | `thread` | `ispf-driver-thread` | STUB | Apache-2.0 | Thread Border Router stub |

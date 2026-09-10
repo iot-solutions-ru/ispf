@@ -127,7 +127,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `modbus-tcp` | `ispf-driver-modbus` | PRODUCTION | Apache-2.0 | Modbus TCP master (FC read/write holding/input/coils) |
 | `modbus-udp` | `ispf-driver-modbus-udp` | PRODUCTION | Apache-2.0 | Modbus UDP master |
 | `modem-at` | `ispf-driver-modem-at` | PRODUCTION | Apache-2.0 | GSM/cellular modem AT commands over TCP/serial |
-| `mqtt` | `ispf-driver-mqtt` | PRODUCTION | Apache-2.0 | MQTT client: subscribe topics and optional publish/write |
+| `mqtt` | `ispf-driver-mqtt` | PRODUCTION | Apache-2.0 | MQTT 3.1.1 client (Paho mqttv3): subscribe topics and optional publish/write |
 | `mqtt-sn` | `ispf-driver-mqtt-sn` | STUB | Apache-2.0 | MQTT For Sensor Networks stub |
 | `mtconnect` | `ispf-driver-mtconnect` | STUB | Apache-2.0 | MTConnect agent HTTP stub |
 | `nats` | `ispf-driver-nats` | STUB | Apache-2.0 | NATS messaging stub (cluster messaging is separate) |
