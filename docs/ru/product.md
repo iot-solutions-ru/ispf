@@ -16,7 +16,7 @@
 |------|--------|---------------|
 | **Оператор** | Мониторинг, управление, work queue, отчёты | [Руководство оператора](operator-guide.md) |
 | **Администратор** | Дерево объектов, дашборды, workflow, пользователи | [Быстрый старт](getting-started.md) → [Web Console](web-console.md) |
-| **Разработчик решений** | Deploy приложений, функции, operator UI, отчёты | [Разработчик решений](solution-developer-guide.md) |
+| **Разработчик решений** | Deploy приложений, функции, operator UI, отчёты | [Разработчик решений](solution-developer-guide.md) · [Внешняя AI IDE](external-ide.md) |
 | **Разработчик платформы** | Драйверы, REQ-PF, расширения ядра | [Roadmap](roadmap.md) |
 | **DevOps / SRE** | Развёртывание, профили, инфраструктура | [Развёртывание](deployment.md) |
 
@@ -64,7 +64,7 @@ graph LR
 ### Ключевые возможности
 
 - **Единая модель** — устройство, дашборд, workflow и правило тревоги — узлы дерева; логика через variables, events, functions и BPMN.
-- **Bundles, а не форки ядра** — отраслевые решения деплоятся как конфигурация в механизмы платформы ([applications](applications.md)).
+- **Bundles, а не форки ядра** — отраслевые решения деплоятся как конфигурация в механизмы платформы ([applications](applications.md)). Продуктовый UI оператора — **hosted React SPA** (любые компоненты) во внешней IDE, поставка ui-pack — [external-ide](external-ide.md).
 - **Стек** — Spring Boot 4, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket; опционально NATS/MQTT/Keycloak.
 - **~60 driver packs** (не внутри `ispf-server.jar`; maturity разный — см. [drivers](drivers.md)).
 - **Платформа AGPL v3** — опционально Enterprise dual-license; driver packs и application bundles могут иметь отдельные условия ([license](license.md), [plugins](plugins.md)).
@@ -310,6 +310,7 @@ Base URL: `http://localhost:8080/api/v1`
 | **product.md** (этот файл) | Обзор продукта, возможности, сценарии |
 | [operator-guide](operator-guide.md) | Работа оператора с HMI |
 | [solution-developer-guide](solution-developer-guide.md) | Сборка прикладных решений |
+| [external-ide](external-ide.md) | Cursor / VS Code: hosted SPA, MCP, ui-pack |
 | [glossary](glossary.md) | Термины |
 
 ### Техническая документация

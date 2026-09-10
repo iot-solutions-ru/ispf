@@ -269,7 +269,7 @@ Content-Type: application/json
 }
 ```
 
-После deploy функции также адресуются на дереве как `{appId}.functions.{name}`. Детали и wire rules: [applications](applications.md#bff-req-pf-06). Предпочитайте **dashboards + function-button / function-form** вместо custom operator manifest shell.
+После deploy функции также адресуются на дереве как `{appId}.functions.{name}`. Детали и wire rules: [applications](applications.md#bff-req-pf-06). Предпочитайте **dashboards + function-button / function-form** вместо custom operator manifest shell. Для **продуктового React UI** (любые компоненты) поставляйте hosted ui-pack из внешней IDE, не расширяя `apps/web-console` — [external-ide](external-ide.md).
 
 ---
 
@@ -365,6 +365,7 @@ examples/demo-app/
 ## Связанные документы
 
 - [applications](applications.md) — полный REQ-PF API
+- [external-ide](external-ide.md) — Cursor / VS Code: hosted SPA + MCP + ui-pack
 - [reports](reports.md) — SQL-отчёты
 - [dashboards](dashboards.md) — виджеты
 - [web-console](web-console.md) — admin UI для настройки

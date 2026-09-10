@@ -18,6 +18,9 @@ Base URL: `http://localhost:8080`
 | GET | `/api/v1/platform/haystack/export` | operator+ | Экспорт Haystack grid для поддерева (`rootPath`, `includePoints`) |
 | GET | `/api/v1/platform/haystack/search` | operator+ | Поиск по тегам с AND (`tags`, `rootPath`, `entityKind`, `limit`) |
 | GET | `/api/v1/platform/haystack/query` | operator+ | Запрос по Haystack-фильтру (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — см. [0023-haystack-query-runtime](decisions/0023-haystack-query-runtime.md) |
+| GET | `/api/v1/platform/runtime-settings` | admin | Эффективные runtime-настройки (файл перекрывает env) |
+| PATCH | `/api/v1/platform/runtime-settings` | admin | Запись override-файла; Live сразу, остальные после рестарта |
+| POST | `/api/v1/platform/runtime-settings/restart` | admin | Запланировать рестарт процесса (`systemd` или выход JVM) |
 | GET | `/api/v1/platform/update/status` | admin | Проверка обновлений из GitHub Releases |
 | POST | `/api/v1/platform/update/check` | admin | Принудительная проверка релиза |
 | POST | `/api/v1/platform/update/apply` | admin | Скачать релиз и перезапустить сервер (VPS, `apply-enabled=true`) |

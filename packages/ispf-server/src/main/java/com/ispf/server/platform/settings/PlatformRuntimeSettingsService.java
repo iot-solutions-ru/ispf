@@ -22,6 +22,8 @@ import java.util.Map;
 @Service
 public class PlatformRuntimeSettingsService {
 
+    static final String SENSITIVE_MASK = "********";
+
     private final Environment environment;
     private final PlatformRuntimeSettingsStore store;
     private final ObjectChangeProperties objectChangeProperties;
@@ -89,14 +91,11 @@ public class PlatformRuntimeSettingsService {
         List<String> errors = new ArrayList<>();
         boolean restartRequired = false;
 
-        for (Map.Entry<String, String> entry : request.values().entrySet()) {
+        Map<String, String> values = request.values() == null ? Map.of() : request.values();
+        for (Map.Entry<String, String> entry : values.entrySet()) {
             PlatformRuntimeSettingDefinition definition = definitions.get(entry.getKey());
             if (definition == null) {
                 errors.add("Unknown setting: " + entry.getKey());
-                continue;
-            }
-            if (definition.sensitive()) {
-                errors.add("Sensitive setting cannot be updated via API: " + entry.getKey());
                 continue;
             }
             String normalized;
@@ -104,6 +103,10 @@ public class PlatformRuntimeSettingsService {
                 normalized = normalizeValue(definition, entry.getValue());
             } catch (IllegalArgumentException ex) {
                 errors.add(entry.getKey() + ": " + ex.getMessage());
+                continue;
+            }
+            if (definition.sensitive() && SENSITIVE_MASK.equals(normalized)) {
+                errors.add(entry.getKey() + ": masked placeholder is not a real value");
                 continue;
             }
             overrides.put(definition.propertyKey(), normalized);
@@ -138,13 +141,13 @@ public class PlatformRuntimeSettingsService {
             source = "default";
             rawValue = environment.getProperty(definition.propertyKey(), definition.defaultValue());
         }
-        boolean editable = !definition.sensitive();
+        boolean editable = true;
         String displayValue = definition.sensitive() && rawValue != null && !rawValue.isBlank()
-                ? "********"
+                ? SENSITIVE_MASK
                 : rawValue;
         String displayEnvValue = null;
         if (envValue != null) {
-            displayEnvValue = definition.sensitive() && !envValue.isBlank() ? "********" : envValue;
+            displayEnvValue = definition.sensitive() && !envValue.isBlank() ? SENSITIVE_MASK : envValue;
         }
         return new PlatformRuntimeSettingView(
                 definition.id(),

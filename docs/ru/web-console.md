@@ -184,7 +184,7 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 | Вкладка | Содержимое |
 |---------|------------|
 | **Metrics** | Метрики платформы, health cards (Redis, NATS, YARG, MCP), **Platform backup** |
-| **Runtime settings** | `GET/PATCH /api/v1/platform/runtime-settings` |
+| **Runtime settings** | `GET/PATCH /api/v1/platform/runtime-settings`; **Перезапуск сервера** → `POST .../runtime-settings/restart` |
 | **Events / Functions / Bindings** | Invoke/audit logs |
 | **Change sets** | Управление изменениями платформы |
 | **App schedules** | `GET/POST /api/v1/schedules` — JDBC `platform_schedules` (не путать с object-tree `SCHEDULE` → `ScheduleEditor`) |

@@ -22,6 +22,7 @@
 | Панели мониторинга/рабочие процессы | Дерево объектов + REST | Макет JSON, BPMN XML |
 | Автоматизация | Правила оповещения, корреляторы в деревне | CEL, шаблоны корреляторов |
 | Operator UI | `operatorUi` / `dashboards[]` в bundle | `GET .../operator-ui` |
+| Hosted SPA | `artifactKind: ui-pack`, `operatorUi.spaNav` / `uiPack` | Vite `base: '/apps/<appId>/'`; [external-ide](external-ide.md) |
 | Reports | Tree-first `root.platform.reports.*` | SQL + optional YARG |
 | Вебсокет | `/ws/objects` — `subscribe`, `subscribe_events` | Параметр запроса токена; см. [messaging](messaging.md) |
 | Event catalog | `events[]` в bundle, `GET .../events` | Роли для WS subscribe (FW-31) |
@@ -34,6 +35,7 @@
 | Действие | Почему |
 |----------|--------|
 | Java в `packages/ispf-server/` | [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) |
+| Отраслевой React в `apps/web-console/` | Hosted ui-pack ([external-ide](external-ide.md), [0054](decisions/0054-hosted-ui-packs.md)) |
 | Таблицы приложений Flyway на платформе | Схема приложения только через API миграции |
 | Отраслевые BFF routes | Только `/api/v1/bff/invoke` |
 | Сервер платформы Fork для одного клиента | Пакетное развертывание + настройка |
@@ -73,5 +75,6 @@
 - [applications](applications.md) — полный API развертывания.
 - [messaging](messaging.md) — асинхронность и синхронизация, субъекты NATS, события WS
 - [ai-development](ai-development.md) — уровень AI (FW-40…43), инструменты администратора.
+- [external-ide](external-ide.md) — Cursor / hosted SPA / ui-pack
 - [api](api.md) — справочник REST
 - [plugins](plugins.md) — границы `main`

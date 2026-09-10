@@ -78,7 +78,9 @@ A concise dictionary of platform terms. Product overview: [product](product.md).
 
 ## H
 
-**HMI (Human-Machine Interface)** — the operator interface. In ISPF — operator HMI based on dashboards.
+**HMI (Human-Machine Interface)** — the operator interface. In ISPF — operator HMI based on dashboards, plus optional **hosted application SPA** at `/apps/<appId>/` ([external-ide](external-ide.md)).
+
+**Hosted UI pack** — zip of a static React (or HTML) SPA plus `ui-pack.json`, installed under `ISPF_UI_PACKS_DIR/<appId>/` and served at `/apps/<appId>/`. Companion of an application bundle (`uiPackSlug`). See [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md).
 
 ---
 
@@ -103,6 +105,8 @@ A concise dictionary of platform terms. Product overview: [product](product.md).
 **Blueprint (BlueprintDefinition)** — object structure template: variables, events, functions, bindings. Kinds: `MIXIN`, `SINGLETON`, `INSTANCE`. MIXIN blueprints auto-apply on create only when CEL is non-empty (*Applicability condition* / `suitabilityExpression`). Explicit apply — via `templateId` or API.
 
 **Fixture model** — demo/lab model (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), registered when `ispf.bootstrap.fixtures-enabled=true`. Not part of the core built-in registry. See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+
+**MCP (Model Context Protocol)** — adapter that exposes platform agent tools to external IDEs (Cursor, CI). Endpoint `POST /api/v1/ai/mcp`. See [ai-development](ai-development.md), [external-ide](external-ide.md).
 
 **Model engine** — the `ispf-plugin-blueprint` plugin that applies models to objects.
 
@@ -149,6 +153,8 @@ A concise dictionary of platform terms. Product overview: [product](product.md).
 ---
 
 ## U
+
+**UI pack** — see **Hosted UI pack**.
 
 **User task** — a BPMN element: a task for an operator. Appears in the Work Queue until claim/complete.
 

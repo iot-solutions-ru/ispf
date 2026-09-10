@@ -45,4 +45,5 @@
 ## Связанное
 
 - [web-console](web-console.md) — operator vs admin shell
+- [external-ide](external-ide.md) — hosted SPA / Open app UI из внешней IDE
 - [release-dogfood](release-dogfood.md) — pre-tag gate

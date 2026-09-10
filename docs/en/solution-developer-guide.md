@@ -261,7 +261,7 @@ Content-Type: application/json
 }
 ```
 
-After deploy, functions are also addressable on the tree as `{appId}.functions.{name}`. Details and wire rules: [applications](applications.md#bff-req-pf-06). Prefer **dashboards + function-button / function-form** over a custom operator manifest shell.
+After deploy, functions are also addressable on the tree as `{appId}.functions.{name}`. Details and wire rules: [applications](applications.md#bff-req-pf-06). Prefer **dashboards + function-button / function-form** over a custom operator manifest shell. For a **product React UI** (unlimited components) ship a hosted ui-pack from an external IDE instead of extending `apps/web-console` — [external-ide](external-ide.md).
 
 ---
 
@@ -357,6 +357,7 @@ Run demo: register app, then `POST …/deploy` JSON (or stepwise migrate + funct
 ## Related documents
 
 - [applications](applications.md) — full REQ-PF API
+- [external-ide](external-ide.md) — Cursor / VS Code: hosted SPA + MCP + ui-pack
 - [reports](reports.md) — SQL reports
 - [dashboards](dashboards.md) — widgets
 - [web-console](web-console.md) — admin UI for setup

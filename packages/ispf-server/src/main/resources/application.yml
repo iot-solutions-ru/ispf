@@ -96,6 +96,10 @@ ispf:
     mes-catalog-enabled: ${ISPF_BOOTSTRAP_MES_CATALOG_ENABLED:false}
   platform:
     name: IoT Solutions Platform Framework
+    restart:
+      enabled: ${ISPF_PLATFORM_RESTART_ENABLED:true}
+      unit: ${ISPF_PLATFORM_RESTART_UNIT:ispf-server}
+      delay-ms: ${ISPF_PLATFORM_RESTART_DELAY_MS:2000}
     update:
       check-enabled: ${ISPF_UPDATE_CHECK_ENABLED:true}
       apply-enabled: ${ISPF_UPDATE_APPLY_ENABLED:false}

@@ -1,7 +1,8 @@
 package com.ispf.server.platform.settings;
 
+import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
@@ -14,12 +15,20 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * UI/API overrides in {@code runtime-settings.properties} must beat OS environment variables
- * (Spring env normally wins over imported files).
+ * UI/API overrides in {@code runtime-settings.properties} apply to <em>every</em>
+ * catalog key (AI, database, messaging, drivers, …), not a single section.
+ * The file must beat OS environment variables and profile yaml (Spring env /
+ * {@code application-{profile}.yml} normally win over {@code spring.config.import}).
+ * Runs after config data so {@code ispf.license.data-dir} is already bound.
  */
-public final class RuntimeSettingsOverrideEnvironmentPostProcessor implements EnvironmentPostProcessor {
+public final class RuntimeSettingsOverrideEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
     static final String PROPERTY_SOURCE_NAME = "ispfRuntimeSettingsOverride";
+
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE;
+    }
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
@@ -40,11 +49,17 @@ public final class RuntimeSettingsOverrideEnvironmentPostProcessor implements En
         for (String name : properties.stringPropertyNames()) {
             source.put(name, properties.getProperty(name));
         }
+        if (environment.getPropertySources().contains(PROPERTY_SOURCE_NAME)) {
+            environment.getPropertySources().remove(PROPERTY_SOURCE_NAME);
+        }
         environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, source));
     }
 
     static Path resolveSettingsFile(ConfigurableEnvironment environment) {
         String dataDir = System.getenv("ISPF_DATA_DIR");
+        if (dataDir == null || dataDir.isBlank()) {
+            dataDir = environment.getProperty("ISPF_DATA_DIR");
+        }
         if (dataDir == null || dataDir.isBlank()) {
             dataDir = environment.getProperty("ispf.license.data-dir", "./data");
         }

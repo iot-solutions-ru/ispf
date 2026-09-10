@@ -546,6 +546,18 @@ export async function mockAuthenticatedApi(
       });
     }
 
+    if (apiPath.startsWith("/api/v1/platform/runtime-settings")) {
+      if (apiPath.endsWith("/restart")) {
+        return json(route, {
+          accepted: false,
+          delayMs: 0,
+          mode: "disabled",
+          message: "e2e",
+        });
+      }
+      return json(route, { settingsFile: "./data/runtime-settings.properties", sections: [] });
+    }
+
     if (apiPath.startsWith("/api/v1/platform/update/")) {
       return json(route, {
         checkEnabled: false,

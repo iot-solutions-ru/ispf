@@ -59,6 +59,33 @@ class PlatformRuntimeSettingsApiTest {
                 .andExpect(jsonPath("$.appliedLive[0]").value("object-change.elastic-scale-up-threshold"));
     }
 
+    @Test
+    void adminCanPatchAiBaseUrlAndReadItBack() throws Exception {
+        mockMvc.perform(patch("/api/v1/platform/runtime-settings")
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"values":{"ai.provider":"openai-compatible","ai.base-url":"https://api.deepseek.com/v1"}}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.restartRequired").value(true));
+
+        mockMvc.perform(get("/api/v1/platform/runtime-settings")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sections[*].settings[?(@.id=='ai.base-url')].value", hasItem("https://api.deepseek.com/v1")))
+                .andExpect(jsonPath("$.sections[*].settings[?(@.id=='ai.provider')].value", hasItem("openai-compatible")));
+    }
+
+    @Test
+    void adminRestartIsDisabledInTestProfile() throws Exception {
+        mockMvc.perform(post("/api/v1/platform/runtime-settings/restart")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accepted").value(false))
+                .andExpect(jsonPath("$.mode").value("disabled"));
+    }
+
     private String adminToken() throws Exception {
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

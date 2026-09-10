@@ -72,11 +72,11 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` доба�
 | *(по умолчанию / не указан)* | Deploy application bundle | [applications](applications.md) |
 | `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` (REAL — BL-185) | [symbol-marketplace](symbol-marketplace.md) |
 | `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
-| `ui-pack` | `ISPF_UI_PACKS_DIR` → раздача `/apps/<appId>/` (ADR-0054) | [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) |
+| `ui-pack` | `ISPF_UI_PACKS_DIR` → раздача `/apps/<appId>/` (ADR-0054) | [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md), [external-ide](external-ide.md) |
 
 Платные **analytics extension packs** (Tier C historian-функции) используют тот же install/activate API, что и приложения. После установки helpers появляются в `GET /api/v1/platform/analytics/catalog` с `pack: <packId>`.
 
-**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Установка — Solutions marketplace или локально `POST /api/v1/marketplace/ui-packs/{id}/install`. В листинге приложения можно указать `uiPackSlug`, чтобы one-click ставил BFF и SPA вместе. Для SPA: Vite `base: '/apps/<appId>/'` и same-origin `/api/v1`. Поля бандла `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` сохраняются при deploy — кнопка Operator **Open app UI** не требует повторного configure.
+**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Установка — Solutions marketplace или локально `POST /api/v1/marketplace/ui-packs/{id}/install`. В листинге приложения можно указать `uiPackSlug`, чтобы one-click ставил BFF и SPA вместе. Для SPA: Vite `base: '/apps/<appId>/'` и same-origin `/api/v1`. Поля бандла `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` сохраняются при deploy — кнопка Operator **Open app UI** не требует повторного configure. **Как собирать SPA в Cursor / VS Code** (MCP, BFF, раскладка, анти-паттерны): [external-ide](external-ide.md).
 
 **Split nginx:** `location ^~ /apps/` **обязан** идти `proxy_pass` на `ispf-server` (как `/api/`). Иначе `try_files … /index.html` отдаёт админ-консоль на `/apps/<appId>/`. См. [ADR-0054](decisions/0054-hosted-ui-packs.md) и `deploy/nginx-ispf.conf`.
 

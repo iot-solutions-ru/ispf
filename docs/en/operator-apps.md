@@ -45,4 +45,5 @@ Tree: `root.platform.operator-apps.{appId}`.
 ## Related
 
 - [web-console](web-console.md) — operator vs admin shell
+- [external-ide](external-ide.md) — hosted SPA / Open app UI from an external IDE
 - [release-dogfood](release-dogfood.md) — pre-tag gate
