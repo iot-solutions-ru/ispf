@@ -21,6 +21,7 @@ export type ChartHistoryBucketId =
   | "30m"
   | "1h"
   | "6h"
+  | "8h"
   | "1d";
 
 export const CHART_SAMPLE_MODE_IDS: ChartSampleMode[] = ["auto", "aggregate", "coalesce", "raw"];
@@ -33,10 +34,14 @@ export const CHART_HISTORY_BUCKET_OPTIONS: { id: ChartHistoryBucketId; label: st
   { id: "30m", label: "30m" },
   { id: "1h", label: "1h" },
   { id: "6h", label: "6h" },
+  { id: "8h", label: "8h" },
   { id: "1d", label: "1d" },
 ];
 
 export const DEFAULT_LIVE_COALESCE_MS = 1_000;
+
+/** Default ClickHouse rollup granules ({@code HistorianRollupBuckets.DEFAULT_SPEC}). */
+export const DEFAULT_ROLLUP_GRANULES = ["5m", "1h", "8h"] as const;
 
 const BUCKET_MS: Record<Exclude<ChartHistoryBucketId, "auto">, number> = {
   "1m": 60_000,
@@ -45,6 +50,7 @@ const BUCKET_MS: Record<Exclude<ChartHistoryBucketId, "auto">, number> = {
   "30m": 30 * 60_000,
   "1h": 60 * 60_000,
   "6h": 6 * 60 * 60_000,
+  "8h": 8 * 60 * 60_000,
   "1d": 24 * 60 * 60_000,
 };
 
@@ -74,7 +80,7 @@ export function bucketDurationMs(bucket: string): number {
 
 /**
  * Historian bucket for chart windows. Prefer explicit override; otherwise match range
- * (live defaults to 1m so maxPoints≈minutes of coverage).
+ * to default rollup granules (5m / 1h / 8h). Live stays on 1m/5m hot aggregates.
  */
 export function resolveChartHistoryBucket(
   historyRange: WidgetHistoryRange,

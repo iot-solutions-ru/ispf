@@ -99,4 +99,36 @@ class HistorianRollupQueryServiceTest {
         assertThat(result).isEmpty();
         verify(rollupStore, never()).queryBuckets(any(), any(), any(), any(), any(), any(), anyInt());
     }
+
+    @Test
+    void sevenDaySlidingWindowStillUsesRollup() {
+        HistorianRollupQueryService service = new HistorianRollupQueryService(
+                rollupStore,
+                subscriptionIndex,
+                analyticsProperties
+        );
+        when(rollupStore.isConfigured()).thenReturn(true);
+        Instant to = Instant.parse("2026-07-09T00:00:00Z");
+        Instant from = to.minus(Duration.ofDays(7)).plusSeconds(30);
+        Duration bucket = Duration.ofHours(1);
+        List<VariableHistoryService.VariableHistoryBucket> buckets = List.of(
+                new VariableHistoryService.VariableHistoryBucket(from, 10.0, 9.0, 11.0, 5)
+        );
+        when(subscriptionIndex.isSubscribed("root.dev", "temperature", "value", bucket)).thenReturn(true);
+        when(rollupStore.queryBuckets("root.dev", "temperature", "value", bucket, from, to, 500))
+                .thenReturn(buckets);
+
+        Optional<HistorianRollupQueryService.RollupQueryResult> result = service.tryRollupQuery(
+                "root.dev",
+                "temperature",
+                "value",
+                from,
+                to,
+                bucket,
+                500
+        );
+
+        assertThat(result).isPresent();
+        assertThat(result.orElseThrow().dataSource()).isEqualTo("rollup");
+    }
 }

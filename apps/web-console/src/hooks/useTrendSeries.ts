@@ -325,6 +325,8 @@ function bucketHintMs(bucket: string): number {
       return 60 * 60_000;
     case "6h":
       return 6 * 60 * 60_000;
+    case "8h":
+      return 8 * 60 * 60_000;
     case "1d":
       return 24 * 60 * 60_000;
     default:
