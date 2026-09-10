@@ -123,6 +123,11 @@ public class ExpressionEngine {
         compile(expression);
     }
 
+    /** Compiles a payload-scoped CEL expression (event filters) without evaluating it. */
+    public void validatePayloadCelCompile(String expression) {
+        payloadCompiledCache.computeIfAbsent(expression, this::compilePayloadUncached);
+    }
+
     private PayloadCompiledExpression compilePayloadUncached(String expression) {
         String normalized = normalizeMapIndexSelects(expression);
         try {

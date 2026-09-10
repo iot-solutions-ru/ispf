@@ -369,7 +369,7 @@ export interface EventFeedWidget extends DashboardWidgetBase {
   type: "event-feed";
   objectPathPrefix?: string;
   eventNamesJson?: string;
-  /** Client-side filter on payload row, e.g. `count>10 && name contains abc` */
+  /** Client mini-DSL, or CEL when the expression mentions `payload` (evaluated on the server). */
   payloadFilterExpr?: string;
   maxItems?: number;
 }

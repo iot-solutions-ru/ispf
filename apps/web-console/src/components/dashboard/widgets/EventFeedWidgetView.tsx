@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchEvents } from "../../../api";
 import type { EventFeedWidget } from "../../../types/dashboard";
-import { matchesPayloadFilter } from "../../../utils/ui/payloadFilter";
+import { isCelEventFilter, matchesPayloadFilter } from "../../../utils/ui/payloadFilter";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
@@ -61,10 +61,13 @@ export default function EventFeedWidgetView({
 
   const liveMax = widget.maxItems ?? LIVE_LIMIT;
   const fetchLimit = mode === "live" ? liveMax : historyLimit;
+  const celExpr = isCelEventFilter(widget.payloadFilterExpr)
+    ? widget.payloadFilterExpr?.trim()
+    : undefined;
 
   const events = useQuery({
-    queryKey: ["events", "feed", pathPrefix, fetchLimit, mode],
-    queryFn: () => fetchEvents(undefined, fetchLimit),
+    queryKey: ["events", "feed", pathPrefix, fetchLimit, mode, celExpr],
+    queryFn: () => fetchEvents(undefined, fetchLimit, { expr: celExpr }),
     refetchInterval: mode === "live" ? refreshIntervalMs : false,
     staleTime: mode === "live" ? 0 : 30_000,
   });
@@ -78,7 +81,7 @@ export default function EventFeedWidgetView({
         return false;
       }
       const payloadRow = event.payload?.rows?.[0];
-      if (!matchesPayloadFilter(payloadRow, widget.payloadFilterExpr)) {
+      if (!celExpr && !matchesPayloadFilter(payloadRow, widget.payloadFilterExpr)) {
         return false;
       }
       return true;
@@ -99,7 +102,7 @@ export default function EventFeedWidgetView({
     }
 
     return rows;
-  }, [eventNames, events.data, levelFilter, mode, pathPrefix, searchFilter, widget.payloadFilterExpr]);
+  }, [celExpr, eventNames, events.data, levelFilter, mode, pathPrefix, searchFilter, widget.payloadFilterExpr]);
 
   const levels = useMemo(() => {
     const set = new Set<string>();

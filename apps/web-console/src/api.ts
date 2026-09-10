@@ -227,10 +227,20 @@ export function invokeFunction(
   });
 }
 
-export function fetchEvents(objectPath?: string, limit = 50): Promise<import("./types/event").ObjectEvent[]> {
+export function fetchEvents(
+  objectPath?: string,
+  limit = 50,
+  options: { filterPath?: string; expr?: string } = {}
+): Promise<import("./types/event").ObjectEvent[]> {
   const params = new URLSearchParams({ limit: String(limit) });
   if (objectPath) {
     params.set("objectPath", objectPath);
+  }
+  if (options.filterPath?.trim()) {
+    params.set("filterPath", options.filterPath.trim());
+  }
+  if (options.expr?.trim()) {
+    params.set("expr", options.expr.trim());
   }
   return request(`/api/v1/events?${params}`);
 }

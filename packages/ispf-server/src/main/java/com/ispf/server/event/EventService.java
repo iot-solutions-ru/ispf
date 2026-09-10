@@ -5,6 +5,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.EventLevel;
 import com.ispf.core.model.DataRecord;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.application.catalog.EventCatalogPayloadValidator;
@@ -30,6 +31,8 @@ import java.util.Set;
 
 @Service
 public class EventService {
+
+    private static final int MAX_FILTER_EXPRESSION_LENGTH = 2000;
 
     private final ObjectManager objectManager;
     private final EventJournalStore eventJournalStore;
@@ -174,28 +177,37 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public List<ObjectEvent> list(String objectPath, int limit, String filterPath) {
+        return list(objectPath, limit, filterPath, null);
+    }
+
+    /**
+     * @param expression optional payload-scoped CEL (same bindings as saved filter {@code filterExpression})
+     */
+    @Transactional(readOnly = true)
+    public List<ObjectEvent> list(String objectPath, int limit, String filterPath, String expression) {
         int capped = Math.max(1, Math.min(limit, 200));
         EventFilterDefinition filter = resolveFilter(filterPath);
-        // Over-fetch when filtering so pattern/severity cuts still return a full page.
-        int fetchLimit = filter != null ? Math.min(1000, capped * 10) : capped;
+        String expr = normalizeExpression(expression);
+        // Over-fetch when filtering so pattern/severity/CEL cuts still return a full page.
+        int fetchLimit = (filter != null || expr != null) ? Math.min(1000, capped * 10) : capped;
         boolean globalQuery = objectPath == null || objectPath.isBlank();
         List<ObjectEvent> fromCache = recentEventCache.isEnabled()
                 ? recentEventCache.query(objectPath, fetchLimit)
                 : List.of();
         if (!eventJournalProperties.isEnabled()) {
-            return applyFilter(fromCache, filter, capped);
+            return applyFilter(fromCache, filter, expr, capped);
         }
         if (!globalQuery && !objectManager.isEventJournalEnabled(objectPath.trim())) {
-            return applyFilter(fromCache, filter, capped);
+            return applyFilter(fromCache, filter, expr, capped);
         }
-        if (filter == null && fromCache.size() >= capped) {
+        if (filter == null && expr == null && fromCache.size() >= capped) {
             return fromCache.subList(0, capped);
         }
         boolean skipGlobalStore = globalQuery
                 && eventJournalProperties.isCassandraStore()
                 && !eventJournalProperties.isCassandraGlobalTableEnabled();
         if (skipGlobalStore) {
-            return applyFilter(fromCache, filter, capped);
+            return applyFilter(fromCache, filter, expr, capped);
         }
         Set<String> seen = new HashSet<>();
         for (ObjectEvent event : fromCache) {
@@ -215,7 +227,25 @@ public class EventService {
             }
         }
         merged.sort((left, right) -> right.timestamp().compareTo(left.timestamp()));
-        return applyFilter(merged, filter, capped);
+        return applyFilter(merged, filter, expr, capped);
+    }
+
+    private String normalizeExpression(String expression) {
+        if (expression == null || expression.isBlank()) {
+            return null;
+        }
+        String trimmed = expression.trim();
+        if (trimmed.length() > MAX_FILTER_EXPRESSION_LENGTH) {
+            throw new IllegalArgumentException(
+                    "Event filter expression exceeds " + MAX_FILTER_EXPRESSION_LENGTH + " characters"
+            );
+        }
+        try {
+            eventFilterMatcher.validateExpression(trimmed);
+        } catch (ExpressionException ex) {
+            throw new IllegalArgumentException(ex.getMessage(), ex);
+        }
+        return trimmed;
     }
 
     private EventFilterDefinition resolveFilter(String filterPath) {
@@ -225,20 +255,30 @@ public class EventService {
         return eventFilterObjectService.getByPath(filterPath.trim());
     }
 
-    private List<ObjectEvent> applyFilter(List<ObjectEvent> events, EventFilterDefinition filter, int limit) {
+    private List<ObjectEvent> applyFilter(
+            List<ObjectEvent> events,
+            EventFilterDefinition filter,
+            String expression,
+            int limit
+    ) {
         if (events == null || events.isEmpty()) {
             return List.of();
         }
-        if (filter == null) {
+        boolean hasExpr = expression != null && !expression.isBlank();
+        if (filter == null && !hasExpr) {
             return events.size() <= limit ? events : events.subList(0, limit);
         }
         List<ObjectEvent> matched = new ArrayList<>(Math.min(events.size(), limit));
         for (ObjectEvent event : events) {
-            if (eventFilterMatcher.matches(filter, event)) {
-                matched.add(event);
-                if (matched.size() >= limit) {
-                    break;
-                }
+            if (filter != null && !eventFilterMatcher.matches(filter, event)) {
+                continue;
+            }
+            if (hasExpr && !eventFilterMatcher.matchesExpression(expression, event)) {
+                continue;
+            }
+            matched.add(event);
+            if (matched.size() >= limit) {
+                break;
             }
         }
         return matched;

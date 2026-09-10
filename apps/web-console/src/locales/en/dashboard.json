@@ -67,7 +67,7 @@
   "rules.templates.onSelectMode": "Mode on selection",
   "rules.templates.showWidget": "Show widget in detail",
   "rules.templates.hideWidget": "Hide widget when idle",
-  "editor.deprecation.payloadFilterExpr": "Legacy mini-DSL. Prefer Platform rules (Rules tab) with CEL condition on event payload.",
+  "editor.deprecation.payloadFilterExpr": "Legacy mini-DSL unless the expression mentions payload. CEL such as payload.int > 20 is evaluated on the server.",
   "editor.deprecation.requireSessionParamsJson": "Legacy gate. Prefer Platform rules with CEL on context.params.* before showing or enabling actions.",
   "haystackBind.open": "Bind by Haystack query",
   "haystackBind.title": "Bind widgets by Haystack query",

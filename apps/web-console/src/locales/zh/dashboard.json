@@ -2,7 +2,7 @@
   "editor.advanced": "高级",
   "editor.containerDropHint": "选择此容器时，将小部件拖放到此处或从调色板添加。",
   "editor.demoPreviewLabel": "demoPreviewJson（编辑器预览）",
-  "editor.deprecation.payloadFilterExpr": "旧版 mini-DSL。请改用平台规则（规则选项卡）并对事件 payload 使用 CEL。",
+  "editor.deprecation.payloadFilterExpr": "旧版 mini-DSL（表达式不含 payload 时）。含 payload 的 CEL（如 payload.int > 20）在服务器上求值。",
   "editor.deprecation.requireSessionParamsJson": "旧版门禁。请改用对 context.params.* 的 CEL 平台规则。",
   "editor.general": "常规",
   "editor.layerBackward": "下移",

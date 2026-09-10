@@ -53,6 +53,7 @@ public class EventController {
             @RequestParam(required = false) String objectPath,
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) String filterPath,
+            @RequestParam(required = false) String expr,
             Authentication authentication
     ) {
         String canonicalObject = canonicalizeOptional(objectPath, authentication);
@@ -63,10 +64,14 @@ public class EventController {
         if (canonicalFilter != null) {
             tenantScopeService.requirePathInScope(canonicalFilter, authentication);
         }
-        return eventService.list(canonicalObject, limit, canonicalFilter).stream()
-                .filter(event -> tenantScopeService.isPathVisible(event.objectPath(), authentication))
-                .map(event -> virtualizeEvent(event, authentication))
-                .toList();
+        try {
+            return eventService.list(canonicalObject, limit, canonicalFilter, expr).stream()
+                    .filter(event -> tenantScopeService.isPathVisible(event.objectPath(), authentication))
+                    .map(event -> virtualizeEvent(event, authentication))
+                    .toList();
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @GetMapping("/journal-status")
