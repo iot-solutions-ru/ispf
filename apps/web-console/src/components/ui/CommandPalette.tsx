@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ModalPortal from "../../ui/ModalPortal";
 import type { ObjectSummary } from "../../types";
+import { useObjectTreeSearch } from "../../hooks/useObjectTreeSearch";
+import { OBJECT_SEARCH_MIN_CHARS } from "../../utils/tree/treeSearch";
 
 export type CommandPaletteWorkspace = "explorer" | "system" | "ai-studio";
 
@@ -38,6 +40,7 @@ export default function CommandPalette({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const objectSearch = useObjectTreeSearch(query, open, { limit: 24 });
 
   useEffect(() => {
     if (!open) {
@@ -96,7 +99,12 @@ export default function CommandPalette({
         )
       : actions;
 
-    const objectMatches = objects
+    const searchableObjects: ObjectSummary[] =
+      query.trim().length >= OBJECT_SEARCH_MIN_CHARS && objectSearch.data?.objects
+        ? objectSearch.data.objects
+        : objects;
+
+    const objectMatches = searchableObjects
       .filter((obj) => {
         if (!q) {
           return obj.type === "DASHBOARD" || obj.path.split(".").length <= 4;
@@ -117,7 +125,17 @@ export default function CommandPalette({
       }));
 
     return [...filteredActions, ...objectMatches];
-  }, [canConfigure, isAdmin, objects, onCreate, onOpenWorkspace, onSelectPath, query, t]);
+  }, [
+    canConfigure,
+    isAdmin,
+    objectSearch.data,
+    objects,
+    onCreate,
+    onOpenWorkspace,
+    onSelectPath,
+    query,
+    t,
+  ]);
 
   useEffect(() => {
     setActiveIndex(0);

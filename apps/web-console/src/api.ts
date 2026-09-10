@@ -26,10 +26,12 @@ export type {
   UpdateVariableHistoryPayload,
   CreateVariablePayload,
   UpdateVariableDefinitionPayload,
+  ObjectSearchResponse,
 } from "./api/objectsCore";
 
 export {
   fetchObjects,
+  searchObjects,
   reorderObjectChildren,
   fetchObjectEditor,
   fetchObject,
