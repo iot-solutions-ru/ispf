@@ -155,6 +155,7 @@ Content-Type: application/json
 |--------|------|-------|-------------|
 | GET | `/api/v1/events` | operator+ | Журнал (`objectPath`, `limit` ≤ 200) |
 | POST | `/api/v1/events/fire` | operator+ | Публикация события |
+| POST | `/api/v1/events/journal/purge` | admin (tenant-admin, если `objectPath` в scope) | Одно SQL/mutation удаление сохранённых строк старше `olderThan`. Тело: `{ "olderThan": "<ISO-8601>", "objectPath": "<опционально>" }`. Cassandra/Scylla — 409 (только TTL). |
 
 ### Публикация события
 

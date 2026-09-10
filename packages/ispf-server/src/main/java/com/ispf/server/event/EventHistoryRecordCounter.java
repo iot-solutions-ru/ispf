@@ -29,6 +29,16 @@ public class EventHistoryRecordCounter {
         }
     }
 
+    public void recordDeleted(long count) {
+        if (count <= 0) {
+            return;
+        }
+        long current = total.get();
+        if (current > 0) {
+            total.set(Math.max(0, current - count));
+        }
+    }
+
     public long totalRecords() {
         long current = total.get();
         return current < 0 ? 0 : current;

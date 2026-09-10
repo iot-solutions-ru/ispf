@@ -133,7 +133,32 @@ public class JdbcEventJournalStore implements EventJournalStore {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void purgeOlderThan(Instant cutoff) {
-        jdbcTemplate.update("DELETE FROM event_history WHERE occurred_at < ?", Timestamp.from(cutoff));
+        deleteOlderThan(cutoff, null);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public long deleteOlderThan(Instant cutoff, String objectPath) {
+        int deleted;
+        if (objectPath == null || objectPath.isBlank()) {
+            deleted = jdbcTemplate.update(
+                    "DELETE FROM event_history WHERE occurred_at < ?",
+                    Timestamp.from(cutoff)
+            );
+        } else {
+            deleted = jdbcTemplate.update(
+                    """
+                            DELETE FROM event_history
+                            WHERE occurred_at < ?
+                              AND (object_path = ? OR object_path LIKE ?)
+                            """,
+                    Timestamp.from(cutoff),
+                    objectPath,
+                    objectPath + ".%"
+            );
+        }
+        recordCounter.recordDeleted(deleted);
+        return deleted;
     }
 
     @Override

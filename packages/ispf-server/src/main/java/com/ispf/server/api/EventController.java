@@ -81,6 +81,41 @@ public class EventController {
         return eventService.journalStatus(canonical);
     }
 
+    @PostMapping("/journal/purge")
+    public Map<String, Object> purgeJournal(
+            @RequestBody PurgeJournalRequest request,
+            Authentication authentication
+    ) {
+        if (request == null || request.olderThan() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "olderThan is required");
+        }
+        String canonical = canonicalizeOptional(request.objectPath(), authentication);
+        if (canonical == null || canonical.isBlank()) {
+            objectAccessService.requireAdmin(authentication);
+        } else {
+            tenantScopeService.requirePathInScope(canonical, authentication);
+            if (!com.ispf.server.config.IspfRoles.isGlobalAdmin(authentication)
+                    && !com.ispf.server.config.IspfRoles.isTenantAdmin(authentication)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+            }
+        }
+        try {
+            long deleted = eventService.purgeJournal(request.olderThan(), canonical);
+            return Map.of(
+                    "deleted", deleted,
+                    "olderThan", request.olderThan().toString(),
+                    "objectPath", canonical == null ? "" : canonical
+            );
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (UnsupportedOperationException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+    }
+
+    public record PurgeJournalRequest(Instant olderThan, String objectPath) {
+    }
+
     @PostMapping("/fire")
     public ObjectEvent fire(
             @RequestParam String objectPath,
