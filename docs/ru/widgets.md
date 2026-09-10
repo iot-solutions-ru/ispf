@@ -607,7 +607,7 @@
 |------|----------|
 | `targetDashboardPath` | Статический путь |
 | `targetDashboardPathKey` | Путь из `session.params[key]` |
-| `inheritContext` | `true` — передать selection родителя |
+| `inheritContext` | По умолчанию `true` — вложенные виджеты делят selection/params родителя. `false` изолирует сессию (навигация остаётся родительской). |
 
 ---
 

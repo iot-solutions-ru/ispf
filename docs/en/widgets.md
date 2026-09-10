@@ -607,7 +607,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 |-------|-------------|
 | `targetDashboardPath` | Static path |
 | `targetDashboardPathKey` | Path from `session.params[key]` |
-| `inheritContext` | `true` — pass parent selection |
+| `inheritContext` | Default `true` — nested widgets share parent selection/params. `false` isolates session (navigation still uses the parent). |
 
 ---
 
