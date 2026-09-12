@@ -132,6 +132,9 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.POST, "/api/v1/alarm-shelves/requests/*/reject")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/events/journal/purge")
+                .hasAnyRole(IspfRoles.ROLES_TENANT_SECURITY);
+
         auth.requestMatchers(HttpMethod.GET, "/api/v1/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 

@@ -247,6 +247,19 @@ export function fetchEvents(
   return request(`/api/v1/events?${params}`);
 }
 
+export function purgeEventJournal(options: {
+  olderThan: string;
+  objectPath?: string;
+}): Promise<{ deleted: number; olderThan: string; objectPath: string }> {
+  return request("/api/v1/events/journal/purge", {
+    method: "POST",
+    body: JSON.stringify({
+      olderThan: options.olderThan,
+      objectPath: options.objectPath,
+    }),
+  });
+}
+
 export function fireEvent(
   objectPath: string,
   eventName: string,

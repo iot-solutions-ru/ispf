@@ -21,6 +21,14 @@ public interface EventJournalStore {
 
     void purgeOlderThan(Instant cutoff);
 
+    /**
+     * Deletes matching journal rows in one store statement (not per-id round-trips).
+     *
+     * @param objectPath blank means every object
+     * @return deleted row count, or {@code -1} if the backend only queued a mutation
+     */
+    long deleteOlderThan(Instant cutoff, String objectPath);
+
     /** When false, retention is handled by the backend (Timescale policy or ClickHouse TTL). */
     boolean supportsApplicationRetentionPurge();
 }

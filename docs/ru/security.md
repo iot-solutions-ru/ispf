@@ -83,6 +83,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 | `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ |
 | `WS /ws/**` | ✓ | ✓ | ✓ | ✓ |
 | `GET /api/v1/**` | ✓ | ✓ | ✓ | |
+| `POST /api/v1/events/journal/purge` | ✓ | | | |
 | `POST /api/v1/events/**` | ✓ | ✓ | ✓ | |
 | `POST .../functions/invoke` | ✓ | ✓ | ✓ | |
 | `POST /api/v1/bff/**` | ✓ | ✓ | ✓ | |

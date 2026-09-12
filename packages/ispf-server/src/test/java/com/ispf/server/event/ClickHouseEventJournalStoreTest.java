@@ -36,7 +36,9 @@ class ClickHouseEventJournalStoreTest {
             lastQuery.set(query);
             queries.add(query);
             lastBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            byte[] response = "Ok.".getBytes(StandardCharsets.UTF_8);
+            byte[] response = query != null && query.contains("count")
+                    ? "{\"cnt\":4}\n".getBytes(StandardCharsets.UTF_8)
+                    : "Ok.".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, response.length);
             exchange.getResponseBody().write(response);
             exchange.close();
@@ -81,5 +83,15 @@ class ClickHouseEventJournalStoreTest {
 
         assertTrue(queries.stream().anyMatch(q -> q.contains("CREATE+DATABASE")));
         assertTrue(queries.stream().anyMatch(q -> q.contains("CREATE+TABLE")));
+    }
+
+    @Test
+    void deleteOlderThanCountsThenIssuesOneAlterDelete() {
+        long deleted = store.deleteOlderThan(Instant.parse("2024-01-01T00:00:00Z"), "root.devices.a");
+
+        assertEquals(4L, deleted);
+        assertTrue(queries.stream().anyMatch(q -> q.contains("count")));
+        assertTrue(queries.stream().anyMatch(q -> q.contains("ALTER+TABLE") && q.contains("DELETE")));
+        assertEquals(0L, recordCounter.totalRecords());
     }
 }

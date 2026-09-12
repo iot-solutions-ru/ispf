@@ -248,6 +248,13 @@ public class CassandraEventJournalStore implements EventJournalStore {
     }
 
     @Override
+    public long deleteOlderThan(Instant cutoff, String objectPath) {
+        throw new UnsupportedOperationException(
+                "Manual event journal purge is not supported for Cassandra/Scylla (row TTL)"
+        );
+    }
+
+    @Override
     public boolean supportsApplicationRetentionPurge() {
         return false;
     }
