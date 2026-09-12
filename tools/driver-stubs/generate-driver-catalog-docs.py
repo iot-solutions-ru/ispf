@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 PURPOSE_EN = {
     "virtual": "Simulator / virtual device profiles for demos and tests",
-    "mqtt": "MQTT client: subscribe topics and optional publish/write",
+    "mqtt": "MQTT 3.1.1 client (Paho mqttv3): subscribe topics and optional publish/write",
     "modbus-tcp": "Modbus TCP master (FC read/write holding/input/coils)",
     "modbus-rtu": "Modbus RTU master over serial",
     "modbus-udp": "Modbus UDP master",
@@ -78,7 +78,7 @@ PURPOSE_EN = {
 
 PURPOSE_RU = {
     "virtual": "Симулятор / виртуальные профили устройств для демо и тестов",
-    "mqtt": "MQTT-клиент: подписка на топики и опциональная запись/publish",
+    "mqtt": "MQTT 3.1.1 клиент (Paho mqttv3): подписка на топики и опциональная запись/publish",
     "modbus-tcp": "Modbus TCP master (чтение/запись holding/input/coils)",
     "modbus-rtu": "Modbus RTU master по последовательному порту",
     "modbus-udp": "Modbus UDP master",

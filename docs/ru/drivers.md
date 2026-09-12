@@ -235,13 +235,17 @@ GET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>
 
 ### mqtt (`ispf-driver-mqtt`)
 
-Eclipse Paho, подписка на топики.
+Eclipse Paho `org.eclipse.paho.client.mqttv3` — только MQTT **3.1.1**.
+
+MQTT 5 (user properties, session expiry, reason codes, topic aliases, shared subscriptions) — **non-goal** этого драйвера, пока не выбран отдельный MQTT 5 клиент. Брокеры, которым нужны только возможности MQTT 5, не совместимы.
 
 Конфиг: `brokerUrl`, `topicPrefix`, `clientId`, credentials.
 
 Маппинг точек: `variableName → mqttTopicSuffix`.
 
 Loopback-тест: `MqttDeviceDriverTest` (встроенный moquette broker, subscribe + publish write).
+
+`sparkplug-b` использует ту же сессию Paho mqttv3 (MQTT 3.1.1) плюс кодек Sparkplug B protobuf.
 
 ### modbus-tcp (`ispf-driver-modbus`)
 
@@ -579,7 +583,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `modbus-tcp` | `ispf-driver-modbus` | PRODUCTION | Apache-2.0 | Modbus TCP master (чтение/запись holding/input/coils) |
 | `modbus-udp` | `ispf-driver-modbus-udp` | PRODUCTION | Apache-2.0 | Modbus UDP master |
 | `modem-at` | `ispf-driver-modem-at` | PRODUCTION | Apache-2.0 | GSM/cellular AT-команды (TCP/serial) |
-| `mqtt` | `ispf-driver-mqtt` | PRODUCTION | Apache-2.0 | MQTT-клиент: подписка на топики и опциональная запись/publish |
+| `mqtt` | `ispf-driver-mqtt` | PRODUCTION | Apache-2.0 | MQTT 3.1.1 клиент (Paho mqttv3): подписка на топики и опциональная запись/publish |
 | `mqtt-sn` | `ispf-driver-mqtt-sn` | STUB | Apache-2.0 | MQTT-SN: MQTT For Sensor Networks stub (stub TCP-доступности; codec пока не реализован) |
 | `mtconnect` | `ispf-driver-mtconnect` | STUB | Apache-2.0 | MTConnect: MTConnect agent HTTP stub (stub TCP-доступности; codec пока не реализован) |
 | `nats` | `ispf-driver-nats` | STUB | Apache-2.0 | NATS: NATS messaging stub (cluster messaging is separate) (stub TCP-доступности; codec пока не реализован) |
