@@ -81,4 +81,5 @@ All-in-one JAR без отдельного static root — отдельный `l
 
 - [0001-app-platform-boundary](0001-app-platform-boundary.md)
 - [marketplace](../marketplace.md)
+- [external-ide](../external-ide.md) — Cursor / VS Code: SPA, MCP, zip pack
 - Oil Control: https://github.com/iot-solutions-ru/ispf/pull/64

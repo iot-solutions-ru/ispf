@@ -78,7 +78,9 @@
 
 ## H
 
-**HMI (Human-Machine Interface)** — интерфейс оператора. В ISPF — operator HMI на базе дашбордов.
+**HMI (Human-Machine Interface)** — интерфейс оператора. В ISPF — operator HMI на базе дашбордов плюс опциональный **hosted SPA** приложения на `/apps/<appId>/` ([external-ide](external-ide.md)).
+
+**Hosted UI pack** — zip статического React (или HTML) SPA плюс `ui-pack.json`, ставится в `ISPF_UI_PACKS_DIR/<appId>/` и отдаётся с `/apps/<appId>/`. Компаньон application bundle (`uiPackSlug`). См. [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md).
 
 ---
 
@@ -103,6 +105,8 @@
 **Blueprint (BlueprintDefinition)** — шаблон структуры объекта: переменные, события, функции, bindings. Виды: `MIXIN`, `SINGLETON`, `INSTANCE`. MIXIN auto-apply при создании только при непустом CEL (*Applicability condition* / `suitabilityExpression`). Явное применение — через `templateId` или API.
 
 **Fixture model** — демо/лабораторная модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется при `ispf.bootstrap.fixtures-enabled=true`. Не входит в core built-in registry. См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+
+**MCP (Model Context Protocol)** — адаптер, отдающий platform agent tools внешним IDE (Cursor, CI). Endpoint `POST /api/v1/ai/mcp`. См. [ai-development](ai-development.md), [external-ide](external-ide.md).
 
 **Model engine** — плагин `ispf-plugin-blueprint`, применяющий модели к объектам.
 
@@ -149,6 +153,8 @@
 ---
 
 ## U
+
+**UI pack** — см. **Hosted UI pack**.
 
 **User task** — элемент BPMN: задача для оператора. Появляется в Work Queue до claim/complete.
 

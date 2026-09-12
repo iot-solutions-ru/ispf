@@ -11,6 +11,9 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Система → Настройки: запись sensitive (`ai.api-key`) из UI; кнопка перезапуска сервера (`POST /runtime-settings/restart`).
+- AI Studio чат: nginx HTML 404 при вызове LLM — host-only `base-url` теперь получает `/v1`, HTML шлюза заменяется подсказкой с URL запроса.
+- Runtime settings из UI снова применяются ко **всем** ключам каталога (не только AI): Boot 4 не читал старый SPI EnvironmentPostProcessor, yaml/env затирали `runtime-settings.properties`. Профиль `local` больше не пинит lab LLM URL.
 - Auth logout AuthZ: `POST /api/v1/auth/logout` снова `permitAll` (операторы могут отзывать Bearer).
 - Marketplace `mqtt-temperature`: H2-совместимый SQL как в lab bundle.
 - Modbus TCP/UDP/RTU `readConfig`: сначала `configuration()`, затем переменные устройства (fix bind host/port из `driverConfigJson`).
@@ -26,6 +29,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **Внешняя AI IDE / hosted SPA** — how-to Cursor/VS Code: MCP, BFF, Vite `base`, ui-pack. Хаб [`docs/ru/external-ide.md`](external-ide.md) (канон EN [`docs/en/external-ide.md`](../en/external-ide.md)).
 - **OT Trust BL-140 Pilot #1 soak day 2** — auto soak-check 2026-09-07 06:00 MSK pass. Evidence `docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md`.
 - **OT Trust BL-140 Pilot #1 C5 + daily soak check** — disconnect/reconnect на lab VLAN; `tools/ot-trust/pilot1-modbus-soak-check.py` + timer 06:00 MSK. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md`.
 - **OT Trust BL-140 Pilot #1 lab day 1** — площадка `lab-ot-vlan-192.168.100`; Modbus peer `:1502`; 50 тегов RUNNING; write+historian; journal day 1. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md`.

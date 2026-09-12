@@ -167,6 +167,7 @@ DONE    = validate → dry-run/preview → apply  (P10)
 | Дать типизированному объекту variables / events / functions | **SHAPE** — blueprint apply / instantiate (или `models[]` в bundle) | — | Каждый раз заново руками те же переменные |
 | Ревью или промоут пачки уже существующих tree ops | **PROMOTE** — change set `preview → apply` | `force` только явно | Change set как greenfield bootstrap приложения |
 | Итеративный HMI без релизного конвейера | **AUTHOR** Admin UI на дереве | Agent в ask/plan | Change set вместо Explorer |
+| Продуктовый React UI оператора (любые компоненты) | **AUTHOR** SPA в Cursor/VS Code + **SHIP** bundle + ui-pack | Виджетный kit как Operator fallback | Слить SPA в `apps/web-console` |
 
 #### Decision flow (один проход)
 
@@ -183,7 +184,7 @@ DONE    = validate → dry-run/preview → apply  (P10)
 Перед любым shipping-mutate: validate → dry-run/preview → apply (P10)
 ```
 
-Метки A–H (tree-first, console, bundle, REST, AI Studio, reference, platform HMI, commercial) — это **варианты AUTHOR/SHIP** внутри этого стека: детали tools и Operator UI. Канон выбора — этот раздел; расширенная таблица — в [agent-knowledge § Approaches](agent-knowledge.md).
+Метки A–I (tree-first, console, bundle, REST, AI Studio, reference, platform HMI, commercial, **hosted UI pack**) — это **варианты AUTHOR/SHIP** внутри этого стека: детали tools и Operator UI. Канон выбора — этот раздел; расширенная таблица — в [agent-knowledge § Approaches](agent-knowledge.md). How-to SPA: [external-ide](external-ide.md).
 
 Доктрина качества для этого стека (prevention вместо гвардов): [ADR-0051](decisions/0051-poka-yoke-constraints-over-guards.md).
 
@@ -193,7 +194,7 @@ DONE    = validate → dry-run/preview → apply  (P10)
 2. Если `needAppSchema` или `needCi` → путь **SHIP** bundle; иначе **AUTHOR** tree-first.
 3. Создание типизированных объектов → предпочитайте blueprint / model apply для **SHAPE**; не изобретайте параллельные наборы переменных.
 4. Никогда не предлагайте blueprint или change set как ровню bundle для greenfield-решений.
-5. Выбор пути: `search_context topic=application-principles` (этот раздел), затем `topic=agent-knowledge` для деталей A–H; `get_example_bundle` / playbooks — когда default = baseline bundle.
+5. Выбор пути: `search_context topic=application-principles` (этот раздел), затем `topic=agent-knowledge` для деталей A–I; `get_example_bundle` / playbooks — когда default = baseline bundle. Hosted SPA: `topic=external-ide`.
 
 ---
 
@@ -220,7 +221,9 @@ DONE    = validate → dry-run/preview → apply  (P10)
 
 **Для людей:** Operator HMI: `?mode=operator&app={appId}`. Меню и default dashboard — из `operatorUi` в bundle или `configure_operator_ui`. Приоритет: БД `operator_app_ui` → bundle `operatorUi` → autogen из dashboards.
 
-**Для агентов:** После tree-first POC — `configure_operator_ui`; в `finish` — URL с `?mode=operator&app=...&dashboard=...`.
+**Продуктовый UI:** hosted React SPA на `/apps/<appId>/` (ui-pack) — предпочтительная оболочка оператора, если нужны произвольные компоненты. Виджетные дашборды — fallback и lab/SCADA kit. How-to: [external-ide](external-ide.md).
+
+**Для агентов:** После tree-first POC — `configure_operator_ui`; в `finish` — URL с `?mode=operator&app=...&dashboard=...`. Для hosted SPA: также `operatorUi.spaNav` / `externalSpaUrl` / `uiPack` и `/apps/<appId>/`.
 
 ---
 
@@ -253,6 +256,7 @@ DONE    = validate → dry-run/preview → apply  (P10)
 | Уникальный оркестратор решения (один logic-хаб) | **SINGLETON** — предпочтительно `root.platform.singleton-blueprints.{project}` | [blueprints](blueprints.md), [agent-knowledge](agent-knowledge.md) |
 | Логика цифрового двойника (много однотипных) | **INSTANCE** → `instantiate_instance_type` (каждый twin несёт свою логику; не DEVICE) | [blueprints](blueprints.md) |
 | HMI-таблица | Виджет `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
+| Продуктовый React UI оператора | Hosted ui-pack + `POST /bff/invoke` | [external-ide](external-ide.md), [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) |
 | Legacy mini-DSL на виджете | **Deprecated** → Platform rules | [platform-logic](platform-logic.md) § legacy |
 
 ### Объекты логики vs DEVICE (обязательно)
@@ -274,6 +278,7 @@ DONE    = validate → dry-run/preview → apply  (P10)
 | Антипаттерн | Почему плохо | Правильный подход |
 |-------------|--------------|-------------------|
 | Отраслевой Java в сервере | Ломает границу platform/solution | Script function + tree |
+| Отраслевой React в `apps/web-console` | Ломает границу platform/solution | Hosted ui-pack ([external-ide](external-ide.md)) |
 | App layer как runtime | Дублирует object tree | Tree paths |
 | Логика на виджете | N mini-DSL, AI/люди путаются | Platform Rule |
 | sessionStorage-only context | Не durable, не multi-client | `@dashboardContext` + WS |
@@ -321,12 +326,13 @@ DONE    = validate → dry-run/preview → apply  (P10)
 | Документ | Назначение |
 |----------|------------|
 | [solution-developer-guide](solution-developer-guide.md) | Жизненный цикл: register → migrate → deploy → operator |
-| [agent-knowledge](agent-knowledge.md) | Варианты AUTHOR/SHIP A–H, карта docs, topics search_context |
+| [agent-knowledge](agent-knowledge.md) | Варианты AUTHOR/SHIP A–I, карта docs, topics search_context |
 | [blueprints](blueprints.md) | SHAPE — шаблоны структуры объектов |
 | [collaboration](collaboration.md) | PROMOTE — change sets, preview/apply |
 | [architecture](architecture.md) | Слои платформы, доменная модель |
 | [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
 | [ai-development](ai-development.md) | Agent tools, ContextPack, MCP |
+| [external-ide](external-ide.md) | Cursor / VS Code: hosted SPA + MCP + ui-pack |
 | [manufacturing-patterns](manufacturing-patterns.md) | MES-паттерны решений и граница |
 | [mes-capability-mcp](mes-capability-mcp.md) | Capability агента → MES-функции |
 | [solution-developer-public-api](solution-developer-public-api.md) | Стабильный контракт манифеста |

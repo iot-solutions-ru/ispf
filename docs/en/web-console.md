@@ -180,7 +180,7 @@ Components: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/f
 | Tab | Content |
 |-----|---------|
 | **Metrics** | Platform metrics, health cards (Redis, NATS, YARG, MCP), **Platform backup** |
-| **Runtime settings** | `GET/PATCH /api/v1/platform/runtime-settings` |
+| **Runtime settings** | `GET/PATCH /api/v1/platform/runtime-settings`; **Restart server** → `POST .../runtime-settings/restart` |
 | **Events / Functions / Bindings** | Invoke/audit logs |
 | **Change sets** | Platform change management |
 | **App schedules** | `GET/POST /api/v1/schedules` — JDBC `platform_schedules` (not to be confused with object-tree `SCHEDULE` → `ScheduleEditor`) |

@@ -37,7 +37,7 @@
 | SHIP | Bundle | Строки **C**, **D**, **E** (import), **F**, **H** |
 | PROMOTE | Change set | [collaboration](collaboration.md) § change-sets — не greenfield bootstrap |
 
-A–H ниже — **детали tooling** под AUTHOR/SHIP. Сначала слой в P7, потом строка таблицы.
+A–I ниже — **детали tooling** под AUTHOR/SHIP. Сначала слой в P7, потом строка таблицы.
 
 | # | Подход | Слой | Когда использовать | Доставка | Operator UI |
 |---|--------|------|-------------------|----------|-------------|
@@ -49,6 +49,7 @@ A–H ниже — **детали tooling** под AUTHOR/SHIP. Сначала �
 | **F** | **Reference example** | SHIP | Обучение, baseline MES/lab | `get_example_bundle` → adapt → import | из example-манифеста |
 | **G** | **Platform HMI only** | AUTHOR | Только мониторинг, без app schema | dashboards + binding rules на дереве | встроенное `platform` operator app |
 | **H** | **Commercial bundle** | SHIP | Лицензируемое решение | signed bundle + license gate | как у C |
+| **I** | **Hosted UI pack (внешняя IDE)** | AUTHOR+SHIP | Продуктовый React UI, любые компоненты | zip Vite SPA (`artifactKind: ui-pack`) + bundle BFF | `/apps/<appId>/` Open app UI |
 
 ### Дерево решений (кратко — зеркало P7)
 
@@ -56,6 +57,9 @@ A–H ниже — **детали tooling** под AUTHOR/SHIP. Сначала �
 Нужна изолированная app SQL и/или повторяемый релиз?
   ├─ ДА → SHIP: C/D/E/F/H (+ migrations[], если SQL)
   └─ НЕТ → AUTHOR: A/B/G (tree-only; SHAPE через blueprints для типизированных объектов)
+
+Нужен неограниченный React / брендированный SPA оператора?
+  └─ ДА → AUTHOR+SHIP строка **I**: внешняя IDE + ui-pack ([external-ide](external-ide.md)); виджетный kit — fallback
 
 Структура типизированного объекта (variables/events/functions)?
   └─ SHAPE → blueprint apply / models[] — не копировать руками каждый раз
@@ -391,6 +395,16 @@ Signed manifest + `license` block. Deploy через тот же import с пр�
 
 ---
 
+## I. Hosted UI pack (внешняя AI IDE)
+
+**Идея:** продуктовый UI оператора — **React SPA** в Cursor/VS Code (любые компоненты), платформа отдаёт его с `/apps/<appId>/`. Логика остаётся на дереве (BFF, SQL-схема, CEL, alerts). Отраслевые страницы не сливать в `apps/web-console`.
+
+Типовая цепочка: OpenAPI `functionName` → Vite `base: '/apps/<appId>/'` → `POST /bff/invoke` → `operatorUi.spaNav` + `uiPack` в бандле → zip + `ui-pack.json` → marketplace / `ISPF_UI_PACKS_DIR`.
+
+How-to: [external-ide](external-ide.md). Runtime: [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md). MCP: [ai-development](ai-development.md). Dogfood: `examples/oil-control-ui`, `examples/farmtwin-ui`.
+
+---
+
 ## Где выражать логику (не дублировать)
 
 | Задача | Механизм | Документ |
@@ -404,6 +418,7 @@ Signed manifest + `license` block. Deploy через тот же import с пр�
 | SQL → опрос переменных | sqlBinding/привязки[] | [applications](applications.md) |
 | Телеметрия устройства | Драйвер + сопоставления точек | [drivers](drivers.md) |
 | Таблица HMI | Виджет дашборда `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
+| Продуктовый React UI оператора | Hosted ui-pack + `/bff/invoke` | [external-ide](external-ide.md) |
 | Мнемосхема / P&ID | Объект `MIMIC` + виджет `scada-mimic` | [scada](scada.md) |
 | Legacy mini-DSL на виджете | **Устарело** → Правила платформы | [platform-logic](platform-logic.md) § наследие |
 
@@ -431,6 +446,7 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 | [product](product.md) | продукт | Обзор продукта, сюжеты |
 | [application-principles](application-principles.md) | принципы применения | Свод P1–P10, Target approach, антипаттерны |
 | [solution-developer-guide](solution-developer-guide.md) | решения, приложения | Жизненный цикл решения, 6 шагов |
+| [external-ide](external-ide.md) | external-ide, ui-pack, cursor, hosted-ui | Внешняя AI IDE, SPA, MCP, ui-pack |
 | [solution-developer-public-api](solution-developer-public-api.md) | публичный API, пакет | Манифест стабильного контракта |
 | [applications](applications.md) | приложения, BFF, бандлы | REQ-PF: развертывание, функции, SQL, расписания |
 | [glossary](glossary.md) | глоссарий | Термины |
@@ -533,7 +549,8 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 |-------|-------|
 | `application-principles` | Target approach, P1–P10, стек творения P7 |
 | `poka-yoke` | ADR-0051: constraints вместо гвардов; схемы до native FC |
-| `agent-knowledge` | Варианты AUTHOR/SHIP A–H под P7, карта docs |
+| `agent-knowledge` | Варианты AUTHOR/SHIP A–I под P7, карта docs |
+| `external-ide` | Hosted SPA в Cursor/VS Code, ui-pack, BFF |
 | `applications` | Bundle, BFF, migrations, functions |
 | `public-api` | Контракт manifest |
 | `solution` | Жизненный цикл solution developer |

@@ -19,6 +19,20 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Runtime settings save + restart** — System → Settings now writes sensitive
+  keys (`ai.api-key`) instead of skipping them, rejects the `********` mask, and
+  can schedule `ispf-server` restart (`POST /api/v1/platform/runtime-settings/restart`).
+- **AI Studio chat nginx HTML 404** — OpenAI-compatible base URL without `/v1`
+  (or a pasted `/chat/completions` path) posted to a host nginx and the chat
+  showed the HTML 404 page. Host-only URLs now get `/v1`; gateway HTML is
+  replaced with a hint plus the request URL.
+- **Platform Runtime settings not applied** — Spring Boot 4 only loads
+  `EnvironmentPostProcessor` from `META-INF/spring.factories`. ISPF registered
+  the override loader in the Boot 3 `META-INF/spring/…EnvironmentPostProcessor`
+  file, so **every** UI value in `runtime-settings.properties` (AI, database,
+  messaging, drivers, cluster, …) never beat yaml/env defaults. Also drop the
+  `local` profile lab LLM pin (`lab-edge.example.invalid`). HTTP errors now
+  include exception type + URL; LLM client uses HTTP/1.1.
 - **Auth logout AuthZ** — `POST /api/v1/auth/logout` is `permitAll` again so operators
   (and idempotent no-token calls) can revoke opaque Bearer sessions; was incorrectly
   CONFIG-gated. Evidence: [`docs/evidence/security-pentest/2026-09-09-engineering-review/`](docs/evidence/security-pentest/2026-09-09-engineering-review/).
@@ -45,6 +59,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **External AI IDE / hosted SPA** — how-to for Cursor/VS Code: MCP, BFF invoke, Vite `base`, ui-pack zip. Hub [`docs/en/external-ide.md`](docs/en/external-ide.md) (RU [`docs/ru/external-ide.md`](docs/ru/external-ide.md)); P7/P9, agent-knowledge approach **I**, marketplace, solution-developer-guide.
 - **OT Trust BL-140 Pilot #1 soak day 2** — auto soak-check 2026-09-07 06:00 MSK pass (`RUNNING`, 50 tags). Evidence [`docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md`](docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md).
 - **OT Trust BL-140 Pilot #1 C5 + daily soak check** — disconnect/reconnect on `lab-ot-vlan-192.168.100` (`ERROR`/`Not connected` → `RUNNING`); `tools/ot-trust/pilot1-modbus-soak-check.py` + lab systemd timer 06:00 MSK. Not field Done / not OT 10/10. Evidence [`docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md`](docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md).
 - **OT Trust BL-140 Pilot #1 lab day 1** — named site `lab-ot-vlan-192.168.100`; Modbus peer `:1502`; ISPF device 50 tags RUNNING; write+historian §1 green; soak journal day 1. Not field Done / not OT 10/10. Evidence [`docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md`](docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md).

@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Input, Select, Space, Table, Tag, Typography } from "antd";
+import { Alert, Button, Input, Popconfirm, Select, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   fetchPlatformRuntimeSettings,
+  isSensitiveUnchanged,
   patchPlatformRuntimeSettings,
+  restartPlatformServer,
+  waitForPlatformReady,
   type PlatformRuntimeSetting,
   type PlatformRuntimeSettingsSection,
 } from "../../api/platformRuntimeSettings";
@@ -299,11 +302,33 @@ export default function SystemSettingsView() {
     onError: (error: Error) => setFeedback(error.message),
   });
 
+  const restartMutation = useMutation({
+    mutationFn: restartPlatformServer,
+    onSuccess: async (result) => {
+      if (!result.accepted) {
+        setFeedback(result.message || t("settings.restart.disabled"));
+        return;
+      }
+      setFeedback(t("settings.restart.waiting"));
+      try {
+        await waitForPlatformReady();
+        await queryClient.invalidateQueries({ queryKey: ["platform-runtime-settings"] });
+        setFeedback(t("settings.restart.ready"));
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : t("settings.restart.timeout"));
+      }
+    },
+    onError: (error: Error) => setFeedback(error.message),
+  });
+
   const dirtyValues = useMemo(() => {
     const values: Record<string, string> = {};
     for (const section of settingsQuery.data?.sections ?? []) {
       for (const setting of section.settings) {
-        if (!setting.editable || setting.sensitive) {
+        if (!setting.editable) {
+          continue;
+        }
+        if (isSensitiveUnchanged(setting, mergedDrafts[setting.id])) {
           continue;
         }
         const draft = mergedDrafts[setting.id];
@@ -339,7 +364,7 @@ export default function SystemSettingsView() {
         availableSettingsTabs: allTabs,
         availableSectionIds: sectionIds,
         visibleSettingIds,
-        actions: ["refresh", "saveChanges"],
+        actions: ["refresh", "saveChanges", "restartServer"],
         screenHint:
           activeTab === INTEGRATIONS_TAB
             ? "Integrations quick toggles: Redis, NATS, AI, MCP, AI provider, tenant isolation"
@@ -365,6 +390,23 @@ export default function SystemSettingsView() {
         >
           {t("settings.saveChanges")}
         </Button>
+        <Popconfirm
+          title={t("settings.restart.confirmTitle")}
+          description={t("settings.restart.confirm")}
+          okText={t("settings.restart.confirmOk")}
+          cancelText={t("common:action.cancel")}
+          disabled={restartMutation.isPending || Object.keys(dirtyValues).length > 0}
+          onConfirm={() => restartMutation.mutate()}
+        >
+          <Button
+            danger
+            loading={restartMutation.isPending}
+            disabled={restartMutation.isPending || Object.keys(dirtyValues).length > 0}
+            title={Object.keys(dirtyValues).length > 0 ? t("settings.restart.saveFirst") : undefined}
+          >
+            {t("settings.restart.action")}
+          </Button>
+        </Popconfirm>
       </div>
 
       <Typography.Paragraph type="secondary" className="system-settings-intro">

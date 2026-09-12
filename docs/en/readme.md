@@ -25,12 +25,12 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 | I am… | Read next |
 |-------|-----------|
 | **Trying the product** | [Getting started](getting-started.md) → [Operator guide](operator-guide.md) |
-| **Building a solution / bundle** | [Solution developer guide](solution-developer-guide.md) · [Applications](applications.md) · [Application principles](application-principles.md) |
+| **Building a solution / bundle** | [Solution developer guide](solution-developer-guide.md) · [Applications](applications.md) · [Application principles](application-principles.md) · [External AI IDE](external-ide.md) |
 | **Wiring OT / drivers** | [Drivers](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
 | **Building HMI / SCADA** | [Dashboards](dashboards.md) · [SCADA](scada.md) · [Widgets](widgets.md) |
 | **Writing expressions / CEL** | [Expression language](expression-language.md) · [Bindings](bindings.md) |
 | **Automating alarms / workflows** | [Automation](automation.md) · [Workflows](workflows.md) · [OT Automation tutorials](ot-automation-excellence-tutorials.md) |
-| **Using AI Studio / agent** | [AI development](ai-development.md) · [AI agent](ai-agent.md) |
+| **Using AI Studio / agent** | [AI development](ai-development.md) · [AI agent](ai-agent.md) · [External AI IDE](external-ide.md) |
 | **Deploying / operating** | [Deployment](deployment.md) · [Security](security.md) · [Observability](observability.md) |
 | **Contributing to the core** | [Getting started — Contribute](getting-started.md#contribute-local-dev--qa) · [Testing](testing.md) · [ADR index](decisions/readme.md) |
 
@@ -56,6 +56,7 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 | [Product overview](product.md) | Stable | Capabilities, scenarios, doc map |
 | [Operator guide](operator-guide.md) | Stable | HMI, work queue, events |
 | [Solution developer guide](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
+| [External AI IDE](external-ide.md) | Stable | Cursor/VS Code: hosted SPA + MCP + ui-pack |
 | [Application principles](application-principles.md) | Stable | P1–P10; P7 creation stack (AUTHOR/SHAPE/SHIP/PROMOTE) |
 | [ADR-0051 poka-yoke](decisions/0051-poka-yoke-constraints-over-guards.md) | Accepted | Constraints over guards; tool schemas first |
 | [Public API](solution-developer-public-api.md) | Stable | Stable platform ↔ bundle boundary |

@@ -101,6 +101,7 @@ Temperature is a sine wave; when the threshold is exceeded, `alarmActive` and th
 
 - [Product overview](product.md) · [Object model](object-model.md) · [Dashboards](dashboards.md) · [Automation](automation.md)  
 - [Solution developer guide](solution-developer-guide.md) — build a real bundle  
+- [External AI IDE](external-ide.md) — product React SPA in Cursor (hosted ui-pack)  
 - [Architecture](architecture.md) · [API](api.md)
 
 ---

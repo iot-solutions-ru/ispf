@@ -75,6 +75,41 @@ class PlatformRuntimeSettingsServiceTest {
     }
 
     @Test
+    void patchWritesSensitiveApiKeyAndRejectsMaskedPlaceholder() {
+        when(store.readOverrides()).thenReturn(new java.util.LinkedHashMap<>(Map.of("ispf.ai.provider", "openai-compatible")));
+
+        PlatformRuntimeSettingsPatchResult written = service.patch(
+                new PlatformRuntimeSettingsPatchRequest(Map.of("ai.api-key", "sk-live-key"))
+        );
+        assertThat(written.errors()).isEmpty();
+        assertThat(written.restartRequired()).isTrue();
+
+        ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(store).writeOverrides(captor.capture());
+        assertThat(captor.getValue()).containsEntry("ispf.ai.api-key", "sk-live-key");
+
+        PlatformRuntimeSettingsPatchResult masked = service.patch(
+                new PlatformRuntimeSettingsPatchRequest(Map.of("ai.api-key", "********"))
+        );
+        assertThat(masked.errors()).anyMatch(error -> error.contains("masked placeholder"));
+    }
+
+    @Test
+    void fileAiModelIsNotTreatedAsEnvOverrideWhenIspfAiModelUnset() {
+        when(store.settingsFile()).thenReturn(Path.of("./data/runtime-settings.properties"));
+        environment.setProperty("ispf.ai.model", "gpt-4o-mini");
+        when(store.readOverrides()).thenReturn(Map.of("ispf.ai.model", "deepseek-v4-flash"));
+
+        PlatformRuntimeSettingView model = findSetting(service.snapshot(), "ai.model");
+
+        assertThat(model).isNotNull();
+        assertThat(model.value()).isEqualTo("deepseek-v4-flash");
+        assertThat(model.source()).isEqualTo("file");
+        assertThat(model.overridesEnvironment()).isFalse();
+        assertThat(model.environmentValue()).isNull();
+    }
+
+    @Test
     void patchPersistsOverrideInsteadOfSkippingEnvironmentLockedSetting() {
         when(store.readOverrides()).thenReturn(Map.of());
 

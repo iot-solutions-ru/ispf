@@ -1,0 +1,5 @@
+# Spring Boot 4 loads EnvironmentPostProcessor only from this file
+# (META-INF/spring/org.springframework.boot.env.EnvironmentPostProcessor is ignored).
+org.springframework.boot.EnvironmentPostProcessor=\
+com.ispf.server.platform.settings.RuntimeSettingsOverrideEnvironmentPostProcessor,\
+com.ispf.server.config.HistorianTierDeployProfileEnvironmentPostProcessor

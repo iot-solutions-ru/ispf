@@ -329,7 +329,7 @@ Cursor example (HTTP to local server):
 }
 ```
 
-See [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md).
+See [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md). **Building a product SPA in Cursor** (BFF, Vite `base`, ui-pack zip, anti-patterns): [external-ide](external-ide.md).
 
 ---
 
@@ -435,4 +435,5 @@ Commercial bundles: sign **after** AI edits (`contentSha256` covers manifest bod
 - [plugins](plugins.md) — external LLM provider (like drivers)
 - [applications](applications.md) — deploy API
 - [dashboards](dashboards.md) — widget registry for generated dashboards
+- [external-ide](external-ide.md) — Cursor / VS Code: hosted SPA + MCP + ui-pack
 - [roadmap.md § Part B (FW-40…48)](roadmap.md)

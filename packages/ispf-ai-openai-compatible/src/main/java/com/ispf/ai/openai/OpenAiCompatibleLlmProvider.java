@@ -24,7 +24,7 @@ public class OpenAiCompatibleLlmProvider implements LlmProvider {
     private final HttpClient httpClient;
 
     public OpenAiCompatibleLlmProvider(String baseUrl, String defaultModel, String apiKey, Duration timeout) {
-        this.baseUrl = trimTrailingSlash(baseUrl);
+        this.baseUrl = LlmHttpSupport.normalizeOpenAiCompatibleBaseUrl(baseUrl);
         this.defaultModel = defaultModel;
         this.apiKey = apiKey;
         this.timeout = timeout;
@@ -126,12 +126,5 @@ public class OpenAiCompatibleLlmProvider implements LlmProvider {
             return Map.of();
         }
         return Map.of("Authorization", "Bearer " + apiKey);
-    }
-
-    private static String trimTrailingSlash(String url) {
-        if (url == null) {
-            return "";
-        }
-        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 }

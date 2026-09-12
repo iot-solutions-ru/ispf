@@ -35,6 +35,7 @@ public final class LlmHttpSupport {
 
     public static HttpClient client(Duration timeout) {
         return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(timeout)
                 .build();
     }
@@ -56,13 +57,13 @@ public final class LlmHttpSupport {
             }
             HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new LlmException("HTTP " + response.statusCode() + ": " + truncate(response.body()));
+                throw new LlmException(formatHttpStatusFailure(url, response.statusCode(), response.body()));
             }
             return response.body();
         } catch (LlmException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new LlmException("LLM HTTP request failed: " + ex.getMessage(), ex);
+            throw new LlmException(formatHttpFailure(url, ex), ex);
         }
     }
 
@@ -78,7 +79,7 @@ public final class LlmHttpSupport {
     ) throws LlmException {
         HttpResult result = postJsonWithStatus(client, timeout, url, headers, body);
         if (result.statusCode() < 200 || result.statusCode() >= 300) {
-            throw new LlmException("HTTP " + result.statusCode() + ": " + truncate(result.body()));
+            throw new LlmException(formatHttpStatusFailure(url, result.statusCode(), result.body()));
         }
         return result.body();
     }
@@ -102,7 +103,7 @@ public final class LlmHttpSupport {
             HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             return new HttpResult(response.statusCode(), response.body());
         } catch (Exception ex) {
-            throw new LlmException("LLM HTTP request failed: " + ex.getMessage(), ex);
+            throw new LlmException(formatHttpFailure(url, ex), ex);
         }
     }
 
@@ -393,5 +394,81 @@ public final class LlmHttpSupport {
             return "";
         }
         return body.length() > 500 ? body.substring(0, 500) + "..." : body;
+    }
+
+    /**
+     * OpenAI-compatible clients POST {@code {base}/chat/completions}. Host-only URLs
+     * (and a pasted full completions path) otherwise hit nginx HTML 404.
+     */
+    public static String normalizeOpenAiCompatibleBaseUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        String trimmed = url.trim();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        if (trimmed.endsWith("/chat/completions")) {
+            trimmed = trimmed.substring(0, trimmed.length() - "/chat/completions".length());
+            while (trimmed.endsWith("/")) {
+                trimmed = trimmed.substring(0, trimmed.length() - 1);
+            }
+        }
+        URI uri;
+        try {
+            uri = URI.create(trimmed);
+        } catch (IllegalArgumentException ex) {
+            return trimmed;
+        }
+        String path = uri.getPath();
+        if (path == null || path.isBlank() || "/".equals(path)) {
+            return trimmed + "/v1";
+        }
+        return trimmed;
+    }
+
+    static String formatHttpStatusFailure(String url, int statusCode, String body) {
+        String suffix = url == null || url.isBlank() ? "" : " url=" + url;
+        if (looksLikeHtmlGatewayPage(body)) {
+            String hint = statusCode == 404
+                    ? " nginx HTML 404 (not an LLM JSON API). Set ISPF_AI_BASE_URL / ispf.ai.base-url"
+                    + " to the OpenAI-compatible root including /v1 (e.g. https://api.deepseek.com/v1),"
+                    + " not the ISPF web console."
+                    : " gateway returned HTML instead of JSON.";
+            return "HTTP " + statusCode + ":" + hint + suffix;
+        }
+        return "HTTP " + statusCode + ": " + truncate(body) + suffix;
+    }
+
+    private static boolean looksLikeHtmlGatewayPage(String body) {
+        if (body == null || body.isBlank()) {
+            return false;
+        }
+        String lower = body.stripLeading().toLowerCase(Locale.ROOT);
+        return lower.startsWith("<!doctype html")
+                || lower.startsWith("<html")
+                || lower.contains("<center>nginx</center>");
+    }
+
+    static String formatHttpFailure(String url, Exception ex) {
+        String detail = exceptionDetail(ex);
+        String suffix = url == null || url.isBlank() ? "" : " url=" + url;
+        return "LLM HTTP request failed: " + detail + suffix;
+    }
+
+    private static String exceptionDetail(Throwable ex) {
+        String message = ex.getMessage();
+        if (message != null && !message.isBlank()) {
+            return message;
+        }
+        Throwable cause = ex.getCause();
+        if (cause != null && cause != ex) {
+            String causeDetail = exceptionDetail(cause);
+            if (!causeDetail.equals(cause.getClass().getSimpleName())) {
+                return ex.getClass().getSimpleName() + " (" + cause.getClass().getSimpleName() + ": " + causeDetail + ")";
+            }
+            return ex.getClass().getSimpleName() + " (" + cause.getClass().getSimpleName() + ")";
+        }
+        return ex.getClass().getSimpleName();
     }
 }

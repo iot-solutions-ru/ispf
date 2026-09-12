@@ -166,6 +166,7 @@ DONE    = validate → dry-run/preview → apply  (P10)
 | Give a typed object its variables / events / functions | **SHAPE** — blueprint apply / instantiate (or `models[]` in bundle) | — | Re-create the same variables by hand each time |
 | Review or promote a package of existing tree ops | **PROMOTE** — change set `preview → apply` | `force` only when explicit | Change set as greenfield app bootstrap |
 | Iterative HMI without a release train | **AUTHOR** Admin UI on the tree | Agent in ask/plan | Change set as a substitute for Explorer |
+| Product React operator UI (any components) | **AUTHOR** SPA in Cursor/VS Code + **SHIP** bundle + ui-pack | Widget kit as Operator fallback | Merge SPA into `apps/web-console` |
 
 #### Decision flow (one pass)
 
@@ -182,7 +183,7 @@ Moving or reviewing already-authored ops (people / environments)?
 Before any shipping mutate: validate → dry-run/preview → apply (P10)
 ```
 
-Labels A–H (tree-first, console, bundle, REST, AI Studio, reference, platform HMI, commercial) are **AUTHOR/SHIP variants** under this stack — tool and Operator UI detail only. Canonical selection is this section; the expanded table lives in [agent-knowledge § Approaches](agent-knowledge.md).
+Labels A–I (tree-first, console, bundle, REST, AI Studio, reference, platform HMI, commercial, **hosted UI pack**) are **AUTHOR/SHIP variants** under this stack — tool and Operator UI detail only. Canonical selection is this section; the expanded table lives in [agent-knowledge § Approaches](agent-knowledge.md). Hosted SPA how-to: [external-ide](external-ide.md).
 
 Quality doctrine for this stack (prevention over guards): [ADR-0051](decisions/0051-poka-yoke-constraints-over-guards.md).
 
@@ -192,7 +193,7 @@ Quality doctrine for this stack (prevention over guards): [ADR-0051](decisions/0
 2. If `needAppSchema` or `needCi` → **SHIP** bundle path; else **AUTHOR** tree-first.
 3. Creating typed objects → prefer blueprint / model apply for **SHAPE**; do not invent parallel variable sets.
 4. Never offer blueprint or change set as peer alternatives to bundle for greenfield solutions.
-5. Path selection: `search_context topic=application-principles` (this section), then `topic=agent-knowledge` for A–H tool detail; use `get_example_bundle` / playbooks when the default is a baseline bundle.
+5. Path selection: `search_context topic=application-principles` (this section), then `topic=agent-knowledge` for A–I tool detail; use `get_example_bundle` / playbooks when the default is a baseline bundle. Hosted SPA: `topic=external-ide`.
 
 ---
 
@@ -219,7 +220,9 @@ Quality doctrine for this stack (prevention over guards): [ADR-0051](decisions/0
 
 **For humans:** Operator HMI: `?mode=operator&app={appId}`. Menu and default dashboard — from `operatorUi` in bundle or `configure_operator_ui`. Priority: DB `operator_app_ui` → bundle `operatorUi` → autogen from dashboards.
 
-**For agents:** After tree-first POC — `configure_operator_ui`; in `finish` — URL with `?mode=operator&app=...&dashboard=...`.
+**Product UI:** a hosted React SPA at `/apps/<appId>/` (ui-pack) is the preferred operator shell when the solution needs arbitrary components. Widget dashboards remain the fallback and the lab/SCADA kit. How-to: [external-ide](external-ide.md).
+
+**For agents:** After tree-first POC — `configure_operator_ui`; in `finish` — URL with `?mode=operator&app=...&dashboard=...`. For a hosted SPA: also `operatorUi.spaNav` / `externalSpaUrl` / `uiPack` and `/apps/<appId>/`.
 
 ---
 
@@ -252,6 +255,7 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | Unique project orchestrator (one logic hub) | **SINGLETON** — prefer `root.platform.singleton-blueprints.{project}` | [blueprints](blueprints.md), [agent-knowledge](agent-knowledge.md) |
 | Digital-twin logic (many alike) | **INSTANCE** type → `instantiate_instance_type` (each twin holds its logic; not DEVICE) | [blueprints](blueprints.md) |
 | HMI table | Widget `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
+| Product React operator UI | Hosted ui-pack + `POST /bff/invoke` | [external-ide](external-ide.md), [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) |
 | Legacy mini-DSL on widget | **Deprecated** → Platform rules | [platform-logic](platform-logic.md) § legacy |
 
 ### Logic objects vs DEVICE (mandatory)
@@ -273,6 +277,7 @@ Do **not** invent a fake “hub DEVICE” and hang KPIs on it. A CUSTOM/folder c
 | Anti-pattern | Why it is bad | Correct approach |
 |--------------|---------------|------------------|
 | Industry Java in server | Breaks platform/solution boundary | Script function + tree |
+| Industry React in `apps/web-console` | Breaks platform/solution boundary | Hosted ui-pack ([external-ide](external-ide.md)) |
 | App layer as runtime | Duplicates object tree | Tree paths |
 | Logic on widget | N mini-DSL, AI/people get confused | Platform Rule |
 | sessionStorage-only context | Not durable, not multi-client | `@dashboardContext` + WS |
@@ -320,12 +325,13 @@ Do **not** invent a fake “hub DEVICE” and hang KPIs on it. A CUSTOM/folder c
 | Document | Purpose |
 |----------|---------|
 | [solution-developer-guide](solution-developer-guide.md) | Lifecycle: register → migrate → deploy → operator |
-| [agent-knowledge](agent-knowledge.md) | AUTHOR/SHIP variants A–H, docs map, search_context topics |
+| [agent-knowledge](agent-knowledge.md) | AUTHOR/SHIP variants A–I, docs map, search_context topics |
 | [blueprints](blueprints.md) | SHAPE — object structure templates |
 | [collaboration](collaboration.md) | PROMOTE — change sets, preview/apply |
 | [architecture](architecture.md) | Platform layers, core domain model |
 | [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
 | [ai-development](ai-development.md) | Agent tools, ContextPack, MCP |
+| [external-ide](external-ide.md) | Cursor / VS Code: hosted SPA + MCP + ui-pack |
 | [manufacturing-patterns](manufacturing-patterns.md) | MES solution patterns and boundary |
 | [mes-capability-mcp](mes-capability-mcp.md) | Agent capability to MES function mapping |
 | [solution-developer-public-api](solution-developer-public-api.md) | Stable manifest contract |

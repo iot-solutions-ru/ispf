@@ -16,7 +16,7 @@ This document is the **entry point for all roles**. Implementation details live 
 |------|------------------|------------|
 | **Operator** | Monitoring, control, work queue, reports | [Operator guide](operator-guide.md) |
 | **Administrator** | Object tree, dashboards, workflow, users | [Getting started](getting-started.md) → [Web Console](web-console.md) |
-| **Solution developer** | Deploy applications, functions, operator UI, reports | [Solution developer guide](solution-developer-guide.md) |
+| **Solution developer** | Deploy applications, functions, operator UI, reports | [Solution developer guide](solution-developer-guide.md) · [External AI IDE](external-ide.md) |
 | **Platform developer** | Drivers, REQ-PF, core extensions | [Roadmap](roadmap.md) |
 | **DevOps / SRE** | Deployment, profiles, infrastructure | [Deployment](deployment.md) |
 
@@ -64,7 +64,7 @@ graph LR
 ### Key capabilities
 
 - **Unified model** — device, dashboard, workflow, and alert rule are tree nodes; logic uses variables, events, functions, and BPMN.
-- **Bundles, not core forks** — industry solutions deploy as configuration into platform mechanisms ([applications](applications.md)).
+- **Bundles, not core forks** — industry solutions deploy as configuration into platform mechanisms ([applications](applications.md)). Rich operator UI is a **hosted React SPA** (any components) in an external IDE, shipped as a ui-pack — [external-ide](external-ide.md).
 - **Stack** — Spring Boot 4, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket; optional NATS/MQTT/Keycloak.
 - **~60 driver packs** (not inside `ispf-server.jar`; maturity varies — see [drivers](drivers.md)).
 - **AGPL v3 platform** — optional Enterprise dual-license; driver packs and application bundles may use separate terms ([license](license.md), [plugins](plugins.md)).
@@ -310,6 +310,7 @@ Details: [license](license.md), [plugins](plugins.md).
 | **product.md** (this file) | Product overview, capabilities, scenarios |
 | [operator-guide](operator-guide.md) | Operator HMI usage |
 | [solution-developer-guide](solution-developer-guide.md) | Building application solutions |
+| [external-ide](external-ide.md) | Cursor / VS Code: hosted SPA, MCP, ui-pack |
 | [glossary](glossary.md) | Terms and definitions |
 
 ### Technical documentation
