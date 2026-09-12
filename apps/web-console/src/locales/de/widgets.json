@@ -49,7 +49,7 @@
   "editor.ganttInteractive": "Interaktive Zeitleiste (Pan/Zoom im Bedienermodus)",
   "editor.historyRange": "Verlaufszeitraum (historyRange)",
   "editor.historyBucket": "Historian-Bucket (historyBucket)",
-  "editor.historyBucketHint": "auto wählt Bucket nach Zeitraum (live → 1m). Für Aggregate und Multi-Tag-Charts.",
+  "editor.historyBucketHint": "auto wählt ein Rollup-Granulat nach Zeitraum (5m / 1h / 8h; live → 1m). Für Aggregate und Multi-Tag-Charts.",
   "editor.sampleMode": "Telemetrie-Sampling (sampleMode)",
   "editor.sampleModeAuto": "auto (Aggregate wenn historisiert, sonst coalesce)",
   "editor.sampleModeAggregate": "aggregate (avg je Bucket)",

@@ -49,7 +49,7 @@
   "editor.ganttInteractive": "交互式时间轴（操作员模式下平移/缩放）",
   "editor.historyRange": "历史周期 (historyRange)",
   "editor.historyBucket": "Historian 桶 (historyBucket)",
-  "editor.historyBucketHint": "auto 按范围选择（live → 1m）。用于聚合与多标签图。",
+  "editor.historyBucketHint": "auto 按范围选择 rollup 粒度（5m / 1h / 8h；live → 1m）。用于聚合与多标签图。",
   "editor.sampleMode": "遥测采样 (sampleMode)",
   "editor.sampleModeAuto": "auto（有历史则聚合，否则 coalesce）",
   "editor.sampleModeAggregate": "aggregate（按桶平均）",

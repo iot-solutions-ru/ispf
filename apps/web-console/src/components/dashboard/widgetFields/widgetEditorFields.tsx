@@ -929,6 +929,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
                 <option value="30m">30m</option>
                 <option value="1h">1h</option>
                 <option value="6h">6h</option>
+                <option value="8h">8h</option>
                 <option value="1d">1d</option>
               </select>
               <span className="hint">{t("editor.historyBucketHint")}</span>

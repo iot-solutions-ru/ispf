@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendCoalescedTrendPoint,
   coalesceTrendPoints,
+  DEFAULT_ROLLUP_GRANULES,
   resolveChartHistoryBucket,
   resolveEffectiveSampleMode,
 } from "./chartSampling";
@@ -17,8 +18,14 @@ describe("chartSampling", () => {
   it("picks live/range historian buckets", () => {
     expect(resolveChartHistoryBucket("live", undefined, 120)).toBe("1m");
     expect(resolveChartHistoryBucket("live", undefined, 400)).toBe("5m");
-    expect(resolveChartHistoryBucket("6h", undefined, 120)).toBe("15m");
+    expect(resolveChartHistoryBucket("6h", undefined, 120)).toBe("5m");
+    expect(resolveChartHistoryBucket("24h", undefined, 120)).toBe("1h");
+    expect(resolveChartHistoryBucket("7d", undefined, 120)).toBe("1h");
+    expect(resolveChartHistoryBucket("all", undefined, 120)).toBe("8h");
     expect(resolveChartHistoryBucket("live", "5m", 120)).toBe("5m");
+    for (const range of ["1h", "6h", "24h", "today", "yesterday", "7d", "all"] as const) {
+      expect(DEFAULT_ROLLUP_GRANULES).toContain(resolveChartHistoryBucket(range, undefined, 120));
+    }
   });
 
   it("coalesces dense ticks into last-value slots", () => {

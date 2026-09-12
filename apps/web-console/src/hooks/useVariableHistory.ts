@@ -42,37 +42,24 @@ export function historyRangeFrom(range: HistoryRange): string | undefined {
   return new Date(Date.now() - RANGE_MS[range]).toISOString();
 }
 
-/** Server-side bucket for long ranges (avg/min/max per interval). */
-export function historyBucketForRange(range: HistoryRange): string | null {
-  if (range === "7d" || range === "yesterday") {
-    return "1h";
-  }
-  if (range === "today") {
-    return "15m";
-  }
-  if (range === "all") {
-    return "6h";
-  }
-  return null;
+/** Server-side bucket aligned with default historian rollup granules (5m, 1h, 8h). */
+export function historyBucketForRange(range: HistoryRange): string {
+  return historyBucketForRangeChart(range);
 }
 
 /** Bucket sizes for chart min/max band (always uses aggregate API). */
 export function historyBucketForRangeChart(range: HistoryRange): string {
   switch (range) {
     case "1h":
-      return "5m";
     case "6h":
-      return "15m";
-    case "24h":
-      return "30m";
     case "today":
-      return "15m";
+      return "5m";
+    case "24h":
     case "yesterday":
-      return "1h";
     case "7d":
       return "1h";
     case "all":
-      return "6h";
+      return "8h";
   }
 }
 

@@ -157,7 +157,7 @@
 | `variableName` | **Обязательно** для линии/площади/бара/диапазона/свечи. На переменном нужен `historyEnabled: true` |
 | `chartStyle` | `line` \| `area` (не для bubble/radar) |
 | `chartType` | `line`, `area`, `bar`, `candlestick`, `bubble`, `radar`, `range` |
-| `historyRange` | `live` (скользящее окно), `1h`, `6h`, `24h`, `7d`, `all` |
+| `historyRange` | `live` (скользящее окно), `1h`, `6h`, `24h`, `7d`, `all`. Авто-бакеты совпадают с rollup: 5m / 1h / 8h. |
 | `maxPoints` | Макс. точек (~120 по умолчанию) |
 | `color` | Цвет линии |
 | `decimals`, `unit`, `unitField` | Формат оси/подписи |
