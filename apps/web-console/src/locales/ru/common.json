@@ -88,6 +88,7 @@
   "modal.select": "Выбрать",
   "objectPath.browseTree": "Выбор из дерева",
   "objectPath.filterHint": "Можно выбрать типы: {{types}}",
+  "objectPath.searchHint": "Поиск идёт по всему дереву, а не только по открытым папкам.",
   "objectPath.placeholder": "корень.платформа...",
   "objectType.BLUEPRINT": "Blueprint",
   "objectType.DEVICE": "Устройство",

@@ -88,6 +88,7 @@
   "modal.select": "Auswählen",
   "objectPath.browseTree": "Baum durchsuchen",
   "objectPath.filterHint": "Auswählbare Typen: {{types}}",
+  "objectPath.searchHint": "Die Suche umfasst den gesamten Baum, nicht nur geöffnete Ordner.",
   "objectPath.placeholder": "root.platform...",
   "objectType.BLUEPRINT": "Blueprint",
   "objectType.DEVICE": "Gerät",

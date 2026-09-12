@@ -94,6 +94,7 @@
   "empty.noMatches": "No matching objects",
   "objectPath.placeholder": "root.platform...",
   "objectPath.filterHint": "Selectable types: {{types}}",
+  "objectPath.searchHint": "Search covers the full tree, not only opened folders.",
   "objectPath.browseTree": "Browse tree",
   "modal.select": "Select",
   "modal.advancedSettings": "Advanced settings",

@@ -14,6 +14,33 @@ import { getAuthHeaders } from "../auth/session";
 import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
 import { request, writeHeaders, type ObjectWriteOptions } from "./httpClient";
 
+export interface ObjectSearchResponse {
+  query: string;
+  matchCount: number;
+  truncated: boolean;
+  objects: ObjectSummary[];
+}
+
+export function searchObjects(options: {
+  q: string;
+  type?: string;
+  parentPrefix?: string;
+  limit?: number;
+}): Promise<ObjectSearchResponse> {
+  const params = new URLSearchParams();
+  params.set("q", options.q);
+  if (options.type) {
+    params.set("type", options.type);
+  }
+  if (options.parentPrefix) {
+    params.set("parentPrefix", options.parentPrefix);
+  }
+  if (options.limit != null) {
+    params.set("limit", String(options.limit));
+  }
+  return request(`/api/v1/objects/search?${params.toString()}`);
+}
+
 export function fetchObjects(parent?: string, lite = true): Promise<ObjectSummary[]> {
   const params = new URLSearchParams();
   if (parent) {

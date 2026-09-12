@@ -29,6 +29,7 @@ import com.ispf.server.object.ObjectEditLeaseService;
 import com.ispf.server.api.support.ObjectCollaborationSupport;
 import com.ispf.server.object.ObjectBulkDeleteService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.ObjectSearchService;
 import com.ispf.server.object.ObjectTreeDriverEnricher;
 import com.ispf.server.object.VisualGroupService;
 import com.ispf.server.object.ObjectTemplateService;
@@ -110,6 +111,7 @@ public class ObjectController {
     private final DriverRuntimeService driverRuntimeService;
     private final AuditEventService auditEventService;
     private final SystemObjectStructureService systemObjectStructureService;
+    private final ObjectSearchService objectSearchService;
 
     public ObjectController(
             ObjectManager objectManager,
@@ -137,7 +139,8 @@ public class ObjectController {
             ObjectBulkDeleteService objectBulkDeleteService,
             DriverRuntimeService driverRuntimeService,
             AuditEventService auditEventService,
-            SystemObjectStructureService systemObjectStructureService
+            SystemObjectStructureService systemObjectStructureService,
+            ObjectSearchService objectSearchService
     ) {
         this.objectManager = objectManager;
         this.objectTemplateService = objectTemplateService;
@@ -165,6 +168,7 @@ public class ObjectController {
         this.driverRuntimeService = driverRuntimeService;
         this.auditEventService = auditEventService;
         this.systemObjectStructureService = systemObjectStructureService;
+        this.objectSearchService = objectSearchService;
     }
 
     private void requireObjectTreeReady() {
@@ -329,6 +333,34 @@ public class ObjectController {
                         .toList(),
                 authentication
         );
+    }
+
+    @GetMapping("/search")
+    public ObjectSearchResponse search(
+            @RequestParam String q,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String parentPrefix,
+            @RequestParam(defaultValue = "50") int limit,
+            Authentication authentication
+    ) {
+        requireObjectTreeReady();
+        String prefix = parentPrefix == null || parentPrefix.isBlank()
+                ? ""
+                : canonicalPath(parentPrefix, authentication);
+        ObjectSearchService.Result result = objectSearchService.search(q, type, prefix, limit, authentication);
+        List<ObjectDto> objects = tenantVirtualRootService.virtualize(
+                result.nodes().stream().map(this::toLiteDto).toList(),
+                authentication
+        );
+        return new ObjectSearchResponse(result.query(), result.matchCount(), result.truncated(), objects);
+    }
+
+    public record ObjectSearchResponse(
+            String query,
+            int matchCount,
+            boolean truncated,
+            List<ObjectDto> objects
+    ) {
     }
 
     @GetMapping("/by-path/editor")
