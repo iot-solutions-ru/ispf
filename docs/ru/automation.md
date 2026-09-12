@@ -34,7 +34,7 @@ POST /api/v1/events/fire
 GET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50
 ```
 
-Без `objectPath` — глобальный журнал (до 200 записей).
+Без `objectPath` — глобальный журнал (до 200 записей). Необязательный `expr` — CEL по `payload.*` (те же привязки, что у `filterExpression` сохранённого фильтра); невалидный CEL даёт 400.
 
 ### Демо
 
@@ -275,7 +275,7 @@ API alert rules принимает те же поля в `POST/PUT` body (`Creat
 
 ## Фильтры событий (BL-174)
 
-Объекты в `root.platform.event-filters`. Применение к журналу: `GET /api/v1/events?filterPath=…` или `GET /api/v1/event-filters/by-path/events?path=…`.
+Объекты в `root.platform.event-filters`. Применение к журналу: `GET /api/v1/events?filterPath=…`, `GET /api/v1/events?expr=payload.eventName=="alarmActive"` или `GET /api/v1/event-filters/by-path/events?path=…`.
 
 ## ML hooks (BL-175)
 

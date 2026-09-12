@@ -1,3 +1,8 @@
+/** Server CEL event filters bind fields on `payload` (eventName, level, first-row fields, …). */
+export function isCelEventFilter(expr: string | undefined): boolean {
+  return /\bpayload\b/.test(expr ?? "");
+}
+
 /** Simple client-side payload filter: `count>10`, `name contains abc`, joined with `&&`. */
 export function matchesPayloadFilter(
   row: Record<string, unknown> | undefined,

@@ -1272,7 +1272,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
             <input
               value={widget.payloadFilterExpr ?? ""}
               onChange={(e) => update({ payloadFilterExpr: e.target.value || undefined })}
-              placeholder="count>10 && name contains abc"
+              placeholder="payload.int > 20"
             />
           </label>
           <p className="hint">{t("editor.deprecation.payloadFilterExpr")}</p>

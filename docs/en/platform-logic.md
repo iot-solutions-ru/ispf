@@ -149,7 +149,7 @@ All publishers (phase 1+) → **PUT `@dashboardContext`**, not only React state.
 | Legacy | Where | Migration | Status |
 |--------|-------|-----------|--------|
 | `showWhenJson` | function-form field | CEL rule on form object or dashboard rule on `context.params.*` | runtime kept; UI migration — phase 3 |
-| `payloadFilterExpr` | event-feed | CEL `condition` on rule / server-side filter | runtime kept; deprecation hint in editor |
+| `payloadFilterExpr` | event-feed | CEL `GET /events?expr=` when the expression mentions `payload`; mini-DSL still client-side | runtime kept |
 | `requireSessionParamsJson` | link, form | `condition` on non-empty keys in context | runtime kept; deprecation hint in editor |
 | Dashboard session only (sessionStorage) | operator | `@dashboardContext` + WS | phase 1 ✅ |
 | Per-widget `visible` boolean | layout | static default; runtime → rules → `widgets.*.visible` | phase 2 ✅ |

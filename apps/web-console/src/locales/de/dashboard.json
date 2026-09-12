@@ -2,7 +2,7 @@
   "editor.advanced": "Erweitert",
   "editor.containerDropHint": "Legen Sie Widgets hier ab oder fügen Sie sie aus der Palette hinzu, während dieser Container ausgewählt ist.",
   "editor.demoPreviewLabel": "demoPreviewJson (Editor-Vorschau)",
-  "editor.deprecation.payloadFilterExpr": "Legacy Mini-DSL. Bevorzugen: Platform-Regeln (Tab Regeln) mit CEL auf Event-Payload.",
+  "editor.deprecation.payloadFilterExpr": "Legacy Mini-DSL, sofern der Ausdruck kein payload enthält. CEL wie payload.int > 20 wertet der Server aus.",
   "editor.deprecation.requireSessionParamsJson": "Legacy-Prüfung. Bevorzugen: Platform-Regeln mit CEL auf context.params.*.",
   "editor.general": "Allgemein",
   "editor.layerBackward": "Nach hinten",

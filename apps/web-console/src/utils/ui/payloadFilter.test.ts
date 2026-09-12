@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { matchesPayloadFilter } from "./payloadFilter";
+import { isCelEventFilter, matchesPayloadFilter } from "./payloadFilter";
+
+describe("isCelEventFilter", () => {
+  it("detects payload-scoped CEL", () => {
+    expect(isCelEventFilter("payload.int > 20")).toBe(true);
+    expect(isCelEventFilter("payload[\"int\"] > 20")).toBe(true);
+    expect(isCelEventFilter("count>10")).toBe(false);
+    expect(isCelEventFilter(undefined)).toBe(false);
+  });
+});
 
 describe("matchesPayloadFilter", () => {
   const row = { count: 12, name: "abcSensor", level: 5 };

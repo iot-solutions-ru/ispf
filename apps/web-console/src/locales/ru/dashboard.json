@@ -2,7 +2,7 @@
   "editor.advanced": "Расширенное",
   "editor.containerDropHint": "Перетащите виджет сюда или добавьте из палитры, когда контейнер выбран.",
   "editor.demoPreviewLabel": "demoPreviewJson (превью в редакторе)",
-  "editor.deprecation.payloadFilterExpr": "Устаревший mini-DSL. Используйте Platform rules (вкладка «Правила») с CEL на payload события.",
+  "editor.deprecation.payloadFilterExpr": "Устаревший mini-DSL, если в выражении нет payload. CEL вроде payload.int > 20 выполняется на сервере.",
   "editor.deprecation.requireSessionParamsJson": "Устаревшая проверка. Используйте Platform rules с CEL на context.params.*.",
   "editor.general": "Общее",
   "editor.layerBackward": "Ниже",

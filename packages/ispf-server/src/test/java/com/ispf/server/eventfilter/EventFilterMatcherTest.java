@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.EventLevel;
 import com.ispf.core.object.ObjectEvent;
 import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.eventfilter.EventFilterObjectService.EventFilterDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import java.time.Instant;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class EventFilterMatcherTest {
 
@@ -111,5 +113,30 @@ class EventFilterMatcherTest {
                 DataRecord.empty(DataSchema.builder("payload").build())
         );
         assertThat(matcher.matches(filter, event)).isFalse();
+    }
+
+    @Test
+    void adHocExpressionFiltersByEventName() {
+        ObjectEvent hit = ObjectEvent.of(
+                "root.platform.devices.pump-1",
+                "celHit",
+                EventLevel.WARNING,
+                DataRecord.empty(DataSchema.builder("payload").build())
+        );
+        ObjectEvent miss = ObjectEvent.of(
+                "root.platform.devices.pump-1",
+                "celMiss",
+                EventLevel.WARNING,
+                DataRecord.empty(DataSchema.builder("payload").build())
+        );
+        assertThat(matcher.matchesExpression("payload.eventName == \"celHit\"", hit)).isTrue();
+        assertThat(matcher.matchesExpression("payload.eventName == \"celHit\"", miss)).isFalse();
+        assertThat(matcher.matchesExpression("  ", hit)).isTrue();
+    }
+
+    @Test
+    void invalidExpressionFailsValidation() {
+        assertThatThrownBy(() -> matcher.validateExpression("payload."))
+                .isInstanceOf(ExpressionException.class);
     }
 }

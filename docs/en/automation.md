@@ -36,7 +36,7 @@ Shared hot path after descriptor validation:
 GET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50
 ```
 
-Without `objectPath` — global journal (up to 200 entries).
+Without `objectPath` — global journal (up to 200 entries). Optional `expr` is payload-scoped CEL (same bindings as saved event-filter `filterExpression`); invalid CEL returns 400.
 
 ### Demo
 
@@ -318,6 +318,7 @@ Apply:
 | Method | Path |
 |--------|------|
 | GET | `/api/v1/events?filterPath=root.platform.event-filters.*` |
+| GET | `/api/v1/events?expr=payload.eventName=="alarmActive"` |
 | GET | `/api/v1/event-filters/by-path/events?path=…` |
 
 CRUD: `/api/v1/event-filters`.

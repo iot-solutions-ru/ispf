@@ -639,7 +639,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 |-------|-------------|
 | `objectPathPrefix` | Path prefix filter |
 | `eventNamesJson` | `["thresholdExceeded", …]` |
-| `payloadFilterExpr` | Client-side payload filter |
+| `payloadFilterExpr` | Mini-DSL on the client, or CEL on `payload` evaluated by `GET /events?expr=` |
 | `maxItems` | Row limit |
 
 ---

@@ -23,6 +23,8 @@
   "filter.eventName": "Событие",
   "filter.fieldPlaceholder": "Имя поля…",
   "filter.level": "Уровень",
+  "filter.cel": "CEL",
+  "filter.celPlaceholder": "payload.eventName == \"alarmActive\"",
   "filter.searchPlaceholder": "Поиск по пути или имени…",
   "filter.objectPathPlaceholder": "root.platform.devices…",
   "liveHint": "Автообновление последних записей",

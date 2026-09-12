@@ -149,7 +149,7 @@ Web-console `DashboardSession` зеркалирует эту структуру.
 | Legacy | Где | Миграция | Статус |
 |--------|-----|----------|--------|
 | `showWhenJson` | поле function-form | CEL rule на объекте формы или dashboard rule на `context.params.*` | runtime сохранён; UI migration — фаза 3 |
-| `payloadFilterExpr` | event-feed | CEL `condition` на правиле / server-side filter | runtime сохранён; deprecation hint в редакторе |
+| `payloadFilterExpr` | event-feed | CEL `GET /events?expr=` если выражение содержит `payload`; mini-DSL остаётся на клиенте | runtime сохранён |
 | `requireSessionParamsJson` | link, form | `condition` на непустые ключи в context | runtime сохранён; deprecation hint в редакторе |
 | Dashboard session only (sessionStorage) | operator | `@dashboardContext` + WS | фаза 1 ✅ |
 | Per-widget `visible` boolean | layout | static default; runtime → rules → `widgets.*.visible` | фаза 2 ✅ |

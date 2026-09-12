@@ -56,7 +56,22 @@ public class EventFilterMatcher {
         return matchesExpression(filter.filterExpression(), event);
     }
 
-    private boolean matchesExpression(String expression, ObjectEvent event) {
+    /**
+     * Compiles a payload-scoped CEL expression. Throws if the syntax is invalid.
+     */
+    public void validateExpression(String expression) {
+        if (expression == null || expression.isBlank()) {
+            return;
+        }
+        expressionEngine.validatePayloadCelCompile(expression.trim());
+    }
+
+    /**
+     * Evaluates ad-hoc CEL against an event. Bindings live on {@code payload}
+     * ({@code eventName}, {@code objectPath}, {@code level}, {@code severity}, {@code timestamp},
+     * plus first-row payload fields).
+     */
+    public boolean matchesExpression(String expression, ObjectEvent event) {
         if (expression == null || expression.isBlank()) {
             return true;
         }
