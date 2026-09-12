@@ -523,6 +523,7 @@ export interface SubDashboardWidget extends DashboardWidgetBase {
   type: "sub-dashboard";
   targetDashboardPath?: string;
   targetDashboardPathKey?: string;
+  /** Default true: nested widgets share parent selection/params. `false` isolates session. */
   inheritContext?: boolean;
 }
 
