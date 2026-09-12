@@ -19,7 +19,7 @@
 |---------|---------|-------------|
 | URL | `opc.tcp://localhost:4840/ispf` | Built from `bindPort` + fixed path `/ispf` |
 | Transport | `TCP_UASC_UABINARY` | Milo binary protocol |
-| Security | `SecurityPolicy.None` | Lab / interop only |
+| Security | `None` (по умолчанию) или `Sign` / `SignAndEncrypt` | Lab может оставить `None`. Production: `securityPolicy` + `pkiDir` и обмен `application.cer` |
 | Авторизация | Аноним или имя пользователя | Валидатор имени пользователя принимает любые учетные данные |
 | Application URI | `urn:ispf:driver:opcua-server` | Milo application identity |
 | Namespace URI | `urn:ispf:opcua:server` | Custom namespace index (default **2**) |
@@ -48,6 +48,9 @@ Objects
 | `namespace` | `2` | Namespace index for bare identifiers |
 | `timeoutMs` | `5000` | Server startup/shutdown timeout |
 | `endpointPath` | `/ispf` | Documented in metadata; not user-overridable in v0.1 |
+| `securityPolicy` | `None` | `None` или политика Milo (`Basic256Sha256`, …). Для значения не `None` нужен `pkiDir`. |
+| `securityMode` | `None` при политике `None`; иначе `SignAndEncrypt` | `None`, `Sign` или `SignAndEncrypt` |
+| `pkiDir` | (пусто; temp при `None`) | PKCS12-идентичность + trust list. Обязателен, если `securityPolicy` не `None`. Скопируйте клиентский `application.cer` в `pkiDir/trusted/certs`. |
 
 Отображение точек: строка OPC UA `NodeId`, например. `ns=2;s=Temperature` или пустой `Temperature` (использует настроенное пространство имен).
 
@@ -112,10 +115,11 @@ Point mapping: same NodeId as server mapping, e.g. `ns=2;s=Temperature`.
 ## Ограничения (v0.1)
 
 – Только строковые значения (без сопоставления типизированных вариантов).
-- SecurityPolicy None — не подходит для ненадежных сетей.
+- По умолчанию остаётся SecurityPolicy None (lab). Sign / SignAndEncrypt требуют постоянного `pkiDir` и взаимного доверия `application.cer`. GetEndpoints идёт на `/ispf/discovery` с SecurityPolicy None (соглашение OPC UA).
+- Username-токен по-прежнему принимает любые учётные данные (безопасность канала — идентичность приложения)
 — Нет просмотра REST для серверных устройств (используйте просмотр OPC UA в проводном режиме).
 - Уведомления о внешних подписках зависят от обратных вызовов мониторинга сервера Milo (обратная запись в переменные ISPF рассматривается в рамках интеграционного теста BL-143)
-- Эфемерный самозаверяющий сертификат восстанавливается при каждом подключении.
+- Самоподписанная идентичность создаётся один раз в `pkiDir` (`identity.p12`); без `pkiDir` при `None` по-прежнему используется временный каталог
 
 ## Связанные файлы
 

@@ -13,6 +13,7 @@ import org.eclipse.milo.opcua.sdk.server.identity.CompositeValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator;
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager;
+import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -20,18 +21,13 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
-import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder;
-import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator;
 import org.eclipse.milo.opcua.stack.server.EndpointConfiguration;
 import org.eclipse.milo.opcua.stack.server.security.DefaultServerCertificateValidator;
 import org.eclipse.milo.opcua.stack.server.security.ServerCertificateValidator;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
-import java.time.Period;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,13 +46,15 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
             "opcua-server",
             "OPC UA Server Driver",
             "0.1.0",
-            "Hosts an embedded OPC UA server (Eclipse Milo) and maps node values to ISPF variables",
+            "Hosts an embedded OPC UA server (None / Sign / SignAndEncrypt) and maps node values to ISPF variables",
             "ISPF",
             Map.of(
                     "bindPort", String.valueOf(OpcUaServerInterop.DEFAULT_BIND_PORT),
                     "namespace", String.valueOf(OpcUaServerInterop.DEFAULT_NAMESPACE_INDEX),
                     "timeoutMs", "5000",
-                    "endpointPath", OpcUaServerInterop.ENDPOINT_PATH
+                    "endpointPath", OpcUaServerInterop.ENDPOINT_PATH,
+                    "securityPolicy", "None",
+                    "securityMode", "None"
             )
     );
 
@@ -72,6 +70,10 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
     private int bindPort = 4840;
     private int namespaceIndex = 2;
     private int timeoutMs = 5000;
+    private String securityPolicyRaw = "None";
+    private String securityModeRaw = "";
+    private String pkiDir = "";
+    private OpcUaServerPki pki;
     private final Map<String, OpcUaServerPoint> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -87,6 +89,9 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
         readConfig("bindPort", value -> bindPort = Integer.parseInt(value));
         readConfig("namespace", value -> namespaceIndex = Integer.parseInt(value));
         readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
+        readConfig("securityPolicy", value -> securityPolicyRaw = value.trim());
+        readConfig("securityMode", value -> securityModeRaw = value.trim());
+        readConfig("pkiDir", value -> pkiDir = value.trim());
     }
 
     private void applyConfig(String key, String value) {
@@ -97,6 +102,9 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
             case "bindPort" -> bindPort = Integer.parseInt(value.trim());
             case "namespace" -> namespaceIndex = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "securityPolicy" -> securityPolicyRaw = value.trim();
+            case "securityMode" -> securityModeRaw = value.trim();
+            case "pkiDir" -> pkiDir = value.trim();
             default -> { }
         }
     }
@@ -104,38 +112,48 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         try {
-            File securityDir = Files.createTempDirectory("ispf-opcua-server-").toFile();
-            KeyPair keyPair = SelfSignedCertificateGenerator.generateRsaKeyPair(2048);
-            X509Certificate certificate = new SelfSignedCertificateBuilder(keyPair)
-                    .setCommonName("ISPF OPC UA Server")
-                    .setOrganization("ISPF")
-                    .setApplicationUri(APPLICATION_URI)
-                    .addDnsName("localhost")
-                    .setValidityPeriod(Period.ofYears(3))
-                    .build();
+            SecurityPolicy policy = parsePolicy(securityPolicyRaw);
+            MessageSecurityMode mode = parseMode(securityModeRaw, policy);
+            if (policy != SecurityPolicy.None && pkiDir.isBlank()) {
+                throw new DriverException("pkiDir is required when securityPolicy is not None");
+            }
+            java.nio.file.Path securityPath = pkiDir.isBlank()
+                    ? Files.createTempDirectory("ispf-opcua-server-")
+                    : java.nio.file.Path.of(pkiDir);
+            pki = OpcUaServerPki.loadOrCreate(securityPath, "ISPF OPC UA Server", APPLICATION_URI);
+            KeyPair keyPair = pki.keyPair();
+            X509Certificate certificate = pki.certificate();
 
             DefaultCertificateManager certificateManager = new DefaultCertificateManager(keyPair, certificate);
-            DefaultTrustListManager trustListManager = new DefaultTrustListManager(securityDir);
+            DefaultTrustListManager trustListManager = pki.trustList();
             ServerCertificateValidator certificateValidator = new DefaultServerCertificateValidator(trustListManager);
 
-            EndpointConfiguration endpoint = EndpointConfiguration.newBuilder()
+            EndpointConfiguration.Builder endpointBuilder = EndpointConfiguration.newBuilder()
                     .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
                     .setBindAddress("0.0.0.0")
                     .setBindPort(bindPort)
                     .setHostname("localhost")
-                    .setPath("/ispf")
                     .setCertificate(certificate)
-                    .setSecurityPolicy(org.eclipse.milo.opcua.stack.core.security.SecurityPolicy.None)
-                    .setSecurityMode(MessageSecurityMode.None)
                     .addTokenPolicy(OpcUaServerConfig.USER_TOKEN_POLICY_ANONYMOUS)
-                    .addTokenPolicy(OpcUaServerConfig.USER_TOKEN_POLICY_USERNAME)
+                    .addTokenPolicy(OpcUaServerConfig.USER_TOKEN_POLICY_USERNAME);
+
+            EndpointConfiguration endpoint = endpointBuilder.copy()
+                    .setPath("/ispf")
+                    .setSecurityPolicy(policy)
+                    .setSecurityMode(mode)
+                    .build();
+            // Milo clients GetEndpoints via "{path}/discovery" before selecting Sign/SignAndEncrypt.
+            EndpointConfiguration discovery = endpointBuilder.copy()
+                    .setPath("/ispf/discovery")
+                    .setSecurityPolicy(SecurityPolicy.None)
+                    .setSecurityMode(MessageSecurityMode.None)
                     .build();
 
             OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
                     .setApplicationUri(APPLICATION_URI)
                     .setApplicationName(LocalizedText.english("ISPF OPC UA Server"))
                     .setProductUri(APPLICATION_URI)
-                    .setEndpoints(Set.of(endpoint))
+                    .setEndpoints(Set.of(endpoint, discovery))
                     .setCertificateManager(certificateManager)
                     .setTrustListManager(trustListManager)
                     .setCertificateValidator(certificateValidator)
@@ -160,7 +178,13 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
             server.startup().get(timeoutMs, TimeUnit.MILLISECONDS);
             connected = true;
             driverObject.log(DriverLogLevel.INFO,
-                    "OPC UA server listening on " + endpointUrl() + " (browse: " + OpcUaServerInterop.browsePath("<tag>") + ")");
+                    "OPC UA server listening on " + endpointUrl()
+                            + " (" + policy.name() + " / " + mode
+                            + ", browse: " + OpcUaServerInterop.browsePath("<tag>") + ")");
+        } catch (DriverException e) {
+            connected = false;
+            shutdownServer();
+            throw e;
         } catch (Exception e) {
             connected = false;
             shutdownServer();
@@ -245,6 +269,43 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
             server = null;
             namespace = null;
         }
+        if (pki != null) {
+            pki.close();
+            pki = null;
+        }
+    }
+
+    private static SecurityPolicy parsePolicy(String raw) {
+        if (raw == null || raw.isBlank() || "none".equalsIgnoreCase(raw.trim())) {
+            return SecurityPolicy.None;
+        }
+        String normalized = raw.trim();
+        if (normalized.startsWith("SecurityPolicy.")) {
+            normalized = normalized.substring("SecurityPolicy.".length());
+        }
+        for (SecurityPolicy candidate : SecurityPolicy.values()) {
+            if (candidate.name().equalsIgnoreCase(normalized)
+                    || candidate.name().replace('_', '-').equalsIgnoreCase(normalized)
+                    || candidate.getUri().equalsIgnoreCase(normalized)) {
+                return candidate;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported securityPolicy: " + raw);
+    }
+
+    private static MessageSecurityMode parseMode(String raw, SecurityPolicy policy) {
+        if (policy == SecurityPolicy.None) {
+            return MessageSecurityMode.None;
+        }
+        if (raw == null || raw.isBlank()
+                || "signandencrypt".equalsIgnoreCase(raw.trim())
+                || "sign-and-encrypt".equalsIgnoreCase(raw.trim())) {
+            return MessageSecurityMode.SignAndEncrypt;
+        }
+        if ("sign".equalsIgnoreCase(raw.trim())) {
+            return MessageSecurityMode.Sign;
+        }
+        throw new IllegalArgumentException("Unsupported securityMode: " + raw);
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {
