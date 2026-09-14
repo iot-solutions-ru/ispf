@@ -9,6 +9,7 @@ import com.ispf.server.driver.DriverBinding;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantVirtualRootService;
 import org.springframework.security.core.Authentication;
@@ -33,17 +34,20 @@ public class DriverRuntimeController {
     private final SystemObjectStructureService structureService;
     private final TenantScopeService tenantScopeService;
     private final TenantVirtualRootService tenantVirtualRootService;
+    private final ObjectAccessService objectAccessService;
 
     public DriverRuntimeController(
             DriverRuntimeService driverRuntimeService,
             SystemObjectStructureService structureService,
             TenantScopeService tenantScopeService,
-            TenantVirtualRootService tenantVirtualRootService
+            TenantVirtualRootService tenantVirtualRootService,
+            ObjectAccessService objectAccessService
     ) {
         this.driverRuntimeService = driverRuntimeService;
         this.structureService = structureService;
         this.tenantScopeService = tenantScopeService;
         this.tenantVirtualRootService = tenantVirtualRootService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/status")
@@ -52,6 +56,7 @@ public class DriverRuntimeController {
             Authentication authentication
     ) {
         String canonical = requirePathAccess(devicePath, authentication);
+        objectAccessService.requireRead(canonical, authentication);
         return driverRuntimeService.status(canonical)
                 .orElseThrow(() -> new IllegalArgumentException("No driver binding for: " + devicePath));
     }
@@ -61,7 +66,7 @@ public class DriverRuntimeController {
             @RequestParam String devicePath,
             Authentication authentication
     ) {
-        return driverRuntimeService.start(requirePathAccess(devicePath, authentication));
+        return driverRuntimeService.start(requireDeviceWrite(devicePath, authentication));
     }
 
     @PostMapping("/stop")
@@ -69,7 +74,7 @@ public class DriverRuntimeController {
             @RequestParam String devicePath,
             Authentication authentication
     ) {
-        return driverRuntimeService.stop(requirePathAccess(devicePath, authentication));
+        return driverRuntimeService.stop(requireDeviceWrite(devicePath, authentication));
     }
 
     @PostMapping("/poll")
@@ -78,7 +83,9 @@ public class DriverRuntimeController {
             @RequestParam(required = false) String pointId,
             Authentication authentication
     ) {
-        return driverRuntimeService.pollNow(requirePathAccess(devicePath, authentication), pointId);
+        String canonical = requirePathAccess(devicePath, authentication);
+        objectAccessService.requireRead(canonical, authentication);
+        return driverRuntimeService.pollNow(canonical, pointId);
     }
 
     @GetMapping("/browse")
@@ -87,7 +94,9 @@ public class DriverRuntimeController {
             @RequestParam(required = false) String nodeId,
             Authentication authentication
     ) {
-        return driverRuntimeService.browseDriverChildren(requirePathAccess(devicePath, authentication), nodeId);
+        String canonical = requirePathAccess(devicePath, authentication);
+        objectAccessService.requireRead(canonical, authentication);
+        return driverRuntimeService.browseDriverChildren(canonical, nodeId);
     }
 
     @GetMapping("/catalog/artifacts")
@@ -105,7 +114,7 @@ public class DriverRuntimeController {
             @RequestBody CatalogArtifactUploadRequest request,
             Authentication authentication
     ) {
-        requireAuthenticated(authentication);
+        objectAccessService.requireConfigurator(authentication);
         if (request == null || request.fileName() == null || request.fileName().isBlank()) {
             throw new IllegalArgumentException("fileName is required");
         }
@@ -122,7 +131,7 @@ public class DriverRuntimeController {
             @RequestParam String name,
             Authentication authentication
     ) {
-        requireAuthenticated(authentication);
+        objectAccessService.requireConfigurator(authentication);
         driverRuntimeService.deleteDriverArtifact(driverId, name);
         return Map.of("deleted", true, "name", name);
     }
@@ -156,7 +165,7 @@ public class DriverRuntimeController {
             @RequestBody ImportPointsRequest request,
             Authentication authentication
     ) {
-        String canonical = requirePathAccess(devicePath, authentication);
+        String canonical = requireDeviceWrite(devicePath, authentication);
         List<com.ispf.driver.DriverPointCatalog.PointProposal> proposals;
         if (request != null && request.proposals() != null && !request.proposals().isEmpty()) {
             proposals = request.proposals();
@@ -207,7 +216,7 @@ public class DriverRuntimeController {
             @RequestBody(required = false) DataRecordPayloadRequest value,
             Authentication authentication
     ) {
-        String canonical = requirePathAccess(devicePath, authentication);
+        String canonical = requireDeviceWrite(devicePath, authentication);
         DataSchema schema = DataSchema.builder("driverWrite")
                 .field("value", FieldType.STRING)
                 .build();
@@ -221,7 +230,7 @@ public class DriverRuntimeController {
             @RequestBody ConfigureDriverRequest request,
             Authentication authentication
     ) {
-        String canonical = requirePathAccess(devicePath, authentication);
+        String canonical = requireDeviceWrite(devicePath, authentication);
         structureService.ensureDeviceDriverStructure(canonical);
         Map<String, String> configuration = mergeConfiguration(request);
         TelemetryPublishMode publishMode = TelemetryPublishMode.parse(configuration.get("telemetryPublishMode"));
@@ -240,6 +249,12 @@ public class DriverRuntimeController {
             return driverRuntimeService.start(canonical);
         }
         return driverRuntimeService.status(canonical).orElseThrow();
+    }
+
+    private String requireDeviceWrite(String path, Authentication authentication) {
+        String canonical = requirePathAccess(path, authentication);
+        objectAccessService.requireWrite(canonical, authentication);
+        return canonical;
     }
 
     private String requirePathAccess(String path, Authentication authentication) {

@@ -207,6 +207,8 @@ GET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>
 
 `write` body — `DataRecord` with a `value` field (number, boolean, or string). `pointId` — key from `driverPointMappingsJson` (variable name).
 
+**AuthZ:** device-scoped calls also need object ACL — `READ` for `status` / `browse` / `poll`; `WRITE` for `configure` / `start` / `stop` / `write` / `catalog/import-points` (in addition to HTTP CONFIG role and tenant scope). Shared SNMP catalog artifact upload/delete requires a configurator role.
+
 ## Driver packs (not bundled in server JAR)
 
 Each protocol is a separate pack (`ispf-driver-*`). Without installed packs, `GET /api/v1/drivers` is empty.

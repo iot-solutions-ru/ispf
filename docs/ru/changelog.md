@@ -11,6 +11,8 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Driver runtime: мутации устройства требуют object `WRITE` ACL; status/browse/poll — `READ`;
+  загрузка shared catalog — configurator.
 - Система → Настройки: запись sensitive (`ai.api-key`) из UI; кнопка перезапуска сервера (`POST /runtime-settings/restart`).
 - AI Studio чат: nginx HTML 404 при вызове LLM — host-only `base-url` теперь получает `/v1`, HTML шлюза заменяется подсказкой с URL запроса.
 - Runtime settings из UI снова применяются ко **всем** ключам каталога (не только AI): Boot 4 не читал старый SPI EnvironmentPostProcessor, yaml/env затирали `runtime-settings.properties`. Профиль `local` больше не пинит lab LLM URL.
@@ -20,6 +22,11 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- Поиск по полному дереву объектов в Web Console (#204).
+- CEL-фильтр ленты журнала событий (#205).
+- Гранулы historian для auto-бакетов графиков (#207).
+- OPC UA Sign / SignAndEncrypt + PKI trust lists (#208).
+- Пакетная очистка журнала: `POST /api/v1/events/journal/purge` (#211).
 - Внутренний engineering security review 2026-09-09 (defensive; **≠ G-01**).
 - Enterprise L tooling в `tools/historian-scale/`: seed/count history-enabled,
   `GET /history-enabled-count`, gate считает переменные (не `/tags` binding rules).
@@ -29,6 +36,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- MQTT: wire = **3.1.1**; MQTT 5 — non-goal (#209). Nested dashboards: inheritContext (#206).
 - **Внешняя AI IDE / hosted SPA** — how-to Cursor/VS Code: MCP, BFF, Vite `base`, ui-pack. Хаб [`docs/ru/external-ide.md`](external-ide.md) (канон EN [`docs/en/external-ide.md`](../en/external-ide.md)).
 - **OT Trust BL-140 Pilot #1 soak day 2** — auto soak-check 2026-09-07 06:00 MSK pass. Evidence `docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md`.
 - **OT Trust BL-140 Pilot #1 C5 + daily soak check** — disconnect/reconnect на lab VLAN; `tools/ot-trust/pilot1-modbus-soak-check.py` + timer 06:00 MSK. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md`.

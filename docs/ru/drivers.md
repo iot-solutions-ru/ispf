@@ -206,6 +206,8 @@ GET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>
 
 `write` body — `DataRecord` с полем `value` (число, boolean или string). `pointId` — ключ из `driverPointMappingsJson` (имя переменной).
 
+**AuthZ:** для device-scoped вызовов нужна object ACL — `READ` для `status` / `browse` / `poll`; `WRITE` для `configure` / `start` / `stop` / `write` / `catalog/import-points` (поверх HTTP CONFIG и tenant scope). Загрузка/удаление shared SNMP catalog — роль configurator.
+
 ## Driver packs (не встроены в server JAR)
 
 Каждый протокол — отдельный pack (`ispf-driver-*`). Без установленных packs `GET /api/v1/drivers` пуст.

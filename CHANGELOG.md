@@ -19,6 +19,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Driver runtime object ACL** — `configure` / `start` / `stop` / `write` /
+  `catalog/import-points` require object `WRITE` (not only tenant scope + CONFIG
+  role); `status` / `browse` / `poll` require `READ`. Shared catalog artifact
+  mutate requires configurator.
 - **Runtime settings save + restart** — System → Settings now writes sensitive
   keys (`ai.api-key`) instead of skipping them, rejects the `********` mask, and
   can schedule `ispf-server` restart (`POST /api/v1/platform/runtime-settings/restart`).
@@ -44,6 +48,14 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Operator tree search** — Web Console object tree search queries the full tree
+  (`GET /api/v1/objects/search`), not only already-expanded folders (#204).
+- **CEL on event journal feed** — event journal list can filter with CEL expressions (#205).
+- **Chart historian granules** — auto chart buckets align with historian rollup granules (#207).
+- **OPC UA Sign / SignAndEncrypt** — Milo client/server security policies with PKI trust
+  lists; discovery endpoint stays None for GetEndpoints; lab default remains None (#208).
+- **Event journal batch purge** — `POST /api/v1/events/journal/purge` deletes stored history
+  in one store statement (JDBC / ClickHouse); Cassandra returns 409 (#211).
 - **Internal engineering security review (2026-09-09)** — defensive lab surface checks +
   AuthN/AuthZ/ACL/tenant/MFA code review; **not** a hired pen-test and **does not** close G-01.
 - **OT Trust Wave 3b** — +7 clean-room codecs: `ocpp`, `odata`, `grpc` (JSON-lab), `openadr`, `scpi`, `visa` (SOCKET-only), `knx-tp`.
@@ -59,6 +71,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **MQTT wire honesty** — Paho mqttv3 = MQTT **3.1.1**; MQTT 5 documented as a non-goal (#209).
+- **Nested dashboard inheritContext** — nested dashboards honor inheritContext (#206).
 - **External AI IDE / hosted SPA** — how-to for Cursor/VS Code: MCP, BFF invoke, Vite `base`, ui-pack zip. Hub [`docs/en/external-ide.md`](docs/en/external-ide.md) (RU [`docs/ru/external-ide.md`](docs/ru/external-ide.md)); P7/P9, agent-knowledge approach **I**, marketplace, solution-developer-guide.
 - **OT Trust BL-140 Pilot #1 soak day 2** — auto soak-check 2026-09-07 06:00 MSK pass (`RUNNING`, 50 tags). Evidence [`docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md`](docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md).
 - **OT Trust BL-140 Pilot #1 C5 + daily soak check** — disconnect/reconnect on `lab-ot-vlan-192.168.100` (`ERROR`/`Not connected` → `RUNNING`); `tools/ot-trust/pilot1-modbus-soak-check.py` + lab systemd timer 06:00 MSK. Not field Done / not OT 10/10. Evidence [`docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md`](docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md).
