@@ -4,7 +4,8 @@ Phase 25 / BL-140.
 Checklist: [pilot3-opcua-line.checklist.md](pilot3-opcua-line.checklist.md).  
 Day-1: [2026-09-08-bl140-pilot3-opcua-day1.md](2026-09-08-bl140-pilot3-opcua-day1.md).
 
-> **Honesty:** Same-host `opcua-server`↔`opcua` loopback on lab ISPF. Not external PLC. Not OT 10/10.
+> **Honesty:** Same-host `opcua-server`↔`opcua` loopback on lab ISPF. Not external PLC. Not OT 10/10.  
+> **Stopped 2026-09-14** (operator): [stop note](2026-09-14-bl140-lab-soak-stopped.md).
 
 ## Header
 
@@ -33,8 +34,5 @@ Day-1: [2026-09-08-bl140-pilot3-opcua-day1.md](2026-09-08-bl140-pilot3-opcua-day
 | --- | ---------- | ----------- | --------- | ------------ | -------- | ----- |
 | 1 | 2026-09-08 | 12 | none | ☑ | ☑ | Loopback UA; packs resignatured — [day1](2026-09-08-bl140-pilot3-opcua-day1.md) |
 | 2 | 2026-09-09 | 12 | none | ☑ | ☑ | Auto soak-check 06:10 MSK pass — [day2](2026-09-09-bl140-pilot3-opcua-day2.md) · [JSON](pilot3-lab/soak-day2-2026-09-09.json) |
-| 3 | | | | ☐ | ☐ | |
-| 4 | | | | ☐ | ☐ | |
-| 5 | | | | ☐ | ☐ | |
-| 6 | | | | ☐ | ☐ | |
-| 7 | | | | ☐ | ☐ | Sign-off? |
+| 3–7 | 2026-09-10…14 | 12 | none | ☑ | — | Continuous timer JSON `pass: true` — [pull](2026-09-14-bl140-lab-soak-pull.md) |
+| — | 2026-09-14 | — | — | — | — | **Soak stopped** — [stop](2026-09-14-bl140-lab-soak-stopped.md) |

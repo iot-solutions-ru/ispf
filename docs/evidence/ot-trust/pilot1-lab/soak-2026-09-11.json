@@ -1,7 +1,7 @@
 ﻿{
-  "utc": "2026-09-06T18:54:04Z",
-  "date": "2026-09-06",
-  "day": 1,
+  "utc": "2026-09-11T03:00:04Z",
+  "date": "2026-09-11",
+  "day": null,
   "site": "lab-ot-vlan-192.168.100",
   "baseUrl": "http://127.0.0.1:8080",
   "devicePath": "root.platform.devices.pilot1-modbus.plant",

@@ -2,7 +2,7 @@
 # Pull Pilot #1 / #2 / #3 soak evidence from the OT lab host via jump.
 #
 # Prefer key auth (canonical): ~/.ssh/lab_ed25519
-# Fallback: SSHPASS password (one-time / legacy)
+# Also accepted: ISPF_LAB_SSH_IDENTITY_FILE=~/.ssh/ispf_lab_ed25519 (operator workstation)
 #
 # Usage:
 #   ./tools/ot-trust/pull-pilot-soak-evidence.sh

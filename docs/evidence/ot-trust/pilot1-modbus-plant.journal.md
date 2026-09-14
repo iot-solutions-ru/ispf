@@ -4,7 +4,8 @@ Phase 25 / BL-140. Instance of [pilot-soak-journal.template.md](pilot-soak-journ
 Checklist: [pilot1-modbus-plant.checklist.md](pilot1-modbus-plant.checklist.md).  
 Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-day1.md).
 
-> **Honesty:** Internal OT lab VLAN soak. Not customer plant. Not OT 10/10. Not BL-140 Done until day 7 + sign-off.
+> **Honesty:** Internal OT lab VLAN soak. Not customer plant. Not OT 10/10.  
+> **Stopped 2026-09-14** (operator): lab evidence Consumed — [stop note](2026-09-14-bl140-lab-soak-stopped.md). Field sign-off remains parked.
 
 ## Header
 
@@ -40,9 +41,8 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | 2 | 2026-09-07 | 50 | none | ☑ | ☑ | ☐ | Auto soak-check 06:00 MSK pass — [day2](2026-09-07-bl140-pilot1-day2.md) · [JSON](pilot1-lab/soak-day2-2026-09-07.json) |
 | 3 | 2026-09-08 | 50 | none | ☑ | ☑ | ☐ | Auto soak-check 06:00 MSK pass — [day3](2026-09-08-bl140-pilot1-day3.md) · [JSON](pilot1-lab/soak-day3-2026-09-08.json) |
 | 4 | 2026-09-09 | 50 | none | ☑ | ☑ | ☐ | Auto soak-check 06:00 MSK pass — [day4](2026-09-09-bl140-pilot1-day4.md) · [JSON](pilot1-lab/soak-day4-2026-09-09.json) |
-| 5 | | | | ☐ | ☐ | ☐ | |
-| 6 | | | | ☐ | ☐ | ☐ | |
-| 7 | | | | ☐ | ☐ | ☐ | Sign-off ready? |
+| 5–9 | 2026-09-10…14 | 50 | none | ☑ | — | ☐ | Continuous timer JSON `pass: true` — [pull](2026-09-14-bl140-lab-soak-pull.md) · `pilot1-lab/soak-2026-09-1*.json` |
+| — | 2026-09-14 | — | — | — | — | — | **Soak stopped** (operator) — timers disarmed; [stop](2026-09-14-bl140-lab-soak-stopped.md) |
 
 **P0** = driver crash, data loss, write to wrong register, historian gap >1 h — paste log excerpt in Notes.
 
@@ -56,5 +56,7 @@ Day-1 note: [2026-09-06-bl140-pilot1-lab-day1.md](2026-09-06-bl140-pilot1-lab-da
 | Day-2 soak | [2026-09-07-bl140-pilot1-day2.md](2026-09-07-bl140-pilot1-day2.md) |
 | Day-3 soak | [2026-09-08-bl140-pilot1-day3.md](2026-09-08-bl140-pilot1-day3.md) |
 | Day-4 soak | [2026-09-09-bl140-pilot1-day4.md](2026-09-09-bl140-pilot1-day4.md) |
+| Continuous pull | [2026-09-14-bl140-lab-soak-pull.md](2026-09-14-bl140-lab-soak-pull.md) |
+| Stop / close-out | [2026-09-14-bl140-lab-soak-stopped.md](2026-09-14-bl140-lab-soak-stopped.md) |
 | C5 disconnect | [2026-09-06-bl140-pilot1-c5-disconnect.md](2026-09-06-bl140-pilot1-c5-disconnect.md) |
 | Customer ticket | n/a (internal lab) |

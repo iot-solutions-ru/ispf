@@ -5,7 +5,8 @@ Checklist: [pilot2-mqtt-fleet.checklist.md](pilot2-mqtt-fleet.checklist.md).
 Kickoff: [2026-09-07-bl140-pilot2-mqtt-kickoff.md](2026-09-07-bl140-pilot2-mqtt-kickoff.md).  
 Day-1: [2026-09-08-bl140-pilot2-mqtt-day1.md](2026-09-08-bl140-pilot2-mqtt-day1.md).
 
-> **Honesty:** Internal OT lab VLAN. Not customer plant. Not OT 10/10.
+> **Honesty:** Internal OT lab VLAN. Not customer plant. Not OT 10/10.  
+> **Stopped 2026-09-14** (operator): [stop note](2026-09-14-bl140-lab-soak-stopped.md).
 
 ## Header
 
@@ -39,11 +40,8 @@ Day-1: [2026-09-08-bl140-pilot2-mqtt-day1.md](2026-09-08-bl140-pilot2-mqtt-day1.
 | --- | ---------- | ------------- | ----------------- | ------------ | -------- | ----- |
 | 1 | 2026-09-08 | 10 | none | ☑ | ☑ | Mosquitto + device green; C5 pass — [day1](2026-09-08-bl140-pilot2-mqtt-day1.md) · [JSON](pilot2-lab/day1-2026-09-08.json) |
 | 2 | 2026-09-09 | 10 | none | ☑ | ☑ | Auto soak-check 06:05 MSK pass — [day2](2026-09-09-bl140-pilot2-mqtt-day2.md) · [JSON](pilot2-lab/soak-day2-2026-09-09.json) |
-| 3 | | | | ☐ | ☐ | |
-| 4 | | | | ☐ | ☐ | |
-| 5 | | | | ☐ | ☐ | |
-| 6 | | | | ☐ | ☐ | |
-| 7 | | | | ☐ | ☐ | Sign-off ready? |
+| 3–7 | 2026-09-10…14 | 10 | none | ☑ | — | Continuous timer JSON `pass: true` — [pull](2026-09-14-bl140-lab-soak-pull.md) |
+| — | 2026-09-14 | — | — | — | — | **Soak stopped** — [stop](2026-09-14-bl140-lab-soak-stopped.md) |
 
 ## Close-out links
 

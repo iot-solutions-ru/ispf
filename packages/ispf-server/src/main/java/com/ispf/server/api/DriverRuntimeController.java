@@ -10,9 +10,11 @@ import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantVirtualRootService;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,19 +37,22 @@ public class DriverRuntimeController {
     private final TenantScopeService tenantScopeService;
     private final TenantVirtualRootService tenantVirtualRootService;
     private final ObjectAccessService objectAccessService;
+    private final VariableMemberAccessService variableMemberAccessService;
 
     public DriverRuntimeController(
             DriverRuntimeService driverRuntimeService,
             SystemObjectStructureService structureService,
             TenantScopeService tenantScopeService,
             TenantVirtualRootService tenantVirtualRootService,
-            ObjectAccessService objectAccessService
+            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService
     ) {
         this.driverRuntimeService = driverRuntimeService;
         this.structureService = structureService;
         this.tenantScopeService = tenantScopeService;
         this.tenantVirtualRootService = tenantVirtualRootService;
         this.objectAccessService = objectAccessService;
+        this.variableMemberAccessService = variableMemberAccessService;
     }
 
     @GetMapping("/status")
@@ -216,7 +221,18 @@ public class DriverRuntimeController {
             @RequestBody(required = false) DataRecordPayloadRequest value,
             Authentication authentication
     ) {
-        String canonical = requireDeviceWrite(devicePath, authentication);
+        String canonical = requirePathAccess(devicePath, authentication);
+        try {
+            // Mapped point variable: honor writeRoles (and object WRITE).
+            variableMemberAccessService.requireWrite(canonical, pointId, authentication);
+        } catch (ResponseStatusException e) {
+            if (e.getStatusCode() != null && e.getStatusCode().value() == 404) {
+                // Point not yet materialised as a variable — fall back to object WRITE.
+                objectAccessService.requireWrite(canonical, authentication);
+            } else {
+                throw e;
+            }
+        }
         DataSchema schema = DataSchema.builder("driverWrite")
                 .field("value", FieldType.STRING)
                 .build();

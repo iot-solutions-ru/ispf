@@ -5,6 +5,7 @@ import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,6 +39,7 @@ class MarketplaceSymbolListingApiTest {
     }
 
     @Test
+    @WithMockUser(roles = "developer")
     void installsHvacPackThenScadaApiListsIt() throws Exception {
         mockMvc.perform(post("/api/v1/marketplace/symbols/hvac-equipment-v1/install"))
                 .andExpect(status().isOk())
@@ -59,6 +61,14 @@ class MarketplaceSymbolListingApiTest {
     }
 
     @Test
+    @WithMockUser(roles = "operator")
+    void operatorCannotInstallSymbolPack() throws Exception {
+        mockMvc.perform(post("/api/v1/marketplace/symbols/hvac-equipment-v1/install"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "developer")
     void rejectsUnknownSymbolPack() throws Exception {
         mockMvc.perform(post("/api/v1/marketplace/symbols/unknown-pack/install"))
                 .andExpect(status().isBadRequest());
