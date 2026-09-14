@@ -48,6 +48,9 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Batch function invoke** — `POST /api/v1/objects/by-path/functions/invoke-batch`
+  (≤100 items, per-item ACL). Operator alarm bar **Acknowledge all** uses one HTTP call
+  instead of N× `acknowledgeAlarm`.
 - **Operator tree search** — Web Console object tree search queries the full tree
   (`GET /api/v1/objects/search`), not only already-expanded folders (#204).
 - **CEL on event journal feed** — event journal list can filter with CEL expressions (#205).

@@ -27,6 +27,7 @@
   "agent.title": "KI-Assistent",
   "alarmBar.ackRequiredMissingFunction": "Quittierung erforderlich — acknowledgeFunction in der Alarmregel konfigurieren",
   "alarmBar.acknowledge": "Bestätigen",
+  "alarmBar.acknowledgeAll": "Alle bestätigen",
   "alarmBar.dashboard": "Armaturenbrett",
   "alarmBar.mute": "Stumm",
   "alarmBar.report": "Bericht",

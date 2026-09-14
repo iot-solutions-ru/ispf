@@ -57,6 +57,7 @@
   "alarmBar.unmute": "Enable sound",
   "alarmBar.mute": "Mute",
   "alarmBar.acknowledge": "Acknowledge",
+  "alarmBar.acknowledgeAll": "Acknowledge all",
   "alarmBar.ackRequiredMissingFunction": "Ack required — configure acknowledgeFunction on this alarm rule",
   "alarmBar.shelve": "Shelve 1h",
   "alarmShelves.title": "Shelved alarms",

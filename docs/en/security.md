@@ -86,6 +86,7 @@ Rules: `IspfAuthorizationRules.java`.
 | `POST /api/v1/events/journal/purge` | ✓ | | | |
 | `POST /api/v1/events/**` | ✓ | ✓ | ✓ | |
 | `POST .../functions/invoke` | ✓ | ✓ | ✓ | |
+| `POST .../functions/invoke-batch` | ✓ | ✓ | ✓ | |
 | `POST /api/v1/bff/**` | ✓ | ✓ | ✓ | |
 | `POST /api/v1/workflows/instances/*/cancel` | ✓ | ✓ | ✓ | |
 | `GET/POST /api/v1/work-queue/**` | ✓ | ✓ | ✓ | |

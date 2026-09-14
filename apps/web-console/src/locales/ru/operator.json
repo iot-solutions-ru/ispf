@@ -27,6 +27,7 @@
   "agent.title": "ИИ-помощник",
   "alarmBar.ackRequiredMissingFunction": "Нужно квитирование — настройте acknowledgeFunction в правиле алерта",
   "alarmBar.acknowledge": "Подтвердить",
+  "alarmBar.acknowledgeAll": "Подтвердить все",
   "alarmBar.dashboard": "Дашборд",
   "alarmBar.mute": "Без звука",
   "alarmBar.report": "Отчёт",
