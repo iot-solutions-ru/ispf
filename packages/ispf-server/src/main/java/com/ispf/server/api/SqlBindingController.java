@@ -1,6 +1,10 @@
 package com.ispf.server.api;
 
 import com.ispf.server.binding.SqlBindingObjectService;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.tenant.TenantScopeService;
+import com.ispf.server.tenant.TenantVirtualRootService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -10,46 +14,92 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/sql-bindings")
 public class SqlBindingController {
 
     private final SqlBindingObjectService sqlBindingObjectService;
+    private final TenantScopeService tenantScopeService;
+    private final TenantVirtualRootService tenantVirtualRootService;
+    private final ObjectAccessService objectAccessService;
 
-    public SqlBindingController(SqlBindingObjectService sqlBindingObjectService) {
+    public SqlBindingController(
+            SqlBindingObjectService sqlBindingObjectService,
+            TenantScopeService tenantScopeService,
+            TenantVirtualRootService tenantVirtualRootService,
+            ObjectAccessService objectAccessService
+    ) {
         this.sqlBindingObjectService = sqlBindingObjectService;
+        this.tenantScopeService = tenantScopeService;
+        this.tenantVirtualRootService = tenantVirtualRootService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/by-path")
-    public SqlBindingObjectService.BindingDefinition get(@RequestParam String path) {
-        return sqlBindingObjectService.getByPath(path);
+    public SqlBindingObjectService.BindingDefinition get(
+            @RequestParam String path,
+            Authentication authentication
+    ) {
+        String canonical = requirePathRead(path, authentication);
+        return sqlBindingObjectService.getByPath(canonical);
     }
 
     @PostMapping
-    public SqlBindingObjectService.BindingDefinition create(@RequestBody SaveSqlBindingRequest request) {
+    public SqlBindingObjectService.BindingDefinition create(
+            @RequestBody SaveSqlBindingRequest request,
+            Authentication authentication
+    ) {
         if (request.bindingId() == null || request.bindingId().isBlank()) {
             throw new IllegalArgumentException("bindingId is required");
         }
-        return sqlBindingObjectService.create(toDefinition("", request));
+        requirePathWrite(SqlBindingObjectService.BINDINGS_ROOT, authentication);
+        String path = sqlBindingObjectService.pathForBindingId(request.bindingId());
+        tenantScopeService.requirePathInScope(path, authentication);
+        return sqlBindingObjectService.create(toDefinition(path, request));
     }
 
     @PutMapping("/by-path")
     public SqlBindingObjectService.BindingDefinition update(
             @RequestParam String path,
-            @RequestBody SaveSqlBindingRequest request
+            @RequestBody SaveSqlBindingRequest request,
+            Authentication authentication
     ) {
-        return sqlBindingObjectService.update(path, toDefinition(path, request));
+        String canonical = requirePathWrite(path, authentication);
+        return sqlBindingObjectService.update(canonical, toDefinition(canonical, request));
     }
 
     @PostMapping("/by-path/refresh")
-    public Map<String, Object> refresh(@RequestParam String path) {
-        sqlBindingObjectService.refresh(path);
+    public Map<String, Object> refresh(@RequestParam String path, Authentication authentication) {
+        String canonical = requirePathWrite(path, authentication);
+        sqlBindingObjectService.refresh(canonical);
         return Map.of(
                 "status", "OK",
-                "path", path,
-                "binding", sqlBindingObjectService.getByPath(path)
+                "path", Objects.requireNonNullElse(
+                        tenantVirtualRootService.toVirtual(canonical, authentication),
+                        path
+                ),
+                "binding", sqlBindingObjectService.getByPath(canonical)
         );
+    }
+
+    private String requirePathRead(String path, Authentication authentication) {
+        String canonical = requirePathAccess(path, authentication);
+        objectAccessService.requireRead(canonical, authentication);
+        return canonical;
+    }
+
+    private String requirePathWrite(String path, Authentication authentication) {
+        String canonical = requirePathAccess(path, authentication);
+        objectAccessService.requireWrite(canonical, authentication);
+        return canonical;
+    }
+
+    private String requirePathAccess(String path, Authentication authentication) {
+        String canonical = tenantVirtualRootService.toCanonical(path, authentication);
+        tenantScopeService.requirePathInScope(canonical, authentication);
+        return canonical;
     }
 
     private static SqlBindingObjectService.BindingDefinition toDefinition(

@@ -11,6 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Data sources / SQL bindings: мутации требуют object `WRITE` ACL; чтение — `READ`.
 - Driver runtime: мутации устройства требуют object `WRITE` ACL; status/browse/poll — `READ`;
   загрузка shared catalog — configurator.
 - Система → Настройки: запись sensitive (`ai.api-key`) из UI; кнопка перезапуска сервера (`POST /runtime-settings/restart`).
