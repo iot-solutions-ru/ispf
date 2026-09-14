@@ -5,6 +5,9 @@ import com.ispf.server.eventfilter.EventFilterObjectService.EventFilterDefinitio
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ class EventFilterControllerTest {
     @Transactional
     void crudEventFiltersViaRestShape() {
         eventFilterObjectService.ensureCatalog();
+        Authentication admin = adminAuth();
 
         EventFilterDefinition created = eventFilterController.create(new EventFilterController.SaveEventFilterRequest(
                 "ops-critical",
@@ -38,15 +42,15 @@ class EventFilterControllerTest {
                 60000L,
                 "",
                 true
-        ));
+        ), admin);
 
         assertThat(created.path()).startsWith(EventFilterObjectService.EVENT_FILTERS_ROOT + ".");
         assertThat(created.filterId()).isEqualTo("ops-critical");
 
-        List<EventFilterDefinition> listed = eventFilterController.list();
+        List<EventFilterDefinition> listed = eventFilterController.list(admin);
         assertThat(listed).anyMatch(filter -> "ops-critical".equals(filter.filterId()));
 
-        EventFilterDefinition fetched = eventFilterController.get(created.path());
+        EventFilterDefinition fetched = eventFilterController.get(created.path(), admin);
         assertThat(fetched.enabled()).isTrue();
 
         EventFilterDefinition updated = eventFilterController.update(
@@ -62,12 +66,21 @@ class EventFilterControllerTest {
                         created.timeWindowMs(),
                         created.filterExpression(),
                         false
-                )
+                ),
+                admin
         );
         assertThat(updated.enabled()).isFalse();
 
-        eventFilterController.delete(created.path());
-        assertThat(eventFilterController.list().stream().map(EventFilterDefinition::filterId))
+        eventFilterController.delete(created.path(), admin);
+        assertThat(eventFilterController.list(admin).stream().map(EventFilterDefinition::filterId))
                 .doesNotContain("ops-critical");
+    }
+
+    private static Authentication adminAuth() {
+        return new UsernamePasswordAuthenticationToken(
+                "admin",
+                "n/a",
+                List.of(new SimpleGrantedAuthority("ROLE_admin"))
+        );
     }
 }
