@@ -44,6 +44,7 @@ Changelog отдельных application bundles — в манифестах п�
 - MQTT: wire = **3.1.1**; MQTT 5 — non-goal (#209). Nested dashboards: inheritContext (#206).
 - **Внешняя AI IDE / hosted SPA** — how-to Cursor/VS Code: MCP, BFF, Vite `base`, ui-pack. Хаб [`docs/ru/external-ide.md`](external-ide.md) (канон EN [`docs/en/external-ide.md`](../en/external-ide.md)).
 - **OT Trust BL-140 lab soak pull 2026-09-10…14** — P1/P2/P3 `pass: true` / RUNNING; закрывает SSH-блокер [#212](https://github.com/iot-solutions-ru/ispf/pull/212). Lab ≠ field / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-14-bl140-lab-soak-pull.md`.
+- **OT Trust BL-140 lab soak stopped** — остановка 2026-09-14; P-OT учтён (lab); таймеры сняты. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-14-bl140-lab-soak-stopped.md`.
 - **OT Trust BL-140 Pilot #1 soak day 2** — auto soak-check 2026-09-07 06:00 MSK pass. Evidence `docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md`.
 - **OT Trust BL-140 Pilot #1 C5 + daily soak check** — disconnect/reconnect на lab VLAN; `tools/ot-trust/pilot1-modbus-soak-check.py` + timer 06:00 MSK. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-c5-disconnect.md`.
 - **OT Trust BL-140 Pilot #1 lab day 1** — площадка `lab-ot-vlan-192.168.100`; Modbus peer `:1502`; 50 тегов RUNNING; write+historian; journal day 1. Не field Done / не OT 10/10. Evidence `docs/evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md`.
