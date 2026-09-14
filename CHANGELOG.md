@@ -19,6 +19,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Automation object ACL** — `alert-rules`, `event-filters`, and `correlators`
+  create/update/delete require object `WRITE`; get/list honor `READ` (+ tenant scope).
 - **Data source / SQL binding object ACL** — `data-sources` and `sql-bindings` mutations
   (`create` / `update` / `execute-query` / binding `refresh`) require object `WRITE`;
   reads require `READ` (not only CONFIG role + tenant scope).
