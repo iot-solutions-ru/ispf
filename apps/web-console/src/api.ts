@@ -229,6 +229,30 @@ export function invokeFunction(
   });
 }
 
+export type FunctionInvokeBatchItem = {
+  path: string;
+  name: string;
+  input?: DataRecord;
+};
+
+export type FunctionInvokeBatchResult = {
+  path: string;
+  name: string;
+  ok: boolean;
+  status?: number | null;
+  error?: string | null;
+  result?: { schema: unknown; rows: Array<Record<string, unknown>> } | null;
+};
+
+export function invokeFunctionsBatch(
+  items: FunctionInvokeBatchItem[]
+): Promise<{ results: FunctionInvokeBatchResult[] }> {
+  return request(`/api/v1/objects/by-path/functions/invoke-batch`, {
+    method: "POST",
+    body: JSON.stringify({ items }),
+  });
+}
+
 export function fetchEvents(
   objectPath?: string,
   limit = 50,

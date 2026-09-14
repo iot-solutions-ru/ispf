@@ -66,6 +66,8 @@ public final class IspfAuthorizationRules {
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/objects/by-path/functions/invoke")
                 .hasAnyRole(IspfRoles.ROLES_READ);
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/objects/by-path/functions/invoke-batch")
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/bff/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);

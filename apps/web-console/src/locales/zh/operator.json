@@ -27,6 +27,7 @@
   "agent.title": "人工智能助手",
   "alarmBar.ackRequiredMissingFunction": "需要确认 — 请在告警规则中配置 acknowledgeFunction",
   "alarmBar.acknowledge": "确认",
+  "alarmBar.acknowledgeAll": "全部确认",
   "alarmBar.dashboard": "仪表板",
   "alarmBar.mute": "静音",
   "alarmBar.report": "报告",

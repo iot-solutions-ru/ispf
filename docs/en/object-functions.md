@@ -106,6 +106,20 @@ Object: sensor with variables `alarmActive`, `alarmAcknowledged` (fixture `demo-
 
 ```http
 POST /api/v1/objects/by-path/functions/invoke?path=root.platform.devices.demo-sensor-01&name=acknowledgeAlarm
+
+Batch (operator alarm bar “Acknowledge all”, mass workflows; max 100 items; per-item ACL — one failure does not abort the rest):
+
+```http
+POST /api/v1/objects/by-path/functions/invoke-batch
+Content-Type: application/json
+
+{
+  "items": [
+    { "path": "root.platform.devices.demo-sensor-01", "name": "acknowledgeAlarm" },
+    { "path": "root.platform.devices.other", "name": "acknowledgeAlarm" }
+  ]
+}
+```
 ```
 
 Result: `alarmAcknowledged.value = true`, output `{ "success": true, "message": "Alarm acknowledged" }`.

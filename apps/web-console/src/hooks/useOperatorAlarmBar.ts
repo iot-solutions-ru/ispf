@@ -4,6 +4,7 @@ import {
   fetchAlarmShelves,
   fetchEvents,
   invokeFunction,
+  invokeFunctionsBatch,
   isAlarmShelfPendingRequest,
   shelveAlarm,
   unshelveAlarm,
@@ -363,6 +364,67 @@ export function useOperatorAlarmBar(
     [alarms]
   );
 
+  const dismissAllAlarms = useCallback(async () => {
+    if (alarms.length === 0) {
+      return;
+    }
+    const blocked = alarms.filter((alarm) => alarm.ackRequired && !alarm.acknowledgeFunction);
+    if (blocked.length > 0 && blocked.length === alarms.length) {
+      setActionError("Acknowledge function missing for active alarms");
+      return;
+    }
+    const toInvoke = alarms.filter(
+      (alarm) =>
+        !alarm.hideAcknowledge &&
+        Boolean(alarm.acknowledgeFunction) &&
+        !(alarm.ackRequired && !alarm.acknowledgeFunction)
+    );
+    const localOnly = alarms.filter(
+      (alarm) =>
+        !alarm.hideAcknowledge &&
+        !alarm.acknowledgeFunction &&
+        !alarm.ackRequired
+    );
+    const dismissedIds = new Set(localOnly.map((alarm) => alarm.id));
+
+    if (toInvoke.length > 0) {
+      try {
+        const response = await invokeFunctionsBatch(
+          toInvoke.map((alarm) => ({
+            path: alarm.event.objectPath,
+            name: alarm.acknowledgeFunction as string,
+          }))
+        );
+        const failures: string[] = [];
+        response.results.forEach((result, index) => {
+          const alarm = toInvoke[index];
+          if (!alarm) {
+            return;
+          }
+          if (result.ok) {
+            dismissedIds.add(alarm.id);
+          } else {
+            failures.push(
+              `${alarm.title}: ${result.error ?? `status ${result.status ?? "error"}`}`
+            );
+          }
+        });
+        if (failures.length > 0) {
+          setActionError(failures.slice(0, 3).join("; "));
+        } else {
+          setActionError(null);
+        }
+      } catch (error) {
+        setActionError(error instanceof Error ? error.message : "Failed to acknowledge alarms");
+        return;
+      }
+    }
+
+    if (dismissedIds.size > 0) {
+      setAlarms((current) => current.filter((item) => !dismissedIds.has(item.id)));
+    }
+  }, [alarms]);
+
   const toggleMute = useCallback(() => {
     setMuted((current) => {
       const next = !current;
@@ -433,6 +495,7 @@ export function useOperatorAlarmBar(
     muted,
     toggleMute,
     onDismiss: dismissAlarm,
+    onDismissAll: dismissAllAlarms,
     onShelve: shelveAlarmFor,
     onUnshelveShelf: unshelveShelf,
     onOpenDashboard: openDashboardFor,

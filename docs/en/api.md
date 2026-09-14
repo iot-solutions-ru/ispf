@@ -103,6 +103,7 @@ Content-Type: application/json
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
 | POST | `/api/v1/objects/by-path/functions/invoke` | operator+ | Invoke (`path`, `name`, body) |
+| POST | `/api/v1/objects/by-path/functions/invoke-batch` | operator+ | Batch invoke (≤100 items; per-item ACL) |
 
 ## Dashboards
 

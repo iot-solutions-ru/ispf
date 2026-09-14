@@ -9,6 +9,7 @@ export interface AlarmBarOverlayProps {
   muted: boolean;
   toggleMute: () => void;
   onDismiss: (alarmId: string) => void;
+  onDismissAll?: () => void;
   onShelve: (alarmId: string, durationMinutes?: number) => void;
   onOpenDashboard: (alarm: ActiveOperatorAlarm) => void;
   onOpenReport: (alarm: ActiveOperatorAlarm) => void;
@@ -131,6 +132,7 @@ export default function AlarmBarOverlay({
   muted,
   toggleMute,
   onDismiss,
+  onDismissAll,
   onShelve,
   onOpenDashboard,
   onOpenReport,
@@ -139,9 +141,15 @@ export default function AlarmBarOverlay({
   actionError,
   clearActionError,
 }: AlarmBarOverlayProps) {
+  const { t } = useTranslation("operator");
   if (!enabled || alarms.length === 0) {
     return null;
   }
+
+  const canAckAll =
+    Boolean(onDismissAll) &&
+    alarms.some((alarm) => !alarm.hideAcknowledge) &&
+    alarms.length > 1;
 
   return (
     <div
@@ -157,6 +165,13 @@ export default function AlarmBarOverlay({
           closable={Boolean(clearActionError)}
           onClose={clearActionError}
         />
+      )}
+      {canAckAll && (
+        <div className="operator-alarm-bar-batch">
+          <Button type="primary" size="small" onClick={onDismissAll} data-testid="operator-alarm-ack-all">
+            {t("alarmBar.acknowledgeAll")}
+          </Button>
+        </div>
       )}
       {alarms.map((alarm, index) => (
         <AlarmBarItem

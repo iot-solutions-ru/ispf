@@ -22,11 +22,15 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+<<<<<<< HEAD
 - Поиск по полному дереву объектов в Web Console (#204).
 - CEL-фильтр ленты журнала событий (#205).
 - Гранулы historian для auto-бакетов графиков (#207).
 - OPC UA Sign / SignAndEncrypt + PKI trust lists (#208).
 - Пакетная очистка журнала: `POST /api/v1/events/journal/purge` (#211).
+=======
+- Пакетный invoke функций (`POST .../functions/invoke-batch`) и «Подтвердить все» в alarm bar.
+>>>>>>> 8506c37f (feat(operator): batch acknowledge alarms in one invoke)
 - Внутренний engineering security review 2026-09-09 (defensive; **≠ G-01**).
 - Enterprise L tooling в `tools/historian-scale/`: seed/count history-enabled,
   `GET /history-enabled-count`, gate считает переменные (не `/tags` binding rules).
