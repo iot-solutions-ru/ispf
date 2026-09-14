@@ -11,6 +11,8 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Marketplace install: символ/UI/analytics/bundle — только configurator; operator → 403.
+- Driver `runtime/write`: учитывает `writeRoles` переменной точки (иначе object `WRITE`).
 - Alert rules / event filters / correlators: мутации требуют object `WRITE` ACL; list/get — `READ`.
 - Data sources / SQL bindings: мутации требуют object `WRITE` ACL; чтение — `READ`.
 - Driver runtime: мутации устройства требуют object `WRITE` ACL; status/browse/poll — `READ`;

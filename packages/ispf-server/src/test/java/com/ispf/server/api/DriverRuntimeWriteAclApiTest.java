@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.UUID;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -99,6 +100,103 @@ class DriverRuntimeWriteAclApiTest {
                                 }
                                 """))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void developerCannotWritePointWhenVariableWriteRolesRestrictToAdmin() throws Exception {
+        String admin = login("admin", "admin");
+        String developer = login("developer", "developer");
+        String name = "acl-wrt-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        String path = "root.platform.devices." + name;
+
+        mockMvc.perform(post("/api/v1/objects")
+                        .header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "parentPath": "root.platform.devices",
+                                  "name": "%s",
+                                  "type": "DEVICE",
+                                  "displayName": "Driver writeRoles device"
+                                }
+                                """.formatted(name)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/drivers/runtime/configure")
+                        .header("Authorization", "Bearer " + admin)
+                        .param("devicePath", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "driverId": "virtual",
+                                  "pollIntervalMs": 5000,
+                                  "configuration": {
+                                    "baseTemperature": "22.0",
+                                    "amplitude": "1.0"
+                                  },
+                                  "pointMappings": {
+                                    "temperature": "sim"
+                                  },
+                                  "autoStart": false
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/objects/by-path/variables")
+                        .header("Authorization", "Bearer " + admin)
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "temperature",
+                                  "schema": {
+                                    "name": "temperature",
+                                    "fields": [
+                                      { "name": "value", "type": "STRING" }
+                                    ]
+                                  },
+                                  "readable": true,
+                                  "writable": true,
+                                  "historyEnabled": false
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/v1/objects/by-path/variables")
+                        .header("Authorization", "Bearer " + admin)
+                        .param("path", path)
+                        .param("name", "temperature")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "writeRoles": ["admin"] }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/drivers/runtime/write")
+                        .header("Authorization", "Bearer " + developer)
+                        .param("devicePath", path)
+                        .param("pointId", "temperature")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "rows": [{ "value": "25.0" }] }
+                                """))
+                .andExpect(status().isForbidden());
+
+        // Virtual is read-only after ACL; assert writeRoles gate alone (not object WRITE).
+        mockMvc.perform(post("/api/v1/drivers/runtime/write")
+                        .header("Authorization", "Bearer " + admin)
+                        .param("devicePath", path)
+                        .param("pointId", "temperature")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "rows": [{ "value": "25.0" }] }
+                                """))
+                .andExpect(result -> {
+                    int code = result.getResponse().getStatus();
+                    if (code == 403) {
+                        throw new AssertionError("admin should pass variable writeRoles; got 403");
+                    }
+                });
     }
 
     private String login(String username, String password) throws Exception {

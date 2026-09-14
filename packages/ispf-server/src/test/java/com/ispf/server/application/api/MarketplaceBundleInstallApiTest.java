@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -53,6 +54,7 @@ class MarketplaceBundleInstallApiTest {
     }
 
     @Test
+    @WithMockUser(roles = "developer")
     void installMarketplaceDemoBundleBySlug() throws Exception {
         mockMvc.perform(post("/api/v1/marketplace/bundles/marketplace-demo/install"))
                 .andExpect(status().isOk())
@@ -62,6 +64,14 @@ class MarketplaceBundleInstallApiTest {
     }
 
     @Test
+    @WithMockUser(roles = "operator")
+    void operatorCannotInstallMarketplaceDemoBundle() throws Exception {
+        mockMvc.perform(post("/api/v1/marketplace/bundles/marketplace-demo/install"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "developer")
     void uninstallMarketplaceDemoBundleBySlug() throws Exception {
         mockMvc.perform(post("/api/v1/marketplace/bundles/marketplace-demo/install"))
                 .andExpect(status().isOk());

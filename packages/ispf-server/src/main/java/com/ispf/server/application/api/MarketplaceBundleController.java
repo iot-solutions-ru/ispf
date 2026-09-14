@@ -4,7 +4,9 @@ import com.ispf.server.application.bundle.MarketplaceLocalBundleService;
 import com.ispf.server.application.bundle.MarketplaceAnalyticsPackLocalService;
 import com.ispf.server.application.bundle.MarketplaceSymbolListingService;
 import com.ispf.server.application.bundle.MarketplaceUiPackLocalService;
+import com.ispf.server.security.acl.ObjectAccessService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,17 +28,20 @@ public class MarketplaceBundleController {
     private final MarketplaceAnalyticsPackLocalService analyticsPackLocalService;
     private final MarketplaceSymbolListingService symbolListingService;
     private final MarketplaceUiPackLocalService uiPackLocalService;
+    private final ObjectAccessService objectAccessService;
 
     public MarketplaceBundleController(
             MarketplaceLocalBundleService localBundleService,
             MarketplaceAnalyticsPackLocalService analyticsPackLocalService,
             MarketplaceSymbolListingService symbolListingService,
-            MarketplaceUiPackLocalService uiPackLocalService
+            MarketplaceUiPackLocalService uiPackLocalService,
+            ObjectAccessService objectAccessService
     ) {
         this.localBundleService = localBundleService;
         this.analyticsPackLocalService = analyticsPackLocalService;
         this.symbolListingService = symbolListingService;
         this.uiPackLocalService = uiPackLocalService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/bundles")
@@ -51,7 +56,8 @@ public class MarketplaceBundleController {
     }
 
     @PostMapping("/symbols/{id}/install")
-    public Map<String, Object> installSymbolPack(@PathVariable("id") String packId) {
+    public Map<String, Object> installSymbolPack(@PathVariable("id") String packId, Authentication authentication) {
+        objectAccessService.requireConfigurator(authentication);
         try {
             return symbolListingService.installSymbolPack(packId);
         } catch (IllegalArgumentException ex) {
@@ -68,7 +74,8 @@ public class MarketplaceBundleController {
     }
 
     @PostMapping("/ui-packs/{id}/install")
-    public Map<String, Object> installUiPack(@PathVariable("id") String packId) {
+    public Map<String, Object> installUiPack(@PathVariable("id") String packId, Authentication authentication) {
+        objectAccessService.requireConfigurator(authentication);
         try {
             Map<String, Object> result = uiPackLocalService.installLocalPack(packId);
             if ("ERROR".equals(result.get("status"))) {
@@ -93,7 +100,8 @@ public class MarketplaceBundleController {
     }
 
     @PostMapping("/analytics-packs/{id}/install")
-    public Map<String, Object> installAnalyticsPack(@PathVariable("id") String packId) {
+    public Map<String, Object> installAnalyticsPack(@PathVariable("id") String packId, Authentication authentication) {
+        objectAccessService.requireConfigurator(authentication);
         try {
             Map<String, Object> result = analyticsPackLocalService.installLocalPack(packId);
             if ("ERROR".equals(result.get("status"))) {
@@ -113,7 +121,8 @@ public class MarketplaceBundleController {
     }
 
     @PostMapping("/bundles/{id}/install")
-    public Map<String, Object> installBundle(@PathVariable("id") String bundleId) {
+    public Map<String, Object> installBundle(@PathVariable("id") String bundleId, Authentication authentication) {
+        objectAccessService.requireConfigurator(authentication);
         try {
             Map<String, Object> result = localBundleService.installLocalBundle(bundleId);
             if ("ERROR".equals(result.get("status"))) {
@@ -133,7 +142,8 @@ public class MarketplaceBundleController {
     }
 
     @DeleteMapping("/bundles/{id}/install")
-    public Map<String, Object> uninstallBundle(@PathVariable("id") String bundleId) {
+    public Map<String, Object> uninstallBundle(@PathVariable("id") String bundleId, Authentication authentication) {
+        objectAccessService.requireConfigurator(authentication);
         try {
             Map<String, Object> result = localBundleService.uninstallLocalBundle(bundleId);
             if ("ERROR".equals(result.get("status"))) {
