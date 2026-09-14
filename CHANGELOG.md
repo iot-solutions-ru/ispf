@@ -19,6 +19,9 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Data source / SQL binding object ACL** — `data-sources` and `sql-bindings` mutations
+  (`create` / `update` / `execute-query` / binding `refresh`) require object `WRITE`;
+  reads require `READ` (not only CONFIG role + tenant scope).
 - **Driver runtime object ACL** — `configure` / `start` / `stop` / `write` /
   `catalog/import-points` require object `WRITE` (not only tenant scope + CONFIG
   role); `status` / `browse` / `poll` require `READ`. Shared catalog artifact

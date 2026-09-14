@@ -5,6 +5,7 @@ import com.ispf.server.datasource.DataSourceConnectionResolver;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.datasource.DataSourceQueryResult;
+import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantVirtualRootService;
@@ -31,22 +32,25 @@ public class DataSourceController {
     private final TenantScopeService tenantScopeService;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
     private final TenantVirtualRootService tenantVirtualRootService;
+    private final ObjectAccessService objectAccessService;
 
     public DataSourceController(
             DataSourceObjectService dataSourceObjectService,
             TenantScopeService tenantScopeService,
             TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
-            TenantVirtualRootService tenantVirtualRootService
+            TenantVirtualRootService tenantVirtualRootService,
+            ObjectAccessService objectAccessService
     ) {
         this.dataSourceObjectService = dataSourceObjectService;
         this.tenantScopeService = tenantScopeService;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
         this.tenantVirtualRootService = tenantVirtualRootService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/by-path")
     public DataSourceObjectService.DataSourceView get(@RequestParam String path, Authentication authentication) {
-        String canonical = requirePathAccess(path, authentication);
+        String canonical = requirePathRead(path, authentication);
         return dataSourceObjectService.getByPath(canonical);
     }
 
@@ -55,8 +59,9 @@ public class DataSourceController {
             @RequestBody CreateDataSourceRequest request,
             Authentication authentication
     ) {
-        String path = tenantVirtualRootService.dataSourcesRoot(authentication) + "."
-                + DataSourcePathResolver.sanitizeNodeName(request.name());
+        String parent = tenantVirtualRootService.dataSourcesRoot(authentication);
+        objectAccessService.requireWrite(parent, authentication);
+        String path = parent + "." + DataSourcePathResolver.sanitizeNodeName(request.name());
         requirePathAccess(path, authentication);
         tenantLocalDataAccessGuard.requireExternalConnectionMode(request.connectionMode(), authentication);
         if (DataSourceConnectionResolver.MODE_EXTERNAL.equalsIgnoreCase(
@@ -72,7 +77,7 @@ public class DataSourceController {
             @RequestBody UpdateDataSourceRequest request,
             Authentication authentication
     ) {
-        String canonical = requirePathAccess(path, authentication);
+        String canonical = requirePathWrite(path, authentication);
         if (request.connectionMode() != null) {
             tenantLocalDataAccessGuard.requireExternalConnectionMode(request.connectionMode(), authentication);
         }
@@ -88,7 +93,7 @@ public class DataSourceController {
             @RequestBody(required = false) TestConnectionRequest request,
             Authentication authentication
     ) {
-        String canonical = requirePathAccess(path, authentication);
+        String canonical = requirePathRead(path, authentication);
         tenantLocalDataAccessGuard.requireAllowedDataSourcePath(canonical, authentication);
         if (request != null && request.jdbcUrl() != null && !request.jdbcUrl().isBlank()) {
             tenantLocalDataAccessGuard.requireAllowedJdbcUrl(request.jdbcUrl(), authentication);
@@ -115,7 +120,7 @@ public class DataSourceController {
             @RequestBody ExecuteQueryRequest request,
             Authentication authentication
     ) {
-        String canonical = requirePathAccess(path, authentication);
+        String canonical = requirePathWrite(path, authentication);
         tenantLocalDataAccessGuard.requireAllowedDataSourcePath(canonical, authentication);
         return dataSourceObjectService.executeQuery(
                 canonical,
@@ -123,6 +128,18 @@ public class DataSourceController {
                 request.params(),
                 request.maxRows()
         );
+    }
+
+    private String requirePathRead(String path, Authentication authentication) {
+        String canonical = requirePathAccess(path, authentication);
+        objectAccessService.requireRead(canonical, authentication);
+        return canonical;
+    }
+
+    private String requirePathWrite(String path, Authentication authentication) {
+        String canonical = requirePathAccess(path, authentication);
+        objectAccessService.requireWrite(canonical, authentication);
+        return canonical;
     }
 
     private String requirePathAccess(String path, Authentication authentication) {
