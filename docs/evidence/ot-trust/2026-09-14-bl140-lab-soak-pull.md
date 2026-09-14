@@ -24,3 +24,5 @@ Also pulled continuous daily files `soak-2026-09-10.json` … `soak-2026-09-13.j
 ## Unblock note
 
 Cloud Agent still needs secret `ISPF_LAB_SSH_PRIVATE_KEY` for unattended pulls. Operator workstation with `ispf_lab_ed25519` can pull evidence now.
+
+**Follow-up:** soak **stopped** 2026-09-14 — [2026-09-14-bl140-lab-soak-stopped.md](2026-09-14-bl140-lab-soak-stopped.md).
