@@ -79,6 +79,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Docs
 
+- **Quality hold pack** — G-01 vendor outreach draft, Web Console dogfood checklist, ACL mutate-API audit note. Links from [parked-backlog](docs/en/parked-backlog.md) **P-PENTEST**. Prep ≠ pen-test pass.
 - **MQTT wire honesty** — Paho mqttv3 = MQTT **3.1.1**; MQTT 5 documented as a non-goal (#209).
 - **Nested dashboard inheritContext** — nested dashboards honor inheritContext (#206).
 - **External AI IDE / hosted SPA** — how-to for Cursor/VS Code: MCP, BFF invoke, Vite `base`, ui-pack zip. Hub [`docs/en/external-ide.md`](docs/en/external-ide.md) (RU [`docs/ru/external-ide.md`](docs/ru/external-ide.md)); P7/P9, agent-knowledge approach **I**, marketplace, solution-developer-guide.

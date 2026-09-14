@@ -39,6 +39,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Docs
 
+- **Quality hold** — черновик письма G-01, чеклист dogfood Web Console, заметка ACL-аудита. Prep ≠ pass.
 - MQTT: wire = **3.1.1**; MQTT 5 — non-goal (#209). Nested dashboards: inheritContext (#206).
 - **Внешняя AI IDE / hosted SPA** — how-to Cursor/VS Code: MCP, BFF, Vite `base`, ui-pack. Хаб [`docs/ru/external-ide.md`](external-ide.md) (канон EN [`docs/en/external-ide.md`](../en/external-ide.md)).
 - **OT Trust BL-140 Pilot #1 soak day 2** — auto soak-check 2026-09-07 06:00 MSK pass. Evidence `docs/evidence/ot-trust/2026-09-07-bl140-pilot1-day2.md`.
