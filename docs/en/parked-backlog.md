@@ -12,7 +12,7 @@
 | P-ERP | Live ERP connector (BL-169) | **Parked** | Named 1C/SAP integration | Sandbox / simulate catalog may exist; **live** round-trip is not claimed. |
 | P-BPMN | BPMN/DMN depth beyond ADR-0047 | **Parked** | Named customer blocker + ADR | Freeze holds. |
 | P-WEBAUTHN | WebAuthn / passkeys (BL-194) | **Parked (Planned)** | Tender / customer MFA requirement | TOTP MFA GA remains the shipped path. |
-| P-PENTEST | Third-party pen-test report (G-01) | **Parked** (vendor-pack ready) | Hired assessment + dated report + retest | **Send:** [pen-test-vendor-pack.md](pen-test-vendor-pack.md). SOW [pen-test-scope.md](pen-test-scope.md); RoE [pen-test-roe.md](pen-test-roe.md); RFP [pen-test-questionnaire.md](pen-test-questionnaire.md); prep [pen-test-prep.md](pen-test-prep.md); cases [pen-test-cases.md](pen-test-cases.md); lab pin [2026-09-09 preflight](../evidence/security-pentest/2026-09-09-lab-192.168.100.10-preflight.md). Docs ≠ cert. |
+| P-PENTEST | Third-party pen-test report (G-01) | **Parked** (vendor-pack ready) | Hired assessment + dated report + retest | **Send:** [outreach draft](pen-test-vendor-outreach-draft.md) · [vendor pack](pen-test-vendor-pack.md). SOW/RoE/RFP/prep/cases linked from pack; lab pin [2026-09-09 preflight](../evidence/security-pentest/2026-09-09-lab-192.168.100.10-preflight.md). Dogfood hold: [web-console-dogfood-checklist.md](web-console-dogfood-checklist.md). Docs ≠ cert. |
 
 ## Lab access (operators)
 

@@ -68,9 +68,12 @@ Preflight JSON: [`2026-09-09-lab-192.168.100.10-preflight.json`](../evidence/sec
 
 ### Explicit non-targets (lab)
 
-- Destructive delete / DoS on shared lab DBs while **Pilot #1–#3** soak timers run (06:00 / 06:05 / 06:10 MSK)
-- OT peers / Mosquitto / OPC UA loopback used by BL-140 pilots unless assessor + OT lead agree in writing
+- Destructive delete / DoS on shared lab DBs during an active assessment window without written OT lead approval
+- OT peers / Mosquitto / OPC UA loopback unless assessor + OT lead agree in writing  
+  (BL-140 lab soak timers were **stopped** 2026-09-14 — see [`../evidence/ot-trust/2026-09-14-bl140-lab-soak-stopped.md`](../evidence/ot-trust/2026-09-14-bl140-lab-soak-stopped.md); refresh inventory at kickoff)
 - Public internet targets without a separate inventory + RoE
+
+**Outreach draft (fill & send):** [pen-test-vendor-outreach-draft.md](pen-test-vendor-outreach-draft.md).
 
 ---
 
