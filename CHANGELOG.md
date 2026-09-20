@@ -59,6 +59,17 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Web Console: two 2000+ line modules split into registries** (no behaviour change):
+  `ispfSheetEval.ts` (2166 lines) is now a 45-line facade over `sheetEvalCore` /
+  `sheetEvalTokenizer` / `sheetEvalParser` / `sheetEvalFunctions` (dispatcher) and six
+  per-category function registries (`Logical`, `Math`, `Text`, `Date`, `Financial`, `Ispf`) —
+  the 118-branch `invokeFunction` if-chain became `Record<string, SheetFunction>` tables;
+  a characterization test replays 135 formulas captured from the pre-split implementation.
+  `widgetEditorFields.tsx` (2492 lines) is now a 31-line dispatcher over
+  `widgetTypeFields{Display,Chart,Data,Layout}.tsx` registries keyed by widget type (each
+  renderer receives `WidgetFieldContextFor<K>` so the widget stays narrowed), plus
+  `widgetFieldPrimitives` / `widgetRowNavigationFields` / `widgetDataSourceFields`; a test
+  asserts the registry covers exactly the 43 types the old switch handled and mounts each.
 - **Web Console lint gate at zero warnings** — `npm run lint` now runs with
   `--max-warnings 0` (was 180). All `react-hooks/exhaustive-deps`,
   `@typescript-eslint/no-non-null-assertion` and `react-refresh/only-export-components`

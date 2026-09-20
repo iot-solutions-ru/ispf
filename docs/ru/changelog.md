@@ -26,6 +26,13 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- Web Console: два модуля по 2000+ строк разбиты на реестры (поведение не менялось):
+  `ispfSheetEval.ts` (2166 строк) → фасад 45 строк над `sheetEvalCore` / `Tokenizer` / `Parser` /
+  `Functions` и шестью реестрами функций по категориям; if-цепочка из 118 веток стала таблицами
+  `Record<string, SheetFunction>`; characterization-тест воспроизводит 135 формул со значениями,
+  снятыми с прежней реализации. `widgetEditorFields.tsx` (2492 строки) → диспетчер 31 строка над
+  реестрами `widgetTypeFields{Display,Chart,Data,Layout}.tsx` по типу виджета; тест проверяет,
+  что реестр покрывает ровно 43 типа старого `switch`, и монтирует каждый рендерер.
 - Lint-гейт Web Console на нуле предупреждений: `npm run lint` с `--max-warnings 0` (было 180);
   исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
   (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).
