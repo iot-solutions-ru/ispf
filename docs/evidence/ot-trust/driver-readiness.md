@@ -1,6 +1,6 @@
 # Driver readiness audit (all packs)
 
-> Generated: `2026-09-06T01:22:03Z`  
+> Generated: `2026-09-20T14:31:13Z`  
 > Catalog: **162** / expected **162**  
 > Matrix ENTRIES: **162** · Stub list: **0**  
 > Findings: FAIL **0** · WARN **0**  
@@ -10,8 +10,8 @@
 
 | Dimension | Counts |
 |-----------|--------|
-| Maturity | `BETA`=3, `PRODUCTION`=159 |
-| Readiness | `PARTIAL`=1, `READY_LAB`=159, `SHELL_BETA`=2 |
+| Maturity | `BETA`=6, `PRODUCTION`=156 |
+| Readiness | `PARTIAL`=4, `READY_LAB`=156, `SHELL_BETA`=2 |
 | Source | `matrix`=162 |
 
 ### Readiness legend
@@ -115,7 +115,7 @@ _None._
 | `hitachi-hidic` | `ispf-driver-hitachi-hidic` | PRODUCTION | matrix | `READY_LAB` | — |
 | `http` | `ispf-driver-http` | PRODUCTION | matrix | `READY_LAB` | — |
 | `http-server` | `ispf-driver-http-server` | PRODUCTION | matrix | `READY_LAB` | — |
-| `icmp` | `ispf-driver-icmp` | PRODUCTION | matrix | `READY_LAB` | — |
+| `icmp` | `ispf-driver-icmp` | BETA | matrix | `PARTIAL` | — |
 | `idec-microsmart` | `ispf-driver-idec-microsmart` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec101` | `ispf-driver-iec101` | PRODUCTION | matrix | `READY_LAB` | — |
 | `iec103` | `ispf-driver-iec103` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -193,7 +193,7 @@ _None._
 | `secs-gem` | `ispf-driver-secs-gem` | PRODUCTION | matrix | `READY_LAB` | — |
 | `sigfox` | `ispf-driver-sigfox` | PRODUCTION | matrix | `READY_LAB` | — |
 | `sip` | `ispf-driver-sip` | PRODUCTION | matrix | `READY_LAB` | — |
-| `smb` | `ispf-driver-smb` | PRODUCTION | matrix | `READY_LAB` | — |
+| `smb` | `ispf-driver-smb` | BETA | matrix | `PARTIAL` | — |
 | `smi-s` | `ispf-driver-smis` | PRODUCTION | matrix | `READY_LAB` | — |
 | `smpp` | `ispf-driver-smpp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `sms` | `ispf-driver-sms` | PRODUCTION | matrix | `READY_LAB` | — |
@@ -219,7 +219,7 @@ _None._
 | `wirelesshart` | `ispf-driver-wirelesshart` | PRODUCTION | matrix | `READY_LAB` | — |
 | `wisun` | `ispf-driver-wisun` | PRODUCTION | matrix | `READY_LAB` | — |
 | `wmbus` | `ispf-driver-wmbus` | PRODUCTION | matrix | `READY_LAB` | — |
-| `wmi` | `ispf-driver-wmi` | PRODUCTION | matrix | `READY_LAB` | — |
+| `wmi` | `ispf-driver-wmi` | BETA | matrix | `PARTIAL` | — |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | PRODUCTION | matrix | `READY_LAB` | — |
 | `zigbee` | `ispf-driver-zigbee` | PRODUCTION | matrix | `READY_LAB` | — |

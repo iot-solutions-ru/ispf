@@ -140,6 +140,7 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `vmware` | BETA | **PRODUCTION** | Real vSphere SOAP flow: RetrieveServiceContent + SessionManager Login (session cookie) + PropertyCollector RetrieveProperties, re-login on NotAuthenticated, Logout on disconnect; `VmwareDeviceDriverTest` rewritten around a session-enforcing fake endpoint |
 | `smi-s` | BETA | **PRODUCTION** | Real CIM-XML parser (JDK DOM/XPath, secure processing) replaces hardcoded properties; CIM `ERROR` handling; `SmisDeviceDriverTest` extended (values, arrays, error, refused) |
 | `opc-da`, `opc-bridge`, `corba` | BETA | **BETA** (stays) | Objective blockers: opc-da/opc-bridge proxy protocol undefined (Windows DCOM bridge out of scope); corba needs a third-party ORB (JDK CORBA removed) |
+| `icmp`, `smb`, `wmi` | PRODUCTION | **BETA** (demoted) | Fail the mechanical evidence criterion (`DriverMaturityEvidence`): `icmp` < 100 LOC of driver code; `smb` has only a point-parser test and no SMB peer; `wmi` is Windows-only and its tests skip on the Linux runner. Promote back by adding the missing evidence (loopback peer / driver test), the matrix test then flags them for promotion |
 
 ## Status (July 2026, driver batch B3 promotion)
 

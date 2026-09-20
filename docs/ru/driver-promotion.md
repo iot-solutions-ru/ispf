@@ -32,6 +32,7 @@
 | `vmware` | BETA | **PRODUCTION** | Реальный vSphere SOAP-флоу: RetrieveServiceContent + SessionManager Login (session cookie) + PropertyCollector RetrieveProperties, re-login при NotAuthenticated, Logout при disconnect; `VmwareDeviceDriverTest` переписан вокруг фейкового эндпоинта с проверкой сессии |
 | `smi-s` | BETA | **PRODUCTION** | Реальный парсер CIM-XML (JDK DOM/XPath, secure processing) вместо захардкоженных свойств; обработка CIM `ERROR`; `SmisDeviceDriverTest` расширен (значения, массивы, ошибка, отказ соединения) |
 | `opc-da`, `opc-bridge`, `corba` | BETA | **BETA** (остаётся) | Объективные блокеры: протокол proxy для opc-da/opc-bridge не определён (Windows DCOM bridge вне скоупа); corba требует стороннюю ORB (JDK CORBA удалён) |
+| `icmp`, `smb`, `wmi` | PRODUCTION | **BETA** (понижены) | Не проходят механический критерий доказательности (`DriverMaturityEvidence`): `icmp` — < 100 строк кода драйвера; `smb` — только тест парсера точек, SMB-peer нет; `wmi` — только Windows, тесты пропускаются на Linux-раннере. Возврат в PRODUCTION — добавить недостающие доказательства (loopback-peer / тест драйвера), после чего тест матрицы сам предложит повышение |
 
 ## Статус (июль 2026, продвижение партии B3)
 

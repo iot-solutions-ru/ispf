@@ -112,7 +112,8 @@ def find_pack_contract_test(pack_id: str) -> Path | None:
     test_root = ROOT / "packages" / pack_id / "src" / "test" / "java"
     if not test_root.is_dir():
         return None
-    tests = sorted(test_root.rglob("*Test.java"))
+    # Sort by POSIX-relative path so the pick is identical on Linux CI and Windows checkouts.
+    tests = sorted(test_root.rglob("*Test.java"), key=lambda p: p.relative_to(test_root).as_posix())
     return tests[0] if tests else None
 
 
@@ -262,7 +263,7 @@ def audit() -> tuple[list[DriverRow], dict]:
             source="",
             pack_dir_ok=(ROOT / "packages" / pack_id).is_dir(),
             source_ok=src.is_file(),
-            source_path=str(src.relative_to(ROOT)) if src.is_file() else str(src),
+            source_path=src.relative_to(ROOT).as_posix() if src.is_file() else src.as_posix(),
             top10=driver_id in top10,
             top20=driver_id in top20,
         )
@@ -302,7 +303,7 @@ def audit() -> tuple[list[DriverRow], dict]:
         contract = find_pack_contract_test(pack_id)
         if contract is not None:
             row.pack_contract_test = True
-            row.pack_contract_test_path = str(contract.relative_to(ROOT))
+            row.pack_contract_test_path = contract.relative_to(ROOT).as_posix()
             if row.maturity == "STUB":
                 row.loopback_path = row.pack_contract_test_path
                 row.loopback_ok = True

@@ -105,7 +105,7 @@ final class DriverProductionMatrix {
                     testPath("ispf-driver-modbus-rtu", "com.ispf.driver.modbusrtu.ModbusRtuDeviceDriverTest"),
                     "ispf-driver-modbus-rtu"),
             entry("modbus-udp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-modbus", "com.ispf.driver.modbus.ModbusTcpDeviceDriverTest"),
+                    testPath("ispf-driver-modbus-udp", "com.ispf.driver.modbusudp.ModbusUdpDeviceDriverTest"),
                     "ispf-driver-modbus-udp"),
             entry("opcua", DriverMaturity.PRODUCTION, EnumSet.of(
                     Capability.POLL, Capability.SUBSCRIBE, Capability.WRITE, Capability.DISCOVERY,
@@ -160,7 +160,8 @@ final class DriverProductionMatrix {
             entry("smi-s", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-smis", "com.ispf.driver.smis.SmisDeviceDriverTest"),
                     "ispf-driver-smis"),
-            entry("wmi", DriverMaturity.PRODUCTION, POLL_ONLY,
+            // F-03 evidence criterion: Windows-only backend, tests skip on the Linux CI runner — no verifiable device.
+            entry("wmi", DriverMaturity.BETA, POLL_ONLY,
                     testPath("ispf-driver-wmi", "com.ispf.driver.wmi.WmiDeviceDriverTest"),
                     "ispf-driver-wmi"),
             entry("odbc", DriverMaturity.PRODUCTION, POLL_ONLY,
@@ -184,7 +185,8 @@ final class DriverProductionMatrix {
             entry("coap", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-coap", "com.ispf.driver.coap.CoapDeviceDriverTest"),
                     "ispf-driver-coap"),
-            entry("icmp", DriverMaturity.PRODUCTION, POLL_ONLY,
+            // F-03 evidence criterion: 89 non-comment LOC of driver code — below the PRODUCTION floor.
+            entry("icmp", DriverMaturity.BETA, POLL_ONLY,
                     testPath("ispf-driver-icmp", "com.ispf.driver.icmp.IcmpDeviceDriverTest"),
                     "ispf-driver-icmp"),
             entry("ip-host", DriverMaturity.PRODUCTION, POLL_ONLY,
@@ -287,7 +289,8 @@ final class DriverProductionMatrix {
             entry("webhook", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-webhook", "com.ispf.driver.webhook.WebhookDeviceDriverTest"),
                     "ispf-driver-webhook"),
-            entry("smb", DriverMaturity.PRODUCTION, POLL_ONLY,
+            // F-03 evidence criterion: only a path-parser test, no SMB peer (no jcifs/smbj loopback) — shell.
+            entry("smb", DriverMaturity.BETA, POLL_ONLY,
                     testPath("ispf-driver-smb", "com.ispf.driver.smb.SmbPointTest"),
                     "ispf-driver-smb"),
             // OT Trust Wave 2 — honest codec promotions (loopback tests, no stub javadoc).

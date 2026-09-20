@@ -1,15 +1,15 @@
 {
   "summary": {
-    "generatedAt": "2026-09-06T01:22:03Z",
+    "generatedAt": "2026-09-20T14:31:13Z",
     "catalogSize": 162,
     "expectedCatalogSize": 162,
     "byMaturity": {
-      "PRODUCTION": 159,
-      "BETA": 3
+      "PRODUCTION": 156,
+      "BETA": 6
     },
     "byReadiness": {
-      "READY_LAB": 159,
-      "PARTIAL": 1,
+      "READY_LAB": 156,
+      "PARTIAL": 4,
       "SHELL_BETA": 2
     },
     "bySource": {
@@ -1552,7 +1552,7 @@
       "driver_id": "icmp",
       "pack_id": "ispf-driver-icmp",
       "driver_class": "com.ispf.driver.icmp.IcmpDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL"
@@ -1571,8 +1571,8 @@
       "interop_in_workflow": false,
       "write_claimed": false,
       "write_looks_stub": true,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -2670,7 +2670,7 @@
       "extends_protocol_stub": false,
       "pack_contract_test": true,
       "pack_contract_test_path": "packages/ispf-driver-modbus-udp/src/test/java/com/ispf/driver/modbusudp/ModbusPointTest.java",
-      "loopback_path": "packages/ispf-driver-modbus/src/test/java/com/ispf/driver/modbus/ModbusTcpDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-modbus-udp/src/test/java/com/ispf/driver/modbusudp/ModbusUdpDeviceDriverTest.java",
       "loopback_ok": true,
       "interop_module": "ispf-driver-modbus-udp",
       "interop_in_workflow": true,
@@ -3715,7 +3715,7 @@
       "driver_id": "smb",
       "pack_id": "ispf-driver-smb",
       "driver_class": "com.ispf.driver.smb.SmbDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL"
@@ -3734,8 +3734,8 @@
       "interop_in_workflow": false,
       "write_claimed": false,
       "write_looks_stub": true,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -4435,7 +4435,7 @@
       "driver_id": "wmi",
       "pack_id": "ispf-driver-wmi",
       "driver_class": "com.ispf.driver.wmi.WmiDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL"
@@ -4454,8 +4454,8 @@
       "interop_in_workflow": false,
       "write_claimed": false,
       "write_looks_stub": true,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {

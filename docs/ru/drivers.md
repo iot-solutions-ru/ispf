@@ -23,7 +23,7 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **159** драйверов **PRODUCTION** (OT Trust Waves 1–11: clean-room lab-кодеки, у каждого in-process loopback-тест; включая `cwmp` и notification-паки `email`/`sms`/`webhook`/`smb` вне top-20), **3** **BETA** (`opc-da`, `opc-bridge`, `corba`), каталожных **STUB**-пакетов не осталось (`protocol-stub-ids.json` пуст; `ispf-driver-stub-kit` — шаблон для новых протоколов). Многие lab-кодеки небольшие (часть паков < 300 строк вместе с тестом): метка **PRODUCTION** в реестре означает «lab-кодек + loopback-тест + документация», а не проверку в поле — см. колонку **`STUB_LAB`** в [driver-readiness](../evidence/ot-trust/driver-readiness.md). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Цифры сверяются тестом `DriverProductionMatrixTest.docsMaturityCountsMatchMatrix` по маркеру в английской версии.
+В `DriverProductionMatrix` — **156** драйверов **PRODUCTION** (OT Trust Waves 1–11: clean-room lab-кодеки, у каждого in-process loopback-тест; включая `cwmp` и notification-паки `email`/`sms`/`webhook` вне top-20), **6** **BETA** (`opc-da`, `opc-bridge`, `corba`, а также `icmp`, `smb`, `wmi` — понижены механическим критерием доказательности, см. ниже), каталожных **STUB**-пакетов не осталось (`protocol-stub-ids.json` пуст; `ispf-driver-stub-kit` — шаблон для новых протоколов). Многие lab-кодеки небольшие (часть паков < 300 строк вместе с тестом): метка **PRODUCTION** в реестре означает «lab-кодек + loopback-тест + документация», а не проверку в поле — см. колонку **`STUB_LAB`** в [driver-readiness](../evidence/ot-trust/driver-readiness.md). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Цифры сверяются тестом `DriverProductionMatrixTest.docsMaturityCountsMatchMatrix` по маркеру в английской версии.
 
 > **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `corba`. Бывшие каталожные заглушки (`iec61850`, `profinet`, `visa`, `scpi`, …) продвинуты в Waves 1–11 только на основании lab-кодеков и loopback-тестов и сохраняют аудит-метку **`STUB_LAB`** до полевого пилота. Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
@@ -35,7 +35,8 @@
 | `cwmp` | PRODUCTION | вне top-20; Inform + Get/SetParameterValues |
 | `dnp3` | PRODUCTION | **Только poll/read** — `writePoint` не реализован |
 | `haystack`, `kafka`, `coap` | PRODUCTION | poll-only клиенты; loopback-тесты |
-| `icmp`, `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote-проверки; read-only |
+| `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote-проверки; read-only |
+| `icmp` | BETA | проба `InetAddress.isReachable`, < 100 строк — ниже порога критерия; read-only |
 | `file`, `folder`, `application` | PRODUCTION | мониторинг локального хоста; read-only |
 | `imap`, `pop3`, `jms` | PRODUCTION | mail/messaging-клиенты; read-only |
 | `soap`, `web-transaction`, `http-server` | PRODUCTION | на базе HTTP; read-only |
@@ -46,7 +47,8 @@
 | `iec104-server` | PRODUCTION | slave/server; write + quality; interop partner для `iec104` |
 | `omron-fins`, `mbus` | PRODUCTION | industrial read; loopback-тесты |
 | `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` submit через маппинг; loopback-тесты |
-| `ipmi`, `wmi` | PRODUCTION | hardware/OS-пробы; `wmi` — только Windows |
+| `ipmi` | PRODUCTION | hardware-проба; loopback-тест RMCP/IPMI |
+| `wmi` | BETA | только Windows (PowerShell/CIM); тесты пропускаются на Linux CI — проверяемого peer нет |
 | `odbc` | PRODUCTION | SQL read; нужен внешний ODBC-JDBC bridge JAR |
 | `ethernet-ip` | PRODUCTION | UCMM CIP Read/Write Tag (атомарные типы); loopback CIP-эмулятор |
 | `smi-s`, `vmware` | PRODUCTION | парсинг CIM-XML / vSphere SOAP (Login + RetrieveProperties); loopback-тесты |
@@ -543,7 +545,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `hitachi-hidic` | `ispf-driver-hitachi-hidic` | STUB | Apache-2.0 | Hitachi HIDIC: Hitachi HIDIC / EH-150 stub (stub TCP-доступности; codec пока не реализован) |
 | `http` | `ispf-driver-http` | PRODUCTION | Apache-2.0 | HTTP/HTTPS клиент (GET/POST JSON/text) |
 | `http-server` | `ispf-driver-http-server` | PRODUCTION | Apache-2.0 | Встроенный HTTP-сервер для входящих запросов |
-| `icmp` | `ispf-driver-icmp` | PRODUCTION | Apache-2.0 | ICMP ping / проверка доступности и RTT |
+| `icmp` | `ispf-driver-icmp` | BETA | Apache-2.0 | ICMP ping / проверка доступности и RTT |
 | `idec-microsmart` | `ispf-driver-idec-microsmart` | STUB | Apache-2.0 | IDEC MicroSmart: IDEC MicroSmart FC6A stub (stub TCP-доступности; codec пока не реализован) |
 | `iec101` | `ispf-driver-iec101` | STUB | Apache-2.0 | IEC 60870-5-101: IEC 60870-5-101 serial/TCP stub (stub TCP-доступности; codec пока не реализован) |
 | `iec103` | `ispf-driver-iec103` | STUB | Apache-2.0 | IEC 60870-5-103: IEC 60870-5-103 protection stub (stub TCP-доступности; codec пока не реализован) |
@@ -621,7 +623,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `secs-gem` | `ispf-driver-secs-gem` | STUB | Apache-2.0 | SECS/GEM: SEMI SECS-I/HSMS/GEM stub (stub TCP-доступности; codec пока не реализован) |
 | `sigfox` | `ispf-driver-sigfox` | STUB | Apache-2.0 | Sigfox: Sigfox backend callback stub (stub TCP-доступности; codec пока не реализован) |
 | `sip` | `ispf-driver-sip` | PRODUCTION | LicenseRef-NIST-PublicDomain | SIP OPTIONS/REGISTER probe доступности |
-| `smb` | `ispf-driver-smb` | PRODUCTION | Apache-2.0 | Доступ к SMB/CIFS шарам |
+| `smb` | `ispf-driver-smb` | BETA | Apache-2.0 | Доступ к SMB/CIFS шарам (в тестах нет SMB-peer) |
 | `smi-s` | `ispf-driver-smis` | PRODUCTION | Apache-2.0 | SMI-S storage CIM-XML poll |
 | `smpp` | `ispf-driver-smpp` | PRODUCTION | Apache-2.0 | SMPP SMSC клиент |
 | `sms` | `ispf-driver-sms` | PRODUCTION | Apache-2.0 | Исходящие SMS через HTTP relay |
@@ -647,7 +649,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `wirelesshart` | `ispf-driver-wirelesshart` | STUB | Apache-2.0 | WirelessHART: WirelessHART gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `wisun` | `ispf-driver-wisun` | STUB | Apache-2.0 | Wi-SUN: Wi-SUN FAN border router stub (stub TCP-доступности; codec пока не реализован) |
 | `wmbus` | `ispf-driver-wmbus` | STUB | Apache-2.0 | Wireless M-Bus: Wireless M-Bus (OMS) stub (stub TCP-доступности; codec пока не реализован) |
-| `wmi` | `ispf-driver-wmi` | PRODUCTION | Apache-2.0 | Windows WMI через PowerShell (только Windows) |
+| `wmi` | `ispf-driver-wmi` | BETA | Apache-2.0 | Windows WMI через PowerShell (только Windows) |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | Apache-2.0 | XMPP клиент (Smack) |
 | `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | STUB | Apache-2.0 | Yaskawa Memobus: Yaskawa Memobus/Modbus-family PLC stub (stub TCP-доступности; codec пока не реализован) |
 | `zigbee` | `ispf-driver-zigbee` | STUB | Apache-2.0 | Zigbee: Zigbee coordinator / ZCL stub (stub TCP-доступности; codec пока не реализован) |

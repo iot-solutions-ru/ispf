@@ -19,6 +19,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **`flexible` driver over UDP** — `exchangeUdpBytes` built the `DatagramPacket` with
+  `InetSocketAddress.createUnresolved(...)`, which the JDK rejects (`IllegalArgumentException:
+  unresolved address`), so every UDP exchange failed before the request left the host. Now resolves
+  the address; covered by the new `FlexibleDeviceDriverTest` UDP loopback.
 - **Marketplace install ACL** — local marketplace symbol / UI / analytics / bundle
   install and uninstall require a configurator role (developer/admin/tenant-admin);
   operators get 403.
@@ -70,6 +74,13 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   renderer receives `WidgetFieldContextFor<K>` so the widget stays narrowed), plus
   `widgetFieldPrimitives` / `widgetRowNavigationFields` / `widgetDataSourceFields`; a test
   asserts the registry covers exactly the 43 types the old switch handled and mounts each.
+- **Driver maturity evidence criterion (F-03)** — `DriverProductionMatrixTest` now enforces a
+  mechanical bar for every `PRODUCTION` entry (`DriverMaturityEvidence`): ≥ 100 non-comment LOC of
+  driver code, a `*Driver*Test` that drives the driver itself, and a verifiable peer (interop-lab
+  fixture, in-process emulated peer, or transport-less driver). BETA entries that pass must be listed
+  in `BETA_BY_DECISION` with a reason. `icmp`, `smb`, `wmi` demoted to **BETA** (156 PRODUCTION / 6
+  BETA); `modbus-udp`, `flexible`, `webhook` got real loopback driver tests instead of parser-only
+  coverage. `tools/driver-readiness-audit.py` output is now OS-independent (POSIX paths, stable pick).
 - **Web Console lint gate at zero warnings** — `npm run lint` now runs with
   `--max-warnings 0` (was 180). All `react-hooks/exhaustive-deps`,
   `@typescript-eslint/no-non-null-assertion` and `react-refresh/only-export-components`

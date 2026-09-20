@@ -23,11 +23,13 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-<!-- maturity-counts: production=159 beta=3 stub=0 -->
+<!-- maturity-counts: production=156 beta=6 stub=0 -->
 <!-- The numbers above are asserted by DriverProductionMatrixTest.docsMaturityCountsMatchMatrix; update both the marker and the sentence together. -->
-In `DriverProductionMatrix` — **159** drivers at **PRODUCTION** (OT Trust Waves 1–11 clean-room lab codecs, each with an in-process loopback test; includes `cwmp` / notification packs `email`/`sms`/`webhook` / `smb` outside top-20), **3** at **BETA** (`opc-da`, `opc-bridge`, `corba`), **0** catalog **STUB** packs left (`protocol-stub-ids.json` is empty; `ispf-driver-stub-kit` remains the template for new protocols). Many lab codecs are small (some packs < 300 LOC including the test) — registry **PRODUCTION** means "lab codec + loopback test + docs", **not** field-proven; see the audit **`STUB_LAB`** column in [driver-readiness](../evidence/ot-trust/driver-readiness.md) and the ready-for-field process below. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
+In `DriverProductionMatrix` — **156** drivers at **PRODUCTION** (OT Trust Waves 1–11 clean-room lab codecs, each with an in-process loopback test; includes `cwmp` / notification packs `email`/`sms`/`webhook` outside top-20), **6** at **BETA** (`opc-da`, `opc-bridge`, `corba`, plus `icmp`, `smb`, `wmi` — demoted by the mechanical evidence criterion, see below), **0** catalog **STUB** packs left (`protocol-stub-ids.json` is empty; `ispf-driver-stub-kit` remains the template for new protocols). Many lab codecs are small (some packs < 300 LOC including the test) — registry **PRODUCTION** means "lab codec + loopback test + docs", **not** field-proven; see the audit **`STUB_LAB`** column in [driver-readiness](../evidence/ot-trust/driver-readiness.md) and the ready-for-field process below. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `corba`. Former catalog stubs (`iec61850`, `profinet`, `visa`, `scpi`, …) were promoted in OT Trust Waves 1–11 on the strength of lab codecs + loopback tests only; they keep the audit label **`STUB_LAB`** until a field pilot. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `corba`, and `icmp` / `smb` / `wmi` (fail the evidence criterion).
+>
+> **Evidence criterion (mechanical, enforced by `DriverProductionMatrixTest.productionDriversMeetEvidenceCriterion`):** a PRODUCTION entry must have (1) ≥ 100 non-comment lines of driver main code, (2) a `*Driver*Test` class exercising the driver itself (not only a point parser), and (3) a verifiable peer — an interop-lab fixture in `deploy/driver-interop/docker-compose.yml`, an in-process emulated peer in the tests (loopback socket / mock server / embedded broker), or a transport-less driver (`virtual`, `file`, `folder`, `application`, `jdbc`, `odbc`, `flexible`). A BETA entry that satisfies the criterion must be listed in `DriverProductionMatrixTest.BETA_BY_DECISION` with a reason, otherwise the test asks for promotion. Rules live in `DriverMaturityEvidence`. Former catalog stubs (`iec61850`, `profinet`, `visa`, `scpi`, …) were promoted in OT Trust Waves 1–11 on the strength of lab codecs + loopback tests only; they keep the audit label **`STUB_LAB`** until a field pilot. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
 | `driverId` | Maturity (registry) | Notes / interop |
 | ---------- | ------------------- | --------------- |
@@ -37,7 +39,8 @@ In `DriverProductionMatrix` — **159** drivers at **PRODUCTION** (OT Trust Wave
 | `cwmp` | PRODUCTION | outside top-20; Inform + Get/SetParameterValues |
 | `dnp3` | PRODUCTION | **Poll/read only** — `writePoint` not implemented |
 | `haystack`, `kafka`, `coap` | PRODUCTION | poll-only clients; loopback tests |
-| `icmp`, `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote checks; read-only |
+| `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote checks; read-only |
+| `icmp` | BETA | `InetAddress.isReachable` probe, < 100 LOC — below the evidence floor; read-only |
 | `file`, `folder`, `application` | PRODUCTION | local host monitoring; read-only |
 | `imap`, `pop3`, `jms` | PRODUCTION | mail/messaging clients; read-only |
 | `soap`, `web-transaction`, `http-server` | PRODUCTION | HTTP-based; read-only |
@@ -49,7 +52,8 @@ In `DriverProductionMatrix` — **159** drivers at **PRODUCTION** (OT Trust Wave
 | `omron-fins`, `mbus` | PRODUCTION | industrial read; loopback tests |
 | `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` SMSC; loopback tests |
 | `email`, `sms`, `webhook` | PRODUCTION | notification gateways (HTTP relay / webhook); per-device config |
-| `ipmi`, `wmi` | PRODUCTION | hardware/OS probes; `wmi` Windows-only |
+| `ipmi` | PRODUCTION | hardware probe; RMCP/IPMI loopback test |
+| `wmi` | BETA | Windows-only (PowerShell/CIM); tests skip on the Linux CI runner, so no verifiable peer |
 | `odbc` | PRODUCTION | SQL read; requires external ODBC-JDBC bridge JAR |
 | `ethernet-ip` | PRODUCTION | UCMM CIP Read/Write Tag (atomic types); loopback CIP emulator test |
 | `smi-s`, `vmware` | PRODUCTION | CIM-XML parse / vSphere SOAP (Login + RetrieveProperties); loopback tests |
@@ -599,7 +603,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `hitachi-hidic` | `ispf-driver-hitachi-hidic` | STUB | Apache-2.0 | Hitachi HIDIC / EH-150 stub |
 | `http` | `ispf-driver-http` | PRODUCTION | Apache-2.0 | HTTP/HTTPS client poll (GET/POST JSON/text) |
 | `http-server` | `ispf-driver-http-server` | PRODUCTION | Apache-2.0 | Embedded HTTP server endpoint for inbound requests |
-| `icmp` | `ispf-driver-icmp` | PRODUCTION | Apache-2.0 | ICMP ping reachability / RTT probe |
+| `icmp` | `ispf-driver-icmp` | BETA | Apache-2.0 | ICMP ping reachability / RTT probe |
 | `idec-microsmart` | `ispf-driver-idec-microsmart` | STUB | Apache-2.0 | IDEC MicroSmart FC6A stub |
 | `iec101` | `ispf-driver-iec101` | STUB | Apache-2.0 | IEC 60870-5-101 serial/TCP stub |
 | `iec103` | `ispf-driver-iec103` | STUB | Apache-2.0 | IEC 60870-5-103 protection stub |
@@ -677,7 +681,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `secs-gem` | `ispf-driver-secs-gem` | STUB | Apache-2.0 | SEMI SECS-I/HSMS/GEM stub |
 | `sigfox` | `ispf-driver-sigfox` | STUB | Apache-2.0 | Sigfox backend callback stub |
 | `sip` | `ispf-driver-sip` | PRODUCTION | LicenseRef-NIST-PublicDomain | SIP OPTIONS/REGISTER reachability probe |
-| `smb` | `ispf-driver-smb` | PRODUCTION | Apache-2.0 | SMB/CIFS file share access |
+| `smb` | `ispf-driver-smb` | BETA | Apache-2.0 | SMB/CIFS file share access (no SMB peer in tests) |
 | `smi-s` | `ispf-driver-smis` | PRODUCTION | Apache-2.0 | SMI-S storage CIM-XML poll |
 | `smpp` | `ispf-driver-smpp` | PRODUCTION | Apache-2.0 | SMPP SMSC client |
 | `sms` | `ispf-driver-sms` | PRODUCTION | Apache-2.0 | Outbound SMS via HTTP relay gateway |
@@ -703,7 +707,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `wirelesshart` | `ispf-driver-wirelesshart` | STUB | Apache-2.0 | WirelessHART gateway stub |
 | `wisun` | `ispf-driver-wisun` | STUB | Apache-2.0 | Wi-SUN FAN border router stub |
 | `wmbus` | `ispf-driver-wmbus` | STUB | Apache-2.0 | Wireless M-Bus (OMS) stub |
-| `wmi` | `ispf-driver-wmi` | PRODUCTION | Apache-2.0 | Windows WMI via PowerShell (Windows only) |
+| `wmi` | `ispf-driver-wmi` | BETA | Apache-2.0 | Windows WMI via PowerShell (Windows only) |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | Apache-2.0 | XMPP messaging client (Smack) |
 | `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | PRODUCTION | Apache-2.0 | Memobus Modbus-TCP FC3/FC6 holding registers (`HR:100` / `100`) |
 | `zigbee` | `ispf-driver-zigbee` | STUB | Apache-2.0 | Zigbee coordinator / ZCL stub |
