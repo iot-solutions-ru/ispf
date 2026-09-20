@@ -141,12 +141,46 @@ and are ratcheted: raise a floor when coverage grows, never lower one silently.
 ```
 
 Modules without a floor (drivers, analytics, AI providers) only get the report.
+## Static analysis (Error Prone)
+
+Every `javac` in the Gradle build runs [Error Prone](https://errorprone.info/) (`net.ltgt.errorprone`,
+`error_prone_core` — versions pinned in the root `build.gradle.kts`). Bug patterns at **ERROR** severity fail
+the compile, so there is no separate task: `./gradlew compileJava compileTestJava` (or any `test`) is the gate.
+
+- Promoted to ERROR after the 2026-09 sweep fixed every occurrence: `DefaultCharset`, `StreamResourceLeak`,
+  `NonAtomicVolatileUpdate`, `OrphanedFormatString`, `ArgumentSelectionDefectChecker`, `AlreadyChecked`,
+  `DuplicateBranches`, `MissingOverride`. Do not downgrade these — fix the code or add a targeted
+  `@SuppressWarnings("<Pattern>")` with a one-line reason next to it (see `JmxDeviceDriver.connect` /
+  `ApplicationSchemaSession` for the accepted form).
+- Repo-wide `disable(...)` is reserved for Javadoc-style checks (`MissingSummary`, `InvalidInlineTag`,
+  `EscapedEntity`) and `AddressSelection`; each entry carries a reason in `build.gradle.kts`.
+- Remaining WARNING-level findings are visible in the compile log; promote a pattern to ERROR only after
+  the sweep that fixes it lands in the same PR.
+- Local quick iteration without the checker: `./gradlew ... -Pispf.errorprone=false`. CI never sets it.
+
+## Dependency vulnerability gate (nightly)
+
+The `dependency-vulnerabilities` job in `.github/workflows/nightly.yml` builds one CycloneDX SBOM over the
+`runtimeClasspath` of every module (`./gradlew cyclonedxBom` → `build/reports/cyclonedx/bom.json`) and scans it
+with Trivy:
+
+- **CRITICAL / HIGH** with an available fix fail the night; **MEDIUM / LOW** are report-only.
+- The full table for all severities plus the SBOM are uploaded as the `dependency-vulnerabilities-<run>`
+  artifact (30 days).
+- A finding is closed by upgrading the direct dependency, or — when it is transitive and the owner lags —
+  by a `resolutionStrategy.force` / BOM override in `build.gradle.kts` **registered in the ADR-0059 pin
+  registry** with the CVE and the condition for removing the pin. Never suppress by `.trivyignore`.
+- Dependabot (`.github/dependabot.yml`) keeps direct versions moving; the nightly scan is the safety net for
+  what Dependabot does not see (transitive BOM members).
+
+Run locally: `./gradlew cyclonedxBom -Pispf.errorprone=false && trivy sbom build/reports/cyclonedx/bom.json`.
 
 ## CI (recommended)
 
 ```bash
-./gradlew test
+./gradlew test          # compiles with Error Prone; ERROR patterns fail here
 cd apps/web-console && npm ci && npm test && npm run build
+# nightly: ./gradlew cyclonedxBom + Trivy (CRITICAL/HIGH gate)
 ```
 
 ## App bundle smoke (outside `main`)

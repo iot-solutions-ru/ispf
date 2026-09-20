@@ -81,21 +81,21 @@ subprojects {
             "errorprone"("com.google.errorprone:error_prone_core:2.50.0")
         }
         tasks.withType<JavaCompile> {
-                    options.errorprone {
-                        disableWarningsInGeneratedCode.set(true)
-                        // Promoted from WARNING: each of these is a real defect class that was found and fixed in the
-                        // 2026-09 sweep (wire bytes depending on the JVM default charset, unclosed directory streams,
-                        // racy counters, literal "%s" in exception messages, swapped arguments, dead conditions).
-                        error(
-                            "DefaultCharset",
-                            "StreamResourceLeak",
-                            "NonAtomicVolatileUpdate",
-                            "OrphanedFormatString",
-                            "ArgumentSelectionDefectChecker",
-                            "AlreadyChecked",
-                            "DuplicateBranches",
-                            "MissingOverride",
-                        )
+            options.errorprone {
+                disableWarningsInGeneratedCode.set(true)
+                // Promoted from WARNING: each of these is a real defect class that was found and fixed in the
+                // 2026-09 sweep (wire bytes depending on the JVM default charset, unclosed directory streams,
+                // racy counters, literal "%s" in exception messages, swapped arguments, dead conditions).
+                error(
+                    "DefaultCharset",
+                    "StreamResourceLeak",
+                    "NonAtomicVolatileUpdate",
+                    "OrphanedFormatString",
+                    "ArgumentSelectionDefectChecker",
+                    "AlreadyChecked",
+                    "DuplicateBranches",
+                    "MissingOverride",
+                )
                 // Repo-wide opt-outs — style checks that are not bug patterns; keep each with a reason.
                 disable(
                     "MissingSummary",    // Javadoc summary-fragment style (Google style guide), not a defect

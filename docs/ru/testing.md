@@ -140,12 +140,46 @@ Backend-джоб pr-fast падает, если покрытие модуля о
 ```
 
 Модули без порога (драйверы, аналитика, AI-провайдеры) получают только отчёт.
+## Статический анализ (Error Prone)
+
+Каждый `javac` в Gradle-сборке идёт через [Error Prone](https://errorprone.info/) (`net.ltgt.errorprone`,
+`error_prone_core` — версии закреплены в корневом `build.gradle.kts`). Паттерны уровня **ERROR** валят
+компиляцию, отдельной задачи нет: `./gradlew compileJava compileTestJava` (или любой `test`) и есть гейт.
+
+- Поднято до ERROR после того, как sweep 2026-09 исправил все вхождения: `DefaultCharset`, `StreamResourceLeak`,
+  `NonAtomicVolatileUpdate`, `OrphanedFormatString`, `ArgumentSelectionDefectChecker`, `AlreadyChecked`,
+  `DuplicateBranches`, `MissingOverride`. Понижать нельзя — правьте код или ставьте точечный
+  `@SuppressWarnings("<Pattern>")` с причиной в одну строку рядом (принятая форма — `JmxDeviceDriver.connect`,
+  `ApplicationSchemaSession`).
+- Глобальный `disable(...)` — только для Javadoc-стилевых проверок (`MissingSummary`, `InvalidInlineTag`,
+  `EscapedEntity`) и `AddressSelection`; у каждой записи есть причина в `build.gradle.kts`.
+- Оставшиеся WARNING видны в логе компиляции; поднимать паттерн до ERROR — только в том же PR, где исправлены
+  все его вхождения.
+- Локально без чекера для быстрой итерации: `./gradlew ... -Pispf.errorprone=false`. CI этот флаг не ставит.
+
+## Гейт уязвимостей зависимостей (nightly)
+
+Job `dependency-vulnerabilities` в `.github/workflows/nightly.yml` собирает один CycloneDX SBOM по
+`runtimeClasspath` всех модулей (`./gradlew cyclonedxBom` → `build/reports/cyclonedx/bom.json`) и сканирует
+его Trivy:
+
+- **CRITICAL / HIGH** с доступным фиксом валят ночь; **MEDIUM / LOW** — только в отчёте.
+- Полная таблица по всем severity и сам SBOM выкладываются артефактом `dependency-vulnerabilities-<run>`
+  (30 дней).
+- Находка закрывается апгрейдом прямой зависимости, либо — если она транзитивная и владелец отстаёт —
+  `resolutionStrategy.force` / override BOM в `build.gradle.kts` **с записью в реестре пинов ADR-0059**
+  (CVE и условие снятия пина). Не подавлять через `.trivyignore`.
+- Dependabot (`.github/dependabot.yml`) двигает прямые версии; nightly-скан — страховка от того, чего Dependabot
+  не видит (транзитивные члены BOM).
+
+Локально: `./gradlew cyclonedxBom -Pispf.errorprone=false && trivy sbom build/reports/cyclonedx/bom.json`.
 
 ## CI (рекомендация)
 
 ```bash
-./gradlew test
+./gradlew test          # компиляция с Error Prone; ERROR-паттерны падают здесь
 cd apps/web-console && npm ci && npm test && npm run build
+# nightly: ./gradlew cyclonedxBom + Trivy (гейт CRITICAL/HIGH)
 ```
 
 ## App bundle smoke (вне `main`)
