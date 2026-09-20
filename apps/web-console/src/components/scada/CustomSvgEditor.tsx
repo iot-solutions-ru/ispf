@@ -5,6 +5,7 @@ import type { MimicBindingSlot, MimicCustomSymbol, MimicElement, MimicSymbolBeha
 import { DEFAULT_CUSTOM_SVG_INNER, isSvgUploadTooComplexError, parseSvgUpload, sanitizeSvgMarkup, SVG_UPLOAD_MAX_CHARS, SVG_UPLOAD_MAX_ELEMENTS } from "../../scada/customSvg";
 import { convertElementToLibrarySymbol, convertPackToLibrarySymbol, isBuiltinSymbolId, isPackSymbolId } from "../../scada/convertBuiltinToLibrary";
 import { createMimicId } from "../../scada/document";
+import { isCustomSvgElement, supportsSvgMarkupEditor } from "./customSvgElement";
 
 interface CustomSvgEditorProps {
   element: MimicElement;
@@ -13,14 +14,6 @@ interface CustomSvgEditorProps {
   onAddCustomSymbol: (def: MimicCustomSymbol) => void;
   onUpdateCustomSymbol?: (id: string, patch: Partial<MimicCustomSymbol>) => void;
   onUpdateCustomSymbols?: (symbols: MimicCustomSymbol[]) => void;
-}
-
-function isCustomSvgElement(element: MimicElement): boolean {
-  return element.symbolId === "custom.svg" || element.symbolId.startsWith("custom:");
-}
-
-function supportsSvgMarkupEditor(element: MimicElement): boolean {
-  return isCustomSvgElement(element) || isBuiltinSymbolId(element.symbolId) || isPackSymbolId(element.symbolId);
 }
 
 function resolveLibraryDef(
@@ -53,11 +46,15 @@ export default function CustomSvgEditor({
 }: CustomSvgEditorProps) {
   const { t } = useTranslation("scada");
   const fileRef = useRef<HTMLInputElement>(null);
+  // Keyed on the fields the resolvers actually read (symbolId / props.svg) so that moving or
+  // restyling the element does not reset the SVG draft below.
+  /* eslint-disable react-hooks/exhaustive-deps */
   const libraryDef = useMemo(
     () => resolveLibraryDef(element, customSymbols),
     [element.symbolId, customSymbols]
   );
   const baseSvg = useMemo(() => resolveBaseSvg(element, libraryDef), [element.props?.svg, libraryDef]);
+  /* eslint-enable react-hooks/exhaustive-deps */
   const [draftSvg, setDraftSvg] = useState(baseSvg);
   const [dirty, setDirty] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -351,4 +348,3 @@ export default function CustomSvgEditor({
   );
 }
 
-export { isCustomSvgElement, supportsSvgMarkupEditor };

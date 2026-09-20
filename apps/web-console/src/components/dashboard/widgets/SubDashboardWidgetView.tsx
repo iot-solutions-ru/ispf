@@ -1,12 +1,14 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboard } from "../../../api";
-import type { DashboardLayout, SubDashboardWidget } from "../../../types/dashboard";
 import { resolveDashboardLayout } from "../../../types/dashboard";
+import type { DashboardLayout, SubDashboardWidget } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { resolveContextPath } from "../dashboardUtils";
-import { DashboardProvider, useDashboardContext } from "../DashboardContext";
+import { DashboardProvider } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import { useWidgetSession } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import DashboardGrid from "../DashboardGrid";
@@ -36,7 +38,7 @@ export default function SubDashboardWidgetView({
       resolveContextPath(
         widget.targetDashboardPath,
         widget.targetDashboardPathKey,
-        session
+        { selection: session.selection, params: session.params }
       ),
     [
       widget.targetDashboardPath,

@@ -8,14 +8,7 @@ import {
 } from "../../api/ai";
 import { fetchDeployHistory, rollbackDeploy } from "../../api/applications";
 import { importPackage } from "../../api/packages";
-import { useAgentChat } from "../../context/AgentChatContext";
-
-const DEFAULT_MANIFEST = `{
-  "version": "1.0.0",
-  "displayName": "AI generated app",
-  "schemaName": "app_ai_generated",
-  "migrations": []
-}`;
+import { useAgentChat } from "../../context/useAgentChat";
 
 interface AiStudioBundleTabProps {
   appId: string;
@@ -28,10 +21,6 @@ interface AiStudioBundleTabProps {
   setValidationText: (value: string | null) => void;
   dryRunText: string | null;
   setDryRunText: (value: string | null) => void;
-}
-
-export function defaultBundleManifest(): string {
-  return DEFAULT_MANIFEST;
 }
 
 export default function AiStudioBundleTab({

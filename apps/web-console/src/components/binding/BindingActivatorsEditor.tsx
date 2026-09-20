@@ -14,8 +14,6 @@ import {
   resolveOnEventSelectValue,
 } from "./bindingActivatorsUtils";
 
-export { activatorsSummary } from "./bindingActivatorsUtils";
-
 interface BindingActivatorsEditorProps {
   activators: BindingActivators;
   eventNames: string[];

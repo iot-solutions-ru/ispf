@@ -5,7 +5,7 @@ import { setVariable } from "../../../api";
 import { getStoredSession, isConfiguratorSession } from "../../../auth/session";
 import { validateStoredSession } from "../../../auth/validateSession";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import { defaultSessionKey, resolveSheetConfig, resolveSheetMode } from "./sheetConfig";
 import type { SheetValues } from "./sheetFormulaEngine";
 import {
@@ -18,7 +18,6 @@ import {
   canWriteSheetValues,
   hasSheetValuesSchema,
 } from "./sheetPersist";
-import type { SheetWorkbook } from "./sheetWorkbook";
 import {
   activeSheetData,
   createDefaultWorkbook,
@@ -27,11 +26,9 @@ import {
   workbookFromPersist,
   workbookToPersist,
 } from "./sheetWorkbook";
-import {
-  parseSheetRuntimeMeta,
-  sheetMetaSessionKey,
-  type SheetRuntimeMeta,
-} from "./sheetRuntimeMeta";
+import type { SheetWorkbook } from "./sheetWorkbook";
+import { parseSheetRuntimeMeta, sheetMetaSessionKey } from "./sheetRuntimeMeta";
+import type { SheetRuntimeMeta } from "./sheetRuntimeMeta";
 import { resolveSpreadsheetRefreshInterval } from "./spreadsheetLiveRefresh";
 
 const PERSIST_DEBOUNCE_MS = 400;
@@ -254,6 +251,9 @@ export function useSpreadsheetPersist(
   const [persistWarning, setPersistWarning] = useState<string | null>(null);
   const authTokenRef = useRef<string | null>(getStoredSession()?.token ?? null);
 
+  // Runs after every render on purpose: the auth token lives outside React state, so this is the
+  // cheapest way to notice a re-login and lift the write block. The ref guard keeps it idempotent.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const token = getStoredSession()?.token ?? null;
     if (token !== authTokenRef.current) {

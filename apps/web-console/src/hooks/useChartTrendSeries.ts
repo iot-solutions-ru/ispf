@@ -1,22 +1,22 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchVariableHistoryAggregate, type VariableHistoryBucket } from "../api";
+import { fetchVariableHistoryAggregate } from "../api";
+import type { VariableHistoryBucket } from "../api";
 import type { WidgetHistoryRange } from "../types/dashboard";
 import {
   bucketsToCandlestickPoints,
   candlestickStats,
   livePointsToCandlestickPoints,
-  type CandlestickPoint,
 } from "../utils/analytics/chartOhlcUtils";
-import {
-  historyRangeFrom,
-  isCalendarHistoryRange,
-  type HistoryRange,
-} from "./useVariableHistory";
-import { resolveAnalyticsAggregateBucket, type AnalyticsTemplateRef } from "../utils/analytics/analyticsChartBinding";
+import type { CandlestickPoint } from "../utils/analytics/chartOhlcUtils";
+import { historyRangeFrom, isCalendarHistoryRange } from "./useVariableHistory";
+import type { HistoryRange } from "./useVariableHistory";
+import { resolveAnalyticsAggregateBucket } from "../utils/analytics/analyticsChartBinding";
+import type { AnalyticsTemplateRef } from "../utils/analytics/analyticsChartBinding";
 import { liveAggregateFromIso, resolveChartHistoryBucket } from "../utils/analytics/chartSampling";
-import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
-import { useTrendSeries, type TrendPoint } from "./useTrendSeries";
+import { useOptionalUserTimeZone } from "../context/useUserTimeZone";
+import { useTrendSeries } from "./useTrendSeries";
+import type { TrendPoint } from "./useTrendSeries";
 
 export type ChartSeriesMode = "line" | "range" | "candlestick";
 

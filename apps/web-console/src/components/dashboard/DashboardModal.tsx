@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Button, Modal } from "antd";
 import DashboardBuilder from "./DashboardBuilder";
-import type { DashboardSession } from "./DashboardContext";
-import type { OpenDashboardOptions } from "./DashboardContext";
+import type { DashboardSession, OpenDashboardOptions } from "./useDashboardContext";
 
 interface DashboardModalProps {
   path: string;

@@ -7,8 +7,10 @@ import {
   groupMarketplaceListingsByKind,
   marketplaceListingIdentifier,
   resolveMarketplaceListingKind,
-  type MarketplaceKindFilter,
-  type MarketplaceListingKind,
+} from "../../api/marketplaceListingKind";
+import type {
+  MarketplaceKindFilter,
+  MarketplaceListingKind,
 } from "../../api/marketplaceListingKind";
 import {
   activateMarketplaceListing,
@@ -16,11 +18,12 @@ import {
   fetchMarketplaces,
   installMarketplaceListing,
   uninstallAnalyticsPack,
-  type MarketplaceListing,
 } from "../../api/solutions";
+import type { MarketplaceListing } from "../../api/solutions";
 import { fetchPlatformLicense } from "../../api/platformLicense";
 import BundleLicenseErrorAlert from "./BundleLicenseErrorAlert";
-import VendorContactModal, { hasMarketplaceVendorContact } from "./VendorContactModal";
+import VendorContactModal from "./VendorContactModal";
+import { hasMarketplaceVendorContact } from "./marketplaceVendorContact";
 
 const KIND_FILTERS: MarketplaceKindFilter[] = [
   "all",
@@ -347,7 +350,7 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
     enabled: Boolean(activeId) && marketplacesQuery.data?.enabled !== false,
   });
 
-  const listings = catalogQuery.data?.listings ?? [];
+  const listings = useMemo(() => catalogQuery.data?.listings ?? [], [catalogQuery.data]);
   const visibleListings = useMemo(
     () => filterMarketplaceListingsByInstalled(listings, installedFilter),
     [listings, installedFilter]

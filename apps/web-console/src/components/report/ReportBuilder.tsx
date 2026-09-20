@@ -1,7 +1,7 @@
 import { Button, Space } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOptionalUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useOptionalUserTimeZone } from "../../context/useUserTimeZone";
 import { enrichReportRunParameters } from "../../utils/report/reportRunParameters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,9 +13,11 @@ import {
   saveReportDefinition,
   saveTreeVariablesReportDefinition,
   uploadReportTemplate,
-  type ReportColumn,
-  type ReportExportFormat,
-  type SaveReportDefinitionPayload,
+} from "../../api/reports";
+import type {
+  ReportColumn,
+  ReportExportFormat,
+  SaveReportDefinitionPayload,
 } from "../../api/reports";
 import BffDataTable from "../operator/BffDataTable";
 import ReportExportControls from "./ReportExportControls";
@@ -29,10 +31,10 @@ import {
   inferTemplateFormat,
   isTreeVariablesReport,
   normalizeColumn,
-  type ReportKind,
   validateColumns,
   validateParameters,
 } from "./reportBuilderUtils";
+import type { ReportKind } from "./reportBuilderUtils";
 
 function validationErrorMessage(code: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
   const [key, value] = code.split(":");
@@ -252,6 +254,9 @@ export default function ReportBuilder({
     setParamValues(defaults);
     setEditKind(isTreeVariablesReport(data.reportType) ? "tree-variables" : "sql");
     setPreviewRequested(false);
+    // Reset the editor draft only when a different report is opened or a new fetch lands
+    // (dataUpdatedAt), not on every structurally-equal `data` identity change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportQuery.data?.path, reportQuery.dataUpdatedAt]);
 
   const effectiveSql = useMemo(() => {

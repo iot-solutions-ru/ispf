@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Modal, Space, Typography } from "antd";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   applyPlatformUpdate,
@@ -68,7 +68,7 @@ export default function PlatformUpdateBanner() {
 
   const status = statusQuery.data;
 
-  function dismiss(fingerprint: string | null) {
+  const dismiss = useCallback((fingerprint: string | null) => {
     setDismissedFingerprint(fingerprint);
     try {
       if (fingerprint) {
@@ -79,17 +79,14 @@ export default function PlatformUpdateBanner() {
     } catch {
       // ignore storage errors
     }
-  }
+  }, []);
 
+  const applyState = status?.applyState;
   useEffect(() => {
-    if (!status) {
-      return;
-    }
-    const applying = status.applyState === "DOWNLOADING" || status.applyState === "RESTARTING";
-    if (applying) {
+    if (applyState === "DOWNLOADING" || applyState === "RESTARTING") {
       dismiss(null);
     }
-  }, [status?.applyState]);
+  }, [applyState, dismiss]);
 
   if (!status) {
     return null;

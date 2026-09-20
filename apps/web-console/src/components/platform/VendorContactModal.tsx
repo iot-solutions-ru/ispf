@@ -7,17 +7,6 @@ interface VendorContactModalProps {
   onClose: () => void;
 }
 
-export function hasMarketplaceVendorContact(listing: MarketplaceListing): boolean {
-  return Boolean(
-    listing.vendorName
-    || listing.vendorLegalName
-    || listing.vendorInn
-    || listing.vendorContactPerson
-    || listing.vendorContactEmail
-    || listing.vendorContactPhone
-  );
-}
-
 function companyDisplayName(listing: MarketplaceListing): string | null {
   if (listing.vendorLegalName?.trim()) {
     return listing.vendorLegalName.trim();

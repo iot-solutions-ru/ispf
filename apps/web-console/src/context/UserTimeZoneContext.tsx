@@ -1,12 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchAuthMe, updateAuthTimeZone } from "../api";
 import {
@@ -15,14 +8,7 @@ import {
   readStoredTimeZone,
 } from "../i18n/timezones";
 import { getStoredSession } from "../auth/session";
-
-interface UserTimeZoneContextValue {
-  timeZone: string;
-  setTimeZone: (timeZone: string) => Promise<void>;
-  formatDate: (value: string | number | Date | null | undefined) => string;
-}
-
-const UserTimeZoneContext = createContext<UserTimeZoneContextValue | null>(null);
+import { UserTimeZoneContext } from "./useUserTimeZone";
 
 function initialTimeZone(): string {
   return readStoredTimeZone() ?? detectBrowserTimeZone();
@@ -99,15 +85,3 @@ export function UserTimeZoneProvider({ children }: { children: ReactNode }) {
   return <UserTimeZoneContext.Provider value={value}>{children}</UserTimeZoneContext.Provider>;
 }
 
-export function useUserTimeZone(): UserTimeZoneContextValue {
-  const ctx = useContext(UserTimeZoneContext);
-  if (!ctx) {
-    throw new Error("useUserTimeZone must be used within UserTimeZoneProvider");
-  }
-  return ctx;
-}
-
-/** Safe hook for components that may render outside provider (e.g. tests). */
-export function useOptionalUserTimeZone(): UserTimeZoneContextValue | null {
-  return useContext(UserTimeZoneContext);
-}

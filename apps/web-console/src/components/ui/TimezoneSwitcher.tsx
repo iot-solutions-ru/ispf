@@ -1,6 +1,6 @@
 import { Select } from "antd";
 import { useTranslation } from "react-i18next";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 import { normalizeTimeZoneList, timeZoneLabel } from "../../i18n/timezones";
 
 export default function TimezoneSwitcher() {

@@ -7,12 +7,12 @@ import {
   sendOperatorAgentMessage,
   subscribeOperatorAgentProgress,
   fetchOperatorAgentStatus,
-  type AiAgentStep,
 } from "../../api/operatorAgent";
+import type { AiAgentStep } from "../../api/operatorAgent";
 import { AgentRunDetails } from "../agent/AgentRunDetails";
 import OperatorAgentArtifactsView from "./OperatorAgentArtifacts";
 import { AgentStarterSuggestions } from "../agent/AgentChatArtifacts";
-import { AgentChatMessageBody } from "../../utils/agent/agentChatMarkdown";
+import { AgentChatMessageBody } from "../../utils/agent/AgentChatMessageBody";
 
 interface ChatMessage {
   id: string;
@@ -137,7 +137,7 @@ export default function OperatorAgentPanel({
         setIsPending(false);
       }
     },
-    [appId, isPending, providerReady, t]
+    [appId, isPending, providerReady, t, i18n.language]
   );
 
   const appendToInput = useCallback((text: string) => {

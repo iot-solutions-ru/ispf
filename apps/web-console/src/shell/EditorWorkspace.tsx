@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { EditorTab } from "../types";
-import type { DashboardSession } from "../components/dashboard/DashboardContext";
+import type { DashboardSession } from "../components/dashboard/useDashboardContext";
 import { isBlueprintsPath } from "../types/blueprints";
 
 const ReportBuilder = lazy(() => import("../components/report/ReportBuilder"));

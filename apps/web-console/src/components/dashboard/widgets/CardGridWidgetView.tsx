@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchObjects } from "../../../api";
-import type { CardGridWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { CardGridWidget } from "../../../types/dashboard";
 import type { VariableDto } from "../../../types";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { parseJsonObject } from "../dashboardUtils";
-import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
+import { triggerDashboardOpen, useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 
@@ -59,7 +59,7 @@ export default function CardGridWidgetView({
     }, openOptions);
   };
 
-  const cardObjects = children.data ?? [];
+  const cardObjects = useMemo(() => children.data ?? [], [children.data]);
   const cardPaths = useMemo(() => cardObjects.map((obj) => obj.path), [cardObjects]);
   const variablesBatch = useVariablesBatchQuery(
     cardPaths,

@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "antd";
-import ObjectTreeIcon, {
-  TREE_ICON_CATALOG,
-  normalizeIconId,
-  type TreeIconKind,
-} from "./ObjectTreeIcon";
+import ObjectTreeIcon from "./ObjectTreeIcon";
+import { TREE_ICON_CATALOG, normalizeIconId } from "./objectTreeIconCatalog";
+import type { TreeIconKind } from "./objectTreeIconCatalog";
 import type { ObjectType } from "../../types";
+import { getOrCreate } from "../../utils/required";
 
 interface IconPickerProps {
   path: string;
@@ -29,10 +28,7 @@ export default function IconPicker({
     const map = new Map<string, typeof TREE_ICON_CATALOG>();
     for (const item of TREE_ICON_CATALOG) {
       const categoryLabel = t(`icons.category.${item.category}`);
-      if (!map.has(categoryLabel)) {
-        map.set(categoryLabel, []);
-      }
-      map.get(categoryLabel)!.push(item);
+      getOrCreate(map, categoryLabel, () => []).push(item);
     }
     return [...map.entries()];
   }, [t]);

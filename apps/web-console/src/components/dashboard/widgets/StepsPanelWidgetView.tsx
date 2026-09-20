@@ -5,7 +5,7 @@ import { resolveContextParam } from "../dashboardUtils";
 import { useWidgetSession } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { useDashboardEditor } from "../DashboardEditorContext";
+import { useDashboardEditor } from "../useDashboardEditor";
 import { ContainerChildGridOrList } from "../ContainerChildGrid";
 import { renderWidgetList } from "../renderDashboardWidget";
 

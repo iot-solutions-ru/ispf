@@ -11,7 +11,7 @@ import {
   fetchAiProviderStatus,
   refreshAiContextPack,
 } from "../../api/ai";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 
 export default function AiStudioStatusTab() {
   const { t } = useTranslation(["ai", "common"]);
@@ -48,7 +48,8 @@ export default function AiStudioStatusTab() {
 
   const provider = providerQuery.data;
   const contextPack = contextPackQuery.data;
-  const tools = toolsQuery.data?.tools ?? [];
+  const toolsData = toolsQuery.data?.tools;
+  const tools = useMemo(() => toolsData ?? [], [toolsData]);
   const scenarios = scenariosQuery.data?.scenarios ?? [];
 
   const filteredTools = useMemo(() => {

@@ -2,7 +2,8 @@ import { useCallback } from "react";
 import type { DashboardLayoutPreset } from "../../types/dashboard";
 import type { OperatorUiDashboard } from "../../types/operatorUi";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
-import { emptySession, mergeSession, type DashboardSession } from "../dashboard/DashboardContext";
+import { emptySession, mergeSession } from "../dashboard/useDashboardContext";
+import type { DashboardSession } from "../dashboard/useDashboardContext";
 import { videoWallSlotCount } from "../dashboard/dashboardLayoutPresets";
 import VideoWallAutoScale from "./VideoWallAutoScale";
 

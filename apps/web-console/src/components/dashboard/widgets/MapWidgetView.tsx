@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Map, { Marker, Popup, type MapRef } from "react-map-gl/maplibre";
+import Map, { Marker, Popup } from "react-map-gl/maplibre";
+import type { MapRef } from "react-map-gl/maplibre";
 import { useQuery } from "@tanstack/react-query";
 import { fetchObjects } from "../../../api";
-import type { MapWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { MapWidget } from "../../../types/dashboard";
 import type { VariableDto } from "../../../types";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { parseJsonObject } from "../dashboardUtils";
 import { resolveMapStyle } from "../mapStyleUtils";
-import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
+import { triggerDashboardOpen, useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+
 import "../../../map/maplibreSetup";
 import "maplibre-gl/dist/maplibre-gl.css";
 

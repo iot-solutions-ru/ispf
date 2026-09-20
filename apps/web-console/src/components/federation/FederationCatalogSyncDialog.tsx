@@ -34,15 +34,16 @@ export default function FederationCatalogSyncDialog({
   onError,
 }: FederationCatalogSyncDialogProps) {
   const { t } = useTranslation(["federation", "common"]);
-  const subtreeMode = Boolean(remoteSubtreePath?.trim());
+  const subtreePath = remoteSubtreePath?.trim() ? remoteSubtreePath : undefined;
+  const subtreeMode = subtreePath !== undefined;
   const [preview, setPreview] = useState<Awaited<ReturnType<typeof previewFederationCatalogSync>> | null>(null);
   const [actions, setActions] = useState<Record<string, CatalogSyncResolutionAction>>({});
 
   const previewMutation = useMutation({
     mutationFn: () =>
-      subtreeMode
+      subtreePath !== undefined
         ? previewFederationSubtreeSync(peerId, {
-            remoteSubtreePath: remoteSubtreePath!,
+            remoteSubtreePath: subtreePath,
             localParentPath,
           })
         : previewFederationCatalogSync(peerId),
@@ -59,9 +60,9 @@ export default function FederationCatalogSyncDialog({
 
   const syncMutation = useMutation({
     mutationFn: (resolutions: CatalogSyncResolution[]) =>
-      subtreeMode
+      subtreePath !== undefined
         ? syncFederationSubtree(peerId, {
-            remoteSubtreePath: remoteSubtreePath!,
+            remoteSubtreePath: subtreePath,
             localParentPath,
             resolutions,
           })
@@ -81,9 +82,10 @@ export default function FederationCatalogSyncDialog({
     onError: (error: Error) => onError(error.message),
   });
 
+  const { mutate: requestPreview } = previewMutation;
   useEffect(() => {
-    previewMutation.mutate();
-  }, [peerId, remoteSubtreePath, localParentPath]);
+    requestPreview();
+  }, [peerId, remoteSubtreePath, localParentPath, requestPreview]);
 
   const conflictRows = preview?.conflicts ?? [];
   const titleKey = subtreeMode ? "subtreeSync.title" : "catalogSync.title";

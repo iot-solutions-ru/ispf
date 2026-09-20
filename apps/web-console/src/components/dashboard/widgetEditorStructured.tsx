@@ -1,45 +1,18 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ObjectTableColumn, SheetConfig } from "../../types/dashboard";
-import type { FunctionFormField, InputFormField } from "../../types/dashboard";
+import type {
+  ObjectTableColumn,
+  SheetConfig,
+  FunctionFormField,
+  InputFormField,
+} from "../../types/dashboard";
 import {
   parseSheetConfig,
   sheetConfigToJson,
 } from "./sheet/sheetConfig";
-import {
-  WIDGET_STYLE_KEYS_HINT,
-  type WidgetStyleKey,
-  parseWidgetStyles,
-} from "./widgetStyles";
-
-export function parseJsonArray<T>(raw: string | undefined, fallback: T[] = []): T[] {
-  if (!raw?.trim()) return fallback;
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as T[]) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-export function parseJsonObject(raw: string | undefined): Record<string, string> {
-  if (!raw?.trim()) return {};
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-    const result: Record<string, string> = {};
-    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
-      if (v !== undefined && v !== null) result[k] = String(v);
-    }
-    return result;
-  } catch {
-    return {};
-  }
-}
-
-export function stringifyJson(value: unknown): string {
-  return JSON.stringify(value, null, 2);
-}
+import { WIDGET_STYLE_KEYS_HINT, parseWidgetStyles } from "./widgetStyles";
+import type { WidgetStyleKey } from "./widgetStyles";
+import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJson";
 
 function ListActions({
   onAdd,

@@ -1,9 +1,6 @@
 import { useMemo } from "react";
-import {
-  objectTypeToFocusSurface,
-  type AdminClientFocus,
-  type AdminFocusSurface,
-} from "../../context/AdminFocusContext";
+import { objectTypeToFocusSurface } from "../../context/adminFocusUtils";
+import type { AdminClientFocus, AdminFocusSurface } from "../../context/useAdminFocus";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
 import type { EditorTab } from "../../types";
 

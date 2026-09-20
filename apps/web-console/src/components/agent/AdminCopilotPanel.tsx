@@ -1,15 +1,13 @@
 import { Alert, Button, Space } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAdminCopilotChat } from "../../context/AdminCopilotChatContext";
-import {
-  formatAdminFocusChip,
-  useAdminFocusOptional,
-  type AdminClientFocus,
-} from "../../context/AdminFocusContext";
+import { useAdminCopilotChat } from "../../context/useAdminCopilotChat";
+import { formatAdminFocusChip } from "../../context/adminFocusUtils";
+import { useAdminFocusOptional } from "../../context/useAdminFocus";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
 import { AgentRunDetails } from "./AgentRunDetails";
 import AgentChatArtifacts, { AgentStarterSuggestions } from "./AgentChatArtifacts";
-import { AgentChatMessageBody } from "../../utils/agent/agentChatMarkdown";
+import { AgentChatMessageBody } from "../../utils/agent/AgentChatMessageBody";
 
 interface AdminCopilotPanelProps {
   open: boolean;

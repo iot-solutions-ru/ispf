@@ -1,14 +1,14 @@
 import { Line, LineChart, ResponsiveContainer } from "recharts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { SparklineWidget } from "../../../types/dashboard";
 import { widgetHistoryRangeLabel } from "../../../types/dashboard";
+import type { SparklineWidget } from "../../../types/dashboard";
 import { useTrendSeries } from "../../../hooks/useTrendSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetHistoryControls from "../WidgetHistoryControls";
-import { buildDemoTrendPoints, parseDemoPreview } from "../widgetDemoPreview";
+import { buildDemoTrendPoints, parseDemoPreview } from "../widgetDemoData";
 
 interface SparklineWidgetViewProps {
   widget: SparklineWidget;

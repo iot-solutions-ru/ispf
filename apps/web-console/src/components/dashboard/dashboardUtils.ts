@@ -1,5 +1,5 @@
 import type { DataRecord, DataSchema } from "../../types";
-import type { DashboardSession } from "./DashboardContext";
+import type { DashboardSession } from "./useDashboardContext";
 import type { FunctionFormField } from "../../types/dashboard";
 
 export function resolveWidgetPath(

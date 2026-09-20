@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchDashboardContext, saveDashboardContext } from "../api";
-import type { DashboardSession } from "../components/dashboard/DashboardContext";
-import { mergeSession } from "../components/dashboard/DashboardContext";
+import { mergeSession } from "../components/dashboard/useDashboardContext";
+import type { DashboardSession } from "../components/dashboard/useDashboardContext";
 import {
   DASHBOARD_CONTEXT_VARIABLE,
   patchFromSession,
   sessionFromServerContext,
   sessionsEqual,
 } from "../utils/dashboard/dashboardContext";
-import { OBJECT_WS_EVENT, trackObjectPathSubscriptions, type ObjectWsMessage } from "./useObjectWebSocket";
+import { OBJECT_WS_EVENT, trackObjectPathSubscriptions } from "./useObjectWebSocket";
+import type { ObjectWsMessage } from "./useObjectWebSocket";
 
 const SYNC_DEBOUNCE_MS = 300;
 

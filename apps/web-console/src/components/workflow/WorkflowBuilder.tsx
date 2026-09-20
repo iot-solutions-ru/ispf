@@ -12,12 +12,13 @@ import {
   signalWorkflowInstance,
   updateWorkflowOperatorApp,
   updateWorkflowStatus,
+  fetchAuthMe,
 } from "../../api";
-import { fetchAuthMe } from "../../api";
 import { fetchOperatorApps } from "../../api/operatorApps";
-import type { WorkflowLifecycleStatus, WorkflowStepSummary } from "../../types/workflow";
 import { parseInstanceState } from "../../types/workflow";
+import type { WorkflowLifecycleStatus, WorkflowStepSummary } from "../../types/workflow";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
+import { required } from "../../utils/required";
 
 const BpmnDiagramEditor = lazy(() => import("./BpmnDiagramEditor"));
 const BpmnDiagramViewer = lazy(() => import("./BpmnDiagramViewer"));
@@ -95,7 +96,7 @@ export default function WorkflowBuilder({
   );
   const stepsQuery = useQuery({
     queryKey: ["workflow-steps", instance.instanceId],
-    queryFn: () => fetchWorkflowSteps(instance.instanceId!),
+    queryFn: () => fetchWorkflowSteps(required(instance.instanceId, "instance.instanceId")),
     enabled: Boolean(instance.instanceId),
   });
   const dirty = draftBpmn !== null;
@@ -518,7 +519,7 @@ export default function WorkflowBuilder({
                       type="primary"
                       disabled={signalMutation.isPending}
                       loading={signalMutation.isPending}
-                      onClick={() => signalMutation.mutate(instance.pendingSignalName!)}
+                      onClick={() => signalMutation.mutate(required(instance.pendingSignalName, "pendingSignalName"))}
                     >
                       {signalMutation.isPending
                         ? t("workflow:instance.signaling")

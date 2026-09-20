@@ -14,7 +14,7 @@ import {
 } from "../../../scada/topologySvgConfig";
 import { prepareTopologyHitLayer } from "../../../scada/topologyHitLayer";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
-import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
+import { triggerDashboardOpen, useDashboardContext } from "../useDashboardContext";
 import { resolveWidgetMediaSrc } from "../widgetMediaUrl";
 
 export interface SvgInteractiveBodyProps {

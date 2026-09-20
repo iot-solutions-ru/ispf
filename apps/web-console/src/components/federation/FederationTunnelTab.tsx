@@ -8,7 +8,7 @@ import type {
   TunnelSession,
 } from "../../api/federation";
 import { copyToClipboard } from "./federationShared";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 
 interface FederationTunnelTabProps {
   inboundQuery: UseQueryResult<InboundRegistration[], Error>;

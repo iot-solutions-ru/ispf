@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchVariableHistory, fetchVariableHistoryAggregate } from "../api";
+import { readFieldValue } from "../types/dashboard";
 import type { ChartSampleMode, WidgetHistoryRange } from "../types/dashboard";
 import { useBoundVariable } from "./useBoundVariable";
-import {
-  historyRangeFrom,
-  isCalendarHistoryRange,
-  useVariableHistory,
-  type HistoryRange,
-} from "./useVariableHistory";
-import { readFieldValue } from "../types/dashboard";
+import { historyRangeFrom, isCalendarHistoryRange, useVariableHistory } from "./useVariableHistory";
+import type { HistoryRange } from "./useVariableHistory";
 import { isPlottableTelemetryQuality, readRowQuality } from "../utils/analytics/telemetryQuality";
 import {
   appendCoalescedTrendPoint,
@@ -19,7 +15,7 @@ import {
   resolveChartHistoryBucket,
   resolveEffectiveSampleMode,
 } from "../utils/analytics/chartSampling";
-import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
+import { useOptionalUserTimeZone } from "../context/useUserTimeZone";
 
 export interface TrendPoint {
   t: number;
@@ -186,14 +182,15 @@ export function useTrendSeries(
     setLivePoints([]);
   }, [historyKey]);
 
+  const liveSamples = liveHistoryQuery.data?.samples;
   useEffect(() => {
     if (historyRange !== "live" || useAggregate) {
       return;
     }
-    if (!liveHistoryQuery.data?.samples?.length) {
+    if (!liveSamples?.length) {
       return;
     }
-    let seeded = liveHistoryQuery.data.samples
+    let seeded = liveSamples
       .filter((sample) => sample.value != null && Number.isFinite(sample.value))
       .map((sample) => sampleToPoint(sample.ts, sample.value as number));
     if (effectiveMode === "coalesce") {
@@ -204,6 +201,7 @@ export function useTrendSeries(
     setLivePoints(next);
   }, [
     liveHistoryQuery.dataUpdatedAt,
+    liveSamples,
     historyKey,
     maxPoints,
     historyRange,

@@ -1,13 +1,12 @@
-import { createContext, useRef, type ReactNode, type RefObject } from "react";
+import { createContext, useRef } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import JournalExportButtons from "./JournalExportButtons";
 import type { JournalExportRow } from "../../utils/journal/journalExport";
 import EmptyState from "../ui/EmptyState";
+import type { JournalViewMode } from "./journalViewMode";
 
-export const JournalScrollContext = createContext<RefObject<HTMLDivElement | null> | null>(null);
-
-export type JournalViewMode = "live" | "history";
-export const JOURNAL_VIEW_MODES: readonly JournalViewMode[] = ["live", "history"];
+const JournalScrollContext = createContext<RefObject<HTMLDivElement | null> | null>(null);
 
 export interface JournalViewShellProps {
   title: string;

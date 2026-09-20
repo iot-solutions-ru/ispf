@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "antd";
 import type { DataRecord } from "../../types";
-import { cloneRecord, setFieldValue } from "../../utils/ui/record";
+import { setFieldValue } from "../../utils/ui/record";
 import { defaultForFieldType } from "../../utils/schema/dataSchema";
 import VariableFieldEditor from "../objectEditor/VariableFieldEditor";
 
@@ -94,8 +94,4 @@ export default function DataRecordValueEditor({
       )}
     </div>
   );
-}
-
-export function recordFromEditor(record: DataRecord): DataRecord {
-  return cloneRecord(record);
 }

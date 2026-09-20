@@ -1,4 +1,4 @@
-import type { ResolvedTheme, ThemePreference } from "./theme";
+import type { ResolvedTheme, ThemePreference } from "./useTheme";
 
 const THEME_STORAGE_KEY = "ispf-theme";
 const THEME_QUERY = "(prefers-color-scheme: dark)";

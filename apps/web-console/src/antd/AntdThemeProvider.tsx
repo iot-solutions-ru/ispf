@@ -1,8 +1,9 @@
 import { ConfigProvider, theme as antdTheme } from "antd";
 import type { ThemeConfig } from "antd";
-import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { useTheme, type ResolvedTheme } from "../theme";
+import type { ReactNode } from "react";
+import { useTheme } from "../useTheme";
+import type { ResolvedTheme } from "../useTheme";
 
 /** Mirrors `tokens-shell.css` — do not read CSS vars at render (theme attr updates after paint). */
 const SHELL: Record<

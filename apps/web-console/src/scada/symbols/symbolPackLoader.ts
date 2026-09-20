@@ -98,8 +98,9 @@ export async function loadPackManifest(): Promise<PackManifest | null> {
 }
 
 export async function loadPackCategory(categoryId: PackCategoryId): Promise<PackSymbolRecord[]> {
-  if (loadedCategories.has(categoryId)) {
-    return loadedCategories.get(categoryId)!;
+  const cached = loadedCategories.get(categoryId);
+  if (cached) {
+    return cached;
   }
   const manifest = await loadPackManifest();
   if (!manifest) return [];

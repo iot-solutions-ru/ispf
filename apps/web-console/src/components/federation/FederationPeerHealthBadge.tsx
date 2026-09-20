@@ -8,7 +8,7 @@ interface FederationPeerHealthBadgeProps {
   compact?: boolean;
 }
 
-export function federationPeerHealthBadgeClass(level: FederationPeerHealthLevel | undefined): string {
+function federationPeerHealthBadgeClass(level: FederationPeerHealthLevel | undefined): string {
   if (level === "GREEN") return "success";
   if (level === "YELLOW") return "warning";
   return "error";

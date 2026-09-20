@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAuthHeaders } from "../auth/session";
 import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
-import type { OperatorManifest } from "../types/operatorManifest";
 import { operatorAppIdCandidates } from "../utils/operator/operatorAppsPath";
+import type { OperatorManifest } from "../types/operatorManifest";
+import { required } from "../utils/required";
 import {
   cacheOperatorManifest,
   readCachedOperatorManifest,
@@ -85,7 +86,7 @@ async function loadManifest(appId: string): Promise<OperatorManifest> {
 export function useOperatorManifest(appId: string | null) {
   return useQuery({
     queryKey: ["operator-manifest", appId],
-    queryFn: () => loadManifest(appId!),
+    queryFn: () => loadManifest(required(appId, "appId")),
     enabled: Boolean(appId),
     refetchOnReconnect: true,
     placeholderData: () =>

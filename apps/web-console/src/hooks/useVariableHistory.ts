@@ -1,13 +1,9 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  fetchVariableHistory,
-  fetchVariableHistoryAggregate,
-  type VariableHistoryAggregateResponse,
-  type VariableHistoryResponse,
-} from "../api";
+import { fetchVariableHistory, fetchVariableHistoryAggregate } from "../api";
+import type { VariableHistoryAggregateResponse, VariableHistoryResponse } from "../api";
 import type { TrendPoint } from "./useTrendSeries";
-import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
+import { useOptionalUserTimeZone } from "../context/useUserTimeZone";
 import { RECORD_SNAPSHOT_FIELD } from "../utils/object/variableHistoryFields";
 
 export { RECORD_SNAPSHOT_FIELD };

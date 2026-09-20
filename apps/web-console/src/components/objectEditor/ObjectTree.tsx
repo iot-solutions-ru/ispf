@@ -83,7 +83,7 @@ function useTreeDrag(): TreeDragContextValue | null {
   return useContext(TreeDragContext);
 }
 
-export function flattenVisibleNodes(
+function flattenVisibleNodes(
   nodes: TreeNode[],
   isExpanded: (path: string) => boolean,
   depth = 0,

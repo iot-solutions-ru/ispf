@@ -19,14 +19,14 @@ import {
   createMigration,
   createSqlBinding,
 } from "../../api/platformSql";
-import DataSourceConnectionFields, {
-  isDataSourceConnectionValid,
-  type DataSourceConnectionMode,
-} from "../platform/DataSourceConnectionFields";
+import DataSourceConnectionFields from "../platform/DataSourceConnectionFields";
+import { isDataSourceConnectionValid } from "../platform/dataSourceConnectionValidation";
+import type { DataSourceConnectionMode } from "../platform/dataSourceConnectionValidation";
 import { createSchedule } from "../../api/platformSchedules";
 import { fetchDrivers } from "../../api/drivers";
 import { formatDriverConfigJson } from "../../utils/driverDefaults";
-import DriverMaturityBadge, { formatDriverOptionLabel } from "../DriverMaturityBadge";
+import DriverMaturityBadge from "../DriverMaturityBadge";
+import { formatDriverOptionLabel } from "../driverOptionLabel";
 import {
   applicationObjectPath,
   defaultObjectTypeForParent,

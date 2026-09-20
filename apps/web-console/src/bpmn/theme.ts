@@ -1,4 +1,4 @@
-import type { ResolvedTheme } from "../theme";
+import type { ResolvedTheme } from "../useTheme";
 
 /** Colors for bpmn-js `bpmnRenderer` (applied at modeler/viewer create time). */
 export function bpmnRendererTheme(theme: ResolvedTheme): {

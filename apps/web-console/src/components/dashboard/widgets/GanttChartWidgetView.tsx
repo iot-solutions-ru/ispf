@@ -2,14 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { setVariable } from "../../../api";
-import type { GanttChartWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { GanttChartWidget } from "../../../types/dashboard";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { cloneRecord } from "../../../utils/ui/record";
 import {
-  type GanttRow,
-  type GanttViewport,
   GANTT_ZOOM_FACTOR,
   buildGanttTicks,
   computeDataBounds,
@@ -22,9 +20,10 @@ import {
   timeAtTrackPixel,
   zoomGanttViewport,
 } from "../../../utils/analytics/ganttChartView";
+import type { GanttRow, GanttViewport } from "../../../utils/analytics/ganttChartView";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { useEditorDemoRows } from "../widgetDemoPreview";
+import { useEditorDemoRows } from "../widgetDemoData";
 
 interface GanttChartWidgetViewProps {
   widget: GanttChartWidget;

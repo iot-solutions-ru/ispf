@@ -85,18 +85,21 @@ export default function TreeBulkContextMenu({
     return null;
   }
 
+  const contextPath = menu.contextPath;
+  const { onCreateChild, onCreateVisualGroup } = config;
   const canCreateChild = Boolean(
-    menu.contextPath
-    && config.onCreateChild
-    && canCreateChildAt(menu.contextPath, menu.contextObjectType),
+    contextPath
+    && onCreateChild
+    && canCreateChildAt(contextPath, menu.contextObjectType),
   );
-  const visualGroupParentPath = menu.contextPath
-    ? resolveVisualGroupParentPath(menu.contextPath, menu.contextObjectType)
+  const visualGroupParentPath = contextPath
+    ? resolveVisualGroupParentPath(contextPath, menu.contextObjectType)
     : null;
   const canCreateVisualGroup = Boolean(
-    visualGroupParentPath
-    && config.onCreateVisualGroup
-    && canCreateVisualGroupAt(menu.contextPath!, menu.contextObjectType),
+    contextPath
+    && visualGroupParentPath
+    && onCreateVisualGroup
+    && canCreateVisualGroupAt(contextPath, menu.contextObjectType),
   );
   const createLabel = menu.contextPath ? createContextMenuLabel(menu.contextPath) : "";
   const isDeviceContext = menu.contextObjectType === "DEVICE" && Boolean(menu.contextPath);
@@ -162,25 +165,25 @@ export default function TreeBulkContextMenu({
         style={{ left: menu.x, top: menu.y }}
         onContextMenu={(event) => event.preventDefault()}
       >
-        {canCreateChild && config.onCreateChild && menu.contextPath && item(
+        {canCreateChild && onCreateChild && contextPath && item(
           createLabel,
-          () => config.onCreateChild!(menu.contextPath!),
+          () => onCreateChild(contextPath),
         )}
-        {canCreateVisualGroup && config.onCreateVisualGroup && visualGroupParentPath && item(
+        {canCreateVisualGroup && onCreateVisualGroup && visualGroupParentPath && item(
           t("contextMenu.create.visual-group"),
-          () => config.onCreateVisualGroup!(visualGroupParentPath),
+          () => onCreateVisualGroup(visualGroupParentPath),
         )}
-        {isDeviceContext && menu.contextPath && (
+        {isDeviceContext && contextPath && (
           <>
             <div className="tree-context-menu-sep" role="separator" />
             {item(
               t("contextMenu.driver.poll"),
-              () => pollMutation.mutate(menu.contextPath!),
+              () => pollMutation.mutate(contextPath),
               { disabled: pollMutation.isPending },
             )}
             {onDriverWrite && item(
               t("contextMenu.driver.write"),
-              () => onDriverWrite(menu.contextPath!),
+              () => onDriverWrite(contextPath),
             )}
           </>
         )}

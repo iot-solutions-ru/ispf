@@ -9,11 +9,12 @@ import {
   shelveAlarm,
   unshelveAlarm,
 } from "../api";
-import { OBJECT_WS_EVENT, useObjectPathsSubscription, type ObjectWsMessage } from "./useObjectWebSocket";
+import { OBJECT_WS_EVENT, useObjectPathsSubscription } from "./useObjectWebSocket";
+import type { ObjectWsMessage } from "./useObjectWebSocket";
 import type { EventLevel, ObjectEvent } from "../types/event";
 import type { OperatorAlarmBarConfig, OperatorAlarmRule } from "../types/operatorAlarmBar";
 import type { OperatorUi } from "../types/operatorUi";
-import type { OpenDashboardOptions } from "../components/dashboard/DashboardContext";
+import type { OpenDashboardOptions } from "../components/dashboard/useDashboardContext";
 import {
   ALARM_MUTE_STORAGE_KEY,
   buildActiveAlarm,

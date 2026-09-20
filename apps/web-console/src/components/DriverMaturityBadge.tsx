@@ -27,11 +27,3 @@ export default function DriverMaturityBadge({ maturity, compact = false }: Drive
   );
 }
 
-export function formatDriverOptionLabel(
-  driverId: string,
-  name: string,
-  maturity?: string,
-): string {
-  const level = normalizeDriverMaturity(maturity);
-  return `${driverId} — ${name} [${driverMaturityLabel(level)}]`;
-}

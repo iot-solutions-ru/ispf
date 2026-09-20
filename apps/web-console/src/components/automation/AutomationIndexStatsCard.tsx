@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Alert } from "antd";
 import { fetchAutomationIndexStats } from "../../api/automationIndex";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 
 export default function AutomationIndexStatsCard() {
   const { t } = useTranslation(["system", "common"]);

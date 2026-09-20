@@ -2,12 +2,15 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { Alert, Button, Form, Input, Modal, Segmented, Space, Switch, Typography } from "antd";
-import { createVariable, type CreateVariablePayload } from "../../api";
+import { createVariable } from "../../api";
+import type { CreateVariablePayload } from "../../api";
 import type { DataRecord, DataSchema } from "../../types";
 import DataSchemaEditor from "../schema/DataSchemaEditor";
 import DataRecordValueEditor from "../schema/DataRecordValueEditor";
-import VariableHistoryFields, { type VariableHistoryState } from "./VariableHistoryFields";
-import { scalarValueSchema, syncRecordSchema, type SchemaFieldType } from "../../utils/schema/dataSchema";
+import VariableHistoryFields from "./VariableHistoryFields";
+import type { VariableHistoryState } from "./variableHistoryModel";
+import { scalarValueSchema, syncRecordSchema } from "../../utils/schema/dataSchema";
+import type { SchemaFieldType } from "../../utils/schema/dataSchema";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
 
 interface CreateVariableDialogProps {

@@ -1,5 +1,4 @@
 import type { DashboardWidget } from "../../types/dashboard";
-import { useTranslation } from "react-i18next";
 import DashboardWidgetContent from "./DashboardWidgetContent";
 import CarouselWidgetView from "./widgets/CarouselWidgetView";
 import CompositeWidgetView from "./widgets/CompositeWidgetView";
@@ -8,13 +7,9 @@ import PanelWidgetView from "./widgets/PanelWidgetView";
 import StepsPanelWidgetView from "./widgets/StepsPanelWidgetView";
 import SubDashboardWidgetView from "./widgets/SubDashboardWidgetView";
 import TabPanelWidgetView from "./widgets/TabPanelWidgetView";
+import { MaxWidgetDepthMessage } from "./MaxWidgetDepthMessage";
 
 const MAX_WIDGET_DEPTH = 3;
-
-function MaxWidgetDepthMessage() {
-  const { t } = useTranslation("widgets");
-  return <div className="hint">{t("error.maxDepth")}</div>;
-}
 
 export interface RenderDashboardWidgetProps {
   widget: DashboardWidget;

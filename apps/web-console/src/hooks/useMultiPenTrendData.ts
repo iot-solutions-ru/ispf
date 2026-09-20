@@ -2,12 +2,9 @@ import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { fetchVariableHistory } from "../api";
 import type { TrendPen } from "../types/trendPen";
-import {
-  historyRangeFrom,
-  isCalendarHistoryRange,
-  type HistoryRange,
-} from "./useVariableHistory";
-import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
+import { historyRangeFrom, isCalendarHistoryRange } from "./useVariableHistory";
+import type { HistoryRange } from "./useVariableHistory";
+import { useOptionalUserTimeZone } from "../context/useUserTimeZone";
 
 export interface MergedTrendPoint {
   t: number;

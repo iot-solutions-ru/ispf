@@ -8,10 +8,10 @@ import {
   fetchMfaStatus,
   startMfaEnrollment,
   verifyMfaEnrollment,
-  type MfaEnrollmentStart,
 } from "../../api/mfa";
+import type { MfaEnrollmentStart } from "../../api/mfa";
 import { getStoredSession } from "../../auth/session";
-import { useTheme } from "../../theme";
+import { useTheme } from "../../useTheme";
 
 export default function SecurityMfaPanel() {
   const { t } = useTranslation(["security", "common"]);

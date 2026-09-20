@@ -4,7 +4,7 @@ import {
   buildDemoRangeTrendPoints,
   buildDemoTrendPoints,
   parseDemoPreview,
-} from "./widgetDemoPreview";
+} from "./widgetDemoData";
 
 describe("parseDemoPreview", () => {
   it("returns null for missing or invalid JSON", () => {

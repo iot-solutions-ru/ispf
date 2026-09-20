@@ -241,8 +241,8 @@ export default function ApplicationDeployPanel({
                   {
                     title: t("deploy.eventCatalogRoles"),
                     render: (_, entry) =>
-                      (entry.roles ?? []).length > 0
-                        ? entry.roles!.join(", ")
+                      entry.roles && entry.roles.length > 0
+                        ? entry.roles.join(", ")
                         : t("deploy.eventCatalogAnyRole"),
                   },
                 ]}

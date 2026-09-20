@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { fetchObjects } from "../../../api";
 import type { ObjectTreeWidget } from "../../../types/dashboard";
 import { deviceDriverTreeClass } from "../../../utils/deviceDriverTreeTone";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 

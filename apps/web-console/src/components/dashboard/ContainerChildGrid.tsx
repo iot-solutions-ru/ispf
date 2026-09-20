@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { DashboardWidget } from "../../types/dashboard";
 import DashboardGrid from "./DashboardGrid";
-import { useDashboardEditor } from "./DashboardEditorContext";
-import type { WidgetSlotRef } from "./widgetLayoutTree";
+import { useDashboardEditor } from "./useDashboardEditor";
 import { getChildrenAtSlot, slotRefKey } from "./widgetLayoutTree";
+import type { WidgetSlotRef } from "./widgetLayoutTree";
 
 interface ContainerChildGridProps {
   slotRef: WidgetSlotRef;

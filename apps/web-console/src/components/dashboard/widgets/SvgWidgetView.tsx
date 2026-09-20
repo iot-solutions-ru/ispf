@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invokeFunction, setVariable } from "../../../api";
 import type { SvgWidget } from "../../../types/dashboard";
 import { resolveWidgetPath } from "../dashboardUtils";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { cloneRecord, setFieldValue } from "../../../utils/ui/record";

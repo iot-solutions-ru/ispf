@@ -11,7 +11,7 @@ import type { WorkQueueWidget } from "../../../types/dashboard";
 import type { WorkQueueItem } from "../../../types/operator";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { parseDemoPreview } from "../widgetDemoPreview";
+import { parseDemoPreview } from "../widgetDemoData";
 
 interface DemoWorkTask {
   id: string;

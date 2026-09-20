@@ -1,4 +1,4 @@
-import { useDashboardContext } from "../components/dashboard/DashboardContext";
+import { useDashboardContext } from "../components/dashboard/useDashboardContext";
 import { resolveWidgetPath } from "../components/dashboard/dashboardUtils";
 
 export function useWidgetObjectPath(

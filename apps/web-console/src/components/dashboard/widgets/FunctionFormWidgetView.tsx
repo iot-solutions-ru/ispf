@@ -11,9 +11,10 @@ import type {
   FunctionFormWidget,
 } from "../../../types/dashboard";
 import { buildFunctionInput, parseJsonArray, parseJsonObject, resolveWidgetPath } from "../dashboardUtils";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import { required } from "../../../utils/required";
 
 interface FunctionFormWidgetViewProps {
   widget: FunctionFormWidget;
@@ -97,13 +98,13 @@ function useFunctionFormFieldOptions(
 ): FunctionFormSelectOption[] | undefined {
   const children = useQuery({
     queryKey: ["objects", field.optionsFrom],
-    queryFn: () => fetchObjects(field.optionsFrom!),
+    queryFn: () => fetchObjects(required(field.optionsFrom, "field.optionsFrom")),
     enabled: field.type === "select" && Boolean(field.optionsFrom),
   });
 
   const report = useQuery({
     queryKey: ["function-form-report-options", field.optionsFromReport],
-    queryFn: () => runReportByPathSync(field.optionsFromReport!),
+    queryFn: () => runReportByPathSync(required(field.optionsFromReport, "field.optionsFromReport")),
     enabled: field.type === "select" && Boolean(field.optionsFromReport),
     staleTime: 30_000,
   });
@@ -119,11 +120,12 @@ function useFunctionFormFieldOptions(
       const valueField = field.optionsValueField ?? "code";
       const labelField = field.optionsLabelField;
       let rows = report.data.rows as Record<string, unknown>[];
-      if (field.optionsFilterField && field.optionsFilterColumn && filterValues) {
+      const filterColumn = field.optionsFilterColumn;
+      if (field.optionsFilterField && filterColumn && filterValues) {
         const filterValue = filterValues[field.optionsFilterField] ?? "";
         if (filterValue) {
           rows = rows.filter(
-            (row) => String(row[field.optionsFilterColumn!] ?? "") === filterValue
+            (row) => String(row[filterColumn] ?? "") === filterValue
           );
         }
       }

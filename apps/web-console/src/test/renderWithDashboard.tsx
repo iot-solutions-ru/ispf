@@ -1,9 +1,10 @@
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import { render, type RenderOptions } from "@testing-library/react";
-import { I18nextProvider } from "react-i18next";
+import { initReactI18next, I18nextProvider } from "react-i18next";
+import { render } from "@testing-library/react";
+import type { RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
-import { DashboardProvider, type DashboardSession } from "../components/dashboard/DashboardContext";
+import { DashboardProvider } from "../components/dashboard/DashboardContext";
+import type { DashboardSession } from "../components/dashboard/useDashboardContext";
 import enWidgets from "../locales/en/widgets.json";
 import enDashboard from "../locales/en/dashboard.json";
 import enCommon from "../locales/en/common.json";

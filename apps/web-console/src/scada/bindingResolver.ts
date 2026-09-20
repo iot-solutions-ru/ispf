@@ -1,4 +1,4 @@
-import type { DashboardSession } from "../components/dashboard/DashboardContext";
+import type { DashboardSession } from "../components/dashboard/useDashboardContext";
 import { resolveWidgetPath } from "../components/dashboard/dashboardUtils";
 import { readFieldValue } from "../types/dashboard";
 import type { VariableDto } from "../types";

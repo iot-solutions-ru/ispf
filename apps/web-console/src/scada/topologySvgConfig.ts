@@ -1,4 +1,4 @@
-import type { DashboardSession } from "../components/dashboard/DashboardContext";
+import type { DashboardSession } from "../components/dashboard/useDashboardContext";
 import { resolveWidgetPath } from "../components/dashboard/dashboardUtils";
 import type { MimicBinding, MimicSymbolBehavior } from "../types/scadaMimic";
 import { resolveBindingValue } from "./bindingResolver";

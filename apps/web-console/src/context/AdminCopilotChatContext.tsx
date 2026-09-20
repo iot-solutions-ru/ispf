@@ -1,13 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   cancelAgentRun,
@@ -21,15 +13,16 @@ import {
   isAgentAcceptedResponse,
   isAgentTurnResultDeliveryError,
   waitUntilAgentRunIdle,
-  type AiAgentChatResponse,
-  type AiAgentStep,
-  type AiAgentTurn,
-  type AiProviderStatus,
-  type AgentClientFocus,
-  type AgentInteractionMode,
-  type AgentPlanState,
 } from "../api/ai";
-import { useAdminFocusOptional } from "./AdminFocusContext";
+import type {
+  AiAgentChatResponse,
+  AiAgentStep,
+  AiAgentTurn,
+  AgentClientFocus,
+  AgentInteractionMode,
+  AgentPlanState,
+} from "../api/ai";
+import { useAdminFocusOptional } from "./useAdminFocus";
 import {
   loadAgentChatIndex,
   loadAiStudioPrefs,
@@ -39,37 +32,11 @@ import {
   saveAgentChatIndex,
   saveCopilotPrefs,
   upsertChatEntry,
-  type AgentChatIndex,
 } from "../utils/agent/agentChatStorage";
+import type { AgentChatIndex } from "../utils/agent/agentChatStorage";
 import i18n from "../i18n";
-
-export interface CopilotChatMessage {
-  id: string;
-  role: "user" | "agent";
-  text: string;
-  steps?: AiAgentStep[];
-  result?: Record<string, unknown>;
-  status?: string;
-}
-
-interface AdminCopilotChatContextValue {
-  provider: AiProviderStatus | undefined;
-  providerLoading: boolean;
-  agentApiReady: boolean;
-  messages: CopilotChatMessage[];
-  isPending: boolean;
-  liveSteps: AiAgentStep[];
-  sendMessage: (
-    text: string,
-    options?: { clientFocus?: AgentClientFocus | null }
-  ) => Promise<void>;
-  cancelRun: () => Promise<void>;
-  startNewChat: () => void;
-  interactionMode: AgentInteractionMode;
-  setInteractionMode: (mode: AgentInteractionMode) => void;
-}
-
-const AdminCopilotChatContext = createContext<AdminCopilotChatContextValue | null>(null);
+import { AdminCopilotChatContext } from "./useAdminCopilotChat";
+import type { CopilotChatMessage, AdminCopilotChatContextValue } from "./useAdminCopilotChat";
 
 const CHANNEL = "copilot" as const;
 
@@ -288,7 +255,7 @@ export function AdminCopilotChatProvider({
 
         const runTurnAsync = async () => {
           const ack = await sendAgentMessage(
-            sessionId!,
+            sessionId,
             trimmed,
             rootPath,
             "execute",
@@ -299,7 +266,7 @@ export function AdminCopilotChatProvider({
             i18n.language
           );
           if (isAgentAcceptedResponse(ack)) {
-            return waitForAgentTurnCompletion(sessionId!, onProgress, {
+            return waitForAgentTurnCompletion(sessionId, onProgress, {
               baselineTurnCount: baselineTurnsAtSendRef.current,
             });
           }
@@ -395,14 +362,3 @@ export function AdminCopilotChatProvider({
   );
 }
 
-export function useAdminCopilotChat(): AdminCopilotChatContextValue {
-  const ctx = useContext(AdminCopilotChatContext);
-  if (!ctx) {
-    throw new Error("useAdminCopilotChat must be used within AdminCopilotChatProvider");
-  }
-  return ctx;
-}
-
-export function useAdminCopilotChatOptional(): AdminCopilotChatContextValue | null {
-  return useContext(AdminCopilotChatContext);
-}

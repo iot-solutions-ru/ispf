@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../../api";
 import type { BindingRule, BindingRuleKind, BindingTargetKind, VariableDto } from "../../types";
-import BindingActivatorsEditor, { activatorsSummary } from "./BindingActivatorsEditor";
+import BindingActivatorsEditor from "./BindingActivatorsEditor";
+import { activatorsSummary } from "./bindingActivatorsUtils";
 import BindingExpressionField from "./BindingExpressionField";
 import BindingTargetRefEditor from "./BindingTargetRefEditor";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
@@ -24,7 +25,7 @@ import { validateBindingRuleExpression } from "../../utils/binding/bindingExpres
 import { encodeHistorianTagPath } from "../../utils/analytics/analyticsPath";
 import { useAnalyticsCatalog } from "../../hooks/useAnalyticsCatalog";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
-import type { AdminClientFocus } from "../../context/AdminFocusContext";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
 
 interface RuleTemplate {
   id: string;

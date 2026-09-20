@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeIconId, resolveTreeIconKind } from "./ObjectTreeIcon";
+import { normalizeIconId, resolveTreeIconKind } from "./objectTreeIconCatalog";
 
 describe("resolveTreeIconKind", () => {
   it("uses blueprint icon for blueprint catalog folders", () => {

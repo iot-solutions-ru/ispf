@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { SpreadsheetWidget } from "../../../types/dashboard";
@@ -6,7 +7,8 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { rowColToA1, a1ToRowCol } from "../sheet/sheetAddress";
-import { applyGridOperation, shiftSelectedCell, type GridOperation } from "../sheet/sheetGridOps";
+import { applyGridOperation, shiftSelectedCell } from "../sheet/sheetGridOps";
+import type { GridOperation } from "../sheet/sheetGridOps";
 import {
   IconCopy,
   IconCsv,
@@ -37,10 +39,9 @@ import {
   exportXlsxWorkbookFromTabs,
   importXlsxWorkbook,
 } from "../sheet/sheetXlsx";
-import SpreadsheetImportNotice, {
-  hasSpreadsheetImportIssues,
-  type SpreadsheetImportNoticeState,
-} from "./SpreadsheetImportNotice";
+import SpreadsheetImportNotice from "./SpreadsheetImportNotice";
+import type { SpreadsheetImportNoticeState } from "./SpreadsheetImportNotice";
+import { hasSpreadsheetImportIssues } from "./spreadsheetImportIssues";
 import { useSpreadsheetColumnResize } from "./spreadsheet/useSpreadsheetColumnResize";
 import {
   buildMergeHiddenSet,
@@ -363,7 +364,6 @@ export default function SpreadsheetFreeGridView({
     formula,
     getWorkbookSnapshot,
     localMeta,
-    t,
     widget.title,
   ]);
 
@@ -403,7 +403,7 @@ export default function SpreadsheetFreeGridView({
         setImportNotice({ kind: "error" });
       }
     },
-    [applyXlsxImport, canEdit, t]
+    [applyXlsxImport, canEdit]
   );
 
   const handleSwitchSheet = useCallback(

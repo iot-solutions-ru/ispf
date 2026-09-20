@@ -12,6 +12,7 @@ import {
   setVariable,
   updateObject,
   updateVariableHistory,
+  fetchAuthMe,
 } from "../../api";
 import { inspectorQueryLoading, resolveInspectorEditor, useInspectorObjectEditor } from "../../hooks/useInspectorQueries";
 import { useVariablesQuery } from "../../hooks/useVariablesQuery";
@@ -22,8 +23,8 @@ import type {
   DataRecord,
   VariableDto,
 } from "../../types";
-import { fetchAuthMe } from "../../api";
-import { OBJECT_WS_EVENT, sendPresence, type ObjectWsMessage } from "../../hooks/useObjectWebSocket";
+import { OBJECT_WS_EVENT, sendPresence } from "../../hooks/useObjectWebSocket";
+import type { ObjectWsMessage } from "../../hooks/useObjectWebSocket";
 import {
   cloneRecord,
   ensureRecord,
@@ -34,13 +35,14 @@ import { applyRemoteVariables } from "../../utils/object/objectPropertiesRemoteS
 import IconPicker from "../icons/IconPicker";
 import ObjectTreeIcon from "../icons/ObjectTreeIcon";
 import VariableFieldEditor from "./VariableFieldEditor";
-import VariableHistoryFields, {
+import VariableHistoryFields from "./VariableHistoryFields";
+import {
   formatHistoryRetention,
   historyStateEqual,
   historyStateFromVariable,
   telemetryModeToApi,
-  type VariableHistoryState,
-} from "./VariableHistoryFields";
+} from "./variableHistoryModel";
+import type { VariableHistoryState } from "./variableHistoryModel";
 import { canDeleteObjectPath } from "../../utils/platform/platformSystemPaths";
 import { filterUserVariableNames, isDeletableUserVariable, isHiddenObjectVariable } from "../../utils/platform/systemVariables";
 import { localizedSystemObjectDescription } from "../../utils/platform/systemFolderI18n";
@@ -68,12 +70,9 @@ import { resolveApplicationAppId } from "../../utils/platform/applicationPath";
 import EditLeaseBanner from "./EditLeaseBanner";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
-import type { AdminClientFocus } from "../../context/AdminFocusContext";
-import {
-  OBJECT_EDITOR_TABS,
-  visibleObjectEditorTabs,
-  type ObjectEditorTab,
-} from "./tabs";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
+import { OBJECT_EDITOR_TABS, visibleObjectEditorTabs } from "./tabs";
+import type { ObjectEditorTab } from "./tabs";
 
 const EventJournalPanel = lazy(() => import("../operator/EventJournalPanel"));
 
@@ -578,11 +577,12 @@ export default function ObjectPropertiesEditor({
     return <div className="editor-loading">{t("objectEditor.loading")}</div>;
   }
 
-  if (!editorData || !state) {
+  if (!editorData || !state || !baseline) {
     return <div className="editor-loading">{t("objectEditor.loading")}</div>;
   }
 
   const ctx = editorData.object;
+  const appliedBlueprints = ctx.appliedBlueprints ?? [];
   const isRoot = path === "root";
   const isPlatformRoot = path === "root.platform";
   const isDevice = ctx.type === "DEVICE";
@@ -844,11 +844,11 @@ export default function ObjectPropertiesEditor({
                   className="readonly"
                 />
               </label>
-              {(ctx.appliedBlueprints?.length ?? 0) > 0 && (
+              {appliedBlueprints.length > 0 && (
                 <div className="full">
                   <span className="field-label">{t("common:field.appliedBlueprints")}</span>
                   <ul className="applied-models-list">
-                    {ctx.appliedBlueprints!.map((model) => (
+                    {appliedBlueprints.map((model) => (
                       <li key={model.id}>
                         <code>{model.name}</code> ({model.type}
                         {model.primary ? ", primary" : ""})
@@ -959,9 +959,9 @@ export default function ObjectPropertiesEditor({
                 <VariableEditorRow
                   variable={variable}
                   record={state.variables[variable.name]}
-                  baseline={baseline!.variables[variable.name]}
+                  baseline={baseline.variables[variable.name]}
                   history={state.variableHistory[variable.name]}
-                  historyBaseline={baseline!.variableHistory[variable.name]}
+                  historyBaseline={baseline.variableHistory[variable.name]}
                   canManage={canManage && !ctx.federated}
                   onOpenSettings={
                     canManage && !ctx.federated

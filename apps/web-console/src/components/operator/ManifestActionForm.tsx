@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { assertBffOk, bffInvoke, toBffInput } from "../../api/bff";
 import { isActionVisible } from "../../api/manifestVisibility";
+import { required } from "../../utils/required";
 import type {
   OperatorManifestAction,
   OperatorManifestField,
@@ -22,19 +23,21 @@ function useOptionsFrom(source: OperatorManifestOptionsFrom | undefined, wirePro
     queryKey: ["manifest-options", source?.objectPath, source?.functionName, source?.input],
     enabled: Boolean(source),
     queryFn: async () => {
+      const src = required(source, "optionsFrom source");
       const wire = await bffInvoke<Array<Record<string, unknown>> | Record<string, unknown>>({
-        objectPath: source!.objectPath,
-        functionName: source!.functionName,
-        input: toBffInput(source!.input),
+        objectPath: src.objectPath,
+        functionName: src.functionName,
+        input: toBffInput(src.input),
         wireProfile,
       });
       const result = assertBffOk(wire);
       const rows = Array.isArray(result) ? result : [result as Record<string, unknown>];
       let filtered = rows;
-      if (source!.filterField) {
+      const filterField = src.filterField;
+      if (filterField) {
         filtered = rows.filter((row) => {
-          const actual = row[source!.filterField!];
-          const expected = source!.filterValue;
+          const actual = row[filterField];
+          const expected = src.filterValue;
           if (typeof expected === "boolean") {
             return actual === expected || String(actual).toLowerCase() === String(expected);
           }
@@ -42,8 +45,8 @@ function useOptionsFrom(source: OperatorManifestOptionsFrom | undefined, wirePro
         });
       }
       return filtered.map((row) => ({
-        value: String(row[source!.valueField] ?? ""),
-        label: String(row[source!.labelField] ?? row[source!.valueField] ?? ""),
+        value: String(row[src.valueField] ?? ""),
+        label: String(row[src.labelField] ?? row[src.valueField] ?? ""),
       }));
     },
   });
