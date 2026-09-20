@@ -35,6 +35,7 @@
   "action.confirmDeleteObject": "Delete object \"{{name}}\" and all children?",
   "action.confirmDeleteEvent": "Delete event \"{{name}}\"?",
   "action.confirmDeleteFunction": "Delete function \"{{name}}\"?",
+  "action.confirmDeleteVariable": "Delete variable \"{{name}}\"?",
   "action.confirmDeleteRole": "Delete role \"{{name}}\"?",
   "action.confirmDeleteUser": "Delete user \"{{name}}\"?",
   "empty.none": "None",

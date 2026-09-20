@@ -4,6 +4,7 @@
   "action.close": "关闭",
   "action.confirmDeleteEvent": "删除事件“{{name}}”？",
   "action.confirmDeleteFunction": "删除函数“{{name}}”？",
+  "action.confirmDeleteVariable": "删除变量“{{name}}”？",
   "action.confirmDeleteNamed": "删除「{{name}}」？",
   "action.confirmDeleteObject": "删除对象“{{name}}”和所有子对象？",
   "action.confirmDeleteRole": "删除角色“{{name}}”？",

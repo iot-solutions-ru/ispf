@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, Button, Input, Modal, Space, Switch, Tag, Typography } from "antd";
 import {
+  deleteVariable,
   setVariable,
   updateVariableDefinition,
   updateVariableHistory,
@@ -18,6 +19,7 @@ import VariableHistoryFields, {
 } from "./VariableHistoryFields";
 import RoleMultiSelect from "../security/RoleMultiSelect";
 import { cloneRecord, recordsEqual } from "../../utils/ui/record";
+import { isDeletableUserVariable } from "../../utils/platform/systemVariables";
 
 interface EditVariableDialogProps {
   objectPath: string;
@@ -26,6 +28,7 @@ interface EditVariableDialogProps {
   canEditDefinition?: boolean;
   onClose: () => void;
   onSaved: () => void;
+  onDeleted?: () => void;
 }
 
 function historyFromVariable(variable: VariableDto): VariableHistoryState {
@@ -43,6 +46,7 @@ export default function EditVariableDialog({
   canEditDefinition = false,
   onClose,
   onSaved,
+  onDeleted,
 }: EditVariableDialogProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const [record, setRecord] = useState<DataRecord>(() =>
@@ -128,6 +132,8 @@ export default function EditVariableDialog({
     }
   }
 
+  const canDelete = Boolean(onDeleted) && isDeletableUserVariable(variable.name);
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (canEditDefinition && definitionDirty) {
@@ -156,6 +162,11 @@ export default function EditVariableDialog({
     onSuccess: onSaved,
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteVariable(objectPath, variable.name),
+    onSuccess: () => onDeleted?.(),
+  });
+
   function handleSave() {
     const hasChanges = definitionDirty || historyDirty || valueDirty;
     if (!hasChanges) {
@@ -171,6 +182,14 @@ export default function EditVariableDialog({
     } catch {
       setParseError(t("common:error.invalidJson"));
     }
+  }
+
+  function handleDelete() {
+    if (!canDelete) return;
+    if (!confirm(t("common:action.confirmDeleteVariable", { name: variable.name }))) {
+      return;
+    }
+    deleteMutation.mutate();
   }
 
   const title = canEditValue
@@ -189,6 +208,20 @@ export default function EditVariableDialog({
       width={900}
       className="variable-editor-modal"
       footer={[
+        ...(canDelete
+          ? [
+              <Button
+                key="delete"
+                danger
+                onClick={handleDelete}
+                disabled={mutation.isPending || deleteMutation.isPending}
+                loading={deleteMutation.isPending}
+                style={{ marginRight: "auto" }}
+              >
+                {t("common:action.delete")}
+              </Button>,
+            ]
+          : []),
         <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
         <Button
           key="save"
@@ -196,6 +229,7 @@ export default function EditVariableDialog({
           onClick={handleSave}
           disabled={
             mutation.isPending ||
+            deleteMutation.isPending ||
             (!definitionDirty && !historyDirty && !valueDirty)
           }
           loading={mutation.isPending}
@@ -305,6 +339,9 @@ export default function EditVariableDialog({
 
         {parseError && <Alert type="error" showIcon message={parseError} />}
         {mutation.error && <Alert type="error" showIcon message={(mutation.error as Error).message} />}
+        {deleteMutation.error && (
+          <Alert type="error" showIcon message={(deleteMutation.error as Error).message} />
+        )}
       </Space>
     </Modal>
   );
