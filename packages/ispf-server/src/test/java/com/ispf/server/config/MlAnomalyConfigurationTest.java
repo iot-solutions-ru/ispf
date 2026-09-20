@@ -2,28 +2,45 @@ package com.ispf.server.config;
 
 import com.ispf.core.ml.AnomalyDetectionSpi;
 import com.ispf.server.ml.NoOpAnomalyDetectionSpi;
+import com.ispf.server.ml.ThresholdAnomalyDetectionSpi;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("test")
+/**
+ * F-06: slice the ML SPI wiring with {@link ApplicationContextRunner} instead of full server boot.
+ */
 class MlAnomalyConfigurationTest {
 
-    @Autowired
-    private AnomalyDetectionSpi anomalyDetectionSpi;
-
-    @Autowired
-    private MlAnomalyProperties mlAnomalyProperties;
+    private final ApplicationContextRunner runner = new ApplicationContextRunner()
+            .withUserConfiguration(TestConfig.class);
 
     @Test
     void wiresNoOpSpiByDefault() {
-        assertThat(anomalyDetectionSpi).isInstanceOf(NoOpAnomalyDetectionSpi.class);
-        assertThat(anomalyDetectionSpi.modelId()).isEqualTo(NoOpAnomalyDetectionSpi.MODEL_ID);
-        assertThat(anomalyDetectionSpi.score("root.test", "temperature", java.util.List.of())).isEmpty();
-        assertThat(mlAnomalyProperties.isEnabled()).isFalse();
+        runner.run(context -> {
+            AnomalyDetectionSpi spi = context.getBean(AnomalyDetectionSpi.class);
+            assertThat(spi).isInstanceOf(NoOpAnomalyDetectionSpi.class);
+            assertThat(spi.modelId()).isEqualTo(NoOpAnomalyDetectionSpi.MODEL_ID);
+            assertThat(spi.score("root.test", "temperature", java.util.List.of())).isEmpty();
+            assertThat(context.getBean(MlAnomalyProperties.class).isEnabled()).isFalse();
+        });
+    }
+
+    @Test
+    void wiresThresholdSpiWhenEnabled() {
+        runner.withPropertyValues("ispf.ml.anomaly.enabled=true").run(context -> {
+            assertThat(context.getBean(AnomalyDetectionSpi.class)).isInstanceOf(ThresholdAnomalyDetectionSpi.class);
+            assertThat(context.getBean(MlAnomalyProperties.class).isEnabled()).isTrue();
+        });
+    }
+
+    @Configuration
+    @Import(MlAnomalyConfiguration.class)
+    @EnableConfigurationProperties(MlAnomalyProperties.class)
+    static class TestConfig {
     }
 }

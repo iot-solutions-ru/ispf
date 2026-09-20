@@ -1,23 +1,17 @@
 package com.ispf.server.platform;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.env.Environment;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("test")
+/**
+ * F-06: property smoke without {@code @SpringBootTest} (was a full-context boot for one YAML key).
+ */
 class OtlpTracingExportPropertiesTest {
 
-    @Autowired
-    private Environment environment;
-
     @Test
-    void tracingExportDisabledByDefaultInTestProfile() {
-        assertThat(environment.getProperty("management.tracing.enabled", Boolean.class, false))
-                .isFalse();
+    void tracingExportDisabledByDefaultInTestProfile() throws Exception {
+        assertThat(OtlpMetricsExportPropertiesTest.testProfileProperty("management.tracing.enabled"))
+                .isEqualTo(false);
     }
 }
