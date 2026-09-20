@@ -161,6 +161,7 @@ jobs:
         working-directory: apps/web-console
         run: |
           npm ci
+          npm run lint
           npm test
           npm run i18n:check
           npx playwright install chromium --with-deps

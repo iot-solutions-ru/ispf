@@ -211,7 +211,7 @@ function AppShell() {
     return () => {
       cancelled = true;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- validate stored token once on load
+  }, []); // validate stored token once on load
 
   useEffect(() => {
     const onSessionInvalid = () => setSession(null);

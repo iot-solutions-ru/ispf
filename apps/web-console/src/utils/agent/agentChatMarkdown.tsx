@@ -5,7 +5,7 @@ export type AgentMarkdownBlock =
   | { type: "ol"; items: string[] }
   | { type: "ul"; items: string[] };
 
-const ORDERED_ITEM = /^\d+[\.)]\s+(.*)$/;
+const ORDERED_ITEM = /^\d+[.)]\s+(.*)$/;
 const UNORDERED_ITEM = /^[-*•]\s+(.*)$/;
 
 /** Split inline "1. … 2. …" steps onto separate lines for legacy agent replies. */
@@ -14,8 +14,8 @@ export function normalizeAgentMarkdown(text: string): string {
   if (!normalized) {
     return "";
   }
-  normalized = normalized.replace(/(?<=[^\n])\s+(?=\d+[\.)]\s)/g, "\n");
-  normalized = normalized.replace(/:\s+(\d+[\.)]\s)/g, ":\n$1");
+  normalized = normalized.replace(/(?<=[^\n])\s+(?=\d+[.)]\s)/g, "\n");
+  normalized = normalized.replace(/:\s+(\d+[.)]\s)/g, ":\n$1");
   // Match legacy RU agent replies that start a section with **Пример
   normalized = normalized.replace(/(?<=[^\n])\s+(?=\*\*\u041F\u0440\u0438\u043C\u0435\u0440)/gi, "\n\n");
   return normalized;

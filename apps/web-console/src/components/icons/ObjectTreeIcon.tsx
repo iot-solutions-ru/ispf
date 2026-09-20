@@ -285,7 +285,6 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
       return "screens";
     case "AGENT":
       return "agent";
-    case "CUSTOM":
     default:
       return "folder";
   }

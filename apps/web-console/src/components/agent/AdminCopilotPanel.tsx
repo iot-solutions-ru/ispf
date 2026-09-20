@@ -150,12 +150,6 @@ function suggestionKeysForFocus(focus: AdminClientFocus | null): string[] {
         "copilot.suggest.systemLookup",
         "copilot.suggest.bindings",
       ];
-    case "dashboard":
-      return [
-        "copilot.suggest.explain",
-        "copilot.suggest.dashboard",
-        "copilot.suggest.systemLookup",
-      ];
     case "mimic":
       return [
         "copilot.suggest.explain",

@@ -97,7 +97,7 @@ export default function SystemFolderListPanel({
     items.sort((a, b) => {
       const idA = childIdFromPath(folderPath, a.path);
       const idB = childIdFromPath(folderPath, b.path);
-      let cmp = 0;
+      let cmp: number;
       if (sortKey === "type") {
         cmp = a.type.localeCompare(b.type);
       } else if (sortKey === "template") {
