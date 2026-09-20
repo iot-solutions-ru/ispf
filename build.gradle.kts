@@ -15,6 +15,7 @@ allprojects {
 
 subprojects {
     apply(plugin = "java")
+    apply(plugin = "jacoco")
 
     if (name.startsWith("ispf-driver-")
         && name != "ispf-driver-api"
@@ -39,6 +40,20 @@ subprojects {
         useJUnitPlatform()
         maxParallelForks = 1
         systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+    }
+
+    // Coverage (report only, no threshold yet — F-02 code-analysis follow-up).
+    // Run `./gradlew coverageReport` after tests; XML lands in
+    // <module>/build/reports/jacoco/test/jacocoTestReport.xml for Codecov/Sonar-style tooling.
+    extensions.configure<JacocoPluginExtension> {
+        toolVersion = "0.8.14"
+    }
+    tasks.withType<JacocoReport> {
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+        }
     }
 
     dependencies {
@@ -180,6 +195,12 @@ tasks.register("testPrFast") {
     group = "verification"
     description = "PR-fast backend slice — add -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev"
     dependsOn(prFastBackendTestTasks)
+}
+
+tasks.register("coverageReport") {
+    group = "verification"
+    description = "JaCoCo XML+HTML reports for the PR-fast backend modules (run after testPrFast)"
+    dependsOn(prFastBackendTestTasks.map { it.removeSuffix(":test") + ":jacocoTestReport" })
 }
 
 tasks.register("testNightlyBackend") {
