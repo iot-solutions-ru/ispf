@@ -66,6 +66,12 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   dependencies corrected, and non-component exports (context hooks, helpers, catalogs)
   moved to sibling `.ts` modules (`useAdminFocus`, `useAgentChat`, `useDashboardContext`,
   `useTheme`, …) so Fast Refresh keeps component state.
+- **Optional Parquet export module** — parquet-mr / Avro / hadoop-common moved from
+  `ispf-server` into `packages/ispf-export-parquet` (SPI `HistoryParquetExporter` in
+  `ispf-core`, discovered via `ServiceLoader`). Default `bootJar` still includes it;
+  `./gradlew bootJar -Pispf.exportParquet=false` builds a slimmer server where
+  `GET …/history/export?format=parquet` answers **501** and the cold archive run
+  reports `skipped` (ADR-0059 §4).
 - **Batch function invoke** — `POST /api/v1/objects/by-path/functions/invoke-batch`
   (≤100 items, per-item ACL). Operator alarm bar **Acknowledge all** uses one HTTP call
   instead of N× `acknowledgeAlarm`.

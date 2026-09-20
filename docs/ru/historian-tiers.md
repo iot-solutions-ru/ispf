@@ -32,7 +32,7 @@ Hot может включить **dual-write** в warm ClickHouse (`dual-write-e
 |------|-----------|
 | **Write** | `TierRoutingVariableHistoryWriteStore` — недавние сэмплы → JDBC hot; старше hot retention → ClickHouse warm; опциональный dual-write для hot-окна |
 | **Read** | `TierRoutingVariableHistoryQueryStore` — диапазоны через hot cutoff объединяют JDBC + ClickHouse |
-| **Cold** | Ночной `HistorianColdArchiveRunner` экспортирует Parquet за день, покидающий warm retention (когда `ispf.historian.cold-archive.enabled=true`) |
+| **Cold** | Ночной `HistorianColdArchiveRunner` экспортирует Parquet за день, покидающий warm retention (когда `ispf.historian.cold-archive.enabled=true`). Нужен опциональный модуль `ispf-export-parquet` (в дефолтном `bootJar`; при сборке с `-Pispf.exportParquet=false` его нет — запуск даёт `skipped`, а экспорт `format=parquet` отвечает 501) |
 
 Профиль `hot-only` оставляет только JDBC (`warm.enabled=false`).
 

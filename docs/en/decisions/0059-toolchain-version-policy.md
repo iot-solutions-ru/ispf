@@ -33,9 +33,23 @@ ISPF is a self-hosted industrial SCADA platform: operators expect long-lived ins
 
 Every `force(...)`, `extra["*.version"]`, `enforcedPlatform` or npm `overrides` entry must carry a comment with (a) the reason and (b) the upstream issue or release that lets us remove it. Nightly runs `./gradlew dependencyUpdates`-style reporting (Dependabot/Renovate already open PRs); the owner of a pin reviews it at each Spring Boot minor.
 
+#### Pin registry
+
+The registry below is the single list of live pins. A PR that adds a pin adds a row; a PR that removes the upstream cause removes the row. Owner = the area team that reviews Dependabot PRs for that package.
+
+| Pin | Where | Why | Remove when | Owner | Re-check |
+|-----|-------|-----|-------------|-------|----------|
+| `protobuf-java(-util,-javalite)` **4.36.1** (`force`) | root `build.gradle.kts` | CEL 0.14+ gencode needs runtime ≥ gencode; Micrometer/OTel transitively bring 4.34.x | Micrometer OTLP + CEL both ship the same protobuf line in the Boot BOM | platform/core | each Spring Boot minor |
+| `kafka.version` **4.3.1** (`extra`) + explicit `kafka-clients` / `embedded-kafka_2.13` 4.3.1 | `ispf-server`, `ispf-driver-kafka` | Boot BOM forces 4.2.1 → `CompressionType` CNFE against EmbeddedKafka 4.3.1 | Spring Boot BOM moves to Kafka 4.3+ | drivers/messaging | each Spring Boot minor |
+| `netty-bom` **4.2.17/4.2.18.Final** (`enforcedPlatform`) | `ispf-driver-opcua(-server)`, `ispf-driver-mqtt`, `ispf-driver-sparkplug-b`, `ispf-server` tests | Milo 0.6.x and Moquette 0.17 declare Netty 4.1.x; the bom lifts the whole graph to the patched 4.2 line (Dependabot CVE stream) | Milo / Moquette releases declare Netty 4.2 themselves; then drop the boms or collapse to one version | drivers/OPC UA | quarterly |
+| `commons-beanutils` **1.11.0** (`constraints`) | `ispf-export-parquet` | hadoop-common 3.5.0 transitively pulls an older, vulnerable line | hadoop-common ≥ 3.5.1 declares ≥ 1.11 | platform/historian | each hadoop bump |
+| `typescript` → `@typescript/typescript6` alias; `@typescript/native` = TS 7 | `apps/web-console/package.json` | `typescript-eslint` has no TS 7 API support yet (§5) | typescript-eslint supports TS 7 | web-console | each typescript-eslint major |
+
 ### 4. Heavy optional dependencies live in optional modules
 
-A dependency that serves one feature and exceeds ~10 MB of transitive jars (Hadoop/Parquet, LibreOffice bridge, Cassandra driver, …) must sit in its own module or driver pack, wired via the existing pack/plugin mechanism and excluded from the default `bootJar`. First target: `ispf-export-parquet` (Parquet/Avro/Hadoop out of `ispf-server`).
+A dependency that serves one feature and exceeds ~10 MB of transitive jars (Hadoop/Parquet, LibreOffice bridge, Cassandra driver, …) must sit in its own module or driver pack, wired via the existing pack/plugin mechanism and excluded from the default `bootJar`.
+
+Done: **`ispf-export-parquet`** holds parquet-mr, Avro and hadoop-common. `ispf-server` sees only the `HistoryParquetExporter` SPI in `ispf-core` and discovers the module via `ServiceLoader`. It is included as `runtimeOnly` by default (no behaviour change) and dropped with `./gradlew bootJar -Pispf.exportParquet=false`; without it `GET …/history/export?format=parquet` returns **501** and the cold archive reports `skipped`. Next candidates: Cassandra `java-driver-core` (historian backend), POI (report rendering).
 
 ### 5. Frontend compiler split
 
@@ -46,7 +60,7 @@ A dependency that serves one feature and exceeds ~10 MB of transitive jars (Hado
 - Fewer surprise breakages for operators; upgrades to a new Boot/JDK major become a planned ISPF minor with a migration note.
 - Slightly slower adoption of new language/framework features (typically one patch release).
 - Existing pins become searchable technical debt with a removal condition instead of permanent config.
-- `ispf-server` bootJar shrinks once Parquet export moves out (tracked as a follow-up).
+- `ispf-server` can be built without Parquet/Hadoop (`-Pispf.exportParquet=false`); default artifacts keep the module so existing deployments see no change.
 
 ## Related
 

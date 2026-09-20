@@ -60,7 +60,7 @@ subprojects {
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
-    // Keep protobuf runtime ahead of CEL / OTel gencode (runtime must be >= gencode).
+    // Pin (ADR-0059 registry). Keep protobuf runtime ahead of CEL / OTel gencode (runtime must be >= gencode).
     // Without this, CEL 0.14+ can fail with ProtobufRuntimeVersionException when an older
     // transitive protobuf-java (e.g. 4.34.x from Micrometer/OTel) wins resolution.
     configurations.configureEach {
@@ -185,6 +185,7 @@ tasks.register("testDevDriverPacks") {
 val prFastBackendTestTasks = listOf(
     ":packages:ispf-core:test",
     ":packages:ispf-expression:test",
+    ":packages:ispf-export-parquet:test",
     ":packages:ispf-plugin-blueprint:test",
     ":packages:ispf-plugin-workflow:test",
     ":packages:ispf-server:test",

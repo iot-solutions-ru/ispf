@@ -29,6 +29,7 @@ jobs:
               - 'packages/ispf-server/**'
               - 'packages/ispf-core/**'
               - 'packages/ispf-expression/**'
+              - 'packages/ispf-export-parquet/**'
               - 'packages/ispf-ai-*/**'
               - 'packages/ispf-analytics-*/**'
               - 'packages/ispf-plugin-*/**'
