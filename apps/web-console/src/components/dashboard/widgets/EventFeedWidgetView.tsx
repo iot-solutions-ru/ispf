@@ -7,8 +7,10 @@ import { isCelEventFilter, matchesPayloadFilter } from "../../../utils/ui/payloa
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { parseDemoPreview } from "../widgetDemoPreview";
-import JournalViewShell, { JOURNAL_VIEW_MODES, type JournalViewMode } from "../../journal/JournalViewShell";
+import { parseDemoPreview } from "../widgetDemoData";
+import JournalViewShell from "../../journal/JournalViewShell";
+import { JOURNAL_VIEW_MODES } from "../../journal/journalViewMode";
+import type { JournalViewMode } from "../../journal/journalViewMode";
 import JournalVirtualList from "../../journal/JournalVirtualList";
 import JournalExpandableItem from "../../journal/JournalExpandableItem";
 import { usePersistentTab } from "../../../hooks/usePersistentTab";

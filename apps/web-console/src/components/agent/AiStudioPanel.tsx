@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import AiAgentChat from "./AiAgentChat";
-import AiStudioBundleTab, { defaultBundleManifest } from "./AiStudioBundleTab";
+import AiStudioBundleTab from "./AiStudioBundleTab";
+import { defaultBundleManifest } from "./aiStudioBundleDefaults";
 import AiStudioPrefsTab from "./AiStudioPrefsTab";
 import AiStudioStatusTab from "./AiStudioStatusTab";
 import { useAgentRunStatus } from "../../utils/agent/agentRunStatus";
 import { loadAiStudioPrefs, saveAiStudioPrefs } from "../../utils/agent/agentChatStorage";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
-import type { AdminClientFocus } from "../../context/AdminFocusContext";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
 
 export type StudioMode = "agent" | "bundle" | "status" | "prefs";
+
+const STUDIO_TABS: StudioMode[] = ["agent", "bundle", "status", "prefs"];
 
 export default function AiStudioPanel() {
   const { t } = useTranslation("ai");
@@ -30,8 +33,6 @@ export default function AiStudioPanel() {
     saveAiStudioPrefs({ ...prefs, lastTab: mode });
   }, [mode]);
 
-  const tabs: StudioMode[] = ["agent", "bundle", "status", "prefs"];
-
   const studioFocus = useMemo((): AdminClientFocus => {
     return {
       surface: "ai-studio",
@@ -39,7 +40,7 @@ export default function AiStudioPanel() {
       detail: {
         screenTitle: "AI Studio (Platform Studio)",
         studioTab: mode,
-        availableStudioTabs: tabs,
+        availableStudioTabs: STUDIO_TABS,
         screenHint:
           mode === "agent"
             ? "Build/plan agent chat for creating solutions (separate from Admin Copilot)"
@@ -66,7 +67,7 @@ export default function AiStudioPanel() {
       </header>
 
       <nav className="tabs ai-studio-tabs" aria-label={t("studio.sectionsAria")}>
-        {tabs.map((tab) => (
+        {STUDIO_TABS.map((tab) => (
           <button
             key={tab}
             type="button"

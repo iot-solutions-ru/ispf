@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePinnedWatchValues } from "./ExpressionDebuggerWatchList";
+import { resolvePinnedWatchValues } from "./expressionDebuggerWatchValues";
 
 describe("resolvePinnedWatchValues", () => {
   it("prefers live variable values over step bindings", () => {

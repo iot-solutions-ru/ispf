@@ -131,6 +131,8 @@ export function useLazyObjectTree(enabled = true) {
     return () => window.removeEventListener(OBJECT_WS_EVENT, onDriverVariable);
   }, [refreshParent]);
 
+  // `version` is the change counter of the ref-backed store; it is the real dependency here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const objects = useMemo(() => [...objectsRef.current.values()], [version]);
 
   const tree: TreeNode[] = useMemo(() => buildObjectTree(objects), [objects]);

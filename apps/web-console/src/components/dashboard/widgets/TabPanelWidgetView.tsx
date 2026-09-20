@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import type { DashboardWidget, TabPanelWidget, TabPanelTab } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { useDashboardEditor } from "../DashboardEditorContext";
+import { useDashboardEditor } from "../useDashboardEditor";
 import { ContainerChildGridOrList } from "../ContainerChildGrid";
 import { renderWidgetList } from "../renderDashboardWidget";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 
 interface TabPanelWidgetViewProps {
   widget: TabPanelWidget;

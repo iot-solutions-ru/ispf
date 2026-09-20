@@ -3,6 +3,7 @@ import { loadOperatorAppUi } from "./useOperatorAppsRegistry";
 import type { OperatorUi } from "../types/operatorUi";
 import { operatorAppIdCandidates } from "../utils/operator/operatorAppsPath";
 import { cacheOperatorUi, readCachedOperatorUi } from "../utils/operator/operatorOfflineCache";
+import { required } from "../utils/required";
 
 async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
   const response = await fetch(`/operator-apps/${appId}.ui.json`);
@@ -55,7 +56,7 @@ async function loadOperatorUi(appId: string): Promise<OperatorUi | null> {
 export function useOperatorUi(appId: string | null) {
   return useQuery({
     queryKey: ["operator-ui", appId],
-    queryFn: () => loadOperatorUi(appId!),
+    queryFn: () => loadOperatorUi(required(appId, "appId")),
     enabled: Boolean(appId),
     refetchOnReconnect: true,
     placeholderData: () => (appId ? readCachedOperatorUi(appId) ?? undefined : undefined),

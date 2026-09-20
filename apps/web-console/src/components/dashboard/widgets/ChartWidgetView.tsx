@@ -14,11 +14,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { ChartWidget } from "../../../types/dashboard";
 import { widgetHistoryRangeLabel } from "../../../types/dashboard";
+import type { ChartWidget } from "../../../types/dashboard";
 import { useChartTrendSeries } from "../../../hooks/useChartTrendSeries";
 import type { TrendPoint } from "../../../hooks/useTrendSeries";
-import { useAnalyticsMultiSeries, type AnalyticsMultiSeriesPoint } from "../../../hooks/useAnalyticsMultiSeries";
+import { useAnalyticsMultiSeries } from "../../../hooks/useAnalyticsMultiSeries";
+import type { AnalyticsMultiSeriesPoint } from "../../../hooks/useAnalyticsMultiSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetDragHandle from "../WidgetDragHandle";
@@ -28,7 +29,7 @@ import {
   buildDemoRangeTrendPoints,
   buildDemoTrendPoints,
   parseDemoPreview,
-} from "../widgetDemoPreview";
+} from "../widgetDemoData";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import CandlestickChartBody from "./CandlestickChartBody";
 import ChartBubbleWidgetView from "./ChartBubbleWidgetView";

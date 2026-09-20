@@ -9,11 +9,9 @@ import {
   fetchChangeSet,
   fetchChangeSets,
   previewChangeSet,
-  type ChangeSetOp,
-  type ChangeSetPreview,
-  type ChangeSetSummary,
 } from "../../api/platformChangeSets";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import type { ChangeSetOp, ChangeSetPreview, ChangeSetSummary } from "../../api/platformChangeSets";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 
 const SAMPLE_OPS = `[
   {

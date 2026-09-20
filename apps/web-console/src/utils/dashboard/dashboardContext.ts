@@ -1,4 +1,4 @@
-import type { DashboardSession } from "../../components/dashboard/DashboardContext";
+import type { DashboardSession } from "../../components/dashboard/useDashboardContext";
 
 export const DASHBOARD_CONTEXT_VARIABLE = "@dashboardContext";
 

@@ -8,6 +8,8 @@ import { UserTimeZoneProvider } from "./context/UserTimeZoneContext";
 import { i18nReady } from "./i18n";
 import { initThemeOnDocument } from "./themeInit";
 import { migrateAppsDenylistServiceWorker } from "./pwa/migrateAppsDenylistSw";
+import { required } from "./utils/required";
+
 import "./styles/index.css";
 
 initThemeOnDocument();
@@ -33,7 +35,7 @@ void i18nReady
     console.error("i18n init failed, rendering with defaults", error);
   })
   .finally(() => {
-    createRoot(document.getElementById("root")!).render(
+    createRoot(required(document.getElementById("root"), "#root element")).render(
       <StrictMode>
         <BrowserRouter basename={routerBasename}>
           <QueryClientProvider client={queryClient}>

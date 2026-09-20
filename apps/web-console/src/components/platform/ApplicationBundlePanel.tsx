@@ -55,7 +55,8 @@ export default function ApplicationBundlePanel({
     retry: false,
   });
 
-  const hasActiveDeploy = Boolean(exportQuery.data?.manifest);
+  const activeDeploy = exportQuery.data?.manifest ? exportQuery.data : undefined;
+  const hasActiveDeploy = activeDeploy !== undefined;
 
   useEffect(() => {
     setManifestDirty(false);
@@ -207,11 +208,11 @@ export default function ApplicationBundlePanel({
         />
       )}
 
-      {hasActiveDeploy && (
+      {activeDeploy && (
         <p className="op-muted application-bundle-status">
           {t("bundle.activeVersion", {
-            version: exportQuery.data!.version,
-            deployedAt: exportQuery.data!.deployedAt,
+            version: activeDeploy.version,
+            deployedAt: activeDeploy.deployedAt,
           })}
         </p>
       )}

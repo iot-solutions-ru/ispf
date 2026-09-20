@@ -59,6 +59,13 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Web Console lint gate at zero warnings** — `npm run lint` now runs with
+  `--max-warnings 0` (was 180). All `react-hooks/exhaustive-deps`,
+  `@typescript-eslint/no-non-null-assertion` and `react-refresh/only-export-components`
+  findings are fixed: `!` assertions replaced by `required()` / explicit guards, hook
+  dependencies corrected, and non-component exports (context hooks, helpers, catalogs)
+  moved to sibling `.ts` modules (`useAdminFocus`, `useAgentChat`, `useDashboardContext`,
+  `useTheme`, …) so Fast Refresh keeps component state.
 - **Batch function invoke** — `POST /api/v1/objects/by-path/functions/invoke-batch`
   (≤100 items, per-item ACL). Operator alarm bar **Acknowledge all** uses one HTTP call
   instead of N× `acknowledgeAlarm`.

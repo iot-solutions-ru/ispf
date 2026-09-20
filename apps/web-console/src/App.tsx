@@ -13,8 +13,8 @@ import {
   isAdminSession,
   isConfiguratorSession,
   setStoredSession,
-  type AuthSession,
 } from "./auth/session";
+import type { AuthSession } from "./auth/session";
 import { SESSION_INVALID_EVENT, SESSION_UPDATED_EVENT, validateStoredSession } from "./auth/validateSession";
 import {
   clearOidcCallbackParams,
@@ -45,14 +45,14 @@ import { useObjectTreeSearch } from "./hooks/useObjectTreeSearch";
 import { useMobileLayout } from "./hooks/useMobileLayout";
 import ObjectPropertiesEditor from "./components/objectEditor/ObjectPropertiesEditor";
 import ObjectTree from "./components/objectEditor/ObjectTree";
-import WorkspaceTabs, { type WorkspaceTabItem } from "./components/ui/WorkspaceTabs";
+import WorkspaceTabs from "./components/ui/WorkspaceTabs";
+import type { WorkspaceTabItem } from "./components/ui/WorkspaceTabs";
 import CreateObjectDialog from "./components/objectEditor/CreateObjectDialog";
-import {
-  emptySession,
-  mergeSession,
-  type DashboardSession,
-  type OpenDashboardOptions,
-} from "./components/dashboard/DashboardContext";
+import { emptySession, mergeSession } from "./components/dashboard/useDashboardContext";
+import type {
+  DashboardSession,
+  OpenDashboardOptions,
+} from "./components/dashboard/useDashboardContext";
 import AgentChatStatusBar from "./components/agent/AgentChatStatusBar";
 import AgentChatRunBootstrap from "./components/agent/AgentChatRunBootstrap";
 import PlatformUpdateBanner from "./components/platform/PlatformUpdateBanner";
@@ -65,7 +65,8 @@ import AdminWorkspaceFocusSync from "./components/agent/AdminWorkspaceFocusSync"
 import CommandPalette from "./components/ui/CommandPalette";
 import { useAgentRunStatus } from "./utils/agent/agentRunStatus";
 import AntdThemeProvider from "./antd/AntdThemeProvider";
-import { ThemeProvider, useThemeController } from "./theme";
+import { ThemeProvider } from "./theme";
+import { useThemeController } from "./useTheme";
 import { isBlueprintsPath } from "./types/blueprints";
 import {
   isOperatorAppChildPath,
@@ -272,6 +273,8 @@ function AppShell() {
     if (fromUrl && fromUrl !== selectedPath) {
       setSelectedPath(fromUrl);
     }
+    // One-way URL -> state sync; the reverse direction (selectedPath -> URL) is the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   useEffect(() => {
@@ -392,7 +395,7 @@ function AppShell() {
     workspaceTab === "explorer"
     && (!isMobileLayout || mobileExplorerPane === "detail");
 
-  const applyDashboardOpenOptions = (tabId: string, options?: OpenDashboardOptions) => {
+  const applyDashboardOpenOptions = useCallback((tabId: string, options?: OpenDashboardOptions) => {
     if (!options) {
       return;
     }
@@ -400,9 +403,9 @@ function AppShell() {
       ...current,
       [tabId]: mergeSession(current[tabId] ?? emptySession(), options),
     }));
-  };
+  }, []);
 
-  const openEditor = (path: string, options?: OpenDashboardOptions) => {
+  const openEditor = useCallback((path: string, options?: OpenDashboardOptions) => {
     const ctx = objectList.find((c) => c.path === path);
     if (!isSpecializedEditorObject(path, ctx?.type, ctx?.templateId)) {
       setSelectedPath(path);
@@ -432,7 +435,7 @@ function AppShell() {
       applyDashboardOpenOptions(tab.id, options);
     }
     setWorkspaceTab(tab.id);
-  };
+  }, [objectList, editorTabs, isMobileLayout, applyDashboardOpenOptions]);
 
   const handleTreeRowSelect = useCallback(
     (row: TreeRowSelection, event: { metaKey: boolean; shiftKey: boolean }) => {
@@ -556,7 +559,7 @@ function AppShell() {
     queryClient.clear();
   };
 
-  const selectOperatorApp = (appId: string) => {
+  const selectOperatorApp = useCallback((appId: string) => {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -574,7 +577,7 @@ function AppShell() {
       { replace: true }
     );
     setAppMode("operator");
-  };
+  }, [setSearchParams, setAppMode]);
 
   const openOperatorAppFromPath = useCallback(
     (path: string) => {
@@ -583,7 +586,7 @@ function AppShell() {
         selectOperatorApp(appId);
       }
     },
-    [operatorAppsQuery.data],
+    [operatorAppsQuery.data, selectOperatorApp],
   );
 
   const handleLoggedIn = (next: AuthSession) => {

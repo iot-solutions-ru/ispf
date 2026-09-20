@@ -26,6 +26,9 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- Lint-гейт Web Console на нуле предупреждений: `npm run lint` с `--max-warnings 0` (было 180);
+  исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
+  (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).
 - Пакетный invoke функций (`POST .../functions/invoke-batch`) и «Подтвердить все» в alarm bar.
 - Поиск по полному дереву объектов в Web Console (#204).
 - CEL-фильтр ленты журнала событий (#205).

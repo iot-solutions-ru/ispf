@@ -2,19 +2,20 @@ import { Alert, Button } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { downloadAgentAuditCsv } from "../../api/ai";
-import { useAgentChat } from "../../context/AgentChatContext";
 import type { AgentInteractionMode } from "../../api/ai";
+import { useAgentChat } from "../../context/useAgentChat";
 import AgentChatArtifacts, { AgentStarterSuggestions } from "./AgentChatArtifacts";
 import AgentChatComposeAttachments, {
   AgentMessageAttachmentPreview,
 } from "./AgentChatComposeAttachments";
-import { AgentChatMessageBody } from "../../utils/agent/agentChatMarkdown";
+import { AgentChatMessageBody } from "../../utils/agent/AgentChatMessageBody";
 import AgentSessionKnowledgePanel from "./AgentSessionKnowledgePanel";
 import { AgentRunDetails } from "./AgentRunDetails";
 import {
   type AgentChatAttachment,
 } from "../../utils/agent/agentChatAttachments";
 import { formatUserDateTime } from "../../utils/ui/formatDateTime";
+
 const CHAT_INPUT_MAX_HEIGHT_PX = 320;
 
 function resizeChatInput(textarea: HTMLTextAreaElement | null) {

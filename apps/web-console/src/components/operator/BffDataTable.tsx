@@ -75,7 +75,7 @@ export default function BffDataTable({
 }: BffDataTableProps) {
   const { t } = useTranslation(["operator", "common"]);
   const [filterDraft, setFilterDraft] = useState<Record<string, string>>({});
-  const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const columns = useMemo(() => (rows.length > 0 ? Object.keys(rows[0]) : []), [rows]);
   const activeFilterColumns = useMemo(() => {
     if (!filterable || columns.length === 0) return [];
     const requested = (filterColumns ?? []).filter((column) => columns.includes(column));

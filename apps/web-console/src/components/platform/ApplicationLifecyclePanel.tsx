@@ -162,10 +162,10 @@ export default function ApplicationLifecyclePanel({
                 <dd><code>{dataStatusQuery.data.version}</code></dd>
               </div>
             )}
-            {(dataStatusQuery.data.appliedMigrations?.length ?? 0) > 0 && (
+            {dataStatusQuery.data.appliedMigrations && dataStatusQuery.data.appliedMigrations.length > 0 && (
               <div>
                 <dt>{t("lifecycle.migrations")}</dt>
-                <dd>{dataStatusQuery.data.appliedMigrations!.join(", ")}</dd>
+                <dd>{dataStatusQuery.data.appliedMigrations.join(", ")}</dd>
               </div>
             )}
           </dl>

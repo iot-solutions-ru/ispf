@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { validateExpression } from "../../api";
@@ -8,8 +9,10 @@ import {
   PLATFORM_BINDING_ENTRIES,
   filterPlatformBindings,
   suggestPlatformBindingPrefix,
-  type BindingBuilderContext,
-  type PlatformBindingEntry,
+} from "../../utils/platform/platformBindings";
+import type {
+  BindingBuilderContext,
+  PlatformBindingEntry,
 } from "../../utils/platform/platformBindings";
 import type { BindingExpressionValidator } from "../../utils/binding/bindingExpressionValidation";
 import AnalyticsFormulaBrowser from "../analytics/AnalyticsFormulaBrowser";
@@ -19,8 +22,8 @@ import ObjectQuerySpecEditorModal from "../objectEditor/ObjectQuerySpecEditorMod
 import { PlatformRefPicker } from "../platform/PlatformRefPicker";
 import { minifyObjectQuerySpec } from "../../utils/object/objectQuerySpecUtils";
 import type { BindingFormulaLink, VariableDto } from "../../types";
-import { useAdminFocusOptional } from "../../context/AdminFocusContext";
-import { useAdminCopilotChatOptional } from "../../context/AdminCopilotChatContext";
+import { useAdminFocusOptional } from "../../context/useAdminFocus";
+import { useAdminCopilotChatOptional } from "../../context/useAdminCopilotChat";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
 
 export interface BindingExpressionFocusContext {

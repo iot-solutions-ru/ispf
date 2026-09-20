@@ -285,13 +285,15 @@ export class SheetFormulaEngine {
     const upper = addr.toUpperCase();
     const fullKey = `${sheetKey}!${upper}`;
     const isCurrentSheet =
-      sheetKey === this.workbookContext!.currentSheetName.toLowerCase();
+      sheetKey === this.requireWorkbookContext().currentSheetName.toLowerCase();
 
-    if (isCurrentSheet && this.computed.has(upper)) {
-      return this.computed.get(upper)!;
+    const currentSheetCached = isCurrentSheet ? this.computed.get(upper) : undefined;
+    if (currentSheetCached !== undefined) {
+      return currentSheetCached;
     }
-    if (this.workbookComputed.has(fullKey)) {
-      return this.workbookComputed.get(fullKey)!;
+    const workbookCached = this.workbookComputed.get(fullKey);
+    if (workbookCached !== undefined) {
+      return workbookCached;
     }
 
     if (isCurrentSheet && this.bindingAddresses.has(upper)) {
@@ -344,8 +346,15 @@ export class SheetFormulaEngine {
     return result;
   }
 
-  private recalcWorkbook(): void {
-    const currentSheet = this.workbookContext!.currentSheetName;
+  private requireWorkbookContext(): WorkbookFormulaContext {
+    if (!this.workbookContext) {
+      throw new Error("Workbook formula context is required for cross-sheet evaluation");
+    }
+    return this.workbookContext;
+  }
+
+  private recalcWorkbook(workbook: WorkbookFormulaContext): void {
+    const currentSheet = workbook.currentSheetName;
     const addresses = [...this.rawByAddr.keys()];
     const evalOrder = [
       ...addresses.filter((addr) => !isFormulaContent(this.rawByAddr.get(addr) ?? "")),
@@ -370,7 +379,7 @@ export class SheetFormulaEngine {
     this.computed.clear();
     this.workbookComputed.clear();
     if (this.workbookContext) {
-      this.recalcWorkbook();
+      this.recalcWorkbook(this.workbookContext);
       return;
     }
     const addresses = [...this.rawByAddr.keys()];
@@ -382,8 +391,9 @@ export class SheetFormulaEngine {
 
     const getCell = (address: string): SheetEvalResult => {
       const addr = address.toUpperCase();
-      if (this.computed.has(addr)) {
-        return this.computed.get(addr)!;
+      const cached = this.computed.get(addr);
+      if (cached !== undefined) {
+        return cached;
       }
       if (this.bindingAddresses.has(addr)) {
         const ext = this.externalByAddr.get(addr);

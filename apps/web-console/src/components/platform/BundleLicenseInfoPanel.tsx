@@ -5,7 +5,7 @@ import { Alert, Button, Space, Table, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { fetchPlatformLicense } from "../../api/platformLicense";
 import { parseManifestLicense } from "../../utils/platform/bundleLicenseUi";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 
 interface BundleLicenseInfoPanelProps {
   appId?: string;

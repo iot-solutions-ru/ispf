@@ -7,14 +7,13 @@ import {
   fetchDataSource,
   testDataSourceConnection,
   updateDataSource,
-  type DataSourceQueryResult,
 } from "../../api/platformSql";
+import type { DataSourceQueryResult } from "../../api/platformSql";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
 import BffDataTable from "../operator/BffDataTable";
-import DataSourceConnectionFields, {
-  isDataSourceConnectionValid,
-  type DataSourceConnectionMode,
-} from "./DataSourceConnectionFields";
+import DataSourceConnectionFields from "./DataSourceConnectionFields";
+import { isDataSourceConnectionValid } from "./dataSourceConnectionValidation";
+import type { DataSourceConnectionMode } from "./dataSourceConnectionValidation";
 
 const { TextArea } = Input;
 

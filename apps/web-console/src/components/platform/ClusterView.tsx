@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Typography } from "antd";
 import { fetchClusterHealth } from "../../api/clusterHealth";
 import ClusterHealthPanel from "./ClusterHealthCard";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 
 export default function ClusterView() {
   const { t } = useTranslation("system");

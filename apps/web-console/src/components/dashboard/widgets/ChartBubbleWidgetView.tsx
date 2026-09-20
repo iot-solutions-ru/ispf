@@ -16,7 +16,7 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import WidgetDragHandle from "../WidgetDragHandle";
-import { parseDemoPreview } from "../widgetDemoPreview";
+import { parseDemoPreview } from "../widgetDemoData";
 import { parseDemoBubblePoints } from "../../../utils/analytics/chartRadarBubbleUtils";
 
 interface ChartBubbleWidgetViewProps {

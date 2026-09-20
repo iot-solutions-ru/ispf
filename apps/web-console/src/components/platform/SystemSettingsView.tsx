@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Input, Popconfirm, Select, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   fetchPlatformRuntimeSettings,
@@ -9,13 +9,15 @@ import {
   patchPlatformRuntimeSettings,
   restartPlatformServer,
   waitForPlatformReady,
-  type PlatformRuntimeSetting,
-  type PlatformRuntimeSettingsSection,
+} from "../../api/platformRuntimeSettings";
+import type {
+  PlatformRuntimeSetting,
+  PlatformRuntimeSettingsSection,
 } from "../../api/platformRuntimeSettings";
 import { DatabaseSettingsCard } from "./DatabaseSettingsCard";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
-import type { AdminClientFocus } from "../../context/AdminFocusContext";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
 
 const INTEGRATIONS_TAB = "integrations" as const;
 
@@ -342,10 +344,13 @@ export default function SystemSettingsView() {
 
   const activeSection = settingsQuery.data?.sections.find((section) => section.id === activeTab);
 
-  const tabLabel = (tabId: string) =>
-    tabId === INTEGRATIONS_TAB
-      ? t("settings.tabs.integrations")
-      : t(`settings.sections.${tabId}`, tabId);
+  const tabLabel = useCallback(
+    (tabId: string) =>
+      tabId === INTEGRATIONS_TAB
+        ? t("settings.tabs.integrations")
+        : t(`settings.sections.${tabId}`, tabId),
+    [t]
+  );
 
   const settingsFocus = useMemo((): AdminClientFocus => {
     const sectionIds = settingsQuery.data?.sections.map((section) => section.id) ?? [];
@@ -371,7 +376,7 @@ export default function SystemSettingsView() {
             : `Settings section «${activeTab}» — runtime platform config rows`,
       },
     };
-  }, [activeTab, activeSection, allTabs, settingsQuery.data, t]);
+  }, [activeTab, activeSection, allTabs, settingsQuery.data, tabLabel]);
   usePublishAdminFocus("system-settings", settingsFocus, Boolean(settingsQuery.data));
 
   return (

@@ -17,7 +17,8 @@ import {
   snapCanvasCoordinate,
 } from "../../scada/document";
 import { findNearestPort, findPortOnElement, getElementPortPosition, rerouteConnectionsForElement, routeOrthogonal } from "../../scada/connectionRouting";
-import { snapElementPosition, type SnapGuide } from "../../scada/elementSnap";
+import { snapElementPosition } from "../../scada/elementSnap";
+import type { SnapGuide } from "../../scada/elementSnap";
 import {
   alignElements,
   applyElementResize,
@@ -27,15 +28,13 @@ import {
   getElementBounds,
   rotateElement,
   setElementSize,
-  type AlignMode,
-  type DistributeAxis,
-  type ResizeHandle,
 } from "../../scada/layoutOps";
+import type { AlignMode, DistributeAxis, ResizeHandle } from "../../scada/layoutOps";
 import { directionFromArrowKey, findElementInDirection } from "../../scada/mimicKeyboardNav";
 import { collectBindingInterests, collectBindingPaths, groupBindingVariablesByPath, resolveDocumentBindings } from "../../scada/bindingResolver";
 import { ensurePackLoaded, resolvePlacementSymbol } from "../../scada/symbols/registry";
 import { useVariablesBatchQuery } from "../../hooks/useVariablesQuery";
-import { useMimicHostSession } from "./MimicHostContext";
+import { useMimicHostSession } from "./useMimicHostSession";
 import ScadaMimicCanvas from "./ScadaMimicCanvas";
 import SymbolPalette from "./SymbolPalette";
 import MimicPropertiesPanel from "./MimicPropertiesPanel";
@@ -198,7 +197,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       setSelectedConnectionId(conn.id);
       setSelectedIds(new Set());
     },
-    [connectFrom, updateDocument]
+    [connectFrom, updateDocument, activeLayerId]
   );
 
   const handleConnectAtPoint = useCallback(

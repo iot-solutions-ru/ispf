@@ -41,6 +41,9 @@ export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidget
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Deliberately keyed on the serialized fields, not the `widget` object: the editor re-parses only
+  // when the SVG-related JSON changes, not on every unrelated widget edit (title, styles, ...).
+  /* eslint-disable react-hooks/exhaustive-deps */
   const behaviors = useMemo(() => readSvgWidgetBehaviors(widget), [widget.behaviorsJson, widget.topologyJson]);
   const bindings = useMemo(() => readSvgWidgetBindings(widget), [widget.bindingsJson, widget.topologyJson]);
   const bindingSchema = useMemo(
@@ -49,6 +52,7 @@ export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidget
   );
   const hitAreas = useMemo(() => readSvgWidgetHitAreas(widget), [widget.hitAreasJson, widget.topologyJson]);
   const svgInner = useMemo(() => readSvgWidgetInner(widget) ?? "", [widget.svgInnerJson, widget.topologyJson]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const pushState = (patch: Partial<{
     behaviors: MimicSymbolBehavior[];

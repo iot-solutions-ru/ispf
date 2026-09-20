@@ -5,7 +5,7 @@ import {
   formatDispatchStatus,
   resolveWidgetPath,
 } from "../dashboardUtils";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";

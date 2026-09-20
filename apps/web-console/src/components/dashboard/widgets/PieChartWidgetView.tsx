@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import type { PieChartWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { PieChartWidget } from "../../../types/dashboard";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { useEditorDemoRows } from "../widgetDemoPreview";
+import { useEditorDemoRows } from "../widgetDemoData";
 import { CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 
 const SLICE_COLORS = ["#2f81f7", "#3fb950", "#d29922", "#f85149", "#a371f7", "#39c5cf"];

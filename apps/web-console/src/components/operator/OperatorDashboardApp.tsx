@@ -2,19 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import type { AuthSession } from "../../auth/session";
 import { isAdminSession } from "../../auth/session";
+import type { AuthSession } from "../../auth/session";
 import { useOperatorUi } from "../../hooks/useOperatorUi";
 import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
 import { useOperatorAlarmBar } from "../../hooks/useOperatorAlarmBar";
-import {
-  resolveOperatorDashboard,
-  resolveOperatorReport,
-  type OperatorUi,
-} from "../../types/operatorUi";
+import { resolveOperatorDashboard, resolveOperatorReport } from "../../types/operatorUi";
+import type { OperatorUi } from "../../types/operatorUi";
 import type { DashboardLayoutPreset } from "../../types/dashboard";
 import { isVideoWallPreset } from "../dashboard/dashboardLayoutPresets";
-import { emptySession, mergeSession, type DashboardSession } from "../dashboard/DashboardContext";
+import { emptySession, mergeSession } from "../dashboard/useDashboardContext";
+import type { DashboardSession } from "../dashboard/useDashboardContext";
 import OperatorPreferences from "./OperatorPreferences";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
@@ -273,7 +271,7 @@ export default function OperatorDashboardApp({
   }, [activeDashboardPath, appId, viewKind]);
 
   const navigateDashboard = useCallback(
-    (path: string, options?: import("../dashboard/DashboardContext").OpenDashboardOptions) => {
+    (path: string, options?: import("../dashboard/useDashboardContext").OpenDashboardOptions) => {
       setSessionsByDashboard((prev) => {
         const current = prev[path] ?? loadStoredDashboardSession(appId, path) ?? emptySession();
         const next = options ? mergeSession(current, options) : current;
@@ -411,11 +409,11 @@ export default function OperatorDashboardApp({
         main={
           viewKind === "report" ? (
             <ReportBuilder key={activeReportPath} path={activeReportPath} operatorMode />
-          ) : videoWallMode ? (
+          ) : videoWallMode && layoutPreset ? (
             <OperatorVideoWallGrid
               dashboards={ui.dashboards}
               appId={appId}
-              layoutPreset={layoutPreset!}
+              layoutPreset={layoutPreset}
               sessionsByDashboard={sessionsByDashboard}
               onSessionChange={handleVideoWallSessionChange}
               onNavigateDashboard={navigateDashboard}

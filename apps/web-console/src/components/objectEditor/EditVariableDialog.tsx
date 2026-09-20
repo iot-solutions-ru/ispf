@@ -11,12 +11,13 @@ import {
 import { fetchSecurityRoles } from "../../api/securityRoles";
 import type { DataRecord, VariableDto } from "../../types";
 import DataRecordValueEditor from "../schema/DataRecordValueEditor";
-import VariableHistoryFields, {
+import VariableHistoryFields from "./VariableHistoryFields";
+import {
   historyStateEqual,
   historyStateFromVariable,
   telemetryModeToApi,
-  type VariableHistoryState,
-} from "./VariableHistoryFields";
+} from "./variableHistoryModel";
+import type { VariableHistoryState } from "./variableHistoryModel";
 import RoleMultiSelect from "../security/RoleMultiSelect";
 import { cloneRecord, recordsEqual } from "../../utils/ui/record";
 import { isDeletableUserVariable } from "../../utils/platform/systemVariables";

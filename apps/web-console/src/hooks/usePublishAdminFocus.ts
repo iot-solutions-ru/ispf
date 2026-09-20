@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
-import {
-  useAdminFocusOptional,
-  type AdminClientFocus,
-} from "../context/AdminFocusContext";
+import { useAdminFocusOptional } from "../context/useAdminFocus";
+import type { AdminClientFocus } from "../context/useAdminFocus";
 
 /**
  * Publishes a focus layer while mounted / while {@code active} is true.

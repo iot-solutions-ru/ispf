@@ -68,6 +68,9 @@ export default function SymbolPalette({
     };
   }, []);
 
+  // `packReady` is an invalidation signal: the symbol registry is a module-level store filled
+  // asynchronously by ensurePackLoaded(); these memos re-read it once the packs have landed.
+  /* eslint-disable react-hooks/exhaustive-deps */
   const paletteCategories = useMemo(() => listPaletteCategories(), [packReady]);
 
   const documentCustom = useMemo(() => listDocumentCustomSymbols(customSymbols), [customSymbols]);
@@ -91,6 +94,7 @@ export default function SymbolPalette({
     }
     return counts;
   }, [documentCustom.length, packReady, paletteCategories]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const totalCount = listAllSymbols().length + documentCustom.length;
   const categoryOptions = paletteCategories.map((cat) => ({
@@ -185,7 +189,8 @@ export default function SymbolPalette({
               style={{ height: virtualizer.getTotalSize(), position: "relative" }}
             >
               {virtualizer.getVirtualItems().map((item) => {
-                const sym = symbols[item.index]!;
+                const sym = symbols[item.index];
+                if (!sym) return null;
                 return (
                   <button
                     key={sym.id}

@@ -15,7 +15,7 @@ export interface ExpressionDebuggerSectionProps {
 }
 
 /** Phases operators can set breakpoints on (BL-149). */
-export const EXPRESSION_DEBUG_BREAKPOINT_PHASES = [
+const EXPRESSION_DEBUG_BREAKPOINT_PHASES = [
   "validate",
   "load-object",
   "variable-context",

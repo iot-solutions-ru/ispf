@@ -11,7 +11,8 @@ import type {
 } from "../../types/scadaMimic";
 import { createMimicId } from "../../scada/document";
 import { resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
-import CustomSvgEditor, { supportsSvgMarkupEditor } from "./CustomSvgEditor";
+import CustomSvgEditor from "./CustomSvgEditor";
+import { supportsSvgMarkupEditor } from "./customSvgElement";
 import MimicBindingSlotEditor from "./MimicBindingSlotEditor";
 
 interface MimicPropertiesPanelProps {

@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
-import type { DashboardSession } from "../dashboard/DashboardContext";
-import {
-  parseManifestSelectionJson,
-  type OperatorManifestDashboard,
-} from "../../types/operatorManifest";
+import type { DashboardSession } from "../dashboard/useDashboardContext";
+import { parseManifestSelectionJson } from "../../types/operatorManifest";
+import type { OperatorManifestDashboard } from "../../types/operatorManifest";
+
 interface ManifestEmbeddedDashboardProps {
   config: OperatorManifestDashboard;
 }

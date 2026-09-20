@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { CarouselWidget, DashboardWidget } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { useDashboardEditor } from "../DashboardEditorContext";
+import { useDashboardEditor } from "../useDashboardEditor";
 import { ContainerChildGridOrList } from "../ContainerChildGrid";
 import { renderWidgetList } from "../renderDashboardWidget";
 

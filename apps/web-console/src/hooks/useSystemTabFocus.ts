@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { AdminClientFocus } from "../context/AdminFocusContext";
+import type { AdminClientFocus } from "../context/useAdminFocus";
 import { usePublishAdminFocus } from "./usePublishAdminFocus";
 
 /**

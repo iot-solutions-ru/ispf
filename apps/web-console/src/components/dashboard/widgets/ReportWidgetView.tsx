@@ -1,20 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import {
-  downloadReportExportByPath,
-  fetchReport,
-  runReportByPathSync,
-  type ReportExportFormat,
-} from "../../../api/reports";
+import { downloadReportExportByPath, fetchReport, runReportByPathSync } from "../../../api/reports";
+import type { ReportExportFormat } from "../../../api/reports";
 import type { ReportWidget } from "../../../types/dashboard";
 import { parseJsonArray, parseJsonObject } from "../dashboardUtils";
-import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
+import { triggerDashboardOpen, useDashboardContext } from "../useDashboardContext";
 import { useWidgetStyles } from "../widgetStyles";
 import BffDataTable from "../../operator/BffDataTable";
 import ReportExportControls from "../../report/ReportExportControls";
 import { filterReportExportOptions } from "../../report/reportExportOptions";
-import { useOptionalUserTimeZone } from "../../../context/UserTimeZoneContext";
+import { useOptionalUserTimeZone } from "../../../context/useUserTimeZone";
 import { enrichReportRunParameters } from "../../../utils/report/reportRunParameters";
 
 interface ReportWidgetViewProps {
@@ -105,6 +101,11 @@ export default function ReportWidgetView({
     String(sessionParams[selectionParamKey]).trim() !== ""
       ? String(sessionParams[selectionParamKey])
       : null;
+
+  // Latest-callback ref: the auto-select effect below must not re-run when this closure changes,
+  // only when the report data / selection inputs change.
+  const applyRowSelectionRef = useRef(applyRowSelection);
+  applyRowSelectionRef.current = applyRowSelection;
 
   function applyRowSelection(
     row: Record<string, unknown> | null,
@@ -227,7 +228,7 @@ export default function ReportWidgetView({
       return;
     }
     if (widget.autoSelectFirstRow === true) {
-      applyRowSelection(runQuery.data.rows[0], { open: false });
+      applyRowSelectionRef.current(runQuery.data.rows[0], { open: false });
     }
   }, [
     widget.selectable,

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Space, Typography } from "antd";
 import { acquireEditLease, fetchEditLeases, releaseEditLease } from "../../api";
-import { useUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useUserTimeZone } from "../../context/useUserTimeZone";
 
 function leaseCoversPath(leasePath: string, objectPath: string): boolean {
   return objectPath === leasePath || objectPath.startsWith(`${leasePath}.`);

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, Button, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { fetchPlatformLicense } from "../../api/platformLicense";
-import { useOptionalUserTimeZone } from "../../context/UserTimeZoneContext";
+import { useOptionalUserTimeZone } from "../../context/useUserTimeZone";
 import { formatUserDateTime } from "../../utils/ui/formatDateTime";
 
 export default function PlatformLicenseCard() {

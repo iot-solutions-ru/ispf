@@ -89,6 +89,9 @@ export function useOperatorAppsRegistry(currentUi?: OperatorUi) {
     const merged = new Map(loaded.map((ui) => [ui.appId, ui]));
     merged.set(currentUi.appId, currentUi);
     return [...merged.values()];
+    // `uiSignature` folds appId + dataUpdatedAt of every query into one primitive so the merge
+    // re-runs exactly when a UI pack finishes loading, not on every useQueries() render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUi, uiSignature, uiQueries]);
 
   const isLoading =

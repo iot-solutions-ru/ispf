@@ -1,26 +1,10 @@
 import type { ReactNode } from "react";
 import { Input, InputNumber, Segmented } from "antd";
 import { useTranslation } from "react-i18next";
-
-export type DataSourceConnectionMode = "internal" | "external";
-
-export interface DataSourceConnectionValues {
-  connectionMode: DataSourceConnectionMode;
-  schemaName: string;
-  jdbcUrl: string;
-  jdbcDriverClass: string;
-  jdbcUsername: string;
-  jdbcPassword: string;
-  poolSize: number;
-}
-
-export function isDataSourceConnectionValid(
-  values: Pick<DataSourceConnectionValues, "connectionMode" | "schemaName" | "jdbcUrl">,
-): boolean {
-  return values.connectionMode === "external"
-    ? values.jdbcUrl.trim().length > 0
-    : values.schemaName.trim().length > 0;
-}
+import type {
+  DataSourceConnectionValues,
+  DataSourceConnectionMode,
+} from "./dataSourceConnectionValidation";
 
 interface DataSourceConnectionFieldsProps extends DataSourceConnectionValues {
   onConnectionModeChange: (mode: DataSourceConnectionMode) => void;

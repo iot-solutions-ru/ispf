@@ -2,15 +2,13 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { assertBffOk, bffInvoke, toBffInput } from "../../api/bff";
-import { downloadReportExport, runReport, type ReportExportFormat } from "../../api/reports";
+import { downloadReportExport, runReport } from "../../api/reports";
+import type { ReportExportFormat } from "../../api/reports";
 import ReportExportControls from "../report/ReportExportControls";
 import { invokeInputFromAction, validateActionInput } from "../../api/manifestInput";
 import { isActionVisible } from "../../api/manifestVisibility";
+import { resolveManifestScreenKind, selectionKeyForTable } from "../../types/operatorManifest";
 import type { OperatorManifestScreen } from "../../types/operatorManifest";
-import {
-  resolveManifestScreenKind,
-  selectionKeyForTable,
-} from "../../types/operatorManifest";
 import BffDataTable from "./BffDataTable";
 import ManifestActionForm from "./ManifestActionForm";
 import ManifestChartPanel from "./ManifestChartPanel";
@@ -21,6 +19,7 @@ import {
   readCachedManifestScreenSnapshot,
   screenSupportsOfflineCache,
 } from "../../utils/operator/operatorOfflineCache";
+import { required } from "../../utils/required";
 
 interface ManifestScreenProps {
   screen: OperatorManifestScreen;
@@ -43,7 +42,7 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
     refetchInterval: screen.table?.refreshIntervalMs,
     queryFn: async () => {
       try {
-        const table = screen.table!;
+        const table = required(screen.table, "screen.table");
         const wire = await bffInvoke<Array<Record<string, unknown>> | Record<string, unknown>>({
           objectPath: table.objectPath,
           functionName: table.functionName,
@@ -80,7 +79,7 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
     refetchInterval: screen.report?.refreshIntervalMs,
     queryFn: async () => {
       try {
-        const report = screen.report!;
+        const report = required(screen.report, "screen.report");
         const result = await runReport(appId, report.reportId, report.parameters);
         const labels = Object.fromEntries(result.columns.map((col) => [col.field, col.label]));
         const payload = { rows: result.rows, labels, truncated: result.truncated };
@@ -129,7 +128,7 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
         setExportBusy(false);
       }
     },
-    [appId, onStatus, screen.report]
+    [appId, onStatus, screen.report, t]
   );
 
   const actionMutation = useMutation({

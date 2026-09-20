@@ -32,7 +32,7 @@ export default function VisualGroupInspector({
     queryFn: () => fetchGroupMembers(path),
   });
 
-  const members = membersQuery.data ?? [];
+  const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
 
   const memberSummaries = useMemo(() => {
     const byPath = new Map(allObjects.map((obj) => [obj.path, obj]));

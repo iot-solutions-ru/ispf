@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { formatAdminFocusChip, useAdminFocusOptional } from "../../context/AdminFocusContext";
+import { formatAdminFocusChip } from "../../context/adminFocusUtils";
+import { useAdminFocusOptional } from "../../context/useAdminFocus";
 import ModalPortal from "../../ui/ModalPortal";
 import AdminCopilotPanel from "./AdminCopilotPanel";
 

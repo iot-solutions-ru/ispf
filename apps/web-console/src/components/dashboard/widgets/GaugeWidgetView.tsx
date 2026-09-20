@@ -1,7 +1,7 @@
 import type { GaugeWidget } from "../../../types/dashboard";
 import { useTranslation } from "react-i18next";
 import { resolveWidgetPath } from "../dashboardUtils";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";

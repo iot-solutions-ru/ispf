@@ -1,20 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DASHBOARD_GRID_MARGIN, mergeWidgetLayout } from "../../types/dashboard";
 import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
-import { DASHBOARD_GRID_MARGIN } from "../../types/dashboard";
-import { mergeWidgetLayout } from "../../types/dashboard";
 import renderDashboardWidget from "./renderDashboardWidget";
-import { useDashboardEditor } from "./DashboardEditorContext";
-import { parseSlotRefKey, slotRefKey, type WidgetSlotRef } from "./widgetLayoutTree";
+import { useDashboardEditor } from "./useDashboardEditor";
+import { parseSlotRefKey, slotRefKey } from "./widgetLayoutTree";
+import type { WidgetSlotRef } from "./widgetLayoutTree";
 import {
   isWidgetVisible,
   resolveWidgetZIndex,
   sortWidgetsForRender,
 } from "./widgetLayerUtils";
-import {
-  isWidgetVisibleAtRuntime,
-  type ContextWidgets,
-} from "./widgetRuntimeVisibility";
+import { isWidgetVisibleAtRuntime } from "./widgetRuntimeVisibility";
+import type { ContextWidgets } from "./widgetRuntimeVisibility";
 
 const SELECTED_Z_BOOST = 10_000;
 

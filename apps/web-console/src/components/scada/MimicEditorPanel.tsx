@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMimic, saveMimicDiagram, saveMimicTitle } from "../../api";
 import ScadaMimicEditor from "./ScadaMimicEditor";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
-import type { AdminClientFocus } from "../../context/AdminFocusContext";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
 
 interface MimicEditorPanelProps {
   path: string;

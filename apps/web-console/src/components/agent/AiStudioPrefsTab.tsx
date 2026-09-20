@@ -1,12 +1,9 @@
 import { Button } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAgentChat } from "../../context/AgentChatContext";
-import {
-  loadAiStudioPrefs,
-  saveAiStudioPrefs,
-  type AiStudioPrefs,
-} from "../../utils/agent/agentChatStorage";
+import { useAgentChat } from "../../context/useAgentChat";
+import { loadAiStudioPrefs, saveAiStudioPrefs } from "../../utils/agent/agentChatStorage";
+import type { AiStudioPrefs } from "../../utils/agent/agentChatStorage";
 
 export default function AiStudioPrefsTab() {
   const { t } = useTranslation(["ai", "common"]);

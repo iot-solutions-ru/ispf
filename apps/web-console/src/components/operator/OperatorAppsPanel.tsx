@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchObjects } from "../../api";
 import {
@@ -38,7 +38,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
     queryFn: () => fetchObjects(DASHBOARD_PARENT),
   });
 
-  const apps = appsQuery.data ?? [];
+  const apps = useMemo(() => appsQuery.data ?? [], [appsQuery.data]);
   const selectedAppId = useMemo(() => {
     if (!pathLeaf) {
       return "platform";
@@ -114,7 +114,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
     );
   };
 
-  const buildUi = (): OperatorUi | null => {
+  const buildUi = useCallback((): OperatorUi | null => {
     const dashboards: OperatorUiDashboard[] = selectedPaths.map((path) => {
       const obj = availableDashboards.find((item) => item.path === path);
       return { path, title: obj?.displayName ?? path.split(".").pop() ?? path };
@@ -135,7 +135,17 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       ...(hideTasksAndEvents ? { hideTasksAndEvents: true } : {}),
       ...(hideDashboardNav ? { hideDashboardNav: true } : {}),
     };
-  };
+  }, [
+    title,
+    defaultDashboard,
+    selectedPaths,
+    selectedAppId,
+    availableDashboards,
+    alarmBar,
+    agentInstructions,
+    hideTasksAndEvents,
+    hideDashboardNav,
+  ]);
 
   const dirty = useMemo(() => {
     const ui = uiQuery.data;
@@ -147,18 +157,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       return true;
     }
     return JSON.stringify(ui) !== JSON.stringify(draft);
-  }, [
-    uiQuery.data,
-    title,
-    defaultDashboard,
-    selectedPaths,
-    selectedAppId,
-    availableDashboards,
-    alarmBar,
-    agentInstructions,
-    hideTasksAndEvents,
-    hideDashboardNav,
-  ]);
+  }, [uiQuery.data, buildUi]);
 
   const handleSave = () => {
     const ui = buildUi();

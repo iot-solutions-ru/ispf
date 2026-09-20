@@ -5,9 +5,10 @@ import { invokeFunction, runWorkflow } from "../../../api";
 import { refreshWorkQueue } from "../../../hooks/workQueueCache";
 import type { DataRecord } from "../../../types";
 import type { FunctionButton, FunctionWidget } from "../../../types/dashboard";
-import { parseInstanceState, type WorkflowView } from "../../../types/workflow";
+import { parseInstanceState } from "../../../types/workflow";
+import type { WorkflowView } from "../../../types/workflow";
 import { parseFunctionInputJson, parseJsonArray, resolveWidgetPath } from "../dashboardUtils";
-import { useDashboardContext } from "../DashboardContext";
+import { useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 

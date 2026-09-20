@@ -1,18 +1,20 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { fetchObjects } from "../../../api";
-import type { ObjectTableColumn, ObjectTableWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { ObjectTableColumn, ObjectTableWidget } from "../../../types/dashboard";
 import type { VariableDto } from "../../../types";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
-import { useDashboardContext, triggerDashboardOpen } from "../DashboardContext";
+import { useDashboardContext, triggerDashboardOpen } from "../useDashboardContext";
 import { parseJsonObject, parseWidgetJsonArray, matchesNamePattern, objectTableValueField, formatObjectTableCell } from "../dashboardUtils";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import MultiPenTrendModal from "../../analytics/MultiPenTrendModal";
-import { createTrendPen, type TrendPen } from "../../../types/trendPen";
+import { createTrendPen } from "../../../types/trendPen";
+import type { TrendPen } from "../../../types/trendPen";
 
 const VIRTUALIZE_ROW_THRESHOLD = 50;
 const TABLE_ROW_ESTIMATE_PX = 36;
@@ -80,11 +82,15 @@ export default function ObjectTableWidgetView({
   });
 
   const virtualRows = shouldVirtualize ? rowVirtualizer.getVirtualItems() : [];
+  // Primitive key so the memo below tracks *which* rows are visible, not the virtualizer's array identity.
+  const visibleIndexKey = virtualRows.map((virtualRow) => virtualRow.index).join(",");
   const rowPaths = useMemo(() => {
     if (!shouldVirtualize) {
       return rows.map((row) => row.path);
     }
-    const visibleIndices = new Set(virtualRows.map((virtualRow) => virtualRow.index));
+    const visibleIndices = new Set(
+      visibleIndexKey === "" ? [] : visibleIndexKey.split(",").map((index) => Number(index))
+    );
     if (selectedPath) {
       const selectedIndex = rows.findIndex((row) => row.path === selectedPath);
       if (selectedIndex >= 0) {
@@ -95,7 +101,7 @@ export default function ObjectTableWidgetView({
       .sort((a, b) => a - b)
       .map((index) => rows[index]?.path)
       .filter((path): path is string => Boolean(path));
-  }, [rows, selectedPath, shouldVirtualize, virtualRows]);
+  }, [rows, selectedPath, shouldVirtualize, visibleIndexKey]);
   const variablesBatch = useVariablesBatchQuery(rowPaths, refreshIntervalMs, Boolean(widget.parentPath));
   const [trendModal, setTrendModal] = useState<{
     pens: TrendPen[];
@@ -110,7 +116,10 @@ export default function ObjectTableWidgetView({
   } | null>(null);
 
   const trendColumns = useMemo(
-    () => parsedColumns.filter((column) => Boolean(column.variable)),
+    () =>
+      parsedColumns.flatMap((column) =>
+        column.variable ? [{ ...column, variable: column.variable }] : []
+      ),
     [parsedColumns]
   );
 
@@ -139,7 +148,7 @@ export default function ObjectTableWidgetView({
     const availablePens = trendColumns.map((col, index) =>
       createTrendPen(
         path,
-        col.variable!,
+        col.variable,
         `${displayName} · ${col.label}`,
         objectTableValueField(col),
         index

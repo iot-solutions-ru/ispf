@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchAgentSessionTrace } from "../../api/ai";
 import type { AiAgentStep } from "../../api/ai";
+import { required } from "../../utils/required";
 
 function formatMs(value: unknown): string {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -29,7 +30,7 @@ export default function AgentTracePanel({
   const { t } = useTranslation("ai");
   const traceQuery = useQuery({
     queryKey: ["agent-trace", sessionId, turnId],
-    queryFn: () => fetchAgentSessionTrace(sessionId!, turnId ?? undefined),
+    queryFn: () => fetchAgentSessionTrace(required(sessionId, "sessionId"), turnId ?? undefined),
     enabled: Boolean(sessionId && turnId),
   });
 

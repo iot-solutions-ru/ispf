@@ -1,27 +1,30 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import cytoscape, { type Core, type LayoutOptions, type StylesheetStyle } from "cytoscape";
+import cytoscape from "cytoscape";
+import type { Core, LayoutOptions, StylesheetStyle } from "cytoscape";
 import type { NetworkGraphWidget } from "../../../types/dashboard";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { parseDemoPreview } from "../widgetDemoPreview";
+import { parseDemoPreview } from "../widgetDemoData";
 import {
-  type DemoNetworkGraphPreview,
-  type NetworkGraphFieldConfig,
-  type NetworkGraphLayout,
   parseDemoNetworkGraphPreview,
   parseNetworkGraphData,
   toCytoscapeElements,
+} from "../../../utils/analytics/networkGraphData";
+import type {
+  DemoNetworkGraphPreview,
+  NetworkGraphFieldConfig,
+  NetworkGraphLayout,
 } from "../../../utils/analytics/networkGraphData";
 import {
   elementsWithPreservedPositions,
   networkGraphApplyMode,
   shouldFitNetworkGraphOnApply,
   shouldFitNetworkGraphOnResize,
-  type NetworkGraphNodePosition,
 } from "../../../utils/analytics/networkGraphLayout";
+import type { NetworkGraphNodePosition } from "../../../utils/analytics/networkGraphLayout";
 import { useThemeColors } from "../../../utils/ui/themeColors";
 
 interface NetworkGraphWidgetViewProps {
@@ -141,7 +144,7 @@ export default function NetworkGraphWidgetView({
   );
 
   const isDemo = Boolean(editable && liveData.nodes.length === 0 && demoData);
-  const graphData = isDemo ? demoData! : liveData;
+  const graphData = isDemo && demoData ? demoData : liveData;
   const layout = (widget.layout ?? "cose") as NetworkGraphLayout;
   const elements = useMemo(() => toCytoscapeElements(graphData), [graphData]);
 

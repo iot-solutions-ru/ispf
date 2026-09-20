@@ -18,7 +18,7 @@ export interface AgentChatComposeAttachmentsProps {
   onReject?: (reason: "unsupported" | "vision-not-supported") => void;
 }
 
-export function useAgentChatAttachments(
+function useAgentChatAttachments(
   attachments: AgentChatAttachment[],
   onChange: (next: AgentChatAttachment[]) => void
 ) {

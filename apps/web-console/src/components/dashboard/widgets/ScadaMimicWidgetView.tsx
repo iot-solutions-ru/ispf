@@ -5,7 +5,7 @@ import { fetchMimic, invokeFunction, setVariable } from "../../../api";
 import type { ScadaMimicWidget } from "../../../types/dashboard";
 import type { MimicAction, MimicElement, ScadaMimicDocument } from "../../../types/scadaMimic";
 import { parseMimicDocument } from "../../../scada/document";
-import { parseSelectionJson } from "../dashboardUtils";
+import { parseSelectionJson, resolveWidgetPath } from "../dashboardUtils";
 import {
   collectBindingInterests,
   collectBindingPaths,
@@ -22,14 +22,14 @@ import {
   primaryAction,
 } from "../../../scada/mimicActions";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
-import { useDashboardContext } from "../DashboardContext";
-import { resolveWidgetPath } from "../dashboardUtils";
+import { useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { cloneRecord, setFieldValue } from "../../../utils/ui/record";
 import { asBool } from "../../../scada/utils";
 import ScadaMimicCanvas from "../../scada/ScadaMimicCanvas";
 import { ensurePackLoaded } from "../../../scada/symbols/registry";
 import { exportMimicSvgToPng, resolveMimicExportBackground } from "../../../scada/mimicPngExport";
+import { required } from "../../../utils/required";
 
 interface ScadaMimicWidgetViewProps {
   widget: ScadaMimicWidget;
@@ -114,7 +114,7 @@ export default function ScadaMimicWidgetView({
 
   const mimicQuery = useQuery({
     queryKey: ["mimic", widget.mimicPath],
-    queryFn: () => fetchMimic(widget.mimicPath!),
+    queryFn: () => fetchMimic(required(widget.mimicPath, "widget.mimicPath")),
     enabled: Boolean(widget.mimicPath?.trim()),
   });
 
@@ -166,7 +166,7 @@ export default function ScadaMimicWidgetView({
     bindingPaths.length > 0,
     bindingVariablesByPath
   );
-  const variablesByPath = variablesBatch.data ?? {};
+  const variablesByPath = useMemo(() => variablesBatch.data ?? {}, [variablesBatch.data]);
 
   const resolved = useMemo(
     () => resolveDocumentBindings(document.elements, document.connections, session, variablesByPath),
@@ -255,8 +255,9 @@ export default function ScadaMimicWidgetView({
           break;
         }
         case "toggleLayer": {
-          if (!action.layerId) break;
-          setRuntimeDoc((prev) => applyToggleLayer(prev ?? baseDocument, action.layerId!));
+          const layerId = action.layerId;
+          if (!layerId) break;
+          setRuntimeDoc((prev) => applyToggleLayer(prev ?? baseDocument, layerId));
           break;
         }
         case "cycleUnit": {

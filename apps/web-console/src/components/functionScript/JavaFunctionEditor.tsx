@@ -3,7 +3,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { java } from "@codemirror/lang-java";
 import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { EditorView } from "@codemirror/view";
-import { useTheme } from "../../theme";
+import { useTheme } from "../../useTheme";
 
 interface JavaFunctionEditorProps {
   value: string;

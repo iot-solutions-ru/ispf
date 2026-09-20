@@ -1,6 +1,7 @@
 import { Select } from "antd";
 import { useTranslation } from "react-i18next";
-import { useTheme, type ThemePreference } from "../../theme";
+import { useTheme } from "../../useTheme";
+import type { ThemePreference } from "../../useTheme";
 
 const OPTIONS: ThemePreference[] = ["system", "light", "dark"];
 

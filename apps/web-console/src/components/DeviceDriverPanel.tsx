@@ -9,9 +9,12 @@ import {
   fetchDrivers,
   startDriver,
   stopDriver,
+  pollDriver,
+  browseDriverNodes,
 } from "../api/drivers";
 import { formatDriverConfigJson } from "../utils/driverDefaults";
-import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBadge";
+import DriverMaturityBadge from "./DriverMaturityBadge";
+import { formatDriverOptionLabel } from "./driverOptionLabel";
 import DriverWriteForm from "./DriverWriteForm";
 import { driverSupportsWrite } from "../types/drivers";
 import type { VariableDto } from "../types";
@@ -20,8 +23,8 @@ import {
   buildHaystackMappingTemplate,
   COMMON_HAYSTACK_MARKER_TAGS,
 } from "../utils/object/haystackMappingHints";
-import { pollDriver, browseDriverNodes } from "../api/drivers";
 import SnmpMibPanel from "./SnmpMibPanel";
+import { required } from "../utils/required";
 
 const { TextArea } = Input;
 
@@ -494,7 +497,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                         <Button
                           size="small"
                           className="driver-haystack-apply"
-                          onClick={() => applyHaystackTemplate(issue.key!, issue.suggestedTags!)}
+                          onClick={() => applyHaystackTemplate(required(issue.key, "issue.key"), required(issue.suggestedTags, "issue.suggestedTags"))}
                         >
                           {t("inspector:driver.haystackApplyTemplate")}
                         </Button>

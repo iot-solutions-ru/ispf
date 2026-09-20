@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { DashboardLinkWidget } from "../../../types/dashboard";
 import { useTranslation } from "react-i18next";
 import { parseJsonArray, parseJsonObject, parseSelectionJson } from "../dashboardUtils";
-import { useDashboardContext, triggerDashboardOpen } from "../DashboardContext";
+import { useDashboardContext, triggerDashboardOpen } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 

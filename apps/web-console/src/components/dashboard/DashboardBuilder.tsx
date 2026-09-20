@@ -13,19 +13,23 @@ import {
   applyDashboardLayoutTemplate,
   fetchDashboardLayoutTemplates,
 } from "../../api/dashboardsCore";
-import type { DashboardLayout, DashboardLayoutPreset, DashboardView, DashboardWidget, WidgetType } from "../../types/dashboard";
 import { layoutToJson, newWidget, resolveDashboardLayout } from "../../types/dashboard";
+import type {
+  DashboardLayout,
+  DashboardLayoutPreset,
+  DashboardView,
+  DashboardWidget,
+  WidgetType,
+} from "../../types/dashboard";
 import WidgetPalette from "./WidgetPalette";
 import { WIDGET_SAMPLE_PATHS } from "./widgetSamples";
-import {
-  DashboardProvider,
-  mergeSession,
-  type DashboardSession,
-  type OpenDashboardOptions,
-} from "./DashboardContext";
+import { DashboardProvider } from "./DashboardContext";
+import { mergeSession } from "./useDashboardContext";
+import type { DashboardSession, OpenDashboardOptions } from "./useDashboardContext";
 import DashboardGrid from "./DashboardGrid";
 import DashboardModal from "./DashboardModal";
-import { DashboardEditorProvider, type ContainerActiveSlots } from "./DashboardEditorContext";
+import { DashboardEditorProvider } from "./DashboardEditorContext";
+import type { ContainerActiveSlots } from "./useDashboardEditor";
 import {
   findWidgetInLayout,
   getChildrenAtSlot,
@@ -52,7 +56,7 @@ import { applyLayoutPreset, isVideoWallPreset } from "./dashboardLayoutPresets";
 import { widgetDataBinding } from "./widgetEditorBinding";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
 import { useMimicHistory } from "../../hooks/useMimicHistory";
-import type { AdminClientFocus } from "../../context/AdminFocusContext";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
 import PathBreadcrumb from "../ui/PathBreadcrumb";
 
 interface DashboardBuilderProps {
@@ -411,7 +415,7 @@ export default function DashboardBuilder({
     },
   });
 
-  const addWidget = (type: WidgetType) => {
+  const addWidget = useCallback((type: WidgetType) => {
     const slot = resolveAddTargetSlot(layout, selectedWidgetId, activeSlots);
     const siblings = getChildrenAtSlot(layout, slot);
     const position = defaultChildPosition(siblings, layout.columns);
@@ -426,7 +430,7 @@ export default function DashboardBuilder({
     setSelectedWidgetId(widget.id);
     setEditorSidePanel("widget");
     setMode("edit");
-  };
+  }, [layout, selectedWidgetId, activeSlots, commitLayout]);
 
   const selectWidget = (widgetId: string | null) => {
     setSelectedWidgetId(widgetId);
@@ -439,18 +443,24 @@ export default function DashboardBuilder({
     commitLayout(setChildrenAtSlot(layout, { kind: "root" }, widgets));
   };
 
-  const updateWidget = (widget: DashboardWidget) => {
+  const updateWidget = useCallback((widget: DashboardWidget) => {
     commitLayout(updateWidgetInLayout(layout, widget));
-  };
+  }, [layout, commitLayout]);
 
-  const setChildrenAtSlotDraft = (slot: import("./widgetLayoutTree").WidgetSlotRef, children: DashboardWidget[]) => {
-    commitLayout(setChildrenAtSlot(layout, slot, children));
-  };
+  const setChildrenAtSlotDraft = useCallback(
+    (slot: import("./widgetLayoutTree").WidgetSlotRef, children: DashboardWidget[]) => {
+      commitLayout(setChildrenAtSlot(layout, slot, children));
+    },
+    [layout, commitLayout]
+  );
 
-  const reparentToSlot = (widgetId: string, slot: import("./widgetLayoutTree").WidgetSlotRef) => {
-    commitLayout(reparentWidgetToSlot(layout, widgetId, slot));
-    setSelectedWidgetId(widgetId);
-  };
+  const reparentToSlot = useCallback(
+    (widgetId: string, slot: import("./widgetLayoutTree").WidgetSlotRef) => {
+      commitLayout(reparentWidgetToSlot(layout, widgetId, slot));
+      setSelectedWidgetId(widgetId);
+    },
+    [layout, commitLayout]
+  );
 
   const updateLayoutSettings = (patch: Partial<DashboardLayout>) => {
     commitLayout({ ...layout, ...patch });
@@ -526,7 +536,9 @@ export default function DashboardBuilder({
       isEditorWorkspace,
       layout,
       refreshIntervalMs,
+      reparentToSlot,
       selectedWidgetId,
+      setChildrenAtSlotDraft,
       updateWidget,
     ]
   );
@@ -546,7 +558,7 @@ export default function DashboardBuilder({
             },
           })
         : currentSession,
-    [currentSession, isEditorWorkspace]
+    [currentSession, isEditorWorkspace, t]
   );
 
   useEffect(() => {

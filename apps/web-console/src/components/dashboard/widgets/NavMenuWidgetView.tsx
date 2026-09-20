@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { NavMenuWidget } from "../../../types/dashboard";
-import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
+import { triggerDashboardOpen, useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { parseJsonArray } from "../dashboardUtils";
 import { useWidgetStyles } from "../widgetStyles";

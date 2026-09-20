@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Alert, Button, Form, Modal, Space } from "antd";
 import { createAlertRule, fetchVariables, validateExpression } from "../../api";
 import type { AlertRuleFormValues } from "../../types/automation";
-import AlertRuleFormFields, { toCreateAlertRulePayload } from "./AlertRuleFormFields";
+import AlertRuleFormFields from "./AlertRuleFormFields";
+import { toCreateAlertRulePayload } from "./alertRulePayload";
 
 interface CreateAlertRuleDialogProps {
   onClose: () => void;

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTheme } from "../../theme";
+import { useTheme } from "../../useTheme";
 
 function readCssVar(name: string, fallback: string): string {
   if (typeof document === "undefined") {
@@ -21,6 +21,8 @@ export function useThemeColors() {
       networkNodeText: readCssVar("--network-node-text", "#e8eaed"),
       networkEdgeColor: readCssVar("--network-edge-color", "#6b7280"),
     }),
+    // CSS variables are re-read when the theme flips; `resolvedTheme` is the trigger, not an input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [resolvedTheme]
   );
 }

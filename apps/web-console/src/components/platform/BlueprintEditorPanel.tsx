@@ -28,15 +28,18 @@ import {
   catalogRootForBlueprintType,
   isBlueprintCatalogRoot,
   blueprintNameFromPath,
-  type BlueprintBindingRule,
-  type BlueprintCatalogRoot,
-  type BlueprintDto,
-  type BlueprintType,
-  type BlueprintVariableDefinition,
+} from "../../types/blueprints";
+import type {
+  BlueprintBindingRule,
+  BlueprintCatalogRoot,
+  BlueprintDto,
+  BlueprintType,
+  BlueprintVariableDefinition,
 } from "../../types/blueprints";
 import { recordDisplayValue } from "../../utils/tree/tree";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
-import { formatHistoryRetention } from "../objectEditor/VariableHistoryFields";
+import { formatHistoryRetention } from "../objectEditor/variableHistoryModel";
+import { required } from "../../utils/required";
 
 interface BlueprintEditorPanelProps {
   selectedPath: string;
@@ -1136,7 +1139,7 @@ export default function BlueprintEditorPanel({
 
   const modelQuery = useQuery({
     queryKey: ["BLUEPRINT", modelName],
-    queryFn: () => fetchBlueprintByName(modelName!),
+    queryFn: () => fetchBlueprintByName(required(modelName, "modelName")),
     enabled: !!modelName,
   });
 

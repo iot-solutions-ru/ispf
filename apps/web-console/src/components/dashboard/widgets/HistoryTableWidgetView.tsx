@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchVariableHistory } from "../../../api";
-import type { HistoryTableRange } from "../../../types/dashboard";
 import { historyTableRangeLabel } from "../../../types/dashboard";
-import type { HistoryTableWidget } from "../../../types/dashboard";
+import type { HistoryTableRange, HistoryTableWidget } from "../../../types/dashboard";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { historyRangeFrom, isCalendarHistoryRange, type HistoryRange } from "../../../hooks/useVariableHistory";
-import { useOptionalUserTimeZone } from "../../../context/UserTimeZoneContext";
+import { historyRangeFrom, isCalendarHistoryRange } from "../../../hooks/useVariableHistory";
+import type { HistoryRange } from "../../../hooks/useVariableHistory";
+import { useOptionalUserTimeZone } from "../../../context/useUserTimeZone";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 

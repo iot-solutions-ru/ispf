@@ -7,6 +7,7 @@ import {
   fetchAgentSessionDocuments,
   uploadAgentSessionDocument,
 } from "../../api/ai";
+import { required } from "../../utils/required";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) {
@@ -27,12 +28,12 @@ export default function AgentSessionKnowledgePanel({ sessionId }: { sessionId: s
 
   const docsQuery = useQuery({
     queryKey: ["agent-session-documents", sessionId],
-    queryFn: () => fetchAgentSessionDocuments(sessionId!),
+    queryFn: () => fetchAgentSessionDocuments(required(sessionId, "sessionId")),
     enabled: Boolean(sessionId),
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => uploadAgentSessionDocument(sessionId!, file, description),
+    mutationFn: async (file: File) => uploadAgentSessionDocument(required(sessionId, "sessionId"), file, description),
     onSuccess: () => {
       setDescription("");
       setUploadError(null);
@@ -45,7 +46,7 @@ export default function AgentSessionKnowledgePanel({ sessionId }: { sessionId: s
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (docId: string) => deleteAgentSessionDocument(sessionId!, docId),
+    mutationFn: (docId: string) => deleteAgentSessionDocument(required(sessionId, "sessionId"), docId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-session-documents", sessionId] });
     },

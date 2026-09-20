@@ -8,10 +8,6 @@ export type SpreadsheetImportNoticeState =
   | { kind: "warning"; sheetCount: number; report: SheetImportReport }
   | { kind: "error" };
 
-export function hasSpreadsheetImportIssues(report: SheetImportReport): boolean {
-  return report.unsupportedFunctions.length > 0 || report.truncations.length > 0;
-}
-
 interface SpreadsheetImportNoticeProps {
   notice: SpreadsheetImportNoticeState;
   onDismiss: () => void;

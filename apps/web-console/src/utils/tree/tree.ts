@@ -1,6 +1,7 @@
 import type { ObjectSummary, TreeNode } from "../../types";
 import { objectTreeKey, treeParentPath } from "./treeRowKey";
 import { APPLICATIONS_ROOT } from "../object/createObjectMode";
+import { getOrCreate } from "../required";
 
 /** Hide legacy mirror subfolders under an app; keep the Applications folder and app nodes visible. */
 function isHiddenLegacyApplicationPath(path: string): boolean {
@@ -51,19 +52,12 @@ export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
 
   for (const ctx of objects) {
     if (ctx.groupRef) {
-      const parentPath = treeParentPath(ctx);
-      if (!childMap.has(parentPath)) {
-        childMap.set(parentPath, []);
-      }
-      childMap.get(parentPath)!.push(ctx);
+      getOrCreate(childMap, treeParentPath(ctx), () => []).push(ctx);
       continue;
     }
     const dot = ctx.path.lastIndexOf(".");
     const parentPath = dot === -1 ? "" : ctx.path.slice(0, dot);
-    if (!childMap.has(parentPath)) {
-      childMap.set(parentPath, []);
-    }
-    childMap.get(parentPath)!.push(ctx);
+    getOrCreate(childMap, parentPath, () => []).push(ctx);
   }
 
   for (const list of childMap.values()) {

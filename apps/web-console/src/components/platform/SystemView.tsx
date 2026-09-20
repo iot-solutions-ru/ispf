@@ -14,7 +14,7 @@ import SemanticExportPanel from "./SemanticExportPanel";
 import SolutionCatalogPanel from "./SolutionCatalogPanel";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
 import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
-import type { AdminClientFocus } from "../../context/AdminFocusContext";
+import type { AdminClientFocus } from "../../context/useAdminFocus";
 
 type SystemTab =
   | "metrics"

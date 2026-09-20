@@ -7,7 +7,8 @@ import type { AlertRuleFormValues } from "../../types/automation";
 import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
 import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
 import ObjectFederationBindSection from "../federation/ObjectFederationBindSection";
-import AlertRuleFormFields, { toCreateAlertRulePayload } from "./AlertRuleFormFields";
+import AlertRuleFormFields from "./AlertRuleFormFields";
+import { toCreateAlertRulePayload } from "./alertRulePayload";
 
 interface AlertRuleInspectorProps {
   path: string;

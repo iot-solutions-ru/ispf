@@ -1,13 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   agentApiUnavailableMessage,
@@ -24,17 +16,16 @@ import {
   isAgentAcceptedResponse,
   isAgentTurnResultDeliveryError,
   waitUntilAgentRunIdle,
-  type AiAgentChatResponse,
-  type AiAgentSession,
-  type AiAgentSessionSummary,
-  type AiAgentStep,
-  type AiAgentTool,
-  type AiAgentTurn,
-  type AiProviderStatus,
-  type AgentClientFocus,
-  type AgentInteractionMode,
-  type AgentMessageAttachmentMeta,
-  type AgentPlanState,
+} from "../api/ai";
+import type {
+  AiAgentChatResponse,
+  AiAgentSession,
+  AiAgentSessionSummary,
+  AiAgentStep,
+  AiAgentTurn,
+  AgentClientFocus,
+  AgentInteractionMode,
+  AgentPlanState,
 } from "../api/ai";
 import {
   clearAgentChatIndex,
@@ -45,65 +36,23 @@ import {
   saveAgentChatIndex,
   saveAiStudioPrefs,
   upsertChatEntry,
-  type AgentChatIndex,
 } from "../utils/agent/agentChatStorage";
+import type { AgentChatIndex } from "../utils/agent/agentChatStorage";
 import i18n from "../i18n";
 import {
   buildAttachmentApiPayload,
   revokeAttachmentPreviews,
-  type AgentChatAttachment,
 } from "../utils/agent/agentChatAttachments";
+import type { AgentChatAttachment } from "../utils/agent/agentChatAttachments";
 import { publishAgentRunStatus } from "../utils/agent/agentRunStatus";
 import {
   formatRefinePlanMessage,
   isExecuteIntentSuggestion,
   isPlanApprovalSuggestion,
-  type OperatorAgentSuggestion,
 } from "../utils/operator/operatorAgentArtifacts";
-
-export interface ChatMessage {
-  id: string;
-  role: "user" | "agent";
-  text: string;
-  attachments?: AgentMessageAttachmentMeta[];
-  interactionMode?: AgentInteractionMode;
-  steps?: AiAgentStep[];
-  result?: Record<string, unknown>;
-  status?: string;
-  turnId?: string;
-}
-
-interface AgentChatContextValue {
-  provider: AiProviderStatus | undefined;
-  providerLoading: boolean;
-  providerReachable: boolean;
-  agentApiReady: boolean;
-  agentApiChecking: boolean;
-  agentApiBanner: string | null;
-  agentTools: AiAgentTool[] | undefined;
-  chatIndex: AgentChatIndex;
-  activeSessionId: string | null;
-  messages: ChatMessage[];
-  loadingSession: boolean;
-  isPending: boolean;
-  liveSteps: AiAgentStep[];
-  livePlanPhase?: AgentPlanState["planPhase"];
-  pendingUserMessage: string | null;
-  defaultRootPath: string;
-  startNewChat: () => Promise<void>;
-  switchSession: (sessionId: string) => Promise<void>;
-  deleteChat: (sessionId: string) => Promise<void>;
-  sendMessage: (
-    text: string,
-    options?: { attachments?: AgentChatAttachment[]; clientFocus?: AgentClientFocus | null }
-  ) => Promise<void>;
-  cancelRun: () => Promise<void>;
-  clearLocalChatIndex: () => void;
-  interactionMode: AgentInteractionMode;
-  setInteractionMode: (mode: AgentInteractionMode) => void;
-}
-
-const AgentChatContext = createContext<AgentChatContextValue | null>(null);
+import type { OperatorAgentSuggestion } from "../utils/operator/operatorAgentArtifacts";
+import { AgentChatContext } from "./useAgentChat";
+import type { ChatMessage, AgentChatContextValue } from "./useAgentChat";
 
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -632,8 +581,9 @@ export function AgentChatProvider({
           registerSession(session, loadAgentChatIndex("studio"), sessionId);
           turnCountRef.current = 0;
         }
+        const resolvedSessionId: string = sessionId;
 
-        const liveSession = await fetchAgentSession(sessionId);
+        const liveSession = await fetchAgentSession(resolvedSessionId);
         baselineTurnsAtSendRef.current = liveSession.turns.length;
         turnCountRef.current = liveSession.turns.length;
         turnDeliveredRef.current = false;
@@ -649,7 +599,7 @@ export function AgentChatProvider({
 
         const runTurnAsync = async () => {
           const ack = await sendAgentMessage(
-            sessionId!,
+            resolvedSessionId,
             trimmed,
             rootPath,
             interactionMode,
@@ -660,7 +610,7 @@ export function AgentChatProvider({
             i18n.language
           );
           if (isAgentAcceptedResponse(ack)) {
-            return waitForAgentTurnCompletion(sessionId!, onProgress, {
+            return waitForAgentTurnCompletion(resolvedSessionId, onProgress, {
               baselineTurnCount: baselineTurnsAtSendRef.current,
             });
           }
@@ -813,14 +763,3 @@ export function AgentChatProvider({
   return <AgentChatContext.Provider value={value}>{children}</AgentChatContext.Provider>;
 }
 
-export function useAgentChat(): AgentChatContextValue {
-  const ctx = useContext(AgentChatContext);
-  if (!ctx) {
-    throw new Error("useAgentChat must be used within AgentChatProvider");
-  }
-  return ctx;
-}
-
-export function useAgentChatOptional(): AgentChatContextValue | null {
-  return useContext(AgentChatContext);
-}
