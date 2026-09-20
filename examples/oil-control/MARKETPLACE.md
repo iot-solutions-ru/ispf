@@ -7,7 +7,7 @@
 | Package / appId | `oil-control` |
 | Display name | Ойл Контроль |
 | Bundle | `examples/oil-control/bundle.json` (+ sql V1–V8) |
-| UI pack | `examples/oil-control-ui/oil-control-ui-0.5.0.zip` (`artifactKind: ui-pack`) |
+| UI pack | `examples/marketplace-catalog/oil-control-ui/oil-control-ui-0.5.0.zip` (`artifactKind: ui-pack`) |
 | Версия | `0.5.0` (bundle ↔ SPA) |
 | Catalog | `examples/marketplace-catalog/oil-control/` + `…/oil-control-ui/` |
 | Bridge | `operatorUi.externalSpaUrl` = http://82.146.32.188/ |
@@ -26,7 +26,7 @@ From SPA repo `oil-control-azs-web`:
 npm run pack:ui
 ```
 
-Copy `pack/oil-control-ui-0.5.0.zip` into `examples/oil-control-ui/` (and catalog mirror).
+Copy `pack/oil-control-ui-0.5.0.zip` into `examples/marketplace-catalog/oil-control-ui/` (the only tracked copy; `tools/repo-hygiene/check-tracked-binaries.mjs` rejects mirrors).
 
 ## Не включать в application JAR
 

@@ -12,7 +12,7 @@ From repo root:
 
 Produces:
 
-- `analytics-pack-demo-1.0.0.zip` — installable archive
+- `analytics-pack-demo-1.0.0.zip` — installable archive (build output, git-ignored; `deploy/tools/publish-marketplace-analytics-pack.ps1` rebuilds it before publishing)
 - `listing.manifest.json` — marketplace catalog entry
 
 ## Local install (dev/lab)

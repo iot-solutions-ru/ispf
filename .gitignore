@@ -156,6 +156,9 @@ tmp-*.cjs
 tmp-*.mjs
 /tmp*
 packages.zip
+# Analytics pack zips are Gradle outputs (assembleAnalyticsMarketplaceZip), not sources.
+examples/marketplace-analytics-pack-demo/*.zip
+examples/marketplace-analytics-energy-pack-demo/*.zip
 apps/web-console/tmp-bpmn-*
 apps/web-console/web-console-hotfix.zip
 tmp-ci-backend-log.txt

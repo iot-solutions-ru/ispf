@@ -8,7 +8,7 @@
 |------|------|
 | Product bundle | `examples/it-infra-monitoring/bundle.json` (**v1.1.2**, ITM MMI) |
 | UI overlay | `examples/it-infra-monitoring/m11-ui-overlay.json` (applied by `build-bundle.mjs`) |
-| UI pack | `examples/m11-monitor-ui/` (`m11-monitor-ui-0.1.0.zip`, base `/apps/it-infra-monitoring/`) |
+| UI pack | `examples/marketplace-catalog/m11-monitor-ui/` (`m11-monitor-ui-0.1.0.zip`, base `/apps/it-infra-monitoring/`; notes in `examples/m11-monitor-ui/`) |
 | Site inventory | `plugins/itm-site-inventory/sites/m11/bundle.json` |
 | Site topology | `plugins/itm-site-topology/sites/m11/bundle.json` |
 | Site integrations | `plugins/itm-site-integrations/sites/m11/bundle.json` |

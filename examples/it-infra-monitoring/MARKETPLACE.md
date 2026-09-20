@@ -7,7 +7,7 @@
 | Package / appId | `it-infra-monitoring` |
 | Display name | Мониторинг ИТ-инфраструктуры |
 | Bundle | `examples/it-infra-monitoring/bundle.json` **v1.1.2** |
-| UI pack | `examples/m11-monitor-ui/m11-monitor-ui-0.1.0.zip` |
+| UI pack | `examples/marketplace-catalog/m11-monitor-ui/m11-monitor-ui-0.1.0.zip` |
 | Site plugins | inventory / topology / integrations (`sites/m11`) |
 | Catalog | `examples/marketplace-catalog/it-infra-monitoring/` + `…/m11-monitor-ui/` |
 | Bridge | `operatorUi.uiPack` → `/apps/it-infra-monitoring/` |

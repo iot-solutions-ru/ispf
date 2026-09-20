@@ -7,7 +7,7 @@
 | Package / appId | `storetwin` |
 | Display name | Цифровой двойник розничной точки |
 | Bundle | `examples/storetwin/bundle.json` (+ `sql/st_v2_ui_parity.sql`) |
-| UI pack | `examples/storetwin-ui/storetwin-ui-1.0.0.zip` (`artifactKind: ui-pack`) |
+| UI pack | `examples/marketplace-catalog/storetwin-ui/storetwin-ui-1.0.0.zip` (`artifactKind: ui-pack`) |
 | Версия | app `1.1.6` · ui-pack `1.0.0` |
 | Catalog | `examples/marketplace-catalog/storetwin/` + `…/storetwin-ui/` |
 | Bridge | `operatorUi.externalSpaUrl` = https://ispf.ai/apps/storetwin/ |
@@ -26,7 +26,7 @@ From SPA repo (`app/` in StoreTwin project):
 cd app && npm run pack:ui
 ```
 
-Copy `ispf/storetwin-ui-1.0.0.zip` into `examples/storetwin-ui/` (and catalog mirror).
+Copy `ispf/storetwin-ui-1.0.0.zip` into `examples/marketplace-catalog/storetwin-ui/` (the only tracked copy; `tools/repo-hygiene/check-tracked-binaries.mjs` rejects mirrors).
 
 ## Не включать в application JAR
 
