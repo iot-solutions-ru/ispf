@@ -4,6 +4,7 @@
   "action.close": "Закрыть",
   "action.confirmDeleteEvent": "Удалить событие \"{{name}}\"?",
   "action.confirmDeleteFunction": "Удалить функцию \"{{name}}\"?",
+  "action.confirmDeleteVariable": "Удалить переменную \"{{name}}\"?",
   "action.confirmDeleteNamed": "Удалить «{{name}}»?",
   "action.confirmDeleteObject": "Удалить объект «{{name}}» и все дочерние элементы?",
   "action.confirmDeleteRole": "Удалить роль \"{{name}}\"?",

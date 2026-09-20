@@ -6,6 +6,7 @@ import {
   deleteEvent,
   deleteFunction,
   deleteObject,
+  deleteVariable,
   fetchAnalyticsTags,
   fetchObjectEditor,
   setVariable,
@@ -41,7 +42,7 @@ import VariableHistoryFields, {
   type VariableHistoryState,
 } from "./VariableHistoryFields";
 import { canDeleteObjectPath } from "../../utils/platform/platformSystemPaths";
-import { filterUserVariableNames, isHiddenObjectVariable } from "../../utils/platform/systemVariables";
+import { filterUserVariableNames, isDeletableUserVariable, isHiddenObjectVariable } from "../../utils/platform/systemVariables";
 import { localizedSystemObjectDescription } from "../../utils/platform/systemFolderI18n";
 import CreateVariableDialog from "./CreateVariableDialog";
 import EditDescriptorDialog from "./EditDescriptorDialog";
@@ -138,6 +139,8 @@ function VariableEditorRow({
   onChange,
   onHistoryChange,
   onOpenSettings,
+  onDelete,
+  deleting = false,
 }: {
   variable: VariableDto;
   record?: DataRecord;
@@ -147,6 +150,8 @@ function VariableEditorRow({
   onChange: (next: DataRecord) => void;
   onHistoryChange: (next: VariableHistoryState) => void;
   onOpenSettings?: () => void;
+  onDelete?: () => void;
+  deleting?: boolean;
   canManage?: boolean;
 }) {
   const { t } = useTranslation(["inspector", "common"]);
@@ -189,6 +194,17 @@ function VariableEditorRow({
           {onOpenSettings && (
             <Button size="small" onClick={onOpenSettings}>
               {t("variables.settings")}
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              size="small"
+              danger
+              loading={deleting}
+              disabled={deleting}
+              onClick={onDelete}
+            >
+              {t("common:action.delete")}
             </Button>
           )}
           <Button size="small" onClick={() => setShowHistory((v) => !v)}>
@@ -459,6 +475,16 @@ export default function ObjectPropertiesEditor({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
       void reloadFromEditor();
+    },
+  });
+
+  const deleteVariableMutation = useMutation({
+    mutationFn: (name: string) => deleteVariable(path, name),
+    onSuccess: async () => {
+      setSettingsVariable(null);
+      await queryClient.invalidateQueries({ queryKey: ["variables", path] });
+      await queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+      await reloadFromEditor();
     },
   });
 
@@ -942,6 +968,19 @@ export default function ObjectPropertiesEditor({
                       ? () => setSettingsVariable(variable)
                       : undefined
                   }
+                  onDelete={
+                    canManage && !ctx.federated && isDeletableUserVariable(variable.name)
+                      ? () => {
+                          if (confirm(t("common:action.confirmDeleteVariable", { name: variable.name }))) {
+                            deleteVariableMutation.mutate(variable.name);
+                          }
+                        }
+                      : undefined
+                  }
+                  deleting={
+                    deleteVariableMutation.isPending &&
+                    deleteVariableMutation.variables === variable.name
+                  }
                   onChange={(next) =>
                     setState((s) =>
                       s ? { ...s, variables: { ...s.variables, [variable.name]: next } } : s
@@ -1170,6 +1209,16 @@ export default function ObjectPropertiesEditor({
             await reloadFromEditor();
             setSettingsVariable(null);
           }}
+          onDeleted={
+            canManage && !ctx.federated && isDeletableUserVariable(settingsVariable.name)
+              ? async () => {
+                  setSettingsVariable(null);
+                  await queryClient.invalidateQueries({ queryKey: ["variables", path] });
+                  await queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+                  await reloadFromEditor();
+                }
+              : undefined
+          }
         />
       )}
 
