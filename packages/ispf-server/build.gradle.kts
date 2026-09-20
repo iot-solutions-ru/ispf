@@ -85,7 +85,7 @@ dependencies {
     // Embedded Kafka for BL-142 KafkaDriverRuntimeIntegrationTest (matches ispf-driver-kafka).
     testImplementation("org.apache.kafka:kafka-clients:4.3.1")
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
-    testRuntimeOnly("org.scala-lang:scala-library:2.13.15")
+    testRuntimeOnly("org.scala-lang:scala-library:3.9.0")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.18.Final"))
     testImplementation("io.moquette:moquette-broker:0.17")
