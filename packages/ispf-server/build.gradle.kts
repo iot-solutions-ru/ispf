@@ -33,7 +33,7 @@ dependencies {
     implementation(project(":packages:ispf-ai-openai-compatible"))
     implementation(project(":packages:ispf-ai-ollama"))
 
-    implementation("io.nats:jnats:2.26.2")
+    implementation("io.nats:jnats:2.26.3")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
@@ -87,7 +87,7 @@ dependencies {
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
     testRuntimeOnly("org.scala-lang:scala-library:2.13.15")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
-    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.17.Final"))
+    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.18.Final"))
     testImplementation("io.moquette:moquette-broker:0.17")
     testImplementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     testRuntimeOnly("com.h2database:h2")
