@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * BL-177 / BL-178: schema validation for agent-regression scenario JSON (no LLM).
@@ -86,11 +87,14 @@ final class AgentRegressionScenarioValidator {
             throw new IOException("Scenarios directory not found: " + scenariosDir);
         }
 
-        List<String> files = Files.list(scenariosDir)
-                .filter(path -> path.getFileName().toString().endsWith(".json"))
-                .map(path -> path.getFileName().toString())
-                .sorted()
-                .toList();
+        List<String> files;
+        try (Stream<Path> listing = Files.list(scenariosDir)) {
+            files = listing
+                    .filter(path -> path.getFileName().toString().endsWith(".json"))
+                    .map(path -> path.getFileName().toString())
+                    .sorted()
+                    .toList();
+        }
 
         ValidationReport report = new ValidationReport();
         report.total = files.size();

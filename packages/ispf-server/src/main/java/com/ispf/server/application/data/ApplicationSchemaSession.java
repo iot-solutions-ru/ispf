@@ -33,6 +33,10 @@ public class ApplicationSchemaSession {
         }
     }
 
+    // Error Prone [Finally]: the finally block deliberately rethrows the *same* action error (with the
+    // restore failure attached as suppressed) or, when the action succeeded, surfaces the restore failure.
+    // Nothing thrown by the try block is masked.
+    @SuppressWarnings("Finally")
     public void runInSchema(String schemaName, Runnable action) {
         ensureSchemaExists(schemaName);
         Connection connection = DataSourceUtils.getConnection(dataSource);
@@ -73,6 +77,7 @@ public class ApplicationSchemaSession {
         });
     }
 
+    @SuppressWarnings("Finally") // same rethrow-with-suppressed pattern as runInSchema
     public <T> T callWithPlatformCatalog(Supplier<T> action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         RuntimeException actionError = null;

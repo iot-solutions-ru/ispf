@@ -1,7 +1,24 @@
+import net.ltgt.gradle.errorprone.errorprone
+
 plugins {
     java
     id("org.springframework.boot") version "4.1.1" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
+    id("net.ltgt.errorprone") version "5.1.1" apply false
+    // SBOM for the nightly dependency vulnerability scan (Trivy): ./gradlew cyclonedxBom
+    id("org.cyclonedx.bom") version "3.4.1"
+}
+
+// Aggregate CycloneDX SBOM over every module's runtimeClasspath (server + all driver packs + AI
+// providers): build/reports/cyclonedx/bom.json. Nightly CI scans it with Trivy (see nightly.yml).
+// Only shipped classpaths: test-only libraries (embedded brokers, fixtures) are not attack surface.
+tasks.cyclonedxBom {
+    componentName.set("ispf-platform")
+}
+allprojects {
+    tasks.withType<org.cyclonedx.gradle.CyclonedxDirectTask>().configureEach {
+        includeConfigs.set(listOf("runtimeClasspath"))
+    }
 }
 
 allprojects {
@@ -55,6 +72,42 @@ subprojects {
         options.compilerArgs.add("-parameters")
     }
 
+    // Static analysis (code-analysis F-02): Error Prone runs inside javac on every compile.
+    // ERROR-severity bug patterns fail the build; WARNING patterns are reported. Local opt-out
+    // for a quick iteration: -Pispf.errorprone=false (CI always compiles with it on).
+    if (findProperty("ispf.errorprone")?.toString() != "false") {
+        apply(plugin = "net.ltgt.errorprone")
+        dependencies {
+            "errorprone"("com.google.errorprone:error_prone_core:2.50.0")
+        }
+        tasks.withType<JavaCompile> {
+            options.errorprone {
+                disableWarningsInGeneratedCode.set(true)
+                // Promoted from WARNING: each of these is a real defect class that was found and fixed in the
+                // 2026-09 sweep (wire bytes depending on the JVM default charset, unclosed directory streams,
+                // racy counters, literal "%s" in exception messages, swapped arguments, dead conditions).
+                error(
+                    "DefaultCharset",
+                    "StreamResourceLeak",
+                    "NonAtomicVolatileUpdate",
+                    "OrphanedFormatString",
+                    "ArgumentSelectionDefectChecker",
+                    "AlreadyChecked",
+                    "DuplicateBranches",
+                    "MissingOverride",
+                )
+                // Repo-wide opt-outs — style checks that are not bug patterns; keep each with a reason.
+                disable(
+                    "MissingSummary",    // Javadoc summary-fragment style (Google style guide), not a defect
+                    "InvalidInlineTag",  // Javadoc `{@code}` vs backticks — docs hygiene, not a defect
+                    "EscapedEntity",     // Javadoc HTML entities — same
+                    "AddressSelection",  // InetAddress.getByName(host) is the intended API for driver hosts;
+                                         // multi-homed selection is the operator's DNS concern
+                )
+            }
+        }
+    }
+
     tasks.withType<Test> {
         useJUnitPlatform()
         maxParallelForks = 1
@@ -102,12 +155,22 @@ subprojects {
     // Pin (ADR-0059 registry). Keep protobuf runtime ahead of CEL / OTel gencode (runtime must be >= gencode).
     // Without this, CEL 0.14+ can fail with ProtobufRuntimeVersionException when an older
     // transitive protobuf-java (e.g. 4.34.x from Micrometer/OTel) wins resolution.
+    // Bouncy Castle is pulled transitively at 1.78.1 (Eclipse Milo) and 1.82 (hadoop-common); both carry
+    // CRITICAL CVEs (CVE-2025-14813, CVE-2026-8763, CVE-2026-13506). Crypto must resolve to one patched line.
+    // Pin (ADR-0059 registry): drop when Milo/Hadoop declare >= 1.85.
     configurations.configureEach {
         resolutionStrategy {
             force(
                 "com.google.protobuf:protobuf-java:4.36.1",
                 "com.google.protobuf:protobuf-java-util:4.36.1",
                 "com.google.protobuf:protobuf-javalite:4.36.1",
+                "org.bouncycastle:bcprov-jdk18on:1.86",
+                "org.bouncycastle:bcpkix-jdk18on:1.86",
+                "org.bouncycastle:bcutil-jdk18on:1.86",
+                // kafka-clients 4.3.1 -> lz4-java 1.10.2 (CVE-2026-59949); hadoop-common 3.5.0 ->
+                // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
+                "at.yawk.lz4:lz4-java:1.11.3",
+                "org.apache.commons:commons-configuration2:2.15.1",
             )
         }
     }

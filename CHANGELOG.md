@@ -88,6 +88,19 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   `DriverConfiguration` / `DriverPermanent` / `DriverUnsupportedOperationException`), so
   `ispf.driver.errors.total{kind}` and driver status stop reporting `unclassified` for them.
   `DriverTypedExceptionsTest` guards the packs against regressions.
+- **Error Prone on every `javac`** — `net.ltgt.errorprone` 5.1.1 / `error_prone_core` 2.50.0 across all Java
+  modules; ERROR-severity bug patterns fail the compile. Eight patterns promoted from WARNING to ERROR
+  after the sweep fixed every occurrence (`DefaultCharset`, `StreamResourceLeak`, `NonAtomicVolatileUpdate`,
+  `OrphanedFormatString`, `ArgumentSelectionDefectChecker`, `AlreadyChecked`, `DuplicateBranches`,
+  `MissingOverride`); fixes include MQTT publish / Basic-auth / DLMS bytes no longer depending on the JVM
+  default charset, unclosed `Files.walk` streams, racy `volatile` counters in test fixtures and dead
+  conditions in `PlatformUserService` / `EventCorrelatorService`. `-Pispf.errorprone=false` for local quick
+  iteration; see [testing § Static analysis](docs/en/testing.md#static-analysis-error-prone).
+- **Nightly dependency vulnerability gate** — `./gradlew cyclonedxBom` produces one CycloneDX SBOM over
+  every module's `runtimeClasspath`; the `dependency-vulnerabilities` nightly job scans it with Trivy and
+  fails on fixable CRITICAL/HIGH (full report + SBOM as artifact). First run remediated: Tomcat 11.0.26,
+  Netty 4.2.18 for the Neo4j driver, Bouncy Castle 1.86, lz4-java 1.11.3, commons-configuration2 2.15.1 —
+  all registered in the ADR-0059 pin registry with removal conditions.
 - **Web Console lint gate at zero warnings** — `npm run lint` now runs with
   `--max-warnings 0` (was 180). All `react-hooks/exhaustive-deps`,
   `@typescript-eslint/no-non-null-assertion` and `react-refresh/only-export-components`

@@ -11,5 +11,6 @@ public interface EventCorrelatorRepository extends JpaRepository<EventCorrelator
 
     List<EventCorrelatorEntity> findBySecondEventNameAndEnabledTrue(String secondEventName);
 
+    @Override
     long count();
 }

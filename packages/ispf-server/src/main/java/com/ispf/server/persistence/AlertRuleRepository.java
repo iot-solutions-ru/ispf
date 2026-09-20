@@ -12,5 +12,6 @@ public interface AlertRuleRepository extends JpaRepository<AlertRuleEntity, Stri
             String watchVariable
     );
 
+    @Override
     long count();
 }

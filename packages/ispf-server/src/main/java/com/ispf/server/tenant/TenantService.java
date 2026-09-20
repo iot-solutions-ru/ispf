@@ -131,8 +131,7 @@ public class TenantService {
 
     @Transactional
     public void assignUserToTenant(String username, String tenantId) {
-        tenantStore.findById(tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        requireTenant(tenantId);
         try {
             tenantStore.assignUserTenant(username, tenantId);
         } catch (IllegalArgumentException ex) {
@@ -143,16 +142,20 @@ public class TenantService {
 
     @Transactional
     public Tenant updateQuotas(String tenantId, TenantQuotas quotas) {
-        tenantStore.findById(tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        requireTenant(tenantId);
         tenantStore.updateQuotas(tenantId, quotas);
         return tenantStore.findById(tenantId).orElseThrow();
     }
 
     public TenantQuotaService.TenantUsage usage(String tenantId) {
-        tenantStore.findById(tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        requireTenant(tenantId);
         return tenantQuotaService.usage(tenantId);
+    }
+
+    private void requireTenant(String tenantId) {
+        if (tenantStore.findById(tenantId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found");
+        }
     }
 
     @Transactional

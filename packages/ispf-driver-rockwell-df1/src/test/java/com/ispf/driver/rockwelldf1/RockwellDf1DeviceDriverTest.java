@@ -200,7 +200,7 @@ class RockwellDf1DeviceDriverTest {
         private byte[] buildReply(byte[] requestPdu) {
             RockwellDf1Frame.ParsedPdu req = RockwellDf1Frame.parsePdu(requestPdu);
             if (req.cmd() != RockwellDf1Frame.CMD_PROTECTED) {
-                return RockwellDf1Frame.buildReply(req.src(), req.dst(), req.tns(), (byte) 0x10, new byte[0]);
+                return RockwellDf1Frame.buildReply(/* dst= */ req.src(), /* src= */ req.dst(), req.tns(), (byte) 0x10, new byte[0]);
             }
             byte[] payload = req.payload();
             RockwellDf1Point point = RockwellDf1Frame.parseAddress(payload);
@@ -213,15 +213,15 @@ class RockwellDf1DeviceDriverTest {
                 } else if (data.length > size) {
                     data = Arrays.copyOf(data, size);
                 }
-                return RockwellDf1Frame.buildReply(req.src(), req.dst(), req.tns(), RockwellDf1Frame.STS_OK, data);
+                return RockwellDf1Frame.buildReply(/* dst= */ req.src(), /* src= */ req.dst(), req.tns(), RockwellDf1Frame.STS_OK, data);
             }
             if (req.fnc() == RockwellDf1Frame.FNC_TYPED_WRITE) {
                 int size = payload.length > 4 ? (payload[4] & 0xFF) : 0;
                 byte[] data = Arrays.copyOfRange(payload, 5, 5 + size);
                 storage.put(key, data);
-                return RockwellDf1Frame.buildReply(req.src(), req.dst(), req.tns(), RockwellDf1Frame.STS_OK, new byte[0]);
+                return RockwellDf1Frame.buildReply(/* dst= */ req.src(), /* src= */ req.dst(), req.tns(), RockwellDf1Frame.STS_OK, new byte[0]);
             }
-            return RockwellDf1Frame.buildReply(req.src(), req.dst(), req.tns(), (byte) 0x10, new byte[0]);
+            return RockwellDf1Frame.buildReply(/* dst= */ req.src(), /* src= */ req.dst(), req.tns(), (byte) 0x10, new byte[0]);
         }
 
         private static String storageKey(RockwellDf1Point point) {

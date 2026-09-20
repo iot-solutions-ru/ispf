@@ -51,6 +51,19 @@ Changelog отдельных application bundles — в манифестах п�
   `gps-tracker` теперь объявляют `DriverErrorKind` (`DriverTransient` / `DriverConfiguration` /
   `DriverPermanent` / `DriverUnsupportedOperationException`) — `ispf.driver.errors.total{kind}` и статус
   драйвера перестают показывать `unclassified` для них. `DriverTypedExceptionsTest` защищает паки от регресса.
+- Error Prone на каждом `javac`: `net.ltgt.errorprone` 5.1.1 / `error_prone_core` 2.50.0 во всех Java-модулях,
+  ERROR-паттерны валят компиляцию. Восемь паттернов поднято из WARNING в ERROR после того, как sweep исправил
+  все вхождения (`DefaultCharset`, `StreamResourceLeak`, `NonAtomicVolatileUpdate`, `OrphanedFormatString`,
+  `ArgumentSelectionDefectChecker`, `AlreadyChecked`, `DuplicateBranches`, `MissingOverride`); среди правок —
+  байты MQTT publish / Basic-auth / DLMS больше не зависят от default charset JVM, закрыты потоки `Files.walk`,
+  гоночные `volatile`-счётчики в тестовых фикстурах, мёртвые условия в `PlatformUserService` /
+  `EventCorrelatorService`. `-Pispf.errorprone=false` для быстрой локальной итерации; см.
+  [testing § Статический анализ](docs/ru/testing.md).
+- Ночной гейт уязвимостей зависимостей: `./gradlew cyclonedxBom` собирает один CycloneDX SBOM по `runtimeClasspath`
+  всех модулей; job `dependency-vulnerabilities` в nightly сканирует его Trivy и падает на исправимых
+  CRITICAL/HIGH (полный отчёт и SBOM — артефакт). Первый прогон закрыт пинами Tomcat 11.0.26, Netty 4.2.18 для
+  драйвера Neo4j, Bouncy Castle 1.86, lz4-java 1.11.3, commons-configuration2 2.15.1 — все внесены в реестр
+  пинов ADR-0059 с условиями снятия.
 - Lint-гейт Web Console на нуле предупреждений: `npm run lint` с `--max-warnings 0` (было 180);
   исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
   (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).

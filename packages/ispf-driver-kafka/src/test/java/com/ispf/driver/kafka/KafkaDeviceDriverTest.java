@@ -19,11 +19,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -129,7 +129,8 @@ class KafkaDeviceDriverTest {
     private static class StubDriverObject implements DeviceDriver.DriverObject {
 
         private final Map<String, String> configuration;
-        private final Map<String, DataRecord> variables = new HashMap<>();
+        // Consumer thread calls updateVariable while the test polls/asserts — HashMap CME under load.
+        private final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;

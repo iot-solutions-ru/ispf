@@ -68,8 +68,9 @@ public class AnalyticsBackfillService {
         if (from == null || to == null || !from.isBefore(to)) {
             throw new IllegalArgumentException("from must be before to");
         }
-        catalogService.findCatalogEntryByTagPath(tagPath)
-                .orElseThrow(() -> new IllegalArgumentException("Historian computation not found: " + tagPath));
+        if (catalogService.findCatalogEntryByTagPath(tagPath).isEmpty()) {
+            throw new IllegalArgumentException("Historian computation not found: " + tagPath);
+        }
 
         List<AnalyticsTagDefinition> tags = catalogService.listEnabledTags();
         if (enforceMemberAcl) {

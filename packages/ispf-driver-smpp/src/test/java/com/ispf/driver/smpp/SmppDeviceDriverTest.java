@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Loopback tests against an in-test SMPP 3.4 server speaking raw PDUs on a ServerSocket:
@@ -208,7 +209,7 @@ class SmppDeviceDriverTest {
         private final Thread acceptThread;
         private final List<Socket> connections = new CopyOnWriteArrayList<>();
         private final List<Submission> submissions = new CopyOnWriteArrayList<>();
-        private volatile int bindCount;
+        private final AtomicInteger bindCount = new AtomicInteger();
         private int messageCounter;
 
         FakeSmppServer() throws IOException {
@@ -223,7 +224,7 @@ class SmppDeviceDriverTest {
         }
 
         int bindCount() {
-            return bindCount;
+            return bindCount.get();
         }
 
         List<Submission> submissions() {
@@ -269,7 +270,7 @@ class SmppDeviceDriverTest {
                     }
                     switch (commandId) {
                         case BIND_TRANSCEIVER -> {
-                            bindCount++;
+                            bindCount.incrementAndGet();
                             writePdu(out, BIND_TRANSCEIVER_RESP, sequence, cstring("ispf-smsc"));
                         }
                         case SUBMIT_SM -> {

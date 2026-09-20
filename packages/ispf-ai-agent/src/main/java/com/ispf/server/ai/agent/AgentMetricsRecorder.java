@@ -73,6 +73,7 @@ public class AgentMetricsRecorder implements AgentMetricsPort {
         );
     }
 
+    @Override
     public Map<String, Object> agentSnapshot() {
         pruneOldTurnStarts();
         Map<String, Object> snapshot = new LinkedHashMap<>();

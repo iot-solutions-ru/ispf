@@ -18,7 +18,7 @@ import java.util.Locale;
  */
 public final class OpcuaPubsubLabCodec {
 
-    public static final byte[] MAGIC = {'U', 'A', 'D', 'P'};
+    private static final byte[] MAGIC = {'U', 'A', 'D', 'P'};
     public static final byte VERSION = 0x01;
     public static final byte MSG_GET = 0x01;
     public static final byte MSG_SAMPLE = 0x02;

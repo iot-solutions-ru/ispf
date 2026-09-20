@@ -221,7 +221,7 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
             return true;
         }
         if (mapping.startsWith("devices/")) {
-            return topic.equals(mapping);
+            return false; // absolute device topic: exact match was already ruled out above
         }
         String suffix = mapping.startsWith("/") ? mapping.substring(1) : mapping;
         return topic.equals(prefix + suffix) || topic.endsWith("/" + suffix) || topic.endsWith(suffix);

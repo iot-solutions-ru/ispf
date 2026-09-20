@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.nio.charset.StandardCharsets;
 
 /**
  * SMI-S driver — CIM-XML over HTTP(S) client that enumerates
@@ -184,7 +185,7 @@ public class SmisDeviceDriver implements DeviceDriver {
                     .header("Content-Type", "application/xml; charset=utf-8")
                     .POST(HttpRequest.BodyPublishers.ofString(envelope));
             if (username != null && !username.isBlank()) {
-                String token = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+                String token = Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
                 builder.header("Authorization", "Basic " + token);
             }
             HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());

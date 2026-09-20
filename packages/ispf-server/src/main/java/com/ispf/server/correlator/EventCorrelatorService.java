@@ -613,27 +613,12 @@ public class EventCorrelatorService {
         if (windowSeconds < 0) {
             throw new IllegalArgumentException("windowSeconds must be >= 0");
         }
-        if (actionType == CorrelatorActionType.RUN_WORKFLOW && (actionTarget == null || actionTarget.isBlank())) {
-            throw new IllegalArgumentException("actionTarget workflow path is required for RUN_WORKFLOW");
-        }
-        if (actionType == CorrelatorActionType.FIRE_EVENT && (actionTarget == null || actionTarget.isBlank())) {
-            throw new IllegalArgumentException("actionTarget event name is required for FIRE_EVENT");
-        }
         if (actionType == CorrelatorActionType.SET_VARIABLE && !actionTarget.contains("=")) {
             throw new IllegalArgumentException("actionTarget must be variableName=value for SET_VARIABLE");
-        }
-        if (actionType == CorrelatorActionType.OPEN_OPERATOR_REPORT && (actionTarget == null || actionTarget.isBlank())) {
-            throw new IllegalArgumentException("actionTarget report path is required for OPEN_OPERATOR_REPORT");
         }
         if (actionType == CorrelatorActionType.SEND_WEBHOOK) {
             // SSRF guard: webhook targets must be safe outbound http(s) URLs (checked at dispatch too).
             OutboundUrlSafety.requireSafeHttpUrl(actionTarget, "", false);
-        }
-        if (actionType == CorrelatorActionType.SEND_EMAIL && (actionTarget == null || actionTarget.isBlank())) {
-            throw new IllegalArgumentException("actionTarget email is required for SEND_EMAIL (to|subject|body)");
-        }
-        if (actionType == CorrelatorActionType.SEND_SMS && (actionTarget == null || actionTarget.isBlank())) {
-            throw new IllegalArgumentException("actionTarget SMS is required for SEND_SMS (msisdn|body)");
         }
         if (patternType == CorrelatorPatternType.SEQUENCE) {
             if (secondEventName == null || secondEventName.isBlank()) {

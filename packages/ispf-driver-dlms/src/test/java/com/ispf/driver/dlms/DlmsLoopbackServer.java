@@ -79,7 +79,8 @@ final class DlmsLoopbackServer implements AutoCloseable {
                 } else {
                     response = DlmsTcpWrapperCodec.setResponse(1);
                 }
-                DlmsTcpWrapperCodec.writeFrame(socket.getOutputStream(), frame.destinationWPort(), frame.sourceWPort(), response);
+                DlmsTcpWrapperCodec.writeFrame(socket.getOutputStream(),
+                        /* sourceWPort= */ frame.destinationWPort(), /* destinationWPort= */ frame.sourceWPort(), response);
             }
         } catch (Exception ignored) {
             // Client disconnects end the test session.

@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @Component
 public class LibreOfficeDocumentConverter {
@@ -110,9 +111,8 @@ public class LibreOfficeDocumentConverter {
         if (tempDir == null) {
             return;
         }
-        try {
-            Files.walk(tempDir)
-                    .sorted((a, b) -> b.compareTo(a))
+        try (Stream<Path> tree = Files.walk(tempDir)) {
+            tree.sorted((a, b) -> b.compareTo(a))
                     .forEach(path -> {
                         try {
                             Files.deleteIfExists(path);

@@ -627,7 +627,7 @@ public class MarketplaceService {
                 .build();
         HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
         if (response.statusCode() >= 400) {
-            throw new MarketplaceRemoteException(response.statusCode(), new String(response.body()));
+            throw new MarketplaceRemoteException(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
         }
         return response.body();
     }

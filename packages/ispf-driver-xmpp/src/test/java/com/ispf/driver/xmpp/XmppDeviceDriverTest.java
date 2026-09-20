@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Loopback tests against an in-test XMPP server speaking real XML streams over a ServerSocket:
@@ -167,10 +168,10 @@ class XmppDeviceDriverTest {
         private final ServerSocket serverSocket;
         private final Thread acceptThread;
         private final List<Socket> connections = new CopyOnWriteArrayList<>();
-        private volatile int authCount;
-        private volatile int bindCount;
-        private volatile int pingCount;
-        private volatile int rosterCount;
+        private final AtomicInteger authCount = new AtomicInteger();
+        private final AtomicInteger bindCount = new AtomicInteger();
+        private final AtomicInteger pingCount = new AtomicInteger();
+        private final AtomicInteger rosterCount = new AtomicInteger();
 
         FakeXmppServer() throws IOException {
             serverSocket = new ServerSocket(0);
@@ -184,15 +185,15 @@ class XmppDeviceDriverTest {
         }
 
         int authCount() {
-            return authCount;
+            return authCount.get();
         }
 
         int bindCount() {
-            return bindCount;
+            return bindCount.get();
         }
 
         int pingCount() {
-            return pingCount;
+            return pingCount.get();
         }
 
         private void acceptLoop() {
@@ -240,22 +241,22 @@ class XmppDeviceDriverTest {
                         if (!authenticated) {
                             return;
                         }
-                        authCount++;
+                        authCount.incrementAndGet();
                     } else if (stanza.startsWith("<iq")) {
                         String id = attribute(ID_PATTERN, stanza);
                         if (stanza.contains("urn:ietf:params:xml:ns:xmpp-bind")) {
-                            bindCount++;
+                            bindCount.incrementAndGet();
                             String resource = attribute(RESOURCE_PATTERN, stanza);
                             boundJid = USER + "@" + DOMAIN + "/" + (resource.isEmpty() ? "ispf" : resource);
                             send(writer, "<iq type='result' id='" + id + "'>"
                                     + "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><jid>" + boundJid
                                     + "</jid></bind></iq>");
                         } else if (stanza.contains("jabber:iq:roster")) {
-                            rosterCount++;
+                            rosterCount.incrementAndGet();
                             send(writer, "<iq type='result' id='" + id + "'>"
                                     + "<query xmlns='jabber:iq:roster'/></iq>");
                         } else if (stanza.contains("urn:xmpp:ping")) {
-                            pingCount++;
+                            pingCount.incrementAndGet();
                             send(writer, "<iq type='result' id='" + id + "' from='" + DOMAIN + "'"
                                     + (boundJid != null ? " to='" + boundJid + "'" : "") + "/>");
                         } else {

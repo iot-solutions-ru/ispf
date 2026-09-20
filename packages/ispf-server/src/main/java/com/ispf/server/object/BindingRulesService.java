@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 public class BindingRulesService {
@@ -368,7 +369,7 @@ public class BindingRulesService {
             }
         }
         long periodicMs = Math.max(0L, activators.periodicMs());
-        if (onEvent != activators.onEvent() || periodicMs != activators.periodicMs()) {
+        if (!Objects.equals(onEvent, activators.onEvent()) || periodicMs != activators.periodicMs()) {
             activators = new BindingActivators(
                     activators.onStartup(),
                     activators.onVariableChange(),

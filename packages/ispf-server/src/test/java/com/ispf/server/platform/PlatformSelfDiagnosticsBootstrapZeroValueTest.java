@@ -21,6 +21,7 @@ class PlatformSelfDiagnosticsBootstrapZeroValueTest {
             .build();
 
     @Test
+    @SuppressWarnings("ConditionalExpressionNumericPromotion") // the promotion IS the subject of this test
     void numericTernaryZeroPromotesToDoubleAndBreaksIntegerSchema() {
         // Documents the Java trap that skipped self-diagnostics bootstrap on demostand.
         assertThatThrownBy(() -> DataRecord.single(

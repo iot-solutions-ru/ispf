@@ -34,7 +34,7 @@ public record IngressElasticSettings(
     }
 
     public int resolvedMaxWorkers() {
-        return enabled ? maxWorkers : maxWorkers;
+        return maxWorkers;
     }
 
     public static IngressElasticSettings resolve(

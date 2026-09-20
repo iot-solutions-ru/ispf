@@ -590,9 +590,9 @@ public class DriverRuntimeService {
     @Transactional
     public ImportPointsResult importDriverPoints(String devicePath, List<DriverPointCatalog.PointProposal> proposals) {
         structureService.ensureDeviceDriverStructure(devicePath);
-        readBinding(devicePath).orElseThrow(
-                () -> new IllegalArgumentException("No driver binding for: " + devicePath)
-        );
+        if (readBinding(devicePath).isEmpty()) {
+            throw new IllegalArgumentException("No driver binding for: " + devicePath);
+        }
         if (proposals == null || proposals.isEmpty()) {
             return new ImportPointsResult(0, 0, List.of());
         }

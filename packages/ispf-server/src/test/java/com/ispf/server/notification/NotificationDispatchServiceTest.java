@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.nio.charset.StandardCharsets;
 
 class NotificationDispatchServiceTest {
 
@@ -34,7 +35,7 @@ class NotificationDispatchServiceTest {
         AtomicReference<String> body = new AtomicReference<>();
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/hook", exchange -> {
-            body.set(new String(exchange.getRequestBody().readAllBytes()));
+            body.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(204, -1);
             exchange.close();
             latch.countDown();
@@ -80,7 +81,7 @@ class NotificationDispatchServiceTest {
         AtomicReference<String> body = new AtomicReference<>();
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/sms", exchange -> {
-            body.set(new String(exchange.getRequestBody().readAllBytes()));
+            body.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(204, -1);
             exchange.close();
             latch.countDown();
