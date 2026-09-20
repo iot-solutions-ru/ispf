@@ -73,6 +73,7 @@ public class DriverRuntimeService {
     private final ObjectProvider<DriverRuntimeService> self;
     private final DriverOwnershipService ownershipService;
     private final SystemObjectStructureService structureService;
+    private final DriverErrorMetrics errorMetrics;
     private ElasticScheduledPool schedulerPool;
     private ScheduledThreadPoolExecutor scheduler;
     private ElasticWorkerLauncher ioWorkers;
@@ -90,8 +91,10 @@ public class DriverRuntimeService {
             RuntimeTelemetryProperties runtimeTelemetryProperties,
             ObjectProvider<DriverRuntimeService> self,
             DriverOwnershipService ownershipService,
-            SystemObjectStructureService structureService
+            SystemObjectStructureService structureService,
+            DriverErrorMetrics errorMetrics
     ) {
+        this.errorMetrics = errorMetrics;
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
@@ -324,8 +327,9 @@ public class DriverRuntimeService {
         try {
             driver.connect();
         } catch (DriverException e) {
+            var kind = errorMetrics.record(binding.driverId(), DriverErrorMetrics.Operation.CONNECT, e);
             setStatus(devicePath, "ERROR");
-            throw new IllegalStateException("Driver connect failed: " + e.getMessage(), e);
+            throw new IllegalStateException("Driver connect failed [" + kind.tag() + "]: " + e.getMessage(), e);
         }
 
         ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(
@@ -474,6 +478,7 @@ public class DriverRuntimeService {
             ));
             setStatus(devicePath, "RUNNING");
         } catch (DriverException e) {
+            var kind = errorMetrics.record(active.binding().driverId(), DriverErrorMetrics.Operation.WRITE, e);
             activeDrivers.put(devicePath, new ActiveDriver(
                     active.driver(),
                     active.binding(),
@@ -483,7 +488,7 @@ public class DriverRuntimeService {
                     active.driverObject()
             ));
             setStatus(devicePath, "ERROR");
-            throw new IllegalStateException("Driver write failed: " + e.getMessage(), e);
+            throw new IllegalStateException("Driver write failed [" + kind.tag() + "]: " + e.getMessage(), e);
         }
         active.driverObject().flushIngress();
         return status(devicePath).orElseThrow();
@@ -765,6 +770,7 @@ public class DriverRuntimeService {
             notifyConnectionIfChanged(devicePath, active, next);
             setStatus(devicePath, "RUNNING");
         } catch (Exception e) {
+            var kind = errorMetrics.record(active.binding().driverId(), DriverErrorMetrics.Operation.POLL, e);
             activeDrivers.put(devicePath, new ActiveDriver(
                     active.driver(),
                     active.binding(),
@@ -774,7 +780,7 @@ public class DriverRuntimeService {
                     active.driverObject()
             ));
             setStatus(devicePath, "ERROR");
-            log.warn("Driver poll failed for {}: {}", devicePath, e.getMessage());
+            log.warn("Driver poll failed for {} [{}]: {}", devicePath, kind.tag(), e.getMessage());
         }
     }
 

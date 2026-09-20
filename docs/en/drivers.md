@@ -96,6 +96,18 @@ public interface DeviceDriver {
 
 **Ingress contract:** hot path `updateVariable` must not write DB/historian/disk — durable storage is async in the server. Full source: [`DeviceDriver.java`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java). SDK walkthrough: [driver-ddk](driver-ddk.md).
 
+**Error contract:** throw a typed `DriverException` so the runtime can tell flapping networks from misconfiguration and bugs:
+
+| Exception | `DriverErrorKind` | Meaning / runtime reaction |
+|-----------|-------------------|-----------------------------|
+| `DriverTransientException` | `transient` | timeout, connection reset, device busy — keep polling |
+| `DriverPermanentException` | `permanent` | protocol violation, device rejected — retry will not help |
+| `DriverConfigurationException` | `configuration` | bad host / register / unit id — operator must fix config |
+| `DriverUnsupportedOperationException` | `unsupported` | write or browse not implemented for this driver / model |
+| plain `DriverException` | `unclassified` (heuristic from cause: `SocketTimeoutException` → transient, `UnknownHostException` / `IllegalArgumentException` → configuration, …) | legacy; prefer a typed subclass |
+
+The runtime counts failures as `ispf.driver.errors.total{driver,op,kind}` (Micrometer) and tags the `[kind]` in driver status messages and logs.
+
 Registration via **driver packs** in `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop at `pollIntervalMs`.
 
 Build packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. See [licensed-driver-packs](licensed-driver-packs.md).
