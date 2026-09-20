@@ -243,7 +243,7 @@ public class BundleVisualGroupService {
                 }
             }
         }
-        if (ApplicationBundleDeployService.hasOperatorUiManifest(manifest)) {
+        if (BundleOperatorUiSync.hasOperatorUiManifest(manifest)) {
             add.accept(ApplicationBundleDeployService.operatorAppTreePath(appId));
         }
         add.accept(ApplicationBundleDeployService.applicationTreePath(appId));

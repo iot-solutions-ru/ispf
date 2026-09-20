@@ -12,14 +12,14 @@ class ReportServiceValidationTest {
 
     @Test
     void acceptsSelectQuery() {
-        ReportService.validateSelectQuery("SELECT 1");
-        ReportService.validateSelectQuery("WITH cte AS (SELECT 1) SELECT * FROM cte");
+        ReportSqlQuery.validateSelectQuery("SELECT 1");
+        ReportSqlQuery.validateSelectQuery("WITH cte AS (SELECT 1) SELECT * FROM cte");
     }
 
     @Test
     void rejectsForbiddenKeywords() {
         assertThrows(IllegalArgumentException.class, () ->
-                ReportService.validateSelectQuery("SELECT 1; DELETE FROM demo_item"));
+                ReportSqlQuery.validateSelectQuery("SELECT 1; DELETE FROM demo_item"));
     }
 
     @Test
@@ -31,7 +31,7 @@ class ReportServiceValidationTest {
     @Test
     void bindQueryParametersRepeatsSingleNamedParamForMultiplePlaceholders() {
         String query = "SELECT 1 WHERE (? = '' OR item_code = ?)";
-        List<Object> bound = ReportService.bindQueryParameters(
+        List<Object> bound = ReportSqlQuery.bindQueryParameters(
                 query,
                 List.of("orderNo"),
                 Map.of("orderNo", "")
@@ -41,6 +41,6 @@ class ReportServiceValidationTest {
 
     @Test
     void countSqlPlaceholdersIgnoresQuestionMarksInStringLiterals() {
-        assertEquals(2, ReportService.countSqlPlaceholders("SELECT ? WHERE col = '?' AND id = ?"));
+        assertEquals(2, ReportSqlQuery.countSqlPlaceholders("SELECT ? WHERE col = '?' AND id = ?"));
     }
 }

@@ -1,7 +1,4 @@
 package com.ispf.server.workflow;
-
-import com.ispf.server.cluster.NatsEventBridge;
-
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.ObjectNotFoundException;
@@ -10,16 +7,11 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldType;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.plugin.workflow.BpmnProcess;
-import com.ispf.plugin.workflow.CallActivityDefinition;
-import com.ispf.plugin.workflow.CallActivityExecutor;
 import com.ispf.plugin.workflow.InstanceStatus;
-import com.ispf.plugin.workflow.MessageTaskDefinition;
 import com.ispf.plugin.workflow.SequenceFlowDefinition;
-import com.ispf.plugin.workflow.ServiceTaskDefinition;
 import com.ispf.plugin.workflow.UserTaskDefinition;
 import com.ispf.plugin.workflow.WorkflowActionType;
 import com.ispf.plugin.workflow.WorkflowConditionEvaluator;
@@ -33,13 +25,8 @@ import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowDeadLetterEntity;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
-import com.ispf.server.function.FunctionInvocationScope;
-import com.ispf.server.function.FunctionService;
-import com.ispf.server.binding.BindingRefreshAfterCommit;
-import com.ispf.server.event.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,27 +46,21 @@ public class WorkflowService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowService.class);
 
-    private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")
-            .field("value", FieldType.STRING)
-            .build();
+    private static final DataSchema STRING_VALUE = WorkflowTaskExecutor.STRING_VALUE;
 
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
     private final WorkflowEngine workflowEngine;
-    private final NatsEventBridge natsEventBridge;
     private final ObjectMapper objectMapper;
     private final WorkflowInstanceStore instanceStore;
     private final WorkflowConditionFactory conditionFactory;
-    private final FunctionService functionService;
-    private final EventService eventService;
-    private final WorkQueueService workQueueService;
+    private final WorkflowTaskExecutor taskExecutor;
+    private final WorkflowInstanceStatePublisher statePublisher;
     private final WorkflowInstanceRepository instanceRepository;
-    private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
     private final WorkflowEventTriggerIndex eventTriggerIndex;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final WorkflowTriggerIndexRefresh triggerIndexRefresh;
     private final ObjectProvider<WorkflowService> self;
-    private final WorkflowAiActionService workflowAiActionService;
     private final WorkflowDeadLetterService deadLetterService;
     private final WorkflowWebhookIndex webhookIndex;
     private final WorkflowRetryService retryService;
@@ -89,20 +70,16 @@ public class WorkflowService {
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
             WorkflowEngine workflowEngine,
-            NatsEventBridge natsEventBridge,
             ObjectMapper objectMapper,
             WorkflowInstanceStore instanceStore,
             WorkflowConditionFactory conditionFactory,
-            FunctionService functionService,
-            EventService eventService,
-            @Lazy WorkQueueService workQueueService,
+            WorkflowTaskExecutor taskExecutor,
+            WorkflowInstanceStatePublisher statePublisher,
             WorkflowInstanceRepository instanceRepository,
-            BindingRefreshAfterCommit bindingRefreshAfterCommit,
             WorkflowEventTriggerIndex eventTriggerIndex,
             AutomationMetricsRecorder automationMetricsRecorder,
             WorkflowTriggerIndexRefresh triggerIndexRefresh,
             ObjectProvider<WorkflowService> self,
-            WorkflowAiActionService workflowAiActionService,
             WorkflowDeadLetterService deadLetterService,
             WorkflowWebhookIndex webhookIndex,
             WorkflowRetryService retryService,
@@ -111,20 +88,16 @@ public class WorkflowService {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.workflowEngine = workflowEngine;
-        this.natsEventBridge = natsEventBridge;
         this.objectMapper = objectMapper;
         this.instanceStore = instanceStore;
         this.conditionFactory = conditionFactory;
-        this.functionService = functionService;
-        this.eventService = eventService;
-        this.workQueueService = workQueueService;
+        this.taskExecutor = taskExecutor;
+        this.statePublisher = statePublisher;
         this.instanceRepository = instanceRepository;
-        this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
         this.eventTriggerIndex = eventTriggerIndex;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.triggerIndexRefresh = triggerIndexRefresh;
         this.self = self;
-        this.workflowAiActionService = workflowAiActionService;
         this.deadLetterService = deadLetterService;
         this.webhookIndex = webhookIndex;
         this.retryService = retryService;
@@ -133,7 +106,7 @@ public class WorkflowService {
 
     @PostConstruct
     void wireCallActivityExecutor() {
-        workflowEngine.setCallActivityExecutor(this::executeCallActivity);
+        workflowEngine.setCallActivityExecutor(taskExecutor::executeCallActivity);
     }
 
     @Transactional
@@ -345,19 +318,15 @@ public class WorkflowService {
 
         WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(triggerObjectPath);
         while (instance.status() == InstanceStatus.RUNNING) {
-            workflowEngine.step(instance, process, this::executeTask, this::executeMessageTask, evaluator);
+            workflowEngine.step(
+                    instance,
+                    process,
+                    taskExecutor::executeServiceTask,
+                    taskExecutor::executeMessageTask,
+                    evaluator
+            );
         }
-
-        UserTaskDefinition pendingTask = instance.pendingUserTaskId()
-                .map(id -> process.userTasks().get(id))
-                .orElse(null);
-        instanceStore.save(instance, process, triggerObjectPath, pendingTask);
-        persistInstanceSnapshot(path, instance);
-        publishInstanceEvent(path, instance);
-        if (instance.status() == InstanceStatus.FAILED) {
-            handleFailure(path, instance, input);
-        }
-        notifyCallActivityParents(instance);
+        finishStep(triggerObjectPath, instance, process, input);
         return instance;
     }
 
@@ -527,9 +496,9 @@ public class WorkflowService {
 
     private void handleFailure(String path, WorkflowInstance instance, Map<String, String> input) {
         PlatformObject node = objectManager.require(path);
-        int attempt = parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
-        int maxAttempts = parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
-        int backoffSeconds = Math.max(0, parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
+        int attempt = WorkflowTaskExecutor.parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
+        int maxAttempts = WorkflowTaskExecutor.parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
+        int backoffSeconds = Math.max(0, WorkflowTaskExecutor.parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
         if (maxAttempts > 0 && attempt < maxAttempts) {
             Map<String, String> retryInput = new HashMap<>(input == null ? Map.of() : input);
             retryInput.put("_retryAttempt", String.valueOf(attempt));
@@ -583,14 +552,6 @@ public class WorkflowService {
         }
     }
 
-    private static int parseInt(String raw, int fallback) {
-        try {
-            return Integer.parseInt(raw.trim());
-        } catch (Exception e) {
-            return fallback;
-        }
-    }
-
     @Transactional
     public void claimInstance(String instanceId, String operatorId) throws WorkflowException {
         WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
@@ -618,10 +579,7 @@ public class WorkflowService {
         }
 
         String workflowPath = instance.workflowPath();
-        BpmnProcess process = workflowEngine.parse(
-                readString(objectManager.require(workflowPath), "bpmnXml")
-                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
-        );
+        BpmnProcess process = parseProcess(workflowPath);
 
         String userTaskId = taskNodeId != null && !taskNodeId.isBlank()
                 ? taskNodeId
@@ -629,23 +587,20 @@ public class WorkflowService {
                         .orElseThrow(() -> new WorkflowException("No pending user task"));
         UserTaskDefinition userTask = process.userTasks().get(userTaskId);
         if (userTask != null) {
-            executeUserTaskAction(userTask, stored.triggerObjectPath());
+            taskExecutor.executeUserTaskAction(userTask, stored.triggerObjectPath());
         }
 
         instance.claim(operatorId);
         WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
-        workflowEngine.completeUserTask(instance, process, userTaskId, this::executeTask, this::executeMessageTask, evaluator);
-
-        UserTaskDefinition nextPending = instance.pendingUserTaskId()
-                .map(id -> process.userTasks().get(id))
-                .orElse(null);
-        instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
-        persistInstanceSnapshot(workflowPath, instance);
-        publishInstanceEvent(workflowPath, instance);
-        if (instance.status() == InstanceStatus.FAILED) {
-            handleFailure(workflowPath, instance, instance.variables());
-        }
-        notifyCallActivityParents(instance);
+        workflowEngine.completeUserTask(
+                instance,
+                process,
+                userTaskId,
+                taskExecutor::executeServiceTask,
+                taskExecutor::executeMessageTask,
+                evaluator
+        );
+        finishStep(stored.triggerObjectPath(), instance, process, instance.variables());
         return getWorkflow(workflowPath);
     }
 
@@ -655,45 +610,23 @@ public class WorkflowService {
         if (signalName == null || signalName.isBlank()) {
             throw new WorkflowException("Signal name is required");
         }
-        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
-        WorkflowInstance instance = stored.instance();
-        if (instance.status() != InstanceStatus.WAITING) {
-            throw new WorkflowException("Instance is not waiting: " + instanceId);
-        }
-        if (!instance.pendingSignalNames().contains(signalName)) {
-            throw new WorkflowException("Instance is not waiting for signal: " + signalName);
-        }
-
-        String workflowPath = instance.workflowPath();
-        BpmnProcess process = workflowEngine.parse(
-                readString(objectManager.require(workflowPath), "bpmnXml")
-                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        WorkflowInstance instance = resumeWaitingInstance(
+                instanceId,
+                operatorId,
+                waiting -> {
+                    if (!waiting.pendingSignalNames().contains(signalName)) {
+                        throw new WorkflowException("Instance is not waiting for signal: " + signalName);
+                    }
+                },
+                (waiting, process, evaluator) -> workflowEngine.deliverSignal(
+                        waiting,
+                        process,
+                        signalName,
+                        taskExecutor::executeServiceTask,
+                        taskExecutor::executeMessageTask,
+                        evaluator
+                )
         );
-
-        if (operatorId != null && !operatorId.isBlank()) {
-            instance.claim(operatorId);
-        }
-        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
-        workflowEngine.deliverSignal(
-                instance,
-                process,
-                signalName,
-                this::executeTask,
-                this::executeMessageTask,
-                evaluator
-        );
-
-        UserTaskDefinition nextPending = instance.pendingUserTaskId()
-                .map(id -> process.userTasks().get(id))
-                .orElse(null);
-        instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
-        persistInstanceSnapshot(workflowPath, instance);
-        publishInstanceEvent(workflowPath, instance);
-        if (instance.status() == InstanceStatus.FAILED) {
-            handleFailure(workflowPath, instance, instance.variables());
-        }
-        notifyCallActivityParents(instance);
-
         return Map.of(
                 "instanceId", instanceId,
                 "signal", signalName,
@@ -707,45 +640,23 @@ public class WorkflowService {
         if (messageName == null || messageName.isBlank()) {
             throw new WorkflowException("Message name is required");
         }
-        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
-        WorkflowInstance instance = stored.instance();
-        if (instance.status() != InstanceStatus.WAITING) {
-            throw new WorkflowException("Instance is not waiting: " + instanceId);
-        }
-        if (!instance.pendingMessageNames().contains(messageName)) {
-            throw new WorkflowException("Instance is not waiting for message: " + messageName);
-        }
-
-        String workflowPath = instance.workflowPath();
-        BpmnProcess process = workflowEngine.parse(
-                readString(objectManager.require(workflowPath), "bpmnXml")
-                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        WorkflowInstance instance = resumeWaitingInstance(
+                instanceId,
+                operatorId,
+                waiting -> {
+                    if (!waiting.pendingMessageNames().contains(messageName)) {
+                        throw new WorkflowException("Instance is not waiting for message: " + messageName);
+                    }
+                },
+                (waiting, process, evaluator) -> workflowEngine.deliverMessage(
+                        waiting,
+                        process,
+                        messageName,
+                        taskExecutor::executeServiceTask,
+                        taskExecutor::executeMessageTask,
+                        evaluator
+                )
         );
-
-        if (operatorId != null && !operatorId.isBlank()) {
-            instance.claim(operatorId);
-        }
-        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
-        workflowEngine.deliverMessage(
-                instance,
-                process,
-                messageName,
-                this::executeTask,
-                this::executeMessageTask,
-                evaluator
-        );
-
-        UserTaskDefinition nextPending = instance.pendingUserTaskId()
-                .map(id -> process.userTasks().get(id))
-                .orElse(null);
-        instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
-        persistInstanceSnapshot(workflowPath, instance);
-        publishInstanceEvent(workflowPath, instance);
-        if (instance.status() == InstanceStatus.FAILED) {
-            handleFailure(workflowPath, instance, instance.variables());
-        }
-        notifyCallActivityParents(instance);
-
         return Map.of(
                 "instanceId", instanceId,
                 "message", messageName,
@@ -755,44 +666,22 @@ public class WorkflowService {
 
     @Transactional
     public Map<String, Object> fireDueTimers(String instanceId, String operatorId) throws WorkflowException {
-        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
-        WorkflowInstance instance = stored.instance();
-        if (instance.status() != InstanceStatus.WAITING) {
-            throw new WorkflowException("Instance is not waiting: " + instanceId);
-        }
-        if (!instance.hasDueTimers(System.currentTimeMillis())) {
-            throw new WorkflowException("No due timers for instance: " + instanceId);
-        }
-
-        String workflowPath = instance.workflowPath();
-        BpmnProcess process = workflowEngine.parse(
-                readString(objectManager.require(workflowPath), "bpmnXml")
-                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        WorkflowInstance instance = resumeWaitingInstance(
+                instanceId,
+                operatorId,
+                waiting -> {
+                    if (!waiting.hasDueTimers(System.currentTimeMillis())) {
+                        throw new WorkflowException("No due timers for instance: " + instanceId);
+                    }
+                },
+                (waiting, process, evaluator) -> workflowEngine.fireDueTimers(
+                        waiting,
+                        process,
+                        taskExecutor::executeServiceTask,
+                        taskExecutor::executeMessageTask,
+                        evaluator
+                )
         );
-
-        if (operatorId != null && !operatorId.isBlank()) {
-            instance.claim(operatorId);
-        }
-        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
-        workflowEngine.fireDueTimers(
-                instance,
-                process,
-                this::executeTask,
-                this::executeMessageTask,
-                evaluator
-        );
-
-        UserTaskDefinition nextPending = instance.pendingUserTaskId()
-                .map(id -> process.userTasks().get(id))
-                .orElse(null);
-        instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
-        persistInstanceSnapshot(workflowPath, instance);
-        publishInstanceEvent(workflowPath, instance);
-        if (instance.status() == InstanceStatus.FAILED) {
-            handleFailure(workflowPath, instance, instance.variables());
-        }
-        notifyCallActivityParents(instance);
-
         return Map.of(
                 "instanceId", instanceId,
                 "status", instance.status().name()
@@ -908,78 +797,6 @@ public class WorkflowService {
         }
     }
 
-    private void executeUserTaskAction(UserTaskDefinition userTask, String triggerObjectPath) {
-        Map<String, String> params = userTask.parameters();
-        String functionName = params.get("function");
-        String targetObject = params.getOrDefault("targetObject", triggerObjectPath);
-        if (functionName == null || functionName.isBlank() || targetObject == null || targetObject.isBlank()) {
-            return;
-        }
-        try {
-            FunctionInvocationScope.runSystemTrusted(() ->
-                    functionService.invoke(targetObject, functionName));
-        } catch (Exception e) {
-            log.warn("User task function {} on {} failed: {}", functionName, targetObject, e.getMessage());
-        }
-    }
-
-    private void executeMessageTask(MessageTaskDefinition task, WorkflowInstance instance) {
-        if ("bpmn-throw".equalsIgnoreCase(task.channel())) {
-            String messageName = task.subject();
-            instance.resumeMessageIfPresent(messageName);
-            try {
-                self.getObject().deliverMessageByWorkflowPath(instance.workflowPath(), messageName, null);
-            } catch (WorkflowException e) {
-                log.debug("BPMN message throw had no external waiters for {}: {}", messageName, e.getMessage());
-            }
-            return;
-        }
-        if ("nats".equalsIgnoreCase(task.channel())) {
-            natsEventBridge.publish(task.subject(), task.message());
-            return;
-        }
-        log.info("[workflow:{}] message {} -> {}", instance.workflowPath(), task.subject(), task.message());
-    }
-
-    private CallActivityExecutor.Result executeCallActivity(
-            CallActivityDefinition call,
-            WorkflowInstance parent
-    ) throws WorkflowException {
-        Map<String, String> input = new HashMap<>();
-        input.put("__callParentInstanceId", parent.instanceId());
-        String inputMap = call.parameters().get("inputMap");
-        if (inputMap != null && !inputMap.isBlank()) {
-            for (String part : inputMap.split(",")) {
-                String[] kv = part.split("=", 2);
-                if (kv.length != 2) {
-                    continue;
-                }
-                String key = kv[0].trim();
-                String valueExpr = kv[1].trim();
-                String value = valueExpr.startsWith("${") && valueExpr.endsWith("}")
-                        ? parent.variables().getOrDefault(valueExpr.substring(2, valueExpr.length() - 1), "")
-                        : valueExpr;
-                input.put(key, value);
-            }
-        }
-        String trigger = call.parameters().get("objectPath");
-        if (trigger == null || trigger.isBlank()) {
-            trigger = parent.variables().get("triggerObjectPath");
-        }
-        WorkflowInstance child = self.getObject().runWorkflowInstance(
-                call.workflowPath(),
-                trigger,
-                AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
-                input
-        );
-        return new CallActivityExecutor.Result(
-                child.status(),
-                child.instanceId(),
-                child.variables(),
-                child.errorMessage()
-        );
-    }
-
     private void notifyCallActivityParents(WorkflowInstance child) {
         if (child.status() != InstanceStatus.COMPLETED && child.status() != InstanceStatus.FAILED) {
             return;
@@ -1027,11 +844,7 @@ public class WorkflowService {
             return;
         }
 
-        String workflowPath = parent.workflowPath();
-        BpmnProcess process = workflowEngine.parse(
-                readString(objectManager.require(workflowPath), "bpmnXml")
-                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
-        );
+        BpmnProcess process = parseProcess(parent.workflowPath());
         WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
         workflowEngine.resumeAfterCallActivityChild(
                 parent,
@@ -1039,213 +852,75 @@ public class WorkflowService {
                 childInstanceId,
                 childVariables,
                 childFailedMessage,
-                this::executeTask,
-                this::executeMessageTask,
+                taskExecutor::executeServiceTask,
+                taskExecutor::executeMessageTask,
                 evaluator
         );
+        finishStep(stored.triggerObjectPath(), parent, process, parent.variables());
+    }
 
-        UserTaskDefinition nextPending = parent.pendingUserTaskId()
+    /** One engine step on a WAITING instance (signal / message / timer): load, guard, claim, run, commit. */
+    private WorkflowInstance resumeWaitingInstance(
+            String instanceId,
+            String operatorId,
+            WaitingInstanceGuard guard,
+            EngineStep step
+    ) throws WorkflowException {
+        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
+        WorkflowInstance instance = stored.instance();
+        if (instance.status() != InstanceStatus.WAITING) {
+            throw new WorkflowException("Instance is not waiting: " + instanceId);
+        }
+        guard.check(instance);
+
+        BpmnProcess process = parseProcess(instance.workflowPath());
+        if (operatorId != null && !operatorId.isBlank()) {
+            instance.claim(operatorId);
+        }
+        step.run(instance, process, conditionFactory.forTriggerObjectPath(stored.triggerObjectPath()));
+        finishStep(stored.triggerObjectPath(), instance, process, instance.variables());
+        return instance;
+    }
+
+    /**
+     * Post-step commit shared by every entry point that advances an instance: store the runtime
+     * state, project it onto the WORKFLOW object, publish the transition, route failures to
+     * retry / dead-letter, and wake a parent callActivity that may be waiting on this instance.
+     */
+    private void finishStep(
+            String triggerObjectPath,
+            WorkflowInstance instance,
+            BpmnProcess process,
+            Map<String, String> failureInput
+    ) {
+        UserTaskDefinition nextPending = instance.pendingUserTaskId()
                 .map(id -> process.userTasks().get(id))
                 .orElse(null);
-        instanceStore.save(parent, process, stored.triggerObjectPath(), nextPending);
-        persistInstanceSnapshot(workflowPath, parent);
-        publishInstanceEvent(workflowPath, parent);
-        if (parent.status() == InstanceStatus.FAILED) {
-            handleFailure(workflowPath, parent, parent.variables());
+        instanceStore.save(instance, process, triggerObjectPath, nextPending);
+        String workflowPath = instance.workflowPath();
+        statePublisher.publish(workflowPath, instance);
+        if (instance.status() == InstanceStatus.FAILED) {
+            handleFailure(workflowPath, instance, failureInput);
         }
-        notifyCallActivityParents(parent);
+        notifyCallActivityParents(instance);
     }
 
-    private void executeTask(ServiceTaskDefinition task, WorkflowInstance instance) throws WorkflowException {
-        Map<String, String> params = task.parameters();
-        switch (task.action()) {
-            case LOG -> log.info("[workflow:{}] {}", instance.workflowPath(), params.getOrDefault("message", task.name()));
-            case SET_VARIABLE -> {
-                String target = required(params, "targetObject");
-                String variable = required(params, "variable");
-                String value = params.getOrDefault("value", "");
-                objectManager.setVariableValue(
-                        target,
-                        variable,
-                        DataRecord.single(STRING_VALUE, Map.of("value", value))
-                );
-            }
-            case PUBLISH_NATS -> natsEventBridge.publish(
-                    params.getOrDefault("subject", "ispf.workflow.event"),
-                    params.getOrDefault("message", task.name())
-            );
-            case INVOKE_FUNCTION -> invokeWorkflowFunction(params, instance);
-            case FIRE_EVENT -> {
-                String target = params.getOrDefault("objectPath", params.getOrDefault("targetObject", ""));
-                String eventName = required(params, "eventName");
-                DataRecord payload = resolveEventPayload(target, params.get("payloadVariable"));
-                eventService.fire(target, eventName, payload);
-            }
-            case READ_VARIABLE -> {
-                String target = params.getOrDefault("objectPath", params.getOrDefault("targetObject", ""));
-                String variable = params.get("sourceVariable");
-                if (variable == null || variable.isBlank()) {
-                    variable = required(params, "variable");
-                }
-                String valueField = params.getOrDefault("valueField", "value");
-                String contextKey = params.getOrDefault("contextKey", variable);
-                String value = readObjectVariableField(target, variable, valueField);
-                instance.setVariable(contextKey, value);
-            }
-            case START_WORKFLOW -> {
-                String childPath = required(params, "workflowPath");
-                self.getObject().runWorkflow(
-                        childPath,
-                        params.get("objectPath"),
-                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT
-                );
-            }
-            case LLM_COMPLETE -> {
-                String template = params.getOrDefault("promptTemplate", params.getOrDefault("message", ""));
-                String prompt = WorkflowAiActionService.interpolate(template, instance.variables());
-                int timeoutMs = parseInt(params.getOrDefault("timeoutMs", "30000"), 30_000);
-                String content = workflowAiActionService.llmComplete(
-                        prompt,
-                        params.getOrDefault("modelRef", "platform-default"),
-                        timeoutMs
-                );
-                String outputVariable = params.getOrDefault("outputVariable", "llmOutput");
-                instance.setVariable(outputVariable, content);
-            }
-            case INVOKE_AGENT -> {
-                String goalTemplate = params.getOrDefault("goalTemplate", params.getOrDefault("promptTemplate", ""));
-                String goal = WorkflowAiActionService.interpolate(goalTemplate, instance.variables());
-                String brief = workflowAiActionService.invokeAgent(
-                        goal,
-                        params.getOrDefault("agentMode", "ask"),
-                        params.getOrDefault("toolAllowlist", ""),
-                        parseInt(params.getOrDefault("maxSteps", "8"), 8)
-                );
-                String outputVariable = params.getOrDefault("outputVariable", "agentBrief");
-                instance.setVariable(outputVariable, brief);
-            }
-        }
+    private BpmnProcess parseProcess(String workflowPath) throws WorkflowException {
+        return workflowEngine.parse(
+                readString(objectManager.require(workflowPath), "bpmnXml")
+                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        );
     }
 
-    private DataRecord resolveEventPayload(String objectPath, String payloadVariable) {
-        if (payloadVariable == null || payloadVariable.isBlank()) {
-            return null;
-        }
-        PlatformObject node = objectManager.require(objectPath);
-        return node.getVariable(payloadVariable)
-                .flatMap(Variable::value)
-                .orElse(null);
+    @FunctionalInterface
+    private interface WaitingInstanceGuard {
+        void check(WorkflowInstance instance) throws WorkflowException;
     }
 
-    private String readObjectVariableField(String objectPath, String variableName, String valueField) {
-        PlatformObject node = objectManager.require(objectPath);
-        return node.getVariable(variableName)
-                .flatMap(Variable::value)
-                .map(record -> {
-                    Object value = record.firstRow().get(valueField);
-                    return value != null ? String.valueOf(value) : "";
-                })
-                .orElse("");
-    }
-
-    private void invokeWorkflowFunction(Map<String, String> params, WorkflowInstance instance) throws WorkflowException {
-        String objectPath = required(params, "objectPath");
-        String functionName = required(params, "functionName");
-        String inputMap = params.getOrDefault("inputMap", "");
-        DataRecord input = buildWorkflowFunctionInput(inputMap, instance);
-        DataRecord output = FunctionInvocationScope.callSystemTrusted(() ->
-                functionService.invoke(objectPath, functionName, input));
-        applyWorkflowFunctionOutput(params.get("outputMap"), output, instance);
-        bindingRefreshAfterCommit.refreshNow(objectPath, functionName);
-        if (output != null && output.rowCount() > 0) {
-            Object errorCode = output.firstRow().get("error_code");
-            if (errorCode != null && !"OK".equals(String.valueOf(errorCode))) {
-                throw new WorkflowException("Function " + functionName + " failed: " + errorCode);
-            }
-        }
-    }
-
-    private DataRecord buildWorkflowFunctionInput(String inputMap, WorkflowInstance instance) {
-        if (inputMap == null || inputMap.isBlank()) {
-            return null;
-        }
-        Map<String, Object> row = new HashMap<>();
-        DataSchema.Builder schemaBuilder = DataSchema.builder("workflowFunctionInput");
-        for (String part : inputMap.split(",")) {
-            String[] kv = part.split("=", 2);
-            if (kv.length != 2) {
-                continue;
-            }
-            String key = kv[0].trim();
-            String valueExpr = kv[1].trim();
-            String value = valueExpr.startsWith("${") && valueExpr.endsWith("}")
-                    ? instance.variables().getOrDefault(valueExpr.substring(2, valueExpr.length() - 1), "")
-                    : valueExpr;
-            row.put(key, value);
-            schemaBuilder.field(key, FieldType.STRING);
-        }
-        return row.isEmpty() ? null : DataRecord.single(schemaBuilder.build(), row);
-    }
-
-    private void applyWorkflowFunctionOutput(String outputMap, DataRecord output, WorkflowInstance instance) {
-        if (outputMap == null || outputMap.isBlank() || output == null || output.rowCount() == 0) {
-            return;
-        }
-        Map<String, Object> resultRow = output.firstRow();
-        for (String part : outputMap.split(",")) {
-            String[] kv = part.split("=", 2);
-            if (kv.length != 2) {
-                continue;
-            }
-            String workflowVar = kv[0].trim();
-            String resultField = kv[1].trim();
-            instance.setVariable(workflowVar, String.valueOf(resultRow.get(resultField)));
-        }
-    }
-
-    private void publishInstanceEvent(String path, WorkflowInstance instance) {
-        if (instance.status() == InstanceStatus.COMPLETED) {
-            natsEventBridge.publishWorkflowEvent(path, "completed", Map.of(
-                    "instanceId", instance.instanceId(),
-                    "status", instance.status().name()
-            ));
-        } else if (instance.status() == InstanceStatus.WAITING) {
-            natsEventBridge.publishWorkflowEvent(path, "waiting", Map.of(
-                    "instanceId", instance.instanceId(),
-                    "taskId", instance.pendingUserTaskId().orElse(""),
-                    "signal", instance.pendingSignalName().orElse(""),
-                    "message", instance.pendingMessageName().orElse("")
-            ));
-        }
-    }
-
-    private void persistInstanceSnapshot(String path, WorkflowInstance instance) {
-        try {
-            Map<String, Object> state = new HashMap<>();
-            state.put("instanceId", instance.instanceId());
-            state.put("status", instance.status().name());
-            state.put("currentNodeId", instance.currentNodeId());
-            state.put("startedAt", instance.startedAt().toString());
-            state.put("completedAt", instance.completedAt() != null ? instance.completedAt().toString() : null);
-            state.put("history", instance.history());
-            state.put("errorMessage", instance.errorMessage());
-            state.put("assignee", instance.assignee().orElse(null));
-            state.put("pendingUserTaskId", instance.pendingUserTaskId().orElse(null));
-            state.put("pendingSignalName", instance.pendingSignalName().orElse(null));
-            // ADR-0049: tool output projection and AI outputVariable read this map.
-            state.put("variables", instance.variables() == null ? Map.of() : Map.copyOf(instance.variables()));
-
-            String json = objectMapper.writeValueAsString(state);
-            objectManager.setVariableValue(path, "instanceState", DataRecord.single(STRING_VALUE, Map.of("value", json)));
-            objectManager.setVariableValue(
-                    path,
-                    "lastRunAt",
-                    DataRecord.single(STRING_VALUE, Map.of("value", Instant.now().toString()))
-            );
-            objectManager.persistNodeTree(path);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to persist workflow instance state", e);
-        }
+    @FunctionalInterface
+    private interface EngineStep {
+        void run(WorkflowInstance instance, BpmnProcess process, WorkflowConditionEvaluator evaluator)
+                throws WorkflowException;
     }
 
     private boolean isTriggerConditionMet(PlatformObject workflow, String objectPath, String variableName) {
@@ -1277,14 +952,6 @@ public class WorkflowService {
             log.debug("Trigger condition check failed for {}: {}", workflow.path(), e.getMessage());
             return false;
         }
-    }
-
-    private static String required(Map<String, String> params, String key) throws WorkflowException {
-        String value = params.get(key);
-        if (value == null || value.isBlank()) {
-            throw new WorkflowException("Missing service task parameter: " + key);
-        }
-        return value;
     }
 
     private static WorkflowLifecycleStatus readLifecycleStatus(PlatformObject node) {

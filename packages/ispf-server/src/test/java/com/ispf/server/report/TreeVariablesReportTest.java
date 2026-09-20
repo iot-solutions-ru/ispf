@@ -31,15 +31,15 @@ class TreeVariablesReportTest {
 
     @Test
     void matchesPrefixAndGlobPatterns() {
-        assertTrue(ReportService.matchesDevicePathPattern(
+        assertTrue(TreeVariablesReportRows.matchesDevicePathPattern(
                 "root.platform.devices.lab-userA-01",
                 "root.platform.devices.lab-"
         ));
-        assertTrue(ReportService.matchesDevicePathPattern(
+        assertTrue(TreeVariablesReportRows.matchesDevicePathPattern(
                 "root.platform.devices.lab-userB-01",
                 "root.platform.devices.lab-*"
         ));
-        assertFalse(ReportService.matchesDevicePathPattern(
+        assertFalse(TreeVariablesReportRows.matchesDevicePathPattern(
                 "root.platform.devices.demo-sensor-01",
                 "root.platform.devices.lab-*"
         ));

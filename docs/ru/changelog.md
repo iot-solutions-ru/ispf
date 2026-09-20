@@ -70,6 +70,13 @@ Changelog отдельных application bundles — в манифестах п�
   требует ≥ 2×, чтобы разделение не откатилось незаметно. Все 76 оставшихся `synchronized` в `ispf-server`
   просмотрены — других мониторов на весь экземпляр на горячем пути нет; один пункт «watch»
   (`RecentEventCache`, сканы на чтение). Отчёт: `docs/evidence/quality/2026-09-20-synchronized-audit.md`.
+- Крупные сервисы сервера разбиты на компоненты (API без изменений):
+  `ApplicationBundleDeployService` 1459 → 674 строк (`BundleTreeArtifactsApplier`,
+  `BundleArtifactDeployers`, `BundleOperatorUiSync`); `WorkflowService` 1329 → 996
+  (`WorkflowTaskExecutor`, `WorkflowInstanceStatePublisher`, общий `resumeWaitingInstance`/`finishStep`
+  вместо пяти копий цикла «загрузить → шаг движка → сохранить/опубликовать»);
+  `ReportService` 1183 → 830 (`ReportSqlQuery`, `ReportTableExport`, `TreeVariablesReportRows`).
+  Новые тесты: `WorkflowTaskExecutorTest`, `ReportTableExportTest`.
 - Lint-гейт Web Console на нуле предупреждений: `npm run lint` с `--max-warnings 0` (было 180);
   исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
   (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).
