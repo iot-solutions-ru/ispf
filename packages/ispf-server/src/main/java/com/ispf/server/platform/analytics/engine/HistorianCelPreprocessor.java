@@ -100,7 +100,7 @@ public final class HistorianCelPreprocessor {
         StringBuilder output = new StringBuilder();
         int lastEnd = 0;
         while (matcher.find()) {
-            output.append(expression, lastEnd, matcher.start());
+            output.append(expression, /* start= */ lastEnd, /* end= */ matcher.start());
             String function = matcher.group(1).toLowerCase(Locale.ROOT);
             List<String> args = parseArgs(matcher.group(2));
             double value = evaluateCall(function, args, historian, live, asOf, ruleObjectPath);

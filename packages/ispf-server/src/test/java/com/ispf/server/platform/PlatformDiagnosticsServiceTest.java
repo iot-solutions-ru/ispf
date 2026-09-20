@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -34,6 +33,6 @@ class PlatformDiagnosticsServiceTest {
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> suspects = (List<Map<String, Object>>) snapshot.get("suspects");
-        assertTrue(suspects.size() >= 0);
+        assertNotNull(suspects);
     }
 }

@@ -185,7 +185,7 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
             String body = station + "#" + ("D".equals(device) ? "RDD" : "RCC") + padded + padded;
             return "%" + body + bcc(body);
         }
-        return ensureBccFrame(map.startsWith("%") ? map : "%" + station + map);
+        return ensureBccFrame("%" + station + map);
     }
 
     static String buildWriteCommand(String station, String mapping, String payload) {

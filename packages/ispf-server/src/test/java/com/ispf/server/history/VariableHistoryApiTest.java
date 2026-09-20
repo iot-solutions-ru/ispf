@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.nio.charset.StandardCharsets;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -196,8 +197,8 @@ class VariableHistoryApiTest {
                 .getContentAsByteArray();
 
         assertThat(body.length).isGreaterThan(8);
-        assertThat(new String(body, 0, 4)).isEqualTo("PAR1");
-        assertThat(new String(body, body.length - 4, 4)).isEqualTo("PAR1");
+        assertThat(new String(body, 0, 4, StandardCharsets.US_ASCII)).isEqualTo("PAR1");
+        assertThat(new String(body, body.length - 4, 4, StandardCharsets.US_ASCII)).isEqualTo("PAR1");
     }
 
     @Test

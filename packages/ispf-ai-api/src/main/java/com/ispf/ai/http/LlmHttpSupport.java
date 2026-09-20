@@ -352,7 +352,7 @@ public final class LlmHttpSupport {
         if (normalized.contains("image")) {
             return true;
         }
-        if (normalized.contains("text") && !normalized.contains("image")) {
+        if (normalized.contains("text")) {
             return false;
         }
         return null;

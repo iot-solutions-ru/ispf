@@ -14,6 +14,9 @@ import java.util.Map;
 @Component
 class AgentPromptStartupValidator {
 
+    /** Unresolved String.format placeholder — must never survive into a rendered prompt. */
+    private static final String PLACEHOLDER = "%s";
+
     private static final Logger log = LoggerFactory.getLogger(AgentPromptStartupValidator.class);
 
     private final PlatformAgentToolRegistry toolRegistry;
@@ -29,8 +32,8 @@ class AgentPromptStartupValidator {
         if (prompt.isBlank()) {
             throw new IllegalStateException("Agent system prompt is empty");
         }
-        if (prompt.contains("%s")) {
-            throw new IllegalStateException("Agent system prompt contains unresolved %s placeholder");
+        if (prompt.contains(PLACEHOLDER)) {
+            throw new IllegalStateException("Agent system prompt contains unresolved " + PLACEHOLDER + " placeholder");
         }
         for (String playbook : List.of(
                 AgentPlaybooks.snmpLocalhostMonitoring(),
@@ -40,8 +43,8 @@ class AgentPromptStartupValidator {
                 AgentPlaybooks.scadaMimicGuide(),
                 AgentPlaybooks.platformObjectTypesGuide()
         )) {
-            if (playbook.contains("%s")) {
-                throw new IllegalStateException("Agent playbook contains forbidden %s placeholder");
+            if (playbook.contains(PLACEHOLDER)) {
+                throw new IllegalStateException("Agent playbook contains forbidden " + PLACEHOLDER + " placeholder");
             }
         }
         log.info("Agent prompt validated ({} tools, {} chars)", catalog.size(), prompt.length());

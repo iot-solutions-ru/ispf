@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.nio.charset.StandardCharsets;
 
 class AuditSiemWebhookDispatcherTest {
 
@@ -32,7 +33,7 @@ class AuditSiemWebhookDispatcherTest {
         AtomicReference<String> body = new AtomicReference<>();
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/siem", exchange -> {
-            body.set(new String(exchange.getRequestBody().readAllBytes()));
+            body.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(204, -1);
             exchange.close();
             latch.countDown();

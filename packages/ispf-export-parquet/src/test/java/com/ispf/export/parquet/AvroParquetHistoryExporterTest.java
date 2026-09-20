@@ -3,6 +3,7 @@ package com.ispf.export.parquet;
 import com.ispf.core.export.HistoryParquetExporter;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ServiceLoader;
 
@@ -20,15 +21,15 @@ class AvroParquetHistoryExporterTest {
         ));
 
         assertThat(body.length).isGreaterThan(8);
-        assertThat(new String(body, 0, 4)).isEqualTo("PAR1");
-        assertThat(new String(body, body.length - 4, 4)).isEqualTo("PAR1");
+        assertThat(new String(body, 0, 4, StandardCharsets.US_ASCII)).isEqualTo("PAR1");
+        assertThat(new String(body, body.length - 4, 4, StandardCharsets.US_ASCII)).isEqualTo("PAR1");
     }
 
     @Test
     void emptyInputStillProducesValidFile() throws Exception {
         byte[] body = new AvroParquetHistoryExporter().export(List.of());
-        assertThat(new String(body, 0, 4)).isEqualTo("PAR1");
-        assertThat(new String(body, body.length - 4, 4)).isEqualTo("PAR1");
+        assertThat(new String(body, 0, 4, StandardCharsets.US_ASCII)).isEqualTo("PAR1");
+        assertThat(new String(body, body.length - 4, 4, StandardCharsets.US_ASCII)).isEqualTo("PAR1");
     }
 
     @Test

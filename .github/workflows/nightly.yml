@@ -185,6 +185,57 @@ jobs:
           npm run lighthouse:ci
           npm run test:quality
 
+  dependency-vulnerabilities:
+    # Code-analysis F-02: SBOM of every shipped runtimeClasspath (server, driver packs, AI providers,
+    # optional export modules) scanned against the vulnerability DB. CRITICAL/HIGH fail the night;
+    # MEDIUM/LOW are reported in the artifact only. Pins that close a finding go into the ADR-0059
+    # registry with a removal condition.
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - run: chmod +x gradlew
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Generate CycloneDX SBOM (runtime classpaths)
+        run: ./gradlew cyclonedxBom --no-daemon -Pispf.errorprone=false
+
+      - name: Scan SBOM (report, all severities)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: sbom
+          scan-ref: build/reports/cyclonedx/bom.json
+          format: table
+          output: trivy-dependencies.txt
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+          exit-code: "0"
+
+      - name: Scan SBOM (gate on CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: sbom
+          scan-ref: build/reports/cyclonedx/bom.json
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          skip-setup-trivy: true
+
+      - name: Upload SBOM and vulnerability report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-vulnerabilities-${{ github.run_id }}
+          path: |
+            build/reports/cyclonedx/bom.json
+            trivy-dependencies.txt
+          retention-days: 30
+          if-no-files-found: ignore
+
   ci-dashboard:
     needs: [backend-full, web-console-full, cluster-ownership]
     if: always() && github.event_name != 'push'

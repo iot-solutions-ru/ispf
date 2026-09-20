@@ -7,6 +7,8 @@ plugins {
 extra["protobuf-java.version"] = "4.36.0"
 // Pin (ADR-0059 registry). Align EmbeddedKafka 4.3.1 with kafka_2.13 (Boot BOM otherwise forces 4.2.1 → CompressionType CNFE).
 extra["kafka.version"] = "4.3.1"
+// Pin (ADR-0059 registry): Boot 4.1.1 manages Tomcat 11.0.24 (CVE-2026-65182/65905/68525); drop when the BOM catches up.
+extra["tomcat.version"] = "11.0.26"
 
 configurations.all {
     exclude(group = "org.slf4j", module = "slf4j-reload4j")

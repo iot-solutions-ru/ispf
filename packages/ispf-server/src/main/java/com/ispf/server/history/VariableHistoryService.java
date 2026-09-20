@@ -415,8 +415,9 @@ public class VariableHistoryService {
             Instant to,
             int limit
     ) {
-        objectManager.require(objectPath).getVariable(variableName)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + variableName));
+        if (objectManager.require(objectPath).getVariable(variableName).isEmpty()) {
+            throw new IllegalArgumentException("Unknown variable: " + variableName);
+        }
 
         String field = fieldName == null || fieldName.isBlank() ? "value" : fieldName;
 

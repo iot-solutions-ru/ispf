@@ -104,8 +104,9 @@ public class FederationInboundRegistrationService {
         if (sessionToken == null || sessionToken.isBlank()) {
             throw new IllegalArgumentException("sessionToken is required for reconnect");
         }
-        platformUserService.authenticateToken(sessionToken.trim())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid session token"));
+        if (platformUserService.authenticateToken(sessionToken.trim()).isEmpty()) {
+            throw new IllegalArgumentException("Invalid session token");
+        }
         FederationPeer peer = peerStore.findById(peerId)
                 .orElseThrow(() -> new IllegalArgumentException("Peer not found: " + peerId));
         if (peer.connectionMode() != FederationConnectionMode.TUNNEL_INBOUND) {

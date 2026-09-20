@@ -74,6 +74,11 @@ public class JmxDeviceDriver implements DeviceDriver {
         }
     }
 
+    // JMX remoting over RMI resolves the connector stub through JNDI by specification
+    // (service:jmx:rmi:///jndi/rmi://...); there is no non-JNDI transport for a standard JMX agent.
+    // The endpoint comes from the object's driver configuration (configurator role), never from
+    // runtime user input, so the deserialization surface is limited to operator-registered hosts.
+    @SuppressWarnings("BanJNDI")
     @Override
     public void connect() throws DriverException {
         try {

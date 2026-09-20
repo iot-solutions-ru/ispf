@@ -186,8 +186,7 @@ public class AiController {
             Authentication authentication,
             @PathVariable String sessionId
     ) {
-        AgentSession session = agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        AgentSession session = requireSession(sessionId, authentication);
         return session.toMap();
     }
 
@@ -215,8 +214,7 @@ public class AiController {
             @PathVariable String sessionId,
             @RequestParam(name = "turnId", required = false) String turnId
     ) {
-        AgentSession session = agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        AgentSession session = requireSession(sessionId, authentication);
         if (turnId == null || turnId.isBlank()) {
             return agentTraceService.traceAllTurns(session);
         }
@@ -246,8 +244,7 @@ public class AiController {
             Authentication authentication,
             @PathVariable String sessionId
     ) {
-        agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        requireSession(sessionId, authentication);
         return Map.of(
                 "sessionId", sessionId,
                 "documents", agentSessionDocumentService.listMetadata(sessionId, 50),
@@ -262,8 +259,7 @@ public class AiController {
             @RequestPart("file") MultipartFile file,
             @RequestParam(name = "description", required = false) String description
     ) throws Exception {
-        agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        requireSession(sessionId, authentication);
         AgentSessionDocumentRecord record = agentSessionDocumentService.upload(sessionId, file, description);
         return Map.of(
                 "status", "OK",
@@ -279,8 +275,7 @@ public class AiController {
             @PathVariable String sessionId,
             @PathVariable String docId
     ) {
-        agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        requireSession(sessionId, authentication);
         agentSessionDocumentService.delete(sessionId, docId);
         return Map.of("status", "OK", "docId", docId);
     }
@@ -290,8 +285,7 @@ public class AiController {
             Authentication authentication,
             @PathVariable String sessionId
     ) {
-        agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        requireSession(sessionId, authentication);
         return agentService.runProgress(sessionId);
     }
 
@@ -300,8 +294,7 @@ public class AiController {
             Authentication authentication,
             @PathVariable String sessionId
     ) {
-        agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        requireSession(sessionId, authentication);
 
         SseEmitter emitter = new SseEmitter(AGENT_PROGRESS_SSE_TIMEOUT_MS);
         AtomicBoolean finished = new AtomicBoolean(false);
@@ -357,8 +350,7 @@ public class AiController {
             @RequestBody AgentMessageRequest request,
             @RequestParam(name = "async", defaultValue = "false") boolean async
     ) {
-        AgentSession session = agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        AgentSession session = requireSession(sessionId, authentication);
         if (request != null && request.rootPath() != null && !request.rootPath().isBlank()) {
             session.setRootPath(request.rootPath());
         }
@@ -419,8 +411,7 @@ public class AiController {
             Authentication authentication,
             @PathVariable String sessionId
     ) {
-        agentSessionStore.require(sessionId, actor(authentication))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        requireSession(sessionId, authentication);
         return agentService.cancelRun(sessionId);
     }
 
@@ -576,4 +567,11 @@ public class AiController {
             String uiLocale
     ) {
     }
+
+    /** Session must exist and belong to the caller; 404 otherwise (used as a guard on every session route). */
+    private AgentSession requireSession(String sessionId, Authentication authentication) {
+        return agentSessionStore.require(sessionId, actor(authentication))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+    }
+
 }

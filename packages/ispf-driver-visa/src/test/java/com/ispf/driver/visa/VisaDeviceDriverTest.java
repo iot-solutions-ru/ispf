@@ -211,7 +211,7 @@ class VisaDeviceDriverTest {
                     } else if (upper.equals("MEAS:VOLT:DC?")) {
                         write(out, voltage.get());
                     } else if (upper.startsWith("VOLT ") || upper.startsWith("MEAS:VOLT:DC ")) {
-                        String[] parts = command.split("\s+", 2);
+                        String[] parts = command.split("\\s+", 2);
                         if (parts.length == 2) {
                             voltage.set(parts[1].trim());
                         }

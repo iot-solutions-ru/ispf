@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Loopback tests against in-test UDP peers answering RMCP pings and minimal IPMI LAN commands.
@@ -228,7 +229,7 @@ class IpmiDeviceDriverTest {
         private final DatagramSocket socket;
         private final Thread thread;
         private volatile boolean running = true;
-        private volatile int requestCount;
+        private final AtomicInteger requestCount = new AtomicInteger();
 
         RmcpPeer() throws Exception {
             socket = new DatagramSocket(0);
@@ -242,7 +243,7 @@ class IpmiDeviceDriverTest {
         }
 
         int requestCount() {
-            return requestCount;
+            return requestCount.get();
         }
 
         void stopResponding() {
@@ -258,7 +259,7 @@ class IpmiDeviceDriverTest {
                     if (!running) {
                         continue;
                     }
-                    requestCount++;
+                    requestCount.incrementAndGet();
                     byte[] response = authCapabilitiesResponse(buffer, request.getLength());
                     socket.send(new DatagramPacket(response, response.length,
                             request.getAddress(), request.getPort()));
@@ -307,7 +308,7 @@ class IpmiDeviceDriverTest {
         private final Thread thread;
         private final byte[] cpuTempSdr = fullSensorSdr(0x0A, "CPU Temp");
         private volatile boolean running = true;
-        private volatile int requestCount;
+        private final AtomicInteger requestCount = new AtomicInteger();
 
         MockBmc() throws Exception {
             socket = new DatagramSocket(0);
@@ -321,7 +322,7 @@ class IpmiDeviceDriverTest {
         }
 
         int requestCount() {
-            return requestCount;
+            return requestCount.get();
         }
 
         private void serve() {
@@ -330,7 +331,7 @@ class IpmiDeviceDriverTest {
                 try {
                     DatagramPacket request = new DatagramPacket(buffer, buffer.length);
                     socket.receive(request);
-                    requestCount++;
+                    requestCount.incrementAndGet();
                     byte[] response = response(buffer, request.getLength());
                     socket.send(new DatagramPacket(response, response.length, request.getAddress(), request.getPort()));
                 } catch (Exception ex) {

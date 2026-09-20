@@ -4,6 +4,8 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverPermanentException;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Value coercion for DLMS read/write.
  */
@@ -41,7 +43,7 @@ final class DlmsValueCodec {
 
     static Object formatReadValue(Object raw) {
         if (raw instanceof byte[] bytes) {
-            return new String(bytes);
+            return new String(bytes, StandardCharsets.UTF_8);
         }
         return raw;
     }

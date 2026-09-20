@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Loopback tests for {@link OmronFinsDeviceDriver} against a fake FINS/TCP server bound to an
@@ -141,7 +142,7 @@ class OmronFinsDeviceDriverTest {
             return thread;
         });
         private final Map<Long, int[]> wordsByAreaAndAddress = new HashMap<>();
-        private volatile int connectionsHandled;
+        private final AtomicInteger connectionsHandled = new AtomicInteger();
 
         FakeFinsServer() throws IOException {
             serverSocket = new ServerSocket();
@@ -162,10 +163,10 @@ class OmronFinsDeviceDriverTest {
         }
 
         int awaitConnectionsHandled(int expected) throws InterruptedException {
-            for (int attempt = 0; attempt < 20 && connectionsHandled < expected; attempt++) {
+            for (int attempt = 0; attempt < 20 && connectionsHandled.get() < expected; attempt++) {
                 TimeUnit.MILLISECONDS.sleep(100);
             }
-            return connectionsHandled;
+            return connectionsHandled.get();
         }
 
         private static long key(int areaCode, int address) {
@@ -220,7 +221,7 @@ class OmronFinsDeviceDriverTest {
             } catch (IOException ignored) {
                 // malformed frame or reset — back to the accept loop
             } finally {
-                connectionsHandled++;
+                connectionsHandled.incrementAndGet();
             }
         }
 

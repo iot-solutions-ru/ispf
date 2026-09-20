@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Graph database driver — Neo4j Bolt or Gremlin-over-HTTP scalar queries.
@@ -161,7 +162,7 @@ public class GraphDbDeviceDriver implements DeviceDriver {
                     .timeout(Duration.ofMillis(timeoutMs))
                     .header("Content-Type", "application/json");
             if (username != null && !username.isBlank()) {
-                String token = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+                String token = Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
                 builder.header("Authorization", "Basic " + token);
             }
             HttpResponse<String> response = httpClient.send(

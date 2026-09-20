@@ -359,8 +359,9 @@ public class PlatformUserService {
         if (password == null || password.length() < 8) {
             throw new IllegalArgumentException("Password must be at least 8 characters");
         }
-        userStore.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        if (userStore.findByUsername(username).isEmpty()) {
+            throw new IllegalArgumentException("User not found: " + username);
+        }
         requireSameTenantOrGlobalAdmin(username, authentication);
         userStore.updatePassword(username, passwordEncoder.encode(password));
     }
@@ -442,7 +443,7 @@ public class PlatformUserService {
             );
             case "autoStartEnabled" -> {
                 boolean enabledAutoStart = Boolean.parseBoolean(fieldValue);
-                String app = enabledAutoStart ? user.autoStartApp() : user.autoStartApp();
+                String app = user.autoStartApp();
                 if (enabledAutoStart && (app == null || app.isBlank())) {
                     throw new IllegalArgumentException("autoStartApp must be set before enabling auto start");
                 }
@@ -601,7 +602,7 @@ public class PlatformUserService {
         }
         String normalized = autoStartApp.trim();
         if (normalized.isEmpty()) {
-            return autoStartEnabled ? null : null;
+            return null;
         }
         if (!normalized.matches("[a-z0-9._-]{1,64}")) {
             throw new IllegalArgumentException("Invalid autoStartApp format");

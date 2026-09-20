@@ -75,7 +75,7 @@ class AgentRunCancellationRegistryTest {
                 progressField.setAccessible(true);
                 progressField.setLong(runState, ms);
             } catch (ReflectiveOperationException ex) {
-                throw new AssertionError(ex);
+                throw new LinkageError("AgentRunCancellationRegistry internals changed", ex);
             }
         }
     }

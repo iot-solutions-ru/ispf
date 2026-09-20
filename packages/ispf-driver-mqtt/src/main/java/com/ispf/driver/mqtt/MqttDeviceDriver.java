@@ -403,7 +403,7 @@ public class MqttDeviceDriver implements DeviceDriver {
         String topic = topicPrefix + pointId;
         Object raw = value.firstRow().get("raw");
         try {
-            client.publish(topic, new MqttMessage(String.valueOf(raw).getBytes()));
+            client.publish(topic, new MqttMessage(String.valueOf(raw).getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             throw new DriverTransientException("Publish failed: " + topic, e);
         }

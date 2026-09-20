@@ -173,8 +173,9 @@ public class VisualGroupService {
         if (memberPath.equals(groupPath)) {
             throw new IllegalArgumentException("Visual group cannot reference itself: " + groupPath);
         }
-        objectManager.tree().findByPath(memberPath)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown member path: " + memberPath));
+        if (objectManager.tree().findByPath(memberPath).isEmpty()) {
+            throw new IllegalArgumentException("Unknown member path: " + memberPath);
+        }
     }
 
     private void assertNoCycle(String groupPath, String memberPath, Set<String> visiting) {
