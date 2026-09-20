@@ -211,6 +211,43 @@ class DriverProductionMatrixTest {
         }
     }
 
+    /**
+     * Honesty gate (code-analysis F-03): the maturity counts published in
+     * {@code docs/en/drivers.md} must match the registry. The doc line is
+     * {@code <!-- maturity-counts: production=N beta=M stub=K -->} and is the single
+     * source for the human-readable sentence right below it.
+     */
+    @Test
+    void docsMaturityCountsMatchMatrix() throws IOException {
+        Path doc = firstExisting(
+                Path.of("docs", "en", "drivers.md"),
+                Path.of("..", "..", "docs", "en", "drivers.md")
+        );
+        assertNotNull(doc, "docs/en/drivers.md not found");
+        Matcher m = Pattern
+                .compile("<!--\\s*maturity-counts:\\s*production=(\\d+)\\s+beta=(\\d+)\\s+stub=(\\d+)\\s*-->")
+                .matcher(Files.readString(doc));
+        assertTrue(m.find(), "docs/en/drivers.md must carry a <!-- maturity-counts: ... --> marker");
+
+        long production = 0;
+        long beta = 0;
+        long stub = 0;
+        for (String driverId : DriverProductionMatrix.entries().keySet()) {
+            switch (DriverProductionMatrix.resolveMaturity(driverId)) {
+                case PRODUCTION -> production++;
+                case BETA -> beta++;
+                case STUB -> stub++;
+            }
+        }
+        stub += DriverProductionMatrix.protocolStubIds().stream()
+                .filter(id -> !DriverProductionMatrix.entries().containsKey(id))
+                .count();
+
+        assertEquals(production, Long.parseLong(m.group(1)), "PRODUCTION count in docs/en/drivers.md is stale");
+        assertEquals(beta, Long.parseLong(m.group(2)), "BETA count in docs/en/drivers.md is stale");
+        assertEquals(stub, Long.parseLong(m.group(3)), "STUB count in docs/en/drivers.md is stale");
+    }
+
     private static Path resolveDeviceDriverSource(DriverProductionMatrix.Entry entry) throws IOException {
         String module = entry.interopGradleModule();
         if (module == null || module.isBlank()) {

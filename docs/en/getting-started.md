@@ -148,7 +148,7 @@ Details: [licensed-driver-packs](licensed-driver-packs.md).
 
 ## Contribute: local dev & QA
 
-**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all ~58 driver packs** and can run **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)).
+**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all 162 driver packs** and can run **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)).
 
 ### Pre-push check (matches CI pr-fast)
 

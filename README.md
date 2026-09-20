@@ -47,7 +47,7 @@ Honest positioning: closer to an **open Ignition-class application platform** th
 ## Features at a glance
 
 - **Object tree** — typed variables, events, functions; REST + WebSocket
-- **~58 drivers** — Modbus, OPC UA, MQTT, SNMP, JDBC, and more ([drivers](docs/en/drivers.md))
+- **162 driver packs** — Modbus, OPC UA, MQTT, SNMP, JDBC, and more; top-20 industrial protocols run in the interop lab, the long tail is lab-codec grade (see maturity notes in [drivers](docs/en/drivers.md))
 - **HMI** — dashboard builder, charts with variable history, SCADA mimics
 - **Automation** — alert rules, correlators, BPMN workflows as tree nodes
 - **Applications** — bundle deploy, reports, BFF functions, scheduler
