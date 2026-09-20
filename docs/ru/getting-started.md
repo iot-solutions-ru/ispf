@@ -148,7 +148,7 @@ docker compose up -d
 
 ## Контрибут: локальный dev & QA
 
-**Не начинайте** с `./gradlew test` или `syncAllDriverPacks`, если не меняете драйверы и не гоняете полную регрессию. Эти пути собирают **все ~58 driver packs** и могут прогнать **1000+** тестов — на холодной машине часто **часы** ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)).
+**Не начинайте** с `./gradlew test` или `syncAllDriverPacks`, если не меняете драйверы и не гоняете полную регрессию. Эти пути собирают **все 162 driver packs** и могут прогнать **1000+** тестов — на холодной машине часто **часы** ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)).
 
 ### Проверка перед push (как CI pr-fast)
 

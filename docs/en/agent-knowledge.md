@@ -483,7 +483,7 @@ Use `search_context` with `topic` or keywords from this table.
 | [workflows](workflows.md) | workflows | BPMN, ISPF extensions |
 | [messaging](messaging.md) | messaging, features | NATS, WS, events |
 | [federation](federation.md) | federation | Remote peers |
-| [drivers](drivers.md) | drivers | 58 drivers, config |
+| [drivers](drivers.md) | drivers | 162 driver packs, maturity, config |
 | [reports](reports.md) | reports | SQL reports, export |
 
 ### AI, deploy, ops
