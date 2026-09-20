@@ -48,6 +48,9 @@ The registry below is the single list of live pins. A PR that adds a pin adds a 
 | `at.yawk.lz4:lz4-java` **1.11.3** (`force`) | root `build.gradle.kts` | kafka-clients 4.3.1 declares 1.10.2 (CVE-2026-59949) | kafka-clients declares ≥ 1.11.3 | drivers/messaging | each Kafka bump |
 | `commons-configuration2` **2.15.1** (`force`) | root `build.gradle.kts` | hadoop-common 3.5.0 declares 2.10.1 (CVE-2026-45205) | hadoop-common ≥ 3.5.1 declares ≥ 2.15 | platform/historian | each hadoop bump |
 | `typescript` → `@typescript/typescript6` alias; `@typescript/native` = TS 7 | `apps/web-console/package.json` | `typescript-eslint` has no TS 7 API support yet (§5) | typescript-eslint supports TS 7 | web-console | each typescript-eslint major |
+| npm `overrides` (`fast-uri` 3.1.6, `browserslist` 4.28.7, `baseline-browser-mapping` 2.11.0, `uuid` 11.1.1, `brace-expansion` 1.1.18/2.1.4/5.0.12) | `apps/web-console/package.json` | Dependabot GHSA stream (maplibre is a direct bump; these are transitive) | parents declare patched ranges | web-console | each Dependabot sweep |
+| npm `overrides` (`postcss` 8.5.23) | `tools/symbol-import`, `tools/symbol-pack-isa` | PostCSS sourceMappingURL path traversal (GHSA-r28c-9q8g-f849 / GHSA-fxqj-rqcc-2cmp) | vite/tsx declare postcss ≥ 8.5.23 | tooling | each Dependabot sweep |
+| npm `overrides` (`form-data` 4.0.6) | `tools/n8n-nodes-ispf` | n8n-workflow pins form-data 4.0.0 (GHSA-fjxv-7rqg-78g4 / GHSA-hmw2-7cc7-3qxx) | n8n-workflow declares form-data ≥ 4.0.6 | tooling | each n8n bump |
 
 ### 4. Heavy optional dependencies live in optional modules
 
