@@ -8,6 +8,9 @@ import java.util.Map;
 /**
  * Builds the agent system prompt without {@link String#formatted(String, Object...)} on playbook text
  * (playbooks may contain {@code %} and other characters that break format strings).
+ * <p>
+ * Playbook <em>bodies</em> are not inlined — use {@code get_automation_schema} / {@code search_context} /
+ * {@code search_platform_recipes} on demand (progressive disclosure).
  */
 public final class AgentPromptBuilder {
 
@@ -34,7 +37,7 @@ public final class AgentPromptBuilder {
             For "create application/solution" or approach choice: search_context topic=agent-knowledge (AGENT_KNOWLEDGE.md — all delivery paths A–H and full doc index).
             For bundle/manifest/SQL/BFF: search_context topic=applications or topic=solution.
             For dashboard context rules: search_context topic=platform-logic.
-            For dashboards: follow Dashboard guide in Playbooks — list_variables first, prefer set_dashboard_layout
+            For dashboards: get_automation_schema topic=dashboard (or search_context) — list_variables first, prefer set_dashboard_layout
             template= or one full layoutJson over many add_dashboard_widget; never set_variable name=widgets.
             PRESENTATION (mandatory): columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row;
             charts/tables w≥42 h≥28; sizes multiples of 7; NEVER legacy crumbs w=2..6 h=1..3 — ugly and unreadable.
@@ -44,12 +47,16 @@ public final class AgentPromptBuilder {
             For reports: get_automation_schema topic=report; list_reports; get_report_schema; run_report preview;
             configure_report to create/update; template upload is UI-only (Report Builder → Шаблон YARG).
             For SCADA mimics: list_mimic_symbols → create_object type=MIMIC → save_mimic_diagram with non-empty elements[];
-            never finish with empty mimic; do NOT use set_variable name=diagram; follow SCADA guide in Playbooks.
+            never finish with empty mimic; do NOT use set_variable name=diagram; get_automation_schema topic=scada.
             For model choice: list_instance_types + list_mixin_blueprints + list_singleton_blueprints before create_object.
             For complex tasks: get_automation_schema topic=platformMaster first; then area-specific tools (workflow, lifecycle, dashboard, scada).
             For complex build recipes: search_platform_recipes query="<task>" before inventing steps.
             Complete end-to-end — dashboards, SCADA panels, workflows, apps, alerts — using tools only.
             Do not call search_context more than 3 times in a row with the same query; prefer specific tools.
+            
+            TOOL SURFACE (progressive): only Active tools below are callable until you enable more packs.
+            Use list_agent_tools / describe_agent_tool / enable_agent_tool_pack to expand (devices, dashboards,
+            automation, bundles, scada, analytics, security, misc). Capability is deferred, not removed.
             
             Reply with ONLY one JSON object per turn — no markdown fences, no prose before or after:
             {"type":"tool","name":"<tool>","arguments":{...}}
@@ -89,6 +96,22 @@ public final class AgentPromptBuilder {
             
             """;
 
+    private static final String PLAYBOOK_INDEX = """
+            
+            ## Playbook index (fetch on demand — do NOT invent from memory)
+            - Ground truth / paths: get_automation_schema topic=platformMaster OR search_context topic=agent-knowledge
+            - Spec intake / sectional plans: get_automation_schema topic=projectBlueprint
+            - SNMP / Modbus / virtual devices: search_context topic=drivers; list_drivers; get_driver_help
+            - Dashboards / widgets: get_automation_schema topic=dashboard; get_widget_catalog; search_context topic=dashboards
+            - SCADA mimics: get_automation_schema topic=scada; list_mimic_symbols
+            - Workflows / BPMN: get_automation_schema topic=workflow
+            - Applications / bundles: search_context topic=applications; get_deploy_playbook; get_example_bundle
+            - Platform rules / schedules / functions: get_automation_schema topic=platformMaster; search_platform_recipes
+            - Recipes: search_platform_recipes query="<task>"
+            Layout templates (names only): """
+            + String.join(", ", DashboardService.layoutTemplateNames())
+            + "\n";
+
     private static final String RULES = """
             
             Rules:
@@ -96,70 +119,15 @@ public final class AgentPromptBuilder {
             - create_object types: DEVICE, DASHBOARD, CUSTOM, WORKFLOW, REPORT, ALERT, CORRELATOR, ...
             - delete_object path=<full path> — remove tree node; stops device driver first
             - BARE PLATFORM: never assume pre-seeded demo objects exist — list_objects / search_objects first; paths only from tool results
-            - SNMP device: search_context topic=drivers query=snmp — templateId, driverConfigJson, point mappings from docs
-            - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
-            - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1 (MIXINs); driverId=virtual with OOTB config (no profiles)
-            - Before project implementation: get_automation_schema topic=projectBlueprint
-            - Model selection baseline: list_instance_types + list_mixin_blueprints + list_singleton_blueprints
-              (then instantiate_instance_type / apply_mixin_blueprint / ensure_singleton_instance)
-            - Mixin Blueprints: list_mixin_blueprints → apply_mixin_blueprint objectPath=... modelName=virtual-lab-v1
-              (adds variables, events, functions to existing DEVICE); or create_object with same templateId
-            - NEVER create_object DEVICE with driverId=virtual and empty/wrong templateId — use apply_mixin_blueprint or create_virtual_device
-            - Virtual devices: create_virtual_device (OOTB multi-type). Domain plants: apply_mixin_blueprint, not driver profiles
-            - Never claim devices have variables/drivers unless list_variables or create_virtual_device returned telemetryVariableCount>0
-            - Chart/sparkline widgets need historian: configure_variable_history path=... name=sineWave historyEnabled=true
-            - 1-minute average threshold: historian rule avg(path/var, 1m) → avgVar, then reactive CEL on avgVar; never rolling-avg Mixin Blueprint for this
-            - MQTT many sensors on one broker: model mqtt-gateway-v1, ingressVariable lastIngress, ingressTopicLanes true, dispatchTelemetry to child sensors
-            - High-rate telemetry: driver telemetryCoalesceMs + TELEMETRY_ONLY; historian store=jdbc (platform default); see search_context topic=telemetry
-            - Automation: get_automation_schema → configure_alert, configure_correlator, configure_variable_history
             - Cross-device / app logic: choose blueprint kind first —
               UNIQUE orchestrator → SINGLETON (prefer ensure_singleton_instance / singleton-blueprints);
               MANY digital twins with per-twin logic → INSTANCE (instantiate_instance_type).
               Hub may sit under devices tree with DEVICE children (path = implementation choice).
               NEVER type the logic/hub object as DEVICE — DEVICE is I/O only.
             - Operator HMI: configure_operator_ui (defaultDashboard + dashboards[]) — do NOT defer to manual UI setup
-            - create_variable for bindings; describe_variables before set_variable on existing vars
-            - Dashboard layout templates (names only — bind widgets to paths from list_variables): """
-                + String.join(", ", DashboardService.layoutTemplateNames())
-                + """
-            - Drill-down: object-table rowTargetDashboard + selectionKey on detail widgets (see virtual-cluster playbook)
-            - Complete end-to-end projects with tools; create objects AND types (instantiate_instance_type, apply_mixin_blueprint) autonomously
-            - Never tell user to configure dashboards/alerts/operator/models manually in UI when agent tools exist
-            - set_variable for driverConfigJson, driverPointMappingsJson, dashboard title
-            - Dashboard workflow: create_object DASHBOARD → list_variables on device → set_dashboard_layout template=
-              (snmp-host-monitoring|virtual-cluster-*|empty) OR one complete layoutJson; add_dashboard_widget only for 1–2 widgets.
-              Layout: {columns:84,rowHeight:8,widgets[]}. NEVER set_variable name=widgets or layout.
-              Presentation: KPI row w=21|28 h=14 filling 84; charts/tables w≥42 h≥28; multiples of 7; no w=2..6 crumbs.
-            - Widget binding: value/chart use objectPath OR selectionKey+variableName; object-table/card-grid/map use parentPath;
-              selectionKey strings must match between table (publisher) and consumers; drill-down: rowTargetDashboard on table
-            - columnsJson/fieldsJson/stylesJson are JSON strings inside widget, not nested objects in tool arguments
-            - chart/sparkline: configure_variable_history historyEnabled=true before adding widget
-            - Widget properties: get_widget_catalog type=<type> for per-type fields; progress uses currentVariable+maxVariable not variableName
-            - valueField: value (default), raw (SNMP uptime), online (status link); object-table uses parentPath not objectPath
-            - gauge needs minValue+maxValue or minVariable+maxVariable; pie-chart/gantt need RECORD_LIST variable; spreadsheet needs sheetConfigJson
-            - configure_driver or driver_control start after driver mappings are set;
-              configure_driver without configuration reads driverConfigJson already set on the device
-            - list_variables to show metrics to the user in finish summary
-            - bundle import only after validate_bundle/dry_run_deploy OK
-            - Reports: list_reports → get_report_schema → run_report preview → configure_report if needed;
-              YARG template columns must match report column field names (UPPERCASE in template);
-              add_dashboard_widget type=report for table on dashboard; finish with Report Builder path
-            - BFF / app functions: list_functions → get_function → invoke_bff (objectPath, functionName, inputRows)
-            - Tree functions: invoke_tree_function; search: search_objects; events: list_event_catalog, get_event_schema, fire_event, list_events
-            - Variables: describe_variables for schema before set_variable; list_variables for current values
-            - Object templates: list_object_blueprints before create_object
             - Never invent REST paths; use tools only
-            - SCADA mimic workflow: list_mimic_symbols → create_object type=MIMIC templateId=mimic-v1
-              → save_mimic_diagram path=... elements=[{id,symbolId,layerId,x,y,bindings}] (or full diagramJson)
-              → get_mimic_diagram to verify elementCount>0 → create_object DASHBOARD → add_dashboard_widget type=scada-mimic mimicPath=...
-              → list_variables on devices before bindings; NEVER set_variable name=diagram; NEVER finish with empty elements[]
-            - Workflows: create_object WORKFLOW → save_workflow_bpmn → update_workflow_status ACTIVE → run_workflow
-            - Application: validate_bundle → dry_run_deploy → import_package OR register_application + application_data_migrate
-            - Platform rules on dashboard: configure_platform_context_rule; list_binding_rules to inspect
-            - Schedules: configure_platform_schedule; list_platform_schedules
-            - Functions: get_function_template topic=java|script → deploy_tree_function (java|script on tree);
-              deploy_app_function sourceType=script for app BFF; invoke_tree_function to test
-            - Master tool index: get_automation_schema topic=platformMaster (embedded in Playbooks platformMasterGuide)
+            - Enable missing tool packs with enable_agent_tool_pack before calling domain mutations
+            - Master tool index: get_automation_schema topic=platformMaster
             - For multi-step scenarios prefer search_platform_recipes query="<domain task>" before custom sequencing
             """;
 
@@ -168,69 +136,24 @@ public final class AgentPromptBuilder {
 
     public static String build(String rootPath, List<Map<String, Object>> toolCatalog, String platformBriefing) {
         String effectiveRoot = rootPath == null || rootPath.isBlank() ? "root" : rootPath.trim();
-        StringBuilder prompt = new StringBuilder(HEADER.length() + 8192);
+        StringBuilder prompt = new StringBuilder(HEADER.length() + 4096);
         prompt.append(HEADER);
         prompt.append("Default tree root for this run: ").append(effectiveRoot).append("\n\n");
         if (platformBriefing != null && !platformBriefing.isBlank()) {
             prompt.append("## Platform knowledge (auto)\n");
             prompt.append(platformBriefing.trim()).append("\n\n");
         }
-        prompt.append("Available tools:\n");
-        for (Map<String, Object> tool : toolCatalog) {
-            prompt.append("- ")
-                    .append(tool.get("name"))
-                    .append(": ")
-                    .append(tool.get("description"))
-                    .append("\n");
+        prompt.append("Active tools (").append(toolCatalog == null ? 0 : toolCatalog.size()).append("):\n");
+        if (toolCatalog != null) {
+            for (Map<String, Object> tool : toolCatalog) {
+                prompt.append("- ")
+                        .append(tool.get("name"))
+                        .append(": ")
+                        .append(tool.get("description"))
+                        .append("\n");
+            }
         }
-        prompt.append("\nPlaybooks:\n");
-        prompt.append(AgentPlaybooks.specIntakeGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.groundTruthGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.snmpLocalhostMonitoring());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.dashboardLayoutEditing());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.snmpIfMibExtension());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.virtualMeterLab());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.virtualPumpStation());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.mixinBlueprintsGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.mesReferenceLifecycle());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.modbusTcpDevice());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.virtualClusterMonitoring());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.miniTecReference());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.scadaMimicGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.platformObjectTypesGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.widgetCatalogGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.reportsGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.platformMasterGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.workflowGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.applicationLifecycleGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentDeployPlaybook.referenceText());
-        prompt.append("\n\n");
-        prompt.append(AgentSolutionGeneratorPlaybook.referenceText());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.platformRuleGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.scheduleGuide());
-        prompt.append("\n\n");
-        prompt.append(AgentPlaybooks.functionsGuide());
+        prompt.append(PLAYBOOK_INDEX);
         prompt.append(RULES);
         return prompt.toString();
     }

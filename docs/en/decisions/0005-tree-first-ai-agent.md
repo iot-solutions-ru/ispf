@@ -39,3 +39,14 @@ FW-40…43 provide one-shot bundle generation with validation gates. Solution de
 ## Amendment (2026-07-18) — Gradle module
 
 Per [0048](0048-server-modularization-seams.md) Wave 3, agent/tool sources under `com.ispf.server.ai.*` live in Gradle module `packages/ispf-ai-agent` (package names unchanged). REST paths `/api/v1/ai/**` remain stable; the server app soft-wires the module onto the runtime classpath and component-scans `com.ispf.server`.
+
+## Amendment (2026-09-20) — Progressive tool surface + lean prompts
+
+Wall time on demostand was dominated by **LLM rounds** (large system prompts), not platform tool latency. Capability is **deferred, not removed**:
+
+1. **Tool packs** (`AgentToolPackCatalog`): always-on `core` + `discovery`; domain packs (`devices`, `dashboards`, `automation`, `bundles`, `scada`, `analytics`, `security`, `misc`) enabled mid-turn via `enable_agent_tool_pack`. Meta-tools `list_agent_tools` / `describe_agent_tool` always available. Inactive tools return a structured expand hint (same spirit as unknown-tool errors).
+2. **Lean system prompts**: `AgentPromptBuilder` / `AgentAskPromptBuilder` keep mission + rules; playbook **bodies** are replaced by a compact index pointing at `get_automation_schema` / `search_context` / `search_platform_recipes`. Ask mode may **finish from briefing/UI focus** without tools.
+3. **Briefing**: static knowledge defaults to **first session turn only** (`ispf.ai.briefing-every-turn: false`); live overlay unchanged.
+4. **History**: default window **24** turns; older turns condensed into one synthetic summary pair (goal / paths / plan phase). Default `agent-max-tokens` **16384**, parse retries **2** (raise via env for huge sectional plans).
+
+Native OpenAI `tool_calls` remain out of scope (portability). Operator and Admin Copilot keep their existing surfaces (no pack gate).

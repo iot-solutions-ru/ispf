@@ -327,7 +327,22 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         for (PlatformAgentTool tool : tools) {
             index.put(tool.name(), tool);
         }
+        for (PlatformAgentTool meta : AgentToolPackTools.all(() -> catalogRows(index))) {
+            index.put(meta.name(), meta);
+        }
         this.toolsByName = Map.copyOf(index);
+    }
+
+    private static List<Map<String, Object>> catalogRows(Map<String, PlatformAgentTool> index) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (PlatformAgentTool tool : index.values()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("name", tool.name());
+            row.put("description", tool.description());
+            row.put("inputSchema", tool.inputSchema());
+            rows.add(row);
+        }
+        return List.copyOf(rows);
     }
 
     @Override

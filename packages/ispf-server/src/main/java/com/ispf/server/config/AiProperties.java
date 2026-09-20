@@ -15,15 +15,15 @@ public class AiProperties {
     private String apiKeyEnv = "OPENAI_API_KEY";
     private int timeoutSeconds = 600;
     private int maxTokens = 65536;
-    /** Max completion tokens per agent turn (~half of a 256k context window; prompt uses the rest). */
-    private int agentMaxTokens = 131_072;
+    /** Max completion tokens per agent turn (env can raise for huge sectional plans). */
+    private int agentMaxTokens = 16_384;
     private double temperature = 0.0;
     private String contextPackClasspath = "classpath:ai/context-pack.json";
     private int agentMaxSteps = 256;
     private int agentSessionTtlHours = 24;
-    private int agentMaxHistoryTurns = 128;
+    private int agentMaxHistoryTurns = 24;
     private boolean agentDisableThinking = true;
-    private int agentParseRetries = 5;
+    private int agentParseRetries = 2;
     private int briefingMaxChars = 32_768;
     private boolean briefingEveryTurn = false;
     /** When set, overrides vision capability detection from model name. */

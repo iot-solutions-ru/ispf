@@ -344,6 +344,13 @@ public final class AgentToolInputSchemas {
                 req("path"),
                 true
         ));
+        catalog.put("describe_agent_tool", objectSchema(
+                props(
+                        "name", stringProp("Exact snake_case tool name")
+                ),
+                req("name"),
+                true
+        ));
         catalog.put("detect_anomalies", objectSchema(
                 props(
                         "path", stringProp("Object tree path"),
@@ -374,6 +381,15 @@ public final class AgentToolInputSchemas {
                         "blueprintId", stringProp("Absolute blueprint id")
                 ),
                 req("blueprintId"),
+                true
+        ));
+        catalog.put("enable_agent_tool_pack", objectSchema(
+                props(
+                        "pack", stringProp(
+                                "Tool pack: core|discovery|devices|dashboards|automation|bundles|scada|analytics|security|misc"
+                        )
+                ),
+                req("pack"),
                 true
         ));
         catalog.put("evaluate_analytics_expression", objectSchema(
@@ -629,6 +645,14 @@ public final class AgentToolInputSchemas {
                 true
         ));
         catalog.put("list_applications", emptyObject());
+        catalog.put("list_agent_tools", objectSchema(
+                props(
+                        "pack", stringProp("Optional pack filter"),
+                        "query", stringProp("Optional name/description filter")
+                ),
+                List.of(),
+                true
+        ));
         catalog.put("list_automation", objectSchema(
                 props(
                         "parent", stringProp("Parent folder path")

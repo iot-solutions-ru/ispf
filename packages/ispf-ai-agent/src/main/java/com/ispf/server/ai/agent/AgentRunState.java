@@ -36,6 +36,33 @@ public final class AgentRunState {
     private volatile String clientChannel = "";
     /** Web-console UI locale for this turn (en|ru|de|zh); drives response language. */
     private volatile String uiLocale = "";
+    /** Active tool packs for progressive disclosure within the current agent turn. */
+    private final Set<String> activeToolPacks = ConcurrentHashMap.newKeySet();
+
+    public Set<String> activeToolPacks() {
+        return Set.copyOf(activeToolPacks);
+    }
+
+    public void setActiveToolPacks(Set<String> packs) {
+        activeToolPacks.clear();
+        if (packs != null) {
+            for (String pack : packs) {
+                if (pack != null && !pack.isBlank()) {
+                    activeToolPacks.add(pack.trim().toLowerCase());
+                }
+            }
+        }
+    }
+
+    public void enableToolPack(String pack) {
+        if (pack != null && !pack.isBlank()) {
+            activeToolPacks.add(pack.trim().toLowerCase());
+        }
+    }
+
+    public void clearActiveToolPacks() {
+        activeToolPacks.clear();
+    }
 
     public Map<String, Object> clientFocus() {
         return clientFocus == null ? Map.of() : clientFocus;
@@ -300,6 +327,9 @@ public final class AgentRunState {
         map.put("reworkRoundCount", reworkRoundCount.get());
         map.put("planDepth", planDepth);
         map.put("mutationsUnlockedForTurn", mutationsUnlockedForTurn);
+        if (!activeToolPacks.isEmpty()) {
+            map.put("activeToolPacks", Set.copyOf(activeToolPacks));
+        }
         if (pending != null) {
             map.put("pending", pending.toMap(objectMapper));
         }
@@ -383,6 +413,15 @@ public final class AgentRunState {
         }
         Object mutationsRaw = raw.get("mutationsUnlockedForTurn");
         mutationsUnlockedForTurn = mutationsRaw instanceof Boolean bool && bool;
+        activeToolPacks.clear();
+        Object packsRaw = raw.get("activeToolPacks");
+        if (packsRaw instanceof Iterable<?> iterable) {
+            for (Object item : iterable) {
+                if (item != null && !String.valueOf(item).isBlank()) {
+                    activeToolPacks.add(String.valueOf(item).trim().toLowerCase());
+                }
+            }
+        }
     }
 
     /** @deprecated use {@link #snapshot(ObjectMapper)} */

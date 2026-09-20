@@ -247,22 +247,23 @@ ispf:
   ai:
     timeout-seconds: 600
     agent-max-steps: 256
-    agent-max-tokens: 131072   # ~50% of 256k context for completion; prompt uses the rest
-    agent-parse-retries: 5
+    agent-max-tokens: 16384    # поднять через env для огромных sectional plans
+    agent-parse-retries: 2
     agent-max-text-inject-chars: 524288   # ~512 KB TZ/spec inline
     agent-max-attachment-bytes: 33554432  # 32 MB upload
     agent-session-ttl-hours: 24
-    agent-max-history-turns: 128
+    agent-max-history-turns: 24
+    briefing-every-turn: false
     max-tokens: 65536   # bundle generation completion cap
 ```
 
-Env: `ISPF_AI_TIMEOUT_SECONDS`, `ISPF_AI_AGENT_MAX_STEPS`, `ISPF_AI_AGENT_MAX_TOKENS`, `ISPF_AI_AGENT_MAX_TEXT_INJECT_CHARS`, `ISPF_AI_AGENT_MAX_ATTACHMENT_BYTES`, `ISPF_AI_AGENT_MAX_HISTORY_TURNS`.
+Env: `ISPF_AI_TIMEOUT_SECONDS`, `ISPF_AI_AGENT_MAX_STEPS`, `ISPF_AI_AGENT_MAX_TOKENS`, `ISPF_AI_AGENT_MAX_TEXT_INJECT_CHARS`, `ISPF_AI_AGENT_MAX_ATTACHMENT_BYTES`, `ISPF_AI_AGENT_MAX_HISTORY_TURNS`, `ISPF_AI_BRIEFING_EVERY_TURN`.
 
 `max-tokens` (default **65536**, env `ISPF_AI_MAX_TOKENS`) — лимит **ответа** для bundle generation.
 
-`agent-max-tokens` (default **131072**, env `ISPF_AI_AGENT_MAX_TOKENS`) — лимит **ответа** на один ход агента.
+`agent-max-tokens` (default **16384**, env `ISPF_AI_AGENT_MAX_TOKENS`) — лимит **ответа** на один ход агента (до 131072 через env для крупных планов).
 
-256k у Qwen/vLLM — **окно контекста** (подсказка + завершение). По умолчанию выше рассчитаны под `max-model-len=262144`: до ~512 КБ ТЗ + система/инструменты/история в командной строке, до 128 тыс. токенов при завершении. Не ставьте `agent-max-tokens=262144` — подсказка не оставляет места. vLLM на хосте-выводе должен разрешить `max_tokens` ≥ 131072.
+Progressive tool packs + lean-промпты: [0005](../en/decisions/0005-tree-first-ai-agent.md) поправка 2026-09-20. История за окном сжимается в одну summary-пару.
 
 Сеансы **сохраняются в PostgreSQL** (`agent_sessions`, `agent_turns`) с вытеснением TTL (по умолчанию 24 часа, `ispf.ai.agent-session-ttl-hours`). Перезапуск JVM сохраняет историю чата до TTL; Веб-консоль сохраняет индекс чата в `localStorage` и повторно загружает ходы через `GET session`.
 

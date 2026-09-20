@@ -37,6 +37,7 @@ public class TreeFirstAgentService {
 
     private static final Logger log = LoggerFactory.getLogger(TreeFirstAgentService.class);
     private static final int HISTORY_SUMMARY_MAX_LEN = 800;
+    private static final int HISTORY_USER_MESSAGE_MAX_LEN = 4_000;
 
     private final ExecutorService agentRunExecutor;
 
@@ -285,6 +286,15 @@ public class TreeFirstAgentService {
                     aiProperties.isAgentRequireApprovalForMutate(),
                     actor
             );
+            if (profile != AgentProfile.OPERATOR && !copilotChannel) {
+                AgentToolSurface.beginTurn(
+                        session.runState(),
+                        session.runState().interactionMode(),
+                        llmUserText
+                );
+            } else {
+                session.runState().clearActiveToolPacks();
+            }
             if (planApprovedThisTurn) {
                 recordTurnAudit(
                         session,
@@ -756,6 +766,11 @@ public class TreeFirstAgentService {
                     } else if (!toolRegistry.isKnownTool(toolName)) {
                         toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
                         executedTool = toolName;
+                    } else if (!AgentToolSurface.isToolActive(session.runState(), toolName)) {
+                        toolResult = new LinkedHashMap<>(
+                                AgentToolSurface.inactiveToolResult(toolName, session.runState())
+                        );
+                        executedTool = toolName;
                     } else {
                         toolResult = executeToolWithTransientRetry(toolName, toolArgs, context);
                         if ("list_reports".equals(toolName)) {
@@ -775,6 +790,11 @@ public class TreeFirstAgentService {
                             agentMetrics.recordGuardBlock("loopGuard");
                         } else if (!toolRegistry.isKnownTool(toolName)) {
                             toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
+                            executedTool = toolName;
+                        } else if (!AgentToolSurface.isToolActive(session.runState(), toolName)) {
+                            toolResult = new LinkedHashMap<>(
+                                    AgentToolSurface.inactiveToolResult(toolName, session.runState())
+                            );
                             executedTool = toolName;
                         } else {
                         Optional<AgentPreflightService.PreflightHint> preflight =
@@ -1239,6 +1259,11 @@ public class TreeFirstAgentService {
         List<LlmMessage> messages = new ArrayList<>();
         boolean includeStatic = aiProperties.isBriefingEveryTurn() || session.turns().isEmpty();
         String briefing = platformBriefingService.buildBriefing(session.rootPath(), includeStatic);
+        List<Map<String, Object>> activeTools = AgentToolSurface.filterCatalog(
+                toolRegistry.toolCatalog(profile),
+                session.runState(),
+                true
+        );
         String systemPrompt;
         if (profile == AgentProfile.OPERATOR && operatorScope != null) {
             String memorySection = operatorMemoryService.formatPromptSection(
@@ -1272,13 +1297,15 @@ public class TreeFirstAgentService {
                     session.sessionId(),
                     llmUserText
             );
+            boolean uiFocusPresent = session.runState().clientFocus() != null
+                    && !session.runState().clientFocus().isEmpty();
             systemPrompt = AgentAskPromptBuilder.build(
                     session.rootPath(),
-                    toolRegistry.toolCatalog(profile),
+                    activeTools,
                     briefing,
                     prepared.hasImages(),
                     sessionDocs,
-                    true
+                    !uiFocusPresent
             );
             if (hasTextAttachment(prepared.attachmentMetadata())) {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
@@ -1286,7 +1313,7 @@ public class TreeFirstAgentService {
         } else {
             systemPrompt = AgentPromptBuilder.build(
                     session.rootPath(),
-                    toolRegistry.toolCatalog(profile),
+                    activeTools,
                     briefing
             );
             systemPrompt += AgentPlanPromptSection.forRunState(session.runState());
@@ -1323,9 +1350,23 @@ public class TreeFirstAgentService {
             List<AgentTurn> history = session.turns();
             int maxTurns = Math.max(1, aiProperties.getAgentMaxHistoryTurns());
             int start = Math.max(0, history.size() - maxTurns);
+            if (start > 0) {
+                String rolledSummary = summarizeOlderHistory(
+                        history.subList(0, start),
+                        session.runState()
+                );
+                messages.add(new LlmMessage(
+                        "user",
+                        "[Earlier session context — condensed]\n" + rolledSummary
+                ));
+                messages.add(new LlmMessage(
+                        "assistant",
+                        "Understood prior context; continuing from the recent turns below."
+                ));
+            }
             for (int i = start; i < history.size(); i++) {
                 AgentTurn turn = history.get(i);
-                messages.add(new LlmMessage("user", turn.userMessage()));
+                messages.add(new LlmMessage("user", truncateHistoryUserMessage(turn.userMessage())));
                 messages.add(new LlmMessage("assistant", truncateForHistory(turn.assistantSummary())));
             }
         }
@@ -1417,6 +1458,62 @@ public class TreeFirstAgentService {
             return trimmed;
         }
         return trimmed.substring(0, HISTORY_SUMMARY_MAX_LEN - 1) + "…";
+    }
+
+    private static String truncateHistoryUserMessage(String message) {
+        if (message == null || message.isBlank()) {
+            return "";
+        }
+        String trimmed = message.trim();
+        if (trimmed.length() <= HISTORY_USER_MESSAGE_MAX_LEN) {
+            return trimmed;
+        }
+        return trimmed.substring(0, HISTORY_USER_MESSAGE_MAX_LEN - 1) + "…";
+    }
+
+    /**
+     * Condenses turns that fall outside the history window so multi-step Studio projects keep continuity.
+     */
+    static String summarizeOlderHistory(List<AgentTurn> olderTurns, AgentRunState runState) {
+        StringBuilder sb = new StringBuilder();
+        if (runState != null) {
+            Map<String, Object> plan = runState.storedPlan();
+            if (plan != null && !plan.isEmpty()) {
+                Object goal = plan.get("goal");
+                if (goal != null && !String.valueOf(goal).isBlank()) {
+                    sb.append("Goal: ").append(truncateForHistory(String.valueOf(goal))).append('\n');
+                }
+            }
+            if (runState.planPhase() != null && runState.planPhase() != AgentPlanPhase.NONE) {
+                sb.append("Plan phase: ").append(runState.planPhase().storageValue()).append('\n');
+            }
+            if (runState.interactionMode() != null) {
+                sb.append("Mode: ").append(runState.interactionMode().storageValue()).append('\n');
+            }
+        }
+        int limit = Math.min(olderTurns == null ? 0 : olderTurns.size(), 12);
+        for (int i = 0; i < limit; i++) {
+            AgentTurn turn = olderTurns.get(i);
+            sb.append("- User: ").append(truncateForHistory(turn.userMessage())).append('\n');
+            String summary = turn.assistantSummary();
+            if (summary != null && !summary.isBlank()) {
+                sb.append("  Agent: ").append(truncateForHistory(summary)).append('\n');
+            }
+            Map<String, Object> result = turn.result();
+            if (result != null) {
+                for (String key : List.of("devicePath", "dashboardPath", "mimicPath", "workflowPath", "path", "appId")) {
+                    Object value = result.get(key);
+                    if (value instanceof String path && !path.isBlank()) {
+                        sb.append("  ").append(key).append("=").append(path).append('\n');
+                    }
+                }
+            }
+        }
+        if (olderTurns != null && olderTurns.size() > limit) {
+            sb.append("(+").append(olderTurns.size() - limit).append(" earlier turns omitted)\n");
+        }
+        String text = sb.toString().trim();
+        return text.isBlank() ? "Prior turns exist but had little extractable context." : text;
     }
 
     private static boolean hasTextAttachment(List<Map<String, Object>> attachmentMetadata) {

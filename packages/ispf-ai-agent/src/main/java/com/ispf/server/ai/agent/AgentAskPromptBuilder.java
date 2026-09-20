@@ -22,7 +22,9 @@ public final class AgentAskPromptBuilder {
             preview reports, and answer «how do I…?» with step-by-step Markdown instructions.
             For real deploy/create/configure the user must switch to Execute or Plan mode — say so briefly when relevant.
             
-            Work step-by-step with read-only tools when live data helps; otherwise answer from playbooks below.
+            FINISH FROM BRIEFING (preferred for simple Q&A): if Platform knowledge, UI focus, or LIVE UI SNAPSHOT
+            already answers the question, finish immediately with Markdown — do NOT call tools first.
+            Use read-only tools only when live tree/report data is required and not already in context.
             
             GROUND TRUTH: paths, appIds, report names — from tool results this turn, briefing, \
             OR from LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] on this turn (those ARE live state). \
@@ -33,6 +35,9 @@ public final class AgentAskPromptBuilder {
             - Give numbered Markdown steps in summary (tool names in backticks).
             - Optional: list_applications, get_example_bundle appId=mes-reference, search_context.
             - Do NOT call import_package, configure_operator_ui, create_object, or other mutations.
+            
+            TOOL SURFACE: only listed Active tools are callable. Use list_agent_tools / enable_agent_tool_pack
+            to expand discovery packs if needed. Ask mode still blocks mutations via the plan guard.
             
             Reply with ONLY one JSON object per turn — no markdown fences:
             {"type":"tool","name":"<read-only-tool>","arguments":{...}}
@@ -52,6 +57,14 @@ public final class AgentAskPromptBuilder {
             
             """;
 
+    private static final String KNOWLEDGE_INDEX = """
+            ## Knowledge index (fetch on demand)
+            - Concepts / how-to: search_context topic=agent-knowledge|applications|drivers|dashboards
+            - Schemas: get_automation_schema topic=platformMaster|dashboard|scada|workflow|report|projectBlueprint
+            - Examples: list_examples; get_example_bundle; list_applications
+            - Live tree: list_objects; get_object; list_variables; search_objects
+            """;
+
     private AgentAskPromptBuilder() {
     }
 
@@ -62,12 +75,12 @@ public final class AgentAskPromptBuilder {
             boolean hasImages,
             String sessionDocumentsSection
     ) {
-        return build(rootPath, fullToolCatalog, platformBriefing, hasImages, sessionDocumentsSection, true);
+        return build(rootPath, fullToolCatalog, platformBriefing, hasImages, sessionDocumentsSection, false);
     }
 
     /**
-     * @param includePlaybooks when false (Admin Copilot with live UI focus), skip bulky reference playbooks
-     *                         that drown the focus block and encourage generic clarifying questions.
+     * @param includePlaybooks when false (default), use a compact knowledge index instead of bulky reference playbooks.
+     *                         When UI focus is present, keep the Copilot-style short focus path.
      */
     public static String build(
             String rootPath,
@@ -83,14 +96,14 @@ public final class AgentAskPromptBuilder {
         prompt.append(HEADER);
         prompt.append(FORMATTING);
         prompt.append("Default tree root: ").append(effectiveRoot).append("\n\n");
-        if (platformBriefing != null && !platformBriefing.isBlank() && includePlaybooks) {
+        if (platformBriefing != null && !platformBriefing.isBlank()) {
             prompt.append("## Platform knowledge (auto)\n");
             prompt.append(platformBriefing.trim()).append("\n\n");
         }
         if (sessionDocumentsSection != null && !sessionDocumentsSection.isBlank()) {
             prompt.append(sessionDocumentsSection.trim()).append("\n\n");
         }
-        prompt.append("Read-only tools available in Ask mode (").append(tools.size()).append("):\n");
+        prompt.append("Active read-only tools (").append(tools.size()).append("):\n");
         for (Map<String, Object> tool : tools) {
             prompt.append("- ")
                     .append(tool.get("name"))
@@ -99,6 +112,7 @@ public final class AgentAskPromptBuilder {
                     .append("\n");
         }
         if (includePlaybooks) {
+            prompt.append("\n").append(KNOWLEDGE_INDEX);
             prompt.append("\n## Reference playbooks (documentation — not live state)\n\n");
             prompt.append(AgentPlaybooks.applicationLifecycleGuide());
             prompt.append("\n\n");
@@ -106,7 +120,8 @@ public final class AgentAskPromptBuilder {
             prompt.append("\n\n");
             prompt.append(AgentPlaybooks.platformObjectTypesGuide());
         } else {
-            prompt.append("\nUI focus is present for this Copilot turn — answer from LIVE UI SNAPSHOT / focus.\n")
+            prompt.append("\n").append(KNOWLEDGE_INDEX);
+            prompt.append("\nUI focus / briefing first — finish from context when possible.\n")
                     .append("FORBIDDEN: asking for object path, screen, rule id, or expression when those are in focus.\n")
                     .append("If surface=binding and rules are listed, explain those rules (id, target, expression) directly.\n")
                     .append("Optional tools: describe_variables / list_binding_rules / list_variables using the focus objectPath — never ask the user for it.\n");
@@ -127,7 +142,7 @@ public final class AgentAskPromptBuilder {
             String platformBriefing,
             boolean hasImages
     ) {
-        return build(rootPath, fullToolCatalog, platformBriefing, hasImages, "", true);
+        return build(rootPath, fullToolCatalog, platformBriefing, hasImages, "", false);
     }
 
     static List<Map<String, Object>> readOnlyToolCatalog(List<Map<String, Object>> fullToolCatalog) {

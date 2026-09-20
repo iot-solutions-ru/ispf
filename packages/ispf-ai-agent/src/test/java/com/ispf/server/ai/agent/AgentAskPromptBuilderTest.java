@@ -16,6 +16,24 @@ class AgentAskPromptBuilderTest {
         assertThat(prompt).doesNotContain("PLAN-BEFORE-EXECUTE");
         assertThat(prompt).doesNotContain("specIntakeGuide");
         assertThat(prompt).doesNotContain("Утвердить полный план");
+        assertThat(prompt).contains("FINISH FROM BRIEFING");
+        assertThat(prompt).contains("Knowledge index");
+        assertThat(prompt).doesNotContain("## Reference playbooks");
+    }
+
+    @Test
+    void defaultAskPromptOmitsBulkyPlaybooks() {
+        String prompt = AgentAskPromptBuilder.build(
+                "root",
+                sampleCatalog(),
+                "Brief facts about SNMP",
+                false,
+                "",
+                false
+        );
+        assertThat(prompt).contains("Brief facts about SNMP");
+        assertThat(prompt).contains("Knowledge index");
+        assertThat(prompt).doesNotContain("## Reference playbooks");
     }
 
     @Test

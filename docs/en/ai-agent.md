@@ -4,7 +4,21 @@
 
 Operator and integrator reference for the ISPF tree-first agent, regression suite, solution generator, and observability widgets.
 
-See also [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).
+See also [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md) (progressive tool packs amendment).
+
+---
+
+## Progressive tool surface (speed)
+
+AI Studio admin agent starts with a **lean** tool list (`core` + `discovery`) and expands packs mid-turn:
+
+| Meta-tool | Purpose |
+|-----------|---------|
+| `list_agent_tools` | Optional `pack` / `query` — names + one-line descriptions from the full registry |
+| `describe_agent_tool` | Full description (+ schema) for one tool |
+| `enable_agent_tool_pack` | Adds a pack (`devices`, `dashboards`, `automation`, `bundles`, `scada`, …) for the rest of the turn |
+
+Inactive tools return `status: ERROR` with a hint to enable the owning pack — capability is deferred, not removed. Ask mode still blocks mutations via `AgentPlanGuard`. System prompts use a **playbook index** (fetch via `get_automation_schema` / `search_context`) instead of inlining every playbook body. Defaults: `agent-max-history-turns=24`, `agent-max-tokens=16384`, `briefing-every-turn=false`.
 
 ---
 
