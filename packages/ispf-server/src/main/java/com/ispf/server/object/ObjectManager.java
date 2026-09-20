@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Central facade for object tree operations with database persistence and change events.
@@ -64,6 +65,14 @@ public class ObjectManager {
     private final ObjectMetadataService metadataService;
     private final ConcurrentHashMap<String, Object> variablePersistLocks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Object> nodePersistLocks = new ConcurrentHashMap<>();
+    /**
+     * Tree-wide structural lock. Whole-tree operations ({@link #initialize()},
+     * {@link #reloadFromDatabase()}) take the write side; per-path follower syncs take the
+     * read side plus the per-path monitor from {@link #lockForNode(String)}, so syncs for
+     * different paths run concurrently instead of serializing on this instance.
+     * Lock order everywhere: {@code treeSyncLock} → per-path monitor (never the reverse).
+     */
+    private final ReentrantReadWriteLock treeSyncLock = new ReentrantReadWriteLock();
     private volatile boolean initialized;
 
     public ObjectManager(
@@ -103,25 +112,33 @@ public class ObjectManager {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE)
     @Transactional
-    public synchronized void initialize() {
+    public void initialize() {
         if (initialized) {
             return;
         }
-        bootstrapFacade.prepareClusterFixtureRole();
-        if (nodeRepository.existsByPath("root.platform")) {
-            loadSyncService.loadFromDatabase();
-            ensureBootstrapNodes();
-        } else {
-            seedPlatformStructure();
+        treeSyncLock.writeLock().lock();
+        try {
+            if (initialized) {
+                return;
+            }
+            bootstrapFacade.prepareClusterFixtureRole();
+            if (nodeRepository.existsByPath("root.platform")) {
+                loadSyncService.loadFromDatabase();
+                ensureBootstrapNodes();
+            } else {
+                seedPlatformStructure();
+            }
+            bootstrapFacade.runCatalogAndFixtures(this);
+        } finally {
+            treeSyncLock.writeLock().unlock();
         }
-        bootstrapFacade.runCatalogAndFixtures(this);
     }
 
     public boolean isInitialized() {
         return initialized;
     }
 
-    public synchronized void markInitialized() {
+    public void markInitialized() {
         initialized = true;
     }
 
@@ -490,33 +507,55 @@ public class ObjectManager {
         }
     }
 
-    public synchronized void reloadFromDatabase() {
-        loadSyncService.reloadFromDatabase(this::ensureBootstrapNodes);
+    public void reloadFromDatabase() {
+        treeSyncLock.writeLock().lock();
+        try {
+            loadSyncService.reloadFromDatabase(this::ensureBootstrapNodes);
+        } finally {
+            treeSyncLock.writeLock().unlock();
+        }
     }
 
-    public synchronized void syncPathFromDatabase(String path) {
-        loadSyncService.syncPathFromDatabase(path);
+    public void syncPathFromDatabase(String path) {
+        withPathSyncLock(path, () -> loadSyncService.syncPathFromDatabase(path));
     }
 
     /**
      * Reloads node metadata and all persisted variables from PostgreSQL (cluster follower sync).
      * Removes RAM variables absent in PG; drops the path from RAM when the node no longer exists.
      */
-    public synchronized void reloadPathFromDatabase(String path) {
-        loadSyncService.reloadPathFromDatabase(path);
+    public void reloadPathFromDatabase(String path) {
+        withPathSyncLock(path, () -> loadSyncService.reloadPathFromDatabase(path));
     }
 
     /** Reloads a persisted config variable from PostgreSQL (cluster follower sync). */
-    public synchronized void syncVariableFromDatabase(String path, String name) {
-        loadSyncService.syncVariableFromDatabase(path, name);
+    public void syncVariableFromDatabase(String path, String name) {
+        withPathSyncLock(path, () -> loadSyncService.syncVariableFromDatabase(path, name));
     }
 
-    public synchronized void removePathFromMemoryIfPresent(String path) {
+    public void removePathFromMemoryIfPresent(String path) {
         if (path == null || path.isBlank() || "root".equals(path)) {
             return;
         }
-        if (objectTree.findByPath(path).isPresent()) {
-            objectTree.delete(path);
+        withPathSyncLock(path, () -> {
+            if (objectTree.findByPath(path).isPresent()) {
+                objectTree.delete(path);
+            }
+        });
+    }
+
+    /**
+     * Shared tree lock + per-path monitor. Re-entrant on both levels, and a thread that holds
+     * the write lock (bootstrap / full reload) may still call these helpers for individual paths.
+     */
+    private void withPathSyncLock(String path, Runnable action) {
+        treeSyncLock.readLock().lock();
+        try {
+            synchronized (lockForNode(path == null ? "" : path)) {
+                action.run();
+            }
+        } finally {
+            treeSyncLock.readLock().unlock();
         }
     }
 

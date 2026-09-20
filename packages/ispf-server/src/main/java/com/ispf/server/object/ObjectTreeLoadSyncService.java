@@ -47,13 +47,15 @@ public class ObjectTreeLoadSyncService {
         this.mapper = mapper;
     }
 
-    public synchronized void reloadFromDatabase(Runnable ensureBootstrapNodes) {
+    /** Callers hold {@code ObjectManager.treeSyncLock} (write); no additional monitor here. */
+    public void reloadFromDatabase(Runnable ensureBootstrapNodes) {
         clearNonRootNodes();
         loadFromDatabase();
         ensureBootstrapNodes.run();
     }
 
-    public synchronized void syncPathFromDatabase(String path) {
+    /** Locking is owned by {@code ObjectManager} (shared tree lock + per-path monitor). */
+    public void syncPathFromDatabase(String path) {
         reloadPathFromDatabase(path);
     }
 
@@ -61,7 +63,7 @@ public class ObjectTreeLoadSyncService {
      * Reloads node metadata and all persisted variables from PostgreSQL (cluster follower sync).
      * Removes RAM variables absent in PG; drops the path from RAM when the node no longer exists.
      */
-    public synchronized void reloadPathFromDatabase(String path) {
+    public void reloadPathFromDatabase(String path) {
         ObjectTree objectTree = objectManager.tree();
         if (path == null || path.isBlank() || "root".equals(path)) {
             return;
@@ -82,7 +84,7 @@ public class ObjectTreeLoadSyncService {
     }
 
     /** Reloads a persisted config variable from PostgreSQL (cluster follower sync). */
-    public synchronized void syncVariableFromDatabase(String path, String name) {
+    public void syncVariableFromDatabase(String path, String name) {
         ObjectTree objectTree = objectManager.tree();
         if (path == null || path.isBlank() || "root".equals(path) || name == null || name.isBlank()) {
             return;
