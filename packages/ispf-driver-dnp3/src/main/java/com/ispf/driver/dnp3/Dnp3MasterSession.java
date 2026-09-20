@@ -1,6 +1,8 @@
 package com.ispf.driver.dnp3;
 
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverPermanentException;
+import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.dnp3.codec.Dnp3TcpCodec;
 
 import java.net.InetSocketAddress;
@@ -36,7 +38,7 @@ final class Dnp3MasterSession implements AutoCloseable {
             socket.setSoTimeout(timeoutMs);
         } catch (Exception ex) {
             close();
-            throw new DriverException("DNP3 master session failed", ex);
+            throw new DriverTransientException("DNP3 master session failed", ex);
         }
     }
 
@@ -46,7 +48,7 @@ final class Dnp3MasterSession implements AutoCloseable {
 
     void pollAllClasses() throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         readCache.clear();
         try {
@@ -55,11 +57,11 @@ final class Dnp3MasterSession implements AutoCloseable {
             Dnp3TcpCodec.writeFrame(socket.getOutputStream(), request);
             Dnp3TcpCodec.Frame response = Dnp3TcpCodec.readFrame(socket.getInputStream());
             if (response.source() != outstationAddress || response.destination() != masterAddress) {
-                throw new DriverException("DNP3 response address mismatch");
+                throw new DriverPermanentException("DNP3 response address mismatch");
             }
             Dnp3TcpCodec.applyResponse(response, readCache);
         } catch (Exception ex) {
-            throw new DriverException("DNP3 Class 0/1/2/3 poll failed", ex);
+            throw new DriverTransientException("DNP3 Class 0/1/2/3 poll failed", ex);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.ispf.driver.opcua;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 
@@ -11,12 +12,12 @@ record OpcUaPoint(NodeId nodeId) {
 
     static OpcUaPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("OPC UA mapping requires nodeId: " + mapping);
+            throw new DriverConfigurationException("OPC UA mapping requires nodeId: " + mapping);
         }
         try {
             return new OpcUaPoint(NodeId.parse(mapping.trim()));
         } catch (Exception e) {
-            throw new DriverException("Invalid OPC UA nodeId: " + mapping, e);
+            throw new DriverConfigurationException("Invalid OPC UA nodeId: " + mapping, e);
         }
     }
 }

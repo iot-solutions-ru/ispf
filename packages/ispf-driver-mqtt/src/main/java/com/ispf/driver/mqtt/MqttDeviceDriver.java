@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.driver.ingress.DriverIngressFifoExecutor;
@@ -179,7 +180,7 @@ public class MqttDeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             shutdownIngress();
             closeClient();
-            throw new DriverException("MQTT connect failed", e);
+            throw new DriverTransientException("MQTT connect failed", e);
         }
     }
 
@@ -284,7 +285,7 @@ public class MqttDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String topic = topicPrefix + entry.getValue();
@@ -293,7 +294,7 @@ public class MqttDeviceDriver implements DeviceDriver {
                 client.subscribe(topic);
                 subscriptions.put(topic, variableName);
             } catch (Exception e) {
-                throw new DriverException("Subscribe failed: " + topic, e);
+                throw new DriverTransientException("Subscribe failed: " + topic, e);
             }
         }
     }
@@ -397,14 +398,14 @@ public class MqttDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         String topic = topicPrefix + pointId;
         Object raw = value.firstRow().get("raw");
         try {
             client.publish(topic, new MqttMessage(String.valueOf(raw).getBytes()));
         } catch (Exception e) {
-            throw new DriverException("Publish failed: " + topic, e);
+            throw new DriverTransientException("Publish failed: " + topic, e);
         }
     }
 }

@@ -2,11 +2,14 @@ package com.ispf.driver.snmp;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPermanentException;
 import com.ispf.driver.DriverPointCatalog;
 import com.ispf.driver.DriverPollTimestamps;
+import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.snmp.mib.SnmpMibCatalogSupport;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
@@ -154,11 +157,11 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
         } catch (IOException e) {
             connected = false;
             closeSession();
-            throw new DriverException("SNMP connect failed", e);
+            throw new DriverTransientException("SNMP connect failed", e);
         } catch (IllegalArgumentException e) {
             connected = false;
             closeSession();
-            throw new DriverException(e.getMessage(), e);
+            throw new DriverConfigurationException(e.getMessage(), e);
         }
     }
 
@@ -233,7 +236,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         Instant observedAt = DriverPollTimestamps.pollTick();
@@ -262,18 +265,18 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
                 }
                 continue;
             }
-            throw new DriverException("SNMP GET missing value for point " + pointId + " (" + point.oid() + ")");
+            throw new DriverPermanentException("SNMP GET missing value for point " + pointId + " (" + point.oid() + ")");
         }
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         SnmpPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown SNMP point: " + pointId);
+            throw new DriverConfigurationException("Unknown SNMP point: " + pointId);
         }
         setOid(point, SnmpValueMapper.fromRecord(value, point.valueKind()));
         driverObject.updateVariable(pointId, getOid(point), DriverPollTimestamps.pollTick());
@@ -292,11 +295,11 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
 
             ResponseEvent event = snmp.send(pdu, target);
             if (event == null || event.getResponse() == null) {
-                throw new DriverException("SNMP GET timeout (batch size " + entries.size() + ")");
+                throw new DriverTransientException("SNMP GET timeout (batch size " + entries.size() + ")");
             }
             PDU response = event.getResponse();
             if (response.getErrorStatus() != PDU.noError) {
-                throw new DriverException("SNMP GET batch error: " + response.getErrorStatusText());
+                throw new DriverPermanentException("SNMP GET batch error: " + response.getErrorStatusText());
             }
 
             Map<String, DataRecord> results = new LinkedHashMap<>();
@@ -313,7 +316,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("SNMP GET batch failed", e);
+            throw new DriverTransientException("SNMP GET batch failed", e);
         }
     }
 
@@ -325,23 +328,23 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
 
             ResponseEvent event = snmp.send(pdu, target);
             if (event == null || event.getResponse() == null) {
-                throw new DriverException("SNMP GET timeout for OID " + point.oid());
+                throw new DriverTransientException("SNMP GET timeout for OID " + point.oid());
             }
             if (event.getResponse().getErrorStatus() != PDU.noError) {
-                throw new DriverException(
+                throw new DriverPermanentException(
                         "SNMP GET error for OID " + point.oid() + ": "
                                 + event.getResponse().getErrorStatusText()
                 );
             }
             VariableBinding binding = event.getResponse().get(0);
             if (binding == null || binding.getVariable() == null || binding.getVariable() instanceof Null) {
-                throw new DriverException("SNMP OID not available: " + point.oid());
+                throw new DriverConfigurationException("SNMP OID not available: " + point.oid());
             }
             return SnmpValueMapper.toRecord(binding.getVariable(), point.valueKind());
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("SNMP GET failed for OID " + point.oid(), e);
+            throw new DriverTransientException("SNMP GET failed for OID " + point.oid(), e);
         }
     }
 
@@ -353,10 +356,10 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
 
             ResponseEvent event = snmp.send(pdu, target);
             if (event == null || event.getResponse() == null) {
-                throw new DriverException("SNMP SET timeout for OID " + point.oid());
+                throw new DriverTransientException("SNMP SET timeout for OID " + point.oid());
             }
             if (event.getResponse().getErrorStatus() != PDU.noError) {
-                throw new DriverException(
+                throw new DriverPermanentException(
                         "SNMP SET error for OID " + point.oid() + ": "
                                 + event.getResponse().getErrorStatusText()
                 );
@@ -364,7 +367,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("SNMP SET failed for OID " + point.oid(), e);
+            throw new DriverTransientException("SNMP SET failed for OID " + point.oid(), e);
         }
     }
 
@@ -384,7 +387,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
     private static Address parseAddress(String host, int port) throws DriverException {
         Address address = GenericAddress.parse("udp:" + host + "/" + port);
         if (address == null) {
-            throw new DriverException("Invalid SNMP address: " + host + ":" + port);
+            throw new DriverConfigurationException("Invalid SNMP address: " + host + ":" + port);
         }
         return address;
     }

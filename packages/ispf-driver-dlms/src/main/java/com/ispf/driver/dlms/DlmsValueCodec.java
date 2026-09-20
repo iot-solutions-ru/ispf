@@ -2,6 +2,7 @@ package com.ispf.driver.dlms;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverPermanentException;
 
 /**
  * Value coercion for DLMS read/write.
@@ -17,7 +18,7 @@ final class DlmsValueCodec {
             raw = value.firstRow().get("value");
         }
         if (raw == null) {
-            throw new DriverException("DLMS write requires value or raw field");
+            throw new DriverPermanentException("DLMS write requires value or raw field");
         }
         return switch (point.objectType()) {
             case REGISTER, EXTENDED_REGISTER, DEMAND_REGISTER -> toDouble(raw);
@@ -34,7 +35,7 @@ final class DlmsValueCodec {
         try {
             return Double.parseDouble(String.valueOf(raw));
         } catch (NumberFormatException ex) {
-            throw new DriverException("DLMS write requires numeric value: " + raw, ex);
+            throw new DriverPermanentException("DLMS write requires numeric value: " + raw, ex);
         }
     }
 

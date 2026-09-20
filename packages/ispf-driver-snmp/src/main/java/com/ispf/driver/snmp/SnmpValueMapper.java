@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverPermanentException;
 import org.snmp4j.smi.Counter32;
 import org.snmp4j.smi.Counter64;
 import org.snmp4j.smi.Gauge32;
@@ -42,7 +43,7 @@ final class SnmpValueMapper {
 
     static DataRecord toRecord(Variable variable, SnmpPoint.ValueKind kind) throws DriverException {
         if (variable == null || variable instanceof Null) {
-            throw new DriverException("SNMP variable is null");
+            throw new DriverPermanentException("SNMP variable is null");
         }
         String typeName = variable.getClass().getSimpleName();
         String raw = variable.toString();
@@ -112,7 +113,7 @@ final class SnmpValueMapper {
         try {
             return Double.parseDouble(variable.toString());
         } catch (NumberFormatException e) {
-            throw new DriverException("Cannot convert SNMP value to number: " + variable, e);
+            throw new DriverPermanentException("Cannot convert SNMP value to number: " + variable, e);
         }
     }
 

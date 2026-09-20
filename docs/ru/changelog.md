@@ -45,6 +45,12 @@ Changelog отдельных application bundles — в манифестах п�
   **BETA** (156 PRODUCTION / 6 BETA); у `modbus-udp`, `flexible`, `webhook` появились настоящие
   loopback-тесты драйвера вместо тестов парсера. `tools/driver-readiness-audit.py` даёт одинаковый
   вывод на любой ОС (POSIX-пути, детерминированный выбор теста).
+- Типизированные исключения драйверов в top-20 industrial (F-05): все 204 места `throw new
+  DriverException(...)` в `virtual`, `mqtt`, `modbus-tcp/rtu/udp`, `opcua`, `opcua-server`, `snmp`, `bacnet`,
+  `s7`, `http`, `flexible`, `iec104`, `iec104-server`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`,
+  `gps-tracker` теперь объявляют `DriverErrorKind` (`DriverTransient` / `DriverConfiguration` /
+  `DriverPermanent` / `DriverUnsupportedOperationException`) — `ispf.driver.errors.total{kind}` и статус
+  драйвера перестают показывать `unclassified` для них. `DriverTypedExceptionsTest` защищает паки от регресса.
 - Lint-гейт Web Console на нуле предупреждений: `npm run lint` с `--max-warnings 0` (было 180);
   исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
   (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).

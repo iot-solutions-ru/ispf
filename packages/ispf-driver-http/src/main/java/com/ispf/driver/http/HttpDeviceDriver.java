@@ -4,8 +4,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPermanentException;
+import com.ispf.driver.DriverTransientException;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -103,7 +106,7 @@ public class HttpDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         lastMappings.clear();
@@ -118,10 +121,10 @@ public class HttpDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         if (value == null || value.rowCount() == 0) {
-            throw new DriverException("HTTP write requires a non-empty DataRecord");
+            throw new DriverPermanentException("HTTP write requires a non-empty DataRecord");
         }
         HttpPoint point = resolvePoint(pointId);
         String method = writeMethod(point.method());
@@ -145,12 +148,12 @@ public class HttpDeviceDriver implements DeviceDriver {
             ));
             driverObject.updateVariable(pointId, result);
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new DriverException("HTTP write failed for " + url + ": HTTP " + response.statusCode());
+                throw new DriverTransientException("HTTP write failed for " + url + ": HTTP " + response.statusCode());
             }
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("HTTP write failed for " + url, e);
+            throw new DriverTransientException("HTTP write failed for " + url, e);
         }
     }
 
@@ -165,7 +168,7 @@ public class HttpDeviceDriver implements DeviceDriver {
             points.put(pointId, point);
             return point;
         }
-        throw new DriverException("Unknown HTTP point: " + pointId);
+        throw new DriverConfigurationException("Unknown HTTP point: " + pointId);
     }
 
     private String resolveWriteUrl(HttpPoint point, DataRecord value) {
@@ -325,7 +328,7 @@ public class HttpDeviceDriver implements DeviceDriver {
                     "contentType", contentType
             ));
         } catch (Exception e) {
-            throw new DriverException("HTTP request failed for " + point.url(), e);
+            throw new DriverTransientException("HTTP request failed for " + point.url(), e);
         }
     }
 

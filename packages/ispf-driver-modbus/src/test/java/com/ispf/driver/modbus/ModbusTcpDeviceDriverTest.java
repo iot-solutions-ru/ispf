@@ -13,6 +13,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -155,10 +156,12 @@ class ModbusTcpDeviceDriverTest {
                 "discrete", "1:DISCRETE:0"
         ));
 
-        assertThrows(DriverException.class, () ->
+        DriverException inputError = assertThrows(DriverException.class, () ->
                 driver.writePoint("inputReg", DataRecord.single(REGISTER_SCHEMA, Map.of("raw", 1L, "value", 1.0))));
-        assertThrows(DriverException.class, () ->
+        assertEquals(DriverErrorKind.UNSUPPORTED, inputError.kind());
+        DriverException discreteError = assertThrows(DriverException.class, () ->
                 driver.writePoint("discrete", DataRecord.single(COIL_SCHEMA, Map.of("value", true))));
+        assertEquals(DriverErrorKind.UNSUPPORTED, discreteError.kind());
         driver.disconnect();
     }
 
@@ -179,6 +182,7 @@ class ModbusTcpDeviceDriverTest {
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.writePoint("missing", DataRecord.single(REGISTER_SCHEMA, Map.of("raw", 1L, "value", 1.0))));
         assertTrue(error.getMessage().contains("Unknown point"));
+        assertEquals(DriverErrorKind.CONFIGURATION, error.kind());
         driver.disconnect();
     }
 

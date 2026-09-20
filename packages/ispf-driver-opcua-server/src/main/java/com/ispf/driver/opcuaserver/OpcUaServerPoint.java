@@ -1,5 +1,6 @@
 package com.ispf.driver.opcuaserver;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 
@@ -10,7 +11,7 @@ record OpcUaServerPoint(NodeId nodeId, String nodeIdText) {
 
     static OpcUaServerPoint parse(String mapping, int namespaceIndex) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("OPC UA server mapping requires nodeId: " + mapping);
+            throw new DriverConfigurationException("OPC UA server mapping requires nodeId: " + mapping);
         }
         String trimmed = mapping.trim();
         try {
@@ -24,7 +25,7 @@ record OpcUaServerPoint(NodeId nodeId, String nodeIdText) {
                 NodeId nodeId = new NodeId(namespaceIndex, trimmed);
                 return new OpcUaServerPoint(nodeId, trimmed);
             } catch (Exception nested) {
-                throw new DriverException("Invalid OPC UA server nodeId: " + mapping, e);
+                throw new DriverConfigurationException("Invalid OPC UA server nodeId: " + mapping, e);
             }
         }
     }

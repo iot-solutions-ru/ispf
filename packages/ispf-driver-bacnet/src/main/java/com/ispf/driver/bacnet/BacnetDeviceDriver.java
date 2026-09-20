@@ -4,9 +4,13 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPermanentException;
 import com.ispf.driver.DriverPollTimestamps;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.bacnet.codec.BacnetEngineeringUnit;
 import com.ispf.driver.bacnet.codec.BacnetException;
 import com.ispf.driver.bacnet.codec.BacnetIpClient;
@@ -102,7 +106,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             connected = false;
             closeClient();
-            throw new DriverException("BACnet connect failed for local device " + localDeviceId, e);
+            throw new DriverTransientException("BACnet connect failed for local device " + localDeviceId, e);
         }
     }
 
@@ -120,7 +124,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         Instant observedAt = DriverPollTimestamps.pollTick();
@@ -134,21 +138,21 @@ public class BacnetDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         BacnetPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         if (!isWritable(point)) {
-            throw new DriverException("BACnet object type is read-only: " + point.objectType());
+            throw new DriverUnsupportedOperationException("BACnet object type is read-only: " + point.objectType());
         }
         try {
             BacnetObjectIdentifier objectId = new BacnetObjectIdentifier(point.objectType(), point.instance());
             client.writeProperty(objectId, point.property(), encodeWriteValue(point, value));
             driverObject.updateVariable(pointId, readPoint(point), DriverPollTimestamps.pollTick());
         } catch (BacnetException e) {
-            throw new DriverException("BACnet write failed for point " + pointId, e);
+            throw new DriverTransientException("BACnet write failed for point " + pointId, e);
         }
     }
 
@@ -162,7 +166,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
             raw = value.firstRow().get("value");
         }
         if (raw == null) {
-            throw new DriverException("BACnet write requires value or raw field");
+            throw new DriverPermanentException("BACnet write requires value or raw field");
         }
         if (point.objectType().isAnalog()) {
             return new BacnetValue.RealValue((float) extractDouble(raw));
@@ -170,7 +174,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
         if (point.objectType().isBinary()) {
             return new BacnetValue.BinaryValue(extractBoolean(raw));
         }
-        throw new DriverException("Unsupported BACnet write type: " + point.objectType());
+        throw new DriverUnsupportedOperationException("Unsupported BACnet write type: " + point.objectType());
     }
 
     private static double extractDouble(Object raw) throws DriverException {
@@ -180,7 +184,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
         try {
             return Double.parseDouble(String.valueOf(raw));
         } catch (NumberFormatException e) {
-            throw new DriverException("BACnet write requires numeric value: " + raw, e);
+            throw new DriverPermanentException("BACnet write requires numeric value: " + raw, e);
         }
     }
 
@@ -208,7 +212,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
             }
             return DataRecord.single(VALUE_SCHEMA, fields);
         } catch (BacnetException e) {
-            throw new DriverException("BACnet read failed for " + point, e);
+            throw new DriverTransientException("BACnet read failed for " + point, e);
         }
     }
 

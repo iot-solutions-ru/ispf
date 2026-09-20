@@ -8,9 +8,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverPollTimestamps;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -77,7 +80,7 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO, "Connected to Modbus TCP " + host + ":" + port);
         } catch (Exception e) {
             connected = false;
-            throw new DriverException("Modbus TCP connect failed", e);
+            throw new DriverTransientException("Modbus TCP connect failed", e);
         }
     }
 
@@ -98,7 +101,7 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         Instant observedAt = DriverPollTimestamps.pollTick();
@@ -113,11 +116,11 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         ModbusPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         try {
             switch (point.type()) {
@@ -129,13 +132,13 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
                     boolean coilValue = Boolean.TRUE.equals(value.firstRow().get("value"));
                     master.writeCoil(point.slaveId(), point.address(), coilValue);
                 }
-                case INPUT, DISCRETE -> throw new DriverException("Register type is read-only: " + point.type());
+                case INPUT, DISCRETE -> throw new DriverUnsupportedOperationException("Register type is read-only: " + point.type());
             }
             driverObject.updateVariable(pointId, readPoint(point), DriverPollTimestamps.pollTick());
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("Modbus write failed for point " + pointId, e);
+            throw new DriverTransientException("Modbus write failed for point " + pointId, e);
         }
     }
 
@@ -160,7 +163,7 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
                 }
             };
         } catch (Exception e) {
-            throw new DriverException("Modbus read failed at " + point, e);
+            throw new DriverTransientException("Modbus read failed at " + point, e);
         }
     }
 

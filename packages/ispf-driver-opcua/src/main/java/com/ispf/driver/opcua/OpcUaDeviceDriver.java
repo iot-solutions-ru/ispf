@@ -4,10 +4,13 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPermanentException;
 import com.ispf.driver.DriverPollTimestamps;
+import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.TelemetryQuality;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
@@ -137,7 +140,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
             refreshSecurity();
             if (security.secure()) {
                 if (security.pkiDir().isBlank()) {
-                    throw new DriverException("pkiDir is required when securityPolicy is not None");
+                    throw new DriverConfigurationException("pkiDir is required when securityPolicy is not None");
                 }
                 pki = OpcUaClientPki.loadOrCreate(
                         java.nio.file.Path.of(security.pkiDir()),
@@ -158,7 +161,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
         } catch (Exception e) {
             connected = false;
             releaseClient();
-            throw new DriverException("OPC UA connect failed", e);
+            throw new DriverTransientException("OPC UA connect failed", e);
         }
     }
 
@@ -193,7 +196,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -218,11 +221,11 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         OpcUaPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         try {
             DataValue current = client.readValue(
@@ -234,14 +237,14 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
             StatusCode status = client.writeValue(point.nodeId(), new DataValue(variant))
                     .get(timeoutMs, TimeUnit.MILLISECONDS);
             if (status == null || !status.isGood()) {
-                throw new DriverException("OPC UA write rejected: " + status);
+                throw new DriverPermanentException("OPC UA write rejected: " + status);
             }
             PointRead read = readPoint(point);
             driverObject.updateVariable(pointId, read.record(), DriverPollTimestamps.sourceOrPollTick(read.observedAt()));
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("OPC UA write failed for point " + pointId, e);
+            throw new DriverTransientException("OPC UA write failed for point " + pointId, e);
         }
     }
 
@@ -368,7 +371,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
             }
             return nodes;
         } catch (Exception e) {
-            throw new DriverException("OPC UA browse failed", e);
+            throw new DriverTransientException("OPC UA browse failed", e);
         }
     }
 
@@ -410,7 +413,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
             ).get(timeoutMs, TimeUnit.MILLISECONDS);
             return toPointRead(dataValue);
         } catch (Exception e) {
-            throw new DriverException("OPC UA read failed at " + point.nodeId(), e);
+            throw new DriverTransientException("OPC UA read failed at " + point.nodeId(), e);
         }
     }
 
@@ -423,7 +426,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
         if (val != null) {
             return val;
         }
-        throw new DriverException("OPC UA write requires value or raw field");
+        throw new DriverPermanentException("OPC UA write requires value or raw field");
     }
 
     private static Variant toWriteVariant(Object writeObject, Variant current) {

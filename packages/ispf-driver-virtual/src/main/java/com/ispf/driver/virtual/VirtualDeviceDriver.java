@@ -4,6 +4,8 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.util.Map;
 
@@ -81,7 +83,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!connected) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         VirtualUnifiedPoll.poll(
                 driverObject,
@@ -92,6 +94,6 @@ public class VirtualDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Virtual driver is read-only");
+        throw new DriverUnsupportedOperationException("Virtual driver is read-only");
     }
 }

@@ -6,6 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -124,7 +126,7 @@ public class FlexibleDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
 
         List<Map.Entry<String, FlexiblePoint>> legacyPoints = new ArrayList<>();
@@ -159,7 +161,7 @@ public class FlexibleDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Flexible driver is read-only");
+        throw new DriverUnsupportedOperationException("Flexible driver is read-only");
     }
 
     private String resolvePayload(byte[] frame, boolean pointVerifyChecksum) throws DriverException {
@@ -198,7 +200,7 @@ public class FlexibleDeviceDriver implements DeviceDriver {
             }
             return exchangeTcpBytes(request);
         } catch (IOException e) {
-            throw new DriverException("Flexible exchange failed", e);
+            throw new DriverTransientException("Flexible exchange failed", e);
         }
     }
 

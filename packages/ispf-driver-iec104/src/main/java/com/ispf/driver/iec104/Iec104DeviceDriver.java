@@ -4,8 +4,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPermanentException;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.iec104.codec.Iec104Asdu;
 import com.ispf.driver.iec104.codec.Iec104Connection;
 import com.ispf.driver.iec104.codec.Iec104ConnectionListener;
@@ -86,7 +90,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             connected = false;
             connection = null;
-            throw new DriverException("IEC104 connect failed", e);
+            throw new DriverTransientException("IEC104 connect failed", e);
         }
     }
 
@@ -112,7 +116,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -137,11 +141,11 @@ public class Iec104DeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         Iec104Point point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         try {
             switch (point.dataType()) {
@@ -150,13 +154,13 @@ public class Iec104DeviceDriver implements DeviceDriver {
                         connection.setShortFloatCommand(commonAddress, point.ioa(), extractDouble(value));
                 case INT, M_ME_NA_1 ->
                         connection.setNormalizedValueCommand(commonAddress, point.ioa(), extractDouble(value));
-                default -> throw new DriverException("Unsupported IEC104 write data type: " + point.dataType());
+                default -> throw new DriverUnsupportedOperationException("Unsupported IEC104 write data type: " + point.dataType());
             }
             driverObject.updateVariable(pointId, writeResult(point, value));
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("IEC104 write failed for point " + pointId, e);
+            throw new DriverTransientException("IEC104 write failed for point " + pointId, e);
         }
     }
 
@@ -182,7 +186,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
             return bool;
         }
         if (raw == null) {
-            throw new DriverException("IEC104 write requires boolean value field");
+            throw new DriverPermanentException("IEC104 write requires boolean value field");
         }
         String text = String.valueOf(raw).trim().toLowerCase();
         return "true".equals(text) || "1".equals(text) || "on".equals(text);
@@ -197,12 +201,12 @@ public class Iec104DeviceDriver implements DeviceDriver {
             return number.doubleValue();
         }
         if (raw == null) {
-            throw new DriverException("IEC104 write requires numeric value field");
+            throw new DriverPermanentException("IEC104 write requires numeric value field");
         }
         try {
             return Double.parseDouble(String.valueOf(raw));
         } catch (NumberFormatException e) {
-            throw new DriverException("IEC104 write requires numeric value: " + raw, e);
+            throw new DriverPermanentException("IEC104 write requires numeric value: " + raw, e);
         }
     }
 
@@ -212,16 +216,16 @@ public class Iec104DeviceDriver implements DeviceDriver {
         try {
             connection.readCommand(commonAddress, point.ioa());
             if (!pending.await(timeoutMs)) {
-                throw new DriverException("IEC104 read timeout for IOA " + point.ioa());
+                throw new DriverTransientException("IEC104 read timeout for IOA " + point.ioa());
             }
             DataRecord record = pending.result();
             if (record == null) {
-                throw new DriverException("IEC104 read returned no value for IOA " + point.ioa());
+                throw new DriverConfigurationException("IEC104 read returned no value for IOA " + point.ioa());
             }
             return record;
         } catch (IOException e) {
             connected = false;
-            throw new DriverException("IEC104 read failed for IOA " + point.ioa(), e);
+            throw new DriverTransientException("IEC104 read failed for IOA " + point.ioa(), e);
         } finally {
             pendingReads.remove(point.ioa());
         }
@@ -329,7 +333,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new DriverException("IEC104 read interrupted", e);
+                throw new DriverTransientException("IEC104 read interrupted", e);
             }
             DriverException failure = error.get();
             if (failure != null) {

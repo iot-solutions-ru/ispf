@@ -112,6 +112,8 @@ public interface DeviceDriver {
 
 The runtime counts failures as `ispf.driver.errors.total{driver,op,kind}` (Micrometer) and tags the `[kind]` in driver status messages and logs.
 
+All **top-20 industrial** drivers (`DriverProductionMatrix.TOP_20_INDUSTRIAL`) throw only typed subclasses; `DriverTypedExceptionsTest` fails the build on any plain `throw new DriverException(...)` in their main sources. Convention used there: `Not connected` / connect / read / write / timeout → transient; bad mapping, unknown point, missing required option → configuration; device rejected, checksum / CRC / range / value-shape errors → permanent; read-only driver or unsupported data type → unsupported.
+
 Registration via **driver packs** in `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop at `pollIntervalMs`.
 
 Build packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. See [licensed-driver-packs](licensed-driver-packs.md).

@@ -6,6 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -86,7 +88,7 @@ public class OpcBridgeDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -98,7 +100,7 @@ public class OpcBridgeDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("OPC bridge driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("OPC bridge driver is read-only in v0.1");
     }
 
     private DataRecord check(OpcBridgePoint point) {

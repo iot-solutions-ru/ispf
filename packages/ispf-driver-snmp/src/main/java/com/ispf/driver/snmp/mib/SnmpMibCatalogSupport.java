@@ -1,7 +1,9 @@
 package com.ispf.driver.snmp.mib;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverPointCatalog;
+import com.ispf.driver.DriverTransientException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,7 +28,7 @@ public final class SnmpMibCatalogSupport {
                             f.fileName(), f.moduleName(), f.sizeBytes(), f.status()))
                     .toList();
         } catch (IOException e) {
-            throw new DriverException("Failed to list MIB artifacts: " + e.getMessage(), e);
+            throw new DriverTransientException("Failed to list MIB artifacts: " + e.getMessage(), e);
         }
     }
 
@@ -37,7 +39,7 @@ public final class SnmpMibCatalogSupport {
             return new DriverPointCatalog.ArtifactInfo(
                     info.fileName(), info.moduleName(), info.sizeBytes(), info.status());
         } catch (IOException e) {
-            throw new DriverException("Failed to import MIB: " + e.getMessage(), e);
+            throw new DriverTransientException("Failed to import MIB: " + e.getMessage(), e);
         }
     }
 
@@ -45,7 +47,7 @@ public final class SnmpMibCatalogSupport {
         try {
             SnmpMibLibrary.get().deleteFile(name);
         } catch (IOException e) {
-            throw new DriverException("Failed to delete MIB: " + e.getMessage(), e);
+            throw new DriverTransientException("Failed to delete MIB: " + e.getMessage(), e);
         }
     }
 
@@ -112,16 +114,16 @@ public final class SnmpMibCatalogSupport {
                 object = byId.get(selection.nodeId().substring("object:".length()));
             }
             if (object == null || !object.selectable()) {
-                throw new DriverException("Unknown or non-selectable MIB object: " + selection.nodeId());
+                throw new DriverConfigurationException("Unknown or non-selectable MIB object: " + selection.nodeId());
             }
             if (object.resolvedOid().isBlank()) {
-                throw new DriverException(
+                throw new DriverConfigurationException(
                         "OID not resolved for " + object.qualifiedName()
                                 + " — upload imported modules (IMPORTS) first"
                 );
             }
             if (object.kind() == SnmpMibObject.Kind.COLUMN && selection.index().isBlank()) {
-                throw new DriverException(
+                throw new DriverConfigurationException(
                         "Table column " + object.name() + " requires an index (e.g. ifIndex)"
                 );
             }

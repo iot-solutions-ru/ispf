@@ -1,5 +1,6 @@
 package com.ispf.driver.iec104;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
 /**
@@ -21,14 +22,14 @@ record Iec104Point(int ioa, Iec104DataType dataType) {
     static Iec104Point parse(String mapping) throws DriverException {
         String[] parts = mapping.split(":");
         if (parts.length < 2) {
-            throw new DriverException("Invalid IEC104 mapping (expected ioa:dataType): " + mapping);
+            throw new DriverConfigurationException("Invalid IEC104 mapping (expected ioa:dataType): " + mapping);
         }
         try {
             int ioa = Integer.parseInt(parts[0].trim());
             Iec104DataType dataType = Iec104DataType.valueOf(parts[1].trim().toUpperCase());
             return new Iec104Point(ioa, dataType);
         } catch (IllegalArgumentException e) {
-            throw new DriverException("Invalid IEC104 mapping: " + mapping, e);
+            throw new DriverConfigurationException("Invalid IEC104 mapping: " + mapping, e);
         }
     }
 }

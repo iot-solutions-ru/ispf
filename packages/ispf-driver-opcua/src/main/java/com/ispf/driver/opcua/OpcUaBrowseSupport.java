@@ -1,6 +1,8 @@
 package com.ispf.driver.opcua;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverTransientException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -49,7 +51,7 @@ public final class OpcUaBrowseSupport {
         try {
             if (security.secure()) {
                 if (security.pkiDir().isBlank()) {
-                    throw new DriverException("pkiDir is required when securityPolicy is not None");
+                    throw new DriverConfigurationException("pkiDir is required when securityPolicy is not None");
                 }
                 pki = OpcUaClientPki.loadOrCreate(
                         Path.of(security.pkiDir()),
@@ -78,7 +80,7 @@ public final class OpcUaBrowseSupport {
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("OPC UA browse failed", e);
+            throw new DriverTransientException("OPC UA browse failed", e);
         } finally {
             if (client != null) {
                 try {

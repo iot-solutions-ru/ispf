@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -128,6 +129,7 @@ class EthernetIpDeviceDriverTest {
                         Map.of("value", 1)
                 )));
         assertTrue(error.getMessage().contains("not mapped"));
+        assertEquals(DriverErrorKind.CONFIGURATION, error.kind());
         driver.disconnect();
     }
 
@@ -144,7 +146,8 @@ class EthernetIpDeviceDriverTest {
                 "timeoutMs", "3000"
         )));
 
-        assertThrows(DriverException.class, driver::connect);
+        DriverException error = assertThrows(DriverException.class, driver::connect);
+        assertEquals(DriverErrorKind.TRANSIENT, error.kind());
     }
 
     private Map<String, String> loopbackConfig() {

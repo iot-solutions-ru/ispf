@@ -1,6 +1,7 @@
 package com.ispf.driver.s7;
 
 import com.github.s7connector.api.DaveArea;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
 /**
@@ -37,7 +38,7 @@ record S7Point(DaveArea area, int dbNumber, int offset, S7DataType dataType) {
     static S7Point parse(String mapping) throws DriverException {
         String[] parts = mapping.split(":");
         if (parts.length < 4) {
-            throw new DriverException("Invalid S7 mapping (expected area:dbNumber:offset:type): " + mapping);
+            throw new DriverConfigurationException("Invalid S7 mapping (expected area:dbNumber:offset:type): " + mapping);
         }
         try {
             DaveArea area = parseArea(parts[0].trim());
@@ -46,7 +47,7 @@ record S7Point(DaveArea area, int dbNumber, int offset, S7DataType dataType) {
             S7DataType dataType = S7DataType.valueOf(parts[3].trim().toUpperCase());
             return new S7Point(area, dbNumber, offset, dataType);
         } catch (IllegalArgumentException e) {
-            throw new DriverException("Invalid S7 mapping: " + mapping, e);
+            throw new DriverConfigurationException("Invalid S7 mapping: " + mapping, e);
         }
     }
 
@@ -58,7 +59,7 @@ record S7Point(DaveArea area, int dbNumber, int offset, S7DataType dataType) {
             case "FLAGS", "M" -> DaveArea.FLAGS;
             case "TIMER", "T" -> DaveArea.TIMER;
             case "COUNTER", "C" -> DaveArea.COUNTER;
-            default -> throw new DriverException("Unknown S7 area: " + areaName);
+            default -> throw new DriverConfigurationException("Unknown S7 area: " + areaName);
         };
     }
 }

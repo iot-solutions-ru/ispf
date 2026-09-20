@@ -1,5 +1,6 @@
 package com.ispf.driver.snmp;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
 /**
@@ -19,7 +20,7 @@ record SnmpPoint(String oid, ValueKind valueKind, boolean optional) {
 
     static SnmpPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("SNMP mapping is empty");
+            throw new DriverConfigurationException("SNMP mapping is empty");
         }
         String trimmed = mapping.trim();
         String[] segments = trimmed.split(":", -1);
@@ -28,7 +29,7 @@ record SnmpPoint(String oid, ValueKind valueKind, boolean optional) {
         }
         String oid = segments[0].trim();
         if (oid.isBlank()) {
-            throw new DriverException("SNMP OID is required in mapping: " + mapping);
+            throw new DriverConfigurationException("SNMP OID is required in mapping: " + mapping);
         }
         boolean optional = "optional".equalsIgnoreCase(segments[segments.length - 1].trim());
         String kindRaw = optional
@@ -40,7 +41,7 @@ record SnmpPoint(String oid, ValueKind valueKind, boolean optional) {
         try {
             return new SnmpPoint(oid, ValueKind.valueOf(kindRaw.toUpperCase()), optional);
         } catch (IllegalArgumentException e) {
-            throw new DriverException("Unknown SNMP value kind in mapping: " + mapping, e);
+            throw new DriverConfigurationException("Unknown SNMP value kind in mapping: " + mapping, e);
         }
     }
 }

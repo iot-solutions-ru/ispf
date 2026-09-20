@@ -95,6 +95,20 @@ public interface DeviceDriver {
 
 **Ingress contract:** hot path `updateVariable` не должен писать в DB/historian/disk — долговременное хранение асинхронно на стороне сервера. Полный исходник: [`DeviceDriver.java`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java). SDK, пошаговое руководство: [driver-ddk](driver-ddk.md).
 
+**Контракт ошибок:** бросайте типизированный `DriverException`, чтобы runtime отличал моргающую сеть от ошибки конфигурации и бага:
+
+| Исключение | `DriverErrorKind` | Смысл / реакция runtime |
+|-----------|-------------------|--------------------------|
+| `DriverTransientException` | `transient` | таймаут, обрыв соединения, устройство занято — продолжаем опрос |
+| `DriverPermanentException` | `permanent` | нарушение протокола, устройство отказало — повтор не поможет |
+| `DriverConfigurationException` | `configuration` | неверный host / регистр / unit id — оператор должен исправить конфиг |
+| `DriverUnsupportedOperationException` | `unsupported` | запись или browse не реализованы для драйвера / модели |
+| обычный `DriverException` | `unclassified` (эвристика по cause: `SocketTimeoutException` → transient, `UnknownHostException` / `IllegalArgumentException` → configuration, …) | legacy; предпочитайте типизированный подкласс |
+
+Runtime считает отказы как `ispf.driver.errors.total{driver,op,kind}` (Micrometer) и помечает `[kind]` в статусе драйвера и логах.
+
+Все **top-20 industrial** драйверы (`DriverProductionMatrix.TOP_20_INDUSTRIAL`) бросают только типизированные подклассы; `DriverTypedExceptionsTest` валит сборку на любом `throw new DriverException(...)` в их main-исходниках. Принятая там конвенция: `Not connected` / connect / read / write / таймаут → transient; неверный mapping, неизвестная точка, отсутствующая обязательная опция → configuration; отказ устройства, ошибки checksum / CRC / диапазона / формы значения → permanent; read-only драйвер или неподдерживаемый тип данных → unsupported.
+
 Регистрация через **driver packs** в `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop по `pollIntervalMs`.
 
 Сборка packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. См. [licensed-driver-packs](licensed-driver-packs.md).

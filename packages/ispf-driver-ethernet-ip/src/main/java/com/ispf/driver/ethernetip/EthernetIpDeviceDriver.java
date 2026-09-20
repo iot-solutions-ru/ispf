@@ -4,8 +4,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPermanentException;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -127,7 +131,7 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             connected = false;
             closeSocket();
-            throw new DriverException("EtherNet/IP connect failed", e);
+            throw new DriverTransientException("EtherNet/IP connect failed", e);
         }
     }
 
@@ -145,7 +149,7 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -158,11 +162,11 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         EthernetIpPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("EtherNet/IP point '" + pointId
+            throw new DriverConfigurationException("EtherNet/IP point '" + pointId
                     + "' is not mapped; include it in a poll before writing");
         }
         Object raw = value.firstRow().get("value");
@@ -170,14 +174,14 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
             raw = value.firstRow().get("raw");
         }
         if (raw == null) {
-            throw new DriverException("EtherNet/IP write requires a value");
+            throw new DriverPermanentException("EtherNet/IP write requires a value");
         }
         int type = resolveWriteType(pointId, raw);
         try {
             byte[] request = buildCipRequest(CIP_WRITE_TAG, point.tagPath(), encodeWriteData(type, raw));
             int status = ucmmExchange(request)[1][0] & 0xFF;
             if (status != 0) {
-                throw new DriverException("CIP Write Tag failed: generalStatus=0x"
+                throw new DriverPermanentException("CIP Write Tag failed: generalStatus=0x"
                         + Integer.toHexString(status));
             }
             driverObject.updateVariable(pointId, DataRecord.single(STATUS_SCHEMA, Map.of(
@@ -189,7 +193,7 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
             )));
         } catch (IOException e) {
             markDisconnected();
-            throw new DriverException("EtherNet/IP write failed", e);
+            throw new DriverTransientException("EtherNet/IP write failed", e);
         }
     }
 
@@ -368,7 +372,7 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
         for (String segment : tagPath.split("\\.")) {
             byte[] name = segment.getBytes(StandardCharsets.US_ASCII);
             if (name.length == 0 || name.length > 255) {
-                throw new DriverException("Invalid CIP tag path segment: '" + segment + "'");
+                throw new DriverConfigurationException("Invalid CIP tag path segment: '" + segment + "'");
             }
             path.write(0x91);
             path.write(name.length);
@@ -417,11 +421,11 @@ public class EthernetIpDeviceDriver implements DeviceDriver {
                 case CIP_INT -> buffer.putShort((short) Integer.parseInt(text));
                 case CIP_DINT -> buffer.putInt((int) Long.parseLong(text));
                 case CIP_REAL -> buffer.putFloat(Float.parseFloat(text));
-                default -> throw new DriverException(
+                default -> throw new DriverUnsupportedOperationException(
                         "Unsupported CIP write type 0x" + Integer.toHexString(type));
             }
         } catch (NumberFormatException e) {
-            throw new DriverException("Value '" + text + "' does not fit CIP type 0x"
+            throw new DriverPermanentException("Value '" + text + "' does not fit CIP type 0x"
                     + Integer.toHexString(type), e);
         }
         int length = switch (type) {
