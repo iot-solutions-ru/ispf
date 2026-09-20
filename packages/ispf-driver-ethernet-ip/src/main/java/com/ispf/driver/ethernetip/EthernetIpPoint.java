@@ -1,5 +1,6 @@
 package com.ispf.driver.ethernetip;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
 /**
@@ -9,7 +10,7 @@ record EthernetIpPoint(String tagPath) {
 
     static EthernetIpPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("EtherNet/IP mapping requires tagPath: " + mapping);
+            throw new DriverConfigurationException("EtherNet/IP mapping requires tagPath: " + mapping);
         }
         return new EthernetIpPoint(mapping.trim());
     }

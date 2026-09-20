@@ -2,6 +2,8 @@ package com.ispf.driver.dlms;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverPermanentException;
+import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.dlms.codec.DlmsTcpWrapperCodec;
 
 import java.net.InetSocketAddress;
@@ -38,7 +40,7 @@ final class DlmsClientCommunicator implements AutoCloseable {
             throw ex;
         } catch (Exception ex) {
             closeQuietly();
-            throw new DriverException("DLMS connect failed", ex);
+            throw new DriverTransientException("DLMS connect failed", ex);
         }
     }
 
@@ -52,7 +54,7 @@ final class DlmsClientCommunicator implements AutoCloseable {
             byte[] response = exchange(request);
             return DlmsTcpWrapperCodec.parseGetResponse(response);
         } catch (Exception ex) {
-            throw new DriverException("DLMS read failed for " + point.obis(), ex);
+            throw new DriverTransientException("DLMS read failed for " + point.obis(), ex);
         }
     }
 
@@ -64,14 +66,14 @@ final class DlmsClientCommunicator implements AutoCloseable {
         } catch (DriverException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new DriverException("DLMS write failed for " + point.obis(), ex);
+            throw new DriverTransientException("DLMS write failed for " + point.obis(), ex);
         }
     }
 
     private void associate() throws Exception {
         byte[] response = exchange(DlmsTcpWrapperCodec.associateRequest(clientAddress, logicalDevice));
         if (!DlmsTcpWrapperCodec.parseAssociateResponse(response)) {
-            throw new DriverException("DLMS association rejected");
+            throw new DriverPermanentException("DLMS association rejected");
         }
         associated = true;
     }

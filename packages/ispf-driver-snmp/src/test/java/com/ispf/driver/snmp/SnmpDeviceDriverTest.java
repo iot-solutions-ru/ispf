@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -74,6 +75,7 @@ class SnmpDeviceDriverTest {
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.writePoint("gauge", DataRecord.single(VALUE_SCHEMA, Map.of("value", 1.0, "raw", "1"))));
         assertTrue(error.getMessage().contains("Not connected"));
+        assertEquals(DriverErrorKind.TRANSIENT, error.kind());
     }
 
     private static int freePort() throws Exception {

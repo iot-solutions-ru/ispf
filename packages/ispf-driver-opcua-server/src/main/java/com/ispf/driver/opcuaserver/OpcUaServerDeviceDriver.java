@@ -4,8 +4,10 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig;
 import org.eclipse.milo.opcua.sdk.server.identity.AnonymousIdentityValidator;
@@ -115,7 +117,7 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
             SecurityPolicy policy = parsePolicy(securityPolicyRaw);
             MessageSecurityMode mode = parseMode(securityModeRaw, policy);
             if (policy != SecurityPolicy.None && pkiDir.isBlank()) {
-                throw new DriverException("pkiDir is required when securityPolicy is not None");
+                throw new DriverConfigurationException("pkiDir is required when securityPolicy is not None");
             }
             java.nio.file.Path securityPath = pkiDir.isBlank()
                     ? Files.createTempDirectory("ispf-opcua-server-")
@@ -188,7 +190,7 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             connected = false;
             shutdownServer();
-            throw new DriverException("OPC UA server start failed", e);
+            throw new DriverTransientException("OPC UA server start failed", e);
         }
     }
 
@@ -207,7 +209,7 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -221,11 +223,11 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         OpcUaServerPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         String newValue = extractString(value);
         namespace.writeValue(point.nodeId(), newValue);

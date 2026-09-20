@@ -1,6 +1,8 @@
 package com.ispf.driver.dnp3.codec;
 
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverPermanentException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.dnp3.Dnp3Point;
 
 import java.io.EOFException;
@@ -69,11 +71,11 @@ public final class Dnp3TcpCodec {
         }
         int second = in.read();
         if (first != START_0 || second != START_1) {
-            throw new DriverException("Invalid DNP3 start bytes");
+            throw new DriverPermanentException("Invalid DNP3 start bytes");
         }
         int length = in.read();
         if (length < 5 || length > MAX_FRAME) {
-            throw new DriverException("Invalid DNP3 frame length " + length);
+            throw new DriverPermanentException("Invalid DNP3 frame length " + length);
         }
         byte[] body = readFully(in, length);
         int sentCrcLow = in.read();
@@ -84,7 +86,7 @@ public final class Dnp3TcpCodec {
         int sentCrc = sentCrcLow | (sentCrcHigh << 8);
         int actualCrc = crc16(body);
         if (sentCrc != actualCrc) {
-            throw new DriverException("DNP3 frame CRC mismatch");
+            throw new DriverPermanentException("DNP3 frame CRC mismatch");
         }
         ByteBuffer buffer = ByteBuffer.wrap(body).order(ByteOrder.LITTLE_ENDIAN);
         int control = Byte.toUnsignedInt(buffer.get());
@@ -103,7 +105,7 @@ public final class Dnp3TcpCodec {
 
     public static int requestSequence(Frame frame) throws DriverException {
         if (frame.application().length < 2 || Byte.toUnsignedInt(frame.application()[1]) != FUNCTION_READ) {
-            throw new DriverException("Unsupported DNP3 request");
+            throw new DriverUnsupportedOperationException("Unsupported DNP3 request");
         }
         return frame.application()[0] & 0x0F;
     }
@@ -113,7 +115,7 @@ public final class Dnp3TcpCodec {
         int control = Byte.toUnsignedInt(app.get());
         int function = Byte.toUnsignedInt(app.get());
         if ((control & 0xC0) != APP_RESPONSE || function != FUNCTION_RESPONSE) {
-            throw new DriverException("Unexpected DNP3 response");
+            throw new DriverPermanentException("Unexpected DNP3 response");
         }
         app.getShort(); // internal indications
         while (app.hasRemaining()) {
@@ -121,7 +123,7 @@ public final class Dnp3TcpCodec {
             int variation = Byte.toUnsignedInt(app.get());
             int qualifier = Byte.toUnsignedInt(app.get());
             if (qualifier != QUALIFIER_16BIT_INDEXES) {
-                throw new DriverException("Unsupported DNP3 qualifier 0x" + Integer.toHexString(qualifier));
+                throw new DriverUnsupportedOperationException("Unsupported DNP3 qualifier 0x" + Integer.toHexString(qualifier));
             }
             int count = Short.toUnsignedInt(app.getShort());
             for (int i = 0; i < count; i++) {
@@ -191,7 +193,7 @@ public final class Dnp3TcpCodec {
     }
 
     private static void skipUnsupported(ByteBuffer app, int variation) throws DriverException {
-        throw new DriverException("Unsupported DNP3 response object variation " + variation);
+        throw new DriverUnsupportedOperationException("Unsupported DNP3 response object variation " + variation);
     }
 
     private static byte[] readFully(InputStream in, int length) throws IOException {

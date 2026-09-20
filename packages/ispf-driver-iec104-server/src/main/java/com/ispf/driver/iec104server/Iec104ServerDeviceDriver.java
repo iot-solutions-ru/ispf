@@ -4,8 +4,10 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.driver.ingress.DriverIngressFifoExecutor;
@@ -106,7 +108,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO, "IEC104 server listening on port " + listenPort);
         } catch (IOException e) {
             releaseResources();
-            throw new DriverException("IEC104 server start failed", e);
+            throw new DriverTransientException("IEC104 server start failed", e);
         }
     }
 
@@ -154,7 +156,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -168,7 +170,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         Iec104ServerPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         ioaValues.put(point.ioa(), extractNumeric(value));
         driverObject.updateVariable(pointId, readPoint(point));

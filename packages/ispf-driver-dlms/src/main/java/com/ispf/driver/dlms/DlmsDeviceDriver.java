@@ -4,9 +4,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
-import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
 
 import java.util.Map;
 import java.util.Set;
@@ -109,7 +111,7 @@ public class DlmsDeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -127,11 +129,11 @@ public class DlmsDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         DlmsPoint point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         communicator.writeAttribute(point, value);
         driverObject.updateVariable(pointId, readPoint(point));

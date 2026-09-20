@@ -1,6 +1,7 @@
 package com.ispf.driver.opcuaserver;
 
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverPermanentException;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
@@ -79,7 +80,7 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
             variablesFolder.addOrganizes(variableNode);
             variableNodes.put(point.nodeId(), variableNode);
         } catch (Exception e) {
-            throw new DriverException("Failed to create OPC UA variable node " + point.nodeId(), e);
+            throw new DriverPermanentException("Failed to create OPC UA variable node " + point.nodeId(), e);
         }
     }
 

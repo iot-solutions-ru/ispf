@@ -1,6 +1,7 @@
 package com.ispf.driver.dlms;
 
 import com.ispf.driver.dlms.codec.DlmsObjectType;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
 import java.util.Locale;
@@ -26,11 +27,11 @@ record DlmsPoint(int logicalDevice, String obis, DlmsObjectType objectType, int 
 
     static DlmsPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("DLMS mapping requires logicalDevice:obis: " + mapping);
+            throw new DriverConfigurationException("DLMS mapping requires logicalDevice:obis: " + mapping);
         }
         Matcher matcher = MAPPING.matcher(mapping.trim());
         if (!matcher.matches()) {
-            throw new DriverException("Invalid DLMS mapping (expected logicalDevice:obis[:type[:attr]]): " + mapping);
+            throw new DriverConfigurationException("Invalid DLMS mapping (expected logicalDevice:obis[:type[:attr]]): " + mapping);
         }
         try {
             int logicalDevice = Integer.parseInt(matcher.group(1));
@@ -46,7 +47,7 @@ record DlmsPoint(int logicalDevice, String obis, DlmsObjectType objectType, int 
             }
             return new DlmsPoint(logicalDevice, obis, objectType, attributeIndex);
         } catch (IllegalArgumentException ex) {
-            throw new DriverException("Invalid DLMS mapping: " + mapping, ex);
+            throw new DriverConfigurationException("Invalid DLMS mapping: " + mapping, ex);
         }
     }
 }

@@ -1,6 +1,9 @@
 package com.ispf.driver.dlms.codec;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverPermanentException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -130,7 +133,7 @@ public final class DlmsTcpWrapperCodec {
         expectCommand(buffer, CMD_GET_RESPONSE);
         int result = Byte.toUnsignedInt(buffer.get());
         if (result != 0) {
-            throw new DriverException("DLMS GET rejected with result " + result);
+            throw new DriverPermanentException("DLMS GET rejected with result " + result);
         }
         return decodeValue(buffer);
     }
@@ -140,7 +143,7 @@ public final class DlmsTcpWrapperCodec {
         expectCommand(buffer, CMD_SET_RESPONSE);
         int result = Byte.toUnsignedInt(buffer.get());
         if (result != 0) {
-            throw new DriverException("DLMS SET rejected with result " + result);
+            throw new DriverPermanentException("DLMS SET rejected with result " + result);
         }
     }
 
@@ -153,13 +156,13 @@ public final class DlmsTcpWrapperCodec {
     public static byte[] encodeObis(String obis) throws DriverException {
         String[] parts = obis.split("\\.");
         if (parts.length != 6) {
-            throw new DriverException("Invalid OBIS code: " + obis);
+            throw new DriverConfigurationException("Invalid OBIS code: " + obis);
         }
         byte[] result = new byte[6];
         for (int i = 0; i < parts.length; i++) {
             int value = Integer.parseInt(parts[i]);
             if (value < 0 || value > 255) {
-                throw new DriverException("Invalid OBIS component: " + obis);
+                throw new DriverConfigurationException("Invalid OBIS component: " + obis);
             }
             result[i] = (byte) value;
         }
@@ -208,7 +211,7 @@ public final class DlmsTcpWrapperCodec {
                 yield new String(bytes, StandardCharsets.UTF_8);
             }
             case TAG_OCTETS -> sizedBytes(buffer);
-            default -> throw new DriverException("Unsupported DLMS data tag " + tag);
+            default -> throw new DriverUnsupportedOperationException("Unsupported DLMS data tag " + tag);
         };
     }
 
@@ -222,7 +225,7 @@ public final class DlmsTcpWrapperCodec {
     private static void expectCommand(ByteBuffer buffer, int expected) throws DriverException {
         int actual = Byte.toUnsignedInt(buffer.get());
         if (actual != expected) {
-            throw new DriverException("Unexpected DLMS command 0x" + Integer.toHexString(actual));
+            throw new DriverPermanentException("Unexpected DLMS command 0x" + Integer.toHexString(actual));
         }
     }
 

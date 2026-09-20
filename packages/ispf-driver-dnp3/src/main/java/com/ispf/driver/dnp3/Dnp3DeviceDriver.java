@@ -4,8 +4,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -100,7 +103,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         session.pollAllClasses();
@@ -119,13 +122,13 @@ public class Dnp3DeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("DNP3 write not implemented");
+        throw new DriverUnsupportedOperationException("DNP3 write not implemented");
     }
 
     private DataRecord readPoint(Dnp3Point point, Dnp3ReadCache cache) throws DriverException {
         Object raw = cache.valueFor(point);
         if (raw == null) {
-            throw new DriverException("No value for index " + point.index() + " type " + point.dataType());
+            throw new DriverConfigurationException("No value for index " + point.index() + " type " + point.dataType());
         }
         String status = cache.qualityFor(point);
         return switch (point.dataType()) {

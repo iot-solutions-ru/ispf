@@ -8,6 +8,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,7 @@ class S7DeviceDriverTest {
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.writePoint("setpoint", DataRecord.single(VALUE_SCHEMA, Map.of("raw", 1L, "value", 1.0))));
         assertTrue(error.getMessage().contains("Not connected"));
+        assertEquals(DriverErrorKind.TRANSIENT, error.kind());
     }
 
     @Test
@@ -66,6 +68,7 @@ class S7DeviceDriverTest {
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.writePoint("setpoint", DataRecord.single(VALUE_SCHEMA, Map.of("raw", 1L, "value", 1.0))));
         assertTrue(error.getMessage().contains("Unknown point"));
+        assertEquals(DriverErrorKind.CONFIGURATION, error.kind());
     }
 
     private static final class MemoryS7Connector implements S7Connector {

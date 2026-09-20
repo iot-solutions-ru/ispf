@@ -6,9 +6,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPermanentException;
 import com.ispf.driver.DriverPollTimestamps;
+import com.ispf.driver.DriverTransientException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -85,7 +88,7 @@ public class S7DeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             connected = false;
             connector = null;
-            throw new DriverException("S7 connect failed", e);
+            throw new DriverTransientException("S7 connect failed", e);
         }
     }
 
@@ -110,7 +113,7 @@ public class S7DeviceDriver implements DeviceDriver {
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         points.clear();
         Instant observedAt = DriverPollTimestamps.pollTick();
@@ -124,11 +127,11 @@ public class S7DeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
-            throw new DriverException("Not connected");
+            throw new DriverTransientException("Not connected");
         }
         S7Point point = points.get(pointId);
         if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
+            throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         try {
             byte[] data = encodeValue(point, value, connector);
@@ -137,7 +140,7 @@ public class S7DeviceDriver implements DeviceDriver {
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("S7 write failed for point " + pointId, e);
+            throw new DriverTransientException("S7 write failed for point " + pointId, e);
         }
     }
 
@@ -147,7 +150,7 @@ public class S7DeviceDriver implements DeviceDriver {
             byte[] data = connector.read(point.area(), point.dbNumber(), length, point.offset());
             return decodeValue(point.dataType(), data);
         } catch (Exception e) {
-            throw new DriverException("S7 read failed at " + point, e);
+            throw new DriverTransientException("S7 read failed at " + point, e);
         }
     }
 
@@ -168,7 +171,7 @@ public class S7DeviceDriver implements DeviceDriver {
                 try {
                     existing = connector.read(point.area(), point.dbNumber(), 1, point.offset());
                 } catch (Exception e) {
-                    throw new DriverException("S7 read before BOOL write failed at " + point, e);
+                    throw new DriverTransientException("S7 read before BOOL write failed at " + point, e);
                 }
                 existing[0] = (byte) (boolValue ? (existing[0] | 0x01) : (existing[0] & ~0x01));
                 yield existing;
@@ -176,21 +179,21 @@ public class S7DeviceDriver implements DeviceDriver {
             case BYTE, USINT -> {
                 long raw = extractNumeric(row);
                 if (raw < 0 || raw > 0xFF) {
-                    throw new DriverException(type + " out of range: " + raw);
+                    throw new DriverPermanentException(type + " out of range: " + raw);
                 }
                 yield new byte[]{(byte) (raw & 0xFF)};
             }
             case SINT -> {
                 long raw = extractNumeric(row);
                 if (raw < Byte.MIN_VALUE || raw > Byte.MAX_VALUE) {
-                    throw new DriverException("SINT out of range: " + raw);
+                    throw new DriverPermanentException("SINT out of range: " + raw);
                 }
                 yield new byte[]{(byte) raw};
             }
             case INT -> {
                 long raw = extractNumeric(row);
                 if (raw < Short.MIN_VALUE || raw > Short.MAX_VALUE) {
-                    throw new DriverException("INT out of range: " + raw);
+                    throw new DriverPermanentException("INT out of range: " + raw);
                 }
                 buffer = ByteBuffer.allocate(2).order(ByteOrder.BIG_ENDIAN);
                 buffer.putShort((short) raw);
@@ -199,7 +202,7 @@ public class S7DeviceDriver implements DeviceDriver {
             case UINT, WORD -> {
                 long raw = extractNumeric(row);
                 if (raw < 0 || raw > 0xFFFF) {
-                    throw new DriverException(type + " out of range: " + raw);
+                    throw new DriverPermanentException(type + " out of range: " + raw);
                 }
                 buffer = ByteBuffer.allocate(2).order(ByteOrder.BIG_ENDIAN);
                 buffer.putShort((short) (raw & 0xFFFF));
@@ -208,7 +211,7 @@ public class S7DeviceDriver implements DeviceDriver {
             case DINT -> {
                 long raw = extractNumeric(row);
                 if (raw < Integer.MIN_VALUE || raw > Integer.MAX_VALUE) {
-                    throw new DriverException("DINT out of range: " + raw);
+                    throw new DriverPermanentException("DINT out of range: " + raw);
                 }
                 buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN);
                 buffer.putInt((int) raw);
@@ -217,7 +220,7 @@ public class S7DeviceDriver implements DeviceDriver {
             case UDINT, DWORD -> {
                 long raw = extractNumeric(row);
                 if (raw < 0 || raw > 0xFFFF_FFFFL) {
-                    throw new DriverException(type + " out of range: " + raw);
+                    throw new DriverPermanentException(type + " out of range: " + raw);
                 }
                 buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN);
                 buffer.putInt((int) (raw & 0xFFFF_FFFFL));
@@ -284,7 +287,7 @@ public class S7DeviceDriver implements DeviceDriver {
         if (numeric instanceof Number number) {
             return number.longValue();
         }
-        throw new DriverException("S7 write requires numeric raw/value field");
+        throw new DriverPermanentException("S7 write requires numeric raw/value field");
     }
 
     private static float extractFloat(Map<String, Object> row) throws DriverException {
@@ -296,7 +299,7 @@ public class S7DeviceDriver implements DeviceDriver {
         if (raw instanceof Number number) {
             return number.floatValue();
         }
-        throw new DriverException("S7 REAL write requires numeric raw/value field");
+        throw new DriverPermanentException("S7 REAL write requires numeric raw/value field");
     }
 
     private static double extractDouble(Map<String, Object> row) throws DriverException {
@@ -308,7 +311,7 @@ public class S7DeviceDriver implements DeviceDriver {
         if (raw instanceof Number number) {
             return number.doubleValue();
         }
-        throw new DriverException("S7 LREAL write requires numeric raw/value field");
+        throw new DriverPermanentException("S7 LREAL write requires numeric raw/value field");
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {

@@ -1,5 +1,6 @@
 package com.ispf.driver.bacnet;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.bacnet.codec.BacnetObjectType;
 import com.ispf.driver.bacnet.codec.BacnetPropertyIdentifier;
@@ -13,7 +14,7 @@ record BacnetPoint(BacnetObjectType objectType, int instance, BacnetPropertyIden
     static BacnetPoint parse(String mapping) throws DriverException {
         String[] parts = mapping.split(":");
         if (parts.length < 3) {
-            throw new DriverException("Invalid BACnet mapping (expected objectType:instance:property): " + mapping);
+            throw new DriverConfigurationException("Invalid BACnet mapping (expected objectType:instance:property): " + mapping);
         }
         try {
             BacnetObjectType objectType = parseObjectType(parts[0].trim());
@@ -21,7 +22,7 @@ record BacnetPoint(BacnetObjectType objectType, int instance, BacnetPropertyIden
             BacnetPropertyIdentifier property = parseProperty(parts[2].trim());
             return new BacnetPoint(objectType, instance, property);
         } catch (IllegalArgumentException e) {
-            throw new DriverException("Invalid BACnet mapping: " + mapping, e);
+            throw new DriverConfigurationException("Invalid BACnet mapping: " + mapping, e);
         }
     }
 

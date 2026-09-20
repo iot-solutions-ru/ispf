@@ -81,6 +81,13 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   in `BETA_BY_DECISION` with a reason. `icmp`, `smb`, `wmi` demoted to **BETA** (156 PRODUCTION / 6
   BETA); `modbus-udp`, `flexible`, `webhook` got real loopback driver tests instead of parser-only
   coverage. `tools/driver-readiness-audit.py` output is now OS-independent (POSIX paths, stable pick).
+- **Typed driver exceptions in the top-20 industrial drivers (F-05)** — all 204 `throw new
+  DriverException(...)` sites in `virtual`, `mqtt`, `modbus-tcp/rtu/udp`, `opcua`, `opcua-server`, `snmp`,
+  `bacnet`, `s7`, `http`, `flexible`, `iec104`, `iec104-server`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`,
+  `opc-bridge`, `gps-tracker` now declare their `DriverErrorKind` (`DriverTransient` /
+  `DriverConfiguration` / `DriverPermanent` / `DriverUnsupportedOperationException`), so
+  `ispf.driver.errors.total{kind}` and driver status stop reporting `unclassified` for them.
+  `DriverTypedExceptionsTest` guards the packs against regressions.
 - **Web Console lint gate at zero warnings** — `npm run lint` now runs with
   `--max-warnings 0` (was 180). All `react-hooks/exhaustive-deps`,
   `@typescript-eslint/no-non-null-assertion` and `react-refresh/only-export-components`

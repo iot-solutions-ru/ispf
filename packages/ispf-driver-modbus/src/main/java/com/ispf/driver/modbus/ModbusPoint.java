@@ -1,5 +1,6 @@
 package com.ispf.driver.modbus;
 
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
 /**
@@ -14,7 +15,7 @@ record ModbusPoint(int slaveId, RegisterType type, int address, int count) {
     static ModbusPoint parse(String mapping) throws DriverException {
         String[] parts = mapping.split(":");
         if (parts.length < 3) {
-            throw new DriverException("Invalid Modbus mapping (expected slaveId:type:address): " + mapping);
+            throw new DriverConfigurationException("Invalid Modbus mapping (expected slaveId:type:address): " + mapping);
         }
         try {
             int slaveId = Integer.parseInt(parts[0].trim());
@@ -23,7 +24,7 @@ record ModbusPoint(int slaveId, RegisterType type, int address, int count) {
             int count = parts.length > 3 ? Integer.parseInt(parts[3].trim()) : 1;
             return new ModbusPoint(slaveId, type, address, count);
         } catch (IllegalArgumentException e) {
-            throw new DriverException("Invalid Modbus mapping: " + mapping, e);
+            throw new DriverConfigurationException("Invalid Modbus mapping: " + mapping, e);
         }
     }
 }
