@@ -73,24 +73,11 @@ import {
   resolveOperatorAppIdFromPath,
 } from "./utils/operator/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/object/createObjectMode";
+import EditorWorkspace, { LazyFallback } from "./shell/EditorWorkspace";
 
 const SystemView = lazy(() => import("./components/platform/SystemView"));
 const AiStudioPanel = lazy(() => import("./components/agent/AiStudioPanel"));
-const ReportBuilder = lazy(() => import("./components/report/ReportBuilder"));
-const WorkflowBuilder = lazy(() => import("./components/workflow/WorkflowBuilder"));
-const DashboardBuilder = lazy(() => import("./components/dashboard/DashboardBuilder"));
 const ExplorerView = lazy(() => import("./components/ui/ExplorerView"));
-const DataSourceEditor = lazy(() => import("./components/platform/DataSourceEditor"));
-const MigrationEditor = lazy(() => import("./components/platform/MigrationEditor"));
-const SqlBindingEditor = lazy(() => import("./components/platform/SqlBindingEditor"));
-const ScheduleEditor = lazy(() => import("./components/platform/ScheduleEditor"));
-const MimicEditorPanel = lazy(() => import("./components/scada/MimicEditorPanel"));
-const BlueprintEditorPanel = lazy(() => import("./components/platform/BlueprintEditorPanel"));
-const ApplicationEditorPanel = lazy(() => import("./components/platform/ApplicationEditorPanel"));
-
-function LazyFallback() {
-  return <div className="loading" />;
-}
 
 let tabCounter = 1;
 
@@ -922,87 +909,22 @@ function AppShell() {
         )}
 
         {activeEditor && workspaceTab === activeEditor.id && !showPropertiesEditor && (
-          <main className="main editor-main dashboard-main">
-            <Suspense fallback={<LazyFallback />}>
-              {activeEditor.objectType === "DASHBOARD" ? (
-                <DashboardBuilder
-                  path={activeEditor.path}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                  onSelectObjectPath={selectPathInExplorer}
-                  session={dashboardSessions[activeEditor.id]}
-                  onSessionChange={(next) => {
-                    setDashboardSessions((current) => ({
-                      ...current,
-                      [activeEditor.id]: next,
-                    }));
-                  }}
-                  onNavigateDashboard={openEditor}
-                />
-              ) : activeEditor.objectType === "REPORT" ? (
-                <ReportBuilder
-                  path={activeEditor.path}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                />
-              ) : activeEditor.objectType === "WORKFLOW" ? (
-                <WorkflowBuilder
-                  path={activeEditor.path}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                />
-              ) : activeEditor.objectType === "BLUEPRINT" || isBlueprintsPath(activeEditor.path) ? (
-                <BlueprintEditorPanel
-                  selectedPath={activeEditor.path}
-                  canManage={canConfigure}
-                  title={activeEditor.title}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onSelectPath={(path) => {
-                    setSelectedPath(path);
-                    openEditor(path);
-                  }}
-                />
-              ) : activeEditor.objectType === "DATA_SOURCE" ? (
-                <DataSourceEditor
-                  path={activeEditor.path}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                />
-              ) : activeEditor.objectType === "MIGRATION" ? (
-                <MigrationEditor
-                  path={activeEditor.path}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                />
-              ) : activeEditor.objectType === "BINDING" ? (
-                <SqlBindingEditor
-                  path={activeEditor.path}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                />
-              ) : activeEditor.objectType === "SCHEDULE" ? (
-                <ScheduleEditor
-                  path={activeEditor.path}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                />
-              ) : activeEditor.objectType === "MIMIC" ? (
-                <MimicEditorPanel
-                  path={activeEditor.path}
-                  title={activeEditor.title}
-                  onClose={() => closeEditor(activeEditor.id)}
-                />
-              ) : activeEditor.objectType === "APPLICATION" ? (
-                <ApplicationEditorPanel
-                  path={activeEditor.path}
-                  title={activeEditor.title}
-                  onClose={() => closeEditor(activeEditor.id)}
-                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                  canManage={canConfigure}
-                />
-              ) : null}
-            </Suspense>
-          </main>
+          <EditorWorkspace
+            editor={activeEditor}
+            canConfigure={canConfigure}
+            dashboardSession={dashboardSessions[activeEditor.id]}
+            onClose={closeEditor}
+            onOpenProperties={setPropertiesTabPath}
+            onSelectObjectPath={selectPathInExplorer}
+            onOpenEditor={openEditor}
+            onDashboardSessionChange={(tabId, next) => {
+              setDashboardSessions((current) => ({ ...current, [tabId]: next }));
+            }}
+            onSelectBlueprintPath={(path) => {
+              setSelectedPath(path);
+              openEditor(path);
+            }}
+          />
         )}
 
         {activeEditor && workspaceTab === activeEditor.id && showPropertiesEditor && (
