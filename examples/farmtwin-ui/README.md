@@ -6,7 +6,7 @@
 | **appId** | `farmtwin` |
 | **basePath** | `/apps/farmtwin/` |
 | **version** | `1.0.0` |
-| **artifact** | `farmtwin-ui-1.0.0.zip` |
+| **artifact** | `../marketplace-catalog/farmtwin-ui/farmtwin-ui-1.0.0.zip` (single tracked copy) |
 
 Companion of application listing `farmtwin` (`uiPackSlug: farmtwin-ui`).
 

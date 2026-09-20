@@ -5,7 +5,7 @@ Hosted React SPA for `appId=predictive` (ADR-0054).
 | File | Role |
 |------|------|
 | `ui-pack.json` | Pack manifest |
-| `predictive-ui-1.2.0.zip` | Static SPA (index.html + assets) |
+| `../marketplace-catalog/predictive-ui/predictive-ui-1.2.0.zip` | Static SPA (index.html + assets); single tracked copy |
 | `listing.manifest.json` | Marketplace listing |
 
 ## Install

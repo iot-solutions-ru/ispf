@@ -8,7 +8,7 @@ React MMI **ИТ-мониторинг** as an ISPF Marketplace **`ui-pack`**.
 | **appId** | `it-infra-monitoring` |
 | **version** | `0.1.0` |
 | **Serve path** | `/apps/it-infra-monitoring/` |
-| **Artifact** | `m11-monitor-ui-0.1.0.zip` |
+| **Artifact** | `../marketplace-catalog/m11-monitor-ui/m11-monitor-ui-0.1.0.zip` (single tracked copy) |
 | **Entry** | `index.html` |
 
 ## Zip layout

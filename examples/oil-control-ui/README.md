@@ -8,7 +8,7 @@ React SPA **Ойл Контроль** as an ISPF Marketplace **`ui-pack`**.
 | **appId** | `oil-control` |
 | **version** | `0.5.0` (aligned with application bundle) |
 | **Serve path** | `/apps/oil-control/` (same origin as `/api`) |
-| **Artifact** | `oil-control-ui-0.5.0.zip` |
+| **Artifact** | `../marketplace-catalog/oil-control-ui/oil-control-ui-0.5.0.zip` (single tracked copy) |
 | **Entry** | `index.html` |
 
 ## Zip layout

@@ -6,7 +6,7 @@
 | **appId** | `storetwin` |
 | **basePath** | `/apps/storetwin/` |
 | **version** | `1.0.0` |
-| **artifact** | `storetwin-ui-1.0.0.zip` |
+| **artifact** | `../marketplace-catalog/storetwin-ui/storetwin-ui-1.0.0.zip` (single tracked copy) |
 | **listing** | `listing.manifest.json` · catalog `../marketplace-catalog/storetwin-ui/` |
 
 ## Install

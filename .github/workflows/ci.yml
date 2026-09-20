@@ -219,6 +219,9 @@ jobs:
       - name: Validate marketplace-catalog bundles (BL-183)
         run: node tools/marketplace-catalog/validate-catalog.mjs
 
+      - name: Tracked binaries / oversized files gate
+        run: node tools/repo-hygiene/check-tracked-binaries.mjs
+
   helm-chart:
     runs-on: ubuntu-latest
     steps:
