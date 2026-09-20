@@ -64,6 +64,7 @@ Backend only:
 ```powershell
 .\gradlew testPrFast `
   -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
+.\gradlew coverageVerify   # JaCoCo floors (coverageFloors in build.gradle.kts) — CI fails below them
 ```
 
 Nightly backend slice (load + federation gates):

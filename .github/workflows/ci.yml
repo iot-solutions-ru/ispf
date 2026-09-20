@@ -152,9 +152,13 @@ jobs:
           -Dispf.test.skipFederation=true
           -Dispf.driver.packs=dev
 
-      - name: Coverage report (JaCoCo, informational)
+      - name: Coverage report (JaCoCo)
         if: always()
         run: ./gradlew coverageReport --no-daemon -q || true
+
+      # Per-module LINE/BRANCH floors live in coverageFloors (build.gradle.kts). Ratchet up, never down.
+      - name: Coverage gate (JaCoCo floors)
+        run: ./gradlew coverageVerify --no-daemon
 
       - name: Upload coverage XML
         if: always()

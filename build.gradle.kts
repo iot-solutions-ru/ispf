@@ -13,6 +13,25 @@ allprojects {
     }
 }
 
+/**
+ * JaCoCo coverage floors per module (code-analysis F-02): LINE and BRANCH covered ratio.
+ *
+ * Ratchet policy: the floors sit ~3 pp (line) / ~4 pp (branch) under the measured CI baseline of
+ * 2026-09-20 (pr-fast slice: `-Dispf.test.skipLoad=true -Dispf.test.skipFederation=true`).
+ * Raise a floor when a module's coverage grows; never lower one silently вЂ” a drop means tests
+ * were deleted or untested code landed, and that is exactly what the gate is for.
+ * Modules absent from this map only get a report (`coverageReport`), no verification.
+ */
+val coverageFloors: Map<String, Pair<Double, Double>> = mapOf(
+    //  module                    line  branch   (baseline: line / branch)
+    "ispf-core" to (0.31 to 0.13),             // 34.5 / 17.3
+    "ispf-expression" to (0.61 to 0.46),       // 64.7 / 50.5
+    "ispf-plugin-blueprint" to (0.45 to 0.28), // 48.0 / 32.4
+    "ispf-plugin-workflow" to (0.72 to 0.52),  // 75.6 / 56.3
+    "ispf-server" to (0.61 to 0.43),           // 64.7 / 47.3
+    "ispf-ai-agent" to (0.56 to 0.35),         // 59.3 / 39.8
+)
+
 subprojects {
     apply(plugin = "java")
     apply(plugin = "jacoco")
@@ -42,9 +61,9 @@ subprojects {
         systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     }
 
-    // Coverage (report only, no threshold yet — F-02 code-analysis follow-up).
-    // Run `./gradlew coverageReport` after tests; XML lands in
-    // <module>/build/reports/jacoco/test/jacocoTestReport.xml for Codecov/Sonar-style tooling.
+    // Coverage: `./gradlew coverageReport` after tests writes
+    // <module>/build/reports/jacoco/test/jacocoTestReport.xml (Codecov/Sonar-style tooling);
+    // `./gradlew coverageVerify` fails the build when a module in coverageFloors drops below its floor.
     extensions.configure<JacocoPluginExtension> {
         toolVersion = "0.8.14"
     }
@@ -53,6 +72,26 @@ subprojects {
             xml.required.set(true)
             html.required.set(true)
             csv.required.set(false)
+        }
+    }
+    coverageFloors[name]?.let { (lineFloor, branchFloor) ->
+        tasks.withType<JacocoCoverageVerification> {
+            violationRules {
+                rule {
+                    limit {
+                        counter = "LINE"
+                        value = "COVEREDRATIO"
+                        minimum = lineFloor.toBigDecimal()
+                    }
+                }
+                rule {
+                    limit {
+                        counter = "BRANCH"
+                        value = "COVEREDRATIO"
+                        minimum = branchFloor.toBigDecimal()
+                    }
+                }
+            }
         }
     }
 
@@ -120,7 +159,7 @@ tasks.register("assembleAllDriverPacks") {
 
 tasks.register("assembleDevDriverPacks") {
     group = "driver packs"
-    description = "Assemble dev/minimal driver packs (virtual, mqtt, modbus, http, …)"
+    description = "Assemble dev/minimal driver packs (virtual, mqtt, modbus, http, вЂ¦)"
     dependsOn(devDriverPackProjects.map { it.path + ":assembleDriverPack" })
 }
 
@@ -194,7 +233,7 @@ val prFastBackendTestTasks = listOf(
 
 tasks.register("testPrFast") {
     group = "verification"
-    description = "PR-fast backend slice — add -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev"
+    description = "PR-fast backend slice вЂ” add -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev"
     dependsOn(prFastBackendTestTasks)
 }
 
@@ -204,9 +243,19 @@ tasks.register("coverageReport") {
     dependsOn(prFastBackendTestTasks.map { it.removeSuffix(":test") + ":jacocoTestReport" })
 }
 
+tasks.register("coverageVerify") {
+    group = "verification"
+    description = "Fail when a PR-fast module drops below its JaCoCo floor (coverageFloors); run after testPrFast"
+    dependsOn(
+        prFastBackendTestTasks
+            .filter { coverageFloors.containsKey(it.removeSuffix(":test").substringAfterLast(':')) }
+            .map { it.removeSuffix(":test") + ":jacocoTestCoverageVerification" },
+    )
+}
+
 tasks.register("testNightlyBackend") {
     group = "verification"
-    description = "Nightly backend module batch — add -Dispf.test.skipLoad=true -Dispf.driver.packs=dev (federation + load run separately)"
+    description = "Nightly backend module batch вЂ” add -Dispf.test.skipLoad=true -Dispf.driver.packs=dev (federation + load run separately)"
     dependsOn(prFastBackendTestTasks)
 }
 

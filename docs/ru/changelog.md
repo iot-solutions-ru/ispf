@@ -30,6 +30,8 @@ Changelog отдельных application bundles — в манифестах п�
   исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
   (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).
 - Опциональный модуль Parquet-экспорта `packages/ispf-export-parquet` (parquet-mr/Avro/hadoop вынесены из `ispf-server`, SPI `HistoryParquetExporter` в `ispf-core`); `-Pispf.exportParquet=false` собирает сервер без него — `format=parquet` отвечает 501, cold archive — `skipped` (ADR-0059 §4).
+- Гейт покрытия JaCoCo: `./gradlew coverageVerify` (CI pr-fast) падает при снижении LINE/BRANCH
+  покрытия модуля ниже порога из `coverageFloors` (корневой `build.gradle.kts`); пороги только повышаются.
 - Пакетный invoke функций (`POST .../functions/invoke-batch`) и «Подтвердить все» в alarm bar.
 - Поиск по полному дереву объектов в Web Console (#204).
 - CEL-фильтр ленты журнала событий (#205).
