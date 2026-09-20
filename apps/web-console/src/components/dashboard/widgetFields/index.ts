@@ -1,6 +1,7 @@
 /**
  * Widget editor field modules.
- * Per-type extract continues here; `widgetEditorFields.tsx` still holds the type switch.
+ * Per-type fields live in `widgetTypeFields{Display,Chart,Data,Layout}.tsx` as registries keyed by
+ * widget type (merged in `widgetTypeFieldsRegistry.ts`); `widgetEditorFields.tsx` is the dispatcher.
  */
 export type { WidgetFieldContext } from "./widgetEditorFields";
 export {
