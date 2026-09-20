@@ -11,8 +11,6 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
-import com.ispf.core.object.EventDescriptor;
-import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.expression.BindingExpressionValidator;
@@ -71,7 +69,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -240,43 +237,7 @@ public class ObjectController {
                 .toList();
     }
 
-    @GetMapping("/leases")
-    public List<ObjectEditLeaseService.EditLease> listLeases(Authentication authentication) {
-        objectAccessService.requireAdmin(authentication);
-        return editLeaseService.listActive();
-    }
-
-    @PostMapping("/leases")
-    public ObjectEditLeaseService.EditLease acquireLease(
-            @Valid @RequestBody AcquireLeaseRequest request,
-            Authentication authentication
-    ) {
-        objectAccessService.requireAdmin(authentication);
-        Duration ttl = request.ttlMinutes() != null
-                ? Duration.ofMinutes(request.ttlMinutes())
-                : Duration.ofHours(2);
-        return editLeaseService.acquire(
-                request.pathPrefix(),
-                authentication.getName(),
-                ttl
-        );
-    }
-
-    @DeleteMapping("/leases")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void releaseLease(
-            @RequestParam String pathPrefix,
-            Authentication authentication
-    ) {
-        objectAccessService.requireAdmin(authentication);
-        editLeaseService.release(pathPrefix, authentication.getName());
-    }
-
-    public record AcquireLeaseRequest(
-            @NotBlank String pathPrefix,
-            Integer ttlMinutes
-    ) {
-    }
+    // Edit leases: see ObjectEditLeaseController. Functions/events: see ObjectBehaviorController.
 
     @GetMapping
     public List<ObjectDto> list(
@@ -862,76 +823,6 @@ public class ObjectController {
             objectManager.deleteVariable(path, name);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } finally {
-            endWrite();
-        }
-    }
-
-    @PutMapping("/by-path/functions")
-    public FunctionDescriptor upsertFunction(
-            @RequestParam String path,
-            @Valid @RequestBody FunctionDescriptor function,
-            Authentication authentication,
-            @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
-    ) {
-        path = canonicalPath(path, authentication);
-        beginWrite(path, authentication, headers);
-        try {
-            return objectManager.upsertFunction(path, function);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } finally {
-            endWrite();
-        }
-    }
-
-    @DeleteMapping("/by-path/functions")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteFunction(
-            @RequestParam String path,
-            @RequestParam String name,
-            Authentication authentication,
-            @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
-    ) {
-        path = canonicalPath(path, authentication);
-        beginWrite(path, authentication, headers);
-        try {
-            objectManager.deleteFunction(path, name);
-        } finally {
-            endWrite();
-        }
-    }
-
-    @PutMapping("/by-path/events")
-    public EventDescriptor upsertEvent(
-            @RequestParam String path,
-            @Valid @RequestBody EventDescriptor event,
-            Authentication authentication,
-            @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
-    ) {
-        path = canonicalPath(path, authentication);
-        beginWrite(path, authentication, headers);
-        try {
-            return objectManager.upsertEvent(path, event);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } finally {
-            endWrite();
-        }
-    }
-
-    @DeleteMapping("/by-path/events")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteEvent(
-            @RequestParam String path,
-            @RequestParam String name,
-            Authentication authentication,
-            @org.springframework.web.bind.annotation.RequestHeader HttpHeaders headers
-    ) {
-        path = canonicalPath(path, authentication);
-        beginWrite(path, authentication, headers);
-        try {
-            objectManager.deleteEvent(path, name);
         } finally {
             endWrite();
         }
