@@ -83,6 +83,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   `./gradlew bootJar -Pispf.exportParquet=false` builds a slimmer server where
   `GET …/history/export?format=parquet` answers **501** and the cold archive run
   reports `skipped` (ADR-0059 §4).
+- **JaCoCo coverage gate** — `./gradlew coverageVerify` (CI pr-fast backend job) fails when a
+  module drops below its LINE/BRANCH floor from `coverageFloors` in the root `build.gradle.kts`
+  (`ispf-core`, `ispf-expression`, `ispf-plugin-*`, `ispf-server`, `ispf-ai-agent`). Floors sit a
+  few points under the 2026-09 baseline and are ratcheted up, never down.
 - **Batch function invoke** — `POST /api/v1/objects/by-path/functions/invoke-batch`
   (≤100 items, per-item ACL). Operator alarm bar **Acknowledge all** uses one HTTP call
   instead of N× `acknowledgeAlarm`.

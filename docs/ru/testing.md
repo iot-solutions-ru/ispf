@@ -127,6 +127,20 @@ CI: [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-
 
 Chaos / soak под нагрузкой (журнал REAL vs PARTIAL): **[cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md)**. CI **не** доказывает multi-hour soak и kill-owner под sustained ingress.
 
+## Гейт покрытия (JaCoCo)
+
+Backend-джоб pr-fast падает, если покрытие модуля опускается ниже его порога. Пороги
+(LINE / BRANCH covered ratio) заданы в `coverageFloors` в корневом `build.gradle.kts`
+и работают как «трещотка»: поднимайте порог, когда покрытие растёт, и не понижайте молча.
+
+```bash
+./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
+./gradlew coverageVerify   # гейт
+./gradlew coverageReport   # HTML/XML в <module>/build/reports/jacoco/test/
+```
+
+Модули без порога (драйверы, аналитика, AI-провайдеры) получают только отчёт.
+
 ## CI (рекомендация)
 
 ```bash

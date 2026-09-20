@@ -128,6 +128,20 @@ CI: workflow [`.github/workflows/cluster-load-test.yml`](../../.github/workflows
 
 Chaos / soak under load (lab journal, REAL vs PARTIAL): **[cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md)**. CI does **not** prove multi-hour soak or kill-owner under sustained ingress.
 
+## Coverage gate (JaCoCo)
+
+The pr-fast backend job fails when a module drops below its coverage floor. Floors
+(LINE / BRANCH covered ratio) live in `coverageFloors` in the root `build.gradle.kts`
+and are ratcheted: raise a floor when coverage grows, never lower one silently.
+
+```bash
+./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
+./gradlew coverageVerify   # gate
+./gradlew coverageReport   # HTML/XML in <module>/build/reports/jacoco/test/
+```
+
+Modules without a floor (drivers, analytics, AI providers) only get the report.
+
 ## CI (recommended)
 
 ```bash
