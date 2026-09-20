@@ -183,10 +183,11 @@ jobs:
           npm test
           npm run build
 
-      - name: Unit tests, i18n gate, build
+      - name: Lint, unit tests, i18n gate, build
         working-directory: apps/web-console
         run: |
           npm ci
+          npm run lint
           npm test
           npm run i18n:check
           npm run build

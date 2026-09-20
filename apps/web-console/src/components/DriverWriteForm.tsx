@@ -80,7 +80,7 @@ export default function DriverWriteForm({
           if (error instanceof Error && error.message === t("inspector:driver.write.valueRequired")) {
             throw error;
           }
-          throw new Error(t("common:error.invalidJsonInput"));
+          throw new Error(t("common:error.invalidJsonInput"), { cause: error });
         }
       } else {
         if (!valueText.trim()) {

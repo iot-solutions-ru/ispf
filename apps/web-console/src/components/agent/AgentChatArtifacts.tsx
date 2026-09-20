@@ -55,7 +55,7 @@ function openLink(link: AgentArtifactLink, handlers: AgentChatArtifactsProps) {
 
 /** Strip leading "1." / "1)" so `<ol>` counters do not double-number agent steps. */
 function normalizePlanStepText(step: string): string {
-  return step.replace(/^\s*\d+[\.)]\s*/, "").trim() || step;
+  return step.replace(/^\s*\d+[.)]\s*/, "").trim() || step;
 }
 
 function TablePreviewModal({

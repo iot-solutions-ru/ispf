@@ -69,7 +69,7 @@ describe("sheetExcelFunctionsReport", () => {
 
   it("evaluates IFS, TEXTJOIN, SUBTOTAL", () => {
     expect(evaluateSheetFormula("=IFS(A1>10,\"high\",A1<=10,\"low\")", env({ A1: 15 }))).toBe("high");
-    expect(evaluateSheetFormula('=TEXTJOIN(\",\",TRUE,A1,A2,B1)', env({ A1: "a", A2: "", B1: "b" }))).toBe("a,b");
+    expect(evaluateSheetFormula('=TEXTJOIN(",",TRUE,A1,A2,B1)', env({ A1: "a", A2: "", B1: "b" }))).toBe("a,b");
     expect(evaluateSheetFormula("=SUBTOTAL(9,A1:A3)", env({ A1: 1, A2: 2, A3: 3 }))).toBe(6);
   });
 

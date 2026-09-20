@@ -7,7 +7,7 @@ import { useObjectTreeSearch } from "../hooks/useObjectTreeSearch";
 import type { ObjectType } from "../types";
 import { buildObjectTree } from "../utils/tree/tree";
 import { filterLoadedObjectsForQuery, OBJECT_SEARCH_MIN_CHARS } from "../utils/tree/treeSearch";
-import { selectionFromObject } from "../utils/tree/treeRowKey";
+import { type selectionFromObject } from "../utils/tree/treeRowKey";
 import Modal from "./Modal";
 
 export interface ObjectTreePickerDialogProps {

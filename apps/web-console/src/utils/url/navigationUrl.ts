@@ -1,4 +1,5 @@
 const SCHEME_PATTERN = /^([a-z][a-z0-9+.-]*):/i;
+// eslint-disable-next-line no-control-regex -- strips C0 controls and spaces from user-supplied URLs
 const STRIPPED_CHARS = /[\u0000-\u0020]/g;
 
 /**

@@ -1701,6 +1701,7 @@ function invokeFunction(
   }
 
   if (name === "CLEAN") {
+    // eslint-disable-next-line no-control-regex -- Excel CLEAN(): strips non-printable ASCII by design
     return String(args[0] ?? "").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
   }
 

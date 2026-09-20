@@ -40,15 +40,16 @@ interface ChartWidgetViewProps {
   editable?: boolean;
 }
 
+/**
+ * Dispatcher: bubble / radar charts have their own hook sets, so they render as
+ * separate components. Everything else goes to {@link ChartTrendWidgetView}.
+ * Keeping the early returns here (before any hooks) satisfies rules-of-hooks.
+ */
 export default function ChartWidgetView({
   widget,
   refreshIntervalMs,
   editable = false,
 }: ChartWidgetViewProps) {
-  const { t } = useTranslation("widgets");
-  const maxPoints = widget.maxPoints ?? 120;
-  const historyRange = widget.historyRange ?? "live";
-  const color = widget.color ?? "#2f81f7";
   const chartStyle = widget.chartStyle ?? "area";
   const chartType = widget.chartType ?? chartStyle;
 
@@ -71,6 +72,26 @@ export default function ChartWidgetView({
     );
   }
 
+  return (
+    <ChartTrendWidgetView
+      widget={widget}
+      refreshIntervalMs={refreshIntervalMs}
+      editable={editable}
+    />
+  );
+}
+
+function ChartTrendWidgetView({
+  widget,
+  refreshIntervalMs,
+  editable = false,
+}: ChartWidgetViewProps) {
+  const { t } = useTranslation("widgets");
+  const maxPoints = widget.maxPoints ?? 120;
+  const historyRange = widget.historyRange ?? "live";
+  const color = widget.color ?? "#2f81f7";
+  const chartStyle = widget.chartStyle ?? "area";
+  const chartType = widget.chartType ?? chartStyle;
   const isRangeChart = chartType === "range";
   const isCandlestickChart = chartType === "candlestick";
   const chartMode = isRangeChart ? "range" : isCandlestickChart ? "candlestick" : "line";
