@@ -112,7 +112,16 @@ class WorkflowRetryIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.instanceState").value(org.hamcrest.Matchers.containsString("FAILED")));
 
-        List<WorkflowRetryScheduleEntity> pending = retryRepository.findDue(Instant.now().plusSeconds(5));
+        // Retry schedule is written after the failed run; under CI load that can lag a few hundred ms.
+        List<WorkflowRetryScheduleEntity> pending = List.of();
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            pending = retryRepository.findDue(Instant.now().plusSeconds(5));
+            if (!pending.isEmpty()) {
+                break;
+            }
+            Thread.sleep(50);
+        }
         assertThat(pending).isNotEmpty();
         assertThat(pending.get(0).getWorkflowPath()).isEqualTo(WORKFLOW);
         assertThat(pending.get(0).getStatus()).isEqualTo(WorkflowRetryService.STATUS_PENDING);
