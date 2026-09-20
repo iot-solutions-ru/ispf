@@ -64,6 +64,12 @@ Changelog отдельных application bundles — в манифестах п�
   CRITICAL/HIGH (полный отчёт и SBOM — артефакт). Первый прогон закрыт пинами Tomcat 11.0.26, Netty 4.2.18 для
   драйвера Neo4j, Bouncy Castle 1.86, lz4-java 1.11.3, commons-configuration2 2.15.1 — все внесены в реестр
   пинов ADR-0059 с условиями снятия.
+- Бенчмарк синка путей ObjectManager + аудит `synchronized` (F-08): `ObjectManagerPathSyncBenchmarkTest`
+  прогоняет 8 followers × 20 синков по разным путям через монитор экземпляра (до F-08) и через текущий
+  RW-лок + per-path монитор: **в 8,2 раза быстрее** (402,9 → 49,0 мс при имитации DB round-trip 2 мс); тест
+  требует ≥ 2×, чтобы разделение не откатилось незаметно. Все 76 оставшихся `synchronized` в `ispf-server`
+  просмотрены — других мониторов на весь экземпляр на горячем пути нет; один пункт «watch»
+  (`RecentEventCache`, сканы на чтение). Отчёт: `docs/evidence/quality/2026-09-20-synchronized-audit.md`.
 - Lint-гейт Web Console на нуле предупреждений: `npm run lint` с `--max-warnings 0` (было 180);
   исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
   (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).
